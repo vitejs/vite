@@ -7,14 +7,46 @@ declare const __HMR_CONFIG_NAME__: string
 const hmrConfigName = __HMR_CONFIG_NAME__
 const base = __BASE__ || '/'
 
-// Error Template
-const template = document.createElement('div')
-template.classList.add('backdrop')
-template.setAttribute('part', 'backdrop')
+// Create an element with provided attributes and optional text
+function h(
+  e: string,
+  attrs: Record<string, string> = {},
+  content: string = '',
+) {
+  const elem = document.createElement(e)
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') {
+      elem.className = v
+    } else {
+      elem.setAttribute(k, v)
+    }
+  }
 
+  if (content) {
+    elem.textContent = content
+  }
+  return elem
+}
+
+type HTMLChildren = HTMLElement | string
+
+// Append a list of children to a parent element
+function hstack(parent: HTMLElement, ...children: HTMLChildren[]) {
+  for (const child of children) {
+    if (typeof child === 'string') {
+      parent.appendChild(document.createTextNode(child))
+    } else {
+      parent.appendChild(child)
+    }
+  }
+  return parent
+}
+
+// Error Template
+const template = h('div', { class: 'backdrop', part: 'backdrop' })
 // Style
 // set :host styles to make playwright detect the element as visible
-const style = document.createElement('style')
+const style = h('style')
 style.textContent = `
 :host {
   position: fixed;
@@ -157,69 +189,35 @@ kbd {
 `
 
 // Error Window
-const errorWindow = document.createElement('div')
-errorWindow.classList.add('window')
-errorWindow.setAttribute('part', 'window')
-const message = document.createElement('pre')
-message.classList.add('message')
-message.setAttribute('part', 'message')
-const plugin = document.createElement('span')
-plugin.classList.add('plugin')
-plugin.setAttribute('part', 'plugin')
-const messageBody = document.createElement('span')
-messageBody.classList.add('message-body')
-messageBody.setAttribute('part', 'message-body')
-message.appendChild(plugin)
-message.appendChild(messageBody)
+const errorWindow = h('div', { class: 'window', part: 'window' })
+const message = h('pre', { class: 'message', part: 'message' })
+const plugin = h('span', { class: 'plugin', part: 'plugin' })
+const messageBody = h('span', { class: 'message-body', part: 'message-body' })
+hstack(message, plugin, messageBody)
 
 // Error Info
-const file = document.createElement('pre')
-file.classList.add('file')
-file.setAttribute('part', 'file')
-const frame = document.createElement('pre')
-frame.classList.add('frame')
-frame.setAttribute('part', 'frame')
-const stack = document.createElement('pre')
-stack.classList.add('stack')
-stack.setAttribute('part', 'stack')
+const file = h('pre', { class: 'file', part: 'file' })
+const frame = h('pre', { class: 'frame', part: 'frame' })
+const stack = h('pre', { class: 'stack', part: 'stack' })
 
 // Tip
-const tip = document.createElement('div')
-tip.classList.add('tip')
-tip.setAttribute('part', 'tip')
-tip.appendChild(document.createTextNode('Click outside, press '))
-const kbd = document.createElement('kbd')
-const kbdContent = document.createTextNode('Esc')
-kbd.appendChild(kbdContent)
-tip.appendChild(kbd)
-tip.appendChild(document.createTextNode(' key, or fix the code to dismiss.'))
-tip.appendChild(document.createElement('br'))
-tip.appendChild(
-  document.createTextNode('You can also disable this overlay by setting '),
+const tip = h('div', { class: 'tip', part: 'tip' })
+hstack(
+  tip,
+  'Click outside, press ',
+  h('kbd', {}, 'Esc'),
+  ' key, or fix the code to dismiss.',
+  h('br'),
+  'You can also disable this overlay by setting ',
+  h('code', { part: 'config-option-name' }, 'server.hmr.overlay'),
+  ' to ',
+  h('code', { part: 'config-option-value' }, 'false'),
+  ' in ',
+  h('code', { part: 'config-file-name' }, hmrConfigName),
+  '.',
 )
-const hmr = document.createElement('code')
-hmr.setAttribute('part', 'config-option-name')
-hmr.appendChild(document.createTextNode('server.hmr.overlay'))
-tip.appendChild(hmr)
-tip.appendChild(document.createTextNode(' to '))
-const hmrValue = document.createElement('code')
-hmrValue.setAttribute('part', 'config-option-value')
-hmrValue.appendChild(document.createTextNode('false'))
-tip.appendChild(hmrValue)
-tip.appendChild(document.createTextNode(' in '))
-const hmrConfig = document.createElement('code')
-hmrConfig.setAttribute('part', 'config-file-name')
-hmrConfig.appendChild(document.createTextNode(hmrConfigName))
-tip.appendChild(hmrConfig)
-tip.appendChild(document.createTextNode('.'))
 
-template.appendChild(style)
-template.appendChild(errorWindow)
-errorWindow.appendChild(message)
-errorWindow.appendChild(file)
-errorWindow.appendChild(frame)
-errorWindow.appendChild(stack)
-errorWindow.appendChild(tip)
+hstack(template, style, errorWindow, file, frame, stack, tip)
 
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
