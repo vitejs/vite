@@ -7,11 +7,11 @@ declare const __HMR_CONFIG_NAME__: string
 const hmrConfigName = __HMR_CONFIG_NAME__
 const base = __BASE__ || '/'
 
-// Create an element with provided attributes and optional text
+// Create an element with provided attributes and optional children
 function h(
   e: string,
   attrs: Record<string, string> = {},
-  content: string = '',
+  ...children: (string | Node)[]
 ) {
   const elem = document.createElement(e)
   for (const [k, v] of Object.entries(attrs)) {
@@ -22,32 +22,21 @@ function h(
     }
   }
 
-  if (content) {
-    elem.textContent = content
+  // Append children
+  for (const child of children) {
+    // If a child is a string, create a text node
+    if (typeof child === 'string') {
+      elem.appendChild(document.createTextNode(child))
+    } else {
+      // Otherwise, append the child node
+      elem.appendChild(child)
+    }
   }
+
   return elem
 }
 
-type HTMLChildren = HTMLElement | string
-
-// Append a list of children to a parent element
-function hstack(parent: HTMLElement, ...children: HTMLChildren[]) {
-  for (const child of children) {
-    if (typeof child === 'string') {
-      parent.appendChild(document.createTextNode(child))
-    } else {
-      parent.appendChild(child)
-    }
-  }
-  return parent
-}
-
-// Error Template
-const template = h('div', { class: 'backdrop', part: 'backdrop' })
-// Style
-// set :host styles to make playwright detect the element as visible
-const style = h('style')
-style.textContent = `
+const templateStyle = `
 :host {
   position: fixed;
   top: 0;
@@ -188,36 +177,40 @@ kbd {
 }
 `
 
-// Error Window
-const errorWindow = h('div', { class: 'window', part: 'window' })
-const message = h('pre', { class: 'message', part: 'message' })
-const plugin = h('span', { class: 'plugin', part: 'plugin' })
-const messageBody = h('span', { class: 'message-body', part: 'message-body' })
-hstack(message, plugin, messageBody)
-
-// Error Info
-const file = h('pre', { class: 'file', part: 'file' })
-const frame = h('pre', { class: 'frame', part: 'frame' })
-const stack = h('pre', { class: 'stack', part: 'stack' })
-
-// Tip
-const tip = h('div', { class: 'tip', part: 'tip' })
-hstack(
-  tip,
-  'Click outside, press ',
-  h('kbd', {}, 'Esc'),
-  ' key, or fix the code to dismiss.',
-  h('br'),
-  'You can also disable this overlay by setting ',
-  h('code', { part: 'config-option-name' }, 'server.hmr.overlay'),
-  ' to ',
-  h('code', { part: 'config-option-value' }, 'false'),
-  ' in ',
-  h('code', { part: 'config-file-name' }, hmrConfigName),
-  '.',
+// Error Template
+const template = h(
+  'div',
+  { class: 'backdrop', part: 'backdrop' },
+  h(
+    'div',
+    { class: 'window', part: 'window' },
+    h(
+      'pre',
+      { class: 'message', part: 'message' },
+      h('span', { class: 'plugin', part: 'plugin' }),
+      h('span', { class: 'message-body', part: 'message-body' }),
+    ),
+    h('pre', { class: 'file', part: 'file' }),
+    h('pre', { class: 'frame', part: 'frame' }),
+    h('pre', { class: 'stack', part: 'stack' }),
+    h(
+      'div',
+      { class: 'tip', part: 'tip' },
+      'Click outside, press ',
+      h('kbd', {}, 'Esc'),
+      ' key, or fix the code to dismiss.',
+      h('br'),
+      'You can also disable this overlay by setting ',
+      h('code', { part: 'config-option-name' }, 'server.hmr.overlay'),
+      ' to ',
+      h('code', { part: 'config-option-value' }, 'false'),
+      ' in ',
+      h('code', { part: 'config-file-name' }, hmrConfigName),
+      '.',
+    ),
+  ),
+  h('style', {}, templateStyle),
 )
-
-hstack(template, style, errorWindow, file, frame, stack, tip)
 
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
