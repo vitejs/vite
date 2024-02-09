@@ -1158,13 +1158,13 @@ export function toOutputFilePathInJS(
         relative = result.relative
       }
     } else if (result) {
-      return result
+      return encodeURI(result)
     }
   }
   if (relative && !config.build.ssr) {
-    return toRelative(filename, hostId)
+    return toRelative(encodeURI(filename), hostId)
   }
-  return joinUrlSegments(config.base, filename)
+  return joinUrlSegments(config.base, encodeURI(filename))
 }
 
 export function createToImportMetaURLBasedRelativeRuntime(
