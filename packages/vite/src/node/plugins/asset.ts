@@ -206,7 +206,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      return `export default ${JSON.stringify(url)}`
+      return `export default ${JSON.stringify(
+        url.startsWith('data:') ? url : encodeURI(url),
+      )}`
     },
 
     renderChunk(code, chunk, opts) {
