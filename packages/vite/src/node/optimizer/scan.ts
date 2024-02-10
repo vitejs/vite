@@ -238,24 +238,10 @@ function orderedDependencies(deps: Record<string, string>) {
   return Object.fromEntries(depsList)
 }
 
-function isPatternLiteral(pattern: string): boolean {
-  // According to the docs all the special characters are: $^*+?()[]
-  // So if the pattern contains any of them without a backslash ahead,
-  // it's not a literal pattern.
-  return !pattern.match(/(?<!\\)[$^*+?()[\]]/)
-}
-
-function getUnescapedPath(filepath: string, config: ResolvedConfig) {
-  const unescaped = filepath.replace(/\\([$^*+?()[\]])/g, '$1')
-  return path.isAbsolute(unescaped)
-    ? unescaped
-    : path.resolve(config.root, unescaped)
-}
-
 function globEntries(pattern: string | string[], config: ResolvedConfig) {
   const resolvedPatterns = Array.isArray(pattern) ? pattern : [pattern]
-  if (resolvedPatterns.every(isPatternLiteral)) {
-    return resolvedPatterns.map((p) => getUnescapedPath(p, config))
+  if (resolvedPatterns.every((str) => !glob.isDynamicPattern(str))) {
+    return resolvedPatterns.map((p) => path.resolve(config.root, p))
   }
   return glob(pattern, {
     cwd: config.root,
