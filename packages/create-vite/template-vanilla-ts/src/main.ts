@@ -5,52 +5,51 @@ import { setupCounter } from './counter.ts'
 
 const app = document.querySelector<HTMLDivElement>('#app')
 
+// Create a node with provided attributes and optional children
+function h(
+  e: string,
+  attrs: Record<string, string> = {},
+  ...children: (string | Node)[]
+): Node {
+  const elem = document.createElement(e)
+  for (const [k, v] of Object.entries(attrs)) {
+    elem.setAttribute(k, v)
+  }
+  elem.append(...children)
+  return elem
+}
+
 if (app) {
-  const wrapper = document.createElement('div')
+  app.append(
+    h(
+      'div',
+      {},
+      h(
+        'a',
+        { href: 'https://vitejs.dev', target: '_blank' },
+        h('img', { src: viteLogo, class: 'logo', alt: 'Vite logo' }),
+      ),
+      h(
+        'a',
+        {
+          href: 'https://www.typescriptlang.org/',
+          target: '_blank',
+        },
+        h('img', {
+          src: typescriptLogo,
+          class: 'logo vanilla',
+          alt: 'JavaScript logo',
+        }),
+      ),
+      h('h1', {}, 'Hello Vite!'),
+      h('div', { class: 'card' }, h('button', { id: 'counter' })),
+      h(
+        'p',
+        { class: 'read-the-docs' },
+        'Click on the Vite logo to learn more',
+      ),
+    ),
+  )
 
-  // Set up Vite link and logo
-  const viteLink = document.createElement('a')
-  viteLink.setAttribute('href', 'https://vitejs.dev')
-  viteLink.setAttribute('target', '_blank')
-  const viteLinkLogo = document.createElement('img')
-  viteLinkLogo.setAttribute('src', viteLogo)
-  viteLinkLogo.setAttribute('class', 'logo')
-  viteLinkLogo.setAttribute('alt', 'Vite logo')
-  viteLink.appendChild(viteLinkLogo)
-
-  // Set up JavaScript link and logo
-  const typescriptLink = document.createElement('a')
-  typescriptLink.setAttribute('href', 'https://www.typescriptlang.org/')
-  typescriptLink.setAttribute('target', '_blank')
-  const tsLinkLogo = document.createElement('img')
-  tsLinkLogo.setAttribute('src', typescriptLogo)
-  tsLinkLogo.setAttribute('class', 'logo vanilla')
-  tsLinkLogo.setAttribute('alt', 'TypeScript logo')
-  typescriptLink.appendChild(tsLinkLogo)
-
-  // Set up title
-  const title = document.createElement('h1')
-  title.textContent = 'Hello Vite!'
-
-  // Set up card
-  const card = document.createElement('div')
-  card.setAttribute('class', 'card')
-  const counterButton = document.createElement('button')
-  counterButton.setAttribute('id', 'counter')
-  card.appendChild(counterButton)
-
-  // Set up docs
-  const readTheDocs = document.createElement('p')
-  readTheDocs.setAttribute('class', 'read-the-docs')
-  readTheDocs.textContent = 'Click on the Vite logo to learn more'
-
-  // Append all elements to wrapper, then the app
-  wrapper.appendChild(viteLink)
-  wrapper.appendChild(typescriptLink)
-  wrapper.appendChild(title)
-  wrapper.appendChild(card)
-  wrapper.appendChild(readTheDocs)
-  app.appendChild(wrapper)
-
-  setupCounter(counterButton)
+  setupCounter(documment.querySelector('#counter'))
 }
