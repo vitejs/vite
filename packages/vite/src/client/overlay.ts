@@ -21,18 +21,7 @@ function h(
       elem.setAttribute(k, v)
     }
   }
-
-  // Append children
-  for (const child of children) {
-    // If a child is a string, create a text node
-    if (typeof child === 'string') {
-      elem.appendChild(document.createTextNode(child))
-    } else {
-      // Otherwise, append the child node
-      elem.appendChild(child)
-    }
-  }
-
+  elem.append(...child)
   return elem
 }
 
