@@ -15,11 +15,7 @@ function h(
 ) {
   const elem = document.createElement(e)
   for (const [k, v] of Object.entries(attrs)) {
-    if (k === 'class') {
-      elem.className = v
-    } else {
-      elem.setAttribute(k, v)
-    }
+    elem.setAttribute(k, v)
   }
   elem.append(...child)
   return elem
