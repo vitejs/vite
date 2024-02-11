@@ -25,7 +25,8 @@ function h(
   return elem
 }
 
-const templateStyle = `
+// set :host styles to make playwright detect the element as visible
+const templateStyle = /*css*/ `
 :host {
   position: fixed;
   top: 0;
