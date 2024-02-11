@@ -17,7 +17,7 @@ function h(
   for (const [k, v] of Object.entries(attrs)) {
     elem.setAttribute(k, v)
   }
-  elem.append(...child)
+  elem.append(...children)
   return elem
 }
 
