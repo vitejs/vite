@@ -13,9 +13,6 @@ patchedDependencies:
   chokidar@3.6.0:
     hash: bckcfsslxcffppz65mxcq6naau
     path: patches/chokidar@3.6.0.patch
-  dotenv-expand@10.0.0:
-    hash: weuqf2vlv5b5g6cikeo4slurbm
-    path: patches/dotenv-expand@10.0.0.patch
   sirv@2.0.4:
     hash: amdes53ifqfntejkflpaq5ifce
     path: patches/sirv@2.0.4.patch
@@ -319,8 +316,8 @@ importers:
         specifier: ^16.4.2
         version: 16.4.2
       dotenv-expand:
-        specifier: ^10.0.0
-        version: 10.0.0(patch_hash=weuqf2vlv5b5g6cikeo4slurbm)
+        specifier: ^11.0.3
+        version: 11.0.3
       es-module-lexer:
         specifier: ^1.4.1
         version: 1.4.1
@@ -5592,11 +5589,12 @@ packages:
       is-obj: 2.0.0
     dev: true
 
-  /dotenv-expand@10.0.0(patch_hash=weuqf2vlv5b5g6cikeo4slurbm):
-    resolution: {integrity: sha512-GopVGCpVS1UKH75VKHGuQFqS1Gusej0z4FyQkPdwjil2gNIv+LNsqBlboOzpJFZKVT95GkCyWJbBSdFEFUWI2A==}
+  /dotenv-expand@11.0.3:
+    resolution: {integrity: sha512-qkK+MLTvZ86oq4sjMqGpUN/38SQ/J37mny88CsEUFFjb2MBVz06a809ri0QeVDXpxkvZkXzqjGUb0M1R6n3OGw==}
     engines: {node: '>=12'}
+    dependencies:
+      dotenv: 16.4.2
     dev: true
-    patched: true
 
   /dotenv@16.4.2:
     resolution: {integrity: sha512-rZSSFxke7d9nYQ5NeMIwp5PP+f8wXgKNljpOb7KtH6SKW1cEqcXAz9VSJYVLKe7Jhup/gUYOkaeSVyK8GJ+nBg==}

@@ -117,7 +117,7 @@
     "debug": "^4.3.4",
     "dep-types": "link:./src/types",
     "dotenv": "^16.4.2",
-    "dotenv-expand": "^10.0.0",
+    "dotenv-expand": "^11.0.3",
     "es-module-lexer": "^1.4.1",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
