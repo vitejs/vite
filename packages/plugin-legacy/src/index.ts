@@ -60,7 +60,7 @@ function toOutputFilePathInHtml(
   toRelative: (filename: string, importer: string) => string,
 ): string {
   const { renderBuiltUrl } = config.experimental
-  let relative = config.base === '' || config.base === './'
+  let isBaseDefault = config.base === '' || config.base === './'
   if (renderBuiltUrl) {
     const result = renderBuiltUrl(filename, {
       hostId,
@@ -75,13 +75,13 @@ function toOutputFilePathInHtml(
         )
       }
       if (typeof result.relative === 'boolean') {
-        relative = result.relative
+        isBaseDefault = result.relative
       }
     } else if (result) {
       return result
     }
   }
-  if (relative && !config.build.ssr) {
+  if (isBaseDefault && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
     return config.base + filename
