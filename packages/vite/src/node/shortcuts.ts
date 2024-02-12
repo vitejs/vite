@@ -25,6 +25,8 @@ export type CLIShortcut<Server = ViteDevServer | PreviewServer> = {
   action?(server: Server): void | Promise<void>
 }
 
+let rl: readline.Interface
+const shortcuts: CLIShortcut[] = []
 export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   server: Server,
   opts?: BindCLIShortcutsOptions<Server>,
@@ -32,7 +34,6 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
   if (!server.httpServer || !process.stdin.isTTY || process.env.CI) {
     return
   }
-
   const isDev = isDevServer(server)
 
   if (isDev) {
@@ -48,17 +49,10 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     )
   }
 
-  const shortcuts = (opts?.customShortcuts ?? []).concat(
-    (isDev
-      ? BASE_DEV_SHORTCUTS
-      : BASE_PREVIEW_SHORTCUTS) as CLIShortcut<Server>[],
-  )
-
   let actionRunning = false
 
   const onInput = async (input: string) => {
     if (actionRunning) return
-
     if (input === 'h') {
       const loggedKeys = new Set<string>()
       server.config.logger.info('\n  Shortcuts')
@@ -86,8 +80,22 @@ export function bindCLIShortcuts<Server extends ViteDevServer | PreviewServer>(
     await shortcut.action(server)
     actionRunning = false
   }
-
-  const rl = readline.createInterface({ input: process.stdin })
+  /**
+   * User may add custom shortcuts (see #15781)
+   * This will ensure that only one instance of readline is running
+   */
+  if (rl) {
+    rl.close()
+  } else {
+    // No readline instance, push the default shortcuts
+    shortcuts.push(
+      ...((isDev
+        ? BASE_DEV_SHORTCUTS
+        : BASE_PREVIEW_SHORTCUTS) as CLIShortcut<Server>[]),
+    )
+  }
+  shortcuts.push(...(opts?.customShortcuts ?? []))
+  rl = readline.createInterface({ input: process.stdin })
   rl.on('line', onInput)
   server.httpServer.on('close', () => rl.close())
 }
