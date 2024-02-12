@@ -718,9 +718,7 @@ export async function build(
     clearLine()
     if (startTime) {
       config.logger.error(
-        `${colors.red(
-          `x Build failed in ${displayTime(Date.now() - startTime)}`,
-        )}`,
+        `${colors.red('x')} Build failed in ${displayTime(Date.now() - startTime)}`,
       )
       startTime = undefined
     }
