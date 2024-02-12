@@ -38,7 +38,6 @@ import {
   withTrailingSlash,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
-import { LogLevels } from './logger'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
@@ -706,12 +705,9 @@ export async function build(
     for (const output of normalizedOutputs) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
-    const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
-    if (shouldLogInfo) {
-      config.logger.info(
-        `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
-      )
-    }
+    config.logger.info(
+      `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
+    )
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     e.message = mergeRollupError(e)
