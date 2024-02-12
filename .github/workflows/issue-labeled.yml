@@ -16,7 +16,7 @@ jobs:
           actions: "remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
-          labels: "pending triage, need reproduction"
+          labels: "pending triage, needs reproduction"
 
       - name: remove pending
         if: contains(github.event.label.description, '(priority)') && contains(github.event.issue.labels.*.name, 'pending triage')
@@ -36,13 +36,13 @@ jobs:
           issue-number: ${{ github.event.issue.number }}
           labels: "enhancement: pending triage"
 
-      - name: need reproduction
-        if: github.event.label.name == 'need reproduction'
+      - name: needs reproduction
+        if: github.event.label.name == 'needs reproduction'
         uses: actions-cool/issues-helper@v3
         with:
           actions: "create-comment, remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
           issue-number: ${{ github.event.issue.number }}
           body: |
-            Hello @${{ github.event.issue.user.login }}. Please provide a [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) using a GitHub repository or [StackBlitz](https://vite.new). Issues marked with `need reproduction` will be closed if they have no activity within 3 days.
+            Hello @${{ github.event.issue.user.login }}. Please provide a [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) using a GitHub repository or [StackBlitz](https://vite.new). Issues marked with `needs reproduction` will be closed if they have no activity within 3 days.
           labels: "pending triage"
