@@ -116,7 +116,7 @@
     "cross-spawn": "^7.0.3",
     "debug": "^4.3.4",
     "dep-types": "link:./src/types",
-    "dotenv": "^16.4.1",
+    "dotenv": "^16.4.2",
     "dotenv-expand": "^10.0.0",
     "es-module-lexer": "^1.4.1",
     "escape-html": "^1.0.3",
