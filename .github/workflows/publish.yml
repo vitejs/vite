@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.4.0
+        uses: pnpm/action-setup@v3.0.0
 
       - name: Set node version to 18
         uses: actions/setup-node@v4
