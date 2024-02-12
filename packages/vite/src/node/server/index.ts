@@ -194,10 +194,10 @@ export interface FileSystemServeOptions {
   deny?: string[]
 
   /**
-   * Enable caching of fs calls.
+   * Enable caching of fs calls. It is enabled by default if no custom watch ignored patterns are provided.
    *
    * @experimental
-   * @default true
+   * @default undefined
    */
   cachedChecks?: boolean
 }
@@ -1002,7 +1002,7 @@ export function resolveServerOptions(
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
     deny,
-    cachedChecks: server.fs?.cachedChecks ?? true,
+    cachedChecks: server.fs?.cachedChecks,
   }
 
   if (server.origin?.endsWith('/')) {
