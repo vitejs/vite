@@ -308,9 +308,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
           return this.error(
-            `Failed to resolve import "${url}" from "${path.relative(
-              process.cwd(),
-              importerFile,
+            `Failed to resolve import "${url}" from "${normalizePath(
+              path.relative(process.cwd(), importerFile),
             )}". Does the file exist?`,
             pos,
           )
