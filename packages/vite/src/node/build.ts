@@ -719,7 +719,7 @@ export async function build(
     if (startTime) {
       config.logger.error(
         `${colors.red(
-          `x Builed failed in ${displayTime(Date.now() - startTime)}`,
+          `x Build failed in ${displayTime(Date.now() - startTime)}`,
         )}`,
       )
       startTime = undefined
