@@ -61,6 +61,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       function createChunk(chunk: OutputChunk): ManifestChunk {
         const manifestChunk: ManifestChunk = {
           file: chunk.fileName,
+          name: chunk.name,
         }
 
         if (chunk.facadeModuleId) {
@@ -68,7 +69,6 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         }
         if (chunk.isEntry) {
           manifestChunk.isEntry = true
-          manifestChunk.name = chunk.name
         }
         if (chunk.isDynamicEntry) {
           manifestChunk.isDynamicEntry = true
