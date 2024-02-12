@@ -5593,7 +5593,7 @@ packages:
     resolution: {integrity: sha512-qkK+MLTvZ86oq4sjMqGpUN/38SQ/J37mny88CsEUFFjb2MBVz06a809ri0QeVDXpxkvZkXzqjGUb0M1R6n3OGw==}
     engines: {node: '>=12'}
     dependencies:
-      dotenv: 16.4.1
+      dotenv: 16.4.2
     dev: true
 
   /dotenv@16.4.2:
