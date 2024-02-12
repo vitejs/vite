@@ -2,7 +2,13 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import colors from 'picocolors'
 import type { ViteDevServer } from '../server'
-import { isBuiltin, isExternalUrl, isFilePathESM, unwrapId } from '../utils'
+import {
+  isBuiltin,
+  isExternalUrl,
+  isFilePathESM,
+  isWindows,
+  unwrapId,
+} from '../utils'
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
@@ -127,7 +133,12 @@ async function instantiateModule(
   // referenced before it's been instantiated.
   mod.ssrModule = ssrModule
 
+  // replace '/' with '\\' on Windows to match Node.js
+  const osNormalizedFilename = isWindows ? path.resolve(mod.file!) : mod.file!
+
   const ssrImportMeta = {
+    dirname: path.dirname(osNormalizedFilename),
+    filename: osNormalizedFilename,
     // The filesystem URL, matching native Node.js modules
     url: pathToFileURL(mod.file!).toString(),
   }
