@@ -1,6 +1,5 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import colors from 'picocolors'
 import type { FSWatcher } from 'dep-types/chokidar'
 import type { ResolvedConfig } from './config'
 import {
@@ -9,6 +8,7 @@ import {
   safeRealpathSync,
   tryStatSync,
 } from './utils'
+import { searchForWorkspaceRoot } from './server/searchRoot'
 
 export interface FsUtils {
   existsSync: (path: string) => boolean
@@ -45,31 +45,18 @@ const cachedFsUtilsMap = new WeakMap<ResolvedConfig, FsUtils>()
 export function getFsUtils(config: ResolvedConfig): FsUtils {
   let fsUtils = cachedFsUtilsMap.get(config)
   if (!fsUtils) {
-    if (config.command !== 'serve' || !config.server.fs.cachedChecks) {
-      // cached fsUtils is only used in the dev server for now, and only when the watcher isn't configured
-      // we can support custom ignored patterns later
+    if (
+      config.command !== 'serve' ||
+      config.server.fs.cachedChecks === false ||
+      config.server.watch?.ignored
+    ) {
+      // cached fsUtils is only used in the dev server for now
+      // it is enabled by default only when there aren't custom watcher ignored patterns configured
       fsUtils = commonFsUtils
-    } /* TODO: Enabling for testing, we need to review if this guard is needed
-    else if (config.server.watch === null || config.server.watch?.ignored) {
-      config.logger.warn(
-        colors.yellow(
-          `${colors.bold(
-            `(!)`,
-          )} server.fs.cachedChecks isn't supported if server.watch is null or a custom server.watch.ignored is configured\n`,
-        ),
-      )
-      fsUtils = commonFsUtils
-    } */ else if (
+    } else if (
       !config.resolve.preserveSymlinks &&
       config.root !== getRealPath(config.root)
     ) {
-      config.logger.warn(
-        colors.yellow(
-          `${colors.bold(
-            `(!)`,
-          )} server.fs.cachedChecks isn't supported when resolve.preserveSymlinks is false and root is symlinked\n`,
-        ),
-      )
       fsUtils = commonFsUtils
     } else {
       fsUtils = createCachedFsUtils(config)
@@ -142,7 +129,7 @@ function pathUntilPart(root: string, parts: string[], i: number): string {
 }
 
 export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
-  const root = config.root // root is resolved and normalized, so it doesn't have a trailing slash
+  const root = normalizePath(searchForWorkspaceRoot(config.root))
   const rootDirPath = `${root}/`
   const rootCache: DirentCache = { type: 'directory' } // dirents will be computed lazily
 
@@ -165,11 +152,11 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
           return
         }
         if (nextDirentCache.type === 'directory_maybe_symlink') {
-          dirPath ??= pathUntilPart(root, parts, i)
+          dirPath ??= pathUntilPart(root, parts, i + 1)
           const isSymlink = fs
             .lstatSync(dirPath, { throwIfNoEntry: false })
             ?.isSymbolicLink()
-          direntCache.type = isSymlink ? 'symlink' : 'directory'
+          nextDirentCache.type = isSymlink ? 'symlink' : 'directory'
         }
         direntCache = nextDirentCache
       } else if (direntCache.type === 'symlink') {
@@ -219,7 +206,9 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
     file: string,
     type: 'directory_maybe_symlink' | 'file_maybe_symlink',
   ) {
-    const direntCache = getDirentCacheFromPath(path.dirname(file))
+    const direntCache = getDirentCacheFromPath(
+      normalizePath(path.dirname(file)),
+    )
     if (
       direntCache &&
       direntCache.type === 'directory' &&
@@ -230,7 +219,9 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   }
 
   function onPathUnlink(file: string) {
-    const direntCache = getDirentCacheFromPath(path.dirname(file))
+    const direntCache = getDirentCacheFromPath(
+      normalizePath(path.dirname(file)),
+    )
     if (
       direntCache &&
       direntCache.type === 'directory' &&

@@ -412,7 +412,10 @@ export function prettifyUrl(url: string, root: string): string {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
-    const file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
+    const file = path.posix.relative(
+      root,
+      isAbsoluteFile ? url : fsPathFromId(url),
+    )
     return colors.dim(file)
   } else {
     return colors.dim(url)
