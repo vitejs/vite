@@ -18,7 +18,7 @@ body:
     id: reproduction
     attributes:
       label: Reproduction
-      description: Please provide a link via [vite.new](https://vite.new/) or a link to a repo that can reproduce the problem you ran into. `npm create vite@latest` and `npm create vite-extra@latest` (for SSR or library repros) can be used as a starter template. A [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) is required ([Why?](https://antfu.me/posts/why-reproductions-are-required)). If a report is vague (e.g. just a generic error message) and has no reproduction, it will receive a "need reproduction" label. If no reproduction is provided after 3 days, it will be auto-closed.
+      description: Please provide a link via [vite.new](https://vite.new/) or a link to a repo that can reproduce the problem you ran into. `npm create vite@latest` and `npm create vite-extra@latest` (for SSR or library repros) can be used as a starter template. A [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) is required ([Why?](https://antfu.me/posts/why-reproductions-are-required)). If a report is vague (e.g. just a generic error message) and has no reproduction, it will receive a "needs reproduction" label. If no reproduction is provided after 3 days, it will be auto-closed.
       placeholder: Reproduction URL
     validations:
       required: true
