@@ -1,12 +1,9 @@
 import { isWindows } from '../shared/utils'
+import { VITE_RUNTIME_SOURCEMAPPING_URL } from '../shared/constants'
 import { decodeBase64 } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
 import type { ModuleCache } from './types'
 
-let SOURCEMAPPING_URL = 'sourceMa'
-SOURCEMAPPING_URL += 'ppingURL'
-
-const VITE_RUNTIME_SOURCEMAPPING_URL = `${SOURCEMAPPING_URL}=data:application/json;charset=utf-8`
 const VITE_RUNTIME_SOURCEMAPPING_REGEXP = new RegExp(
   `//# ${VITE_RUNTIME_SOURCEMAPPING_URL};base64,(.+)`,
 )

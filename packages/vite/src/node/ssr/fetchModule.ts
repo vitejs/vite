@@ -6,6 +6,11 @@ import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
 import type { FetchResult } from '../../runtime/types'
 import { unwrapId } from '../../shared/utils'
+import {
+  SOURCEMAPPING_URL,
+  VITE_RUNTIME_SOURCEMAPPING_SOURCE,
+  VITE_RUNTIME_SOURCEMAPPING_URL,
+} from '../../shared/constants'
 
 interface NodeImportResolveOptions
   extends InternalResolveOptionsWithOverrideConditions {
@@ -78,7 +83,8 @@ export async function fetchModule(
       throw err
     }
     const file = pathToFileURL(resolved.id).toString()
-    const type = isFilePathESM(file, server.config.packageCache)
+    // NOTE: fileURLだとキャッシュにヒットしないと思う
+    const type = isFilePathESM(resolved.id, server.config.packageCache)
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }
@@ -117,12 +123,6 @@ export async function fetchModule(
 
   return { code: result.code, file: mod.file }
 }
-
-let SOURCEMAPPING_URL = 'sourceMa'
-SOURCEMAPPING_URL += 'ppingURL'
-
-const VITE_RUNTIME_SOURCEMAPPING_SOURCE = '//# sourceMappingSource=vite-runtime'
-const VITE_RUNTIME_SOURCEMAPPING_URL = `${SOURCEMAPPING_URL}=data:application/json;charset=utf-8`
 
 function inlineSourceMap(
   mod: ModuleNode,

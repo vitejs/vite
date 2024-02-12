@@ -15,3 +15,10 @@ export const VALID_ID_PREFIX = `/@id/`
  * modules in the browser end up encoded as `/@id/__x00__{id}`
  */
 export const NULL_BYTE_PLACEHOLDER = `__x00__`
+
+export let SOURCEMAPPING_URL = 'sourceMa'
+SOURCEMAPPING_URL += 'ppingURL'
+
+export const VITE_RUNTIME_SOURCEMAPPING_SOURCE =
+  '//# sourceMappingSource=vite-runtime'
+export const VITE_RUNTIME_SOURCEMAPPING_URL = `${SOURCEMAPPING_URL}=data:application/json;charset=utf-8`
