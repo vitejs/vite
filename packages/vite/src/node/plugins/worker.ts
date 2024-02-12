@@ -289,12 +289,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             // Using blob URL for SharedWorker results in multiple instances of a same worker
             workerConstructor === 'Worker'
               ? `${encodedJs}
+          const decodeBase64 = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
           const blob = typeof window !== "undefined" && window.Blob && new Blob([${
             workerType === 'classic'
               ? ''
               : // `URL` is always available, in `Worker[type="module"]`
-                `'URL.revokeObjectURL(import.meta.url);'+`
-          }atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+                `'URL.revokeObjectURL(import.meta.url);',`
+          }decodeBase64(encodedJs)], { type: "text/javascript;charset=utf-8" });
           export default function WorkerWrapper(options) {
             let objURL;
             try {

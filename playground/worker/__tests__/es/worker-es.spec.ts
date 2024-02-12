@@ -50,6 +50,14 @@ test('import meta url', async () => {
   )
 })
 
+test('unicode inlined', async () => {
+  await untilUpdated(
+    () => page.textContent('.pong-inline-unicode'),
+    '•pong•',
+    true,
+  )
+})
+
 test('shared worker', async () => {
   await untilUpdated(() => page.textContent('.tick-count'), 'pong', true)
 })
