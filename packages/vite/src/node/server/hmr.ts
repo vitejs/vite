@@ -9,6 +9,7 @@ import { CLIENT_DIR } from '../constants'
 import {
   createDebugger,
   normalizePath,
+  slash,
   unique,
   withTrailingSlash,
   wrapId,
@@ -166,7 +167,7 @@ export async function handleHMRUpdate(
     hot.send({
       type: 'full-reload',
       path: '*',
-      trigger: path.posix.resolve(config.root, file),
+      trigger: path.posix.resolve(config.root, slash(file)),
     })
     return
   }
@@ -273,7 +274,7 @@ export function updateModules(
     )
     hot.send({
       type: 'full-reload',
-      trigger: path.posix.resolve(config.root, file),
+      trigger: path.posix.resolve(config.root, slash(file)),
     })
     return
   }
