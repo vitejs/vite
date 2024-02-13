@@ -1097,14 +1097,6 @@ async function setupViteRuntime(
       noDiscovery: true,
       include: [],
     },
-    plugins: [
-      {
-        name: 'tessss',
-        handleHotUpdate({ file }) {
-          console.log('hot', file)
-        },
-      },
-    ],
     ...serverOptions,
   })
 
