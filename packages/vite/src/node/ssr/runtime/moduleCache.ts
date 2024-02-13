@@ -97,7 +97,7 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
 
     const fileModule = this.getByModuleId(importedId)
     const importers = fileModule?.importers
-    // console.log(this, { importedId, importers: fileModule?.importers, imports: fileModule?.imports })
+
     if (!importers) return false
 
     if (importers.has(importedBy)) return true
