@@ -51,11 +51,11 @@ export async function handleHMRPayload(
           runtime.moduleCache.deleteByModuleId(id)
         }
       })
-      const { via } = payload
-      const clearEntrypoints = via
+      const { trigger } = payload
+      const clearEntrypoints = trigger
         ? [...runtime.entrypoints].filter((entrypoint) =>
             runtime.moduleCache.isImported({
-              importedId: via,
+              importedId: trigger,
               importedBy: entrypoint,
             }),
           )
