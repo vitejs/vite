@@ -511,6 +511,7 @@ describe('acceptExports', () => {
       const testFile = 'non-tested/index.js'
 
       beforeAll(async () => {
+        clientLogs.length = 0
         // so it's in the module graph
         await server.transformRequest(testFile, { ssr: true })
         await server.transformRequest('non-tested/dep.js', { ssr: true })
