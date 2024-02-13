@@ -76,14 +76,16 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     seen = new Set<string>(),
   ): boolean {
     importedId = this.normalize(importedId)
+    importedBy = this.normalize(importedBy)
+
+    if (importedBy === importedId) return true
+
     if (seen.has(importedId)) return false
     seen.add(importedId)
 
     const fileModule = this.getByModuleId(importedId)
     const importers = fileModule?.importers
     if (!importers) return false
-
-    importedBy = this.normalize(importedBy)
 
     if (importers.has(importedBy)) return true
 
