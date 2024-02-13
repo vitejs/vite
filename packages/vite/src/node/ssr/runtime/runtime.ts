@@ -138,7 +138,7 @@ export class ViteRuntime {
 
   private invalidateFiles(files: string[]) {
     files.forEach((file) => {
-      const ids = this.fileToIdMap.get(file)
+      const ids = this.fileToIdMap.get(posixResolve(this.options.root, file))
       if (ids) {
         ids.forEach((id) => this.moduleCache.deleteByModuleId(id))
       }
