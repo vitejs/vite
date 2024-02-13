@@ -21,6 +21,7 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
+import { withTrailingSlash } from '../shared/utils'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   ESBUILD_MODULES_TARGET,
@@ -40,7 +41,6 @@ import {
   joinUrlSegments,
   normalizePath,
   requireResolveFromRootWithFallback,
-  withTrailingSlash,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'

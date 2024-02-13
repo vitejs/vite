@@ -19,7 +19,7 @@ import type MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
-import { cleanUrl, isWindows, slash } from '../shared/utils'
+import { cleanUrl, isWindows, slash, withTrailingSlash } from '../shared/utils'
 import { VALID_ID_PREFIX } from '../shared/constants'
 import {
   CLIENT_ENTRY,
@@ -224,13 +224,6 @@ export function fsPathFromId(id: string): string {
 
 export function fsPathFromUrl(url: string): string {
   return fsPathFromId(cleanUrl(url))
-}
-
-export function withTrailingSlash(path: string): string {
-  if (path[path.length - 1] !== '/') {
-    return `${path}/`
-  }
-  return path
 }
 
 /**

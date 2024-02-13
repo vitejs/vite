@@ -48,7 +48,6 @@ import {
   timeFrom,
   transformStableResult,
   urlRE,
-  withTrailingSlash,
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { checkPublicFile } from '../publicDir'
@@ -57,7 +56,12 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { cleanUrl, unwrapId, wrapId } from '../../shared/utils'
+import {
+  cleanUrl,
+  unwrapId,
+  withTrailingSlash,
+  wrapId,
+} from '../../shared/utils'
 import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'

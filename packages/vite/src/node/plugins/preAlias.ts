@@ -12,11 +12,10 @@ import {
   isInNodeModules,
   isOptimizable,
   moduleListContains,
-  withTrailingSlash,
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { getDepsOptimizer } from '../optimizer'
-import { cleanUrl } from '../../shared/utils'
+import { cleanUrl, withTrailingSlash } from '../../shared/utils'
 import { tryOptimizedResolve } from './resolve'
 
 /**

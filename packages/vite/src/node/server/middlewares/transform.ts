@@ -15,7 +15,6 @@ import {
   removeImportQuery,
   removeTimestampQuery,
   urlRE,
-  withTrailingSlash,
 } from '../../utils'
 import { send } from '../send'
 import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
@@ -33,7 +32,7 @@ import {
 } from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
-import { cleanUrl, unwrapId } from '../../../shared/utils'
+import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
 import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
 
 const debugCache = createDebugger('vite:cache')

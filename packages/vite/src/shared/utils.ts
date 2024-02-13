@@ -36,3 +36,10 @@ export function cleanUrl(url: string): string {
 export function isPrimitive(value: unknown): boolean {
   return !value || (typeof value !== 'object' && typeof value !== 'function')
 }
+
+export function withTrailingSlash(path: string): string {
+  if (path[path.length - 1] !== '/') {
+    return `${path}/`
+  }
+  return path
+}

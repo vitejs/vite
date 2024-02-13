@@ -4,13 +4,9 @@ import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
 import type { ResolvedConfig } from '../config'
-import {
-  isDefined,
-  isInNodeModules,
-  normalizePath,
-  withTrailingSlash,
-} from '../utils'
+import { isDefined, isInNodeModules, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
+import { withTrailingSlash } from '../../shared/utils'
 
 const groups = [
   { name: 'Assets', color: colors.green },

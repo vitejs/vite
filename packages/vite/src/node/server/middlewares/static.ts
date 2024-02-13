@@ -16,9 +16,13 @@ import {
   isSameFileUri,
   normalizePath,
   removeLeadingSlash,
-  withTrailingSlash,
 } from '../../utils'
-import { cleanUrl, isWindows, slash } from '../../../shared/utils'
+import {
+  cleanUrl,
+  isWindows,
+  slash,
+  withTrailingSlash,
+} from '../../../shared/utils'
 
 const knownJavascriptExtensionRE = /\.[tj]sx?$/
 

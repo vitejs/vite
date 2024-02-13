@@ -1,4 +1,4 @@
-import { isWindows } from '../shared/utils'
+import { isWindows, withTrailingSlash } from '../shared/utils'
 import { VITE_RUNTIME_SOURCEMAPPING_URL } from '../shared/constants'
 import { decodeBase64 } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
@@ -113,13 +113,6 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), baseFile)
     return mod.map
   }
-}
-
-function withTrailingSlash(path: string): string {
-  if (path[path.length - 1] !== '/') {
-    return `${path}/`
-  }
-  return path
 }
 
 // unique id that is not available as "$bare_import" like "test"

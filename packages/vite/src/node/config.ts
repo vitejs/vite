@@ -10,6 +10,7 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
+import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
@@ -48,7 +49,6 @@ import {
   mergeConfig,
   normalizeAlias,
   normalizePath,
-  withTrailingSlash,
 } from './utils'
 import { getFsUtils } from './fsUtils'
 import {

@@ -34,7 +34,6 @@ import {
   normalizePath,
   safeRealpathSync,
   tryStatSync,
-  withTrailingSlash,
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
@@ -48,7 +47,12 @@ import {
   loadPackageData,
   resolvePackageData,
 } from '../packages'
-import { cleanUrl, isWindows, slash } from '../../shared/utils'
+import {
+  cleanUrl,
+  isWindows,
+  slash,
+  withTrailingSlash,
+} from '../../shared/utils'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
