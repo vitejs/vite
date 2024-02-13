@@ -72,7 +72,7 @@ export class ViteRuntime {
           : options.hmr.logger || console,
         options.hmr.connection,
         ({ acceptedPath, ssrInvalidates }) => {
-          this.moduleCache.delete(acceptedPath)
+          this.moduleCache.invalidate(acceptedPath)
           if (ssrInvalidates) {
             this.invalidateFiles(ssrInvalidates)
           }
@@ -138,9 +138,9 @@ export class ViteRuntime {
 
   private invalidateFiles(files: string[]) {
     files.forEach((file) => {
-      const ids = this.fileToIdMap.get(posixResolve(this.options.root, file))
+      const ids = this.fileToIdMap.get(file)
       if (ids) {
-        ids.forEach((id) => this.moduleCache.deleteByModuleId(id))
+        ids.forEach((id) => this.moduleCache.invalidate(id))
       }
     })
   }

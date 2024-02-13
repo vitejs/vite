@@ -44,13 +44,6 @@ export async function handleHMRPayload(
       break
     }
     case 'full-reload': {
-      hmrClient.logger.debug(`[vite] program reload`)
-      await hmrClient.notifyListeners('vite:beforeFullReload', payload)
-      Array.from(runtime.moduleCache.keys()).forEach((id) => {
-        if (!id.includes('node_modules')) {
-          runtime.moduleCache.deleteByModuleId(id)
-        }
-      })
       const { trigger } = payload
       const clearEntrypoints = trigger
         ? [...runtime.entrypoints].filter((entrypoint) =>
@@ -59,7 +52,14 @@ export async function handleHMRPayload(
               importedBy: entrypoint,
             }),
           )
-        : runtime.entrypoints
+        : [...runtime.entrypoints]
+
+      if (!clearEntrypoints.length) break
+
+      hmrClient.logger.debug(`[vite] program reload`)
+      await hmrClient.notifyListeners('vite:beforeFullReload', payload)
+      runtime.moduleCache.clear()
+
       for (const id of clearEntrypoints) {
         await runtime.executeUrl(id)
       }

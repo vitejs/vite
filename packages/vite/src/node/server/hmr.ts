@@ -166,7 +166,7 @@ export async function handleHMRUpdate(
     hot.send({
       type: 'full-reload',
       path: '*',
-      trigger: file,
+      trigger: path.posix.resolve(config.root, file),
     })
     return
   }
@@ -256,7 +256,7 @@ export function updateModules(
           isWithinCircularImport,
           // browser modules are invalidated by changing ?t= query,
           // but in ssr we control the module system, so we can directly remove them form cache
-          ssrInvalidates: getSSRInvalidatedImporters(config.root, acceptedVia),
+          ssrInvalidates: getSSRInvalidatedImporters(acceptedVia),
         }),
       ),
     )
@@ -273,7 +273,7 @@ export function updateModules(
     )
     hot.send({
       type: 'full-reload',
-      trigger: file,
+      trigger: path.posix.resolve(config.root, file),
     })
     return
   }
@@ -314,9 +314,9 @@ function populateSSRImporters(
   return seen
 }
 
-function getSSRInvalidatedImporters(root: string, module: ModuleNode) {
-  return [...populateSSRImporters(module, module.lastHMRTimestamp)].map((m) =>
-    path.posix.relative(root, m.file!),
+function getSSRInvalidatedImporters(module: ModuleNode) {
+  return [...populateSSRImporters(module, module.lastHMRTimestamp)].map(
+    (m) => m.file!,
   )
 }
 

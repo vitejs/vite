@@ -65,6 +65,18 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     return this.deleteByModuleId(this.normalize(fsPath))
   }
 
+  invalidate(id: string): void {
+    const module = this.get(id)
+    module.evaluated = false
+    delete module.meta
+    delete module.map
+    delete module.promise
+    delete module.exports
+    // remove imports in case they are changed,
+    // don't remove the importers because otherwise it will be empty after evaluation
+    module.imports?.clear()
+  }
+
   isImported(
     {
       importedId,
@@ -85,6 +97,7 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
 
     const fileModule = this.getByModuleId(importedId)
     const importers = fileModule?.importers
+    // console.log(this, { importedId, importers: fileModule?.importers, imports: fileModule?.imports })
     if (!importers) return false
 
     if (importers.has(importedBy)) return true
