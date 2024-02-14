@@ -74,6 +74,8 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     delete module.exports
     // remove imports in case they are changed,
     // don't remove the importers because otherwise it will be empty after evaluation
+    // this can create a bug when file was removed but it still triggers full-reload
+    // we are fine with the bug for now because it's not a common case
     module.imports?.clear()
   }
 
