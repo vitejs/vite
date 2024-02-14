@@ -129,7 +129,8 @@ app.use('*', async (req, res, next) => {
     //    ESM source code to be usable in Node.js! There is no bundling
     //    required, and provides efficient invalidation similar to HMR.
     const { render } = await vite.ssrLoadModule('/src/entry-server.js')
-    // 3b. Since Vite 5.1, you can use createViteRuntime API instead.
+    // 3b. Since Vite 5.1, you can use the experimental createViteRuntime API
+    //    instead.
     //    It fully supports HMR and works in a simillar way to ssrLoadModule
     //    More advanced use case would be creating a runtime in a separate
     //    thread or even a different machine using ViteRuntime class
