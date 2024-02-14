@@ -123,6 +123,11 @@ SOURCEMAPPING_URL += 'ppingURL'
 const VITE_RUNTIME_SOURCEMAPPING_SOURCE = '//# sourceMappingSource=vite-runtime'
 const VITE_RUNTIME_SOURCEMAPPING_URL = `${SOURCEMAPPING_URL}=data:application/json;charset=utf-8`
 
+const OTHER_SOURCE_MAP_REGEXP = new RegExp(
+  `//# ${SOURCEMAPPING_URL}=data:application/json[^,]+base64,([A-Za-z0-9+/=]+)$`,
+  'gm',
+)
+
 function inlineSourceMap(
   mod: ModuleNode,
   result: TransformResult,
@@ -139,11 +144,8 @@ function inlineSourceMap(
     return result
 
   // to reduce the payload size, we only inline vite node source map, because it's also the only one we use
-  const OTHER_SOURCE_MAP_REGEXP = new RegExp(
-    `//# ${SOURCEMAPPING_URL}=data:application/json[^,]+base64,([A-Za-z0-9+/=]+)$`,
-    'gm',
-  )
-  while (OTHER_SOURCE_MAP_REGEXP.test(code))
+  OTHER_SOURCE_MAP_REGEXP.lastIndex = 0
+  if (OTHER_SOURCE_MAP_REGEXP.test(code))
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
   const sourceMap = Buffer.from(
