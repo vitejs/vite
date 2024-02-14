@@ -167,7 +167,7 @@ export async function handleHMRUpdate(
     hot.send({
       type: 'full-reload',
       path: '*',
-      trigger: path.posix.resolve(config.root, slash(file)),
+      trigger: path.resolve(config.root, slash(file)),
     })
     return
   }
@@ -274,7 +274,7 @@ export function updateModules(
     )
     hot.send({
       type: 'full-reload',
-      trigger: path.posix.resolve(config.root, slash(file)),
+      trigger: path.resolve(config.root, file),
     })
     return
   }
