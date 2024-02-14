@@ -83,8 +83,7 @@ export async function fetchModule(
       throw err
     }
     const file = pathToFileURL(resolved.id).toString()
-    // NOTE: fileURLだとキャッシュにヒットしないと思う
-    const type = isFilePathESM(resolved.id, server.config.packageCache)
+    const type = isFilePathESM(file, server.config.packageCache)
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }
