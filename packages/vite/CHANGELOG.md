@@ -1,3 +1,15 @@
+## <small>5.1.2 (2024-02-14)</small>
+
+* fix: normalize import file path info (#15772) ([306df44](https://github.com/vitejs/vite/commit/306df44)), closes [#15772](https://github.com/vitejs/vite/issues/15772)
+* fix(build): do not output build time when build fails (#15711) ([added3e](https://github.com/vitejs/vite/commit/added3e)), closes [#15711](https://github.com/vitejs/vite/issues/15711)
+* fix(runtime): pass path instead of fileURL to `isFilePathESM` (#15908) ([7b15607](https://github.com/vitejs/vite/commit/7b15607)), closes [#15908](https://github.com/vitejs/vite/issues/15908)
+* fix(worker): support UTF-8 encoding in inline workers (fixes #12117) (#15866) ([570e0f1](https://github.com/vitejs/vite/commit/570e0f1)), closes [#12117](https://github.com/vitejs/vite/issues/12117) [#15866](https://github.com/vitejs/vite/issues/15866)
+* chore: update license file (#15885) ([d9adf18](https://github.com/vitejs/vite/commit/d9adf18)), closes [#15885](https://github.com/vitejs/vite/issues/15885)
+* chore(deps): update all non-major dependencies (#15874) ([d16ce5d](https://github.com/vitejs/vite/commit/d16ce5d)), closes [#15874](https://github.com/vitejs/vite/issues/15874)
+* chore(deps): update dependency dotenv-expand to v11 (#15875) ([642d528](https://github.com/vitejs/vite/commit/642d528)), closes [#15875](https://github.com/vitejs/vite/issues/15875)
+
+
+
 ## <small>5.1.1 (2024-02-09)</small>
 
 * fix: empty CSS file was output when only .css?url is used (#15846) ([b2873ac](https://github.com/vitejs/vite/commit/b2873ac)), closes [#15846](https://github.com/vitejs/vite/issues/15846)
