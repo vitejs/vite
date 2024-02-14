@@ -447,7 +447,7 @@ importers:
 
   packages/vite/src/node/ssr/__tests__/fixtures/cjs-ssr-dep: {}
 
-  packages/vite/src/runtime/__tests__:
+  packages/vite/src/node/ssr/runtime/__tests__:
     dependencies:
       '@vitejs/cjs-external':
         specifier: link:./fixtures/cjs-external
@@ -459,9 +459,9 @@ importers:
         specifier: 2.2.0
         version: 2.2.0
 
-  packages/vite/src/runtime/__tests__/fixtures/cjs-external: {}
+  packages/vite/src/node/ssr/runtime/__tests__/fixtures/cjs-external: {}
 
-  packages/vite/src/runtime/__tests__/fixtures/esm-external: {}
+  packages/vite/src/node/ssr/runtime/__tests__/fixtures/esm-external: {}
 
   playground:
     devDependencies:
