@@ -87,10 +87,21 @@ describe('vite-runtime initialization', async () => {
 
   it('exports is not modifiable', async ({ runtime }) => {
     const mod = await runtime.executeUrl('/fixtures/simple.js')
+    expect(Object.isSealed(mod)).toBe(true)
     expect(() => {
       mod.test = 'I am modified'
     }).toThrowErrorMatchingInlineSnapshot(
       `[TypeError: Cannot set property test of [object Module] which has only a getter]`,
+    )
+    expect(() => {
+      delete mod.test
+    }).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Cannot delete property 'test' of [object Module]]`,
+    )
+    expect(() => {
+      Object.defineProperty(mod, 'test', { value: 'I am modified' })
+    }).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Cannot redefine property: test]`,
     )
     expect(() => {
       mod.other = 'I am added'

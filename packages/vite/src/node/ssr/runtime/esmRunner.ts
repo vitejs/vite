@@ -34,7 +34,7 @@ export class ESModulesRunner implements ViteModuleRunner {
       context[ssrExportAllKey],
     )
 
-    Object.freeze(context[ssrModuleExportsKey])
+    Object.seal(context[ssrModuleExportsKey])
   }
 
   runExternalModule(filepath: string): Promise<any> {
