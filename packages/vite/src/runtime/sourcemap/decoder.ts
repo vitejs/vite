@@ -1,7 +1,4 @@
-import type {
-  InvalidOriginalMapping,
-  OriginalMapping,
-} from '@jridgewell/trace-mapping'
+import type { OriginalMapping } from '@jridgewell/trace-mapping'
 import { originalPositionFor } from '@jridgewell/trace-mapping'
 import { posixResolve } from '../utils'
 
@@ -58,6 +55,10 @@ function memoizedState(): Stats {
 export function getOriginalPosition(
   map: DecodedMap,
   needle: Needle,
-): OriginalMapping | InvalidOriginalMapping {
-  return originalPositionFor(map as any, needle)
+): OriginalMapping | null {
+  const result = originalPositionFor(map as any, needle)
+  if (result.column == null) {
+    return null
+  }
+  return result
 }
