@@ -28,7 +28,7 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
   update(fsPath: string, mod: ModuleCache): this {
     fsPath = this.normalize(fsPath)
     if (!super.has(fsPath)) this.setByModuleId(fsPath, mod)
-    else Object.assign(super.get(fsPath) as ModuleCache, mod)
+    else Object.assign(super.get(fsPath)!, mod)
     return this
   }
 
@@ -50,7 +50,7 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
         importers: new Set(),
       })
     }
-    return mod as ModuleCache
+    return mod
   }
 
   override get(fsPath: string): ModuleCache {

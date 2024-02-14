@@ -218,21 +218,20 @@ export class ViteRuntime {
         return this.processImport(mod.exports, fetchedModule, metadata)
     }
 
-    const getStack = () =>
-      `stack:\n${[...callstack, moduleId]
-        .reverse()
-        .map((p) => `  - ${p}`)
-        .join('\n')}`
-
     let debugTimer: any
-    if (this.debug)
-      debugTimer = setTimeout(
-        () =>
-          this.debug!(
-            `[vite-runtime] module ${moduleId} takes over 2s to load.\n${getStack()}`,
-          ),
-        2000,
-      )
+    if (this.debug) {
+      debugTimer = setTimeout(() => {
+        const getStack = () =>
+          `stack:\n${[...callstack, moduleId]
+            .reverse()
+            .map((p) => `  - ${p}`)
+            .join('\n')}`
+
+        this.debug!(
+          `[vite-runtime] module ${moduleId} takes over 2s to load.\n${getStack()}`,
+        )
+      }, 2000)
+    }
 
     try {
       // cached module
@@ -266,7 +265,7 @@ export class ViteRuntime {
     this.debug?.('[vite-runtime] fetching', id)
     // fast return for established externalized patterns
     const fetchedModule = id.startsWith('data:')
-      ? ({ externalize: id, type: 'builtin' } as FetchResult)
+      ? ({ externalize: id, type: 'builtin' } satisfies FetchResult)
       : await this.options.fetchModule(id, importer)
     // base moduleId on "file" and not on id
     // if `import(variable)` is called it's possible that it doesn't have an extension for example
