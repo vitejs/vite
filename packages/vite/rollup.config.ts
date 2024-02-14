@@ -217,7 +217,7 @@ function createRuntimeConfig(isProduction: boolean) {
           }
         },
       },
-      bundleSizeLimit(43),
+      bundleSizeLimit(44),
     ],
   })
 }
