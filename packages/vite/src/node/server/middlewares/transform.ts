@@ -57,10 +57,10 @@ export function cachedTransformMiddleware(
     if (ifNoneMatch) {
       const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch)
       if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
-        // For direct CSS requests, if the same CSS file is imported in a module,
+        // For CSS requests, if the same CSS file is imported in a module,
         // the browser sends the request for the direct CSS request with the etag
         // from the imported CSS module. We ignore the etag in this case.
-        const maybeMixedEtag = req.headers.accept?.includes('text/css')
+        const maybeMixedEtag = isCSSRequest(req.url!)
         if (!maybeMixedEtag) {
           debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
           res.statusCode = 304
@@ -175,14 +175,17 @@ export function transformMiddleware(
         url = unwrapId(url)
 
         // for CSS, we differentiate between normal CSS requests and imports
-        if (isCSSRequest(url) && req.headers.accept?.includes('text/css')) {
-          if (!isDirectRequest(url)) {
+        if (isCSSRequest(url)) {
+          if (
+            req.headers.accept?.includes('text/css') &&
+            !isDirectRequest(url)
+          ) {
             url = injectQuery(url, 'direct')
           }
 
-          // check if we can return 304 early for direct CSS requests
-          // these aren't handled by the cachedTransformMiddleware due to
-          // the browser possibly mixing the etags of direct and imported CSS
+          // check if we can return 304 early for CSS requests. These aren't handled
+          // by the cachedTransformMiddleware due to the browser possibly mixing the
+          // etags of direct and imported CSS
           const ifNoneMatch = req.headers['if-none-match']
           if (
             ifNoneMatch &&
