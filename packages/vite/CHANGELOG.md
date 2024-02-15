@@ -1,3 +1,11 @@
+## <small>5.1.3 (2024-02-15)</small>
+
+* fix: cachedTransformMiddleware for direct css requests (#15919) ([5099028](https://github.com/vitejs/vite/commit/5099028)), closes [#15919](https://github.com/vitejs/vite/issues/15919)
+* refactor(runtime): minor tweaks (#15904) ([63a39c2](https://github.com/vitejs/vite/commit/63a39c2)), closes [#15904](https://github.com/vitejs/vite/issues/15904)
+* refactor(runtime): seal ES module namespace object instead of feezing (#15914) ([4172f02](https://github.com/vitejs/vite/commit/4172f02)), closes [#15914](https://github.com/vitejs/vite/issues/15914)
+
+
+
 ## <small>5.1.2 (2024-02-14)</small>
 
 * fix: normalize import file path info (#15772) ([306df44](https://github.com/vitejs/vite/commit/306df44)), closes [#15772](https://github.com/vitejs/vite/issues/15772)
