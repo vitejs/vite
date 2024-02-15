@@ -234,7 +234,7 @@ flowchart TD
     label --> evan_non_strict[Await input from Evan]
     evan_non_strict -.-> strict
     strict --> approve
-    approve --> merge["Merge if approved by 2 or\nmore team members\n- Use 'Squash and Merge'\n- Edit commit message to follow\nconvention\n- In commit message body, list\nrelevant issues being fixed\ne.g. 'fix #1234, fix #1235'"]    
+    approve --> merge["Merge if approved by 2 or\nmore team members\n- Use 'Squash and Merge'\n- Edit commit message to follow\nconvention\n- In commit message body, list\nrelevant issues being fixed\ne.g. 'fix #1234, fix #1235'"]
 ```
 
 ## Notes on Dependencies
