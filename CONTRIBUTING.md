@@ -197,17 +197,45 @@ You can set the `DEBUG` environment variable to turn on debugging logs (e.g. `DE
 
 ### Issue Triaging Workflow
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./.github/issue-workflow-dark.png">
-  <img src="./.github/issue-workflow.png">
-</picture>
+```mermaid
+flowchart TD
+    start{Followed issue\ntemplate?}
+    start --NO--> close1[Close and ask to\nfollow template]
+    start --YES--> dupe{Is duplicate?}
+    dupe --YES--> close2[Close and point\nto duplicate]
+    dupe --NO--> repro{Has proper\nreproduction?}
+    repro --NO--> close3[Label: 'needs reproduction'\nbot will auto close if no update\nhas been made in 3 days]
+    repro --YES--> real{Is actually a bug?}
+    real --NO--> intended{Is the intended\nbehaviour?}
+    intended --YES--> explain[Explain and close\npoint to docs if needed]
+    intended --NO--> open[Keep open for discussion\nRemove 'pending triage' label]
+    real --YES--> real2["1. Remove 'pending triage' label\n2. Add 'bug' label\n3. Add related feature label if\napplicable (e.g. 'bug: ssr'\nor 'plugin: vue')\n4. Add priority label (see below)"]
+    real2 --> unusable{Does the\nbug make Vite\nunusable?}
+    unusable --YES--> maj{Does the bug\naffect the majority\nof Vite users?}
+    maj --YES--> p5[p5: urgent]
+    maj --NO--> p4[p4: important]
+    unusable --NO--> workarounds{Are there\nworkarounds for\nthe bug?}
+    workarounds --YES--> p2[p2: has workaround]
+    workarounds --NO--> p3[p3: minor bug]
+```
 
 ### Pull Request Review Workflow
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./.github/pr-workflow-dark.png">
-  <img src="./.github/pr-workflow.png">
-</picture>
+```mermaid
+flowchart TD
+    start{Bug fix\nor\nfeature}
+    start --BUG FIX--> strict_bug{"Is a 'strict fix'\ni.e. fixes an obvious\noversight with no\nside effects"}
+    start --FEATURE--> feature[- Discuss feature necessity\n- Is this the best way to address the need\n- Review code quality\n- Add feature labels\n- Approve if you feel strongly\nthat the feature is needed]
+    feature --> evan[Await input from Evan]
+    evan -.-> merge
+    strict_bug --YES--> strict[- Verify the fix locally\n- Review code quality\n- Require test case if applicable\n- Request changes if necessary]
+    strict_bug --NO--> non_strict[Discuss the potential side\neffects of the fix, e.g.\n- Could it introduce implicit\nbehavior changes in other\ncases?\n- Does it introduce too much\nchanges?]
+    non_strict --> label["Add priority labels\n(see issue triaging workflow)"]
+    label --> evan_non_strict[Await input from Evan]
+    evan_non_strict -.-> strict
+    strict --> approve
+    approve --> merge["Merge if approved by 2 or\nmore team members\n- Use 'Squash and Merge'\n- Edit commit message to follow\nconvention\n- In commit message body, list\nrelevant issues being fixed\ne.g. 'fix #1234, fix #1235'"]
+```
 
 ## Notes on Dependencies
 
