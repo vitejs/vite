@@ -48,10 +48,12 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
     if (
       config.command !== 'serve' ||
       config.server.fs.cachedChecks === false ||
-      config.server.watch?.ignored
+      config.server.watch?.ignored ||
+      process.versions.pnp
     ) {
       // cached fsUtils is only used in the dev server for now
       // it is enabled by default only when there aren't custom watcher ignored patterns configured
+      // and if yarn pnp isn't used
       fsUtils = commonFsUtils
     } else if (
       !config.resolve.preserveSymlinks &&
