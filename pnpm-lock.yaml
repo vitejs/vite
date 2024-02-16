@@ -16,6 +16,9 @@ patchedDependencies:
   sirv@2.0.4:
     hash: amdes53ifqfntejkflpaq5ifce
     path: patches/sirv@2.0.4.patch
+  tsconfck@3.0.2:
+    hash: c6mi54ysf2x6yunnu4xiqwavba
+    path: patches/tsconfck@3.0.2.patch
 
 importers:
 
@@ -401,7 +404,7 @@ importers:
         version: 2.0.0
       tsconfck:
         specifier: ^3.0.2
-        version: 3.0.2(typescript@5.2.2)
+        version: 3.0.2(patch_hash=c6mi54ysf2x6yunnu4xiqwavba)(typescript@5.2.2)
       tslib:
         specifier: ^2.6.2
         version: 2.6.2
@@ -9128,7 +9131,7 @@ packages:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
-  /tsconfck@3.0.2(typescript@5.2.2):
+  /tsconfck@3.0.2(patch_hash=c6mi54ysf2x6yunnu4xiqwavba)(typescript@5.2.2):
     resolution: {integrity: sha512-6lWtFjwuhS3XI4HsX4Zg0izOI3FU/AI9EGVlPEUMDIhvLPMD4wkiof0WCoDgW7qY+Dy198g4d9miAqUHWHFH6Q==}
     engines: {node: ^18 || >=20}
     hasBin: true
@@ -9140,6 +9143,7 @@ packages:
     dependencies:
       typescript: 5.2.2
     dev: true
+    patched: true
 
   /tslib@2.6.2:
     resolution: {integrity: sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==}

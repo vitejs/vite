@@ -1,0 +1,13 @@
+diff --git a/src/parse.js b/src/parse.js
+index 246a5939fd949d805e1bb31e3bb050fee3b34e78..f625e132e265ce9283a37dcce324c6046076df40 100644
+--- a/src/parse.js
++++ b/src/parse.js
+@@ -206,7 +206,7 @@ async function parseExtends(result, cache) {
+ 			extended.splice(
+ 				pos + 1,
+ 				0,
+-				...(await Promise.all(resolvedExtends.map((file) => parseFile(file, cache))))
++				...(await Promise.all(resolvedExtends.map((file) => parseFile(file, cache, true))))
+ 			);
+ 		} else {
+ 			// reached a leaf, backtrack to the last branching point and continue
