@@ -118,7 +118,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
            uses: actions/deploy-pages@v2
    ```
    
- Note: If you encounter 404 errors when reloading pages for routes, modify the build command as follows: `npm run build && cp ./dist/index.html ./dist/404.html` 
+Note: If you encounter 404 errors when reloading pages for routes, modify the build command as follows: `npm run build && cp ./dist/index.html ./dist/404.html` 
    
 
 ## GitLab Pages and GitLab CI
