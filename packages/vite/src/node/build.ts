@@ -30,6 +30,7 @@ import {
   arraify,
   asyncFlatten,
   copyDir,
+  displayTime,
   emptyDir,
   joinUrlSegments,
   normalizePath,
@@ -559,6 +560,7 @@ export async function build(
   }
 
   let bundle: RollupBuild | undefined
+  let startTime: number | undefined
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
@@ -692,6 +694,7 @@ export async function build(
 
     // write or generate files with rollup
     const { rollup } = await import('rollup')
+    startTime = Date.now()
     bundle = await rollup(rollupOptions)
 
     if (options.write) {
@@ -702,10 +705,19 @@ export async function build(
     for (const output of normalizedOutputs) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
+    config.logger.info(
+      `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
+    )
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     e.message = mergeRollupError(e)
     clearLine()
+    if (startTime) {
+      config.logger.error(
+        `${colors.red('x')} Build failed in ${displayTime(Date.now() - startTime)}`,
+      )
+      startTime = undefined
+    }
     throw e
   } finally {
     if (bundle) await bundle.close()

@@ -4,11 +4,11 @@
     "./rollup.config.ts",
     "./rollup.dts.config.ts",
     "src/node/__tests__",
-    "src/types/shims.d.ts",
+    "src/types/shims.d.ts"
   ],
   "compilerOptions": {
     "esModuleInterop": true,
     "declaration": false,
-    "resolveJsonModule": true,
-  },
+    "resolveJsonModule": true
+  }
 }

@@ -57,13 +57,11 @@ export function cachedTransformMiddleware(
     if (ifNoneMatch) {
       const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch)
       if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
-        // For direct CSS requests, if the same CSS file is imported in a module,
+        // For CSS requests, if the same CSS file is imported in a module,
         // the browser sends the request for the direct CSS request with the etag
         // from the imported CSS module. We ignore the etag in this case.
-        const mixedEtag =
-          !req.headers.accept?.includes('text/css') &&
-          isDirectRequest(moduleByEtag.url)
-        if (!mixedEtag) {
+        const maybeMixedEtag = isCSSRequest(req.url!)
+        if (!maybeMixedEtag) {
           debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
           res.statusCode = 304
           return res.end()
@@ -176,14 +174,28 @@ export function transformMiddleware(
         // not valid browser import specifiers by the importAnalysis plugin.
         url = unwrapId(url)
 
-        // for CSS, we need to differentiate between normal CSS requests and
-        // imports
-        if (
-          isCSSRequest(url) &&
-          !isDirectRequest(url) &&
-          req.headers.accept?.includes('text/css')
-        ) {
-          url = injectQuery(url, 'direct')
+        // for CSS, we differentiate between normal CSS requests and imports
+        if (isCSSRequest(url)) {
+          if (
+            req.headers.accept?.includes('text/css') &&
+            !isDirectRequest(url)
+          ) {
+            url = injectQuery(url, 'direct')
+          }
+
+          // check if we can return 304 early for CSS requests. These aren't handled
+          // by the cachedTransformMiddleware due to the browser possibly mixing the
+          // etags of direct and imported CSS
+          const ifNoneMatch = req.headers['if-none-match']
+          if (
+            ifNoneMatch &&
+            (await server.moduleGraph.getModuleByUrl(url, false))
+              ?.transformResult?.etag === ifNoneMatch
+          ) {
+            debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
+            res.statusCode = 304
+            return res.end()
+          }
         }
 
         // resolve, load and transform using the plugin container
