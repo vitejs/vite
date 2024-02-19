@@ -106,7 +106,7 @@ export default defineConfig({
       '/api': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/\/api/, ''),
       },
       // with RegEx: http://localhost:5173/fallback/ -> http://jsonplaceholder.typicode.com/
       '^/fallback/.*': {
