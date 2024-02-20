@@ -90,7 +90,7 @@ Configure custom proxy rules for the dev server. Expects an object of `{ key: op
 
 Note that if you are using non-relative [`base`](/config/shared-options.md#base), you must prefix each key with that `base`.
 
-Extends [`http-proxy`](https://github.com/http-party/node-http-proxy#options). Additional options are [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/proxy.ts#L12).
+Extends [`http-proxy`](https://github.com/http-party/node-http-proxy#options). Additional options are [here](https://github.com/vitejs/vite/blob/main/packages/vite/src/node/server/middlewares/proxy.ts#L13).
 
 In some cases, you might also want to configure the underlying dev server (e.g. to add custom middlewares to the internal [connect](https://github.com/senchalabs/connect) app). In order to do that, you need to write your own [plugin](/guide/using-plugins.html) and use [configureServer](/guide/api-plugin.html#configureserver) function.
 
@@ -202,7 +202,7 @@ export default defineConfig({
 
 File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
 
-The Vite server watcher watches the `root` and skips the `.git/` and `node_modules/` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
+The Vite server watcher watches the `root` and skips the `.git/`, `node_modules/`, and Vite's `cacheDir` and `build.outDir` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
 
 If set to `null`, no files will be watched. `server.watcher` will provide a compatible event emitter, but calling `add` or `unwatch` will have no effect.
 

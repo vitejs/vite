@@ -332,6 +332,19 @@ describe('processSrcSetSync', () => {
       ),
     ).toBe('/base/nested/asset.png 1x, /base/nested/asset.png 2x')
   })
+
+  test('should not split the comma inside base64 value', async () => {
+    const base64 =
+      'data:image/avif;base64,aA+/0= 400w, data:image/avif;base64,bB+/9= 800w'
+    expect(processSrcSetSync(base64, ({ url }) => url)).toBe(base64)
+  })
+
+  test('should not break a regular URL in srcSet', async () => {
+    const source = 'https://anydomain/image.jpg'
+    expect(
+      processSrcSetSync('https://anydomain/image.jpg', ({ url }) => url),
+    ).toBe(source)
+  })
 })
 
 describe('flattenId', () => {

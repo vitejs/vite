@@ -12,6 +12,7 @@ import type {
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
+import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
 import type { ExecaChildProcess } from 'execa'
 import { isBuild, isWindows, page, testDir } from './vitestSetup'
@@ -34,9 +35,12 @@ export const ports = {
   'ssr-noexternal': 9603,
   'ssr-pug': 9604,
   'ssr-webworker': 9605,
-  'proxy-hmr': 9606, // not imported but used in `proxy-hmr/vite.config.js`
-  'proxy-hmr/other-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
-  'ssr-conditions': 9608,
+  'proxy-bypass': 9606, // not imported but used in `proxy-hmr/vite.config.js`
+  'proxy-bypass/non-existent-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'ssr-hmr': 9609, // not imported but used in `hmr-ssr/__tests__/hmr.spec.ts`
+  'proxy-hmr': 9616, // not imported but used in `proxy-hmr/vite.config.js`
+  'proxy-hmr/other-app': 9617, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'ssr-conditions': 9620,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
@@ -230,6 +234,25 @@ export async function withRetry(
     await timeout(50)
   }
   await func()
+}
+
+export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
+  type A = Assertion<T>
+  return new Proxy(
+    {},
+    {
+      get(_target, key) {
+        return async (...args) => {
+          await withRetry(
+            async () => expect(await getActual())[key](...args),
+            true,
+          )
+        }
+      },
+    },
+  ) as {
+    [K in keyof A]: (...params: Parameters<A[K]>) => Promise<ReturnType<A[K]>>
+  }
 }
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void

@@ -3,11 +3,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { exec } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { URL, URLSearchParams, fileURLToPath } from 'node:url'
+import { URL, fileURLToPath } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
+import fsp from 'node:fs/promises'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
@@ -161,6 +162,16 @@ export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 // TODO: use import()
 const _require = createRequire(import.meta.url)
 
+export function resolveDependencyVersion(
+  dep: string,
+  pkgRelativePath = '../../package.json',
+): string {
+  const pkgPath = path.resolve(_require.resolve(dep), pkgRelativePath)
+  return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version
+}
+
+export const rollupVersion = resolveDependencyVersion('rollup')
+
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
 
@@ -235,7 +246,7 @@ export function fsPathFromId(id: string): string {
   const fsPath = normalizePath(
     id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id,
   )
-  return fsPath[0] === '/' || fsPath.match(VOLUME_RE) ? fsPath : `/${fsPath}`
+  return fsPath[0] === '/' || VOLUME_RE.test(fsPath) ? fsPath : `/${fsPath}`
 }
 
 export function fsPathFromUrl(url: string): string {
@@ -335,6 +346,15 @@ export function removeDirectQuery(url: string): string {
   return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
 }
 
+export const urlRE = /(\?|&)url(?:&|$)/
+export const rawRE = /(\?|&)raw(?:&|$)/
+export function removeUrlQuery(url: string): string {
+  return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
+}
+export function removeRawQuery(url: string): string {
+  return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
+}
+
 const replacePercentageRE = /%/g
 export function injectQuery(url: string, queryToInject: string): string {
   // encode percents for consistent behavior with pathToFileURL
@@ -392,7 +412,10 @@ export function prettifyUrl(url: string, root: string): string {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
-    const file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
+    const file = path.posix.relative(
+      root,
+      isAbsoluteFile ? url : fsPathFromId(url),
+    )
     return colors.dim(file)
   } else {
     return colors.dim(url)
@@ -622,6 +645,38 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
+export const ERR_SYMLINK_IN_RECURSIVE_READDIR =
+  'ERR_SYMLINK_IN_RECURSIVE_READDIR'
+export async function recursiveReaddir(dir: string): Promise<string[]> {
+  if (!fs.existsSync(dir)) {
+    return []
+  }
+  let dirents: fs.Dirent[]
+  try {
+    dirents = await fsp.readdir(dir, { withFileTypes: true })
+  } catch (e) {
+    if (e.code === 'EACCES') {
+      // Ignore permission errors
+      return []
+    }
+    throw e
+  }
+  if (dirents.some((dirent) => dirent.isSymbolicLink())) {
+    const err: any = new Error(
+      'Symbolic links are not supported in recursiveReaddir',
+    )
+    err.code = ERR_SYMLINK_IN_RECURSIVE_READDIR
+    throw err
+  }
+  const files = await Promise.all(
+    dirents.map((dirent) => {
+      const res = path.resolve(dir, dirent.name)
+      return dirent.isDirectory() ? recursiveReaddir(res) : normalizePath(res)
+    }),
+  )
+  return files.flat(1)
+}
+
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
@@ -712,7 +767,9 @@ interface ImageCandidate {
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
 function joinSrcset(ret: ImageCandidate[]) {
-  return ret.map(({ url, descriptor }) => `${url} ${descriptor}`).join(', ')
+  return ret
+    .map(({ url, descriptor }) => url + (descriptor ? ` ${descriptor}` : ''))
+    .join(', ')
 }
 
 function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
@@ -754,10 +811,10 @@ export function processSrcSetSync(
 }
 
 const cleanSrcSetRE =
-  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g
+  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+\-]+;base64,[\w+/=]+/g
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
-  // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
+  // There could be a ',' inside of url(data:...), linear-gradient(...), "data:..." or data:...
   const cleanedSrcs = srcs.replace(cleanSrcSetRE, blankReplacer)
   let startIndex = 0
   let splitIndex: number
@@ -999,14 +1056,6 @@ export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
 export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
-export function parseRequest(id: string): Record<string, string> | null {
-  const [_, search] = id.split(requestQuerySplitRE, 2)
-  if (!search) {
-    return null
-  }
-  return Object.fromEntries(new URLSearchParams(search))
-}
-
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
 export function getHash(text: Buffer | string, length = 8): string {
@@ -1037,7 +1086,7 @@ export const requireResolveFromRootWithFallback = (
 }
 
 export function emptyCssComments(raw: string): string {
-  return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
+  return raw.replace(multilineCommentsRE, blankReplacer)
 }
 
 function backwardCompatibleWorkerPlugins(plugins: any) {
@@ -1345,4 +1394,57 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
     reject = _reject
   })
   return { promise, resolve, reject }
+}
+
+export function createSerialPromiseQueue<T>(): {
+  run(f: () => Promise<T>): Promise<T>
+} {
+  let previousTask: Promise<[unknown, Awaited<T>]> | undefined
+
+  return {
+    async run(f) {
+      const thisTask = f()
+      // wait for both the previous task and this task
+      // so that this function resolves in the order this function is called
+      const depTasks = Promise.all([previousTask, thisTask])
+      previousTask = depTasks
+
+      const [, result] = await depTasks
+
+      // this task was the last one, clear `previousTask` to free up memory
+      if (previousTask === depTasks) {
+        previousTask = undefined
+      }
+
+      return result
+    },
+  }
+}
+
+export function sortObjectKeys<T extends Record<string, any>>(obj: T): T {
+  const sorted: Record<string, any> = {}
+  for (const key of Object.keys(obj).sort()) {
+    sorted[key] = obj[key]
+  }
+  return sorted as T
+}
+
+export function displayTime(time: number): string {
+  // display: {X}ms
+  if (time < 1000) {
+    return `${time}ms`
+  }
+
+  time = time / 1000
+
+  // display: {X}s
+  if (time < 60) {
+    return `${time.toFixed(2)}s`
+  }
+
+  const mins = parseInt((time / 60).toString())
+  const seconds = time % 60
+
+  // display: {X}m {Y}s
+  return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
 }

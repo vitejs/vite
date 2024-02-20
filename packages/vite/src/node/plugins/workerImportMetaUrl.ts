@@ -8,11 +8,9 @@ import {
   cleanUrl,
   evalValue,
   injectQuery,
-  parseRequest,
   slash,
   transformStableResult,
 } from '../utils'
-import { getDepsOptimizer } from '../optimizer'
 import type { ResolveFn } from '..'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
@@ -131,37 +129,29 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(code, id, options) {
-      const ssr = options?.ssr === true
       if (!options?.ssr && isIncludeWorkerImportMetaUrl(code)) {
-        const query = parseRequest(id)
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
-          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
+          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
 
         let match: RegExpExecArray | null
         while ((match = workerImportMetaUrlRE.exec(cleanString))) {
-          const { 0: allExp, 1: exp, 2: emptyUrl, index } = match
-          const urlIndex = allExp.indexOf(exp) + index
+          const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
+            match.indices!
 
-          const urlStart = cleanString.indexOf(emptyUrl, index)
-          const urlEnd = urlStart + emptyUrl.length
           const rawUrl = code.slice(urlStart, urlEnd)
 
           // potential dynamic template string
           if (rawUrl[0] === '`' && rawUrl.includes('${')) {
             this.error(
               `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
-              urlIndex,
+              expStart,
             )
           }
 
           s ||= new MagicString(code)
-          const workerType = getWorkerType(
-            code,
-            cleanString,
-            index + allExp.length,
-          )
+          const workerType = getWorkerType(code, cleanString, endIndex)
           const url = rawUrl.slice(1, -1)
           let file: string | undefined
           if (url[0] === '.') {
@@ -182,16 +172,17 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
           let builtUrl: string
           if (isBuild) {
-            getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
-            builtUrl = await workerFileToUrl(config, file, query)
+            builtUrl = await workerFileToUrl(config, file)
           } else {
             builtUrl = await fileToUrl(cleanUrl(file), config, this)
-            builtUrl = injectQuery(builtUrl, WORKER_FILE_ID)
-            builtUrl = injectQuery(builtUrl, `type=${workerType}`)
+            builtUrl = injectQuery(
+              builtUrl,
+              `${WORKER_FILE_ID}&type=${workerType}`,
+            )
           }
           s.update(
-            urlIndex,
-            urlIndex + exp.length,
+            expStart,
+            expEnd,
             // add `'' +` to skip vite:asset-import-meta-url plugin
             `new URL('' + ${JSON.stringify(builtUrl)}, import.meta.url)`,
           )

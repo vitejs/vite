@@ -423,11 +423,11 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   - Filter and narrow down the affected module list so that the HMR is more accurate.
 
-  - Return an empty array and perform complete custom HMR handling by sending custom events to the client:
+  - Return an empty array and perform complete custom HMR handling by sending custom events to the client (example uses `server.hot` which was introduced in Vite 5.1, it is recommended to also use `server.ws` if you support lower versions):
 
     ```js
     handleHotUpdate({ server }) {
-      server.ws.send({
+      server.hot.send({
         type: 'custom',
         event: 'special-update',
         data: {}
@@ -509,8 +509,6 @@ export default defineConfig({
 })
 ```
 
-Check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official Rollup plugins with usage instructions.
-
 ## Path Normalization
 
 Vite normalizes paths while resolving ids to use POSIX separators ( / ) while preserving the volume in Windows. On the other hand, Rollup keeps resolved paths untouched by default, so resolved ids have win32 separators ( \\ ) in Windows. However, Rollup plugins use a [`normalizePath` utility function](https://github.com/rollup/plugins/tree/master/packages/pluginutils#normalizepath) from `@rollup/pluginutils` internally, which converts separators to POSIX before performing comparisons. This means that when these plugins are used in Vite, the `include` and `exclude` config pattern and other similar paths against resolved ids comparisons work correctly.
@@ -534,7 +532,7 @@ Since Vite 2.9, we provide some utilities for plugins to help handle the communi
 
 ### Server to Client
 
-On the plugin side, we could use `server.ws.send` to broadcast events to all the clients:
+On the plugin side, we could use `server.hot.send` (since Vite 5.1) or `server.ws.send` to broadcast events to all the clients:
 
 ```js
 // vite.config.js
@@ -544,8 +542,8 @@ export default defineConfig({
       // ...
       configureServer(server) {
         // Example: wait for a client to connect before sending a message
-        server.ws.on('connection', () => {
-          server.ws.send('my:greetings', { msg: 'hello' })
+        server.hot.on('connection', () => {
+          server.hot.send('my:greetings', { msg: 'hello' })
         })
       },
     },
@@ -579,7 +577,7 @@ if (import.meta.hot) {
 }
 ```
 
-Then use `server.ws.on` and listen to the events on the server side:
+Then use `server.hot.on` (since Vite 5.1) or `server.ws.on` and listen to the events on the server side:
 
 ```js
 // vite.config.js
@@ -588,7 +586,7 @@ export default defineConfig({
     {
       // ...
       configureServer(server) {
-        server.ws.on('my:from-client', (data, client) => {
+        server.hot.on('my:from-client', (data, client) => {
           console.log('Message from client:', data.msg) // Hey!
           // reply only to the client (if needed)
           client.send('my:ack', { msg: 'Hi! I got your message!' })

@@ -5,12 +5,13 @@ import type {
   OutputChunk,
   RenderedChunk,
 } from 'rollup'
-import jsonStableStringify from 'json-stable-stringify'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { normalizePath } from '../utils'
+import { normalizePath, sortObjectKeys } from '../utils'
 import { generatedAssets } from './asset'
 import type { GeneratedAssetMeta } from './asset'
+
+const endsWithJSRE = /\.[cm]?js$/
 
 export type Manifest = Record<string, ManifestChunk>
 
@@ -135,7 +136,9 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
           // If JS chunk and asset chunk are both generated from the same source file,
           // prioritize JS chunk as it contains more information
-          if (manifest[src]?.file.endsWith('.js')) continue
+          const file = manifest[src]?.file
+          if (file && endsWithJSRE.test(file)) continue
+
           manifest[src] = asset
           fileNameToAsset.set(chunk.fileName, asset)
         }
@@ -162,7 +165,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
               ? config.build.manifest
               : '.vite/manifest.json',
           type: 'asset',
-          source: jsonStableStringify(manifest, { space: 2 }),
+          source: JSON.stringify(sortObjectKeys(manifest), undefined, 2),
         })
       }
     },

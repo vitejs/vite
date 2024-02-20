@@ -20,10 +20,12 @@ export interface Update {
   path: string
   acceptedPath: string
   timestamp: number
-  /**
-   * @experimental internal
-   */
-  explicitImportRequired?: boolean | undefined
+  /** @internal */
+  explicitImportRequired?: boolean
+  /** @internal */
+  isWithinCircularImport?: boolean
+  /** @internal */
+  ssrInvalidates?: string[]
 }
 
 export interface PrunePayload {

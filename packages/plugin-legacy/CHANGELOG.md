@@ -1,3 +1,17 @@
+## 5.3.0 (2024-01-25)
+
+* docs: fix commit id collision (#15105) ([0654d1b](https://github.com/vitejs/vite/commit/0654d1b)), closes [#15105](https://github.com/vitejs/vite/issues/15105)
+* docs: fix dead link (#15700) ([aa7916a](https://github.com/vitejs/vite/commit/aa7916a)), closes [#15700](https://github.com/vitejs/vite/issues/15700)
+* feat(legacy): build file name optimization (#15115) ([39f435d](https://github.com/vitejs/vite/commit/39f435d)), closes [#15115](https://github.com/vitejs/vite/issues/15115)
+* feat(legacy): support any separator before hash in fileNames (#15170) ([ecab41a](https://github.com/vitejs/vite/commit/ecab41a)), closes [#15170](https://github.com/vitejs/vite/issues/15170)
+* feat(plugin-legacy): add `modernTargets` option (#15506) ([cf56507](https://github.com/vitejs/vite/commit/cf56507)), closes [#15506](https://github.com/vitejs/vite/issues/15506)
+* fix(deps): update all non-major dependencies (#15233) ([ad3adda](https://github.com/vitejs/vite/commit/ad3adda)), closes [#15233](https://github.com/vitejs/vite/issues/15233)
+* fix(deps): update all non-major dependencies (#15304) ([bb07f60](https://github.com/vitejs/vite/commit/bb07f60)), closes [#15304](https://github.com/vitejs/vite/issues/15304)
+* fix(deps): update all non-major dependencies (#15375) ([ab56227](https://github.com/vitejs/vite/commit/ab56227)), closes [#15375](https://github.com/vitejs/vite/issues/15375)
+* chore(deps): update all non-major dependencies (#15145) ([7ff2c0a](https://github.com/vitejs/vite/commit/7ff2c0a)), closes [#15145](https://github.com/vitejs/vite/issues/15145)
+
+
+
 ## 5.2.0 (2023-11-22)
 
 * test(legacy): add a test to checks all inline snippets are valid JS (#15098) ([1b9ca66](https://github.com/vitejs/vite/commit/1b9ca66)), closes [#15098](https://github.com/vitejs/vite/issues/15098)
