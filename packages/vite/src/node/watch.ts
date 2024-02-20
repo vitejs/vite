@@ -9,22 +9,22 @@ export function resolveChokidarOptions(
   config: ResolvedConfig,
   options: WatchOptions | undefined,
 ): WatchOptions {
-  const { ignored = [], ...otherOptions } = options ?? {}
-  const arraifyIgnored = arraify(ignored)
+  const { ignored: ignoredList, ...otherOptions } = options ?? {}
+  const ignored: WatchOptions['ignored'] = [
+    '**/.git/**',
+    '**/node_modules/**',
+    '**/test-results/**', // Playwright
+    glob.escapePath(config.cacheDir) + '/**',
+    ...arraify(ignoredList || []),
+  ]
   if (config.build.outDir) {
-    arraifyIgnored.push(
+    ignored.push(
       glob.escapePath(path.resolve(config.root, config.build.outDir)) + '/**',
     )
   }
 
   const resolvedWatchOptions: WatchOptions = {
-    ignored: [
-      '**/.git/**',
-      '**/node_modules/**',
-      '**/test-results/**', // Playwright
-      glob.escapePath(config.cacheDir) + '/**',
-      ...arraifyIgnored,
-    ],
+    ignored,
     ignoreInitial: true,
     ignorePermissionErrors: true,
     ...otherOptions,
