@@ -126,3 +126,5 @@ import './async/index'
 
 import('./same-name/sub1/sub')
 import('./same-name/sub2/sub')
+
+import './imports-imports-field.css'

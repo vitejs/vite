@@ -27,5 +27,8 @@
     "sass": "^1.71.0",
     "stylus": "^0.62.0",
     "sugarss": "^4.0.1"
+  },
+  "imports": {
+    "#imports": "./imports-field.css"
   }
 }

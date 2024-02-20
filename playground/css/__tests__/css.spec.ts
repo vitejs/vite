@@ -476,6 +476,10 @@ test('aliased css has content', async () => {
   expect(await getColor('.aliased-module')).toBe('blue')
 })
 
+test('resolve imports field in CSS', async () => {
+  expect(await getColor('.imports-field')).toBe('red')
+})
+
 test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
   serverLogs.forEach((log) => {
     // no warning from esbuild css minifier
