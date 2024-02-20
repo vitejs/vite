@@ -209,14 +209,14 @@ flowchart TD
     real --NO--> intended{Is the intended\nbehaviour?}
     intended --YES--> explain[Explain and close\npoint to docs if needed]
     intended --NO--> open[Keep open for discussion\nRemove 'pending triage' label]
-    real --YES--> real2["1. Remove 'pending triage' label\n2. Add 'bug' label\n3. Add related feature label if\napplicable (e.g. 'bug: ssr'\nor 'plugin: vue')\n4. Add priority label (see below)"]
+    real --YES--> real2["1. Remove 'pending triage' label\n2. Add related feature label if\napplicable (e.g. 'feat: ssr')\n3. Add priority and meta labels (see below)"]
     real2 --> unusable{Does the\nbug make Vite\nunusable?}
     unusable --YES--> maj{Does the bug\naffect the majority\nof Vite users?}
     maj --YES--> p5[p5: urgent]
     maj --NO--> p4[p4: important]
     unusable --NO--> workarounds{Are there\nworkarounds for\nthe bug?}
-    workarounds --YES--> p2[p2: has workaround]
     workarounds --NO--> p3[p3: minor bug]
+    workarounds --YES--> p2[p2: edge case\nhas workaround]
 ```
 
 ### Pull Request Review Workflow
