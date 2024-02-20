@@ -189,6 +189,10 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   function getDirentCacheFromPath(
     normalizedFile: string,
   ): DirentCache | false | undefined {
+    // path.posix.normalize may return a path either with / or without /
+    if (normalizedFile[normalizedFile.length - 1] === '/') {
+      normalizedFile = normalizedFile.slice(0, -1)
+    }
     if (normalizedFile === root) {
       return rootCache
     }

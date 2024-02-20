@@ -99,6 +99,13 @@ export default defineConfig({
         }
       },
     },
+    {
+      name: 'resolve to non normalized absolute',
+      async resolveId(id) {
+        if (id !== '@non-normalized') return
+        return this.resolve(__dirname + '//non-normalized')
+      },
+    },
   ],
   optimizeDeps: {
     include: [

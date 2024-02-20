@@ -215,6 +215,10 @@ test('Resolve doesnt interrupt page request with trailing query and .css', async
   expect(await page.textContent('h1')).toBe('Resolve')
 })
 
+test('resolve non-normalized absolute path', async () => {
+  expect(await page.textContent('.non-normalized')).toMatch('[success]')
+})
+
 test.runIf(!isWindows)(
   'Resolve doesnt interrupt page request that clashes with local project package.json',
   async () => {
