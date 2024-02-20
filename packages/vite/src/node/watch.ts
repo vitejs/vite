@@ -13,7 +13,7 @@ export function resolveChokidarOptions(
   const arraifyIgnored = arraify(ignored)
   if (config.build.outDir) {
     arraifyIgnored.push(
-      glob.escapePath(path.resolve(config.root, config.build.outDir)),
+      glob.escapePath(path.resolve(config.root, config.build.outDir)) + '/**',
     )
   }
 
