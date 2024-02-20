@@ -485,7 +485,6 @@ function esbuildScanPlugin(
         return {
           loader: 'js',
           contents: js,
-          resolveDir: normalizePath(path.dirname(p)),
         }
       }
 
@@ -596,15 +595,12 @@ function esbuildScanPlugin(
               return externalUnlessEntry({ path: id })
             }
 
-            if (htmlTypesRE.test(resolved)) {
-              return {
-                path: path.resolve(cleanUrl(resolved)),
-                namespace: 'html',
-              }
-            }
+            const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
 
-            // make esbuild handle js/ts/jsx/tsx
-            // so that tsconfig.json is respected by esbuild
+            return {
+              path: path.resolve(cleanUrl(resolved)),
+              namespace,
+            }
           } else {
             // resolve failed... probably unsupported type
             return externalUnlessEntry({ path: id })
