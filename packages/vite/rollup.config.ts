@@ -197,7 +197,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(165)],
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(175)],
   })
 }
 

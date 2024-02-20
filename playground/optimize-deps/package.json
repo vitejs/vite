@@ -41,7 +41,7 @@
     "react-dom": "^18.2.0",
     "@vitejs/test-resolve-linked": "workspace:0.0.0",
     "url": "^0.11.3",
-    "vue": "^3.4.18",
+    "vue": "^3.4.19",
     "vuex": "^4.1.0",
     "lodash": "^4.17.21",
     "lodash.clonedeep": "^4.5.0"
