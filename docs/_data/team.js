@@ -65,54 +65,6 @@ export const core = [
     sponsor: 'https://github.com/sponsors/sapphi-red',
   },
   {
-    avatar: 'https://github.com/sodatea.png',
-    name: 'Haoqun Jiang',
-    title: 'Developer',
-    org: 'Vue.js',
-    orgLink: 'https://vuejs.org/',
-    desc: 'Vue/Vite core team member. Full-time open sourcerer.',
-    links: [
-      { icon: 'github', link: 'https://github.com/sodatea' },
-      { icon: 'twitter', link: 'https://twitter.com/haoqunjiang' },
-      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@haoqun' },
-    ],
-    sponsor: 'https://github.com/sponsors/sodatea',
-  },
-  {
-    avatar: 'https://github.com/Shinigami92.png',
-    name: 'Shinigami',
-    title: 'Maintainer',
-    org: 'Faker',
-    orgLink: 'https://fakerjs.dev',
-    desc: 'Passionate TypeScript enthusiast working extensively with Vue SPA and pug.',
-    links: [
-      { icon: 'github', link: 'https://github.com/Shinigami92' },
-      { icon: 'mastodon', link: 'https://elk.zone/mas.to/@Shini92' },
-    ],
-    sponsor: 'https://github.com/sponsors/Shinigami92',
-  },
-  {
-    avatar: 'https://i.imgur.com/KMed6rQ.jpeg',
-    name: 'Alec Larson',
-    title: 'Entrepreneur',
-    desc: 'Dabbling in social ecommerce, meta frameworks, and board games',
-    links: [
-      { icon: 'github', link: 'https://github.com/aleclarson' },
-      { icon: 'twitter', link: 'https://twitter.com/retropragma' },
-    ],
-    sponsor: 'https://github.com/sponsors/aleclarson',
-  },
-  {
-    avatar: 'https://github.com/poyoho.png',
-    name: 'yoho',
-    title: 'Frontend Developer',
-    desc: 'Frontend. Vite team member.',
-    links: [
-      { icon: 'github', link: 'https://github.com/poyoho' },
-      { icon: 'twitter', link: 'https://twitter.com/yoho_po' },
-    ],
-  },
-  {
     avatar: 'https://github.com/ArnaudBarre.png',
     name: 'Arnaud Barré',
     title: 'Frontend Developer',
@@ -147,9 +99,56 @@ export const core = [
     ],
     sponsor: 'https://github.com/sponsors/sheremet-va',
   },
+  {
+    avatar: 'https://github.com/Shinigami92.png',
+    name: 'Shinigami',
+    title: 'Maintainer',
+    org: 'Faker',
+    orgLink: 'https://fakerjs.dev',
+    desc: 'Passionate TypeScript enthusiast working extensively with Vue SPA and pug.',
+    links: [
+      { icon: 'github', link: 'https://github.com/Shinigami92' },
+      { icon: 'mastodon', link: 'https://elk.zone/mas.to/@Shini92' },
+    ],
+    sponsor: 'https://github.com/sponsors/Shinigami92',
+  },
+  {
+    avatar: 'https://github.com/sodatea.png',
+    name: 'Haoqun Jiang',
+    title: 'Developer',
+    org: 'Vue.js',
+    orgLink: 'https://vuejs.org/',
+    desc: 'Vue/Vite core team member. Full-time open sourcerer.',
+    links: [
+      { icon: 'github', link: 'https://github.com/sodatea' },
+      { icon: 'twitter', link: 'https://twitter.com/haoqunjiang' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@haoqun' },
+    ],
+    sponsor: 'https://github.com/sponsors/sodatea',
+  },
 ]
 
 export const emeriti = [
+  {
+    avatar: 'https://i.imgur.com/KMed6rQ.jpeg',
+    name: 'Alec Larson',
+    title: 'Entrepreneur',
+    desc: 'Dabbling in social ecommerce, meta frameworks, and board games',
+    links: [
+      { icon: 'github', link: 'https://github.com/aleclarson' },
+      { icon: 'twitter', link: 'https://twitter.com/retropragma' },
+    ],
+  },
+  {
+    avatar: 'https://github.com/poyoho.png',
+    name: 'yoho',
+    title: 'Frontend Developer',
+    desc: 'Frontend. Vite team member.',
+    links: [
+      { icon: 'github', link: 'https://github.com/poyoho' },
+      { icon: 'twitter', link: 'https://twitter.com/yoho_po' },
+    ],
+  },
   {
     avatar: 'https://github.com/ygj6.png',
     name: 'ygj6',
