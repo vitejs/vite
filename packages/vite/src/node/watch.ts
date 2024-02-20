@@ -10,6 +10,12 @@ export function resolveChokidarOptions(
   options: WatchOptions | undefined,
 ): WatchOptions {
   const { ignored = [], ...otherOptions } = options ?? {}
+  const arraifyIgnored = arraify(ignored)
+  if (config.build.outDir) {
+    arraifyIgnored.push(
+      glob.escapePath(path.resolve(config.root, config.build.outDir)),
+    )
+  }
 
   const resolvedWatchOptions: WatchOptions = {
     ignored: [
@@ -17,8 +23,7 @@ export function resolveChokidarOptions(
       '**/node_modules/**',
       '**/test-results/**', // Playwright
       glob.escapePath(config.cacheDir) + '/**',
-      glob.escapePath(path.resolve(config.root, config.build.outDir)) + '/**',
-      ...arraify(ignored),
+      ...arraifyIgnored,
     ],
     ignoreInitial: true,
     ignorePermissionErrors: true,
