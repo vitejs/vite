@@ -440,7 +440,7 @@ function prettifyMessage(m: Message, code: string): string {
 
 let tsconfckCache: TSConfckCache<TSConfckParseResult> | undefined
 
-async function loadTsconfigJsonForFile(
+export async function loadTsconfigJsonForFile(
   filename: string,
 ): Promise<TSConfigJSON> {
   try {

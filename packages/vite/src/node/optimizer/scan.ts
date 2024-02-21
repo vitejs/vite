@@ -38,6 +38,7 @@ import {
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
 import { transformGlobImport } from '../plugins/importMetaGlob'
+import { loadTsconfigJsonForFile } from '../plugins/esbuild'
 
 type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
 
@@ -217,6 +218,21 @@ async function prepareEsbuildScanner(
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
+  // The plugin pipeline automatically loads the closest tsconfig.json.
+  // But esbuild doesn't support reading tsconfig.json if the plugin has resolved the path (https://github.com/evanw/esbuild/issues/2265).
+  // Due to syntax incompatibilities between the experimental decorators in TypeScript and TC39 decorators,
+  // we cannot simply set `"experimentalDecorators": true` or `false`. (https://github.com/vitejs/vite/pull/15206#discussion_r1417414715)
+  // Therefore, we use the closest tsconfig.json from the root to make it work in most cases.
+  let tsconfigRaw = esbuildOptions.tsconfigRaw
+  if (!tsconfigRaw && !esbuildOptions.tsconfig) {
+    const tsconfigResult = await loadTsconfigJsonForFile(
+      path.join(config.root, '_dummy.js'),
+    )
+    if (tsconfigResult.compilerOptions?.experimentalDecorators) {
+      tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
+    }
+  }
+
   return await esbuild.context({
     absWorkingDir: process.cwd(),
     write: false,
@@ -229,6 +245,7 @@ async function prepareEsbuildScanner(
     logLevel: 'silent',
     plugins: [...plugins, plugin],
     ...esbuildOptions,
+    tsconfigRaw,
   })
 }
 

@@ -2,7 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { transformWithEsbuild } from 'vite'
 import { describe, expect, test } from 'vitest'
-import { browserLogs } from '~utils'
+import { browserLogs, isServe, serverLogs } from '~utils'
 
 test('should respected each `tsconfig.json`s compilerOptions', () => {
   // main side effect should be called (because of `"importsNotUsedAsValues": "preserve"`)
@@ -19,6 +19,16 @@ test('should respected each `tsconfig.json`s compilerOptions', () => {
   expect(browserLogs).toContain('nested-with-extends side effect')
   // nested-with-extends base setter should be called (because of `"useDefineForClassFields": false"`)
   expect(browserLogs).toContain('data setter in NestedWithExtendsBase')
+})
+
+test.runIf(isServe)('scanner should not error with decorators', () => {
+  expect(serverLogs).not.toStrictEqual(
+    expect.arrayContaining([
+      expect.stringContaining(
+        'Parameter decorators only work when experimental decorators are enabled',
+      ),
+    ]),
+  )
 })
 
 describe('transformWithEsbuild', () => {
