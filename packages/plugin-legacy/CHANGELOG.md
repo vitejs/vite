@@ -1,3 +1,11 @@
+## <small>5.3.1 (2024-02-21)</small>
+
+* fix(deps): update all non-major dependencies (#15675) ([4d9363a](https://github.com/vitejs/vite/commit/4d9363a)), closes [#15675](https://github.com/vitejs/vite/issues/15675)
+* fix(deps): update all non-major dependencies (#15803) ([e0a6ef2](https://github.com/vitejs/vite/commit/e0a6ef2)), closes [#15803](https://github.com/vitejs/vite/issues/15803)
+* fix(deps): update all non-major dependencies (#15959) ([571a3fd](https://github.com/vitejs/vite/commit/571a3fd)), closes [#15959](https://github.com/vitejs/vite/issues/15959)
+
+
+
 ## 5.3.0 (2024-01-25)
 
 * docs: fix commit id collision (#15105) ([0654d1b](https://github.com/vitejs/vite/commit/0654d1b)), closes [#15105](https://github.com/vitejs/vite/issues/15105)
