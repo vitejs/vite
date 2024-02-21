@@ -1,3 +1,14 @@
+## <small>5.1.4 (2024-02-21)</small>
+
+* perf: remove unnecessary regex s modifier (#15766) ([8dc1b73](https://github.com/vitejs/vite/commit/8dc1b73)), closes [#15766](https://github.com/vitejs/vite/issues/15766)
+* fix: fs cached checks disabled by default for yarn pnp (#15920) ([8b11fea](https://github.com/vitejs/vite/commit/8b11fea)), closes [#15920](https://github.com/vitejs/vite/issues/15920)
+* fix: resolve directory correctly when `fs.cachedChecks: true` (#15983) ([4fe971f](https://github.com/vitejs/vite/commit/4fe971f)), closes [#15983](https://github.com/vitejs/vite/issues/15983)
+* fix: srcSet with optional descriptor (#15905) ([81b3bd0](https://github.com/vitejs/vite/commit/81b3bd0)), closes [#15905](https://github.com/vitejs/vite/issues/15905)
+* fix(deps): update all non-major dependencies (#15959) ([571a3fd](https://github.com/vitejs/vite/commit/571a3fd)), closes [#15959](https://github.com/vitejs/vite/issues/15959)
+* fix(watch): build watch fails when outDir is empty string (#15979) ([1d263d3](https://github.com/vitejs/vite/commit/1d263d3)), closes [#15979](https://github.com/vitejs/vite/issues/15979)
+
+
+
 ## <small>5.1.3 (2024-02-15)</small>
 
 * fix: cachedTransformMiddleware for direct css requests (#15919) ([5099028](https://github.com/vitejs/vite/commit/5099028)), closes [#15919](https://github.com/vitejs/vite/issues/15919)
