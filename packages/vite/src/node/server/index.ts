@@ -48,6 +48,8 @@ import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
+import type { FetchResult } from '../ssr/runtime/types'
+import { ssrFetchModule } from '../ssr/ssrFetchModule'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -76,6 +78,7 @@ import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HMRBroadcaster, HmrOptions } from './hmr'
 import {
   createHMRBroadcaster,
+  createServerHMRChannel,
   getShortName,
   handleFileAddUnlink,
   handleHMRUpdate,
@@ -191,10 +194,10 @@ export interface FileSystemServeOptions {
   deny?: string[]
 
   /**
-   * Enable caching of fs calls.
+   * Enable caching of fs calls. It is enabled by default if no custom watch ignored patterns are provided.
    *
    * @experimental
-   * @default true
+   * @default undefined
    */
   cachedChecks?: boolean
 }
@@ -294,6 +297,11 @@ export interface ViteDevServer {
     url: string,
     opts?: { fixStacktrace?: boolean },
   ): Promise<Record<string, any>>
+  /**
+   * Fetch information about the module for Vite SSR runtime.
+   * @experimental
+   */
+  ssrFetchModule(id: string, importer?: string): Promise<FetchResult>
   /**
    * Returns a fixed version of the given stack
    */
@@ -413,7 +421,9 @@ export async function _createServer(
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
 
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
-  const hot = createHMRBroadcaster().addChannel(ws)
+  const hot = createHMRBroadcaster()
+    .addChannel(ws)
+    .addChannel(createServerHMRChannel())
   if (typeof config.server.hmr === 'object' && config.server.hmr.channels) {
     config.server.hmr.channels.forEach((channel) => hot.addChannel(channel))
   }
@@ -495,6 +505,9 @@ export async function _createServer(
         undefined,
         opts?.fixStacktrace,
       )
+    },
+    async ssrFetchModule(url: string, importer?: string) {
+      return ssrFetchModule(server, url, importer)
     },
     ssrFixStacktrace(e) {
       ssrFixStacktrace(e, moduleGraph)
@@ -989,7 +1002,7 @@ export function resolveServerOptions(
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
     deny,
-    cachedChecks: server.fs?.cachedChecks ?? true,
+    cachedChecks: server.fs?.cachedChecks,
   }
 
   if (server.origin?.endsWith('/')) {

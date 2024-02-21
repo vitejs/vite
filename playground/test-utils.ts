@@ -37,6 +37,7 @@ export const ports = {
   'ssr-webworker': 9605,
   'proxy-bypass': 9606, // not imported but used in `proxy-hmr/vite.config.js`
   'proxy-bypass/non-existent-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'ssr-hmr': 9609, // not imported but used in `hmr-ssr/__tests__/hmr.spec.ts`
   'proxy-hmr': 9616, // not imported but used in `proxy-hmr/vite.config.js`
   'proxy-hmr/other-app': 9617, // not imported but used in `proxy-hmr/other-app/vite.config.js`
   'ssr-conditions': 9620,
