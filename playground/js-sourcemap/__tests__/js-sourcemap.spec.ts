@@ -137,18 +137,12 @@ describe.runIf(isBuild)('build tests', () => {
     const map = findAssetFile(/after-preload-dynamic.*\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
-        "mappings": "22BAAA,QAAQ,IAAI;AAAA;AAAA;AAAA;AAAA,CAIX,QAED,OAAO,2BAAuB,EAAC,wBAE/B,QAAQ,IAAI,uBAAuB",
+        "mappings": ";;;;;;i3BAAA,OAAO,2BAAuB,EAAC,wBAE/B,QAAQ,IAAI,uBAAuB",
         "sources": [
           "../../after-preload-dynamic.js",
         ],
         "sourcesContent": [
-          "console.log(\`
-      false-positive sourcemap comments
-      //# sourceMappingURL=1.css.map
-      /*# sourceMappingURL=2.css.map */
-      \`)
-
-      import('./dynamic/dynamic-foo')
+          "import('./dynamic/dynamic-foo')
 
       console.log('after preload dynamic')
       ",
