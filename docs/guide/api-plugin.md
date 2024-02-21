@@ -402,6 +402,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 ### `handleHotUpdate`
 
 - **Type:** `(ctx: HmrContext) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
+- **See also:** [HMR API](./api-hmr)
 
   Perform custom HMR update handling. The hook receives a context object with the following signature:
 
@@ -423,10 +424,31 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   - Filter and narrow down the affected module list so that the HMR is more accurate.
 
-  - Return an empty array and perform complete custom HMR handling by sending custom events to the client (example uses `server.hot` which was introduced in Vite 5.1, it is recommended to also use `server.ws` if you support lower versions):
+  - Return an empty array and perform a full reload:
+
+    ```js
+    handleHotUpdate({ server, modules, timestamp }) {
+      // Also use `server.ws.send` to support Vite <5.1 if needed
+      server.hot.send({ type: 'full-reload' })
+      // Invalidate modules manually
+      const invalidatedModules = new Set()
+      for (const mod of modules) {
+        server.moduleGraph.invalidateModule(
+          mod,
+          invalidatedModules,
+          timestamp,
+          true
+        )
+      }
+      return []
+    }
+    ```
+
+  - Return an empty array and perform complete custom HMR handling by sending custom events to the client:
 
     ```js
     handleHotUpdate({ server }) {
+      // Also use `server.ws.send` to support Vite <5.1 if needed
       server.hot.send({
         type: 'custom',
         event: 'special-update',
