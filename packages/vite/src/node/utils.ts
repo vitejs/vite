@@ -295,7 +295,7 @@ export function isSameFileUri(file1: string, file2: string): boolean {
 
 export const queryRE = /\?.*$/s
 
-const postfixRE = /[?#].*$/s
+const postfixRE = /[?#].*$/
 export function cleanUrl(url: string): string {
   return url.replace(postfixRE, '')
 }

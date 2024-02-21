@@ -27,7 +27,7 @@ export function slash(p: string): string {
   return p.replace(windowsSlashRE, '/')
 }
 
-const postfixRE = /[?#].*$/s
+const postfixRE = /[?#].*$/
 export function cleanUrl(url: string): string {
   return url.replace(postfixRE, '')
 }
