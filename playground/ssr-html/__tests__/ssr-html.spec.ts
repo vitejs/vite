@@ -100,12 +100,28 @@ describe.runIf(isServe)('stacktrace', () => {
   }
 })
 
-test.runIf(isServe)('network-imports', async () => {
-  await execFileAsync(
-    'node',
-    ['--experimental-network-imports', 'test-network-imports.js'],
-    {
-      cwd: fileURLToPath(new URL('..', import.meta.url)),
-    },
-  )
+describe.runIf(isServe)('network-imports', () => {
+  test('with Vite SSR', async () => {
+    await execFileAsync(
+      'node',
+      ['--experimental-network-imports', 'test-network-imports.js'],
+      {
+        cwd: fileURLToPath(new URL('..', import.meta.url)),
+      },
+    )
+  })
+
+  test('with Vite runtime', async () => {
+    await execFileAsync(
+      'node',
+      [
+        '--experimental-network-imports',
+        'test-network-imports.js',
+        '--runtime',
+      ],
+      {
+        cwd: fileURLToPath(new URL('..', import.meta.url)),
+      },
+    )
+  })
 })

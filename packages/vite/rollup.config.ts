@@ -153,6 +153,7 @@ function createNodeConfig(isProduction: boolean) {
       index: path.resolve(__dirname, 'src/node/index.ts'),
       cli: path.resolve(__dirname, 'src/node/cli.ts'),
       constants: path.resolve(__dirname, 'src/node/constants.ts'),
+      runtime: path.resolve(__dirname, 'src/node/ssr/runtime/index.ts'),
     },
     output: {
       ...sharedNodeOptions.output,
@@ -196,7 +197,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(163)],
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(175)],
   })
 }
 
@@ -299,7 +300,12 @@ const __require = require;
     name: 'cjs-chunk-patch',
     renderChunk(code, chunk) {
       if (!chunk.fileName.includes('chunks/dep-')) return
-
+      // don't patch runtime utils chunk because it should stay lightweight and we know it doesn't use require
+      if (
+        chunk.name === 'utils' &&
+        chunk.moduleIds.some((id) => id.endsWith('/ssr/runtime/utils.ts'))
+      )
+        return
       const match = code.match(/^(?:import[\s\S]*?;\s*)+/)
       const index = match ? match.index! + match[0].length : 0
       const s = new MagicString(code)
@@ -321,18 +327,22 @@ const __require = require;
  * @param limit size in kB
  */
 function bundleSizeLimit(limit: number): Plugin {
+  let size = 0
+
   return {
     name: 'bundle-limit',
-    generateBundle(options, bundle) {
-      const size = Buffer.byteLength(
+    generateBundle(_, bundle) {
+      size = Buffer.byteLength(
         Object.values(bundle)
           .map((i) => ('code' in i ? i.code : ''))
           .join(''),
         'utf-8',
       )
+    },
+    closeBundle() {
       const kb = size / 1000
       if (kb > limit) {
-        throw new Error(
+        this.error(
           `Bundle size exceeded ${limit} kB, current size is ${kb.toFixed(
             2,
           )}kb.`,

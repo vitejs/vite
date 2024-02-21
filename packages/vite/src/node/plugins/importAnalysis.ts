@@ -43,6 +43,7 @@ import {
   normalizePath,
   prettifyUrl,
   removeImportQuery,
+  removeTimestampQuery,
   stripBase,
   stripBomTag,
   timeFrom,
@@ -76,8 +77,6 @@ export const canSkipImportAnalysis = (id: string): boolean =>
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
-const hasImportInQueryParamsRE = /[?&]import=?\b/
-
 export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
@@ -91,14 +90,7 @@ interface UrlPosition {
 }
 
 export function isExplicitImportRequired(url: string): boolean {
-  return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
-}
-
-function markExplicitImport(url: string) {
-  if (isExplicitImportRequired(url)) {
-    return injectQuery(url, 'import')
-  }
-  return url
+  return !isJSRequest(url) && !isCSSRequest(url)
 }
 
 function extractImportedBindings(
@@ -316,9 +308,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
           return this.error(
-            `Failed to resolve import "${url}" from "${path.relative(
-              process.cwd(),
-              importerFile,
+            `Failed to resolve import "${url}" from "${normalizePath(
+              path.relative(process.cwd(), importerFile),
             )}". Does the file exist?`,
             pos,
           )
@@ -362,18 +353,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // make the URL browser-valid if not SSR
         if (!ssr) {
           // mark non-js/css imports with `?import`
-          url = markExplicitImport(url)
-
-          // If the url isn't a request for a pre-bundled common chunk,
-          // for relative js/css imports, or self-module virtual imports
-          // (e.g. vue blocks), inherit importer's version query
-          // do not do this for unknown type imports, otherwise the appended
-          // query can break 3rd party plugin's extension checks.
-          if (
+          if (isExplicitImportRequired(url)) {
+            url = injectQuery(url, 'import')
+          } else if (
             (isRelative || isSelfImport) &&
-            !hasImportInQueryParamsRE.test(url) &&
             !DEP_VERSION_RE.test(url)
           ) {
+            // If the url isn't a request for a pre-bundled common chunk,
+            // for relative js/css imports, or self-module virtual imports
+            // (e.g. vue blocks), inherit importer's version query
+            // do not do this for unknown type imports, otherwise the appended
+            // query can break 3rd party plugin's extension checks.
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
@@ -685,7 +675,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // `importedUrls` will be mixed with watched files for the module graph,
       // `staticImportedUrls` will only contain the static top-level imports and
       // dynamic imports
-      const staticImportedUrls = new Set(_orderedImportedUrls)
+      const staticImportedUrls = new Set(
+        _orderedImportedUrls.map((url) => removeTimestampQuery(url)),
+      )
       const acceptedUrls = mergeAcceptedUrls(orderedAcceptedUrls)
       const acceptedExports = mergeAcceptedUrls(orderedAcceptedExports)
 
@@ -1038,7 +1030,7 @@ function __vite__injectQuery(url: string, queryToInject: string): string {
   }
 
   // can't use pathname from URL since it may be relative like ../
-  const pathname = url.replace(/[?#].*$/s, '')
+  const pathname = url.replace(/[?#].*$/, '')
   const { search, hash } = new URL(url, 'http://vitejs.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${

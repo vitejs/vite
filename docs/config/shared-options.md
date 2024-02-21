@@ -263,7 +263,7 @@ export default defineConfig({
 
 ## css.preprocessorMaxWorkers
 
-- **Experimental:** [Give Feedback](TODO: update)
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/15835)
 - **Type:** `number | true`
 - **Default:** `0` (does not create any workers and run in the main thread)
 

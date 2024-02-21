@@ -398,6 +398,34 @@ export type ResolveFn = (
   ssr?: boolean,
 ) => Promise<string | undefined>
 
+/**
+ * Check and warn if `path` includes characters that don't work well in Vite,
+ * such as `#` and `?`.
+ */
+function checkBadCharactersInPath(path: string, logger: Logger): void {
+  const badChars = []
+
+  if (path.includes('#')) {
+    badChars.push('#')
+  }
+  if (path.includes('?')) {
+    badChars.push('?')
+  }
+
+  if (badChars.length > 0) {
+    const charString = badChars.map((c) => `"${c}"`).join(' and ')
+    const inflectedChars = badChars.length > 1 ? 'characters' : 'character'
+
+    logger.warn(
+      colors.yellow(
+        `The project root contains the ${charString} ${inflectedChars} (${colors.cyan(
+          path,
+        )}), which may not work when running Vite. Consider renaming the directory to remove the characters.`,
+      ),
+    )
+  }
+}
+
 export async function resolveConfig(
   inlineConfig: InlineConfig,
   command: 'build' | 'serve',
@@ -431,6 +459,7 @@ export async function resolveConfig(
       configFile,
       config.root,
       config.logLevel,
+      config.customLogger,
     )
     if (loadResult) {
       config = mergeConfig(loadResult.config, config)
@@ -477,15 +506,8 @@ export async function resolveConfig(
   const resolvedRoot = normalizePath(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
-  if (resolvedRoot.includes('#')) {
-    logger.warn(
-      colors.yellow(
-        `The project root contains the "#" character (${colors.cyan(
-          resolvedRoot,
-        )}), which may not work when running Vite. Consider renaming the directory to remove the "#".`,
-      ),
-    )
-  }
+
+  checkBadCharactersInPath(resolvedRoot, logger)
 
   const clientAlias = [
     {
@@ -766,6 +788,7 @@ export async function resolveConfig(
     packageCache,
     createResolver,
     optimizeDeps: {
+      holdUntilCrawlEnd: true,
       ...optimizeDeps,
       esbuildOptions: {
         preserveSymlinks: resolveOptions.preserveSymlinks,
@@ -941,6 +964,7 @@ export async function loadConfigFromFile(
   configFile?: string,
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
+  customLogger?: Logger,
 ): Promise<{
   path: string
   config: UserConfig
@@ -994,9 +1018,11 @@ export async function loadConfigFromFile(
       dependencies: bundled.dependencies,
     }
   } catch (e) {
-    createLogger(logLevel).error(
+    createLogger(logLevel, { customLogger }).error(
       colors.red(`failed to load config from ${resolvedPath}`),
-      { error: e },
+      {
+        error: e,
+      },
     )
     throw e
   }
@@ -1257,7 +1283,7 @@ function optimizeDepsDisabledBackwardCompatibility(
       }
       resolved.logger.warn(
         colors.yellow(`(!) Experimental ${optimizeDepsPath}optimizeDeps.disabled and deps pre-bundling during build were removed in Vite 5.1.
-    To disable the deps optimizer, set ${optimizeDepsPath}optimizeDeps.noDiscovery to true and ${optimizeDepsPath}optimizeDeps.include as undefined or empty. 
+    To disable the deps optimizer, set ${optimizeDepsPath}optimizeDeps.noDiscovery to true and ${optimizeDepsPath}optimizeDeps.include as undefined or empty.
     Please remove ${optimizeDepsPath}optimizeDeps.disabled from your config.
     ${
       commonjsPluginDisabled

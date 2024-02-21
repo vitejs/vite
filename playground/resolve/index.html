@@ -167,6 +167,9 @@
 <h2>resolve package that contains # in path</h2>
 <p class="path-contains-sharp-symbol"></p>
 
+<h2>resolve non normalized absolute path</h2>
+<p class="non-normalized"></p>
+
 <script type="module">
   import '@generated-content-virtual-file'
   function text(selector, text) {
@@ -384,6 +387,9 @@
     '.path-contains-sharp-symbol',
     `[success] ${contains.call('#', '#')} ${last.call('#')}`,
   )
+
+  import nonNormalizedAbsolute from '@non-normalized'
+  text('.non-normalized', nonNormalizedAbsolute)
 </script>
 
 <style>

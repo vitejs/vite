@@ -35,7 +35,7 @@ export default defineConfig({
 
 By default, linked packages not inside `node_modules` are not pre-bundled. Use this option to force a linked package to be pre-bundled.
 
-**Experimental:** If you're using a library with many deep imports, you can also specify a trailing glob pattern to pre-bundle all deep imports at once. This will avoid constantly pre-bundling whenever a new deep import is used. For example:
+**Experimental:** If you're using a library with many deep imports, you can also specify a trailing glob pattern to pre-bundle all deep imports at once. This will avoid constantly pre-bundling whenever a new deep import is used. [Give Feedback](https://github.com/vitejs/vite/discussions/15833). For example:
 
 ```js
 export default defineConfig({
@@ -47,7 +47,17 @@ export default defineConfig({
 
 ## optimizeDeps.esbuildOptions
 
-- **Type:** [`EsbuildBuildOptions`](https://esbuild.github.io/api/#simple-options)
+- **Type:** [`Omit`](https://www.typescriptlang.org/docs/handbook/utility-types.html#omittype-keys)`<`[`EsbuildBuildOptions`](https://esbuild.github.io/api/#simple-options)`,
+| 'bundle'
+| 'entryPoints'
+| 'external'
+| 'write'
+| 'watch'
+| 'outdir'
+| 'outfile'
+| 'outbase'
+| 'outExtension'
+| 'metafile'>`
 
 Options to pass to esbuild during the dep scanning and optimization.
 
@@ -61,6 +71,14 @@ Certain options are omitted since changing them would not be compatible with Vit
 - **Type:** `boolean`
 
 Set to `true` to force dependency pre-bundling, ignoring previously cached optimized dependencies.
+
+## optimizeDeps.holdUntilCrawlEnd
+
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/15834)
+- **Type:** `boolean`
+- **Default:** `true`
+
+When enabled, it will hold the first optimized deps results until all static imports are crawled on cold start. This avoids the need for full-page reloads when new dependencies are discovered and they trigger the generation of new common chunks. If all dependencies are found by the scanner plus the explicitely defined ones in `include`, it is better to disable this option to let the browser process more requests in parallel.
 
 ## optimizeDeps.disabled
 

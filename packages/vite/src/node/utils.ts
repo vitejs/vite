@@ -162,6 +162,16 @@ export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 // TODO: use import()
 const _require = createRequire(import.meta.url)
 
+export function resolveDependencyVersion(
+  dep: string,
+  pkgRelativePath = '../../package.json',
+): string {
+  const pkgPath = path.resolve(_require.resolve(dep), pkgRelativePath)
+  return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version
+}
+
+export const rollupVersion = resolveDependencyVersion('rollup')
+
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
 
@@ -285,7 +295,7 @@ export function isSameFileUri(file1: string, file2: string): boolean {
 
 export const queryRE = /\?.*$/s
 
-const postfixRE = /[?#].*$/s
+const postfixRE = /[?#].*$/
 export function cleanUrl(url: string): string {
   return url.replace(postfixRE, '')
 }
@@ -402,7 +412,10 @@ export function prettifyUrl(url: string, root: string): string {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
-    const file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
+    const file = path.posix.relative(
+      root,
+      isAbsoluteFile ? url : fsPathFromId(url),
+    )
     return colors.dim(file)
   } else {
     return colors.dim(url)
@@ -754,7 +767,9 @@ interface ImageCandidate {
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
 function joinSrcset(ret: ImageCandidate[]) {
-  return ret.map(({ url, descriptor }) => `${url} ${descriptor}`).join(', ')
+  return ret
+    .map(({ url, descriptor }) => url + (descriptor ? ` ${descriptor}` : ''))
+    .join(', ')
 }
 
 function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
@@ -1412,4 +1427,24 @@ export function sortObjectKeys<T extends Record<string, any>>(obj: T): T {
     sorted[key] = obj[key]
   }
   return sorted as T
+}
+
+export function displayTime(time: number): string {
+  // display: {X}ms
+  if (time < 1000) {
+    return `${time}ms`
+  }
+
+  time = time / 1000
+
+  // display: {X}s
+  if (time < 60) {
+    return `${time.toFixed(2)}s`
+  }
+
+  const mins = parseInt((time / 60).toString())
+  const seconds = time % 60
+
+  // display: {X}m {Y}s
+  return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
 }

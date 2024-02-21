@@ -97,3 +97,9 @@ test('works with the -t alias', () => {
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
   expect(templateFiles).toEqual(generatedFiles)
 })
+
+test('accepts command line override for --overwrite', () => {
+  createNonEmptyDir()
+  const { stdout } = run(['.', '--overwrite', 'ignore'], { cwd: genPath })
+  expect(stdout).not.toContain(`Current directory is not empty.`)
+})
