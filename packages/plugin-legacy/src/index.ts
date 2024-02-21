@@ -24,7 +24,7 @@ import type {
 } from '@babel/core'
 import colors from 'picocolors'
 import browserslist from 'browserslist'
-import { resolveToEsbuildTarget } from 'esbuild-plugin-browserslist'
+import browserslistToEsbuild from 'browserslist-to-esbuild'
 import type { Options } from './types'
 import {
   detectModernBrowserCode,
@@ -210,7 +210,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           overriddenBuildTarget = config.build.target !== undefined
           overriddenDefaultModernTargets = options.modernTargets !== undefined
           config.build.target = options.modernTargets
-            ? resolveToEsbuildTarget(browserslist(options.modernTargets))
+            ? browserslistToEsbuild(options.modernTargets)
             : modernTargetsEsbuild
         }
       }
