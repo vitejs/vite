@@ -111,6 +111,13 @@ const FRAMEWORKS: Framework[] = [
         display: 'JavaScript + SWC',
         color: yellow,
       },
+      {
+        name: 'custom-remix',
+        display: 'Remix ↗',
+        color: cyan,
+        customCommand:
+          'npm create remix@latest TARGET_DIR -- --template remix-run/remix/templates/vite',
+      },
     ],
   },
   {
