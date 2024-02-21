@@ -20,6 +20,7 @@ import {
   SPECIAL_QUERY_RE,
 } from '../constants'
 import {
+  arraify,
   cleanUrl,
   createDebugger,
   dataUrlRE,
@@ -239,7 +240,7 @@ function orderedDependencies(deps: Record<string, string>) {
 }
 
 function globEntries(pattern: string | string[], config: ResolvedConfig) {
-  const resolvedPatterns = Array.isArray(pattern) ? pattern : [pattern]
+  const resolvedPatterns = arraify(pattern)
   if (resolvedPatterns.every((str) => !glob.isDynamicPattern(str))) {
     return resolvedPatterns.map((p) => path.resolve(config.root, p))
   }
