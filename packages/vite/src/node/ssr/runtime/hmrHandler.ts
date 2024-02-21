@@ -44,11 +44,11 @@ export async function handleHMRPayload(
       break
     }
     case 'full-reload': {
-      const { trigger } = payload
-      const clearEntrypoints = trigger
+      const { triggeredBy } = payload
+      const clearEntrypoints = triggeredBy
         ? [...runtime.entrypoints].filter((entrypoint) =>
             runtime.moduleCache.isImported({
-              importedId: trigger,
+              importedId: triggeredBy,
               importedBy: entrypoint,
             }),
           )
