@@ -348,6 +348,7 @@ export function removeDirectQuery(url: string): string {
 
 export const urlRE = /(\?|&)url(?:&|$)/
 export const rawRE = /(\?|&)raw(?:&|$)/
+export const blobRE = /(\?|&)blob(?:&|$)/
 export function removeUrlQuery(url: string): string {
   return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
 }
