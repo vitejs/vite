@@ -225,16 +225,16 @@ flowchart TD
 flowchart TD
     start{Bug fix\nor\nfeature}
     start --BUG FIX--> strict_bug{"Is a 'strict fix'\ni.e. fixes an obvious\noversight with no\nside effects"}
-    start --FEATURE--> feature[- Discuss feature necessity\n- Is this the best way to address the need\n- Review code quality\n- Add feature labels\n- Approve if you feel strongly\nthat the feature is needed]
-    feature --> evan[Await input from Evan]
-    evan -.-> merge
-    strict_bug --YES--> strict[- Verify the fix locally\n- Review code quality\n- Require test case if applicable\n- Request changes if necessary]
-    strict_bug --NO--> non_strict[Discuss the potential side\neffects of the fix, e.g.\n- Could it introduce implicit\nbehavior changes in other\ncases?\n- Does it introduce too much\nchanges?]
-    non_strict --> label["Add priority labels\n(see issue triaging workflow)"]
-    label --> evan_non_strict[Await input from Evan]
-    evan_non_strict -.-> strict
-    strict --> approve
-    approve --> merge["Merge if approved by 2 or\nmore team members\n- Use 'Squash and Merge'\n- Edit commit message to follow\nconvention\n- In commit message body, list\nrelevant issues being fixed\ne.g. 'fix #1234, fix #1235'"]
+    start --FEATURE--> feature[- Discuss feature necessity\n- Is this the best way to address the need\n- Review code quality\n- Add feature labels\n- Add to milestone\n- Add to Team Board]
+    feature -.-> approve_non_strict[Approve if you feel strongly\nthat the PR is needed]
+    strict_bug --YES--> strict[- Verify the fix locally\n- Review code quality\n- Require test case if applicable\n- Request changes if necessary\n- Add priority, feat, and meta labels\n- Add to milestone]
+    strict_bug --NO--> non_strict[Discuss the potential side\neffects of the fix, e.g.\n- Could it introduce implicit\nbehavior changes in other\ncases?\n- Does it introduce too much\nchanges?\n- Add priority, feat, and meta labels\n- Add to Team Board]
+    non_strict -.-> approve_non_strict
+    strict --> approve_strict[Approve if ready to be merged]
+    approve_strict --> merge_strict[Merge if approved by 2 or\nmore team members]
+    approve_non_strict -.-> merge_non_strict[Merge if approved by 2 or\nmore team members\nand the PR has been discussed\n in a team meeting]
+    merge_non_strict -.-> merge_extra
+    merge_strict --> merge_extra["- Use 'Squash and Merge'\n- Edit commit message to follow\nconvention\n- In commit message body, list\nrelevant issues being fixed\ne.g. 'fix #1234, fix #1235'"]
 ```
 
 ## Notes on Dependencies
