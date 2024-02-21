@@ -85,7 +85,10 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
-  let result = await server.transformRequest(url, { ssr: true })
+  let result = await server.transformRequest(url, {
+    ssr: true,
+    runtime: 'server',
+  })
 
   if (!result) {
     throw new Error(
@@ -96,7 +99,7 @@ export async function fetchModule(
   }
 
   // module entry should be created by transformRequest
-  const mod = await server.moduleGraph.getModuleByUrl(url, true)
+  const mod = await server.moduleGraph.server.getModuleByUrl(url) // TODO: fetchModule should get a runtime?
 
   if (!mod) {
     throw new Error(

@@ -53,22 +53,25 @@ export function getAffectedGlobModules(
   server: ViteDevServer,
 ): ModuleNode[] {
   const modules: ModuleNode[] = []
-  for (const [id, allGlobs] of server._importGlobMap!) {
+  for (const [id, importGlob] of server._importGlobMap!) {
     // (glob1 || glob2) && !glob3 && !glob4...
     if (
-      allGlobs.some(
+      importGlob.globs.some(
         ({ affirmed, negated }) =>
           (!affirmed.length || affirmed.some((glob) => isMatch(file, glob))) &&
           (!negated.length || negated.every((glob) => isMatch(file, glob))),
       )
     ) {
-      const mod = server.moduleGraph.getModuleById(id)
-      if (mod) modules.push(mod)
+      const mod = server.moduleGraph.get(importGlob.runtime).getModuleById(id)
+
+      if (mod) {
+        if (mod.file) {
+          server.moduleGraph.get(importGlob.runtime).onFileChange(mod.file)
+        }
+        modules.push(mod)
+      }
     }
   }
-  modules.forEach((i) => {
-    if (i?.file) server.moduleGraph.onFileChange(i.file)
-  })
   return modules
 }
 
@@ -81,7 +84,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       server = _server
       server._importGlobMap.clear()
     },
-    async transform(code, id) {
+    async transform(code, id, options) {
       if (!code.includes('import.meta.glob')) return
       const result = await transformGlobImport(
         code,
@@ -95,9 +98,9 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       if (result) {
         if (server) {
           const allGlobs = result.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(
-            id,
-            allGlobs.map((globs) => {
+          server._importGlobMap.set(id, {
+            runtime: options?.runtime ?? 'browser',
+            globs: allGlobs.map((globs) => {
               const affirmed: string[] = []
               const negated: string[] = []
 
@@ -106,7 +109,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
               }
               return { affirmed, negated }
             }),
-          )
+          })
         }
         return transformStableResult(result.s, id, config)
       }

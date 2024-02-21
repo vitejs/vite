@@ -170,46 +170,53 @@ export async function handleHMRUpdate(
     return
   }
 
-  const mods = moduleGraph.getModulesByFile(file)
+  await Promise.all(
+    moduleGraph.runtimes.map(async (runtime) => {
+      const mods = moduleGraph.get(runtime).getModulesByFile(file)
 
-  // check if any plugin wants to perform custom HMR handling
-  const timestamp = Date.now()
-  const hmrContext: HmrContext = {
-    file,
-    timestamp,
-    modules: mods ? [...mods] : [],
-    read: () => readModifiedFile(file),
-    server,
-  }
+      // check if any plugin wants to perform custom HMR handling
+      const timestamp = Date.now()
+      const hmrContext: HmrContext = {
+        file,
+        timestamp,
+        modules: mods ? [...mods] : [],
+        read: () => readModifiedFile(file),
+        server,
+      }
 
-  for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
-    const filteredModules = await hook(hmrContext)
-    if (filteredModules) {
-      hmrContext.modules = filteredModules
-    }
-  }
+      for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
+        const filteredModules = await hook(hmrContext)
+        if (filteredModules) {
+          hmrContext.modules = filteredModules
+        }
+      }
 
-  if (!hmrContext.modules.length) {
-    // html file cannot be hot updated
-    if (file.endsWith('.html')) {
-      config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
-        clear: true,
-        timestamp: true,
-      })
-      hot.send({
-        type: 'full-reload',
-        path: config.server.middlewareMode
-          ? '*'
-          : '/' + normalizePath(path.relative(config.root, file)),
-      })
-    } else {
-      // loaded but not in the module graph, probably not js
-      debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
-    }
-    return
-  }
+      if (!hmrContext.modules.length) {
+        // html file cannot be hot updated
+        if (file.endsWith('.html')) {
+          config.logger.info(
+            colors.green(`page reload `) + colors.dim(shortFile),
+            {
+              clear: true,
+              timestamp: true,
+            },
+          )
+          hot.send({
+            type: 'full-reload',
+            path: config.server.middlewareMode
+              ? '*'
+              : '/' + normalizePath(path.relative(config.root, file)),
+          })
+        } else {
+          // loaded but not in the module graph, probably not js
+          debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
+        }
+        return
+      }
 
-  updateModules(shortFile, hmrContext.modules, timestamp, server)
+      updateModules(shortFile, hmrContext.modules, timestamp, server)
+    }),
+  )
 }
 
 type HasDeadEnd = boolean
@@ -230,7 +237,11 @@ export function updateModules(
     const boundaries: PropagationBoundary[] = []
     const hasDeadEnd = propagateUpdate(mod, traversedModules, boundaries)
 
-    moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true)
+    // TODO: we don't need NodeModule to have the runtime if we pass it to updateModules
+    // it still seems useful to know the runtime for a given module
+    moduleGraph
+      .get(mod.runtime)
+      .invalidateModule(mod, invalidatedModules, timestamp, true)
 
     if (needFullReload) {
       continue
@@ -297,7 +308,7 @@ function populateSSRImporters(
   timestamp: number,
   seen: Set<ModuleNode>,
 ) {
-  module.ssrImportedModules.forEach((importer) => {
+  module.importedModules.forEach((importer) => {
     if (seen.has(importer)) {
       return
     }
@@ -323,26 +334,30 @@ export async function handleFileAddUnlink(
   server: ViteDevServer,
   isUnlink: boolean,
 ): Promise<void> {
-  const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
+  server.moduleGraph.runtimes.forEach((runtime) => {
+    const modules = [
+      ...(server.moduleGraph.get(runtime).getModulesByFile(file) || []),
+    ]
 
-  if (isUnlink) {
-    for (const deletedMod of modules) {
-      deletedMod.importedModules.forEach((importedMod) => {
-        importedMod.importers.delete(deletedMod)
-      })
+    if (isUnlink) {
+      for (const deletedMod of modules) {
+        deletedMod.importedModules.forEach((importedMod) => {
+          importedMod.importers.delete(deletedMod)
+        })
+      }
     }
-  }
 
-  modules.push(...getAffectedGlobModules(file, server))
+    modules.push(...getAffectedGlobModules(file, server))
 
-  if (modules.length > 0) {
-    updateModules(
-      getShortName(file, server.config.root),
-      unique(modules),
-      Date.now(),
-      server,
-    )
-  }
+    if (modules.length > 0) {
+      updateModules(
+        getShortName(file, server.config.root),
+        unique(modules),
+        Date.now(),
+        server,
+      )
+    }
+  })
 }
 
 function areAllImportsAccepted(

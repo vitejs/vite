@@ -34,7 +34,7 @@ export function ssrRewriteStacktrace(
           if (!id) return input
 
           const mod = moduleGraph.idToModuleMap.get(id)
-          const rawSourceMap = mod?.ssrTransformResult?.map
+          const rawSourceMap = mod?.transformResult?.map
 
           if (!rawSourceMap) {
             return input

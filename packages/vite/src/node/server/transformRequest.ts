@@ -46,6 +46,7 @@ export interface TransformResult {
 
 export interface TransformOptions {
   ssr?: boolean
+  runtime?: string
   html?: boolean
 }
 
@@ -56,7 +57,13 @@ export function transformRequest(
 ): Promise<TransformResult | null> {
   if (server._restartPromise && !options.ssr) throwClosedServerError()
 
-  const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
+  const runtime = options.runtime ?? (options.ssr ? 'server' : 'browser')
+  const cacheKey =
+    (options.runtime === 'browser'
+      ? options.html
+        ? 'html:'
+        : ''
+      : `${options.runtime}:`) + url
 
   // This module may get invalidated while we are processing it. For example
   // when a full page reload is needed after the re-processing of pre-bundled
@@ -83,7 +90,8 @@ export function transformRequest(
   const pending = server._pendingRequests.get(cacheKey)
   if (pending) {
     return server.moduleGraph
-      .getModuleByUrl(removeTimestampQuery(url), options.ssr)
+      .get(runtime)
+      .getModuleByUrl(removeTimestampQuery(url))
       .then((module) => {
         if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
           // The pending request is still valid, we can safely reuse its result
@@ -132,19 +140,20 @@ async function doTransform(
 
   const { config, pluginContainer } = server
   const ssr = !!options.ssr
+  const runtime = options.runtime ?? (options.ssr ? 'server' : 'browser')
 
   if (ssr && isDepsOptimizerEnabled(config, true)) {
     await initDevSsrDepsOptimizer(config, server)
   }
 
-  let module = await server.moduleGraph.getModuleByUrl(url, ssr)
+  let module = await server.moduleGraph.get(runtime).getModuleByUrl(url)
   if (module) {
     // try use cache from url
     const cached = await getCachedTransformResult(
       url,
       module,
       server,
-      ssr,
+      runtime,
       timestamp,
     )
     if (cached) return cached
@@ -152,21 +161,24 @@ async function doTransform(
 
   const resolved = module
     ? undefined
-    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
+    : (await pluginContainer.resolveId(url, undefined, { ssr, runtime })) ??
+      undefined
 
   // resolve
   const id = module?.id ?? resolved?.id ?? url
 
-  module ??= server.moduleGraph.getModuleById(id)
+  module ??= server.moduleGraph.get(runtime).getModuleById(id)
   if (module) {
     // if a different url maps to an existing loaded id,  make sure we relate this url to the id
-    await server.moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
+    await server.moduleGraph
+      .get(runtime)
+      ._ensureEntryFromUrl(url, undefined, resolved)
     // try use cache from id
     const cached = await getCachedTransformResult(
       url,
       module,
       server,
-      ssr,
+      runtime,
       timestamp,
     )
     if (cached) return cached
@@ -191,7 +203,7 @@ async function getCachedTransformResult(
   url: string,
   module: ModuleNode,
   server: ViteDevServer,
-  ssr: boolean,
+  runtime: string,
   timestamp: number,
 ) {
   const prettyUrl = debugCache ? prettifyUrl(url, server.config.root) : ''
@@ -200,15 +212,14 @@ async function getCachedTransformResult(
   // returns a boolean true is successful, or false if no handling is needed
   const softInvalidatedTransformResult =
     module &&
-    (await handleModuleSoftInvalidation(module, ssr, timestamp, server))
+    (await handleModuleSoftInvalidation(module, runtime, timestamp, server))
   if (softInvalidatedTransformResult) {
     debugCache?.(`[memory-hmr] ${prettyUrl}`)
     return softInvalidatedTransformResult
   }
 
   // check if we have a fresh cache
-  const cached =
-    module && (ssr ? module.ssrTransformResult : module.transformResult)
+  const cached = module?.transformResult
   if (cached) {
     debugCache?.(`[memory] ${prettyUrl}`)
     return cached
@@ -229,6 +240,7 @@ async function loadAndTransform(
   const prettyUrl =
     debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
+  const runtime = options.runtime ?? 'browser'
 
   const file = cleanUrl(id)
 
@@ -237,7 +249,7 @@ async function loadAndTransform(
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id, { ssr })
+  const loadResult = await pluginContainer.load(id, { ssr, runtime })
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
     // SPA fallback.
@@ -299,8 +311,9 @@ async function loadAndTransform(
         `should not be imported from source code. It can only be referenced ` +
         `via HTML tags.`
       : `Does the file exist?`
-    const importerMod: ModuleNode | undefined = server.moduleGraph.idToModuleMap
-      .get(id)
+    const importerMod: ModuleNode | undefined = server.moduleGraph
+      .get(runtime)
+      .idToModuleMap.get(id)
       ?.importers.values()
       .next().value
     const importer = importerMod?.file || importerMod?.url
@@ -316,13 +329,16 @@ async function loadAndTransform(
   if (server._restartPromise && !ssr) throwClosedServerError()
 
   // ensure module in graph after successful load
-  mod ??= await moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
+  mod ??= await moduleGraph
+    .get(runtime)
+    ._ensureEntryFromUrl(url, undefined, resolved)
 
   // transform
   const transformStart = debugTransform ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
     ssr,
+    runtime,
   })
   const originalCode = code
   if (
@@ -399,7 +415,7 @@ async function loadAndTransform(
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
   if (timestamp > mod.lastInvalidationTimestamp)
-    moduleGraph.updateModuleTransformResult(mod, result, ssr)
+    moduleGraph.get(runtime).updateModuleTransformResult(mod, result)
 
   return result
 }
@@ -422,20 +438,19 @@ function createConvertSourceMapReadMap(originalFileName: string) {
  */
 async function handleModuleSoftInvalidation(
   mod: ModuleNode,
-  ssr: boolean,
+  runtime: string,
   timestamp: number,
   server: ViteDevServer,
 ) {
-  const transformResult = ssr ? mod.ssrInvalidationState : mod.invalidationState
+  const transformResult = mod.invalidationState
 
   // Reset invalidation state
-  if (ssr) mod.ssrInvalidationState = undefined
-  else mod.invalidationState = undefined
+  mod.invalidationState = undefined
 
   // Skip if not soft-invalidated
   if (!transformResult || transformResult === 'HARD_INVALIDATED') return
 
-  if (ssr ? mod.ssrTransformResult : mod.transformResult) {
+  if (mod.transformResult) {
     throw new Error(
       `Internal server error: Soft-invalidated module "${mod.url}" should not have existing transform result`,
     )
@@ -443,7 +458,7 @@ async function handleModuleSoftInvalidation(
 
   let result: TransformResult
   // For SSR soft-invalidation, no transformation is needed
-  if (ssr) {
+  if (runtime !== 'browser') {
     result = transformResult
   }
   // For client soft-invalidation, we need to transform each imports with new timestamps if available
@@ -467,7 +482,7 @@ async function handleModuleSoftInvalidation(
       const hmrUrl = unwrapId(
         stripBase(removeImportQuery(urlWithoutTimestamp), server.config.base),
       )
-      for (const importedMod of mod.clientImportedModules) {
+      for (const importedMod of mod.importedModules) {
         if (importedMod.url !== hmrUrl) continue
         if (importedMod.lastHMRTimestamp > 0) {
           const replacedUrl = injectQuery(
@@ -481,7 +496,7 @@ async function handleModuleSoftInvalidation(
 
         if (imp.d === -1 && server.config.server.preTransformRequests) {
           // pre-transform known direct imports
-          server.warmupRequest(hmrUrl, { ssr })
+          server.warmupRequest(hmrUrl, { runtime })
         }
 
         break
@@ -501,7 +516,7 @@ async function handleModuleSoftInvalidation(
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
   if (timestamp > mod.lastInvalidationTimestamp)
-    server.moduleGraph.updateModuleTransformResult(mod, result, ssr)
+    server.moduleGraph.get(runtime).updateModuleTransformResult(mod, result)
 
   return result
 }

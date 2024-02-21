@@ -11,6 +11,7 @@ import { FS_PREFIX } from '../constants'
 import type { TransformResult } from './transformRequest'
 
 export class ModuleNode {
+  runtime: string
   /**
    * Public served url path, starts with /
    */
@@ -24,16 +25,24 @@ export class ModuleNode {
   info?: ModuleInfo
   meta?: Record<string, any>
   importers = new Set<ModuleNode>()
-  clientImportedModules = new Set<ModuleNode>()
-  ssrImportedModules = new Set<ModuleNode>()
+
+  importedModules = new Set<ModuleNode>()
+  // clientImportedModules = new Set<ModuleNode>()
+  // ssrImportedModules = new Set<ModuleNode>()
+
   acceptedHmrDeps = new Set<ModuleNode>()
   acceptedHmrExports: Set<string> | null = null
   importedBindings: Map<string, Set<string>> | null = null
   isSelfAccepting?: boolean
   transformResult: TransformResult | null = null
-  ssrTransformResult: TransformResult | null = null
-  ssrModule: Record<string, any> | null = null
-  ssrError: Error | null = null
+
+  // ssrTransformResult: TransformResult | null = null
+  // ssrModule: Record<string, any> | null = null
+  // ssrError: Error | null = null
+
+  module: Record<string, any> | null = null
+  error: Error | null = null
+
   lastHMRTimestamp = 0
   lastInvalidationTimestamp = 0
   /**
@@ -50,7 +59,7 @@ export class ModuleNode {
   /**
    * @internal
    */
-  ssrInvalidationState: TransformResult | 'HARD_INVALIDATED' | undefined
+  // ssrInvalidationState: TransformResult | 'HARD_INVALIDATED' | undefined
   /**
    * The module urls that are statically imported in the code. This information is separated
    * out from `importedModules` as only importers that statically import the module can be
@@ -62,7 +71,8 @@ export class ModuleNode {
   /**
    * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
    */
-  constructor(url: string, setIsSelfAccepting = true) {
+  constructor(url: string, runtime: string, setIsSelfAccepting = true) {
+    this.runtime = runtime
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
     if (setIsSelfAccepting) {
@@ -70,6 +80,7 @@ export class ModuleNode {
     }
   }
 
+  /*
   get importedModules(): Set<ModuleNode> {
     const importedModules = new Set(this.clientImportedModules)
     for (const module of this.ssrImportedModules) {
@@ -77,6 +88,7 @@ export class ModuleNode {
     }
     return importedModules
   }
+  */
 }
 
 export type ResolvedUrl = [
@@ -86,6 +98,8 @@ export type ResolvedUrl = [
 ]
 
 export class ModuleGraph {
+  runtime: string
+
   urlToModuleMap = new Map<string, ModuleNode>()
   idToModuleMap = new Map<string, ModuleNode>()
   etagToModuleMap = new Map<string, ModuleNode>()
@@ -100,33 +114,23 @@ export class ModuleGraph {
     string,
     Promise<ModuleNode> | ModuleNode
   >()
-  /**
-   * @internal
-   */
-  _ssrUnresolvedUrlToModuleMap = new Map<
-    string,
-    Promise<ModuleNode> | ModuleNode
-  >()
 
   constructor(
-    private resolveId: (
-      url: string,
-      ssr: boolean,
-    ) => Promise<PartialResolvedId | null>,
-  ) {}
+    runtime: string,
+    private resolveId: (url: string) => Promise<PartialResolvedId | null>,
+  ) {
+    this.runtime = runtime
+  }
 
-  async getModuleByUrl(
-    rawUrl: string,
-    ssr?: boolean,
-  ): Promise<ModuleNode | undefined> {
+  async getModuleByUrl(rawUrl: string): Promise<ModuleNode | undefined> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    const mod = this._getUnresolvedUrlToModule(rawUrl, ssr)
+    const mod = this._getUnresolvedUrlToModule(rawUrl)
     if (mod) {
       return mod
     }
 
-    const [url] = await this._resolveUrl(rawUrl, ssr)
+    const [url] = await this._resolveUrl(rawUrl)
     return this.urlToModuleMap.get(url)
   }
 
@@ -157,7 +161,7 @@ export class ModuleGraph {
     softInvalidate = false,
   ): void {
     const prevInvalidationState = mod.invalidationState
-    const prevSsrInvalidationState = mod.ssrInvalidationState
+    // const prevSsrInvalidationState = mod.ssrInvalidationState
 
     // Handle soft invalidation before the `seen` check, as consecutive soft/hard invalidations can
     // cause the final soft invalidation state to be different.
@@ -165,19 +169,19 @@ export class ModuleGraph {
     // import timestamps only in `transformRequest`. If there's no previous `transformResult`, hard invalidate it.
     if (softInvalidate) {
       mod.invalidationState ??= mod.transformResult ?? 'HARD_INVALIDATED'
-      mod.ssrInvalidationState ??= mod.ssrTransformResult ?? 'HARD_INVALIDATED'
+      // mod.ssrInvalidationState ??= mod.ssrTransformResult ?? 'HARD_INVALIDATED'
     }
     // If hard invalidated, further soft invalidations have no effect until it's reset to `undefined`
     else {
       mod.invalidationState = 'HARD_INVALIDATED'
-      mod.ssrInvalidationState = 'HARD_INVALIDATED'
+      // mod.ssrInvalidationState = 'HARD_INVALIDATED'
     }
 
     // Skip updating the module if it was already invalidated before and the invalidation state has not changed
     if (
       seen.has(mod) &&
-      prevInvalidationState === mod.invalidationState &&
-      prevSsrInvalidationState === mod.ssrInvalidationState
+      prevInvalidationState === mod.invalidationState
+      // && prevSsrInvalidationState === mod.ssrInvalidationState
     ) {
       return
     }
@@ -197,9 +201,9 @@ export class ModuleGraph {
     if (etag) this.etagToModuleMap.delete(etag)
 
     mod.transformResult = null
-    mod.ssrTransformResult = null
-    mod.ssrModule = null
-    mod.ssrError = null
+    // mod.ssrTransformResult = null
+    mod.module = null
+    mod.error = null
 
     mod.importers.forEach((importer) => {
       if (!importer.acceptedHmrDeps.has(mod)) {
@@ -243,12 +247,11 @@ export class ModuleGraph {
     acceptedModules: Set<string | ModuleNode>,
     acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
-    ssr?: boolean,
     /** @internal */
     staticImportedUrls?: Set<string>,
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
-    const prevImports = ssr ? mod.ssrImportedModules : mod.clientImportedModules
+    const prevImports = mod.importedModules
     let noLongerImported: Set<ModuleNode> | undefined
 
     let resolvePromises = []
@@ -259,7 +262,7 @@ export class ModuleGraph {
       const nextIndex = index++
       if (typeof imported === 'string') {
         resolvePromises.push(
-          this.ensureEntryFromUrl(imported, ssr).then((dep) => {
+          this.ensureEntryFromUrl(imported).then((dep) => {
             dep.importers.add(mod)
             resolveResults[nextIndex] = dep
           }),
@@ -275,18 +278,11 @@ export class ModuleGraph {
     }
 
     const nextImports = new Set(resolveResults)
-    if (ssr) {
-      mod.ssrImportedModules = nextImports
-    } else {
-      mod.clientImportedModules = nextImports
-    }
+    mod.importedModules = nextImports
 
     // remove the importer from deps that were imported but no longer are.
     prevImports.forEach((dep) => {
-      if (
-        !mod.clientImportedModules.has(dep) &&
-        !mod.ssrImportedModules.has(dep)
-      ) {
+      if (!mod.importedModules.has(dep)) {
         dep.importers.delete(mod)
         if (!dep.importers.size) {
           // dependency no longer imported
@@ -303,7 +299,7 @@ export class ModuleGraph {
       const nextIndex = index++
       if (typeof accepted === 'string') {
         resolvePromises.push(
-          this.ensureEntryFromUrl(accepted, ssr).then((dep) => {
+          this.ensureEntryFromUrl(accepted).then((dep) => {
             resolveResults[nextIndex] = dep
           }),
         )
@@ -327,10 +323,9 @@ export class ModuleGraph {
 
   async ensureEntryFromUrl(
     rawUrl: string,
-    ssr?: boolean,
     setIsSelfAccepting = true,
   ): Promise<ModuleNode> {
-    return this._ensureEntryFromUrl(rawUrl, ssr, setIsSelfAccepting)
+    return this._ensureEntryFromUrl(rawUrl, setIsSelfAccepting)
   }
 
   /**
@@ -338,26 +333,21 @@ export class ModuleGraph {
    */
   async _ensureEntryFromUrl(
     rawUrl: string,
-    ssr?: boolean,
     setIsSelfAccepting = true,
     // Optimization, avoid resolving the same url twice if the caller already did it
     resolved?: PartialResolvedId,
   ): Promise<ModuleNode> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
-    let mod = this._getUnresolvedUrlToModule(rawUrl, ssr)
+    let mod = this._getUnresolvedUrlToModule(rawUrl)
     if (mod) {
       return mod
     }
     const modPromise = (async () => {
-      const [url, resolvedId, meta] = await this._resolveUrl(
-        rawUrl,
-        ssr,
-        resolved,
-      )
+      const [url, resolvedId, meta] = await this._resolveUrl(rawUrl, resolved)
       mod = this.idToModuleMap.get(resolvedId)
       if (!mod) {
-        mod = new ModuleNode(url, setIsSelfAccepting)
+        mod = new ModuleNode(url, this.runtime, setIsSelfAccepting)
         if (meta) mod.meta = meta
         this.urlToModuleMap.set(url, mod)
         mod.id = resolvedId
@@ -375,13 +365,13 @@ export class ModuleGraph {
       else if (!this.urlToModuleMap.has(url)) {
         this.urlToModuleMap.set(url, mod)
       }
-      this._setUnresolvedUrlToModule(rawUrl, mod, ssr)
+      this._setUnresolvedUrlToModule(rawUrl, mod)
       return mod
     })()
 
     // Also register the clean url to the module, so that we can short-circuit
     // resolving the same url twice
-    this._setUnresolvedUrlToModule(rawUrl, modPromise, ssr)
+    this._setUnresolvedUrlToModule(rawUrl, modPromise)
     return modPromise
   }
 
@@ -404,7 +394,7 @@ export class ModuleGraph {
       }
     }
 
-    const mod = new ModuleNode(url)
+    const mod = new ModuleNode(url, this.runtime)
     mod.file = file
     fileMappedModules.add(mod)
     return mod
@@ -414,30 +404,26 @@ export class ModuleGraph {
   // 1. remove the HMR timestamp query (?t=xxxx) and the ?import query
   // 2. resolve its extension so that urls with or without extension all map to
   // the same module
-  async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
+  async resolveUrl(url: string): Promise<ResolvedUrl> {
     url = removeImportQuery(removeTimestampQuery(url))
-    const mod = await this._getUnresolvedUrlToModule(url, ssr)
+    const mod = await this._getUnresolvedUrlToModule(url)
     if (mod?.id) {
       return [mod.url, mod.id, mod.meta]
     }
-    return this._resolveUrl(url, ssr)
+    return this._resolveUrl(url)
   }
 
   updateModuleTransformResult(
     mod: ModuleNode,
     result: TransformResult | null,
-    ssr: boolean,
   ): void {
-    if (ssr) {
-      mod.ssrTransformResult = result
-    } else {
+    if (this.runtime === 'browser') {
       const prevEtag = mod.transformResult?.etag
       if (prevEtag) this.etagToModuleMap.delete(prevEtag)
-
-      mod.transformResult = result
-
       if (result?.etag) this.etagToModuleMap.set(result.etag, mod)
     }
+
+    mod.transformResult = result
   }
 
   getModuleByEtag(etag: string): ModuleNode | undefined {
@@ -449,11 +435,8 @@ export class ModuleGraph {
    */
   _getUnresolvedUrlToModule(
     url: string,
-    ssr?: boolean,
   ): Promise<ModuleNode> | ModuleNode | undefined {
-    return (
-      ssr ? this._ssrUnresolvedUrlToModuleMap : this._unresolvedUrlToModuleMap
-    ).get(url)
+    return this._unresolvedUrlToModuleMap.get(url)
   }
   /**
    * @internal
@@ -461,12 +444,8 @@ export class ModuleGraph {
   _setUnresolvedUrlToModule(
     url: string,
     mod: Promise<ModuleNode> | ModuleNode,
-    ssr?: boolean,
   ): void {
-    ;(ssr
-      ? this._ssrUnresolvedUrlToModuleMap
-      : this._unresolvedUrlToModuleMap
-    ).set(url, mod)
+    this._unresolvedUrlToModuleMap.set(url, mod)
   }
 
   /**
@@ -474,10 +453,9 @@ export class ModuleGraph {
    */
   async _resolveUrl(
     url: string,
-    ssr?: boolean,
     alreadyResolved?: PartialResolvedId,
   ): Promise<ResolvedUrl> {
-    const resolved = alreadyResolved ?? (await this.resolveId(url, !!ssr))
+    const resolved = alreadyResolved ?? (await this.resolveId(url))
     const resolvedId = resolved?.id || url
     if (
       url !== resolvedId &&
@@ -493,5 +471,205 @@ export class ModuleGraph {
       }
     }
     return [url, resolvedId, resolved?.meta]
+  }
+}
+
+interface BackwardCompatibleModuleNode extends ModuleNode {
+  clientImportedModules: Set<ModuleNode>
+  ssrImportedModules: Set<ModuleNode>
+  ssrTransformResult: TransformResult | null
+  ssrModule: Record<string, any> | null
+  ssrError: Error | null
+  // TODO: ssrInvalidationState?
+}
+
+export class ModuleGraphs {
+  browser: ModuleGraph
+  server: ModuleGraph
+  runtimes: string[]
+
+  constructor(moduleGraphs: { browser: ModuleGraph; server: ModuleGraph }) {
+    this.browser = moduleGraphs.browser
+    this.server = moduleGraphs.server
+    this.runtimes = Object.keys(moduleGraphs)
+  }
+
+  get(runtime: string): ModuleGraph {
+    // TODO: how to properly type runtime so we can use moduleGraph[runtime]
+    return runtime === 'browser' ? this.browser : this.server
+  }
+
+  /** @deprecated */
+  getModuleById(id: string): ModuleNode | undefined {
+    const browserModule = this.browser.getModuleById(id)
+    const serverModule = this.server.getModuleById(id)
+    return this._getBackwardCompatibleModuleNode(browserModule, serverModule)
+  }
+
+  /** @deprecated */
+  async getModuleByUrl(
+    url: string,
+    ssr?: boolean,
+  ): Promise<ModuleNode | undefined> {
+    // In the mixed graph, the ssr flag was used to resolve the id.
+    // TODO: check if it is more compatible to only get the module from the browser
+    // or server depending on the ssr flag. For now, querying for both modules
+    // seems to me closer to what we did before.
+    const [browserModule, serverModule] = await Promise.all([
+      this.browser.getModuleByUrl(url),
+      this.server.getModuleByUrl(url),
+    ])
+    return this._getBackwardCompatibleModuleNode(browserModule, serverModule)
+  }
+
+  /** @deprecated */
+  getModulesByFile(file: string): Set<ModuleNode> | undefined {
+    // Until Vite 5.1.x, the moduleGraph contained modules from both the browser and server
+    // We maintain backwards compatibility by returning a Set of module proxies assuming
+    // that the modules for a certain file are the same in both the browser and server
+    const browserModules = this.browser.getModulesByFile(file)
+    if (browserModules) {
+      return new Set(
+        [...browserModules].map((module) => this.getModuleById(module.id!)!),
+      )
+    }
+    const serverModules = this.server.getModulesByFile(file)
+    if (serverModules) {
+      return new Set(
+        [...serverModules].map((module) => this.getModuleById(module.id!)!),
+      )
+    }
+    return undefined
+  }
+
+  /** @deprecated */
+  onFileChange(file: string): void {
+    this.browser.onFileChange(file)
+    this.server.onFileChange(file)
+  }
+
+  /** @deprecated */
+  invalidateModule(
+    mod: ModuleNode,
+    seen: Set<ModuleNode> = new Set(),
+    timestamp: number = Date.now(),
+    isHmr: boolean = false,
+    /** @internal */
+    softInvalidate = false,
+  ): void {
+    this.get(mod.runtime).invalidateModule(
+      mod,
+      seen,
+      timestamp,
+      isHmr,
+      softInvalidate,
+    )
+  }
+
+  /** @deprecated */
+  invalidateAll(): void {
+    this.browser.invalidateAll()
+    this.server.invalidateAll()
+  }
+
+  /** @deprecated */
+  async updateModuleInfo(
+    mod: ModuleNode,
+    importedModules: Set<string | ModuleNode>,
+    importedBindings: Map<string, Set<string>> | null,
+    acceptedModules: Set<string | ModuleNode>,
+    acceptedExports: Set<string> | null,
+    isSelfAccepting: boolean,
+    ssr?: boolean,
+    /** @internal */
+    staticImportedUrls?: Set<string>,
+  ): Promise<Set<ModuleNode> | undefined> {
+    // TODO: return backward compatible module nodes?
+    return (ssr ? this.server : this.browser).updateModuleInfo(
+      mod,
+      importedModules,
+      importedBindings,
+      acceptedModules,
+      acceptedExports,
+      isSelfAccepting,
+      staticImportedUrls,
+    )
+  }
+
+  /** @deprecated */
+  async ensureEntryFromUrl(
+    rawUrl: string,
+    ssr?: boolean,
+    setIsSelfAccepting = true,
+  ): Promise<ModuleNode> {
+    // TODO: should we only ensure the entry on the browser or server depending on the ssr flag?
+    const [browserModule, serverModule] = await Promise.all([
+      this.browser.ensureEntryFromUrl(rawUrl, setIsSelfAccepting),
+      this.server.ensureEntryFromUrl(rawUrl, setIsSelfAccepting),
+    ])
+    return this._getBackwardCompatibleModuleNode(browserModule, serverModule)!
+  }
+
+  /** @deprecated */
+  createFileOnlyEntry(file: string): ModuleNode {
+    const browserModule = this.browser.createFileOnlyEntry(file)
+    const serverModule = this.browser.createFileOnlyEntry(file)
+    return this._getBackwardCompatibleModuleNode(browserModule, serverModule)!
+  }
+
+  /** @deprecated */
+  async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
+    return ssr ? this.server.resolveUrl(url) : this.browser.resolveUrl(url)
+  }
+
+  /** @deprecated */
+  updateModuleTransformResult(
+    mod: ModuleNode,
+    result: TransformResult | null,
+    ssr: boolean,
+  ): void {
+    this.get(mod.runtime).updateModuleTransformResult(mod, result)
+  }
+
+  /** @deprecated */
+  getModuleByEtag(etag: string): ModuleNode | undefined {
+    const mod = this.browser.etagToModuleMap.get(etag)
+    if (!mod) {
+      return
+    }
+    return this._getBackwardCompatibleModuleNode(
+      mod,
+      this.server.getModuleById(mod.id!),
+    )
+  }
+
+  /** @internal */
+  _getBackwardCompatibleModuleNode(
+    browserModule?: ModuleNode,
+    serverModule?: ModuleNode,
+  ): ModuleNode | undefined {
+    return browserModule || serverModule
+      ? new Proxy((browserModule || serverModule)!, {
+          get(_, prop: keyof BackwardCompatibleModuleNode) {
+            if (prop === 'clientImportedModules') {
+              return browserModule?.importedModules
+            } else if (prop === 'ssrImportedModules') {
+              return serverModule?.importedModules
+            } else if (prop === 'importedModules') {
+              return new Set([
+                ...(browserModule?.importedModules || []),
+                ...(serverModule?.importedModules || []),
+              ])
+            } else if (prop === 'ssrTransformResult') {
+              return serverModule?.transformResult
+            } else if (prop === 'ssrModule') {
+              return serverModule?.module
+            } else if (prop === 'ssrError') {
+              return serverModule?.error
+            }
+            return browserModule?.[prop] ?? serverModule?.[prop]
+          },
+        })
+      : undefined
   }
 }

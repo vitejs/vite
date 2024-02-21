@@ -215,7 +215,7 @@ export function isFileServingAllowed(
 
   if (server._fsDenyGlob(file)) return false
 
-  if (server.moduleGraph.safeModulesPath.has(file)) return true
+  if (server.moduleGraph.browser.safeModulesPath.has(file)) return true // TODO: safeModulePaths shouldn't be part of a moduleGraph
 
   if (
     server.config.server.fs.allow.some(

@@ -212,6 +212,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const ssr = options?.ssr === true
+      const runtime = options?.runtime ?? 'browser'
 
       if (canSkipImportAnalysis(importer)) {
         debug?.(colors.dim(`[skipped] ${prettifyUrl(importer, root)}`))
@@ -239,7 +240,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const { moduleGraph } = server
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
-      const importerModule = moduleGraph.getModuleById(importer)!
+      const importerModule = moduleGraph.get(runtime).getModuleById(importer)
       if (!importerModule) {
         // This request is no longer valid. It could happen for optimized deps
         // requests. A full reload is going to request this id again.
@@ -376,12 +377,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           try {
             // delay setting `isSelfAccepting` until the file is actually used (#7870)
             // We use an internal function to avoid resolving the url again
-            const depModule = await moduleGraph._ensureEntryFromUrl(
-              unwrapId(url),
-              ssr,
-              canSkipImportAnalysis(url) || forceSkipImportAnalysis,
-              resolved,
-            )
+            const depModule = await moduleGraph
+              .get(runtime)
+              ._ensureEntryFromUrl(
+                unwrapId(url),
+                canSkipImportAnalysis(url) || forceSkipImportAnalysis,
+                resolved,
+              )
             if (depModule.lastHMRTimestamp > 0) {
               url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
             }
@@ -523,7 +525,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // record as safe modules
             // safeModulesPath should not include the base prefix.
             // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
-            server?.moduleGraph.safeModulesPath.add(
+            server?.moduleGraph.browser.safeModulesPath.add(
               fsPathFromUrl(stripBase(url, base)),
             )
 
@@ -725,10 +727,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
-        const [normalized] = await moduleGraph.resolveUrl(
-          toAbsoluteUrl(url),
-          ssr,
-        )
+        const [normalized] = await moduleGraph
+          .get(runtime)
+          .resolveUrl(toAbsoluteUrl(url))
         normalizedAcceptedUrls.add(normalized)
         str().overwrite(start, end, JSON.stringify(normalized), {
           contentOnly: true,
@@ -766,16 +767,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         ) {
           isSelfAccepting = true
         }
-        const prunedImports = await moduleGraph.updateModuleInfo(
-          importerModule,
-          importedUrls,
-          importedBindings,
-          normalizedAcceptedUrls,
-          isPartiallySelfAccepting ? acceptedExports : null,
-          isSelfAccepting,
-          ssr,
-          staticImportedUrls,
-        )
+        const prunedImports = await moduleGraph
+          .get(runtime)
+          .updateModuleInfo(
+            importerModule,
+            importedUrls,
+            importedBindings,
+            normalizedAcceptedUrls,
+            isPartiallySelfAccepting ? acceptedExports : null,
+            isSelfAccepting,
+            staticImportedUrls,
+          )
         if (hasHMR && prunedImports) {
           handlePrunedModules(prunedImports, server)
         }

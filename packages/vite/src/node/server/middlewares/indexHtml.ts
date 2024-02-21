@@ -129,7 +129,7 @@ const processNodeUrl = (
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
     if (server?.moduleGraph) {
-      const mod = server.moduleGraph.urlToModuleMap.get(url)
+      const mod = server.moduleGraph.browser.urlToModuleMap.get(url)
       if (mod && mod.lastHMRTimestamp > 0) {
         url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
@@ -240,9 +240,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
 
     // invalidate the module so the newly cached contents will be served
-    const module = server?.moduleGraph.getModuleById(modulePath)
+    const module = server?.moduleGraph.browser.getModuleById(modulePath)
     if (module) {
-      server?.moduleGraph.invalidateModule(module)
+      server?.moduleGraph.browser.invalidateModule(module)
     }
     s.update(
       node.sourceCodeLocation!.startOffset,
@@ -348,7 +348,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
       // ensure module in graph after successful load
-      const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+      const mod = await moduleGraph.browser.ensureEntryFromUrl(url, false)
       ensureWatchedFile(watcher, mod.file, config.root)
 
       const result = await server!.pluginContainer.transform(code, mod.id!)
@@ -373,7 +373,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       // will transform with css plugin and cache result with css-post plugin
       const url = `${proxyModulePath}?html-proxy&inline-css&style-attr&index=${index}.css`
 
-      const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+      const mod = await moduleGraph.browser.ensureEntryFromUrl(url, false)
       ensureWatchedFile(watcher, mod.file, config.root)
 
       await server?.pluginContainer.transform(code, mod.id!)

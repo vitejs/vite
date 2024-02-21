@@ -222,7 +222,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(raw, id) {
+    async transform(raw, id, options) {
       const workerFileMatch = workerFileRE.exec(id)
       if (workerFileMatch) {
         // if import worker by worker constructor will have query.type
@@ -245,7 +245,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             // dynamic worker type we can't know how import the env
             // so we copy /@vite/env code of server transform result into file header
             const { moduleGraph } = server
-            const module = moduleGraph.getModuleById(ENV_ENTRY)
+            const runtime = options?.runtime ?? 'browser'
+            const module = moduleGraph.get(runtime).getModuleById(ENV_ENTRY)
             injectEnv = module?.transformResult?.code || ''
           }
         }

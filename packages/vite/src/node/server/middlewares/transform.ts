@@ -55,7 +55,8 @@ export function cachedTransformMiddleware(
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
     if (ifNoneMatch) {
-      const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch)
+      const moduleByEtag =
+        server.moduleGraph.browser.getModuleByEtag(ifNoneMatch)
       if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
         // For CSS requests, if the same CSS file is imported in a module,
         // the browser sends the request for the direct CSS request with the etag
@@ -146,7 +147,7 @@ export function transformMiddleware(
         } else {
           const originalUrl = url.replace(/\.map($|\?)/, '$1')
           const map = (
-            await server.moduleGraph.getModuleByUrl(originalUrl, false)
+            await server.moduleGraph.browser.getModuleByUrl(originalUrl)
           )?.transformResult?.map
           if (map) {
             return send(req, res, JSON.stringify(map), 'json', {
@@ -189,7 +190,7 @@ export function transformMiddleware(
           const ifNoneMatch = req.headers['if-none-match']
           if (
             ifNoneMatch &&
-            (await server.moduleGraph.getModuleByUrl(url, false))
+            (await server.moduleGraph.browser.getModuleByUrl(url))
               ?.transformResult?.etag === ifNoneMatch
           ) {
             debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)

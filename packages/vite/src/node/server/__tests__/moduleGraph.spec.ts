@@ -3,20 +3,22 @@ import { ModuleGraph } from '../moduleGraph'
 
 describe('moduleGraph', () => {
   describe('invalidateModule', () => {
-    it('removes an ssrError', async () => {
-      const moduleGraph = new ModuleGraph(async (url) => ({ id: url }))
+    it('removes an ssr error', async () => {
+      const moduleGraph = new ModuleGraph('browser', async (url) => ({
+        id: url,
+      }))
       const entryUrl = '/x.js'
 
       const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
-      entryModule.ssrError = new Error(`unable to execute module`)
+      entryModule.error = new Error(`unable to execute module`)
 
-      expect(entryModule.ssrError).to.be.a('error')
+      expect(entryModule.error).to.be.a('error')
       moduleGraph.invalidateModule(entryModule)
-      expect(entryModule.ssrError).toBe(null)
+      expect(entryModule.error).toBe(null)
     })
 
     it('ensureEntryFromUrl should based on resolvedId', async () => {
-      const moduleGraph = new ModuleGraph(async (url) => {
+      const moduleGraph = new ModuleGraph('browser', async (url) => {
         if (url === '/xx.js') {
           return { id: '/x.js' }
         } else {

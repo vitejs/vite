@@ -942,9 +942,9 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const ssr = options?.ssr === true
+      const runtime = options?.runtime ?? 'browser'
       const { moduleGraph } = server
-      const thisModule = moduleGraph.getModuleById(id)
+      const thisModule = moduleGraph.get(runtime).getModuleById(id)
 
       // Handle CSS @import dependency HMR and other added modules via this.addWatchFile.
       // JS-related HMR is handled in the import-analysis plugin.
@@ -966,17 +966,18 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           for (const file of pluginImports) {
             depModules.add(
               isCSSRequest(file)
-                ? moduleGraph.createFileOnlyEntry(file)
-                : await moduleGraph.ensureEntryFromUrl(
-                    stripBase(
-                      await fileToUrl(file, config, this),
-                      (config.server?.origin ?? '') + devBase,
+                ? moduleGraph.get(runtime).createFileOnlyEntry(file)
+                : await moduleGraph
+                    .get(runtime)
+                    .ensureEntryFromUrl(
+                      stripBase(
+                        await fileToUrl(file, config, this),
+                        (config.server?.origin ?? '') + devBase,
+                      ),
                     ),
-                    ssr,
-                  ),
             )
           }
-          moduleGraph.updateModuleInfo(
+          moduleGraph.get(runtime).updateModuleInfo(
             thisModule,
             depModules,
             null,
@@ -985,7 +986,6 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
             new Set(),
             null,
             isSelfAccepting,
-            ssr,
           )
         } else {
           thisModule.isSelfAccepting = isSelfAccepting

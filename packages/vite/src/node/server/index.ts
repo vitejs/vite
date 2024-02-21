@@ -72,7 +72,7 @@ import {
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
 import type { ModuleNode } from './moduleGraph'
-import { ModuleGraph } from './moduleGraph'
+import { ModuleGraph, ModuleGraphs } from './moduleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HMRBroadcaster, HmrOptions } from './hmr'
@@ -253,7 +253,7 @@ export interface ViteDevServer {
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
    */
-  moduleGraph: ModuleGraph
+  moduleGraph: ModuleGraphs
   /**
    * The resolved urls Vite prints on the CLI. null in middleware mode or
    * before `server.listen` is called.
@@ -349,7 +349,10 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
+  _importGlobMap: Map<
+    string,
+    { runtime: string; globs: { affirmed: string[]; negated: string[] }[] }
+  >
   /**
    * @internal
    */
@@ -446,9 +449,14 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
-  const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
-    container.resolveId(url, undefined, { ssr }),
-  )
+  const moduleGraph = new ModuleGraphs({
+    browser: new ModuleGraph('browser', (url) =>
+      container.resolveId(url, undefined, { ssr: false, runtime: 'browser' }),
+    ),
+    server: new ModuleGraph('server', (url) =>
+      container.resolveId(url, undefined, { ssr: true, runtime: 'server' }),
+    ),
+  })
 
   const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
@@ -510,10 +518,10 @@ export async function _createServer(
       return ssrFetchModule(server, url, importer)
     },
     ssrFixStacktrace(e) {
-      ssrFixStacktrace(e, moduleGraph)
+      ssrFixStacktrace(e, moduleGraph.server)
     },
     ssrRewriteStacktrace(stack: string) {
-      return ssrRewriteStacktrace(stack, moduleGraph)
+      return ssrRewriteStacktrace(stack, moduleGraph.server)
     },
     async reloadModule(module) {
       if (serverConfig.hmr !== false && module.file) {
@@ -703,12 +711,13 @@ export async function _createServer(
         const path = file.slice(publicDir.length)
         publicFiles[isUnlink ? 'delete' : 'add'](path)
         if (!isUnlink) {
-          const moduleWithSamePath = await moduleGraph.getModuleByUrl(path)
+          const moduleWithSamePath =
+            await moduleGraph.browser.getModuleByUrl(path)
           const etag = moduleWithSamePath?.transformResult?.etag
           if (etag) {
             // The public file should win on the next request over a module with the
             // same path. Prevent the transform etag fast path from serving the module
-            moduleGraph.etagToModuleMap.delete(etag)
+            moduleGraph.browser.etagToModuleMap.delete(etag)
           }
         }
       }
@@ -721,7 +730,9 @@ export async function _createServer(
     file = normalizePath(file)
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
-    moduleGraph.onFileChange(file)
+    moduleGraph.runtimes.forEach((runtime) =>
+      moduleGraph.get(runtime).onFileChange(file),
+    )
     await onHMRUpdate(file, false)
   })
 
@@ -734,13 +745,17 @@ export async function _createServer(
     onFileAddUnlink(file, true)
   })
 
-  hot.on('vite:invalidate', async ({ path, message }) => {
-    const mod = moduleGraph.urlToModuleMap.get(path)
+  function invalidateModule(m: {
+    path: string
+    message?: string
+    runtime: string
+  }) {
+    const mod = moduleGraph.get(m.runtime).urlToModuleMap.get(m.path)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
       config.logger.info(
         colors.yellow(`hmr invalidate `) +
-          colors.dim(path) +
-          (message ? ` ${message}` : ''),
+          colors.dim(m.path) +
+          (m.message ? ` ${m.message}` : ''),
         { timestamp: true },
       )
       const file = getShortName(mod.file!, config.root)
@@ -751,6 +766,16 @@ export async function _createServer(
         server,
         true,
       )
+    }
+  }
+
+  hot.on('vite:invalidate', async ({ path, message, runtime }) => {
+    if (runtime) {
+      invalidateModule({ path, message, runtime })
+    } else {
+      moduleGraph.runtimes.forEach((runtime) => {
+        invalidateModule({ path, message, runtime })
+      })
     }
   })
 

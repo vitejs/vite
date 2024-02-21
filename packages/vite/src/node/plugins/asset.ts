@@ -30,7 +30,7 @@ import {
   withTrailingSlash,
 } from '../utils'
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
-import type { ModuleGraph } from '../server/moduleGraph'
+import type { ModuleGraphs } from '../server/moduleGraph'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
@@ -142,7 +142,7 @@ const viteBuildPublicIdPrefix = '\0vite:asset:public'
 export function assetPlugin(config: ResolvedConfig): Plugin {
   registerCustomMime()
 
-  let moduleGraph: ModuleGraph | undefined
+  let moduleGraph: ModuleGraphs | undefined
 
   return {
     name: 'vite:asset',
@@ -170,7 +170,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async load(id) {
+    async load(id, options) {
       if (id.startsWith(viteBuildPublicIdPrefix)) {
         id = id.slice(viteBuildPublicIdPrefix.length)
       }
@@ -200,7 +200,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       // Inherit HMR timestamp if this asset was invalidated
       if (moduleGraph) {
-        const mod = moduleGraph.getModuleById(id)
+        const runtime = options?.runtime ?? 'browser'
+        const mod = moduleGraph.get(runtime).getModuleById(id)
         if (mod && mod.lastHMRTimestamp > 0) {
           url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
         }
