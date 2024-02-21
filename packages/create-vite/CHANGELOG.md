@@ -1,3 +1,14 @@
+## <small>5.2.1 (2024-02-21)</small>
+
+* fix(create-vite): remove tsc command from qwik template (#15982) ([5e05f10](https://github.com/vitejs/vite/commit/5e05f10)), closes [#15982](https://github.com/vitejs/vite/issues/15982)
+* fix(deps): update all non-major dependencies (#15959) ([571a3fd](https://github.com/vitejs/vite/commit/571a3fd)), closes [#15959](https://github.com/vitejs/vite/issues/15959)
+* fix(qwik template): change preview script (#15975) ([725589a](https://github.com/vitejs/vite/commit/725589a)), closes [#15975](https://github.com/vitejs/vite/issues/15975)
+* feat(create-vite): add custom remix option for React (#15995) ([f3b195c](https://github.com/vitejs/vite/commit/f3b195c)), closes [#15995](https://github.com/vitejs/vite/issues/15995)
+* chore(deps): update all non-major dependencies (#15874) ([d16ce5d](https://github.com/vitejs/vite/commit/d16ce5d)), closes [#15874](https://github.com/vitejs/vite/issues/15874)
+* chore(deps): update typescript-eslint monorepo to v7 (major) (#15960) ([7b9e927](https://github.com/vitejs/vite/commit/7b9e927)), closes [#15960](https://github.com/vitejs/vite/issues/15960)
+
+
+
 ## 5.2.0 (2024-02-08)
 
 * fix(create-vite): turn off `react/jsx-no-target-blank` ESLint rule in React JS template (#15672) ([a6f39e8](https://github.com/vitejs/vite/commit/a6f39e8)), closes [#15672](https://github.com/vitejs/vite/issues/15672)
