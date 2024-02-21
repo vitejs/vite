@@ -12,8 +12,16 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(name) {
-          if (name.includes('after-preload-dynamic')) {
+          if (name.endsWith('after-preload-dynamic.js')) {
             return 'after-preload-dynamic'
+          }
+          if (name.endsWith('after-preload-dynamic-hashbang.js')) {
+            return 'after-preload-dynamic-hashbang'
+          }
+        },
+        banner(chunk) {
+          if (chunk.name.endsWith('after-preload-dynamic-hashbang')) {
+            return '#!/usr/bin/env node'
           }
         },
       },

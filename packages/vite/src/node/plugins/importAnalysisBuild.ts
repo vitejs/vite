@@ -41,12 +41,6 @@ const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`, 'g')
 
 const dynamicImportPrefixRE = /import\s*\(/
 
-// modified convert-source-map's `mapFileCommentRegex` to match only at the last line
-// https://github.com/thlorenz/convert-source-map/blob/1afbeee2f2a42a3747c31dfcfc355387afdf42e2/index.js#L14
-const lastMapFileCommentRegex =
-  // eslint-disable-next-line regexp/no-super-linear-backtracking
-  /\/\/[@#][ \t]+sourceMappingURL=([^\s'"`]+)\n$|\/\*[@#][ \t]+sourceMappingURL=([^*]+?)[ \t]*\*\/\n$/
-
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
   return relPath[0] === '.' ? relPath : `./${relPath}`
@@ -513,13 +507,11 @@ function __vite__mapDeps(indexes) {
   return indexes.map((i) => __vite__mapDeps.viteFileDeps[i])
 }\n`
 
-          // inject extra code before the last sourcemap comment
-          const mapFileCommentMatch =
-            config.build.sourcemap && lastMapFileCommentRegex.exec(code)
-          if (mapFileCommentMatch) {
-            s.appendRight(mapFileCommentMatch.index, mapDepsCode)
+          // inject extra code at the top or next line of hashbang
+          if (code.startsWith('#!')) {
+            s.prependLeft(code.indexOf('\n') + 1, mapDepsCode)
           } else {
-            s.append(mapDepsCode)
+            s.prepend(mapDepsCode)
           }
 
           // there may still be markers due to inlined dynamic imports, remove
