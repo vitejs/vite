@@ -123,11 +123,17 @@ export class ModuleGraph {
     Promise<ModuleNode> | ModuleNode
   >()
 
+  /**
+   * @internal
+   */
+  _resolveId: (url: string) => Promise<PartialResolvedId | null>
+
   constructor(
     runtime: string,
-    private _resolveId: (url: string) => Promise<PartialResolvedId | null>,
+    resolveId: (url: string) => Promise<PartialResolvedId | null>,
   ) {
     this.runtime = runtime
+    this._resolveId = resolveId
   }
 
   async getModuleByUrl(rawUrl: string): Promise<ModuleNode | undefined> {
