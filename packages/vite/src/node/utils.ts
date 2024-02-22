@@ -295,7 +295,7 @@ export function isSameFileUri(file1: string, file2: string): boolean {
 
 export const queryRE = /\?.*$/s
 
-const postfixRE = /[?#].*$/s
+const postfixRE = /[?#].*$/
 export function cleanUrl(url: string): string {
   return url.replace(postfixRE, '')
 }
@@ -767,7 +767,9 @@ interface ImageCandidate {
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
 function joinSrcset(ret: ImageCandidate[]) {
-  return ret.map(({ url, descriptor }) => `${url} ${descriptor}`).join(', ')
+  return ret
+    .map(({ url, descriptor }) => url + (descriptor ? ` ${descriptor}` : ''))
+    .join(', ')
 }
 
 function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
