@@ -125,7 +125,7 @@ export class ModuleGraph {
 
   constructor(
     runtime: string,
-    private resolveId: (url: string) => Promise<PartialResolvedId | null>,
+    private _resolveId: (url: string) => Promise<PartialResolvedId | null>,
   ) {
     this.runtime = runtime
   }
@@ -463,7 +463,7 @@ export class ModuleGraph {
     url: string,
     alreadyResolved?: PartialResolvedId,
   ): Promise<ResolvedUrl> {
-    const resolved = alreadyResolved ?? (await this.resolveId(url))
+    const resolved = alreadyResolved ?? (await this._resolveId(url))
     const resolvedId = resolved?.id || url
     if (
       url !== resolvedId &&
@@ -667,14 +667,7 @@ export class ModuleGraphs {
     return this.browser.safeModulesPath
   }
 
-  constructor(
-    moduleGraphs: { browser: ModuleGraph; server: ModuleGraph },
-    private resolveId: (
-      url: string,
-    ) => Promise<PartialResolvedId | null> = async (url) => null,
-  ) {
-    this.resolveId('')
-
+  constructor(moduleGraphs: { browser: ModuleGraph; server: ModuleGraph }) {
     this.browser = moduleGraphs.browser
     this.server = moduleGraphs.server
     this.runtimes = Object.keys(moduleGraphs)
