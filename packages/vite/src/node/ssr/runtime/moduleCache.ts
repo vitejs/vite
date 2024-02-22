@@ -68,10 +68,10 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
   invalidate(id: string): void {
     const module = this.get(id)
     module.evaluated = false
-    delete module.meta
-    delete module.map
-    delete module.promise
-    delete module.exports
+    module.meta = undefined
+    module.map = undefined
+    module.promise = undefined
+    module.exports = undefined
     // remove imports in case they are changed,
     // don't remove the importers because otherwise it will be empty after evaluation
     // this can create a bug when file was removed but it still triggers full-reload
