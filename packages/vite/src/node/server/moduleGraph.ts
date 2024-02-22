@@ -638,6 +638,9 @@ function createBackwardCompatibleFileToModulesMap(
 }
 
 export class ModuleGraphs {
+  // Added so ModuleGraphs is a ModuleGraph
+  runtime = 'mixed'
+
   browser: ModuleGraph
   server: ModuleGraph
   runtimes: string[]
@@ -652,7 +655,14 @@ export class ModuleGraphs {
     return this.browser.safeModulesPath
   }
 
-  constructor(moduleGraphs: { browser: ModuleGraph; server: ModuleGraph }) {
+  constructor(
+    moduleGraphs: { browser: ModuleGraph; server: ModuleGraph },
+    private resolveId: (
+      url: string,
+    ) => Promise<PartialResolvedId | null> = async (url) => null,
+  ) {
+    this.resolveId('')
+
     this.browser = moduleGraphs.browser
     this.server = moduleGraphs.server
     this.runtimes = Object.keys(moduleGraphs)
@@ -715,13 +725,21 @@ export class ModuleGraphs {
     const browserModules = this.browser.getModulesByFile(file)
     if (browserModules) {
       return new Set(
-        [...browserModules].map((module) => this.getModuleById(module.id!)!),
+        [...browserModules].map(
+          (module) =>
+            getBackwardCompatibleModuleNode(
+              module,
+              module.id ? this.server.getModuleById(module.id) : undefined,
+            )!,
+        ),
       )
     }
     const serverModules = this.server.getModulesByFile(file)
     if (serverModules) {
       return new Set(
-        [...serverModules].map((module) => this.getModuleById(module.id!)!),
+        [...serverModules].map(
+          (module) => getBackwardCompatibleModuleNode(undefined, module)!,
+        ),
       )
     }
     return undefined
@@ -770,7 +788,7 @@ export class ModuleGraphs {
     staticImportedUrls?: Set<string>,
   ): Promise<Set<ModuleNode> | undefined> {
     // TODO: return backward compatible module nodes?
-    return (ssr ? this.server : this.browser).updateModuleInfo(
+    const modules = await (ssr ? this.server : this.browser).updateModuleInfo(
       mod,
       importedModules,
       importedBindings,
@@ -779,6 +797,21 @@ export class ModuleGraphs {
       isSelfAccepting,
       staticImportedUrls,
     )
+    return modules
+      ? new Set(
+          [...modules].map((module) =>
+            ssr
+              ? getBackwardCompatibleModuleNode(
+                  module.id ? this.server.getModuleById(module.id) : undefined,
+                  module,
+                )!
+              : getBackwardCompatibleModuleNode(
+                  module,
+                  module.id ? this.server.getModuleById(module.id) : undefined,
+                )!,
+          ),
+        )
+      : undefined
   }
 
   /** @deprecated */
