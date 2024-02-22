@@ -24,3 +24,19 @@ it('loadConfigFromFile', async () => {
     }
   `)
 })
+
+it('tea.yaml matches expected content', () => {
+  const filePath = resolve(__dirname, '../../../tea.yaml')
+  const yamlContents = fs.readFileSync(filePath, 'utf8')
+
+  const expectedYaml = `# https://tea.xyz/what-is-this-file
+---
+version: 1.0.0
+codeOwners:
+  - '0x2F9CbfcE3197F881D2b6F8abF46cdbeB6eFf88A3'
+quorum: 1
+`
+
+  // Assert that the actual YAML contents match the expected YAML text
+  expect(yamlContents).toEqual(expectedYaml)
+})
