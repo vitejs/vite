@@ -65,6 +65,57 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     return this.deleteByModuleId(this.normalize(fsPath))
   }
 
+  invalidate(id: string): void {
+    const module = this.get(id)
+    module.evaluated = false
+    module.meta = undefined
+    module.map = undefined
+    module.promise = undefined
+    module.exports = undefined
+    // remove imports in case they are changed,
+    // don't remove the importers because otherwise it will be empty after evaluation
+    // this can create a bug when file was removed but it still triggers full-reload
+    // we are fine with the bug for now because it's not a common case
+    module.imports?.clear()
+  }
+
+  isImported(
+    {
+      importedId,
+      importedBy,
+    }: {
+      importedId: string
+      importedBy: string
+    },
+    seen = new Set<string>(),
+  ): boolean {
+    importedId = this.normalize(importedId)
+    importedBy = this.normalize(importedBy)
+
+    if (importedBy === importedId) return true
+
+    if (seen.has(importedId)) return false
+    seen.add(importedId)
+
+    const fileModule = this.getByModuleId(importedId)
+    const importers = fileModule?.importers
+
+    if (!importers) return false
+
+    if (importers.has(importedBy)) return true
+
+    for (const importer of importers) {
+      if (
+        this.isImported({
+          importedBy: importedBy,
+          importedId: importer,
+        })
+      )
+        return true
+    }
+    return false
+  }
+
   /**
    * Invalidate modules that dependent on the given modules, up to the main entry
    */

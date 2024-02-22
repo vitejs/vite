@@ -36,6 +36,8 @@ export interface PrunePayload {
 export interface FullReloadPayload {
   type: 'full-reload'
   path?: string
+  /** @internal */
+  triggeredBy?: string
 }
 
 export interface CustomPayload {
