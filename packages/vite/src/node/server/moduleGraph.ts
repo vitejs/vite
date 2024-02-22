@@ -541,6 +541,9 @@ function createBackwardCompatibleModuleMap(
   prop: 'urlToModuleMap' | 'idToModuleMap' | 'etagToModuleMap',
 ): Map<string, ModuleNode> {
   return {
+    [Symbol.iterator](): IterableIterator<[string, ModuleNode]> {
+      return this.entries()
+    },
     get(key: string) {
       const browserModule = browser[prop].get(key)
       const serverModule = server[prop].get(key)
@@ -613,6 +616,9 @@ function createBackwardCompatibleFileToModulesMap(
   ): Set<ModuleNode> | undefined =>
     browserModules ? mapBrowserModules(browserModules) : undefined
   return {
+    [Symbol.iterator](): IterableIterator<[string, Set<ModuleNode>]> {
+      return this.entries()
+    },
     get(key: string) {
       return mapMaybeBrowserModules(browser.fileToModulesMap.get(key))
     },
