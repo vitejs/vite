@@ -27,18 +27,12 @@ export class ModuleNode {
   importers = new Set<ModuleNode>()
 
   importedModules = new Set<ModuleNode>()
-  // clientImportedModules = new Set<ModuleNode>()
-  // ssrImportedModules = new Set<ModuleNode>()
 
   acceptedHmrDeps = new Set<ModuleNode>()
   acceptedHmrExports: Set<string> | null = null
   importedBindings: Map<string, Set<string>> | null = null
   isSelfAccepting?: boolean
   transformResult: TransformResult | null = null
-
-  // ssrTransformResult: TransformResult | null = null
-  // ssrModule: Record<string, any> | null = null
-  // ssrError: Error | null = null
 
   module: Record<string, any> | null = null
   error: Error | null = null
@@ -80,15 +74,27 @@ export class ModuleNode {
     }
   }
 
-  /*
-  get importedModules(): Set<ModuleNode> {
-    const importedModules = new Set(this.clientImportedModules)
-    for (const module of this.ssrImportedModules) {
-      importedModules.add(module)
-    }
-    return importedModules
+  // Backward compatibility
+  /** @deprecated */
+  get ssrTransformResult(): TransformResult | null {
+    return this.runtime === 'server' ? this.transformResult : null
   }
-  */
+  /** @deprecated */
+  get ssrModule(): Record<string, any> | null {
+    return this.module
+  }
+  /** @deprecated */
+  get ssrError(): Error | null {
+    return this.error
+  }
+  /** @deprecated */
+  get clientImportedModules(): Set<ModuleNode> {
+    return this.runtime === 'browser' ? this.importedModules : new Set()
+  }
+  /** @deprecated */
+  get ssrImportedModules(): Set<ModuleNode> {
+    return this.runtime === 'server' ? this.importedModules : new Set()
+  }
 }
 
 export type ResolvedUrl = [
