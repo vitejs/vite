@@ -913,8 +913,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         })
       }
 
-      function extractCss() {
-        let css = ''
+      async function extractCss() {
         const collected = new Set<OutputChunk>()
         const prelimaryNameToChunkMap = new Map(
           Object.values(bundle)
@@ -928,23 +927,31 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           collected.add(chunk)
 
           chunk.imports.forEach(collect)
-          css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          return chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
         }
 
-        for (const chunkName of chunkCSSMap.keys())
-          collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
+        const collectPromises: Promise<string | undefined>[] = []
 
-        return css
+        for (const chunkName of chunkCSSMap.keys()) {
+          const filename = prelimaryNameToChunkMap.get(chunkName)?.fileName
+          const css = collect(filename ?? '')
+          if (css) {
+            collectPromises.push(finalizeCss(css, true, config, filename))
+          }
+        }
+
+        return (await Promise.all(collectPromises)).join('')
       }
-      let extractedCss = !hasEmitted && extractCss()
-      if (extractedCss) {
-        hasEmitted = true
-        extractedCss = await finalizeCss(extractedCss, true, config)
-        this.emitFile({
-          name: cssBundleName,
-          type: 'asset',
-          source: extractedCss,
-        })
+      if (!hasEmitted) {
+        const extractedCss = await extractCss()
+        if (extractedCss) {
+          hasEmitted = true
+          this.emitFile({
+            name: cssBundleName,
+            type: 'asset',
+            source: extractedCss,
+          })
+        }
       }
     },
   }
