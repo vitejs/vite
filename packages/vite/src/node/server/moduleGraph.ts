@@ -855,7 +855,7 @@ export class ModuleGraphs {
   updateModuleTransformResult(
     mod: ModuleNode,
     result: TransformResult | null,
-    ssr: boolean,
+    ssr?: boolean,
   ): void {
     this.get(mod.runtime).updateModuleTransformResult(mod, result)
   }
