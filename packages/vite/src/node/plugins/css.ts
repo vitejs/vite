@@ -530,7 +530,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       } else if (inlined) {
         let content = css
         if (config.build.cssMinify) {
-          content = await minifyCSS(content, config, true)
+          content = await minifyCSS(content, config, true, id)
         }
         code = `export default ${JSON.stringify(content)}`
       } else {
@@ -548,14 +548,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts) {
-      let chunkCSS = ''
+      const cssMap = new Map<string, string>()
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
         if (styles.has(id)) {
           // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
           if (!transformOnlyRE.test(id)) {
-            chunkCSS += styles.get(id)
+            cssMap.set(id, styles.get(id) || '')
             // a css module contains JS, so it makes this not a pure css chunk
             if (cssModuleRE.test(id)) {
               isPureCssChunk = false
@@ -675,7 +675,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       await urlEmitQueue.run(async () =>
         Promise.all(
           urlEmitTasks.map(async (info) => {
-            info.content = await finalizeCss(info.content, true, config)
+            info.content = await finalizeCss(
+              info.content,
+              true,
+              config,
+              info.originalFilename,
+            )
           }),
         ),
       )
@@ -718,7 +723,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      if (chunkCSS) {
+      if (cssMap.size > 0) {
         if (config.build.cssCodeSplit) {
           if (opts.format === 'es' || opts.format === 'cjs') {
             if (isPureCssChunk) {
@@ -742,18 +747,26 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               opts.format,
             )
 
-            chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
+            const finalizeCssPromises: Promise<string>[] = []
+            for (const [id, content] of cssMap) {
+              const resolvedCSS = resolveAssetUrlsInCss(content, cssAssetName)
+              finalizeCssPromises.push(
+                codeSplitEmitQueue.run(async () => {
+                  return finalizeCss(resolvedCSS, true, config, id)
+                }),
+              )
+            }
 
             // wait for previous tasks as well
-            chunkCSS = await codeSplitEmitQueue.run(async () => {
-              return finalizeCss(chunkCSS, true, config)
-            })
+            const finalizedCss = (await Promise.all(finalizeCssPromises)).join(
+              '',
+            )
 
             // emit corresponding css file
             const referenceId = this.emitFile({
               name: cssAssetName,
               type: 'asset',
-              source: chunkCSS,
+              source: finalizedCss,
             })
             generatedAssets
               .get(config)!
@@ -768,8 +781,20 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // But because entry chunk can be imported by dynamic import,
             // we shouldn't remove the inlined CSS. (#10285)
 
-            chunkCSS = await finalizeCss(chunkCSS, true, config)
-            let cssString = JSON.stringify(chunkCSS)
+            const finalizeCssPromises: Promise<string>[] = []
+            for (const [id, content] of cssMap) {
+              finalizeCssPromises.push(
+                codeSplitEmitQueue.run(async () => {
+                  return finalizeCss(content, true, config, id)
+                }),
+              )
+            }
+
+            const finalizedCss = (await Promise.all(finalizeCssPromises)).join(
+              '',
+            )
+
+            let cssString = JSON.stringify(finalizedCss)
             cssString =
               renderAssetUrlInJS(
                 this,
@@ -797,10 +822,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         } else {
           // resolve public URL from CSS paths, we need to use absolute paths
-          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
+          let mergedCss = Array.from(cssMap.values()).join('')
+
+          mergedCss = resolveAssetUrlsInCss(mergedCss, cssBundleName)
           // finalizeCss is called for the aggregated chunk in generateBundle
 
-          chunkCSSMap.set(chunk.fileName, chunkCSS)
+          chunkCSSMap.set(chunk.fileName, mergedCss)
         }
       }
 
@@ -1530,13 +1557,14 @@ async function finalizeCss(
   css: string,
   minify: boolean,
   config: ResolvedConfig,
+  filename?: string,
 ) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
     css = await hoistAtRules(css)
   }
   if (minify && config.build.cssMinify) {
-    css = await minifyCSS(css, config, false)
+    css = await minifyCSS(css, config, false, filename)
   }
   return css
 }
@@ -1771,6 +1799,7 @@ async function minifyCSS(
   css: string,
   config: ResolvedConfig,
   inlined: boolean,
+  filename?: string,
 ) {
   // We want inlined CSS to not end with a linebreak, while ensuring that
   // regular CSS assets do end with a linebreak.
@@ -1801,6 +1830,7 @@ async function minifyCSS(
     const { code, warnings } = await transform(css, {
       loader: 'css',
       target: config.build.cssTarget || undefined,
+      sourcefile: filename,
       ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
     })
     if (warnings.length) {
