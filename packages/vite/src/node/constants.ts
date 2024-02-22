@@ -36,14 +36,9 @@ export const DEFAULT_EXTENSIONS = [
   '.json',
 ]
 
-export const DEFAULT_CONFIG_FILES = [
-  'vite.config.js',
-  'vite.config.mjs',
-  'vite.config.ts',
-  'vite.config.cjs',
-  'vite.config.mts',
-  'vite.config.cts',
-]
+export const DEFAULT_CONFIG_FILES = 'js,mjs,ts,cjs,mts,cts'
+  .split(',')
+  .map((ext) => `vite.config.${ext}`)
 
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
 
