@@ -53,20 +53,22 @@ export function getAffectedGlobModules(
   server: ViteDevServer,
 ): ModuleNode[] {
   const modules: ModuleNode[] = []
-  for (const [id, importGlob] of server._importGlobMap!) {
+  // TODO: properly support other runtimes. Changing _importGlobMap breaks VitePress
+  // https://github.com/vuejs/vitepress/blob/28989df83446923a9e7c8ada345b0778119ed66f/src/node/plugins/staticDataPlugin.ts#L128
+  for (const [id, allGlobs] of server._importGlobMap!) {
     // (glob1 || glob2) && !glob3 && !glob4...
     if (
-      importGlob.globs.some(
+      allGlobs.some(
         ({ affirmed, negated }) =>
           (!affirmed.length || affirmed.some((glob) => isMatch(file, glob))) &&
           (!negated.length || negated.every((glob) => isMatch(file, glob))),
       )
     ) {
-      const mod = server.moduleGraph.get(importGlob.runtime).getModuleById(id)
+      const mod = server.moduleGraph.browser.getModuleById(id)
 
       if (mod) {
         if (mod.file) {
-          server.moduleGraph.get(importGlob.runtime).onFileChange(mod.file)
+          server.moduleGraph.browser.onFileChange(mod.file)
         }
         modules.push(mod)
       }
@@ -98,9 +100,9 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       if (result) {
         if (server) {
           const allGlobs = result.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(id, {
-            runtime: options?.runtime ?? 'browser',
-            globs: allGlobs.map((globs) => {
+          server._importGlobMap.set(
+            id,
+            allGlobs.map((globs) => {
               const affirmed: string[] = []
               const negated: string[] = []
 
@@ -109,7 +111,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
               }
               return { affirmed, negated }
             }),
-          })
+          )
         }
         return transformStableResult(result.s, id, config)
       }

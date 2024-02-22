@@ -349,10 +349,7 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _importGlobMap: Map<
-    string,
-    { runtime: string; globs: { affirmed: string[]; negated: string[] }[] }
-  >
+  _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
   /**
    * @internal
    */
