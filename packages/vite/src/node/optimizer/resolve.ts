@@ -137,7 +137,10 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
     // for packages without exports, we can do a simple glob
     const matched = glob
       .sync(pattern, { cwd: pkgData.dir, ignore: ['node_modules'] })
-      .map((match) => path.posix.join(pkgName, slash(match)))
+      .flatMap((match) => {
+        const res = path.posix.join(pkgName, slash(match))
+        return res.endsWith('.js') ? [res, res.slice(0, -3)] : [res]
+      })
     matched.unshift(pkgName)
     return matched
   }
