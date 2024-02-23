@@ -12,7 +12,6 @@ import type {
   RollupError,
   SourceMapInput,
 } from 'rollup'
-import { dataToEsm } from '@rollup/pluginutils'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type * as PostCSS from 'postcss'
@@ -25,6 +24,7 @@ import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
+import { pluginName } from 'vite-css-modules';
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -226,11 +226,6 @@ export const isDirectCSSRequest = (request: string): boolean =>
 export const isDirectRequest = (request: string): boolean =>
   directRequestRE.test(request)
 
-const cssModulesCache = new WeakMap<
-  ResolvedConfig,
-  Map<string, Record<string, string>>
->()
-
 export const removedPureCssFilesCache = new WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
@@ -252,7 +247,6 @@ const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  let moduleCache: Map<string, Record<string, string>>
 
   const resolveUrl = config.createResolver({
     preferRelative: true,
@@ -271,10 +265,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:css',
 
     buildStart() {
-      // Ensure a new cache for every build (i.e. rebuilding in watch mode)
-      moduleCache = new Map<string, Record<string, string>>()
-      cssModulesCache.set(config, moduleCache)
-
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
 
       preprocessorWorkerController = createPreprocessorWorkerController(
@@ -359,7 +349,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
       const {
         code: css,
-        modules,
         deps,
         map,
       } = await compileCSS(
@@ -369,9 +358,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         preprocessorWorkerController!,
         urlReplacer,
       )
-      if (modules) {
-        moduleCache.set(id, modules)
-      }
 
       if (deps) {
         for (const file of deps) {
@@ -469,15 +455,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       const inlined = inlineRE.test(id)
-      const modules = cssModulesCache.get(config)!.get(id)
 
-      // #6984, #7552
-      // `foo.module.css` => modulesCode
-      // `foo.module.css?inline` => cssContent
-      const modulesCode =
-        modules &&
-        !inlined &&
-        dataToEsm(modules, { namedExports: true, preferConst: true })
+      const moduleInfo = (
+        isModuleCSSRequest(id)
+        && this.getModuleInfo(id)
+      );
+      const moduleData = moduleInfo && moduleInfo.meta[pluginName];
+
+      let modulesCode = undefined;
+      if (moduleData) {
+        modulesCode = css;
+        css = moduleData.css;
+      }
 
       if (config.command === 'serve') {
         const getContentWithSourcemap = async (content: string) => {
@@ -525,14 +514,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       let code: string
-      if (modulesCode) {
-        code = modulesCode
-      } else if (inlined) {
+      if (inlined) {
         let content = css
         if (config.build.cssMinify) {
           content = await minifyCSS(content, config, true)
         }
         code = `export default ${JSON.stringify(content)}`
+      } else if (modulesCode) {
+        code = modulesCode
       } else {
         // empty module when it's not a CSS module nor `?inline`
         code = ''
@@ -951,7 +940,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (thisModule) {
         // CSS modules cannot self-accept since it exports values
         const isSelfAccepting =
-          !cssModulesCache.get(config)?.get(id) &&
+          !isModuleCSSRequest(id) &&
           !inlineRE.test(id) &&
           !htmlProxyRE.test(id)
         // attached by pluginContainer.addWatchFile
@@ -1083,12 +1072,6 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
   }
 }
 
-function getCssResolversKeys(
-  resolvers: CSSAtImportResolvers,
-): Array<keyof CSSAtImportResolvers> {
-  return Object.keys(resolvers) as unknown as Array<keyof CSSAtImportResolvers>
-}
-
 async function compileCSSPreprocessors(
   id: string,
   lang: PreprocessLang,
@@ -1179,15 +1162,13 @@ async function compileCSS(
   code: string
   map?: SourceMapInput
   ast?: PostCSS.Result
-  modules?: Record<string, string>
   deps?: Set<string>
 }> {
   if (config.css?.transformer === 'lightningcss') {
     return compileLightningCSS(id, code, config, urlReplacer)
   }
 
-  const { modules: modulesOptions, devSourcemap } = config.css || {}
-  const isModule = modulesOptions !== false && cssModuleRE.test(id)
+  const { devSourcemap } = config.css || {}
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
@@ -1199,14 +1180,12 @@ async function compileCSS(
   if (
     lang === 'css' &&
     !postcssConfig &&
-    !isModule &&
     !needInlineImport &&
     !hasUrl
   ) {
     return { code, map: null }
   }
 
-  let modules: Record<string, string> | undefined
   const deps = new Set<string>()
 
   // 2. pre-processors: sass etc.
@@ -1291,35 +1270,6 @@ async function compileCSS(
       UrlRewritePostcssPlugin({
         replacer: urlReplacer,
         logger: config.logger,
-      }),
-    )
-  }
-
-  if (isModule) {
-    postcssPlugins.unshift(
-      (await importPostcssModules()).default({
-        ...modulesOptions,
-        localsConvention: modulesOptions?.localsConvention,
-        getJSON(
-          cssFileName: string,
-          _modules: Record<string, string>,
-          outputFileName: string,
-        ) {
-          modules = _modules
-          if (modulesOptions && typeof modulesOptions.getJSON === 'function') {
-            modulesOptions.getJSON(cssFileName, _modules, outputFileName)
-          }
-        },
-        async resolve(id: string, importer: string) {
-          for (const key of getCssResolversKeys(atImportResolvers)) {
-            const resolved = await atImportResolvers[key](id, importer)
-            if (resolved) {
-              return path.resolve(resolved)
-            }
-          }
-
-          return id
-        },
       }),
     )
   }
@@ -1409,7 +1359,6 @@ async function compileCSS(
       ast: postcssResult,
       code: postcssResult.css,
       map: { mappings: '' },
-      modules,
       deps,
     }
   }
@@ -1427,7 +1376,6 @@ async function compileCSS(
     ast: postcssResult,
     code: postcssResult.css,
     map: combineSourcemapsIfExists(cleanUrl(id), postcssMap, preprocessorMap),
-    modules,
     deps,
   }
 }
@@ -1445,7 +1393,6 @@ function createCachedImport<T>(imp: () => Promise<T>): () => T | Promise<T> {
   }
 }
 const importPostcssImport = createCachedImport(() => import('postcss-import'))
-const importPostcssModules = createCachedImport(() => import('postcss-modules'))
 const importPostcss = createCachedImport(() => import('postcss'))
 
 const preprocessorWorkerControllerCache = new WeakMap<
@@ -2687,7 +2634,6 @@ async function compileLightningCSS(
   urlReplacer?: CssUrlReplacer,
 ): ReturnType<typeof compileCSS> {
   const deps = new Set<string>()
-  // Relative path is needed to get stable hash when using CSS modules
   const filename = cleanUrl(path.relative(config.root, id))
   const toAbsolute = (filePath: string) =>
     path.isAbsolute(filePath) ? filePath : path.join(config.root, filePath)
@@ -2740,9 +2686,6 @@ async function compileLightningCSS(
             ? !!config.build.sourcemap
             : config.css?.devSourcemap,
         analyzeDependencies: true,
-        cssModules: cssModuleRE.test(id)
-          ? config.css?.lightningcss?.cssModules ?? true
-          : undefined,
       })
 
   let css = res.code.toString()
@@ -2763,27 +2706,10 @@ async function compileLightningCSS(
     }
   }
 
-  let modules: Record<string, string> | undefined
-  if ('exports' in res && res.exports) {
-    modules = {}
-    // https://github.com/parcel-bundler/lightningcss/issues/291
-    const sortedEntries = Object.entries(res.exports).sort((a, b) =>
-      a[0].localeCompare(b[0]),
-    )
-    for (const [key, value] of sortedEntries) {
-      modules[key] = value.name
-      // https://lightningcss.dev/css-modules.html#class-composition
-      for (const c of value.composes) {
-        modules[key] += ' ' + c.name
-      }
-    }
-  }
-
   return {
     code: css,
     map: 'map' in res ? res.map?.toString() : undefined,
     deps,
-    modules,
   }
 }
 

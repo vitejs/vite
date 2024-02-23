@@ -137,7 +137,6 @@
     "picomatch": "^2.3.1",
     "postcss-import": "^16.0.1",
     "postcss-load-config": "^4.0.2",
-    "postcss-modules": "^6.0.0",
     "resolve.exports": "^2.0.2",
     "rollup-plugin-dts": "^6.1.0",
     "rollup-plugin-license": "^3.2.0",
@@ -149,6 +148,7 @@
     "tslib": "^2.6.2",
     "types": "link:./types",
     "ufo": "^1.4.0",
+    "vite-css-modules": "^1.0.1",
     "ws": "^8.16.0"
   },
   "peerDependencies": {

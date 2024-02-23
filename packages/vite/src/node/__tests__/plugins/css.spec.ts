@@ -1,11 +1,6 @@
-import fs from 'node:fs'
-import path from 'node:path'
-import { describe, expect, test, vi } from 'vitest'
-import { resolveConfig } from '../../config'
-import type { InlineConfig } from '../../config'
+import { describe, expect, test } from 'vitest'
 import {
   convertTargets,
-  cssPlugin,
   cssUrlRE,
   getEmptyChunkReplacer,
   hoistAtRules,
@@ -50,71 +45,6 @@ describe('search css url function', () => {
         'mask-image: image(skyblue,url(mask.png), linear-gradient(rgba(0, 0, 0, 1.0), transparent));',
       ),
     ).toBe(true)
-  })
-})
-
-describe('css modules', () => {
-  test('css module compose/from path resolutions', async () => {
-    const mockedProjectPath = path.join(process.cwd(), '/foo/bar/project')
-    const { transform, resetMock } = await createCssPluginTransform(
-      {
-        [path.join(mockedProjectPath, '/css/bar.module.css')]: `\
-.bar {
-display: block;
-background: #f0f;
-}`,
-      },
-      {
-        resolve: {
-          alias: [
-            {
-              find: '@',
-              replacement: mockedProjectPath,
-            },
-          ],
-        },
-      },
-    )
-
-    const result = await transform(
-      `\
-.foo {
-position: fixed;
-composes: bar from '@/css/bar.module.css';
-}`,
-      '/css/foo.module.css',
-    )
-
-    expect(result.code).toBe(
-      `\
-._bar_1csqm_1 {
-display: block;
-background: #f0f;
-}
-._foo_86148_1 {
-position: fixed;
-}`,
-    )
-
-    resetMock()
-  })
-
-  test('custom generateScopedName', async () => {
-    const { transform, resetMock } = await createCssPluginTransform(undefined, {
-      css: {
-        modules: {
-          generateScopedName: 'custom__[hash:base64:5]',
-        },
-      },
-    })
-    const css = `\
-.foo {
-  color: red;
-}`
-    const result1 = await transform(css, '/foo.module.css') // server
-    const result2 = await transform(css, '/foo.module.css?direct') // client
-    expect(result1.code).toBe(result2.code)
-    resetMock()
   })
 })
 
@@ -207,42 +137,6 @@ describe('hoist @ rules', () => {
     `)
   })
 })
-
-async function createCssPluginTransform(
-  files?: Record<string, string>,
-  inlineConfig: InlineConfig = {},
-) {
-  const config = await resolveConfig(inlineConfig, 'serve')
-  const { transform, buildStart } = cssPlugin(config)
-
-  // @ts-expect-error buildStart is function
-  await buildStart.call({})
-
-  const mockFs = vi
-    .spyOn(fs, 'readFile')
-    // @ts-expect-error vi.spyOn not recognize override `fs.readFile` definition.
-    .mockImplementationOnce((p, encoding, callback) => {
-      callback(null, Buffer.from(files?.[p] ?? ''))
-    })
-
-  return {
-    async transform(code: string, id: string) {
-      // @ts-expect-error transform is function
-      return await transform.call(
-        {
-          addWatchFile() {
-            return
-          },
-        },
-        code,
-        id,
-      )
-    },
-    resetMock() {
-      mockFs.mockReset()
-    },
-  }
-}
 
 describe('convertTargets', () => {
   test('basic cases', () => {
