@@ -166,6 +166,7 @@ export async function handleHMRUpdate(
     hot.send({
       type: 'full-reload',
       path: '*',
+      triggeredBy: path.resolve(config.root, file),
     })
     return
   }
@@ -272,6 +273,7 @@ export function updateModules(
     )
     hot.send({
       type: 'full-reload',
+      triggeredBy: path.resolve(config.root, file),
     })
     return
   }
@@ -295,7 +297,7 @@ export function updateModules(
 function populateSSRImporters(
   module: ModuleNode,
   timestamp: number,
-  seen: Set<ModuleNode>,
+  seen: Set<ModuleNode> = new Set(),
 ) {
   module.ssrImportedModules.forEach((importer) => {
     if (seen.has(importer)) {
@@ -313,9 +315,9 @@ function populateSSRImporters(
 }
 
 function getSSRInvalidatedImporters(module: ModuleNode) {
-  return [
-    ...populateSSRImporters(module, module.lastHMRTimestamp, new Set()),
-  ].map((m) => m.file!)
+  return [...populateSSRImporters(module, module.lastHMRTimestamp)].map(
+    (m) => m.file!,
+  )
 }
 
 export async function handleFileAddUnlink(

@@ -506,6 +506,55 @@ describe('acceptExports', () => {
         )
       })
     })
+
+    describe("doesn't reload if files not in the the entrypoint importers chain is changed", async () => {
+      const testFile = 'non-tested/index.js'
+
+      beforeAll(async () => {
+        clientLogs.length = 0
+        // so it's in the module graph
+        await server.transformRequest(testFile, { ssr: true })
+        await server.transformRequest('non-tested/dep.js', { ssr: true })
+      })
+
+      test('does not full reload', async () => {
+        editFile(
+          testFile,
+          (code) => code + '\n\nexport const query5 = "query5"',
+        )
+        const start = Date.now()
+        // for 2 seconds check that there is no log about the file being reloaded
+        while (Date.now() - start < 2000) {
+          if (
+            clientLogs.some(
+              (log) =>
+                log.match(PROGRAM_RELOAD) ||
+                log.includes('non-tested/index.js'),
+            )
+          ) {
+            throw new Error('File was reloaded')
+          }
+          await new Promise((r) => setTimeout(r, 100))
+        }
+      }, 5_000)
+
+      test('does not update', async () => {
+        editFile('non-tested/dep.js', (code) => code + '//comment')
+        const start = Date.now()
+        // for 2 seconds check that there is no log about the file being reloaded
+        while (Date.now() - start < 2000) {
+          if (
+            clientLogs.some(
+              (log) =>
+                log.match(PROGRAM_RELOAD) || log.includes('non-tested/dep.js'),
+            )
+          ) {
+            throw new Error('File was updated')
+          }
+          await new Promise((r) => setTimeout(r, 100))
+        }
+      }, 5_000)
+    })
   })
 
   test('accepts itself when imported for side effects only (no bindings imported)', async () => {
