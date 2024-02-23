@@ -1,5 +1,5 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
-import { cssModules } from 'vite-css-modules';
+import { cssModules } from 'vite-css-modules'
 import type { ObjectHook } from 'rollup'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'

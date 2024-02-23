@@ -24,7 +24,7 @@ import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
-import { pluginName } from 'vite-css-modules';
+import { pluginName } from 'vite-css-modules'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -456,16 +456,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       const inlined = inlineRE.test(id)
 
-      const moduleInfo = (
-        isModuleCSSRequest(id)
-        && this.getModuleInfo(id)
-      );
-      const moduleData = moduleInfo && moduleInfo.meta[pluginName];
+      const moduleInfo = isModuleCSSRequest(id) && this.getModuleInfo(id)
+      const moduleData = moduleInfo && moduleInfo.meta[pluginName]
 
-      let modulesCode = undefined;
+      let modulesCode = undefined
       if (moduleData) {
-        modulesCode = css;
-        css = moduleData.css;
+        modulesCode = css
+        css = moduleData.css
       }
 
       if (config.command === 'serve') {
@@ -940,9 +937,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (thisModule) {
         // CSS modules cannot self-accept since it exports values
         const isSelfAccepting =
-          !isModuleCSSRequest(id) &&
-          !inlineRE.test(id) &&
-          !htmlProxyRE.test(id)
+          !isModuleCSSRequest(id) && !inlineRE.test(id) && !htmlProxyRE.test(id)
         // attached by pluginContainer.addWatchFile
         const pluginImports = (this as any)._addedImports as
           | Set<string>
@@ -1177,12 +1172,7 @@ async function compileCSS(
   const postcssConfig = await resolvePostcssConfig(config)
 
   // 1. plain css that needs no processing
-  if (
-    lang === 'css' &&
-    !postcssConfig &&
-    !needInlineImport &&
-    !hasUrl
-  ) {
+  if (lang === 'css' && !postcssConfig && !needInlineImport && !hasUrl) {
     return { code, map: null }
   }
 

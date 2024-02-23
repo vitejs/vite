@@ -10,7 +10,7 @@
     "esModuleInterop": true,
     "useUnknownInCatchVariables": false,
     "paths": {
-      "vite": ["./src/node/index.ts"],
-    },
-  },
+      "vite": ["./src/node/index.ts"]
+    }
+  }
 }
