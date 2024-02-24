@@ -35,7 +35,7 @@ Vite 5 [was released](./announcing-vite5.md) last November, and it represented a
 
 Quick links: [Docs](/), [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#510-2024-02-08)
 
-Docs in other languages: [简体中文](https://cn.vitejs.dev/), [日本語](https://ja.vitejs.dev/), [Español](https://es.vitejs.dev/), [Português](https://pt.vitejs.dev/), [한국어](https://ko.vitejs.dev/), [Deutsch](https://de.vitejs.dev/)
+Docs in other languages: [简体中文](https://cn.vitejs.dev/blog/announcing-vite5-1.html), [日本語](https://ja.vitejs.dev/blog/announcing-vite5-1.html), [Español](https://es.vitejs.dev/blog/announcing-vite5-1.html), [Português](https://pt.vitejs.dev/blog/announcing-vite5-1.html), [한국어](https://ko.vitejs.dev/blog/announcing-vite5-1.html), [Deutsch](https://de.vitejs.dev/blog/announcing-vite5-1.html)
 
 Try Vite 5.1 online in StackBlitz: [vanilla](https://vite.new/vanilla-ts), [vue](https://vite.new/vue-ts), [react](https://vite.new/react-ts), [preact](https://vite.new/preact-ts), [lit](https://vite.new/lit-ts), [svelte](https://vite.new/svelte-ts), [solid](https://vite.new/solid-ts), [qwik](https://vite.new/qwik-ts).
 

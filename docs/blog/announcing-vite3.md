@@ -55,9 +55,9 @@ If you need to access the Vite 2 docs, they will remain online at [v2.vitejs.dev
 
 There is also now an official Spanish translation, that has been added to the previous Chinese and Japanese translations:
 
-- [简体中文](https://cn.vitejs.dev/)
-- [日本語](https://ja.vitejs.dev/)
-- [Español](https://es.vitejs.dev/)
+- [简体中文](https://cn.vitejs.dev/blog/announcing-vite3.html)
+- [日本語](https://ja.vitejs.dev/blog/announcing-vite3.html)
+- [Español](https://es.vitejs.dev/blog/announcing-vite3.html)
 
 ## Create Vite Starter Templates
 

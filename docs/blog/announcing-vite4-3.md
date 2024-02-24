@@ -33,7 +33,7 @@ _April 20, 2023_
 
 Quick links:
 
-- Docs: [English](/), [简体中文](https://cn.vitejs.dev/), [日本語](https://ja.vitejs.dev/), [Español](https://es.vitejs.dev/), [Português](https://pt.vitejs.dev/)
+- Docs: [English](/), [简体中文](https://cn.vitejs.dev/blog/announcing-vite4-3.html), [日本語](https://ja.vitejs.dev/blog/announcing-vite4-3.html), [Español](https://es.vitejs.dev/blog/announcing-vite4-3.html), [Português](https://pt.vitejs.dev/blog/announcing-vite4-3.html)
 - [Vite 4.3 Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#430-2023-04-20)
 
 ## Performance Improvements

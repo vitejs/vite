@@ -49,12 +49,12 @@ Quick links:
 
 Docs in other languages:
 
-- [简体中文](https://cn.vitejs.dev/)
-- [日本語](https://ja.vitejs.dev/)
-- [Español](https://es.vitejs.dev/)
-- [Português](https://pt.vitejs.dev/)
-- [한국어](https://ko.vitejs.dev/)
-- [Deutsch](https://de.vitejs.dev/) (new translation!)
+- [简体中文](https://cn.vitejs.dev/blog/announcing-vite5.html)
+- [日本語](https://ja.vitejs.dev/blog/announcing-vite5.html)
+- [Español](https://es.vitejs.dev/blog/announcing-vite5.html)
+- [Português](https://pt.vitejs.dev/blog/announcing-vite5.html)
+- [한국어](https://ko.vitejs.dev/blog/announcing-vite5.html)
+- [Deutsch](https://de.vitejs.dev/blog/announcing-vite5.html) (new translation!)
 
 If you're new to Vite, we suggest reading first the [Getting Started](/guide/) and [Features](/guide/features) guides.
 
