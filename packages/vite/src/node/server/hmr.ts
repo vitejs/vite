@@ -16,7 +16,7 @@ import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { Plugin } from '../plugin'
-import type { BackwardCompatibleModuleNode, ModuleNode } from './moduleGraph'
+import type { ModuleNode } from './moduleGraph'
 import { getBackwardCompatibleModuleNode } from './moduleGraph'
 import { restartServerWithUrls } from '.'
 
@@ -284,10 +284,12 @@ export async function handleHMRUpdate(
       )
       if (filteredModules) {
         hmrContext.modules = filteredModules
-        hotContext.modules = filteredModules.map(
-          (mod) =>
-            ((mod as BackwardCompatibleModuleNode).browser ??
-              (mod as BackwardCompatibleModuleNode).server)!,
+        hotContext.modules = filteredModules.map((mod) =>
+          mod.id
+            ? server.moduleGraph.browser.getModuleById(mod.id) ??
+              server.moduleGraph.server.getModuleById(mod.id) ??
+              mod
+            : mod,
         )
       }
     }

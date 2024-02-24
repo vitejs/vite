@@ -489,8 +489,6 @@ export class ModuleGraph {
 }
 
 export interface BackwardCompatibleModuleNode extends ModuleNode {
-  browser: ModuleNode | undefined
-  server: ModuleNode | undefined
   clientImportedModules: Set<ModuleNode>
   ssrImportedModules: Set<ModuleNode>
   ssrTransformResult: TransformResult | null
@@ -506,11 +504,7 @@ export function getBackwardCompatibleModuleNode(
   return browserModule || serverModule
     ? new Proxy((browserModule || serverModule)!, {
         get(_, prop: keyof BackwardCompatibleModuleNode) {
-          if (prop === 'browser') {
-            return browserModule
-          } else if (prop === 'server') {
-            return serverModule
-          } else if (prop === 'clientImportedModules') {
+          if (prop === 'clientImportedModules') {
             return browserModule?.importedModules
           } else if (prop === 'ssrImportedModules') {
             return serverModule?.importedModules
