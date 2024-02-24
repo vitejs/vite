@@ -749,7 +749,11 @@ export class ModuleGraphs {
     if (serverModules) {
       return new Set(
         [...serverModules].map(
-          (module) => getBackwardCompatibleModuleNode(undefined, module)!,
+          (module) =>
+            getBackwardCompatibleModuleNode(
+              module.id ? this.browser.getModuleById(module.id) : undefined,
+              module,
+            )!,
         ),
       )
     }
@@ -799,7 +803,7 @@ export class ModuleGraphs {
     staticImportedUrls?: Set<string>,
   ): Promise<Set<ModuleNode> | undefined> {
     // TODO: return backward compatible module nodes?
-    const modules = await (ssr ? this.server : this.browser).updateModuleInfo(
+    const modules = await this.get(mod.runtime).updateModuleInfo(
       mod,
       importedModules,
       importedBindings,
@@ -811,14 +815,14 @@ export class ModuleGraphs {
     return modules
       ? new Set(
           [...modules].map((module) =>
-            ssr
+            mod.runtime === 'browser'
               ? getBackwardCompatibleModuleNode(
-                  module.id ? this.server.getModuleById(module.id) : undefined,
                   module,
+                  module.id ? this.server.getModuleById(module.id) : undefined,
                 )!
               : getBackwardCompatibleModuleNode(
+                  module.id ? this.browser.getModuleById(module.id) : undefined,
                   module,
-                  module.id ? this.server.getModuleById(module.id) : undefined,
                 )!,
           ),
         )
