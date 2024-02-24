@@ -237,6 +237,8 @@ export async function handleHMRUpdate(
         runtime,
       }
 
+      let hmrContext
+
       for (const plugin of getSortedHotUpdatePlugins(config)) {
         if (plugin.hotUpdate) {
           const filteredModules = await getHookHandler(plugin.hotUpdate)(
@@ -244,10 +246,12 @@ export async function handleHMRUpdate(
           )
           if (filteredModules) {
             hotContext.modules = filteredModules
+            // Invalidate the hmrContext to force compat modules to be updated
+            hmrContext = undefined
           }
         } else if (runtime === 'browser') {
           // Backward compatibility with mixed client and ssr moduleGraph
-          const hmrContext = {
+          hmrContext ??= {
             ...hotContext,
             modules: hotContext.modules.map((mod) =>
               getBackwardCompatibleModuleNode(
@@ -262,6 +266,7 @@ export async function handleHMRUpdate(
             hmrContext,
           )
           if (filteredModules) {
+            hmrContext.modules = filteredModules
             hotContext.modules = filteredModules.map(
               (mod) => (mod as BackwardCompatibleModuleNode).browser!,
             )
