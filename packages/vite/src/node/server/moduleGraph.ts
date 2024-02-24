@@ -842,7 +842,7 @@ export class ModuleGraphs {
   /** @deprecated */
   createFileOnlyEntry(file: string): ModuleNode {
     const browserModule = this.browser.createFileOnlyEntry(file)
-    const serverModule = this.browser.createFileOnlyEntry(file)
+    const serverModule = this.server.createFileOnlyEntry(file)
     return getBackwardCompatibleModuleNode(browserModule, serverModule)!
   }
 
