@@ -262,7 +262,7 @@ export async function handleHMRUpdate(
             hmrContext,
           )
           if (filteredModules) {
-            hmrContext.modules = filteredModules.map(
+            hotContext.modules = filteredModules.map(
               (mod) => (mod as BackwardCompatibleModuleNode).browser!,
             )
           }
