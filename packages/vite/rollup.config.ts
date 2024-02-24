@@ -8,6 +8,7 @@ import json from '@rollup/plugin-json'
 import MagicString from 'magic-string'
 import type { Plugin, RollupOptions } from 'rollup'
 import { defineConfig } from 'rollup'
+import { minify as esbuildMinifyPlugin } from 'rollup-plugin-esbuild'
 import licensePlugin from './rollupLicensePlugin'
 
 const pkg = JSON.parse(
@@ -153,13 +154,13 @@ function createNodeConfig(isProduction: boolean) {
       index: path.resolve(__dirname, 'src/node/index.ts'),
       cli: path.resolve(__dirname, 'src/node/cli.ts'),
       constants: path.resolve(__dirname, 'src/node/constants.ts'),
-      runtime: path.resolve(__dirname, 'src/node/ssr/runtime/index.ts'),
     },
     output: {
       ...sharedNodeOptions.output,
       sourcemap: !isProduction,
     },
     external: [
+      /^vite\//,
       'fsevents',
       'lightningcss',
       'rollup/parseAst',
@@ -173,6 +174,51 @@ function createNodeConfig(isProduction: boolean) {
       // in development we need to rely on the rollup ts plugin
       isProduction ? false : './dist/node',
     ),
+  })
+}
+
+function createRuntimeConfig(isProduction: boolean) {
+  return defineConfig({
+    ...sharedNodeOptions,
+    input: {
+      runtime: path.resolve(__dirname, 'src/runtime/index.ts'),
+    },
+    output: {
+      ...sharedNodeOptions.output,
+      sourcemap: !isProduction,
+    },
+    external: [
+      'fsevents',
+      'lightningcss',
+      'rollup/parseAst',
+      ...Object.keys(pkg.dependencies),
+    ],
+    plugins: [
+      ...createNodePlugins(
+        false,
+        !isProduction,
+        // in production we use rollup.dts.config.ts for dts generation
+        // in development we need to rely on the rollup ts plugin
+        isProduction ? false : './dist/node',
+      ),
+      esbuildMinifyPlugin({ minify: false, minifySyntax: true }),
+      {
+        name: 'replace bias',
+        transform(code, id) {
+          if (id.includes('@jridgewell+trace-mapping')) {
+            return {
+              code: code.replaceAll(
+                'bias === LEAST_UPPER_BOUND',
+                'true' +
+                  `/*${'bias === LEAST_UPPER_BOUND'.length - '/**/'.length - 'true'.length}*/`,
+              ),
+              map: null,
+            }
+          }
+        },
+      },
+      bundleSizeLimit(45),
+    ],
   })
 }
 
@@ -209,6 +255,7 @@ export default (commandLineArgs: any): RollupOptions[] => {
     envConfig,
     clientConfig,
     createNodeConfig(isProduction),
+    createRuntimeConfig(isProduction),
     createCjsConfig(isProduction),
   ])
 }

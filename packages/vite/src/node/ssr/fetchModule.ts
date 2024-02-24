@@ -3,8 +3,14 @@ import type { ModuleNode, TransformResult, ViteDevServer } from '..'
 import type { PackageCache } from '../packages'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
-import { isBuiltin, isExternalUrl, isFilePathESM, unwrapId } from '../utils'
-import type { FetchResult } from './runtime/types'
+import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
+import type { FetchResult } from '../../runtime/types'
+import { unwrapId } from '../../shared/utils'
+import {
+  SOURCEMAPPING_URL,
+  VITE_RUNTIME_SOURCEMAPPING_SOURCE,
+  VITE_RUNTIME_SOURCEMAPPING_URL,
+} from '../../shared/constants'
 
 interface NodeImportResolveOptions
   extends InternalResolveOptionsWithOverrideConditions {
@@ -116,12 +122,6 @@ export async function fetchModule(
 
   return { code: result.code, file: mod.file }
 }
-
-let SOURCEMAPPING_URL = 'sourceMa'
-SOURCEMAPPING_URL += 'ppingURL'
-
-const VITE_RUNTIME_SOURCEMAPPING_SOURCE = '//# sourceMappingSource=vite-runtime'
-const VITE_RUNTIME_SOURCEMAPPING_URL = `${SOURCEMAPPING_URL}=data:application/json;charset=utf-8`
 
 const OTHER_SOURCE_MAP_REGEXP = new RegExp(
   `//# ${SOURCEMAPPING_URL}=data:application/json[^,]+base64,([A-Za-z0-9+/=]+)$`,

@@ -1,6 +1,6 @@
 import type { ViteDevServer } from '../server'
+import type { FetchResult } from '../../runtime/types'
 import { fetchModule } from './fetchModule'
-import type { FetchResult } from './runtime/types'
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 const AsyncFunction = async function () {}.constructor as typeof Function

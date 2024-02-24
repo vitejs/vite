@@ -12,7 +12,6 @@ import type { InternalModuleFormat, SourceMap } from 'rollup'
 import type { TSConfckParseResult } from 'tsconfck'
 import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
 import {
-  cleanUrl,
   combineSourcemaps,
   createDebugger,
   createFilter,
@@ -22,6 +21,7 @@ import {
 import type { ViteDevServer } from '../server'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import { cleanUrl } from '../../shared/utils'
 
 const debug = createDebugger('vite:esbuild')
 

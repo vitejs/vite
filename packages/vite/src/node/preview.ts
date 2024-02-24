@@ -4,6 +4,7 @@ import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
+import { DEFAULT_PREVIEW_PORT } from './constants'
 import type {
   HttpServer,
   ResolvedServerOptions,
@@ -28,7 +29,6 @@ import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
-import { DEFAULT_PREVIEW_PORT } from './constants'
 import { resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 

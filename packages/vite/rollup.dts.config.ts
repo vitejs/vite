@@ -15,6 +15,7 @@ const pkg = JSON.parse(
 
 const external = [
   /^node:*/,
+  /^vite\//,
   'rollup/parseAst',
   ...Object.keys(pkg.dependencies),
   // lightningcss types are bundled
@@ -24,7 +25,7 @@ const external = [
 export default defineConfig({
   input: {
     index: './temp/node/index.d.ts',
-    runtime: './temp/node/ssr/runtime/index.d.ts',
+    runtime: './temp/runtime/index.d.ts',
   },
   output: {
     dir: './dist/node',
@@ -132,6 +133,7 @@ function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
       !id.startsWith('../') &&
       !id.startsWith('node:') &&
       !id.startsWith('types.d') &&
+      !id.startsWith('vite/') &&
       !deps.includes(id) &&
       !deps.some((name) => id.startsWith(name + '/'))
     ) {

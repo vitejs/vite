@@ -1,12 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { cleanUrl, withTrailingSlash } from '../shared/utils'
 import type { ResolvedConfig } from './config'
 import {
   ERR_SYMLINK_IN_RECURSIVE_READDIR,
-  cleanUrl,
   normalizePath,
   recursiveReaddir,
-  withTrailingSlash,
 } from './utils'
 
 const publicFilesMap = new WeakMap<ResolvedConfig, Set<string>>()

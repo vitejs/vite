@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest'
-import type { ViteRuntime } from '../runtime'
+import type { ViteRuntime } from 'vite/runtime'
 import { createViteRuntimeTester, editFile, resolvePath } from './utils'
 
 describe('vite-runtime initialization', async () => {

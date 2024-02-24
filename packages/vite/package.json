@@ -140,6 +140,7 @@
     "postcss-modules": "^6.0.0",
     "resolve.exports": "^2.0.2",
     "rollup-plugin-dts": "^6.1.0",
+    "rollup-plugin-esbuild": "^6.1.1",
     "rollup-plugin-license": "^3.2.0",
     "sirv": "^2.0.4",
     "source-map-support": "^0.5.21",

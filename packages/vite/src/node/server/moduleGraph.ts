@@ -2,12 +2,12 @@ import { extname } from 'node:path'
 import type { ModuleInfo, PartialResolvedId } from 'rollup'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
-  cleanUrl,
   normalizePath,
   removeImportQuery,
   removeTimestampQuery,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
+import { cleanUrl } from '../../shared/utils'
 import type { TransformResult } from './transformRequest'
 
 export class ModuleNode {

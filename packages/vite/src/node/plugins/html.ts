@@ -13,7 +13,6 @@ import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
-  cleanUrl,
   generateCodeFrame,
   getHash,
   isDataUrl,
@@ -28,6 +27,7 @@ import { checkPublicFile } from '../publicDir'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
 import type { Logger } from '../logger'
+import { cleanUrl } from '../../shared/utils'
 import {
   assetUrlRE,
   getPublicAssetFilename,

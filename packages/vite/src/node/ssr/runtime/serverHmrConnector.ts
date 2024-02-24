@@ -1,10 +1,7 @@
 import type { CustomPayload, HMRPayload } from 'types/hmrPayload'
-import type { ViteDevServer } from '../../../server'
-import type {
-  HMRBroadcasterClient,
-  ServerHMRChannel,
-} from '../../../server/hmr'
-import type { HMRRuntimeConnection } from '../types'
+import type { HMRRuntimeConnection } from 'vite/runtime'
+import type { ViteDevServer } from '../../server'
+import type { HMRBroadcasterClient, ServerHMRChannel } from '../../server/hmr'
 
 class ServerHMRBroadcasterClient implements HMRBroadcasterClient {
   constructor(private readonly hmrChannel: ServerHMRChannel) {}

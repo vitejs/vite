@@ -10,11 +10,11 @@ import {
   getLocalhostAddressIfDiffersFromDNS,
   injectQuery,
   isFileReadable,
-  isWindows,
   posToNumber,
   processSrcSetSync,
   resolveHostname,
 } from '../utils'
+import { isWindows } from '../../shared/utils'
 
 describe('bareImportRE', () => {
   test('should work with normal package name', () => {

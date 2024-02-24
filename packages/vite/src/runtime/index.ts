@@ -4,7 +4,7 @@ export { ModuleCacheMap } from './moduleCache'
 export { ViteRuntime } from './runtime'
 export { ESModulesRunner } from './esmRunner'
 
-export type { HMRLogger, HMRConnection } from '../../../shared/hmr'
+export type { HMRLogger, HMRConnection } from '../shared/hmr'
 export type {
   ViteModuleRunner,
   ViteRuntimeModuleContext,

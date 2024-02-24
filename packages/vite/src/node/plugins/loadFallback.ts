@@ -1,6 +1,6 @@
 import fsp from 'node:fs/promises'
 import type { Plugin } from '..'
-import { cleanUrl } from '../utils'
+import { cleanUrl } from '../../shared/utils'
 
 /**
  * A plugin to provide build load fallback for arbitrary request with queries.

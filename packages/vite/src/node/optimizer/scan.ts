@@ -21,7 +21,6 @@ import {
 } from '../constants'
 import {
   arraify,
-  cleanUrl,
   createDebugger,
   dataUrlRE,
   externalRE,
@@ -38,6 +37,7 @@ import {
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
 import { transformGlobImport } from '../plugins/importMetaGlob'
+import { cleanUrl } from '../../shared/utils'
 import { loadTsconfigJsonForFile } from '../plugins/esbuild'
 
 type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]

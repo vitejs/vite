@@ -3,8 +3,9 @@ import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
-import { cleanUrl, createDebugger } from '../utils'
+import { createDebugger } from '../utils'
 import { getDepsOptimizer, optimizedDepInfoFromFile } from '../optimizer'
+import { cleanUrl } from '../../shared/utils'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'

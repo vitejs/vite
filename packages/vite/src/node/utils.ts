@@ -19,14 +19,14 @@ import type MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
+import { cleanUrl, isWindows, slash, withTrailingSlash } from '../shared/utils'
+import { VALID_ID_PREFIX } from '../shared/constants'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
   OPTIMIZABLE_ENTRY_RE,
-  VALID_ID_PREFIX,
   loopbackHosts,
   wildcardHosts,
 } from './constants'
@@ -54,31 +54,6 @@ export const createFilter = _createFilter as (
   exclude?: FilterPattern,
   options?: { resolve?: string | false | null },
 ) => (id: string | unknown) => boolean
-
-const windowsSlashRE = /\\/g
-export function slash(p: string): string {
-  return p.replace(windowsSlashRE, '/')
-}
-
-/**
- * Prepend `/@id/` and replace null byte so the id is URL-safe.
- * This is prepended to resolved ids that are not valid browser
- * import specifiers by the importAnalysis plugin.
- */
-export function wrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX)
-    ? id
-    : VALID_ID_PREFIX + id.replace('\0', NULL_BYTE_PLACEHOLDER)
-}
-
-/**
- * Undo {@link wrapId}'s `/@id/` and null byte replacements.
- */
-export function unwrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX)
-    ? id.slice(VALID_ID_PREFIX.length).replace(NULL_BYTE_PLACEHOLDER, '\0')
-    : id
-}
 
 const replaceSlashOrColonRE = /[/:]/g
 const replaceDotRE = /\./g
@@ -234,8 +209,6 @@ export const urlCanParse =
 
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
-export const isWindows = os.platform() === 'win32'
-
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
@@ -251,13 +224,6 @@ export function fsPathFromId(id: string): string {
 
 export function fsPathFromUrl(url: string): string {
   return fsPathFromId(cleanUrl(url))
-}
-
-export function withTrailingSlash(path: string): string {
-  if (path[path.length - 1] !== '/') {
-    return `${path}/`
-  }
-  return path
 }
 
 /**
@@ -291,13 +257,6 @@ export function isSameFileUri(file1: string, file2: string): boolean {
     file1 === file2 ||
     (isCaseInsensitiveFS && file1.toLowerCase() === file2.toLowerCase())
   )
-}
-
-export const queryRE = /\?.*$/s
-
-const postfixRE = /[?#].*$/
-export function cleanUrl(url: string): string {
-  return url.replace(postfixRE, '')
 }
 
 export const externalRE = /^(https?:)?\/\//

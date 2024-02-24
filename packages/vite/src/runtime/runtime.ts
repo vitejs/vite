@@ -1,5 +1,12 @@
 import type { ViteHotContext } from 'types/hot'
-import { HMRClient, HMRContext } from '../../../shared/hmr'
+import { HMRClient, HMRContext } from '../shared/hmr'
+import {
+  cleanUrl,
+  isPrimitive,
+  isWindows,
+  unwrapId,
+  wrapId,
+} from '../shared/utils'
 import { ModuleCacheMap } from './moduleCache'
 import type {
   FetchResult,
@@ -12,15 +19,10 @@ import type {
   ViteRuntimeOptions,
 } from './types'
 import {
-  cleanUrl,
-  isPrimitive,
-  isWindows,
   posixDirname,
   posixPathToFileHref,
   posixResolve,
   toWindowsPath,
-  unwrapId,
-  wrapId,
 } from './utils'
 import {
   ssrDynamicImportKey,

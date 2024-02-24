@@ -15,7 +15,6 @@ import {
   flattenId,
   getHash,
   isOptimizable,
-  isWindows,
   lookupFile,
   normalizeId,
   normalizePath,
@@ -25,6 +24,7 @@ import {
 } from '../utils'
 import { transformWithEsbuild } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
+import { isWindows } from '../../shared/utils'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'

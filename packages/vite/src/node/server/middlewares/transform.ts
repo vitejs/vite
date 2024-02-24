@@ -5,7 +5,6 @@ import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
 import type { ViteDevServer } from '..'
 import {
-  cleanUrl,
   createDebugger,
   fsPathFromId,
   injectQuery,
@@ -15,19 +14,13 @@ import {
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
-  unwrapId,
   urlRE,
-  withTrailingSlash,
 } from '../../utils'
 import { send } from '../send'
 import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
-import {
-  DEP_VERSION_RE,
-  FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
-} from '../../constants'
+import { DEP_VERSION_RE, FS_PREFIX } from '../../constants'
 import {
   isCSSRequest,
   isDirectCSSRequest,
@@ -39,6 +32,8 @@ import {
 } from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
+import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
+import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
 
 const debugCache = createDebugger('vite:cache')
 

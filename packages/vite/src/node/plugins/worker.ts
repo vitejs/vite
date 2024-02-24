@@ -5,12 +5,13 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import { cleanUrl, getHash, injectQuery, urlRE } from '../utils'
+import { getHash, injectQuery, urlRE } from '../utils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   onRollupWarning,
   toOutputFilePathInJS,
 } from '../build'
+import { cleanUrl } from '../../shared/utils'
 import { fileToUrl } from './asset'
 
 interface WorkerCache {

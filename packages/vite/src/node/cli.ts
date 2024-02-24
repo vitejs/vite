@@ -3,12 +3,12 @@ import fs from 'node:fs'
 import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
+import { VERSION } from './constants'
 import type { BuildOptions } from './build'
 import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
-import { VERSION } from './constants'
 import { resolveConfig } from './config'
 
 const cli = cac('vite')

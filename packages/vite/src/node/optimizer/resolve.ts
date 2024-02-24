@@ -2,8 +2,9 @@ import path from 'node:path'
 import glob from 'fast-glob'
 import micromatch from 'micromatch'
 import type { ResolvedConfig } from '../config'
-import { escapeRegex, getNpmPackageName, slash } from '../utils'
+import { escapeRegex, getNpmPackageName } from '../utils'
 import { resolvePackageData } from '../packages'
+import { slash } from '../../shared/utils'
 
 export function createOptimizeDepsIncludeResolver(
   config: ResolvedConfig,
