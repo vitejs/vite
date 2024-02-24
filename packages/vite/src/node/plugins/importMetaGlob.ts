@@ -24,13 +24,9 @@ import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
-import {
-  evalValue,
-  normalizePath,
-  slash,
-  transformStableResult,
-} from '../utils'
+import { evalValue, normalizePath, transformStableResult } from '../utils'
 import type { Logger } from '../logger'
+import { slash } from '../../shared/utils'
 
 const { isMatch, scan } = micromatch
 

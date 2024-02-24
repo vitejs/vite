@@ -7,7 +7,6 @@ import escapeHtml from 'escape-html'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
-  cleanUrl,
   fsPathFromId,
   fsPathFromUrl,
   isFileReadable,
@@ -15,12 +14,15 @@ import {
   isInternalRequest,
   isParentDirectory,
   isSameFileUri,
-  isWindows,
   normalizePath,
   removeLeadingSlash,
+} from '../../utils'
+import {
+  cleanUrl,
+  isWindows,
   slash,
   withTrailingSlash,
-} from '../../utils'
+} from '../../../shared/utils'
 
 const knownJavascriptExtensionRE = /\.[tj]sx?$/
 

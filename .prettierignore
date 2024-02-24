@@ -1,4 +1,5 @@
 packages/*/CHANGELOG.md
+packages/vite/src/node/ssr/runtime/__tests__/fixtures
 playground-temp/
 dist/
 temp/

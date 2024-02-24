@@ -1,40 +1,9 @@
-export const isWindows =
-  typeof process !== 'undefined' && process.platform === 'win32'
+import { isWindows, slash } from '../shared/utils'
 
 export const decodeBase64 =
   typeof atob !== 'undefined'
     ? atob
     : (str: string) => Buffer.from(str, 'base64').toString('utf-8')
-
-// currently we copy this from '../../constants' - maybe we can inline it somewhow?
-const NULL_BYTE_PLACEHOLDER = `__x00__`
-const VALID_ID_PREFIX = `/@id/`
-
-export function wrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX)
-    ? id
-    : VALID_ID_PREFIX + id.replace('\0', NULL_BYTE_PLACEHOLDER)
-}
-
-export function unwrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX)
-    ? id.slice(VALID_ID_PREFIX.length).replace(NULL_BYTE_PLACEHOLDER, '\0')
-    : id
-}
-
-const windowsSlashRE = /\\/g
-export function slash(p: string): string {
-  return p.replace(windowsSlashRE, '/')
-}
-
-const postfixRE = /[?#].*$/
-export function cleanUrl(url: string): string {
-  return url.replace(postfixRE, '')
-}
-
-export function isPrimitive(value: unknown): boolean {
-  return !value || (typeof value !== 'object' && typeof value !== 'function')
-}
 
 const CHAR_FORWARD_SLASH = 47
 const CHAR_BACKWARD_SLASH = 92
