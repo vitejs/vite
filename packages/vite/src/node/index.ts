@@ -119,7 +119,7 @@ export type {
   TransformOptions,
   TransformResult,
 } from './server/transformRequest'
-export type { HmrOptions, HmrContext } from './server/hmr'
+export type { HmrOptions, HmrContext, HotUpdateContext } from './server/hmr'
 
 export type {
   HMRBroadcaster,

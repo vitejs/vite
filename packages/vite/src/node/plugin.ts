@@ -13,7 +13,7 @@ import type { ConfigEnv, ResolvedConfig, UserConfig } from './config'
 import type { ServerHook } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { ModuleNode } from './server/moduleGraph'
-import type { HmrContext } from './server/hmr'
+import type { HmrContext, HotUpdateContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
 
 /**
@@ -119,6 +119,19 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * `{ order: 'pre', handler: hook }`
    */
   transformIndexHtml?: IndexHtmlTransform
+
+  /**
+   * @deprecated
+   * Compat support, ctx.modules is a backward compatible ModuleNode array
+   * with the mixed client and ssr moduleGraph. Use hotUpdate instead
+   */
+  handleHotUpdate?: ObjectHook<
+    (
+      this: void,
+      ctx: HmrContext,
+    ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+  >
+
   /**
    * Perform custom handling of HMR updates.
    * The handler receives a context containing changed filename, timestamp, a
@@ -134,10 +147,10 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * - If the hook doesn't return a value, the hmr update will be performed as
    *   normal.
    */
-  handleHotUpdate?: ObjectHook<
+  hotUpdate?: ObjectHook<
     (
       this: void,
-      ctx: HmrContext,
+      ctx: HotUpdateContext,
     ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
   >
 

@@ -6,14 +6,18 @@ import colors from 'picocolors'
 import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
+import type { ResolvedConfig } from '../config'
 import { createDebugger, normalizePath, unique } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
+import { getHookHandler } from '../plugins'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
-import type { ModuleNode } from './moduleGraph'
+import type { Plugin } from '../plugin'
+import type { BackwardCompatibleModuleNode, ModuleNode } from './moduleGraph'
+import { getBackwardCompatibleModuleNode } from './moduleGraph'
 import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -35,6 +39,19 @@ export interface HmrOptions {
   channels?: HMRChannel[]
 }
 
+export interface HotUpdateContext {
+  file: string
+  timestamp: number
+  modules: Array<ModuleNode>
+  read: () => string | Promise<string>
+  server: ViteDevServer
+  runtime: string
+}
+
+/**
+ * @deprecated
+ * Used by handleHotUpdate for backward compatibility with mixed client and ssr moduleGraph
+ **/
 export interface HmrContext {
   file: string
   timestamp: number
@@ -117,6 +134,45 @@ export function getShortName(file: string, root: string): string {
     : file
 }
 
+export function getSortedPluginsByHotUpdateHook(
+  plugins: readonly Plugin[],
+): Plugin[] {
+  const sortedPlugins: Plugin[] = []
+  // Use indexes to track and insert the ordered plugins directly in the
+  // resulting array to avoid creating 3 extra temporary arrays per hook
+  let pre = 0,
+    normal = 0,
+    post = 0
+  for (const plugin of plugins) {
+    const hook = plugin['hotUpdate'] ?? plugin['handleHotUpdate']
+    if (hook) {
+      if (typeof hook === 'object') {
+        if (hook.order === 'pre') {
+          sortedPlugins.splice(pre++, 0, plugin)
+          continue
+        }
+        if (hook.order === 'post') {
+          sortedPlugins.splice(pre + normal + post++, 0, plugin)
+          continue
+        }
+      }
+      sortedPlugins.splice(pre + normal++, 0, plugin)
+    }
+  }
+
+  return sortedPlugins
+}
+
+const sortedHotUpdatePluginsCache = new WeakMap<ResolvedConfig, Plugin[]>()
+function getSortedHotUpdatePlugins(config: ResolvedConfig): Plugin[] {
+  let sortedPlugins = sortedHotUpdatePluginsCache.get(config) as Plugin[]
+  if (!sortedPlugins) {
+    sortedPlugins = getSortedPluginsByHotUpdateHook(config.plugins)
+    sortedHotUpdatePluginsCache.set(config, sortedPlugins)
+  }
+  return sortedPlugins
+}
+
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer,
@@ -172,22 +228,48 @@ export async function handleHMRUpdate(
 
       // check if any plugin wants to perform custom HMR handling
       const timestamp = Date.now()
-      const hmrContext: HmrContext = {
+      const hotContext: HotUpdateContext = {
         file,
         timestamp,
         modules: mods ? [...mods] : [],
         read: () => readModifiedFile(file),
         server,
+        runtime,
       }
 
-      for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
-        const filteredModules = await hook(hmrContext)
-        if (filteredModules) {
-          hmrContext.modules = filteredModules
+      for (const plugin of getSortedHotUpdatePlugins(config)) {
+        if (plugin.hotUpdate) {
+          const filteredModules = await getHookHandler(plugin.hotUpdate)(
+            hotContext,
+          )
+          if (filteredModules) {
+            hotContext.modules = filteredModules
+          }
+        } else if (runtime === 'browser') {
+          // Backward compatibility with mixed client and ssr moduleGraph
+          const hmrContext = {
+            ...hotContext,
+            modules: hotContext.modules.map((mod) =>
+              getBackwardCompatibleModuleNode(
+                mod,
+                mod.id
+                  ? server.moduleGraph.server.getModuleById(mod.id)
+                  : undefined,
+              ),
+            ),
+          } as HmrContext
+          const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(
+            hmrContext,
+          )
+          if (filteredModules) {
+            hmrContext.modules = filteredModules.map(
+              (mod) => (mod as BackwardCompatibleModuleNode).browser!,
+            )
+          }
         }
       }
 
-      if (!hmrContext.modules.length) {
+      if (!hotContext.modules.length) {
         // html file cannot be hot updated
         if (file.endsWith('.html')) {
           config.logger.info(
@@ -210,7 +292,7 @@ export async function handleHMRUpdate(
         return
       }
 
-      updateModules(shortFile, hmrContext.modules, timestamp, server)
+      updateModules(shortFile, hotContext.modules, timestamp, server)
     }),
   )
 }
