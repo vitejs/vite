@@ -338,6 +338,13 @@ describe('processSrcSetSync', () => {
       'data:image/avif;base64,aA+/0= 400w, data:image/avif;base64,bB+/9= 800w'
     expect(processSrcSetSync(base64, ({ url }) => url)).toBe(base64)
   })
+
+  test('should not break a regular URL in srcSet', async () => {
+    const source = 'https://anydomain/image.jpg'
+    expect(
+      processSrcSetSync('https://anydomain/image.jpg', ({ url }) => url),
+    ).toBe(source)
+  })
 })
 
 describe('flattenId', () => {

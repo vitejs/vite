@@ -48,10 +48,12 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
     if (
       config.command !== 'serve' ||
       config.server.fs.cachedChecks === false ||
-      config.server.watch?.ignored
+      config.server.watch?.ignored ||
+      process.versions.pnp
     ) {
       // cached fsUtils is only used in the dev server for now
       // it is enabled by default only when there aren't custom watcher ignored patterns configured
+      // and if yarn pnp isn't used
       fsUtils = commonFsUtils
     } else if (
       !config.resolve.preserveSymlinks &&
@@ -187,6 +189,10 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   function getDirentCacheFromPath(
     normalizedFile: string,
   ): DirentCache | false | undefined {
+    // path.posix.normalize may return a path either with / or without /
+    if (normalizedFile[normalizedFile.length - 1] === '/') {
+      normalizedFile = normalizedFile.slice(0, -1)
+    }
     if (normalizedFile === root) {
       return rootCache
     }
