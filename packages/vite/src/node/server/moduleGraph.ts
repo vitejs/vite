@@ -822,13 +822,10 @@ function createBackwardCompatibleModuleSet(
     keys(): IterableIterator<ModuleNode> {
       // TODO: should we return the keys from both the browser and server if !runtime?
       const r = runtime ?? (browserModule?.[prop].size ? 'browser' : 'server')
-      return r === 'browser'
-        ? mapIterator(browserModule![prop].keys(), (mod) =>
-            moduleGraph.getBackwardCompatibleBrowserModuleNode(mod),
-          )
-        : mapIterator(serverModule![prop].keys(), (mod) =>
-            moduleGraph.getBackwardCompatibleServerModuleNode(mod),
-          )
+      return mapIterator(
+        (r === 'browser' ? browserModule : serverModule)![prop].keys(),
+        (mod) => moduleGraph.getBackwardCompatibleModuleNode(mod),
+      )
     },
     get size() {
       const r = runtime ?? (browserModule?.[prop].size ? 'browser' : 'server')
@@ -865,38 +862,17 @@ function createBackwardCompatibleModuleMap(
         : moduleGraph.server[prop].keys()
     },
     values(): IterableIterator<ModuleNode> {
-      return moduleGraph.browser[prop].size
-        ? mapIterator(moduleGraph.browser[prop].values(), (browserModule) =>
-            moduleGraph.getBackwardCompatibleBrowserModuleNode(browserModule),
-          )
-        : mapIterator(
-            moduleGraph.server[prop].values(),
-            (serverModule) =>
-              moduleGraph.getBackwardCompatibleModuleNodeDual(
-                undefined,
-                serverModule,
-              )!,
-          )
+      const runtime = moduleGraph.browser[prop].size ? 'browser' : 'server'
+      return mapIterator(moduleGraph.get(runtime)[prop].values(), (mod) =>
+        moduleGraph.getBackwardCompatibleModuleNode(mod),
+      )
     },
     entries(): IterableIterator<[string, ModuleNode]> {
-      return moduleGraph.browser[prop].size
-        ? mapIterator(
-            moduleGraph.browser[prop].entries(),
-            ([key, browserModule]) => [
-              key,
-              moduleGraph.getBackwardCompatibleBrowserModuleNode(browserModule),
-            ],
-          )
-        : mapIterator(
-            moduleGraph.server[prop].entries(),
-            ([key, serverModule]) => [
-              key,
-              moduleGraph.getBackwardCompatibleModuleNodeDual(
-                undefined,
-                serverModule,
-              )!,
-            ],
-          )
+      const runtime = moduleGraph.browser[prop].size ? 'browser' : 'server'
+      return mapIterator(
+        moduleGraph.get(runtime)[prop].entries(),
+        ([key, mod]) => [key, moduleGraph.getBackwardCompatibleModuleNode(mod)],
+      )
     },
     get size() {
       return moduleGraph.browser[prop].size || moduleGraph.server[prop].size
@@ -911,8 +887,8 @@ function createBackwardCompatibleFileToModulesMap(
     browserModules: Set<ModuleNode>,
   ): Set<ModuleNode> =>
     new Set(
-      [...browserModules].map((browserModule) =>
-        moduleGraph.getBackwardCompatibleBrowserModuleNode(browserModule),
+      [...browserModules].map((mod) =>
+        moduleGraph.getBackwardCompatibleBrowserModuleNode(mod),
       ),
     )
 
