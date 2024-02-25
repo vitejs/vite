@@ -862,12 +862,14 @@ function createBackwardCompatibleModuleMap(
         : moduleGraph.server[prop].keys()
     },
     values(): IterableIterator<ModuleNode> {
+      // TODO: should we return the keys from both the browser and server?
       const runtime = moduleGraph.browser[prop].size ? 'browser' : 'server'
       return mapIterator(moduleGraph.get(runtime)[prop].values(), (mod) =>
         moduleGraph.getBackwardCompatibleModuleNode(mod),
       )
     },
     entries(): IterableIterator<[string, ModuleNode]> {
+      // TODO: should we return the keys from both the browser and server?
       const runtime = moduleGraph.browser[prop].size ? 'browser' : 'server'
       return mapIterator(
         moduleGraph.get(runtime)[prop].entries(),
@@ -883,28 +885,29 @@ function createBackwardCompatibleModuleMap(
 function createBackwardCompatibleFileToModulesMap(
   moduleGraph: ModuleGraphs,
 ): Map<string, Set<ModuleNode>> {
-  const mapBrowserModules = (
-    browserModules: Set<ModuleNode>,
+  const getBackwardCompatibleModules = (
+    modules: Set<ModuleNode>,
   ): Set<ModuleNode> =>
     new Set(
-      [...browserModules].map((mod) =>
-        moduleGraph.getBackwardCompatibleBrowserModuleNode(mod),
+      [...modules].map((mod) =>
+        moduleGraph.getBackwardCompatibleModuleNode(mod),
       ),
     )
-
-  const mapMaybeBrowserModules = (
-    browserModules: Set<ModuleNode> | undefined,
-  ): Set<ModuleNode> | undefined =>
-    browserModules ? mapBrowserModules(browserModules) : undefined
 
   return {
     [Symbol.iterator](): IterableIterator<[string, Set<ModuleNode>]> {
       return this.entries()
     },
     get(key: string) {
-      return mapMaybeBrowserModules(
-        moduleGraph.browser.fileToModulesMap.get(key),
-      )
+      // TODO: should we return the modules from both the browser and server?
+      let modules = moduleGraph.browser.fileToModulesMap.get(key)
+      if (!modules) {
+        modules = moduleGraph.server.fileToModulesMap.get(key)
+      }
+      if (!modules) {
+        return
+      }
+      return getBackwardCompatibleModules(modules)
     },
     keys(): IterableIterator<string> {
       // TODO: should we return the keys from both the browser and server?
@@ -913,15 +916,26 @@ function createBackwardCompatibleFileToModulesMap(
         : moduleGraph.server.fileToModulesMap.keys()
     },
     values(): IterableIterator<Set<ModuleNode>> {
+      // TODO: should we return the keys from both the browser and server?
+      const runtime = moduleGraph.browser.fileToModulesMap.size
+        ? 'browser'
+        : 'server'
       return mapIterator(
-        moduleGraph.browser.fileToModulesMap.values(),
-        mapBrowserModules,
+        moduleGraph.get(runtime).fileToModulesMap.values(),
+        getBackwardCompatibleModules,
       )
     },
     entries(): IterableIterator<[string, Set<ModuleNode>]> {
+      // TODO: should we return the keys from both the browser and server?
+      const runtime = moduleGraph.browser.fileToModulesMap.size
+        ? 'browser'
+        : 'server'
       return mapIterator(
-        moduleGraph.browser.fileToModulesMap.entries(),
-        ([key, browserModules]) => [key, mapBrowserModules(browserModules)],
+        moduleGraph.get(runtime).fileToModulesMap.entries(),
+        ([key, browserModules]) => [
+          key,
+          getBackwardCompatibleModules(browserModules),
+        ],
       )
     },
     get size() {
