@@ -748,31 +748,68 @@ export class ModuleGraphs {
     browserModule?: ModuleNode,
     serverModule?: ModuleNode,
   ): ModuleNode {
-    const wrapModuleSet = (prop: ModuleSetNames, runtime?: string) =>
+    const wrapModuleSet = (
+      prop: ModuleSetNames,
+      getModuleSet?: () => Set<ModuleNode>,
+      runtime?: string,
+    ) =>
       createBackwardCompatibleModuleSet(
         this,
         prop,
         browserModule,
         serverModule,
+        getModuleSet,
         runtime,
       )
+    const getModuleSetUnion = (prop: 'importedModules' | 'importers') => () => {
+      // A good approximation to the previous logic that returned the union of
+      // the importedModules and importers from both the browser and server
+      const importedModules = new Set<ModuleNode>()
+      const ids = new Set<string>()
+      if (browserModule) {
+        for (const mod of browserModule[prop]) {
+          if (mod.id) ids.add(mod.id)
+          importedModules.add(this.getBackwardCompatibleModuleNode(mod))
+        }
+      }
+      if (serverModule) {
+        for (const mod of serverModule[prop]) {
+          if (mod.id && !ids.has(mod.id)) {
+            importedModules.add(this.getBackwardCompatibleModuleNode(mod))
+          }
+        }
+      }
+      return importedModules
+    }
     return new Proxy((browserModule ?? serverModule)!, {
       get(_, prop: keyof BackwardCompatibleModuleNode) {
         switch (prop) {
           case 'importers':
-            return wrapModuleSet('importers')
+            return getModuleSetUnion('importers')
 
           case 'acceptedHmrDeps':
-            return wrapModuleSet('acceptedHmrDeps')
+            return wrapModuleSet('acceptedHmrDeps') // TODO: should it be browser only?
 
           case 'clientImportedModules':
-            return wrapModuleSet('importedModules', 'browser')
+            return wrapModuleSet(
+              'importedModules',
+              () => {
+                return browserModule ? browserModule.importedModules : new Set()
+              },
+              'browser',
+            )
 
           case 'ssrImportedModules':
-            return wrapModuleSet('importedModules', 'server')
+            return wrapModuleSet(
+              'importedModules',
+              () => {
+                return serverModule ? serverModule.importedModules : new Set()
+              },
+              'server',
+            )
 
           case 'importedModules':
-            return wrapModuleSet('importedModules')
+            return getModuleSetUnion('importedModules')
 
           case 'ssrTransformResult':
             return serverModule?.transformResult
@@ -796,19 +833,16 @@ function createBackwardCompatibleModuleSet(
   prop: ModuleSetNames,
   browserModule?: ModuleNode,
   serverModule?: ModuleNode,
+  getModuleSet: () => Set<ModuleNode> = () => {
+    const module = serverModule
+      ? browserModule?.[prop].size
+        ? browserModule
+        : serverModule
+      : browserModule
+    return module![prop]
+  },
   runtime?: string,
 ): Set<ModuleNode> {
-  const getModuleSet = (): Set<ModuleNode> => {
-    let module
-    if (runtime) {
-      module = runtime === 'browser' ? browserModule : serverModule
-    } else if (serverModule) {
-      module = browserModule?.[prop].size ? browserModule : serverModule
-    } else {
-      module = browserModule
-    }
-    return module![prop]
-  }
   return {
     [Symbol.iterator]() {
       return this.keys()
