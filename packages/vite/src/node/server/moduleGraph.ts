@@ -761,7 +761,7 @@ export class ModuleGraphs {
         getModuleSet,
         runtime,
       )
-    const getModuleSetUnion = (prop: 'importedModules' | 'importers') => () => {
+    const getModuleSetUnion = (prop: 'importedModules' | 'importers') => {
       // A good approximation to the previous logic that returned the union of
       // the importedModules and importers from both the browser and server
       const importedModules = new Set<ModuleNode>()
