@@ -818,7 +818,7 @@ function createBackwardCompatibleModuleSet(
     },
     keys(): IterableIterator<ModuleNode> {
       // TODO: should we return the keys from both the browser and server if !runtime?
-      const r = runtime ?? browserModule?.[prop].size ? 'browser' : 'server'
+      const r = runtime ?? (browserModule?.[prop].size ? 'browser' : 'server')
       return r === 'browser'
         ? mapIterator(browserModule![prop].keys(), (mod) =>
             moduleGraph.getBackwardCompatibleBrowserModuleNode(mod),
@@ -828,7 +828,7 @@ function createBackwardCompatibleModuleSet(
           )
     },
     get size() {
-      const r = runtime ?? browserModule?.[prop].size ? 'browser' : 'server'
+      const r = runtime ?? (browserModule?.[prop].size ? 'browser' : 'server')
       return r === 'browser'
         ? browserModule?.[prop].size
         : serverModule?.[prop].size
