@@ -798,6 +798,17 @@ function createBackwardCompatibleModuleSet(
   serverModule?: ModuleNode,
   runtime?: string,
 ): Set<ModuleNode> {
+  const getModuleSet = (): Set<ModuleNode> => {
+    let module
+    if (runtime) {
+      module = runtime === 'browser' ? browserModule : serverModule
+    } else if (serverModule) {
+      module = browserModule?.[prop].size ? browserModule : serverModule
+    } else {
+      module = browserModule
+    }
+    return module![prop]
+  }
   return {
     [Symbol.iterator]() {
       return this.keys()
@@ -824,23 +835,15 @@ function createBackwardCompatibleModuleSet(
     },
     keys() {
       // TODO: should we return the keys from both the browser and server if !runtime?
-      const r = runtime ?? (browserModule?.[prop].size ? 'browser' : 'server')
-      return mapIterator(
-        (r === 'browser' ? browserModule : serverModule)![prop].keys(),
-        (mod) => moduleGraph.getBackwardCompatibleModuleNode(mod),
+      return mapIterator(getModuleSet().keys(), (mod) =>
+        moduleGraph.getBackwardCompatibleModuleNode(mod),
       )
     },
     get size() {
-      const r = runtime ?? (browserModule?.[prop].size ? 'browser' : 'server')
-      return r === 'browser'
-        ? browserModule?.[prop].size
-        : serverModule?.[prop].size
+      return getModuleSet().size
     },
     forEach(callback, thisArg) {
-      const r = runtime ?? (browserModule?.[prop].size ? 'browser' : 'server')
-      return (
-        r === 'browser' ? browserModule![prop] : serverModule![prop]
-      ).forEach((mod) => {
+      return getModuleSet().forEach((mod) => {
         const backwardCompatibleMod =
           moduleGraph.getBackwardCompatibleModuleNode(mod)
         callback.call(
@@ -861,6 +864,10 @@ function createBackwardCompatibleModuleMap(
   moduleGraph: ModuleGraphs,
   prop: 'urlToModuleMap' | 'idToModuleMap' | 'etagToModuleMap',
 ): Map<string, ModuleNode> {
+  const getModuleMap = (): Map<string, ModuleNode> => {
+    const runtime = moduleGraph.browser[prop].size ? 'browser' : 'server'
+    return moduleGraph.get(runtime)[prop]
+  }
   return {
     [Symbol.iterator]() {
       return this.entries()
@@ -878,31 +885,26 @@ function createBackwardCompatibleModuleMap(
     },
     keys() {
       // TODO: should we return the keys from both the browser and server?
-      return moduleGraph.browser[prop].size
-        ? moduleGraph.browser[prop].keys()
-        : moduleGraph.server[prop].keys()
+      return getModuleMap().keys()
     },
     values() {
       // TODO: should we return the keys from both the browser and server?
-      const runtime = moduleGraph.browser[prop].size ? 'browser' : 'server'
-      return mapIterator(moduleGraph.get(runtime)[prop].values(), (mod) =>
+      return mapIterator(getModuleMap().values(), (mod) =>
         moduleGraph.getBackwardCompatibleModuleNode(mod),
       )
     },
     entries() {
       // TODO: should we return the keys from both the browser and server?
-      const runtime = moduleGraph.browser[prop].size ? 'browser' : 'server'
-      return mapIterator(
-        moduleGraph.get(runtime)[prop].entries(),
-        ([key, mod]) => [key, moduleGraph.getBackwardCompatibleModuleNode(mod)],
-      )
+      return mapIterator(getModuleMap().entries(), ([key, mod]) => [
+        key,
+        moduleGraph.getBackwardCompatibleModuleNode(mod),
+      ])
     },
     get size() {
       return moduleGraph.browser[prop].size || moduleGraph.server[prop].size
     },
     forEach(callback, thisArg) {
-      const runtime = moduleGraph.browser[prop].size ? 'browser' : 'server'
-      return moduleGraph.get(runtime)[prop].forEach((mod, key) => {
+      return getModuleMap().forEach((mod, key) => {
         const backwardCompatibleMod =
           moduleGraph.getBackwardCompatibleModuleNode(mod)
         callback.call(thisArg, backwardCompatibleMod, key, this)
@@ -914,6 +916,12 @@ function createBackwardCompatibleModuleMap(
 function createBackwardCompatibleFileToModulesMap(
   moduleGraph: ModuleGraphs,
 ): Map<string, Set<ModuleNode>> {
+  const getFileToModulesMap = (): Map<string, Set<ModuleNode>> => {
+    const runtime = moduleGraph.browser.fileToModulesMap.size
+      ? 'browser'
+      : 'server'
+    return moduleGraph.get(runtime).fileToModulesMap
+  }
   const getBackwardCompatibleModules = (
     modules: Set<ModuleNode>,
   ): Set<ModuleNode> =>
@@ -940,51 +948,30 @@ function createBackwardCompatibleFileToModulesMap(
     },
     keys() {
       // TODO: should we return the keys from both the browser and server?
-      return moduleGraph.browser.fileToModulesMap.size
-        ? moduleGraph.browser.fileToModulesMap.keys()
-        : moduleGraph.server.fileToModulesMap.keys()
+      return getFileToModulesMap().keys()
     },
     values() {
       // TODO: should we return the keys from both the browser and server?
-      const runtime = moduleGraph.browser.fileToModulesMap.size
-        ? 'browser'
-        : 'server'
       return mapIterator(
-        moduleGraph.get(runtime).fileToModulesMap.values(),
+        getFileToModulesMap().values(),
         getBackwardCompatibleModules,
       )
     },
     entries() {
       // TODO: should we return the keys from both the browser and server?
-      const runtime = moduleGraph.browser.fileToModulesMap.size
-        ? 'browser'
-        : 'server'
-      return mapIterator(
-        moduleGraph.get(runtime).fileToModulesMap.entries(),
-        ([key, modules]) => [key, getBackwardCompatibleModules(modules)],
-      )
+      return mapIterator(getFileToModulesMap().entries(), ([key, modules]) => [
+        key,
+        getBackwardCompatibleModules(modules),
+      ])
     },
     get size() {
-      return (
-        moduleGraph.browser.fileToModulesMap.size ||
-        moduleGraph.server.fileToModulesMap.size
-      )
+      return getFileToModulesMap().size
     },
     forEach(callback, thisArg) {
       // TODO: should we return the keys from both the browser and server?
-      const runtime = moduleGraph.browser.fileToModulesMap.size
-        ? 'browser'
-        : 'server'
-      return moduleGraph
-        .get(runtime)
-        .fileToModulesMap.forEach((modules, key) => {
-          callback.call(
-            thisArg,
-            getBackwardCompatibleModules(modules),
-            key,
-            this,
-          )
-        })
+      return getFileToModulesMap().forEach((modules, key) => {
+        callback.call(thisArg, getBackwardCompatibleModules(modules), key, this)
+      })
     },
   } as Map<string, Set<ModuleNode>>
 }
