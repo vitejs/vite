@@ -17,7 +17,6 @@ import { getEnvFilesForMode } from '../env'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { Plugin } from '../plugin'
 import type { ModuleNode } from './moduleGraph'
-import { getBackwardCompatibleModuleNode } from './moduleGraph'
 import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -264,19 +263,7 @@ export async function handleHMRUpdate(
       hmrContext ??= {
         ...hotContext,
         modules: hotContext.modules.map((mod) =>
-          mod.runtime === 'browser'
-            ? getBackwardCompatibleModuleNode(
-                mod,
-                mod.id
-                  ? server.moduleGraph.server.getModuleById(mod.id)
-                  : undefined,
-              )
-            : getBackwardCompatibleModuleNode(
-                mod.id
-                  ? server.moduleGraph.browser.getModuleById(mod.id)
-                  : undefined,
-                mod,
-              ),
+          moduleGraph.getBackwardCompatibleModuleNode(mod),
         ),
       } as HmrContext
       const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(

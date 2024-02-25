@@ -497,34 +497,7 @@ export interface BackwardCompatibleModuleNode extends ModuleNode {
   // TODO: ssrInvalidationState?
 }
 
-export function getBackwardCompatibleModuleNode(
-  browserModule?: ModuleNode,
-  serverModule?: ModuleNode,
-): ModuleNode | undefined {
-  return browserModule || serverModule
-    ? new Proxy((browserModule || serverModule)!, {
-        get(_, prop: keyof BackwardCompatibleModuleNode) {
-          if (prop === 'clientImportedModules') {
-            return browserModule?.importedModules
-          } else if (prop === 'ssrImportedModules') {
-            return serverModule?.importedModules
-          } else if (prop === 'importedModules') {
-            return new Set([
-              ...(browserModule?.importedModules || []),
-              ...(serverModule?.importedModules || []),
-            ])
-          } else if (prop === 'ssrTransformResult') {
-            return serverModule?.transformResult
-          } else if (prop === 'ssrModule') {
-            return serverModule?.module
-          } else if (prop === 'ssrError') {
-            return serverModule?.error
-          }
-          return browserModule?.[prop] ?? serverModule?.[prop]
-        },
-      })
-    : undefined
-}
+type ModuleSetNames = 'importers' | 'acceptedHmrDeps' | 'importedModules'
 
 function mapIterator<T, K = T>(
   iterable: IterableIterator<T>,
@@ -544,114 +517,6 @@ function mapIterator<T, K = T>(
           }
     },
   }
-}
-
-function createBackwardCompatibleModuleMap(
-  browser: ModuleGraph,
-  server: ModuleGraph,
-  prop: 'urlToModuleMap' | 'idToModuleMap' | 'etagToModuleMap',
-): Map<string, ModuleNode> {
-  return {
-    [Symbol.iterator](): IterableIterator<[string, ModuleNode]> {
-      return this.entries()
-    },
-    get(key: string) {
-      const browserModule = browser[prop].get(key)
-      const serverModule = server[prop].get(key)
-      return getBackwardCompatibleModuleNode(browserModule, serverModule)
-    },
-    keys(): IterableIterator<string> {
-      // TODO: should we return the keys from both the browser and server?
-      return browser[prop].size ? browser[prop].keys() : server[prop].keys()
-    },
-    values(): IterableIterator<ModuleNode> {
-      return browser[prop].size
-        ? mapIterator(
-            browser[prop].values(),
-            (browserModule) =>
-              getBackwardCompatibleModuleNode(
-                browserModule,
-                browserModule.id
-                  ? server.getModuleById(browserModule.id)
-                  : undefined,
-              )!,
-          )
-        : mapIterator(
-            server[prop].values(),
-            (serverModule) =>
-              getBackwardCompatibleModuleNode(undefined, serverModule)!,
-          )
-    },
-    entries(): IterableIterator<[string, ModuleNode]> {
-      return browser[prop].size
-        ? mapIterator(browser[prop].entries(), ([key, browserModule]) => [
-            key,
-            getBackwardCompatibleModuleNode(
-              browserModule,
-              browserModule.id
-                ? server.getModuleById(browserModule.id)
-                : undefined,
-            )!,
-          ])
-        : mapIterator(server[prop].entries(), ([key, serverModule]) => [
-            key,
-            getBackwardCompatibleModuleNode(undefined, serverModule)!,
-          ])
-    },
-    get size() {
-      return browser[prop].size || server[prop].size
-    },
-  } as Map<string, ModuleNode>
-}
-
-function createBackwardCompatibleFileToModulesMap(
-  browser: ModuleGraph,
-  server: ModuleGraph,
-): Map<string, Set<ModuleNode>> {
-  const mapBrowserModules = (
-    browserModules: Set<ModuleNode>,
-  ): Set<ModuleNode> =>
-    new Set(
-      [...browserModules].map(
-        (browserModule) =>
-          getBackwardCompatibleModuleNode(
-            browserModule,
-            browserModule.id
-              ? server.getModuleById(browserModule.id)
-              : undefined,
-          )!,
-      ),
-    )
-  const mapMaybeBrowserModules = (
-    browserModules: Set<ModuleNode> | undefined,
-  ): Set<ModuleNode> | undefined =>
-    browserModules ? mapBrowserModules(browserModules) : undefined
-  return {
-    [Symbol.iterator](): IterableIterator<[string, Set<ModuleNode>]> {
-      return this.entries()
-    },
-    get(key: string) {
-      return mapMaybeBrowserModules(browser.fileToModulesMap.get(key))
-    },
-    keys(): IterableIterator<string> {
-      // TODO: should we return the keys from both the browser and server?
-      return browser.fileToModulesMap.size
-        ? browser.fileToModulesMap.keys()
-        : server.fileToModulesMap.keys()
-    },
-    values(): IterableIterator<Set<ModuleNode>> {
-      return mapIterator(browser.fileToModulesMap.values(), mapBrowserModules)
-    },
-    entries(): IterableIterator<[string, Set<ModuleNode>]> {
-      return mapIterator(
-        browser.fileToModulesMap.entries(),
-        ([key, browserModules]) => [key, mapBrowserModules(browserModules)],
-      )
-    },
-    get size() {
-      return browser.fileToModulesMap.size || server.fileToModulesMap.size
-    },
-  } as Map<string, Set<ModuleNode>>
 }
 
 export class ModuleGraphs {
@@ -676,27 +541,19 @@ export class ModuleGraphs {
     this.browser = moduleGraphs.browser
     this.server = moduleGraphs.server
     this.runtimes = Object.keys(moduleGraphs)
-
     this.urlToModuleMap = createBackwardCompatibleModuleMap(
-      this.browser,
-      this.server,
+      this,
       'urlToModuleMap',
     )
     this.idToModuleMap = createBackwardCompatibleModuleMap(
-      this.browser,
-      this.server,
+      this,
       'idToModuleMap',
     )
     this.etagToModuleMap = createBackwardCompatibleModuleMap(
-      this.browser,
-      this.server,
+      this,
       'etagToModuleMap',
     )
-
-    this.fileToModulesMap = createBackwardCompatibleFileToModulesMap(
-      this.browser,
-      this.server,
-    )
+    this.fileToModulesMap = createBackwardCompatibleFileToModulesMap(this)
   }
 
   get(runtime: string): ModuleGraph {
@@ -708,7 +565,7 @@ export class ModuleGraphs {
   getModuleById(id: string): ModuleNode | undefined {
     const browserModule = this.browser.getModuleById(id)
     const serverModule = this.server.getModuleById(id)
-    return getBackwardCompatibleModuleNode(browserModule, serverModule)
+    return this.getBackwardCompatibleModuleNodeDual(browserModule, serverModule)
   }
 
   /** @deprecated */
@@ -724,7 +581,7 @@ export class ModuleGraphs {
       this.browser.getModuleByUrl(url),
       this.server.getModuleByUrl(url),
     ])
-    return getBackwardCompatibleModuleNode(browserModule, serverModule)
+    return this.getBackwardCompatibleModuleNodeDual(browserModule, serverModule)
   }
 
   /** @deprecated */
@@ -736,11 +593,7 @@ export class ModuleGraphs {
     if (browserModules) {
       return new Set(
         [...browserModules].map(
-          (module) =>
-            getBackwardCompatibleModuleNode(
-              module,
-              module.id ? this.server.getModuleById(module.id) : undefined,
-            )!,
+          (mod) => this.getBackwardCompatibleBrowserModuleNode(mod)!,
         ),
       )
     }
@@ -748,11 +601,7 @@ export class ModuleGraphs {
     if (serverModules) {
       return new Set(
         [...serverModules].map(
-          (module) =>
-            getBackwardCompatibleModuleNode(
-              module.id ? this.browser.getModuleById(module.id) : undefined,
-              module,
-            )!,
+          (mod) => this.getBackwardCompatibleServerModuleNode(mod)!,
         ),
       )
     }
@@ -791,7 +640,7 @@ export class ModuleGraphs {
 
   /** @deprecated */
   async updateModuleInfo(
-    mod: ModuleNode,
+    module: ModuleNode,
     importedModules: Set<string | ModuleNode>,
     importedBindings: Map<string, Set<string>> | null,
     acceptedModules: Set<string | ModuleNode>,
@@ -802,8 +651,8 @@ export class ModuleGraphs {
     staticImportedUrls?: Set<string>,
   ): Promise<Set<ModuleNode> | undefined> {
     // TODO: return backward compatible module nodes?
-    const modules = await this.get(mod.runtime).updateModuleInfo(
-      mod,
+    const modules = await this.get(module.runtime).updateModuleInfo(
+      module,
       importedModules,
       importedBindings,
       acceptedModules,
@@ -813,17 +662,7 @@ export class ModuleGraphs {
     )
     return modules
       ? new Set(
-          [...modules].map((module) =>
-            mod.runtime === 'browser'
-              ? getBackwardCompatibleModuleNode(
-                  module,
-                  module.id ? this.server.getModuleById(module.id) : undefined,
-                )!
-              : getBackwardCompatibleModuleNode(
-                  module.id ? this.browser.getModuleById(module.id) : undefined,
-                  module,
-                )!,
-          ),
+          [...modules].map((mod) => this.getBackwardCompatibleModuleNode(mod)!),
         )
       : undefined
   }
@@ -839,14 +678,20 @@ export class ModuleGraphs {
       this.browser.ensureEntryFromUrl(rawUrl, setIsSelfAccepting),
       this.server.ensureEntryFromUrl(rawUrl, setIsSelfAccepting),
     ])
-    return getBackwardCompatibleModuleNode(browserModule, serverModule)!
+    return this.getBackwardCompatibleModuleNodeDual(
+      browserModule,
+      serverModule,
+    )!
   }
 
   /** @deprecated */
   createFileOnlyEntry(file: string): ModuleNode {
     const browserModule = this.browser.createFileOnlyEntry(file)
     const serverModule = this.server.createFileOnlyEntry(file)
-    return getBackwardCompatibleModuleNode(browserModule, serverModule)!
+    return this.getBackwardCompatibleModuleNodeDual(
+      browserModule,
+      serverModule,
+    )!
   }
 
   /** @deprecated */
@@ -866,12 +711,242 @@ export class ModuleGraphs {
   /** @deprecated */
   getModuleByEtag(etag: string): ModuleNode | undefined {
     const mod = this.browser.etagToModuleMap.get(etag)
-    if (!mod) {
+    return mod && this.getBackwardCompatibleBrowserModuleNode(mod)
+  }
+
+  getBackwardCompatibleBrowserModuleNode(
+    browserModule: ModuleNode,
+  ): ModuleNode {
+    return this.getBackwardCompatibleModuleNodeDual(
+      browserModule,
+      browserModule.id
+        ? this.server.getModuleById(browserModule.id)
+        : undefined,
+    )!
+  }
+
+  getBackwardCompatibleServerModuleNode(serverModule: ModuleNode): ModuleNode {
+    return this.getBackwardCompatibleModuleNodeDual(
+      serverModule.id ? this.browser.getModuleById(serverModule.id) : undefined,
+      serverModule,
+    )!
+  }
+
+  getBackwardCompatibleModuleNode(module: ModuleNode): ModuleNode {
+    return module.runtime === 'browser'
+      ? this.getBackwardCompatibleBrowserModuleNode(module)!
+      : this.getBackwardCompatibleServerModuleNode(module)!
+  }
+
+  getBackwardCompatibleModuleNodeDual(
+    browserModule?: ModuleNode,
+    serverModule?: ModuleNode,
+  ): ModuleNode | undefined {
+    if (!browserModule && !serverModule) {
       return
     }
-    return getBackwardCompatibleModuleNode(
-      mod,
-      this.server.getModuleById(mod.id!),
-    )
+    const wrapModuleSet = (prop: ModuleSetNames, runtime?: string) =>
+      createBackwardCompatibleModuleSet(
+        this,
+        prop,
+        browserModule,
+        serverModule,
+        runtime,
+      )
+    return new Proxy((browserModule ?? serverModule)!, {
+      get(_, prop: keyof BackwardCompatibleModuleNode) {
+        switch (prop) {
+          case 'importers':
+            return wrapModuleSet('importers')
+
+          case 'acceptedHmrDeps':
+            return wrapModuleSet('acceptedHmrDeps')
+
+          case 'clientImportedModules':
+            return wrapModuleSet('importedModules', 'browser')
+
+          case 'ssrImportedModules':
+            return wrapModuleSet('importedModules', 'server')
+
+          case 'importedModules':
+            return wrapModuleSet('importedModules')
+
+          case 'ssrTransformResult':
+            return serverModule?.transformResult
+
+          case 'ssrModule':
+            return serverModule?.module
+
+          case 'ssrError':
+            return serverModule?.error
+
+          default:
+            return browserModule?.[prop] ?? serverModule?.[prop]
+        }
+      },
+    })
   }
+}
+
+function createBackwardCompatibleModuleSet(
+  moduleGraph: ModuleGraphs,
+  prop: ModuleSetNames,
+  browserModule?: ModuleNode,
+  serverModule?: ModuleNode,
+  runtime?: string,
+): Set<ModuleNode> {
+  return {
+    [Symbol.iterator](): IterableIterator<ModuleNode> {
+      return this.keys()
+    },
+    has(key: ModuleNode) {
+      if (!key.id) {
+        return false
+      }
+      const bm =
+        !runtime || runtime === 'browser'
+          ? moduleGraph.browser.getModuleById(key.id)
+          : undefined
+      const sm =
+        !runtime || runtime === 'server'
+          ? moduleGraph.server.getModuleById(key.id)
+          : undefined
+      return (
+        (bm !== undefined && browserModule?.[prop].has(bm)) ||
+        (sm !== undefined && serverModule?.[prop].has(sm))
+      )
+    },
+    keys(): IterableIterator<ModuleNode> {
+      // TODO: should we return the keys from both the browser and server if !runtime?
+      const r = runtime ?? browserModule?.[prop].size ? 'browser' : 'server'
+      return r === 'browser'
+        ? mapIterator(browserModule![prop].keys(), (mod) =>
+            moduleGraph.getBackwardCompatibleBrowserModuleNode(mod),
+          )
+        : mapIterator(serverModule![prop].keys(), (mod) =>
+            moduleGraph.getBackwardCompatibleServerModuleNode(mod),
+          )
+    },
+    get size() {
+      const r = runtime ?? browserModule?.[prop].size ? 'browser' : 'server'
+      return r === 'browser'
+        ? browserModule?.[prop].size
+        : serverModule?.[prop].size
+    },
+  } as Set<ModuleNode>
+}
+
+function createBackwardCompatibleModuleMap(
+  moduleGraph: ModuleGraphs,
+  prop: 'urlToModuleMap' | 'idToModuleMap' | 'etagToModuleMap',
+): Map<string, ModuleNode> {
+  return {
+    [Symbol.iterator](): IterableIterator<[string, ModuleNode]> {
+      return this.entries()
+    },
+    get(key: string) {
+      const browserModule = moduleGraph.browser[prop].get(key)
+      const serverModule = moduleGraph.server[prop].get(key)
+      return moduleGraph.getBackwardCompatibleModuleNodeDual(
+        browserModule,
+        serverModule,
+      )
+    },
+    keys(): IterableIterator<string> {
+      // TODO: should we return the keys from both the browser and server?
+      return moduleGraph.browser[prop].size
+        ? moduleGraph.browser[prop].keys()
+        : moduleGraph.server[prop].keys()
+    },
+    values(): IterableIterator<ModuleNode> {
+      return moduleGraph.browser[prop].size
+        ? mapIterator(moduleGraph.browser[prop].values(), (browserModule) =>
+            moduleGraph.getBackwardCompatibleBrowserModuleNode(browserModule),
+          )
+        : mapIterator(
+            moduleGraph.server[prop].values(),
+            (serverModule) =>
+              moduleGraph.getBackwardCompatibleModuleNodeDual(
+                undefined,
+                serverModule,
+              )!,
+          )
+    },
+    entries(): IterableIterator<[string, ModuleNode]> {
+      return moduleGraph.browser[prop].size
+        ? mapIterator(
+            moduleGraph.browser[prop].entries(),
+            ([key, browserModule]) => [
+              key,
+              moduleGraph.getBackwardCompatibleBrowserModuleNode(browserModule),
+            ],
+          )
+        : mapIterator(
+            moduleGraph.server[prop].entries(),
+            ([key, serverModule]) => [
+              key,
+              moduleGraph.getBackwardCompatibleModuleNodeDual(
+                undefined,
+                serverModule,
+              )!,
+            ],
+          )
+    },
+    get size() {
+      return moduleGraph.browser[prop].size || moduleGraph.server[prop].size
+    },
+  } as Map<string, ModuleNode>
+}
+
+function createBackwardCompatibleFileToModulesMap(
+  moduleGraph: ModuleGraphs,
+): Map<string, Set<ModuleNode>> {
+  const mapBrowserModules = (
+    browserModules: Set<ModuleNode>,
+  ): Set<ModuleNode> =>
+    new Set(
+      [...browserModules].map((browserModule) =>
+        moduleGraph.getBackwardCompatibleBrowserModuleNode(browserModule),
+      ),
+    )
+
+  const mapMaybeBrowserModules = (
+    browserModules: Set<ModuleNode> | undefined,
+  ): Set<ModuleNode> | undefined =>
+    browserModules ? mapBrowserModules(browserModules) : undefined
+
+  return {
+    [Symbol.iterator](): IterableIterator<[string, Set<ModuleNode>]> {
+      return this.entries()
+    },
+    get(key: string) {
+      return mapMaybeBrowserModules(
+        moduleGraph.browser.fileToModulesMap.get(key),
+      )
+    },
+    keys(): IterableIterator<string> {
+      // TODO: should we return the keys from both the browser and server?
+      return moduleGraph.browser.fileToModulesMap.size
+        ? moduleGraph.browser.fileToModulesMap.keys()
+        : moduleGraph.server.fileToModulesMap.keys()
+    },
+    values(): IterableIterator<Set<ModuleNode>> {
+      return mapIterator(
+        moduleGraph.browser.fileToModulesMap.values(),
+        mapBrowserModules,
+      )
+    },
+    entries(): IterableIterator<[string, Set<ModuleNode>]> {
+      return mapIterator(
+        moduleGraph.browser.fileToModulesMap.entries(),
+        ([key, browserModules]) => [key, mapBrowserModules(browserModules)],
+      )
+    },
+    get size() {
+      return (
+        moduleGraph.browser.fileToModulesMap.size ||
+        moduleGraph.server.fileToModulesMap.size
+      )
+    },
+  } as Map<string, Set<ModuleNode>>
 }
