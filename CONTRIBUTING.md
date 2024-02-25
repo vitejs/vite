@@ -68,7 +68,7 @@ You may wish to test your locally modified copy of Vite against another package 
 ```json
 {
   "dependencies": {
-    "vite": "^4.0.0"
+    "vite": "^5.0.0"
   },
   "pnpm": {
     "overrides": {
@@ -209,14 +209,14 @@ flowchart TD
     real --NO--> intended{Is the intended\nbehaviour?}
     intended --YES--> explain[Explain and close\npoint to docs if needed]
     intended --NO--> open[Keep open for discussion\nRemove 'pending triage' label]
-    real --YES--> real2["1. Remove 'pending triage' label\n2. Add 'bug' label\n3. Add related feature label if\napplicable (e.g. 'bug: ssr'\nor 'plugin: vue')\n4. Add priority label (see below)"]
+    real --YES--> real2["1. Remove 'pending triage' label\n2. Add related feature label if\napplicable (e.g. 'feat: ssr')\n3. Add priority and meta labels (see below)"]
     real2 --> unusable{Does the\nbug make Vite\nunusable?}
     unusable --YES--> maj{Does the bug\naffect the majority\nof Vite users?}
     maj --YES--> p5[p5: urgent]
     maj --NO--> p4[p4: important]
     unusable --NO--> workarounds{Are there\nworkarounds for\nthe bug?}
-    workarounds --YES--> p2[p2: has workaround]
     workarounds --NO--> p3[p3: minor bug]
+    workarounds --YES--> p2[p2: edge case\nhas workaround]
 ```
 
 ### Pull Request Review Workflow
@@ -224,17 +224,17 @@ flowchart TD
 ```mermaid
 flowchart TD
     start{Bug fix\nor\nfeature}
-    start --BUG FIX--> strict_bug{"Is a 'strict fix'\ni.e. fixes an obvious\noversight with no\nside effects"}
-    start --FEATURE--> feature[- Discuss feature necessity\n- Is this the best way to address the need\n- Review code quality\n- Add feature labels\n- Approve if you feel strongly\nthat the feature is needed]
-    feature --> evan[Await input from Evan]
-    evan -.-> merge
-    strict_bug --YES--> strict[- Verify the fix locally\n- Review code quality\n- Require test case if applicable\n- Request changes if necessary]
-    strict_bug --NO--> non_strict[Discuss the potential side\neffects of the fix, e.g.\n- Could it introduce implicit\nbehavior changes in other\ncases?\n- Does it introduce too much\nchanges?]
-    non_strict --> label["Add priority labels\n(see issue triaging workflow)"]
-    label --> evan_non_strict[Await input from Evan]
-    evan_non_strict -.-> strict
-    strict --> approve
-    approve --> merge["Merge if approved by 2 or\nmore team members\n- Use 'Squash and Merge'\n- Edit commit message to follow\nconvention\n- In commit message body, list\nrelevant issues being fixed\ne.g. 'fix #1234, fix #1235'"]
+    start --BUG FIX--> strict_bug{"Is this a 'strict fix'?\ni.e. fixes an obvious\noversight with no\nside effects"}
+    start --FEATURE--> feature[- Discuss feature necessity\n- Is there a better way\nto address the need?\n- Review code quality\n- Add labels\n- Add to milestone\n- Add to Team Board]
+    feature -.-> approve_non_strict[- Run vite-ecosystem-ci if needed\n- Approve if you feel strongly\nthat the PR is needed\nand add to milestone]
+    strict_bug --YES--> strict[- Verify the fix locally\n- Review code quality\n- Require test case if applicable\n- Request changes if necessary\n- Add labels]
+    strict_bug --NO--> non_strict[Discuss the potential side\neffects of the fix, e.g.\n- Could it introduce implicit\nbehavior changes in other cases?\n- Does it introduce too much changes?\n- Add labels\n- Add to Team Board]
+    non_strict -.-> approve_non_strict
+    strict --> approve_strict[Approve if ready to be merged]
+    approve_strict --> merge_strict[Merge if approved by 2 or\nmore team members]
+    approve_non_strict -.-> merge_non_strict[Merge if approved by 2 or\nmore team members\nand the PR has been discussed\n in a team meeting]
+    merge_non_strict -.-> merge_extra
+    merge_strict --> merge_extra["- Use 'Squash and Merge'\n- Edit commit message to follow convention\n- In commit message body, list\nrelevant issues being fixed\ne.g. 'fix #1234, fix #1235'"]
 ```
 
 ## Notes on Dependencies

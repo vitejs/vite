@@ -507,13 +507,11 @@ function __vite__mapDeps(indexes) {
   return indexes.map((i) => __vite__mapDeps.viteFileDeps[i])
 }\n`
 
-          // inject extra code before sourcemap comment
-          const mapFileCommentMatch =
-            convertSourceMap.mapFileCommentRegex.exec(code)
-          if (mapFileCommentMatch) {
-            s.appendRight(mapFileCommentMatch.index, mapDepsCode)
+          // inject extra code at the top or next line of hashbang
+          if (code.startsWith('#!')) {
+            s.prependLeft(code.indexOf('\n') + 1, mapDepsCode)
           } else {
-            s.append(mapDepsCode)
+            s.prepend(mapDepsCode)
           }
 
           // there may still be markers due to inlined dynamic imports, remove

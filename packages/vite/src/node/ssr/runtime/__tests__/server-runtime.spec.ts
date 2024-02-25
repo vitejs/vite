@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'node:fs'
 import { posix, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect } from 'vitest'
-import { isWindows } from '../utils'
+import { isWindows } from '../../../../shared/utils'
 import { createViteRuntimeTester } from './utils'
 
 const _URL = URL

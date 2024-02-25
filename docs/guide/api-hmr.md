@@ -206,3 +206,9 @@ Send custom events back to Vite's dev server.
 If called before connected, the data will be buffered and sent once the connection is established.
 
 See [Client-server Communication](/guide/api-plugin.html#client-server-communication) for more details.
+
+## Further Reading
+
+If you'd like to learn more about how to use the HMR API and how it works under-the-hood. Check out these resources:
+
+- [Hot Module Replacement is Easy](https://bjornlu.com/blog/hot-module-replacement-is-easy)
