@@ -565,6 +565,9 @@ export class ModuleGraphs {
   getModuleById(id: string): ModuleNode | undefined {
     const browserModule = this.browser.getModuleById(id)
     const serverModule = this.server.getModuleById(id)
+    if (!browserModule && !serverModule) {
+      return
+    }
     return this.getBackwardCompatibleModuleNodeDual(browserModule, serverModule)
   }
 
@@ -581,6 +584,9 @@ export class ModuleGraphs {
       this.browser.getModuleByUrl(url),
       this.server.getModuleByUrl(url),
     ])
+    if (!browserModule && !serverModule) {
+      return
+    }
     return this.getBackwardCompatibleModuleNodeDual(browserModule, serverModule)
   }
 
@@ -722,29 +728,26 @@ export class ModuleGraphs {
       browserModule.id
         ? this.server.getModuleById(browserModule.id)
         : undefined,
-    )!
+    )
   }
 
   getBackwardCompatibleServerModuleNode(serverModule: ModuleNode): ModuleNode {
     return this.getBackwardCompatibleModuleNodeDual(
       serverModule.id ? this.browser.getModuleById(serverModule.id) : undefined,
       serverModule,
-    )!
+    )
   }
 
-  getBackwardCompatibleModuleNode(module: ModuleNode): ModuleNode {
-    return module.runtime === 'browser'
-      ? this.getBackwardCompatibleBrowserModuleNode(module)!
-      : this.getBackwardCompatibleServerModuleNode(module)!
+  getBackwardCompatibleModuleNode(mod: ModuleNode): ModuleNode {
+    return mod.runtime === 'browser'
+      ? this.getBackwardCompatibleBrowserModuleNode(mod)
+      : this.getBackwardCompatibleServerModuleNode(mod)
   }
 
   getBackwardCompatibleModuleNodeDual(
     browserModule?: ModuleNode,
     serverModule?: ModuleNode,
-  ): ModuleNode | undefined {
-    if (!browserModule && !serverModule) {
-      return
-    }
+  ): ModuleNode {
     const wrapModuleSet = (prop: ModuleSetNames, runtime?: string) =>
       createBackwardCompatibleModuleSet(
         this,
@@ -847,6 +850,9 @@ function createBackwardCompatibleModuleMap(
     get(key: string) {
       const browserModule = moduleGraph.browser[prop].get(key)
       const serverModule = moduleGraph.server[prop].get(key)
+      if (!browserModule && !serverModule) {
+        return
+      }
       return moduleGraph.getBackwardCompatibleModuleNodeDual(
         browserModule,
         serverModule,
