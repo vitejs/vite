@@ -73,7 +73,7 @@ You can also directly specify the project name and the template you want to use 
 
 ```bash
 # npm 7+, extra double-dash is needed:
-npm create vite@latest my-vue-app -- --template vue
+npm create vite@latest my-vue-app --template vue
 
 # yarn
 yarn create vite my-vue-app --template vue
