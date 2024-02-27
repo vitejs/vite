@@ -6,18 +6,13 @@ import colors from 'picocolors'
 import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import {
-  createDebugger,
-  normalizePath,
-  unique,
-  withTrailingSlash,
-  wrapId,
-} from '../utils'
+import { createDebugger, normalizePath, unique } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
+import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { ModuleNode } from './moduleGraph'
 import { restartServerWithUrls } from '.'
 

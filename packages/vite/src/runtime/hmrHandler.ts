@@ -1,6 +1,6 @@
 import type { HMRPayload } from 'types/hmrPayload'
+import { unwrapId } from '../shared/utils'
 import type { ViteRuntime } from './runtime'
-import { unwrapId } from './utils'
 
 // updates to HMR should go one after another. It is possible to trigger another update during the invalidation for example.
 export function createHMRHandler(

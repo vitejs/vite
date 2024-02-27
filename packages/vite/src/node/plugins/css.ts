@@ -46,7 +46,6 @@ import { checkPublicFile } from '../publicDir'
 import {
   arraify,
   asyncReplace,
-  cleanUrl,
   combineSourcemaps,
   createSerialPromiseQueue,
   emptyCssComments,
@@ -63,12 +62,12 @@ import {
   removeDirectQuery,
   removeUrlQuery,
   requireResolveFromRootWithFallback,
-  slash,
   stripBase,
   stripBomTag,
   urlRE,
 } from '../utils'
 import type { Logger } from '../logger'
+import { cleanUrl, slash } from '../../shared/utils'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,

@@ -1,8 +1,9 @@
 import path from 'node:path'
 import type { Connect } from 'dep-types/connect'
-import { cleanUrl, createDebugger } from '../../utils'
+import { createDebugger } from '../../utils'
 import type { FsUtils } from '../../fsUtils'
 import { commonFsUtils } from '../../fsUtils'
+import { cleanUrl } from '../../../shared/utils'
 
 const debug = createDebugger('vite:html-fallback')
 

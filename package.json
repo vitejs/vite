@@ -53,17 +53,17 @@
     "@types/fs-extra": "^11.0.4",
     "@types/less": "^3.0.6",
     "@types/micromatch": "^4.0.6",
-    "@types/node": "^20.11.19",
+    "@types/node": "^20.11.20",
     "@types/picomatch": "^2.3.3",
     "@types/sass": "~1.43.1",
-    "@types/semver": "^7.5.7",
+    "@types/semver": "^7.5.8",
     "@types/stylus": "^0.48.42",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^7.0.2",
-    "@typescript-eslint/parser": "^7.0.2",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
     "@vitejs/release-scripts": "^1.3.1",
     "conventional-changelog-cli": "^4.1.0",
-    "eslint": "^8.56.0",
+    "eslint": "^8.57.0",
     "eslint-define-config": "^2.1.0",
     "eslint-plugin-i": "^2.29.1",
     "eslint-plugin-n": "^16.6.2",
@@ -85,9 +85,9 @@
     "typescript": "^5.2.2",
     "unbuild": "^2.0.0",
     "vite": "workspace:*",
-    "vitepress": "1.0.0-rc.43",
-    "vitest": "^1.3.0",
-    "vue": "^3.4.19"
+    "vitepress": "1.0.0-rc.44",
+    "vitest": "^1.3.1",
+    "vue": "^3.4.20"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -106,7 +106,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@8.15.3",
+  "packageManager": "pnpm@8.15.4",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
