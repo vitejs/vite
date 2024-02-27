@@ -85,6 +85,8 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
+    "@yarnpkg/core": "^4.0.3",
+    "@yarnpkg/fslib": "^3.0.2",
     "esbuild": "^0.19.3",
     "postcss": "^8.4.35",
     "rollup": "^4.2.0"

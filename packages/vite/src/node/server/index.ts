@@ -15,6 +15,8 @@ import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
 import type { Matcher } from 'picomatch'
+import { Configuration } from '@yarnpkg/core'
+import type { PortablePath } from '@yarnpkg/fslib'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -988,6 +990,14 @@ export function resolveServerOptions(
 
   if (!allowDirs) {
     allowDirs = [searchForWorkspaceRoot(root)]
+    if (process.versions.pnp) {
+      const yarnConfig = Configuration.create(root as PortablePath)
+      allowDirs.push(
+        yarnConfig.values.get('enableGlobalCache')
+          ? yarnConfig.values.get('globalFolder')
+          : yarnConfig.values.get('cacheFolder'),
+      )
+    }
   }
 
   allowDirs = allowDirs.map((i) => resolvedAllowDir(root, i))

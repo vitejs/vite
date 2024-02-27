@@ -12,7 +12,6 @@ import {
   fsPathFromUrl,
   isFileReadable,
   isImportRequest,
-  isInNodeModules,
   isInternalRequest,
   isParentDirectory,
   isSameFileUri,
@@ -216,8 +215,7 @@ export function isFileServingAllowed(
 
   if (server._fsDenyGlob(file)) return false
 
-  if (server.moduleGraph.safeModulesPath.has(file) || isInNodeModules(file))
-    return true
+  if (server.moduleGraph.safeModulesPath.has(file)) return true
 
   if (
     server.config.server.fs.allow.some(
