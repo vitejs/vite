@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.23.9",
-    "es5-ext": "0.10.62",
+    "es5-ext": "0.10.63",
     "normalize.css": "^8.0.1",
     "@vitejs/test-require-pkg-with-module-field": "link:./require-pkg-with-module-field",
     "@vitejs/test-resolve-browser-field": "link:./browser-field",

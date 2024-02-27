@@ -18,7 +18,7 @@
     "preview:preload-disabled": "vite preview --config vite.config-preload-disabled.ts"
   },
   "devDependencies": {
-    "terser": "^5.27.1",
+    "terser": "^5.28.1",
     "@vitejs/test-dep-a": "file:./dep-a",
     "@vitejs/test-dep-including-a": "file:./dep-including-a"
   }
