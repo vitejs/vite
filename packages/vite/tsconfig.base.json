@@ -8,9 +8,6 @@
     "noImplicitOverride": true,
     "noUnusedLocals": true,
     "esModuleInterop": true,
-    "useUnknownInCatchVariables": false,
-    "paths": {
-      "vite": ["./src/node/index.ts"]
-    }
+    "useUnknownInCatchVariables": false
   }
 }
