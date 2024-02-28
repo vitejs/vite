@@ -80,6 +80,9 @@ function preload(
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
     const links = document.getElementsByTagName('link')
+    const cspNonce = document.querySelector<HTMLMetaElement>(
+      'meta[property=csp-nonce]',
+    )?.nonce
 
     promise = Promise.all(
       deps.map((dep) => {
@@ -116,6 +119,9 @@ function preload(
           link.crossOrigin = ''
         }
         link.href = dep
+        if (cspNonce) {
+          link.setAttribute('nonce', cspNonce)
+        }
         document.head.appendChild(link)
         if (isCss) {
           return new Promise((res, rej) => {

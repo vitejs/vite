@@ -13,8 +13,18 @@ test('imported css', async () => {
   expect(await getColor('.from-js')).toBe('blue')
 })
 
+test('dynamic css', async () => {
+  expect(await getColor('.dynamic')).toBe('red')
+})
+
 test('script tag', async () => {
   await expectWithRetry(() => page.textContent('.js')).toBe('js: ok')
+})
+
+test('dynamic js', async () => {
+  await expectWithRetry(() => page.textContent('.dynamic-js')).toBe(
+    'dynamic-js: ok',
+  )
 })
 
 test('meta[property=csp-nonce] is injected', async () => {
