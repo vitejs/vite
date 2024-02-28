@@ -9,6 +9,10 @@ test('inline style tag', async () => {
   expect(await getColor('.inline')).toBe('green')
 })
 
+test('imported css', async () => {
+  expect(await getColor('.from-js')).toBe('blue')
+})
+
 test('script tag', async () => {
   await expectWithRetry(() => page.textContent('.js')).toBe('js: ok')
 })
