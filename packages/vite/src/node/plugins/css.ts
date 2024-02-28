@@ -247,7 +247,7 @@ function encodePublicUrlsInCSS(config: ResolvedConfig) {
 }
 
 function getLineCount(str: string) {
-  return str.split(splitRE).length
+  return str.split(splitRE).length - 1
 }
 
 const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
@@ -570,8 +570,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const content = styles.get(id)!
             chunkCSS += content
             line += getLineCount(content)
-            concatCssEndLineMap.set(id, line - 1)
-
+            concatCssEndLineMap.set(id, line)
             // a css module contains JS, so it makes this not a pure css chunk
             if (cssModuleRE.test(id)) {
               isPureCssChunk = false
@@ -943,7 +942,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           if (cssCode) {
             line += getLineCount(cssCode)
-            concatCssEndLineMap.set(filename, line - 1)
+            concatCssEndLineMap.set(filename, line)
 
             css += cssCode
           }
@@ -1857,6 +1856,7 @@ async function minifyCSS(
           for (const [file, end] of cssEntries) {
             if (start <= line && line <= end) {
               warning.location.file = file
+              warning.location.line = line - start + 1
               break
             }
             start = end + 1
