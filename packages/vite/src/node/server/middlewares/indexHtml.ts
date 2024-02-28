@@ -15,6 +15,7 @@ import {
   getScriptInfo,
   htmlEnvHook,
   htmlProxyResult,
+  injectCspNonceMetaTagHook,
   nodeIsElement,
   overwriteAttrValue,
   parseRelAttr,
@@ -70,6 +71,7 @@ export function createDevHtmlTransformFn(
   )
   const transformHooks = [
     preImportMapHook(config),
+    injectCspNonceMetaTagHook(config),
     ...preHooks,
     htmlEnvHook(config),
     devHtmlHook,

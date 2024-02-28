@@ -308,6 +308,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     config.plugins,
     config.logger,
   )
+  preHooks.unshift(injectCspNonceMetaTagHook(config))
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
   postHooks.push(postImportMapHook())
@@ -1090,6 +1091,22 @@ export function postImportMapHook(): IndexHtmlTransformHook {
     }
 
     return html
+  }
+}
+
+export function injectCspNonceMetaTagHook(
+  config: ResolvedConfig,
+): IndexHtmlTransformHook {
+  return () => {
+    if (!config.html?.cspNonce) return
+
+    return [
+      {
+        tag: 'meta',
+        injectTo: 'head',
+        attrs: { property: 'csp-nonce', nonce: config.html.cspNonce },
+      },
+    ]
   }
 }
 
