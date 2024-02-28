@@ -1093,6 +1093,8 @@ export function injectCspNonceMetaTagHook(
       {
         tag: 'meta',
         injectTo: 'head',
+        // use nonce attribute so that it's hidden
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding
         attrs: { property: 'csp-nonce', nonce: config.html.cspNonce },
       },
     ]
