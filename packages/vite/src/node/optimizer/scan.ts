@@ -259,7 +259,9 @@ function orderedDependencies(deps: Record<string, string>) {
 function globEntries(pattern: string | string[], config: ResolvedConfig) {
   const resolvedPatterns = arraify(pattern)
   if (resolvedPatterns.every((str) => !glob.isDynamicPattern(str))) {
-    return resolvedPatterns.map((p) => path.resolve(config.root, p))
+    return resolvedPatterns.map((p) =>
+      normalizePath(path.resolve(config.root, p)),
+    )
   }
   return glob(pattern, {
     cwd: config.root,
