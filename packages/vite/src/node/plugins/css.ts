@@ -1848,18 +1848,20 @@ async function minifyCSS(
       ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
     })
     if (warnings.length) {
-      for (const warning of warnings) {
-        if (warning.location && concatCssEndLineMap) {
-          const { line } = warning.location
-          let start = 1
-          const cssEntries = concatCssEndLineMap.entries()
-          for (const [file, end] of cssEntries) {
-            if (start <= line && line <= end) {
-              warning.location.file = file
-              warning.location.line = line - start + 1
-              break
+      if (concatCssEndLineMap && concatCssEndLineMap.size > 0) {
+        for (const warning of warnings) {
+          if (warning.location) {
+            const { line } = warning.location
+            let start = 1
+            const cssEntries = concatCssEndLineMap.entries()
+            for (const [file, end] of cssEntries) {
+              if (start <= line && line <= end) {
+                warning.location.file = file
+                warning.location.line = line - start + 1
+                break
+              }
+              start = end + 1
             }
-            start = end + 1
           }
         }
       }
