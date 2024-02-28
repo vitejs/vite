@@ -557,9 +557,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (genModern) {
         tags.push({
           tag: 'script',
-          attrs: {
-            nomodule: genModern,
-          },
+          attrs: { nomodule: genModern },
           children: safari10NoModuleFix,
           injectTo: 'body',
         })
