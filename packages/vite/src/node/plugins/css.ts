@@ -1855,6 +1855,7 @@ async function minifyCSS(
             let start = 1
             const cssEntries = concatCssEndLineMap.entries()
             for (const [file, end] of cssEntries) {
+              // reassign the file and line number to the original file
               if (start <= line && line <= end) {
                 warning.location.file = file
                 warning.location.line = line - start + 1
