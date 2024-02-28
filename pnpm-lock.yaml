@@ -415,8 +415,8 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0
       vite-css-modules:
-        specifier: github:privatenumber/vite-plugin-css-modules#npm/develop
-        version: git@github.com+privatenumber/vite-plugin-css-modules/211b34b44478dff4ccc223c26b74ce55daceaa5c(lightningcss@1.24.0)(postcss@8.4.35)(rollup@4.2.0)(vite@packages+vite)
+        specifier: ^1.1.0
+        version: 1.1.0(lightningcss@1.24.0)(postcss@8.4.35)(rollup@4.2.0)(vite@packages+vite)
       ws:
         specifier: ^8.16.0
         version: 8.16.0
@@ -9362,6 +9362,32 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
+  /vite-css-modules@1.1.0(lightningcss@1.24.0)(postcss@8.4.35)(rollup@4.2.0)(vite@packages+vite):
+    resolution: {integrity: sha512-NAH3SQPGTkro1vayJ4uvfKz2UN1MMPJ+ZGzLdsdfS87jIicx+xinudYEg4PAAueCCEEHgCzxexMn4BGHC/5h1g==}
+    peerDependencies:
+      lightningcss: ^1.23.0
+      postcss: ^8.4.33
+      vite: '*'
+    peerDependenciesMeta:
+      lightningcss:
+        optional: true
+      postcss:
+        optional: true
+    dependencies:
+      '@rollup/pluginutils': 5.1.0(rollup@4.2.0)
+      generic-names: 4.0.0
+      icss-utils: 5.1.0(postcss@8.4.35)
+      lightningcss: 1.24.0
+      postcss: 8.4.35
+      postcss-modules-extract-imports: 3.0.0(postcss@8.4.35)
+      postcss-modules-local-by-default: 4.0.4(postcss@8.4.35)
+      postcss-modules-scope: 3.1.1(postcss@8.4.35)
+      postcss-modules-values: 4.0.0(postcss@8.4.35)
+      vite: link:packages/vite
+    transitivePeerDependencies:
+      - rollup
+    dev: true
+
   /vite-node@1.3.1:
     resolution: {integrity: sha512-azbRrqRxlWTJEVbzInZCTchx0X69M/XPTCz4H+TLvlTcR/xH/3hkRqhOakT41fMJCMzXTu4UvegkZiEoJAWvng==}
     engines: {node: ^18.0.0 || >=20.0.0}
@@ -10096,32 +10122,3 @@ packages:
     resolution: {directory: playground/worker/dep-to-optimize, type: directory}
     name: '@vitejs/test-dep-to-optimize'
     dev: false
-
-  git@github.com+privatenumber/vite-plugin-css-modules/211b34b44478dff4ccc223c26b74ce55daceaa5c(lightningcss@1.24.0)(postcss@8.4.35)(rollup@4.2.0)(vite@packages+vite):
-    resolution: {commit: 211b34b44478dff4ccc223c26b74ce55daceaa5c, repo: git@github.com:privatenumber/vite-plugin-css-modules.git, type: git}
-    id: git@github.com+privatenumber/vite-plugin-css-modules/211b34b44478dff4ccc223c26b74ce55daceaa5c
-    name: vite-css-modules
-    version: 0.0.0-semantic-release
-    peerDependencies:
-      lightningcss: ^1.23.0
-      postcss: ^8.4.33
-      vite: '*'
-    peerDependenciesMeta:
-      lightningcss:
-        optional: true
-      postcss:
-        optional: true
-    dependencies:
-      '@rollup/pluginutils': 5.1.0(rollup@4.2.0)
-      generic-names: 4.0.0
-      icss-utils: 5.1.0(postcss@8.4.35)
-      lightningcss: 1.24.0
-      postcss: 8.4.35
-      postcss-modules-extract-imports: 3.0.0(postcss@8.4.35)
-      postcss-modules-local-by-default: 4.0.4(postcss@8.4.35)
-      postcss-modules-scope: 3.1.1(postcss@8.4.35)
-      postcss-modules-values: 4.0.0(postcss@8.4.35)
-      vite: link:packages/vite
-    transitivePeerDependencies:
-      - rollup
-    dev: true
