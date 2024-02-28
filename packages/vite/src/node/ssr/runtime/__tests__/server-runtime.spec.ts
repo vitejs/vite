@@ -41,9 +41,9 @@ describe('vite-runtime initialization', async () => {
     const module = await runtime.executeUrl('/fixtures/test.module.css')
     expect(module).toMatchObject({
       default: {
-        test: expect.stringMatching(/^test-module_/),
+        test: expect.stringMatching(/^_test_/),
       },
-      test: expect.stringMatching(/^test-module_/),
+      test: expect.stringMatching(/^_test_/),
     })
   })
 
