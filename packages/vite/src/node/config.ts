@@ -174,6 +174,10 @@ export interface UserConfig {
    */
   resolve?: ResolveOptions & { alias?: AliasOptions }
   /**
+   * HTML related options
+   */
+  html?: HTMLOptions
+  /**
    * CSS related options (preprocessors and CSS modules)
    */
   css?: CSSOptions
@@ -279,6 +283,15 @@ export interface UserConfig {
    * @default 'spa'
    */
   appType?: AppType
+}
+
+export interface HTMLOptions {
+  /**
+   * A nonce value placeholder that will be used when generating script/style tags.
+   *
+   * Make sure that this placeholder will be replaced with a unique value for each request by the server.
+   */
+  cspNonce?: string
 }
 
 export interface ExperimentalOptions {

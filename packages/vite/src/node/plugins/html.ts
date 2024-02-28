@@ -543,11 +543,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         node.attrs.some(
                           (p) =>
                             p.name === 'rel' &&
-                            p.value
-                              .split(spaceRe)
-                              .some((v) =>
-                                noInlineLinkRels.has(v.toLowerCase()),
-                              ),
+                            parseRelAttr(p.value).some((v) =>
+                              noInlineLinkRels.has(v),
+                            ),
                         )
                       const shouldInline = isNoInlineLink ? false : undefined
                       assetUrlsPromises.push(
@@ -608,6 +606,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               styleNode.sourceCodeLocation!.endOffset,
               `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
             )
+
+            if (config.html?.cspNonce) {
+              s.appendRight(
+                node.sourceCodeLocation!.startTag!.endOffset - 1,
+                ` nonce="${config.html.cspNonce}"`,
+              )
+            }
           }
 
           if (shouldRemove) {
@@ -677,6 +682,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
+      const cspNonce = config.html?.cspNonce
       const analyzedChunk: Map<OutputChunk, number> = new Map()
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
@@ -714,6 +720,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // Now `<script type="module">` uses `same origin`: https://github.com/whatwg/html/pull/3656#:~:text=Module%20scripts%20are%20always%20fetched%20with%20credentials%20mode%20%22same%2Dorigin%22%20by%20default%20and%20can%20no%20longer%0Ause%20%22omit%22
           crossorigin: true,
           src: toOutputPath(chunk.fileName),
+          ...(cspNonce ? { nonce: cspNonce } : {}),
         },
       })
 
@@ -726,6 +733,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           rel: 'modulepreload',
           crossorigin: true,
           href: toOutputPath(filename),
+          ...(cspNonce ? { nonce: cspNonce } : {}),
         },
       })
 
@@ -754,6 +762,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 rel: 'stylesheet',
                 crossorigin: true,
                 href: toOutputPath(file),
+                ...(cspNonce ? { nonce: cspNonce } : {}),
               },
             })
           }
@@ -862,6 +871,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   rel: 'stylesheet',
                   crossorigin: true,
                   href: toOutputAssetFilePath(cssChunk.fileName),
+                  ...(cspNonce ? { nonce: cspNonce } : {}),
                 },
               },
             ])
@@ -928,6 +938,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+export function parseRelAttr(attr: string): string[] {
+  return attr.split(spaceRe).map((v) => v.toLowerCase())
 }
 
 // <tag style="... url(...) or image-set(...) ..."></tag>
