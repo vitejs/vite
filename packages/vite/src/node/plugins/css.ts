@@ -558,9 +558,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts) {
-      let cssChunk = ''
+      let chunkCSS = ''
       let line = 1
-      const fileMap = new Map<string, number>()
+      const concatCssEndLineMap = new Map<string, number>()
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
@@ -568,9 +568,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
           if (!transformOnlyRE.test(id)) {
             const content = styles.get(id)!
-            cssChunk += content
+            chunkCSS += content
             line += getLineCount(content)
-            fileMap.set(id, line - 1)
+            concatCssEndLineMap.set(id, line - 1)
 
             // a css module contains JS, so it makes this not a pure css chunk
             if (cssModuleRE.test(id)) {
@@ -739,7 +739,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      if (cssChunk) {
+      if (chunkCSS) {
         if (config.build.cssCodeSplit) {
           if (opts.format === 'es' || opts.format === 'cjs') {
             if (isPureCssChunk) {
@@ -763,18 +763,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               opts.format,
             )
 
-            cssChunk = resolveAssetUrlsInCss(cssChunk, cssAssetName)
+            chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
 
             // wait for previous tasks as well
-            cssChunk = await codeSplitEmitQueue.run(async () => {
-              return finalizeCss(cssChunk, true, config, fileMap)
+            chunkCSS = await codeSplitEmitQueue.run(async () => {
+              return finalizeCss(chunkCSS, true, config, concatCssEndLineMap)
             })
 
             // emit corresponding css file
             const referenceId = this.emitFile({
               name: cssAssetName,
               type: 'asset',
-              source: cssChunk,
+              source: chunkCSS,
             })
             generatedAssets
               .get(config)!
@@ -789,8 +789,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // But because entry chunk can be imported by dynamic import,
             // we shouldn't remove the inlined CSS. (#10285)
 
-            cssChunk = await finalizeCss(cssChunk, true, config, fileMap)
-            let cssString = JSON.stringify(cssChunk)
+            chunkCSS = await finalizeCss(
+              chunkCSS,
+              true,
+              config,
+              concatCssEndLineMap,
+            )
+            let cssString = JSON.stringify(chunkCSS)
 
             cssString =
               renderAssetUrlInJS(
@@ -819,10 +824,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         } else {
           // resolve public URL from CSS paths, we need to use absolute paths
-          cssChunk = resolveAssetUrlsInCss(cssChunk, cssBundleName)
+          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
           // finalizeCss is called for the aggregated chunk in generateBundle
 
-          chunkCSSMap.set(chunk.fileName, cssChunk)
+          chunkCSSMap.set(chunk.fileName, chunkCSS)
         }
       }
 
@@ -912,7 +917,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         let css = ''
         let line = 1
         const collected = new Set<OutputChunk>()
-        const fileMap = new Map<string, number>()
+        const concatCssEndLineMap = new Map<string, number>()
         const prelimaryNameToChunkMap = new Map(
           Object.values(bundle)
             .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
@@ -938,13 +943,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           if (cssCode) {
             line += getLineCount(cssCode)
-            fileMap.set(filename, line - 1)
+            concatCssEndLineMap.set(filename, line - 1)
 
             css += cssCode
           }
         }
 
-        return await finalizeCss(css, false, config, fileMap)
+        return await finalizeCss(css, false, config, concatCssEndLineMap)
       }
       if (!hasEmitted) {
         const extractedCss = await extractCss()
@@ -1568,14 +1573,14 @@ async function finalizeCss(
   css: string,
   minify: boolean,
   config: ResolvedConfig,
-  fileMap: Map<string, number>,
+  concatCssEndLineMap: Map<string, number>,
 ) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
     css = await hoistAtRules(css)
   }
   if (minify && config.build.cssMinify) {
-    css = await minifyCSS(css, config, false, fileMap)
+    css = await minifyCSS(css, config, false, concatCssEndLineMap)
   }
   return css
 }
@@ -1810,7 +1815,7 @@ async function minifyCSS(
   css: string,
   config: ResolvedConfig,
   inlined: boolean,
-  fileMap?: Map<string, number>,
+  concatCssEndLineMap?: Map<string, number>,
 ) {
   // We want inlined CSS to not end with a linebreak, while ensuring that
   // regular CSS assets do end with a linebreak.
@@ -1845,10 +1850,11 @@ async function minifyCSS(
     })
     if (warnings.length) {
       for (const warning of warnings) {
-        if (warning.location && fileMap) {
+        if (warning.location && concatCssEndLineMap) {
           const { line } = warning.location
           let start = 1
-          for (const [file, end] of fileMap.entries()) {
+          const cssEntries = concatCssEndLineMap.entries()
+          for (const [file, end] of cssEntries) {
             if (start <= line && line <= end) {
               warning.location.file = file
               break
