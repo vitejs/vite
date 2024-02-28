@@ -522,7 +522,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
       const tags: HtmlTagDescriptor[] = []
       const htmlFilename = chunk.facadeModuleId?.replace(/\?.*$/, '')
-      const cspNonce = config.html?.cspNonce
 
       // 1. inject modern polyfills
       if (genModern) {
@@ -541,7 +540,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
                 chunk.facadeModuleId!,
                 config,
               ),
-              ...(cspNonce ? { nonce: cspNonce } : {}),
             },
           })
         } else if (modernPolyfills.size) {
@@ -561,7 +559,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           tag: 'script',
           attrs: {
             nomodule: genModern,
-            ...(cspNonce ? { nonce: cspNonce } : {}),
           },
           children: safari10NoModuleFix,
           injectTo: 'body',
@@ -584,7 +581,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
               chunk.facadeModuleId!,
               config,
             ),
-            ...(cspNonce ? { nonce: cspNonce } : {}),
           },
           injectTo: 'body',
         })
@@ -614,7 +610,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
               chunk.facadeModuleId!,
               config,
             ),
-            ...(cspNonce ? { nonce: cspNonce } : {}),
           },
           children: systemJSInlineCode,
           injectTo: 'body',
@@ -629,13 +624,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (legacyPolyfillFilename && legacyEntryFilename && genModern) {
         tags.push({
           tag: 'script',
-          attrs: { type: 'module', ...(cspNonce ? { nonce: cspNonce } : {}) },
+          attrs: { type: 'module' },
           children: detectModernBrowserCode,
           injectTo: 'head',
         })
         tags.push({
           tag: 'script',
-          attrs: { type: 'module', ...(cspNonce ? { nonce: cspNonce } : {}) },
+          attrs: { type: 'module' },
           children: dynamicFallbackInlineCode,
           injectTo: 'head',
         })

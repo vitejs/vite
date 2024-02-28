@@ -311,6 +311,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   preHooks.unshift(injectCspNonceMetaTagHook(config))
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
+  postHooks.push(injectNonceAttributeTagHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
 
@@ -607,13 +608,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               styleNode.sourceCodeLocation!.endOffset,
               `__VITE_INLINE_CSS__${hash}_${inlineModuleIndex}__`,
             )
-
-            if (config.html?.cspNonce) {
-              s.appendRight(
-                node.sourceCodeLocation!.startTag!.endOffset - 1,
-                ` nonce="${config.html.cspNonce}"`,
-              )
-            }
           }
 
           if (shouldRemove) {
@@ -683,7 +677,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
-      const cspNonce = config.html?.cspNonce
       const analyzedChunk: Map<OutputChunk, number> = new Map()
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
@@ -721,7 +714,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // Now `<script type="module">` uses `same origin`: https://github.com/whatwg/html/pull/3656#:~:text=Module%20scripts%20are%20always%20fetched%20with%20credentials%20mode%20%22same%2Dorigin%22%20by%20default%20and%20can%20no%20longer%0Ause%20%22omit%22
           crossorigin: true,
           src: toOutputPath(chunk.fileName),
-          ...(cspNonce ? { nonce: cspNonce } : {}),
         },
       })
 
@@ -734,7 +726,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           rel: 'modulepreload',
           crossorigin: true,
           href: toOutputPath(filename),
-          ...(cspNonce ? { nonce: cspNonce } : {}),
         },
       })
 
@@ -763,7 +754,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 rel: 'stylesheet',
                 crossorigin: true,
                 href: toOutputPath(file),
-                ...(cspNonce ? { nonce: cspNonce } : {}),
               },
             })
           }
@@ -872,7 +862,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   rel: 'stylesheet',
                   crossorigin: true,
                   href: toOutputAssetFilePath(cssChunk.fileName),
-                  ...(cspNonce ? { nonce: cspNonce } : {}),
                 },
               },
             ])
@@ -1156,6 +1145,43 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
         return text
       }
     })
+  }
+}
+
+export function injectNonceAttributeTagHook(
+  config: ResolvedConfig,
+): IndexHtmlTransformHook {
+  const processRelType = new Set(['stylesheet', 'modulepreload', 'preload'])
+
+  return async (html, { filename }) => {
+    const nonce = config.html?.cspNonce
+    if (!nonce) return
+
+    const s = new MagicString(html)
+
+    await traverseHtml(html, filename, (node) => {
+      if (!nodeIsElement(node)) {
+        return
+      }
+
+      if (
+        node.nodeName === 'script' ||
+        (node.nodeName === 'link' &&
+          node.attrs.some(
+            (attr) =>
+              attr.name === 'rel' &&
+              parseRelAttr(attr.value).some((a) => processRelType.has(a)),
+          )) ||
+        (node.nodeName === 'style' && node.childNodes.length)
+      ) {
+        s.appendRight(
+          node.sourceCodeLocation!.startTag!.endOffset - 1,
+          ` nonce="${nonce}"`,
+        )
+      }
+    })
+
+    return s.toString()
   }
 }
 

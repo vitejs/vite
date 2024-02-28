@@ -16,9 +16,9 @@ import {
   htmlEnvHook,
   htmlProxyResult,
   injectCspNonceMetaTagHook,
+  injectNonceAttributeTagHook,
   nodeIsElement,
   overwriteAttrValue,
-  parseRelAttr,
   postImportMapHook,
   preImportMapHook,
   resolveHtmlTransforms,
@@ -77,6 +77,7 @@ export function createDevHtmlTransformFn(
     devHtmlHook,
     ...normalHooks,
     ...postHooks,
+    injectNonceAttributeTagHook(config),
     postImportMapHook(),
   ]
   return (
@@ -183,7 +184,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 ) => {
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
-  const cspNonce = config.html?.cspNonce
 
   let proxyModulePath: string
   let proxyModuleUrl: string
@@ -249,7 +249,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
-      `<script type="module" src="${modulePath}"${cspNonce ? ` nonce="${cspNonce}"` : ''}></script>`,
+      `<script type="module" src="${modulePath}"></script>`,
     )
     preTransformRequest(server!, modulePath, base)
   }
@@ -276,10 +276,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         if (processedUrl !== src.value) {
           overwriteAttrValue(s, sourceCodeLocation!, processedUrl)
         }
-
-        if (cspNonce) {
-          s.appendRight(sourceCodeLocation!.endOffset, ` nonce="${cspNonce}"`)
-        }
       } else if (isModule && node.childNodes.length) {
         addInlineModule(node, 'js')
       } else if (node.childNodes.length) {
@@ -305,21 +301,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
     }
 
-    if (
-      cspNonce &&
-      node.nodeName === 'link' &&
-      node.attrs.some(
-        (attr) =>
-          attr.name === 'rel' &&
-          parseRelAttr(attr.value).includes('stylesheet'),
-      )
-    ) {
-      s.appendRight(
-        node.sourceCodeLocation!.attrs!['rel'].endOffset,
-        ` nonce="${cspNonce}"`,
-      )
-    }
-
     const inlineStyle = findNeedTransformStyleAttribute(node)
     if (inlineStyle) {
       inlineModuleIndex++
@@ -337,11 +318,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         end: children.sourceCodeLocation!.endOffset,
         code: children.value,
       })
-
-      s.appendRight(
-        node.sourceCodeLocation!.startTag!.endOffset - 1,
-        ` nonce="${cspNonce}"`,
-      )
     }
 
     // elements with [href/src] attrs
@@ -420,7 +396,6 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         attrs: {
           type: 'module',
           src: path.posix.join(base, CLIENT_PUBLIC_PATH),
-          ...(cspNonce ? { nonce: cspNonce } : {}),
         },
         injectTo: 'head-prepend',
       },
