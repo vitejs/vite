@@ -415,8 +415,8 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0
       vite-css-modules:
-        specifier: github:privatenumber/vite-plugin-css-modules#npm/locals-convention
-        version: git@github.com+privatenumber/vite-plugin-css-modules/9fb0207e4974cad7caa46eaa4bf446237f63a99f(lightningcss@1.24.0)(postcss@8.4.35)(rollup@4.2.0)(vite@packages+vite)
+        specifier: github:privatenumber/vite-plugin-css-modules#npm/develop
+        version: git@github.com+privatenumber/vite-plugin-css-modules/211b34b44478dff4ccc223c26b74ce55daceaa5c(lightningcss@1.24.0)(postcss@8.4.35)(rollup@4.2.0)(vite@packages+vite)
       ws:
         specifier: ^8.16.0
         version: 8.16.0
@@ -10097,9 +10097,9 @@ packages:
     name: '@vitejs/test-dep-to-optimize'
     dev: false
 
-  git@github.com+privatenumber/vite-plugin-css-modules/9fb0207e4974cad7caa46eaa4bf446237f63a99f(lightningcss@1.24.0)(postcss@8.4.35)(rollup@4.2.0)(vite@packages+vite):
-    resolution: {commit: 9fb0207e4974cad7caa46eaa4bf446237f63a99f, repo: git@github.com:privatenumber/vite-plugin-css-modules.git, type: git}
-    id: git@github.com+privatenumber/vite-plugin-css-modules/9fb0207e4974cad7caa46eaa4bf446237f63a99f
+  git@github.com+privatenumber/vite-plugin-css-modules/211b34b44478dff4ccc223c26b74ce55daceaa5c(lightningcss@1.24.0)(postcss@8.4.35)(rollup@4.2.0)(vite@packages+vite):
+    resolution: {commit: 211b34b44478dff4ccc223c26b74ce55daceaa5c, repo: git@github.com:privatenumber/vite-plugin-css-modules.git, type: git}
+    id: git@github.com+privatenumber/vite-plugin-css-modules/211b34b44478dff4ccc223c26b74ce55daceaa5c
     name: vite-css-modules
     version: 0.0.0-semantic-release
     peerDependencies:

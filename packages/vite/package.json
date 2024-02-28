@@ -149,7 +149,7 @@
     "tslib": "^2.6.2",
     "types": "link:./types",
     "ufo": "^1.4.0",
-    "vite-css-modules": "github:privatenumber/vite-plugin-css-modules#npm/locals-convention",
+    "vite-css-modules": "github:privatenumber/vite-plugin-css-modules#npm/develop",
     "ws": "^8.16.0"
   },
   "peerDependencies": {
