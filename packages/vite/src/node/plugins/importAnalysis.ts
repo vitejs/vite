@@ -480,7 +480,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // static import or valid string in dynamic import
           // If resolvable, let's resolve it
-          if (specifier) {
+          if (specifier !== undefined) {
             // skip external / data uri
             if (isExternalUrl(specifier) || isDataUrl(specifier)) {
               return
