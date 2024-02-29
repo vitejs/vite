@@ -2,6 +2,7 @@ import type { OriginalMapping } from '@jridgewell/trace-mapping'
 import type { ViteRuntime } from '../runtime'
 import { posixDirname, posixResolve } from '../utils'
 import type { ModuleCacheMap } from '../moduleCache'
+import { slash } from '../../shared/utils'
 import { DecodedMap, getOriginalPosition } from './decoder'
 
 interface RetrieveFileHandler {
@@ -88,24 +89,21 @@ interface CachedMapEntry {
 // Support URLs relative to a directory, but be careful about a protocol prefix
 function supportRelativeURL(file: string, url: string) {
   if (!file) return url
-  const dir = posixDirname(file.replace(/\\/g, '/'))
+  const dir = posixDirname(slash(file))
   const match = /^\w+:\/\/[^/]*/.exec(dir)
   let protocol = match ? match[0] : ''
   const startPath = dir.slice(protocol.length)
   if (protocol && /^\/\w:/.test(startPath)) {
     // handle file:///C:/ paths
     protocol += '/'
-    return (
-      protocol +
-      posixResolve(dir.slice(protocol.length), url).replace(/\\/g, '/')
-    )
+    return protocol + slash(posixResolve(startPath, url))
   }
-  return protocol + posixResolve(dir.slice(protocol.length), url)
+  return protocol + posixResolve(startPath, url)
 }
 
 function getRuntimeSourceMap(position: OriginalMapping): CachedMapEntry | null {
   for (const moduleCache of moduleGraphs) {
-    const sourceMap = moduleCache.getSourceMap(position.source as string)
+    const sourceMap = moduleCache.getSourceMap(position.source!)
     if (sourceMap) {
       return {
         url: position.source,

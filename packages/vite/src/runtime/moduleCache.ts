@@ -1,4 +1,4 @@
-import { isWindows, withTrailingSlash } from '../shared/utils'
+import { isWindows, slash, withTrailingSlash } from '../shared/utils'
 import { SOURCEMAPPING_URL } from '../shared/constants'
 import { decodeBase64 } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
@@ -180,8 +180,7 @@ function normalizeModuleId(file: string, root: string): string {
   if (prefixedBuiltins.has(file)) return file
 
   // unix style, but Windows path still starts with the drive letter to check the root
-  let unixFile = file
-    .replace(/\\/g, '/')
+  let unixFile = slash(file)
     .replace(/^\/@fs\//, isWindows ? '' : '/')
     .replace(/^node:/, '')
     .replace(/^\/+/, '/')

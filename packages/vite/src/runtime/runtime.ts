@@ -4,6 +4,7 @@ import {
   cleanUrl,
   isPrimitive,
   isWindows,
+  slash,
   unwrapId,
   wrapId,
 } from '../shared/utils'
@@ -164,7 +165,7 @@ export class ViteRuntime {
       // 8 is the length of "file:///"
       url = url.slice(isWindows ? 8 : 7)
     }
-    url = url.replace(/\\/g, '/')
+    url = slash(url)
     const _root = this.options.root
     const root = _root[_root.length - 1] === '/' ? _root : `${_root}/`
     // strip root from the URL because fetchModule prefers a public served url path
