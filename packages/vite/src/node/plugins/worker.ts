@@ -69,20 +69,24 @@ async function bundleWorkerEntry(
         ? workerOutputConfig[0] || {}
         : workerOutputConfig
       : {}
+    const workerName = path.posix.basename(
+      cleanUrl(id),
+      path.posix.extname(cleanUrl(id)),
+    )
     const {
       output: [outputChunk, ...outputChunks],
     } = await bundle.generate({
       entryFileNames: path.posix.join(
         config.build.assetsDir,
-        '[name]-[hash].js',
+        `${workerName}-[name]-[hash].js`,
       ),
       chunkFileNames: path.posix.join(
         config.build.assetsDir,
-        '[name]-[hash].js',
+        `${workerName}-[name]-[hash].js`,
       ),
       assetFileNames: path.posix.join(
         config.build.assetsDir,
-        '[name]-[hash].[ext]',
+        `${workerName}-[name]-[hash].[ext]`,
       ),
       ...workerConfig,
       format,
