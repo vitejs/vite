@@ -37,11 +37,11 @@ const createExecHandlers = <T extends (...args: any) => any>(
 }
 
 const retrieveFileFromHandlers = createExecHandlers(retrieveFileHandlers)
-const retrievSourceMapFromHandlers = createExecHandlers(
+const retrieveSourceMapFromHandlers = createExecHandlers(
   retrieveSourceMapHandlers,
 )
 
-let overriden = false
+let overridden = false
 const originalPrepare = Error.prepareStackTrace
 
 function resetInterceptor(runtime: ViteRuntime, options: InterceptorOptions) {
@@ -51,7 +51,7 @@ function resetInterceptor(runtime: ViteRuntime, options: InterceptorOptions) {
     retrieveSourceMapHandlers.delete(options.retrieveSourceMap)
   if (moduleGraphs.size === 0) {
     Error.prepareStackTrace = originalPrepare
-    overriden = false
+    overridden = false
   }
 }
 
@@ -59,9 +59,9 @@ export function interceptStackTrace(
   runtime: ViteRuntime,
   options: InterceptorOptions = {},
 ): () => void {
-  if (!overriden) {
+  if (!overridden) {
     Error.prepareStackTrace = prepareStackTrace
-    overriden = true
+    overridden = true
   }
   moduleGraphs.add(runtime.moduleCache)
   if (options.retrieveFile) retrieveFileHandlers.add(options.retrieveFile)
@@ -145,7 +145,7 @@ function retrieveSourceMapURL(source: string) {
 const reSourceMap = /^data:application\/json[^,]+base64,/
 
 function retrieveSourceMap(source: string) {
-  const urlAndMap = retrievSourceMapFromHandlers(source)
+  const urlAndMap = retrieveSourceMapFromHandlers(source)
   if (urlAndMap) return urlAndMap
 
   let sourceMappingURL = retrieveSourceMapURL(source)
