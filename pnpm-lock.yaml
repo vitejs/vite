@@ -363,6 +363,9 @@ importers:
       parse5:
         specifier: ^7.1.2
         version: 7.1.2
+      pathe:
+        specifier: ^1.1.2
+        version: 1.1.2
       periscopic:
         specifier: ^4.0.2
         version: 4.0.2
@@ -7829,10 +7832,6 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
-  /pathe@1.1.1:
-    resolution: {integrity: sha512-d+RQGp0MAYTIaDBIMmOfMwz3E+LOZnxx1HZd5R18mmCZY0QBlK0LDZfPc8FW8Ed2DlvsuE6PRjroDY+wg4+j/Q==}
-    dev: true
-
   /pathe@1.1.2:
     resolution: {integrity: sha512-whLdWMYL2TwI08hn8/ZqAbrVemu0LNaNNJZX73O6qaIdCTfXutsLhMkjdENX0qhsQ9uIimo4/aQOmXkoon2nDQ==}
     dev: true
@@ -9276,7 +9275,7 @@ packages:
       magic-string: 0.30.4
       mkdist: 1.3.0(typescript@5.2.2)
       mlly: 1.4.2
-      pathe: 1.1.1
+      pathe: 1.1.2
       pkg-types: 1.0.3
       pretty-bytes: 6.1.1
       rollup: 3.29.2
