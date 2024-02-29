@@ -533,3 +533,9 @@ test.runIf(isBuild)('manual chunk path', async () => {
     findAssetFile(/dir\/dir2\/manual-chunk-[-\w]{8}\.css$/),
   ).not.toBeUndefined()
 })
+
+test.runIf(isBuild)('Scoped CSS via cssScopeTo should be treeshaken', () => {
+  const css = findAssetFile(/\.css$/, undefined, undefined, true)
+  expect(css).not.toContain('treeshake-module-b')
+  expect(css).not.toContain('treeshake-module-c')
+})

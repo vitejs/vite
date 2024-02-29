@@ -10,6 +10,31 @@ globalThis.window = {}
 globalThis.location = new URL('http://localhost/')
 
 export default defineConfig({
+  plugins: [
+    {
+      // Emulate a UI framework component where a framework module would import
+      // scoped CSS files that should treeshake if the default export is not used.
+      name: 'treeshake-scoped-css',
+      enforce: 'pre',
+      async resolveId(id, importer) {
+        if (!importer || !id.endsWith('-scoped.css')) return
+
+        const resolved = await this.resolve(id, importer)
+        if (!resolved) return
+
+        return {
+          ...resolved,
+          meta: {
+            vite: {
+              cssScopeTo: {
+                [importer]: ['default'],
+              },
+            },
+          },
+        }
+      },
+    },
+  ],
   build: {
     cssTarget: 'chrome61',
     rollupOptions: {
