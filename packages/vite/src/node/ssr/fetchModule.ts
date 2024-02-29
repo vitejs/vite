@@ -8,8 +8,8 @@ import { unwrapId } from '../../shared/utils'
 import {
   SOURCEMAPPING_URL,
   VITE_RUNTIME_SOURCEMAPPING_SOURCE,
-  VITE_RUNTIME_SOURCEMAPPING_URL,
 } from '../../shared/constants'
+import { genSourceMapUrl } from '../server/sourcemap'
 
 export interface FetchModuleOptions {
   inlineSourceMap?: boolean
@@ -139,13 +139,10 @@ function inlineSourceMap(
   if (OTHER_SOURCE_MAP_REGEXP.test(code))
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
-  const sourceMap = Buffer.from(
-    JSON.stringify(processSourceMap?.(map) || map),
-    'utf-8',
-  ).toString('base64')
+  const sourceMap = processSourceMap?.(map) || map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
     mod.id
-  }\n${VITE_RUNTIME_SOURCEMAPPING_SOURCE}\n//# ${VITE_RUNTIME_SOURCEMAPPING_URL};base64,${sourceMap}\n`
+  }\n${VITE_RUNTIME_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
 }

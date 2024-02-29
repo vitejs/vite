@@ -1,3 +1,4 @@
+import { AsyncFunction } from '../shared/utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -6,9 +7,6 @@ import {
   ssrModuleExportsKey,
 } from './constants'
 import type { ViteModuleRunner, ViteRuntimeModuleContext } from './types'
-
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-const AsyncFunction = async function () {}.constructor as typeof Function
 
 export class ESModulesRunner implements ViteModuleRunner {
   async runViteModule(

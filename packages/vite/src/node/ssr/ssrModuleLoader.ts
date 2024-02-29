@@ -7,12 +7,17 @@ import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { genSourceMapUrl } from '../server/sourcemap'
-import { unwrapId } from '../../shared/utils'
+import {
+  AsyncFunction,
+  asyncFunctionDeclarationPaddingLineCount,
+  unwrapId,
+} from '../../shared/utils'
 import {
   type SSRImportBaseMetadata,
   analyzeImportedModDifference,
   proxyGuardOnlyEsm,
 } from '../../shared/ssrTransform'
+import { SOURCEMAPPING_URL } from '../../shared/constants'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -31,16 +36,6 @@ type SSRModule = Record<string, any>
 interface NodeImportResolveOptions
   extends InternalResolveOptionsWithOverrideConditions {
   legacyProxySsrExternalModules?: boolean
-}
-
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-const AsyncFunction = async function () {}.constructor as typeof Function
-let fnDeclarationLineCount = 0
-{
-  const body = '/*code*/'
-  const source = new AsyncFunction('a', 'b', body).toString()
-  fnDeclarationLineCount =
-    source.slice(0, source.indexOf(body)).split('\n').length - 1
 }
 
 const pendingModules = new Map<string, Promise<SSRModule>>()
@@ -216,12 +211,11 @@ async function instantiateModule(
   let sourceMapSuffix = ''
   if (result.map && 'version' in result.map) {
     const moduleSourceMap = Object.assign({}, result.map, {
-      // currently we need to offset the line
-      // https://github.com/nodejs/node/issues/43047#issuecomment-1180632750
-      mappings: ';'.repeat(fnDeclarationLineCount) + result.map.mappings,
+      mappings:
+        ';'.repeat(asyncFunctionDeclarationPaddingLineCount) +
+        result.map.mappings,
     })
-    sourceMapSuffix =
-      '\n//# sourceMappingURL=' + genSourceMapUrl(moduleSourceMap)
+    sourceMapSuffix = `\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(moduleSourceMap)}`
   }
 
   try {

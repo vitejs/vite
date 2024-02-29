@@ -1,11 +1,11 @@
 import { isWindows, withTrailingSlash } from '../shared/utils'
-import { VITE_RUNTIME_SOURCEMAPPING_URL } from '../shared/constants'
+import { SOURCEMAPPING_URL } from '../shared/constants'
 import { decodeBase64 } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
 import type { ModuleCache } from './types'
 
 const VITE_RUNTIME_SOURCEMAPPING_REGEXP = new RegExp(
-  `//# ${VITE_RUNTIME_SOURCEMAPPING_URL};base64,(.+)`,
+  `//# ${SOURCEMAPPING_URL}=data:application/json;base64,(.+)`,
 )
 
 export class ModuleCacheMap extends Map<string, ModuleCache> {
