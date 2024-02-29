@@ -7,7 +7,6 @@ import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { genSourceMapUrl } from '../server/sourcemap'
-import type { PackageCache } from '../packages'
 import { unwrapId } from '../../shared/utils'
 import {
   type SSRImportBaseMetadata,
@@ -32,7 +31,6 @@ type SSRModule = Record<string, any>
 interface NodeImportResolveOptions
   extends InternalResolveOptionsWithOverrideConditions {
   legacyProxySsrExternalModules?: boolean
-  packageCache?: PackageCache
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function

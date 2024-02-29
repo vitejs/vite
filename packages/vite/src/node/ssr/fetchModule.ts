@@ -1,6 +1,5 @@
 import { pathToFileURL } from 'node:url'
 import type { ModuleNode, TransformResult, ViteDevServer } from '..'
-import type { PackageCache } from '../packages'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
@@ -11,12 +10,6 @@ import {
   VITE_RUNTIME_SOURCEMAPPING_SOURCE,
   VITE_RUNTIME_SOURCEMAPPING_URL,
 } from '../../shared/constants'
-
-interface NodeImportResolveOptions
-  extends InternalResolveOptionsWithOverrideConditions {
-  legacyProxySsrExternalModules?: boolean
-  packageCache?: PackageCache
-}
 
 export interface FetchModuleOptions {
   inlineSourceMap?: boolean
@@ -51,7 +44,7 @@ export async function fetchModule(
     } = server.config
     const overrideConditions = ssr.resolve?.externalConditions || []
 
-    const resolveOptions: NodeImportResolveOptions = {
+    const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
       mainFields: ['main'],
       conditions: [],
       overrideConditions: [...overrideConditions, 'production', 'development'],
@@ -62,8 +55,6 @@ export async function fetchModule(
       isProduction,
       root,
       ssrConfig: ssr,
-      legacyProxySsrExternalModules:
-        server.config.legacy?.proxySsrExternalModules,
       packageCache: server.config.packageCache,
     }
 
