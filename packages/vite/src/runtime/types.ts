@@ -1,6 +1,10 @@
 import type { ViteHotContext } from 'types/hot'
 import type { HMRPayload } from 'types/hmrPayload'
 import type { HMRConnection, HMRLogger } from '../shared/hmr'
+import type {
+  DefineImportMetadata,
+  SSRImportBaseMetadata,
+} from '../shared/ssrTransform'
 import type { ModuleCacheMap } from './moduleCache'
 import type {
   ssrDynamicImportKey,
@@ -12,17 +16,9 @@ import type {
 import type { DecodedMap } from './sourcemap/decoder'
 import type { InterceptorOptions } from './sourcemap/interceptor'
 
-export interface DefineImportMetadata {
-  /**
-   * Imported names before being transformed to `ssrImportKey`
-   *
-   * import foo, { bar as baz, qux } from 'hello'
-   * => ['default', 'bar', 'qux']
-   *
-   * import * as namespace from 'world
-   * => undefined
-   */
-  importedNames?: string[]
+export type { DefineImportMetadata }
+export interface SSRImportMetadata extends SSRImportBaseMetadata {
+  entrypoint?: boolean
 }
 
 export interface HMRRuntimeConnection extends HMRConnection {
@@ -31,11 +27,6 @@ export interface HMRRuntimeConnection extends HMRConnection {
    * This method expects that connection will start listening for HMR updates and call this callback when it's received.
    */
   onUpdate(callback: (payload: HMRPayload) => void): void
-}
-
-export interface SSRImportMetadata extends DefineImportMetadata {
-  isDynamicImport?: boolean
-  entrypoint?: boolean
 }
 
 export interface ViteRuntimeImportMeta extends ImportMeta {
