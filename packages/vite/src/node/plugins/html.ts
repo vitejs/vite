@@ -1173,8 +1173,7 @@ export function injectNonceAttributeTagHook(
             (attr) =>
               attr.name === 'rel' &&
               parseRelAttr(attr.value).some((a) => processRelType.has(a)),
-          )) ||
-        (node.nodeName === 'style' && node.childNodes.length)
+          ))
       ) {
         s.appendRight(
           node.sourceCodeLocation!.startTag!.endOffset - 1,
