@@ -70,7 +70,7 @@ import {
   stripBomTag,
   urlRE,
 } from '../utils'
-import { type Logger } from '../logger'
+import type { Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -765,7 +765,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             }
 
             const isEntry = chunk.isEntry && isPureCssChunk
-
             const originalFilename = getChunkOriginalFileName(
               chunk,
               config.root,
