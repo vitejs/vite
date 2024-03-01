@@ -31,19 +31,11 @@ The behavior is similar to webpack's `file-loader`. The difference is that the i
 - TypeScript, by default, does not recognize static asset imports as valid modules. To fix this, include [`vite/client`](./features#client-types).
 
 ::: tip Inlining SVGs through `url()`
-When passing a variable of SVG string to a manually constructed `url()` through a JS framework, such as `svelte` or `styled-components`, the variable should be wrapped within `"` double quotes.
+When passing a URL of SVG to a manually constructed `url()` by JS, the variable should be wrapped within double quotes.
 
 ```js
-// App.svelte
-
-<script lang="ts">
-  import viteIcon from './assets/vite.svg'
-</script>
-
-<main>
-  {/* viteIcon should be wrapped within double quotes */}
-  <div style='background: url("{viteIcon}")'>
-</main>
+import imgUrl from './img.svg'
+document.getElementById('hero-img').style.background = 'url("${imgUrl}")'
 ```
 
 :::
