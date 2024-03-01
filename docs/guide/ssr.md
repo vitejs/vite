@@ -110,6 +110,8 @@ Here `vite` is an instance of [ViteDevServer](./api-javascript#vitedevserver). `
 The next step is implementing the `*` handler to serve server-rendered HTML:
 
 ```js
+import { createViteRuntime } from 'vite'
+
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
@@ -134,7 +136,7 @@ app.use('*', async (req, res, next) => {
     //    It fully supports HMR and works in a simillar way to ssrLoadModule
     //    More advanced use case would be creating a runtime in a separate
     //    thread or even a different machine using ViteRuntime class
-    const runtime = await vite.createViteRuntime(server)
+    const runtime = await createViteRuntime(server)
     const { render } = await runtime.executeEntrypoint('/src/entry-server.js')
 
     // 4. render the app HTML. This assumes entry-server.js's exported
