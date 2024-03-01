@@ -136,7 +136,7 @@ app.use('*', async (req, res, next) => {
     //    It fully supports HMR and works in a simillar way to ssrLoadModule
     //    More advanced use case would be creating a runtime in a separate
     //    thread or even a different machine using ViteRuntime class
-    const runtime = await createViteRuntime(server)
+    const runtime = await createViteRuntime(vite)
     const { render } = await runtime.executeEntrypoint('/src/entry-server.js')
 
     // 4. render the app HTML. This assumes entry-server.js's exported
