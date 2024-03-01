@@ -1,11 +1,9 @@
+import { isWindows, withTrailingSlash } from '../shared/utils'
+import { VITE_RUNTIME_SOURCEMAPPING_URL } from '../shared/constants'
+import { decodeBase64 } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
 import type { ModuleCache } from './types'
-import { decodeBase64, isWindows } from './utils'
 
-let SOURCEMAPPING_URL = 'sourceMa'
-SOURCEMAPPING_URL += 'ppingURL'
-
-const VITE_RUNTIME_SOURCEMAPPING_URL = `${SOURCEMAPPING_URL}=data:application/json;charset=utf-8`
 const VITE_RUNTIME_SOURCEMAPPING_REGEXP = new RegExp(
   `//# ${VITE_RUNTIME_SOURCEMAPPING_URL};base64,(.+)`,
 )
@@ -65,6 +63,57 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     return this.deleteByModuleId(this.normalize(fsPath))
   }
 
+  invalidate(id: string): void {
+    const module = this.get(id)
+    module.evaluated = false
+    module.meta = undefined
+    module.map = undefined
+    module.promise = undefined
+    module.exports = undefined
+    // remove imports in case they are changed,
+    // don't remove the importers because otherwise it will be empty after evaluation
+    // this can create a bug when file was removed but it still triggers full-reload
+    // we are fine with the bug for now because it's not a common case
+    module.imports?.clear()
+  }
+
+  isImported(
+    {
+      importedId,
+      importedBy,
+    }: {
+      importedId: string
+      importedBy: string
+    },
+    seen = new Set<string>(),
+  ): boolean {
+    importedId = this.normalize(importedId)
+    importedBy = this.normalize(importedBy)
+
+    if (importedBy === importedId) return true
+
+    if (seen.has(importedId)) return false
+    seen.add(importedId)
+
+    const fileModule = this.getByModuleId(importedId)
+    const importers = fileModule?.importers
+
+    if (!importers) return false
+
+    if (importers.has(importedBy)) return true
+
+    for (const importer of importers) {
+      if (
+        this.isImported({
+          importedBy: importedBy,
+          importedId: importer,
+        })
+      )
+        return true
+    }
+    return false
+  }
+
   /**
    * Invalidate modules that dependent on the given modules, up to the main entry
    */
@@ -115,13 +164,6 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), baseFile)
     return mod.map
   }
-}
-
-function withTrailingSlash(path: string): string {
-  if (path[path.length - 1] !== '/') {
-    return `${path}/`
-  }
-  return path
 }
 
 // unique id that is not available as "$bare_import" like "test"

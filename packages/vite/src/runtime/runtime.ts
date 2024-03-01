@@ -1,5 +1,12 @@
 import type { ViteHotContext } from 'types/hot'
-import { HMRClient, HMRContext } from '../../../shared/hmr'
+import { HMRClient, HMRContext } from '../shared/hmr'
+import {
+  cleanUrl,
+  isPrimitive,
+  isWindows,
+  unwrapId,
+  wrapId,
+} from '../shared/utils'
 import { ModuleCacheMap } from './moduleCache'
 import type {
   FetchResult,
@@ -12,15 +19,10 @@ import type {
   ViteRuntimeOptions,
 } from './types'
 import {
-  cleanUrl,
-  isPrimitive,
-  isWindows,
   posixDirname,
   posixPathToFileHref,
   posixResolve,
   toWindowsPath,
-  unwrapId,
-  wrapId,
 } from './utils'
 import {
   ssrDynamicImportKey,
@@ -72,7 +74,7 @@ export class ViteRuntime {
           : options.hmr.logger || console,
         options.hmr.connection,
         ({ acceptedPath, ssrInvalidates }) => {
-          this.moduleCache.delete(acceptedPath)
+          this.moduleCache.invalidate(acceptedPath)
           if (ssrInvalidates) {
             this.invalidateFiles(ssrInvalidates)
           }
@@ -140,7 +142,7 @@ export class ViteRuntime {
     files.forEach((file) => {
       const ids = this.fileToIdMap.get(file)
       if (ids) {
-        ids.forEach((id) => this.moduleCache.deleteByModuleId(id))
+        ids.forEach((id) => this.moduleCache.invalidate(id))
       }
     })
   }

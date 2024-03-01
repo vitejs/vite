@@ -1,9 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./", "../dep-types", "../types"],
-  "exclude": ["**/__tests__"],
+  "include": ["./", "../runtime", "../dep-types", "../types", "constants.ts"],
+  "exclude": ["../**/__tests__"],
   "compilerOptions": {
     "lib": ["ESNext", "DOM"],
-    "stripInternal": true
+    "stripInternal": true,
+    "paths": {
+      "vite/runtime": ["../runtime"]
+    }
   }
 }

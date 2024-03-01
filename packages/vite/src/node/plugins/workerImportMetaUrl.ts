@@ -4,14 +4,9 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import {
-  cleanUrl,
-  evalValue,
-  injectQuery,
-  slash,
-  transformStableResult,
-} from '../utils'
+import { evalValue, injectQuery, transformStableResult } from '../utils'
 import type { ResolveFn } from '..'
+import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'

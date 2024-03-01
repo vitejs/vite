@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+ 
 
 export { a as c } from './a'
 

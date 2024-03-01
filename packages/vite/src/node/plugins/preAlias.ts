@@ -9,14 +9,13 @@ import type { Plugin } from '../plugin'
 import { createIsConfiguredAsSsrExternal } from '../ssr/ssrExternal'
 import {
   bareImportRE,
-  cleanUrl,
   isInNodeModules,
   isOptimizable,
   moduleListContains,
-  withTrailingSlash,
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { getDepsOptimizer } from '../optimizer'
+import { cleanUrl, withTrailingSlash } from '../../shared/utils'
 import { tryOptimizedResolve } from './resolve'
 
 /**

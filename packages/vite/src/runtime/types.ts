@@ -1,6 +1,6 @@
 import type { ViteHotContext } from 'types/hot'
 import type { HMRPayload } from 'types/hmrPayload'
-import type { HMRConnection, HMRLogger } from '../../../shared/hmr'
+import type { HMRConnection, HMRLogger } from '../shared/hmr'
 import type { ModuleCacheMap } from './moduleCache'
 import type {
   ssrDynamicImportKey,

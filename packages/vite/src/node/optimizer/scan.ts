@@ -21,7 +21,6 @@ import {
 } from '../constants'
 import {
   arraify,
-  cleanUrl,
   createDebugger,
   dataUrlRE,
   externalRE,
@@ -38,6 +37,7 @@ import {
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
 import { transformGlobImport } from '../plugins/importMetaGlob'
+import { cleanUrl } from '../../shared/utils'
 import { loadTsconfigJsonForFile } from '../plugins/esbuild'
 
 type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
@@ -259,7 +259,9 @@ function orderedDependencies(deps: Record<string, string>) {
 function globEntries(pattern: string | string[], config: ResolvedConfig) {
   const resolvedPatterns = arraify(pattern)
   if (resolvedPatterns.every((str) => !glob.isDynamicPattern(str))) {
-    return resolvedPatterns.map((p) => path.resolve(config.root, p))
+    return resolvedPatterns.map((p) =>
+      normalizePath(path.resolve(config.root, p)),
+    )
   }
   return glob(pattern, {
     cwd: config.root,
