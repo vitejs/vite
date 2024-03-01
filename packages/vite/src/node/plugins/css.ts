@@ -7,6 +7,7 @@ import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
   ModuleFormat,
+  OutputAsset,
   OutputChunk,
   RenderedChunk,
   RollupError,
@@ -69,7 +70,7 @@ import {
   stripBomTag,
   urlRE,
 } from '../utils'
-import type { Logger } from '../logger'
+import { type Logger } from '../logger'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -246,8 +247,12 @@ function encodePublicUrlsInCSS(config: ResolvedConfig) {
   return config.command === 'build'
 }
 
-function getLineCount(str: string) {
-  return str.split(splitRE).length - 1
+function getLineCount(str: string): number {
+  const lines = str.match(splitRE)
+  if (lines == null) {
+    return 0
+  }
+  return lines.length + 1
 }
 
 const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
@@ -535,12 +540,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       } else if (inlined) {
         let content = css
         if (config.build.cssMinify) {
-          content = await minifyCSS(
-            content,
-            config,
-            true,
-            new Map([[id, content.split(splitRE).length]]),
-          )
+          content = await minifyCSS(content, config, true, id, [
+            { file: id, end: getLineCount(content) },
+          ])
         }
         code = `export default ${JSON.stringify(content)}`
       } else {
@@ -559,8 +561,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
-      let line = 1
-      const concatCssEndLineMap = new Map<string, number>()
+      let line = 0
+      const concatCssEndLines: Array<{ file: string; end: number }> = []
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
@@ -570,7 +572,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const content = styles.get(id)!
             chunkCSS += content
             line += getLineCount(content)
-            concatCssEndLineMap.set(id, line)
+            concatCssEndLines.push({ file: id, end: line })
             // a css module contains JS, so it makes this not a pure css chunk
             if (cssModuleRE.test(id)) {
               isPureCssChunk = false
@@ -694,7 +696,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               info.content,
               true,
               config,
-              new Map([[info.originalFilename, info.end]]),
+              info.originalFilename,
+              [
+                {
+                  file: info.originalFilename,
+                  end: getLineCount(info.content),
+                },
+              ],
             )
           }),
         ),
@@ -740,6 +748,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       if (chunkCSS) {
         if (config.build.cssCodeSplit) {
+          const cssFullAssetName = ensureFileExt(chunk.name, '.css')
+          // if facadeModuleId doesn't exist or doesn't have a CSS extension,
+          // that means a JS entry file imports a CSS file.
+          // in this case, only use the filename for the CSS chunk name like JS chunks.
+          const cssAssetName =
+            chunk.isEntry &&
+            (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
+              ? path.basename(cssFullAssetName)
+              : cssFullAssetName
+
           if (opts.format === 'es' || opts.format === 'cjs') {
             if (isPureCssChunk) {
               // this is a shared CSS-only chunk that is empty.
@@ -747,15 +765,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             }
 
             const isEntry = chunk.isEntry && isPureCssChunk
-            const cssFullAssetName = ensureFileExt(chunk.name, '.css')
-            // if facadeModuleId doesn't exist or doesn't have a CSS extension,
-            // that means a JS entry file imports a CSS file.
-            // in this case, only use the filename for the CSS chunk name like JS chunks.
-            const cssAssetName =
-              chunk.isEntry &&
-              (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
-                ? path.basename(cssFullAssetName)
-                : cssFullAssetName
+
             const originalFilename = getChunkOriginalFileName(
               chunk,
               config.root,
@@ -766,7 +776,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
             // wait for previous tasks as well
             chunkCSS = await codeSplitEmitQueue.run(async () => {
-              return finalizeCss(chunkCSS, true, config, concatCssEndLineMap)
+              return finalizeCss(
+                chunkCSS,
+                true,
+                config,
+                cssAssetName,
+                concatCssEndLines,
+              )
             })
 
             // emit corresponding css file
@@ -792,10 +808,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               chunkCSS,
               true,
               config,
-              concatCssEndLineMap,
+              cssAssetName,
+              concatCssEndLines,
             )
             let cssString = JSON.stringify(chunkCSS)
-
             cssString =
               renderAssetUrlInJS(
                 this,
@@ -914,22 +930,35 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       async function extractCss() {
         let css = ''
-        let line = 1
-        const collected = new Set<OutputChunk>()
-        const concatCssEndLineMap = new Map<string, number>()
+        let line = 0
+        const collected = new Set<OutputAsset | OutputChunk>()
+        const concatCssEndLines: Array<{ file: string; end: number }> = []
         const prelimaryNameToChunkMap = new Map(
           Object.values(bundle)
             .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
             .map((chunk) => [chunk.preliminaryFileName, chunk]),
         )
 
-        function collect(fileName: string) {
+        function collect(fileName: string): string {
           const chunk = bundle[fileName]
-          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
-          collected.add(chunk)
+          if (!chunk || chunk.type !== 'chunk') {
+            collected.add(chunk)
+            return ''
+          }
+          if (collected.has(chunk)) {
+            return ''
+          }
 
-          chunk.imports.forEach(collect)
-          return chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          const css = chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          const importedCSS = chunk.imports.reduce((css, file) => {
+            const imported = collect(file)
+            if (imported.length > 0) {
+              return css + '\n' + imported
+            }
+            return css
+          }, '')
+
+          return importedCSS + '\n' + css
         }
 
         for (const chunkName of chunkCSSMap.keys()) {
@@ -942,13 +971,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           if (cssCode) {
             line += getLineCount(cssCode)
-            concatCssEndLineMap.set(filename, line)
+            concatCssEndLines.push({ file: filename, end: line })
 
             css += cssCode
           }
         }
 
-        return await finalizeCss(css, false, config, concatCssEndLineMap)
+        return await finalizeCss(
+          css,
+          false,
+          config,
+          undefined,
+          concatCssEndLines,
+        )
       }
       if (!hasEmitted) {
         const extractedCss = await extractCss()
@@ -1572,14 +1607,15 @@ async function finalizeCss(
   css: string,
   minify: boolean,
   config: ResolvedConfig,
-  concatCssEndLineMap: Map<string, number>,
+  filename: string | undefined,
+  concatCssEndLines: Array<{ file: string; end: number }>,
 ) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
     css = await hoistAtRules(css)
   }
   if (minify && config.build.cssMinify) {
-    css = await minifyCSS(css, config, false, concatCssEndLineMap)
+    css = await minifyCSS(css, config, false, filename, concatCssEndLines)
   }
   return css
 }
@@ -1814,7 +1850,8 @@ async function minifyCSS(
   css: string,
   config: ResolvedConfig,
   inlined: boolean,
-  concatCssEndLineMap?: Map<string, number>,
+  filename: string | undefined,
+  concatCssEndLines: Array<{ file: string; end: number }>,
 ) {
   // We want inlined CSS to not end with a linebreak, while ensuring that
   // regular CSS assets do end with a linebreak.
@@ -1825,7 +1862,7 @@ async function minifyCSS(
       ...config.css?.lightningcss,
       targets: convertTargets(config.build.cssTarget),
       cssModules: undefined,
-      filename: cssBundleName,
+      filename: filename || 'style.css',
       code: Buffer.from(css),
       minify: true,
     })
@@ -1848,20 +1885,19 @@ async function minifyCSS(
       ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
     })
     if (warnings.length) {
-      if (concatCssEndLineMap && concatCssEndLineMap.size > 0) {
+      if (concatCssEndLines && concatCssEndLines.length > 0) {
         for (const warning of warnings) {
           if (warning.location) {
             const { line } = warning.location
             let start = 1
-            const cssEntries = concatCssEndLineMap.entries()
-            for (const [file, end] of cssEntries) {
+            for (const { file, end } of concatCssEndLines) {
               // reassign the file and line number to the original file
               if (start <= line && line <= end) {
                 warning.location.file = file
                 warning.location.line = line - start + 1
                 break
               }
-              start = end + 1
+              start = end
             }
           }
         }
