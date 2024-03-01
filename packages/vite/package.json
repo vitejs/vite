@@ -132,6 +132,7 @@
     "mrmime": "^2.0.0",
     "open": "^8.4.2",
     "parse5": "^7.1.2",
+    "pathe": "^1.1.2",
     "periscopic": "^4.0.2",
     "picocolors": "^1.0.0",
     "picomatch": "^2.3.1",

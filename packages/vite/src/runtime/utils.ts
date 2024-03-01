@@ -1,4 +1,5 @@
-import { isWindows, slash } from '../shared/utils'
+import * as pathe from 'pathe'
+import { isWindows } from '../shared/utils'
 
 export const decodeBase64 =
   typeof atob !== 'undefined'
@@ -31,6 +32,10 @@ function encodePathChars(filepath: string) {
   return filepath
 }
 
+export const posixDirname = pathe.dirname
+export const posixResolve = pathe.resolve
+export const normalizeString = pathe.normalizeString
+
 export function posixPathToFileHref(posixPath: string): string {
   let resolved = posixResolve(posixPath)
   // path.resolve strips trailing slashes so we must add them back
@@ -56,131 +61,6 @@ export function posixPathToFileHref(posixPath: string): string {
   return new URL(`file://${resolved}`).href
 }
 
-export function posixDirname(filepath: string): string {
-  const normalizedPath = filepath.endsWith('/')
-    ? filepath.substring(0, filepath.length - 1)
-    : filepath
-  return normalizedPath.substring(0, normalizedPath.lastIndexOf('/')) || '/'
-}
-
 export function toWindowsPath(path: string): string {
   return path.replace(/\//g, '\\')
-}
-
-// inlined from pathe to support environments without access to node:path
-function cwd(): string {
-  if (typeof process !== 'undefined' && typeof process.cwd === 'function') {
-    return slash(process.cwd())
-  }
-  return '/'
-}
-
-export function posixResolve(...segments: string[]): string {
-  // Normalize windows arguments
-  segments = segments.map((argument) => slash(argument))
-
-  let resolvedPath = ''
-  let resolvedAbsolute = false
-
-  for (
-    let index = segments.length - 1;
-    index >= -1 && !resolvedAbsolute;
-    index--
-  ) {
-    const path = index >= 0 ? segments[index] : cwd()
-
-    // Skip empty entries
-    if (!path || path.length === 0) {
-      continue
-    }
-
-    resolvedPath = `${path}/${resolvedPath}`
-    resolvedAbsolute = isAbsolute(path)
-  }
-
-  // At this point the path should be resolved to a full absolute path, but
-  // handle relative paths to be safe (might happen when process.cwd() fails)
-
-  // Normalize the path
-  resolvedPath = normalizeString(resolvedPath, !resolvedAbsolute)
-
-  if (resolvedAbsolute && !isAbsolute(resolvedPath)) {
-    return `/${resolvedPath}`
-  }
-
-  return resolvedPath.length > 0 ? resolvedPath : '.'
-}
-
-const _IS_ABSOLUTE_RE = /^[/\\](?![/\\])|^[/\\]{2}(?!\.)|^[A-Za-z]:[/\\]/
-
-function isAbsolute(p: string): boolean {
-  return _IS_ABSOLUTE_RE.test(p)
-}
-
-// Resolves . and .. elements in a path with directory names
-export function normalizeString(path: string, allowAboveRoot: boolean): string {
-  let res = ''
-  let lastSegmentLength = 0
-  let lastSlash = -1
-  let dots = 0
-  let char: string | null = null
-  for (let index = 0; index <= path.length; ++index) {
-    if (index < path.length) {
-      char = path[index]
-    } else if (char === '/') {
-      break
-    } else {
-      char = '/'
-    }
-    if (char === '/') {
-      if (lastSlash === index - 1 || dots === 1) {
-        // NOOP
-      } else if (dots === 2) {
-        if (
-          res.length < 2 ||
-          lastSegmentLength !== 2 ||
-          res[res.length - 1] !== '.' ||
-          res[res.length - 2] !== '.'
-        ) {
-          if (res.length > 2) {
-            const lastSlashIndex = res.lastIndexOf('/')
-            if (lastSlashIndex === -1) {
-              res = ''
-              lastSegmentLength = 0
-            } else {
-              res = res.slice(0, lastSlashIndex)
-              lastSegmentLength = res.length - 1 - res.lastIndexOf('/')
-            }
-            lastSlash = index
-            dots = 0
-            continue
-          } else if (res.length > 0) {
-            res = ''
-            lastSegmentLength = 0
-            lastSlash = index
-            dots = 0
-            continue
-          }
-        }
-        if (allowAboveRoot) {
-          res += res.length > 0 ? '/..' : '..'
-          lastSegmentLength = 2
-        }
-      } else {
-        if (res.length > 0) {
-          res += `/${path.slice(lastSlash + 1, index)}`
-        } else {
-          res = path.slice(lastSlash + 1, index)
-        }
-        lastSegmentLength = index - lastSlash - 1
-      }
-      lastSlash = index
-      dots = 0
-    } else if (char === '.' && dots !== -1) {
-      ++dots
-    } else {
-      dots = -1
-    }
-  }
-  return res
 }
