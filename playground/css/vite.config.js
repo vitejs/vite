@@ -38,6 +38,13 @@ export default defineConfig({
   build: {
     cssTarget: 'chrome61',
     rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, './index.html'),
+        treeshakeScoped: path.resolve(
+          __dirname,
+          './treeshake-scoped/index.html',
+        ),
+      },
       output: {
         manualChunks(id) {
           if (id.includes('manual-chunk.css')) {

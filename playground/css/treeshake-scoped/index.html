@@ -1,0 +1,7 @@
+<h1>treeshake-scoped</h1>
+<p class="scoped-another">Imported scoped CSS</p>
+
+<script type="module">
+  import { d } from './index.js'
+  document.querySelector('.scoped-another').classList.add(d())
+</script>
