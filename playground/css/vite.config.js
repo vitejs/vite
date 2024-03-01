@@ -39,7 +39,7 @@ export default defineConfig({
     cssTarget: 'chrome61',
     rollupOptions: {
       input: {
-        main: path.resolve(__dirname, './index.html'),
+        index: path.resolve(__dirname, './index.html'),
         treeshakeScoped: path.resolve(
           __dirname,
           './treeshake-scoped/index.html',
