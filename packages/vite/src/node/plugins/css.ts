@@ -22,10 +22,11 @@ import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
 import type { LightningCSSOptions } from 'dep-types/lightningcss'
-import type { TransformOptions } from 'esbuild'
+import type { Message, TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
+import type { Warning } from 'lightningcss'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -696,12 +697,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               true,
               config,
               info.originalFilename,
-              [
-                {
-                  file: info.originalFilename,
-                  end: getLineCount(info.content),
-                },
-              ],
             )
           }),
         ),
@@ -950,12 +945,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const css = chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
           const importedCSS = chunk.imports.reduce((css, file) => {
             const imported = collect(file)
+
             if (imported.length > 0) {
+              line += getLineCount(imported)
+              concatCssEndLines.push({ file, end: line })
+
               return css + '\n' + imported
             }
             return css
           }, '')
-
           return importedCSS + '\n' + css
         }
 
@@ -979,7 +977,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           css,
           false,
           config,
-          undefined,
+          cssBundleName,
           concatCssEndLines,
         )
       }
@@ -1606,7 +1604,7 @@ async function finalizeCss(
   minify: boolean,
   config: ResolvedConfig,
   filename: string | undefined,
-  concatCssEndLines: Array<{ file: string; end: number }>,
+  concatCssEndLines?: Array<{ file: string; end: number }>,
 ) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
@@ -1844,12 +1842,48 @@ async function doImportCSSReplace(
   return `@import ${wrap}${await replacer(rawUrl)}${wrap}`
 }
 
+function getLocation(message: Warning | Message) {
+  if ('loc' in message) {
+    return message.loc
+  }
+  return message.location
+}
+
+function formatReturnedMessages(
+  messages: (Warning | Message)[],
+  concatCssEndLines?: Array<{ file: string; end: number }>,
+) {
+  if (concatCssEndLines && concatCssEndLines.length > 0) {
+    for (const message of messages) {
+      const location = getLocation(message)
+      if (location) {
+        const { line } = location
+        let start = 0
+        for (const { file, end } of concatCssEndLines) {
+          // reassign the file and line number to the original file
+          if (start < line && line <= end) {
+            if ('filename' in location) {
+              location.filename = file // Warning
+            } else {
+              location.file = file // Message
+            }
+            location.line = line - start
+            break
+          }
+          start = end
+        }
+      }
+    }
+  }
+  return messages
+}
+
 async function minifyCSS(
   css: string,
   config: ResolvedConfig,
   inlined: boolean,
   filename: string | undefined,
-  concatCssEndLines: Array<{ file: string; end: number }>,
+  concatCssEndLines?: Array<{ file: string; end: number }>,
 ) {
   // We want inlined CSS to not end with a linebreak, while ensuring that
   // regular CSS assets do end with a linebreak.
@@ -1865,10 +1899,17 @@ async function minifyCSS(
       minify: true,
     })
     if (warnings.length) {
+      const msgs = formatReturnedMessages(
+        warnings,
+        concatCssEndLines,
+      ) as Warning[]
       config.logger.warn(
         colors.yellow(
-          `warnings when minifying css:\n${warnings
-            .map((w) => w.message)
+          `warnings when minifying css:\n${msgs
+            .map(
+              (w) =>
+                `${w.message}\n\n\t${w.loc.filename}:${w.loc.line}:${w.loc.column}\n\n`,
+            )
             .join('\n')}`,
         ),
       )
@@ -1880,27 +1921,14 @@ async function minifyCSS(
     const { code, warnings } = await transform(css, {
       loader: 'css',
       target: config.build.cssTarget || undefined,
+      sourcefile: filename || cssBundleName,
       ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
     })
     if (warnings.length) {
-      if (concatCssEndLines && concatCssEndLines.length > 0) {
-        for (const warning of warnings) {
-          if (warning.location) {
-            const { line } = warning.location
-            let start = 1
-            for (const { file, end } of concatCssEndLines) {
-              // reassign the file and line number to the original file
-              if (start <= line && line <= end) {
-                warning.location.file = file
-                warning.location.line = line - start + 1
-                break
-              }
-              start = end
-            }
-          }
-        }
-      }
-      const msgs = await formatMessages(warnings, { kind: 'warning' })
+      const msgs = await formatMessages(
+        formatReturnedMessages(warnings, concatCssEndLines) as Message[],
+        { kind: 'warning' },
+      )
       config.logger.warn(
         colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
       )
@@ -1910,7 +1938,10 @@ async function minifyCSS(
   } catch (e) {
     if (e.errors) {
       e.message = '[esbuild css minify] ' + e.message
-      const msgs = await formatMessages(e.errors, { kind: 'error' })
+      const msgs = await formatMessages(
+        formatReturnedMessages(e.errors, concatCssEndLines) as Message[],
+        { kind: 'error' },
+      )
       e.frame = '\n' + msgs.join('\n')
       e.loc = e.errors[0].location
     }
