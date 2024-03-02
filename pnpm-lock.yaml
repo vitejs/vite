@@ -599,6 +599,8 @@ importers:
         specifier: ^1.24.0
         version: 1.24.0
 
+  playground/css-no-codesplit: {}
+
   playground/css-sourcemap:
     devDependencies:
       less:
