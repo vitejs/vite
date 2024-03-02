@@ -10,10 +10,10 @@ import {
 
 test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
   expect(findAssetFile(/style-only-entry-.+\.css/, 'watch')).toContain(
-    '#ff69b4',
+    'hotpink',
   )
   expect(findAssetFile(/style-only-entry-legacy-.+\.js/, 'watch')).toContain(
-    '#ff69b4',
+    'hotpink',
   )
   expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toBeTruthy()
   const numberOfManifestEntries = Object.keys(readManifest('watch')).length
@@ -21,7 +21,7 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
 
   editFile(
     'style-only-entry.css',
-    (originalContents) => originalContents.replace('#ff69b4', '#ffb6c1'),
+    (originalContents) => originalContents.replace('hotpink', 'lightpink'),
     true,
   )
   await notifyRebuildComplete(watcher)
@@ -35,13 +35,13 @@ test.runIf(isBuild)('rebuilds styles only entry on change', async () => {
     updatedManifest['style-only-entry.css']!.file.substring('assets/'.length),
     'watch',
   )
-  expect(reRenderedCssFile).toContain('#ffb6c1')
+  expect(reRenderedCssFile).toContain('lightpink')
   const reRenderedCssLegacyFile = findAssetFile(
     updatedManifest['style-only-entry-legacy.css']!.file.substring(
       'assets/'.length,
     ),
     'watch',
   )
-  expect(reRenderedCssLegacyFile).toContain('#ffb6c1')
+  expect(reRenderedCssLegacyFile).toContain('lightpink')
   expect(findAssetFile(/polyfills-legacy-.+\.js/, 'watch')).toBeTruthy()
 })
