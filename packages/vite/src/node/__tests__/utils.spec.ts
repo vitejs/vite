@@ -352,16 +352,16 @@ describe('flattenId', () => {
     const tenChars = '1234567890'
     let id = ''
 
-    for (let i = 0; i < 17; i++) {
+    for (let i = 0; i < 16; i++) {
       id += tenChars
     }
-    expect(id).toHaveLength(170)
+    expect(id).toHaveLength(160)
 
     const result = flattenId(id)
-    expect(result).toHaveLength(170)
+    expect(result).toHaveLength(160)
 
     id += tenChars
     const result2 = flattenId(id)
-    expect(result2).toHaveLength(170)
+    expect(result2).toHaveLength(160)
   })
 })

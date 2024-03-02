@@ -288,7 +288,7 @@ test('name file limit is 170 characters', async () => {
     const fromUrl = content.url()
     const stripFolderPart = fromUrl.split('/').at(-1)
     const onlyTheFilePart = stripFolderPart.split('.')[0]
-    expect(onlyTheFilePart).toHaveLength(170)
+    expect(onlyTheFilePart.length).toBeLessThanOrEqual(170)
 
     const text = await content.text()
     expect(text).toMatch(/import\s+("[^"]+")/)
@@ -317,5 +317,13 @@ describe.runIf(isServe)('optimizeDeps config', () => {
 test('long file name should work', async () => {
   await expectWithRetry(() => page.textContent('.long-file-name')).toMatch(
     `hello world`,
+  )
+})
+
+test.runIf(isServe)('warn on incompatible dependency', () => {
+  expect(serverLogs).toContainEqual(
+    expect.stringContaining(
+      'The dependency might be incompatible with the dep optimizer.',
+    ),
   )
 })

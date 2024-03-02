@@ -234,6 +234,10 @@ export interface DepOptimizationMetadata {
   depInfoList: OptimizedDepInfo[]
 }
 
+export const viteHandledFilePrefix = '__vite-'
+export const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
+export const optimizedDepChunkRE = /\/__vite-chunk-[A-Z\d]{8}\.js/
+
 /**
  * Scan and optimize dependencies within a project.
  * Used by Vite CLI when running `vite optimize`.
@@ -650,9 +654,12 @@ export function runOptimizeDeps(
 
         for (const o of Object.keys(meta.outputs)) {
           if (!jsMapExtensionRE.test(o)) {
-            const id = path
+            let id = path
               .relative(processingCacheDirOutputPath, o)
               .replace(jsExtensionRE, '')
+            if (id.startsWith(viteHandledFilePrefix)) {
+              id = id.slice(viteHandledFilePrefix.length)
+            }
             const file = getOptimizedDepPath(id, resolvedConfig, ssr)
             if (
               !findOptimizedDepInfoInRecord(
@@ -798,6 +805,8 @@ async function prepareEsbuildOptimizerRun(
     plugins,
     charset: 'utf8',
     ...esbuildOptions,
+    entryNames: `${viteHandledFilePrefix}[name]`,
+    chunkNames: `${viteHandledFilePrefix}chunk-[hash]`,
     supported: {
       'dynamic-import': true,
       'import-meta': true,
@@ -876,7 +885,10 @@ export function getOptimizedDepPath(
   ssr: boolean,
 ): string {
   return normalizePath(
-    path.resolve(getDepsCacheDir(config, ssr), flattenId(id) + '.js'),
+    path.resolve(
+      getDepsCacheDir(config, ssr),
+      viteHandledFilePrefix + flattenId(id) + '.js',
+    ),
   )
 }
 
@@ -1040,7 +1052,10 @@ function esbuildOutputFromId(
   const cwd = process.cwd()
   const flatId = flattenId(id) + '.js'
   const normalizedOutputPath = normalizePath(
-    path.relative(cwd, path.join(cacheDirOutputPath, flatId)),
+    path.relative(
+      cwd,
+      path.join(cacheDirOutputPath, `${viteHandledFilePrefix}${flatId}`),
+    ),
   )
   const output = outputs[normalizedOutputPath]
   if (output) {
