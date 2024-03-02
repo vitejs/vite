@@ -540,9 +540,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       } else if (inlined) {
         let content = css
         if (config.build.cssMinify) {
-          content = await minifyCSS(content, config, true, id, [
-            { file: id, end: getLineCount(content) },
-          ])
+          content = await minifyCSS(content, config, true, id)
         }
         code = `export default ${JSON.stringify(content)}`
       } else {
@@ -922,8 +920,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       async function extractCss() {
-        let css = ''
         let line = 0
+        let css = ''
         const collected = new Set<OutputAsset | OutputChunk>()
         const concatCssEndLines: Array<{ file: string; end: number }> = []
         const prelimaryNameToChunkMap = new Map(
