@@ -35,7 +35,7 @@ When passing a URL of SVG to a manually constructed `url()` by JS, the variable 
 
 ```js
 import imgUrl from './img.svg'
-document.getElementById('hero-img').style.background = 'url("${imgUrl}")'
+document.getElementById('hero-img').style.background = `url("${imgUrl}")`
 ```
 
 :::
