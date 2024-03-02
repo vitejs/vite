@@ -548,6 +548,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
+      const isJsChunkEmpty = code === '' && !chunk.isEntry
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
@@ -560,7 +561,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               isPureCssChunk = false
             }
           }
-        } else {
+        } else if (!isJsChunkEmpty) {
           // if the module does not have a style, then it's not a pure css chunk.
           // this is true because in the `transform` hook above, only modules
           // that are css gets added to the `styles` map.
