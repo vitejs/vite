@@ -168,7 +168,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   // using regex over this list to workaround the fact that module preload wasn't
   // configurable.
   const assetsURL = renderBuiltUrl
-    ? // If `experimental.renderBuiltUrl`is used the dependencies are already resolved.
+    ? // If `experimental.renderBuiltUrl` is used, the dependencies are already resolved.
       // To avoid the need for `new URL(dep, import.meta.url)`, a helper `__vitePreloadRelativeDep` is
       // used to resolve from relative paths which can be minimized.
       `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
