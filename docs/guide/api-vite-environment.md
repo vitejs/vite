@@ -265,6 +265,12 @@ A plugin could use the `environment` instance to:
 - Only apply logic for certain environments.
 - Change the way they work depending the configuration for the environment, that can be accessed using `environment.config`. The vite core resolve plugin modifies the way it resolves ids based on `environment.config.resolve.conditions` for example.
 
+:::info environment in hooks
+
+We could also pass an environment object that has `{ name, config }`. In a previous iteration the environment instance was passed directly as a parameter but we also need to pass the `environment` name during build time to hooks.
+
+:::
+
 ## Environment Configuration
 
 All environments share the Vite server configuration, but there are certain options that can be overriden per environment.
