@@ -603,6 +603,18 @@ function onUpdate(callback) {
 
 The callback is queued and it will wait for the current update to be resolved before processing the next update. Unlike the browser implementation, HMR updates in Vite Runtime wait until all listeners (like, `vite:beforeUpdate`/`vite:beforeFullReload`) are finished before updating the modules.
 
+## Environments during build
+
+Plugin hooks also receive the environment name during build. This replaces the `ssr` boolean we have been passing them so far.
+
+The Vite CLI would aslo be updated from `vite build --ssr` to `vite build --environment=ssr`. Applications can then call build for each environment (for example `vite build --environment=workerd`).
+
+In a future stage, or as part of this proposal, we could also review or stance on vite build being a simple wrapper around rollup. Instead, now that we have a proper environment concept, vite build could create a `ViteBuilder` that has knowledge of all the configured environments and build them all with a single call. This has been requested many times by framework authors that use the "Framework as a plugin" scheme. Right now they end up triggering the SSR build when the `buildEnd` hook for the browser build is called.
+
+In its simpler form, the vite builder could call each build in series as defined by `config.environments` order (or by a new `config.build.environments` order). This should cover most current use cases out of the box, given that most frameworks build the client first and then SSR (as they use the client manifest).
+
+It is an interesting design space to explore because it could make build and dev work in a more uniform way. For example, Vite Builder could also only load the config file once and do the overrides for each environment in the exact same way as it is done during dev. And there could also be a single plugin pipeline, if we would like plugins to share state directly between the environments (as it happens during dev already).
+
 ## Backward Compatibility
 
 The current Vite server API will be deprecated but keep working during the next major.
