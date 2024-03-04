@@ -306,6 +306,98 @@ We could discuss what other options we should allow to be overriden, although ma
 
 :::
 
+## Separate module graphs
+
+Vite currently has a mixed browser and ssr module graph. Given an unprocessed or invalidated node, it isn't possible to know if it corresponds to the browser, ssr, or both environments. Module nodes have some properties prefixed, like `clientImportedModules` and `ssrImportedModules` (and `importedModules` that returns the union of both). `importers` contains all importers from both the browser and ssr environment for each module node. A module node also have `transformResult` and `ssrTransformResult`.
+
+In this proposal, each environment has its own module graph (and a backward compatibility layer will be implemented to give time to the ecosystem to migrate). All module graphs have the same signature, so generic algorithms can be implemented to crawl or query the graph without depending on the environment. `hotUpdate` is a good example. When a file is modified, the module graph of each environment will be used to discovered the affected modules and perform HMR for each environment independendently.
+
+Each module is represented by a `ModuleNode` instance. Modules may be registered in the graph without yet being processed (`transformResult` would be `null` in that case). `importers` and `importedModules` are also updated after the module is processed.
+
+```ts
+class ModuleNode {
+  environment: string
+
+  url: string
+  id: string | null = null
+  file: string | null = null
+
+  type: 'js' | 'css'
+
+  importers = new Set<ModuleNode>()
+  importedModules = new Set<ModuleNode>()
+  importedBindings: Map<string, Set<string>> | null = null
+
+  info?: ModuleInfo
+  meta?: Record<string, any>
+  transformResult: TransformResult | null = null
+
+  acceptedHmrDeps = new Set<ModuleNode>()
+  acceptedHmrExports: Set<string> | null = null
+  isSelfAccepting?: boolean
+  lastHMRTimestamp = 0
+  lastInvalidationTimestamp = 0
+}
+```
+
+`environment.moduleGraph` is an instance of `ModuleGraph`:
+
+```ts
+export class ModuleGraph {
+  environment: string
+
+  urlToModuleMap = new Map<string, ModuleNode>()
+  idToModuleMap = new Map<string, ModuleNode>()
+  etagToModuleMap = new Map<string, ModuleNode>()
+  fileToModulesMap = new Map<string, Set<ModuleNode>>()
+
+  constructor(
+    environment: string,
+    resolveId: (url: string) => Promise<PartialResolvedId | null>,
+  )
+
+  async getModuleByUrl(rawUrl: string): Promise<ModuleNode | undefined>
+
+  getModulesByFile(file: string): Set<ModuleNode> | undefined
+
+  onFileChange(file: string): void
+
+  invalidateModule(
+    mod: ModuleNode,
+    seen: Set<ModuleNode> = new Set(),
+    timestamp: number = Date.now(),
+    isHmr: boolean = false,
+  ): void
+
+  invalidateAll(): void
+
+  async updateModuleInfo(
+    mod: ModuleNode,
+    importedModules: Set<string | ModuleNode>,
+    importedBindings: Map<string, Set<string>> | null,
+    acceptedModules: Set<string | ModuleNode>,
+    acceptedExports: Set<string> | null,
+    isSelfAccepting: boolean,
+  ): Promise<Set<ModuleNode> | undefined>
+
+  async ensureEntryFromUrl(
+    rawUrl: string,
+    setIsSelfAccepting = true,
+  ): Promise<ModuleNode>
+
+  createFileOnlyEntry(file: string): ModuleNode
+
+  async resolveUrl(url: string): Promise<ResolvedUrl>
+
+  updateModuleTransformResult(
+    mod: ModuleNode,
+    result: TransformResult | null,
+  ): void
+
+  getModuleByEtag(etag: string): ModuleNode | undefined
+}
+```
+
 ## Registering environments
 
 There is a new plugin hook called `registerEnvironment` that is called after `configResolved`:
