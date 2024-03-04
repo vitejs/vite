@@ -177,7 +177,7 @@ The `hotUpdate` hook allows plugins to perform custom HMR update handling for a 
 interface HotContext {
   file: string
   timestamp: number
-  environment: ModuleExecutionEnvironment
+  environment: string
   modules: Array<ModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
