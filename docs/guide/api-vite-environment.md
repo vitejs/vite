@@ -651,15 +651,11 @@ The last one is just an idea. We may want to keep `server.open(url)` around.
 
 The `server.moduleGraph` will keep returning a mixed view of the browser and ssr module graphs. Proxy module nodes will be returned so all functions keep returning mixed module nodes. The same scheme is used for the module nodes passed to `handleHotUpdate`. This is the most difficult change to get right regarding backward compatibility. We may need to accept small breaking changes when we release the API in Vite 6, making it opt in until then when releasing the API as experimental in Vite 5.2.
 
-## Open Questions
+## Open Questions and Alternatives
 
 There are some open questions and alternative as info boxes interlined in the guide.
 
-Names for concepts and the API are the best we could currently find, what we should keep discussing before releasing if we end up adopting this proposal.
-
-## Alternatives
-
-In the process of discussing this proposal, we analized other alternatives. Listing here some of them related to naming.
+Names for concepts and the API are the best we could currently find, what we should keep discussing before releasing if we end up adopting this proposal. Here are some of the alternative naming we discussed in the process of creating this proposal.
 
 ### ModuleLoader vs Environment
 
