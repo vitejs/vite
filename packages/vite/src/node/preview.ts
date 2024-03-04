@@ -4,11 +4,13 @@ import sirv from 'sirv'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
+import { DEFAULT_PREVIEW_PORT } from './constants'
 import type {
   HttpServer,
   ResolvedServerOptions,
   ResolvedServerUrls,
 } from './server'
+import { createServerCloseFn } from './server'
 import type { CommonServerOptions } from './http'
 import {
   httpServerStart,
@@ -27,7 +29,6 @@ import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
-import { DEFAULT_PREVIEW_PORT } from './constants'
 import { resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 
@@ -59,6 +60,10 @@ export interface PreviewServer {
    * The resolved vite config object
    */
   config: ResolvedConfig
+  /**
+   * Stop the server.
+   */
+  close(): Promise<void>
   /**
    * A connect app instance.
    * - Can be used to attach custom middlewares to the preview server.
@@ -103,6 +108,7 @@ export async function preview(
     'serve',
     'production',
     'production',
+    true,
   )
 
   const distDir = path.resolve(config.root, config.build.outDir)
@@ -135,6 +141,7 @@ export async function preview(
     config,
     middlewares: app,
     httpServer,
+    close: createServerCloseFn(httpServer),
     resolvedUrls: null,
     printUrls() {
       if (server.resolvedUrls) {

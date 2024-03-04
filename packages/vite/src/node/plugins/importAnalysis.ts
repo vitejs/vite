@@ -27,7 +27,6 @@ import {
   normalizeHmrUrl,
 } from '../server/hmr'
 import {
-  cleanUrl,
   createDebugger,
   fsPathFromUrl,
   generateCodeFrame,
@@ -43,13 +42,12 @@ import {
   normalizePath,
   prettifyUrl,
   removeImportQuery,
+  removeTimestampQuery,
   stripBase,
   stripBomTag,
   timeFrom,
   transformStableResult,
-  unwrapId,
-  withTrailingSlash,
-  wrapId,
+  urlRE,
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { checkPublicFile } from '../publicDir'
@@ -58,7 +56,12 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
-import { urlRE } from './asset'
+import {
+  cleanUrl,
+  unwrapId,
+  withTrailingSlash,
+  wrapId,
+} from '../../shared/utils'
 import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
@@ -76,8 +79,6 @@ export const canSkipImportAnalysis = (id: string): boolean =>
 const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
 const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
-const hasImportInQueryParamsRE = /[?&]import=?\b/
-
 export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 
 const urlIsStringRE = /^(?:'.*'|".*"|`.*`)$/
@@ -91,14 +92,7 @@ interface UrlPosition {
 }
 
 export function isExplicitImportRequired(url: string): boolean {
-  return !isJSRequest(cleanUrl(url)) && !isCSSRequest(url)
-}
-
-function markExplicitImport(url: string) {
-  if (isExplicitImportRequired(url)) {
-    return injectQuery(url, 'import')
-  }
-  return url
+  return !isJSRequest(url) && !isCSSRequest(url)
 }
 
 function extractImportedBindings(
@@ -226,7 +220,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
-      const start = performance.now()
+      const msAtStart = debug ? performance.now() : 0
       await init
       let imports!: readonly ImportSpecifier[]
       let exports!: readonly ExportSpecifier[]
@@ -259,7 +253,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!imports.length && !(this as any)._addedImports) {
         importerModule.isSelfAccepting = false
         debug?.(
-          `${timeFrom(start)} ${colors.dim(
+          `${timeFrom(msAtStart)} ${colors.dim(
             `[no imports] ${prettifyUrl(importer, root)}`,
           )}`,
         )
@@ -316,9 +310,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
           return this.error(
-            `Failed to resolve import "${url}" from "${path.relative(
-              process.cwd(),
-              importerFile,
+            `Failed to resolve import "${url}" from "${normalizePath(
+              path.relative(process.cwd(), importerFile),
             )}". Does the file exist?`,
             pos,
           )
@@ -362,18 +355,17 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         // make the URL browser-valid if not SSR
         if (!ssr) {
           // mark non-js/css imports with `?import`
-          url = markExplicitImport(url)
-
-          // If the url isn't a request for a pre-bundled common chunk,
-          // for relative js/css imports, or self-module virtual imports
-          // (e.g. vue blocks), inherit importer's version query
-          // do not do this for unknown type imports, otherwise the appended
-          // query can break 3rd party plugin's extension checks.
-          if (
+          if (isExplicitImportRequired(url)) {
+            url = injectQuery(url, 'import')
+          } else if (
             (isRelative || isSelfImport) &&
-            !hasImportInQueryParamsRE.test(url) &&
             !DEP_VERSION_RE.test(url)
           ) {
+            // If the url isn't a request for a pre-bundled common chunk,
+            // for relative js/css imports, or self-module virtual imports
+            // (e.g. vue blocks), inherit importer's version query
+            // do not do this for unknown type imports, otherwise the appended
+            // query can break 3rd party plugin's extension checks.
             const versionMatch = importer.match(DEP_VERSION_RE)
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
@@ -488,7 +480,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // static import or valid string in dynamic import
           // If resolvable, let's resolve it
-          if (specifier) {
+          if (specifier !== undefined) {
             // skip external / data uri
             if (isExternalUrl(specifier) || isDataUrl(specifier)) {
               return
@@ -685,7 +677,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // `importedUrls` will be mixed with watched files for the module graph,
       // `staticImportedUrls` will only contain the static top-level imports and
       // dynamic imports
-      const staticImportedUrls = new Set(_orderedImportedUrls)
+      const staticImportedUrls = new Set(
+        _orderedImportedUrls.map((url) => removeTimestampQuery(url)),
+      )
       const acceptedUrls = mergeAcceptedUrls(orderedAcceptedUrls)
       const acceptedExports = mergeAcceptedUrls(orderedAcceptedExports)
 
@@ -744,7 +738,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       // update the module graph for HMR analysis.
-      // node CSS imports does its own graph update in the css plugin so we
+      // node CSS imports does its own graph update in the css-analysis plugin so we
       // only handle js graph updates here.
       if (!isCSSRequest(importer)) {
         // attached by pluginContainer.addWatchFile
@@ -790,7 +784,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       debug?.(
-        `${timeFrom(start)} ${colors.dim(
+        `${timeFrom(msAtStart)} ${colors.dim(
           `[${importedUrls.size} imports rewritten] ${prettifyUrl(
             importer,
             root,
@@ -847,6 +841,8 @@ export function createParseErrorInfo(
     showCodeFrame: !probablyBinary,
   }
 }
+// prettier-ignore
+const interopHelper = (m: any) => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) ? m : {}), default: m }
 
 export function interopNamedImports(
   str: MagicString,
@@ -870,7 +866,7 @@ export function interopNamedImports(
     str.overwrite(
       expStart,
       expEnd,
-      `import('${rewrittenUrl}').then(m => m.default && m.default.__esModule ? m.default : ({ ...m.default, default: m.default }))` +
+      `import('${rewrittenUrl}').then(m => (${interopHelper.toString()})(m.default))` +
         getLineBreaks(exp),
       { contentOnly: true },
     )
@@ -1006,7 +1002,9 @@ export function transformCjsImport(
     const lines: string[] = [`import ${cjsModuleName} from "${url}"`]
     importNames.forEach(({ importedName, localName }) => {
       if (importedName === '*') {
-        lines.push(`const ${localName} = ${cjsModuleName}`)
+        lines.push(
+          `const ${localName} = (${interopHelper.toString()})(${cjsModuleName})`,
+        )
       } else if (importedName === 'default') {
         lines.push(
           `const ${localName} = ${cjsModuleName}.__esModule ? ${cjsModuleName}.default : ${cjsModuleName}`,
@@ -1034,7 +1032,7 @@ function __vite__injectQuery(url: string, queryToInject: string): string {
   }
 
   // can't use pathname from URL since it may be relative like ../
-  const pathname = url.replace(/[?#].*$/s, '')
+  const pathname = url.replace(/[?#].*$/, '')
   const { search, hash } = new URL(url, 'http://vitejs.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${

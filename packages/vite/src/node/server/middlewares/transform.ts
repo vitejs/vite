@@ -5,7 +5,6 @@ import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
 import type { ViteDevServer } from '..'
 import {
-  cleanUrl,
   createDebugger,
   fsPathFromId,
   injectQuery,
@@ -15,18 +14,13 @@ import {
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
-  unwrapId,
-  withTrailingSlash,
+  urlRE,
 } from '../../utils'
 import { send } from '../send'
 import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
-import {
-  DEP_VERSION_RE,
-  FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
-} from '../../constants'
+import { DEP_VERSION_RE, FS_PREFIX } from '../../constants'
 import {
   isCSSRequest,
   isDirectCSSRequest,
@@ -38,11 +32,41 @@ import {
 } from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
-import { urlRE } from '../../plugins/asset'
+import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
+import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
 
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
+
+/**
+ * A middleware that short-circuits the middleware chain to serve cached transformed modules
+ */
+export function cachedTransformMiddleware(
+  server: ViteDevServer,
+): Connect.NextHandleFunction {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteCachedTransformMiddleware(req, res, next) {
+    // check if we can return 304 early
+    const ifNoneMatch = req.headers['if-none-match']
+    if (ifNoneMatch) {
+      const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch)
+      if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
+        // For CSS requests, if the same CSS file is imported in a module,
+        // the browser sends the request for the direct CSS request with the etag
+        // from the imported CSS module. We ignore the etag in this case.
+        const maybeMixedEtag = isCSSRequest(req.url!)
+        if (!maybeMixedEtag) {
+          debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
+          res.statusCode = 304
+          return res.end()
+        }
+      }
+    }
+
+    next()
+  }
+}
 
 export function transformMiddleware(
   server: ViteDevServer,
@@ -50,8 +74,7 @@ export function transformMiddleware(
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
 
   // check if public dir is inside root dir
-  const { root } = server.config
-  const publicDir = normalizePath(server.config.publicDir)
+  const { root, publicDir } = server.config
   const publicDirInRoot = publicDir.startsWith(withTrailingSlash(root))
   const publicPath = `${publicDir.slice(root.length)}/`
 
@@ -146,26 +169,28 @@ export function transformMiddleware(
         // not valid browser import specifiers by the importAnalysis plugin.
         url = unwrapId(url)
 
-        // for CSS, we need to differentiate between normal CSS requests and
-        // imports
-        if (
-          isCSSRequest(url) &&
-          !isDirectRequest(url) &&
-          req.headers.accept?.includes('text/css')
-        ) {
-          url = injectQuery(url, 'direct')
-        }
+        // for CSS, we differentiate between normal CSS requests and imports
+        if (isCSSRequest(url)) {
+          if (
+            req.headers.accept?.includes('text/css') &&
+            !isDirectRequest(url)
+          ) {
+            url = injectQuery(url, 'direct')
+          }
 
-        // check if we can return 304 early
-        const ifNoneMatch = req.headers['if-none-match']
-        if (
-          ifNoneMatch &&
-          (await server.moduleGraph.getModuleByUrl(url, false))?.transformResult
-            ?.etag === ifNoneMatch
-        ) {
-          debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
-          res.statusCode = 304
-          return res.end()
+          // check if we can return 304 early for CSS requests. These aren't handled
+          // by the cachedTransformMiddleware due to the browser possibly mixing the
+          // etags of direct and imported CSS
+          const ifNoneMatch = req.headers['if-none-match']
+          if (
+            ifNoneMatch &&
+            (await server.moduleGraph.getModuleByUrl(url, false))
+              ?.transformResult?.etag === ifNoneMatch
+          ) {
+            debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
+            res.statusCode = 304
+            return res.end()
+          }
         }
 
         // resolve, load and transform using the plugin container

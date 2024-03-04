@@ -39,13 +39,14 @@ export default defineConfig({
         serveFolder: resolve(__dirname, 'serve/folder/index.html'),
         serveBothFile: resolve(__dirname, 'serve/both.html'),
         serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
+        write: resolve(__dirname, 'write.html'),
       },
     },
   },
 
   server: {
     fs: {
-      cachedChecks: true,
+      cachedChecks: false,
     },
     warmup: {
       clientFiles: ['./warmup/*'],

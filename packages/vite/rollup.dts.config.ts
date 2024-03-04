@@ -13,19 +13,25 @@ const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
 )
 
+const external = [
+  /^node:*/,
+  /^vite\//,
+  'rollup/parseAst',
+  ...Object.keys(pkg.dependencies),
+  // lightningcss types are bundled
+  ...Object.keys(pkg.devDependencies).filter((d) => d !== 'lightningcss'),
+]
+
 export default defineConfig({
-  input: './temp/node/index.d.ts',
-  output: {
-    file: './dist/node/index.d.ts',
-    format: 'es',
+  input: {
+    index: './temp/node/index.d.ts',
+    runtime: './temp/runtime/index.d.ts',
   },
-  external: [
-    /^node:*/,
-    'rollup/parseAst',
-    ...Object.keys(pkg.dependencies),
-    // lightningcss types are bundled
-    ...Object.keys(pkg.devDependencies).filter((d) => d !== 'lightningcss'),
-  ],
+  output: {
+    dir: './dist/node',
+    format: 'esm',
+  },
+  external,
   plugins: [patchTypes(), dts({ respectExternal: true })],
 })
 
@@ -84,12 +90,35 @@ function patchTypes(): Plugin {
       }
     },
     renderChunk(code, chunk) {
-      validateChunkImports.call(this, chunk)
-      code = replaceConfusingTypeNames.call(this, code, chunk)
-      code = stripInternalTypes.call(this, code, chunk)
-      code = cleanUnnecessaryComments(code)
+      if (
+        chunk.fileName.startsWith('runtime') ||
+        chunk.fileName.startsWith('types.d-')
+      ) {
+        validateRuntimeChunk.call(this, chunk)
+      } else {
+        validateChunkImports.call(this, chunk)
+        code = replaceConfusingTypeNames.call(this, code, chunk)
+        code = stripInternalTypes.call(this, code, chunk)
+        code = cleanUnnecessaryComments(code)
+      }
       return code
     },
+  }
+}
+
+/**
+ * Runtime chunk should only import local dependencies to stay lightweight
+ */
+function validateRuntimeChunk(this: PluginContext, chunk: RenderedChunk) {
+  for (const id of chunk.imports) {
+    if (
+      !id.startsWith('./') &&
+      !id.startsWith('../') &&
+      !id.startsWith('types.d')
+    ) {
+      this.warn(`${chunk.fileName} imports "${id}" which is not allowed`)
+      process.exitCode = 1
+    }
   }
 }
 
@@ -103,6 +132,8 @@ function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
       !id.startsWith('./') &&
       !id.startsWith('../') &&
       !id.startsWith('node:') &&
+      !id.startsWith('types.d') &&
+      !id.startsWith('vite/') &&
       !deps.includes(id) &&
       !deps.some((name) => id.startsWith(name + '/'))
     ) {

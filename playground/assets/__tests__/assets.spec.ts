@@ -259,7 +259,7 @@ describe('css url() references', () => {
   })
 
   test.runIf(isBuild)('generated paths in CSS', () => {
-    const css = findAssetFile(/\.css$/, 'foo')
+    const css = findAssetFile(/index-[-\w]{8}\.css$/, 'foo')
 
     // preserve postfix query/hash
     expect(css).toMatch(`woff2?#iefix`)
@@ -353,19 +353,16 @@ test('?url import', async () => {
   const src = readFile('foo.js')
   expect(await page.textContent('.url')).toMatch(
     isBuild
-      ? `data:application/javascript;base64,${Buffer.from(src).toString(
-          'base64',
-        )}`
+      ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
       : `/foo/bar/foo.js`,
   )
 })
 
 test('?url import on css', async () => {
-  const src = readFile('css/icons.css')
   const txt = await page.textContent('.url-css')
-  expect(txt).toEqual(
+  expect(txt).toMatch(
     isBuild
-      ? `data:text/css;base64,${Buffer.from(src).toString('base64')}`
+      ? /\/foo\/bar\/assets\/icons-[-\w]{8}\.css/
       : '/foo/bar/css/icons.css',
   )
 })
@@ -375,9 +372,7 @@ describe('unicode url', () => {
     const src = readFile('テスト-測試-white space.js')
     expect(await page.textContent('.unicode-url')).toMatch(
       isBuild
-        ? `data:application/javascript;base64,${Buffer.from(src).toString(
-            'base64',
-          )}`
+        ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
         : `/foo/bar/テスト-測試-white space.js`,
     )
   })
@@ -408,7 +403,7 @@ test('new URL("/...", import.meta.url)', async () => {
 
 test('new URL(..., import.meta.url) without extension', async () => {
   expect(await page.textContent('.import-meta-url-without-extension')).toMatch(
-    isBuild ? 'data:application/javascript' : 'nested/test.js',
+    isBuild ? 'data:text/javascript' : 'nested/test.js',
   )
   expect(
     await page.textContent('.import-meta-url-content-without-extension'),
@@ -423,7 +418,7 @@ test('new URL(`${dynamic}`, import.meta.url)', async () => {
     assetMatch,
   )
   expect(await page.textContent('.dynamic-import-meta-url-js')).toMatch(
-    isBuild ? 'data:application/javascript;base64' : '/foo/bar/nested/test.js',
+    isBuild ? 'data:text/javascript;base64' : '/foo/bar/nested/test.js',
   )
 })
 
@@ -466,6 +461,8 @@ test.runIf(isBuild)('manifest', async () => {
 
   for (const file of listAssets('foo')) {
     if (file.endsWith('.css')) {
+      // ignore icons-*.css as it's imported with ?url
+      if (file.includes('icons-')) continue
       expect(entry.css).toContain(`assets/${file}`)
     } else if (!file.endsWith('.js')) {
       expect(entry.assets).toContain(`assets/${file}`)

@@ -1,12 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { cleanUrl, withTrailingSlash } from '../shared/utils'
 import type { ResolvedConfig } from './config'
 import {
   ERR_SYMLINK_IN_RECURSIVE_READDIR,
-  cleanUrl,
   normalizePath,
   recursiveReaddir,
-  withTrailingSlash,
 } from './utils'
 
 const publicFilesMap = new WeakMap<ResolvedConfig, Set<string>>()
@@ -56,7 +55,7 @@ export function checkPublicFile(
   }
 
   const publicFile = normalizePath(path.join(publicDir, fileName))
-  if (!publicFile.startsWith(withTrailingSlash(normalizePath(publicDir)))) {
+  if (!publicFile.startsWith(withTrailingSlash(publicDir))) {
     // can happen if URL starts with '../'
     return
   }

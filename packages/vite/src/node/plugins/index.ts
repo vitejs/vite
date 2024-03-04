@@ -9,10 +9,10 @@ import { watchPackageDataPlugin } from '../packages'
 import { getFsUtils } from '../fsUtils'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
-import { optimizedDepsBuildPlugin, optimizedDepsPlugin } from './optimizedDeps'
+import { optimizedDepsPlugin } from './optimizedDeps'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
-import { cssPlugin, cssPostPlugin } from './css'
+import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
@@ -39,16 +39,12 @@ export async function resolvePlugins(
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
-
+  const depsOptimizerEnabled =
+    !isBuild &&
+    (isDepsOptimizerEnabled(config, false) ||
+      isDepsOptimizerEnabled(config, true))
   return [
-    ...(isDepsOptimizerEnabled(config, false) ||
-    isDepsOptimizerEnabled(config, true)
-      ? [
-          isBuild
-            ? optimizedDepsBuildPlugin(config)
-            : optimizedDepsPlugin(config),
-        ]
-      : []),
+    depsOptimizerEnabled ? optimizedDepsPlugin(config) : null,
     isBuild ? metadataPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     preAliasPlugin(config),
@@ -69,7 +65,9 @@ export async function resolvePlugins(
       ssrConfig: config.ssr,
       asSrc: true,
       fsUtils: getFsUtils(config),
-      getDepsOptimizer: (ssr: boolean) => getDepsOptimizer(config, ssr),
+      getDepsOptimizer: isBuild
+        ? undefined
+        : (ssr: boolean) => getDepsOptimizer(config, ssr),
       shouldExternalize:
         isBuild && config.build.ssr
           ? (id, importer) => shouldExternalizeForSSR(id, importer, config)
@@ -103,7 +101,11 @@ export async function resolvePlugins(
     // internal server-only plugins are always applied after everything else
     ...(isBuild
       ? []
-      : [clientInjectionsPlugin(config), importAnalysisPlugin(config)]),
+      : [
+          clientInjectionsPlugin(config),
+          cssAnalysisPlugin(config),
+          importAnalysisPlugin(config),
+        ]),
   ].filter(Boolean) as Plugin[]
 }
 
@@ -138,27 +140,30 @@ export function getSortedPluginsByHook<K extends keyof Plugin>(
   hookName: K,
   plugins: readonly Plugin[],
 ): PluginWithRequiredHook<K>[] {
-  const pre: Plugin[] = []
-  const normal: Plugin[] = []
-  const post: Plugin[] = []
+  const sortedPlugins: Plugin[] = []
+  // Use indexes to track and insert the ordered plugins directly in the
+  // resulting array to avoid creating 3 extra temporary arrays per hook
+  let pre = 0,
+    normal = 0,
+    post = 0
   for (const plugin of plugins) {
     const hook = plugin[hookName]
     if (hook) {
       if (typeof hook === 'object') {
         if (hook.order === 'pre') {
-          pre.push(plugin)
+          sortedPlugins.splice(pre++, 0, plugin)
           continue
         }
         if (hook.order === 'post') {
-          post.push(plugin)
+          sortedPlugins.splice(pre + normal + post++, 0, plugin)
           continue
         }
       }
-      normal.push(plugin)
+      sortedPlugins.splice(pre + normal++, 0, plugin)
     }
   }
 
-  return [...pre, ...normal, ...post] as PluginWithRequiredHook<K>[]
+  return sortedPlugins as PluginWithRequiredHook<K>[]
 }
 
 export function getHookHandler<T extends ObjectHook<Function>>(

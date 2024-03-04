@@ -10,7 +10,6 @@ import colors from 'picocolors'
 import type { ModuleNode, ViteDevServer } from '..'
 import {
   blankReplacer,
-  cleanUrl,
   createDebugger,
   ensureWatchedFile,
   injectQuery,
@@ -20,10 +19,11 @@ import {
   removeTimestampQuery,
   stripBase,
   timeFrom,
-  unwrapId,
 } from '../utils'
 import { checkPublicFile } from '../publicDir'
-import { getDepsOptimizer } from '../optimizer'
+import { isDepsOptimizerEnabled } from '../config'
+import { getDepsOptimizer, initDevSsrDepsOptimizer } from '../optimizer'
+import { cleanUrl, unwrapId } from '../../shared/utils'
 import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
@@ -130,10 +130,70 @@ async function doTransform(
   url = removeTimestampQuery(url)
 
   const { config, pluginContainer } = server
-  const prettyUrl = debugCache ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
 
-  const module = await server.moduleGraph.getModuleByUrl(url, ssr)
+  if (ssr && isDepsOptimizerEnabled(config, true)) {
+    await initDevSsrDepsOptimizer(config, server)
+  }
+
+  let module = await server.moduleGraph.getModuleByUrl(url, ssr)
+  if (module) {
+    // try use cache from url
+    const cached = await getCachedTransformResult(
+      url,
+      module,
+      server,
+      ssr,
+      timestamp,
+    )
+    if (cached) return cached
+  }
+
+  const resolved = module
+    ? undefined
+    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
+
+  // resolve
+  const id = module?.id ?? resolved?.id ?? url
+
+  module ??= server.moduleGraph.getModuleById(id)
+  if (module) {
+    // if a different url maps to an existing loaded id,  make sure we relate this url to the id
+    await server.moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
+    // try use cache from id
+    const cached = await getCachedTransformResult(
+      url,
+      module,
+      server,
+      ssr,
+      timestamp,
+    )
+    if (cached) return cached
+  }
+
+  const result = loadAndTransform(
+    id,
+    url,
+    server,
+    options,
+    timestamp,
+    module,
+    resolved,
+  )
+
+  getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
+
+  return result
+}
+
+async function getCachedTransformResult(
+  url: string,
+  module: ModuleNode,
+  server: ViteDevServer,
+  ssr: boolean,
+  timestamp: number,
+) {
+  const prettyUrl = debugCache ? prettifyUrl(url, server.config.root) : ''
 
   // tries to handle soft invalidation of the module if available,
   // returns a boolean true is successful, or false if no handling is needed
@@ -152,27 +212,6 @@ async function doTransform(
     debugCache?.(`[memory] ${prettyUrl}`)
     return cached
   }
-
-  const resolved = module
-    ? undefined
-    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
-
-  // resolve
-  const id = module?.id ?? resolved?.id ?? url
-
-  const result = loadAndTransform(
-    id,
-    url,
-    server,
-    options,
-    timestamp,
-    module,
-    resolved,
-  )
-
-  getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
-
-  return result
 }
 
 async function loadAndTransform(
@@ -322,6 +361,7 @@ async function loadAndTransform(
     )
 
     if (path.isAbsolute(mod.file)) {
+      let modDirname
       for (
         let sourcesIndex = 0;
         sourcesIndex < normalizedMap.sources.length;
@@ -333,8 +373,9 @@ async function loadAndTransform(
           // to resolve and display them in a meaningful way (rather than
           // with absolute paths).
           if (path.isAbsolute(sourcePath)) {
+            modDirname ??= path.dirname(mod.file)
             normalizedMap.sources[sourcesIndex] = path.relative(
-              path.dirname(mod.file),
+              modDirname,
               sourcePath,
             )
           }
@@ -356,10 +397,8 @@ async function loadAndTransform(
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
-  if (timestamp > mod.lastInvalidationTimestamp) {
-    if (ssr) mod.ssrTransformResult = result
-    else mod.transformResult = result
-  }
+  if (timestamp > mod.lastInvalidationTimestamp)
+    moduleGraph.updateModuleTransformResult(mod, result, ssr)
 
   return result
 }
@@ -411,7 +450,7 @@ async function handleModuleSoftInvalidation(
     await init
     const source = transformResult.code
     const s = new MagicString(source)
-    const [imports] = parseImports(source)
+    const [imports] = parseImports(source, mod.id || undefined)
 
     for (const imp of imports) {
       let rawUrl = source.slice(imp.s, imp.e)
@@ -460,10 +499,8 @@ async function handleModuleSoftInvalidation(
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
-  if (timestamp > mod.lastInvalidationTimestamp) {
-    if (ssr) mod.ssrTransformResult = result
-    else mod.transformResult = result
-  }
+  if (timestamp > mod.lastInvalidationTimestamp)
+    server.moduleGraph.updateModuleTransformResult(mod, result, ssr)
 
   return result
 }

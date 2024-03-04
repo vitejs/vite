@@ -7,7 +7,6 @@ import escapeHtml from 'escape-html'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
 import {
-  cleanUrl,
   fsPathFromId,
   fsPathFromUrl,
   isFileReadable,
@@ -15,12 +14,15 @@ import {
   isInternalRequest,
   isParentDirectory,
   isSameFileUri,
-  isWindows,
   normalizePath,
   removeLeadingSlash,
+} from '../../utils'
+import {
+  cleanUrl,
+  isWindows,
   slash,
   withTrailingSlash,
-} from '../../utils'
+} from '../../../shared/utils'
 
 const knownJavascriptExtensionRE = /\.[tj]sx?$/
 
@@ -40,7 +42,7 @@ const sirvOptions = ({
       // these files to be TypeScript files, and for Vite to serve them with
       // this Content-Type.
       if (knownJavascriptExtensionRE.test(pathname)) {
-        res.setHeader('Content-Type', 'application/javascript')
+        res.setHeader('Content-Type', 'text/javascript')
       }
       const headers = getHeaders()
       if (headers) {

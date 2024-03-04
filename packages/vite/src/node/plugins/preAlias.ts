@@ -9,14 +9,13 @@ import type { Plugin } from '../plugin'
 import { createIsConfiguredAsSsrExternal } from '../ssr/ssrExternal'
 import {
   bareImportRE,
-  cleanUrl,
   isInNodeModules,
   isOptimizable,
   moduleListContains,
-  withTrailingSlash,
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { getDepsOptimizer } from '../optimizer'
+import { cleanUrl, withTrailingSlash } from '../../shared/utils'
 import { tryOptimizedResolve } from './resolve'
 
 /**
@@ -31,7 +30,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
       const ssr = options?.ssr === true
-      const depsOptimizer = getDepsOptimizer(config, ssr)
+      const depsOptimizer = !isBuild && getDepsOptimizer(config, ssr)
       if (
         importer &&
         depsOptimizer &&

@@ -1,22 +1,30 @@
 import { EventEmitter } from 'node:events'
+import path from 'node:path'
 import glob from 'fast-glob'
 import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
+import { arraify } from './utils'
 import type { ResolvedConfig } from '.'
 
 export function resolveChokidarOptions(
   config: ResolvedConfig,
   options: WatchOptions | undefined,
 ): WatchOptions {
-  const { ignored = [], ...otherOptions } = options ?? {}
+  const { ignored: ignoredList, ...otherOptions } = options ?? {}
+  const ignored: WatchOptions['ignored'] = [
+    '**/.git/**',
+    '**/node_modules/**',
+    '**/test-results/**', // Playwright
+    glob.escapePath(config.cacheDir) + '/**',
+    ...arraify(ignoredList || []),
+  ]
+  if (config.build.outDir) {
+    ignored.push(
+      glob.escapePath(path.resolve(config.root, config.build.outDir)) + '/**',
+    )
+  }
 
   const resolvedWatchOptions: WatchOptions = {
-    ignored: [
-      '**/.git/**',
-      '**/node_modules/**',
-      '**/test-results/**', // Playwright
-      glob.escapePath(config.cacheDir) + '/**',
-      ...(Array.isArray(ignored) ? ignored : [ignored]),
-    ],
+    ignored,
     ignoreInitial: true,
     ignorePermissionErrors: true,
     ...otherOptions,
@@ -40,6 +48,14 @@ class NoopWatcher extends EventEmitter implements FSWatcher {
 
   getWatched() {
     return {}
+  }
+
+  ref() {
+    return this
+  }
+
+  unref() {
+    return this
   }
 
   async close() {

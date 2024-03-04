@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-scss-proxy-dep",
+  "private": true,
+  "version": "1.0.0",
+  "sass": "index.scss",
+  "dependencies": {
+    "@vitejs/test-scss-proxy-dep-nested": "file:../scss-proxy-dep-nested"
+  }
+}

@@ -26,7 +26,6 @@ import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import {
-  cleanUrl,
   ensureWatchedFile,
   fsPathFromId,
   getHash,
@@ -37,13 +36,12 @@ import {
   normalizePath,
   processSrcSetSync,
   stripBase,
-  unwrapId,
-  wrapId,
 } from '../../utils'
 import { getFsUtils } from '../../fsUtils'
 import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
+import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
 
 interface AssetNode {
   start: number
@@ -69,30 +67,27 @@ export function createDevHtmlTransformFn(
     config.plugins,
     config.logger,
   )
+  const transformHooks = [
+    preImportMapHook(config),
+    ...preHooks,
+    htmlEnvHook(config),
+    devHtmlHook,
+    ...normalHooks,
+    ...postHooks,
+    postImportMapHook(),
+  ]
   return (
     server: ViteDevServer,
     url: string,
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
-    return applyHtmlTransforms(
-      html,
-      [
-        preImportMapHook(config),
-        ...preHooks,
-        htmlEnvHook(config),
-        devHtmlHook,
-        ...normalHooks,
-        ...postHooks,
-        postImportMapHook(),
-      ],
-      {
-        path: url,
-        filename: getHtmlFilename(url, server),
-        server,
-        originalUrl,
-      },
-    )
+    return applyHtmlTransforms(html, transformHooks, {
+      path: url,
+      filename: getHtmlFilename(url, server),
+      server,
+      originalUrl,
+    })
   }
 }
 
