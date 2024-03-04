@@ -619,16 +619,17 @@ It is an interesting design space to explore because it could make build and dev
 
 The current Vite server API will be deprecated but keep working during the next major.
 
-- `server.transformRequest(url)` <br> -> `server.environment('browser').transformRequest(url)`
-- `server.transformRequest(url, { ssr: true })` <br> -> `server.environment('ssr').tranformRequest(url)`
-- `server.warmupRequest(url)` <br> -> `server.environment('browser').warmupRequest(url)`
-- `server.ssrLoadModule(url)` <br> -> `server.ssrModuleRunner.executeEntryPoint(url)`
-- `server.moduleGraph` <br> -> `server.environment(name).moduleGraph`
-- `handleHotUpdate` <br> -> `hotUpdate`
+|                    Before                     |                         After                         |
+| :-------------------------------------------: | :---------------------------------------------------: |
+|        `server.transformRequest(url)`         | `server.environment('browser').transformRequest(url)` |
+| `server.transformRequest(url, { ssr: true })` |   `server.environment('ssr').tranformRequest(url)`    |
+|          `server.warmupRequest(url)`          |  `server.environment('browser').warmupRequest(url)`   |
+|          `server.ssrLoadModule(url)`          |    `server.ssrModuleRunner.executeEntryPoint(url)`    |
+|             `server.moduleGraph`              |        `server.environment(name).moduleGraph`         |
+|               `handleHotUpdate`               |                      `hotUpdate`                      |
+|              `server.open(url)`               |       `server.environment('browser').run(url)`        |
 
-Maybe we could also have:
-
-- `server.open(url)` <br> -> `server.environment('browser').run(url)`
+The last one is just an idea. We may want to keep `server.open(url)` around.
 
 The `server.moduleGraph` will keep returning a mixed view of the browser and ssr module graphs. Proxy module nodes will be returned so all functions keep returning mixed module nodes. The same scheme is used for the module nodes passed to `handleHotUpdate`. This is the most difficult change to get right regarding backward compatibility. We may need to accept small breaking changes when we release the API in Vite 6, making it opt in until then when releasing the API as experimental in Vite 5.2.
 
