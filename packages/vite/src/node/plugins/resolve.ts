@@ -480,9 +480,12 @@ function resolveSubpathImports(
   const pkgData = findNearestPackageData(basedir, options.packageCache)
   if (!pkgData) return
 
+  let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id.slice(1))
+  idWithoutPostfix = '#' + idWithoutPostfix
+
   let importsPath = resolveExportsOrImports(
     pkgData.data,
-    id,
+    idWithoutPostfix,
     options,
     targetWeb,
     'imports',
@@ -496,7 +499,7 @@ function resolveSubpathImports(
     }
   }
 
-  return importsPath
+  return importsPath + postfix
 }
 
 function ensureVersionQuery(

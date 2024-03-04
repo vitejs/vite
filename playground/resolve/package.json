@@ -15,7 +15,8 @@
     "#nested/path.js": "./imports-path/nested-path.js",
     "#star/*": "./imports-path/star/*",
     "#slash/": "./imports-path/slash/",
-    "#other-pkg-slash/": "@vitejs/test-resolve-imports-pkg/nest/"
+    "#other-pkg-slash/": "@vitejs/test-resolve-imports-pkg/nest/",
+    "#query": "./imports-path/query.json"
   },
   "dependencies": {
     "@babel/runtime": "^7.23.9",
