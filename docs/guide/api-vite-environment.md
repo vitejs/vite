@@ -198,14 +198,14 @@ The hook can choose to:
 
   ```js
   hotUpdate({ environment, modules, timestamp }) {
-    if (environment.name !== 'browser')
+    if (environment !== 'browser')
       return
 
-    environment.hot.send({ type: 'full-reload' })
+    server.environment(environment).hot.send({ type: 'full-reload' })
     // Invalidate modules manually
     const invalidatedModules = new Set()
     for (const mod of modules) {
-      environment.moduleGraph.invalidateModule(
+      server.environment(environment).moduleGraph.invalidateModule(
         mod,
         invalidatedModules,
         timestamp,
@@ -220,10 +220,10 @@ The hook can choose to:
 
   ```js
   hotUpdate({ environment }) {
-    if (environment.name !== 'browser')
+    if (environment !== 'browser')
       return
 
-    environment.hot.send({
+    server.environment(environment).hot.send({
       type: 'custom',
       event: 'special-update',
       data: {}
@@ -250,7 +250,7 @@ In the examples of the previous section, we used a guard in the `hotUpdate` hook
 function ssrOnlyPlugin() {
   return {
     name: 'ssr-only-plugin',
-    apply({ environment }) => environment.name === 'ssr',
+    apply({ environment }) => environment === 'ssr',
     // unguarded hooks...
   }
 }
