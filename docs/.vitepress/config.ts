@@ -276,6 +276,10 @@ export default defineConfig({
               link: '/guide/api-javascript',
             },
             {
+              text: 'Vite Environment API',
+              link: '/guide/api-vite-environment',
+            },
+            {
               text: 'Vite Runtime API',
               link: '/guide/api-vite-runtime',
             },
