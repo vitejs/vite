@@ -341,7 +341,7 @@ const environment = createModuleExecutionEnvironment({
 
 ## `ModuleRunner`
 
-A module runner is instantiated in the target runtime. All APIs in the next section are imported from `vite/environment` unless stated otherwise. This export entry point is kept as lightweight as possible, only exporting the minimal needed to create runners in the
+A module runner is instantiated in the target runtime. All APIs in the next section are imported from `vite/module-runner` unless stated otherwise. This export entry point is kept as lightweight as possible, only exporting the minimal needed to create runners in the
 
 **Type Signature:**
 
