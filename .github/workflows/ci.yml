@@ -58,7 +58,7 @@ jobs:
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@94549999469dbfa032becf298d95c87a14c34394 # v40.2.2
+        uses: tj-actions/changed-files@800a2825992141ddde1a8bca8ad394cec34d3188 # v42.0.5
         with:
           files: |
             docs/**
@@ -69,7 +69,7 @@ jobs:
 
       - name: Install pnpm
         if: steps.changed-files.outputs.only_changed != 'true'
-        uses: pnpm/action-setup@v2.4.0
+        uses: pnpm/action-setup@v3.0.0
 
       - name: Set node version to ${{ matrix.node_version }}
         if: steps.changed-files.outputs.only_changed != 'true'
@@ -93,12 +93,12 @@ jobs:
         if: runner.os == 'Windows' && steps.changed-files.outputs.only_changed != 'true'
         run: |
           echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
-          $env:PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies[\"playwright-chromium\"].version')"
+          $env:PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies["playwright-chromium"].version')"
           echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
 
       - name: Cache Playwright's binary
         if: steps.changed-files.outputs.only_changed != 'true'
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
           path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
@@ -134,7 +134,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.4.0
+        uses: pnpm/action-setup@v3.0.0
 
       - name: Set node version to 18
         uses: actions/setup-node@v4

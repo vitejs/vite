@@ -68,7 +68,7 @@ You may wish to test your locally modified copy of Vite against another package 
 ```json
 {
   "dependencies": {
-    "vite": "^4.0.0"
+    "vite": "^5.0.0"
   },
   "pnpm": {
     "overrides": {
@@ -197,17 +197,45 @@ You can set the `DEBUG` environment variable to turn on debugging logs (e.g. `DE
 
 ### Issue Triaging Workflow
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./.github/issue-workflow-dark.png">
-  <img src="./.github/issue-workflow.png">
-</picture>
+```mermaid
+flowchart TD
+    start{Followed issue\ntemplate?}
+    start --NO--> close1[Close and ask to\nfollow template]
+    start --YES--> dupe{Is duplicate?}
+    dupe --YES--> close2[Close and point\nto duplicate]
+    dupe --NO--> repro{Has proper\nreproduction?}
+    repro --NO--> close3[Label: 'needs reproduction'\nbot will auto close if no update\nhas been made in 3 days]
+    repro --YES--> real{Is actually a bug?}
+    real --NO--> intended{Is the intended\nbehaviour?}
+    intended --YES--> explain[Explain and close\npoint to docs if needed]
+    intended --NO--> open[Keep open for discussion\nRemove 'pending triage' label]
+    real --YES--> real2["1. Remove 'pending triage' label\n2. Add related feature label if\napplicable (e.g. 'feat: ssr')\n3. Add priority and meta labels (see below)"]
+    real2 --> unusable{Does the\nbug make Vite\nunusable?}
+    unusable --YES--> maj{Does the bug\naffect the majority\nof Vite users?}
+    maj --YES--> p5[p5: urgent]
+    maj --NO--> p4[p4: important]
+    unusable --NO--> workarounds{Are there\nworkarounds for\nthe bug?}
+    workarounds --NO--> p3[p3: minor bug]
+    workarounds --YES--> p2[p2: edge case\nhas workaround]
+```
 
 ### Pull Request Review Workflow
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./.github/pr-workflow-dark.png">
-  <img src="./.github/pr-workflow.png">
-</picture>
+```mermaid
+flowchart TD
+    start{Bug fix\nor\nfeature}
+    start --BUG FIX--> strict_bug{"Is this a 'strict fix'?\ni.e. fixes an obvious\noversight with no\nside effects"}
+    start --FEATURE--> feature[- Discuss feature necessity\n- Is there a better way\nto address the need?\n- Review code quality\n- Add labels\n- Add to milestone\n- Add to Team Board]
+    feature -.-> approve_non_strict[- Run vite-ecosystem-ci if needed\n- Approve if you feel strongly\nthat the PR is needed\nand add to milestone]
+    strict_bug --YES--> strict[- Verify the fix locally\n- Review code quality\n- Require test case if applicable\n- Request changes if necessary\n- Add labels]
+    strict_bug --NO--> non_strict[Discuss the potential side\neffects of the fix, e.g.\n- Could it introduce implicit\nbehavior changes in other cases?\n- Does it introduce too much changes?\n- Add labels\n- Add to Team Board]
+    non_strict -.-> approve_non_strict
+    strict --> approve_strict[Approve if ready to be merged]
+    approve_strict --> merge_strict[Merge if approved by 2 or\nmore team members]
+    approve_non_strict -.-> merge_non_strict[Merge if approved by 2 or\nmore team members\nand the PR has been discussed\n in a team meeting]
+    merge_non_strict -.-> merge_extra
+    merge_strict --> merge_extra["- Use 'Squash and Merge'\n- Edit commit message to follow convention\n- In commit message body, list\nrelevant issues being fixed\ne.g. 'fix #1234, fix #1235'"]
+```
 
 ## Notes on Dependencies
 

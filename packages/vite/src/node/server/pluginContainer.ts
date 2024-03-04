@@ -32,7 +32,6 @@ SOFTWARE.
 import fs from 'node:fs'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
-import { VERSION as rollupVersion } from 'rollup'
 import { parseAst as rollupParseAst } from 'rollup/parseAst'
 import type {
   AsyncPluginHooks,
@@ -64,7 +63,6 @@ import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
 import type { Plugin } from '../plugin'
 import {
-  cleanUrl,
   combineSourcemaps,
   createDebugger,
   ensureWatchedFile,
@@ -74,12 +72,13 @@ import {
   normalizePath,
   numberToPos,
   prettifyUrl,
+  rollupVersion,
   timeFrom,
-  unwrapId,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
+import { cleanUrl, unwrapId } from '../../shared/utils'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph, ModuleNode } from './moduleGraph'
 
@@ -299,20 +298,6 @@ export async function createPluginContainer(
 
     constructor(initialPlugin?: Plugin) {
       this._activePlugin = initialPlugin || null
-      this.parse = this.parse.bind(this)
-      this.resolve = this.resolve.bind(this)
-      this.load = this.load.bind(this)
-      this.getModuleInfo = this.getModuleInfo.bind(this)
-      this.getModuleIds = this.getModuleIds.bind(this)
-      this.addWatchFile = this.addWatchFile.bind(this)
-      this.getWatchFiles = this.getWatchFiles.bind(this)
-      this.emitFile = this.emitFile.bind(this)
-      this.setAssetSource = this.setAssetSource.bind(this)
-      this.getFileName = this.getFileName.bind(this)
-      this.warn = this.warn.bind(this)
-      this.error = this.error.bind(this)
-      this.debug = this.debug.bind(this)
-      this.info = this.info.bind(this)
     }
 
     parse(code: string, opts: any) {
@@ -600,7 +585,20 @@ export async function createPluginContainer(
           break
         }
         if (!combinedMap) {
-          combinedMap = m as SourceMap
+          const sm = m as SourceMap
+          // sourcemap should not include `sources: [null]` (because `sources` should be string) nor
+          // `sources: ['']` (because `''` means the path of sourcemap)
+          // but MagicString generates this when `filename` option is not set.
+          // Rollup supports these and therefore we support this as well
+          if (sm.sources.length === 1 && !sm.sources[0]) {
+            combinedMap = {
+              ...sm,
+              sources: [this.filename],
+              sourcesContent: [this.originalCode],
+            }
+          } else {
+            combinedMap = sm
+          }
         } else {
           combinedMap = combineSourcemaps(cleanUrl(this.filename), [
             m as RawSourceMap,

@@ -1,5 +1,5 @@
-import { Worker } from 'okie'
 import type { Terser } from 'dep-types/terser'
+import { Worker } from 'artichokie'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 import { requireResolveFromRootWithFallback } from '../utils'
@@ -38,16 +38,17 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
 
   const makeWorker = () =>
     new Worker(
-      async (
-        terserPath: string,
-        code: string,
-        options: Terser.MinifyOptions,
-      ) => {
-        // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
-        // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
-        const terser = require(terserPath)
-        return terser.minify(code, options) as Terser.MinifyOutput
-      },
+      () =>
+        async (
+          terserPath: string,
+          code: string,
+          options: Terser.MinifyOptions,
+        ) => {
+          // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
+          // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
+          const terser = require(terserPath)
+          return terser.minify(code, options) as Terser.MinifyOutput
+        },
       {
         max: maxWorkers,
       },

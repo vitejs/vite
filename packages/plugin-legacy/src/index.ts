@@ -125,6 +125,7 @@ const prefixedHashInFileNameRE = /\W?\[hash(:\d+)?\]/
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
+  let modernTargets: Options['modernTargets']
 
   // browsers supporting ESM + dynamic import + import.meta + async generator
   const modernTargetsEsbuild = [
@@ -183,10 +184,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   }
 
   let overriddenBuildTarget = false
+  let overriddenDefaultModernTargets = false
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
 
-    config(config, env) {
+    async config(config, env) {
       if (env.command === 'build' && !config.build?.ssr) {
         if (!config.build) {
           config.build = {}
@@ -205,7 +207,17 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // Vite's default target browsers are **not** the same.
           // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
           overriddenBuildTarget = config.build.target !== undefined
-          config.build.target = modernTargetsEsbuild
+          overriddenDefaultModernTargets = options.modernTargets !== undefined
+
+          if (options.modernTargets) {
+            // Package is ESM only
+            const { default: browserslistToEsbuild } = await import(
+              'browserslist-to-esbuild'
+            )
+            config.build.target = browserslistToEsbuild(options.modernTargets)
+          } else {
+            config.build.target = modernTargetsEsbuild
+          }
         }
       }
 
@@ -223,6 +235,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         config.logger.warn(
           colors.yellow(
             `plugin-legacy overrode 'build.target'. You should pass 'targets' as an option to this plugin with the list of legacy browsers to support instead.`,
+          ),
+        )
+      }
+      if (overriddenDefaultModernTargets) {
+        config.logger.warn(
+          colors.yellow(
+            `plugin-legacy 'modernTargets' option overrode the builtin targets of modern chunks. Some versions of browsers between legacy and modern may not be supported.`,
           ),
         )
       }
@@ -322,6 +341,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         'last 2 versions and not dead, > 0.3%, Firefox ESR'
       isDebug && console.log(`[@vitejs/plugin-legacy] targets:`, targets)
 
+      modernTargets = options.modernTargets || modernTargetsBabel
+      isDebug &&
+        console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
+
       const getLegacyOutputFileName = (
         fileNames:
           | string
@@ -394,7 +417,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           genModern
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, modernTargetsBabel, modernPolyfills)
+          await detectPolyfills(raw, modernTargets, modernPolyfills)
         }
 
         const ms = new MagicString(raw)

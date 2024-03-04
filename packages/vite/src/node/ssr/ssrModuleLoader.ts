@@ -2,12 +2,13 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import colors from 'picocolors'
 import type { ViteDevServer } from '../server'
-import { isBuiltin, isFilePathESM, unwrapId } from '../utils'
+import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { PackageCache } from '../packages'
+import { unwrapId } from '../../shared/utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -292,7 +293,7 @@ async function nodeImport(
 ) {
   let url: string
   let filePath: string | undefined
-  if (id.startsWith('data:') || isBuiltin(id)) {
+  if (id.startsWith('data:') || isExternalUrl(id) || isBuiltin(id)) {
     url = id
   } else {
     const resolved = tryNodeResolve(

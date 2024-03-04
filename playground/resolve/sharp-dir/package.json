@@ -4,6 +4,6 @@
   "version": "1.0.0",
   "main": "./index.cjs",
   "dependencies": {
-    "es5-ext": "0.10.62"
+    "es5-ext": "0.10.63"
   }
 }

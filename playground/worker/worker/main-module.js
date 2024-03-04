@@ -45,6 +45,12 @@ inlineWorkerUrl.addEventListener('message', (e) => {
   text('.pong-inline-url', e.data.metaUrl)
 })
 
+const unicodeInlineWorker = new InlineWorker()
+unicodeInlineWorker.postMessage('ping-unicode')
+unicodeInlineWorker.addEventListener('message', (e) => {
+  text('.pong-inline-unicode', e.data.msg)
+})
+
 const startSharedWorker = () => {
   const sharedWorker = new mySharedWorker()
   sharedWorker.port.addEventListener('message', (event) => {
@@ -142,7 +148,7 @@ w2.port.addEventListener('message', (ev) => {
 w2.port.start()
 
 const workers = import.meta.glob('../importMetaGlobEager.*.js', {
-  as: 'worker',
+  query: '?worker',
   eager: true,
 })
 const importMetaGlobEagerWorker = new workers[
