@@ -60,7 +60,7 @@ class ModuleExecutionEnvironment {
    */
   config: ResolvedEnvironmentConfig
 
-  constructor({ name, hot, run, config }: ModuleEnvironmentOptions)
+  constructor(server, { name, hot, run, config }: ModuleEnvironmentOptions)
 
   /**
    * Resolve the URL to an id, load it, and process the code using the
