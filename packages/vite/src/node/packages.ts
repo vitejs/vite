@@ -21,7 +21,9 @@ export type PackageCache = Map<string, PackageData>
 
 export interface PackageData {
   dir: string
+  srcDir: string | null
   hasSideEffects: (id: string) => boolean | 'no-treeshake' | null
+  inWorkspace: boolean
   webResolvedImports: Record<string, string | undefined>
   nodeResolvedImports: Record<string, string | undefined>
   setResolvedCache: (key: string, entry: string, targetWeb: boolean) => void
@@ -194,10 +196,30 @@ export function loadPackageData(pkgPath: string): PackageData {
     hasSideEffects = () => null
   }
 
+  // Determine if the package is locally within a monorepo workspace
+  const inWorkspace = isPackageInWorkspace(pkgPath)
+  let srcDir = null
+
+  // When in a workspace, attempt to find a source directory.
+  // We do this check here, so that it only runs once per package,
+  // and not for every file in the package!
+  if (inWorkspace) {
+    for (const srcName of ['src', 'sources']) {
+      const srcPath = path.join(pkgDir, srcName)
+
+      if (fs.existsSync(srcPath)) {
+        srcDir = srcPath
+        break
+      }
+    }
+  }
+
   const pkg: PackageData = {
     dir: pkgDir,
     data,
     hasSideEffects,
+    inWorkspace,
+    srcDir,
     webResolvedImports: {},
     nodeResolvedImports: {},
     setResolvedCache(key: string, entry: string, targetWeb: boolean) {
@@ -217,6 +239,21 @@ export function loadPackageData(pkgPath: string): PackageData {
   }
 
   return pkg
+}
+
+// Determine if the package is within a monorepo workspace.
+// We can do this by resolving the symlink, comparing the resolved path,
+// and ensuring the resolved path is not within node_modules.
+function isPackageInWorkspace(basePath: string): boolean {
+  if (!basePath.includes('node_modules')) {
+    return true
+  }
+
+  // For soft links (workspace:, link:), this will return the source path
+  // For hard links (file:, node modules), this will return self
+  const realPath = fs.realpathSync(basePath)
+
+  return realPath !== basePath && !realPath.includes('node_modules')
 }
 
 export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {

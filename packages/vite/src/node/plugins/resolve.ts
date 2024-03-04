@@ -127,6 +127,9 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
    * @internal
    */
   idOnly?: boolean
+
+  // Maps to the experiment of the same name
+  resolveLocalPackageSources?: boolean
 }
 
 export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
@@ -481,7 +484,7 @@ function resolveSubpathImports(
   if (!pkgData) return
 
   let importsPath = resolveExportsOrImports(
-    pkgData.data,
+    pkgData,
     id,
     options,
     targetWeb,
@@ -763,13 +766,27 @@ export function tryNodeResolve(
   const unresolvedId = deepMatch ? '.' + id.slice(pkgId.length) : id
 
   let resolved: string | undefined
-  try {
-    resolved = resolveId(unresolvedId, pkg, targetWeb, options)
-  } catch (err) {
-    if (!options.tryEsmOnly) {
-      throw err
+
+  // If a local package, attempt to resolve the original source file,
+  // and avoid entry points or pre-built files
+  if (pkg.inWorkspace && options.resolveLocalPackageSources) {
+    try {
+      resolved = resolveSourceFile(unresolvedId, pkg, targetWeb, options)
+    } catch {
+      // If nothing found, resolve with other methods
     }
   }
+
+  if (!resolved) {
+    try {
+      resolved = resolveId(unresolvedId, pkg, targetWeb, options)
+    } catch (err) {
+      if (!options.tryEsmOnly) {
+        throw err
+      }
+    }
+  }
+
   if (!resolved && options.tryEsmOnly) {
     resolved = resolveId(unresolvedId, pkg, targetWeb, {
       ...options,
@@ -961,11 +978,12 @@ export async function tryOptimizedResolve(
 
 export function resolvePackageEntry(
   id: string,
-  { dir, data, setResolvedCache, getResolvedCache }: PackageData,
+  pkg: PackageData,
   targetWeb: boolean,
   options: InternalResolveOptions,
 ): string | undefined {
   const { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id)
+  const { dir, data, setResolvedCache, getResolvedCache } = pkg
 
   const cached = getResolvedCache('.', targetWeb)
   if (cached) {
@@ -979,7 +997,7 @@ export function resolvePackageEntry(
     // using https://github.com/lukeed/resolve.exports
     if (data.exports) {
       entryPoint = resolveExportsOrImports(
-        data,
+        pkg,
         '.',
         options,
         targetWeb,
@@ -1056,6 +1074,27 @@ export function resolvePackageEntry(
   packageEntryFailure(id)
 }
 
+export function resolveSourceFile(
+  id: string,
+  pkg: PackageData,
+  targetWeb: boolean,
+  options: InternalResolveOptions,
+): string | undefined {
+  const srcDir = pkg.srcDir ?? pkg.dir
+
+  return tryFsResolve(
+    id.startsWith('.')
+      ? // File relative from package source directory
+        path.join(srcDir, id)
+      : // Is the package name, so return an index entry point
+        srcDir,
+    options,
+    true,
+    targetWeb,
+    true,
+  )
+}
+
 function packageEntryFailure(id: string, details?: string) {
   const err: any = new Error(
     `Failed to resolve entry for package "${id}". ` +
@@ -1067,7 +1106,7 @@ function packageEntryFailure(id: string, details?: string) {
 }
 
 function resolveExportsOrImports(
-  pkg: PackageData['data'],
+  pkg: PackageData,
   key: string,
   options: InternalResolveOptionsWithOverrideConditions,
   targetWeb: boolean,
@@ -1093,27 +1132,40 @@ function resolveExportsOrImports(
   })
 
   const fn = type === 'imports' ? imports : exports
-  const result = fn(pkg, key, {
+  const result = fn(pkg.data, key, {
     browser: targetWeb && !additionalConditions.has('node'),
     require: options.isRequire && !additionalConditions.has('import'),
     conditions,
   })
 
-  return result ? result[0] : undefined
+  if (!result) {
+    return undefined
+  }
+
+  // We need to support array conditions like `["./*.js", "./*.mjs"]`
+  // So loop through each result and find one that actually exists
+  if (result.length > 1) {
+    for (const entry of result) {
+      if (fs.existsSync(path.join(pkg.dir, entry))) {
+        return entry
+      }
+    }
+  }
+
+  // If nothing exists, return the 1st entry and let the other layers
+  // handle the appropriate error
+  return result[0]
 }
 
 function resolveDeepImport(
   id: string,
-  {
-    webResolvedImports,
-    setResolvedCache,
-    getResolvedCache,
-    dir,
-    data,
-  }: PackageData,
+  pkg: PackageData,
   targetWeb: boolean,
   options: InternalResolveOptions,
 ): string | undefined {
+  const { webResolvedImports, setResolvedCache, getResolvedCache, dir, data } =
+    pkg
+
   const cache = getResolvedCache(id, targetWeb)
   if (cache) {
     return cache
@@ -1128,7 +1180,7 @@ function resolveDeepImport(
       // resolve without postfix (see #7098)
       const { file, postfix } = splitFileAndPostfix(relativeId)
       const exportsId = resolveExportsOrImports(
-        data,
+        pkg,
         file,
         options,
         targetWeb,

@@ -72,6 +72,8 @@ export async function resolvePlugins(
         isBuild && config.build.ssr
           ? (id, importer) => shouldExternalizeForSSR(id, importer, config)
           : undefined,
+      resolveLocalPackageSources:
+        config.experimental.resolveLocalPackageSources,
     }),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),

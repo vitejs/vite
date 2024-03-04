@@ -310,6 +310,14 @@ export interface ExperimentalOptions {
    * @default false
    */
   skipSsrTransform?: boolean
+  /**
+   * Resolves source files of local packages (in a monorepo workspace) instead of using
+   * pre-built files.
+   *
+   * @experimental
+   * @default false
+   */
+  resolveLocalPackageSources?: boolean
 }
 
 export interface LegacyOptions {

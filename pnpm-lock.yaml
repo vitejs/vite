@@ -803,6 +803,59 @@ importers:
 
   playground/module-graph: {}
 
+  playground/monorepo-alias:
+    devDependencies:
+      '@vitejs/test-resolve-linked':
+        specifier: workspace:*
+        version: link:../resolve-linked
+
+  playground/monorepo-alias/root:
+    dependencies:
+      '@vitejs/test-monorepo-alias-shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  playground/monorepo-alias/shared: {}
+
+  playground/monorepo-auto-alias:
+    devDependencies:
+      '@vitejs/test-resolve-linked':
+        specifier: workspace:*
+        version: link:../resolve-linked
+
+  playground/monorepo-auto-alias/root:
+    dependencies:
+      '@vitejs/test-monorepo-auto-alias-shared':
+        specifier: workspace:*
+        version: link:../shared
+
+  playground/monorepo-auto-alias/shared: {}
+
+  playground/monorepo-local-sources: {}
+
+  playground/monorepo-local-sources/custom-dir: {}
+
+  playground/monorepo-local-sources/no-dir: {}
+
+  playground/monorepo-local-sources/not-local: {}
+
+  playground/monorepo-local-sources/root:
+    dependencies:
+      '@vitejs/test-monorepo-local-sources-custom-dir':
+        specifier: link:../custom-dir
+        version: link:../custom-dir
+      '@vitejs/test-monorepo-local-sources-no-dir':
+        specifier: workspace:*
+        version: link:../no-dir
+      '@vitejs/test-monorepo-local-sources-not-local':
+        specifier: file:../not-local
+        version: file:playground/monorepo-local-sources/not-local
+      '@vitejs/test-monorepo-local-sources-src-dir':
+        specifier: workspace:*
+        version: link:../src-dir
+
+  playground/monorepo-local-sources/src-dir: {}
+
   playground/multiple-entrypoints:
     devDependencies:
       sass:
@@ -9807,6 +9860,11 @@ packages:
   file:playground/minify/dir/module:
     resolution: {directory: playground/minify/dir/module, type: directory}
     name: '@vitejs/test-minify'
+    dev: false
+
+  file:playground/monorepo-local-sources/not-local:
+    resolution: {directory: playground/monorepo-local-sources/not-local, type: directory}
+    name: '@vitejs/test-monorepo-local-sources-not-local'
     dev: false
 
   file:playground/optimize-deps-no-discovery/dep-no-discovery:

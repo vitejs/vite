@@ -1,0 +1,27 @@
+<div>No dir index: <span id="no-dir-index"></span></div>
+<div>No dir deep: <span id="no-dir-deep"></span></div>
+
+<div>Src dir index: <span id="src-dir-index"></span></div>
+<div>Src dir deep: <span id="src-dir-deep"></span></div>
+
+<div>Custom dir index: <span id="custom-dir-index"></span></div>
+<div>Custom dir deep: <span id="custom-dir-deep"></span></div>
+
+<div>Not local index: <span id="not-local-index"></span></div>
+<div>Not local deep: <span id="not-local-deep"></span></div>
+
+<script type="module">
+  import { noDir, srcDir, notLocal } from './src/index.mjs'
+
+  document.getElementById('no-dir-index').textContent = noDir.index
+  document.getElementById('no-dir-deep').textContent = noDir.deep
+
+  document.getElementById('src-dir-index').textContent = srcDir.index
+  document.getElementById('src-dir-deep').textContent = srcDir.deep
+
+  // document.getElementById('custom-dir-index').textContent = customDir.index
+  // document.getElementById('custom-dir-deep').textContent = customDir.deep
+
+  document.getElementById('not-local-index').textContent = notLocal.index
+  document.getElementById('not-local-deep').textContent = notLocal.deep
+</script>
