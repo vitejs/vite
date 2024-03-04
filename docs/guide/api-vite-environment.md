@@ -312,7 +312,7 @@ function workedPlugin() {
       const workedEnvironment = new WorkerdEnvironment(server)
       // This environment has 'workerd' as its name, a convention agreed upon by the ecosystem
       // connect workerdEnviroment logic to its associated workerd module runner
-      return [...environments, workedEnvironment]
+      environments.push(workedEnvironment)
     },
   }
 }
