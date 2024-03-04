@@ -1,14 +1,14 @@
 # Vite Environment API
 
 :::warning Low-level API
-Inital work for this API was introduced in Vite 5.1 with the name [Vite Runtime API](./api-vite-runtime.md). In Vite 5.2 the API was reviewed and renamed as Vite Environemnt API. It still remains an experimental feature. We are gathering feedback about the revised proposal [here](https://github.com/vitejs/vite/discussions/15774). There will probably be breaking changes to it in Vite 5.3, so make sure to pin the Vite version to `~5.2.0` when using it. This is a low-level API meant for library and framework authors. If your goal is to create an application, make sure to check out the higher-level SSR plugins and tools at [Awesome Vite SSR section](https://github.com/vitejs/awesome-vite#ssr) first.
+Initial work for this API was introduced in Vite 5.1 with the name [Vite Runtime API](./api-vite-runtime.md). In Vite 5.2 the API was reviewed and renamed as Vite Environemnt API. It remains an experimental feature. We are gathering feedback about the revised proposal [here](https://github.com/vitejs/vite/discussions/15774). There will probably be breaking changes to it in Vite 5.3, so make sure to pin the Vite version to `~5.2.0` when using it. This is a low-level API meant for library and framework authors. If your goal is to create an application, make sure to check out the higher-level SSR plugins and tools at [Awesome Vite SSR section](https://github.com/vitejs/awesome-vite#ssr) first.
 :::
 
-A single Vite dev server can be used to interact with different module excecution environments concurrently. We'll use the word environment to refer to a configured Vite processing pipeline that can resolve ids, load and process source code and is connected to a runtime were the code is executed. Some examples of environments are: browser, ssr, workerd, rsc. The transformed source code is called a module, and the relationship between the modules processed in a each environment are kept in a module graph. The code for these modules are sent to the runtimes associated to each environment to be executed. When a module is evaluated, the runtime will request its imported modules triggering the processing of a section of the module graph.
+A single Vite dev server can be used to interact with different module execution environments concurrently. We'll use the word environment to refer to a configured Vite processing pipeline that can resolve ids, load, and process source code and is connected to a runtime where the code is executed. Some examples of environments are browser, ssr, workerd, rsc. The transformed source code is called a module, and the relationships between the modules processed in each environment are kept in a module graph. The code for these modules is sent to the runtimes associated with each environment to be executed. When a module is evaluated, the runtime will request its imported modules triggering the processing of a section of the module graph.
 
-A Vite Module Runner allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runtime implementation is decoupled from the server. This allows library and framework authors to implement their own layer of communication between the Vite server and the runner. The browser communicates communicates with its corresponding environment using the server Web Socket and through HTTP requests. The SSR Module runner can directly do function calls to process modules. Other environments could run modules connecting to an edge runtime like workerd, or a Worker Thread in the same node process as Vitest does.
+A Vite Module Runner allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runtime implementation is decoupled from the server. This allows library and framework authors to implement their layer of communication between the Vite server and the runner. The browser communicates with its corresponding environment using the server Web Socket and through HTTP requests. The SSR Module runner can directly do function calls to process modules. Other environments could run modules connecting to an edge runtime like workerd, or a Worker Thread in the same node process as Vitest does.
 
-All these environments share Vite's HTTP server, middlewares and Web Socket. The resolved config and plugins pipeline are also shared, but plugins can use `apply` so its hooks are only called for certain environments. The environment can also be accessed inside hooks for fine grained control.
+All these environments share Vite's HTTP server, middlewares, and Web Socket. The resolved config and plugins pipeline are also shared, but plugins can use `apply` so its hooks are only called for certain environments. The environment can also be accessed inside hooks for fine-grained control.
 
 ![Vite Environments](../images/vite-environments.svg)
 
@@ -16,7 +16,7 @@ All these environments share Vite's HTTP server, middlewares and Web Socket. The
 
 A Vite dev server exposes two environments by default named `'browser'` and `'ssr'`. The browser environment runs in client apps that have imported the `/@vite/client` module. The SSR environment runs in the same runtime as the Vite server (for example, in node) and allows application servers to be used to render requests during dev with full HMR support. We'll discuss later how frameworks and users can create and register new environments.
 
-The available environments can be accessed using the `server.environments` read only array:
+The available environments can be accessed using the `server.environments` read-only array:
 
 ```js
 server.environments.forEach((environment) => log(environment.name))
@@ -35,7 +35,7 @@ class ModuleExecutionEnvironment {
   /**
    * Unique identifier for the environment in a Vite server.
    * By default Vite exposes 'browser' and 'ssr' environments.
-   * The ecosystem has concensus on other environments, like 'workerd'.
+   * The ecosystem has consensus on other environments, like 'workerd'.
    */
   name: string
   /**
@@ -55,12 +55,15 @@ class ModuleExecutionEnvironment {
   run: ModuleRunFunction
   /**
    * Resolved config options for this environment. Options at the server
-   * global scope are taken as defaults for all enviroments, and can
-   * be overriden (resolve conditions, external, optimizedDeps)
+   * global scope are taken as defaults for all environments, and can
+   * be overridden (resolve conditions, external, optimizedDeps)
    */
   config: ResolvedEnvironmentConfig
 
-  constructor(server, { name, hot, run, config }: ModuleEnvironmentOptions)
+  constructor(
+    server,
+    { name, hot, run, config }: ModuleExecutionEnvironmentOptions,
+  )
 
   /**
    * Resolve the URL to an id, load it, and process the code using the
@@ -83,9 +86,9 @@ class ModuleExecutionEnvironment {
 }
 ```
 
-An environment instance in the Vite server let's you process a URL using the `environment.transformRequest(url)` method. This function will use the plugin pipeline to resolve the `url` to a module `id`, load it (reading the file from the file system or through a plugin that implements a virtual module), and then transform the code. While transforming the module, imports and othe metadata will be recorded in the environment module graph by creating or updating the corresponding module node. When processing is done, the transform result is also stored in the module.
+An environment instance in the Vite server lets you process a URL using the `environment.transformRequest(url)` method. This function will use the plugin pipeline to resolve the `url` to a module `id`, load it (reading the file from the file system or through a plugin that implements a virtual module), and then transform the code. While transforming the module, imports and other metadata will be recorded in the environment module graph by creating or updating the corresponding module node. When processing is done, the transform result is also stored in the module.
 
-But the environment instance can't execute the code itself, as the runtime where the module will be run could be different from the one the Vite server is running in. This is the case for the browser environment. When a html is loaded in the browser, its scripts are executed triggering the evaluation of the entire static module graph. Each imported URL generates a request to the Vite server to get the module code, that ends up handled by the Transform Middleware by calling `server.environment('browser').transformRequest(url)`. The connection between the environment instance in the server and the module runner in the browser is carried out through HTTP in this case.
+But the environment instance can't execute the code itself, as the runtime where the module will be run could be different from the one the Vite server is running in. This is the case for the browser environment. When a html is loaded in the browser, its scripts are executed triggering the evaluation of the entire static module graph. Each imported URL generates a request to the Vite server to get the module code, which ends up handled by the Transform Middleware by calling `server.environment('browser').transformRequest(url)`. The connection between the environment instance in the server and the module runner in the browser is carried out through HTTP in this case.
 
 :::info transformRequest naming
 We are using `transformRequest(url)` and `warmupRequest(url)` in the current version of this proposal so it is easier to discuss and understand for users used to Vite's current API. Before releasing, we can take the opportunity to review these names too. For example, it could be named `environment.processModule(url)` or `environment.loadModule(url)` taking a page from Rollup's `context.load(id)` in plugin hooks. For the moment, we think keeping the current names and delaying this discussion is better.
@@ -148,7 +151,7 @@ app.use('*', async (req, res, next) => {
 
 :::info ssrModuleRunner vs ssrEnvironment
 
-An alternative is to expose `server.ssrEnvironment` that implements both `ModuleExecutionEnvironment` and `ModuleRunner` as in this case they are both in the same runtime. In this case, the code above would be:
+An alternative is to expose `server.ssrEnvironment` that implements both `ModuleExecutionEnvironment` and `ModuleRunner` as in this case, they are both in the same runtime. In this case, the code above would be:
 
 ```js
 const { render } = await server.ssrEnvironment.executeEntryPoint(
@@ -156,7 +159,7 @@ const { render } = await server.ssrEnvironment.executeEntryPoint(
 )
 ```
 
-This may be an interesting idea if we would like to move other SSR related methods like `ssrFixStacktrace` from the server to the `ssrEnvironment`. And we could also have `server.browserEnvironment` that extends the environment with browser specific functionality.
+This may be an interesting idea if we would like to move other SSR-related methods like `ssrFixStacktrace` from the server to the `ssrEnvironment`. And we could also have `server.browserEnvironment` that extends the environment with browser-specific functionality.
 
 For this proposal, `server.ssrModuleRunner` is used to highlight the separation between the Environment instance in the server and the module runner instance even if they are both available in the server for SSR.
 
@@ -171,7 +174,7 @@ The Vite server has a shared plugin pipeline, but when a module is processed it 
 - **Type:** `(ctx: HotContext) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
 - **See also:** [HMR API](./api-hmr)
 
-The `hotUpdate` hook allows plugins to perform custom HMR update handling for a given environment. When a file changes, the HMR algorithm is run for each environment in serie according to the order in `server.environments`, so the `hotUpdate` hook will be called multiple times. The hook receives a context object with the following signature:
+The `hotUpdate` hook allows plugins to perform custom HMR update handling for a given environment. When a file changes, the HMR algorithm is run for each environment in series according to the order in `server.environments`, so the `hotUpdate` hook will be called multiple times. The hook receives a context object with the following signature:
 
 ```ts
 interface HotContext {
@@ -188,7 +191,7 @@ interface HotContext {
 
 - `modules` is an array of modules in this environment that are affected by the changed file. It's an array because a single file may map to multiple served modules (e.g. Vue SFCs).
 
-- `read` is an async read function that returns the content of the file. This is provided because on some systems, the file change callback may fire too fast before the editor finishes updating the file and direct `fs.readFile` will return empty content. The read function passed in normalizes this behavior.
+- `read` is an async read function that returns the content of the file. This is provided because, on some systems, the file change callback may fire too fast before the editor finishes updating the file, and direct `fs.readFile` will return empty content. The read function passed in normalizes this behavior.
 
 The hook can choose to:
 
@@ -234,7 +237,7 @@ The hook can choose to:
   }
   ```
 
-  Client code should register corresponding handler using the [HMR API](./api-hmr) (this could be injected by the same plugin's `transform` hook):
+  Client code should register the corresponding handler using the [HMR API](./api-hmr) (this could be injected by the same plugin's `transform` hook):
 
   ```js
   if (import.meta.hot) {
@@ -265,11 +268,11 @@ The `environment` name is passed as a parameter to the `options` of `resolveId`,
 A plugin could use the `environment` instance to:
 
 - Only apply logic for certain environments.
-- Change the way they work depending the configuration for the environment, that can be accessed using `environment.config`. The vite core resolve plugin modifies the way it resolves ids based on `environment.config.resolve.conditions` for example.
+- Change the way they work depending on the configuration for the environment, which can be accessed using `environment.config`. The vite core resolve plugin modifies the way it resolves ids based on `environment.config.resolve.conditions` for example.
 
 :::info environment in hooks
 
-Using the `environment` string in the hooks don't read that well. It isn't clear what should be the name used for a variable when there the environment is used in several places in the hook. It could probably be `serverEnvironment`:
+Using the `environment` string in the hooks doesn't read that well. It isn't clear what should be the name used for a variable when the environment is used in several places in the hook. It could probably be `serverEnvironment`:
 
 ```js
 const serverEnvironment = server.environment(environment)
@@ -281,17 +284,17 @@ if (
 }
 ```
 
-We could also pass an environment object that has `{ name, config }`. In a previous iteration the environment instance was passed directly as a parameter but we also need to pass the `environment` name during build time to hooks.
+We could also pass an environment object that has `{ name, config }`. In a previous iteration, the environment instance was passed directly as a parameter but we also need to pass the `environment` name during build time to hooks.
 
-Or we could pass to the hooks both `{ environmentName, serverEnvironment }` to avoid cluttering every hook with `const serverEnvironment = server.environment(environment)`. Check out the build section later on. If we explore having a `ViteBuilder` that is aware of environments (and can build them all). We could pass `{ environmentName, serverEnvironment, builderEnvironment }`. One of the instances will always be undefined in this case. I think this is more confortable to use compared to a single `{ environment: server environment | builder environment }` instance.
+Or we could pass to the hooks both `{ environmentName, serverEnvironment }` to avoid cluttering every hook with `const serverEnvironment = server.environment(environment)`. Check out the build section later on. If we explore having a `ViteBuilder` that is aware of environments (and can build them all). We could pass `{ environmentName, serverEnvironment, builderEnvironment }`. One of the instances will always be undefined in this case. I think this is more comfortable to use compared to a single `{ environment: server environment | builder environment }` instance.
 
-We could also make the environment name or common environment object accesible using the plugin hook context with `this.serverEnvironment`.
+We could also make the environment name or common environment object accessible using the plugin hook context with `this.serverEnvironment`.
 
 :::
 
 ## Environment Configuration
 
-All environments share the Vite server configuration, but there are certain options that can be overriden per environment.
+All environments share the Vite server configuration, but certain options can be overridden per environment.
 
 ```js
 export default {
@@ -308,27 +311,27 @@ export default {
       optimizeDeps: {} // override for the ssr environment
     },
     workerd: {
-      noExternal: true // override for a third party environment
+      noExternal: true // override for a third-party environment
     }
   }
 }
 ```
 
-The subset of options that can be overriden are resolved and are available at `environment.config`.
+The subset of options that can be overridden are resolved and are available at `environment.config`.
 
-:::info What options can be overriden?
+:::info What options can be overridden?
 
-Vite has already allowed defining some config for the [SSR environment](https://vitejs.dev/config/ssr-options.html). Initially, these are the options that would be available to be overriden by any environment. Except for `ssr.target: 'node' | 'webworker'`, that could be deprecated as `webworker` could be implemented as a separate environment.
+Vite has already allowed defining some config for the [SSR environment](https://vitejs.dev/config/ssr-options.html). Initially, these are the options that would be available to be overridden by any environment. Except for `ssr.target: 'node' | 'webworker'`, that could be deprecated as `webworker` could be implemented as a separate environment.
 
-We could discuss what other options we should allow to be overriden, although maybe it is better to add them when there are requested by users later on. Some examples: `define`, `resolve.alias`, `resolve.dedupe`, `resolve.mainFields`, `resolve.extensions`.
+We could discuss what other options we should allow to be overridden, although maybe it is better to add them when they are requested by users later on. Some examples: `define`, `resolve.alias`, `resolve.dedupe`, `resolve.mainFields`, `resolve.extensions`.
 
 :::
 
 ## Separate module graphs
 
-Vite currently has a mixed browser and ssr module graph. Given an unprocessed or invalidated node, it isn't possible to know if it corresponds to the browser, ssr, or both environments. Module nodes have some properties prefixed, like `clientImportedModules` and `ssrImportedModules` (and `importedModules` that returns the union of both). `importers` contains all importers from both the browser and ssr environment for each module node. A module node also have `transformResult` and `ssrTransformResult`.
+Vite currently has a mixed browser and ssr module graph. Given an unprocessed or invalidated node, it isn't possible to know if it corresponds to the browser, ssr, or both environments. Module nodes have some properties prefixed, like `clientImportedModules` and `ssrImportedModules` (and `importedModules` that returns the union of both). `importers` contains all importers from both the browser and ssr environment for each module node. A module node also has `transformResult` and `ssrTransformResult`.
 
-In this proposal, each environment has its own module graph (and a backward compatibility layer will be implemented to give time to the ecosystem to migrate). All module graphs have the same signature, so generic algorithms can be implemented to crawl or query the graph without depending on the environment. `hotUpdate` is a good example. When a file is modified, the module graph of each environment will be used to discovered the affected modules and perform HMR for each environment independendently.
+In this proposal, each environment has its module graph (and a backward compatibility layer will be implemented to give time to the ecosystem to migrate). All module graphs have the same signature, so generic algorithms can be implemented to crawl or query the graph without depending on the environment. `hotUpdate` is a good example. When a file is modified, the module graph of each environment will be used to discover the affected modules and perform HMR for each environment independently.
 
 Each module is represented by a `ModuleNode` instance. Modules may be registered in the graph without yet being processed (`transformResult` would be `null` in that case). `importers` and `importedModules` are also updated after the module is processed.
 
@@ -434,11 +437,11 @@ function workedPlugin() {
 }
 ```
 
-The environment will be accesible in middlewares or plugin hooks through `server.environment('workerd')`.
+The environment will be accessible in middlewares or plugin hooks through `server.environment('workerd')`.
 
 ## Creating new environments
 
-One of the goals of this feature is to provide a customizable API to process and run code. A Vite dev server provides browser and ssr environments out of the box, but users can build new environments using the exposed primitives.
+One of the goals of this feature is to provide a customizable API to process and run code. A Vite dev server provides browser and SSR environments out of the box, but users can build new environments using the exposed primitives.
 
 ```ts
 import { createModuleExectutionEnvironment } from 'vite'
@@ -496,7 +499,7 @@ export class ModuleRunner {
 
 The module evaluator in `ModuleRunner` is responsible for executing the code. Vite exports `ESModulesEvaluator` out of the box, it uses `new AsyncFunction` to evaluate the code. You can provide your own implementation if your JavaScript runtime doesn't support unsafe evaluation.
 
-The two main methods that a module runner exposes are `executeUrl` and `executeEntrypoint`. The only difference between them is that all modules executed by `executeEntrypoint` will be reexecuted if HMR triggers `full-reload` event. Be aware that Vite module runners don't update the `exports` object when this happens, and instead it overrides it. You would need to run `executeUrl` or get the module from the `moduleCache` again if you rely on having the latest `exports` object.
+The two main methods that a module runner exposes are `executeUrl` and `executeEntrypoint`. The only difference between them is that all modules executed by `executeEntrypoint` will be re-executed if HMR triggers `full-reload` event. Be aware that Vite module runners don't update the `exports` object when this happens, instead, it overrides it. You would need to run `executeUrl` or get the module from the `moduleCache` again if you rely on having the latest `exports` object.
 
 **Example Usage:**
 
@@ -598,12 +601,12 @@ export interface HMRModuleRunnerConnection {
    */
   isReady(): boolean
   /**
-   * Send message to the client.
+   * Send a message to the client.
    */
   send(message: string): void
   /**
    * Configure how HMR is handled when this connection triggers an update.
-   * This method expects that connection will start listening for HMR updates and call this callback when it's received.
+   * This method expects that the connection will start listening for HMR updates and call this callback when it's received.
    */
   onUpdate(callback: (payload: HMRPayload) => void): void
 }
@@ -625,13 +628,13 @@ The callback is queued and it will wait for the current update to be resolved be
 
 Plugin hooks also receive the environment name during build. This replaces the `ssr` boolean we have been passing them so far.
 
-The Vite CLI would aslo be updated from `vite build --ssr` to `vite build --environment=ssr`. Applications can then call build for each environment (for example `vite build --environment=workerd`).
+The Vite CLI would also be updated from `vite build --ssr` to `vite build --environment=ssr`. Applications can then call build for each environment (for example `vite build --environment=workerd`).
 
-In a future stage, or as part of this proposal, we could also review or stance on vite build being a simple wrapper around rollup. Instead, now that we have a proper environment concept, vite build could create a `ViteBuilder` that has knowledge of all the configured environments and build them all with a single call. This has been requested many times by framework authors that use the "Framework as a plugin" scheme. Right now they end up triggering the SSR build when the `buildEnd` hook for the browser build is called.
+In a future stage, or as part of this proposal, we could also review our stance on vite build being a simple wrapper around rollup. Instead, now that we have a proper environment concept, vite build could create a `ViteBuilder` that has knowledge of all the configured environments and build them all with a single call. This has been requested many times by framework authors that use the "Framework as a plugin" scheme. Right now they end up triggering the SSR build when the `buildEnd` hook for the browser build is called.
 
 In its simpler form, the vite builder could call each build in series as defined by `config.environments` order (or by a new `config.build.environments` order). This should cover most current use cases out of the box, given that most frameworks build the client first and then SSR (as they use the client manifest).
 
-It is an interesting design space to explore because it could make build and dev work in a more uniform way. For example, Vite Builder could also only load the config file once and do the overrides for each environment in the exact same way as it is done during dev. And there could also be a single plugin pipeline, if we would like plugins to share state directly between the environments (as it happens during dev already).
+It is an interesting design space to explore because it could make build and dev work more uniformly. For example, Vite Builder could also only load the config file once and do the overrides for each environment in the same way as it is done during dev. And there could also be a single plugin pipeline if we would like plugins to share state directly between the environments (as it happens during dev already).
 
 ## Backward Compatibility
 
@@ -649,22 +652,22 @@ The current Vite server API will be deprecated but keep working during the next 
 
 The last one is just an idea. We may want to keep `server.open(url)` around.
 
-The `server.moduleGraph` will keep returning a mixed view of the browser and ssr module graphs. Proxy module nodes will be returned so all functions keep returning mixed module nodes. The same scheme is used for the module nodes passed to `handleHotUpdate`. This is the most difficult change to get right regarding backward compatibility. We may need to accept small breaking changes when we release the API in Vite 6, making it opt in until then when releasing the API as experimental in Vite 5.2.
+The `server.moduleGraph` will keep returning a mixed view of the browser and ssr module graphs. Proxy module nodes will be returned so all functions keep returning mixed module nodes. The same scheme is used for the module nodes passed to `handleHotUpdate`. This is the most difficult change to get right regarding backward compatibility. We may need to accept small breaking changes when we release the API in Vite 6, making it opt-in until then when releasing the API as experimental in Vite 5.2.
 
 ## Open Questions and Alternatives
 
-There are some open questions and alternative as info boxes interlined in the guide.
+There are some open questions and alternatives as info boxes interlined in the guide.
 
-Names for concepts and the API are the best we could currently find, what we should keep discussing before releasing if we end up adopting this proposal. Here are some of the alternative naming we discussed in the process of creating this proposal.
+Names for concepts and the API are the best we could currently find, which we should keep discussing before releasing if we end up adopting this proposal. Here are some of the alternative names we discussed in the process of creating this proposal.
 
 ### ModuleLoader vs Environment
 
-Instead of `ModuleExecutionEnvironment`, we thought of calling the environment piece inside the Vite Server a `ModuleLoader`. So `server.environment('browser')` would be `server.moduleLoader('browser')`. It has some advantages, `transformRequest(url)` could be renamed to `moduleLoader.load(url)`. And we could pass to hooks a `loader` string instead of an `environment` string. `vite build --loader=ssr` could also be ok. A `ModuleLoader` having a `run()` function that connects it to the `ModuleRunner` in the associated runtime didn't seems like a good fit though. And `loader` could be confused with a node loader, or with the module loader in the target runtime.
+Instead of `ModuleExecutionEnvironment`, we thought of calling the environment piece inside the Vite Server a `ModuleLoader`. So `server.environment('browser')` would be `server.moduleLoader('browser')`. It has some advantages, `transformRequest(url)` could be renamed to `moduleLoader.load(url)`. We could pass to hooks a `loader` string instead of an `environment` string. `vite build --loader=ssr` could also be ok. A `ModuleLoader` having a `run()` function that connects it to the `ModuleRunner` in the associated runtime didn't seem like a good fit though. And `loader` could be confused with a node loader, or with the module loader in the target runtime.
 
 ### Runtime vs Environment
 
-We also discussed naming runtime to the concept we call environment in this proposal. We decided to go with Environment because a Runtime referes to node, bun, deno, workerd, a browser. But we need to be able to define two different module excecution "environments" for the same runtime. For example SSR and RSC environments, both running in the same node runtime.
+We also discussed naming runtime to the concept we call environment in this proposal. We decided to go with Environment because a Runtime refers to node, bun, deno, workerd, a browser. But we need to be able to define two different module execution "environments" for the same runtime. For example SSR and RSC environments, both running in the same node runtime.
 
 ### Server and Client
 
-We could also call `ModuleExecutionEnvironment` a `ServerEnvironment`, and the `ModuleRunner` in the associated runtime a `ClientEnvironment`. Or some variation using Server and Client in the names. We discarded these ideas because there are already many things that are a "server" (the vite dev server, the http server, etc) and client is also used right now to refer to the browser (as in `clientImportedModules`).
+We could also call `ModuleExecutionEnvironment` a `ServerEnvironment`, and the `ModuleRunner` in the associated runtime a `ClientEnvironment`. Or some variation using Server and Client in the names. We discarded these ideas because there are already many things that are a "server" (the vite dev server, the HTTP server, etc), and client is also used right now to refer to the browser (as in `clientImportedModules`).
