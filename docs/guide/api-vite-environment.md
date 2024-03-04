@@ -656,3 +656,19 @@ The `server.moduleGraph` will keep returning a mixed view of the browser and ssr
 There are some open questions and alternative as info boxes interlined in the guide.
 
 Names for concepts and the API are the best we could currently find, what we should keep discussing before releasing if we end up adopting this proposal.
+
+## Alternatives
+
+In the process of discussing this proposal, we analized other alternatives. Listing here some of them related to naming.
+
+### ModuleLoader vs Environment
+
+Instead of `ModuleExecutionEnvironment`, we thought of calling the environment piece inside the Vite Server a `ModuleLoader`. So `server.environment('browser')` would be `server.moduleLoader('browser')`. It has some advantages, `transformRequest(url)` could be renamed to `moduleLoader.load(url)`. And we could pass to hooks a `loader` string instead of an `environment` string. `vite build --loader=ssr` could also be ok. A `ModuleLoader` having a `run()` function that connects it to the `ModuleRunner` in the associated runtime didn't seems like a good fit though. And `loader` could be confused with a node loader, or with the module loader in the target runtime.
+
+### Runtime vs Environment
+
+We also discussed naming runtime to the concept we call environment in this proposal. We decided to go with Environment because a Runtime referes to node, bun, deno, workerd, a browser. But we need to be able to define two different module excecution "environments" for the same runtime. For example SSR and RSC environments, both running in the same node runtime.
+
+### Server and Client
+
+We could also call `ModuleExecutionEnvironment` a `ServerEnvironment`, and the `ModuleRunner` in the associated runtime a `ClientEnvironment`. Or some variation using Server and Client in the names. We discarded these ideas because there are already many things that are a "server" (the vite dev server, the http server, etc) and client is also used right now to refer to the browser (as in `clientImportedModules`).
