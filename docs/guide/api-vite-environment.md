@@ -201,11 +201,13 @@ The hook can choose to:
     if (environment !== 'browser')
       return
 
-    server.environment(environment).hot.send({ type: 'full-reload' })
+    const serverEnvironment = server.environment(environment)
+
+    serverEnvironment.hot.send({ type: 'full-reload' })
     // Invalidate modules manually
     const invalidatedModules = new Set()
     for (const mod of modules) {
-      server.environment(environment).moduleGraph.invalidateModule(
+      serverEnvironment.moduleGraph.invalidateModule(
         mod,
         invalidatedModules,
         timestamp,
@@ -258,7 +260,7 @@ function ssrOnlyPlugin() {
 
 ### Accessing the current environment in hooks
 
-The `environment` instance is passed as a parameter to the `options` of `resolveId`, `load`, and `transform`. It can also be accessed using the plugin hook context by `this.environment`.
+The `environment` name is passed as a parameter to the `options` of `resolveId`, `load`, and `transform`.
 
 A plugin could use the `environment` instance to:
 
@@ -267,7 +269,23 @@ A plugin could use the `environment` instance to:
 
 :::info environment in hooks
 
+Using the `environment` string in the hooks don't read that well. It isn't clear what should be the name used for a variable when there the environment is used in several places in the hook. It could probably be `serverEnvironment`:
+
+```js
+const serverEnvironment = server.environment(environment)
+if (
+  serverEnvironment.config.noExternal === true ||
+  serverEnvironment.moduleGraph.getModuleById(id)
+) {
+  // ...
+}
+```
+
 We could also pass an environment object that has `{ name, config }`. In a previous iteration the environment instance was passed directly as a parameter but we also need to pass the `environment` name during build time to hooks.
+
+Or we could pass to the hooks both `{ environmentName, serverEnvironment }` to avoid cluttering every hook with `const serverEnvironment = server.environment(environment)`. Check out the build section later on. If we explore having a `ViteBuilder` that is aware of environments (and can build them all). We could pass `{ environmentName, serverEnvironment, builderEnvironment }`. One of the instances will always be undefined in this case. I think this is more confortable to use compared to a single `{ environment: server environment | builder environment }` instance.
+
+We could also make the environment name or common environment object accesible using the plugin hook context with `this.serverEnvironment`.
 
 :::
 
