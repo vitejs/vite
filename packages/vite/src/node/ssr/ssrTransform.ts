@@ -16,6 +16,7 @@ import { parseAstAsync as rollupParseAstAsync } from 'rollup/parseAst'
 import type { TransformResult } from '../server/transformRequest'
 import { combineSourcemaps, isDefined } from '../utils'
 import { isJSONRequest } from '../plugins/json'
+import type { DefineImportMetadata } from '../../shared/ssrTransform'
 
 type Node = _Node & {
   start: number
@@ -26,19 +27,6 @@ interface TransformOptions {
   json?: {
     stringify?: boolean
   }
-}
-
-interface DefineImportMetadata {
-  /**
-   * Imported names of an import statement, e.g.
-   *
-   * import foo, { bar as baz, qux } from 'hello'
-   * => ['default', 'bar', 'qux']
-   *
-   * import * as namespace from 'world
-   * => undefined
-   */
-  importedNames?: string[]
 }
 
 export const ssrModuleExportsKey = `__vite_ssr_exports__`

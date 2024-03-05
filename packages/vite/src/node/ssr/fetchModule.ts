@@ -1,6 +1,5 @@
 import { pathToFileURL } from 'node:url'
 import type { ModuleNode, TransformResult, ViteDevServer } from '..'
-import type { PackageCache } from '../packages'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
@@ -9,14 +8,8 @@ import { unwrapId } from '../../shared/utils'
 import {
   SOURCEMAPPING_URL,
   VITE_RUNTIME_SOURCEMAPPING_SOURCE,
-  VITE_RUNTIME_SOURCEMAPPING_URL,
 } from '../../shared/constants'
-
-interface NodeImportResolveOptions
-  extends InternalResolveOptionsWithOverrideConditions {
-  legacyProxySsrExternalModules?: boolean
-  packageCache?: PackageCache
-}
+import { genSourceMapUrl } from '../server/sourcemap'
 
 export interface FetchModuleOptions {
   inlineSourceMap?: boolean
@@ -51,7 +44,7 @@ export async function fetchModule(
     } = server.config
     const overrideConditions = ssr.resolve?.externalConditions || []
 
-    const resolveOptions: NodeImportResolveOptions = {
+    const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
       mainFields: ['main'],
       conditions: [],
       overrideConditions: [...overrideConditions, 'production', 'development'],
@@ -62,8 +55,6 @@ export async function fetchModule(
       isProduction,
       root,
       ssrConfig: ssr,
-      legacyProxySsrExternalModules:
-        server.config.legacy?.proxySsrExternalModules,
       packageCache: server.config.packageCache,
     }
 
@@ -148,13 +139,10 @@ function inlineSourceMap(
   if (OTHER_SOURCE_MAP_REGEXP.test(code))
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
-  const sourceMap = Buffer.from(
-    JSON.stringify(processSourceMap?.(map) || map),
-    'utf-8',
-  ).toString('base64')
+  const sourceMap = processSourceMap?.(map) || map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
     mod.id
-  }\n${VITE_RUNTIME_SOURCEMAPPING_SOURCE}\n//# ${VITE_RUNTIME_SOURCEMAPPING_URL};base64,${sourceMap}\n`
+  }\n${VITE_RUNTIME_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
 }

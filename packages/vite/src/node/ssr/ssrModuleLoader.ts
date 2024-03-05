@@ -7,8 +7,17 @@ import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { genSourceMapUrl } from '../server/sourcemap'
-import type { PackageCache } from '../packages'
-import { unwrapId } from '../../shared/utils'
+import {
+  AsyncFunction,
+  asyncFunctionDeclarationPaddingLineCount,
+  unwrapId,
+} from '../../shared/utils'
+import {
+  type SSRImportBaseMetadata,
+  analyzeImportedModDifference,
+  proxyGuardOnlyEsm,
+} from '../../shared/ssrTransform'
+import { SOURCEMAPPING_URL } from '../../shared/constants'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -27,31 +36,6 @@ type SSRModule = Record<string, any>
 interface NodeImportResolveOptions
   extends InternalResolveOptionsWithOverrideConditions {
   legacyProxySsrExternalModules?: boolean
-  packageCache?: PackageCache
-}
-
-interface SSRImportMetadata {
-  isDynamicImport?: boolean
-  /**
-   * Imported names before being transformed to `ssrImportKey`
-   *
-   * import foo, { bar as baz, qux } from 'hello'
-   * => ['default', 'bar', 'qux']
-   *
-   * import * as namespace from 'world
-   * => undefined
-   */
-  importedNames?: string[]
-}
-
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-const AsyncFunction = async function () {}.constructor as typeof Function
-let fnDeclarationLineCount = 0
-{
-  const body = '/*code*/'
-  const source = new AsyncFunction('a', 'b', body).toString()
-  fnDeclarationLineCount =
-    source.slice(0, source.indexOf(body)).split('\n').length - 1
 }
 
 const pendingModules = new Map<string, Promise<SSRModule>>()
@@ -165,7 +149,7 @@ async function instantiateModule(
   // account for multiple pending deps and duplicate imports.
   const pendingDeps: string[] = []
 
-  const ssrImport = async (dep: string, metadata?: SSRImportMetadata) => {
+  const ssrImport = async (dep: string, metadata?: SSRImportBaseMetadata) => {
     try {
       if (dep[0] !== '.' && dep[0] !== '/') {
         return await nodeImport(dep, mod.file!, resolveOptions, metadata)
@@ -227,12 +211,11 @@ async function instantiateModule(
   let sourceMapSuffix = ''
   if (result.map && 'version' in result.map) {
     const moduleSourceMap = Object.assign({}, result.map, {
-      // currently we need to offset the line
-      // https://github.com/nodejs/node/issues/43047#issuecomment-1180632750
-      mappings: ';'.repeat(fnDeclarationLineCount) + result.map.mappings,
+      mappings:
+        ';'.repeat(asyncFunctionDeclarationPaddingLineCount) +
+        result.map.mappings,
     })
-    sourceMapSuffix =
-      '\n//# sourceMappingURL=' + genSourceMapUrl(moduleSourceMap)
+    sourceMapSuffix = `\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(moduleSourceMap)}`
   }
 
   try {
@@ -289,7 +272,7 @@ async function nodeImport(
   id: string,
   importer: string,
   resolveOptions: NodeImportResolveOptions,
-  metadata?: SSRImportMetadata,
+  metadata?: SSRImportBaseMetadata,
 ) {
   let url: string
   let filePath: string | undefined
@@ -322,10 +305,11 @@ async function nodeImport(
   } else if (filePath) {
     analyzeImportedModDifference(
       mod,
-      filePath,
       id,
+      isFilePathESM(filePath, resolveOptions.packageCache)
+        ? 'module'
+        : undefined,
       metadata,
-      resolveOptions.packageCache,
     )
     return proxyGuardOnlyEsm(mod, id)
   } else {
@@ -357,64 +341,4 @@ function proxyESM(mod: any) {
 
 function isPrimitive(value: any) {
   return !value || (typeof value !== 'object' && typeof value !== 'function')
-}
-
-/**
- * Vite converts `import { } from 'foo'` to `const _ = __vite_ssr_import__('foo')`.
- * Top-level imports and dynamic imports work slightly differently in Node.js.
- * This function normalizes the differences so it matches prod behaviour.
- */
-function analyzeImportedModDifference(
-  mod: any,
-  filePath: string,
-  rawId: string,
-  metadata?: SSRImportMetadata,
-  packageCache?: PackageCache,
-) {
-  // No normalization needed if the user already dynamic imports this module
-  if (metadata?.isDynamicImport) return
-  // If file path is ESM, everything should be fine
-  if (isFilePathESM(filePath, packageCache)) return
-
-  // For non-ESM, named imports is done via static analysis with cjs-module-lexer in Node.js.
-  // If the user named imports a specifier that can't be analyzed, error.
-  if (metadata?.importedNames?.length) {
-    const missingBindings = metadata.importedNames.filter((s) => !(s in mod))
-    if (missingBindings.length) {
-      const lastBinding = missingBindings[missingBindings.length - 1]
-      // Copied from Node.js
-      throw new SyntaxError(`\
-[vite] Named export '${lastBinding}' not found. The requested module '${rawId}' is a CommonJS module, which may not support all module.exports as named exports.
-CommonJS modules can always be imported via the default export, for example using:
-
-import pkg from '${rawId}';
-const {${missingBindings.join(', ')}} = pkg;
-`)
-    }
-  }
-}
-
-/**
- * Guard invalid named exports only, similar to how Node.js errors for top-level imports.
- * But since we transform as dynamic imports, we need to emulate the error manually.
- */
-function proxyGuardOnlyEsm(
-  mod: any,
-  rawId: string,
-  metadata?: SSRImportMetadata,
-) {
-  // If the module doesn't import anything explicitly, e.g. `import 'foo'` or
-  // `import * as foo from 'foo'`, we can skip the proxy guard.
-  if (!metadata?.importedNames?.length) return mod
-
-  return new Proxy(mod, {
-    get(mod, prop) {
-      if (prop !== 'then' && !(prop in mod)) {
-        throw new SyntaxError(
-          `[vite] The requested module '${rawId}' does not provide an export named '${prop.toString()}'`,
-        )
-      }
-      return mod[prop]
-    },
-  })
 }

@@ -4,9 +4,14 @@ import {
   cleanUrl,
   isPrimitive,
   isWindows,
+  slash,
   unwrapId,
   wrapId,
 } from '../shared/utils'
+import {
+  analyzeImportedModDifference,
+  proxyGuardOnlyEsm,
+} from '../shared/ssrTransform'
 import { ModuleCacheMap } from './moduleCache'
 import type {
   FetchResult,
@@ -160,7 +165,7 @@ export class ViteRuntime {
       // 8 is the length of "file:///"
       url = url.slice(isWindows ? 8 : 7)
     }
-    url = url.replace(/\\/g, '/')
+    url = slash(url)
     const _root = this.options.root
     const root = _root[_root.length - 1] === '/' ? _root : `${_root}/`
     // strip root from the URL because fetchModule prefers a public served url path
@@ -426,63 +431,4 @@ function exportAll(exports: any, sourceModule: any) {
       } catch (_err) {}
     }
   }
-}
-
-/**
- * Vite converts `import { } from 'foo'` to `const _ = __vite_ssr_import__('foo')`.
- * Top-level imports and dynamic imports work slightly differently in Node.js.
- * This function normalizes the differences so it matches prod behaviour.
- */
-function analyzeImportedModDifference(
-  mod: any,
-  rawId: string,
-  moduleType: string | undefined,
-  metadata?: SSRImportMetadata,
-) {
-  // No normalization needed if the user already dynamic imports this module
-  if (metadata?.isDynamicImport) return
-  // If file path is ESM, everything should be fine
-  if (moduleType === 'module') return
-
-  // For non-ESM, named imports is done via static analysis with cjs-module-lexer in Node.js.
-  // If the user named imports a specifier that can't be analyzed, error.
-  if (metadata?.importedNames?.length) {
-    const missingBindings = metadata.importedNames.filter((s) => !(s in mod))
-    if (missingBindings.length) {
-      const lastBinding = missingBindings[missingBindings.length - 1]
-      // Copied from Node.js
-      throw new SyntaxError(`\
-[vite] Named export '${lastBinding}' not found. The requested module '${rawId}' is a CommonJS module, which may not support all module.exports as named exports.
-CommonJS modules can always be imported via the default export, for example using:
-
-import pkg from '${rawId}';
-const {${missingBindings.join(', ')}} = pkg;
-`)
-    }
-  }
-}
-
-/**
- * Guard invalid named exports only, similar to how Node.js errors for top-level imports.
- * But since we transform as dynamic imports, we need to emulate the error manually.
- */
-function proxyGuardOnlyEsm(
-  mod: any,
-  rawId: string,
-  metadata?: SSRImportMetadata,
-) {
-  // If the module doesn't import anything explicitly, e.g. `import 'foo'` or
-  // `import * as foo from 'foo'`, we can skip the proxy guard.
-  if (!metadata?.importedNames?.length) return mod
-
-  return new Proxy(mod, {
-    get(mod, prop) {
-      if (prop !== 'then' && !(prop in mod)) {
-        throw new SyntaxError(
-          `[vite] The requested module '${rawId}' does not provide an export named '${prop.toString()}'`,
-        )
-      }
-      return mod[prop]
-    },
-  })
 }

@@ -21,4 +21,3 @@ SOURCEMAPPING_URL += 'ppingURL'
 
 export const VITE_RUNTIME_SOURCEMAPPING_SOURCE =
   '//# sourceMappingSource=vite-runtime'
-export const VITE_RUNTIME_SOURCEMAPPING_URL = `${SOURCEMAPPING_URL}=data:application/json;charset=utf-8`
