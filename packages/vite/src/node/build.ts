@@ -1070,7 +1070,7 @@ function injectSsrFlag<T extends Record<string, any>>(
 
 /*
   The following functions are copied from rollup
-  https://github.com/rollup/rollup/blob/0bcf0a672ac087ff2eb88fbba45ec62389a4f45f/src/ast/nodes/MetaProperty.ts#L145-L193
+  https://github.com/rollup/rollup/blob/ce6cb93098850a46fa242e37b74a919e99a5de28/src/ast/nodes/MetaProperty.ts#L155-L203
 
   https://github.com/rollup/rollup
   The MIT License (MIT)
