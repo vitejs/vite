@@ -138,6 +138,11 @@
   <img src="./nested/テスト-測試-white space.png" />
 </div>
 
+<h2>Filename including single quote</h2>
+<div>
+  <code class="filename-including-single-quote"></code>
+</div>
+
 <h2>encodeURI for the address</h2>
 <div>
   <img
@@ -439,6 +444,9 @@
 
   import unicodeUrl from './テスト-測試-white space.js?url'
   text('.unicode-url', unicodeUrl)
+
+  import filenameIncludingSingleQuoteUrl from "./nested/with-single'quote.png"
+  text('.filename-including-single-quote', filenameIncludingSingleQuoteUrl)
 
   import cssUrl from './css/icons.css?url'
   text('.url-css', cssUrl)
