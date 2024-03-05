@@ -114,8 +114,6 @@ pre.frame {
 .stack {
   font-size: 13px;
   color: var(--dim);
-  white-space: pre-wrap;
-  word-break: break-all;
 }
 
 .tip {
