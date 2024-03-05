@@ -5,7 +5,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import { getHash, injectQuery, urlRE } from '../utils'
+import { getHash, injectQuery, prettifyUrl, urlRE } from '../utils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   onRollupWarning,
@@ -49,13 +49,22 @@ async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
 ): Promise<OutputChunk> {
+  const input = cleanUrl(id)
+  const newBundleChain = [...config.bundleChain, input]
+  if (config.bundleChain.includes(input)) {
+    throw new Error(
+      'Circular worker imports detected. Vite does not support it. ' +
+        `Import chain: ${newBundleChain.map((id) => prettifyUrl(id, config.root)).join(' -> ')}`,
+    )
+  }
+
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
   const bundle = await rollup({
     ...rollupOptions,
-    input: cleanUrl(id),
-    plugins: await plugins(),
+    input,
+    plugins: await plugins(newBundleChain),
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },
