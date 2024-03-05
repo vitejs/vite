@@ -1,6 +1,6 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { EmittedAsset, OutputChunk } from 'rollup'
+import type { OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
@@ -14,9 +14,11 @@ import {
 import { cleanUrl } from '../../shared/utils'
 import { fileToUrl } from './asset'
 
+type WorkerBundleAsset = { fileName: string; source: string | Uint8Array }
+
 interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
-  assets: Map<string, EmittedAsset>
+  assets: Map<string, WorkerBundleAsset>
 
   // worker bundle don't deps on any more worker runtime info an id only had a result.
   // save worker bundled file id to avoid repeated execution of bundles
@@ -38,11 +40,10 @@ const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
-  asset: EmittedAsset,
+  asset: WorkerBundleAsset,
 ): void {
-  const fileName = asset.fileName!
   const workerMap = workerCache.get(config.mainConfig || config)!
-  workerMap.assets.set(fileName, asset)
+  workerMap.assets.set(asset.fileName, asset)
 }
 
 async function bundleWorkerEntry(
@@ -96,7 +97,6 @@ async function bundleWorkerEntry(
         saveEmitWorkerAsset(config, {
           fileName: outputChunk.fileName,
           source: outputChunk.code,
-          type: 'asset',
         })
       }
     })
@@ -121,7 +121,6 @@ function emitSourcemapForWorkerEntry(
       const mapFileName = chunk.fileName + '.map'
       saveEmitWorkerAsset(config, {
         fileName: mapFileName,
-        type: 'asset',
         source: data,
       })
     }
@@ -156,7 +155,6 @@ export async function workerFileToUrl(
     saveEmitWorkerAsset(config, {
       fileName,
       source: outputChunk.code,
-      type: 'asset',
     })
     workerMap.bundle.set(id, fileName)
   }
@@ -410,16 +408,42 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       return result()
     },
 
-    generateBundle(opts) {
+    generateBundle(opts, bundle) {
       // @ts-expect-error asset emits are skipped in legacy bundle
       if (opts.__vite_skip_asset_emit__ || isWorker) {
         return
       }
       const workerMap = workerCache.get(config)!
       workerMap.assets.forEach((asset) => {
-        this.emitFile(asset)
-        workerMap.assets.delete(asset.fileName!)
+        const duplicateAsset = bundle[asset.fileName]
+        if (duplicateAsset) {
+          const content =
+            duplicateAsset.type === 'asset'
+              ? duplicateAsset.source
+              : duplicateAsset.code
+          // don't emit if the file name and the content is same
+          if (isSameContent(content, asset.source)) {
+            return
+          }
+        }
+
+        this.emitFile({
+          type: 'asset',
+          fileName: asset.fileName,
+          source: asset.source,
+        })
       })
+      workerMap.assets.clear()
     },
   }
+}
+
+function isSameContent(a: string | Uint8Array, b: string | Uint8Array) {
+  if (typeof a === 'string') {
+    if (typeof b === 'string') {
+      return a === b
+    }
+    return Buffer.from(a).equals(b)
+  }
+  return Buffer.from(b).equals(a)
 }
