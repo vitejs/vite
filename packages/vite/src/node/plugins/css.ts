@@ -248,9 +248,12 @@ function encodePublicUrlsInCSS(config: ResolvedConfig) {
 }
 
 function getLineCount(str: string): number {
+  if (str === '') {
+    return 0
+  }
   const lines = str.match(splitRE)
   if (lines == null) {
-    return 0
+    return 1
   }
   return lines.length + 1
 }
@@ -920,7 +923,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       async function extractCss() {
-        let line = 0
         let css = ''
         const collected = new Set<OutputAsset | OutputChunk>()
         const concatCssEndLines: Array<{ file: string; end: number }> = []
@@ -930,9 +932,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .map((chunk) => [chunk.preliminaryFileName, chunk]),
         )
 
+        function prependImports(imports: string) {
+          if (!imports) {
+            return ''
+          }
+          return imports + '\n'
+        }
+
         function collect(fileName: string): string {
           const chunk = bundle[fileName]
           if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) {
+            collected.add(chunk)
             return ''
           }
 
@@ -941,14 +951,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const imported = collect(file)
 
             if (imported.length > 0) {
-              line += getLineCount(imported)
-              concatCssEndLines.push({ file, end: line })
+              concatCssEndLines.push({ file, end: getLineCount(imported) })
 
-              return css + '\n' + imported
+              return prependImports(css) + imported
             }
             return css
           }, '')
-          return importedCSS + '\n' + css
+          return prependImports(importedCSS) + css
         }
 
         for (const chunkName of chunkCSSMap.keys()) {
@@ -960,8 +969,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const cssCode = collect(filename)
 
           if (cssCode) {
-            line += getLineCount(cssCode)
-            concatCssEndLines.push({ file: filename, end: line })
+            concatCssEndLines.push({
+              file: filename,
+              end: getLineCount(cssCode),
+            })
 
             css += cssCode
           }
