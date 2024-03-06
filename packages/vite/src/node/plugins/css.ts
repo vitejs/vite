@@ -1914,7 +1914,7 @@ async function minifyCSS(
       ...config.css?.lightningcss,
       targets: convertTargets(config.build.cssTarget),
       cssModules: undefined,
-      filename: filename || cssBundleName,
+      filename: filename,
       code: Buffer.from(css),
       minify: true,
     })
