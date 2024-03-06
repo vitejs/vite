@@ -932,11 +932,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         function collect(fileName: string): string {
           const chunk = bundle[fileName]
-          if (!chunk || chunk.type !== 'chunk') {
-            collected.add(chunk)
-            return ''
-          }
-          if (collected.has(chunk)) {
+          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) {
             return ''
           }
 
@@ -1601,7 +1597,7 @@ async function finalizeCss(
   css: string,
   minify: boolean,
   config: ResolvedConfig,
-  filename: string | undefined,
+  filename: string,
   concatCssEndLines?: Array<{ file: string; end: number }>,
 ) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
@@ -1840,47 +1836,63 @@ async function doImportCSSReplace(
   return `@import ${wrap}${await replacer(rawUrl)}${wrap}`
 }
 
-function getLocation(message: Warning | Message) {
-  if ('loc' in message) {
-    return message.loc
+function formatLightningCssWarning(
+  warnings: Warning[],
+  concatCssEndLines?: Array<{ file: string; end: number }>,
+): Warning[] {
+  if (concatCssEndLines && concatCssEndLines.length > 0) {
+    for (const warning of warnings) {
+      if (warning.loc) {
+        const { file, line } = mapLineWithEndLines(
+          concatCssEndLines,
+          warning.loc.line,
+        )
+        warning.loc.filename = file
+        warning.loc.line = line
+      }
+    }
   }
-  return message.location
+  return warnings
 }
 
-function formatReturnedMessages(
-  messages: (Warning | Message)[],
+function formatEsbuildWarning(
+  messages: Message[],
   concatCssEndLines?: Array<{ file: string; end: number }>,
-) {
+): Message[] {
   if (concatCssEndLines && concatCssEndLines.length > 0) {
     for (const message of messages) {
-      const location = getLocation(message)
-      if (location) {
-        const { line } = location
-        let start = 0
-        for (const { file, end } of concatCssEndLines) {
-          // reassign the file and line number to the original file
-          if (start < line && line <= end) {
-            if ('filename' in location) {
-              location.filename = file // Warning
-            } else {
-              location.file = file // Message
-            }
-            location.line = line - start
-            break
-          }
-          start = end
-        }
+      if (message.location) {
+        const { file, line } = mapLineWithEndLines(
+          concatCssEndLines,
+          message.location.line,
+        )
+        message.location.file = file
+        message.location.line = line
       }
     }
   }
   return messages
 }
 
+function mapLineWithEndLines(
+  concatCssEndLines: Array<{ file: string; end: number }>,
+  line: number,
+): { file: string; line: number } {
+  let start = 0
+  for (const { file, end } of concatCssEndLines) {
+    if (start < line && line <= end) {
+      return { file, line: line - start }
+    }
+    start = end
+  }
+  return { file: '', line }
+}
+
 async function minifyCSS(
   css: string,
   config: ResolvedConfig,
   inlined: boolean,
-  filename: string | undefined,
+  filename: string,
   concatCssEndLines?: Array<{ file: string; end: number }>,
 ) {
   // We want inlined CSS to not end with a linebreak, while ensuring that
@@ -1897,10 +1909,7 @@ async function minifyCSS(
       minify: true,
     })
     if (warnings.length) {
-      const msgs = formatReturnedMessages(
-        warnings,
-        concatCssEndLines,
-      ) as Warning[]
+      const msgs = formatLightningCssWarning(warnings, concatCssEndLines)
       config.logger.warn(
         colors.yellow(
           `warnings when minifying css:\n${msgs
@@ -1924,7 +1933,7 @@ async function minifyCSS(
     })
     if (warnings.length) {
       const msgs = await formatMessages(
-        formatReturnedMessages(warnings, concatCssEndLines) as Message[],
+        formatEsbuildWarning(warnings, concatCssEndLines) as Message[],
         { kind: 'warning' },
       )
       config.logger.warn(
@@ -1937,7 +1946,7 @@ async function minifyCSS(
     if (e.errors) {
       e.message = '[esbuild css minify] ' + e.message
       const msgs = await formatMessages(
-        formatReturnedMessages(e.errors, concatCssEndLines) as Message[],
+        formatEsbuildWarning(e.errors, concatCssEndLines) as Message[],
         { kind: 'error' },
       )
       e.frame = '\n' + msgs.join('\n')
