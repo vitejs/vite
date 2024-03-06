@@ -52,12 +52,12 @@ export class ModuleNode {
    */
   ssrInvalidationState: TransformResult | 'HARD_INVALIDATED' | undefined
   /**
-   * The module urls that are statically imported in the code. This information is separated
-   * out from `importedModules` as only importers that statically import the module can be
-   * soft invalidated. Other imports (e.g. watched files) needs the importer to be hard invalidated.
+   * The module urls that are being watched by `this.addWatchFile` in plugins. This information is
+   * separated out from `importedModules` as watched files need to be hard invalidated, while others
+   * (usually statically or dynamically imported) can be soft invalidated.
    * @internal
    */
-  staticImportedUrls?: Set<string>
+  watchedUrls?: Set<string>
 
   /**
    * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
@@ -203,12 +203,11 @@ export class ModuleGraph {
 
     mod.importers.forEach((importer) => {
       if (!importer.acceptedHmrDeps.has(mod)) {
-        // If the importer statically imports the current module, we can soft-invalidate the importer
-        // to only update the import timestamps. If it's not statically imported, e.g. watched/glob file,
-        // we can only soft invalidate if the current module was also soft-invalidated. A soft-invalidation
-        // doesn't need to trigger a re-load and re-transform of the importer.
+        // Soft invalidation can only happen if the importer is only statically or dynamically importing
+        // the module. If the importer has `watchedUrl` set and the module is not being watched, we can safely
+        // assume that the module is statically or dynamically imported, and we can apply soft invalidation.
         const shouldSoftInvalidateImporter =
-          importer.staticImportedUrls?.has(mod.url) || softInvalidate
+          importer.watchedUrls && !importer.watchedUrls.has(mod.url)
         this.invalidateModule(
           importer,
           seen,
@@ -233,7 +232,7 @@ export class ModuleGraph {
    * If there are dependencies that no longer have any importers, they are
    * returned as a Set.
    *
-   * @param staticImportedUrls Subset of `importedModules` where they're statically imported in code.
+   * @param watchedUrls Subset of `importedModules` where they're watched by `this.addWatchFile` in plugins.
    *   This is only used for soft invalidations so `undefined` is fine but may cause more runtime processing.
    */
   async updateModuleInfo(
@@ -245,7 +244,7 @@ export class ModuleGraph {
     isSelfAccepting: boolean,
     ssr?: boolean,
     /** @internal */
-    staticImportedUrls?: Set<string>,
+    watchedUrls?: Set<string>,
   ): Promise<Set<ModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
     const prevImports = ssr ? mod.ssrImportedModules : mod.clientImportedModules
@@ -317,7 +316,7 @@ export class ModuleGraph {
     }
 
     mod.acceptedHmrDeps = new Set(resolveResults)
-    mod.staticImportedUrls = staticImportedUrls
+    mod.watchedUrls = watchedUrls
 
     // update accepted hmr exports
     mod.acceptedHmrExports = acceptedExports
