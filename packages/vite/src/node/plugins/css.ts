@@ -1938,7 +1938,7 @@ async function minifyCSS(
     const { code, warnings } = await transform(css, {
       loader: 'css',
       target: config.build.cssTarget || undefined,
-      sourcefile: filename || cssBundleName,
+      sourcefile: filename,
       ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
     })
     if (warnings.length) {
