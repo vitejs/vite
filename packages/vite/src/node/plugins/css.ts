@@ -950,9 +950,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             const imported = collect(file)
 
             if (imported.length > 0) {
-              concatCssEndLines.push({ file, end: getLineCount(imported) })
-
-              return prependImports(css) + imported
+              css = prependImports(css) + imported
+              concatCssEndLines.push({ file, end: getLineCount(css) })
             }
             return css
           }, '')
