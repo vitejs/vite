@@ -7,7 +7,6 @@ import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
   ModuleFormat,
-  OutputAsset,
   OutputChunk,
   RenderedChunk,
   RollupError,
@@ -924,7 +923,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       async function extractCss() {
         let css = ''
-        const collected = new Set<OutputAsset | OutputChunk>()
+        const collected = new Set<OutputChunk>()
         const concatCssEndLines: Array<{ file: string; end: number }> = []
         const prelimaryNameToChunkMap = new Map(
           Object.values(bundle)
@@ -942,9 +941,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         function collect(fileName: string): string {
           const chunk = bundle[fileName]
           if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) {
-            collected.add(chunk)
             return ''
           }
+          collected.add(chunk)
 
           const css = chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
           const importedCSS = chunk.imports.reduce((css, file) => {
