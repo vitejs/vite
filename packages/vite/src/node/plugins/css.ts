@@ -1943,7 +1943,7 @@ async function minifyCSS(
     })
     if (warnings.length) {
       const msgs = await formatMessages(
-        formatEsbuildWarning(warnings, concatCssEndLines) as Message[],
+        formatEsbuildWarning(warnings, concatCssEndLines),
         { kind: 'warning' },
       )
       config.logger.warn(
