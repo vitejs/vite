@@ -273,8 +273,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const workerMatch = workerOrSharedWorkerRE.exec(id)
       if (!workerMatch) return
 
-      // stringified url or `new URL(...)`
-      let url: string
       const { format } = config.worker
       const workerConstructor =
         workerMatch[1] === 'sharedworker' ? 'SharedWorker' : 'Worker'
@@ -288,8 +286,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         name: options?.name
       }`
 
+      let urlCode: string
       if (isBuild) {
-        if (inlineRE.test(id)) {
+        if (isWorker && this.getModuleInfo(cleanUrl(id))?.isEntry) {
+          urlCode = 'self.location.href'
+        } else if (inlineRE.test(id)) {
           const chunk = await bundleWorkerEntry(config, id)
           const encodedJs = `const encodedJs = "${Buffer.from(
             chunk.code,
@@ -346,16 +347,17 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             map: { mappings: '' },
           }
         } else {
-          url = await workerFileToUrl(config, id)
+          urlCode = JSON.stringify(await workerFileToUrl(config, id))
         }
       } else {
-        url = await fileToUrl(cleanUrl(id), config, this)
+        let url = await fileToUrl(cleanUrl(id), config, this)
         url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
+        urlCode = JSON.stringify(url)
       }
 
       if (urlRE.test(id)) {
         return {
-          code: `export default ${JSON.stringify(url)}`,
+          code: `export default ${urlCode}`,
           map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
         }
       }
@@ -363,7 +365,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       return {
         code: `export default function WorkerWrapper(options) {
           return new ${workerConstructor}(
-            ${JSON.stringify(url)},
+            ${urlCode},
             ${workerTypeOption}
           );
         }`,
