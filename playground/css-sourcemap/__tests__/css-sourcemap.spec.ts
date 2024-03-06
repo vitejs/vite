@@ -159,7 +159,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AAAA,CAAC,QAAQ;AACT,CAAC,CAAC,CAAC,CAAC,IAAI,CAAC,MAAM;AACf,CAAC,CAAC,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG;",
+        "mappings": "AACE;EACE",
         "sources": [
           "/root/imported.module.sass",
         ],
