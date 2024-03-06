@@ -5,7 +5,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import { getHash, injectQuery, urlRE } from '../utils'
+import { getHash, injectQuery, prettifyUrl, urlRE } from '../utils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   onRollupWarning,
@@ -50,13 +50,22 @@ async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
 ): Promise<OutputChunk> {
+  const input = cleanUrl(id)
+  const newBundleChain = [...config.bundleChain, input]
+  if (config.bundleChain.includes(input)) {
+    throw new Error(
+      'Circular worker imports detected. Vite does not support it. ' +
+        `Import chain: ${newBundleChain.map((id) => prettifyUrl(id, config.root)).join(' -> ')}`,
+    )
+  }
+
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
   const bundle = await rollup({
     ...rollupOptions,
-    input: cleanUrl(id),
-    plugins: await plugins(),
+    input,
+    plugins: await plugins(newBundleChain),
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },
@@ -262,8 +271,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const workerMatch = workerOrSharedWorkerRE.exec(id)
       if (!workerMatch) return
 
-      // stringified url or `new URL(...)`
-      let url: string
       const { format } = config.worker
       const workerConstructor =
         workerMatch[1] === 'sharedworker' ? 'SharedWorker' : 'Worker'
@@ -277,8 +284,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         name: options?.name
       }`
 
+      let urlCode: string
       if (isBuild) {
-        if (inlineRE.test(id)) {
+        if (isWorker && this.getModuleInfo(cleanUrl(id))?.isEntry) {
+          urlCode = 'self.location.href'
+        } else if (inlineRE.test(id)) {
           const chunk = await bundleWorkerEntry(config, id)
           const encodedJs = `const encodedJs = "${Buffer.from(
             chunk.code,
@@ -335,16 +345,17 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             map: { mappings: '' },
           }
         } else {
-          url = await workerFileToUrl(config, id)
+          urlCode = JSON.stringify(await workerFileToUrl(config, id))
         }
       } else {
-        url = await fileToUrl(cleanUrl(id), config, this)
+        let url = await fileToUrl(cleanUrl(id), config, this)
         url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
+        urlCode = JSON.stringify(url)
       }
 
       if (urlRE.test(id)) {
         return {
-          code: `export default ${JSON.stringify(url)}`,
+          code: `export default ${urlCode}`,
           map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
         }
       }
@@ -352,7 +363,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       return {
         code: `export default function WorkerWrapper(options) {
           return new ${workerConstructor}(
-            ${JSON.stringify(url)},
+            ${urlCode},
             ${workerTypeOption}
           );
         }`,

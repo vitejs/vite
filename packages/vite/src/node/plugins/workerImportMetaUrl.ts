@@ -165,22 +165,30 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 : slash(path.resolve(path.dirname(id), url))
           }
 
-          let builtUrl: string
-          if (isBuild) {
-            builtUrl = await workerFileToUrl(config, file)
+          if (
+            isBuild &&
+            config.isWorker &&
+            this.getModuleInfo(cleanUrl(file))?.isEntry
+          ) {
+            s.update(expStart, expEnd, 'self.location.href')
           } else {
-            builtUrl = await fileToUrl(cleanUrl(file), config, this)
-            builtUrl = injectQuery(
-              builtUrl,
-              `${WORKER_FILE_ID}&type=${workerType}`,
+            let builtUrl: string
+            if (isBuild) {
+              builtUrl = await workerFileToUrl(config, file)
+            } else {
+              builtUrl = await fileToUrl(cleanUrl(file), config, this)
+              builtUrl = injectQuery(
+                builtUrl,
+                `${WORKER_FILE_ID}&type=${workerType}`,
+              )
+            }
+            s.update(
+              expStart,
+              expEnd,
+              // add `'' +` to skip vite:asset-import-meta-url plugin
+              `new URL('' + ${JSON.stringify(builtUrl)}, import.meta.url)`,
             )
           }
-          s.update(
-            expStart,
-            expEnd,
-            // add `'' +` to skip vite:asset-import-meta-url plugin
-            `new URL('' + ${JSON.stringify(builtUrl)}, import.meta.url)`,
-          )
         }
 
         if (s) {
