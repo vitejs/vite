@@ -167,3 +167,9 @@ test('self reference worker', async () => {
     'pong: main\npong: nested\n',
   )
 })
+
+test('self reference url worker', async () => {
+  expectWithRetry(() => page.textContent('.self-reference-url-worker')).toBe(
+    'pong: main\npong: nested\n',
+  )
+})

@@ -165,3 +165,12 @@ selfReferenceWorker.postMessage('main')
 selfReferenceWorker.addEventListener('message', (e) => {
   document.querySelector('.self-reference-worker').textContent += `${e.data}\n`
 })
+
+const selfReferenceUrlWorker = new Worker(
+  new URL('../self-reference-url-worker.js', import.meta.url),
+)
+selfReferenceUrlWorker.postMessage('main')
+selfReferenceUrlWorker.addEventListener('message', (e) => {
+  document.querySelector('.self-reference-url-worker').textContent +=
+    `${e.data}\n`
+})
