@@ -1956,7 +1956,7 @@ async function minifyCSS(
     if (e.errors) {
       e.message = '[esbuild css minify] ' + e.message
       const msgs = await formatMessages(
-        formatEsbuildWarning(e.errors, concatCssEndLines) as Message[],
+        formatEsbuildWarning(e.errors, concatCssEndLines),
         { kind: 'error' },
       )
       e.frame = '\n' + msgs.join('\n')
