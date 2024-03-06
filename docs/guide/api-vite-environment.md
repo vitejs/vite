@@ -149,6 +149,22 @@ app.use('*', async (req, res, next) => {
 })
 ```
 
+## Environment agnostic SSR
+
+One of the objectives of this proposal is to allow users to swap Vite's default SSR environment. Out-of-the-box, Vite will use a node environment running on the same process as the server. But a user may want to swap it for a workerd environment.
+
+Vite would expose a `server.ssrEnvironment` so all frameworks can use it and allow them to define what environment type should be used for it. Ideally, instead of using `server.nodeModuleRunner`, the example above would be written as:
+
+```js
+// 3. Load the server entry, with full HMR support.
+const { render } = await server.ssrEnvironment.run('/src/entry-server.js')
+
+// 4. render the app HTML.
+const appHtml = await render(url)
+```
+
+`run(url)` would return RPC wrappers for `entry-server` exported functions, so that this code is compatible with both node and workerd environments.
+
 ## Plugins and environments
 
 The Vite server has a shared plugin pipeline, but when a module is processed it is always done in the context of a given environment.
