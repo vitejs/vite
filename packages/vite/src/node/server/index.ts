@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { exec } from 'node:child_process'
+import { execSync } from 'node:child_process'
 import type * as net from 'node:net'
 import { get as httpGet } from 'node:http'
 import { get as httpsGet } from 'node:https'
@@ -990,14 +990,11 @@ export function resolveServerOptions(
   if (!allowDirs) {
     allowDirs = [searchForWorkspaceRoot(root)]
     if (process.versions.pnp) {
-      exec('yarn config get enableGlobalCache', (error, stdout) => {
-        if (error) return
-        const dir = stdout.trim() === 'true' ? 'globalFolder' : 'cacheFolder'
-        exec(`yarn config get ${dir}`, (error, stdout) => {
-          if (error) return
-          allowDirs.push(stdout.trim())
-        })
-      })
+      try {
+        const enableGlobalCache = execSync('yarn config get enableGlobalCache', {cwd: root}).trim() === 'true'
+        const yarnCacheDir = execSync(`yarn config get ${enableGlobalCache ? 'globalFolder' : 'cacheFolder'}`, {cwd: root}).trim()
+        allowDirs.push(yarnCacheDir)
+      } catch {}
     }
   }
 
