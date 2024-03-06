@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { exec } from 'node:child_process'
 import type * as net from 'node:net'
 import { get as httpGet } from 'node:http'
 import { get as httpsGet } from 'node:https'
@@ -15,8 +16,6 @@ import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
 import type { Matcher } from 'picomatch'
-import { Configuration } from '@yarnpkg/core'
-import type { PortablePath } from '@yarnpkg/fslib'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -991,12 +990,14 @@ export function resolveServerOptions(
   if (!allowDirs) {
     allowDirs = [searchForWorkspaceRoot(root)]
     if (process.versions.pnp) {
-      const yarnConfig = Configuration.create(root as PortablePath)
-      allowDirs.push(
-        yarnConfig.values.get('enableGlobalCache')
-          ? yarnConfig.values.get('globalFolder')
-          : yarnConfig.values.get('cacheFolder'),
-      )
+      exec('yarn config get enableGlobalCache', (error, stdout) => {
+        if (error) return
+        const dir = stdout.trim() === 'true' ? 'globalFolder' : 'cacheFolder'
+        exec(`yarn config get ${dir}`, (error, stdout) => {
+          if (error) return
+          allowDirs.push(stdout.trim())
+        })
+      })
     }
   }
 
