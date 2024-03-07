@@ -77,23 +77,6 @@ export function resolvePackageData(
   }
 
   const originalBasedir = basedir
-  const selfPackageData = findNearestPackageData(basedir, packageCache)
-  const isSelfReference =
-    selfPackageData?.data.exports && selfPackageData?.data.name === pkgName
-
-  if (isSelfReference) {
-    if (packageCache) {
-      setRpdCache(
-        packageCache,
-        selfPackageData,
-        pkgName,
-        basedir,
-        originalBasedir,
-        preserveSymlinks,
-      )
-    }
-    return selfPackageData
-  }
 
   while (basedir) {
     if (packageCache) {

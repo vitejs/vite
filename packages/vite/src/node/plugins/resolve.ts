@@ -732,16 +732,16 @@ export function tryNodeResolve(
     basedir = root
   }
 
-  const pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)
+  let pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)
   if (!pkg) {
-    // if import can't be found, check if it's an optional peer dep.
-    // if so, we can resolve to a special id that errors only when imported.
     if (
       basedir !== root && // root has no peer dep
       !isBuiltin(id) &&
       !id.includes('\0') &&
       bareImportRE.test(id)
     ) {
+      // if import can't be found, check if it's an optional peer dep.
+      // if so, we can resolve to a special id that errors only when imported.
       const mainPkg = findNearestMainPackageData(basedir, packageCache)?.data
       if (mainPkg) {
         const pkgName = getNpmPackageName(id)
@@ -755,8 +755,14 @@ export function tryNodeResolve(
           }
         }
       }
+      // check if it's a self reference dep.
+      const selfPackageData = findNearestPackageData(basedir, packageCache)
+      pkg =
+        selfPackageData?.data.exports && selfPackageData?.data.name === pkgId
+          ? selfPackageData
+          : null
     }
-    return
+    if (!pkg) return
   }
 
   const resolveId = deepMatch ? resolveDeepImport : resolvePackageEntry
