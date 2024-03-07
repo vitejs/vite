@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url'
-import type { ModuleNode, TransformResult, ViteDevServer } from '..'
+import type { EnvironmentModuleNode, TransformResult, ViteDevServer } from '..'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
@@ -123,7 +123,7 @@ const OTHER_SOURCE_MAP_REGEXP = new RegExp(
 )
 
 function inlineSourceMap(
-  mod: ModuleNode,
+  mod: EnvironmentModuleNode,
   result: TransformResult,
   processSourceMap?: FetchModuleOptions['processSourceMap'],
 ) {

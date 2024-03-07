@@ -12,7 +12,7 @@ export type { PluginContext } from 'rollup'
 import type { ConfigEnv, ResolvedConfig, UserConfig } from './config'
 import type { ServerHook } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
-import type { ModuleNode } from './server/moduleGraph'
+import type { EnvironmentModuleNode, ModuleNode } from './server/moduleGraph'
 import type { HmrContext, HotUpdateContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
 
@@ -151,7 +151,10 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
     (
       this: void,
       ctx: HotUpdateContext,
-    ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+    ) =>
+      | Array<EnvironmentModuleNode>
+      | void
+      | Promise<Array<EnvironmentModuleNode> | void>
   >
 
   /**

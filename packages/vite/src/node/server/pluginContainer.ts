@@ -80,7 +80,10 @@ import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import { buildErrorMessage } from './middlewares/error'
-import type { EnvironmentModuleGraph, ModuleNode } from './moduleGraph'
+import type {
+  EnvironmentModuleGraph,
+  EnvironmentModuleNode,
+} from './moduleGraph'
 
 const noop = () => {}
 
@@ -186,7 +189,7 @@ export async function createPluginContainer(
   const watchFiles = new Set<string>()
   // _addedFiles from the `load()` hook gets saved here so it can be reused in the `transform()` hook
   const moduleNodeToLoadAddedImports = new WeakMap<
-    ModuleNode,
+    EnvironmentModuleNode,
     Set<string> | null
   >()
 

@@ -7,7 +7,7 @@ import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
-import type { ModuleNode, ViteDevServer } from '..'
+import type { EnvironmentModuleNode, ViteDevServer } from '..'
 import {
   blankReplacer,
   createDebugger,
@@ -202,7 +202,7 @@ async function doTransform(
 
 async function getCachedTransformResult(
   url: string,
-  module: ModuleNode,
+  module: EnvironmentModuleNode,
   server: ViteDevServer,
   environment: string,
   timestamp: number,
@@ -233,7 +233,7 @@ async function loadAndTransform(
   server: ViteDevServer,
   options: TransformOptions,
   timestamp: number,
-  mod?: ModuleNode,
+  mod?: EnvironmentModuleNode,
   resolved?: PartialResolvedId,
 ) {
   const { config, pluginContainer } = server
@@ -313,10 +313,8 @@ async function loadAndTransform(
         `should not be imported from source code. It can only be referenced ` +
         `via HTML tags.`
       : `Does the file exist?`
-    const importerMod: ModuleNode | undefined = moduleGraph.idToModuleMap
-      .get(id)
-      ?.importers.values()
-      .next().value
+    const importerMod: EnvironmentModuleNode | undefined =
+      moduleGraph.idToModuleMap.get(id)?.importers.values().next().value
     const importer = importerMod?.file || importerMod?.url
     const err: any = new Error(
       `Failed to load url ${url} (resolved id: ${id})${
@@ -436,7 +434,7 @@ function createConvertSourceMapReadMap(originalFileName: string) {
  * - SSR: We don't need to change anything as `ssrLoadModule` controls it
  */
 async function handleModuleSoftInvalidation(
-  mod: ModuleNode,
+  mod: EnvironmentModuleNode,
   environment: string,
   timestamp: number,
   server: ViteDevServer,

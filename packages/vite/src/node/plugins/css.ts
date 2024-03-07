@@ -26,7 +26,7 @@ import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
-import type { ModuleNode } from '../server/moduleGraph'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
 import {
   createToImportMetaURLBasedRelativeRuntime,
@@ -960,7 +960,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (pluginImports) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
-          const depModules = new Set<string | ModuleNode>()
+          const depModules = new Set<string | EnvironmentModuleNode>()
           const devBase = config.base
           for (const file of pluginImports) {
             depModules.add(

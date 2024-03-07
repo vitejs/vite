@@ -10,7 +10,7 @@ import { FS_PREFIX } from '../constants'
 import { cleanUrl } from '../../shared/utils'
 import type { TransformResult } from './transformRequest'
 
-export class ModuleNode {
+export class EnvironmentModuleNode {
   environment: string
   /**
    * Public served url path, starts with /
@@ -24,11 +24,11 @@ export class ModuleNode {
   type: 'js' | 'css'
   info?: ModuleInfo
   meta?: Record<string, any>
-  importers = new Set<ModuleNode>()
+  importers = new Set<EnvironmentModuleNode>()
 
-  importedModules = new Set<ModuleNode>()
+  importedModules = new Set<EnvironmentModuleNode>()
 
-  acceptedHmrDeps = new Set<ModuleNode>()
+  acceptedHmrDeps = new Set<EnvironmentModuleNode>()
   acceptedHmrExports: Set<string> | null = null
   importedBindings: Map<string, Set<string>> | null = null
   isSelfAccepting?: boolean
@@ -88,14 +88,14 @@ export class ModuleNode {
     return this.error
   }
   /** @deprecated */
-  get clientImportedModules(): Set<ModuleNode> {
+  get clientImportedModules(): Set<EnvironmentModuleNode> {
     if (this.environment !== 'browser') {
       throw new Error('clientImportedModules accessed in a node module node')
     }
     return this.importedModules
   }
   /** @deprecated */
-  get ssrImportedModules(): Set<ModuleNode> {
+  get ssrImportedModules(): Set<EnvironmentModuleNode> {
     if (this.environment !== 'browser') {
       throw new Error('ssrImportedModules accessed in a browser module node')
     }
@@ -112,11 +112,11 @@ export type ResolvedUrl = [
 export class EnvironmentModuleGraph {
   environment: string
 
-  urlToModuleMap = new Map<string, ModuleNode>()
-  idToModuleMap = new Map<string, ModuleNode>()
-  etagToModuleMap = new Map<string, ModuleNode>()
+  urlToModuleMap = new Map<string, EnvironmentModuleNode>()
+  idToModuleMap = new Map<string, EnvironmentModuleNode>()
+  etagToModuleMap = new Map<string, EnvironmentModuleNode>()
   // a single file may corresponds to multiple modules with different queries
-  fileToModulesMap = new Map<string, Set<ModuleNode>>()
+  fileToModulesMap = new Map<string, Set<EnvironmentModuleNode>>()
 
   // TODO: this property should be shared across all module graphs
   safeModulesPath = new Set<string>()
@@ -126,7 +126,7 @@ export class EnvironmentModuleGraph {
    */
   _unresolvedUrlToModuleMap = new Map<
     string,
-    Promise<ModuleNode> | ModuleNode
+    Promise<EnvironmentModuleNode> | EnvironmentModuleNode
   >()
 
   /**
@@ -142,7 +142,9 @@ export class EnvironmentModuleGraph {
     this._resolveId = resolveId
   }
 
-  async getModuleByUrl(rawUrl: string): Promise<ModuleNode | undefined> {
+  async getModuleByUrl(
+    rawUrl: string,
+  ): Promise<EnvironmentModuleNode | undefined> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
     const mod = this._getUnresolvedUrlToModule(rawUrl)
@@ -154,18 +156,18 @@ export class EnvironmentModuleGraph {
     return this.urlToModuleMap.get(url)
   }
 
-  getModuleById(id: string): ModuleNode | undefined {
+  getModuleById(id: string): EnvironmentModuleNode | undefined {
     return this.idToModuleMap.get(removeTimestampQuery(id))
   }
 
-  getModulesByFile(file: string): Set<ModuleNode> | undefined {
+  getModulesByFile(file: string): Set<EnvironmentModuleNode> | undefined {
     return this.fileToModulesMap.get(file)
   }
 
   onFileChange(file: string): void {
     const mods = this.getModulesByFile(file)
     if (mods) {
-      const seen = new Set<ModuleNode>()
+      const seen = new Set<EnvironmentModuleNode>()
       mods.forEach((mod) => {
         this.invalidateModule(mod, seen)
       })
@@ -173,8 +175,8 @@ export class EnvironmentModuleGraph {
   }
 
   invalidateModule(
-    mod: ModuleNode,
-    seen: Set<ModuleNode> = new Set(),
+    mod: EnvironmentModuleNode,
+    seen: Set<EnvironmentModuleNode> = new Set(),
     timestamp: number = Date.now(),
     isHmr: boolean = false,
     /** @internal */
@@ -246,7 +248,7 @@ export class EnvironmentModuleGraph {
 
   invalidateAll(): void {
     const timestamp = Date.now()
-    const seen = new Set<ModuleNode>()
+    const seen = new Set<EnvironmentModuleNode>()
     this.idToModuleMap.forEach((mod) => {
       this.invalidateModule(mod, seen, timestamp)
     })
@@ -261,18 +263,18 @@ export class EnvironmentModuleGraph {
    *   This is only used for soft invalidations so `undefined` is fine but may cause more runtime processing.
    */
   async updateModuleInfo(
-    mod: ModuleNode,
-    importedModules: Set<string | ModuleNode>,
+    mod: EnvironmentModuleNode,
+    importedModules: Set<string | EnvironmentModuleNode>,
     importedBindings: Map<string, Set<string>> | null,
-    acceptedModules: Set<string | ModuleNode>,
+    acceptedModules: Set<string | EnvironmentModuleNode>,
     acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
     /** @internal */
     staticImportedUrls?: Set<string>,
-  ): Promise<Set<ModuleNode> | undefined> {
+  ): Promise<Set<EnvironmentModuleNode> | undefined> {
     mod.isSelfAccepting = isSelfAccepting
     const prevImports = mod.importedModules
-    let noLongerImported: Set<ModuleNode> | undefined
+    let noLongerImported: Set<EnvironmentModuleNode> | undefined
 
     let resolvePromises = []
     let resolveResults = new Array(importedModules.size)
@@ -344,7 +346,7 @@ export class EnvironmentModuleGraph {
   async ensureEntryFromUrl(
     rawUrl: string,
     setIsSelfAccepting = true,
-  ): Promise<ModuleNode> {
+  ): Promise<EnvironmentModuleNode> {
     return this._ensureEntryFromUrl(rawUrl, setIsSelfAccepting)
   }
 
@@ -356,7 +358,7 @@ export class EnvironmentModuleGraph {
     setIsSelfAccepting = true,
     // Optimization, avoid resolving the same url twice if the caller already did it
     resolved?: PartialResolvedId,
-  ): Promise<ModuleNode> {
+  ): Promise<EnvironmentModuleNode> {
     // Quick path, if we already have a module for this rawUrl (even without extension)
     rawUrl = removeImportQuery(removeTimestampQuery(rawUrl))
     let mod = this._getUnresolvedUrlToModule(rawUrl)
@@ -367,7 +369,11 @@ export class EnvironmentModuleGraph {
       const [url, resolvedId, meta] = await this._resolveUrl(rawUrl, resolved)
       mod = this.idToModuleMap.get(resolvedId)
       if (!mod) {
-        mod = new ModuleNode(url, this.environment, setIsSelfAccepting)
+        mod = new EnvironmentModuleNode(
+          url,
+          this.environment,
+          setIsSelfAccepting,
+        )
         if (meta) mod.meta = meta
         this.urlToModuleMap.set(url, mod)
         mod.id = resolvedId
@@ -399,7 +405,7 @@ export class EnvironmentModuleGraph {
   // url because they are inlined into the main css import. But they still
   // need to be represented in the module graph so that they can trigger
   // hmr in the importing css file.
-  createFileOnlyEntry(file: string): ModuleNode {
+  createFileOnlyEntry(file: string): EnvironmentModuleNode {
     file = normalizePath(file)
     let fileMappedModules = this.fileToModulesMap.get(file)
     if (!fileMappedModules) {
@@ -414,7 +420,7 @@ export class EnvironmentModuleGraph {
       }
     }
 
-    const mod = new ModuleNode(url, this.environment)
+    const mod = new EnvironmentModuleNode(url, this.environment)
     mod.file = file
     fileMappedModules.add(mod)
     return mod
@@ -434,7 +440,7 @@ export class EnvironmentModuleGraph {
   }
 
   updateModuleTransformResult(
-    mod: ModuleNode,
+    mod: EnvironmentModuleNode,
     result: TransformResult | null,
   ): void {
     if (this.environment === 'browser') {
@@ -446,7 +452,7 @@ export class EnvironmentModuleGraph {
     mod.transformResult = result
   }
 
-  getModuleByEtag(etag: string): ModuleNode | undefined {
+  getModuleByEtag(etag: string): EnvironmentModuleNode | undefined {
     return this.etagToModuleMap.get(etag)
   }
 
@@ -455,7 +461,7 @@ export class EnvironmentModuleGraph {
    */
   _getUnresolvedUrlToModule(
     url: string,
-  ): Promise<ModuleNode> | ModuleNode | undefined {
+  ): Promise<EnvironmentModuleNode> | EnvironmentModuleNode | undefined {
     return this._unresolvedUrlToModuleMap.get(url)
   }
   /**
@@ -463,7 +469,7 @@ export class EnvironmentModuleGraph {
    */
   _setUnresolvedUrlToModule(
     url: string,
-    mod: Promise<ModuleNode> | ModuleNode,
+    mod: Promise<EnvironmentModuleNode> | EnvironmentModuleNode,
   ): void {
     this._unresolvedUrlToModuleMap.set(url, mod)
   }
@@ -494,7 +500,7 @@ export class EnvironmentModuleGraph {
   }
 }
 
-export interface BackwardCompatibleModuleNode extends ModuleNode {
+export interface ModuleNode extends EnvironmentModuleNode {
   clientImportedModules: Set<ModuleNode>
   ssrImportedModules: Set<ModuleNode>
   ssrTransformResult: TransformResult | null
@@ -658,7 +664,7 @@ export class ModuleGraph {
 
   /** @deprecated */
   invalidateModule(
-    mod: BackwardCompatibleModuleNode,
+    mod: ModuleNode,
     seen: Set<ModuleNode> = new Set(),
     timestamp: number = Date.now(),
     isHmr: boolean = false,
@@ -751,7 +757,7 @@ export class ModuleGraph {
 
   /** @deprecated */
   updateModuleTransformResult(
-    mod: BackwardCompatibleModuleNode,
+    mod: ModuleNode,
     result: TransformResult | null,
     ssr?: boolean,
   ): void {
@@ -770,7 +776,7 @@ export class ModuleGraph {
   }
 
   getBackwardCompatibleBrowserModuleNode(
-    browserModule: ModuleNode,
+    browserModule: EnvironmentModuleNode,
   ): ModuleNode {
     return this.getBackwardCompatibleModuleNodeDual(
       browserModule,
@@ -780,7 +786,9 @@ export class ModuleGraph {
     )
   }
 
-  getBackwardCompatibleServerModuleNode(serverModule: ModuleNode): ModuleNode {
+  getBackwardCompatibleServerModuleNode(
+    serverModule: EnvironmentModuleNode,
+  ): ModuleNode {
     return this.getBackwardCompatibleModuleNodeDual(
       serverModule.id
         ? this._browser.getModuleById(serverModule.id)
@@ -789,21 +797,19 @@ export class ModuleGraph {
     )
   }
 
-  getBackwardCompatibleModuleNode(mod: ModuleNode): ModuleNode {
-    return mod.environment === 'mixed'
-      ? mod
-      : mod.environment === 'browser'
-        ? this.getBackwardCompatibleBrowserModuleNode(mod)
-        : this.getBackwardCompatibleServerModuleNode(mod)
+  getBackwardCompatibleModuleNode(mod: EnvironmentModuleNode): ModuleNode {
+    return mod.environment === 'browser'
+      ? this.getBackwardCompatibleBrowserModuleNode(mod)
+      : this.getBackwardCompatibleServerModuleNode(mod)
   }
 
   getBackwardCompatibleModuleNodeDual(
-    browserModule?: ModuleNode,
-    serverModule?: ModuleNode,
+    browserModule?: EnvironmentModuleNode,
+    serverModule?: EnvironmentModuleNode,
   ): ModuleNode {
     const wrapModuleSet = (
       prop: ModuleSetNames,
-      module: ModuleNode | undefined,
+      module: EnvironmentModuleNode | undefined,
     ) => {
       if (!module) {
         return new Set()
@@ -830,47 +836,50 @@ export class ModuleGraph {
       }
       return importedModules
     }
-    return new Proxy((browserModule ?? serverModule)!, {
-      get(_, prop: keyof BackwardCompatibleModuleNode) {
-        switch (prop) {
-          case 'environment':
-            return 'mixed'
+    return new Proxy(
+      {},
+      {
+        get(_, prop: keyof ModuleNode) {
+          switch (prop) {
+            case 'environment':
+              return 'mixed'
 
-          case 'importers':
-            return getModuleSetUnion('importers')
+            case 'importers':
+              return getModuleSetUnion('importers')
 
-          case 'acceptedHmrDeps':
-            return wrapModuleSet('acceptedHmrDeps', browserModule)
+            case 'acceptedHmrDeps':
+              return wrapModuleSet('acceptedHmrDeps', browserModule)
 
-          case 'clientImportedModules':
-            return wrapModuleSet('importedModules', browserModule)
+            case 'clientImportedModules':
+              return wrapModuleSet('importedModules', browserModule)
 
-          case 'ssrImportedModules':
-            return wrapModuleSet('importedModules', serverModule)
+            case 'ssrImportedModules':
+              return wrapModuleSet('importedModules', serverModule)
 
-          case 'importedModules':
-            return getModuleSetUnion('importedModules')
+            case 'importedModules':
+              return getModuleSetUnion('importedModules')
 
-          case 'ssrTransformResult':
-            return serverModule?.transformResult
+            case 'ssrTransformResult':
+              return serverModule?.transformResult
 
-          case 'ssrModule':
-            return serverModule?.module
+            case 'ssrModule':
+              return serverModule?.module
 
-          case 'ssrError':
-            return serverModule?.error
+            case 'ssrError':
+              return serverModule?.error
 
-          case '_browserModule':
-            return browserModule
+            case '_browserModule':
+              return browserModule
 
-          case '_serverModule':
-            return serverModule
+            case '_serverModule':
+              return serverModule
 
-          default:
-            return browserModule?.[prop] ?? serverModule?.[prop]
-        }
+            default:
+              return browserModule?.[prop] ?? serverModule?.[prop]
+          }
+        },
       },
-    })
+    ) as ModuleNode
   }
 }
 
@@ -879,7 +888,7 @@ type ModuleSetNames = 'acceptedHmrDeps' | 'importedModules'
 function createBackwardCompatibleModuleSet(
   moduleGraph: ModuleGraph,
   prop: ModuleSetNames,
-  module: ModuleNode,
+  module: EnvironmentModuleNode,
 ): Set<ModuleNode> {
   return {
     [Symbol.iterator]() {
@@ -926,7 +935,7 @@ function createBackwardCompatibleModuleSet(
 function createBackwardCompatibleModuleMap(
   moduleGraph: ModuleGraph,
   prop: 'urlToModuleMap' | 'idToModuleMap' | 'etagToModuleMap',
-  getModuleMap: () => Map<string, ModuleNode>,
+  getModuleMap: () => Map<string, EnvironmentModuleNode>,
 ): Map<string, ModuleNode> {
   return {
     [Symbol.iterator]() {
@@ -975,7 +984,7 @@ function createBackwardCompatibleModuleMap(
 function createBackwardCompatibleFileToModulesMap(
   moduleGraph: ModuleGraph,
 ): Map<string, Set<ModuleNode>> {
-  const getFileToModulesMap = (): Map<string, Set<ModuleNode>> => {
+  const getFileToModulesMap = (): Map<string, Set<EnvironmentModuleNode>> => {
     // A good approximation to the previous logic that returned the union of
     // the importedModules and importers from both the browser and server
     if (!moduleGraph._server.fileToModulesMap.size) {
@@ -1004,7 +1013,7 @@ function createBackwardCompatibleFileToModulesMap(
     return map
   }
   const getBackwardCompatibleModules = (
-    modules: Set<ModuleNode>,
+    modules: Set<EnvironmentModuleNode>,
   ): Set<ModuleNode> =>
     new Set(
       [...modules].map((mod) =>

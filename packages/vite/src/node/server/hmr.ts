@@ -16,7 +16,7 @@ import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { Plugin } from '../plugin'
-import type { ModuleNode } from './moduleGraph'
+import type { EnvironmentModuleNode, ModuleNode } from './moduleGraph'
 import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -41,7 +41,7 @@ export interface HmrOptions {
 export interface HotUpdateContext {
   file: string
   timestamp: number
-  modules: Array<ModuleNode>
+  modules: Array<EnvironmentModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
   environment: string
@@ -60,8 +60,8 @@ export interface HmrContext {
 }
 
 interface PropagationBoundary {
-  boundary: ModuleNode
-  acceptedVia: ModuleNode
+  boundary: EnvironmentModuleNode
+  acceptedVia: EnvironmentModuleNode
   isWithinCircularImport: boolean
 }
 
@@ -309,15 +309,15 @@ type HasDeadEnd = boolean
 
 export function updateModules(
   file: string,
-  modules: ModuleNode[],
+  modules: EnvironmentModuleNode[],
   timestamp: number,
   server: ViteDevServer,
   afterInvalidation?: boolean,
 ): void {
   const { config, hot } = server
   const updates: Update[] = []
-  const invalidatedModules = new Set<ModuleNode>()
-  const traversedModules = new Set<ModuleNode>()
+  const invalidatedModules = new Set<EnvironmentModuleNode>()
+  const traversedModules = new Set<EnvironmentModuleNode>()
   let needFullReload: HasDeadEnd = false
 
   for (const mod of modules) {
@@ -392,9 +392,9 @@ export function updateModules(
 }
 
 function populateSSRImporters(
-  module: ModuleNode,
+  module: EnvironmentModuleNode,
   timestamp: number,
-  seen: Set<ModuleNode> = new Set(),
+  seen: Set<EnvironmentModuleNode> = new Set(),
 ) {
   module.importedModules.forEach((importer) => {
     if (seen.has(importer)) {
@@ -411,7 +411,7 @@ function populateSSRImporters(
   return seen
 }
 
-function getSSRInvalidatedImporters(module: ModuleNode) {
+function getSSRInvalidatedImporters(module: EnvironmentModuleNode) {
   return [...populateSSRImporters(module, module.lastHMRTimestamp)].map(
     (m) => m.file!,
   )
@@ -461,10 +461,10 @@ function areAllImportsAccepted(
 }
 
 function propagateUpdate(
-  node: ModuleNode,
-  traversedModules: Set<ModuleNode>,
+  node: EnvironmentModuleNode,
+  traversedModules: Set<EnvironmentModuleNode>,
   boundaries: PropagationBoundary[],
-  currentChain: ModuleNode[] = [node],
+  currentChain: EnvironmentModuleNode[] = [node],
 ): HasDeadEnd {
   if (traversedModules.has(node)) {
     return false
@@ -576,10 +576,10 @@ function propagateUpdate(
  * @param traversedModules The set of modules that have traversed
  */
 function isNodeWithinCircularImports(
-  node: ModuleNode,
-  nodeChain: ModuleNode[],
-  currentChain: ModuleNode[] = [node],
-  traversedModules = new Set<ModuleNode>(),
+  node: EnvironmentModuleNode,
+  nodeChain: EnvironmentModuleNode[],
+  currentChain: EnvironmentModuleNode[] = [node],
+  traversedModules = new Set<EnvironmentModuleNode>(),
 ): boolean {
   // To help visualize how each parameters work, imagine this import graph:
   //
@@ -649,7 +649,7 @@ function isNodeWithinCircularImports(
 }
 
 export function handlePrunedModules(
-  mods: Set<ModuleNode>,
+  mods: Set<EnvironmentModuleNode>,
   { hot }: ViteDevServer,
 ): void {
   // update the disposed modules' hmr timestamp
