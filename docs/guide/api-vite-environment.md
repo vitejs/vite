@@ -69,7 +69,7 @@ class ModuleExecutionEnvironment {
    * Resolve the URL to an id, load it, and process the code using the
    * plugins pipeline. The module graph is also updated.
    */
-  async transformRequest(url: string)
+  async transformRequest(url: string): TransformResult
 
   /**
    * Register a request to be processed with low priority. This is useful
@@ -77,12 +77,24 @@ class ModuleExecutionEnvironment {
    * modules by other requests, so it can warmup the module graph so the
    * modules are already processed when they are requested.
    */
-  async warmupRequest(url: string)
+  async warmupRequest(url: string): void
 
   /**
    * Fetch information about a module from the module runner without running it.
    */
   async fetch(url: string)
+}
+```
+
+With `TransformResult` being:
+
+```ts
+interface TransformResult {
+  code: string
+  map: SourceMap | { mappings: '' } | null
+  etag?: string
+  deps?: string[]
+  dynamicDeps?: string[]
 }
 ```
 
