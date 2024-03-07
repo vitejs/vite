@@ -923,7 +923,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 }
 
 export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
-  let server: ViteDevServer
+  let server: ViteDevServer | undefined
 
   return {
     name: 'vite:css-analysis',
@@ -942,8 +942,8 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const runtime = options?.runtime ?? 'browser'
-      const { moduleGraph } = server
-      const thisModule = moduleGraph.get(runtime).getModuleById(id)
+      const moduleGraph = server?.getModuleGraph(runtime)
+      const thisModule = moduleGraph?.getModuleById(id)
 
       // Handle CSS @import dependency HMR and other added modules via this.addWatchFile.
       // JS-related HMR is handled in the import-analysis plugin.
@@ -965,18 +965,16 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           for (const file of pluginImports) {
             depModules.add(
               isCSSRequest(file)
-                ? moduleGraph.get(runtime).createFileOnlyEntry(file)
-                : await moduleGraph
-                    .get(runtime)
-                    .ensureEntryFromUrl(
-                      stripBase(
-                        await fileToUrl(file, config, this),
-                        (config.server?.origin ?? '') + devBase,
-                      ),
+                ? moduleGraph!.createFileOnlyEntry(file)
+                : await moduleGraph!.ensureEntryFromUrl(
+                    stripBase(
+                      await fileToUrl(file, config, this),
+                      (config.server?.origin ?? '') + devBase,
                     ),
+                  ),
             )
           }
-          moduleGraph.get(runtime).updateModuleInfo(
+          moduleGraph!.updateModuleInfo(
             thisModule,
             depModules,
             null,

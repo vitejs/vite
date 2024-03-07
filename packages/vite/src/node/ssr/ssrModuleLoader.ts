@@ -85,8 +85,8 @@ async function instantiateModule(
   urlStack: string[] = [],
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
-  const { moduleGraph } = server
-  const mod = await moduleGraph.server.ensureEntryFromUrl(url) // TODO: runtime?
+  const moduleGraph = server.getModuleGraph('server')
+  const mod = await moduleGraph.ensureEntryFromUrl(url) // TODO: runtime?
 
   if (mod.error) {
     throw mod.error
@@ -176,7 +176,7 @@ async function instantiateModule(
         // return local module to avoid race condition #5470
         return mod
       }
-      return moduleGraph.server.urlToModuleMap.get(dep)?.module
+      return moduleGraph.urlToModuleMap.get(dep)?.module
     } catch (err) {
       // tell external error handler which mod was imported with error
       importErrors.set(err, { importee: dep })
@@ -243,7 +243,7 @@ async function instantiateModule(
     const errorData = importErrors.get(e)
 
     if (e.stack && fixStacktrace) {
-      ssrFixStacktrace(e, moduleGraph.server)
+      ssrFixStacktrace(e, server.moduleGraph)
     }
 
     server.config.logger.error(

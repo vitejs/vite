@@ -89,11 +89,17 @@ export class ModuleNode {
   }
   /** @deprecated */
   get clientImportedModules(): Set<ModuleNode> {
-    return this.runtime === 'browser' ? this.importedModules : new Set()
+    if (this.runtime !== 'browser') {
+      throw new Error('clientImportedModules accessed in a node module node')
+    }
+    return this.importedModules
   }
   /** @deprecated */
   get ssrImportedModules(): Set<ModuleNode> {
-    return this.runtime === 'server' ? this.importedModules : new Set()
+    if (this.runtime !== 'browser') {
+      throw new Error('ssrImportedModules accessed in a browser module node')
+    }
+    return this.importedModules
   }
 }
 
@@ -103,7 +109,7 @@ export type ResolvedUrl = [
   meta: object | null | undefined,
 ]
 
-export class ModuleGraph {
+export class EnvironmentModuleGraph {
   runtime: string
 
   urlToModuleMap = new Map<string, ModuleNode>()
@@ -517,13 +523,14 @@ function mapIterator<T, K = T>(
   }
 }
 
-export class ModuleGraphs {
-  // Added so ModuleGraphs is a ModuleGraph
+export class ModuleGraph {
   runtime = 'mixed'
 
-  browser: ModuleGraph
-  server: ModuleGraph
-  runtimes: string[]
+  /** @internal */
+  _browser: EnvironmentModuleGraph
+
+  /** @internal */
+  _server: EnvironmentModuleGraph
 
   urlToModuleMap: Map<string, ModuleNode>
   idToModuleMap: Map<string, ModuleNode>
@@ -532,23 +539,25 @@ export class ModuleGraphs {
   fileToModulesMap = new Map<string, Set<ModuleNode>>()
 
   get safeModulesPath(): Set<string> {
-    return this.browser.safeModulesPath
+    return this._browser.safeModulesPath
   }
 
-  constructor(moduleGraphs: { browser: ModuleGraph; server: ModuleGraph }) {
-    this.browser = moduleGraphs.browser
-    this.server = moduleGraphs.server
-    this.runtimes = Object.keys(moduleGraphs)
+  constructor(moduleGraphs: {
+    browser: EnvironmentModuleGraph
+    server: EnvironmentModuleGraph
+  }) {
+    this._browser = moduleGraphs.browser
+    this._server = moduleGraphs.server
 
     const getModuleMapUnion =
       (prop: 'urlToModuleMap' | 'idToModuleMap') => () => {
         // A good approximation to the previous logic that returned the union of
         // the importedModules and importers from both the browser and server
-        if (this.server[prop].size === 0) {
-          return this.browser[prop]
+        if (this._server[prop].size === 0) {
+          return this._browser[prop]
         }
-        const map = new Map(this.browser[prop])
-        for (const [key, module] of this.server[prop]) {
+        const map = new Map(this._browser[prop])
+        for (const [key, module] of this._server[prop]) {
           if (!map.has(key)) {
             map.set(key, module)
           }
@@ -569,20 +578,15 @@ export class ModuleGraphs {
     this.etagToModuleMap = createBackwardCompatibleModuleMap(
       this,
       'etagToModuleMap',
-      () => this.browser.etagToModuleMap,
+      () => this._browser.etagToModuleMap,
     )
     this.fileToModulesMap = createBackwardCompatibleFileToModulesMap(this)
   }
 
-  get(runtime: string): ModuleGraph {
-    // TODO: how to properly type runtime so we can use moduleGraph[runtime]
-    return runtime === 'browser' ? this.browser : this.server
-  }
-
   /** @deprecated */
   getModuleById(id: string): ModuleNode | undefined {
-    const browserModule = this.browser.getModuleById(id)
-    const serverModule = this.server.getModuleById(id)
+    const browserModule = this._browser.getModuleById(id)
+    const serverModule = this._server.getModuleById(id)
     if (!browserModule && !serverModule) {
       return
     }
@@ -599,8 +603,8 @@ export class ModuleGraphs {
     // or server depending on the ssr flag. For now, querying for both modules
     // seems to me closer to what we did before.
     const [browserModule, serverModule] = await Promise.all([
-      this.browser.getModuleByUrl(url),
-      this.server.getModuleByUrl(url),
+      this._browser.getModuleByUrl(url),
+      this._server.getModuleByUrl(url),
     ])
     if (!browserModule && !serverModule) {
       return
@@ -613,7 +617,7 @@ export class ModuleGraphs {
     // Until Vite 5.1.x, the moduleGraph contained modules from both the browser and server
     // We maintain backwards compatibility by returning a Set of module proxies assuming
     // that the modules for a certain file are the same in both the browser and server
-    const browserModules = this.browser.getModulesByFile(file)
+    const browserModules = this._browser.getModulesByFile(file)
     if (browserModules) {
       return new Set(
         [...browserModules].map(
@@ -621,7 +625,7 @@ export class ModuleGraphs {
         ),
       )
     }
-    const serverModules = this.server.getModulesByFile(file)
+    const serverModules = this._server.getModulesByFile(file)
     if (serverModules) {
       return new Set(
         [...serverModules].map(
@@ -634,8 +638,20 @@ export class ModuleGraphs {
 
   /** @deprecated */
   onFileChange(file: string): void {
-    this.browser.onFileChange(file)
-    this.server.onFileChange(file)
+    this._browser.onFileChange(file)
+    this._server.onFileChange(file)
+  }
+
+  /** @internal */
+  _getModuleGraph(runtime: string): EnvironmentModuleGraph {
+    switch (runtime) {
+      case 'browser':
+        return this._browser
+      case 'server':
+        return this._server
+      default:
+        throw new Error(`Invalid module node runtime ${runtime}`)
+    }
   }
 
   /** @deprecated */
@@ -647,7 +663,7 @@ export class ModuleGraphs {
     /** @internal */
     softInvalidate = false,
   ): void {
-    this.get(mod.runtime).invalidateModule(
+    this._getModuleGraph(mod.runtime).invalidateModule(
       mod,
       seen,
       timestamp,
@@ -658,8 +674,8 @@ export class ModuleGraphs {
 
   /** @deprecated */
   invalidateAll(): void {
-    this.browser.invalidateAll()
-    this.server.invalidateAll()
+    this._browser.invalidateAll()
+    this._server.invalidateAll()
   }
 
   /** @deprecated */
@@ -674,8 +690,7 @@ export class ModuleGraphs {
     /** @internal */
     staticImportedUrls?: Set<string>,
   ): Promise<Set<ModuleNode> | undefined> {
-    // TODO: return backward compatible module nodes?
-    const modules = await this.get(module.runtime).updateModuleInfo(
+    const modules = await this._getModuleGraph(module.runtime).updateModuleInfo(
       module,
       importedModules,
       importedBindings,
@@ -697,21 +712,16 @@ export class ModuleGraphs {
     ssr?: boolean,
     setIsSelfAccepting = true,
   ): Promise<ModuleNode> {
-    // TODO: should we only ensure the entry on the browser or server depending on the ssr flag?
-    const [browserModule, serverModule] = await Promise.all([
-      this.browser.ensureEntryFromUrl(rawUrl, setIsSelfAccepting),
-      this.server.ensureEntryFromUrl(rawUrl, setIsSelfAccepting),
-    ])
-    return this.getBackwardCompatibleModuleNodeDual(
-      browserModule,
-      serverModule,
-    )!
+    const module = await (
+      ssr ? this._server : this._browser
+    ).ensureEntryFromUrl(rawUrl, setIsSelfAccepting)
+    return this.getBackwardCompatibleModuleNode(module)!
   }
 
   /** @deprecated */
   createFileOnlyEntry(file: string): ModuleNode {
-    const browserModule = this.browser.createFileOnlyEntry(file)
-    const serverModule = this.server.createFileOnlyEntry(file)
+    const browserModule = this._browser.createFileOnlyEntry(file)
+    const serverModule = this._server.createFileOnlyEntry(file)
     return this.getBackwardCompatibleModuleNodeDual(
       browserModule,
       serverModule,
@@ -720,7 +730,7 @@ export class ModuleGraphs {
 
   /** @deprecated */
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
-    return ssr ? this.server.resolveUrl(url) : this.browser.resolveUrl(url)
+    return ssr ? this._server.resolveUrl(url) : this._browser.resolveUrl(url)
   }
 
   /** @deprecated */
@@ -729,12 +739,12 @@ export class ModuleGraphs {
     result: TransformResult | null,
     ssr?: boolean,
   ): void {
-    this.get(mod.runtime).updateModuleTransformResult(mod, result)
+    this._getModuleGraph(mod.runtime).updateModuleTransformResult(mod, result)
   }
 
   /** @deprecated */
   getModuleByEtag(etag: string): ModuleNode | undefined {
-    const mod = this.browser.etagToModuleMap.get(etag)
+    const mod = this._browser.etagToModuleMap.get(etag)
     return mod && this.getBackwardCompatibleBrowserModuleNode(mod)
   }
 
@@ -744,14 +754,16 @@ export class ModuleGraphs {
     return this.getBackwardCompatibleModuleNodeDual(
       browserModule,
       browserModule.id
-        ? this.server.getModuleById(browserModule.id)
+        ? this._server.getModuleById(browserModule.id)
         : undefined,
     )
   }
 
   getBackwardCompatibleServerModuleNode(serverModule: ModuleNode): ModuleNode {
     return this.getBackwardCompatibleModuleNodeDual(
-      serverModule.id ? this.browser.getModuleById(serverModule.id) : undefined,
+      serverModule.id
+        ? this._browser.getModuleById(serverModule.id)
+        : undefined,
       serverModule,
     )
   }
@@ -833,7 +845,7 @@ export class ModuleGraphs {
 type ModuleSetNames = 'acceptedHmrDeps' | 'importedModules'
 
 function createBackwardCompatibleModuleSet(
-  moduleGraph: ModuleGraphs,
+  moduleGraph: ModuleGraph,
   prop: ModuleSetNames,
   module: ModuleNode,
 ): Set<ModuleNode> {
@@ -845,7 +857,9 @@ function createBackwardCompatibleModuleSet(
       if (!key.id) {
         return false
       }
-      const keyModule = moduleGraph.get(module.runtime).getModuleById(key.id)
+      const keyModule = moduleGraph
+        ._getModuleGraph(module.runtime)
+        .getModuleById(key.id)
       return keyModule !== undefined && module[prop].has(keyModule)
     },
     values() {
@@ -878,7 +892,7 @@ function createBackwardCompatibleModuleSet(
 }
 
 function createBackwardCompatibleModuleMap(
-  moduleGraph: ModuleGraphs,
+  moduleGraph: ModuleGraph,
   prop: 'urlToModuleMap' | 'idToModuleMap' | 'etagToModuleMap',
   getModuleMap: () => Map<string, ModuleNode>,
 ): Map<string, ModuleNode> {
@@ -887,8 +901,8 @@ function createBackwardCompatibleModuleMap(
       return this.entries()
     },
     get(key) {
-      const browserModule = moduleGraph.browser[prop].get(key)
-      const serverModule = moduleGraph.server[prop].get(key)
+      const browserModule = moduleGraph._browser[prop].get(key)
+      const serverModule = moduleGraph._server[prop].get(key)
       if (!browserModule && !serverModule) {
         return
       }
@@ -912,7 +926,7 @@ function createBackwardCompatibleModuleMap(
       ])
     },
     get size() {
-      // TODO: Should we use Math.max(moduleGraph.browser[prop].size, moduleGraph.server[prop].size)
+      // TODO: Should we use Math.max(moduleGraph._browser[prop].size, moduleGraph._server[prop].size)
       // for performance? I don't think there are many use cases of this method
       return getModuleMap().size
     },
@@ -927,16 +941,16 @@ function createBackwardCompatibleModuleMap(
 }
 
 function createBackwardCompatibleFileToModulesMap(
-  moduleGraph: ModuleGraphs,
+  moduleGraph: ModuleGraph,
 ): Map<string, Set<ModuleNode>> {
   const getFileToModulesMap = (): Map<string, Set<ModuleNode>> => {
     // A good approximation to the previous logic that returned the union of
     // the importedModules and importers from both the browser and server
-    if (!moduleGraph.server.fileToModulesMap.size) {
-      return moduleGraph.browser.fileToModulesMap
+    if (!moduleGraph._server.fileToModulesMap.size) {
+      return moduleGraph._browser.fileToModulesMap
     }
-    const map = new Map(moduleGraph.browser.fileToModulesMap)
-    for (const [key, modules] of moduleGraph.server.fileToModulesMap) {
+    const map = new Map(moduleGraph._browser.fileToModulesMap)
+    for (const [key, modules] of moduleGraph._server.fileToModulesMap) {
       const modulesSet = map.get(key)
       if (!modulesSet) {
         map.set(key, modules)
@@ -971,8 +985,8 @@ function createBackwardCompatibleFileToModulesMap(
       return this.entries()
     },
     get(key) {
-      const browserModules = moduleGraph.browser.fileToModulesMap.get(key)
-      const serverModules = moduleGraph.server.fileToModulesMap.get(key)
+      const browserModules = moduleGraph._browser.fileToModulesMap.get(key)
+      const serverModules = moduleGraph._server.fileToModulesMap.get(key)
       if (!browserModules && !serverModules) {
         return
       }

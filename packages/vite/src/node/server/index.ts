@@ -72,7 +72,7 @@ import {
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
 import type { ModuleNode } from './moduleGraph'
-import { ModuleGraph, ModuleGraphs } from './moduleGraph'
+import { EnvironmentModuleGraph, ModuleGraph } from './moduleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HMRBroadcaster, HmrOptions } from './hmr'
@@ -250,10 +250,19 @@ export interface ViteDevServer {
    */
   pluginContainer: PluginContainer
   /**
+   * Get the module graph for the given runtime
+   */
+  getModuleGraph(runtime: string): EnvironmentModuleGraph
+  /**
+   * Available module graph runtimes
+   */
+  runtimes: string[]
+  /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
+   * @deprecated use environment module graphs instead
    */
-  moduleGraph: ModuleGraphs
+  moduleGraph: ModuleGraph
   /**
    * The resolved urls Vite prints on the CLI. null in middleware mode or
    * before `server.listen` is called.
@@ -446,16 +455,28 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
-  const moduleGraph = new ModuleGraphs({
-    browser: new ModuleGraph('browser', (url) =>
-      container.resolveId(url, undefined, { ssr: false, runtime: 'browser' }),
-    ),
-    server: new ModuleGraph('server', (url) =>
-      container.resolveId(url, undefined, { ssr: true, runtime: 'server' }),
-    ),
+  const browserModuleGraph = new EnvironmentModuleGraph('browser', (url) =>
+    container.resolveId(url, undefined, { ssr: false, runtime: 'browser' }),
+  )
+  const serverModuleGraph = new EnvironmentModuleGraph('server', (url) =>
+    container.resolveId(url, undefined, { ssr: true, runtime: 'server' }),
+  )
+  const moduleGraph = new ModuleGraph({
+    browser: browserModuleGraph,
+    server: serverModuleGraph,
   })
+  const runtimes = ['browser', 'server']
+  const getModuleGraph = (runtime: string) => {
+    if (runtime === 'browser') {
+      return browserModuleGraph
+    } else if (runtime === 'server') {
+      return serverModuleGraph
+    } else {
+      throw new Error(`Invalid module graph runtime: ${runtime}`)
+    }
+  }
 
-  const container = await createPluginContainer(config, moduleGraph, watcher)
+  const container = await createPluginContainer(config, getModuleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
   let exitProcess: () => void
@@ -470,6 +491,8 @@ export async function _createServer(
     pluginContainer: container,
     ws,
     hot,
+    getModuleGraph,
+    runtimes,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
     ssrTransform(
@@ -515,10 +538,10 @@ export async function _createServer(
       return ssrFetchModule(server, url, importer)
     },
     ssrFixStacktrace(e) {
-      ssrFixStacktrace(e, moduleGraph.server)
+      ssrFixStacktrace(e, moduleGraph)
     },
     ssrRewriteStacktrace(stack: string) {
-      return ssrRewriteStacktrace(stack, moduleGraph.server)
+      return ssrRewriteStacktrace(stack, moduleGraph)
     },
     async reloadModule(module) {
       if (serverConfig.hmr !== false && module.file) {
@@ -709,12 +732,12 @@ export async function _createServer(
         publicFiles[isUnlink ? 'delete' : 'add'](path)
         if (!isUnlink) {
           const moduleWithSamePath =
-            await moduleGraph.browser.getModuleByUrl(path)
+            await browserModuleGraph.getModuleByUrl(path)
           const etag = moduleWithSamePath?.transformResult?.etag
           if (etag) {
             // The public file should win on the next request over a module with the
             // same path. Prevent the transform etag fast path from serving the module
-            moduleGraph.browser.etagToModuleMap.delete(etag)
+            browserModuleGraph.etagToModuleMap.delete(etag)
           }
         }
       }
@@ -727,9 +750,7 @@ export async function _createServer(
     file = normalizePath(file)
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
-    moduleGraph.runtimes.forEach((runtime) =>
-      moduleGraph.get(runtime).onFileChange(file),
-    )
+    runtimes.forEach((runtime) => getModuleGraph(runtime).onFileChange(file))
     await onHMRUpdate(file, false)
   })
 
@@ -747,7 +768,7 @@ export async function _createServer(
     message?: string
     runtime: string
   }) {
-    const mod = moduleGraph.get(m.runtime).urlToModuleMap.get(m.path)
+    const mod = getModuleGraph(m.runtime).urlToModuleMap.get(m.path)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
       config.logger.info(
         colors.yellow(`hmr invalidate `) +
@@ -770,7 +791,7 @@ export async function _createServer(
     if (runtime) {
       invalidateModule({ path, message, runtime })
     } else {
-      moduleGraph.runtimes.forEach((runtime) => {
+      runtimes.forEach((runtime) => {
         invalidateModule({ path, message, runtime })
       })
     }

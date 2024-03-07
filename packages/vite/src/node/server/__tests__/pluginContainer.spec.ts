@@ -242,7 +242,7 @@ async function getPluginContainer(
   config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
 
   resolveId = (id) => container.resolveId(id)
-  const container = await createPluginContainer(config, moduleGraph)
+  const container = await createPluginContainer(config, getModuleGraph)
   return container
 }
 */

@@ -539,7 +539,7 @@ async function createDepsOptimizer(
       // Cached transform results have stale imports (resolved to
       // old locations) so they need to be invalidated before the page is
       // reloaded.
-      server.moduleGraph.browser.invalidateAll()
+      server.getModuleGraph('browser').invalidateAll()
 
       server.hot.send({
         type: 'full-reload',

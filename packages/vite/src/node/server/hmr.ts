@@ -228,11 +228,11 @@ export async function handleHMRUpdate(
   // For now, we only call updateModules for the browser. Later on it should
   // also be called for each runtime.
 
-  let mods = moduleGraph.browser.getModulesByFile(file)
+  let mods = server.getModuleGraph('browser').getModulesByFile(file)
   if (!mods) {
     // For now, given that the HMR SSR expects it, try to get the modules from the
     // server graph if the browser graph doesn't have it
-    mods = moduleGraph.server.getModulesByFile(file)
+    mods = server.getModuleGraph('server').getModulesByFile(file)
   }
 
   // check if any plugin wants to perform custom HMR handling
@@ -273,8 +273,8 @@ export async function handleHMRUpdate(
         hmrContext.modules = filteredModules
         hotContext.modules = filteredModules.map((mod) =>
           mod.id
-            ? server.moduleGraph.browser.getModuleById(mod.id) ??
-              server.moduleGraph.server.getModuleById(mod.id) ??
+            ? server.getModuleGraph('browser').getModuleById(mod.id) ??
+              server.getModuleGraph('server').getModuleById(mod.id) ??
               mod
             : mod,
         )
@@ -311,9 +311,10 @@ export function updateModules(
   file: string,
   modules: ModuleNode[],
   timestamp: number,
-  { config, hot, moduleGraph }: ViteDevServer,
+  server: ViteDevServer,
   afterInvalidation?: boolean,
 ): void {
+  const { config, hot } = server
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   const traversedModules = new Set<ModuleNode>()
@@ -325,8 +326,8 @@ export function updateModules(
 
     // TODO: we don't need NodeModule to have the runtime if we pass it to updateModules
     // it still seems useful to know the runtime for a given module
-    moduleGraph
-      .get(mod.runtime)
+    server
+      .getModuleGraph(mod.runtime)
       .invalidateModule(mod, invalidatedModules, timestamp, true)
 
     if (needFullReload) {
@@ -421,9 +422,9 @@ export async function handleFileAddUnlink(
   server: ViteDevServer,
   isUnlink: boolean,
 ): Promise<void> {
-  server.moduleGraph.runtimes.forEach((runtime) => {
+  server.runtimes.forEach((runtime) => {
     const modules = [
-      ...(server.moduleGraph.get(runtime).getModulesByFile(file) || []),
+      ...(server.getModuleGraph(runtime).getModulesByFile(file) || []),
     ]
 
     if (isUnlink) {

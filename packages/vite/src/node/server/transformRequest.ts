@@ -88,8 +88,8 @@ export function transformRequest(
 
   const pending = server._pendingRequests.get(cacheKey)
   if (pending) {
-    return server.moduleGraph
-      .get(runtime)
+    return server
+      .getModuleGraph(runtime)
       .getModuleByUrl(removeTimestampQuery(url))
       .then((module) => {
         if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
@@ -145,7 +145,7 @@ async function doTransform(
     await initDevSsrDepsOptimizer(config, server)
   }
 
-  let module = await server.moduleGraph.get(runtime).getModuleByUrl(url)
+  let module = await server.getModuleGraph(runtime).getModuleByUrl(url)
   if (module) {
     // try use cache from url
     const cached = await getCachedTransformResult(
@@ -166,11 +166,11 @@ async function doTransform(
   // resolve
   const id = module?.id ?? resolved?.id ?? url
 
-  module ??= server.moduleGraph.get(runtime).getModuleById(id)
+  module ??= server.getModuleGraph(runtime).getModuleById(id)
   if (module) {
     // if a different url maps to an existing loaded id,  make sure we relate this url to the id
-    await server.moduleGraph
-      .get(runtime)
+    await server
+      .getModuleGraph(runtime)
       ._ensureEntryFromUrl(url, undefined, resolved)
     // try use cache from id
     const cached = await getCachedTransformResult(
@@ -234,12 +234,13 @@ async function loadAndTransform(
   mod?: ModuleNode,
   resolved?: PartialResolvedId,
 ) {
-  const { config, pluginContainer, moduleGraph } = server
+  const { config, pluginContainer } = server
   const { logger } = config
   const prettyUrl =
     debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
   const runtime = options.runtime ?? 'browser'
+  const moduleGraph = server.getModuleGraph(runtime)
 
   const file = cleanUrl(id)
 
@@ -310,9 +311,8 @@ async function loadAndTransform(
         `should not be imported from source code. It can only be referenced ` +
         `via HTML tags.`
       : `Does the file exist?`
-    const importerMod: ModuleNode | undefined = server.moduleGraph
-      .get(runtime)
-      .idToModuleMap.get(id)
+    const importerMod: ModuleNode | undefined = moduleGraph.idToModuleMap
+      .get(id)
       ?.importers.values()
       .next().value
     const importer = importerMod?.file || importerMod?.url
@@ -328,9 +328,7 @@ async function loadAndTransform(
   if (server._restartPromise && !ssr) throwClosedServerError()
 
   // ensure module in graph after successful load
-  mod ??= await moduleGraph
-    .get(runtime)
-    ._ensureEntryFromUrl(url, undefined, resolved)
+  mod ??= await moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
 
   // transform
   const transformStart = debugTransform ? performance.now() : 0
@@ -414,7 +412,7 @@ async function loadAndTransform(
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
   if (timestamp > mod.lastInvalidationTimestamp)
-    moduleGraph.get(runtime).updateModuleTransformResult(mod, result)
+    moduleGraph.updateModuleTransformResult(mod, result)
 
   return result
 }
@@ -515,7 +513,7 @@ async function handleModuleSoftInvalidation(
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
   if (timestamp > mod.lastInvalidationTimestamp)
-    server.moduleGraph.get(runtime).updateModuleTransformResult(mod, result)
+    server.getModuleGraph(runtime).updateModuleTransformResult(mod, result)
 
   return result
 }

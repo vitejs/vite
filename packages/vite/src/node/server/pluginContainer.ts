@@ -80,7 +80,7 @@ import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import { buildErrorMessage } from './middlewares/error'
-import type { ModuleGraphs, ModuleNode } from './moduleGraph'
+import type { EnvironmentModuleGraph, ModuleNode } from './moduleGraph'
 
 const noop = () => {}
 
@@ -153,7 +153,9 @@ type PluginContext = Omit<
 
 export async function createPluginContainer(
   config: ResolvedConfig,
-  moduleGraph?: ModuleGraphs,
+  getModuleGraph: (
+    runtime: string,
+  ) => EnvironmentModuleGraph | undefined = () => undefined,
   watcher?: FSWatcher,
 ): Promise<PluginContainer> {
   const {
@@ -312,9 +314,9 @@ export async function createPluginContainer(
       } & Partial<PartialNull<ModuleOptions>>,
     ): Promise<ModuleInfo> {
       // We may not have added this to our module graph yet, so ensure it exists
-      await moduleGraph
-        ?.get(this.runtime)
-        .ensureEntryFromUrl(unwrapId(options.id))
+      await getModuleGraph(this.runtime)?.ensureEntryFromUrl(
+        unwrapId(options.id),
+      )
       // Not all options passed to this function make sense in the context of loading individual files,
       // but we can at least update the module info properties we support
       this._updateModuleInfo(options.id, options)
@@ -342,7 +344,7 @@ export async function createPluginContainer(
     }
 
     getModuleInfo(id: string) {
-      const module = moduleGraph?.get(this.runtime).getModuleById(id)
+      const module = getModuleGraph(this.runtime)?.getModuleById(id)
       if (!module) {
         return null
       }
@@ -365,7 +367,7 @@ export async function createPluginContainer(
     }
 
     _updateModuleLoadAddedImports(id: string) {
-      const module = moduleGraph?.get(this.runtime).getModuleById(id)
+      const module = getModuleGraph(this.runtime)?.getModuleById(id)
       if (module) {
         moduleNodeToLoadAddedImports.set(module, this._addedImports)
       }
@@ -373,7 +375,7 @@ export async function createPluginContainer(
 
     getModuleIds() {
       return (
-        moduleGraph?.get(this.runtime).idToModuleMap.keys() ??
+        getModuleGraph(this.runtime)?.idToModuleMap.keys() ??
         Array.prototype[Symbol.iterator]()
       )
     }
@@ -552,7 +554,7 @@ export async function createPluginContainer(
         this.sourcemapChain.push(inMap)
       }
       // Inherit `_addedImports` from the `load()` hook
-      const node = moduleGraph?.get(this.runtime).getModuleById(id)
+      const node = getModuleGraph(this.runtime)?.getModuleById(id)
       if (node) {
         this._addedImports = moduleNodeToLoadAddedImports.get(node) ?? null
       }

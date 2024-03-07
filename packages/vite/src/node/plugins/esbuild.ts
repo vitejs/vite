@@ -483,8 +483,8 @@ async function reloadOnTsconfigChange(changedFile: string) {
     )
 
     // clear module graph to remove code compiled with outdated config
-    server.moduleGraph.runtimes.forEach((runtime) =>
-      server.moduleGraph.get(runtime).invalidateAll(),
+    server.runtimes.forEach((runtime) =>
+      server.getModuleGraph(runtime).invalidateAll(),
     )
 
     // reset tsconfck so that recompile works with up2date configs
