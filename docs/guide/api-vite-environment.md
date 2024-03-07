@@ -255,7 +255,7 @@ In the examples of the previous section, we used a guard in the `hotUpdate` hook
 function nodeOnlyPlugin() {
   return {
     name: 'node-only-plugin',
-    apply({ environment }) => environment === 'node',
+    apply: ({ environment }) => environment === 'node',
     // unguarded hooks...
   }
 }
