@@ -77,7 +77,6 @@ export function resolvePackageData(
   }
 
   const originalBasedir = basedir
-
   while (basedir) {
     if (packageCache) {
       const cached = getRpdCache(

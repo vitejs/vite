@@ -16,6 +16,6 @@
     "@vitejs/test-package-d": "link:./test-package-d",
     "@vitejs/test-package-e": "link:./test-package-e",
     "@vitejs/test-package-f": "link:./test-package-f",
-    "@vitejs/self-referencing": "link:./self-referencing"
+    "@vitejs/self-referencing": "link:../self-referencing"
   }
 }
