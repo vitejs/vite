@@ -427,7 +427,7 @@ There is a new plugin hook called `registerEnvironment` that is called after `co
 function workedPlugin() {
   return {
     name: 'vite-plugin-workerd',
-    registerEnvironment(server, environments) {
+    registerEnvironment: (server, environments) => {
       const workedEnvironment = new WorkerdEnvironment(server)
       // This environment has 'workerd' as its name, a convention agreed upon by the ecosystem
       // connect workerdEnviroment logic to its associated workerd module runner
