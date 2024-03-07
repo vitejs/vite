@@ -500,6 +500,8 @@ export interface BackwardCompatibleModuleNode extends ModuleNode {
   ssrTransformResult: TransformResult | null
   ssrModule: Record<string, any> | null
   ssrError: Error | null
+  _browserModule: ModuleNode
+  _serverModule: ModuleNode
   // TODO: ssrInvalidationState?
 }
 
@@ -536,7 +538,7 @@ export class ModuleGraph {
   idToModuleMap: Map<string, ModuleNode>
   etagToModuleMap: Map<string, ModuleNode>
 
-  fileToModulesMap = new Map<string, Set<ModuleNode>>()
+  fileToModulesMap: Map<string, Set<ModuleNode>>
 
   get safeModulesPath(): Set<string> {
     return this._browser.safeModulesPath
@@ -656,20 +658,32 @@ export class ModuleGraph {
 
   /** @deprecated */
   invalidateModule(
-    mod: ModuleNode,
+    mod: BackwardCompatibleModuleNode,
     seen: Set<ModuleNode> = new Set(),
     timestamp: number = Date.now(),
     isHmr: boolean = false,
     /** @internal */
     softInvalidate = false,
   ): void {
-    this._getModuleGraph(mod.environment).invalidateModule(
-      mod,
-      seen,
-      timestamp,
-      isHmr,
-      softInvalidate,
-    )
+    if (mod._browserModule) {
+      this._getModuleGraph('browser').invalidateModule(
+        mod._browserModule,
+        seen,
+        timestamp,
+        isHmr,
+        softInvalidate,
+      )
+    }
+    if (mod._serverModule) {
+      // TODO: Maybe this isn't needed?
+      this._getModuleGraph('server').invalidateModule(
+        mod._serverModule,
+        seen,
+        timestamp,
+        isHmr,
+        softInvalidate,
+      )
+    }
   }
 
   /** @deprecated */
@@ -678,7 +692,7 @@ export class ModuleGraph {
     this._server.invalidateAll()
   }
 
-  /** @deprecated */
+  /* TODO: I don't know if we need to implement this method (or how to do it yet)
   async updateModuleInfo(
     module: ModuleNode,
     importedModules: Set<string | ModuleNode>,
@@ -687,16 +701,15 @@ export class ModuleGraph {
     acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
     ssr?: boolean,
-    /** @internal */
-    staticImportedUrls?: Set<string>,
+    staticImportedUrls?: Set<string>, // internal
   ): Promise<Set<ModuleNode> | undefined> {
     const modules = await this._getModuleGraph(
       module.environment,
     ).updateModuleInfo(
       module,
-      importedModules,
+      importedModules, // ?
       importedBindings,
-      acceptedModules,
+      acceptedModules, // ?
       acceptedExports,
       isSelfAccepting,
       staticImportedUrls,
@@ -707,6 +720,7 @@ export class ModuleGraph {
         )
       : undefined
   }
+  */
 
   /** @deprecated */
   async ensureEntryFromUrl(
@@ -737,12 +751,14 @@ export class ModuleGraph {
 
   /** @deprecated */
   updateModuleTransformResult(
-    mod: ModuleNode,
+    mod: BackwardCompatibleModuleNode,
     result: TransformResult | null,
     ssr?: boolean,
   ): void {
     this._getModuleGraph(mod.environment).updateModuleTransformResult(
-      mod,
+      (mod.environment === 'browser'
+        ? mod._browserModule
+        : mod._serverModule) ?? mod,
       result,
     )
   }
@@ -774,9 +790,11 @@ export class ModuleGraph {
   }
 
   getBackwardCompatibleModuleNode(mod: ModuleNode): ModuleNode {
-    return mod.environment === 'browser'
-      ? this.getBackwardCompatibleBrowserModuleNode(mod)
-      : this.getBackwardCompatibleServerModuleNode(mod)
+    return mod.environment === 'mixed'
+      ? mod
+      : mod.environment === 'browser'
+        ? this.getBackwardCompatibleBrowserModuleNode(mod)
+        : this.getBackwardCompatibleServerModuleNode(mod)
   }
 
   getBackwardCompatibleModuleNodeDual(
@@ -815,6 +833,9 @@ export class ModuleGraph {
     return new Proxy((browserModule ?? serverModule)!, {
       get(_, prop: keyof BackwardCompatibleModuleNode) {
         switch (prop) {
+          case 'environment':
+            return 'mixed'
+
           case 'importers':
             return getModuleSetUnion('importers')
 
@@ -838,6 +859,12 @@ export class ModuleGraph {
 
           case 'ssrError':
             return serverModule?.error
+
+          case '_browserModule':
+            return browserModule
+
+          case '_serverModule':
+            return serverModule
 
           default:
             return browserModule?.[prop] ?? serverModule?.[prop]
