@@ -166,7 +166,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
         attributes: Record<string, string>
         custom?: CustomPluginOptions
         ssr?: boolean
-        runtime?: string
+        environment?: string
         /**
          * @internal
          */
@@ -179,7 +179,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
     (
       this: PluginContext,
       id: string,
-      options?: { ssr?: boolean; runtime?: string },
+      options?: { ssr?: boolean; environment?: string },
     ) => Promise<LoadResult> | LoadResult
   >
   transform?: ObjectHook<
@@ -187,7 +187,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: TransformPluginContext,
       code: string,
       id: string,
-      options?: { ssr?: boolean; runtime?: string },
+      options?: { ssr?: boolean; environment?: string },
     ) => Promise<TransformResult> | TransformResult
   >
 }

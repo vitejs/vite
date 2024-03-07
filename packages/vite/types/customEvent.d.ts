@@ -29,7 +29,7 @@ export interface WebSocketConnectionPayload {
 export interface InvalidatePayload {
   path: string
   message: string | undefined
-  runtime?: string
+  environment?: string
 }
 
 export type InferCustomEventPayload<T extends string> =

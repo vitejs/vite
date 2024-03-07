@@ -250,13 +250,13 @@ export interface ViteDevServer {
    */
   pluginContainer: PluginContainer
   /**
-   * Get the module graph for the given runtime
+   * Get the module graph for the given environment
    */
-  getModuleGraph(runtime: string): EnvironmentModuleGraph
+  getModuleGraph(environment: string): EnvironmentModuleGraph
   /**
-   * Available module graph runtimes
+   * Available module graph environments
    */
-  runtimes: string[]
+  environments: string[]
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -456,23 +456,23 @@ export async function _createServer(
     : createNoopWatcher(resolvedWatchOptions)
 
   const browserModuleGraph = new EnvironmentModuleGraph('browser', (url) =>
-    container.resolveId(url, undefined, { ssr: false, runtime: 'browser' }),
+    container.resolveId(url, undefined, { ssr: false, environment: 'browser' }),
   )
   const serverModuleGraph = new EnvironmentModuleGraph('server', (url) =>
-    container.resolveId(url, undefined, { ssr: true, runtime: 'server' }),
+    container.resolveId(url, undefined, { ssr: true, environment: 'server' }),
   )
   const moduleGraph = new ModuleGraph({
     browser: browserModuleGraph,
     server: serverModuleGraph,
   })
-  const runtimes = ['browser', 'server']
-  const getModuleGraph = (runtime: string) => {
-    if (runtime === 'browser') {
+  const environments = ['browser', 'server']
+  const getModuleGraph = (environment: string) => {
+    if (environment === 'browser') {
       return browserModuleGraph
-    } else if (runtime === 'server') {
+    } else if (environment === 'server') {
       return serverModuleGraph
     } else {
-      throw new Error(`Invalid module graph runtime: ${runtime}`)
+      throw new Error(`Invalid module graph runtime: ${environment}`)
     }
   }
 
@@ -492,7 +492,7 @@ export async function _createServer(
     ws,
     hot,
     getModuleGraph,
-    runtimes,
+    environments,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
     ssrTransform(
@@ -750,7 +750,9 @@ export async function _createServer(
     file = normalizePath(file)
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
-    runtimes.forEach((runtime) => getModuleGraph(runtime).onFileChange(file))
+    environments.forEach((environment) =>
+      getModuleGraph(environment).onFileChange(file),
+    )
     await onHMRUpdate(file, false)
   })
 
@@ -766,9 +768,9 @@ export async function _createServer(
   function invalidateModule(m: {
     path: string
     message?: string
-    runtime: string
+    environment: string
   }) {
-    const mod = getModuleGraph(m.runtime).urlToModuleMap.get(m.path)
+    const mod = getModuleGraph(m.environment).urlToModuleMap.get(m.path)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
       config.logger.info(
         colors.yellow(`hmr invalidate `) +
@@ -787,12 +789,12 @@ export async function _createServer(
     }
   }
 
-  hot.on('vite:invalidate', async ({ path, message, runtime }) => {
-    if (runtime) {
-      invalidateModule({ path, message, runtime })
+  hot.on('vite:invalidate', async ({ path, message, environment }) => {
+    if (environment) {
+      invalidateModule({ path, message, environment })
     } else {
-      runtimes.forEach((runtime) => {
-        invalidateModule({ path, message, runtime })
+      environments.forEach((environment) => {
+        invalidateModule({ path, message, environment })
       })
     }
   })

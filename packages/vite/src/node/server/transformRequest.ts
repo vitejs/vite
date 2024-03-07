@@ -45,7 +45,7 @@ export interface TransformResult {
 
 export interface TransformOptions {
   ssr?: boolean
-  runtime?: string
+  environment?: string
   html?: boolean
 }
 
@@ -56,13 +56,14 @@ export function transformRequest(
 ): Promise<TransformResult | null> {
   if (server._restartPromise && !options.ssr) throwClosedServerError()
 
-  const runtime = options.runtime ?? (options.ssr ? 'server' : 'browser')
+  const environment =
+    options.environment ?? (options.ssr ? 'server' : 'browser')
   const cacheKey =
-    (options.runtime === 'browser'
+    (options.environment === 'browser'
       ? options.html
         ? 'html:'
         : ''
-      : `${options.runtime}:`) + url
+      : `${options.environment}:`) + url
 
   // This module may get invalidated while we are processing it. For example
   // when a full page reload is needed after the re-processing of pre-bundled
@@ -89,7 +90,7 @@ export function transformRequest(
   const pending = server._pendingRequests.get(cacheKey)
   if (pending) {
     return server
-      .getModuleGraph(runtime)
+      .getModuleGraph(environment)
       .getModuleByUrl(removeTimestampQuery(url))
       .then((module) => {
         if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
@@ -139,20 +140,21 @@ async function doTransform(
 
   const { config, pluginContainer } = server
   const ssr = !!options.ssr
-  const runtime = options.runtime ?? (options.ssr ? 'server' : 'browser')
+  const environment =
+    options.environment ?? (options.ssr ? 'server' : 'browser')
 
   if (ssr && isDepsOptimizerEnabled(config, true)) {
     await initDevSsrDepsOptimizer(config, server)
   }
 
-  let module = await server.getModuleGraph(runtime).getModuleByUrl(url)
+  let module = await server.getModuleGraph(environment).getModuleByUrl(url)
   if (module) {
     // try use cache from url
     const cached = await getCachedTransformResult(
       url,
       module,
       server,
-      runtime,
+      environment,
       timestamp,
     )
     if (cached) return cached
@@ -160,24 +162,24 @@ async function doTransform(
 
   const resolved = module
     ? undefined
-    : (await pluginContainer.resolveId(url, undefined, { ssr, runtime })) ??
+    : (await pluginContainer.resolveId(url, undefined, { ssr, environment })) ??
       undefined
 
   // resolve
   const id = module?.id ?? resolved?.id ?? url
 
-  module ??= server.getModuleGraph(runtime).getModuleById(id)
+  module ??= server.getModuleGraph(environment).getModuleById(id)
   if (module) {
     // if a different url maps to an existing loaded id,  make sure we relate this url to the id
     await server
-      .getModuleGraph(runtime)
+      .getModuleGraph(environment)
       ._ensureEntryFromUrl(url, undefined, resolved)
     // try use cache from id
     const cached = await getCachedTransformResult(
       url,
       module,
       server,
-      runtime,
+      environment,
       timestamp,
     )
     if (cached) return cached
@@ -202,7 +204,7 @@ async function getCachedTransformResult(
   url: string,
   module: ModuleNode,
   server: ViteDevServer,
-  runtime: string,
+  environment: string,
   timestamp: number,
 ) {
   const prettyUrl = debugCache ? prettifyUrl(url, server.config.root) : ''
@@ -211,7 +213,7 @@ async function getCachedTransformResult(
   // returns a boolean true is successful, or false if no handling is needed
   const softInvalidatedTransformResult =
     module &&
-    (await handleModuleSoftInvalidation(module, runtime, timestamp, server))
+    (await handleModuleSoftInvalidation(module, environment, timestamp, server))
   if (softInvalidatedTransformResult) {
     debugCache?.(`[memory-hmr] ${prettyUrl}`)
     return softInvalidatedTransformResult
@@ -239,8 +241,8 @@ async function loadAndTransform(
   const prettyUrl =
     debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
-  const runtime = options.runtime ?? 'browser'
-  const moduleGraph = server.getModuleGraph(runtime)
+  const environment = options.environment ?? 'browser'
+  const moduleGraph = server.getModuleGraph(environment)
 
   const file = cleanUrl(id)
 
@@ -249,7 +251,7 @@ async function loadAndTransform(
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id, { ssr, runtime })
+  const loadResult = await pluginContainer.load(id, { ssr, environment })
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
     // SPA fallback.
@@ -335,7 +337,7 @@ async function loadAndTransform(
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
     ssr,
-    runtime,
+    environment,
   })
   const originalCode = code
   if (
@@ -435,7 +437,7 @@ function createConvertSourceMapReadMap(originalFileName: string) {
  */
 async function handleModuleSoftInvalidation(
   mod: ModuleNode,
-  runtime: string,
+  environment: string,
   timestamp: number,
   server: ViteDevServer,
 ) {
@@ -455,7 +457,7 @@ async function handleModuleSoftInvalidation(
 
   let result: TransformResult
   // For SSR soft-invalidation, no transformation is needed
-  if (runtime !== 'browser') {
+  if (environment !== 'browser') {
     result = transformResult
   }
   // For client soft-invalidation, we need to transform each imports with new timestamps if available
@@ -493,7 +495,7 @@ async function handleModuleSoftInvalidation(
 
         if (imp.d === -1 && server.config.server.preTransformRequests) {
           // pre-transform known direct imports
-          server.warmupRequest(hmrUrl, { runtime })
+          server.warmupRequest(hmrUrl, { environment })
         }
 
         break
@@ -513,7 +515,7 @@ async function handleModuleSoftInvalidation(
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
   if (timestamp > mod.lastInvalidationTimestamp)
-    server.getModuleGraph(runtime).updateModuleTransformResult(mod, result)
+    server.getModuleGraph(environment).updateModuleTransformResult(mod, result)
 
   return result
 }

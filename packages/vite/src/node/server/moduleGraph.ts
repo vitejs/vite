@@ -11,7 +11,7 @@ import { cleanUrl } from '../../shared/utils'
 import type { TransformResult } from './transformRequest'
 
 export class ModuleNode {
-  runtime: string
+  environment: string
   /**
    * Public served url path, starts with /
    */
@@ -65,8 +65,8 @@ export class ModuleNode {
   /**
    * @param setIsSelfAccepting - set `false` to set `isSelfAccepting` later. e.g. #7870
    */
-  constructor(url: string, runtime: string, setIsSelfAccepting = true) {
-    this.runtime = runtime
+  constructor(url: string, environment: string, setIsSelfAccepting = true) {
+    this.environment = environment
     this.url = url
     this.type = isDirectCSSRequest(url) ? 'css' : 'js'
     if (setIsSelfAccepting) {
@@ -77,7 +77,7 @@ export class ModuleNode {
   // Backward compatibility
   /** @deprecated */
   get ssrTransformResult(): TransformResult | null {
-    return this.runtime === 'server' ? this.transformResult : null
+    return this.environment === 'server' ? this.transformResult : null
   }
   /** @deprecated */
   get ssrModule(): Record<string, any> | null {
@@ -89,14 +89,14 @@ export class ModuleNode {
   }
   /** @deprecated */
   get clientImportedModules(): Set<ModuleNode> {
-    if (this.runtime !== 'browser') {
+    if (this.environment !== 'browser') {
       throw new Error('clientImportedModules accessed in a node module node')
     }
     return this.importedModules
   }
   /** @deprecated */
   get ssrImportedModules(): Set<ModuleNode> {
-    if (this.runtime !== 'browser') {
+    if (this.environment !== 'browser') {
       throw new Error('ssrImportedModules accessed in a browser module node')
     }
     return this.importedModules
@@ -110,7 +110,7 @@ export type ResolvedUrl = [
 ]
 
 export class EnvironmentModuleGraph {
-  runtime: string
+  environment: string
 
   urlToModuleMap = new Map<string, ModuleNode>()
   idToModuleMap = new Map<string, ModuleNode>()
@@ -135,10 +135,10 @@ export class EnvironmentModuleGraph {
   _resolveId: (url: string) => Promise<PartialResolvedId | null>
 
   constructor(
-    runtime: string,
+    environment: string,
     resolveId: (url: string) => Promise<PartialResolvedId | null>,
   ) {
-    this.runtime = runtime
+    this.environment = environment
     this._resolveId = resolveId
   }
 
@@ -367,7 +367,7 @@ export class EnvironmentModuleGraph {
       const [url, resolvedId, meta] = await this._resolveUrl(rawUrl, resolved)
       mod = this.idToModuleMap.get(resolvedId)
       if (!mod) {
-        mod = new ModuleNode(url, this.runtime, setIsSelfAccepting)
+        mod = new ModuleNode(url, this.environment, setIsSelfAccepting)
         if (meta) mod.meta = meta
         this.urlToModuleMap.set(url, mod)
         mod.id = resolvedId
@@ -414,7 +414,7 @@ export class EnvironmentModuleGraph {
       }
     }
 
-    const mod = new ModuleNode(url, this.runtime)
+    const mod = new ModuleNode(url, this.environment)
     mod.file = file
     fileMappedModules.add(mod)
     return mod
@@ -437,7 +437,7 @@ export class EnvironmentModuleGraph {
     mod: ModuleNode,
     result: TransformResult | null,
   ): void {
-    if (this.runtime === 'browser') {
+    if (this.environment === 'browser') {
       const prevEtag = mod.transformResult?.etag
       if (prevEtag) this.etagToModuleMap.delete(prevEtag)
       if (result?.etag) this.etagToModuleMap.set(result.etag, mod)
@@ -643,14 +643,14 @@ export class ModuleGraph {
   }
 
   /** @internal */
-  _getModuleGraph(runtime: string): EnvironmentModuleGraph {
-    switch (runtime) {
+  _getModuleGraph(environment: string): EnvironmentModuleGraph {
+    switch (environment) {
       case 'browser':
         return this._browser
       case 'server':
         return this._server
       default:
-        throw new Error(`Invalid module node runtime ${runtime}`)
+        throw new Error(`Invalid module node runtime ${environment}`)
     }
   }
 
@@ -663,7 +663,7 @@ export class ModuleGraph {
     /** @internal */
     softInvalidate = false,
   ): void {
-    this._getModuleGraph(mod.runtime).invalidateModule(
+    this._getModuleGraph(mod.environment).invalidateModule(
       mod,
       seen,
       timestamp,
@@ -690,7 +690,9 @@ export class ModuleGraph {
     /** @internal */
     staticImportedUrls?: Set<string>,
   ): Promise<Set<ModuleNode> | undefined> {
-    const modules = await this._getModuleGraph(module.runtime).updateModuleInfo(
+    const modules = await this._getModuleGraph(
+      module.environment,
+    ).updateModuleInfo(
       module,
       importedModules,
       importedBindings,
@@ -739,7 +741,10 @@ export class ModuleGraph {
     result: TransformResult | null,
     ssr?: boolean,
   ): void {
-    this._getModuleGraph(mod.runtime).updateModuleTransformResult(mod, result)
+    this._getModuleGraph(mod.environment).updateModuleTransformResult(
+      mod,
+      result,
+    )
   }
 
   /** @deprecated */
@@ -769,7 +774,7 @@ export class ModuleGraph {
   }
 
   getBackwardCompatibleModuleNode(mod: ModuleNode): ModuleNode {
-    return mod.runtime === 'browser'
+    return mod.environment === 'browser'
       ? this.getBackwardCompatibleBrowserModuleNode(mod)
       : this.getBackwardCompatibleServerModuleNode(mod)
   }
@@ -858,7 +863,7 @@ function createBackwardCompatibleModuleSet(
         return false
       }
       const keyModule = moduleGraph
-        ._getModuleGraph(module.runtime)
+        ._getModuleGraph(module.environment)
         .getModuleById(key.id)
       return keyModule !== undefined && module[prop].has(keyModule)
     },

@@ -214,7 +214,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const ssr = options?.ssr === true
-      const runtime = options?.runtime ?? 'browser'
+      const environment = options?.environment ?? 'browser'
 
       if (canSkipImportAnalysis(importer)) {
         debug?.(colors.dim(`[skipped] ${prettifyUrl(importer, root)}`))
@@ -239,7 +239,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const depsOptimizer = getDepsOptimizer(config, ssr)
 
-      const moduleGraph = server.getModuleGraph(runtime)
+      const moduleGraph = server.getModuleGraph(environment)
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
       const importerModule = moduleGraph.getModuleById(importer)

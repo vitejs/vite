@@ -941,8 +941,8 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const runtime = options?.runtime ?? 'browser'
-      const moduleGraph = server?.getModuleGraph(runtime)
+      const environment = options?.environment ?? 'browser'
+      const moduleGraph = server?.getModuleGraph(environment)
       const thisModule = moduleGraph?.getModuleById(id)
 
       // Handle CSS @import dependency HMR and other added modules via this.addWatchFile.

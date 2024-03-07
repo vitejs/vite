@@ -44,7 +44,7 @@ export interface HotUpdateContext {
   modules: Array<ModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
-  runtime: string
+  environment: string
 }
 
 /**
@@ -177,7 +177,7 @@ export async function handleHMRUpdate(
   server: ViteDevServer,
   configOnly: boolean,
 ): Promise<void> {
-  const { hot, config, moduleGraph } = server
+  const { hot, config } = server
   const shortFile = getShortName(file, config.root)
 
   const isConfig = file === config.configFile
@@ -244,7 +244,7 @@ export async function handleHMRUpdate(
     read: () => readModifiedFile(file),
     server,
     // later on hotUpdate will be called for each runtime with a new hotContext
-    runtime: 'browser',
+    environment: 'browser',
   }
 
   let hmrContext
@@ -263,7 +263,7 @@ export async function handleHMRUpdate(
       hmrContext ??= {
         ...hotContext,
         modules: hotContext.modules.map((mod) =>
-          moduleGraph.getBackwardCompatibleModuleNode(mod),
+          server.moduleGraph.getBackwardCompatibleModuleNode(mod),
         ),
       } as HmrContext
       const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(
@@ -327,7 +327,7 @@ export function updateModules(
     // TODO: we don't need NodeModule to have the runtime if we pass it to updateModules
     // it still seems useful to know the runtime for a given module
     server
-      .getModuleGraph(mod.runtime)
+      .getModuleGraph(mod.environment)
       .invalidateModule(mod, invalidatedModules, timestamp, true)
 
     if (needFullReload) {
@@ -422,9 +422,9 @@ export async function handleFileAddUnlink(
   server: ViteDevServer,
   isUnlink: boolean,
 ): Promise<void> {
-  server.runtimes.forEach((runtime) => {
+  server.environments.forEach((environment) => {
     const modules = [
-      ...(server.getModuleGraph(runtime).getModulesByFile(file) || []),
+      ...(server.getModuleGraph(environment).getModulesByFile(file) || []),
     ]
 
     if (isUnlink) {

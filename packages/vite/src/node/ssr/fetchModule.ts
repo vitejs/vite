@@ -84,7 +84,7 @@ export async function fetchModule(
 
   let result = await server.transformRequest(url, {
     ssr: true,
-    runtime: 'server',
+    environment: 'server',
   })
 
   if (!result) {

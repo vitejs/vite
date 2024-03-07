@@ -114,7 +114,7 @@ export interface PluginContainer {
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
-      runtime?: string
+      environment?: string
       /**
        * @internal
        */
@@ -128,14 +128,14 @@ export interface PluginContainer {
     options?: {
       inMap?: SourceDescription['map']
       ssr?: boolean
-      runtime?: string
+      environment?: string
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }>
   load(
     id: string,
     options?: {
       ssr?: boolean
-      runtime?: string
+      environment?: string
     },
   ): Promise<LoadResult | null>
   watchChange(
@@ -154,7 +154,7 @@ type PluginContext = Omit<
 export async function createPluginContainer(
   config: ResolvedConfig,
   getModuleGraph: (
-    runtime: string,
+    environment: string,
   ) => EnvironmentModuleGraph | undefined = () => undefined,
   watcher?: FSWatcher,
 ): Promise<PluginContainer> {
@@ -263,7 +263,7 @@ export async function createPluginContainer(
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
-    runtime = 'browser'
+    environment = 'browser'
     _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
@@ -300,7 +300,7 @@ export async function createPluginContainer(
         isEntry: !!options?.isEntry,
         skip,
         ssr: this.ssr,
-        runtime: this.runtime,
+        environment: this.environment,
         scan: this._scan,
       })
       if (typeof out === 'string') out = { id: out }
@@ -314,7 +314,7 @@ export async function createPluginContainer(
       } & Partial<PartialNull<ModuleOptions>>,
     ): Promise<ModuleInfo> {
       // We may not have added this to our module graph yet, so ensure it exists
-      await getModuleGraph(this.runtime)?.ensureEntryFromUrl(
+      await getModuleGraph(this.environment)?.ensureEntryFromUrl(
         unwrapId(options.id),
       )
       // Not all options passed to this function make sense in the context of loading individual files,
@@ -323,14 +323,14 @@ export async function createPluginContainer(
 
       const loadResult = await container.load(options.id, {
         ssr: this.ssr,
-        runtime: this.runtime,
+        environment: this.environment,
       })
       const code =
         typeof loadResult === 'object' ? loadResult?.code : loadResult
       if (code != null) {
         await container.transform(code, options.id, {
           ssr: this.ssr,
-          runtime: this.runtime,
+          environment: this.environment,
         })
       }
 
@@ -344,7 +344,7 @@ export async function createPluginContainer(
     }
 
     getModuleInfo(id: string) {
-      const module = getModuleGraph(this.runtime)?.getModuleById(id)
+      const module = getModuleGraph(this.environment)?.getModuleById(id)
       if (!module) {
         return null
       }
@@ -367,7 +367,7 @@ export async function createPluginContainer(
     }
 
     _updateModuleLoadAddedImports(id: string) {
-      const module = getModuleGraph(this.runtime)?.getModuleById(id)
+      const module = getModuleGraph(this.environment)?.getModuleById(id)
       if (module) {
         moduleNodeToLoadAddedImports.set(module, this._addedImports)
       }
@@ -375,7 +375,7 @@ export async function createPluginContainer(
 
     getModuleIds() {
       return (
-        getModuleGraph(this.runtime)?.idToModuleMap.keys() ??
+        getModuleGraph(this.environment)?.idToModuleMap.keys() ??
         Array.prototype[Symbol.iterator]()
       )
     }
@@ -554,7 +554,7 @@ export async function createPluginContainer(
         this.sourcemapChain.push(inMap)
       }
       // Inherit `_addedImports` from the `load()` hook
-      const node = getModuleGraph(this.runtime)?.getModuleById(id)
+      const node = getModuleGraph(this.environment)?.getModuleById(id)
       if (node) {
         this._addedImports = moduleNodeToLoadAddedImports.get(node) ?? null
       }
@@ -675,11 +675,11 @@ export async function createPluginContainer(
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
       const skip = options?.skip
       const ssr = options?.ssr
-      const runtime = options?.runtime
+      const environment = options?.environment
       const scan = !!options?.scan
       const ctx = new Context()
       ctx.ssr = !!ssr
-      ctx.runtime = runtime ?? 'browser'
+      ctx.environment = environment ?? 'browser'
       ctx._scan = scan
       ctx._resolveSkips = skip
       const resolveStart = debugResolve ? performance.now() : 0
@@ -700,7 +700,7 @@ export async function createPluginContainer(
             custom: options?.custom,
             isEntry: !!options?.isEntry,
             ssr,
-            runtime,
+            environment,
             scan,
           }),
         )
@@ -746,17 +746,17 @@ export async function createPluginContainer(
 
     async load(id, options) {
       const ssr = options?.ssr
-      const runtime = options?.runtime
+      const environment = options?.environment
       const ctx = new Context()
       ctx.ssr = !!ssr
-      ctx.runtime = runtime ?? 'browser'
+      ctx.environment = environment ?? 'browser'
       for (const plugin of getSortedPlugins('load')) {
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.load) continue
         ctx._activePlugin = plugin
         const handler = getHookHandler(plugin.load)
         const result = await handleHookPromise(
-          handler.call(ctx as any, id, { ssr, runtime }),
+          handler.call(ctx as any, id, { ssr, environment }),
         )
         if (result != null) {
           if (isObject(result)) {
@@ -773,10 +773,10 @@ export async function createPluginContainer(
     async transform(code, id, options) {
       const inMap = options?.inMap
       const ssr = options?.ssr
-      const runtime = options?.runtime
+      const environment = options?.environment
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       ctx.ssr = !!ssr
-      ctx.runtime = runtime ?? 'browser'
+      ctx.environment = environment ?? 'browser'
       for (const plugin of getSortedPlugins('transform')) {
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.transform) continue
@@ -788,7 +788,7 @@ export async function createPluginContainer(
         const handler = getHookHandler(plugin.transform)
         try {
           result = await handleHookPromise(
-            handler.call(ctx as any, code, id, { ssr, runtime }),
+            handler.call(ctx as any, code, id, { ssr, environment }),
           )
         } catch (e) {
           ctx.error(e)
