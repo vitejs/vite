@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { ModuleGraph } from '../moduleGraph'
+import { EnvironmentModuleGraph } from '../moduleGraph'
 
 describe('moduleGraph', () => {
   describe('invalidateModule', () => {
     it('removes an ssr error', async () => {
-      const moduleGraph = new ModuleGraph('browser', async (url) => ({
-        id: url,
-      }))
+      const moduleGraph = new EnvironmentModuleGraph(
+        'browser',
+        async (url) => ({
+          id: url,
+        }),
+      )
       const entryUrl = '/x.js'
 
       const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
@@ -18,7 +21,7 @@ describe('moduleGraph', () => {
     })
 
     it('ensureEntryFromUrl should based on resolvedId', async () => {
-      const moduleGraph = new ModuleGraph('browser', async (url) => {
+      const moduleGraph = new EnvironmentModuleGraph('browser', async (url) => {
         if (url === '/xx.js') {
           return { id: '/x.js' }
         } else {
