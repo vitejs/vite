@@ -842,7 +842,7 @@ export function createParseErrorInfo(
   }
 }
 // prettier-ignore
-const interopHelper = (m: any) => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) ? m : {}), default: m }
+const interopHelper = (m: any) => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) || typeof m === 'function' ? m : {}), default: m }
 
 export function interopNamedImports(
   str: MagicString,
