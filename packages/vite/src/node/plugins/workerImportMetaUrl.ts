@@ -4,14 +4,9 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import {
-  cleanUrl,
-  evalValue,
-  injectQuery,
-  slash,
-  transformStableResult,
-} from '../utils'
+import { evalValue, injectQuery, transformStableResult } from '../utils'
 import type { ResolveFn } from '..'
+import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
@@ -170,22 +165,30 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 : slash(path.resolve(path.dirname(id), url))
           }
 
-          let builtUrl: string
-          if (isBuild) {
-            builtUrl = await workerFileToUrl(config, file)
+          if (
+            isBuild &&
+            config.isWorker &&
+            this.getModuleInfo(cleanUrl(file))?.isEntry
+          ) {
+            s.update(expStart, expEnd, 'self.location.href')
           } else {
-            builtUrl = await fileToUrl(cleanUrl(file), config, this)
-            builtUrl = injectQuery(
-              builtUrl,
-              `${WORKER_FILE_ID}&type=${workerType}`,
+            let builtUrl: string
+            if (isBuild) {
+              builtUrl = await workerFileToUrl(config, file)
+            } else {
+              builtUrl = await fileToUrl(cleanUrl(file), config, this)
+              builtUrl = injectQuery(
+                builtUrl,
+                `${WORKER_FILE_ID}&type=${workerType}`,
+              )
+            }
+            s.update(
+              expStart,
+              expEnd,
+              // add `'' +` to skip vite:asset-import-meta-url plugin
+              `new URL('' + ${JSON.stringify(builtUrl)}, import.meta.url)`,
             )
           }
-          s.update(
-            expStart,
-            expEnd,
-            // add `'' +` to skip vite:asset-import-meta-url plugin
-            `new URL('' + ${JSON.stringify(builtUrl)}, import.meta.url)`,
-          )
         }
 
         if (s) {

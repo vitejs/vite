@@ -1,3 +1,60 @@
+## <small>5.1.5 (2024-03-04)</small>
+
+* fix: `__vite__mapDeps` code injection (#15732) ([aff54e1](https://github.com/vitejs/vite/commit/aff54e1)), closes [#15732](https://github.com/vitejs/vite/issues/15732)
+* fix: analysing build chunk without dependencies (#15469) ([bd52283](https://github.com/vitejs/vite/commit/bd52283)), closes [#15469](https://github.com/vitejs/vite/issues/15469)
+* fix: import with query with imports field (#16085) ([ab823ab](https://github.com/vitejs/vite/commit/ab823ab)), closes [#16085](https://github.com/vitejs/vite/issues/16085)
+* fix: normalize literal-only entry pattern (#16010) ([1dccc37](https://github.com/vitejs/vite/commit/1dccc37)), closes [#16010](https://github.com/vitejs/vite/issues/16010)
+* fix: optimizeDeps.entries with literal-only pattern(s) (#15853) ([49300b3](https://github.com/vitejs/vite/commit/49300b3)), closes [#15853](https://github.com/vitejs/vite/issues/15853)
+* fix: output correct error for empty import specifier (#16055) ([a9112eb](https://github.com/vitejs/vite/commit/a9112eb)), closes [#16055](https://github.com/vitejs/vite/issues/16055)
+* fix: upgrade esbuild to 0.20.x (#16062) ([899d9b1](https://github.com/vitejs/vite/commit/899d9b1)), closes [#16062](https://github.com/vitejs/vite/issues/16062)
+* fix(runtime): runtime HMR affects only imported files (#15898) ([57463fc](https://github.com/vitejs/vite/commit/57463fc)), closes [#15898](https://github.com/vitejs/vite/issues/15898)
+* fix(scanner): respect  `experimentalDecorators: true` (#15206) ([4144781](https://github.com/vitejs/vite/commit/4144781)), closes [#15206](https://github.com/vitejs/vite/issues/15206)
+* revert: "fix: upgrade esbuild to 0.20.x" (#16072) ([11cceea](https://github.com/vitejs/vite/commit/11cceea)), closes [#16072](https://github.com/vitejs/vite/issues/16072)
+* refactor: share code with vite runtime (#15907) ([b20d542](https://github.com/vitejs/vite/commit/b20d542)), closes [#15907](https://github.com/vitejs/vite/issues/15907)
+* refactor(runtime): use functions from `pathe` (#16061) ([aac2ef7](https://github.com/vitejs/vite/commit/aac2ef7)), closes [#16061](https://github.com/vitejs/vite/issues/16061)
+* chore(deps): update all non-major dependencies (#16028) ([7cfe80d](https://github.com/vitejs/vite/commit/7cfe80d)), closes [#16028](https://github.com/vitejs/vite/issues/16028)
+
+
+
+## <small>5.1.4 (2024-02-21)</small>
+
+* perf: remove unnecessary regex s modifier (#15766) ([8dc1b73](https://github.com/vitejs/vite/commit/8dc1b73)), closes [#15766](https://github.com/vitejs/vite/issues/15766)
+* fix: fs cached checks disabled by default for yarn pnp (#15920) ([8b11fea](https://github.com/vitejs/vite/commit/8b11fea)), closes [#15920](https://github.com/vitejs/vite/issues/15920)
+* fix: resolve directory correctly when `fs.cachedChecks: true` (#15983) ([4fe971f](https://github.com/vitejs/vite/commit/4fe971f)), closes [#15983](https://github.com/vitejs/vite/issues/15983)
+* fix: srcSet with optional descriptor (#15905) ([81b3bd0](https://github.com/vitejs/vite/commit/81b3bd0)), closes [#15905](https://github.com/vitejs/vite/issues/15905)
+* fix(deps): update all non-major dependencies (#15959) ([571a3fd](https://github.com/vitejs/vite/commit/571a3fd)), closes [#15959](https://github.com/vitejs/vite/issues/15959)
+* fix(watch): build watch fails when outDir is empty string (#15979) ([1d263d3](https://github.com/vitejs/vite/commit/1d263d3)), closes [#15979](https://github.com/vitejs/vite/issues/15979)
+
+
+
+## <small>5.1.3 (2024-02-15)</small>
+
+* fix: cachedTransformMiddleware for direct css requests (#15919) ([5099028](https://github.com/vitejs/vite/commit/5099028)), closes [#15919](https://github.com/vitejs/vite/issues/15919)
+* refactor(runtime): minor tweaks (#15904) ([63a39c2](https://github.com/vitejs/vite/commit/63a39c2)), closes [#15904](https://github.com/vitejs/vite/issues/15904)
+* refactor(runtime): seal ES module namespace object instead of feezing (#15914) ([4172f02](https://github.com/vitejs/vite/commit/4172f02)), closes [#15914](https://github.com/vitejs/vite/issues/15914)
+
+
+
+## <small>5.1.2 (2024-02-14)</small>
+
+* fix: normalize import file path info (#15772) ([306df44](https://github.com/vitejs/vite/commit/306df44)), closes [#15772](https://github.com/vitejs/vite/issues/15772)
+* fix(build): do not output build time when build fails (#15711) ([added3e](https://github.com/vitejs/vite/commit/added3e)), closes [#15711](https://github.com/vitejs/vite/issues/15711)
+* fix(runtime): pass path instead of fileURL to `isFilePathESM` (#15908) ([7b15607](https://github.com/vitejs/vite/commit/7b15607)), closes [#15908](https://github.com/vitejs/vite/issues/15908)
+* fix(worker): support UTF-8 encoding in inline workers (fixes #12117) (#15866) ([570e0f1](https://github.com/vitejs/vite/commit/570e0f1)), closes [#12117](https://github.com/vitejs/vite/issues/12117) [#15866](https://github.com/vitejs/vite/issues/15866)
+* chore: update license file (#15885) ([d9adf18](https://github.com/vitejs/vite/commit/d9adf18)), closes [#15885](https://github.com/vitejs/vite/issues/15885)
+* chore(deps): update all non-major dependencies (#15874) ([d16ce5d](https://github.com/vitejs/vite/commit/d16ce5d)), closes [#15874](https://github.com/vitejs/vite/issues/15874)
+* chore(deps): update dependency dotenv-expand to v11 (#15875) ([642d528](https://github.com/vitejs/vite/commit/642d528)), closes [#15875](https://github.com/vitejs/vite/issues/15875)
+
+
+
+## <small>5.1.1 (2024-02-09)</small>
+
+* fix: empty CSS file was output when only .css?url is used (#15846) ([b2873ac](https://github.com/vitejs/vite/commit/b2873ac)), closes [#15846](https://github.com/vitejs/vite/issues/15846)
+* fix: skip not only .js but also .mjs manifest entries (#15841) ([3d860e7](https://github.com/vitejs/vite/commit/3d860e7)), closes [#15841](https://github.com/vitejs/vite/issues/15841)
+* chore: post 5.1 release edits (#15840) ([9da6502](https://github.com/vitejs/vite/commit/9da6502)), closes [#15840](https://github.com/vitejs/vite/issues/15840)
+
+
+
 ## 5.1.0 (2024-02-08)
 
 Vite 5.1 is out! Read the announcement blog post at https://vitejs.dev/blog/announcing-vite5-1!

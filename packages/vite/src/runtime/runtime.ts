@@ -1,5 +1,17 @@
 import type { ViteHotContext } from 'types/hot'
-import { HMRClient, HMRContext } from '../../../shared/hmr'
+import { HMRClient, HMRContext } from '../shared/hmr'
+import {
+  cleanUrl,
+  isPrimitive,
+  isWindows,
+  slash,
+  unwrapId,
+  wrapId,
+} from '../shared/utils'
+import {
+  analyzeImportedModDifference,
+  proxyGuardOnlyEsm,
+} from '../shared/ssrTransform'
 import { ModuleCacheMap } from './moduleCache'
 import type {
   FetchResult,
@@ -12,15 +24,10 @@ import type {
   ViteRuntimeOptions,
 } from './types'
 import {
-  cleanUrl,
-  isPrimitive,
-  isWindows,
   posixDirname,
   posixPathToFileHref,
   posixResolve,
   toWindowsPath,
-  unwrapId,
-  wrapId,
 } from './utils'
 import {
   ssrDynamicImportKey,
@@ -72,7 +79,7 @@ export class ViteRuntime {
           : options.hmr.logger || console,
         options.hmr.connection,
         ({ acceptedPath, ssrInvalidates }) => {
-          this.moduleCache.delete(acceptedPath)
+          this.moduleCache.invalidate(acceptedPath)
           if (ssrInvalidates) {
             this.invalidateFiles(ssrInvalidates)
           }
@@ -140,7 +147,7 @@ export class ViteRuntime {
     files.forEach((file) => {
       const ids = this.fileToIdMap.get(file)
       if (ids) {
-        ids.forEach((id) => this.moduleCache.deleteByModuleId(id))
+        ids.forEach((id) => this.moduleCache.invalidate(id))
       }
     })
   }
@@ -158,7 +165,7 @@ export class ViteRuntime {
       // 8 is the length of "file:///"
       url = url.slice(isWindows ? 8 : 7)
     }
-    url = url.replace(/\\/g, '/')
+    url = slash(url)
     const _root = this.options.root
     const root = _root[_root.length - 1] === '/' ? _root : `${_root}/`
     // strip root from the URL because fetchModule prefers a public served url path
@@ -218,21 +225,20 @@ export class ViteRuntime {
         return this.processImport(mod.exports, fetchedModule, metadata)
     }
 
-    const getStack = () =>
-      `stack:\n${[...callstack, moduleId]
-        .reverse()
-        .map((p) => `  - ${p}`)
-        .join('\n')}`
-
     let debugTimer: any
-    if (this.debug)
-      debugTimer = setTimeout(
-        () =>
-          this.debug!(
-            `[vite-runtime] module ${moduleId} takes over 2s to load.\n${getStack()}`,
-          ),
-        2000,
-      )
+    if (this.debug) {
+      debugTimer = setTimeout(() => {
+        const getStack = () =>
+          `stack:\n${[...callstack, moduleId]
+            .reverse()
+            .map((p) => `  - ${p}`)
+            .join('\n')}`
+
+        this.debug!(
+          `[vite-runtime] module ${moduleId} takes over 2s to load.\n${getStack()}`,
+        )
+      }, 2000)
+    }
 
     try {
       // cached module
@@ -266,7 +272,7 @@ export class ViteRuntime {
     this.debug?.('[vite-runtime] fetching', id)
     // fast return for established externalized patterns
     const fetchedModule = id.startsWith('data:')
-      ? ({ externalize: id, type: 'builtin' } as FetchResult)
+      ? ({ externalize: id, type: 'builtin' } satisfies FetchResult)
       : await this.options.fetchModule(id, importer)
     // base moduleId on "file" and not on id
     // if `import(variable)` is called it's possible that it doesn't have an extension for example
@@ -425,63 +431,4 @@ function exportAll(exports: any, sourceModule: any) {
       } catch (_err) {}
     }
   }
-}
-
-/**
- * Vite converts `import { } from 'foo'` to `const _ = __vite_ssr_import__('foo')`.
- * Top-level imports and dynamic imports work slightly differently in Node.js.
- * This function normalizes the differences so it matches prod behaviour.
- */
-function analyzeImportedModDifference(
-  mod: any,
-  rawId: string,
-  moduleType: string | undefined,
-  metadata?: SSRImportMetadata,
-) {
-  // No normalization needed if the user already dynamic imports this module
-  if (metadata?.isDynamicImport) return
-  // If file path is ESM, everything should be fine
-  if (moduleType === 'module') return
-
-  // For non-ESM, named imports is done via static analysis with cjs-module-lexer in Node.js.
-  // If the user named imports a specifier that can't be analyzed, error.
-  if (metadata?.importedNames?.length) {
-    const missingBindings = metadata.importedNames.filter((s) => !(s in mod))
-    if (missingBindings.length) {
-      const lastBinding = missingBindings[missingBindings.length - 1]
-      // Copied from Node.js
-      throw new SyntaxError(`\
-[vite] Named export '${lastBinding}' not found. The requested module '${rawId}' is a CommonJS module, which may not support all module.exports as named exports.
-CommonJS modules can always be imported via the default export, for example using:
-
-import pkg from '${rawId}';
-const {${missingBindings.join(', ')}} = pkg;
-`)
-    }
-  }
-}
-
-/**
- * Guard invalid named exports only, similar to how Node.js errors for top-level imports.
- * But since we transform as dynamic imports, we need to emulate the error manually.
- */
-function proxyGuardOnlyEsm(
-  mod: any,
-  rawId: string,
-  metadata?: SSRImportMetadata,
-) {
-  // If the module doesn't import anything explicitly, e.g. `import 'foo'` or
-  // `import * as foo from 'foo'`, we can skip the proxy guard.
-  if (!metadata?.importedNames?.length) return mod
-
-  return new Proxy(mod, {
-    get(mod, prop) {
-      if (prop !== 'then' && !(prop in mod)) {
-        throw new SyntaxError(
-          `[vite] The requested module '${rawId}' does not provide an export named '${prop.toString()}'`,
-        )
-      }
-      return mod[prop]
-    },
-  })
 }

@@ -17,7 +17,6 @@ import {
 } from '../constants'
 import {
   bareImportRE,
-  cleanUrl,
   createDebugger,
   deepImportRE,
   fsPathFromId,
@@ -32,12 +31,9 @@ import {
   isObject,
   isOptimizable,
   isTsRequest,
-  isWindows,
   normalizePath,
   safeRealpathSync,
-  slash,
   tryStatSync,
-  withTrailingSlash,
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
@@ -51,6 +47,12 @@ import {
   loadPackageData,
   resolvePackageData,
 } from '../packages'
+import {
+  cleanUrl,
+  isWindows,
+  slash,
+  withTrailingSlash,
+} from '../../shared/utils'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -478,9 +480,12 @@ function resolveSubpathImports(
   const pkgData = findNearestPackageData(basedir, options.packageCache)
   if (!pkgData) return
 
+  let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id.slice(1))
+  idWithoutPostfix = '#' + idWithoutPostfix
+
   let importsPath = resolveExportsOrImports(
     pkgData.data,
-    id,
+    idWithoutPostfix,
     options,
     targetWeb,
     'imports',
@@ -494,7 +499,7 @@ function resolveSubpathImports(
     }
   }
 
-  return importsPath
+  return importsPath + postfix
 }
 
 function ensureVersionQuery(

@@ -1,4 +1,4 @@
-import type { HMRLogger } from '../../../shared/hmr'
+import type { HMRLogger } from '../shared/hmr'
 
 const noop = (): void => {}
 

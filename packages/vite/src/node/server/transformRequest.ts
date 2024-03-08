@@ -10,7 +10,6 @@ import colors from 'picocolors'
 import type { ModuleNode, ViteDevServer } from '..'
 import {
   blankReplacer,
-  cleanUrl,
   createDebugger,
   ensureWatchedFile,
   injectQuery,
@@ -20,11 +19,11 @@ import {
   removeTimestampQuery,
   stripBase,
   timeFrom,
-  unwrapId,
 } from '../utils'
 import { checkPublicFile } from '../publicDir'
 import { isDepsOptimizerEnabled } from '../config'
 import { getDepsOptimizer, initDevSsrDepsOptimizer } from '../optimizer'
+import { cleanUrl, unwrapId } from '../../shared/utils'
 import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'

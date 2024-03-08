@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@babel/types": "^7.23.9",
-    "@eslint-types/typescript-eslint": "^6.19.1",
+    "@eslint-types/typescript-eslint": "^6.21.0",
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.9.6",
@@ -53,17 +53,17 @@
     "@types/fs-extra": "^11.0.4",
     "@types/less": "^3.0.6",
     "@types/micromatch": "^4.0.6",
-    "@types/node": "^20.11.16",
+    "@types/node": "^20.11.20",
     "@types/picomatch": "^2.3.3",
     "@types/sass": "~1.43.1",
-    "@types/semver": "^7.5.6",
+    "@types/semver": "^7.5.8",
     "@types/stylus": "^0.48.42",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
     "@vitejs/release-scripts": "^1.3.1",
     "conventional-changelog-cli": "^4.1.0",
-    "eslint": "^8.56.0",
+    "eslint": "^8.57.0",
     "eslint-define-config": "^2.1.0",
     "eslint-plugin-i": "^2.29.1",
     "eslint-plugin-n": "^16.6.2",
@@ -81,13 +81,13 @@
     "semver": "^7.6.0",
     "simple-git-hooks": "^2.9.0",
     "tslib": "^2.6.2",
-    "tsx": "^4.7.0",
+    "tsx": "^4.7.1",
     "typescript": "^5.2.2",
     "unbuild": "^2.0.0",
     "vite": "workspace:*",
-    "vitepress": "1.0.0-rc.42",
-    "vitest": "^1.2.2",
-    "vue": "^3.4.15"
+    "vitepress": "1.0.0-rc.44",
+    "vitest": "^1.3.1",
+    "vue": "^3.4.20"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -106,7 +106,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@8.15.1",
+  "packageManager": "pnpm@8.15.4",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
@@ -125,8 +125,8 @@
     },
     "patchedDependencies": {
       "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
-      "dotenv-expand@10.0.0": "patches/dotenv-expand@10.0.0.patch",
-      "sirv@2.0.4": "patches/sirv@2.0.4.patch"
+      "sirv@2.0.4": "patches/sirv@2.0.4.patch",
+      "postcss-import@16.0.1": "patches/postcss-import@16.0.1.patch"
     },
     "peerDependencyRules": {
       "allowedVersions": {

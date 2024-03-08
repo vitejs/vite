@@ -1,0 +1,38 @@
+diff --git a/lib/parse-styles.js b/lib/parse-styles.js
+index 68a1fef604fad82ac367f6bd63e845027bf86089..4617545e86301f58bfcd649f66c0536e29bda50f 100644
+--- a/lib/parse-styles.js
++++ b/lib/parse-styles.js
+@@ -223,19 +223,20 @@ function isProcessableURL(uri) {
+     return false
+   }
+ 
+-  // check for fragment or query
+-  try {
+-    // needs a base to parse properly
+-    const url = new URL(uri, "https://example.com")
+-
+-    if (url.hash) {
+-      return false
+-    }
+-
+-    if (url.search) {
+-      return false
+-    }
+-  } catch {} // Ignore
++  // PATCH: comment out this part to support resolving imports field
++  // // check for fragment or query
++  // try {
++  //   // needs a base to parse properly
++  //   const url = new URL(uri, "https://example.com")
++
++  //   if (url.hash) {
++  //     return false
++  //   }
++
++  //   if (url.search) {
++  //     return false
++  //   }
++  // } catch {} // Ignore
+ 
+   return true
+ }

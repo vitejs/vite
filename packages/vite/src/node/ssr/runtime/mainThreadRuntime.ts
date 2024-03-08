@@ -1,9 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs'
-import type { ViteDevServer } from '../../../index'
-import { ViteRuntime } from '../runtime'
-import { ESModulesRunner } from '../esmRunner'
-import type { ViteModuleRunner, ViteRuntimeOptions } from '../types'
-import type { HMRLogger } from '../../../../shared/hmr'
+import { ESModulesRunner, ViteRuntime } from 'vite/runtime'
+import type { ViteModuleRunner, ViteRuntimeOptions } from 'vite/runtime'
+import type { ViteDevServer } from '../../server'
+import type { HMRLogger } from '../../../shared/hmr'
 import { ServerHMRConnector } from './serverHmrConnector'
 
 /**
