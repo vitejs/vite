@@ -477,8 +477,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (isDirectCSSRequest(id)) {
-          return null
+          return await getContentWithSourcemap(css);
         }
+
         // server only
         if (options?.ssr) {
           return modulesCode || `export default ${JSON.stringify(css)}`
@@ -487,13 +488,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           return `export default ${JSON.stringify(css)}`
         }
 
-        const cssContent = await getContentWithSourcemap(css)
+        const cssWithMap = await getContentWithSourcemap(css)
         const code = [
           `import { updateStyle as __vite__updateStyle, removeStyle as __vite__removeStyle } from ${JSON.stringify(
             path.posix.join(config.base, CLIENT_PUBLIC_PATH),
           )}`,
           `const __vite__id = ${JSON.stringify(id)}`,
-          `const __vite__css = ${JSON.stringify(cssContent)}`,
+          `const __vite__css = ${JSON.stringify(cssWithMap)}`,
           `__vite__updateStyle(__vite__id, __vite__css)`,
           // css modules exports change on edit so it can't self accept
           `${modulesCode || 'import.meta.hot.accept()'}`,
