@@ -18,6 +18,7 @@ import {
   isDataUrl,
   isExternalUrl,
   normalizePath,
+  partialEncodeURI,
   processSrcSet,
   removeLeadingSlash,
   urlCanParse,
@@ -436,7 +437,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               overwriteAttrValue(
                 s,
                 sourceCodeLocation!,
-                encodeURI(toOutputPublicFilePath(url)),
+                partialEncodeURI(toOutputPublicFilePath(url)),
               )
             }
 
@@ -516,7 +517,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     overwriteAttrValue(
                       s,
                       getAttrSourceCodeLocation(node, attrKey),
-                      encodeURI(toOutputPublicFilePath(url)),
+                      partialEncodeURI(toOutputPublicFilePath(url)),
                     )
                   } else if (!isExcludedUrl(url)) {
                     if (
@@ -562,7 +563,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                             overwriteAttrValue(
                               s,
                               getAttrSourceCodeLocation(node, attrKey),
-                              encodeURI(processedUrl),
+                              partialEncodeURI(processedUrl),
                             )
                           }
                         })(),
@@ -635,12 +636,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
           if (checkPublicFile(url, config)) {
-            s.update(start, end, encodeURI(toOutputPublicFilePath(url)))
+            s.update(start, end, partialEncodeURI(toOutputPublicFilePath(url)))
           } else if (!isExcludedUrl(url)) {
             s.update(
               start,
               end,
-              encodeURI(await urlToBuiltUrl(url, id, config, this)),
+              partialEncodeURI(await urlToBuiltUrl(url, id, config, this)),
             )
           }
         }
