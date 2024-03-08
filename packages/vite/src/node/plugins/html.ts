@@ -436,7 +436,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               overwriteAttrValue(
                 s,
                 sourceCodeLocation!,
-                toOutputPublicFilePath(url),
+                encodeURI(toOutputPublicFilePath(url)),
               )
             }
 
@@ -488,22 +488,24 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 if (attrKey === 'srcset') {
                   assetUrlsPromises.push(
                     (async () => {
-                      const processedUrl = await processSrcSet(
+                      const processedEncodedUrl = await processSrcSet(
                         p.value,
                         async ({ url }) => {
                           const decodedUrl = decodeURI(url)
                           if (!isExcludedUrl(decodedUrl)) {
                             const result = await processAssetUrl(url)
-                            return result !== decodedUrl ? result : url
+                            return result !== decodedUrl
+                              ? encodeURI(result)
+                              : url
                           }
                           return url
                         },
                       )
-                      if (processedUrl !== p.value) {
+                      if (processedEncodedUrl !== p.value) {
                         overwriteAttrValue(
                           s,
                           getAttrSourceCodeLocation(node, attrKey),
-                          processedUrl,
+                          processedEncodedUrl,
                         )
                       }
                     })(),
@@ -514,7 +516,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     overwriteAttrValue(
                       s,
                       getAttrSourceCodeLocation(node, attrKey),
-                      toOutputPublicFilePath(url),
+                      encodeURI(toOutputPublicFilePath(url)),
                     )
                   } else if (!isExcludedUrl(url)) {
                     if (
@@ -560,7 +562,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                             overwriteAttrValue(
                               s,
                               getAttrSourceCodeLocation(node, attrKey),
-                              processedUrl,
+                              encodeURI(processedUrl),
                             )
                           }
                         })(),
@@ -633,9 +635,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
           if (checkPublicFile(url, config)) {
-            s.update(start, end, toOutputPublicFilePath(url))
+            s.update(start, end, encodeURI(toOutputPublicFilePath(url)))
           } else if (!isExcludedUrl(url)) {
-            s.update(start, end, await urlToBuiltUrl(url, id, config, this))
+            s.update(
+              start,
+              end,
+              encodeURI(await urlToBuiltUrl(url, id, config, this)),
+            )
           }
         }
 
@@ -897,7 +903,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (chunk) {
             chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
           }
-          return toOutputAssetFilePath(file) + postfix
+          return encodeURI(toOutputAssetFilePath(file)) + postfix
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
@@ -905,9 +911,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             getPublicAssetFilename(fileHash, config)!,
           )
 
-          return urlCanParse(publicAssetPath)
-            ? publicAssetPath
-            : normalizePath(publicAssetPath)
+          return encodeURI(
+            urlCanParse(publicAssetPath)
+              ? publicAssetPath
+              : normalizePath(publicAssetPath),
+          )
         })
 
         if (chunk && canInlineEntry) {

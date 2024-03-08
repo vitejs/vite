@@ -100,7 +100,7 @@ export function renderAssetUrlInJS(
     )
     const replacementString =
       typeof replacement === 'string'
-        ? JSON.stringify(replacement).slice(1, -1)
+        ? JSON.stringify(encodeURI(replacement)).slice(1, -1)
         : `"+${replacement.runtime}+"`
     s.update(match.index, match.index + full.length, replacementString)
   }
@@ -123,7 +123,7 @@ export function renderAssetUrlInJS(
     )
     const replacementString =
       typeof replacement === 'string'
-        ? JSON.stringify(replacement).slice(1, -1)
+        ? JSON.stringify(encodeURI(replacement)).slice(1, -1)
         : `"+${replacement.runtime}+"`
     s.update(match.index, match.index + full.length, replacementString)
   }
