@@ -477,7 +477,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (isDirectCSSRequest(id)) {
-          return css;
+          return css
         }
 
         // server only
