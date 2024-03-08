@@ -43,3 +43,14 @@ export function withTrailingSlash(path: string): string {
   }
   return path
 }
+
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export const AsyncFunction = async function () {}.constructor as typeof Function
+
+// https://github.com/nodejs/node/issues/43047#issuecomment-1564068099
+export const asyncFunctionDeclarationPaddingLineCount =
+  /** #__PURE__ */ (() => {
+    const body = '/*code*/'
+    const source = new AsyncFunction('a', 'b', body).toString()
+    return source.slice(0, source.indexOf(body)).split('\n').length - 1
+  })()

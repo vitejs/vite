@@ -197,7 +197,7 @@ Custom HMR events can also be sent from plugins. See [handleHotUpdate](./api-plu
 
 ## `hot.off(event, cb)`
 
-Remove callback from the event listeners
+Remove callback from the event listeners.
 
 ## `hot.send(event, data)`
 
