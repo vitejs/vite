@@ -477,7 +477,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
 
         if (isDirectCSSRequest(id)) {
-          return await getContentWithSourcemap(css);
+          return css;
         }
 
         // server only
