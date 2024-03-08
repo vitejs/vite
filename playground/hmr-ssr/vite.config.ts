@@ -51,7 +51,7 @@ export const virtual = _virtual + '${num}';`
           .getModuleByUrl('\0virtual:file')
         if (mod) {
           num++
-          server.reloadModule(mod)
+          server.reloadEnvironmentModule(mod)
         }
       })
     },

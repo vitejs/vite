@@ -71,7 +71,7 @@ import {
   serveStaticMiddleware,
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import type { ModuleNode } from './moduleGraph'
+import type { EnvironmentModuleNode, ModuleNode } from './moduleGraph'
 import { EnvironmentModuleGraph, ModuleGraph } from './moduleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware, prepareError } from './middlewares/error'
@@ -325,6 +325,11 @@ export interface ViteDevServer {
    */
   reloadModule(module: ModuleNode): Promise<void>
   /**
+   * Triggers HMR for an environment module in the module graph.
+   * If `hmr` is false, this is a no-op.
+   */
+  reloadEnvironmentModule(module: EnvironmentModuleNode): Promise<void>
+  /**
    * Start the server.
    */
   listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
@@ -544,6 +549,16 @@ export async function _createServer(
       return ssrRewriteStacktrace(stack, moduleGraph)
     },
     async reloadModule(module) {
+      if (serverConfig.hmr !== false && module.file) {
+        updateModules(
+          module.file,
+          [module._browserModule ?? module._serverModule],
+          Date.now(),
+          server,
+        )
+      }
+    },
+    async reloadEnvironmentModule(module) {
       if (serverConfig.hmr !== false && module.file) {
         updateModules(module.file, [module], Date.now(), server)
       }
