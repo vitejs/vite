@@ -331,6 +331,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
       config = _config
 
+      modernTargets = options.modernTargets || modernTargetsBabel
+      isDebug &&
+        console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
+
       if (!genLegacy || config.build.ssr) {
         return
       }
@@ -340,10 +344,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         browserslistLoadConfig({ path: config.root }) ||
         'last 2 versions and not dead, > 0.3%, Firefox ESR'
       isDebug && console.log(`[@vitejs/plugin-legacy] targets:`, targets)
-
-      modernTargets = options.modernTargets || modernTargetsBabel
-      isDebug &&
-        console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
 
       const getLegacyOutputFileName = (
         fileNames:
