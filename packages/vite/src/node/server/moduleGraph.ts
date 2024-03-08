@@ -73,34 +73,6 @@ export class EnvironmentModuleNode {
       this.isSelfAccepting = false
     }
   }
-
-  // Backward compatibility
-  /** @deprecated */
-  get ssrTransformResult(): TransformResult | null {
-    return this.environment === 'server' ? this.transformResult : null
-  }
-  /** @deprecated */
-  get ssrModule(): Record<string, any> | null {
-    return this.module
-  }
-  /** @deprecated */
-  get ssrError(): Error | null {
-    return this.error
-  }
-  /** @deprecated */
-  get clientImportedModules(): Set<EnvironmentModuleNode> {
-    if (this.environment !== 'browser') {
-      throw new Error('clientImportedModules accessed in a node module node')
-    }
-    return this.importedModules
-  }
-  /** @deprecated */
-  get ssrImportedModules(): Set<EnvironmentModuleNode> {
-    if (this.environment !== 'browser') {
-      throw new Error('ssrImportedModules accessed in a browser module node')
-    }
-    return this.importedModules
-  }
 }
 
 export type ResolvedUrl = [
@@ -500,15 +472,31 @@ export class EnvironmentModuleGraph {
   }
 }
 
-export interface ModuleNode extends EnvironmentModuleNode {
+export interface ModuleNode {
+  url: string
+  id: string | null
+  file: string | null
+  type: 'js' | 'css'
+  info?: ModuleInfo
+  meta?: Record<string, any>
+  importers: Set<ModuleNode>
   clientImportedModules: Set<ModuleNode>
   ssrImportedModules: Set<ModuleNode>
+  importedModules: Set<ModuleNode>
+  acceptedHmrDeps: Set<ModuleNode>
+  acceptedHmrExports: Set<string> | null
+  importedBindings: Map<string, Set<string>> | null
+  isSelfAccepting?: boolean
+  transformResult: TransformResult | null
   ssrTransformResult: TransformResult | null
   ssrModule: Record<string, any> | null
   ssrError: Error | null
-  _browserModule: ModuleNode
-  _serverModule: ModuleNode
-  // TODO: ssrInvalidationState?
+  lastHMRTimestamp: Number
+  lastInvalidationTimestamp: Number
+  invalidationState: TransformResult | 'HARD_INVALIDATED' | undefined
+  ssrInvalidationState: TransformResult | 'HARD_INVALIDATED' | undefined
+  _browserModule: EnvironmentModuleNode
+  _serverModule: EnvironmentModuleNode
 }
 
 function mapIterator<T, K = T>(
@@ -674,7 +662,7 @@ export class ModuleGraph {
     if (mod._browserModule) {
       this._getModuleGraph('browser').invalidateModule(
         mod._browserModule,
-        seen,
+        new Set([...seen].map((mod) => mod._browserModule).filter(Boolean)),
         timestamp,
         isHmr,
         softInvalidate,
@@ -684,7 +672,7 @@ export class ModuleGraph {
       // TODO: Maybe this isn't needed?
       this._getModuleGraph('server').invalidateModule(
         mod._serverModule,
-        seen,
+        new Set([...seen].map((mod) => mod._serverModule).filter(Boolean)),
         timestamp,
         isHmr,
         softInvalidate,
@@ -761,10 +749,9 @@ export class ModuleGraph {
     result: TransformResult | null,
     ssr?: boolean,
   ): void {
-    this._getModuleGraph(mod.environment).updateModuleTransformResult(
-      (mod.environment === 'browser'
-        ? mod._browserModule
-        : mod._serverModule) ?? mod,
+    const environment = ssr ? 'server' : 'browser'
+    this._getModuleGraph(environment).updateModuleTransformResult(
+      environment === 'browser' ? mod._browserModule : mod._serverModule,
       result,
     )
   }
@@ -841,9 +828,6 @@ export class ModuleGraph {
       {
         get(_, prop: keyof ModuleNode) {
           switch (prop) {
-            case 'environment':
-              return 'mixed'
-
             case 'importers':
               return getModuleSetUnion('importers')
 
@@ -873,6 +857,9 @@ export class ModuleGraph {
 
             case '_serverModule':
               return serverModule
+
+            case 'ssrInvalidationState':
+              return serverModule?.invalidationState
 
             default:
               return browserModule?.[prop] ?? serverModule?.[prop]
@@ -1031,7 +1018,7 @@ function createBackwardCompatibleFileToModulesMap(
       if (!browserModules && !serverModules) {
         return
       }
-      const modules = browserModules ?? new Set<ModuleNode>()
+      const modules = browserModules ?? new Set<EnvironmentModuleNode>()
       if (serverModules) {
         for (const serverModule of serverModules) {
           if (serverModule.id) {

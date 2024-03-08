@@ -271,13 +271,14 @@ export async function handleHMRUpdate(
       )
       if (filteredModules) {
         hmrContext.modules = filteredModules
-        hotContext.modules = filteredModules.map((mod) =>
-          mod.id
-            ? server.getModuleGraph('browser').getModuleById(mod.id) ??
-              server.getModuleGraph('server').getModuleById(mod.id) ??
-              mod
-            : mod,
-        )
+        hotContext.modules = filteredModules
+          .map((mod) =>
+            mod.id
+              ? server.getModuleGraph('browser').getModuleById(mod.id) ??
+                server.getModuleGraph('server').getModuleById(mod.id)
+              : undefined,
+          )
+          .filter(Boolean) as EnvironmentModuleNode[]
       }
     }
   }
