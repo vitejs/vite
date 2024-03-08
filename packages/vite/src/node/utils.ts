@@ -1100,7 +1100,7 @@ function mergeConfigRecursively(
     }
 
     if (Array.isArray(existing) || Array.isArray(value)) {
-      merged[key] = [...arraify(existing ?? []), ...arraify(value ?? [])]
+      merged[key] = [...arraify(existing), ...arraify(value)]
       continue
     }
     if (isObject(existing) && isObject(value)) {
