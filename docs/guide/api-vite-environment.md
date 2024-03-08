@@ -81,8 +81,9 @@ class ModuleExecutionEnvironment {
 
   /**
    * Fetch information about a module from the module runner without running it.
+   * Note: This method may not be needed
    */
-  async fetch(url: string)
+  async fetchModuleInfo(url: string)
 }
 ```
 
@@ -127,6 +128,10 @@ class ModuleRunner {
    */
 ```
 
+:::info
+We are using `executeUrl` and `executeEntryPoint` to keep the API familiar with the current Runtime API. This two methods could end up merged as single one and renamed. For example `runner.import(url, { hmr: false })` or `runner.load(url)`.
+:::
+
 The Node module runner instance is accessible through `server.nodeModuleRunner`. It isn't part of its associated environment instance because, as we explained before, other environments' module runners could live in a different runtime (for example for the browser, a module runner in a worker thread as used in Vitest, or an edge runtime like workerd). The communication between `server.nodeModuleRunner` and `server.environment('node')` is implemented through direct function calls. Given a Vite server configured in middleware mode as described by the [SSR setup guide](#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
 
 ```js
@@ -165,17 +170,22 @@ app.use('*', async (req, res, next) => {
 
 One of the objectives of this proposal is to allow users to swap Vite's default SSR environment. Out-of-the-box, Vite will use a node environment running on the same process as the server. But a user may want to swap it for a workerd environment.
 
-Vite would expose a `server.ssrEnvironment` so all frameworks can use it and allow them to define what environment type should be used for it. Ideally, instead of using `server.nodeModuleRunner`, the example above would be written as:
+Vite could expose a `server.ssrEnvironment` so all frameworks can use it and allow them to define what environment type should be used for it. Ideally, instead of using `server.nodeModuleRunner`, the example above would be written as:
 
 ```js
 // 3. Load the server entry, with full HMR support.
-const { render } = await server.ssrEnvironment.run('/src/entry-server.js')
+//    Only functions that accepts serializable params and results are supported.
+const { render } = await server.ssrEnvironment.import('/src/entry-server.js')
 
 // 4. render the app HTML.
 const appHtml = await render(url)
 ```
 
-`run(url)` would return RPC wrappers for `entry-server` exported functions, so that this code is compatible with both node and workerd environments.
+`import(url)` would return RPC wrappers for `entry-server` exported functions, so that this code is compatible with both node and workerd environments.
+
+A `environment.import(url): RPC exports` may be difficult to implement across all environments. So it isn't part of the initial proposal. Given that a lot of projects in the ecosystem end up re-implementating a RPC scheme, we could add it later as a feature that can be supported by a subset of all environments and promote its use only for use cases that don't target universal runtime support. For example, for tools using Vite that are intended to run in a node like environment and want to use a worker thread environment like Vitest.
+
+In this proposal, environments expose a `environment.run(url): void` function to request running the url in the associated module runner.
 
 ## Plugins and environments
 
@@ -460,14 +470,13 @@ import { createModuleExectutionEnvironment } from 'vite'
 
 const environment = createModuleExecutionEnvironment({
   name: 'workerd',
-  hot: null,
   config: {
     resolve: { conditions: ['custom'] }
   },
   run(url) {
-    return rpc().runModule(url)
+    dispatchModuleRunInWorkerd(url)
   }
-}) => ViteModuleExecutionEnvironment
+}) => ModuleExecutionEnvironment
 ```
 
 ## `ModuleRunner`
