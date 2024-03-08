@@ -156,9 +156,10 @@ export interface ServerOptions extends CommonServerOptions {
     | ((sourcePath: string, sourcemapPath: string) => boolean)
 }
 
-export interface ResolvedServerOptions extends ServerOptions {
+export interface ResolvedServerOptions
+  extends Omit<ServerOptions, 'fs' | 'middlewareMode' | 'sourcemapIgnoreList'> {
   fs: Required<FileSystemServeOptions>
-  middlewareMode: Exclude<ServerOptions['middlewareMode'], undefined>
+  middlewareMode: NonNullable<ServerOptions['middlewareMode']>
   sourcemapIgnoreList: Exclude<
     ServerOptions['sourcemapIgnoreList'],
     false | undefined
