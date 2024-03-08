@@ -347,6 +347,12 @@ describe('processSrcSetSync', () => {
     )
   })
 
+  test('should handle srcset when descriptor is not present', async () => {
+    const srcsetNoDescriptor = 'asset.png, test.png 400w,test2?param1=true.png'
+    const result = 'asset.png, test.png 400w, test2?param1=true.png'
+    expect(processSrcSetSync(srcsetNoDescriptor, ({ url }) => url)).toBe(result)
+  })
+
   test('should not break a regular URL in srcSet', async () => {
     const source = 'https://anydomain/image.jpg'
     expect(
