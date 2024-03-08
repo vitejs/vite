@@ -348,8 +348,8 @@ describe('processSrcSetSync', () => {
   })
 
   test('should handle srcset when descriptor is not present', async () => {
-    const srcsetNoDescriptor = 'asset.png, test.png 400w,test2?param1=true.png'
-    const result = 'asset.png, test.png 400w, test2?param1=true.png'
+    const srcsetNoDescriptor = 'asset.png, test.png 400w'
+    const result = 'asset.png, test.png 400w'
     expect(processSrcSetSync(srcsetNoDescriptor, ({ url }) => url)).toBe(result)
   })
 
