@@ -568,8 +568,18 @@ export class ModuleNode {
   get transformResult(): TransformResult | null {
     return this._browserModule?.transformResult ?? null
   }
+  set transformResult(value: TransformResult | null) {
+    if (this._browserModule) {
+      this._browserModule.transformResult = value
+    }
+  }
   get ssrTransformResult(): TransformResult | null {
     return this._serverModule?.transformResult ?? null
+  }
+  set ssrTransformResult(value: TransformResult | null) {
+    if (this._serverModule) {
+      this._serverModule.transformResult = value
+    }
   }
   get ssrModule(): Record<string, any> | null {
     return this._serverModule?.module ?? null
@@ -579,6 +589,11 @@ export class ModuleNode {
   }
   get lastHMRTimestamp(): number {
     return this._browserModule?.lastHMRTimestamp ?? 0
+  }
+  set lastHMRTimestamp(value: number) {
+    if (this._browserModule) {
+      this._browserModule.lastHMRTimestamp = value
+    }
   }
   get lastInvalidationTimestamp(): number {
     return this._browserModule?.lastInvalidationTimestamp ?? 0
