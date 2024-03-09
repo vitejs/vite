@@ -54,16 +54,23 @@ export function transformRequest(
   server: ViteDevServer,
   options: TransformOptions = {},
 ): Promise<TransformResult | null> {
+  // Backward compatibility when only `ssr` is passed
+  if (!options.environment) {
+    options = {
+      ...options,
+      environment: options.ssr ? 'server' : 'browser',
+    }
+  }
+  const environment = options.environment!
+
   if (server._restartPromise && !options.ssr) throwClosedServerError()
 
-  const environment =
-    options.environment ?? (options.ssr ? 'server' : 'browser')
   const cacheKey =
-    (options.environment === 'browser'
+    (environment === 'browser'
       ? options.html
         ? 'html:'
         : ''
-      : `${options.environment}:`) + url
+      : `${environment}:`) + url
 
   // This module may get invalidated while we are processing it. For example
   // when a full page reload is needed after the re-processing of pre-bundled
@@ -139,9 +146,10 @@ async function doTransform(
   url = removeTimestampQuery(url)
 
   const { config, pluginContainer } = server
+
+  // environment is always defined when calling doTransform
   const ssr = !!options.ssr
-  const environment =
-    options.environment ?? (options.ssr ? 'server' : 'browser')
+  const environment = options.environment!
 
   if (ssr && isDepsOptimizerEnabled(config, true)) {
     await initDevSsrDepsOptimizer(config, server)
@@ -240,8 +248,11 @@ async function loadAndTransform(
   const { logger } = config
   const prettyUrl =
     debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
+
+  // options.environment is always defined at this point
   const ssr = !!options.ssr
-  const environment = options.environment ?? 'browser'
+  const environment = options.environment!
+
   const moduleGraph = server.getModuleGraph(environment)
 
   const file = cleanUrl(id)
