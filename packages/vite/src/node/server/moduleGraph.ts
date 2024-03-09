@@ -472,31 +472,123 @@ export class EnvironmentModuleGraph {
   }
 }
 
-export interface ModuleNode {
-  url: string
-  id: string | null
-  file: string | null
-  type: 'js' | 'css'
-  info?: ModuleInfo
-  meta?: Record<string, any>
-  importers: Set<ModuleNode>
-  clientImportedModules: Set<ModuleNode>
-  ssrImportedModules: Set<ModuleNode>
-  importedModules: Set<ModuleNode>
-  acceptedHmrDeps: Set<ModuleNode>
-  acceptedHmrExports: Set<string> | null
-  importedBindings: Map<string, Set<string>> | null
-  isSelfAccepting?: boolean
-  transformResult: TransformResult | null
-  ssrTransformResult: TransformResult | null
-  ssrModule: Record<string, any> | null
-  ssrError: Error | null
-  lastHMRTimestamp: Number
-  lastInvalidationTimestamp: Number
-  invalidationState: TransformResult | 'HARD_INVALIDATED' | undefined
-  ssrInvalidationState: TransformResult | 'HARD_INVALIDATED' | undefined
-  _browserModule: EnvironmentModuleNode
-  _serverModule: EnvironmentModuleNode
+export class ModuleNode {
+  _moduleGraph: ModuleGraph
+  _browserModule: EnvironmentModuleNode | undefined
+  _serverModule: EnvironmentModuleNode | undefined
+  constructor(
+    moduleGraph: ModuleGraph,
+    browserModule?: EnvironmentModuleNode,
+    serverModule?: EnvironmentModuleNode,
+  ) {
+    this._moduleGraph = moduleGraph
+    this._browserModule = browserModule
+    this._serverModule = serverModule
+  }
+  _get<T extends keyof EnvironmentModuleNode>(
+    prop: T,
+  ): EnvironmentModuleNode[T] {
+    return (this._browserModule?.[prop] ?? this._serverModule?.[prop])!
+  }
+  _wrapModuleSet(
+    prop: ModuleSetNames,
+    module: EnvironmentModuleNode | undefined,
+  ): Set<ModuleNode> {
+    if (!module) {
+      return new Set()
+    }
+    return createBackwardCompatibleModuleSet(this._moduleGraph, prop, module)
+  }
+  _getModuleSetUnion(prop: 'importedModules' | 'importers'): Set<ModuleNode> {
+    // A good approximation to the previous logic that returned the union of
+    // the importedModules and importers from both the browser and server
+    const importedModules = new Set<ModuleNode>()
+    const ids = new Set<string>()
+    if (this._browserModule) {
+      for (const mod of this._browserModule[prop]) {
+        if (mod.id) ids.add(mod.id)
+        importedModules.add(
+          this._moduleGraph.getBackwardCompatibleModuleNode(mod),
+        )
+      }
+    }
+    if (this._serverModule) {
+      for (const mod of this._serverModule[prop]) {
+        if (mod.id && !ids.has(mod.id)) {
+          importedModules.add(
+            this._moduleGraph.getBackwardCompatibleModuleNode(mod),
+          )
+        }
+      }
+    }
+    return importedModules
+  }
+  get url(): string {
+    return this._get('url')
+  }
+  get id(): string | null {
+    return this._get('id')
+  }
+  get file(): string | null {
+    return this._get('file')
+  }
+  get type(): 'js' | 'css' {
+    return this._get('type')
+  }
+  get info(): ModuleInfo | undefined {
+    return this._get('info')
+  }
+  get meta(): Record<string, any> | undefined {
+    return this._get('meta')
+  }
+  get importers(): Set<ModuleNode> {
+    return this._getModuleSetUnion('importers')
+  }
+  get clientImportedModules(): Set<ModuleNode> {
+    return this._wrapModuleSet('importedModules', this._browserModule)
+  }
+  get ssrImportedModules(): Set<ModuleNode> {
+    return this._wrapModuleSet('importedModules', this._serverModule)
+  }
+  get importedModules(): Set<ModuleNode> {
+    return this._getModuleSetUnion('importedModules')
+  }
+  get acceptedHmrDeps(): Set<ModuleNode> {
+    return this._wrapModuleSet('acceptedHmrDeps', this._browserModule)
+  }
+  get acceptedHmrExports(): Set<string> | null {
+    return this._browserModule?.acceptedHmrExports ?? null
+  }
+  get importedBindings(): Map<string, Set<string>> | null {
+    return this._browserModule?.importedBindings ?? null
+  }
+  get isSelfAccepting(): boolean | undefined {
+    return this._browserModule?.isSelfAccepting
+  }
+  get transformResult(): TransformResult | null {
+    return this._browserModule?.transformResult ?? null
+  }
+  get ssrTransformResult(): TransformResult | null {
+    return this._serverModule?.transformResult ?? null
+  }
+  get ssrModule(): Record<string, any> | null {
+    return this._serverModule?.module ?? null
+  }
+  get ssrError(): Error | null {
+    return this._serverModule?.error ?? null
+  }
+  get lastHMRTimestamp(): number {
+    return this._browserModule?.lastHMRTimestamp ?? 0
+  }
+  get lastInvalidationTimestamp(): number {
+    return this._browserModule?.lastInvalidationTimestamp ?? 0
+  }
+  get invalidationState(): TransformResult | 'HARD_INVALIDATED' | undefined {
+    return this._browserModule?.invalidationState
+  }
+  get ssrInvalidationState(): TransformResult | 'HARD_INVALIDATED' | undefined {
+    return this._serverModule?.invalidationState
+  }
 }
 
 function mapIterator<T, K = T>(
@@ -662,7 +754,9 @@ export class ModuleGraph {
     if (mod._browserModule) {
       this._getModuleGraph('browser').invalidateModule(
         mod._browserModule,
-        new Set([...seen].map((mod) => mod._browserModule).filter(Boolean)),
+        new Set(
+          [...seen].map((mod) => mod._browserModule).filter(Boolean),
+        ) as Set<EnvironmentModuleNode>,
         timestamp,
         isHmr,
         softInvalidate,
@@ -672,7 +766,9 @@ export class ModuleGraph {
       // TODO: Maybe this isn't needed?
       this._getModuleGraph('server').invalidateModule(
         mod._serverModule,
-        new Set([...seen].map((mod) => mod._serverModule).filter(Boolean)),
+        new Set(
+          [...seen].map((mod) => mod._serverModule).filter(Boolean),
+        ) as Set<EnvironmentModuleNode>,
         timestamp,
         isHmr,
         softInvalidate,
@@ -751,7 +847,7 @@ export class ModuleGraph {
   ): void {
     const environment = ssr ? 'server' : 'browser'
     this._getModuleGraph(environment).updateModuleTransformResult(
-      environment === 'browser' ? mod._browserModule : mod._serverModule,
+      (environment === 'browser' ? mod._browserModule : mod._serverModule)!,
       result,
     )
   }
@@ -794,79 +890,8 @@ export class ModuleGraph {
     browserModule?: EnvironmentModuleNode,
     serverModule?: EnvironmentModuleNode,
   ): ModuleNode {
-    const wrapModuleSet = (
-      prop: ModuleSetNames,
-      module: EnvironmentModuleNode | undefined,
-    ) => {
-      if (!module) {
-        return new Set()
-      }
-      createBackwardCompatibleModuleSet(this, prop, module)
-    }
-    const getModuleSetUnion = (prop: 'importedModules' | 'importers') => {
-      // A good approximation to the previous logic that returned the union of
-      // the importedModules and importers from both the browser and server
-      const importedModules = new Set<ModuleNode>()
-      const ids = new Set<string>()
-      if (browserModule) {
-        for (const mod of browserModule[prop]) {
-          if (mod.id) ids.add(mod.id)
-          importedModules.add(this.getBackwardCompatibleModuleNode(mod))
-        }
-      }
-      if (serverModule) {
-        for (const mod of serverModule[prop]) {
-          if (mod.id && !ids.has(mod.id)) {
-            importedModules.add(this.getBackwardCompatibleModuleNode(mod))
-          }
-        }
-      }
-      return importedModules
-    }
-    return new Proxy(
-      {},
-      {
-        get(_, prop: keyof ModuleNode) {
-          switch (prop) {
-            case 'importers':
-              return getModuleSetUnion('importers')
-
-            case 'acceptedHmrDeps':
-              return wrapModuleSet('acceptedHmrDeps', browserModule)
-
-            case 'clientImportedModules':
-              return wrapModuleSet('importedModules', browserModule)
-
-            case 'ssrImportedModules':
-              return wrapModuleSet('importedModules', serverModule)
-
-            case 'importedModules':
-              return getModuleSetUnion('importedModules')
-
-            case 'ssrTransformResult':
-              return serverModule?.transformResult
-
-            case 'ssrModule':
-              return serverModule?.module
-
-            case 'ssrError':
-              return serverModule?.error
-
-            case '_browserModule':
-              return browserModule
-
-            case '_serverModule':
-              return serverModule
-
-            case 'ssrInvalidationState':
-              return serverModule?.invalidationState
-
-            default:
-              return browserModule?.[prop] ?? serverModule?.[prop]
-          }
-        },
-      },
-    ) as ModuleNode
+    // ...
+    return new ModuleNode(this, browserModule, serverModule)
   }
 }
 

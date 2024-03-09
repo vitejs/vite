@@ -552,7 +552,7 @@ export async function _createServer(
       if (serverConfig.hmr !== false && module.file) {
         updateModules(
           module.file,
-          [module._browserModule ?? module._serverModule],
+          [(module._browserModule ?? module._serverModule)!],
           Date.now(),
           server,
         )
