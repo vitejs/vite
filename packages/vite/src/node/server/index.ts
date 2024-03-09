@@ -989,24 +989,25 @@ export function resolveServerOptions(
 
   if (!allowDirs) {
     allowDirs = [searchForWorkspaceRoot(root)]
-    if (process.versions.pnp) {
-      try {
-        const enableGlobalCache =
-          execSync('yarn config get enableGlobalCache', { cwd: root })
-            .toString()
-            .trim() === 'true'
-        const yarnCacheDir = execSync(
-          `yarn config get ${enableGlobalCache ? 'globalFolder' : 'cacheFolder'}`,
-          { cwd: root },
-        )
+  }
+
+  if (process.versions.pnp) {
+    try {
+      const enableGlobalCache =
+        execSync('yarn config get enableGlobalCache', { cwd: root })
           .toString()
-          .trim()
-        allowDirs.push(yarnCacheDir)
-      } catch (e) {
-        logger.warn(`Get yarn cache dir error: ${e.message}`, {
-          timestamp: true,
-        })
-      }
+          .trim() === 'true'
+      const yarnCacheDir = execSync(
+        `yarn config get ${enableGlobalCache ? 'globalFolder' : 'cacheFolder'}`,
+        { cwd: root },
+      )
+        .toString()
+        .trim()
+      allowDirs.push(yarnCacheDir)
+    } catch (e) {
+      logger.warn(`Get yarn cache dir error: ${e.message}`, {
+        timestamp: true,
+      })
     }
   }
 
