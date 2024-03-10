@@ -48,7 +48,7 @@ describe('vite-runtime initialization', async () => {
       (code) => '\n\n\n\n\n' + code + '\n',
     )
     runtime.moduleCache.clear()
-    server.getModuleGraph('server').invalidateAll() // TODO: environment?
+    server.serverEnvironment.moduleGraph.invalidateAll() // TODO: environment?
 
     const methodErrorNew = await getError(async () => {
       const mod = await runtime.executeUrl('/fixtures/throws-error-method.ts')

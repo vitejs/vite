@@ -127,7 +127,7 @@ const processNodeUrl = (
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
     if (server) {
-      const mod = server.getModuleGraph('browser').urlToModuleMap.get(url)
+      const mod = server.browserEnvironment.moduleGraph.urlToModuleMap.get(url)
       if (mod && mod.lastHMRTimestamp > 0) {
         url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
@@ -238,7 +238,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
 
     // invalidate the module so the newly cached contents will be served
-    const browserModuleGraph = server?.getModuleGraph('browser')
+    const browserModuleGraph = server?.browserEnvironment.moduleGraph
     const module = browserModuleGraph?.getModuleById(modulePath)
     if (module) {
       browserModuleGraph!.invalidateModule(module)
@@ -347,9 +347,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
       // ensure module in graph after successful load
-      const mod = await server!
-        .getModuleGraph('browser')
-        .ensureEntryFromUrl(url, false)
+      const mod =
+        await server!.browserEnvironment.moduleGraph.ensureEntryFromUrl(
+          url,
+          false,
+        )
       ensureWatchedFile(watcher, mod.file, config.root)
 
       const result = await server!.pluginContainer.transform(code, mod.id!)
@@ -374,9 +376,11 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       // will transform with css plugin and cache result with css-post plugin
       const url = `${proxyModulePath}?html-proxy&inline-css&style-attr&index=${index}.css`
 
-      const mod = await server!
-        .getModuleGraph('browser')
-        .ensureEntryFromUrl(url, false)
+      const mod =
+        await server!.browserEnvironment.moduleGraph.ensureEntryFromUrl(
+          url,
+          false,
+        )
       ensureWatchedFile(watcher, mod.file, config.root)
 
       await server?.pluginContainer.transform(code, mod.id!)

@@ -228,11 +228,11 @@ export async function handleHMRUpdate(
   // For now, we only call updateModules for the browser. Later on it should
   // also be called for each runtime.
 
-  let mods = server.getModuleGraph('browser').getModulesByFile(file)
+  let mods = server.browserEnvironment.moduleGraph.getModulesByFile(file)
   if (!mods) {
     // For now, given that the HMR SSR expects it, try to get the modules from the
     // server graph if the browser graph doesn't have it
-    mods = server.getModuleGraph('server').getModulesByFile(file)
+    mods = server.serverEnvironment.moduleGraph.getModulesByFile(file)
   }
 
   // check if any plugin wants to perform custom HMR handling
@@ -274,8 +274,8 @@ export async function handleHMRUpdate(
         hotContext.modules = filteredModules
           .map((mod) =>
             mod.id
-              ? server.getModuleGraph('browser').getModuleById(mod.id) ??
-                server.getModuleGraph('server').getModuleById(mod.id)
+              ? server.browserEnvironment.moduleGraph.getModuleById(mod.id) ??
+                server.serverEnvironment.moduleGraph.getModuleById(mod.id)
               : undefined,
           )
           .filter(Boolean) as EnvironmentModuleNode[]
@@ -327,9 +327,9 @@ export function updateModules(
 
     // TODO: we don't need NodeModule to have the runtime if we pass it to updateModules
     // it still seems useful to know the runtime for a given module
-    server
-      .getModuleGraph(mod.environment)
-      .invalidateModule(mod, invalidatedModules, timestamp, true)
+    server.environments
+      .get(mod.environment)
+      ?.moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true)
 
     if (needFullReload) {
       continue
@@ -424,9 +424,7 @@ export async function handleFileAddUnlink(
   isUnlink: boolean,
 ): Promise<void> {
   server.environments.forEach((environment) => {
-    const modules = [
-      ...(server.getModuleGraph(environment).getModulesByFile(file) || []),
-    ]
+    const modules = [...(environment.moduleGraph.getModulesByFile(file) || [])]
 
     if (isUnlink) {
       for (const deletedMod of modules) {

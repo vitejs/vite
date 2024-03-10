@@ -96,9 +96,9 @@ export function transformRequest(
 
   const pending = server._pendingRequests.get(cacheKey)
   if (pending) {
-    return server
-      .getModuleGraph(environment)
-      .getModuleByUrl(removeTimestampQuery(url))
+    return server.environments
+      .get(environment)!
+      .moduleGraph.getModuleByUrl(removeTimestampQuery(url))
       .then((module) => {
         if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
           // The pending request is still valid, we can safely reuse its result
@@ -155,7 +155,9 @@ async function doTransform(
     await initDevSsrDepsOptimizer(config, server)
   }
 
-  let module = await server.getModuleGraph(environment).getModuleByUrl(url)
+  let module = await server.environments
+    .get(environment)
+    ?.moduleGraph.getModuleByUrl(url)
   if (module) {
     // try use cache from url
     const cached = await getCachedTransformResult(
@@ -176,12 +178,12 @@ async function doTransform(
   // resolve
   const id = module?.id ?? resolved?.id ?? url
 
-  module ??= server.getModuleGraph(environment).getModuleById(id)
+  module ??= server.environments.get(environment)?.moduleGraph.getModuleById(id)
   if (module) {
     // if a different url maps to an existing loaded id,  make sure we relate this url to the id
-    await server
-      .getModuleGraph(environment)
-      ._ensureEntryFromUrl(url, undefined, resolved)
+    await server.environments
+      .get(environment)
+      ?.moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
     // try use cache from id
     const cached = await getCachedTransformResult(
       url,
@@ -253,7 +255,7 @@ async function loadAndTransform(
   const ssr = !!options.ssr
   const environment = options.environment!
 
-  const moduleGraph = server.getModuleGraph(environment)
+  const moduleGraph = server.environments.get(environment)!.moduleGraph
 
   const file = cleanUrl(id)
 
@@ -524,7 +526,9 @@ async function handleModuleSoftInvalidation(
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
   if (timestamp > mod.lastInvalidationTimestamp)
-    server.getModuleGraph(environment).updateModuleTransformResult(mod, result)
+    server.environments
+      .get(environment)
+      ?.moduleGraph.updateModuleTransformResult(mod, result)
 
   return result
 }

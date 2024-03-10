@@ -239,10 +239,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const depsOptimizer = getDepsOptimizer(config, ssr)
 
-      const moduleGraph = server.getModuleGraph(environment)
+      const moduleGraph = server.environments.get(environment)!.moduleGraph
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
-      const importerModule = moduleGraph.getModuleById(importer)
+      const importerModule = moduleGraph?.getModuleById(importer)
       if (!importerModule) {
         // This request is no longer valid. It could happen for optimized deps
         // requests. A full reload is going to request this id again.
@@ -525,9 +525,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // record as safe modules
             // safeModulesPath should not include the base prefix.
             // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
-            server
-              ?.getModuleGraph('browser')
-              .safeModulesPath.add(fsPathFromUrl(stripBase(url, base)))
+            server?.browserEnvironment.moduleGraph.safeModulesPath.add(
+              fsPathFromUrl(stripBase(url, base)),
+            )
 
             if (url !== specifier) {
               let rewriteDone = false

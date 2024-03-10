@@ -72,7 +72,7 @@ import {
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
 import type { EnvironmentModuleNode, ModuleNode } from './moduleGraph'
-import { EnvironmentModuleGraph, ModuleGraph } from './moduleGraph'
+import { ModuleGraph } from './moduleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HMRBroadcaster, HmrOptions } from './hmr'
@@ -89,6 +89,7 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { warmupFiles } from './warmup'
+import { ModuleExecutionEnvironment } from './environment'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -250,13 +251,14 @@ export interface ViteDevServer {
    */
   pluginContainer: PluginContainer
   /**
-   * Get the module graph for the given environment
+   * Dev Environments. Module execution environments attached to the Vite server.
    */
-  getModuleGraph(environment: string): EnvironmentModuleGraph
+  environments: Map<string, ModuleExecutionEnvironment>
   /**
-   * Available module graph environments
+   * Default environments
    */
-  environments: string[]
+  browserEnvironment: ModuleExecutionEnvironment
+  serverEnvironment: ModuleExecutionEnvironment
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -460,27 +462,32 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
-  const browserModuleGraph = new EnvironmentModuleGraph('browser', (url) =>
-    container.resolveId(url, undefined, { ssr: false, environment: 'browser' }),
-  )
-  const serverModuleGraph = new EnvironmentModuleGraph('server', (url) =>
-    container.resolveId(url, undefined, { ssr: true, environment: 'server' }),
-  )
-  const moduleGraph = new ModuleGraph({
-    browser: browserModuleGraph,
-    server: serverModuleGraph,
+  const browserEnvironment = new ModuleExecutionEnvironment('browser', {
+    type: 'browser',
+    resolveId: (url) =>
+      container.resolveId(url, undefined, {
+        ssr: false,
+        environment: 'browser',
+      }),
   })
-  const environments = ['browser', 'server']
-  const getModuleGraph = (environment: string) => {
-    if (environment === 'browser') {
-      return browserModuleGraph
-    } else if (environment === 'server') {
-      return serverModuleGraph
-    } else {
-      throw new Error(`Invalid module graph runtime: ${environment}`)
-    }
-  }
+  const serverEnvironment = new ModuleExecutionEnvironment('server', {
+    type: 'server',
+    resolveId: (url) =>
+      container.resolveId(url, undefined, { ssr: true, environment: 'server' }),
+  })
+  const moduleGraph = new ModuleGraph({
+    browser: browserEnvironment.moduleGraph,
+    server: serverEnvironment.moduleGraph,
+  })
+  const environments = new Map([
+    ['browser', browserEnvironment],
+    ['server', serverEnvironment],
+  ])
 
+  // TODO: Later on, we may pass the environments map to pluginContainer instead of getModuleGraph
+  const getModuleGraph = (environment: string) => {
+    return environments.get(environment)!.moduleGraph
+  }
   const container = await createPluginContainer(config, getModuleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
@@ -496,8 +503,9 @@ export async function _createServer(
     pluginContainer: container,
     ws,
     hot,
-    getModuleGraph,
     environments,
+    browserEnvironment,
+    serverEnvironment,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
     ssrTransform(
@@ -747,12 +755,12 @@ export async function _createServer(
         publicFiles[isUnlink ? 'delete' : 'add'](path)
         if (!isUnlink) {
           const moduleWithSamePath =
-            await browserModuleGraph.getModuleByUrl(path)
+            await browserEnvironment.moduleGraph.getModuleByUrl(path)
           const etag = moduleWithSamePath?.transformResult?.etag
           if (etag) {
             // The public file should win on the next request over a module with the
             // same path. Prevent the transform etag fast path from serving the module
-            browserModuleGraph.etagToModuleMap.delete(etag)
+            browserEnvironment.moduleGraph.etagToModuleMap.delete(etag)
           }
         }
       }
@@ -766,7 +774,7 @@ export async function _createServer(
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     environments.forEach((environment) =>
-      getModuleGraph(environment).onFileChange(file),
+      environment.moduleGraph.onFileChange(file),
     )
     await onHMRUpdate(file, false)
   })
@@ -785,7 +793,9 @@ export async function _createServer(
     message?: string
     environment: string
   }) {
-    const mod = getModuleGraph(m.environment).urlToModuleMap.get(m.path)
+    const mod = environments
+      .get(m.environment)
+      ?.moduleGraph.urlToModuleMap.get(m.path)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
       config.logger.info(
         colors.yellow(`hmr invalidate `) +
@@ -809,7 +819,7 @@ export async function _createServer(
       invalidateModule({ path, message, environment })
     } else {
       environments.forEach((environment) => {
-        invalidateModule({ path, message, environment })
+        invalidateModule({ path, message, environment: environment.id })
       })
     }
   })

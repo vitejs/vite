@@ -253,8 +253,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             // dynamic worker type we can't know how import the env
             // so we copy /@vite/env code of server transform result into file header
             const environment = options?.environment ?? 'browser'
-            const moduleGraph = server.getModuleGraph(environment)
-            const module = moduleGraph.getModuleById(ENV_ENTRY)
+            const moduleGraph =
+              server.environments.get(environment)?.moduleGraph
+            const module = moduleGraph?.getModuleById(ENV_ENTRY)
             injectEnv = module?.transformResult?.code || ''
           }
         }

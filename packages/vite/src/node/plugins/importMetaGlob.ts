@@ -60,11 +60,11 @@ export function getAffectedGlobModules(
           (!negated.length || negated.every((glob) => isMatch(file, glob))),
       )
     ) {
-      const mod = server.getModuleGraph('browser').getModuleById(id)
+      const mod = server.browserEnvironment.moduleGraph.getModuleById(id)
 
       if (mod) {
         if (mod.file) {
-          server.getModuleGraph('browser').onFileChange(mod.file)
+          server.browserEnvironment.moduleGraph.onFileChange(mod.file)
         }
         modules.push(mod)
       }
