@@ -119,7 +119,6 @@ test('import css library', async () => {
   expect(await page.textContent('.module-condition')).toMatch('[success]')
 })
 
-// TODO: fix
 describe.runIf(isServe)('hmr', () => {
   test('handle isomorphic module updates', async () => {
     await page.goto(url)

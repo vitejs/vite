@@ -86,7 +86,7 @@ async function instantiateModule(
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   const moduleGraph = server.getModuleGraph('server')
-  const mod = await moduleGraph.ensureEntryFromUrl(url) // TODO: runtime?
+  const mod = await moduleGraph.ensureEntryFromUrl(url) // TODO: environment?
 
   if (mod.error) {
     throw mod.error

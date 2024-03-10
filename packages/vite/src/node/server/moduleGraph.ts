@@ -19,7 +19,7 @@ export class EnvironmentModuleNode {
   /**
    * Resolved file system path + query
    */
-  id: string | null = null
+  id: string | null = null // TODO: remove null
   file: string | null = null
   type: 'js' | 'css'
   info?: ModuleInfo
@@ -50,10 +50,6 @@ export class EnvironmentModuleNode {
    * @internal
    */
   invalidationState: TransformResult | 'HARD_INVALIDATED' | undefined
-  /**
-   * @internal
-   */
-  // ssrInvalidationState: TransformResult | 'HARD_INVALIDATED' | undefined
   /**
    * The module urls that are statically imported in the code. This information is separated
    * out from `importedModules` as only importers that statically import the module can be
@@ -163,12 +159,10 @@ export class EnvironmentModuleGraph {
     // import timestamps only in `transformRequest`. If there's no previous `transformResult`, hard invalidate it.
     if (softInvalidate) {
       mod.invalidationState ??= mod.transformResult ?? 'HARD_INVALIDATED'
-      // mod.ssrInvalidationState ??= mod.ssrTransformResult ?? 'HARD_INVALIDATED'
     }
     // If hard invalidated, further soft invalidations have no effect until it's reset to `undefined`
     else {
       mod.invalidationState = 'HARD_INVALIDATED'
-      // mod.ssrInvalidationState = 'HARD_INVALIDATED'
     }
 
     // Skip updating the module if it was already invalidated before and the invalidation state has not changed
@@ -195,7 +189,6 @@ export class EnvironmentModuleGraph {
     if (etag) this.etagToModuleMap.delete(etag)
 
     mod.transformResult = null
-    // mod.ssrTransformResult = null
     mod.module = null
     mod.error = null
 
@@ -702,9 +695,6 @@ export class ModuleGraph {
     ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
     // In the mixed graph, the ssr flag was used to resolve the id.
-    // TODO: check if it is more compatible to only get the module from the browser
-    // or server depending on the ssr flag. For now, querying for both modules
-    // seems to me closer to what we did before.
     const [browserModule, serverModule] = await Promise.all([
       this._browser.getModuleByUrl(url),
       this._server.getModuleByUrl(url),
