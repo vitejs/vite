@@ -214,6 +214,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
 
       const ssr = options?.ssr === true
+      const environment = options?.environment ?? 'browser'
 
       if (canSkipImportAnalysis(importer)) {
         debug?.(colors.dim(`[skipped] ${prettifyUrl(importer, root)}`))
@@ -238,10 +239,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const depsOptimizer = getDepsOptimizer(config, ssr)
 
-      const { moduleGraph } = server
+      const moduleGraph = server.getModuleGraph(environment)
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
-      const importerModule = moduleGraph.getModuleById(importer)!
+      const importerModule = moduleGraph.getModuleById(importer)
       if (!importerModule) {
         // This request is no longer valid. It could happen for optimized deps
         // requests. A full reload is going to request this id again.
@@ -380,7 +381,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // We use an internal function to avoid resolving the url again
             const depModule = await moduleGraph._ensureEntryFromUrl(
               unwrapId(url),
-              ssr,
               canSkipImportAnalysis(url) || forceSkipImportAnalysis,
               resolved,
             )
@@ -525,9 +525,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // record as safe modules
             // safeModulesPath should not include the base prefix.
             // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
-            server?.moduleGraph.safeModulesPath.add(
-              fsPathFromUrl(stripBase(url, base)),
-            )
+            server
+              ?.getModuleGraph('browser')
+              .safeModulesPath.add(fsPathFromUrl(stripBase(url, base)))
 
             if (url !== specifier) {
               let rewriteDone = false
@@ -727,10 +727,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
-        const [normalized] = await moduleGraph.resolveUrl(
-          toAbsoluteUrl(url),
-          ssr,
-        )
+        const [normalized] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
         normalizedAcceptedUrls.add(normalized)
         str().overwrite(start, end, JSON.stringify(normalized), {
           contentOnly: true,
@@ -775,7 +772,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           normalizedAcceptedUrls,
           isPartiallySelfAccepting ? acceptedExports : null,
           isSelfAccepting,
-          ssr,
           staticImportedUrls,
         )
         if (hasHMR && prunedImports) {

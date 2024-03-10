@@ -12,8 +12,8 @@ export type { PluginContext } from 'rollup'
 import type { ConfigEnv, ResolvedConfig, UserConfig } from './config'
 import type { ServerHook } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
-import type { ModuleNode } from './server/moduleGraph'
-import type { HmrContext } from './server/hmr'
+import type { EnvironmentModuleNode, ModuleNode } from './server/moduleGraph'
+import type { HmrContext, HotUpdateContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
 
 /**
@@ -119,6 +119,19 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * `{ order: 'pre', handler: hook }`
    */
   transformIndexHtml?: IndexHtmlTransform
+
+  /**
+   * @deprecated
+   * Compat support, ctx.modules is a backward compatible ModuleNode array
+   * with the mixed client and ssr moduleGraph. Use hotUpdate instead
+   */
+  handleHotUpdate?: ObjectHook<
+    (
+      this: void,
+      ctx: HmrContext,
+    ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+  >
+
   /**
    * Perform custom handling of HMR updates.
    * The handler receives a context containing changed filename, timestamp, a
@@ -134,11 +147,14 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * - If the hook doesn't return a value, the hmr update will be performed as
    *   normal.
    */
-  handleHotUpdate?: ObjectHook<
+  hotUpdate?: ObjectHook<
     (
       this: void,
-      ctx: HmrContext,
-    ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+      ctx: HotUpdateContext,
+    ) =>
+      | Array<EnvironmentModuleNode>
+      | void
+      | Promise<Array<EnvironmentModuleNode> | void>
   >
 
   /**
@@ -153,6 +169,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
         attributes: Record<string, string>
         custom?: CustomPluginOptions
         ssr?: boolean
+        environment?: string
         /**
          * @internal
          */
@@ -165,7 +182,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
     (
       this: PluginContext,
       id: string,
-      options?: { ssr?: boolean },
+      options?: { ssr?: boolean; environment?: string },
     ) => Promise<LoadResult> | LoadResult
   >
   transform?: ObjectHook<
@@ -173,7 +190,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: TransformPluginContext,
       code: string,
       id: string,
-      options?: { ssr?: boolean },
+      options?: { ssr?: boolean; environment?: string },
     ) => Promise<TransformResult> | TransformResult
   >
 }

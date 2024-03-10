@@ -112,14 +112,20 @@ export type {
   WebSocketCustomListener,
 } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
-export type { ModuleGraph, ModuleNode, ResolvedUrl } from './server/moduleGraph'
+export type {
+  ModuleGraph,
+  ModuleNode,
+  EnvironmentModuleGraph,
+  EnvironmentModuleNode,
+  ResolvedUrl,
+} from './server/moduleGraph'
 export type { SendOptions } from './server/send'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type {
   TransformOptions,
   TransformResult,
 } from './server/transformRequest'
-export type { HmrOptions, HmrContext } from './server/hmr'
+export type { HmrOptions, HmrContext, HotUpdateContext } from './server/hmr'
 
 export type {
   HMRBroadcaster,

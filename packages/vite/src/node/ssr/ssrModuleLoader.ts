@@ -85,19 +85,19 @@ async function instantiateModule(
   urlStack: string[] = [],
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
-  const { moduleGraph } = server
-  const mod = await moduleGraph.ensureEntryFromUrl(url, true)
+  const moduleGraph = server.getModuleGraph('server')
+  const mod = await moduleGraph.ensureEntryFromUrl(url) // TODO: environment?
 
-  if (mod.ssrError) {
-    throw mod.ssrError
+  if (mod.error) {
+    throw mod.error
   }
 
-  if (mod.ssrModule) {
-    return mod.ssrModule
+  if (mod.module) {
+    return mod.module
   }
   const result =
-    mod.ssrTransformResult ||
-    (await transformRequest(url, server, { ssr: true }))
+    mod.transformResult ||
+    (await transformRequest(url, server, { ssr: true, environment: 'server' }))
   if (!result) {
     // TODO more info? is this even necessary?
     throw new Error(`failed to load module for ssr: ${url}`)
@@ -110,7 +110,7 @@ async function instantiateModule(
 
   // Tolerate circular imports by ensuring the module can be
   // referenced before it's been instantiated.
-  mod.ssrModule = ssrModule
+  mod.module = ssrModule
 
   const ssrImportMeta = {
     // The filesystem URL, matching native Node.js modules
@@ -176,7 +176,7 @@ async function instantiateModule(
         // return local module to avoid race condition #5470
         return mod
       }
-      return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
+      return moduleGraph.urlToModuleMap.get(dep)?.module
     } catch (err) {
       // tell external error handler which mod was imported with error
       importErrors.set(err, { importee: dep })
@@ -239,11 +239,11 @@ async function instantiateModule(
       ssrExportAll,
     )
   } catch (e) {
-    mod.ssrError = e
+    mod.error = e
     const errorData = importErrors.get(e)
 
     if (e.stack && fixStacktrace) {
-      ssrFixStacktrace(e, moduleGraph)
+      ssrFixStacktrace(e, server.moduleGraph)
     }
 
     server.config.logger.error(

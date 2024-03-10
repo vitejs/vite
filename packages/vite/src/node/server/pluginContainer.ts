@@ -80,7 +80,10 @@ import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import { buildErrorMessage } from './middlewares/error'
-import type { ModuleGraph, ModuleNode } from './moduleGraph'
+import type {
+  EnvironmentModuleGraph,
+  EnvironmentModuleNode,
+} from './moduleGraph'
 
 const noop = () => {}
 
@@ -105,7 +108,6 @@ export interface PluginContainerOptions {
 
 export interface PluginContainer {
   options: InputOptions
-  getModuleInfo(id: string): ModuleInfo | null
   buildStart(options: InputOptions): Promise<void>
   resolveId(
     id: string,
@@ -115,6 +117,7 @@ export interface PluginContainer {
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
+      environment?: string
       /**
        * @internal
        */
@@ -128,12 +131,14 @@ export interface PluginContainer {
     options?: {
       inMap?: SourceDescription['map']
       ssr?: boolean
+      environment?: string
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }>
   load(
     id: string,
     options?: {
       ssr?: boolean
+      environment?: string
     },
   ): Promise<LoadResult | null>
   watchChange(
@@ -151,7 +156,9 @@ type PluginContext = Omit<
 
 export async function createPluginContainer(
   config: ResolvedConfig,
-  moduleGraph?: ModuleGraph,
+  getModuleGraph: (
+    environment: string,
+  ) => EnvironmentModuleGraph | undefined = () => undefined,
   watcher?: FSWatcher,
 ): Promise<PluginContainer> {
   const {
@@ -182,7 +189,7 @@ export async function createPluginContainer(
   const watchFiles = new Set<string>()
   // _addedFiles from the `load()` hook gets saved here so it can be reused in the `transform()` hook
   const moduleNodeToLoadAddedImports = new WeakMap<
-    ModuleNode,
+    EnvironmentModuleNode,
     Set<string> | null
   >()
 
@@ -253,42 +260,13 @@ export async function createPluginContainer(
   // same default value of "moduleInfo.meta" as in Rollup
   const EMPTY_OBJECT = Object.freeze({})
 
-  function getModuleInfo(id: string) {
-    const module = moduleGraph?.getModuleById(id)
-    if (!module) {
-      return null
-    }
-    if (!module.info) {
-      module.info = new Proxy(
-        { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
-        ModuleInfoProxy,
-      )
-    }
-    return module.info
-  }
-
-  function updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
-    if (meta) {
-      const moduleInfo = getModuleInfo(id)
-      if (moduleInfo) {
-        moduleInfo.meta = { ...moduleInfo.meta, ...meta }
-      }
-    }
-  }
-
-  function updateModuleLoadAddedImports(id: string, ctx: Context) {
-    const module = moduleGraph?.getModuleById(id)
-    if (module) {
-      moduleNodeToLoadAddedImports.set(module, ctx._addedImports)
-    }
-  }
-
   // we should create a new context for each async hook pipeline so that the
   // active plugin in that pipeline can be tracked in a concurrency-safe manner.
   // using a class to make creating new contexts more efficient
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
+    environment = 'browser'
     _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
@@ -325,6 +303,7 @@ export async function createPluginContainer(
         isEntry: !!options?.isEntry,
         skip,
         ssr: this.ssr,
+        environment: this.environment,
         scan: this._scan,
       })
       if (typeof out === 'string') out = { id: out }
@@ -338,16 +317,24 @@ export async function createPluginContainer(
       } & Partial<PartialNull<ModuleOptions>>,
     ): Promise<ModuleInfo> {
       // We may not have added this to our module graph yet, so ensure it exists
-      await moduleGraph?.ensureEntryFromUrl(unwrapId(options.id), this.ssr)
+      await getModuleGraph(this.environment)?.ensureEntryFromUrl(
+        unwrapId(options.id),
+      )
       // Not all options passed to this function make sense in the context of loading individual files,
       // but we can at least update the module info properties we support
-      updateModuleInfo(options.id, options)
+      this._updateModuleInfo(options.id, options)
 
-      const loadResult = await container.load(options.id, { ssr: this.ssr })
+      const loadResult = await container.load(options.id, {
+        ssr: this.ssr,
+        environment: this.environment,
+      })
       const code =
         typeof loadResult === 'object' ? loadResult?.code : loadResult
       if (code != null) {
-        await container.transform(code, options.id, { ssr: this.ssr })
+        await container.transform(code, options.id, {
+          ssr: this.ssr,
+          environment: this.environment,
+        })
       }
 
       const moduleInfo = this.getModuleInfo(options.id)
@@ -360,13 +347,40 @@ export async function createPluginContainer(
     }
 
     getModuleInfo(id: string) {
-      return getModuleInfo(id)
+      const module = getModuleGraph(this.environment)?.getModuleById(id)
+      if (!module) {
+        return null
+      }
+      if (!module.info) {
+        module.info = new Proxy(
+          { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
+          ModuleInfoProxy,
+        )
+      }
+      return module.info
+    }
+
+    _updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
+      if (meta) {
+        const moduleInfo = this.getModuleInfo(id)
+        if (moduleInfo) {
+          moduleInfo.meta = { ...moduleInfo.meta, ...meta }
+        }
+      }
+    }
+
+    _updateModuleLoadAddedImports(id: string) {
+      const module = getModuleGraph(this.environment)?.getModuleById(id)
+      if (module) {
+        moduleNodeToLoadAddedImports.set(module, this._addedImports)
+      }
     }
 
     getModuleIds() {
-      return moduleGraph
-        ? moduleGraph.idToModuleMap.keys()
-        : Array.prototype[Symbol.iterator]()
+      return (
+        getModuleGraph(this.environment)?.idToModuleMap.keys() ??
+        Array.prototype[Symbol.iterator]()
+      )
     }
 
     addWatchFile(id: string) {
@@ -543,7 +557,7 @@ export async function createPluginContainer(
         this.sourcemapChain.push(inMap)
       }
       // Inherit `_addedImports` from the `load()` hook
-      const node = moduleGraph?.getModuleById(id)
+      const node = getModuleGraph(this.environment)?.getModuleById(id)
       if (node) {
         this._addedImports = moduleNodeToLoadAddedImports.get(node) ?? null
       }
@@ -651,8 +665,6 @@ export async function createPluginContainer(
       return options
     })(),
 
-    getModuleInfo,
-
     async buildStart() {
       await handleHookPromise(
         hookParallel(
@@ -666,9 +678,11 @@ export async function createPluginContainer(
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
       const skip = options?.skip
       const ssr = options?.ssr
+      const environment = options?.environment
       const scan = !!options?.scan
       const ctx = new Context()
       ctx.ssr = !!ssr
+      ctx.environment = environment ?? 'browser'
       ctx._scan = scan
       ctx._resolveSkips = skip
       const resolveStart = debugResolve ? performance.now() : 0
@@ -689,6 +703,7 @@ export async function createPluginContainer(
             custom: options?.custom,
             isEntry: !!options?.isEntry,
             ssr,
+            environment,
             scan,
           }),
         )
@@ -734,33 +749,37 @@ export async function createPluginContainer(
 
     async load(id, options) {
       const ssr = options?.ssr
+      const environment = options?.environment
       const ctx = new Context()
       ctx.ssr = !!ssr
+      ctx.environment = environment ?? 'browser'
       for (const plugin of getSortedPlugins('load')) {
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.load) continue
         ctx._activePlugin = plugin
         const handler = getHookHandler(plugin.load)
         const result = await handleHookPromise(
-          handler.call(ctx as any, id, { ssr }),
+          handler.call(ctx as any, id, { ssr, environment }),
         )
         if (result != null) {
           if (isObject(result)) {
-            updateModuleInfo(id, result)
+            ctx._updateModuleInfo(id, result)
           }
-          updateModuleLoadAddedImports(id, ctx)
+          ctx._updateModuleLoadAddedImports(id)
           return result
         }
       }
-      updateModuleLoadAddedImports(id, ctx)
+      ctx._updateModuleLoadAddedImports(id)
       return null
     },
 
     async transform(code, id, options) {
       const inMap = options?.inMap
       const ssr = options?.ssr
+      const environment = options?.environment
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       ctx.ssr = !!ssr
+      ctx.environment = environment ?? 'browser'
       for (const plugin of getSortedPlugins('transform')) {
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.transform) continue
@@ -772,7 +791,7 @@ export async function createPluginContainer(
         const handler = getHookHandler(plugin.transform)
         try {
           result = await handleHookPromise(
-            handler.call(ctx as any, code, id, { ssr }),
+            handler.call(ctx as any, code, id, { ssr, environment }),
           )
         } catch (e) {
           ctx.error(e)
@@ -794,7 +813,7 @@ export async function createPluginContainer(
               ctx.sourcemapChain.push(result.map)
             }
           }
-          updateModuleInfo(id, result)
+          ctx._updateModuleInfo(id, result)
         } else {
           code = result
         }

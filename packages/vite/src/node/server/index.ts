@@ -71,8 +71,8 @@ import {
   serveStaticMiddleware,
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import type { ModuleNode } from './moduleGraph'
-import { ModuleGraph } from './moduleGraph'
+import type { EnvironmentModuleNode, ModuleNode } from './moduleGraph'
+import { EnvironmentModuleGraph, ModuleGraph } from './moduleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HMRBroadcaster, HmrOptions } from './hmr'
@@ -250,8 +250,17 @@ export interface ViteDevServer {
    */
   pluginContainer: PluginContainer
   /**
+   * Get the module graph for the given environment
+   */
+  getModuleGraph(environment: string): EnvironmentModuleGraph
+  /**
+   * Available module graph environments
+   */
+  environments: string[]
+  /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
+   * @deprecated use environment module graphs instead
    */
   moduleGraph: ModuleGraph
   /**
@@ -315,6 +324,11 @@ export interface ViteDevServer {
    * API to retrieve the module to be reloaded. If `hmr` is false, this is a no-op.
    */
   reloadModule(module: ModuleNode): Promise<void>
+  /**
+   * Triggers HMR for an environment module in the module graph.
+   * If `hmr` is false, this is a no-op.
+   */
+  reloadEnvironmentModule(module: EnvironmentModuleNode): Promise<void>
   /**
    * Start the server.
    */
@@ -446,11 +460,28 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
-  const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
-    container.resolveId(url, undefined, { ssr }),
+  const browserModuleGraph = new EnvironmentModuleGraph('browser', (url) =>
+    container.resolveId(url, undefined, { ssr: false, environment: 'browser' }),
   )
+  const serverModuleGraph = new EnvironmentModuleGraph('server', (url) =>
+    container.resolveId(url, undefined, { ssr: true, environment: 'server' }),
+  )
+  const moduleGraph = new ModuleGraph({
+    browser: browserModuleGraph,
+    server: serverModuleGraph,
+  })
+  const environments = ['browser', 'server']
+  const getModuleGraph = (environment: string) => {
+    if (environment === 'browser') {
+      return browserModuleGraph
+    } else if (environment === 'server') {
+      return serverModuleGraph
+    } else {
+      throw new Error(`Invalid module graph runtime: ${environment}`)
+    }
+  }
 
-  const container = await createPluginContainer(config, moduleGraph, watcher)
+  const container = await createPluginContainer(config, getModuleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
   let exitProcess: () => void
@@ -465,6 +496,8 @@ export async function _createServer(
     pluginContainer: container,
     ws,
     hot,
+    getModuleGraph,
+    environments,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
     ssrTransform(
@@ -516,6 +549,16 @@ export async function _createServer(
       return ssrRewriteStacktrace(stack, moduleGraph)
     },
     async reloadModule(module) {
+      if (serverConfig.hmr !== false && module.file) {
+        updateModules(
+          module.file,
+          [(module._browserModule ?? module._serverModule)!],
+          Date.now(),
+          server,
+        )
+      }
+    },
+    async reloadEnvironmentModule(module) {
       if (serverConfig.hmr !== false && module.file) {
         updateModules(module.file, [module], Date.now(), server)
       }
@@ -703,12 +746,13 @@ export async function _createServer(
         const path = file.slice(publicDir.length)
         publicFiles[isUnlink ? 'delete' : 'add'](path)
         if (!isUnlink) {
-          const moduleWithSamePath = await moduleGraph.getModuleByUrl(path)
+          const moduleWithSamePath =
+            await browserModuleGraph.getModuleByUrl(path)
           const etag = moduleWithSamePath?.transformResult?.etag
           if (etag) {
             // The public file should win on the next request over a module with the
             // same path. Prevent the transform etag fast path from serving the module
-            moduleGraph.etagToModuleMap.delete(etag)
+            browserModuleGraph.etagToModuleMap.delete(etag)
           }
         }
       }
@@ -721,7 +765,9 @@ export async function _createServer(
     file = normalizePath(file)
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
-    moduleGraph.onFileChange(file)
+    environments.forEach((environment) =>
+      getModuleGraph(environment).onFileChange(file),
+    )
     await onHMRUpdate(file, false)
   })
 
@@ -734,13 +780,17 @@ export async function _createServer(
     onFileAddUnlink(file, true)
   })
 
-  hot.on('vite:invalidate', async ({ path, message }) => {
-    const mod = moduleGraph.urlToModuleMap.get(path)
+  function invalidateModule(m: {
+    path: string
+    message?: string
+    environment: string
+  }) {
+    const mod = getModuleGraph(m.environment).urlToModuleMap.get(m.path)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
       config.logger.info(
         colors.yellow(`hmr invalidate `) +
-          colors.dim(path) +
-          (message ? ` ${message}` : ''),
+          colors.dim(m.path) +
+          (m.message ? ` ${m.message}` : ''),
         { timestamp: true },
       )
       const file = getShortName(mod.file!, config.root)
@@ -751,6 +801,16 @@ export async function _createServer(
         server,
         true,
       )
+    }
+  }
+
+  hot.on('vite:invalidate', async ({ path, message, environment }) => {
+    if (environment) {
+      invalidateModule({ path, message, environment })
+    } else {
+      environments.forEach((environment) => {
+        invalidateModule({ path, message, environment })
+      })
     }
   })
 

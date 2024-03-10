@@ -37,6 +37,7 @@ export class HMRContext implements ViteHotContext {
   constructor(
     private hmrClient: HMRClient,
     private ownerPath: string,
+    private environment: string,
   ) {
     if (!hmrClient.dataMap.has(ownerPath)) {
       hmrClient.dataMap.set(ownerPath, {})
@@ -111,7 +112,11 @@ export class HMRContext implements ViteHotContext {
       path: this.ownerPath,
       message,
     })
-    this.send('vite:invalidate', { path: this.ownerPath, message })
+    this.send('vite:invalidate', {
+      path: this.ownerPath,
+      message,
+      environment: this.environment,
+    })
     this.hmrClient.logger.debug(
       `[vite] invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
     )

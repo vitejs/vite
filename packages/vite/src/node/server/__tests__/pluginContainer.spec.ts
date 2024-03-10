@@ -2,17 +2,17 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
-import { ModuleGraph } from '../moduleGraph'
+import { EnvironmentModuleGraph } from '../moduleGraph'
 import type { PluginContainer } from '../pluginContainer'
 import { createPluginContainer } from '../pluginContainer'
 
 let resolveId: (id: string) => any
-let moduleGraph: ModuleGraph
+let moduleGraph: EnvironmentModuleGraph
 
 describe('plugin container', () => {
   describe('getModuleInfo', () => {
     beforeEach(() => {
-      moduleGraph = new ModuleGraph((id) => resolveId(id))
+      moduleGraph = new EnvironmentModuleGraph('browser', (id) => resolveId(id))
     })
 
     it('can pass metadata between hooks', async () => {
@@ -150,7 +150,7 @@ describe('plugin container', () => {
 
   describe('load', () => {
     beforeEach(() => {
-      moduleGraph = new ModuleGraph((id) => resolveId(id))
+      moduleGraph = new EnvironmentModuleGraph('browser', (id) => resolveId(id))
     })
 
     it('can resolve a secondary module', async () => {
@@ -231,6 +231,14 @@ async function getPluginContainer(
   config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
 
   resolveId = (id) => container.resolveId(id)
-  const container = await createPluginContainer(config, moduleGraph)
+  const container = await createPluginContainer(
+    config,
+    (environment: string) => {
+      if (environment === 'browser') {
+        return moduleGraph
+      }
+      throw new Error('unexpected environment')
+    },
+  )
   return container
 }
