@@ -52,7 +52,6 @@ describe('plugin container', () => {
         },
       }
 
-      /*
       const container = await getPluginContainer({
         plugins: [plugin],
       })
@@ -67,7 +66,6 @@ describe('plugin container', () => {
       await container.close()
 
       expect(metaArray).toEqual([{ x: 1 }, { x: 2 }, { x: 3 }])
-      */
     })
 
     it('can pass metadata between plugins', async () => {
@@ -93,7 +91,6 @@ describe('plugin container', () => {
         },
       }
 
-      /*
       const container = await getPluginContainer({
         plugins: [plugin1, plugin2],
       })
@@ -102,7 +99,6 @@ describe('plugin container', () => {
       await container.load(entryUrl)
 
       expect.assertions(1)
-      */
     })
 
     it('can pass custom resolve opts between plugins', async () => {
@@ -141,7 +137,6 @@ describe('plugin container', () => {
         },
       }
 
-      /*
       const container = await getPluginContainer({
         plugins: [plugin1, plugin2],
       })
@@ -150,7 +145,6 @@ describe('plugin container', () => {
       await container.load(entryUrl)
 
       expect.assertions(2)
-      */
     })
   })
 
@@ -182,7 +176,6 @@ describe('plugin container', () => {
         },
       }
 
-      /*
       const container = await getPluginContainer({
         plugins: [plugin],
       })
@@ -190,7 +183,6 @@ describe('plugin container', () => {
       const loadResult: any = await container.load(entryUrl)
       const result: any = await container.transform(loadResult.code, entryUrl)
       expect(result.code).equals('2')
-      */
     })
 
     it('will load and transform the module', async () => {
@@ -216,7 +208,6 @@ describe('plugin container', () => {
         },
       }
 
-      /* TODO
       const container = await getPluginContainer({
         plugins: [plugin],
       })
@@ -224,12 +215,10 @@ describe('plugin container', () => {
       const loadResult: any = await container.load(entryUrl)
       const result: any = await container.transform(loadResult.code, entryUrl)
       expect(result.code).equals('3')
-      */
     })
   })
 })
 
-/* TODO
 async function getPluginContainer(
   inlineConfig?: UserConfig,
 ): Promise<PluginContainer> {
@@ -242,7 +231,14 @@ async function getPluginContainer(
   config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
 
   resolveId = (id) => container.resolveId(id)
-  const container = await createPluginContainer(config, getModuleGraph)
+  const container = await createPluginContainer(
+    config,
+    (environment: string) => {
+      if (environment === 'browser') {
+        return moduleGraph
+      }
+      throw new Error('unexpected environment')
+    },
+  )
   return container
 }
-*/
