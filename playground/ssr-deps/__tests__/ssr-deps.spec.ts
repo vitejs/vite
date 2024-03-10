@@ -120,7 +120,7 @@ test('import css library', async () => {
 })
 
 // TODO: fix
-describe.runIf(isServe).skip('hmr', () => {
+describe.runIf(isServe)('hmr', () => {
   test('handle isomorphic module updates', async () => {
     await page.goto(url)
 
