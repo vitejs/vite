@@ -86,9 +86,6 @@ export class EnvironmentModuleGraph {
   // a single file may corresponds to multiple modules with different queries
   fileToModulesMap = new Map<string, Set<EnvironmentModuleNode>>()
 
-  // TODO: this property should be shared across all module graphs
-  safeModulesPath = new Set<string>()
-
   /**
    * @internal
    */
@@ -633,10 +630,6 @@ export class ModuleGraph {
   etagToModuleMap: Map<string, ModuleNode>
 
   fileToModulesMap: Map<string, Set<ModuleNode>>
-
-  get safeModulesPath(): Set<string> {
-    return this._browser.safeModulesPath
-  }
 
   constructor(moduleGraphs: {
     browser: EnvironmentModuleGraph

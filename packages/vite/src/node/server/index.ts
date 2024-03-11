@@ -388,6 +388,10 @@ export interface ViteDevServer {
   /**
    * @internal
    */
+  _safeModulesPath: Set<string>
+  /**
+   * @internal
+   */
   _fsDenyGlob: Matcher
   /**
    * @internal
@@ -696,6 +700,7 @@ export async function _createServer(
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
+    _safeModulesPath: new Set(),
     _fsDenyGlob: picomatch(config.server.fs.deny, {
       matchBase: true,
       nocase: true,
