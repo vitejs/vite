@@ -258,7 +258,7 @@ export interface ViteDevServer {
    * Default environments
    */
   browserEnvironment: ModuleExecutionEnvironment
-  serverEnvironment: ModuleExecutionEnvironment
+  nodeEnvironment: ModuleExecutionEnvironment
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -470,18 +470,18 @@ export async function _createServer(
         environment: 'browser',
       }),
   })
-  const serverEnvironment = new ModuleExecutionEnvironment('server', {
-    type: 'server',
+  const nodeEnvironment = new ModuleExecutionEnvironment('node', {
+    type: 'node',
     resolveId: (url) =>
-      container.resolveId(url, undefined, { ssr: true, environment: 'server' }),
+      container.resolveId(url, undefined, { ssr: true, environment: 'node' }),
   })
   const moduleGraph = new ModuleGraph({
     browser: browserEnvironment.moduleGraph,
-    server: serverEnvironment.moduleGraph,
+    node: nodeEnvironment.moduleGraph,
   })
   const environments = new Map([
     ['browser', browserEnvironment],
-    ['server', serverEnvironment],
+    ['node', nodeEnvironment],
   ])
 
   // TODO: Later on, we may pass the environments map to pluginContainer instead of getModuleGraph
@@ -505,7 +505,7 @@ export async function _createServer(
     hot,
     environments,
     browserEnvironment,
-    serverEnvironment,
+    nodeEnvironment,
     moduleGraph,
     resolvedUrls: null, // will be set on listen
     ssrTransform(
@@ -560,7 +560,7 @@ export async function _createServer(
       if (serverConfig.hmr !== false && module.file) {
         updateModules(
           module.file,
-          [(module._browserModule ?? module._serverModule)!],
+          [(module._browserModule ?? module._nodeModule)!],
           Date.now(),
           server,
         )

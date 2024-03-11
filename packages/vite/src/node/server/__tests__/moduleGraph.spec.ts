@@ -42,13 +42,13 @@ describe('moduleGraph', () => {
         'browser',
         async (url) => ({ id: url }),
       )
-      const serverModuleGraph = new EnvironmentModuleGraph(
-        'server',
+      const nodeModuleGraph = new EnvironmentModuleGraph(
+        'node',
         async (url) => ({ id: url }),
       )
       const moduleGraph = new ModuleGraph({
         browser: browserModuleGraph,
-        server: serverModuleGraph,
+        node: nodeModuleGraph,
       })
 
       const addBrowserModule = (url: string) =>
@@ -57,33 +57,33 @@ describe('moduleGraph', () => {
         browserModuleGraph.getModuleById(url)
 
       const addServerModule = (url: string) =>
-        serverModuleGraph.ensureEntryFromUrl(url)
+        nodeModuleGraph.ensureEntryFromUrl(url)
       const getServerModule = (url: string) =>
-        serverModuleGraph.getModuleById(url)
+        nodeModuleGraph.getModuleById(url)
 
       const browserModule1 = await addBrowserModule('/1.js')
-      const serverModule1 = await addServerModule('/1.js')
+      const nodeModule1 = await addServerModule('/1.js')
       const module1 = moduleGraph.getModuleById('/1.js')!
       expect(module1._browserModule).toBe(browserModule1)
-      expect(module1._serverModule).toBe(serverModule1)
+      expect(module1._nodeModule).toBe(nodeModule1)
 
       const module2b = await moduleGraph.ensureEntryFromUrl('/b/2.js')
       const module2s = await moduleGraph.ensureEntryFromUrl('/s/2.js')
       expect(module2b._browserModule).toBe(getBrowserModule('/b/2.js'))
-      expect(module2s._serverModule).toBe(getServerModule('/s/2.js'))
+      expect(module2s._nodeModule).toBe(getServerModule('/s/2.js'))
 
       const importersUrls = ['/1/a.js', '/1/b.js', '/1/c.js']
       ;(await Promise.all(importersUrls.map(addBrowserModule))).forEach((mod) =>
         browserModule1.importers.add(mod),
       )
       ;(await Promise.all(importersUrls.map(addServerModule))).forEach((mod) =>
-        serverModule1.importers.add(mod),
+        nodeModule1.importers.add(mod),
       )
 
       expect(module1.importers.size).toBe(importersUrls.length)
 
       const browserModule1importersValues = [...browserModule1.importers]
-      const serverModule1importersValues = [...serverModule1.importers]
+      const nodeModule1importersValues = [...nodeModule1.importers]
 
       const module1importers = module1.importers
       const module1importersValues = [...module1importers.values()]
@@ -91,8 +91,8 @@ describe('moduleGraph', () => {
       expect(module1importersValues[1]._browserModule).toBe(
         browserModule1importersValues[1],
       )
-      expect(module1importersValues[1]._serverModule).toBe(
-        serverModule1importersValues[1],
+      expect(module1importersValues[1]._nodeModule).toBe(
+        nodeModule1importersValues[1],
       )
 
       const module1importersFromForEach: ModuleNode[] = []
@@ -104,8 +104,8 @@ describe('moduleGraph', () => {
       expect(module1importersFromForEach[1]._browserModule).toBe(
         browserModule1importersValues[1],
       )
-      expect(module1importersFromForEach[1]._serverModule).toBe(
-        serverModule1importersValues[1],
+      expect(module1importersFromForEach[1]._nodeModule).toBe(
+        nodeModule1importersValues[1],
       )
     })
   })

@@ -58,7 +58,7 @@ export function transformRequest(
   if (!options.environment) {
     options = {
       ...options,
-      environment: options.ssr ? 'server' : 'browser',
+      environment: options.ssr ? 'node' : 'browser',
     }
   }
   const environment = options.environment!

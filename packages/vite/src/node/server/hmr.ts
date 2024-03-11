@@ -273,7 +273,7 @@ export async function handleHMRUpdate(
             .map((mod) =>
               mod.id
                 ? server.browserEnvironment.moduleGraph.getModuleById(mod.id) ??
-                  server.serverEnvironment.moduleGraph.getModuleById(mod.id)
+                  server.nodeEnvironment.moduleGraph.getModuleById(mod.id)
                 : undefined,
             )
             .filter(Boolean) as EnvironmentModuleNode[]

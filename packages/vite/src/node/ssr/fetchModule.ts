@@ -84,7 +84,7 @@ export async function fetchModule(
 
   let result = await server.transformRequest(url, {
     ssr: true,
-    environment: 'server',
+    environment: 'node',
   })
 
   if (!result) {
@@ -96,7 +96,7 @@ export async function fetchModule(
   }
 
   // module entry should be created by transformRequest
-  const mod = await server.serverEnvironment.moduleGraph.getModuleByUrl(url) // TODO: fetchModule should get a runtime?
+  const mod = await server.nodeEnvironment.moduleGraph.getModuleByUrl(url) // TODO: fetchModule should get a runtime?
 
   if (!mod) {
     throw new Error(
