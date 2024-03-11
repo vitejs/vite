@@ -14,13 +14,13 @@ describe(
     it('hmr options are defined', async ({ runner: runtime }) => {
       expect(runtime.hmrClient).toBeDefined()
 
-      const mod = await runtime.executeUrl('/fixtures/hmr.js')
+      const mod = await runtime.import('/fixtures/hmr.js')
       expect(mod).toHaveProperty('hmr')
       expect(mod.hmr).toHaveProperty('accept')
     })
 
     it('correctly populates hmr client', async ({ runner: runtime }) => {
-      const mod = await runtime.executeUrl('/fixtures/d')
+      const mod = await runtime.import('/fixtures/d')
       expect(mod.d).toBe('a')
 
       const fixtureC = '/fixtures/c.ts'

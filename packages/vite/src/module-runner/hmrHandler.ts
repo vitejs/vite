@@ -56,7 +56,7 @@ export async function handleHMRPayload(
       runner.moduleCache.clear()
 
       for (const id of clearEntrypoints) {
-        await runner.executeUrl(id)
+        await runner.import(id)
       }
       break
     }

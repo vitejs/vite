@@ -15,7 +15,7 @@ describe('vite-runtime hmr works as expected', async () => {
   }) => {
     expect(runtime.hmrClient).toBeUndefined()
 
-    const mod = await runtime.executeUrl('/fixtures/hmr.js')
+    const mod = await runtime.import('/fixtures/hmr.js')
     expect(mod).toHaveProperty('hmr')
     expect(mod.hmr).toBeUndefined()
   })

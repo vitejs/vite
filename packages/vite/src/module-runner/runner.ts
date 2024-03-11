@@ -82,7 +82,7 @@ export class ModuleRunner {
           if (ssrInvalidates) {
             this.invalidateFiles(ssrInvalidates)
           }
-          return this.executeUrl(acceptedPath)
+          return this.import(acceptedPath)
         },
       )
       options.hmr.connection.onUpdate(createHMRHandler(this))
@@ -95,7 +95,7 @@ export class ModuleRunner {
   /**
    * URL to execute. Accepts file path, server path or id relative to the root.
    */
-  public async executeUrl<T = any>(url: string): Promise<T> {
+  public async import<T = any>(url: string): Promise<T> {
     url = this.normalizeEntryUrl(url)
     const fetchedModule = await this.cachedModule(url)
     return await this.cachedRequest(url, fetchedModule)

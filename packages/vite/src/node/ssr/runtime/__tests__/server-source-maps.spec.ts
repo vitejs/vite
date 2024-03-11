@@ -28,14 +28,14 @@ describe('vite-runtime initialization', async () => {
   }) => {
     expect.assertions(3)
     const topLevelError = await getError(() =>
-      runtime.executeUrl('/fixtures/has-error.js'),
+      runtime.import('/fixtures/has-error.js'),
     )
     expect(serializeStack(runtime, topLevelError)).toBe(
       '    at <root>/fixtures/has-error.js:2:7',
     )
 
     const methodError = await getError(async () => {
-      const mod = await runtime.executeUrl('/fixtures/throws-error-method.ts')
+      const mod = await runtime.import('/fixtures/throws-error-method.ts')
       mod.throwError()
     })
     expect(serializeStack(runtime, methodError)).toBe(
@@ -51,7 +51,7 @@ describe('vite-runtime initialization', async () => {
     server.nodeEnvironment.moduleGraph.invalidateAll() // TODO: environment?
 
     const methodErrorNew = await getError(async () => {
-      const mod = await runtime.executeUrl('/fixtures/throws-error-method.ts')
+      const mod = await runtime.import('/fixtures/throws-error-method.ts')
       mod.throwError()
     })
 

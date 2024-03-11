@@ -13,7 +13,7 @@ async function runTest(useRuntime) {
   let mod
   if (useRuntime) {
     const runtime = await createViteRuntime(server, { hmr: false })
-    mod = await runtime.executeUrl('/src/network-imports.js')
+    mod = await runtime.import('/src/network-imports.js')
   } else {
     mod = await server.ssrLoadModule('/src/network-imports.js')
   }

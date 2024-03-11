@@ -1113,7 +1113,7 @@ async function setupViteRuntime(
 
   await waitForWatcher(server, entrypoint)
 
-  await runner.executeEntrypoint(entrypoint)
+  await runner.import(entrypoint)
 
   return {
     runtime: runner,
