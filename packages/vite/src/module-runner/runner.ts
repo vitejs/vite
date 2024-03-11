@@ -16,12 +16,12 @@ import { ModuleCacheMap } from './moduleCache'
 import type {
   FetchResult,
   ModuleCache,
+  ModuleEvaluator,
+  ModuleRunnerContect,
+  ModuleRunnerImportMeta,
+  ModuleRunnerOptions,
   ResolvedResult,
   SSRImportMetadata,
-  ViteModuleRunner,
-  ViteRuntimeImportMeta,
-  ViteRuntimeModuleContext,
-  ViteRuntimeOptions,
 } from './types'
 import {
   posixDirname,
@@ -40,18 +40,17 @@ import { silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
 
-interface ViteRuntimeDebugger {
+interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
 }
 
-export class ViteRuntime {
+export class ModuleRunner {
   /**
    * Holds the cache of modules
    * Keys of the map are ids
    */
   public moduleCache: ModuleCacheMap
   public hmrClient?: HMRClient
-  public entrypoints = new Set<string>()
 
   private idToUrlMap = new Map<string, string>()
   private fileToIdMap = new Map<string, string[]>()
@@ -67,9 +66,9 @@ export class ViteRuntime {
   private _resetSourceMapSupport?: () => void
 
   constructor(
-    public options: ViteRuntimeOptions,
-    public runner: ViteModuleRunner,
-    private debug?: ViteRuntimeDebugger,
+    public options: ModuleRunnerOptions,
+    public runner: ModuleEvaluator,
+    private debug?: ModuleRunnerDebugger,
   ) {
     this.moduleCache = options.moduleCache ?? new ModuleCacheMap(options.root)
     if (typeof options.hmr === 'object') {
@@ -103,25 +102,11 @@ export class ViteRuntime {
   }
 
   /**
-   * Entrypoint URL to execute. Accepts file path, server path or id relative to the root.
-   * In the case of a full reload triggered by HMR, this is the module that will be reloaded.
-   * If this method is called multiple times, all entrypoints will be reloaded one at a time.
-   */
-  public async executeEntrypoint<T = any>(url: string): Promise<T> {
-    url = this.normalizeEntryUrl(url)
-    const fetchedModule = await this.cachedModule(url)
-    return await this.cachedRequest(url, fetchedModule, [], {
-      entrypoint: true,
-    })
-  }
-
-  /**
    * Clear all caches including HMR listeners.
    */
   public clearCache(): void {
     this.moduleCache.clear()
     this.idToUrlMap.clear()
-    this.entrypoints.clear()
     this.hmrClient?.clear()
   }
 
@@ -203,10 +188,6 @@ export class ViteRuntime {
     metadata?: SSRImportMetadata,
   ): Promise<any> {
     const moduleId = fetchedModule.id
-
-    if (metadata?.entrypoint) {
-      this.entrypoints.add(moduleId)
-    }
 
     const mod = this.moduleCache.getByModuleId(moduleId)
 
@@ -350,7 +331,7 @@ export class ViteRuntime {
     const href = posixPathToFileHref(modulePath)
     const filename = modulePath
     const dirname = posixDirname(modulePath)
-    const meta: ViteRuntimeImportMeta = {
+    const meta: ModuleRunnerImportMeta = {
       filename: isWindows ? toWindowsPath(filename) : filename,
       dirname: isWindows ? toWindowsPath(dirname) : dirname,
       url: href,
@@ -392,7 +373,7 @@ export class ViteRuntime {
       })
     }
 
-    const context: ViteRuntimeModuleContext = {
+    const context: ModuleRunnerContect = {
       [ssrImportKey]: request,
       [ssrDynamicImportKey]: dynamicRequest,
       [ssrModuleExportsKey]: exports,

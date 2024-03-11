@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest'
-import type { ViteRuntime } from 'vite/runtime'
+import type { ModuleRunner } from 'vite/module-runner'
 import { createViteRuntimeTester, editFile, resolvePath } from './utils'
 
 describe('vite-runtime initialization', async () => {
@@ -18,12 +18,12 @@ describe('vite-runtime initialization', async () => {
       return err
     }
   }
-  const serializeStack = (runtime: ViteRuntime, err: Error) => {
-    return err.stack!.split('\n')[1].replace(runtime.options.root, '<root>')
+  const serializeStack = (runner: ModuleRunner, err: Error) => {
+    return err.stack!.split('\n')[1].replace(runner.options.root, '<root>')
   }
 
   it('source maps are correctly applied to stack traces', async ({
-    runtime,
+    runner: runtime,
     server,
   }) => {
     expect.assertions(3)

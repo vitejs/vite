@@ -5,14 +5,14 @@ import EventEmitter from 'node:events'
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, Logger, ViteDevServer } from 'vite'
 import { createServer, createViteRuntime } from 'vite'
-import type { ViteRuntime } from 'vite/runtime'
+import type { ModuleRunner } from 'vite/module-runner'
 import type { RollupError } from 'rollup'
 import { page, promiseWithResolvers, slash, untilUpdated } from '~utils'
 
 let server: ViteDevServer
 const clientLogs: string[] = []
 const serverLogs: string[] = []
-let runtime: ViteRuntime
+let runner: ModuleRunner
 
 const logsEmitter = new EventEmitter()
 
@@ -1070,7 +1070,7 @@ async function setupViteRuntime(
     await server.close()
     clientLogs.length = 0
     serverLogs.length = 0
-    runtime.clearCache()
+    runner.clearCache()
   }
 
   globalThis.__HMR__ = {} as any
@@ -1105,7 +1105,7 @@ async function setupViteRuntime(
   // @ts-expect-error not typed for HMR
   globalThis.log = (...msg) => logger.debug(...msg)
 
-  runtime = await createViteRuntime(server, {
+  runner = await createViteRuntime(server, {
     hmr: {
       logger,
     },
@@ -1113,10 +1113,10 @@ async function setupViteRuntime(
 
   await waitForWatcher(server, entrypoint)
 
-  await runtime.executeEntrypoint(entrypoint)
+  await runner.executeEntrypoint(entrypoint)
 
   return {
-    runtime,
+    runtime: runner,
     server,
   }
 }

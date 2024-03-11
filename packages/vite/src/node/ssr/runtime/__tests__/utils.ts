@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { TestAPI } from 'vitest'
 import { afterEach, beforeEach, test } from 'vitest'
-import type { ViteRuntime } from 'vite/runtime'
+import type { ModuleRunner } from 'vite/module-runner'
 import type { MainThreadRuntimeOptions } from '../mainThreadRuntime'
 import type { ViteDevServer } from '../../../server'
 import type { InlineConfig } from '../../../config'
@@ -12,12 +12,12 @@ import { createViteRuntime } from '../mainThreadRuntime'
 
 interface TestClient {
   server: ViteDevServer
-  runtime: ViteRuntime
+  runner: ModuleRunner
 }
 
 export async function createViteRuntimeTester(
   config: InlineConfig = {},
-  runtimeConfig: MainThreadRuntimeOptions = {},
+  runnerConfig: MainThreadRuntimeOptions = {},
 ): Promise<TestAPI<TestClient>> {
   function waitForWatcher(server: ViteDevServer) {
     return new Promise<void>((resolve) => {
@@ -73,13 +73,13 @@ export async function createViteRuntimeTester(
       ],
       ...config,
     })
-    t.runtime = await createViteRuntime(t.server, {
+    t.runner = await createViteRuntime(t.server, {
       hmr: {
         logger: false,
       },
       // don't override by default so Vitest source maps are correct
       sourcemapInterceptor: false,
-      ...runtimeConfig,
+      ...runnerConfig,
     })
     if (config.server?.watch) {
       await waitForWatcher(t.server)
@@ -87,7 +87,7 @@ export async function createViteRuntimeTester(
   })
 
   afterEach<TestClient>(async (t) => {
-    await t.runtime.destroy()
+    await t.runner.destroy()
     await t.server.close()
   })
 

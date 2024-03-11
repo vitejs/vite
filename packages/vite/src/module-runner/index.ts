@@ -1,21 +1,21 @@
-// this file should re-export only things that don't rely on Node.js or other runtime features
+// this file should re-export only things that don't rely on Node.js or other runner features
 
 export { ModuleCacheMap } from './moduleCache'
-export { ViteRuntime } from './runtime'
-export { ESModulesRunner } from './esmRunner'
+export { ModuleRunner } from './runner'
+export { ESModuleEvaluator } from './esmRunner'
 
 export type { HMRLogger, HMRConnection } from '../shared/hmr'
 export type {
-  ViteModuleRunner,
-  ViteRuntimeModuleContext,
+  ModuleEvaluator,
+  ModuleRunnerContect,
   ModuleCache,
   FetchResult,
   FetchFunction,
   ResolvedResult,
   SSRImportMetadata,
-  HMRRuntimeConnection,
-  ViteRuntimeImportMeta,
-  ViteRuntimeOptions,
+  ModuleRunnerHMRConnection,
+  ModuleRunnerImportMeta,
+  ModuleRunnerOptions,
 } from './types'
 export {
   ssrDynamicImportKey,

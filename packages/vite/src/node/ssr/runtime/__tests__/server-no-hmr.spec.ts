@@ -10,7 +10,9 @@ describe('vite-runtime hmr works as expected', async () => {
     },
   })
 
-  it("hmr client is not defined if it's disabled", async ({ runtime }) => {
+  it("hmr client is not defined if it's disabled", async ({
+    runner: runtime,
+  }) => {
     expect(runtime.hmrClient).toBeUndefined()
 
     const mod = await runtime.executeUrl('/fixtures/hmr.js')

@@ -1,21 +1,21 @@
 import type { HMRPayload } from 'types/hmrPayload'
 import { unwrapId } from '../shared/utils'
-import type { ViteRuntime } from './runtime'
+import type { ModuleRunner } from './runner'
 
 // updates to HMR should go one after another. It is possible to trigger another update during the invalidation for example.
 export function createHMRHandler(
-  runtime: ViteRuntime,
+  runner: ModuleRunner,
 ): (payload: HMRPayload) => Promise<void> {
   const queue = new Queue()
-  return (payload) => queue.enqueue(() => handleHMRPayload(runtime, payload))
+  return (payload) => queue.enqueue(() => handleHMRPayload(runner, payload))
 }
 
 export async function handleHMRPayload(
-  runtime: ViteRuntime,
+  runner: ModuleRunner,
   payload: HMRPayload,
 ): Promise<void> {
-  const hmrClient = runtime.hmrClient
-  if (!hmrClient || runtime.isDestroyed()) return
+  const hmrClient = runner.hmrClient
+  if (!hmrClient || runner.isDestroyed()) return
   switch (payload.type) {
     case 'connected':
       hmrClient.logger.debug(`[vite] connected.`)
@@ -26,14 +26,14 @@ export async function handleHMRPayload(
       await Promise.all(
         payload.updates.map(async (update): Promise<void> => {
           if (update.type === 'js-update') {
-            // runtime always caches modules by their full path without /@id/ prefix
+            // runner always caches modules by their full path without /@id/ prefix
             update.acceptedPath = unwrapId(update.acceptedPath)
             update.path = unwrapId(update.path)
             return hmrClient.queueUpdate(update)
           }
 
           hmrClient.logger.error(
-            '[vite] css hmr is not supported in runtime mode.',
+            '[vite] css hmr is not supported in runner mode.',
           )
         }),
       )
@@ -46,22 +46,17 @@ export async function handleHMRPayload(
     case 'full-reload': {
       const { triggeredBy } = payload
       const clearEntrypoints = triggeredBy
-        ? [...runtime.entrypoints].filter((entrypoint) =>
-            runtime.moduleCache.isImported({
-              importedId: triggeredBy,
-              importedBy: entrypoint,
-            }),
-          )
-        : [...runtime.entrypoints]
+        ? findFileEntrypoints(runner, triggeredBy)
+        : findAllEntrypoints(runner)
 
-      if (!clearEntrypoints.length) break
+      if (!clearEntrypoints.size) break
 
       hmrClient.logger.debug(`[vite] program reload`)
       await hmrClient.notifyListeners('vite:beforeFullReload', payload)
-      runtime.moduleCache.clear()
+      runner.moduleCache.clear()
 
       for (const id of clearEntrypoints) {
-        await runtime.executeUrl(id)
+        await runner.executeUrl(id)
       }
       break
     }
@@ -122,4 +117,37 @@ class Queue {
       })
     return true
   }
+}
+
+function findFileEntrypoints(
+  runner: ModuleRunner,
+  id: string,
+  entrypoints = new Set<string>(),
+  visited = new Set(),
+): Set<string> {
+  if (visited.has(id)) return entrypoints
+  visited.add(id)
+  const mod = runner.moduleCache.get(id)
+  if (!mod || !mod.importers) return entrypoints
+  // entry point is a module that doesn't have any importers
+  if (!mod.importers.size) {
+    entrypoints.add(id)
+    return entrypoints
+  }
+  for (const importer of mod.importers) {
+    findFileEntrypoints(runner, importer, entrypoints)
+  }
+  return entrypoints
+}
+
+function findAllEntrypoints(
+  runner: ModuleRunner,
+  entrypoints = new Set<string>(),
+): Set<string> {
+  for (const [id, mod] of runner.moduleCache.entries()) {
+    if (mod.importers && !mod.importers.size) {
+      entrypoints.add(id)
+    }
+  }
+  return entrypoints
 }

@@ -3,7 +3,7 @@ import type { EnvironmentModuleNode, TransformResult, ViteDevServer } from '..'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import type { FetchResult } from '../../runtime/types'
+import type { FetchResult } from '../../module-runner/types'
 import { unwrapId } from '../../shared/utils'
 import {
   SOURCEMAPPING_URL,

@@ -25,7 +25,7 @@ const external = [
 export default defineConfig({
   input: {
     index: './temp/node/index.d.ts',
-    runtime: './temp/runtime/index.d.ts',
+    'module-runner': './temp/module-runner/index.d.ts',
   },
   output: {
     dir: './dist/node',
@@ -91,10 +91,10 @@ function patchTypes(): Plugin {
     },
     renderChunk(code, chunk) {
       if (
-        chunk.fileName.startsWith('runtime') ||
+        chunk.fileName.startsWith('module-runner') ||
         chunk.fileName.startsWith('types.d-')
       ) {
-        validateRuntimeChunk.call(this, chunk)
+        validateRunnerChunk.call(this, chunk)
       } else {
         validateChunkImports.call(this, chunk)
         code = replaceConfusingTypeNames.call(this, code, chunk)
@@ -107,9 +107,9 @@ function patchTypes(): Plugin {
 }
 
 /**
- * Runtime chunk should only import local dependencies to stay lightweight
+ * Runner chunk should only import local dependencies to stay lightweight
  */
-function validateRuntimeChunk(this: PluginContext, chunk: RenderedChunk) {
+function validateRunnerChunk(this: PluginContext, chunk: RenderedChunk) {
   for (const id of chunk.imports) {
     if (
       !id.startsWith('./') &&

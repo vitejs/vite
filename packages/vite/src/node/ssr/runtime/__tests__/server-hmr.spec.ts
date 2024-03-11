@@ -11,7 +11,7 @@ describe(
       },
     })
 
-    it('hmr options are defined', async ({ runtime }) => {
+    it('hmr options are defined', async ({ runner: runtime }) => {
       expect(runtime.hmrClient).toBeDefined()
 
       const mod = await runtime.executeUrl('/fixtures/hmr.js')
@@ -19,7 +19,7 @@ describe(
       expect(mod.hmr).toHaveProperty('accept')
     })
 
-    it('correctly populates hmr client', async ({ runtime }) => {
+    it('correctly populates hmr client', async ({ runner: runtime }) => {
       const mod = await runtime.executeUrl('/fixtures/d')
       expect(mod.d).toBe('a')
 

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { ESModulesRunner, ViteRuntime } from 'vite/runtime'
-import type { ViteModuleRunner, ViteRuntimeOptions } from 'vite/runtime'
+import { ESModuleEvaluator, ModuleRunner } from 'vite/module-runner'
+import type { ModuleEvaluator, ModuleRunnerOptions } from 'vite/module-runner'
 import type { ViteDevServer } from '../../server'
 import type { HMRLogger } from '../../../shared/hmr'
 import { ServerHMRConnector } from './serverHmrConnector'
@@ -9,7 +9,7 @@ import { ServerHMRConnector } from './serverHmrConnector'
  * @experimental
  */
 export interface MainThreadRuntimeOptions
-  extends Omit<ViteRuntimeOptions, 'root' | 'fetchModule' | 'hmr'> {
+  extends Omit<ModuleRunnerOptions, 'root' | 'fetchModule' | 'hmr'> {
   /**
    * Disable HMR or configure HMR logger.
    */
@@ -21,7 +21,7 @@ export interface MainThreadRuntimeOptions
   /**
    * Provide a custom module runner. This controls how the code is executed.
    */
-  runner?: ViteModuleRunner
+  runner?: ModuleEvaluator
 }
 
 function createHMROptions(
@@ -69,9 +69,9 @@ function resolveSourceMapOptions(options: MainThreadRuntimeOptions) {
 export async function createViteRuntime(
   server: ViteDevServer,
   options: MainThreadRuntimeOptions = {},
-): Promise<ViteRuntime> {
+): Promise<ModuleRunner> {
   const hmr = createHMROptions(server, options)
-  return new ViteRuntime(
+  return new ModuleRunner(
     {
       ...options,
       root: server.config.root,
@@ -79,6 +79,6 @@ export async function createViteRuntime(
       hmr,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },
-    options.runner || new ESModulesRunner(),
+    options.runner || new ESModuleEvaluator(),
   )
 }
