@@ -1,5 +1,21 @@
 import { defineConfig } from 'vite'
 
+function delayIndexCssPlugin() {
+  let server
+  return {
+    name: 'delay-index-css',
+    enforce: 'pre',
+    configureServer(_server) {
+      server = _server
+    },
+    async load(id) {
+      if (server && id.includes('index.css')) {
+        await server.delayUntilStaticImportsProcessed(id)
+      }
+    },
+  }
+}
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -25,5 +41,6 @@ export default defineConfig({
         }
       },
     },
+    delayIndexCssPlugin(),
   ],
 })

@@ -31,6 +31,7 @@ import {
   isParentDirectory,
   mergeConfig,
   normalizePath,
+  promiseWithResolvers,
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
@@ -344,6 +345,23 @@ export interface ViteDevServer {
    */
   openBrowser(): void
   /**
+   * Calling `await server.delayUntilStaticImportsProcessed(id)` will wait until all static imports
+   * are processed. This can be used by tools like Tailwind to ensure all source files have been
+   * seen before generating the CSS classes for the app, avoiding flashes of style changes.
+   * This features uses the deps optimizer internal crawl ended event. The promise will be
+   * immediately resolved if the deps optimizer is not enabled.
+   * @experimental
+   */
+  delayUntilStaticImportsProcessed: (id: string) => Promise<void>
+  /**
+   * @internal
+   */
+  _registerRequestProcessing: (id: string, done: () => Promise<unknown>) => void
+  /**
+   * @internal
+   */
+  _onCrawlEnd(cb: () => void): void
+  /**
    * @internal
    */
   _setInternalServer(server: ViteDevServer): void
@@ -457,6 +475,20 @@ export async function _createServer(
   let exitProcess: () => void
 
   const devHtmlTransformFn = createDevHtmlTransformFn(config)
+
+  const onCrawlEndCallbacks: (() => void)[] = []
+  const crawlEndFinder = setupOnCrawlEnd(() => {
+    onCrawlEndCallbacks.forEach((cb) => cb())
+  })
+  function delayUntilStaticImportsProcessed(id: string): Promise<void> {
+    return crawlEndFinder.delayUntilStaticImportsProcessed(id)
+  }
+  function _registerRequestProcessing(id: string, done: () => Promise<any>) {
+    crawlEndFinder.registerRequestProcessing(id, done)
+  }
+  function _onCrawlEnd(cb: () => void) {
+    onCrawlEndCallbacks.push(cb)
+  }
 
   let server: ViteDevServer = {
     config,
@@ -589,6 +621,7 @@ export async function _createServer(
         watcher.close(),
         hot.close(),
         container.close(),
+        crawlEndFinder?.cancel(),
         getDepsOptimizer(server.config)?.close(),
         getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer(),
@@ -636,6 +669,10 @@ export async function _createServer(
       }
       return server._restartPromise
     },
+
+    delayUntilStaticImportsProcessed,
+    _registerRequestProcessing,
+    _onCrawlEnd,
 
     _setInternalServer(_server: ViteDevServer) {
       // Rebind internal the server variable so functions reference the user
@@ -1110,5 +1147,81 @@ export async function restartServerWithUrls(
   ) {
     logger.info('')
     server.printUrls()
+  }
+}
+
+const callCrawlEndIfIdleAfterMs = 50
+
+interface CrawlEndFinder {
+  registerRequestProcessing: (id: string, done: () => Promise<any>) => void
+  delayUntilStaticImportsProcessed: (id: string) => Promise<void>
+  cancel: () => void
+}
+
+function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
+  const registeredIds = new Set<string>()
+  const seenIds = new Set<string>()
+  const onCrawlEndPromiseWithResolvers = promiseWithResolvers<void>()
+
+  let timeoutHandle: NodeJS.Timeout | undefined
+
+  let cancelled = false
+  function cancel() {
+    cancelled = true
+  }
+
+  let crawlEndCalled = false
+  function callOnCrawlEnd() {
+    if (!cancelled && !crawlEndCalled) {
+      crawlEndCalled = true
+      onCrawlEnd()
+    }
+    onCrawlEndPromiseWithResolvers.resolve()
+  }
+
+  function registerRequestProcessing(
+    id: string,
+    done: () => Promise<any>,
+  ): void {
+    if (!seenIds.has(id)) {
+      seenIds.add(id)
+      registeredIds.add(id)
+      done()
+        .catch(() => {})
+        .finally(() => markIdAsDone(id))
+    }
+  }
+
+  function delayUntilStaticImportsProcessed(id: string): Promise<void> {
+    seenIds.add(id)
+    markIdAsDone(id)
+    return onCrawlEndPromiseWithResolvers.promise
+  }
+
+  function markIdAsDone(id: string): void {
+    if (registeredIds.has(id)) {
+      registeredIds.delete(id)
+      checkIfCrawlEndAfterTimeout()
+    }
+  }
+
+  function checkIfCrawlEndAfterTimeout() {
+    if (cancelled || registeredIds.size > 0) return
+
+    if (timeoutHandle) clearTimeout(timeoutHandle)
+    timeoutHandle = setTimeout(
+      callOnCrawlEndWhenIdle,
+      callCrawlEndIfIdleAfterMs,
+    )
+  }
+  async function callOnCrawlEndWhenIdle() {
+    if (cancelled || registeredIds.size > 0) return
+    callOnCrawlEnd()
+  }
+
+  return {
+    registerRequestProcessing,
+    delayUntilStaticImportsProcessed,
+    cancel,
   }
 }
