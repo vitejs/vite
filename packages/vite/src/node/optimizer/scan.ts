@@ -11,6 +11,7 @@ import type {
   Plugin,
 } from 'esbuild'
 import esbuild, { formatMessages, transform } from 'esbuild'
+import type { PartialResolvedId } from 'rollup'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
 import {
@@ -39,8 +40,12 @@ import { createPluginContainer } from '../server/pluginContainer'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 import { cleanUrl } from '../../shared/utils'
 import { loadTsconfigJsonForFile } from '../plugins/esbuild'
+import { ModuleExecutionEnvironment } from '../server/environment'
 
-type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
+type ResolveIdOptions = Omit<
+  Parameters<PluginContainer['resolveId']>[2],
+  'environment'
+>
 
 const debug = createDebugger('vite:deps')
 
@@ -294,7 +299,21 @@ function esbuildScanPlugin(
   entries: string[],
 ): Plugin {
   const seen = new Map<string, string | undefined>()
-
+  const environment = new ModuleExecutionEnvironment('scan:browser', {
+    type: 'browser',
+    resolveId,
+  })
+  async function resolveId(
+    id: string,
+    importer?: string,
+    options?: ResolveIdOptions,
+  ): Promise<PartialResolvedId | null> {
+    return container.resolveId(id, importer && normalizePath(importer), {
+      ...options,
+      scan: true,
+      environment,
+    })
+  }
   const resolve = async (
     id: string,
     importer?: string,
@@ -304,14 +323,7 @@ function esbuildScanPlugin(
     if (seen.has(key)) {
       return seen.get(key)
     }
-    const resolved = await container.resolveId(
-      id,
-      importer && normalizePath(importer),
-      {
-        ...options,
-        scan: true,
-      },
-    )
+    const resolved = await resolveId(id, importer, options)
     const res = resolved?.id
     seen.set(key, res)
     return res

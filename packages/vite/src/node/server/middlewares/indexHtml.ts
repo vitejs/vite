@@ -385,7 +385,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      await server?.pluginContainer.transform(code, mod.id!)
+      await server?.pluginContainer.transform(code, mod.id!, {
+        environment: server!.browserEnvironment,
+      })
 
       const hash = getHash(cleanUrl(mod.id!))
       const result = htmlProxyResult.get(`${hash}_${index}`)

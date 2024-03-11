@@ -8,18 +8,16 @@ import { ModuleExecutionEnvironment } from '../environment'
 
 let resolveId: (id: string) => any
 let environment: ModuleExecutionEnvironment
-const environments = new Map<string, ModuleExecutionEnvironment>()
-function resetEnvironments() {
+function resetEnvironment() {
   environment = new ModuleExecutionEnvironment('browser', {
     type: 'browser',
     resolveId: (id) => resolveId(id),
   })
-  environments.set('browser', environment)
 }
 
 describe('plugin container', () => {
   describe('getModuleInfo', () => {
-    beforeEach(resetEnvironments)
+    beforeEach(resetEnvironment)
     it('can pass metadata between hooks', async () => {
       const entryUrl = '/x.js'
 
@@ -154,7 +152,7 @@ describe('plugin container', () => {
 
   describe('load', () => {
     beforeEach(() => {
-      beforeEach(resetEnvironments)
+      beforeEach(resetEnvironment)
     })
 
     it('can resolve a secondary module', async () => {
@@ -238,7 +236,7 @@ async function getPluginContainer(
   // @ts-expect-error This plugin requires a ViteDevServer instance.
   config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
 
-  resolveId = (id) => container.resolveId(id)
-  const container = await createPluginContainer(config, environments)
+  resolveId = (id) => container.resolveId(id, undefined, { environment })
+  const container = await createPluginContainer(config)
   return container
 }

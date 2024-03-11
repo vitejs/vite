@@ -9,7 +9,7 @@ import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
-import type { RollupOptions } from 'rollup'
+import type { PartialResolvedId, RollupOptions } from 'rollup'
 import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
@@ -69,6 +69,7 @@ import { createPluginContainer } from './server/pluginContainer'
 import type { PackageCache } from './packages'
 import { findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
+import { ModuleExecutionEnvironment } from './server/environment'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
 
@@ -617,8 +618,25 @@ export async function resolveConfig(
   const createResolver: ResolvedConfig['createResolver'] = (options) => {
     let aliasContainer: PluginContainer | undefined
     let resolverContainer: PluginContainer | undefined
-    return async (id, importer, aliasOnly, ssr) => {
+    // The scanner only runs for the browser environment
+    const environments = new Map<string, ModuleExecutionEnvironment>()
+    async function resolve(
+      id: string,
+      importer?: string,
+      aliasOnly?: boolean,
+      ssr?: boolean,
+    ): Promise<PartialResolvedId | null> {
       let container: PluginContainer
+      const environmentType = ssr ? 'node' : 'browser'
+      const resolveType = aliasOnly ? 'alias' : 'resolver'
+      const environmentKey = `${command}:${environmentType}:${resolveType}`
+      let environment = environments.get(environmentKey)
+      if (!environment) {
+        environment = new ModuleExecutionEnvironment(environmentKey, {
+          type: environmentType,
+          resolveId: (id: string) => resolve(id, undefined, aliasOnly, !!ssr),
+        })
+      }
       if (aliasOnly) {
         container =
           aliasContainer ||
@@ -649,13 +667,14 @@ export async function resolveConfig(
             ],
           }))
       }
-      return (
-        await container.resolveId(id, importer, {
-          ssr,
-          scan: options?.scan,
-        })
-      )?.id
+      return await container.resolveId(id, importer, {
+        ssr,
+        environment,
+        scan: options?.scan,
+      })
     }
+    return async (id, importer, aliasOnly, ssr) =>
+      (await resolve(id, importer, aliasOnly, ssr))?.id
   }
 
   const { publicDir } = config

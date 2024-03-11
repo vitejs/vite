@@ -494,7 +494,7 @@ export async function _createServer(
   environments.set('browser', browserEnvironment)
   environments.set('node', nodeEnvironment)
 
-  const container = await createPluginContainer(config, environments, watcher)
+  const container = await createPluginContainer(config, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
   let exitProcess: () => void

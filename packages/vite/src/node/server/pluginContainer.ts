@@ -81,7 +81,7 @@ import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import { buildErrorMessage } from './middlewares/error'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import type { ModuleExecutionEnvironment } from './environment'
+import { ModuleExecutionEnvironment } from './environment'
 
 const noop = () => {}
 
@@ -109,13 +109,13 @@ export interface PluginContainer {
   buildStart(options: InputOptions): Promise<void>
   resolveId(
     id: string,
-    importer?: string,
-    options?: {
+    importer: string | undefined,
+    options: {
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
-      environment?: ModuleExecutionEnvironment
+      environment: ModuleExecutionEnvironment
       /**
        * @internal
        */
@@ -126,17 +126,17 @@ export interface PluginContainer {
   transform(
     code: string,
     id: string,
-    options?: {
+    options: {
       inMap?: SourceDescription['map']
       ssr?: boolean
-      environment?: ModuleExecutionEnvironment
+      environment: ModuleExecutionEnvironment
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }>
   load(
     id: string,
-    options?: {
+    options: {
       ssr?: boolean
-      environment?: ModuleExecutionEnvironment
+      environment: ModuleExecutionEnvironment
     },
   ): Promise<LoadResult | null>
   watchChange(
@@ -157,7 +157,6 @@ type PluginContext = Omit<
 
 export async function createPluginContainer(
   config: ResolvedConfig,
-  environnments?: Map<string, ModuleExecutionEnvironment>,
   watcher?: FSWatcher,
 ): Promise<PluginContainer> {
   const {
@@ -168,6 +167,13 @@ export async function createPluginContainer(
   } = config
   const { getSortedPluginHooks, getSortedPlugins } =
     createPluginHookUtils(plugins)
+
+  // default environment to be used in buildStart, buildEnd, watchChange, and closeBundle hooks,
+  // wich are called once for all environments
+  const defaultEnvironment = new ModuleExecutionEnvironment('mixed', {
+    type: 'mixed',
+    resolveId: async (id: string) => ({ id }),
+  })
 
   const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
@@ -265,7 +271,7 @@ export async function createPluginContainer(
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
-    environment: ModuleExecutionEnvironment | undefined
+    environment: ModuleExecutionEnvironment
     _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
@@ -274,7 +280,7 @@ export async function createPluginContainer(
     _addedImports: Set<string> | null = null
 
     constructor(
-      environment?: ModuleExecutionEnvironment,
+      environment: ModuleExecutionEnvironment,
       initialPlugin?: Plugin,
     ) {
       this.environment = environment
@@ -551,7 +557,7 @@ export async function createPluginContainer(
     constructor(
       id: string,
       code: string,
-      environment?: ModuleExecutionEnvironment,
+      environment: ModuleExecutionEnvironment,
       inMap?: SourceMap | string,
     ) {
       super(environment)
@@ -677,7 +683,7 @@ export async function createPluginContainer(
       await handleHookPromise(
         hookParallel(
           'buildStart',
-          (plugin) => new Context(undefined, plugin),
+          (plugin) => new Context(defaultEnvironment, plugin),
           () => [container.options as NormalizedInputOptions],
         ),
       )
@@ -758,7 +764,7 @@ export async function createPluginContainer(
     async load(id, options) {
       const ssr = options?.ssr
       const environment = options?.environment
-      const ctx = new Context()
+      const ctx = new Context(environment)
       ctx.ssr = !!ssr
       ctx.environment = environment
       for (const plugin of getSortedPlugins('load')) {
@@ -838,7 +844,7 @@ export async function createPluginContainer(
     },
 
     async watchChange(id, change) {
-      const ctx = new Context()
+      const ctx = new Context(defaultEnvironment)
       await hookParallel(
         'watchChange',
         () => ctx,
@@ -850,7 +856,7 @@ export async function createPluginContainer(
       if (closed) return
       closed = true
       await Promise.allSettled(Array.from(processesing))
-      const ctx = new Context()
+      const ctx = new Context(defaultEnvironment)
       await hookParallel(
         'buildEnd',
         () => ctx,
