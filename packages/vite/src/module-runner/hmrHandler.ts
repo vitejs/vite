@@ -123,7 +123,7 @@ function findFileEntrypoints(
   runner: ModuleRunner,
   id: string,
   entrypoints = new Set<string>(),
-  visited = new Set(),
+  visited = new Set<string>(),
 ): Set<string> {
   if (visited.has(id)) return entrypoints
   visited.add(id)

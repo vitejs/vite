@@ -47,7 +47,7 @@ const updated = (file: string, via?: string) => {
 
 describe('hmr works correctly', () => {
   beforeAll(async () => {
-    await setupViteRuntime('/hmr.ts')
+    await setupModuleRunner('/hmr.ts')
   })
 
   test('should connect', async () => {
@@ -331,7 +331,7 @@ describe('acceptExports', () => {
 
     beforeAll(async () => {
       await untilConsoleLogAfter(
-        () => setupViteRuntime(`/${testDir}/index`),
+        () => setupModuleRunner(`/${testDir}/index`),
         [CONNECTED, />>>>>>/],
         (logs) => {
           expect(logs).toContain(`<<<<<< A0 B0 D0 ; ${dep}`)
@@ -459,7 +459,7 @@ describe('acceptExports', () => {
 
     beforeAll(async () => {
       await untilConsoleLogAfter(
-        () => setupViteRuntime(`/${testDir}/index`),
+        () => setupModuleRunner(`/${testDir}/index`),
         [CONNECTED, />>>>>>/],
         (logs) => {
           expect(logs).toContain(`<<< named: ${a} ; ${dep}`)
@@ -562,7 +562,7 @@ describe('acceptExports', () => {
     const file = 'side-effects.ts'
 
     await untilConsoleLogAfter(
-      () => setupViteRuntime(`/${testDir}/index`),
+      () => setupModuleRunner(`/${testDir}/index`),
       [CONNECTED, />>>/],
       (logs) => {
         expect(logs).toContain('>>> side FX')
@@ -591,7 +591,7 @@ describe('acceptExports', () => {
       const url = '/' + file
 
       await untilConsoleLogAfter(
-        () => setupViteRuntime(`/${testDir}/index`),
+        () => setupModuleRunner(`/${testDir}/index`),
         [CONNECTED, '-- unused --'],
         (logs) => {
           expect(logs).toContain('-- unused --')
@@ -614,7 +614,7 @@ describe('acceptExports', () => {
       const file = `${testDir}/${fileName}`
 
       await untilConsoleLogAfter(
-        () => setupViteRuntime(`/${testDir}/index`),
+        () => setupModuleRunner(`/${testDir}/index`),
         [CONNECTED, '-- used --', 'used:foo0'],
         (logs) => {
           expect(logs).toContain('-- used --')
@@ -647,7 +647,7 @@ describe('acceptExports', () => {
         const url = '/' + file
 
         await untilConsoleLogAfter(
-          () => setupViteRuntime(`/${testDir}/index`),
+          () => setupModuleRunner(`/${testDir}/index`),
           [CONNECTED, '>>> ready <<<'],
           (logs) => {
             expect(logs).toContain('loaded:all:a0b0c0default0')
@@ -681,7 +681,7 @@ describe('acceptExports', () => {
         const file = `${testDir}/${fileName}`
 
         await untilConsoleLogAfter(
-          () => setupViteRuntime(`/${testDir}/index`),
+          () => setupModuleRunner(`/${testDir}/index`),
           [CONNECTED, '>>> ready <<<'],
           (logs) => {
             expect(logs).toContain('loaded:some:a0b0c0default0')
@@ -709,7 +709,7 @@ describe('acceptExports', () => {
 })
 
 test('handle virtual module updates', async () => {
-  await setupViteRuntime('/hmr.ts')
+  await setupModuleRunner('/hmr.ts')
   const el = () => hmr('.virtual')
   expect(el()).toBe('[success]0')
   editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
@@ -717,7 +717,7 @@ test('handle virtual module updates', async () => {
 })
 
 test('invalidate virtual module', async () => {
-  await setupViteRuntime('/hmr.ts')
+  await setupModuleRunner('/hmr.ts')
   const el = () => hmr('.virtual')
   expect(el()).toBe('[wow]0')
   globalThis.__HMR__['virtual:increment']()
@@ -725,7 +725,7 @@ test('invalidate virtual module', async () => {
 })
 
 test.todo('should hmr when file is deleted and restored', async () => {
-  await setupViteRuntime('/hmr.ts')
+  await setupModuleRunner('/hmr.ts')
 
   const parentFile = 'file-delete-restore/parent.js'
   const childFile = 'file-delete-restore/child.js'
@@ -823,7 +823,7 @@ test.todo('delete file should not break hmr', async () => {
 })
 
 test('import.meta.hot?.accept', async () => {
-  await setupViteRuntime('/hmr.ts')
+  await setupModuleRunner('/hmr.ts')
   await untilConsoleLogAfter(
     () =>
       editFile('optional-chaining/child.js', (code) =>
@@ -835,7 +835,7 @@ test('import.meta.hot?.accept', async () => {
 })
 
 test('hmr works for self-accepted module within circular imported files', async () => {
-  await setupViteRuntime('/self-accept-within-circular/index')
+  await setupModuleRunner('/self-accept-within-circular/index')
   const el = () => hmr('.self-accept-within-circular')
   expect(el()).toBe('c')
   editFile('self-accept-within-circular/c.js', (code) =>
@@ -851,7 +851,7 @@ test('hmr works for self-accepted module within circular imported files', async 
 })
 
 test('hmr should not reload if no accepted within circular imported files', async () => {
-  await setupViteRuntime('/circular/index')
+  await setupModuleRunner('/circular/index')
   const el = () => hmr('.circular')
   expect(el()).toBe(
     // tests in the browser check that there is an error, but vite runtime just returns undefined in those cases
@@ -867,7 +867,7 @@ test('hmr should not reload if no accepted within circular imported files', asyn
 })
 
 test('assets HMR', async () => {
-  await setupViteRuntime('/hmr.ts')
+  await setupModuleRunner('/hmr.ts')
   const el = () => hmr('#logo')
   await untilConsoleLogAfter(
     () =>
@@ -1062,7 +1062,7 @@ function createInMemoryLogger(logs: string[]) {
   return logger
 }
 
-async function setupViteRuntime(
+async function setupModuleRunner(
   entrypoint: string,
   serverOptions: InlineConfig = {},
 ) {
