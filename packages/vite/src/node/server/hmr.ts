@@ -16,7 +16,6 @@ import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { Plugin } from '../plugin'
-import type { BuildEnvironment } from '../environment'
 import type { EnvironmentModuleNode, ModuleNode } from './moduleGraph'
 import type { ModuleExecutionEnvironment } from './environment'
 import { restartServerWithUrls } from '.'
@@ -46,7 +45,7 @@ export interface HotUpdateContext {
   modules: Array<EnvironmentModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
-  environment: ModuleExecutionEnvironment | BuildEnvironment
+  environment: ModuleExecutionEnvironment
 }
 
 /**
