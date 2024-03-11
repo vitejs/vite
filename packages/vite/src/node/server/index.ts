@@ -244,6 +244,7 @@ export interface ViteDevServer {
    *
    * Always sends a message to at least a WebSocket client. Any third party can
    * add a channel to the broadcaster to process messages
+   * @deprecated use `environments.get(id).hot` instead
    */
   hot: HMRBroadcaster
   /**
@@ -441,9 +442,8 @@ export async function _createServer(
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
 
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
-  const hot = createHMRBroadcaster()
-    .addChannel(ws)
-    .addChannel(createServerHMRChannel())
+  const ssrHotChannel = createServerHMRChannel()
+  const hot = createHMRBroadcaster().addChannel(ws).addChannel(ssrHotChannel)
   if (typeof config.server.hmr === 'object' && config.server.hmr.channels) {
     config.server.hmr.channels.forEach((channel) => hot.addChannel(channel))
   }
@@ -473,11 +473,13 @@ export async function _createServer(
         ssr: false,
         environment: 'browser',
       }),
+    hot: ws,
   })
   const nodeEnvironment = new ModuleExecutionEnvironment('node', {
     type: 'node',
     resolveId: (url) =>
       container.resolveId(url, undefined, { ssr: true, environment: 'node' }),
+    hot: ssrHotChannel,
   })
   const moduleGraph = new ModuleGraph({
     browser: browserEnvironment.moduleGraph,

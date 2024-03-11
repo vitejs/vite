@@ -931,3 +931,18 @@ export function createServerHMRChannel(): ServerHMRChannel {
     },
   }
 }
+
+export function createNoopHMRChannel(): HMRChannel {
+  function noop() {
+    // noop
+  }
+
+  return {
+    name: 'noop',
+    send: noop,
+    on: noop,
+    off: noop,
+    listen: noop,
+    close: noop,
+  }
+}
