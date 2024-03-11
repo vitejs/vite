@@ -1,3 +1,11 @@
+## <small>5.2.2 (2024-03-11)</small>
+
+* chore(deps): update all non-major dependencies (#16028) ([7cfe80d](https://github.com/vitejs/vite/commit/7cfe80d)), closes [#16028](https://github.com/vitejs/vite/issues/16028)
+* chore(deps): update all non-major dependencies (#16131) ([a862ecb](https://github.com/vitejs/vite/commit/a862ecb)), closes [#16131](https://github.com/vitejs/vite/issues/16131)
+* fix(create-vite): ts error in the svelte-ts template (#16031) ([ff4c834](https://github.com/vitejs/vite/commit/ff4c834)), closes [#16031](https://github.com/vitejs/vite/issues/16031)
+
+
+
 ## <small>5.2.1 (2024-02-21)</small>
 
 * fix(create-vite): remove tsc command from qwik template (#15982) ([5e05f10](https://github.com/vitejs/vite/commit/5e05f10)), closes [#15982](https://github.com/vitejs/vite/issues/15982)
