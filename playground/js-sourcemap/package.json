@@ -11,6 +11,6 @@
   },
   "dependencies": {
     "@vitejs/test-importee-pkg": "file:importee-pkg",
-    "magic-string": "^0.30.7"
+    "magic-string": "^0.30.8"
   }
 }

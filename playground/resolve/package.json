@@ -19,8 +19,8 @@
     "#query": "./imports-path/query.json"
   },
   "dependencies": {
-    "@babel/runtime": "^7.23.9",
-    "es5-ext": "0.10.63",
+    "@babel/runtime": "^7.24.0",
+    "es5-ext": "0.10.64",
     "normalize.css": "^8.0.1",
     "@vitejs/test-require-pkg-with-module-field": "link:./require-pkg-with-module-field",
     "@vitejs/test-resolve-browser-field": "link:./browser-field",
