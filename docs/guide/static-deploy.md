@@ -98,24 +98,24 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
          - name: Checkout
            uses: actions/checkout@v4
          - name: Set up Node
-           uses: actions/setup-node@v3
+           uses: actions/setup-node@v4
            with:
-             node-version: 18
+             node-version: 20
              cache: 'npm'
          - name: Install dependencies
-           run: npm install
+           run: npm ci
          - name: Build
            run: npm run build
          - name: Setup Pages
-           uses: actions/configure-pages@v3
+           uses: actions/configure-pages@v4
          - name: Upload artifact
-           uses: actions/upload-pages-artifact@v2
+           uses: actions/upload-pages-artifact@v3
            with:
-             # Upload dist repository
+             # Upload dist folder
              path: './dist'
          - name: Deploy to GitHub Pages
            id: deployment
-           uses: actions/deploy-pages@v2
+           uses: actions/deploy-pages@v4
    ```
 
 ## GitLab Pages and GitLab CI
