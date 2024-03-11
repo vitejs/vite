@@ -228,82 +228,84 @@ export async function handleHMRUpdate(
   // For now, we only call updateModules for the browser. Later on it should
   // also be called for each runtime.
 
-  let mods = server.browserEnvironment.moduleGraph.getModulesByFile(file)
-  if (!mods) {
-    // For now, given that the HMR SSR expects it, try to get the modules from the
-    // server graph if the browser graph doesn't have it
-    mods = server.serverEnvironment.moduleGraph.getModulesByFile(file)
-  }
+  server.environments.forEach(async (environment) => {
+    const mods = environment.moduleGraph.getModulesByFile(file)
 
-  // check if any plugin wants to perform custom HMR handling
-  const timestamp = Date.now()
-  const hotContext: HotUpdateContext = {
-    file,
-    timestamp,
-    modules: mods ? [...mods] : [],
-    read: () => readModifiedFile(file),
-    server,
-    // later on hotUpdate will be called for each runtime with a new hotContext
-    environment: 'browser',
-  }
+    // check if any plugin wants to perform custom HMR handling
+    const timestamp = Date.now()
+    const hotContext: HotUpdateContext = {
+      file,
+      timestamp,
+      modules: mods ? [...mods] : [],
+      read: () => readModifiedFile(file),
+      server,
+      // later on hotUpdate will be called for each runtime with a new hotContext
+      environment: 'browser',
+    }
 
-  let hmrContext
+    let hmrContext
 
-  for (const plugin of getSortedHotUpdatePlugins(config)) {
-    if (plugin.hotUpdate) {
-      const filteredModules = await getHookHandler(plugin.hotUpdate)(hotContext)
-      if (filteredModules) {
-        hotContext.modules = filteredModules
-        // Invalidate the hmrContext to force compat modules to be updated
-        hmrContext = undefined
-      }
-    } else {
-      // later on, we'll need: if (runtime === 'browser')
-      // Backward compatibility with mixed client and ssr moduleGraph
-      hmrContext ??= {
-        ...hotContext,
-        modules: hotContext.modules.map((mod) =>
-          server.moduleGraph.getBackwardCompatibleModuleNode(mod),
-        ),
-      } as HmrContext
-      const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(
-        hmrContext,
-      )
-      if (filteredModules) {
-        hmrContext.modules = filteredModules
-        hotContext.modules = filteredModules
-          .map((mod) =>
-            mod.id
-              ? server.browserEnvironment.moduleGraph.getModuleById(mod.id) ??
-                server.serverEnvironment.moduleGraph.getModuleById(mod.id)
-              : undefined,
-          )
-          .filter(Boolean) as EnvironmentModuleNode[]
+    for (const plugin of getSortedHotUpdatePlugins(config)) {
+      if (plugin.hotUpdate) {
+        const filteredModules = await getHookHandler(plugin.hotUpdate)(
+          hotContext,
+        )
+        if (filteredModules) {
+          hotContext.modules = filteredModules
+          // Invalidate the hmrContext to force compat modules to be updated
+          hmrContext = undefined
+        }
+      } else if (environment.id === 'browser') {
+        // later on, we'll need: if (runtime === 'browser')
+        // Backward compatibility with mixed client and ssr moduleGraph
+        hmrContext ??= {
+          ...hotContext,
+          modules: hotContext.modules.map((mod) =>
+            server.moduleGraph.getBackwardCompatibleModuleNode(mod),
+          ),
+        } as HmrContext
+        const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(
+          hmrContext,
+        )
+        if (filteredModules) {
+          hmrContext.modules = filteredModules
+          hotContext.modules = filteredModules
+            .map((mod) =>
+              mod.id
+                ? server.browserEnvironment.moduleGraph.getModuleById(mod.id) ??
+                  server.serverEnvironment.moduleGraph.getModuleById(mod.id)
+                : undefined,
+            )
+            .filter(Boolean) as EnvironmentModuleNode[]
+        }
       }
     }
-  }
 
-  if (!hotContext.modules.length) {
-    // html file cannot be hot updated
-    if (file.endsWith('.html')) {
-      config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
-        clear: true,
-        timestamp: true,
-      })
-      hot.send({
-        type: 'full-reload',
-        path: config.server.middlewareMode
-          ? '*'
-          : '/' + normalizePath(path.relative(config.root, file)),
-      })
-    } else {
-      // loaded but not in the module graph, probably not js
-      debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
+    if (!hotContext.modules.length) {
+      // html file cannot be hot updated
+      if (file.endsWith('.html')) {
+        config.logger.info(
+          colors.green(`page reload `) + colors.dim(shortFile),
+          {
+            clear: true,
+            timestamp: true,
+          },
+        )
+        hot.send({
+          type: 'full-reload',
+          path: config.server.middlewareMode
+            ? '*'
+            : '/' + normalizePath(path.relative(config.root, file)),
+        })
+      } else {
+        // loaded but not in the module graph, probably not js
+        debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
+      }
+      return
     }
-    return
-  }
 
-  updateModules(shortFile, hotContext.modules, timestamp, server)
+    updateModules(shortFile, hotContext.modules, timestamp, server)
+  })
 }
 
 type HasDeadEnd = boolean
