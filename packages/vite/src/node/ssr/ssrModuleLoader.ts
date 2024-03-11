@@ -88,12 +88,12 @@ async function instantiateModule(
   const moduleGraph = server.nodeEnvironment.moduleGraph
   const mod = await moduleGraph.ensureEntryFromUrl(url) // TODO: environment?
 
-  if (mod.error) {
-    throw mod.error
+  if (mod.ssrError) {
+    throw mod.ssrError
   }
 
-  if (mod.module) {
-    return mod.module
+  if (mod.ssrModule) {
+    return mod.ssrModule
   }
   const result =
     mod.transformResult ||
@@ -110,7 +110,7 @@ async function instantiateModule(
 
   // Tolerate circular imports by ensuring the module can be
   // referenced before it's been instantiated.
-  mod.module = ssrModule
+  mod.ssrModule = ssrModule
 
   const ssrImportMeta = {
     // The filesystem URL, matching native Node.js modules
@@ -176,7 +176,7 @@ async function instantiateModule(
         // return local module to avoid race condition #5470
         return mod
       }
-      return moduleGraph.urlToModuleMap.get(dep)?.module
+      return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
     } catch (err) {
       // tell external error handler which mod was imported with error
       importErrors.set(err, { importee: dep })
@@ -239,7 +239,7 @@ async function instantiateModule(
       ssrExportAll,
     )
   } catch (e) {
-    mod.error = e
+    mod.ssrError = e
     const errorData = importErrors.get(e)
 
     if (e.stack && fixStacktrace) {

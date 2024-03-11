@@ -14,11 +14,11 @@ describe('moduleGraph', () => {
       const entryUrl = '/x.js'
 
       const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
-      entryModule.error = new Error(`unable to execute module`)
+      entryModule.ssrError = new Error(`unable to execute module`)
 
-      expect(entryModule.error).to.be.a('error')
+      expect(entryModule.ssrError).to.be.a('error')
       moduleGraph.invalidateModule(entryModule)
-      expect(entryModule.error).toBe(null)
+      expect(entryModule.ssrError).toBe(null)
     })
 
     it('ensureEntryFromUrl should based on resolvedId', async () => {

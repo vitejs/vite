@@ -34,8 +34,10 @@ export class EnvironmentModuleNode {
   isSelfAccepting?: boolean
   transformResult: TransformResult | null = null
 
-  module: Record<string, any> | null = null
-  error: Error | null = null
+  // ssrModule and ssrError are no longer needed. They are on the module runner module cache.
+  // Once `ssrLoadModule` is re-implemented on top of the new APIs, we can delete these.
+  ssrModule: Record<string, any> | null = null
+  ssrError: Error | null = null
 
   lastHMRTimestamp = 0
   lastInvalidationTimestamp = 0
@@ -186,8 +188,9 @@ export class EnvironmentModuleGraph {
     if (etag) this.etagToModuleMap.delete(etag)
 
     mod.transformResult = null
-    mod.module = null
-    mod.error = null
+
+    mod.ssrModule = null
+    mod.ssrError = null
 
     mod.importers.forEach((importer) => {
       if (!importer.acceptedHmrDeps.has(mod)) {
@@ -572,10 +575,10 @@ export class ModuleNode {
     }
   }
   get ssrModule(): Record<string, any> | null {
-    return this._nodeModule?.module ?? null
+    return this._nodeModule?.ssrModule ?? null
   }
   get ssrError(): Error | null {
-    return this._nodeModule?.error ?? null
+    return this._nodeModule?.ssrError ?? null
   }
   get lastHMRTimestamp(): number {
     return this._browserModule?.lastHMRTimestamp ?? 0
