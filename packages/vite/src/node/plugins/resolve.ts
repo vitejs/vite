@@ -214,8 +214,8 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         ) {
           options.isFromTsImporter = true
         } else {
-          const moduleLang = this.getModuleInfo(importer)?.meta?.vite?.lang
-          options.isFromTsImporter = moduleLang && isTsRequest(`.${moduleLang}`)
+          const lang = this.getModuleInfo(importer)?.meta?.vite?.lang
+          options.isFromTsImporter = lang != null && isTsRequest(`.${lang}`)
         }
       }
 

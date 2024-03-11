@@ -546,20 +546,33 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async renderChunk(code, chunk, opts) {
+    async renderChunk(code, chunk, opts, meta) {
       let chunkCSS = ''
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
         if (styles.has(id)) {
           // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
-          if (!transformOnlyRE.test(id)) {
-            chunkCSS += styles.get(id)
-            // a css module contains JS, so it makes this not a pure css chunk
-            if (cssModuleRE.test(id)) {
-              isPureCssChunk = false
-            }
+          if (transformOnlyRE.test(id)) {
+            continue
           }
+
+          // If this CSS is scoped to its importers exports, check if those importers exports
+          // are rendered in the chunks. If they are not, we can skip bundling this CSS.
+          const cssScopeTo = this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
+          if (
+            cssScopeTo &&
+            !isCssScopeToRendered(cssScopeTo, Object.values(meta.chunks))
+          ) {
+            continue
+          }
+
+          // a css module contains JS, so it makes this not a pure css chunk
+          if (cssModuleRE.test(id)) {
+            isPureCssChunk = false
+          }
+
+          chunkCSS += styles.get(id)
         } else {
           // if the module does not have a style, then it's not a pure css chunk.
           // this is true because in the `transform` hook above, only modules
@@ -1027,6 +1040,24 @@ export function getEmptyChunkReplacer(
           ? `/* empty css ${''.padEnd(m.length - 15)}*/`
           : `${m.at(-1)}/* empty css ${''.padEnd(m.length - 16)}*/`,
     )
+}
+
+function isCssScopeToRendered(
+  cssScopeTo: Record<string, string[]>,
+  chunks: RenderedChunk[],
+) {
+  for (const moduleId in cssScopeTo) {
+    const exports = cssScopeTo[moduleId]
+    // Find the chunk that renders this `moduleId` and get the rendered module
+    const renderedModule = chunks.find((c) => c.moduleIds.includes(moduleId))
+      ?.modules[moduleId]
+
+    if (renderedModule?.renderedExports.some((e) => exports.includes(e))) {
+      return true
+    }
+  }
+
+  return false
 }
 
 interface CSSAtImportResolvers {
