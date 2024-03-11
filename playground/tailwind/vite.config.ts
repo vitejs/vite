@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
+import type { Plugin } from 'vite'
 
-function delayIndexCssPlugin() {
+function delayIndexCssPlugin(): Plugin {
   let server
   return {
     name: 'delay-index-css',
