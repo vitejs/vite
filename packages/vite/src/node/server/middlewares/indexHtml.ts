@@ -354,7 +354,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      const result = await server!.pluginContainer.transform(code, mod.id!)
+      const result = await server!.pluginContainer.transform(code, mod.id!, {
+        environment: server!.browserEnvironment,
+      })
       let content = ''
       if (result) {
         if (result.map && 'version' in result.map) {

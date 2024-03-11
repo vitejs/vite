@@ -15,6 +15,8 @@ import type { IndexHtmlTransform } from './plugins/html'
 import type { EnvironmentModuleNode, ModuleNode } from './server/moduleGraph'
 import type { HmrContext, HotUpdateContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
+import type { ModuleExecutionEnvironment } from './server/environment'
+import type { BuildEnvironment } from './environment'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -169,7 +171,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
         attributes: Record<string, string>
         custom?: CustomPluginOptions
         ssr?: boolean
-        environment?: string
+        environment?: ModuleExecutionEnvironment | BuildEnvironment
         /**
          * @internal
          */
@@ -182,7 +184,10 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
     (
       this: PluginContext,
       id: string,
-      options?: { ssr?: boolean; environment?: string },
+      options?: {
+        ssr?: boolean
+        environment?: ModuleExecutionEnvironment | BuildEnvironment
+      },
     ) => Promise<LoadResult> | LoadResult
   >
   transform?: ObjectHook<
@@ -190,7 +195,10 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: TransformPluginContext,
       code: string,
       id: string,
-      options?: { ssr?: boolean; environment?: string },
+      options?: {
+        ssr?: boolean
+        environment?: ModuleExecutionEnvironment | BuildEnvironment
+      },
     ) => Promise<TransformResult> | TransformResult
   >
 }

@@ -16,7 +16,9 @@ import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { Plugin } from '../plugin'
+import type { BuildEnvironment } from '../environment'
 import type { EnvironmentModuleNode, ModuleNode } from './moduleGraph'
+import type { ModuleExecutionEnvironment } from './environment'
 import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -44,7 +46,7 @@ export interface HotUpdateContext {
   modules: Array<EnvironmentModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
-  environment: string
+  environment: ModuleExecutionEnvironment | BuildEnvironment
 }
 
 /**
@@ -240,7 +242,7 @@ export async function handleHMRUpdate(
       read: () => readModifiedFile(file),
       server,
       // later on hotUpdate will be called for each runtime with a new hotContext
-      environment: 'browser',
+      environment,
     }
 
     let hmrContext
@@ -304,13 +306,14 @@ export async function handleHMRUpdate(
       return
     }
 
-    updateModules(shortFile, hotContext.modules, timestamp, server)
+    updateModules(environment, shortFile, hotContext.modules, timestamp, server)
   })
 }
 
 type HasDeadEnd = boolean
 
 export function updateModules(
+  environment: ModuleExecutionEnvironment,
   file: string,
   modules: EnvironmentModuleNode[],
   timestamp: number,
@@ -327,11 +330,12 @@ export function updateModules(
     const boundaries: PropagationBoundary[] = []
     const hasDeadEnd = propagateUpdate(mod, traversedModules, boundaries)
 
-    // TODO: we don't need NodeModule to have the runtime if we pass it to updateModules
-    // it still seems useful to know the runtime for a given module
-    server.environments
-      .get(mod.environment)
-      ?.moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true)
+    environment.moduleGraph.invalidateModule(
+      mod,
+      invalidatedModules,
+      timestamp,
+      true,
+    )
 
     if (needFullReload) {
       continue
@@ -440,6 +444,7 @@ export async function handleFileAddUnlink(
 
     if (modules.length > 0) {
       updateModules(
+        environment,
         getShortName(file, server.config.root),
         unique(modules),
         Date.now(),

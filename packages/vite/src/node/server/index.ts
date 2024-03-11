@@ -466,35 +466,35 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
+  const environments = new Map()
+
   const browserEnvironment = new ModuleExecutionEnvironment('browser', {
     type: 'browser',
     resolveId: (url) =>
       container.resolveId(url, undefined, {
         ssr: false,
-        environment: 'browser',
+        environment: environments.get('browser'),
       }),
     hot: ws,
   })
   const nodeEnvironment = new ModuleExecutionEnvironment('node', {
     type: 'node',
     resolveId: (url) =>
-      container.resolveId(url, undefined, { ssr: true, environment: 'node' }),
+      container.resolveId(url, undefined, {
+        ssr: true,
+        environment: environments.get('node'),
+      }),
     hot: ssrHotChannel,
   })
   const moduleGraph = new ModuleGraph({
     browser: browserEnvironment.moduleGraph,
     node: nodeEnvironment.moduleGraph,
   })
-  const environments = new Map([
-    ['browser', browserEnvironment],
-    ['node', nodeEnvironment],
-  ])
 
-  // TODO: Later on, we may pass the environments map to pluginContainer instead of getModuleGraph
-  const getModuleGraph = (environment: string) => {
-    return environments.get(environment)!.moduleGraph
-  }
-  const container = await createPluginContainer(config, getModuleGraph, watcher)
+  environments.set('browser', browserEnvironment)
+  environments.set('node', nodeEnvironment)
+
+  const container = await createPluginContainer(config, environments, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
   let exitProcess: () => void
@@ -564,17 +564,27 @@ export async function _createServer(
     },
     async reloadModule(module) {
       if (serverConfig.hmr !== false && module.file) {
+        // TODO: Should we also update the node moduleGraph for backward compatibility?
+        const environmentModule = (module._browserModule ?? module._nodeModule)!
         updateModules(
+          environments.get(environmentModule.environment),
           module.file,
-          [(module._browserModule ?? module._nodeModule)!],
+          [environmentModule],
           Date.now(),
           server,
         )
       }
     },
     async reloadEnvironmentModule(module) {
+      // TODO: Should this be reloadEnvironmentModule(environment, module) ?
       if (serverConfig.hmr !== false && module.file) {
-        updateModules(module.file, [module], Date.now(), server)
+        updateModules(
+          environments.get(module.environment),
+          module.file,
+          [module],
+          Date.now(),
+          server,
+        )
       }
     },
     async listen(port?: number, isRestart?: boolean) {
@@ -795,14 +805,14 @@ export async function _createServer(
     onFileAddUnlink(file, true)
   })
 
-  function invalidateModule(m: {
-    path: string
-    message?: string
-    environment: string
-  }) {
-    const mod = environments
-      .get(m.environment)
-      ?.moduleGraph.urlToModuleMap.get(m.path)
+  function invalidateModule(
+    environment: ModuleExecutionEnvironment,
+    m: {
+      path: string
+      message?: string
+    },
+  ) {
+    const mod = environment.moduleGraph.urlToModuleMap.get(m.path)
     if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
       config.logger.info(
         colors.yellow(`hmr invalidate `) +
@@ -812,6 +822,7 @@ export async function _createServer(
       )
       const file = getShortName(mod.file!, config.root)
       updateModules(
+        environment,
         file,
         [...mod.importers],
         mod.lastHMRTimestamp,
@@ -823,10 +834,10 @@ export async function _createServer(
 
   hot.on('vite:invalidate', async ({ path, message, environment }) => {
     if (environment) {
-      invalidateModule({ path, message, environment })
+      invalidateModule(environments.get(environment), { path, message })
     } else {
       environments.forEach((environment) => {
-        invalidateModule({ path, message, environment: environment.id })
+        invalidateModule(environment, { path, message })
       })
     }
   })

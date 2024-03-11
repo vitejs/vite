@@ -27,6 +27,7 @@ import { cleanUrl, unwrapId } from '../../shared/utils'
 import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
+import type { ModuleExecutionEnvironment } from './environment'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -45,7 +46,7 @@ export interface TransformResult {
 
 export interface TransformOptions {
   ssr?: boolean
-  environment?: string
+  environment?: ModuleExecutionEnvironment
   html?: boolean
 }
 
@@ -58,19 +59,15 @@ export function transformRequest(
   if (!options.environment) {
     options = {
       ...options,
-      environment: options.ssr ? 'node' : 'browser',
+      environment: server.environments.get(options.ssr ? 'node' : 'browser'),
     }
   }
   const environment = options.environment!
 
   if (server._restartPromise && !options.ssr) throwClosedServerError()
 
-  const cacheKey =
-    (environment === 'browser'
-      ? options.html
-        ? 'html:'
-        : ''
-      : `${environment}:`) + url
+  // We could have a cache per environment instead of the global _pendingRequests
+  const cacheKey = `${options.html ? 'html:' : ''}${environment.id}:${url}`
 
   // This module may get invalidated while we are processing it. For example
   // when a full page reload is needed after the re-processing of pre-bundled
@@ -96,9 +93,8 @@ export function transformRequest(
 
   const pending = server._pendingRequests.get(cacheKey)
   if (pending) {
-    return server.environments
-      .get(environment)!
-      .moduleGraph.getModuleByUrl(removeTimestampQuery(url))
+    return environment.moduleGraph
+      .getModuleByUrl(removeTimestampQuery(url))
       .then((module) => {
         if (!module || pending.timestamp > module.lastInvalidationTimestamp) {
           // The pending request is still valid, we can safely reuse its result
@@ -155,16 +151,14 @@ async function doTransform(
     await initDevSsrDepsOptimizer(config, server)
   }
 
-  let module = await server.environments
-    .get(environment)
-    ?.moduleGraph.getModuleByUrl(url)
+  let module = await environment.moduleGraph.getModuleByUrl(url)
   if (module) {
     // try use cache from url
     const cached = await getCachedTransformResult(
+      environment,
       url,
       module,
       server,
-      environment,
       timestamp,
     )
     if (cached) return cached
@@ -178,18 +172,16 @@ async function doTransform(
   // resolve
   const id = module?.id ?? resolved?.id ?? url
 
-  module ??= server.environments.get(environment)?.moduleGraph.getModuleById(id)
+  module ??= environment.moduleGraph.getModuleById(id)
   if (module) {
     // if a different url maps to an existing loaded id,  make sure we relate this url to the id
-    await server.environments
-      .get(environment)
-      ?.moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
+    await environment.moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
     // try use cache from id
     const cached = await getCachedTransformResult(
+      environment,
       url,
       module,
       server,
-      environment,
       timestamp,
     )
     if (cached) return cached
@@ -211,10 +203,10 @@ async function doTransform(
 }
 
 async function getCachedTransformResult(
+  environment: ModuleExecutionEnvironment,
   url: string,
   module: EnvironmentModuleNode,
   server: ViteDevServer,
-  environment: string,
   timestamp: number,
 ) {
   const prettyUrl = debugCache ? prettifyUrl(url, server.config.root) : ''
@@ -223,7 +215,7 @@ async function getCachedTransformResult(
   // returns a boolean true is successful, or false if no handling is needed
   const softInvalidatedTransformResult =
     module &&
-    (await handleModuleSoftInvalidation(module, environment, timestamp, server))
+    (await handleModuleSoftInvalidation(environment, module, timestamp, server))
   if (softInvalidatedTransformResult) {
     debugCache?.(`[memory-hmr] ${prettyUrl}`)
     return softInvalidatedTransformResult
@@ -255,7 +247,7 @@ async function loadAndTransform(
   const ssr = !!options.ssr
   const environment = options.environment!
 
-  const moduleGraph = server.environments.get(environment)!.moduleGraph
+  const moduleGraph = environment.moduleGraph
 
   const file = cleanUrl(id)
 
@@ -447,8 +439,8 @@ function createConvertSourceMapReadMap(originalFileName: string) {
  * - SSR: We don't need to change anything as `ssrLoadModule` controls it
  */
 async function handleModuleSoftInvalidation(
+  environment: ModuleExecutionEnvironment,
   mod: EnvironmentModuleNode,
-  environment: string,
   timestamp: number,
   server: ViteDevServer,
 ) {
@@ -468,7 +460,7 @@ async function handleModuleSoftInvalidation(
 
   let result: TransformResult
   // For SSR soft-invalidation, no transformation is needed
-  if (environment !== 'browser') {
+  if (environment.id !== 'browser') {
     result = transformResult
   }
   // For client soft-invalidation, we need to transform each imports with new timestamps if available
@@ -526,9 +518,7 @@ async function handleModuleSoftInvalidation(
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
   if (timestamp > mod.lastInvalidationTimestamp)
-    server.environments
-      .get(environment)
-      ?.moduleGraph.updateModuleTransformResult(mod, result)
+    environment.moduleGraph.updateModuleTransformResult(mod, result)
 
   return result
 }

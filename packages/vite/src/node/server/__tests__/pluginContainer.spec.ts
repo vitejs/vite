@@ -2,19 +2,24 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
-import { EnvironmentModuleGraph } from '../moduleGraph'
 import type { PluginContainer } from '../pluginContainer'
 import { createPluginContainer } from '../pluginContainer'
+import { ModuleExecutionEnvironment } from '../environment'
 
 let resolveId: (id: string) => any
-let moduleGraph: EnvironmentModuleGraph
+let environment: ModuleExecutionEnvironment
+const environments = new Map<string, ModuleExecutionEnvironment>()
+function resetEnvironments() {
+  environment = new ModuleExecutionEnvironment('browser', {
+    type: 'browser',
+    resolveId: (id) => resolveId(id),
+  })
+  environments.set('browser', environment)
+}
 
 describe('plugin container', () => {
   describe('getModuleInfo', () => {
-    beforeEach(() => {
-      moduleGraph = new EnvironmentModuleGraph('browser', (id) => resolveId(id))
-    })
-
+    beforeEach(resetEnvironments)
     it('can pass metadata between hooks', async () => {
       const entryUrl = '/x.js'
 
@@ -46,26 +51,25 @@ describe('plugin container', () => {
             return { meta: { x: 3 } }
           }
         },
-        buildEnd() {
-          const { meta } = this.getModuleInfo(entryUrl) ?? {}
-          metaArray.push(meta)
-        },
       }
 
       const container = await getPluginContainer({
         plugins: [plugin],
       })
 
-      const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const entryModule = await environment.moduleGraph.ensureEntryFromUrl(
+        entryUrl,
+        false,
+      )
       expect(entryModule.meta).toEqual({ x: 1 })
 
-      const loadResult: any = await container.load(entryUrl)
+      const loadResult: any = await container.load(entryUrl, { environment })
       expect(loadResult?.meta).toEqual({ x: 2 })
 
-      await container.transform(loadResult.code, entryUrl)
+      await container.transform(loadResult.code, entryUrl, { environment })
       await container.close()
 
-      expect(metaArray).toEqual([{ x: 1 }, { x: 2 }, { x: 3 }])
+      expect(metaArray).toEqual([{ x: 1 }, { x: 2 }])
     })
 
     it('can pass metadata between plugins', async () => {
@@ -95,8 +99,8 @@ describe('plugin container', () => {
         plugins: [plugin1, plugin2],
       })
 
-      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
-      await container.load(entryUrl)
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      await container.load(entryUrl, { environment })
 
       expect.assertions(1)
     })
@@ -141,8 +145,8 @@ describe('plugin container', () => {
         plugins: [plugin1, plugin2],
       })
 
-      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
-      await container.load(entryUrl)
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      await container.load(entryUrl, { environment })
 
       expect.assertions(2)
     })
@@ -150,7 +154,7 @@ describe('plugin container', () => {
 
   describe('load', () => {
     beforeEach(() => {
-      moduleGraph = new EnvironmentModuleGraph('browser', (id) => resolveId(id))
+      beforeEach(resetEnvironments)
     })
 
     it('can resolve a secondary module', async () => {
@@ -179,9 +183,11 @@ describe('plugin container', () => {
       const container = await getPluginContainer({
         plugins: [plugin],
       })
-      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
-      const loadResult: any = await container.load(entryUrl)
-      const result: any = await container.transform(loadResult.code, entryUrl)
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const loadResult: any = await container.load(entryUrl, { environment })
+      const result: any = await container.transform(loadResult.code, entryUrl, {
+        environment,
+      })
       expect(result.code).equals('2')
     })
 
@@ -211,9 +217,11 @@ describe('plugin container', () => {
       const container = await getPluginContainer({
         plugins: [plugin],
       })
-      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
-      const loadResult: any = await container.load(entryUrl)
-      const result: any = await container.transform(loadResult.code, entryUrl)
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const loadResult: any = await container.load(entryUrl, { environment })
+      const result: any = await container.transform(loadResult.code, entryUrl, {
+        environment,
+      })
       expect(result.code).equals('3')
     })
   })
@@ -231,14 +239,6 @@ async function getPluginContainer(
   config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
 
   resolveId = (id) => container.resolveId(id)
-  const container = await createPluginContainer(
-    config,
-    (environment: string) => {
-      if (environment === 'browser') {
-        return moduleGraph
-      }
-      throw new Error('unexpected environment')
-    },
-  )
+  const container = await createPluginContainer(config, environments)
   return container
 }

@@ -80,10 +80,8 @@ import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import { buildErrorMessage } from './middlewares/error'
-import type {
-  EnvironmentModuleGraph,
-  EnvironmentModuleNode,
-} from './moduleGraph'
+import type { EnvironmentModuleNode } from './moduleGraph'
+import type { ModuleExecutionEnvironment } from './environment'
 
 const noop = () => {}
 
@@ -117,7 +115,7 @@ export interface PluginContainer {
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
-      environment?: string
+      environment?: ModuleExecutionEnvironment
       /**
        * @internal
        */
@@ -131,14 +129,14 @@ export interface PluginContainer {
     options?: {
       inMap?: SourceDescription['map']
       ssr?: boolean
-      environment?: string
+      environment?: ModuleExecutionEnvironment
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }>
   load(
     id: string,
     options?: {
       ssr?: boolean
-      environment?: string
+      environment?: ModuleExecutionEnvironment
     },
   ): Promise<LoadResult | null>
   watchChange(
@@ -154,11 +152,12 @@ type PluginContext = Omit<
   'cache'
 >
 
+// environments is undefined when using the plugin container in the scan phase
+// or as the internals of createResolve
+
 export async function createPluginContainer(
   config: ResolvedConfig,
-  getModuleGraph: (
-    environment: string,
-  ) => EnvironmentModuleGraph | undefined = () => undefined,
+  environnments?: Map<string, ModuleExecutionEnvironment>,
   watcher?: FSWatcher,
 ): Promise<PluginContainer> {
   const {
@@ -266,7 +265,7 @@ export async function createPluginContainer(
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
-    environment = 'browser'
+    environment: ModuleExecutionEnvironment | undefined
     _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
@@ -274,7 +273,11 @@ export async function createPluginContainer(
     _resolveSkips?: Set<Plugin>
     _addedImports: Set<string> | null = null
 
-    constructor(initialPlugin?: Plugin) {
+    constructor(
+      environment?: ModuleExecutionEnvironment,
+      initialPlugin?: Plugin,
+    ) {
+      this.environment = environment
       this._activePlugin = initialPlugin || null
     }
 
@@ -317,7 +320,7 @@ export async function createPluginContainer(
       } & Partial<PartialNull<ModuleOptions>>,
     ): Promise<ModuleInfo> {
       // We may not have added this to our module graph yet, so ensure it exists
-      await getModuleGraph(this.environment)?.ensureEntryFromUrl(
+      await this.environment?.moduleGraph.ensureEntryFromUrl(
         unwrapId(options.id),
       )
       // Not all options passed to this function make sense in the context of loading individual files,
@@ -347,7 +350,7 @@ export async function createPluginContainer(
     }
 
     getModuleInfo(id: string) {
-      const module = getModuleGraph(this.environment)?.getModuleById(id)
+      const module = this.environment?.moduleGraph.getModuleById(id)
       if (!module) {
         return null
       }
@@ -370,7 +373,7 @@ export async function createPluginContainer(
     }
 
     _updateModuleLoadAddedImports(id: string) {
-      const module = getModuleGraph(this.environment)?.getModuleById(id)
+      const module = this.environment?.moduleGraph.getModuleById(id)
       if (module) {
         moduleNodeToLoadAddedImports.set(module, this._addedImports)
       }
@@ -378,7 +381,7 @@ export async function createPluginContainer(
 
     getModuleIds() {
       return (
-        getModuleGraph(this.environment)?.idToModuleMap.keys() ??
+        this.environment?.moduleGraph.idToModuleMap.keys() ??
         Array.prototype[Symbol.iterator]()
       )
     }
@@ -545,8 +548,13 @@ export async function createPluginContainer(
     sourcemapChain: NonNullable<SourceDescription['map']>[] = []
     combinedMap: SourceMap | { mappings: '' } | null = null
 
-    constructor(id: string, code: string, inMap?: SourceMap | string) {
-      super()
+    constructor(
+      id: string,
+      code: string,
+      environment?: ModuleExecutionEnvironment,
+      inMap?: SourceMap | string,
+    ) {
+      super(environment)
       this.filename = id
       this.originalCode = code
       if (inMap) {
@@ -557,7 +565,7 @@ export async function createPluginContainer(
         this.sourcemapChain.push(inMap)
       }
       // Inherit `_addedImports` from the `load()` hook
-      const node = getModuleGraph(this.environment)?.getModuleById(id)
+      const node = environment?.moduleGraph.getModuleById(id)
       if (node) {
         this._addedImports = moduleNodeToLoadAddedImports.get(node) ?? null
       }
@@ -669,7 +677,7 @@ export async function createPluginContainer(
       await handleHookPromise(
         hookParallel(
           'buildStart',
-          (plugin) => new Context(plugin),
+          (plugin) => new Context(undefined, plugin),
           () => [container.options as NormalizedInputOptions],
         ),
       )
@@ -680,9 +688,9 @@ export async function createPluginContainer(
       const ssr = options?.ssr
       const environment = options?.environment
       const scan = !!options?.scan
-      const ctx = new Context()
+      const ctx = new Context(environment)
       ctx.ssr = !!ssr
-      ctx.environment = environment ?? 'browser'
+      ctx.environment = environment
       ctx._scan = scan
       ctx._resolveSkips = skip
       const resolveStart = debugResolve ? performance.now() : 0
@@ -752,7 +760,7 @@ export async function createPluginContainer(
       const environment = options?.environment
       const ctx = new Context()
       ctx.ssr = !!ssr
-      ctx.environment = environment ?? 'browser'
+      ctx.environment = environment
       for (const plugin of getSortedPlugins('load')) {
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.load) continue
@@ -777,9 +785,14 @@ export async function createPluginContainer(
       const inMap = options?.inMap
       const ssr = options?.ssr
       const environment = options?.environment
-      const ctx = new TransformContext(id, code, inMap as SourceMap)
+      const ctx = new TransformContext(
+        id,
+        code,
+        environment,
+        inMap as SourceMap,
+      )
       ctx.ssr = !!ssr
-      ctx.environment = environment ?? 'browser'
+      ctx.environment = environment
       for (const plugin of getSortedPlugins('transform')) {
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.transform) continue

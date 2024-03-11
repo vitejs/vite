@@ -1,11 +1,12 @@
 import type { PartialResolvedId } from 'rollup'
+import { Environment } from '../environment'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { HMRChannel } from './hmr'
 import { createNoopHMRChannel } from './hmr'
 
-export class ModuleExecutionEnvironment {
-  id: string
-  type: string
+// Maybe we will rename this to DevEnvironment
+export class ModuleExecutionEnvironment extends Environment {
+  command = 'serve' as const
   moduleGraph: EnvironmentModuleGraph
   /**
    * HMR channel for this environment. If not provided or disabled,
@@ -24,8 +25,7 @@ export class ModuleExecutionEnvironment {
       hot?: false | HMRChannel
     },
   ) {
-    this.id = id
-    this.type = options.type
+    super(id, options)
     this.moduleGraph = new EnvironmentModuleGraph(
       options.type,
       options.resolveId,

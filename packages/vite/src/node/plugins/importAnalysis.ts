@@ -54,6 +54,7 @@ import { checkPublicFile } from '../publicDir'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import type { ModuleExecutionEnvironment } from '../server/environment'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import {
@@ -209,12 +210,16 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     async transform(source, importer, options) {
       // In a real app `server` is always defined, but it is undefined when
       // running src/node/server/__tests__/pluginContainer.spec.ts
-      if (!server) {
+
+      const ssr = options?.ssr === true
+      const environment =
+        (options?.environment as ModuleExecutionEnvironment) || undefined
+
+      if (!server || !environment) {
         return null
       }
 
-      const ssr = options?.ssr === true
-      const environment = options?.environment ?? 'browser'
+      const moduleGraph = environment.moduleGraph
 
       if (canSkipImportAnalysis(importer)) {
         debug?.(colors.dim(`[skipped] ${prettifyUrl(importer, root)}`))
@@ -239,10 +244,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const depsOptimizer = getDepsOptimizer(config, ssr)
 
-      const moduleGraph = server.environments.get(environment)!.moduleGraph
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
-      const importerModule = moduleGraph?.getModuleById(importer)
+      const importerModule = moduleGraph.getModuleById(importer)
       if (!importerModule) {
         // This request is no longer valid. It could happen for optimized deps
         // requests. A full reload is going to request this id again.

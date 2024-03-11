@@ -27,7 +27,7 @@ import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
-import type { ResolveFn, ViteDevServer } from '../'
+import type { ResolveFn } from '../'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   resolveUserExternal,
@@ -923,14 +923,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 }
 
 export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
-  let server: ViteDevServer | undefined
-
   return {
     name: 'vite:css-analysis',
-
-    configureServer(_server) {
-      server = _server
-    },
 
     async transform(_, id, options) {
       if (
@@ -941,8 +935,9 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const environment = options?.environment ?? 'browser'
-      const moduleGraph = server?.environments.get(environment)?.moduleGraph
+      const environment = options?.environment
+      const moduleGraph =
+        environment?.command === 'serve' ? environment.moduleGraph : undefined
       const thisModule = moduleGraph?.getModuleById(id)
 
       // Handle CSS @import dependency HMR and other added modules via this.addWatchFile.

@@ -97,7 +97,10 @@ async function instantiateModule(
   }
   const result =
     mod.transformResult ||
-    (await transformRequest(url, server, { ssr: true, environment: 'node' }))
+    (await transformRequest(url, server, {
+      ssr: true,
+      environment: server.nodeEnvironment,
+    }))
   if (!result) {
     // TODO more info? is this even necessary?
     throw new Error(`failed to load module for ssr: ${url}`)
