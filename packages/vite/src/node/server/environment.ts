@@ -1,6 +1,6 @@
 import type { PartialResolvedId } from 'rollup'
 import { EnvironmentModuleGraph } from './moduleGraph'
-import type { HMRChannel} from './hmr';
+import type { HMRChannel } from './hmr'
 import { createNoopHMRChannel } from './hmr'
 
 export class ModuleExecutionEnvironment {
