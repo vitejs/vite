@@ -156,9 +156,10 @@ export interface ServerOptions extends CommonServerOptions {
     | ((sourcePath: string, sourcemapPath: string) => boolean)
 }
 
-export interface ResolvedServerOptions extends ServerOptions {
+export interface ResolvedServerOptions
+  extends Omit<ServerOptions, 'fs' | 'middlewareMode' | 'sourcemapIgnoreList'> {
   fs: Required<FileSystemServeOptions>
-  middlewareMode: boolean
+  middlewareMode: NonNullable<ServerOptions['middlewareMode']>
   sourcemapIgnoreList: Exclude<
     ServerOptions['sourcemapIgnoreList'],
     false | undefined
@@ -786,15 +787,13 @@ export async function _createServer(
   const { proxy } = serverConfig
   if (proxy) {
     const middlewareServer =
-      (isObject(serverConfig.middlewareMode)
-        ? serverConfig.middlewareMode.server
-        : null) || httpServer
+      (isObject(middlewareMode) ? middlewareMode.server : null) || httpServer
     middlewares.use(proxyMiddleware(middlewareServer, proxy, config))
   }
 
   // base
   if (config.base !== '/') {
-    middlewares.use(baseMiddleware(config.rawBase, middlewareMode))
+    middlewares.use(baseMiddleware(config.rawBase, !!middlewareMode))
   }
 
   // open in editor support
@@ -849,7 +848,7 @@ export async function _createServer(
   }
 
   // error handler
-  middlewares.use(errorMiddleware(server, middlewareMode))
+  middlewares.use(errorMiddleware(server, !!middlewareMode))
 
   // httpServer.listen can be called multiple times
   // when port when using next port number
@@ -981,7 +980,7 @@ export function resolveServerOptions(
       raw?.sourcemapIgnoreList === false
         ? () => false
         : raw?.sourcemapIgnoreList || isInNodeModules,
-    middlewareMode: !!raw?.middlewareMode,
+    middlewareMode: raw?.middlewareMode || false,
   }
   let allowDirs = server.fs?.allow
   const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
