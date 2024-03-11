@@ -20,15 +20,17 @@ export class ModuleExecutionEnvironment extends Environment {
     id: string,
     options: {
       type: string
-      resolveId: (url: string) => Promise<PartialResolvedId | null>
+      resolveId: (
+        url: string,
+        environment: ModuleExecutionEnvironment,
+      ) => Promise<PartialResolvedId | null>
       // TODO: use `transport` instead to support any hmr channel?
       hot?: false | HMRChannel
     },
   ) {
     super(id, options)
-    this.moduleGraph = new EnvironmentModuleGraph(
-      options.type,
-      options.resolveId,
+    this.moduleGraph = new EnvironmentModuleGraph(options.type, (url: string) =>
+      options.resolveId(url, this),
     )
     this.hot = options.hot || createNoopHMRChannel()
   }

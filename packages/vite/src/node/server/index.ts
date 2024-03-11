@@ -470,19 +470,19 @@ export async function _createServer(
 
   const browserEnvironment = new ModuleExecutionEnvironment('browser', {
     type: 'browser',
-    resolveId: (url) =>
+    resolveId: (url, environment) =>
       container.resolveId(url, undefined, {
         ssr: false,
-        environment: environments.get('browser'),
+        environment,
       }),
     hot: ws,
   })
   const nodeEnvironment = new ModuleExecutionEnvironment('node', {
     type: 'node',
-    resolveId: (url) =>
+    resolveId: (url, environment) =>
       container.resolveId(url, undefined, {
         ssr: true,
-        environment: environments.get('node'),
+        environment,
       }),
     hot: ssrHotChannel,
   })

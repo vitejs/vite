@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import type { PartialResolvedId } from 'rollup'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
@@ -6,12 +7,15 @@ import type { PluginContainer } from '../pluginContainer'
 import { createPluginContainer } from '../pluginContainer'
 import { ModuleExecutionEnvironment } from '../environment'
 
-let resolveId: (id: string) => any
+let resolveId: (
+  id: string,
+  environment: ModuleExecutionEnvironment,
+) => Promise<PartialResolvedId | null>
 let environment: ModuleExecutionEnvironment
 function resetEnvironment() {
   environment = new ModuleExecutionEnvironment('browser', {
     type: 'browser',
-    resolveId: (id) => resolveId(id),
+    resolveId: (id, environment) => resolveId(id, environment),
   })
 }
 
@@ -236,7 +240,8 @@ async function getPluginContainer(
   // @ts-expect-error This plugin requires a ViteDevServer instance.
   config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
 
-  resolveId = (id) => container.resolveId(id, undefined, { environment })
+  resolveId = (id, environment) =>
+    container.resolveId(id, undefined, { environment })
   const container = await createPluginContainer(config)
   return container
 }

@@ -301,9 +301,11 @@ function esbuildScanPlugin(
   const seen = new Map<string, string | undefined>()
   const environment = new ModuleExecutionEnvironment('scan:browser', {
     type: 'browser',
-    resolveId,
+    resolveId: (url: string, environment: ModuleExecutionEnvironment) =>
+      resolveId(environment, url),
   })
   async function resolveId(
+    environment: ModuleExecutionEnvironment,
     id: string,
     importer?: string,
     options?: ResolveIdOptions,
@@ -323,7 +325,7 @@ function esbuildScanPlugin(
     if (seen.has(key)) {
       return seen.get(key)
     }
-    const resolved = await resolveId(id, importer, options)
+    const resolved = await resolveId(environment, id, importer, options)
     const res = resolved?.id
     seen.set(key, res)
     return res
