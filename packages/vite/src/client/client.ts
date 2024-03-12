@@ -268,7 +268,7 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'prune':
       notifyListeners('vite:beforePrune', payload)
-      hmrClient.prunePaths(payload.paths)
+      await hmrClient.prunePaths(payload.paths)
       break
     case 'error': {
       notifyListeners('vite:error', payload)
