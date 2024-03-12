@@ -1,5 +1,5 @@
 import type { HMRPayload } from 'types/hmrPayload'
-import { unwrapId } from '../shared/utils'
+import { slash, unwrapId } from '../shared/utils'
 import type { ModuleRunner } from './runner'
 
 // updates to HMR should go one after another. It is possible to trigger another update during the invalidation for example.
@@ -46,7 +46,10 @@ export async function handleHMRPayload(
     case 'full-reload': {
       const { triggeredBy } = payload
       const clearEntrypoints = triggeredBy
-        ? getModulesEntrypoints(runner, getModulesByFile(runner, triggeredBy))
+        ? getModulesEntrypoints(
+            runner,
+            getModulesByFile(runner, slash(triggeredBy)),
+          )
         : findAllEntrypoints(runner)
 
       if (!clearEntrypoints.size) break
