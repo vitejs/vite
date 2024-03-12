@@ -402,6 +402,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (isBuiltin(id)) {
           if (ssr) {
             if (
+              targetWeb &&
               ssrNoExternal === true &&
               // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
               // only if the id is explicitly listed in external, we will externalize it and skip this error.
