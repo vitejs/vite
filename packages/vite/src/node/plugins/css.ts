@@ -931,13 +931,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .map((chunk) => [chunk.preliminaryFileName, chunk]),
         )
 
-        function prependImports(imports: string) {
-          if (!imports) {
-            return ''
-          }
-          return imports + '\n'
-        }
-
         let line = 0
 
         function collect(fileName: string) {
@@ -950,13 +943,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunk.imports.forEach(collect)
 
           const content = chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
-
           if (css !== '') {
             css += '\n' + content
           } else {
             css = content
           }
-
           line += getLineCount(content)
           concatCssEndLines.push({ file: fileName, end: line })
         }
