@@ -4,7 +4,7 @@
 
 ### `vite`
 
-Start Vite dev server in the current directory.
+Start Vite dev server in the current directory. `vite dev` and `vite serve` are aliases for `vite`.
 
 #### Usage
 
