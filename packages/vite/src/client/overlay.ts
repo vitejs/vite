@@ -7,9 +7,22 @@ declare const __HMR_CONFIG_NAME__: string
 const hmrConfigName = __HMR_CONFIG_NAME__
 const base = __BASE__ || '/'
 
+// Create an element with provided attributes and optional children
+function h(
+  e: string,
+  attrs: Record<string, string> = {},
+  ...children: (string | Node)[]
+) {
+  const elem = document.createElement(e)
+  for (const [k, v] of Object.entries(attrs)) {
+    elem.setAttribute(k, v)
+  }
+  elem.append(...children)
+  return elem
+}
+
 // set :host styles to make playwright detect the element as visible
-const template = /*html*/ `
-<style>
+const templateStyle = /*css*/ `
 :host {
   position: fixed;
   top: 0;
@@ -149,21 +162,42 @@ kbd {
   border-color: rgb(54, 57, 64);
   border-image: initial;
 }
-</style>
-<div class="backdrop" part="backdrop">
-  <div class="window" part="window">
-    <pre class="message" part="message"><span class="plugin" part="plugin"></span><span class="message-body" part="message-body"></span></pre>
-    <pre class="file" part="file"></pre>
-    <pre class="frame" part="frame"></pre>
-    <pre class="stack" part="stack"></pre>
-    <div class="tip" part="tip">
-      Click outside, press <kbd>Esc</kbd> key, or fix the code to dismiss.<br>
-      You can also disable this overlay by setting
-      <code part="config-option-name">server.hmr.overlay</code> to <code part="config-option-value">false</code> in <code part="config-file-name">${hmrConfigName}.</code>
-    </div>
-  </div>
-</div>
 `
+
+// Error Template
+const template = h(
+  'div',
+  { class: 'backdrop', part: 'backdrop' },
+  h(
+    'div',
+    { class: 'window', part: 'window' },
+    h(
+      'pre',
+      { class: 'message', part: 'message' },
+      h('span', { class: 'plugin', part: 'plugin' }),
+      h('span', { class: 'message-body', part: 'message-body' }),
+    ),
+    h('pre', { class: 'file', part: 'file' }),
+    h('pre', { class: 'frame', part: 'frame' }),
+    h('pre', { class: 'stack', part: 'stack' }),
+    h(
+      'div',
+      { class: 'tip', part: 'tip' },
+      'Click outside, press ',
+      h('kbd', {}, 'Esc'),
+      ' key, or fix the code to dismiss.',
+      h('br'),
+      'You can also disable this overlay by setting ',
+      h('code', { part: 'config-option-name' }, 'server.hmr.overlay'),
+      ' to ',
+      h('code', { part: 'config-option-value' }, 'false'),
+      ' in ',
+      h('code', { part: 'config-file-name' }, hmrConfigName),
+      '.',
+    ),
+  ),
+  h('style', {}, templateStyle),
+)
 
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
@@ -178,7 +212,8 @@ export class ErrorOverlay extends HTMLElement {
   constructor(err: ErrorPayload['err'], links = true) {
     super()
     this.root = this.attachShadow({ mode: 'open' })
-    this.root.innerHTML = template
+
+    this.root.appendChild(template)
 
     codeframeRE.lastIndex = 0
     const hasFrame = err.frame && codeframeRE.test(err.frame)
