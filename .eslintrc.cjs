@@ -47,7 +47,14 @@ module.exports = defineConfig({
     'n/no-extraneous-import': [
       'error',
       {
-        allowModules: ['vite', 'less', 'sass', 'vitest', 'unbuild'],
+        allowModules: [
+          'vite',
+          'less',
+          'sass',
+          'vitest',
+          'unbuild',
+          '@polka/compression',
+        ],
       },
     ],
     'n/no-extraneous-require': [
