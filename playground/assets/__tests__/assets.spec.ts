@@ -369,11 +369,11 @@ test('?url import on css', async () => {
 
 describe('unicode url', () => {
   test('from js import', async () => {
-    const src = readFile('テスト-測試-white space.js')
+    const src = readFile('テスト-測試-white space%.js')
     expect(await page.textContent('.unicode-url')).toMatch(
       isBuild
         ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
-        : `/foo/bar/テスト-測試-white space.js`,
+        : encodeURI(`/foo/bar/テスト-測試-white space%.js`),
     )
   })
 })
