@@ -46,7 +46,7 @@ export async function handleHMRPayload(
     case 'full-reload': {
       const { triggeredBy } = payload
       const clearEntrypoints = triggeredBy
-        ? findFileEntrypoints(runner, triggeredBy)
+        ? getModulesEntrypoints(runner, getModulesByFile(runner, triggeredBy))
         : findAllEntrypoints(runner)
 
       if (!clearEntrypoints.size) break
@@ -119,23 +119,33 @@ class Queue {
   }
 }
 
-function findFileEntrypoints(
-  runner: ModuleRunner,
-  id: string,
-  entrypoints = new Set<string>(),
-  visited = new Set<string>(),
-): Set<string> {
-  if (visited.has(id)) return entrypoints
-  visited.add(id)
-  const mod = runner.moduleCache.get(id)
-  if (!mod || !mod.importers) return entrypoints
-  // entry point is a module that doesn't have any importers
-  if (!mod.importers.size) {
-    entrypoints.add(id)
-    return entrypoints
+function getModulesByFile(runner: ModuleRunner, file: string) {
+  const modules: string[] = []
+  for (const [id, mod] of runner.moduleCache.entries()) {
+    if (mod.meta && 'file' in mod.meta && mod.meta.file === file) {
+      modules.push(id)
+    }
   }
-  for (const importer of mod.importers) {
-    findFileEntrypoints(runner, importer, entrypoints)
+  return modules
+}
+
+function getModulesEntrypoints(
+  runner: ModuleRunner,
+  modules: string[],
+  visited = new Set<string>(),
+  entrypoints = new Set<string>(),
+) {
+  for (const moduleId of modules) {
+    if (visited.has(moduleId)) continue
+    visited.add(moduleId)
+    const module = runner.moduleCache.getByModuleId(moduleId)
+    if (module.importers && !module.importers.size) {
+      entrypoints.add(moduleId)
+      continue
+    }
+    for (const importer of module.importers || []) {
+      getModulesEntrypoints(runner, [importer], visited, entrypoints)
+    }
   }
   return entrypoints
 }

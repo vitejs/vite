@@ -517,7 +517,7 @@ describe('acceptExports', () => {
         await server.transformRequest('non-tested/dep.js', { ssr: true })
       })
 
-      test.only('does not full reload', async () => {
+      test('does not full reload', async () => {
         editFile(
           testFile,
           (code) => code + '\n\nexport const query5 = "query5"',
