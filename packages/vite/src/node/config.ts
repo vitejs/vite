@@ -1054,6 +1054,8 @@ async function bundleConfigFile(
       __dirname: dirnameVarName,
       __filename: filenameVarName,
       'import.meta.url': importMetaUrlVarName,
+      'import.meta.dirname': dirnameVarName,
+      'import.meta.filename': filenameVarName,
     },
     plugins: [
       {
