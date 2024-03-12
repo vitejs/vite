@@ -1,9 +1,9 @@
 import { describe, expect } from 'vitest'
 import type { ModuleRunner } from 'vite/module-runner'
-import { createViteRuntimeTester, editFile, resolvePath } from './utils'
+import { createModuleRunnerTester, editFile, resolvePath } from './utils'
 
 describe('vite-runtime initialization', async () => {
-  const it = await createViteRuntimeTester(
+  const it = await createModuleRunnerTester(
     {},
     {
       sourcemapInterceptor: 'prepareStackTrace',

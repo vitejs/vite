@@ -8,7 +8,7 @@ import { ServerHMRConnector } from './serverHmrConnector'
 /**
  * @experimental
  */
-export interface MainThreadRuntimeOptions
+export interface ServerModuleRunnerOptions
   extends Omit<ModuleRunnerOptions, 'root' | 'fetchModule' | 'hmr'> {
   /**
    * Disable HMR or configure HMR logger.
@@ -26,7 +26,7 @@ export interface MainThreadRuntimeOptions
 
 function createHMROptions(
   server: ViteDevServer,
-  options: MainThreadRuntimeOptions,
+  options: ServerModuleRunnerOptions,
 ) {
   if (server.config.server.hmr === false || options.hmr === false) {
     return false
@@ -46,7 +46,7 @@ const prepareStackTrace = {
   },
 }
 
-function resolveSourceMapOptions(options: MainThreadRuntimeOptions) {
+function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
   if (options.sourcemapInterceptor != null) {
     if (options.sourcemapInterceptor === 'prepareStackTrace') {
       return prepareStackTrace
@@ -66,9 +66,9 @@ function resolveSourceMapOptions(options: MainThreadRuntimeOptions) {
  * Create an instance of the Vite SSR runtime that support HMR.
  * @experimental
  */
-export async function createViteRuntime(
+export async function createServerModuleRunner(
   server: ViteDevServer,
-  options: MainThreadRuntimeOptions = {},
+  options: ServerModuleRunnerOptions = {},
 ): Promise<ModuleRunner> {
   const hmr = createHMROptions(server, options)
   return new ModuleRunner(

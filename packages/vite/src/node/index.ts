@@ -135,8 +135,8 @@ export type {
 } from './server/hmr'
 
 export type { FetchFunction } from '../module-runner/index'
-export { createViteRuntime } from './ssr/runtime/mainThreadRuntime'
-export type { MainThreadRuntimeOptions } from './ssr/runtime/mainThreadRuntime'
+export { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
+export type { ServerModuleRunnerOptions } from './ssr/runtime/serverModuleRunner'
 export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
 
 export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'

@@ -3,12 +3,12 @@ import { posix, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect } from 'vitest'
 import { isWindows } from '../../../../shared/utils'
-import { createViteRuntimeTester } from './utils'
+import { createModuleRunnerTester } from './utils'
 
 const _URL = URL
 
 describe('vite-runtime initialization', async () => {
-  const it = await createViteRuntimeTester()
+  const it = await createModuleRunnerTester()
 
   it('correctly runs ssr code', async ({ runner: runtime }) => {
     const mod = await runtime.import('/fixtures/simple.js')

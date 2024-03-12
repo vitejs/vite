@@ -4,20 +4,20 @@ import { fileURLToPath } from 'node:url'
 import type { TestAPI } from 'vitest'
 import { afterEach, beforeEach, test } from 'vitest'
 import type { ModuleRunner } from 'vite/module-runner'
-import type { MainThreadRuntimeOptions } from '../mainThreadRuntime'
+import type { ServerModuleRunnerOptions } from '../serverModuleRunner'
 import type { ViteDevServer } from '../../../server'
 import type { InlineConfig } from '../../../config'
 import { createServer } from '../../../server'
-import { createViteRuntime } from '../mainThreadRuntime'
+import { createServerModuleRunner } from '../serverModuleRunner'
 
 interface TestClient {
   server: ViteDevServer
   runner: ModuleRunner
 }
 
-export async function createViteRuntimeTester(
+export async function createModuleRunnerTester(
   config: InlineConfig = {},
-  runnerConfig: MainThreadRuntimeOptions = {},
+  runnerConfig: ServerModuleRunnerOptions = {},
 ): Promise<TestAPI<TestClient>> {
   function waitForWatcher(server: ViteDevServer) {
     return new Promise<void>((resolve) => {
@@ -73,7 +73,7 @@ export async function createViteRuntimeTester(
       ],
       ...config,
     })
-    t.runner = await createViteRuntime(t.server, {
+    t.runner = await createServerModuleRunner(t.server, {
       hmr: {
         logger: false,
       },

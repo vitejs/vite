@@ -4,7 +4,7 @@ import { dirname, posix, resolve } from 'node:path'
 import EventEmitter from 'node:events'
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest'
 import type { InlineConfig, Logger, ViteDevServer } from 'vite'
-import { createServer, createViteRuntime } from 'vite'
+import { createServer, createServerModuleRunner } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import type { RollupError } from 'rollup'
 import { page, promiseWithResolvers, slash, untilUpdated } from '~utils'
@@ -1105,7 +1105,7 @@ async function setupModuleRunner(
   // @ts-expect-error not typed for HMR
   globalThis.log = (...msg) => logger.debug(...msg)
 
-  runner = await createViteRuntime(server, {
+  runner = await createServerModuleRunner(server, {
     hmr: {
       logger,
     },

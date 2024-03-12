@@ -1,10 +1,10 @@
 import { describe, expect } from 'vitest'
-import { createViteRuntimeTester } from './utils'
+import { createModuleRunnerTester } from './utils'
 
 describe(
   'vite-runtime hmr works as expected',
   async () => {
-    const it = await createViteRuntimeTester({
+    const it = await createModuleRunnerTester({
       server: {
         // override watch options because it's disabled by default
         watch: {},

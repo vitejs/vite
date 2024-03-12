@@ -1,8 +1,8 @@
 import assert from 'node:assert'
 import { fileURLToPath } from 'node:url'
-import { createServer, createViteRuntime } from 'vite'
+import { createServer, createServerModuleRunner } from 'vite'
 
-async function runTest(useRuntime) {
+async function runTest(userRunner) {
   const server = await createServer({
     configFile: false,
     root: fileURLToPath(new URL('.', import.meta.url)),
@@ -11,8 +11,8 @@ async function runTest(useRuntime) {
     },
   })
   let mod
-  if (useRuntime) {
-    const runtime = await createViteRuntime(server, { hmr: false })
+  if (userRunner) {
+    const runtime = await createServerModuleRunner(server, { hmr: false })
     mod = await runtime.import('/src/network-imports.js')
   } else {
     mod = await server.ssrLoadModule('/src/network-imports.js')
@@ -21,4 +21,4 @@ async function runTest(useRuntime) {
   await server.close()
 }
 
-runTest(process.argv.includes('--runtime'))
+runTest(process.argv.includes('--module-runner'))
