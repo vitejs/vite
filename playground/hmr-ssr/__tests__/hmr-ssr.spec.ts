@@ -7,7 +7,14 @@ import type { InlineConfig, Logger, ViteDevServer } from 'vite'
 import { createServer, createViteRuntime } from 'vite'
 import type { ViteRuntime } from 'vite/runtime'
 import type { RollupError } from 'rollup'
-import { page, promiseWithResolvers, slash, untilUpdated } from '~utils'
+import {
+  addFile,
+  page,
+  promiseWithResolvers,
+  readFile,
+  slash,
+  untilUpdated,
+} from '~utils'
 
 let server: ViteDevServer
 const clientLogs: string[] = []
@@ -737,31 +744,19 @@ test.todo('should hmr when file is deleted and restored', async () => {
   )
   await untilUpdated(() => hmr('.file-delete-restore'), 'parent:child1')
 
+  // delete the file
   editFile(parentFile, (code) =>
     code.replace(
       "export { value as childValue } from './child'",
       "export const childValue = 'not-child'",
     ),
   )
+  const originalChildFileCode = readFile(childFile)
   removeFile(childFile)
   await untilUpdated(() => hmr('.file-delete-restore'), 'parent:not-child')
 
-  createFile(
-    childFile,
-    `
-import { rerender } from './runtime'
-
-export const value = 'child'
-
-if (import.meta.hot) {
-  import.meta.hot.accept((newMod) => {
-    if (!newMod) return
-
-    rerender({ child: newMod.value })
-  })
-}
-`,
-  )
+  // restore the file
+  createFile(childFile, originalChildFileCode)
   editFile(parentFile, (code) =>
     code.replace(
       "export const childValue = 'not-child'",
@@ -821,6 +816,45 @@ test.todo('delete file should not break hmr', async () => {
     'count is 2',
   )
 })
+
+test.todo(
+  'deleted file should trigger dispose and prune callbacks',
+  async () => {
+    await setupViteRuntime('/hmr.ts')
+
+    const parentFile = 'file-delete-restore/parent.js'
+    const childFile = 'file-delete-restore/child.js'
+
+    // delete the file
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export { value as childValue } from './child'",
+        "export const childValue = 'not-child'",
+      ),
+    )
+    const originalChildFileCode = readFile(childFile)
+    removeFile(childFile)
+    await untilUpdated(
+      () => page.textContent('.file-delete-restore'),
+      'parent:not-child',
+    )
+    expect(clientLogs).to.include('file-delete-restore/child.js is disposed')
+    expect(clientLogs).to.include('file-delete-restore/child.js is pruned')
+
+    // restore the file
+    addFile(childFile, originalChildFileCode)
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export const childValue = 'not-child'",
+        "export { value as childValue } from './child'",
+      ),
+    )
+    await untilUpdated(
+      () => page.textContent('.file-delete-restore'),
+      'parent:child',
+    )
+  },
+)
 
 test('import.meta.hot?.accept', async () => {
   await setupViteRuntime('/hmr.ts')

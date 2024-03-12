@@ -26,7 +26,7 @@ However, the performance of community plugins is out of Vite's control, which ma
 
    The longer it takes to transform a file, the more significant the request waterfall will be when loading the site in the browser.
 
-   You can inspect the duration it takes to transform a file using `DEBUG="vite:plugin-transform" vite` or [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect). Note that as asynchronous operations tend to provide inaccurate timings, you should treat the numbers as a rough estimate, but it should still reveal the more expensive operations. For setting environment variables on Windows platform, please refer to the [documentation](https://github.com/debug-js/debug?tab=readme-ov-file#windows-command-prompt-notes).
+   You can inspect the duration it takes to transform a file using `vite --debug plugin-transform` or [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect). Note that as asynchronous operations tend to provide inaccurate timings, you should treat the numbers as a rough estimate, but it should still reveal the more expensive operations.
 
 ::: tip Profiling
 You can run `vite --profile`, visit the site, and press `p + enter` in your terminal to record a `.cpuprofile`. A tool like [speedscope](https://www.speedscope.app) can then be used to inspect the profile and identify the bottlenecks. You can also [share the profiles](https://chat.vitejs.dev) with the Vite team to help us identify performance issues.
@@ -84,7 +84,7 @@ The import relationship can only be known after the file is transformed. If `Big
 
 Vite allows you to warm up files that you know are frequently used, e.g. `big-utils.js`, using the [`server.warmup`](/config/server-options.md#server-warmup) option. This way `big-utils.js` will be ready and cached to be served immediately when requested.
 
-You can find files that are frequently used by running `DEBUG="vite:transform" vite` and inspect the logs:
+You can find files that are frequently used by running `vite --debug transform` and inspect the logs:
 
 ```bash
 vite:transform 28.72ms /@vite/client +1ms

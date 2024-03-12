@@ -138,6 +138,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
+        "ignoreList": [],
         "mappings": "AACE;EACE",
         "sources": [
           "/root/imported.sass",
@@ -159,6 +160,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
+        "ignoreList": [],
         "mappings": "AACE;EACE",
         "sources": [
           "/root/imported.module.sass",
@@ -179,6 +181,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
+        "ignoreList": [],
         "mappings": "AACE;EACE",
         "sources": [
           "/root/imported.less",
@@ -201,6 +204,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
+        "ignoreList": [],
         "mappings": "AACE;EACE,cAAM",
         "sources": [
           "/root/imported.styl",

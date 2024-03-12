@@ -40,6 +40,7 @@ import {
   emptyDir,
   joinUrlSegments,
   normalizePath,
+  partialEncodeURI,
   requireResolveFromRootWithFallback,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
@@ -1092,7 +1093,7 @@ const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
 
 const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
   getResolveUrl(
-    `'${escapeId(relativePath)}', ${
+    `'${escapeId(partialEncodeURI(relativePath))}', ${
       umd ? `typeof document === 'undefined' ? location.href : ` : ''
     }document.currentScript && document.currentScript.src || document.baseURI`,
   )
@@ -1118,11 +1119,15 @@ const relativeUrlMechanisms: Record<
       relativePath,
     )} : ${getRelativeUrlFromDocument(relativePath)})`,
   es: (relativePath) =>
-    getResolveUrl(`'${escapeId(relativePath)}', import.meta.url`),
+    getResolveUrl(
+      `'${escapeId(partialEncodeURI(relativePath))}', import.meta.url`,
+    ),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
   // NOTE: make sure rollup generate `module` params
   system: (relativePath) =>
-    getResolveUrl(`'${escapeId(relativePath)}', module.meta.url`),
+    getResolveUrl(
+      `'${escapeId(partialEncodeURI(relativePath))}', module.meta.url`,
+    ),
   umd: (relativePath) =>
     `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
@@ -1133,7 +1138,9 @@ const relativeUrlMechanisms: Record<
 const customRelativeUrlMechanisms = {
   ...relativeUrlMechanisms,
   'worker-iife': (relativePath) =>
-    getResolveUrl(`'${escapeId(relativePath)}', self.location.href`),
+    getResolveUrl(
+      `'${escapeId(partialEncodeURI(relativePath))}', self.location.href`,
+    ),
 } as const satisfies Record<string, (relativePath: string) => string>
 
 export type RenderBuiltAssetUrl = (
