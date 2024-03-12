@@ -229,9 +229,7 @@ describe('plugin container', () => {
   })
 })
 
-async function getPluginContainer(
-  inlineConfig?: UserConfig,
-): Promise<{
+async function getPluginContainer(inlineConfig?: UserConfig): Promise<{
   pluginContainer: PluginContainer
   environment: ModuleExecutionEnvironment
 }> {
