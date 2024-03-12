@@ -33,7 +33,7 @@ export interface ModuleRunnerImportMeta extends ImportMeta {
   [key: string]: any
 }
 
-export interface ModuleRunnerContect {
+export interface ModuleRunnerContext {
   [ssrModuleExportsKey]: Record<string, any>
   [ssrImportKey]: (id: string, metadata?: DefineImportMetadata) => Promise<any>
   [ssrDynamicImportKey]: (
@@ -52,7 +52,7 @@ export interface ModuleEvaluator {
    * @param id ID that was used to fetch the module
    */
   runInlinedModule(
-    context: ModuleRunnerContect,
+    context: ModuleRunnerContext,
     code: string,
     id: string,
   ): Promise<any>

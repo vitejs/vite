@@ -7,7 +7,7 @@ export { ESModuleEvaluator } from './esmEvaluator'
 export type { HMRLogger, HMRConnection } from '../shared/hmr'
 export type {
   ModuleEvaluator,
-  ModuleRunnerContect,
+  ModuleRunnerContext,
   ModuleCache,
   FetchResult,
   FetchFunction,

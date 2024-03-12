@@ -6,11 +6,11 @@ import {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
-import type { ModuleEvaluator, ModuleRunnerContect } from './types'
+import type { ModuleEvaluator, ModuleRunnerContext } from './types'
 
 export class ESModuleEvaluator implements ModuleEvaluator {
   async runInlinedModule(
-    context: ModuleRunnerContect,
+    context: ModuleRunnerContext,
     code: string,
   ): Promise<any> {
     // use AsyncFunction instead of vm module to support broader array of environments out of the box

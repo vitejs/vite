@@ -17,7 +17,7 @@ import type {
   FetchResult,
   ModuleCache,
   ModuleEvaluator,
-  ModuleRunnerContect,
+  ModuleRunnerContext,
   ModuleRunnerImportMeta,
   ModuleRunnerOptions,
   ResolvedResult,
@@ -373,7 +373,7 @@ export class ModuleRunner {
       })
     }
 
-    const context: ModuleRunnerContect = {
+    const context: ModuleRunnerContext = {
       [ssrImportKey]: request,
       [ssrDynamicImportKey]: dynamicRequest,
       [ssrModuleExportsKey]: exports,
