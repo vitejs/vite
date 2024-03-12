@@ -814,6 +814,9 @@ importers:
 
   playground/nested-deps:
     dependencies:
+      '@vitejs/self-referencing':
+        specifier: link:../self-referencing
+        version: link:../self-referencing
       '@vitejs/test-package-a':
         specifier: link:./test-package-a
         version: link:test-package-a
@@ -1251,6 +1254,8 @@ importers:
       es5-ext:
         specifier: 0.10.64
         version: 0.10.64
+
+  playground/self-referencing: {}
 
   playground/ssr:
     devDependencies:

@@ -24,6 +24,9 @@
 
 <h2>absolute dependency path: <span class="absolute-f"></span></h2>
 
+<h2>self referencing</h2>
+<pre class="self-referencing"></pre>
+
 <script type="module">
   import A from '@vitejs/test-package-a'
   import B, { A as nestedA } from '@vitejs/test-package-b'
@@ -32,6 +35,7 @@
   import D, { nestedD } from '@vitejs/test-package-d'
   // import { testExcluded } from '@vitejs/test-package-e'
   import F from '__F_ABSOLUTE_PACKAGE_PATH__'
+  import { isSelfReference } from '@vitejs/self-referencing/test'
 
   text('.a', A)
   text('.b', B)
@@ -46,6 +50,8 @@
   // text('.nested-e', testExcluded())
 
   text('.absolute-f', F)
+
+  text('.self-referencing', isSelfReference)
 
   function text(sel, text) {
     document.querySelector(sel).textContent = text
