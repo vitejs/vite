@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test } from 'vitest'
+import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   browserLogs,
   editFile,
@@ -6,8 +7,16 @@ import {
   isBuild,
   isServe,
   page,
+  viteServer,
   viteTestUrl,
+  withRetry,
 } from '~utils'
+
+function fetchHtml(p: string) {
+  return fetch(viteTestUrl + p, {
+    headers: { Accept: 'text/html,*/*' },
+  })
+}
 
 function testPage(isNested: boolean) {
   test('pre transform', async () => {
@@ -210,7 +219,7 @@ describe('noBody', () => {
   })
 })
 
-describe('Unicode path', () => {
+describe.skipIf(hasWindowsUnicodeFsBug)('Unicode path', () => {
   test('direct access', async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
@@ -298,9 +307,6 @@ describe('env', () => {
     expect(await page.textContent('.env-define-object-string')).toBe(
       '{ "foo": "bar" }',
     )
-    expect(await page.textContent('.env-define-template-literal')).toBe(
-      '`template literal`', // only double quotes will be unquoted
-    )
     expect(await page.textContent('.env-define-null-string')).toBe('null')
     expect(await page.textContent('.env-bar')).toBeTruthy()
     expect(await page.textContent('.env-prod')).toBe(isBuild + '')
@@ -344,4 +350,84 @@ describe('special character', () => {
   test('should fetch html proxy', async () => {
     expect(browserLogs).toContain('special character')
   })
+})
+
+describe.runIf(isServe)('warmup', () => {
+  test('should warmup /warmup/warm.js', async () => {
+    // warmup transform files async during server startup, so the module check
+    // here might take a while to load
+    await withRetry(async () => {
+      const mod = await viteServer.moduleGraph.getModuleByUrl('/warmup/warm.js')
+      expect(mod).toBeTruthy()
+    })
+  })
+})
+
+test('html serve behavior', async () => {
+  const [
+    file,
+    fileSlash,
+    fileDotHtml,
+
+    folder,
+    folderSlash,
+    folderSlashIndexHtml,
+
+    both,
+    bothSlash,
+    bothDotHtml,
+    bothSlashIndexHtml,
+  ] = await Promise.all([
+    fetchHtml('/serve/file'), // -> serve/file.html
+    fetchHtml('/serve/file/'), // -> index.html (404 in mpa)
+    fetchHtml('/serve/file.html'), // -> serve/file.html
+
+    fetchHtml('/serve/folder'), // -> index.html (404 in mpa)
+    fetchHtml('/serve/folder/'), // -> serve/folder/index.html
+    fetchHtml('/serve/folder/index.html'), // -> serve/folder/index.html
+
+    fetchHtml('/serve/both'), // -> serve/both.html
+    fetchHtml('/serve/both/'), // -> serve/both/index.html
+    fetchHtml('/serve/both.html'), // -> serve/both.html
+    fetchHtml('/serve/both/index.html'), // -> serve/both/index.html
+  ])
+
+  expect(file.status).toBe(200)
+  expect(await file.text()).toContain('file.html')
+  expect(fileSlash.status).toBe(200)
+  expect(await fileSlash.text()).toContain('index.html (fallback)')
+  expect(fileDotHtml.status).toBe(200)
+  expect(await fileDotHtml.text()).toContain('file.html')
+
+  expect(folder.status).toBe(200)
+  expect(await folder.text()).toContain('index.html (fallback)')
+  expect(folderSlash.status).toBe(200)
+  expect(await folderSlash.text()).toContain('folder/index.html')
+  expect(folderSlashIndexHtml.status).toBe(200)
+  expect(await folderSlashIndexHtml.text()).toContain('folder/index.html')
+
+  expect(both.status).toBe(200)
+  expect(await both.text()).toContain('both.html')
+  expect(bothSlash.status).toBe(200)
+  expect(await bothSlash.text()).toContain('both/index.html')
+  expect(bothDotHtml.status).toBe(200)
+  expect(await bothDotHtml.text()).toContain('both.html')
+  expect(bothSlashIndexHtml.status).toBe(200)
+  expect(await bothSlashIndexHtml.text()).toContain('both/index.html')
+})
+
+test('html fallback works non browser accept header', async () => {
+  expect((await fetch(viteTestUrl, { headers: { Accept: '' } })).status).toBe(
+    200,
+  )
+  // defaults to "Accept: */*"
+  expect((await fetch(viteTestUrl)).status).toBe(200)
+  // wait-on uses axios and axios sends this accept header
+  expect(
+    (
+      await fetch(viteTestUrl, {
+        headers: { Accept: 'application/json, text/plain, */*' },
+      })
+    ).status,
+  ).toBe(200)
 })

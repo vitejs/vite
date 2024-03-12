@@ -1,4 +1,5 @@
 import { defineConfig, DefaultTheme } from 'vitepress'
+import { buildEnd } from './buildEnd.config'
 
 const ogDescription = 'Next Generation Frontend Tooling'
 const ogImage = 'https://vitejs.dev/og-image.png'
@@ -30,34 +31,33 @@ const additionalTitle = ((): string => {
   }
 })()
 const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
+  const oldVersions: DefaultTheme.NavItemWithLink[] = [
+    {
+      text: 'Vite 4 Docs',
+      link: 'https://v4.vitejs.dev',
+    },
+    {
+      text: 'Vite 3 Docs',
+      link: 'https://v3.vitejs.dev',
+    },
+    {
+      text: 'Vite 2 Docs',
+      link: 'https://v2.vitejs.dev',
+    },
+  ]
+
   switch (deployType) {
     case 'main':
     case 'local':
       return [
         {
-          text: 'Vite 4 Docs (release)',
+          text: 'Vite 5 Docs (release)',
           link: 'https://vitejs.dev',
         },
-        {
-          text: 'Vite 3 Docs',
-          link: 'https://v3.vitejs.dev',
-        },
-        {
-          text: 'Vite 2 Docs',
-          link: 'https://v2.vitejs.dev',
-        },
+        ...oldVersions,
       ]
     case 'release':
-      return [
-        {
-          text: 'Vite 3 Docs',
-          link: 'https://v3.vitejs.dev',
-        },
-        {
-          text: 'Vite 2 Docs',
-          link: 'https://v2.vitejs.dev',
-        },
-      ]
+      return oldVersions
   }
 })()
 
@@ -67,6 +67,11 @@ export default defineConfig({
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
+    [
+      'link',
+      { rel: 'alternate', type: 'application/rss+xml', href: '/blog.rss' },
+    ],
+    ['link', { rel: 'me', href: 'https://m.webtoo.ls/@vite' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: ogTitle }],
     ['meta', { property: 'og:image', content: ogImage }],
@@ -93,6 +98,7 @@ export default defineConfig({
     es: { label: 'Español', link: 'https://es.vitejs.dev' },
     pt: { label: 'Português', link: 'https://pt.vitejs.dev' },
     ko: { label: '한국어', link: 'https://ko.vitejs.dev' },
+    de: { label: 'Deutsch', link: 'https://de.vitejs.dev' },
   },
 
   themeConfig: {
@@ -137,6 +143,7 @@ export default defineConfig({
         text: 'Resources',
         items: [
           { text: 'Team', link: '/team' },
+          { text: 'Blog', link: '/blog' },
           { text: 'Releases', link: '/releases' },
           {
             items: [
@@ -153,12 +160,12 @@ export default defineConfig({
                 link: 'https://github.com/vitejs/awesome-vite',
               },
               {
-                text: 'DEV Community',
-                link: 'https://dev.to/t/vite',
+                text: 'ViteConf',
+                link: 'https://viteconf.org',
               },
               {
-                text: 'Rollup Plugins Compat',
-                link: 'https://vite-rollup-plugins.patak.dev/',
+                text: 'DEV Community',
+                link: 'https://dev.to/t/vite',
               },
               {
                 text: 'Changelog',
@@ -240,11 +247,15 @@ export default defineConfig({
               link: '/guide/troubleshooting',
             },
             {
+              text: 'Performance',
+              link: '/guide/performance',
+            },
+            {
               text: 'Philosophy',
               link: '/guide/philosophy',
             },
             {
-              text: 'Migration from v3',
+              text: 'Migration from v4',
               link: '/guide/migration',
             },
           ],
@@ -263,6 +274,10 @@ export default defineConfig({
             {
               text: 'JavaScript API',
               link: '/guide/api-javascript',
+            },
+            {
+              text: 'Vite Runtime API',
+              link: '/guide/api-vite-runtime',
             },
             {
               text: 'Config Reference',
@@ -316,4 +331,16 @@ export default defineConfig({
       level: [2, 3],
     },
   },
+  transformPageData(pageData) {
+    const canonicalUrl = `${ogUrl}/${pageData.relativePath}`
+      .replace(/\/index\.md$/, '/')
+      .replace(/\.md$/, '/')
+    pageData.frontmatter.head ??= []
+    pageData.frontmatter.head.unshift([
+      'link',
+      { rel: 'canonical', href: canonicalUrl },
+    ])
+    return pageData
+  },
+  buildEnd,
 })

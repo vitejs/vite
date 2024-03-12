@@ -32,7 +32,7 @@ describe('plugin container', () => {
         },
         load(id) {
           if (id === entryUrl) {
-            const { meta } = this.getModuleInfo(entryUrl)
+            const { meta } = this.getModuleInfo(entryUrl) ?? {}
             metaArray.push(meta)
 
             return { code: 'export {}', meta: { x: 2 } }
@@ -40,14 +40,14 @@ describe('plugin container', () => {
         },
         transform(code, id) {
           if (id === entryUrl) {
-            const { meta } = this.getModuleInfo(entryUrl)
+            const { meta } = this.getModuleInfo(entryUrl) ?? {}
             metaArray.push(meta)
 
             return { meta: { x: 3 } }
           }
         },
         buildEnd() {
-          const { meta } = this.getModuleInfo(entryUrl)
+          const { meta } = this.getModuleInfo(entryUrl) ?? {}
           metaArray.push(meta)
         },
       }
@@ -84,7 +84,7 @@ describe('plugin container', () => {
         name: 'p2',
         load(id) {
           if (id === entryUrl) {
-            const { meta } = this.getModuleInfo(entryUrl)
+            const { meta } = this.getModuleInfo(entryUrl) ?? {}
             expect(meta).toEqual({ x: 1 })
             return null
           }
@@ -183,6 +183,38 @@ describe('plugin container', () => {
       const loadResult: any = await container.load(entryUrl)
       const result: any = await container.transform(loadResult.code, entryUrl)
       expect(result.code).equals('2')
+    })
+
+    it('will load and transform the module', async () => {
+      const entryUrl = '/x.js'
+      const otherUrl = '/y.js'
+
+      const plugin: Plugin = {
+        name: 'p1',
+        resolveId(id) {
+          return id
+        },
+        load(id) {
+          if (id === entryUrl) return { code: '1' }
+          else if (id === otherUrl) return { code: '2', meta: { code: '2' } }
+        },
+        async transform(code, id) {
+          if (id === entryUrl) {
+            // NOTE: ModuleInfo.code not implemented, used `.meta.code` for now
+            return (await this.load({ id: otherUrl }))?.meta.code
+          } else if (id === otherUrl) {
+            return { code: '3', meta: { code: '3' } }
+          }
+        },
+      }
+
+      const container = await getPluginContainer({
+        plugins: [plugin],
+      })
+      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const loadResult: any = await container.load(entryUrl)
+      const result: any = await container.transform(loadResult.code, entryUrl)
+      expect(result.code).equals('3')
     })
   })
 })

@@ -1,14 +1,13 @@
-import os from 'node:os'
 import path from 'node:path'
 import fs from 'fs-extra'
+import type { GlobalSetupContext } from 'vitest/node'
 import type { BrowserServer } from 'playwright-chromium'
 import { chromium } from 'playwright-chromium'
-
-const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
+import { hasWindowsUnicodeFsBug } from './hasWindowsUnicodeFsBug'
 
 let browserServer: BrowserServer | undefined
 
-export async function setup(): Promise<void> {
+export async function setup({ provide }: GlobalSetupContext): Promise<void> {
   process.env.NODE_ENV = process.env.VITE_TEST_BUILD
     ? 'production'
     : 'development'
@@ -20,8 +19,7 @@ export async function setup(): Promise<void> {
       : undefined,
   })
 
-  await fs.mkdirp(DIR)
-  await fs.writeFile(path.join(DIR, 'wsEndpoint'), browserServer.wsEndpoint())
+  provide('wsEndpoint', browserServer.wsEndpoint())
 
   const tempDir = path.resolve(__dirname, '../playground-temp')
   await fs.ensureDir(tempDir)
@@ -30,8 +28,11 @@ export async function setup(): Promise<void> {
     .copy(path.resolve(__dirname, '../playground'), tempDir, {
       dereference: false,
       filter(file) {
+        if (file.includes('中文-にほんご-한글-🌕🌖🌗')) {
+          return !hasWindowsUnicodeFsBug
+        }
         file = file.replace(/\\/g, '/')
-        return !file.includes('__tests__') && !file.match(/dist(\/|$)/)
+        return !file.includes('__tests__') && !/dist(?:\/|$)/.test(file)
       },
     })
     .catch(async (error) => {

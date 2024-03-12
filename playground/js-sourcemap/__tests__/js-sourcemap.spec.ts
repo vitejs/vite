@@ -1,6 +1,7 @@
 import { URL } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { mapFileCommentRegex } from 'convert-source-map'
+import { commentSourceMap } from '../foo-with-sourcemap-plugin'
 import {
   extractSourcemap,
   findAssetFile,
@@ -30,12 +31,34 @@ if (!isBuild) {
     `)
   })
 
-  test('js with existing inline sourcemap', async () => {
+  test('plugin return sourcemap with `sources: [""]`', async () => {
+    const res = await page.request.get(new URL('./zoo.js', page.url()).href)
+    const js = await res.text()
+    expect(js).toContain('// add comment')
+
+    const map = extractSourcemap(js)
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
+        "sources": [
+          "zoo.js",
+        ],
+        "sourcesContent": [
+          "export const zoo = 'zoo'
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
+  test('js with inline sourcemap injected by a plugin', async () => {
     const res = await page.request.get(
       new URL('./foo-with-sourcemap.js', page.url()).href,
     )
     const js = await res.text()
 
+    expect(js).toContain(commentSourceMap)
     const sourcemapComments = js.match(mapFileCommentRegex).length
     expect(sourcemapComments).toBe(1)
 
@@ -45,9 +68,6 @@ if (!isBuild) {
         "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG",
         "sources": [
           "",
-        ],
-        "sourcesContent": [
-          null,
         ],
         "version": 3,
       }
@@ -117,7 +137,8 @@ describe.runIf(isBuild)('build tests', () => {
     const map = findAssetFile(/after-preload-dynamic.*\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
-        "mappings": "k2BAAA,OAAO,2BAAuB,EAAC,sEAE/B,QAAQ,IAAI,uBAAuB",
+        "ignoreList": [],
+        "mappings": ";;;;;;i3BAAA,OAAO,2BAAuB,EAAC,wBAE/B,QAAQ,IAAI,uBAAuB",
         "sources": [
           "../../after-preload-dynamic.js",
         ],
@@ -130,5 +151,10 @@ describe.runIf(isBuild)('build tests', () => {
         "version": 3,
       }
     `)
+    // verify sourcemap comment is preserved at the last line
+    const js = findAssetFile(/after-preload-dynamic.*\.js$/)
+    expect(js).toMatch(
+      /\n\/\/# sourceMappingURL=after-preload-dynamic.*\.js\.map\n$/,
+    )
   })
 })

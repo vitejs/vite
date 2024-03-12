@@ -1,4 +1,8 @@
+import path from 'node:path'
+import url from 'node:url'
 import { defineConfig } from 'vitest/config'
+
+const _dirname = path.dirname(url.fileURLToPath(import.meta.url))
 
 export default defineConfig({
   test: {
@@ -13,5 +17,14 @@ export default defineConfig({
   },
   esbuild: {
     target: 'node18',
+  },
+  publicDir: false,
+  resolve: {
+    alias: {
+      'vite/runtime': path.resolve(
+        _dirname,
+        './packages/vite/src/runtime/index.ts',
+      ),
+    },
   },
 })

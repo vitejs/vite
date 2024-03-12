@@ -8,6 +8,7 @@ import json from '@rollup/plugin-json'
 import MagicString from 'magic-string'
 import type { Plugin, RollupOptions } from 'rollup'
 import { defineConfig } from 'rollup'
+import { minify as esbuildMinifyPlugin } from 'rollup-plugin-esbuild'
 import licensePlugin from './rollupLicensePlugin'
 
 const pkg = JSON.parse(
@@ -116,15 +117,15 @@ function createNodePlugins(
           pattern: /require(?=\((configFile|'ts-node')\))/g,
           replacement: `__require`,
         },
-        'json-stable-stringify/index.js': {
-          pattern: /^var json = typeof JSON.+require\('jsonify'\);$/gm,
-          replacement: 'var json = JSON',
-        },
         // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
         // However, we always pass the `resolve` option. Remove this import to avoid
         // bundling the `resolve` dep.
         'postcss-import/index.js': {
           src: 'const resolveId = require("./lib/resolve-id")',
+          replacement: 'const resolveId = (id) => id',
+        },
+        'postcss-import/lib/parse-styles.js': {
+          src: 'const resolveId = require("./resolve-id")',
           replacement: 'const resolveId = (id) => id',
         },
       }),
@@ -159,18 +160,65 @@ function createNodeConfig(isProduction: boolean) {
       sourcemap: !isProduction,
     },
     external: [
+      /^vite\//,
       'fsevents',
       'lightningcss',
+      'rollup/parseAst',
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
     plugins: createNodePlugins(
       isProduction,
       !isProduction,
-      // in production we use api-extractor for dts generation
+      // in production we use rollup.dts.config.ts for dts generation
       // in development we need to rely on the rollup ts plugin
       isProduction ? false : './dist/node',
     ),
+  })
+}
+
+function createRuntimeConfig(isProduction: boolean) {
+  return defineConfig({
+    ...sharedNodeOptions,
+    input: {
+      runtime: path.resolve(__dirname, 'src/runtime/index.ts'),
+    },
+    output: {
+      ...sharedNodeOptions.output,
+      sourcemap: !isProduction,
+    },
+    external: [
+      'fsevents',
+      'lightningcss',
+      'rollup/parseAst',
+      ...Object.keys(pkg.dependencies),
+    ],
+    plugins: [
+      ...createNodePlugins(
+        false,
+        !isProduction,
+        // in production we use rollup.dts.config.ts for dts generation
+        // in development we need to rely on the rollup ts plugin
+        isProduction ? false : './dist/node',
+      ),
+      esbuildMinifyPlugin({ minify: false, minifySyntax: true }),
+      {
+        name: 'replace bias',
+        transform(code, id) {
+          if (id.includes('@jridgewell+trace-mapping')) {
+            return {
+              code: code.replaceAll(
+                'bias === LEAST_UPPER_BOUND',
+                'true' +
+                  `/*${'bias === LEAST_UPPER_BOUND'.length - '/**/'.length - 'true'.length}*/`,
+              ),
+              map: null,
+            }
+          }
+        },
+      },
+      bundleSizeLimit(45),
+    ],
   })
 }
 
@@ -195,7 +243,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(162)],
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(175)],
   })
 }
 
@@ -207,6 +255,7 @@ export default (commandLineArgs: any): RollupOptions[] => {
     envConfig,
     clientConfig,
     createNodeConfig(isProduction),
+    createRuntimeConfig(isProduction),
     createCjsConfig(isProduction),
   ])
 }
@@ -298,7 +347,12 @@ const __require = require;
     name: 'cjs-chunk-patch',
     renderChunk(code, chunk) {
       if (!chunk.fileName.includes('chunks/dep-')) return
-
+      // don't patch runtime utils chunk because it should stay lightweight and we know it doesn't use require
+      if (
+        chunk.name === 'utils' &&
+        chunk.moduleIds.some((id) => id.endsWith('/ssr/runtime/utils.ts'))
+      )
+        return
       const match = code.match(/^(?:import[\s\S]*?;\s*)+/)
       const index = match ? match.index! + match[0].length : 0
       const s = new MagicString(code)
@@ -320,18 +374,22 @@ const __require = require;
  * @param limit size in kB
  */
 function bundleSizeLimit(limit: number): Plugin {
+  let size = 0
+
   return {
     name: 'bundle-limit',
-    generateBundle(options, bundle) {
-      const size = Buffer.byteLength(
+    generateBundle(_, bundle) {
+      size = Buffer.byteLength(
         Object.values(bundle)
           .map((i) => ('code' in i ? i.code : ''))
           .join(''),
         'utf-8',
       )
+    },
+    closeBundle() {
       const kb = size / 1000
       if (kb > limit) {
-        throw new Error(
+        this.error(
           `Bundle size exceeded ${limit} kB, current size is ${kb.toFixed(
             2,
           )}kb.`,

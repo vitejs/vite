@@ -29,8 +29,5 @@ export default defineConfig({
     port,
     strictPort: true,
   },
-  testConfig: {
-    baseRoute: '/url-base/',
-  },
   cacheDir: 'node_modules/.vite-url-base',
 })

@@ -1,9 +1,18 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { parse } from 'dotenv'
-import { expand } from 'dotenv-expand'
-import { arraify, tryStatSync } from './utils'
+import { type DotenvPopulateInput, expand } from 'dotenv-expand'
+import { arraify, normalizePath, tryStatSync } from './utils'
 import type { UserConfig } from './config'
+
+export function getEnvFilesForMode(mode: string, envDir: string): string[] {
+  return [
+    /** default file */ `.env`,
+    /** local file */ `.env.local`,
+    /** mode file */ `.env.${mode}`,
+    /** mode local file */ `.env.${mode}.local`,
+  ].map((file) => normalizePath(path.join(envDir, file)))
+}
 
 export function loadEnv(
   mode: string,
@@ -18,16 +27,10 @@ export function loadEnv(
   }
   prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
-  const envFiles = [
-    /** default file */ `.env`,
-    /** local file */ `.env.local`,
-    /** mode file */ `.env.${mode}`,
-    /** mode local file */ `.env.${mode}.local`,
-  ]
+  const envFiles = getEnvFilesForMode(mode, envDir)
 
   const parsed = Object.fromEntries(
-    envFiles.flatMap((file) => {
-      const filePath = path.join(envDir, file)
+    envFiles.flatMap((filePath) => {
       if (!tryStatSync(filePath)?.isFile()) return []
 
       return Object.entries(parse(fs.readFileSync(filePath)))
@@ -46,9 +49,10 @@ export function loadEnv(
     process.env.BROWSER_ARGS = parsed.BROWSER_ARGS
   }
 
-  // let environment variables use each other
-  // `expand` patched in patches/dotenv-expand@9.0.0.patch
-  expand({ parsed })
+  // let environment variables use each other. make a copy of `process.env` so that `dotenv-expand`
+  // doesn't re-assign the expanded values to the global `process.env`.
+  const processEnv = { ...process.env } as DotenvPopulateInput
+  expand({ parsed, processEnv })
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
@@ -72,7 +76,7 @@ export function resolveEnvPrefix({
   envPrefix = 'VITE_',
 }: UserConfig): string[] {
   envPrefix = arraify(envPrefix)
-  if (envPrefix.some((prefix) => prefix === '')) {
+  if (envPrefix.includes('')) {
     throw new Error(
       `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`,
     )

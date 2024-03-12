@@ -12,7 +12,7 @@ async function createDevServer() {
     root,
     logLevel: 'silent',
     optimizeDeps: {
-      disabled: true,
+      noDiscovery: true,
     },
   })
   server.pluginContainer.buildStart({})
@@ -51,4 +51,14 @@ test('error has same instance', async () => {
   } catch (e) {
     expect(e[s]).toBe(true)
   }
+})
+
+test('import.meta.filename/dirname returns same value with Node', async () => {
+  const server = await createDevServer()
+  const moduleRelativePath = '/fixtures/modules/import-meta.js'
+  const filename = path.resolve(root, '.' + moduleRelativePath)
+
+  const viteValue = await server.ssrLoadModule(moduleRelativePath)
+  expect(viteValue.dirname).toBe(path.dirname(filename))
+  expect(viteValue.filename).toBe(filename)
 })

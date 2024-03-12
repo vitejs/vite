@@ -5,7 +5,6 @@ import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
 import type { ViteDevServer } from '..'
 import {
-  cleanUrl,
   createDebugger,
   fsPathFromId,
   injectQuery,
@@ -15,18 +14,13 @@ import {
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
-  unwrapId,
-  withTrailingSlash,
+  urlRE,
 } from '../../utils'
 import { send } from '../send'
 import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
-import {
-  DEP_VERSION_RE,
-  FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
-} from '../../constants'
+import { DEP_VERSION_RE, FS_PREFIX } from '../../constants'
 import {
   isCSSRequest,
   isDirectCSSRequest,
@@ -38,21 +32,52 @@ import {
 } from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
-import { urlRE } from '../../plugins/asset'
+import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
+import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
 
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 
+/**
+ * A middleware that short-circuits the middleware chain to serve cached transformed modules
+ */
+export function cachedTransformMiddleware(
+  server: ViteDevServer,
+): Connect.NextHandleFunction {
+  // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+  return function viteCachedTransformMiddleware(req, res, next) {
+    // check if we can return 304 early
+    const ifNoneMatch = req.headers['if-none-match']
+    if (ifNoneMatch) {
+      const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch)
+      if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
+        // For CSS requests, if the same CSS file is imported in a module,
+        // the browser sends the request for the direct CSS request with the etag
+        // from the imported CSS module. We ignore the etag in this case.
+        const maybeMixedEtag = isCSSRequest(req.url!)
+        if (!maybeMixedEtag) {
+          debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
+          res.statusCode = 304
+          return res.end()
+        }
+      }
+    }
+
+    next()
+  }
+}
+
 export function transformMiddleware(
   server: ViteDevServer,
 ): Connect.NextHandleFunction {
-  const {
-    config: { root, logger },
-    moduleGraph,
-  } = server
-
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
+
+  // check if public dir is inside root dir
+  const { root, publicDir } = server.config
+  const publicDirInRoot = publicDir.startsWith(withTrailingSlash(root))
+  const publicPath = `${publicDir.slice(root.length)}/`
+
   return async function viteTransformMiddleware(req, res, next) {
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
@@ -80,7 +105,7 @@ export function transformMiddleware(
           // means that the dependency has already been pre-bundled and loaded
           const sourcemapPath = url.startsWith(FS_PREFIX)
             ? fsPathFromId(url)
-            : normalizePath(path.resolve(root, url.slice(1)))
+            : normalizePath(path.resolve(server.config.root, url.slice(1)))
           try {
             const map = JSON.parse(
               await fsp.readFile(sourcemapPath, 'utf-8'),
@@ -90,7 +115,7 @@ export function transformMiddleware(
               map,
               sourcemapPath,
               server.config.server.sourcemapIgnoreList,
-              logger,
+              server.config.logger,
             )
 
             return send(req, res, JSON.stringify(map), 'json', {
@@ -115,8 +140,9 @@ export function transformMiddleware(
           }
         } else {
           const originalUrl = url.replace(/\.map($|\?)/, '$1')
-          const map = (await moduleGraph.getModuleByUrl(originalUrl, false))
-            ?.transformResult?.map
+          const map = (
+            await server.moduleGraph.getModuleByUrl(originalUrl, false)
+          )?.transformResult?.map
           if (map) {
             return send(req, res, JSON.stringify(map), 'json', {
               headers: server.config.server.headers,
@@ -127,43 +153,8 @@ export function transformMiddleware(
         }
       }
 
-      // check if public dir is inside root dir
-      const publicDir = normalizePath(server.config.publicDir)
-      const rootDir = normalizePath(server.config.root)
-      if (publicDir.startsWith(withTrailingSlash(rootDir))) {
-        const publicPath = `${publicDir.slice(rootDir.length)}/`
-        // warn explicit public paths
-        if (url.startsWith(withTrailingSlash(publicPath))) {
-          let warning: string
-
-          if (isImportRequest(url)) {
-            const rawUrl = removeImportQuery(url)
-            if (urlRE.test(url)) {
-              warning =
-                `Assets in the public directory are served at the root path.\n` +
-                `Instead of ${colors.cyan(rawUrl)}, use ${colors.cyan(
-                  rawUrl.replace(publicPath, '/'),
-                )}.`
-            } else {
-              warning =
-                'Assets in public directory cannot be imported from JavaScript.\n' +
-                `If you intend to import that asset, put the file in the src directory, and use ${colors.cyan(
-                  rawUrl.replace(publicPath, '/src/'),
-                )} instead of ${colors.cyan(rawUrl)}.\n` +
-                `If you intend to use the URL of that asset, use ${colors.cyan(
-                  injectQuery(rawUrl.replace(publicPath, '/'), 'url'),
-                )}.`
-            }
-          } else {
-            warning =
-              `files in the public directory are served at the root path.\n` +
-              `Instead of ${colors.cyan(url)}, use ${colors.cyan(
-                url.replace(publicPath, '/'),
-              )}.`
-          }
-
-          logger.warn(colors.yellow(warning))
-        }
+      if (publicDirInRoot && url.startsWith(publicPath)) {
+        warnAboutExplicitPublicPathInUrl(url)
       }
 
       if (
@@ -178,26 +169,28 @@ export function transformMiddleware(
         // not valid browser import specifiers by the importAnalysis plugin.
         url = unwrapId(url)
 
-        // for CSS, we need to differentiate between normal CSS requests and
-        // imports
-        if (
-          isCSSRequest(url) &&
-          !isDirectRequest(url) &&
-          req.headers.accept?.includes('text/css')
-        ) {
-          url = injectQuery(url, 'direct')
-        }
+        // for CSS, we differentiate between normal CSS requests and imports
+        if (isCSSRequest(url)) {
+          if (
+            req.headers.accept?.includes('text/css') &&
+            !isDirectRequest(url)
+          ) {
+            url = injectQuery(url, 'direct')
+          }
 
-        // check if we can return 304 early
-        const ifNoneMatch = req.headers['if-none-match']
-        if (
-          ifNoneMatch &&
-          (await moduleGraph.getModuleByUrl(url, false))?.transformResult
-            ?.etag === ifNoneMatch
-        ) {
-          debugCache?.(`[304] ${prettifyUrl(url, root)}`)
-          res.statusCode = 304
-          return res.end()
+          // check if we can return 304 early for CSS requests. These aren't handled
+          // by the cachedTransformMiddleware due to the browser possibly mixing the
+          // etags of direct and imported CSS
+          const ifNoneMatch = req.headers['if-none-match']
+          if (
+            ifNoneMatch &&
+            (await server.moduleGraph.getModuleByUrl(url, false))
+              ?.transformResult?.etag === ifNoneMatch
+          ) {
+            debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
+            res.statusCode = 304
+            return res.end()
+          }
         }
 
         // resolve, load and transform using the plugin container
@@ -227,7 +220,7 @@ export function transformMiddleware(
           res.end()
         }
         // This timeout is unexpected
-        logger.error(e.message)
+        server.config.logger.error(e.message)
         return
       }
       if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
@@ -268,5 +261,37 @@ export function transformMiddleware(
     }
 
     next()
+  }
+
+  function warnAboutExplicitPublicPathInUrl(url: string) {
+    let warning: string
+
+    if (isImportRequest(url)) {
+      const rawUrl = removeImportQuery(url)
+      if (urlRE.test(url)) {
+        warning =
+          `Assets in the public directory are served at the root path.\n` +
+          `Instead of ${colors.cyan(rawUrl)}, use ${colors.cyan(
+            rawUrl.replace(publicPath, '/'),
+          )}.`
+      } else {
+        warning =
+          'Assets in public directory cannot be imported from JavaScript.\n' +
+          `If you intend to import that asset, put the file in the src directory, and use ${colors.cyan(
+            rawUrl.replace(publicPath, '/src/'),
+          )} instead of ${colors.cyan(rawUrl)}.\n` +
+          `If you intend to use the URL of that asset, use ${colors.cyan(
+            injectQuery(rawUrl.replace(publicPath, '/'), 'url'),
+          )}.`
+      }
+    } else {
+      warning =
+        `Files in the public directory are served at the root path.\n` +
+        `Instead of ${colors.cyan(url)}, use ${colors.cyan(
+          url.replace(publicPath, '/'),
+        )}.`
+    }
+
+    server.config.logger.warn(colors.yellow(warning))
   }
 }

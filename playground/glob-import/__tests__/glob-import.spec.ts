@@ -211,7 +211,7 @@ test('tree-shake eager css', async () => {
   )
 
   if (isBuild) {
-    const content = findAssetFile(/index-\w+\.js/)
+    const content = findAssetFile(/index-[-\w]+\.js/)
     expect(content).not.toMatch('.tree-shake-eager-css')
   }
 })

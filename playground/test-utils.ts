@@ -12,6 +12,7 @@ import type {
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
+import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
 import type { ExecaChildProcess } from 'execa'
 import { isBuild, isWindows, page, testDir } from './vitestSetup'
@@ -34,8 +35,12 @@ export const ports = {
   'ssr-noexternal': 9603,
   'ssr-pug': 9604,
   'ssr-webworker': 9605,
-  'proxy-hmr': 9606, // not imported but used in `proxy-hmr/vite.config.js`
-  'proxy-hmr/other-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'proxy-bypass': 9606, // not imported but used in `proxy-hmr/vite.config.js`
+  'proxy-bypass/non-existent-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'ssr-hmr': 9609, // not imported but used in `hmr-ssr/__tests__/hmr.spec.ts`
+  'proxy-hmr': 9616, // not imported but used in `proxy-hmr/vite.config.js`
+  'proxy-hmr/other-app': 9617, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'ssr-conditions': 9620,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
@@ -50,6 +55,7 @@ export const hmrPorts = {
   'ssr-pug': 24685,
   'css/lightningcss-proxy': 24686,
   json: 24687,
+  'ssr-conditions': 24688,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -150,6 +156,7 @@ export function findAssetFile(
   match: string | RegExp,
   base = '',
   assets = 'assets',
+  matchAll = false,
 ): string {
   const assetsDir = path.join(testDir, 'dist', base, assets)
   let files: string[]
@@ -161,10 +168,21 @@ export function findAssetFile(
     }
     throw e
   }
-  const file = files.find((file) => {
-    return file.match(match)
-  })
-  return file ? fs.readFileSync(path.resolve(assetsDir, file), 'utf-8') : ''
+  if (matchAll) {
+    const matchedFiles = files.filter((file) => file.match(match))
+    return matchedFiles.length
+      ? matchedFiles
+          .map((file) =>
+            fs.readFileSync(path.resolve(assetsDir, file), 'utf-8'),
+          )
+          .join('')
+      : ''
+  } else {
+    const matchedFile = files.find((file) => file.match(match))
+    return matchedFile
+      ? fs.readFileSync(path.resolve(assetsDir, matchedFile), 'utf-8')
+      : ''
+  }
 }
 
 export function readManifest(base = ''): Manifest {
@@ -230,6 +248,25 @@ export async function withRetry(
   await func()
 }
 
+export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
+  type A = Assertion<T>
+  return new Proxy(
+    {},
+    {
+      get(_target, key) {
+        return async (...args) => {
+          await withRetry(
+            async () => expect(await getActual())[key](...args),
+            true,
+          )
+        }
+      },
+    },
+  ) as {
+    [K in keyof A]: (...params: Parameters<A[K]>) => Promise<ReturnType<A[K]>>
+  }
+}
+
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
 
 export async function untilBrowserLogAfter(
@@ -265,12 +302,7 @@ async function untilBrowserLog(
   target?: string | RegExp | Array<string | RegExp>,
   expectOrder = true,
 ): Promise<string[]> {
-  let resolve: () => void
-  let reject: (reason: any) => void
-  const promise = new Promise<void>((_resolve, _reject) => {
-    resolve = _resolve
-    reject = _reject
-  })
+  const { promise, resolve, reject } = promiseWithResolvers<void>()
 
   const logs = []
 
@@ -360,4 +392,19 @@ export async function killProcess(
   } else {
     serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
   }
+}
+
+export interface PromiseWithResolvers<T> {
+  promise: Promise<T>
+  resolve: (value: T | PromiseLike<T>) => void
+  reject: (reason?: any) => void
+}
+export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
+  let resolve: any
+  let reject: any
+  const promise = new Promise<T>((_resolve, _reject) => {
+    resolve = _resolve
+    reject = _reject
+  })
+  return { promise, resolve, reject }
 }

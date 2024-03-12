@@ -3,11 +3,12 @@ import os from 'node:os'
 import path from 'node:path'
 import { exec } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { URL, URLSearchParams, fileURLToPath } from 'node:url'
+import { URL, fileURLToPath } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
+import fsp from 'node:fs/promises'
 import type { FSWatcher } from 'chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
@@ -18,21 +19,26 @@ import type MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
+import { cleanUrl, isWindows, slash, withTrailingSlash } from '../shared/utils'
+import { VALID_ID_PREFIX } from '../shared/constants'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
   OPTIMIZABLE_ENTRY_RE,
-  VALID_ID_PREFIX,
   loopbackHosts,
   wildcardHosts,
 } from './constants'
 import type { DepOptimizationConfig } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
-import { resolvePackageData } from './packages'
+import type { PreviewServer } from './preview'
+import {
+  type PackageCache,
+  findNearestPackageData,
+  resolvePackageData,
+} from './packages'
 import type { CommonServerOptions } from '.'
 
 /**
@@ -49,41 +55,33 @@ export const createFilter = _createFilter as (
   options?: { resolve?: string | false | null },
 ) => (id: string | unknown) => boolean
 
-const windowsSlashRE = /\\/g
-export function slash(p: string): string {
-  return p.replace(windowsSlashRE, '/')
-}
-
-/**
- * Prepend `/@id/` and replace null byte so the id is URL-safe.
- * This is prepended to resolved ids that are not valid browser
- * import specifiers by the importAnalysis plugin.
- */
-export function wrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX)
-    ? id
-    : VALID_ID_PREFIX + id.replace('\0', NULL_BYTE_PLACEHOLDER)
-}
-
-/**
- * Undo {@link wrapId}'s `/@id/` and null byte replacements.
- */
-export function unwrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX)
-    ? id.slice(VALID_ID_PREFIX.length).replace(NULL_BYTE_PLACEHOLDER, '\0')
-    : id
-}
-
 const replaceSlashOrColonRE = /[/:]/g
 const replaceDotRE = /\./g
 const replaceNestedIdRE = /(\s*>\s*)/g
 const replaceHashRE = /#/g
-export const flattenId = (id: string): string =>
-  id
-    .replace(replaceSlashOrColonRE, '_')
-    .replace(replaceDotRE, '__')
-    .replace(replaceNestedIdRE, '___')
-    .replace(replaceHashRE, '____')
+export const flattenId = (id: string): string => {
+  const flatId = limitFlattenIdLength(
+    id
+      .replace(replaceSlashOrColonRE, '_')
+      .replace(replaceDotRE, '__')
+      .replace(replaceNestedIdRE, '___')
+      .replace(replaceHashRE, '____'),
+  )
+  return flatId
+}
+
+const FLATTEN_ID_HASH_LENGTH = 8
+const FLATTEN_ID_MAX_FILE_LENGTH = 170
+
+const limitFlattenIdLength = (
+  id: string,
+  limit: number = FLATTEN_ID_MAX_FILE_LENGTH,
+): string => {
+  if (id.length <= limit) {
+    return id
+  }
+  return id.slice(0, limit - (FLATTEN_ID_HASH_LENGTH + 1)) + '_' + getHash(id)
+}
 
 export const normalizeId = (id: string): string =>
   id.replace(replaceNestedIdRE, ' > ')
@@ -138,6 +136,16 @@ export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
 const _require = createRequire(import.meta.url)
+
+export function resolveDependencyVersion(
+  dep: string,
+  pkgRelativePath = '../../package.json',
+): string {
+  const pkgPath = path.resolve(_require.resolve(dep), pkgRelativePath)
+  return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version
+}
+
+export const rollupVersion = resolveDependencyVersion('rollup')
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
@@ -201,8 +209,6 @@ export const urlCanParse =
 
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
-export const isWindows = os.platform() === 'win32'
-
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
@@ -213,18 +219,11 @@ export function fsPathFromId(id: string): string {
   const fsPath = normalizePath(
     id.startsWith(FS_PREFIX) ? id.slice(FS_PREFIX.length) : id,
   )
-  return fsPath[0] === '/' || fsPath.match(VOLUME_RE) ? fsPath : `/${fsPath}`
+  return fsPath[0] === '/' || VOLUME_RE.test(fsPath) ? fsPath : `/${fsPath}`
 }
 
 export function fsPathFromUrl(url: string): string {
   return fsPathFromId(cleanUrl(url))
-}
-
-export function withTrailingSlash(path: string): string {
-  if (path[path.length - 1] !== '/') {
-    return `${path}/`
-  }
-  return path
 }
 
 /**
@@ -260,13 +259,6 @@ export function isSameFileUri(file1: string, file2: string): boolean {
   )
 }
 
-export const queryRE = /\?.*$/s
-
-const postfixRE = /[?#].*$/s
-export function cleanUrl(url: string): string {
-  return url.replace(postfixRE, '')
-}
-
 export const externalRE = /^(https?:)?\/\//
 export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 
@@ -276,7 +268,8 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
-const knownJsSrcRE = /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba)(?:$|\?)/
+const knownJsSrcRE =
+  /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba|mdx)(?:$|\?)/
 export const isJSRequest = (url: string): boolean => {
   url = cleanUrl(url)
   if (knownJsSrcRE.test(url)) {
@@ -310,6 +303,15 @@ export function removeImportQuery(url: string): string {
 }
 export function removeDirectQuery(url: string): string {
   return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
+}
+
+export const urlRE = /(\?|&)url(?:&|$)/
+export const rawRE = /(\?|&)raw(?:&|$)/
+export function removeUrlQuery(url: string): string {
+  return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
+}
+export function removeRawQuery(url: string): string {
+  return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
 }
 
 const replacePercentageRE = /%/g
@@ -369,7 +371,10 @@ export function prettifyUrl(url: string, root: string): string {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
-    const file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
+    const file = path.posix.relative(
+      root,
+      isAbsoluteFile ? url : fsPathFromId(url),
+    )
     return colors.dim(file)
   } else {
     return colors.dim(url)
@@ -409,6 +414,25 @@ export function lookupFile(
   }
 }
 
+export function isFilePathESM(
+  filePath: string,
+  packageCache?: PackageCache,
+): boolean {
+  if (/\.m[jt]s$/.test(filePath)) {
+    return true
+  } else if (/\.c[jt]s$/.test(filePath)) {
+    return false
+  } else {
+    // check package.json for type: "module"
+    try {
+      const pkg = findNearestPackageData(path.dirname(filePath), packageCache)
+      return pkg?.data.type === 'module'
+    } catch {
+      return false
+    }
+  }
+}
+
 const splitRE = /\r?\n/
 
 const range: number = 2
@@ -418,10 +442,14 @@ export function pad(source: string, n = 2): string {
   return lines.map((l) => ` `.repeat(n) + l).join(`\n`)
 }
 
-export function posToNumber(
-  source: string,
-  pos: number | { line: number; column: number },
-): number {
+type Pos = {
+  /** 1-based */
+  line: number
+  /** 0-based */
+  column: number
+}
+
+export function posToNumber(source: string, pos: number | Pos): number {
   if (typeof pos === 'number') return pos
   const lines = source.split(splitRE)
   const { line, column } = pos
@@ -432,10 +460,7 @@ export function posToNumber(
   return start + column
 }
 
-export function numberToPos(
-  source: string,
-  offset: number | { line: number; column: number },
-): { line: number; column: number } {
+export function numberToPos(source: string, offset: number | Pos): Pos {
   if (typeof offset !== 'number') return offset
   if (offset > source.length) {
     throw new Error(
@@ -459,16 +484,19 @@ export function numberToPos(
 
 export function generateCodeFrame(
   source: string,
-  start: number | { line: number; column: number } = 0,
-  end?: number,
+  start: number | Pos = 0,
+  end?: number | Pos,
 ): string {
-  start = posToNumber(source, start)
-  end = end || start
+  start = Math.max(posToNumber(source, start), 0)
+  end = Math.min(
+    end !== undefined ? posToNumber(source, end) : start,
+    source.length,
+  )
   const lines = source.split(splitRE)
   let count = 0
   const res: string[] = []
   for (let i = 0; i < lines.length; i++) {
-    count += lines[i].length + 1
+    count += lines[i].length
     if (count >= start) {
       for (let j = i - range; j <= i + range || end > count; j++) {
         if (j < 0 || j >= lines.length) continue
@@ -481,7 +509,7 @@ export function generateCodeFrame(
         const lineLength = lines[j].length
         if (j === i) {
           // push underline
-          const pad = Math.max(start - (count - lineLength) + 1, 0)
+          const pad = Math.max(start - (count - lineLength), 0)
           const length = Math.max(
             1,
             end > count ? lineLength - pad : end - start,
@@ -497,6 +525,7 @@ export function generateCodeFrame(
       }
       break
     }
+    count++
   }
   return res.join('\n')
 }
@@ -575,6 +604,38 @@ export function copyDir(srcDir: string, destDir: string): void {
   }
 }
 
+export const ERR_SYMLINK_IN_RECURSIVE_READDIR =
+  'ERR_SYMLINK_IN_RECURSIVE_READDIR'
+export async function recursiveReaddir(dir: string): Promise<string[]> {
+  if (!fs.existsSync(dir)) {
+    return []
+  }
+  let dirents: fs.Dirent[]
+  try {
+    dirents = await fsp.readdir(dir, { withFileTypes: true })
+  } catch (e) {
+    if (e.code === 'EACCES') {
+      // Ignore permission errors
+      return []
+    }
+    throw e
+  }
+  if (dirents.some((dirent) => dirent.isSymbolicLink())) {
+    const err: any = new Error(
+      'Symbolic links are not supported in recursiveReaddir',
+    )
+    err.code = ERR_SYMLINK_IN_RECURSIVE_READDIR
+    throw err
+  }
+  const files = await Promise.all(
+    dirents.map((dirent) => {
+      const res = path.resolve(dir, dirent.name)
+      return dirent.isDirectory() ? recursiveReaddir(res) : normalizePath(res)
+    }),
+  )
+  return files.flat(1)
+}
+
 // `fs.realpathSync.native` resolves differently in Windows network drive,
 // causing file read errors. skip for now.
 // https://github.com/nodejs/node/issues/37737
@@ -606,9 +667,9 @@ function windowsSafeRealPathSync(path: string): string {
 }
 
 function optimizeSafeRealPathSync() {
-  // Skip if using Node <16.18 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
+  // Skip if using Node <18.10 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
   const nodeVersion = process.versions.node.split('.').map(Number)
-  if (nodeVersion[0] < 16 || (nodeVersion[0] === 16 && nodeVersion[1] < 18)) {
+  if (nodeVersion[0] < 18 || (nodeVersion[0] === 18 && nodeVersion[1] < 10)) {
     safeRealpathSync = fs.realpathSync
     return
   }
@@ -664,23 +725,23 @@ interface ImageCandidate {
 }
 const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
 const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
-function reduceSrcset(ret: { url: string; descriptor: string }[]) {
-  return ret.reduce((prev, { url, descriptor }, index) => {
-    descriptor ??= ''
-    return (prev +=
-      url + ` ${descriptor}${index === ret.length - 1 ? '' : ', '}`)
-  }, '')
+function joinSrcset(ret: ImageCandidate[]) {
+  return ret
+    .map(({ url, descriptor }) => url + (descriptor ? ` ${descriptor}` : ''))
+    .join(', ')
 }
 
+// NOTE: The returned `url` should perhaps be decoded so all handled URLs within Vite are consistently decoded.
+// However, this may also require a refactor for `cssReplacer` to accept decoded URLs instead.
 function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
   return splitSrcSet(srcs)
     .map((s) => {
       const src = s.replace(escapedSpaceCharacters, ' ').trim()
-      const [url] = imageSetUrlRE.exec(src) || ['']
+      const url = imageSetUrlRE.exec(src)?.[0] ?? ''
 
       return {
         url,
-        descriptor: src?.slice(url.length).trim(),
+        descriptor: src.slice(url.length).trim(),
       }
     })
     .filter(({ url }) => !!url)
@@ -695,14 +756,14 @@ export function processSrcSet(
       url: await replacer({ url, descriptor }),
       descriptor,
     })),
-  ).then((ret) => reduceSrcset(ret))
+  ).then(joinSrcset)
 }
 
 export function processSrcSetSync(
   srcs: string,
   replacer: (arg: ImageCandidate) => string,
 ): string {
-  return reduceSrcset(
+  return joinSrcset(
     splitSrcSetDescriptor(srcs).map(({ url, descriptor }) => ({
       url: replacer({ url, descriptor }),
       descriptor,
@@ -711,10 +772,10 @@ export function processSrcSetSync(
 }
 
 const cleanSrcSetRE =
-  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'/g
+  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+\-]+;base64,[\w+/=]+/g
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
-  // There could be a ',' inside of url(data:...), linear-gradient(...) or "data:..."
+  // There could be a ',' inside of url(data:...), linear-gradient(...), "data:..." or data:...
   const cleanedSrcs = srcs.replace(cleanSrcSetRE, blankReplacer)
   let startIndex = 0
   let splitIndex: number
@@ -954,35 +1015,14 @@ export function arraify<T>(target: T | T[]): T[] {
 export const multilineCommentsRE = /\/\*[^*]*\*+(?:[^/*][^*]*\*+)*\//g
 export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
-
-// @ts-expect-error jest only exists when running Jest
-export const usingDynamicImport = typeof jest === 'undefined'
-
-/**
- * Dynamically import files. It will make sure it's not being compiled away by TS/Rollup.
- *
- * As a temporary workaround for Jest's lack of stable ESM support, we fallback to require
- * if we're in a Jest environment.
- * See https://github.com/vitejs/vite/pull/5197#issuecomment-938054077
- *
- * @param file File path to import.
- */
-export const dynamicImport = usingDynamicImport
-  ? new Function('file', 'return import(file)')
-  : _require
-
-export function parseRequest(id: string): Record<string, string> | null {
-  const [_, search] = id.split(requestQuerySplitRE, 2)
-  if (!search) {
-    return null
-  }
-  return Object.fromEntries(new URLSearchParams(search))
-}
+export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
-export function getHash(text: Buffer | string): string {
-  return createHash('sha256').update(text).digest('hex').substring(0, 8)
+export function getHash(text: Buffer | string, length = 8): string {
+  const h = createHash('sha256').update(text).digest('hex').substring(0, length)
+  if (length <= 64) return h
+  return h.padEnd(length, '_')
 }
 
 const _dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -1007,11 +1047,17 @@ export const requireResolveFromRootWithFallback = (
 }
 
 export function emptyCssComments(raw: string): string {
-  return raw.replace(multilineCommentsRE, (s) => ' '.repeat(s.length))
+  return raw.replace(multilineCommentsRE, blankReplacer)
 }
 
-export function removeComments(raw: string): string {
-  return raw.replace(multilineCommentsRE, '').replace(singlelineCommentsRE, '')
+function backwardCompatibleWorkerPlugins(plugins: any) {
+  if (Array.isArray(plugins)) {
+    return plugins
+  }
+  if (typeof plugins === 'function') {
+    return plugins()
+  }
+  return []
 }
 
 function mergeConfigRecursively(
@@ -1047,10 +1093,16 @@ function mergeConfigRecursively(
     ) {
       merged[key] = true
       continue
+    } else if (key === 'plugins' && rootPath === 'worker') {
+      merged[key] = () => [
+        ...backwardCompatibleWorkerPlugins(existing),
+        ...backwardCompatibleWorkerPlugins(value),
+      ]
+      continue
     }
 
     if (Array.isArray(existing) || Array.isArray(value)) {
-      merged[key] = [...arraify(existing ?? []), ...arraify(value ?? [])]
+      merged[key] = [...arraify(existing), ...arraify(value)]
       continue
     }
     if (isObject(existing) && isObject(value)) {
@@ -1282,4 +1334,86 @@ export function getPackageManagerCommand(
     default:
       throw new TypeError(`Unknown command type: ${type}`)
   }
+}
+
+export function isDevServer(
+  server: ViteDevServer | PreviewServer,
+): server is ViteDevServer {
+  return 'pluginContainer' in server
+}
+
+export interface PromiseWithResolvers<T> {
+  promise: Promise<T>
+  resolve: (value: T | PromiseLike<T>) => void
+  reject: (reason?: any) => void
+}
+export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
+  let resolve: any
+  let reject: any
+  const promise = new Promise<T>((_resolve, _reject) => {
+    resolve = _resolve
+    reject = _reject
+  })
+  return { promise, resolve, reject }
+}
+
+export function createSerialPromiseQueue<T>(): {
+  run(f: () => Promise<T>): Promise<T>
+} {
+  let previousTask: Promise<[unknown, Awaited<T>]> | undefined
+
+  return {
+    async run(f) {
+      const thisTask = f()
+      // wait for both the previous task and this task
+      // so that this function resolves in the order this function is called
+      const depTasks = Promise.all([previousTask, thisTask])
+      previousTask = depTasks
+
+      const [, result] = await depTasks
+
+      // this task was the last one, clear `previousTask` to free up memory
+      if (previousTask === depTasks) {
+        previousTask = undefined
+      }
+
+      return result
+    },
+  }
+}
+
+export function sortObjectKeys<T extends Record<string, any>>(obj: T): T {
+  const sorted: Record<string, any> = {}
+  for (const key of Object.keys(obj).sort()) {
+    sorted[key] = obj[key]
+  }
+  return sorted as T
+}
+
+export function displayTime(time: number): string {
+  // display: {X}ms
+  if (time < 1000) {
+    return `${time}ms`
+  }
+
+  time = time / 1000
+
+  // display: {X}s
+  if (time < 60) {
+    return `${time.toFixed(2)}s`
+  }
+
+  const mins = parseInt((time / 60).toString())
+  const seconds = time % 60
+
+  // display: {X}m {Y}s
+  return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
+}
+
+/**
+ * Like `encodeURI`, but only replacing `%` as `%25`. This is useful for environments
+ * that can handle un-encoded URIs, where `%` is the only ambiguous character.
+ */
+export function partialEncodeURI(uri: string): string {
+  return uri.replaceAll('%', '%25')
 }

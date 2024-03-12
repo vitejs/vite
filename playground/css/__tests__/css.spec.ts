@@ -74,6 +74,9 @@ test('sass', async () => {
   const atImport = await page.$('.sass-at-import')
   const atImportAlias = await page.$('.sass-at-import-alias')
   const urlStartsWithVariable = await page.$('.sass-url-starts-with-variable')
+  const urlStartsWithFunctionCall = await page.$(
+    '.sass-url-starts-with-function-call',
+  )
   const partialImport = await page.$('.sass-partial')
 
   expect(await getColor(imported)).toBe('orange')
@@ -84,7 +87,10 @@ test('sass', async () => {
     isBuild ? /base64/ : '/nested/icon.png',
   )
   expect(await getBg(urlStartsWithVariable)).toMatch(
-    isBuild ? /ok-\w+\.png/ : `${viteTestUrl}/ok.png`,
+    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+  )
+  expect(await getBg(urlStartsWithFunctionCall)).toMatch(
+    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
   expect(await getColor(partialImport)).toBe('orchid')
 
@@ -118,7 +124,7 @@ test('less', async () => {
     isBuild ? /base64/ : '/nested/icon.png',
   )
   expect(await getBg(urlStartsWithVariable)).toMatch(
-    isBuild ? /ok-\w+\.png/ : `${viteTestUrl}/ok.png`,
+    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
 
   editFile('less.less', (code) => code.replace('@color: blue', '@color: red'))
@@ -292,6 +298,10 @@ test('@import dependency that @import another dependency', async () => {
   expect(await getColor('.css-proxy-dep')).toBe('purple')
 })
 
+test('@import scss dependency that has @import with a css extension pointing to another dependency', async () => {
+  expect(await getColor('.scss-proxy-dep')).toBe('purple')
+})
+
 test('@import dependency w/out package scss', async () => {
   expect(await getColor('.sass-dep')).toBe('lavender')
 })
@@ -303,8 +313,8 @@ test('async chunk', async () => {
   if (isBuild) {
     // assert that the css is extracted into its own file instead of in the
     // main css file
-    expect(findAssetFile(/index-\w+\.css$/)).not.toMatch('teal')
-    expect(findAssetFile(/async-\w+\.css$/)).toMatch('.async{color:teal}')
+    expect(findAssetFile(/index-[-\w]{8}\.css$/)).not.toMatch('teal')
+    expect(findAssetFile(/async-[-\w]{8}\.css$/)).toMatch('.async{color:teal}')
   } else {
     // test hmr
     editFile('async.css', (code) => code.replace('color: teal', 'color: blue'))
@@ -322,8 +332,8 @@ test('treeshaken async chunk', async () => {
     ).toBeNull()
     // assert that the css is not present anywhere
     expect(findAssetFile(/\.css$/)).not.toMatch('plum')
-    expect(findAssetFile(/index-\w+\.js$/)).not.toMatch('.async{color:plum}')
-    expect(findAssetFile(/async-\w+\.js$/)).not.toMatch('.async{color:plum}')
+    expect(findAssetFile(/index-[-\w]+\.js$/)).not.toMatch('.async{color:plum}')
+    expect(findAssetFile(/async-[-\w]+\.js$/)).not.toMatch('.async{color:plum}')
     // should have no chunk!
     expect(findAssetFile(/async-treeshaken/)).toBe('')
   } else {
@@ -423,9 +433,13 @@ test('minify css', async () => {
   }
 
   // should keep the rgba() syntax
-  const cssFile = findAssetFile(/index-\w+\.css$/)
+  const cssFile = findAssetFile(/index-[-\w]+\.css$/)
   expect(cssFile).toMatch('rgba(')
   expect(cssFile).not.toMatch('#ffff00b3')
+})
+
+test('?url', async () => {
+  expect(await getColor('.url-imported-css')).toBe('yellow')
 })
 
 test('?raw', async () => {
@@ -460,6 +474,10 @@ test('aliased css has content', async () => {
   // skipped: currently not supported see #8936
   // expect(await page.textContent('.aliased-content')).toMatch('.aliased')
   expect(await getColor('.aliased-module')).toBe('blue')
+})
+
+test('resolve imports field in CSS', async () => {
+  expect(await getColor('.imports-field')).toBe('red')
 })
 
 test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
@@ -507,4 +525,16 @@ test('async css order with css modules', async () => {
 
 test('@import scss', async () => {
   expect(await getColor('.at-import-scss')).toBe('red')
+})
+
+test.runIf(isBuild)('manual chunk path', async () => {
+  // assert that the manual-chunk css is output in the directory specified in manualChunk (#12072)
+  expect(
+    findAssetFile(/dir\/dir2\/manual-chunk-[-\w]{8}\.css$/),
+  ).not.toBeUndefined()
+})
+
+test.runIf(isBuild)('CSS modules should be treeshaken if not used', () => {
+  const css = findAssetFile(/\.css$/, undefined, undefined, true)
+  expect(css).not.toContain('treeshake-module-b')
 })

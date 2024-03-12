@@ -1,6 +1,6 @@
 import fsp from 'node:fs/promises'
 import type { Plugin } from '..'
-import { cleanUrl } from '../utils'
+import { cleanUrl } from '../../shared/utils'
 
 /**
  * A plugin to provide build load fallback for arbitrary request with queries.
@@ -10,10 +10,14 @@ export function loadFallbackPlugin(): Plugin {
     name: 'vite:load-fallback',
     async load(id) {
       try {
-        // if we don't add `await` here, we couldn't catch the error in readFile
-        return await fsp.readFile(cleanUrl(id), 'utf-8')
+        const cleanedId = cleanUrl(id)
+        const content = await fsp.readFile(cleanedId, 'utf-8')
+        this.addWatchFile(cleanedId)
+        return content
       } catch (e) {
-        return fsp.readFile(id, 'utf-8')
+        const content = await fsp.readFile(id, 'utf-8')
+        this.addWatchFile(id)
+        return content
       }
     },
   }

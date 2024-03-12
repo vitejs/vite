@@ -38,6 +38,41 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 When using `createServer` and `build` in the same Node.js process, both functions rely on `process.env.NODE_ENV` to work properly, which also depends on the `mode` config option. To prevent conflicting behavior, set `process.env.NODE_ENV` or the `mode` of the two APIs to `development`. Otherwise, you can spawn a child process to run the APIs separately.
 :::
 
+::: tip NOTE
+When using [middleware mode](/config/server-options.html#server-middlewaremode) combined with [proxy config for WebSocket](/config/server-options.html#server-proxy), the parent http server should be provided in `middlewareMode` to bind the proxy correctly.
+
+<details>
+<summary>Example</summary>
+
+```ts
+import http from 'http'
+import { createServer } from 'vite'
+
+const parentServer = http.createServer() // or express, koa, etc.
+
+const vite = await createServer({
+  server: {
+    // Enable middleware mode
+    middlewareMode: {
+      // Provide the parent http server for proxy WebSocket
+      server: parentServer,
+    },
+  },
+  proxy: {
+    '/ws': {
+      target: 'ws://localhost:3000',
+      // Proxying WebSocket
+      ws: true,
+    },
+  },
+})
+
+parentServer.use(vite.middlewares)
+```
+
+</details>
+:::
+
 ## `InlineConfig`
 
 The `InlineConfig` interface extends `UserConfig` with additional properties:
@@ -109,7 +144,11 @@ interface ViteDevServer {
   /**
    * Apply Vite built-in HTML transforms and any plugin HTML transforms.
    */
-  transformIndexHtml(url: string, html: string): Promise<string>
+  transformIndexHtml(
+    url: string,
+    html: string,
+    originalUrl?: string,
+  ): Promise<string>
   /**
    * Load a given URL as an instantiated module for SSR.
    */
@@ -251,10 +290,12 @@ async function resolveConfig(
   inlineConfig: InlineConfig,
   command: 'build' | 'serve',
   defaultMode = 'development',
+  defaultNodeEnv = 'development',
+  isPreview = false,
 ): Promise<ResolvedConfig>
 ```
 
-The `command` value is `serve` in dev (in the cli `vite`, `vite dev`, and `vite serve` are aliases).
+The `command` value is `serve` in dev and preview, and `build` in build.
 
 ## `mergeConfig`
 
@@ -356,6 +397,7 @@ async function loadConfigFromFile(
   configFile?: string,
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
+  customLogger?: Logger,
 ): Promise<{
   path: string
   config: UserConfig

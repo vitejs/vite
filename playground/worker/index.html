@@ -51,6 +51,12 @@
 <code class="pong-inline-url"></code>
 
 <p>
+  import InlineWorker from '../my-worker?worker&inline'
+  <span class="classname">.pong-inline-unicode</span>
+</p>
+<code class="pong-inline-unicode"></code>
+
+<p>
   import TSOutputWorker from '../possible-ts-output-worker?worker'
   <span class="classname">.pong-ts-output</span>
 </p>
@@ -125,6 +131,7 @@
   <span class="classname">.classic-worker</span>
 </p>
 <code class="classic-worker"></code>
+<code class="classic-worker-import"></code>
 
 <p>
   new SharedWorker(new URL('./classic-shared-worker.js', import.meta.url), {
@@ -144,6 +151,39 @@
   <span class="classname">.importMetaGlobEager-worker</span>
 </p>
 <code class="importMetaGlobEager-worker"></code>
+
+<p>
+  self reference worker
+  <span class="classname">.self-reference-worker</span>
+</p>
+<code class="self-reference-worker"></code>
+
+<p>
+  new Worker(new URL('../self-reference-url-worker.js', import.meta.url))
+  <span class="classname">.self-reference-url-worker</span>
+</p>
+<code class="self-reference-url-worker"></code>
+
+<p>
+  new Worker(new URL('../deeply-nested-worker.js', import.meta.url), { type:
+  'module' })
+  <span class="classname">.deeply-nested-worker</span>
+</p>
+<code class="deeply-nested-worker"></code>
+
+<p>
+  new Worker(new URL('deeply-nested-second-worker.js', import.meta.url), { type:
+  'module' })
+  <span class="classname">.deeply-nested-second-worker</span>
+</p>
+<code class="deeply-nested-second-worker"></code>
+
+<p>
+  new Worker(new URL('deeply-nested-third-worker.js', import.meta.url), { type:
+  'module' })
+  <span class="classname">.deeply-nested-third-worker</span>
+</p>
+<code class="deeply-nested-third-worker"></code>
 
 <hr />
 
