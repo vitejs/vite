@@ -1,12 +1,12 @@
 # Vite Environment API
 
 :::warning Low-level API
-Initial work for this API was introduced in Vite 5.1 with the name [Vite Runtime API](./api-vite-runtime.md). In Vite 5.2 the API was reviewed and renamed as Vite Environment API. It remains an experimental feature. We are gathering feedback about the revised proposal [here](https://github.com/vitejs/vite/discussions/15774). There will probably be breaking changes to it in Vite 5.3, so make sure to pin the Vite version to `~5.2.0` when using it. This is a low-level API meant for library and framework authors. If your goal is to create an application, make sure to check out the higher-level SSR plugins and tools at [Awesome Vite SSR section](https://github.com/vitejs/awesome-vite#ssr) first.
+Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". In Vite 5.2 the API was reviewed and renamed as Vite Environment API. It remains an experimental feature. We are gathering feedback about the revised proposal [here](https://github.com/vitejs/vite/discussions/15774). There will probably be breaking changes to it in Vite 5.3, so make sure to pin the Vite version to `~5.2.0` when using it. This is a low-level API meant for library and framework authors. If your goal is to create an application, make sure to check out the higher-level SSR plugins and tools at [Awesome Vite SSR section](https://github.com/vitejs/awesome-vite#ssr) first.
 :::
 
 A single Vite dev server can be used to interact with different module execution environments concurrently. We'll use the word environment to refer to a configured Vite processing pipeline that can resolve ids, load, and process source code and is connected to a runtime where the code is executed. Some examples of environments are browser, ssr, workerd, rsc. The transformed source code is called a module, and the relationships between the modules processed in each environment are kept in a module graph. The code for these modules is sent to the runtimes associated with each environment to be executed. When a module is evaluated, the runtime will request its imported modules triggering the processing of a section of the module graph.
 
-A Vite Module Runner allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runtime implementation is decoupled from the server. This allows library and framework authors to implement their layer of communication between the Vite server and the runner. The browser communicates with its corresponding environment using the server Web Socket and through HTTP requests. The Node Module runner can directly do function calls to process modules as it is running in the same process. Other environments could run modules connecting to an edge runtime like workerd, or a Worker Thread as Vitest does.
+A Vite Module Runner allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runner implementation is decoupled from the server. This allows library and framework authors to implement their layer of communication between the Vite server and the runner. The browser communicates with its corresponding environment using the server Web Socket and through HTTP requests. The Node Module runner can directly do function calls to process modules as it is running in the same process. Other environments could run modules connecting to an edge runtime like workerd, or a Worker Thread as Vitest does.
 
 All these environments share Vite's HTTP server, middlewares, and Web Socket. The resolved config and plugins pipeline are also shared, but plugins can use `apply` so its hooks are only called for certain environments. The environment can also be accessed inside hooks for fine-grained control.
 
@@ -115,21 +115,14 @@ class ModuleRunner {
    * URL to execute. Accepts file path, server path, or id relative to the root.
    * Returns an instantiated module (same as in ssrLoadModule)
    */
-  public async executeUrl(url: string): Promise<Record<string, any>>
-  /**
-   * Entry point URL to execute. Accepts file path, server path or id relative to the root.
-   * In the case of a full reload triggered by HMR, this is the module that will be reloaded.
-   * If this method is called multiple times, all entry points will be reloaded one at a time.
-   * Returns an instantiated module
-   */
-  public async executeEntrypoint(url: string): Promise<Record<string, any>>
+  public async import(url: string): Promise<Record<string, any>>
   /**
    * Other ModuleRunner methods...
    */
 ```
 
 :::info
-We are using `executeUrl` and `executeEntryPoint` to keep the API familiar with the current Runtime API. This two methods could end up merged as single one and renamed. For example `runner.import(url, { hmr: false })` or `runner.load(url)`.
+In the previous iteration, we had `executeUrl` and `executeEntryPoint` methods - they are now merged into a single `import` method. If you want to opt-out of the HMR support, create a runner with `hmr: false` flag.
 :::
 
 The Node module runner instance is accessible through `server.nodeModuleRunner`. It isn't part of its associated environment instance because, as we explained before, other environments' module runners could live in a different runtime (for example for the browser, a module runner in a worker thread as used in Vitest, or an edge runtime like workerd). The communication between `server.nodeModuleRunner` and `server.environment('node')` is implemented through direct function calls. Given a Vite server configured in middleware mode as described by the [SSR setup guide](#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
@@ -146,10 +139,10 @@ app.use('*', async (req, res, next) => {
   //    preambles from @vitejs/plugin-react
   template = await server.transformIndexHtml(url, template)
 
-  // 3. Load the server entry. executeEntryPoint(url) automatically transforms
+  // 3. Load the server entry. import(url) automatically transforms
   //    ESM source code to be usable in Node.js! There is no bundling
   //    required, and provides full HMR support.
-  const { render } = await server.nodeModuleRunner.executeEntryPoint(
+  const { render } = await server.nodeModuleRunner.import(
     '/src/entry-server.js',
   )
 
@@ -495,13 +488,7 @@ export class ModuleRunner {
   /**
    * URL to execute. Accepts file path, server path, or id relative to the root.
    */
-  public async executeUrl<T = any>(url: string): Promise<T>
-  /**
-   * Entry point URL to execute. Accepts file path, server path or id relative to the root.
-   * In the case of a full reload triggered by HMR, this is the module that will be reloaded.
-   * If this method is called multiple times, all entry points will be reloaded one at a time.
-   */
-  public async executeEntrypoint<T = any>(url: string): Promise<T>
+  public async import<T = any>(url: string): Promise<T>
   /**
    * Clear all caches including HMR listeners.
    */
@@ -512,7 +499,7 @@ export class ModuleRunner {
    */
   public async destroy(): Promise<void>
   /**
-   * Returns `true` if the runtime has been destroyed by calling `destroy()` method.
+   * Returns `true` if the runner has been destroyed by calling `destroy()` method.
    */
   public isDestroyed(): boolean
 }
@@ -520,12 +507,12 @@ export class ModuleRunner {
 
 The module evaluator in `ModuleRunner` is responsible for executing the code. Vite exports `ESModulesEvaluator` out of the box, it uses `new AsyncFunction` to evaluate the code. You can provide your own implementation if your JavaScript runtime doesn't support unsafe evaluation.
 
-The two main methods that a module runner exposes are `executeUrl` and `executeEntrypoint`. The only difference between them is that all modules executed by `executeEntrypoint` will be re-executed if HMR triggers `full-reload` event. Be aware that Vite module runners don't update the `exports` object when this happens, instead, it overrides it. You would need to run `executeUrl` or get the module from the `moduleCache` again if you rely on having the latest `exports` object.
+Module runner exposes `import` method. When Vite server triggers `full-reload` HMR event, all affected modules will be re-executed. Be aware that Module Runner doesn't update `exports` object when this happens (it overrides it), you would need to run `import` or get the module from `moduleCache` again if you rely on having the latest `exports` object.
 
 **Example Usage:**
 
 ```js
-import { ModuleRunner, ESModulesEvaluator } from 'vite/environment'
+import { ModuleRunner, ESModulesEvaluator } from 'vite/module-runner'
 import { root, fetchModule } from './rpc-implementation.js'
 
 const moduleRunner = new ModuleRunner(
@@ -537,7 +524,7 @@ const moduleRunner = new ModuleRunner(
   new ESModulesEvaluator(),
 )
 
-await moduleRunner.executeEntrypoint('/src/entry-point.js')
+await moduleRunner.import('/src/entry-point.js')
 ```
 
 ## `ModuleRunnerOptions`
@@ -571,14 +558,14 @@ export interface ModuleRunnerOptions {
         /**
          * Configure how HMR communicates between the client and the server.
          */
-        connection: HMRRuntimeConnection
+        connection: ModuleRunnerHMRConnection
         /**
          * Configure HMR logger.
          */
         logger?: false | HMRLogger
       }
   /**
-   * Custom module cache. If not provided, it creates a separate module cache for each ViteRuntime instance.
+   * Custom module cache. If not provided, it creates a separate module cache for each module runner instance.
    */
   moduleCache?: ModuleCacheMap
 }
@@ -596,7 +583,7 @@ export interface ModuleEvaluator {
    * @param code Transformed code
    * @param id ID that was used to fetch the module
    */
-  evaluateModule(
+  runInlinedModule(
     context: ModuleRunnerContext,
     code: string,
     id: string,
@@ -605,18 +592,18 @@ export interface ModuleEvaluator {
    * evaluate externalized module.
    * @param file File URL to the external module
    */
-  evaluateExternalModule(file: string): Promise<any>
+  runExternalModule(file: string): Promise<any>
 }
 ```
 
 Vite exports `ESModulesEvaluator` that implements this interface by default. It uses `new AsyncFunction` to evaluate code, so if the code has inlined source map it should contain an [offset of 2 lines](https://tc39.es/ecma262/#sec-createdynamicfunction) to accommodate for new lines added. This is done automatically in the server node environment. If your runner implementation doesn't have this constraint, you should use `fetchModule` (exported from `vite`) directly.
 
-## HMRModuleRunnerConnection
+## ModuleRunnerHMRConnection
 
 **Type Signature:**
 
 ```ts
-export interface HMRModuleRunnerConnection {
+export interface ModuleRunnerHMRConnection {
   /**
    * Checked before sending messages to the client.
    */
@@ -635,7 +622,7 @@ export interface HMRModuleRunnerConnection {
 
 This interface defines how HMR communication is established. Vite exports `ServerHMRConnector` from the main entry point to support HMR during Vite SSR. The `isReady` and `send` methods are usually called when the custom event is triggered (like, `import.meta.hot.send("my-event")`).
 
-`onUpdate` is called only once when the new runtime is initiated. It passed down a method that should be called when connection triggers the HMR event. The implementation depends on the type of connection (as an example, it can be `WebSocket`/`EventEmitter`/`MessageChannel`), but it usually looks something like this:
+`onUpdate` is called only once when the new module runner is initiated. It passed down a method that should be called when connection triggers the HMR event. The implementation depends on the type of connection (as an example, it can be `WebSocket`/`EventEmitter`/`MessageChannel`), but it usually looks something like this:
 
 ```js
 function onUpdate(callback) {
@@ -643,7 +630,7 @@ function onUpdate(callback) {
 }
 ```
 
-The callback is queued and it will wait for the current update to be resolved before processing the next update. Unlike the browser implementation, HMR updates in Vite Runtime wait until all listeners (like, `vite:beforeUpdate`/`vite:beforeFullReload`) are finished before updating the modules.
+The callback is queued and it will wait for the current update to be resolved before processing the next update. Unlike the browser implementation, HMR updates in a module runner will wait until all listeners (like, `vite:beforeUpdate`/`vite:beforeFullReload`) are finished before updating the modules.
 
 ## Environments during build
 
@@ -666,7 +653,7 @@ The current Vite server API will be deprecated but keep working during the next 
 |        `server.transformRequest(url)`         | `server.environment('browser').transformRequest(url)` |
 | `server.transformRequest(url, { ssr: true })` |   `server.environment('node').tranformRequest(url)`   |
 |          `server.warmupRequest(url)`          |  `server.environment('browser').warmupRequest(url)`   |
-|          `server.ssrLoadModule(url)`          |   `server.nodeModuleRunner.executeEntryPoint(url)`    |
+|          `server.ssrLoadModule(url)`          |         `server.nodeModuleRunner.import(url)`         |
 |             `server.moduleGraph`              |        `server.environment(name).moduleGraph`         |
 |               `handleHotUpdate`               |                      `hotUpdate`                      |
 |              `server.open(url)`               |       `server.environment('browser').run(url)`        |
