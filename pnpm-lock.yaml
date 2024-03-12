@@ -30,6 +30,9 @@ importers:
       '@eslint-types/typescript-eslint':
         specifier: ^7.0.2
         version: 7.0.2
+      '@polka/compression':
+        specifier: ^1.0.0-next.25
+        version: 1.0.0-next.25
       '@rollup/plugin-typescript':
         specifier: ^11.1.6
         version: 11.1.6(rollup@4.2.0)(tslib@2.6.2)(typescript@5.2.2)
