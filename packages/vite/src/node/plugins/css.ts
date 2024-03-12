@@ -938,42 +938,31 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           return imports + '\n'
         }
 
-        function collect(fileName: string): string {
+        let line = 0
+
+        function collect(fileName: string) {
           const chunk = bundle[fileName]
           if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) {
-            return ''
+            return
           }
           collected.add(chunk)
 
-          const css = chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
-          const importedCSS = chunk.imports.reduce((css, file) => {
-            const imported = collect(file)
+          chunk.imports.forEach(collect)
 
-            if (imported.length > 0) {
-              css = prependImports(css) + imported
-              concatCssEndLines.push({ file, end: getLineCount(css) })
-            }
-            return css
-          }, '')
-          return prependImports(importedCSS) + css
+          const content = chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+
+          if (css !== '') {
+            css += '\n' + content
+          } else {
+            css = content
+          }
+
+          line += getLineCount(content)
+          concatCssEndLines.push({ file: fileName, end: line })
         }
 
         for (const chunkName of chunkCSSMap.keys()) {
-          const filename = prelimaryNameToChunkMap.get(chunkName)?.fileName
-          if (!filename) {
-            continue
-          }
-
-          const cssCode = collect(filename)
-
-          if (cssCode) {
-            concatCssEndLines.push({
-              file: filename,
-              end: getLineCount(cssCode),
-            })
-
-            css += cssCode
-          }
+          collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
         }
 
         return await finalizeCss(
