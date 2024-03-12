@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import sirv from 'sirv'
+import compression from '@polka/compression'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
@@ -19,7 +20,6 @@ import {
   setClientErrorHandler,
 } from './http'
 import { openBrowser } from './server/openBrowser'
-import compression from './server/middlewares/compression'
 import { baseMiddleware } from './server/middlewares/base'
 import { htmlFallbackMiddleware } from './server/middlewares/htmlFallback'
 import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
