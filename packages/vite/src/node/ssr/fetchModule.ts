@@ -82,10 +82,7 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
-  let result = await server.transformRequest(url, {
-    ssr: true,
-    environment: server.nodeEnvironment,
-  })
+  let result = await server.nodeEnvironment.transformRequest(url)
 
   if (!result) {
     throw new Error(

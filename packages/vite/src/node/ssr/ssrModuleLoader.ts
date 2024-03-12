@@ -3,7 +3,6 @@ import { pathToFileURL } from 'node:url'
 import colors from 'picocolors'
 import type { ViteDevServer } from '../server'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { genSourceMapUrl } from '../server/sourcemap'
@@ -96,11 +95,7 @@ async function instantiateModule(
     return mod.ssrModule
   }
   const result =
-    mod.transformResult ||
-    (await transformRequest(url, server, {
-      ssr: true,
-      environment: server.nodeEnvironment,
-    }))
+    mod.transformResult || (await server.nodeEnvironment.transformRequest(url))
   if (!result) {
     // TODO more info? is this even necessary?
     throw new Error(`failed to load module for ssr: ${url}`)

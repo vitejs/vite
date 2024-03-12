@@ -5,28 +5,34 @@ import colors from 'picocolors'
 import { FS_PREFIX } from '../constants'
 import { normalizePath } from '../utils'
 import type { ViteDevServer } from '../index'
+import type { ModuleExecutionEnvironment } from './environment'
 
 export function warmupFiles(server: ViteDevServer): void {
   const options = server.config.server.warmup
   const root = server.config.root
 
+  // TODO: move warmup as an environment config option?
   if (options?.clientFiles?.length) {
     mapFiles(options.clientFiles, root).then((files) => {
       for (const file of files) {
-        warmupFile(server, file, false)
+        warmupFile(server, server.browserEnvironment, file)
       }
     })
   }
   if (options?.ssrFiles?.length) {
     mapFiles(options.ssrFiles, root).then((files) => {
       for (const file of files) {
-        warmupFile(server, file, true)
+        warmupFile(server, server.nodeEnvironment, file)
       }
     })
   }
 }
 
-async function warmupFile(server: ViteDevServer, file: string, ssr: boolean) {
+async function warmupFile(
+  server: ViteDevServer,
+  environment: ModuleExecutionEnvironment,
+  file: string,
+) {
   // transform html with the `transformIndexHtml` hook as Vite internals would
   // pre-transform the imported JS modules linked. this may cause `transformIndexHtml`
   // plugins to be executed twice, but that's probably fine.
@@ -51,7 +57,7 @@ async function warmupFile(server: ViteDevServer, file: string, ssr: boolean) {
   // for other files, pass it through `transformRequest` with warmup
   else {
     const url = fileToUrl(file, server.config.root)
-    await server.warmupRequest(url, { ssr })
+    await environment.warmupRequest(url)
   }
 }
 

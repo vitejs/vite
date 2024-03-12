@@ -274,6 +274,7 @@ export interface ViteDevServer {
   /**
    * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
+   * @deprecated use environment.transformRequest
    */
   transformRequest(
     url: string,
@@ -283,6 +284,7 @@ export interface ViteDevServer {
    * Same as `transformRequest` but only warm up the URLs so the next request
    * will already be cached. The function will never throw as it handles and
    * reports errors internally.
+   * @deprecated use environment.warmupRequest
    */
   warmupRequest(url: string, options?: TransformOptions): Promise<void>
   /**
@@ -468,33 +470,43 @@ export async function _createServer(
 
   const environments = new Map()
 
-  const browserEnvironment = new ModuleExecutionEnvironment('browser', {
-    type: 'browser',
-    resolveId: (url, environment) =>
-      container.resolveId(url, undefined, {
-        ssr: false,
-        environment,
-      }),
-    hot: ws,
-  })
-  const nodeEnvironment = new ModuleExecutionEnvironment('node', {
+  // We need the () => server indirection here so the correct server is referenced when
+  // after a restart where newServer._setInternalServer(server) is called
+
+  const browserEnvironment = new ModuleExecutionEnvironment(
+    () => server,
+    'browser',
+    {
+      type: 'browser',
+      hot: ws,
+    },
+  )
+  environments.set('browser', browserEnvironment)
+
+  const nodeEnvironment = new ModuleExecutionEnvironment(() => server, 'node', {
     type: 'node',
-    resolveId: (url, environment) =>
-      container.resolveId(url, undefined, {
-        ssr: true,
-        environment,
-      }),
     hot: ssrHotChannel,
   })
+  environments.set('node', nodeEnvironment)
+
   const moduleGraph = new ModuleGraph({
     browser: browserEnvironment.moduleGraph,
     node: nodeEnvironment.moduleGraph,
   })
 
-  environments.set('browser', browserEnvironment)
-  environments.set('node', nodeEnvironment)
-
-  const container = await createPluginContainer(config, watcher)
+  // The global environment is used for buildStart, buildEnd, watchChange, and writeBundle hooks
+  // that are called once and not per environment.
+  // The Vite server has always passed the mixed module graph. Passing the browserEnvironment
+  // should give us the best backward compatibility for now.
+  // We can review this in the next Vite major.
+  const defaultEnvironment = browserEnvironment
+  const ssrEnvironment = nodeEnvironment
+  const pluginContainer = await createPluginContainer(
+    config,
+    watcher,
+    defaultEnvironment,
+    ssrEnvironment,
+  )
   const closeHttpServer = createServerCloseFn(httpServer)
 
   let exitProcess: () => void
@@ -506,7 +518,7 @@ export async function _createServer(
     middlewares,
     httpServer,
     watcher,
-    pluginContainer: container,
+    pluginContainer,
     ws,
     hot,
     environments,
@@ -522,11 +534,18 @@ export async function _createServer(
     ) {
       return ssrTransform(code, inMap, url, originalCode, server.config)
     },
+    // environment.transformRequest and .warmupRequest don't take an options param for now,
+    // so the logic and error handling needs to be duplicated here.
+    // The only param in options that could be important is `html`, but we may remove it as
+    // that is part of the internal control flow for the vite dev server to be able to bail
+    // out and do the html fallback
     transformRequest(url, options) {
-      return transformRequest(url, server, options)
+      const environment = options?.ssr ? nodeEnvironment : browserEnvironment
+      return transformRequest(url, server, options, environment)
     },
     async warmupRequest(url, options) {
-      await transformRequest(url, server, options).catch((e) => {
+      const environment = options?.ssr ? nodeEnvironment : browserEnvironment
+      await transformRequest(url, server, options, environment).catch((e) => {
         if (
           e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
           e?.code === ERR_CLOSED_SERVER
@@ -654,7 +673,7 @@ export async function _createServer(
       await Promise.allSettled([
         watcher.close(),
         hot.close(),
-        container.close(),
+        pluginContainer.close(),
         getDepsOptimizer(server.config)?.close(),
         getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer(),
@@ -764,7 +783,9 @@ export async function _createServer(
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
-    await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
+    await pluginContainer.watchChange(file, {
+      event: isUnlink ? 'delete' : 'create',
+    })
 
     if (publicDir && publicFiles) {
       if (file.startsWith(publicDir)) {
@@ -788,7 +809,7 @@ export async function _createServer(
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
-    await container.watchChange(file, { event: 'update' })
+    await pluginContainer.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     environments.forEach((environment) =>
       environment.moduleGraph.onFileChange(file),
@@ -949,7 +970,7 @@ export async function _createServer(
     if (initingServer) return initingServer
 
     initingServer = (async function () {
-      await container.buildStart({})
+      await pluginContainer.buildStart({})
       // start deps optimizer after all container plugins are ready
       if (isDepsOptimizerEnabled(config, false)) {
         await initDepsOptimizer(config, server)

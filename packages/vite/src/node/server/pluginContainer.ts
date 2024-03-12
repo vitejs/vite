@@ -81,7 +81,7 @@ import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import { buildErrorMessage } from './middlewares/error'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import { ModuleExecutionEnvironment } from './environment'
+import type { ModuleExecutionEnvironment } from './environment'
 
 const noop = () => {}
 
@@ -110,12 +110,12 @@ export interface PluginContainer {
   resolveId(
     id: string,
     importer: string | undefined,
-    options: {
+    options?: {
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
-      environment: ModuleExecutionEnvironment
+      environment?: ModuleExecutionEnvironment
       /**
        * @internal
        */
@@ -126,17 +126,17 @@ export interface PluginContainer {
   transform(
     code: string,
     id: string,
-    options: {
+    options?: {
       inMap?: SourceDescription['map']
       ssr?: boolean
-      environment: ModuleExecutionEnvironment
+      environment?: ModuleExecutionEnvironment
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }>
   load(
     id: string,
-    options: {
+    options?: {
       ssr?: boolean
-      environment: ModuleExecutionEnvironment
+      environment?: ModuleExecutionEnvironment
     },
   ): Promise<LoadResult | null>
   watchChange(
@@ -152,12 +152,17 @@ type PluginContext = Omit<
   'cache'
 >
 
-// environments is undefined when using the plugin container in the scan phase
-// or as the internals of createResolve
+// The default environment is in buildStart, buildEnd, watchChange, and closeBundle hooks,
+// wich are called once for all environments, or when no environment is passed in other hooks.
+// The ssrEnvironment is needed for backward compatibility when the ssr flag is passed without
+// an environment. The defaultEnvironment in the main pluginContainer in the server should be
+// the browserEnvironment for backward compatibility.
 
 export async function createPluginContainer(
   config: ResolvedConfig,
   watcher?: FSWatcher,
+  defaultEnvironment?: ModuleExecutionEnvironment,
+  ssrEnvironment?: ModuleExecutionEnvironment,
 ): Promise<PluginContainer> {
   const {
     plugins,
@@ -167,13 +172,6 @@ export async function createPluginContainer(
   } = config
   const { getSortedPluginHooks, getSortedPlugins } =
     createPluginHookUtils(plugins)
-
-  // default environment to be used in buildStart, buildEnd, watchChange, and closeBundle hooks,
-  // wich are called once for all environments
-  const defaultEnvironment = new ModuleExecutionEnvironment('mixed', {
-    type: 'mixed',
-    resolveId: async (id: string) => ({ id }),
-  })
 
   const seenResolves: Record<string, true | undefined> = {}
   const debugResolve = createDebugger('vite:resolve')
@@ -188,6 +186,20 @@ export async function createPluginContainer(
   const debugSourcemapCombine = createDebugger('vite:sourcemap-combine', {
     onlyWhenFocused: true,
   })
+
+  // Backward compatibility
+  // Users should call pluginContainer.resolveId (and load/transform) passing the environment they want to work with
+  // But there is code that is going to call it without passing an environment, or with the ssr flag to get the ssrEnvironment
+  function resolveEnvironment(options?: {
+    ssr?: boolean
+    environment?: ModuleExecutionEnvironment
+  }) {
+    const environment =
+      options?.environment ??
+      (options?.ssr && ssrEnvironment ? ssrEnvironment : defaultEnvironment)
+    const ssr = options?.ssr ?? (environment?.type === 'node' ? true : false)
+    return { environment, ssr }
+  }
 
   // ---------------------------------------------------------------------------
 
@@ -271,7 +283,7 @@ export async function createPluginContainer(
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
-    environment: ModuleExecutionEnvironment
+    environment: ModuleExecutionEnvironment | undefined
     _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
@@ -280,7 +292,7 @@ export async function createPluginContainer(
     _addedImports: Set<string> | null = null
 
     constructor(
-      environment: ModuleExecutionEnvironment,
+      environment?: ModuleExecutionEnvironment,
       initialPlugin?: Plugin,
     ) {
       this.environment = environment
@@ -326,9 +338,7 @@ export async function createPluginContainer(
       } & Partial<PartialNull<ModuleOptions>>,
     ): Promise<ModuleInfo> {
       // We may not have added this to our module graph yet, so ensure it exists
-      await this.environment?.moduleGraph.ensureEntryFromUrl(
-        unwrapId(options.id),
-      )
+      await this._moduleGraph?.ensureEntryFromUrl(unwrapId(options.id))
       // Not all options passed to this function make sense in the context of loading individual files,
       // but we can at least update the module info properties we support
       this._updateModuleInfo(options.id, options)
@@ -356,7 +366,7 @@ export async function createPluginContainer(
     }
 
     getModuleInfo(id: string) {
-      const module = this.environment?.moduleGraph.getModuleById(id)
+      const module = this._moduleGraph?.getModuleById(id)
       if (!module) {
         return null
       }
@@ -379,7 +389,7 @@ export async function createPluginContainer(
     }
 
     _updateModuleLoadAddedImports(id: string) {
-      const module = this.environment?.moduleGraph.getModuleById(id)
+      const module = this._moduleGraph?.getModuleById(id)
       if (module) {
         moduleNodeToLoadAddedImports.set(module, this._addedImports)
       }
@@ -387,7 +397,7 @@ export async function createPluginContainer(
 
     getModuleIds() {
       return (
-        this.environment?.moduleGraph.idToModuleMap.keys() ??
+        this._moduleGraph?.idToModuleMap.keys() ??
         Array.prototype[Symbol.iterator]()
       )
     }
@@ -443,6 +453,16 @@ export async function createPluginContainer(
 
     debug = noop
     info = noop
+
+    /**
+     * @internal
+     */
+    get _moduleGraph() {
+      // Using this.environment.mode is causing an issue with Vitest
+      return this.environment?.mode === 'dev'
+        ? this.environment.moduleGraph
+        : undefined
+    }
   }
 
   function formatError(
@@ -557,7 +577,7 @@ export async function createPluginContainer(
     constructor(
       id: string,
       code: string,
-      environment: ModuleExecutionEnvironment,
+      environment?: ModuleExecutionEnvironment,
       inMap?: SourceMap | string,
     ) {
       super(environment)
@@ -571,7 +591,7 @@ export async function createPluginContainer(
         this.sourcemapChain.push(inMap)
       }
       // Inherit `_addedImports` from the `load()` hook
-      const node = environment?.moduleGraph.getModuleById(id)
+      const node = this._moduleGraph?.getModuleById(id)
       if (node) {
         this._addedImports = moduleNodeToLoadAddedImports.get(node) ?? null
       }
@@ -690,9 +710,8 @@ export async function createPluginContainer(
     },
 
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
+      const { environment, ssr } = resolveEnvironment(options)
       const skip = options?.skip
-      const ssr = options?.ssr
-      const environment = options?.environment
       const scan = !!options?.scan
       const ctx = new Context(environment)
       ctx.ssr = !!ssr
@@ -762,8 +781,7 @@ export async function createPluginContainer(
     },
 
     async load(id, options) {
-      const ssr = options?.ssr
-      const environment = options?.environment
+      const { environment, ssr } = resolveEnvironment(options)
       const ctx = new Context(environment)
       ctx.ssr = !!ssr
       ctx.environment = environment
@@ -788,9 +806,8 @@ export async function createPluginContainer(
     },
 
     async transform(code, id, options) {
+      const { environment, ssr } = resolveEnvironment(options)
       const inMap = options?.inMap
-      const ssr = options?.ssr
-      const environment = options?.environment
       const ctx = new TransformContext(
         id,
         code,

@@ -17,7 +17,7 @@ export class Environment {
 }
 
 export class BuildEnvironment extends Environment {
-  command = 'build' as const
+  mode = 'build' as const
   constructor(id: string, options: { type: string }) {
     super(id, options)
   }

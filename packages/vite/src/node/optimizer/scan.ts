@@ -40,7 +40,6 @@ import { createPluginContainer } from '../server/pluginContainer'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 import { cleanUrl } from '../../shared/utils'
 import { loadTsconfigJsonForFile } from '../plugins/esbuild'
-import { ModuleExecutionEnvironment } from '../server/environment'
 
 type ResolveIdOptions = Omit<
   Parameters<PluginContainer['resolveId']>[2],
@@ -299,13 +298,7 @@ function esbuildScanPlugin(
   entries: string[],
 ): Plugin {
   const seen = new Map<string, string | undefined>()
-  const environment = new ModuleExecutionEnvironment('scan:browser', {
-    type: 'browser',
-    resolveId: (url: string, environment: ModuleExecutionEnvironment) =>
-      resolveId(environment, url),
-  })
   async function resolveId(
-    environment: ModuleExecutionEnvironment,
     id: string,
     importer?: string,
     options?: ResolveIdOptions,
@@ -313,7 +306,6 @@ function esbuildScanPlugin(
     return container.resolveId(id, importer && normalizePath(importer), {
       ...options,
       scan: true,
-      environment,
     })
   }
   const resolve = async (
@@ -325,7 +317,7 @@ function esbuildScanPlugin(
     if (seen.has(key)) {
       return seen.get(key)
     }
-    const resolved = await resolveId(environment, id, importer, options)
+    const resolved = await resolveId(id, importer, options)
     const res = resolved?.id
     seen.set(key, res)
     return res

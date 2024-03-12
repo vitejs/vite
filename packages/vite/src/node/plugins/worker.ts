@@ -254,9 +254,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             // so we copy /@vite/env code of server transform result into file header
             const environment = options?.environment
             const moduleGraph =
-              environment?.command === 'serve'
-                ? environment.moduleGraph
-                : undefined
+              environment?.mode === 'dev' ? environment.moduleGraph : undefined
             const module = moduleGraph?.getModuleById(ENV_ENTRY)
             injectEnv = module?.transformResult?.code || ''
           }

@@ -45,8 +45,13 @@ export interface TransformResult {
 }
 
 export interface TransformOptions {
+  /**
+   * @deprecated infered from environment
+   */
   ssr?: boolean
-  environment?: ModuleExecutionEnvironment
+  /**
+   * TODO: should this be internal?
+   */
   html?: boolean
 }
 
@@ -54,15 +59,16 @@ export function transformRequest(
   url: string,
   server: ViteDevServer,
   options: TransformOptions = {},
+  environment?: ModuleExecutionEnvironment,
 ): Promise<TransformResult | null> {
   // Backward compatibility when only `ssr` is passed
-  if (!options.environment) {
-    options = {
-      ...options,
-      environment: server.environments.get(options.ssr ? 'node' : 'browser'),
-    }
+  if (!environment) {
+    environment = server.environments.get(options.ssr ? 'node' : 'browser')!
   }
-  const environment = options.environment!
+  if (!options?.ssr) {
+    // Backward compatibility
+    options = { ...options, ssr: environment.type !== 'browser' }
+  }
 
   if (server._restartPromise && !options.ssr) throwClosedServerError()
 
@@ -107,12 +113,12 @@ export function transformRequest(
           // First request has been invalidated, abort it to clear the cache,
           // then perform a new doTransform.
           pending.abort()
-          return transformRequest(url, server, options)
+          return transformRequest(url, server, options, environment)
         }
       })
   }
 
-  const request = doTransform(url, server, options, timestamp)
+  const request = doTransform(environment, url, server, options, timestamp)
 
   // Avoid clearing the cache of future requests if aborted
   let cleared = false
@@ -134,6 +140,7 @@ export function transformRequest(
 }
 
 async function doTransform(
+  environment: ModuleExecutionEnvironment,
   url: string,
   server: ViteDevServer,
   options: TransformOptions,
@@ -143,9 +150,7 @@ async function doTransform(
 
   const { config, pluginContainer } = server
 
-  // environment is always defined when calling doTransform
   const ssr = !!options.ssr
-  const environment = options.environment!
 
   if (ssr && isDepsOptimizerEnabled(config, true)) {
     await initDevSsrDepsOptimizer(config, server)
@@ -188,6 +193,7 @@ async function doTransform(
   }
 
   const result = loadAndTransform(
+    environment,
     id,
     url,
     server,
@@ -230,6 +236,7 @@ async function getCachedTransformResult(
 }
 
 async function loadAndTransform(
+  environment: ModuleExecutionEnvironment,
   id: string,
   url: string,
   server: ViteDevServer,
@@ -245,7 +252,6 @@ async function loadAndTransform(
 
   // options.environment is always defined at this point
   const ssr = !!options.ssr
-  const environment = options.environment!
 
   const moduleGraph = environment.moduleGraph
 
@@ -498,7 +504,7 @@ async function handleModuleSoftInvalidation(
 
         if (imp.d === -1 && server.config.server.preTransformRequests) {
           // pre-transform known direct imports
-          server.warmupRequest(hmrUrl, { environment })
+          environment.warmupRequest(hmrUrl)
         }
 
         break
