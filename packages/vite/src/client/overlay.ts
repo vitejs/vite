@@ -44,10 +44,11 @@ const template = /*html*/ `
 .window {
   font-family: var(--monospace);
   line-height: 1.5;
-  width: 800px;
+  max-width: 80vw;
   color: var(--window-color);
+  box-sizing: border-box;
   margin: 30px auto;
-  padding: 25px 40px;
+  padding: 2.5vh 4vw;
   position: relative;
   background: var(--window-background);
   border-radius: 6px 6px 8px 8px;
