@@ -1,3 +1,18 @@
+## <small>5.1.6 (2024-03-11)</small>
+
+* chore(deps): update all non-major dependencies (#16131) ([a862ecb](https://github.com/vitejs/vite/commit/a862ecb)), closes [#16131](https://github.com/vitejs/vite/issues/16131)
+* fix: check for publicDir before checking if it is a parent directory (#16046) ([b6fb323](https://github.com/vitejs/vite/commit/b6fb323)), closes [#16046](https://github.com/vitejs/vite/issues/16046)
+* fix: escape single quote when relative base is used (#16060) ([8f74ce4](https://github.com/vitejs/vite/commit/8f74ce4)), closes [#16060](https://github.com/vitejs/vite/issues/16060)
+* fix: handle function property extension in namespace import (#16113) ([f699194](https://github.com/vitejs/vite/commit/f699194)), closes [#16113](https://github.com/vitejs/vite/issues/16113)
+* fix: server middleware mode resolve (#16122) ([8403546](https://github.com/vitejs/vite/commit/8403546)), closes [#16122](https://github.com/vitejs/vite/issues/16122)
+* fix(esbuild): update tsconfck to fix bug that could cause a deadlock  (#16124) ([fd9de04](https://github.com/vitejs/vite/commit/fd9de04)), closes [#16124](https://github.com/vitejs/vite/issues/16124)
+* fix(worker): hide "The emitted file overwrites" warning if the content is same (#16094) ([60dfa9e](https://github.com/vitejs/vite/commit/60dfa9e)), closes [#16094](https://github.com/vitejs/vite/issues/16094)
+* fix(worker): throw error when circular worker import is detected and support self referencing worker ([eef9da1](https://github.com/vitejs/vite/commit/eef9da1)), closes [#16103](https://github.com/vitejs/vite/issues/16103)
+* style(utils): remove null check (#16112) ([0d2df52](https://github.com/vitejs/vite/commit/0d2df52)), closes [#16112](https://github.com/vitejs/vite/issues/16112)
+* refactor(runtime): share more code between runtime and main bundle (#16063) ([93be84e](https://github.com/vitejs/vite/commit/93be84e)), closes [#16063](https://github.com/vitejs/vite/issues/16063)
+
+
+
 ## <small>5.1.5 (2024-03-04)</small>
 
 * fix: `__vite__mapDeps` code injection (#15732) ([aff54e1](https://github.com/vitejs/vite/commit/aff54e1)), closes [#15732](https://github.com/vitejs/vite/issues/15732)

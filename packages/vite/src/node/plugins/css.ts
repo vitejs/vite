@@ -542,7 +542,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
-        moduleSideEffects: inlined ? false : 'no-treeshake',
+        moduleSideEffects: modulesCode || inlined ? false : 'no-treeshake',
       }
     },
 

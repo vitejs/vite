@@ -458,6 +458,12 @@ Repository: https://github.com/nodelib/nodelib/tree/master/packages/fs/fs.walk
 
 ---------------------------------------
 
+## @polka/compression
+License: MIT
+Repository: lukeed/polka
+
+---------------------------------------
+
 ## @polka/url
 License: MIT
 By: Luke Edwards
