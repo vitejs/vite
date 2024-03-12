@@ -533,3 +533,8 @@ test.runIf(isBuild)('manual chunk path', async () => {
     findAssetFile(/dir\/dir2\/manual-chunk-[-\w]{8}\.css$/),
   ).not.toBeUndefined()
 })
+
+test.runIf(isBuild)('CSS modules should be treeshaken if not used', () => {
+  const css = findAssetFile(/\.css$/, undefined, undefined, true)
+  expect(css).not.toContain('treeshake-module-b')
+})
