@@ -10,37 +10,35 @@ const _URL = URL
 describe('vite-runtime initialization', async () => {
   const it = await createModuleRunnerTester()
 
-  it('correctly runs ssr code', async ({ runner: runtime }) => {
-    const mod = await runtime.import('/fixtures/simple.js')
+  it('correctly runs ssr code', async ({ runner }) => {
+    const mod = await runner.import('/fixtures/simple.js')
     expect(mod.test).toEqual('I am initialized')
 
     // loads the same module if id is a file url
     const fileUrl = new _URL('./fixtures/simple.js', import.meta.url)
-    const mod2 = await runtime.import(fileUrl.toString())
+    const mod2 = await runner.import(fileUrl.toString())
     expect(mod).toBe(mod2)
 
     // loads the same module if id is a file path
     const filePath = fileURLToPath(fileUrl)
-    const mod3 = await runtime.import(filePath)
+    const mod3 = await runner.import(filePath)
     expect(mod).toBe(mod3)
   })
 
-  it('can load virtual modules as an entry point', async ({
-    runner: runtime,
-  }) => {
-    const mod = await runtime.import('virtual:test')
+  it('can load virtual modules as an entry point', async ({ runner }) => {
+    const mod = await runner.import('virtual:test')
     expect(mod.msg).toBe('virtual')
   })
 
-  it('css is loaded correctly', async ({ runner: runtime }) => {
-    const css = await runtime.import('/fixtures/test.css')
+  it('css is loaded correctly', async ({ runner }) => {
+    const css = await runner.import('/fixtures/test.css')
     expect(css.default).toMatchInlineSnapshot(`
       ".test {
         color: red;
       }
       "
     `)
-    const module = await runtime.import('/fixtures/test.module.css')
+    const module = await runner.import('/fixtures/test.module.css')
     expect(module).toMatchObject({
       default: {
         test: expect.stringMatching(/^_test_/),
@@ -49,8 +47,8 @@ describe('vite-runtime initialization', async () => {
     })
   })
 
-  it('assets are loaded correctly', async ({ runner: runtime }) => {
-    const assets = await runtime.import('/fixtures/assets.js')
+  it('assets are loaded correctly', async ({ runner }) => {
+    const assets = await runner.import('/fixtures/assets.js')
     expect(assets).toMatchObject({
       mov: '/fixtures/assets/placeholder.mov',
       txt: '/fixtures/assets/placeholder.txt',
@@ -59,19 +57,17 @@ describe('vite-runtime initialization', async () => {
     })
   })
 
-  it('ids with Vite queries are loaded correctly', async ({
-    runner: runtime,
-  }) => {
-    const raw = await runtime.import('/fixtures/simple.js?raw')
+  it('ids with Vite queries are loaded correctly', async ({ runner }) => {
+    const raw = await runner.import('/fixtures/simple.js?raw')
     expect(raw.default).toMatchInlineSnapshot(`
       "export const test = 'I am initialized'
 
       import.meta.hot?.accept()
       "
     `)
-    const url = await runtime.import('/fixtures/simple.js?url')
+    const url = await runner.import('/fixtures/simple.js?url')
     expect(url.default).toMatchInlineSnapshot(`"/fixtures/simple.js"`)
-    const inline = await runtime.import('/fixtures/test.css?inline')
+    const inline = await runner.import('/fixtures/test.css?inline')
     expect(inline.default).toMatchInlineSnapshot(`
       ".test {
         color: red;
@@ -81,16 +77,16 @@ describe('vite-runtime initialization', async () => {
   })
 
   it('modules with query strings are treated as different modules', async ({
-    runner: runtime,
+    runner,
   }) => {
-    const modSimple = await runtime.import('/fixtures/simple.js')
-    const modUrl = await runtime.import('/fixtures/simple.js?url')
+    const modSimple = await runner.import('/fixtures/simple.js')
+    const modUrl = await runner.import('/fixtures/simple.js?url')
     expect(modSimple).not.toBe(modUrl)
     expect(modUrl.default).toBe('/fixtures/simple.js')
   })
 
-  it('exports is not modifiable', async ({ runner: runtime }) => {
-    const mod = await runtime.import('/fixtures/simple.js')
+  it('exports is not modifiable', async ({ runner }) => {
+    const mod = await runner.import('/fixtures/simple.js')
     expect(Object.isSealed(mod)).toBe(true)
     expect(() => {
       mod.test = 'I am modified'
@@ -114,11 +110,11 @@ describe('vite-runtime initialization', async () => {
     )
   })
 
-  it('throws the same error', async ({ runner: runtime }) => {
+  it('throws the same error', async ({ runner }) => {
     expect.assertions(3)
     const s = Symbol()
     try {
-      await runtime.import('/fixtures/has-error.js')
+      await runner.import('/fixtures/has-error.js')
     } catch (e) {
       expect(e[s]).toBeUndefined()
       e[s] = true
@@ -126,16 +122,14 @@ describe('vite-runtime initialization', async () => {
     }
 
     try {
-      await runtime.import('/fixtures/has-error.js')
+      await runner.import('/fixtures/has-error.js')
     } catch (e) {
       expect(e[s]).toBe(true)
     }
   })
 
-  it('importing external cjs library checks exports', async ({
-    runner: runtime,
-  }) => {
-    await expect(() => runtime.import('/fixtures/cjs-external-non-existing.js'))
+  it('importing external cjs library checks exports', async ({ runner }) => {
+    await expect(() => runner.import('/fixtures/cjs-external-non-existing.js'))
       .rejects.toThrowErrorMatchingInlineSnapshot(`
       [SyntaxError: [vite] Named export 'nonExisting' not found. The requested module '@vitejs/cjs-external' is a CommonJS module, which may not support all module.exports as named exports.
       CommonJS modules can always be imported via the default export, for example using:
@@ -146,32 +140,28 @@ describe('vite-runtime initialization', async () => {
     `)
     // subsequent imports of the same external package should not throw if imports are correct
     await expect(
-      runtime.import('/fixtures/cjs-external-existing.js'),
+      runner.import('/fixtures/cjs-external-existing.js'),
     ).resolves.toMatchObject({
       result: 'world',
     })
   })
 
-  it('importing external esm library checks exports', async ({
-    runner: runtime,
-  }) => {
+  it('importing external esm library checks exports', async ({ runner }) => {
     await expect(() =>
-      runtime.import('/fixtures/esm-external-non-existing.js'),
+      runner.import('/fixtures/esm-external-non-existing.js'),
     ).rejects.toThrowErrorMatchingInlineSnapshot(
       `[SyntaxError: [vite] The requested module '@vitejs/esm-external' does not provide an export named 'nonExisting']`,
     )
     // subsequent imports of the same external package should not throw if imports are correct
     await expect(
-      runtime.import('/fixtures/esm-external-existing.js'),
+      runner.import('/fixtures/esm-external-existing.js'),
     ).resolves.toMatchObject({
       result: 'world',
     })
   })
 
-  it("dynamic import doesn't produce duplicates", async ({
-    runner: runtime,
-  }) => {
-    const mod = await runtime.import('/fixtures/dynamic-import.js')
+  it("dynamic import doesn't produce duplicates", async ({ runner }) => {
+    const mod = await runner.import('/fixtures/dynamic-import.js')
     const modules = await mod.initialize()
     // toBe checks that objects are actually the same, not just structually
     // using toEqual here would be a mistake because it chesk the structural difference
@@ -181,14 +171,14 @@ describe('vite-runtime initialization', async () => {
     expect(modules.static).toBe(modules.dynamicAbsoluteExtension)
   })
 
-  it('correctly imports a virtual module', async ({ runner: runtime }) => {
-    const mod = await runtime.import('/fixtures/virtual.js')
+  it('correctly imports a virtual module', async ({ runner }) => {
+    const mod = await runner.import('/fixtures/virtual.js')
     expect(mod.msg0).toBe('virtual0')
     expect(mod.msg).toBe('virtual')
   })
 
-  it('importing package from node_modules', async ({ runner: runtime }) => {
-    const mod = (await runtime.import(
+  it('importing package from node_modules', async ({ runner }) => {
+    const mod = (await runner.import(
       '/fixtures/installed.js',
     )) as typeof import('tinyspy')
     const fn = mod.spy()
@@ -196,15 +186,15 @@ describe('vite-runtime initialization', async () => {
     expect(fn.called).toBe(true)
   })
 
-  it('importing native node package', async ({ runner: runtime }) => {
-    const mod = await runtime.import('/fixtures/native.js')
+  it('importing native node package', async ({ runner }) => {
+    const mod = await runner.import('/fixtures/native.js')
     expect(mod.readdirSync).toBe(readdirSync)
     expect(mod.existsSync).toBe(existsSync)
   })
 
-  it('correctly resolves module url', async ({ runner: runtime, server }) => {
+  it('correctly resolves module url', async ({ runner, server }) => {
     const { meta } =
-      await runtime.import<typeof import('./fixtures/basic')>('/fixtures/basic')
+      await runner.import<typeof import('./fixtures/basic')>('/fixtures/basic')
     const basicUrl = new _URL('./fixtures/basic.js', import.meta.url).toString()
     expect(meta.url).toBe(basicUrl)
 
