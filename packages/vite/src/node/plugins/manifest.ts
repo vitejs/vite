@@ -21,6 +21,7 @@ export interface ManifestChunk {
   css?: string[]
   assets?: string[]
   isEntry?: boolean
+  name?: string
   isDynamicEntry?: boolean
   imports?: string[]
   dynamicImports?: string[]
@@ -60,6 +61,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       function createChunk(chunk: OutputChunk): ManifestChunk {
         const manifestChunk: ManifestChunk = {
           file: chunk.fileName,
+          name: chunk.name,
         }
 
         if (chunk.facadeModuleId) {
