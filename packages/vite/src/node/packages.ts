@@ -4,6 +4,7 @@ import { createRequire } from 'node:module'
 import {
   createFilter,
   isInNodeModules,
+  normalizePath,
   safeRealpathSync,
   tryStatSync,
 } from './utils'
@@ -44,7 +45,7 @@ function invalidatePackageData(
   packageCache: PackageCache,
   pkgPath: string,
 ): void {
-  const pkgDir = path.dirname(pkgPath)
+  const pkgDir = normalizePath(path.dirname(pkgPath))
   packageCache.forEach((pkg, cacheKey) => {
     if (pkg.dir === pkgDir) {
       packageCache.delete(cacheKey)
@@ -169,7 +170,7 @@ export function findNearestMainPackageData(
 
 export function loadPackageData(pkgPath: string): PackageData {
   const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-  const pkgDir = path.dirname(pkgPath)
+  const pkgDir = normalizePath(path.dirname(pkgPath))
   const { sideEffects } = data
   let hasSideEffects: (id: string) => boolean | null
   if (typeof sideEffects === 'boolean') {
