@@ -5,7 +5,7 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { OutputChunk, SourceMap } from 'rollup'
+import type { SourceMap } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
 import {
@@ -377,15 +377,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   if (filename === ownerFilename) return
                   if (analyzed.has(filename)) return
                   analyzed.add(filename)
-                  const chunk = bundle[filename] as OutputChunk | undefined
+                  const chunk = bundle[filename]
                   if (chunk) {
                     deps.add(chunk.fileName)
-                    chunk.imports.forEach(addDeps)
-                    // Ensure that the css imported by current chunk is loaded after the dependencies.
-                    // So the style of current chunk won't be overwritten unexpectedly.
-                    chunk.viteMetadata!.importedCss.forEach((file) => {
-                      deps.add(file)
-                    })
+                    if (chunk.type === 'chunk') {
+                      chunk.imports.forEach(addDeps)
+                      // Ensure that the css imported by current chunk is loaded after the dependencies.
+                      // So the style of current chunk won't be overwritten unexpectedly.
+                      chunk.viteMetadata!.importedCss.forEach((file) => {
+                        deps.add(file)
+                      })
+                    }
                   } else {
                     const removedPureCssFiles =
                       removedPureCssFilesCache.get(config)!
@@ -507,13 +509,11 @@ function __vite__mapDeps(indexes) {
   return indexes.map((i) => __vite__mapDeps.viteFileDeps[i])
 }\n`
 
-          // inject extra code before sourcemap comment
-          const mapFileCommentMatch =
-            convertSourceMap.mapFileCommentRegex.exec(code)
-          if (mapFileCommentMatch) {
-            s.appendRight(mapFileCommentMatch.index, mapDepsCode)
+          // inject extra code at the top or next line of hashbang
+          if (code.startsWith('#!')) {
+            s.prependLeft(code.indexOf('\n') + 1, mapDepsCode)
           } else {
-            s.append(mapDepsCode)
+            s.prepend(mapDepsCode)
           }
 
           // there may still be markers due to inlined dynamic imports, remove

@@ -145,6 +145,7 @@ module.exports = defineConfig({
     },
     {
       files: ['packages/vite/src/node/**'],
+      excludedFiles: '**/__tests__/**',
       rules: {
         'no-console': ['error'],
       },

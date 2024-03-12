@@ -14,4 +14,5 @@ test('handle nested package', async () => {
   // expect(await page.textContent('.nested-e')).toBe('1')
 
   expect(await page.textContent('.absolute-f')).toBe('F@2.0.0')
+  expect(await page.textContent('.self-referencing')).toBe('true')
 })

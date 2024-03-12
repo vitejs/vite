@@ -1,16 +1,15 @@
 import { pathToFileURL } from 'node:url'
 import type { ModuleNode, TransformResult, ViteDevServer } from '..'
-import type { PackageCache } from '../packages'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
-import { isBuiltin, isExternalUrl, isFilePathESM, unwrapId } from '../utils'
-import type { FetchResult } from './runtime/types'
-
-interface NodeImportResolveOptions
-  extends InternalResolveOptionsWithOverrideConditions {
-  legacyProxySsrExternalModules?: boolean
-  packageCache?: PackageCache
-}
+import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
+import type { FetchResult } from '../../runtime/types'
+import { unwrapId } from '../../shared/utils'
+import {
+  SOURCEMAPPING_URL,
+  VITE_RUNTIME_SOURCEMAPPING_SOURCE,
+} from '../../shared/constants'
+import { genSourceMapUrl } from '../server/sourcemap'
 
 export interface FetchModuleOptions {
   inlineSourceMap?: boolean
@@ -45,7 +44,7 @@ export async function fetchModule(
     } = server.config
     const overrideConditions = ssr.resolve?.externalConditions || []
 
-    const resolveOptions: NodeImportResolveOptions = {
+    const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
       mainFields: ['main'],
       conditions: [],
       overrideConditions: [...overrideConditions, 'production', 'development'],
@@ -56,8 +55,6 @@ export async function fetchModule(
       isProduction,
       root,
       ssrConfig: ssr,
-      legacyProxySsrExternalModules:
-        server.config.legacy?.proxySsrExternalModules,
       packageCache: server.config.packageCache,
     }
 
@@ -77,7 +74,7 @@ export async function fetchModule(
       throw err
     }
     const file = pathToFileURL(resolved.id).toString()
-    const type = isFilePathESM(file, server.config.packageCache)
+    const type = isFilePathESM(resolved.id, server.config.packageCache)
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }
@@ -117,11 +114,10 @@ export async function fetchModule(
   return { code: result.code, file: mod.file }
 }
 
-let SOURCEMAPPING_URL = 'sourceMa'
-SOURCEMAPPING_URL += 'ppingURL'
-
-const VITE_RUNTIME_SOURCEMAPPING_SOURCE = '//# sourceMappingSource=vite-runtime'
-const VITE_RUNTIME_SOURCEMAPPING_URL = `${SOURCEMAPPING_URL}=data:application/json;charset=utf-8`
+const OTHER_SOURCE_MAP_REGEXP = new RegExp(
+  `//# ${SOURCEMAPPING_URL}=data:application/json[^,]+base64,([A-Za-z0-9+/=]+)$`,
+  'gm',
+)
 
 function inlineSourceMap(
   mod: ModuleNode,
@@ -139,20 +135,14 @@ function inlineSourceMap(
     return result
 
   // to reduce the payload size, we only inline vite node source map, because it's also the only one we use
-  const OTHER_SOURCE_MAP_REGEXP = new RegExp(
-    `//# ${SOURCEMAPPING_URL}=data:application/json[^,]+base64,([A-Za-z0-9+/=]+)$`,
-    'gm',
-  )
-  while (OTHER_SOURCE_MAP_REGEXP.test(code))
+  OTHER_SOURCE_MAP_REGEXP.lastIndex = 0
+  if (OTHER_SOURCE_MAP_REGEXP.test(code))
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
-  const sourceMap = Buffer.from(
-    JSON.stringify(processSourceMap?.(map) || map),
-    'utf-8',
-  ).toString('base64')
+  const sourceMap = processSourceMap?.(map) || map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
     mod.id
-  }\n${VITE_RUNTIME_SOURCEMAPPING_SOURCE}\n//# ${VITE_RUNTIME_SOURCEMAPPING_URL};base64,${sourceMap}\n`
+  }\n${VITE_RUNTIME_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
 }

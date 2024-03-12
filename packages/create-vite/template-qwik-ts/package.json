@@ -6,13 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "serve dist"
   },
   "devDependencies": {
+    "serve": "^14.2.1",
     "typescript": "^5.2.2",
-    "vite": "^5.1.1"
+    "vite": "^5.1.6"
   },
   "dependencies": {
-    "@builder.io/qwik": "^1.4.4"
+    "@builder.io/qwik": "^1.5.1"
   }
 }
