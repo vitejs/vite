@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { ESModuleEvaluator, ModuleRunner } from 'vite/module-runner'
+import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type { ModuleEvaluator, ModuleRunnerOptions } from 'vite/module-runner'
 import type { ViteDevServer } from '../../server'
 import type { HMRLogger } from '../../../shared/hmr'
@@ -79,6 +79,6 @@ export async function createServerModuleRunner(
       hmr,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },
-    options.runner || new ESModuleEvaluator(),
+    options.runner || new ESModulesEvaluator(),
   )
 }

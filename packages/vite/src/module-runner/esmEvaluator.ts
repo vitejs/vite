@@ -8,7 +8,7 @@ import {
 } from './constants'
 import type { ModuleEvaluator, ModuleRunnerContext } from './types'
 
-export class ESModuleEvaluator implements ModuleEvaluator {
+export class ESModulesEvaluator implements ModuleEvaluator {
   async runInlinedModule(
     context: ModuleRunnerContext,
     code: string,
