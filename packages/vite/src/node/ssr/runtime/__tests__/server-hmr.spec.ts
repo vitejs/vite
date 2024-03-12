@@ -2,7 +2,7 @@ import { describe, expect } from 'vitest'
 import { createModuleRunnerTester } from './utils'
 
 describe(
-  'vite-runtime hmr works as expected',
+  'module runner hmr works as expected',
   async () => {
     const it = await createModuleRunnerTester({
       server: {

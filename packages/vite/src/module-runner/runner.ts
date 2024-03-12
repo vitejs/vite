@@ -57,7 +57,7 @@ export class ModuleRunner {
   private envProxy = new Proxy({} as any, {
     get(_, p) {
       throw new Error(
-        `[vite-runtime] Dynamic access of "import.meta.env" is not supported. Please, use "import.meta.env.${String(p)}" instead.`,
+        `[module runner] Dynamic access of "import.meta.env" is not supported. Please, use "import.meta.env.${String(p)}" instead.`,
       )
     },
   })
@@ -216,7 +216,7 @@ export class ModuleRunner {
             .join('\n')}`
 
         this.debug!(
-          `[vite-runtime] module ${moduleId} takes over 2s to load.\n${getStack()}`,
+          `[module runner] module ${moduleId} takes over 2s to load.\n${getStack()}`,
         )
       }, 2000)
     }
@@ -250,7 +250,7 @@ export class ModuleRunner {
         return mod.meta as ResolvedResult
       }
     }
-    this.debug?.('[vite-runtime] fetching', id)
+    this.debug?.('[module runner] fetching', id)
     // fast return for established externalized patterns
     const fetchedModule = id.startsWith('data:')
       ? ({ externalize: id, type: 'builtin' } satisfies FetchResult)
@@ -309,7 +309,7 @@ export class ModuleRunner {
 
     if ('externalize' in fetchResult) {
       const { externalize } = fetchResult
-      this.debug?.('[vite-runtime] externalizing', externalize)
+      this.debug?.('[module runner] externalizing', externalize)
       const exports = await this.runner.runExternalModule(externalize)
       mod.exports = exports
       return exports
@@ -320,7 +320,7 @@ export class ModuleRunner {
     if (code == null) {
       const importer = callstack[callstack.length - 2]
       throw new Error(
-        `[vite-runtime] Failed to load "${id}"${
+        `[module runner] Failed to load "${id}"${
           importer ? ` imported from ${importer}` : ''
         }`,
       )
@@ -338,12 +338,12 @@ export class ModuleRunner {
       env: this.envProxy,
       resolve(id, parent) {
         throw new Error(
-          '[vite-runtime] "import.meta.resolve" is not supported.',
+          '[module runner] "import.meta.resolve" is not supported.',
         )
       },
       // should be replaced during transformation
       glob() {
-        throw new Error('[vite-runtime] "import.meta.glob" is not supported.')
+        throw new Error('[module runner] "import.meta.glob" is not supported.')
       },
     }
     const exports = Object.create(null)
@@ -361,9 +361,9 @@ export class ModuleRunner {
         enumerable: true,
         get: () => {
           if (!this.hmrClient) {
-            throw new Error(`[vite-runtime] HMR client was destroyed.`)
+            throw new Error(`[module runner] HMR client was destroyed.`)
           }
-          this.debug?.('[vite-runtime] creating hmr context for', moduleId)
+          this.debug?.('[module runner] creating hmr context for', moduleId)
           hotContext ||= new HMRContext(this.hmrClient, moduleId, 'node')
           return hotContext
         },
@@ -381,9 +381,9 @@ export class ModuleRunner {
       [ssrImportMetaKey]: meta,
     }
 
-    this.debug?.('[vite-runtime] executing', href)
+    this.debug?.('[module runner] executing', href)
 
-    await this.runner.runViteModule(context, code, id)
+    await this.runner.runInlinedModule(context, code, id)
 
     return exports
   }

@@ -7,7 +7,7 @@ import { createModuleRunnerTester } from './utils'
 
 const _URL = URL
 
-describe('vite-runtime initialization', async () => {
+describe('module runner initialization', async () => {
   const it = await createModuleRunnerTester()
 
   it('correctly runs ssr code', async ({ runner }) => {
@@ -193,8 +193,7 @@ describe('vite-runtime initialization', async () => {
   })
 
   it('correctly resolves module url', async ({ runner, server }) => {
-    const { meta } =
-      await runner.import<typeof import('./fixtures/basic')>('/fixtures/basic')
+    const { meta } = await runner.import('/fixtures/basic')
     const basicUrl = new _URL('./fixtures/basic.js', import.meta.url).toString()
     expect(meta.url).toBe(basicUrl)
 

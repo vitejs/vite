@@ -2,7 +2,7 @@ import { describe, expect } from 'vitest'
 import type { ModuleRunner } from 'vite/module-runner'
 import { createModuleRunnerTester, editFile, resolvePath } from './utils'
 
-describe('vite-runtime initialization', async () => {
+describe('module runner initialization', async () => {
   const it = await createModuleRunnerTester(
     {},
     {

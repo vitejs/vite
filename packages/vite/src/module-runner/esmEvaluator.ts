@@ -9,7 +9,7 @@ import {
 import type { ModuleEvaluator, ModuleRunnerContect } from './types'
 
 export class ESModuleEvaluator implements ModuleEvaluator {
-  async runViteModule(
+  async runInlinedModule(
     context: ModuleRunnerContect,
     code: string,
   ): Promise<any> {

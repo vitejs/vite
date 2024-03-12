@@ -2,7 +2,7 @@
 
 export { ModuleCacheMap } from './moduleCache'
 export { ModuleRunner } from './runner'
-export { ESModuleEvaluator } from './esmRunner'
+export { ESModuleEvaluator } from './esmEvaluator'
 
 export type { HMRLogger, HMRConnection } from '../shared/hmr'
 export type {

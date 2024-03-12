@@ -51,7 +51,7 @@ export interface ModuleEvaluator {
    * @param code Transformed code
    * @param id ID that was used to fetch the module
    */
-  runViteModule(
+  runInlinedModule(
     context: ModuleRunnerContect,
     code: string,
     id: string,
