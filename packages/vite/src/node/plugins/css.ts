@@ -942,7 +942,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           chunk.imports.forEach(collect)
 
-          const content = chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          const content = chunkCSSMap.get(chunk.preliminaryFileName) ?? null
+          if (content == null) {
+            return
+          }
           if (css !== '') {
             css += '\n' + content
           } else {
