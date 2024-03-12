@@ -77,7 +77,7 @@
     "playwright-chromium": "^1.42.1",
     "prettier": "3.2.5",
     "rimraf": "^5.0.5",
-    "rollup": "^4.2.0",
+    "rollup": "^4.13.0",
     "semver": "^7.6.0",
     "simple-git-hooks": "^2.10.0",
     "tslib": "^2.6.2",
