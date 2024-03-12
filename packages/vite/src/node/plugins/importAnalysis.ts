@@ -27,7 +27,6 @@ import {
   normalizeHmrUrl,
 } from '../server/hmr'
 import {
-  cleanUrl,
   createDebugger,
   fsPathFromUrl,
   generateCodeFrame,
@@ -48,10 +47,7 @@ import {
   stripBomTag,
   timeFrom,
   transformStableResult,
-  unwrapId,
   urlRE,
-  withTrailingSlash,
-  wrapId,
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { checkPublicFile } from '../publicDir'
@@ -60,6 +56,12 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
+import {
+  cleanUrl,
+  unwrapId,
+  withTrailingSlash,
+  wrapId,
+} from '../../shared/utils'
 import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
@@ -478,7 +480,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // static import or valid string in dynamic import
           // If resolvable, let's resolve it
-          if (specifier) {
+          if (specifier !== undefined) {
             // skip external / data uri
             if (isExternalUrl(specifier) || isDataUrl(specifier)) {
               return
@@ -840,7 +842,7 @@ export function createParseErrorInfo(
   }
 }
 // prettier-ignore
-const interopHelper = (m: any) => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) ? m : {}), default: m }
+const interopHelper = (m: any) => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) || typeof m === 'function' ? m : {}), default: m }
 
 export function interopNamedImports(
   str: MagicString,
@@ -1030,7 +1032,7 @@ function __vite__injectQuery(url: string, queryToInject: string): string {
   }
 
   // can't use pathname from URL since it may be relative like ../
-  const pathname = url.replace(/[?#].*$/s, '')
+  const pathname = url.replace(/[?#].*$/, '')
   const { search, hash } = new URL(url, 'http://vitejs.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${

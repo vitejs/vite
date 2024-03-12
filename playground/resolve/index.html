@@ -61,6 +61,9 @@
 <h2>Resolving from other package with imports field</h2>
 <p class="imports-pkg-slash">fail</p>
 
+<h2>Resolving with query with imports field</h2>
+<p class="imports-query">fail</p>
+
 <h2>Resolve /index.*</h2>
 <p class="index">fail</p>
 
@@ -167,6 +170,9 @@
 <h2>resolve package that contains # in path</h2>
 <p class="path-contains-sharp-symbol"></p>
 
+<h2>resolve non normalized absolute path</h2>
+<p class="non-normalized"></p>
+
 <script type="module">
   import '@generated-content-virtual-file'
   function text(selector, text) {
@@ -250,6 +256,9 @@
 
   import { msg as importsPkgSlash } from '#other-pkg-slash/index.js'
   text('.imports-pkg-slash', importsPkgSlash)
+
+  import importsQuery from '#query?url'
+  text('.imports-query', importsQuery)
 
   // implicit index resolving
   import { foo } from './util'
@@ -384,6 +393,9 @@
     '.path-contains-sharp-symbol',
     `[success] ${contains.call('#', '#')} ${last.call('#')}`,
   )
+
+  import nonNormalizedAbsolute from '@non-normalized'
+  text('.non-normalized', nonNormalizedAbsolute)
 </script>
 
 <style>

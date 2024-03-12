@@ -6,18 +6,13 @@ import colors from 'picocolors'
 import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import {
-  createDebugger,
-  normalizePath,
-  unique,
-  withTrailingSlash,
-  wrapId,
-} from '../utils'
+import { createDebugger, normalizePath, unique } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
+import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { ModuleNode } from './moduleGraph'
 import { restartServerWithUrls } from '.'
 
@@ -166,6 +161,7 @@ export async function handleHMRUpdate(
     hot.send({
       type: 'full-reload',
       path: '*',
+      triggeredBy: path.resolve(config.root, file),
     })
     return
   }
@@ -272,6 +268,7 @@ export function updateModules(
     )
     hot.send({
       type: 'full-reload',
+      triggeredBy: path.resolve(config.root, file),
     })
     return
   }
@@ -295,7 +292,7 @@ export function updateModules(
 function populateSSRImporters(
   module: ModuleNode,
   timestamp: number,
-  seen: Set<ModuleNode>,
+  seen: Set<ModuleNode> = new Set(),
 ) {
   module.ssrImportedModules.forEach((importer) => {
     if (seen.has(importer)) {
@@ -313,9 +310,9 @@ function populateSSRImporters(
 }
 
 function getSSRInvalidatedImporters(module: ModuleNode) {
-  return [
-    ...populateSSRImporters(module, module.lastHMRTimestamp, new Set()),
-  ].map((m) => m.file!)
+  return [...populateSSRImporters(module, module.lastHMRTimestamp)].map(
+    (m) => m.file!,
+  )
 }
 
 export async function handleFileAddUnlink(

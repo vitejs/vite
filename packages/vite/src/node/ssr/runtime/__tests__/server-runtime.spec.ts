@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'node:fs'
 import { posix, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect } from 'vitest'
-import { isWindows } from '../utils'
+import { isWindows } from '../../../../shared/utils'
 import { createViteRuntimeTester } from './utils'
 
 const _URL = URL
@@ -87,10 +87,21 @@ describe('vite-runtime initialization', async () => {
 
   it('exports is not modifiable', async ({ runtime }) => {
     const mod = await runtime.executeUrl('/fixtures/simple.js')
+    expect(Object.isSealed(mod)).toBe(true)
     expect(() => {
       mod.test = 'I am modified'
     }).toThrowErrorMatchingInlineSnapshot(
       `[TypeError: Cannot set property test of [object Module] which has only a getter]`,
+    )
+    expect(() => {
+      delete mod.test
+    }).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Cannot delete property 'test' of [object Module]]`,
+    )
+    expect(() => {
+      Object.defineProperty(mod, 'test', { value: 'I am modified' })
+    }).toThrowErrorMatchingInlineSnapshot(
+      `[TypeError: Cannot redefine property: test]`,
     )
     expect(() => {
       mod.other = 'I am added'

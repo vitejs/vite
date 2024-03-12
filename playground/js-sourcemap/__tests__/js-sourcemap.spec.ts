@@ -137,7 +137,8 @@ describe.runIf(isBuild)('build tests', () => {
     const map = findAssetFile(/after-preload-dynamic.*\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
-        "mappings": "i3BAAA,OAAO,2BAAuB,EAAC,wBAE/B,QAAQ,IAAI,uBAAuB",
+        "ignoreList": [],
+        "mappings": ";;;;;;i3BAAA,OAAO,2BAAuB,EAAC,wBAE/B,QAAQ,IAAI,uBAAuB",
         "sources": [
           "../../after-preload-dynamic.js",
         ],
@@ -150,10 +151,10 @@ describe.runIf(isBuild)('build tests', () => {
         "version": 3,
       }
     `)
-    //
+    // verify sourcemap comment is preserved at the last line
     const js = findAssetFile(/after-preload-dynamic.*\.js$/)
-    expect(js.trim().split('\n').at(-1)).toMatch(
-      /^\/\/# sourceMappingURL=after-preload-dynamic.*\.js\.map$/,
+    expect(js).toMatch(
+      /\n\/\/# sourceMappingURL=after-preload-dynamic.*\.js\.map\n$/,
     )
   })
 })

@@ -63,7 +63,6 @@ import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
 import type { Plugin } from '../plugin'
 import {
-  cleanUrl,
   combineSourcemaps,
   createDebugger,
   ensureWatchedFile,
@@ -75,11 +74,11 @@ import {
   prettifyUrl,
   rollupVersion,
   timeFrom,
-  unwrapId,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
 import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
+import { cleanUrl, unwrapId } from '../../shared/utils'
 import { buildErrorMessage } from './middlewares/error'
 import type { ModuleGraph, ModuleNode } from './moduleGraph'
 
