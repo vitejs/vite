@@ -29,6 +29,7 @@ interface GlobalCLIOptions {
   m?: string
   mode?: string
   force?: boolean
+  all?: boolean
 }
 
 let profileSession = global.__vite_profile_session
@@ -263,21 +264,30 @@ cli
     `[boolean] force empty outDir when it's outside of root`,
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
+  .option('--all', `[boolean] build all environments`)
   .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
     filterDuplicateOptions(options)
-    const { build } = await import('./build')
+    const { build, createViteBuilder } = await import('./build')
     const buildOptions: BuildOptions = cleanOptions(options)
 
+    const config = {
+      root,
+      base: options.base,
+      mode: options.mode,
+      configFile: options.config,
+      logLevel: options.logLevel,
+      clearScreen: options.clearScreen,
+      build: buildOptions,
+    }
+
     try {
-      await build({
-        root,
-        base: options.base,
-        mode: options.mode,
-        configFile: options.config,
-        logLevel: options.logLevel,
-        clearScreen: options.clearScreen,
-        build: buildOptions,
-      })
+      if (options.all) {
+        // Build all environments
+        const builder = await createViteBuilder(config)
+        await builder.build()
+      } else {
+        await build(config)
+      }
     } catch (e) {
       createLogger(options.logLevel).error(
         colors.red(`error during build:\n${e.stack}`),

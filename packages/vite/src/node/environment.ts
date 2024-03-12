@@ -15,10 +15,3 @@ export class Environment {
     this.type = options.type
   }
 }
-
-export class BuildEnvironment extends Environment {
-  mode = 'build' as const
-  constructor(id: string, options: { type: string }) {
-    super(id, options)
-  }
-}

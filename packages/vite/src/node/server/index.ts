@@ -960,6 +960,11 @@ export async function _createServer(
   // error handler
   middlewares.use(errorMiddleware(server, middlewareMode))
 
+  // call configureDevEnvironments hooks
+  for (const hook of config.getSortedPluginHooks('configureDevEnvironments')) {
+    await hook(environments, config, server)
+  }
+
   // httpServer.listen can be called multiple times
   // when port when using next port number
   // this code is to avoid calling buildStart multiple times

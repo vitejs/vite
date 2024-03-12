@@ -10,13 +10,13 @@ import type {
 } from 'rollup'
 export type { PluginContext } from 'rollup'
 import type { ConfigEnv, ResolvedConfig, UserConfig } from './config'
-import type { ServerHook } from './server'
+import type { ServerHook , ViteDevServer } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { EnvironmentModuleNode, ModuleNode } from './server/moduleGraph'
 import type { HmrContext, HotUpdateContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
 import type { ModuleExecutionEnvironment } from './server/environment'
-import type { BuildEnvironment } from './environment'
+import type { BuildEnvironment } from './build'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -95,6 +95,33 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * are applied. Hook can be async functions and will be called in series.
    */
   configureServer?: ObjectHook<ServerHook>
+  /**
+   * Configure dev environments. The hook receives a map of current environments,
+   * the resolved config, and the vite server instance {@link ViteDevServer}.
+   * By default, Vite creates a browser environment and a node environment.
+   * New environments can be added to the map using their id as key.
+   */
+  configureDevEnvironments?: ObjectHook<
+    (
+      this: void,
+      environments: Map<string, ModuleExecutionEnvironment>,
+      config: ResolvedConfig,
+      server: ViteDevServer,
+    ) => void | Promise<void>
+  >
+  /**
+   * Configure build environments. The hook receives a map of current environments,
+   * By default, Vite creates a browser environment and a node environment if
+   * build.ssr is configured.
+   * New environments can be added to the map using their id as key.
+   */
+  configureBuildEnvironments?: ObjectHook<
+    (
+      this: void,
+      environments: Map<string, BuildEnvironment>,
+      config: ResolvedConfig,
+    ) => void | Promise<void>
+  >
   /**
    * Configure the preview server. The hook receives the {@link PreviewServer}
    * instance. This can also be used to store a reference to the server

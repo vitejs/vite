@@ -55,6 +55,7 @@ import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
+import { Environment } from './environment'
 
 export interface BuildOptions {
   /**
@@ -468,6 +469,10 @@ export async function build(
     'production',
     'production',
   )
+  return buildEnvironment(config)
+}
+
+async function buildEnvironment(config: ResolvedConfig) {
   const options = config.build
   const ssr = !!options.ssr
   const libOptions = options.lib
@@ -1244,4 +1249,84 @@ function areSeparateFolders(a: string, b: string) {
     !na.startsWith(withTrailingSlash(nb)) &&
     !nb.startsWith(withTrailingSlash(na))
   )
+}
+
+export class BuildEnvironment extends Environment {
+  mode = 'build' as const
+  config: BuildOptions
+  constructor(id: string, options: { type: string; config?: BuildOptions }) {
+    super(id, options)
+    this.config = options.config ?? {}
+  }
+}
+
+export interface ViteBuilder {
+  environments: Map<string, BuildEnvironment>
+  build(): Promise<void>
+}
+
+export async function createViteBuilder(
+  inlineConfig: InlineConfig = {},
+): Promise<ViteBuilder> {
+  const config = await resolveConfig(
+    inlineConfig,
+    'build',
+    'production',
+    'production',
+  )
+
+  if (config.build.lib) {
+    throw new Error('Library mode is not supported in ViteBuilder')
+  }
+  if (config.build.watch) {
+    throw new Error('Watch mode is not yet supported in ViteBuilder')
+  }
+
+  const environments = new Map<string, BuildEnvironment>()
+
+  const browserEnvironment = new BuildEnvironment('browser', {
+    type: 'browser',
+    config: { ssr: false },
+  })
+  environments.set('browser', browserEnvironment)
+
+  if (config.build.ssr) {
+    const ssrEnvironment = new BuildEnvironment('ssr', { type: 'node' })
+    environments.set('ssr', ssrEnvironment)
+  }
+
+  function resolveEnvironmentBuildOptions(environment: BuildEnvironment) {
+    return resolveBuildOptions(
+      { ...config.build, ...environment.config },
+      config.logger,
+      config.root,
+    )
+  }
+
+  const builder: ViteBuilder = {
+    environments,
+    async build() {
+      for (const environment of environments.values()) {
+        const environmentConfig = {
+          ...config,
+          build: {
+            ...config.build,
+            ...resolveEnvironmentBuildOptions(environment),
+          },
+        }
+        await buildEnvironment(environmentConfig)
+
+        config.logger.info('')
+      }
+    },
+  }
+
+  // call configureBuildEnvironments hooks
+  for (const hook of config.getSortedPluginHooks(
+    'configureBuildEnvironments',
+  )) {
+    await hook(environments, config)
+  }
+
+  return builder
 }
