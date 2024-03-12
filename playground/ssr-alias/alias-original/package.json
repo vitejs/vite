@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-alias-original",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  }
+}

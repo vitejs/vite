@@ -1263,6 +1263,14 @@ importers:
         specifier: ^4.18.3
         version: 4.18.3
 
+  playground/ssr-alias:
+    dependencies:
+      '@vitejs/test-alias-original':
+        specifier: file:./alias-original
+        version: file:playground/ssr-alias/alias-original
+
+  playground/ssr-alias/alias-original: {}
+
   playground/ssr-conditions:
     dependencies:
       '@vitejs/test-ssr-conditions-external':
@@ -9989,6 +9997,11 @@ packages:
       '@vitejs/test-dep-a': file:playground/preload/dep-a
       dep-a: file:playground/preload/dep-a
     dev: true
+
+  file:playground/ssr-alias/alias-original:
+    resolution: {directory: playground/ssr-alias/alias-original, type: directory}
+    name: '@vitejs/test-alias-original'
+    dev: false
 
   file:playground/ssr-conditions/external:
     resolution: {directory: playground/ssr-conditions/external, type: directory}
