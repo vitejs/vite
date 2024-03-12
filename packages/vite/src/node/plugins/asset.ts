@@ -100,7 +100,7 @@ export function renderAssetUrlInJS(
     )
     const replacementString =
       typeof replacement === 'string'
-        ? JSON.stringify(replacement).slice(1, -1)
+        ? JSON.stringify(encodeURI(replacement)).slice(1, -1)
         : `"+${replacement.runtime}+"`
     s.update(match.index, match.index + full.length, replacementString)
   }
@@ -123,7 +123,7 @@ export function renderAssetUrlInJS(
     )
     const replacementString =
       typeof replacement === 'string'
-        ? JSON.stringify(replacement).slice(1, -1)
+        ? JSON.stringify(encodeURI(replacement)).slice(1, -1)
         : `"+${replacement.runtime}+"`
     s.update(match.index, match.index + full.length, replacementString)
   }
@@ -206,7 +206,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
 
       return {
-        code: `export default ${JSON.stringify(url)}`,
+        code: `export default ${JSON.stringify(
+          url.startsWith('data:') ? url : encodeURI(url),
+        )}`,
         // Force rollup to keep this module from being shared between other entry points if it's an entrypoint.
         // If the resulting chunk is empty, it will be removed in generateBundle.
         moduleSideEffects:
