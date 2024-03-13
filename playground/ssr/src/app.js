@@ -3,6 +3,7 @@ import { escapeHtml } from './utils'
 const pathRenderers = {
   '/': renderRoot,
   '/circular-dep': renderCircularDep,
+  '/circular-import': renderCircularImport,
   '/forked-deadlock': renderForkedDeadlock,
 }
 
@@ -32,6 +33,11 @@ async function renderRoot(rootDir) {
 async function renderCircularDep(rootDir) {
   const { getValueAB } = await import('./circular-dep-init/circular-dep-init')
   return `<div class="circ-dep-init">${escapeHtml(getValueAB())}</div>`
+}
+
+async function renderCircularImport(rootDir) {
+  const { logA } = await import('./circular-import/index.js')
+  return `<div class="circ-import">${escapeHtml(logA())}</div>`
 }
 
 async function renderForkedDeadlock(rootDir) {
