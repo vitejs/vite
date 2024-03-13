@@ -309,8 +309,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     config.plugins,
     config.logger,
   )
+  preHooks.unshift(injectCspNonceMetaTagHook(config))
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
+  postHooks.push(injectNonceAttributeTagHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
 
@@ -546,11 +548,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         node.attrs.some(
                           (p) =>
                             p.name === 'rel' &&
-                            p.value
-                              .split(spaceRe)
-                              .some((v) =>
-                                noInlineLinkRels.has(v.toLowerCase()),
-                              ),
+                            parseRelAttr(p.value).some((v) =>
+                              noInlineLinkRels.has(v),
+                            ),
                         )
                       const shouldInline = isNoInlineLink ? false : undefined
                       assetUrlsPromises.push(
@@ -939,6 +939,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
+export function parseRelAttr(attr: string): string[] {
+  return attr.split(spaceRe).map((v) => v.toLowerCase())
+}
+
 // <tag style="... url(...) or image-set(...) ..."></tag>
 // extract inline styles as virtual css
 export function findNeedTransformStyleAttribute(
@@ -1088,6 +1092,24 @@ export function postImportMapHook(): IndexHtmlTransformHook {
   }
 }
 
+export function injectCspNonceMetaTagHook(
+  config: ResolvedConfig,
+): IndexHtmlTransformHook {
+  return () => {
+    if (!config.html?.cspNonce) return
+
+    return [
+      {
+        tag: 'meta',
+        injectTo: 'head',
+        // use nonce attribute so that it's hidden
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding
+        attrs: { property: 'csp-nonce', nonce: config.html.cspNonce },
+      },
+    ]
+  }
+}
+
 /**
  * Support `%ENV_NAME%` syntax in html files
  */
@@ -1134,6 +1156,42 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
         return text
       }
     })
+  }
+}
+
+export function injectNonceAttributeTagHook(
+  config: ResolvedConfig,
+): IndexHtmlTransformHook {
+  const processRelType = new Set(['stylesheet', 'modulepreload', 'preload'])
+
+  return async (html, { filename }) => {
+    const nonce = config.html?.cspNonce
+    if (!nonce) return
+
+    const s = new MagicString(html)
+
+    await traverseHtml(html, filename, (node) => {
+      if (!nodeIsElement(node)) {
+        return
+      }
+
+      if (
+        node.nodeName === 'script' ||
+        (node.nodeName === 'link' &&
+          node.attrs.some(
+            (attr) =>
+              attr.name === 'rel' &&
+              parseRelAttr(attr.value).some((a) => processRelType.has(a)),
+          ))
+      ) {
+        s.appendRight(
+          node.sourceCodeLocation!.startTag!.endOffset - 1,
+          ` nonce="${nonce}"`,
+        )
+      }
+    })
+
+    return s.toString()
   }
 }
 

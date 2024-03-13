@@ -24,6 +24,7 @@ export type {
   AppType,
   ConfigEnv,
   ExperimentalOptions,
+  HTMLOptions,
   InlineConfig,
   LegacyOptions,
   PluginHookUtils,

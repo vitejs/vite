@@ -163,6 +163,13 @@ Enabling this setting causes vite to determine file identity by the original fil
 - **Related:** [esbuild#preserve-symlinks](https://esbuild.github.io/api/#preserve-symlinks), [webpack#resolve.symlinks
   ](https://webpack.js.org/configuration/resolve/#resolvesymlinks)
 
+## html.cspNonce
+
+- **Type:** `string`
+- **Related:** [Content Security Policy (CSP)](/guide/features#content-security-policy-csp)
+
+A nonce value placeholder that will be used when generating script / style tags. Setting this value will also generate a meta tag with nonce value.
+
 ## css.modules
 
 - **Type:**

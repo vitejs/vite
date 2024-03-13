@@ -80,6 +80,13 @@ function preload(
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
     const links = document.getElementsByTagName('link')
+    const cspNonceMeta = document.querySelector<HTMLMetaElement>(
+      'meta[property=csp-nonce]',
+    )
+    // `.nonce` should be used to get along with nonce hiding (https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding)
+    // Firefox 67-74 uses modern chunks and supports CSP nonce, but does not support `.nonce`
+    // in that case fallback to getAttribute
+    const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute('nonce')
 
     promise = Promise.all(
       deps.map((dep) => {
@@ -116,6 +123,9 @@ function preload(
           link.crossOrigin = ''
         }
         link.href = dep
+        if (cspNonce) {
+          link.setAttribute('nonce', cspNonce)
+        }
         document.head.appendChild(link)
         if (isCss) {
           return new Promise((res, rej) => {

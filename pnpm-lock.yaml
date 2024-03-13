@@ -545,6 +545,8 @@ importers:
         specifier: ^4.17.21
         version: 4.17.21
 
+  playground/csp: {}
+
   playground/css:
     devDependencies:
       '@vitejs/test-css-dep':
