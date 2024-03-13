@@ -106,7 +106,7 @@ export function throwOutdatedRequest(id: string): never {
 
 export function throwFileNotFoundInOptimizedDep(id: string): never {
   const err: any = new Error(
-    `The file does not exist at "${id}" which is in optimize deps directory. ` +
+    `The file does not exist at "${id}" which is in the optimize deps directory. ` +
       `The dependency might be incompatible with the dep optimizer. ` +
       `Try adding it to \`optimizeDeps.exclude\`.`,
   )
