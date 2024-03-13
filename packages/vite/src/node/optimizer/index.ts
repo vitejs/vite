@@ -22,7 +22,10 @@ import {
   tryStatSync,
   unique,
 } from '../utils'
-import { transformWithEsbuild } from '../plugins/esbuild'
+import {
+  defaultEsbuildSupported,
+  transformWithEsbuild,
+} from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
 import { isWindows } from '../../shared/utils'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
@@ -799,8 +802,7 @@ async function prepareEsbuildOptimizerRun(
     charset: 'utf8',
     ...esbuildOptions,
     supported: {
-      'dynamic-import': true,
-      'import-meta': true,
+      ...defaultEsbuildSupported,
       ...esbuildOptions.supported,
     },
   })
