@@ -128,3 +128,11 @@ function getAliasPatterns(
   }
   return Object.entries(entries).map(([find]) => find)
 }
+
+export function getAliasPatternMatcher(
+  entries: (AliasOptions | undefined) & Alias[],
+): (importee: string) => boolean {
+  const patterns = getAliasPatterns(entries)
+  return (importee: string) =>
+    patterns.some((pattern) => matches(pattern, importee))
+}

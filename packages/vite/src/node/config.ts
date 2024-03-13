@@ -341,7 +341,7 @@ export interface LegacyOptions {
 
 export interface ResolvedWorkerOptions {
   format: 'es' | 'iife'
-  plugins: () => Promise<Plugin[]>
+  plugins: (bundleChain: string[]) => Promise<Plugin[]>
   rollupOptions: RollupOptions
 }
 
@@ -370,6 +370,8 @@ export type ResolvedConfig = Readonly<
     // in nested worker bundle to find the main config
     /** @internal */
     mainConfig: ResolvedConfig | null
+    /** @internal list of bundle entry id. used to detect recursive worker bundle. */
+    bundleChain: string[]
     isProduction: boolean
     envDir: string
     env: Record<string, any>
@@ -702,7 +704,7 @@ export async function resolveConfig(
     )
   }
 
-  const createWorkerPlugins = async function () {
+  const createWorkerPlugins = async function (bundleChain: string[]) {
     // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
     // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
     // So we need to separate the worker plugin from the plugin that vite needs to run.
@@ -732,6 +734,7 @@ export async function resolveConfig(
       ...resolved,
       isWorker: true,
       mainConfig: resolved,
+      bundleChain,
     }
     const resolvedWorkerPlugins = await resolvePlugins(
       workerResolved,
@@ -773,6 +776,7 @@ export async function resolveConfig(
     ssr,
     isWorker: false,
     mainConfig: null,
+    bundleChain: [],
     isProduction,
     plugins: userPlugins,
     css: resolveCSSOptions(config.css),
@@ -1063,6 +1067,8 @@ async function bundleConfigFile(
       __dirname: dirnameVarName,
       __filename: filenameVarName,
       'import.meta.url': importMetaUrlVarName,
+      'import.meta.dirname': dirnameVarName,
+      'import.meta.filename': filenameVarName,
     },
     plugins: [
       {
