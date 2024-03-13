@@ -71,7 +71,7 @@ export const flattenId = (id: string): string => {
 }
 
 const FLATTEN_ID_HASH_LENGTH = 8
-const FLATTEN_ID_MAX_FILE_LENGTH = 160
+const FLATTEN_ID_MAX_FILE_LENGTH = 170
 
 const limitFlattenIdLength = (
   id: string,

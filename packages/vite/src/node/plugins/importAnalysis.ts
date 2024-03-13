@@ -55,12 +55,7 @@ import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
-import {
-  getDepsOptimizer,
-  optimizedDepChunkRE,
-  optimizedDepDynamicRE,
-  optimizedDepNeedsInterop,
-} from '../optimizer'
+import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import {
   cleanUrl,
   unwrapId,
@@ -80,6 +75,9 @@ const clientDir = normalizePath(CLIENT_DIR)
 const skipRE = /\.(?:map|json)(?:$|\?)/
 export const canSkipImportAnalysis = (id: string): boolean =>
   skipRE.test(id) || isDirectCSSRequest(id)
+
+const optimizedDepChunkRE = /\/chunk-[A-Z\d]{8}\.js/
+const optimizedDepDynamicRE = /-[A-Z\d]{8}\.js/
 
 export const hasViteIgnoreRE = /\/\*\s*@vite-ignore\s*\*\//
 

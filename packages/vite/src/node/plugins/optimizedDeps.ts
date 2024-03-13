@@ -1,15 +1,10 @@
 import fsp from 'node:fs/promises'
-import path from 'node:path'
 import colors from 'picocolors'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { createDebugger } from '../utils'
-import {
-  getDepsOptimizer,
-  optimizedDepInfoFromFile,
-  viteHandledFilePrefix,
-} from '../optimizer'
+import { getDepsOptimizer, optimizedDepInfoFromFile } from '../optimizer'
 import { cleanUrl } from '../../shared/utils'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
@@ -75,7 +70,8 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
         try {
           return await fsp.readFile(file, 'utf-8')
         } catch (e) {
-          if (path.basename(id).startsWith(viteHandledFilePrefix)) {
+          const newMetadata = depsOptimizer.metadata
+          if (optimizedDepInfoFromFile(newMetadata, file)) {
             // Outdated non-entry points (CHUNK), loaded after a rerun
             throwOutdatedRequest(id)
           }
