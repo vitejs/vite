@@ -1,5 +1,5 @@
 import type { ViteDevServer } from '../server'
-import type { FetchResult } from '../../runtime/types'
+import type { FetchResult } from '../../module-runner/types'
 import { asyncFunctionDeclarationPaddingLineCount } from '../../shared/utils'
 import { fetchModule } from './fetchModule'
 

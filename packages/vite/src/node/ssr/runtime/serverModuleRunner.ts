@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { ESModulesRunner, ViteRuntime } from 'vite/runtime'
-import type { ViteModuleRunner, ViteRuntimeOptions } from 'vite/runtime'
+import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+import type { ModuleEvaluator, ModuleRunnerOptions } from 'vite/module-runner'
 import type { ViteDevServer } from '../../server'
 import type { HMRLogger } from '../../../shared/hmr'
 import { ServerHMRConnector } from './serverHmrConnector'
@@ -8,8 +8,8 @@ import { ServerHMRConnector } from './serverHmrConnector'
 /**
  * @experimental
  */
-export interface MainThreadRuntimeOptions
-  extends Omit<ViteRuntimeOptions, 'root' | 'fetchModule' | 'hmr'> {
+export interface ServerModuleRunnerOptions
+  extends Omit<ModuleRunnerOptions, 'root' | 'fetchModule' | 'hmr'> {
   /**
    * Disable HMR or configure HMR logger.
    */
@@ -21,12 +21,12 @@ export interface MainThreadRuntimeOptions
   /**
    * Provide a custom module runner. This controls how the code is executed.
    */
-  runner?: ViteModuleRunner
+  runner?: ModuleEvaluator
 }
 
 function createHMROptions(
   server: ViteDevServer,
-  options: MainThreadRuntimeOptions,
+  options: ServerModuleRunnerOptions,
 ) {
   if (server.config.server.hmr === false || options.hmr === false) {
     return false
@@ -46,7 +46,7 @@ const prepareStackTrace = {
   },
 }
 
-function resolveSourceMapOptions(options: MainThreadRuntimeOptions) {
+function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
   if (options.sourcemapInterceptor != null) {
     if (options.sourcemapInterceptor === 'prepareStackTrace') {
       return prepareStackTrace
@@ -66,12 +66,12 @@ function resolveSourceMapOptions(options: MainThreadRuntimeOptions) {
  * Create an instance of the Vite SSR runtime that support HMR.
  * @experimental
  */
-export async function createViteRuntime(
+export async function createServerModuleRunner(
   server: ViteDevServer,
-  options: MainThreadRuntimeOptions = {},
-): Promise<ViteRuntime> {
+  options: ServerModuleRunnerOptions = {},
+): Promise<ModuleRunner> {
   const hmr = createHMROptions(server, options)
-  return new ViteRuntime(
+  return new ModuleRunner(
     {
       ...options,
       root: server.config.root,
@@ -79,6 +79,6 @@ export async function createViteRuntime(
       hmr,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },
-    options.runner || new ESModulesRunner(),
+    options.runner || new ESModulesEvaluator(),
   )
 }

@@ -1,9 +1,9 @@
 import { describe, expect } from 'vitest'
-import type { ViteRuntime } from 'vite/runtime'
-import { createViteRuntimeTester, editFile, resolvePath } from './utils'
+import type { ModuleRunner } from 'vite/module-runner'
+import { createModuleRunnerTester, editFile, resolvePath } from './utils'
 
-describe('vite-runtime initialization', async () => {
-  const it = await createViteRuntimeTester(
+describe('module runner initialization', async () => {
+  const it = await createModuleRunnerTester(
     {},
     {
       sourcemapInterceptor: 'prepareStackTrace',
@@ -18,27 +18,27 @@ describe('vite-runtime initialization', async () => {
       return err
     }
   }
-  const serializeStack = (runtime: ViteRuntime, err: Error) => {
-    return err.stack!.split('\n')[1].replace(runtime.options.root, '<root>')
+  const serializeStack = (runner: ModuleRunner, err: Error) => {
+    return err.stack!.split('\n')[1].replace(runner.options.root, '<root>')
   }
 
   it('source maps are correctly applied to stack traces', async ({
-    runtime,
+    runner,
     server,
   }) => {
     expect.assertions(3)
     const topLevelError = await getError(() =>
-      runtime.executeUrl('/fixtures/has-error.js'),
+      runner.import('/fixtures/has-error.js'),
     )
-    expect(serializeStack(runtime, topLevelError)).toBe(
+    expect(serializeStack(runner, topLevelError)).toBe(
       '    at <root>/fixtures/has-error.js:2:7',
     )
 
     const methodError = await getError(async () => {
-      const mod = await runtime.executeUrl('/fixtures/throws-error-method.ts')
+      const mod = await runner.import('/fixtures/throws-error-method.ts')
       mod.throwError()
     })
-    expect(serializeStack(runtime, methodError)).toBe(
+    expect(serializeStack(runner, methodError)).toBe(
       '    at Module.throwError (<root>/fixtures/throws-error-method.ts:6:9)',
     )
 
@@ -47,15 +47,15 @@ describe('vite-runtime initialization', async () => {
       resolvePath(import.meta.url, './fixtures/throws-error-method.ts'),
       (code) => '\n\n\n\n\n' + code + '\n',
     )
-    runtime.moduleCache.clear()
+    runner.moduleCache.clear()
     server.nodeEnvironment.moduleGraph.invalidateAll() // TODO: environment?
 
     const methodErrorNew = await getError(async () => {
-      const mod = await runtime.executeUrl('/fixtures/throws-error-method.ts')
+      const mod = await runner.import('/fixtures/throws-error-method.ts')
       mod.throwError()
     })
 
-    expect(serializeStack(runtime, methodErrorNew)).toBe(
+    expect(serializeStack(runner, methodErrorNew)).toBe(
       '    at Module.throwError (<root>/fixtures/throws-error-method.ts:11:9)',
     )
   })

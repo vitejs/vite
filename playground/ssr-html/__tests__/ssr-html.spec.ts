@@ -117,7 +117,7 @@ describe.runIf(isServe)('network-imports', () => {
       [
         '--experimental-network-imports',
         'test-network-imports.js',
-        '--runtime',
+        '--module-runner',
       ],
       {
         cwd: fileURLToPath(new URL('..', import.meta.url)),

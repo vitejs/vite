@@ -3,11 +3,11 @@ import type { EnvironmentModuleNode, TransformResult, ViteDevServer } from '..'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import type { FetchResult } from '../../runtime/types'
+import type { FetchResult } from '../../module-runner/types'
 import { unwrapId } from '../../shared/utils'
 import {
+  MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
-  VITE_RUNTIME_SOURCEMAPPING_SOURCE,
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
 
@@ -130,7 +130,7 @@ function inlineSourceMap(
   if (
     !map ||
     !('version' in map) ||
-    code.includes(VITE_RUNTIME_SOURCEMAPPING_SOURCE)
+    code.includes(MODULE_RUNNER_SOURCEMAPPING_SOURCE)
   )
     return result
 
@@ -142,7 +142,7 @@ function inlineSourceMap(
   const sourceMap = processSourceMap?.(map) || map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
     mod.id
-  }\n${VITE_RUNTIME_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
+  }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
 }

@@ -4,7 +4,7 @@ import { decodeBase64 } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
 import type { ModuleCache } from './types'
 
-const VITE_RUNTIME_SOURCEMAPPING_REGEXP = new RegExp(
+const MODULE_RUNNER_SOURCEMAPPING_REGEXP = new RegExp(
   `//# ${SOURCEMAPPING_URL}=data:application/json;base64,(.+)`,
 )
 
@@ -77,43 +77,6 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     module.imports?.clear()
   }
 
-  isImported(
-    {
-      importedId,
-      importedBy,
-    }: {
-      importedId: string
-      importedBy: string
-    },
-    seen = new Set<string>(),
-  ): boolean {
-    importedId = this.normalize(importedId)
-    importedBy = this.normalize(importedBy)
-
-    if (importedBy === importedId) return true
-
-    if (seen.has(importedId)) return false
-    seen.add(importedId)
-
-    const fileModule = this.getByModuleId(importedId)
-    const importers = fileModule?.importers
-
-    if (!importers) return false
-
-    if (importers.has(importedBy)) return true
-
-    for (const importer of importers) {
-      if (
-        this.isImported({
-          importedBy: importedBy,
-          importedId: importer,
-        })
-      )
-        return true
-    }
-    return false
-  }
-
   /**
    * Invalidate modules that dependent on the given modules, up to the main entry
    */
@@ -157,7 +120,7 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     if (mod.map) return mod.map
     if (!mod.meta || !('code' in mod.meta)) return null
     const mapString = mod.meta.code.match(
-      VITE_RUNTIME_SOURCEMAPPING_REGEXP,
+      MODULE_RUNNER_SOURCEMAPPING_REGEXP,
     )?.[1]
     if (!mapString) return null
     const baseFile = mod.meta.file || moduleId.split('?')[0]
