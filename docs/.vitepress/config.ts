@@ -235,10 +235,6 @@ export default defineConfig({
               link: '/guide/ssr',
             },
             {
-              text: 'Compatibility With Browser Features',
-              link: '/guide/compatibility-with-browser-features',
-            },
-            {
               text: 'Backend Integration',
               link: '/guide/backend-integration',
             },
