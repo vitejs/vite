@@ -33,6 +33,14 @@ const IIFE_BEGIN_RE =
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
 
+// the final build should always support dynamic import and import.meta.
+// if they need to be polyfilled, plugin-legacy should be used.
+// plugin-legacy detects these two features when checking for modern code.
+export const defaultEsbuildSupported = {
+  'dynamic-import': true,
+  'import-meta': true,
+}
+
 let server: ViteDevServer
 
 export interface ESBuildOptions extends TransformOptions {
@@ -235,6 +243,10 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     // Also transforming multiple times with keepNames enabled breaks
     // tree-shaking. (#9164)
     keepNames: false,
+    supported: {
+      ...defaultEsbuildSupported,
+      ...esbuildTransformOptions.supported,
+    },
   }
 
   return {
@@ -360,12 +372,8 @@ export function resolveEsbuildTranspileOptions(
     loader: 'js',
     target: target || undefined,
     format: rollupToEsbuildFormatMap[format],
-    // the final build should always support dynamic import and import.meta.
-    // if they need to be polyfilled, plugin-legacy should be used.
-    // plugin-legacy detects these two features when checking for modern code.
     supported: {
-      'dynamic-import': true,
-      'import-meta': true,
+      ...defaultEsbuildSupported,
       ...esbuildOptions.supported,
     },
   }
