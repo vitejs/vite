@@ -906,6 +906,9 @@ importers:
       '@vitejs/test-dep-esbuild-plugin-transform':
         specifier: file:./dep-esbuild-plugin-transform
         version: file:playground/optimize-deps/dep-esbuild-plugin-transform
+      '@vitejs/test-dep-incompatible':
+        specifier: file:./dep-incompatible
+        version: file:playground/optimize-deps/dep-incompatible
       '@vitejs/test-dep-linked':
         specifier: link:./dep-linked
         version: link:dep-linked
@@ -1018,6 +1021,8 @@ importers:
   playground/optimize-deps/dep-css-require: {}
 
   playground/optimize-deps/dep-esbuild-plugin-transform: {}
+
+  playground/optimize-deps/dep-incompatible: {}
 
   playground/optimize-deps/dep-linked:
     dependencies:
@@ -9899,6 +9904,11 @@ packages:
   file:playground/optimize-deps/dep-esbuild-plugin-transform:
     resolution: {directory: playground/optimize-deps/dep-esbuild-plugin-transform, type: directory}
     name: '@vitejs/test-dep-esbuild-plugin-transform'
+    dev: false
+
+  file:playground/optimize-deps/dep-incompatible:
+    resolution: {directory: playground/optimize-deps/dep-incompatible, type: directory}
+    name: '@vitejs/test-dep-incompatible'
     dev: false
 
   file:playground/optimize-deps/dep-node-env:
