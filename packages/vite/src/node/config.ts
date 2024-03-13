@@ -124,7 +124,70 @@ export type PluginOption =
   | PluginOption[]
   | Promise<Plugin | false | null | undefined | PluginOption[]>
 
-export interface UserConfig {
+export interface DevOptions {
+  /**
+   * The files to be pre-transformed. Supports glob patterns.
+   */
+  warmup?: { files: string[] }
+  /**
+   * Pre-transform known direct imports
+   * @default true
+   */
+  preTransformRequests?: boolean
+  /**
+   * Enables sourcemaps during dev
+   * @default { js: true }
+   * @experimental
+   */
+  sourcemap?: boolean | { js?: boolean; css?: boolean }
+  /**
+   * Whether or not to ignore-list source files in the dev server sourcemap, used to populate
+   * the [`x_google_ignoreList` source map extension](https://developer.chrome.com/blog/devtools-better-angular-debugging/#the-x_google_ignorelist-source-map-extension).
+   *
+   * By default, it excludes all paths containing `node_modules`. You can pass `false` to
+   * disable this behavior, or, for full control, a function that takes the source path and
+   * sourcemap path and returns whether to ignore the source path.
+   */
+  sourcemapIgnoreList?:
+    | false
+    | ((sourcePath: string, sourcemapPath: string) => boolean)
+}
+
+export interface SharedEnvironmentConfig {
+  /**
+   * Configure resolver
+   */
+  resolve?: ResolveOptions & { alias?: AliasOptions }
+  /**
+   * Dep optimization options
+   */
+  optimizeDeps?: DepOptimizationOptions
+}
+
+export interface EnvironmentConfig extends SharedEnvironmentConfig {
+  /**
+   * Dev specific options
+   */
+  dev?: DevOptions
+  /**
+   * Build specific options
+   */
+  build?: BuildOptions
+}
+
+export interface DevEnvironmentConfig extends SharedEnvironmentConfig {
+  dev?: DevOptions
+}
+
+export interface BuildEnvironmentConfig extends SharedEnvironmentConfig {
+  build?: BuildOptions
+}
+
+export interface BuildEnvironmentConfig extends EnvironmentConfig {
+  build?: BuildOptions
+}
+
+export interface UserConfig extends EnvironmentConfig {
   /**
    * Project root directory. Can be an absolute path, or a path relative from
    * the location of the config file itself.
@@ -170,10 +233,6 @@ export interface UserConfig {
    */
   plugins?: PluginOption[]
   /**
-   * Configure resolver
-   */
-  resolve?: ResolveOptions & { alias?: AliasOptions }
-  /**
    * CSS related options (preprocessors and CSS modules)
    */
   css?: CSSOptions
@@ -195,21 +254,9 @@ export interface UserConfig {
    */
   server?: ServerOptions
   /**
-   * Build specific options
-   */
-  build?: BuildOptions
-  /**
    * Preview specific options, e.g. host, port, https...
    */
   preview?: PreviewOptions
-  /**
-   * Dep optimization options
-   */
-  optimizeDeps?: DepOptimizationOptions
-  /**
-   * SSR specific options
-   */
-  ssr?: SSROptions
   /**
    * Experimental features
    *
@@ -279,6 +326,18 @@ export interface UserConfig {
    * @default 'spa'
    */
   appType?: AppType
+  /**
+   * SSR specific options
+   * Some of the options previously under `ssr` (like resolve.conditions) are deprecated
+   * and moved to environment: { ssr: { ... } }
+   */
+  ssr?: SSROptions
+  /**
+   * Environment overrides
+   */
+  environment?: {
+    [key: string]: EnvironmentConfig
+  }
 }
 
 export interface ExperimentalOptions {

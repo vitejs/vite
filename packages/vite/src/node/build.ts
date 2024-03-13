@@ -27,7 +27,11 @@ import {
   ESBUILD_MODULES_TARGET,
   VERSION,
 } from './constants'
-import type { InlineConfig, ResolvedConfig } from './config'
+import type {
+  BuildEnvironmentConfig,
+  InlineConfig,
+  ResolvedConfig,
+} from './config'
 import { resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -469,10 +473,7 @@ export async function build(
     'production',
     'production',
   )
-  return buildEnvironment(config)
-}
 
-async function buildEnvironment(config: ResolvedConfig) {
   const options = config.build
   const ssr = !!options.ssr
   const libOptions = options.lib
@@ -1253,10 +1254,13 @@ function areSeparateFolders(a: string, b: string) {
 
 export class BuildEnvironment extends Environment {
   mode = 'build' as const
-  config: BuildOptions
-  constructor(id: string, options: { type: string; config?: BuildOptions }) {
+  config: BuildEnvironmentConfig
+  constructor(
+    id: string,
+    options: { type: string; config?: BuildEnvironmentConfig },
+  ) {
     super(id, options)
-    this.config = options.config ?? {}
+    this.config = options.config ?? { build: {} }
   }
 }
 
@@ -1268,17 +1272,17 @@ export interface ViteBuilder {
 export async function createViteBuilder(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteBuilder> {
-  const config = await resolveConfig(
+  const defaultConfig = await resolveConfig(
     inlineConfig,
     'build',
     'production',
     'production',
   )
 
-  if (config.build.lib) {
+  if (defaultConfig.build.lib) {
     throw new Error('Library mode is not supported in ViteBuilder')
   }
-  if (config.build.watch) {
+  if (defaultConfig.build.watch) {
     throw new Error('Watch mode is not yet supported in ViteBuilder')
   }
 
@@ -1286,46 +1290,48 @@ export async function createViteBuilder(
 
   const browserEnvironment = new BuildEnvironment('browser', {
     type: 'browser',
-    config: { ssr: false },
+    config: { build: { ssr: false } },
   })
   environments.set('browser', browserEnvironment)
 
-  if (config.build.ssr) {
+  // Backward compatibility for `ssr` option
+  if (defaultConfig.build.ssr) {
     const ssrEnvironment = new BuildEnvironment('ssr', { type: 'node' })
     environments.set('ssr', ssrEnvironment)
-  }
-
-  function resolveEnvironmentBuildOptions(environment: BuildEnvironment) {
-    return resolveBuildOptions(
-      { ...config.build, ...environment.config },
-      config.logger,
-      config.root,
-    )
   }
 
   const builder: ViteBuilder = {
     environments,
     async build() {
       for (const environment of environments.values()) {
-        const environmentConfig = {
-          ...config,
-          build: {
-            ...config.build,
-            ...resolveEnvironmentBuildOptions(environment),
-          },
-        }
-        await buildEnvironment(environmentConfig)
+        // We need to resolve the config again so we can properly merge options
+        // and get a new set of plugins for each build environment. The ecosystem
+        // expects plugins to be run for the same environment once they are created
+        // and to process a single bundle at a time (contrary to dev mode where
+        // plugins are built to handle multiple environments concurrently).
 
-        config.logger.info('')
+        let userConfig = inlineConfig
+        const inlineConfigEnvironmentOverrides =
+          inlineConfig.environment?.[environment.id]
+        if (inlineConfigEnvironmentOverrides) {
+          userConfig = mergeConfig(userConfig, inlineConfigEnvironmentOverrides)
+        }
+        if (environment.config) {
+          userConfig = mergeConfig(userConfig, environment.config)
+        }
+
+        await build(userConfig)
+
+        defaultConfig.logger.info('')
       }
     },
   }
 
   // call configureBuildEnvironments hooks
-  for (const hook of config.getSortedPluginHooks(
+  for (const hook of defaultConfig.getSortedPluginHooks(
     'configureBuildEnvironments',
   )) {
-    await hook(environments, config)
+    await hook(environments, defaultConfig)
   }
 
   return builder

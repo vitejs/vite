@@ -99,6 +99,7 @@ export interface ServerOptions extends CommonServerOptions {
   /**
    * Warm-up files to transform and cache the results in advance. This improves the
    * initial page load during server starts and prevents transform waterfalls.
+   * @deprecated use dev.warmup / environment.ssr.dev.warmup
    */
   warmup?: {
     /**
@@ -142,6 +143,7 @@ export interface ServerOptions extends CommonServerOptions {
   /**
    * Pre-transform known direct imports
    * @default true
+   * @deprecated use dev.preTransformRequests
    */
   preTransformRequests?: boolean
   /**
@@ -151,6 +153,7 @@ export interface ServerOptions extends CommonServerOptions {
    * By default, it excludes all paths containing `node_modules`. You can pass `false` to
    * disable this behavior, or, for full control, a function that takes the source path and
    * sourcemap path and returns whether to ignore the source path.
+   * @deprecated use dev.sourcemapIgnoreList
    */
   sourcemapIgnoreList?:
     | false
