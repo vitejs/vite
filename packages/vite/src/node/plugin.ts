@@ -10,7 +10,7 @@ import type {
 } from 'rollup'
 export type { PluginContext } from 'rollup'
 import type { ConfigEnv, ResolvedConfig, UserConfig } from './config'
-import type { ServerHook , ViteDevServer } from './server'
+import type { ServerHook, ViteDevServer } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { EnvironmentModuleNode, ModuleNode } from './server/moduleGraph'
 import type { HmrContext, HotUpdateContext } from './server/hmr'
