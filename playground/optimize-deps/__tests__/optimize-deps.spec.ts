@@ -319,3 +319,11 @@ test('long file name should work', async () => {
     `hello world`,
   )
 })
+
+test.runIf(isServe)('warn on incompatible dependency', () => {
+  expect(serverLogs).toContainEqual(
+    expect.stringContaining(
+      'The dependency might be incompatible with the dep optimizer.',
+    ),
+  )
+})

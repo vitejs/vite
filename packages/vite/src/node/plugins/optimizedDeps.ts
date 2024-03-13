@@ -10,6 +10,8 @@ import { cleanUrl } from '../../shared/utils'
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
 export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
+export const ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR =
+  'ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR'
 
 const debug = createDebugger('vite:optimize-deps')
 
@@ -68,8 +70,12 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
         try {
           return await fsp.readFile(file, 'utf-8')
         } catch (e) {
-          // Outdated non-entry points (CHUNK), loaded after a rerun
-          throwOutdatedRequest(id)
+          const newMetadata = depsOptimizer.metadata
+          if (optimizedDepInfoFromFile(newMetadata, file)) {
+            // Outdated non-entry points (CHUNK), loaded after a rerun
+            throwOutdatedRequest(id)
+          }
+          throwFileNotFoundInOptimizedDep(id)
         }
       }
     },
@@ -95,5 +101,17 @@ export function throwOutdatedRequest(id: string): never {
   err.code = ERR_OUTDATED_OPTIMIZED_DEP
   // This error will be caught by the transform middleware that will
   // send a 504 status code request timeout
+  throw err
+}
+
+export function throwFileNotFoundInOptimizedDep(id: string): never {
+  const err: any = new Error(
+    `The file does not exist at "${id}" which is in the optimize deps directory. ` +
+      `The dependency might be incompatible with the dep optimizer. ` +
+      `Try adding it to \`optimizeDeps.exclude\`.`,
+  )
+  err.code = ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR
+  // This error will be caught by the transform middleware that will
+  // send a 404 status code not found
   throw err
 }
