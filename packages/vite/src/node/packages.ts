@@ -4,6 +4,7 @@ import { createRequire } from 'node:module'
 import {
   createFilter,
   isInNodeModules,
+  normalizePath,
   safeRealpathSync,
   tryStatSync,
 } from './utils'
@@ -44,7 +45,7 @@ function invalidatePackageData(
   packageCache: PackageCache,
   pkgPath: string,
 ): void {
-  const pkgDir = path.dirname(pkgPath)
+  const pkgDir = normalizePath(path.dirname(pkgPath))
   packageCache.forEach((pkg, cacheKey) => {
     if (pkg.dir === pkgDir) {
       packageCache.delete(cacheKey)
@@ -169,27 +170,33 @@ export function findNearestMainPackageData(
 
 export function loadPackageData(pkgPath: string): PackageData {
   const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-  const pkgDir = path.dirname(pkgPath)
+  const pkgDir = normalizePath(path.dirname(pkgPath))
   const { sideEffects } = data
   let hasSideEffects: (id: string) => boolean | null
   if (typeof sideEffects === 'boolean') {
     hasSideEffects = () => sideEffects
   } else if (Array.isArray(sideEffects)) {
-    const finalPackageSideEffects = sideEffects.map((sideEffect) => {
-      /*
-       * The array accepts simple glob patterns to the relevant files... Patterns like *.css, which do not include a /, will be treated like **\/*.css.
-       * https://webpack.js.org/guides/tree-shaking/
-       * https://github.com/vitejs/vite/pull/11807
-       */
-      if (sideEffect.includes('/')) {
-        return sideEffect
-      }
-      return `**/${sideEffect}`
-    })
+    if (sideEffects.length <= 0) {
+      // createFilter always returns true if `includes` is an empty array
+      // but here we want it to always return false
+      hasSideEffects = () => false
+    } else {
+      const finalPackageSideEffects = sideEffects.map((sideEffect) => {
+        /*
+         * The array accepts simple glob patterns to the relevant files... Patterns like *.css, which do not include a /, will be treated like **\/*.css.
+         * https://webpack.js.org/guides/tree-shaking/
+         * https://github.com/vitejs/vite/pull/11807
+         */
+        if (sideEffect.includes('/')) {
+          return sideEffect
+        }
+        return `**/${sideEffect}`
+      })
 
-    hasSideEffects = createFilter(finalPackageSideEffects, null, {
-      resolve: pkgDir,
-    })
+      hasSideEffects = createFilter(finalPackageSideEffects, null, {
+        resolve: pkgDir,
+      })
+    }
   } else {
     hasSideEffects = () => null
   }

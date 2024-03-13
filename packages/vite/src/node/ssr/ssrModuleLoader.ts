@@ -9,6 +9,7 @@ import { genSourceMapUrl } from '../server/sourcemap'
 import {
   AsyncFunction,
   asyncFunctionDeclarationPaddingLineCount,
+  isWindows,
   unwrapId,
 } from '../../shared/utils'
 import {
@@ -110,7 +111,12 @@ async function instantiateModule(
   // referenced before it's been instantiated.
   mod.ssrModule = ssrModule
 
+  // replace '/' with '\\' on Windows to match Node.js
+  const osNormalizedFilename = isWindows ? path.resolve(mod.file!) : mod.file!
+
   const ssrImportMeta = {
+    dirname: path.dirname(osNormalizedFilename),
+    filename: osNormalizedFilename,
     // The filesystem URL, matching native Node.js modules
     url: pathToFileURL(mod.file!).toString(),
   }

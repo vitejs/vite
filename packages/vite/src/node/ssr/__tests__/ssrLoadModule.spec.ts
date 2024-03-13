@@ -52,3 +52,13 @@ test('error has same instance', async () => {
     expect(e[s]).toBe(true)
   }
 })
+
+test('import.meta.filename/dirname returns same value with Node', async () => {
+  const server = await createDevServer()
+  const moduleRelativePath = '/fixtures/modules/import-meta.js'
+  const filename = path.resolve(root, '.' + moduleRelativePath)
+
+  const viteValue = await server.ssrLoadModule(moduleRelativePath)
+  expect(viteValue.dirname).toBe(path.dirname(filename))
+  expect(viteValue.filename).toBe(filename)
+})

@@ -40,6 +40,7 @@ import {
   joinUrlSegments,
   moduleListContains,
   normalizePath,
+  partialEncodeURI,
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
@@ -68,6 +69,7 @@ import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
 import { WORKER_FILE_ID } from './worker'
+import { getAliasPatternMatcher } from './preAlias'
 
 const debug = createDebugger('vite:import-analysis')
 
@@ -172,6 +174,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const fsUtils = getFsUtils(config)
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
+  const matchAlias = getAliasPatternMatcher(config.resolve.alias)
   let server: ViteDevServer
 
   let _env: string | undefined
@@ -490,7 +493,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               return
             }
             // skip ssr external
-            if (ssr) {
+            if (ssr && !matchAlias(specifier)) {
               if (shouldExternalizeForSSR(specifier, importer, config)) {
                 return
               }
@@ -593,7 +596,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 rewriteDone = true
               }
               if (!rewriteDone) {
-                const rewrittenUrl = JSON.stringify(url)
+                const rewrittenUrl = JSON.stringify(partialEncodeURI(url))
                 const s = isDynamicImport ? start : start - 1
                 const e = isDynamicImport ? end : end + 1
                 str().overwrite(s, e, rewrittenUrl, {
