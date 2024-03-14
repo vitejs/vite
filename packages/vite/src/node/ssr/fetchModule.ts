@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url'
-import type { ModuleNode, TransformResult, ViteDevServer } from '..'
+import type { EnvironmentModuleNode, TransformResult, ViteDevServer } from '..'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
@@ -82,7 +82,10 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
-  let result = await server.transformRequest(url, { ssr: true })
+  let result = await server.transformRequest(url, {
+    ssr: true,
+    environment: 'server',
+  })
 
   if (!result) {
     throw new Error(
@@ -93,7 +96,7 @@ export async function fetchModule(
   }
 
   // module entry should be created by transformRequest
-  const mod = await server.moduleGraph.getModuleByUrl(url, true)
+  const mod = await server.getModuleGraph('server').getModuleByUrl(url) // TODO: fetchModule should get a runtime?
 
   if (!mod) {
     throw new Error(
@@ -120,7 +123,7 @@ const OTHER_SOURCE_MAP_REGEXP = new RegExp(
 )
 
 function inlineSourceMap(
-  mod: ModuleNode,
+  mod: EnvironmentModuleNode,
   result: TransformResult,
   processSourceMap?: FetchModuleOptions['processSourceMap'],
 ) {

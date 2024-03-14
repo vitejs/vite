@@ -22,7 +22,7 @@ import { stringifyQuery } from 'ufo'
 import type { GeneralImportGlobOptions } from 'types/importGlob'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
-import type { ModuleNode } from '../server/moduleGraph'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { evalValue, normalizePath, transformStableResult } from '../utils'
 import type { Logger } from '../logger'
@@ -47,8 +47,10 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
 export function getAffectedGlobModules(
   file: string,
   server: ViteDevServer,
-): ModuleNode[] {
-  const modules: ModuleNode[] = []
+): EnvironmentModuleNode[] {
+  const modules: EnvironmentModuleNode[] = []
+  // TODO: properly support other runtimes. Changing _importGlobMap breaks VitePress
+  // https://github.com/vuejs/vitepress/blob/28989df83446923a9e7c8ada345b0778119ed66f/src/node/plugins/staticDataPlugin.ts#L128
   for (const [id, allGlobs] of server._importGlobMap!) {
     // (glob1 || glob2) && !glob3 && !glob4...
     if (
@@ -58,13 +60,16 @@ export function getAffectedGlobModules(
           (!negated.length || negated.every((glob) => isMatch(file, glob))),
       )
     ) {
-      const mod = server.moduleGraph.getModuleById(id)
-      if (mod) modules.push(mod)
+      const mod = server.getModuleGraph('browser').getModuleById(id)
+
+      if (mod) {
+        if (mod.file) {
+          server.getModuleGraph('browser').onFileChange(mod.file)
+        }
+        modules.push(mod)
+      }
     }
   }
-  modules.forEach((i) => {
-    if (i?.file) server.moduleGraph.onFileChange(i.file)
-  })
   return modules
 }
 
@@ -77,7 +82,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       server = _server
       server._importGlobMap.clear()
     },
-    async transform(code, id) {
+    async transform(code, id, options) {
       if (!code.includes('import.meta.glob')) return
       const result = await transformGlobImport(
         code,

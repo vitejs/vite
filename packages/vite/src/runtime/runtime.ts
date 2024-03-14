@@ -383,7 +383,7 @@ export class ViteRuntime {
             throw new Error(`[vite-runtime] HMR client was destroyed.`)
           }
           this.debug?.('[vite-runtime] creating hmr context for', moduleId)
-          hotContext ||= new HMRContext(this.hmrClient, moduleId)
+          hotContext ||= new HMRContext(this.hmrClient, moduleId, 'server')
           return hotContext
         },
         set: (value) => {

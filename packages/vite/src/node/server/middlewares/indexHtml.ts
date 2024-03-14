@@ -130,8 +130,8 @@ const processNodeUrl = (
 ): string => {
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
-    if (server?.moduleGraph) {
-      const mod = server.moduleGraph.urlToModuleMap.get(url)
+    if (server) {
+      const mod = server.getModuleGraph('browser').urlToModuleMap.get(url)
       if (mod && mod.lastHMRTimestamp > 0) {
         url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
@@ -182,7 +182,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl },
 ) => {
-  const { config, moduleGraph, watcher } = server!
+  const { config, watcher } = server!
   const base = config.base || '/'
 
   let proxyModulePath: string
@@ -242,9 +242,10 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
 
     // invalidate the module so the newly cached contents will be served
-    const module = server?.moduleGraph.getModuleById(modulePath)
+    const browserModuleGraph = server?.getModuleGraph('browser')
+    const module = browserModuleGraph?.getModuleById(modulePath)
     if (module) {
-      server?.moduleGraph.invalidateModule(module)
+      browserModuleGraph!.invalidateModule(module)
     }
     s.update(
       node.sourceCodeLocation!.startOffset,
@@ -350,7 +351,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
       // ensure module in graph after successful load
-      const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+      const mod = await server!
+        .getModuleGraph('browser')
+        .ensureEntryFromUrl(url, false)
       ensureWatchedFile(watcher, mod.file, config.root)
 
       const result = await server!.pluginContainer.transform(code, mod.id!)
@@ -375,7 +378,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       // will transform with css plugin and cache result with css-post plugin
       const url = `${proxyModulePath}?html-proxy&inline-css&style-attr&index=${index}.css`
 
-      const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+      const mod = await server!
+        .getModuleGraph('browser')
+        .ensureEntryFromUrl(url, false)
       ensureWatchedFile(watcher, mod.file, config.root)
 
       await server?.pluginContainer.transform(code, mod.id!)
