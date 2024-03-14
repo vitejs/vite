@@ -1298,12 +1298,31 @@ export interface BuilderOptions {
   ) => Promise<void>
 }
 
+export interface BuilderInlineConfig extends Omit<InlineConfig, 'plugins'> {
+  plugins?: () => Plugin[]
+}
+
 export async function createViteBuilder(
   builderOptions: BuilderOptions = {},
-  defaultInlineConfig: InlineConfig = {},
+  defaultInlineConfig: BuilderInlineConfig = {},
 ): Promise<ViteBuilder> {
+  // Plugins passed to the Builder inline config needs to be created
+  // from a factory to ensure each build has their own instances
+  const getDefaultInlineConfig = (): InlineConfig => {
+    const { plugins } = defaultInlineConfig
+    return plugins
+      ? {
+          ...defaultInlineConfig,
+          plugins: plugins(),
+        }
+      : (defaultInlineConfig as InlineConfig)
+  }
+
+  // We need to resolve a default config to get the plugins and be able
+  // to run the configureBuildEnvironments hooks. Maybe we should expose
+  // this hook as a builder option instead to avoid this.
   const defaultConfig = await resolveConfig(
-    defaultInlineConfig,
+    getDefaultInlineConfig(),
     'build',
     'production',
     'production',
@@ -1349,7 +1368,7 @@ export async function createViteBuilder(
         // and to process a single bundle at a time (contrary to dev mode where
         // plugins are built to handle multiple environments concurrently).
 
-        let userConfig = defaultInlineConfig
+        let userConfig = getDefaultInlineConfig()
         const inlineConfigEnvironmentOverrides =
           defaultInlineConfig.environment?.[environment.id]
         if (inlineConfigEnvironmentOverrides) {

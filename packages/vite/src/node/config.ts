@@ -161,6 +161,9 @@ export interface SharedEnvironmentConfig {
   resolve?: ResolveOptions & { alias?: AliasOptions }
   /**
    * Dep optimization options
+   * These options are only used during dev. It should better be in the
+   * dev options but there isn't a strong enough reason to move it there
+   * at this point.
    */
   optimizeDeps?: DepOptimizationOptions
 }
@@ -337,8 +340,8 @@ export interface UserConfig extends EnvironmentConfig {
   appType?: AppType
   /**
    * SSR specific options
-   * Some of the options previously under `ssr` (like resolve.conditions) are deprecated
-   * and moved to environment: { ssr: { ... } }
+   * We could make SSROptions be a EnvironmentConfig if we can abstract
+   * external/noExternal for environments in general.
    */
   ssr?: SSROptions
   /**
