@@ -11,7 +11,7 @@ function delayIndexCssPlugin(): Plugin {
     },
     async load(id) {
       if (server && id.includes('index.css')) {
-        await server.delayUntilStaticImportsProcessed(id)
+        await server.waitForRequestsIdle(id)
       }
     },
   }

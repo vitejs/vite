@@ -346,14 +346,13 @@ export interface ViteDevServer {
    */
   openBrowser(): void
   /**
-   * Calling `await server.delayUntilStaticImportsProcessed(id)` will wait until all static imports
-   * are processed. This can be used by tools like Tailwind to ensure all source files have been
-   * seen before generating the CSS classes for the app, avoiding flashes of style changes.
-   * This features uses the deps optimizer internal crawl ended event. The promise will be
-   * immediately resolved if the deps optimizer is not enabled.
+   * Calling `await server.waitForRequestsIdle(id)` will wait until all static imports
+   * are processed. If called from a load or transform plugin hook, the id needs to be
+   * passed as a parameter to avoid deadlocks. Calling this function after the first
+   * static imports section of the module graph has been processed will resolve immediately.
    * @experimental
    */
-  delayUntilStaticImportsProcessed: (id: string) => Promise<void>
+  waitForRequestsIdle: (ignoredId?: string) => Promise<void>
   /**
    * @internal
    */
@@ -481,8 +480,8 @@ export async function _createServer(
   const crawlEndFinder = setupOnCrawlEnd(() => {
     onCrawlEndCallbacks.forEach((cb) => cb())
   })
-  function delayUntilStaticImportsProcessed(id: string): Promise<void> {
-    return crawlEndFinder.delayUntilStaticImportsProcessed(id)
+  function waitForRequestsIdle(ignoredId?: string): Promise<void> {
+    return crawlEndFinder.waitForRequestsIdle(ignoredId)
   }
   function _registerRequestProcessing(id: string, done: () => Promise<any>) {
     crawlEndFinder.registerRequestProcessing(id, done)
@@ -671,7 +670,7 @@ export async function _createServer(
       return server._restartPromise
     },
 
-    delayUntilStaticImportsProcessed,
+    waitForRequestsIdle,
     _registerRequestProcessing,
     _onCrawlEnd,
 
@@ -1175,7 +1174,7 @@ const callCrawlEndIfIdleAfterMs = 50
 
 interface CrawlEndFinder {
   registerRequestProcessing: (id: string, done: () => Promise<any>) => void
-  delayUntilStaticImportsProcessed: (id: string) => Promise<void>
+  waitForRequestsIdle: (ignoredId?: string) => Promise<void>
   cancel: () => void
 }
 
@@ -1213,9 +1212,11 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
     }
   }
 
-  function delayUntilStaticImportsProcessed(id: string): Promise<void> {
-    seenIds.add(id)
-    markIdAsDone(id)
+  function waitForRequestsIdle(ignoredId?: string): Promise<void> {
+    if (ignoredId) {
+      seenIds.add(ignoredId)
+      markIdAsDone(ignoredId)
+    }
     return onCrawlEndPromiseWithResolvers.promise
   }
 
@@ -1242,7 +1243,7 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
 
   return {
     registerRequestProcessing,
-    delayUntilStaticImportsProcessed,
+    waitForRequestsIdle,
     cancel,
   }
 }
