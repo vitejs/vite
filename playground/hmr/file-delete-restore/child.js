@@ -8,4 +8,12 @@ if (import.meta.hot) {
 
     rerender({ child: newMod.value })
   })
+
+  import.meta.hot.dispose(() => {
+    console.log('file-delete-restore/child.js is disposed')
+  })
+
+  import.meta.hot.prune(() => {
+    console.log('file-delete-restore/child.js is pruned')
+  })
 }

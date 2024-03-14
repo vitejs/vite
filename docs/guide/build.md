@@ -70,7 +70,7 @@ Vite emits `vite:preloadError` event when it fails to load dynamic imports. `eve
 
 ```js
 window.addEventListener('vite:preloadError', (event) => {
-  window.reload() // for example, refresh the page
+  window.location.reload() // for example, refresh the page
 })
 ```
 
@@ -282,3 +282,5 @@ experimental: {
   }
 }
 ```
+
+Note that the `filename` passed is a decoded URL, and if the function returns a URL string, it should also be decoded. Vite will handle the encoding automatically when rendering the URLs. If an object with `runtime` is returned, encoding should be handled yourself where needed as the runtime code will be rendered as is.

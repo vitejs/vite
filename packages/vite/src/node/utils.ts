@@ -731,6 +731,8 @@ function joinSrcset(ret: ImageCandidate[]) {
     .join(', ')
 }
 
+// NOTE: The returned `url` should perhaps be decoded so all handled URLs within Vite are consistently decoded.
+// However, this may also require a refactor for `cssReplacer` to accept decoded URLs instead.
 function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
   return splitSrcSet(srcs)
     .map((s) => {
@@ -1406,4 +1408,12 @@ export function displayTime(time: number): string {
 
   // display: {X}m {Y}s
   return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
+}
+
+/**
+ * Like `encodeURI`, but only replacing `%` as `%25`. This is useful for environments
+ * that can handle un-encoded URIs, where `%` is the only ambiguous character.
+ */
+export function partialEncodeURI(uri: string): string {
+  return uri.replaceAll('%', '%25')
 }
