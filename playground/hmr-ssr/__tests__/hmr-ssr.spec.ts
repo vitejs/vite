@@ -821,7 +821,7 @@ test.todo('delete file should not break hmr', async () => {
 test.todo(
   'deleted file should trigger dispose and prune callbacks',
   async () => {
-    await setupViteRuntime('/hmr.ts')
+    await setupModuleRunner('/hmr.ts')
 
     const parentFile = 'file-delete-restore/parent.js'
     const childFile = 'file-delete-restore/child.js'
