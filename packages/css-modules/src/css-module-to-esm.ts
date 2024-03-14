@@ -17,7 +17,8 @@ export interface CssModuleToEsmOptions {
   id: string
   exports: CSSModuleExports
   references: CSSModuleReferences
-  loadExports: (id: string, importer: string) => Promise<Exports>
+  resolve: (id: string, importer: string) => Promise<string>
+  loadExports: (resolvedId: string) => Promise<Exports>
   sourcemap?: boolean
   includeArbitraryNames?: boolean
 }
@@ -25,6 +26,7 @@ export interface CssModuleToEsmOptions {
 export interface CssModuleToEsmResult {
   code: string
   css: string
+  exportsMetadata: Exports
   map?: RawSourceMap
 }
 
@@ -94,10 +96,11 @@ export async function cssModuleToEsm(
         const composedClasses = await Promise.all(
           exported.composes.map(async (dep) => {
             if (dep.type === 'dependency') {
-              const loaded = await options.loadExports(
-                `${dep.specifier}?.module.css`,
+              const resolvedId = await options.resolve(
+                dep.specifier,
                 options.id,
               )
+              const loaded = await options.loadExports(resolvedId)
               const exportedEntry = loaded[dep.name]!
               if (!exportedEntry) {
                 throw new Error(
@@ -105,7 +108,7 @@ export async function cssModuleToEsm(
                 )
               }
               const [exportAsName] = Array.from(exportedEntry.exportAs)
-              const importedAs = registerImport(dep.specifier, exportAsName)!
+              const importedAs = registerImport(resolvedId, exportAsName)!
               return {
                 resolved: exportedEntry.resolved,
                 code: `\${${importedAs}}`,
@@ -141,10 +144,8 @@ export async function cssModuleToEsm(
     const ms = new MagicString(outputCss)
     await Promise.all(
       references.map(async ([placeholder, source]) => {
-        const loaded = await options.loadExports(
-          `${source.specifier}?.module.css`,
-          options.id,
-        )
+        const resolvedId = await options.resolve(source.specifier, options.id)
+        const loaded = await options.loadExports(resolvedId)
         const exported = loaded[source.name]
         if (!exported) {
           throw new Error(
@@ -182,6 +183,7 @@ export async function cssModuleToEsm(
   return {
     code: jsCode,
     css: outputCss,
+    exportsMetadata: exports,
     map,
   }
 }

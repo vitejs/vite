@@ -19,19 +19,18 @@ const importStatement = (specifier: string | string[], source: string) =>
 const importsToCode = (imports: Imports, stringNamedExports = false) =>
   Array.from(imports)
     .map(([file, importedAs], index) => {
-      const importFrom = `${file}?.module.css`
       if (stringNamedExports) {
         return importStatement(
           Object.entries(importedAs).map(
             ([exportName, importAs]) =>
               `${JSON.stringify(exportName)} as ${importAs}`,
           ),
-          importFrom,
+          file,
         )
       }
 
       const importDefault = `cssModule${index}`
-      return `${importStatement(importDefault, importFrom)}const {${Object.entries(
+      return `${importStatement(importDefault, file)}const {${Object.entries(
         importedAs,
       )
         .map(

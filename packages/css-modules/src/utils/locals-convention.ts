@@ -1,8 +1,5 @@
 import camelCase from 'lodash.camelcase'
-import type { CSSModulesConfig } from 'lightningcss'
 import type { CSSModulesOptions } from '../types'
-
-type Config = CSSModulesOptions | CSSModulesConfig
 
 export type LocalsConventionFunction = (
   originalClassName: string,
@@ -10,7 +7,9 @@ export type LocalsConventionFunction = (
   inputFile: string,
 ) => string
 
-export const shouldKeepOriginalExport = (cssModuleConfig: Config): boolean =>
+export const shouldKeepOriginalExport = (
+  cssModuleConfig: CSSModulesOptions,
+): boolean =>
   !(
     'localsConvention' in cssModuleConfig &&
     (typeof cssModuleConfig.localsConvention === 'function' ||
@@ -24,7 +23,7 @@ const dashesCamelCase = (string: string) =>
   string.replaceAll(/-+(\w)/g, (_, firstLetter) => firstLetter.toUpperCase())
 
 export const getLocalesConventionFunction = (
-  config: Config,
+  config: CSSModulesOptions,
 ): LocalsConventionFunction | undefined => {
   if (!('localsConvention' in config)) {
     return

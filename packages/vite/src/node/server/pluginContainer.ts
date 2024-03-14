@@ -344,8 +344,13 @@ export async function createPluginContainer(
       updateModuleInfo(options.id, options)
 
       const loadResult = await container.load(options.id, { ssr: this.ssr })
-      const code =
-        typeof loadResult === 'object' ? loadResult?.code : loadResult
+      let code = typeof loadResult === 'object' ? loadResult?.code : loadResult
+      // TODO: consider adding load-fallback to dev by default. It's currently in `transformRequest` instead
+      if (code == null) {
+        try {
+          code = await fs.promises.readFile(options.id, 'utf-8')
+        } catch {}
+      }
       if (code != null) {
         await container.transform(code, options.id, { ssr: this.ssr })
       }

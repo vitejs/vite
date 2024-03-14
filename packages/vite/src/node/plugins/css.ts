@@ -12,7 +12,7 @@ import type {
   RollupError,
   SourceMapInput,
 } from 'rollup'
-import type { CSSModuleData } from '@vitejs/css-modules'
+import type { CSSModuleData, CssModuleToEsmResult } from '@vitejs/css-modules'
 import type { CompileResult as CompileCSSModuleResult } from '@vitejs/css-modules/postcss'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
@@ -227,9 +227,16 @@ export const isDirectCSSRequest = (request: string): boolean =>
 export const isDirectRequest = (request: string): boolean =>
   directRequestRE.test(request)
 
+interface CSSModuleMetadata extends CSSModuleData {
+  /**
+   * Metadata after finishing processing a CSS module file
+   */
+  exportsMetadata?: CssModuleToEsmResult['exportsMetadata']
+}
+
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
-  Map<string, CSSModuleData>
+  Map<string, CSSModuleMetadata>
 >()
 
 export const removedPureCssFilesCache = new WeakMap<
@@ -253,7 +260,7 @@ const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  let moduleCache: Map<string, CSSModuleData>
+  let moduleCache: Map<string, CSSModuleMetadata>
 
   const resolveUrl = config.createResolver({
     preferRelative: true,
@@ -273,7 +280,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       // Ensure a new cache for every build (i.e. rebuilding in watch mode)
-      moduleCache = new Map<string, CSSModuleData>()
+      moduleCache = new Map<string, CSSModuleMetadata>()
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
@@ -478,36 +485,48 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const modulesCode =
         modules &&
         !inlined &&
-        (async () => {
+        (await (async () => {
           const { cssModuleToEsm } = await importCssModules()
           const atImportResolvers = getAtImportResolvers(config)
-          const result = await cssModuleToEsm({
-            css,
-            id,
-            exports: modules.exports,
-            references: modules.references,
-            loadExports: async (id, importer) => {
-              for (const key of getCssResolversKeys(atImportResolvers)) {
-                const resolved = await atImportResolvers[key](id, importer)
-                if (resolved) {
-                  id = path.resolve(resolved)
-                  break
+          const result = await cssModuleToEsm(
+            {
+              css,
+              id,
+              exports: modules.exports,
+              references: modules.references,
+              resolve: async (id, importer) => {
+                for (const key of getCssResolversKeys(atImportResolvers)) {
+                  const resolved = await atImportResolvers[key](id, importer)
+                  if (resolved) {
+                    return path.resolve(resolved)
+                  }
                 }
-              }
 
-              await this.load({ id})
+                return id
+              },
+              loadExports: async (resolvedId) => {
+                await this.load({ id: resolvedId })
 
-              const exports = cssModulesCache.get(config)!.get(id)
-              if (!exports)
-                throw new Error(
-                  `Failed to find exports for ${JSON.stringify(id)} from ${JSON.stringify(importer)}`,
-                )
-              return exports.exports
+                const modules = cssModulesCache.get(config)!.get(resolvedId)
+                if (!modules || !modules.exportsMetadata) {
+                  throw new Error(
+                    `Failed to find exports from ${JSON.stringify(resolvedId)}`,
+                  )
+                }
+                return modules.exportsMetadata
+              },
             },
-          })
+            config.css.transformer === 'postcss' && config.css.modules !== false
+              ? config.css.modules
+              : undefined,
+          )
 
           css = result.css
-        })()
+          // Save metadata to the modules cache so other CSS modules' `loadExports` can use it
+          modules.exportsMetadata = result.exportsMetadata
+
+          return result.code
+        })())
 
       if (config.command === 'serve') {
         const getContentWithSourcemap = async (content: string) => {
@@ -1213,7 +1232,7 @@ async function compileCSS(
   code: string
   map?: SourceMapInput
   ast?: PostCSS.Result
-  modules?: CSSModuleData
+  modules?: CSSModuleMetadata
   deps?: Set<string>
 }> {
   if (config.css?.transformer === 'lightningcss') {
@@ -1327,35 +1346,6 @@ async function compileCSS(
       }),
     )
   }
-
-  // if (isModule) {
-  //   postcssPlugins.unshift(
-  //     (await importPostcssModules()).default({
-  //       ...modulesOptions,
-  //       localsConvention: modulesOptions?.localsConvention,
-  //       getJSON(
-  //         cssFileName: string,
-  //         _modules: Record<string, string>,
-  //         outputFileName: string,
-  //       ) {
-  //         modules = _modules
-  //         if (modulesOptions && typeof modulesOptions.getJSON === 'function') {
-  //           modulesOptions.getJSON(cssFileName, _modules, outputFileName)
-  //         }
-  //       },
-  //       async resolve(id: string, importer: string) {
-  //         for (const key of getCssResolversKeys(atImportResolvers)) {
-  //           const resolved = await atImportResolvers[key](id, importer)
-  //           if (resolved) {
-  //             return path.resolve(resolved)
-  //           }
-  //         }
-
-  //         return id
-  //       },
-  //     }),
-  //   )
-  // }
 
   if (!postcssPlugins.length && !isModule) {
     return {
@@ -1518,7 +1508,7 @@ let alwaysFakeWorkerWorkerControllerCache:
 export interface PreprocessCSSResult {
   code: string
   map?: SourceMapInput
-  modules?: CSSModuleData
+  modules?: CSSModuleMetadata
   deps?: Set<string>
 }
 
@@ -2823,7 +2813,7 @@ async function compileLightningCSS(
     }
   }
 
-  let modules: CSSModuleData | undefined
+  let modules: CSSModuleMetadata | undefined
   if (!isStyleAttr && 'exports' in res && res.exports) {
     const resolved = res as TransformResult
     // https://github.com/parcel-bundler/lightningcss/issues/291
