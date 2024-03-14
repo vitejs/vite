@@ -252,9 +252,9 @@ function getLineCount(str: string): number {
   }
   const lines = str.match(splitRE)
   if (lines == null) {
-    return 1
+    return 0
   }
-  return lines.length + 1
+  return lines.length
 }
 
 const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
@@ -561,7 +561,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
-      let line = 0
+      let line = 1
       const concatCssEndLines: Array<{ file: string; end: number }> = []
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
@@ -796,7 +796,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
             // But because entry chunk can be imported by dynamic import,
             // we shouldn't remove the inlined CSS. (#10285)
-
             chunkCSS = await finalizeCss(
               chunkCSS,
               true,
@@ -931,7 +930,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .map((chunk) => [chunk.preliminaryFileName, chunk]),
         )
 
-        let line = 0
+        let line = 1
 
         function collect(fileName: string) {
           const chunk = bundle[fileName]
@@ -946,11 +945,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (content == null) {
             return
           }
-          if (css !== '') {
-            css += '\n' + content
-          } else {
-            css = content
-          }
+          css += content
           line += getLineCount(content)
           concatCssEndLines.push({ file: fileName, end: line })
         }
@@ -958,7 +953,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         for (const chunkName of chunkCSSMap.keys()) {
           collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
         }
-
         return await finalizeCss(
           css,
           false,
@@ -1873,7 +1867,7 @@ function mapLineWithEndLines(
   let start = 0
   for (const { file, end } of concatCssEndLines) {
     if (start < line && line <= end) {
-      return { file, line: line - start }
+      return { file, line: line - start + 1 }
     }
     start = end
   }
