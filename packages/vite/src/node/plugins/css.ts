@@ -251,7 +251,10 @@ function getLineCount(str: string): number {
     return 0
   }
   const lines = str.match(splitRE)
-  return lines?.length ?? 0
+  if (lines == null) {
+    return 0
+  }
+  return lines?.length + 1
 }
 
 const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
@@ -567,7 +570,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
           if (!transformOnlyRE.test(id)) {
             const content = styles.get(id)!
-            chunkCSS += content
+            if (chunkCSS !== '') {
+              chunkCSS += '\n' + content
+            } else {
+              chunkCSS = content
+            }
             line += getLineCount(content)
             concatCssEndLines.push({ file: id, end: line })
             // a css module contains JS, so it makes this not a pure css chunk
@@ -942,7 +949,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           if (content == null) {
             return
           }
-          css += content
+          if (css !== '') {
+            css += '\n' + content
+          } else {
+            css = content
+          }
           line += getLineCount(content)
           concatCssEndLines.push({ file: fileName, end: line })
         }
