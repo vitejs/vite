@@ -1866,7 +1866,7 @@ function mapLineWithEndLines(
     if (start < line && line <= end) {
       return { file, line: line - start }
     }
-    start = end
+    start = end - 1
   }
   return { file: '', line }
 }
