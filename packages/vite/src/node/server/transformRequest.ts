@@ -181,7 +181,10 @@ async function doTransform(
     resolved,
   )
 
-  getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
+  const depsOptimizer = getDepsOptimizer(config, ssr)
+  if (!depsOptimizer?.isOptimizedDepFile(id)) {
+    server._registerRequestProcessing(id, () => result)
+  }
 
   return result
 }
