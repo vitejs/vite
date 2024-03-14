@@ -32,6 +32,7 @@ import {
   isParentDirectory,
   mergeConfig,
   normalizePath,
+  promiseWithResolvers,
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
@@ -371,6 +372,22 @@ export interface ViteDevServer {
    */
   openBrowser(): void
   /**
+   * Calling `await server.waitForRequestsIdle(id)` will wait until all static imports
+   * are processed. If called from a load or transform plugin hook, the id needs to be
+   * passed as a parameter to avoid deadlocks. Calling this function after the first
+   * static imports section of the module graph has been processed will resolve immediately.
+   * @experimental
+   */
+  waitForRequestsIdle: (ignoredId?: string) => Promise<void>
+  /**
+   * @internal
+   */
+  _registerRequestProcessing: (id: string, done: () => Promise<unknown>) => void
+  /**
+   * @internal
+   */
+  _onCrawlEnd(cb: () => void): void
+  /**
    * @internal
    */
   _setInternalServer(server: ViteDevServer): void
@@ -521,6 +538,20 @@ export async function _createServer(
   let exitProcess: () => void
 
   const devHtmlTransformFn = createDevHtmlTransformFn(config)
+
+  const onCrawlEndCallbacks: (() => void)[] = []
+  const crawlEndFinder = setupOnCrawlEnd(() => {
+    onCrawlEndCallbacks.forEach((cb) => cb())
+  })
+  function waitForRequestsIdle(ignoredId?: string): Promise<void> {
+    return crawlEndFinder.waitForRequestsIdle(ignoredId)
+  }
+  function _registerRequestProcessing(id: string, done: () => Promise<any>) {
+    crawlEndFinder.registerRequestProcessing(id, done)
+  }
+  function _onCrawlEnd(cb: () => void) {
+    onCrawlEndCallbacks.push(cb)
+  }
 
   let server: ViteDevServer = {
     config,
@@ -683,6 +714,7 @@ export async function _createServer(
         watcher.close(),
         hot.close(),
         pluginContainer.close(),
+        crawlEndFinder?.cancel(),
         getDepsOptimizer(server.config)?.close(),
         getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer(),
@@ -730,6 +762,10 @@ export async function _createServer(
       }
       return server._restartPromise
     },
+
+    waitForRequestsIdle,
+    _registerRequestProcessing,
+    _onCrawlEnd,
 
     _setInternalServer(_server: ViteDevServer) {
       // Rebind internal the server variable so functions reference the user
@@ -1252,5 +1288,83 @@ export async function restartServerWithUrls(
   ) {
     logger.info('')
     server.printUrls()
+  }
+}
+
+const callCrawlEndIfIdleAfterMs = 50
+
+interface CrawlEndFinder {
+  registerRequestProcessing: (id: string, done: () => Promise<any>) => void
+  waitForRequestsIdle: (ignoredId?: string) => Promise<void>
+  cancel: () => void
+}
+
+function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
+  const registeredIds = new Set<string>()
+  const seenIds = new Set<string>()
+  const onCrawlEndPromiseWithResolvers = promiseWithResolvers<void>()
+
+  let timeoutHandle: NodeJS.Timeout | undefined
+
+  let cancelled = false
+  function cancel() {
+    cancelled = true
+  }
+
+  let crawlEndCalled = false
+  function callOnCrawlEnd() {
+    if (!cancelled && !crawlEndCalled) {
+      crawlEndCalled = true
+      onCrawlEnd()
+    }
+    onCrawlEndPromiseWithResolvers.resolve()
+  }
+
+  function registerRequestProcessing(
+    id: string,
+    done: () => Promise<any>,
+  ): void {
+    if (!seenIds.has(id)) {
+      seenIds.add(id)
+      registeredIds.add(id)
+      done()
+        .catch(() => {})
+        .finally(() => markIdAsDone(id))
+    }
+  }
+
+  function waitForRequestsIdle(ignoredId?: string): Promise<void> {
+    if (ignoredId) {
+      seenIds.add(ignoredId)
+      markIdAsDone(ignoredId)
+    }
+    return onCrawlEndPromiseWithResolvers.promise
+  }
+
+  function markIdAsDone(id: string): void {
+    if (registeredIds.has(id)) {
+      registeredIds.delete(id)
+      checkIfCrawlEndAfterTimeout()
+    }
+  }
+
+  function checkIfCrawlEndAfterTimeout() {
+    if (cancelled || registeredIds.size > 0) return
+
+    if (timeoutHandle) clearTimeout(timeoutHandle)
+    timeoutHandle = setTimeout(
+      callOnCrawlEndWhenIdle,
+      callCrawlEndIfIdleAfterMs,
+    )
+  }
+  async function callOnCrawlEndWhenIdle() {
+    if (cancelled || registeredIds.size > 0) return
+    callOnCrawlEnd()
+  }
+
+  return {
+    registerRequestProcessing,
+    waitForRequestsIdle,
+    cancel,
   }
 }

@@ -70,7 +70,7 @@ Vite emits `vite:preloadError` event when it fails to load dynamic imports. `eve
 
 ```js
 window.addEventListener('vite:preloadError', (event) => {
-  window.reload() // for example, refresh the page
+  window.location.reload() // for example, refresh the page
 })
 ```
 
