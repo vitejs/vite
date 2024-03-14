@@ -251,10 +251,7 @@ function getLineCount(str: string): number {
     return 0
   }
   const lines = str.match(splitRE)
-  if (lines == null) {
-    return 0
-  }
-  return lines.length
+  return lines?.length ?? 0
 }
 
 const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
@@ -1867,7 +1864,7 @@ function mapLineWithEndLines(
   let start = 0
   for (const { file, end } of concatCssEndLines) {
     if (start < line && line <= end) {
-      return { file, line: line - start + 1 }
+      return { file, line: line - start }
     }
     start = end
   }
