@@ -283,7 +283,7 @@ cli
     try {
       if (options.all) {
         // Build all environments
-        const builder = await createViteBuilder(config)
+        const builder = await createViteBuilder({}, config)
         await builder.build()
       } else {
         await build(config)

@@ -468,13 +468,21 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const config = await resolveConfig(
-    inlineConfig,
-    'build',
-    'production',
-    'production',
-  )
+  const config = await resolveConfigToBuild(inlineConfig)
 
+  // TODO: create a BuildEnvironment here?
+
+  return buildEnvironment(config)
+}
+
+function resolveConfigToBuild(inlineConfig: InlineConfig = {}) {
+  return resolveConfig(inlineConfig, 'build', 'production', 'production')
+}
+
+export async function buildEnvironment(
+  config: ResolvedConfig,
+  environment?: BuildEnvironment,
+): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const options = config.build
   const ssr = !!options.ssr
   const libOptions = options.lib
@@ -1276,11 +1284,26 @@ export interface ViteBuilder {
   build(): Promise<void>
 }
 
+export interface BuildTask {
+  environment: BuildEnvironment
+  config: ResolvedConfig
+  build: () => Promise<void>
+  cancel: () => void
+}
+
+export interface BuilderOptions {
+  runBuildTasks?: (
+    builder: ViteBuilder,
+    buildTasks: BuildTask[],
+  ) => Promise<void>
+}
+
 export async function createViteBuilder(
-  inlineConfig: InlineConfig = {},
+  builderOptions: BuilderOptions = {},
+  defaultInlineConfig: InlineConfig = {},
 ): Promise<ViteBuilder> {
   const defaultConfig = await resolveConfig(
-    inlineConfig,
+    defaultInlineConfig,
     'build',
     'production',
     'production',
@@ -1307,9 +1330,18 @@ export async function createViteBuilder(
     environments.set('ssr', ssrEnvironment)
   }
 
+  const runBuildTasks =
+    builderOptions.runBuildTasks ??
+    async function (builder, buildTasks) {
+      for (const task of buildTasks) {
+        await task.build()
+      }
+    }
+
   const builder: ViteBuilder = {
     environments,
     async build() {
+      const buildTasks = []
       for (const environment of environments.values()) {
         // We need to resolve the config again so we can properly merge options
         // and get a new set of plugins for each build environment. The ecosystem
@@ -1317,9 +1349,9 @@ export async function createViteBuilder(
         // and to process a single bundle at a time (contrary to dev mode where
         // plugins are built to handle multiple environments concurrently).
 
-        let userConfig = inlineConfig
+        let userConfig = defaultInlineConfig
         const inlineConfigEnvironmentOverrides =
-          inlineConfig.environment?.[environment.id]
+          defaultInlineConfig.environment?.[environment.id]
         if (inlineConfigEnvironmentOverrides) {
           userConfig = mergeConfig(userConfig, inlineConfigEnvironmentOverrides)
         }
@@ -1327,10 +1359,20 @@ export async function createViteBuilder(
           userConfig = mergeConfig(userConfig, environment.config)
         }
 
-        await build(userConfig)
+        const config = await resolveConfigToBuild(userConfig)
+        const buildTask = {
+          environment,
+          config,
+          build: async () => {
+            await buildEnvironment(config, environment)
+          },
+          cancel: () => {}, // TODO, maybe not needed
+        }
 
-        defaultConfig.logger.info('')
+        buildTasks.push(buildTask)
       }
+
+      return runBuildTasks(builder, buildTasks)
     },
   }
 

@@ -23,6 +23,7 @@ import {
 import type { HookHandler, Plugin, PluginWithRequiredHook } from './plugin'
 import type {
   BuildOptions,
+  BuilderOptions,
   RenderBuiltAssetUrl,
   ResolvedBuildOptions,
 } from './build'
@@ -253,6 +254,10 @@ export interface UserConfig extends EnvironmentConfig {
    * Specify additional picomatch patterns to be treated as static assets.
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
+  /**
+   * Builder specific options
+   */
+  builder?: BuilderOptions
   /**
    * Server specific options, e.g. host, port, https...
    */
