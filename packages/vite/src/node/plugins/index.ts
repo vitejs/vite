@@ -13,6 +13,7 @@ import { optimizedDepsPlugin } from './optimizedDeps'
 import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
 import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
+import { cssModulesPlugin } from './cssModules'
 import { assetPlugin } from './asset'
 import { clientInjectionsPlugin } from './clientInjections'
 import { buildHtmlPlugin, htmlInlineProxyPlugin } from './html'
@@ -89,6 +90,7 @@ export async function resolvePlugins(
     ...normalPlugins,
     wasmFallbackPlugin(),
     definePlugin(config),
+    cssModulesPlugin(config),
     cssPostPlugin(config),
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),

@@ -12,7 +12,8 @@ import type {
   RollupError,
   SourceMapInput,
 } from 'rollup'
-import { dataToEsm } from '@rollup/pluginutils'
+import type { CSSModuleData } from '@vitejs/css-modules'
+import type { CompileResult as CompileCSSModuleResult } from '@vitejs/css-modules/postcss'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
 import type * as PostCSS from 'postcss'
@@ -80,6 +81,7 @@ import {
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
 import { getChunkOriginalFileName } from './manifest'
+import type { TransformResult } from 'lightningcss'
 
 // const debug = createDebugger('vite:css')
 
@@ -227,7 +229,7 @@ export const isDirectRequest = (request: string): boolean =>
 
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
-  Map<string, Record<string, string>>
+  Map<string, CSSModuleData>
 >()
 
 export const removedPureCssFilesCache = new WeakMap<
@@ -251,7 +253,7 @@ const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  let moduleCache: Map<string, Record<string, string>>
+  let moduleCache: Map<string, CSSModuleData>
 
   const resolveUrl = config.createResolver({
     preferRelative: true,
@@ -271,7 +273,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       // Ensure a new cache for every build (i.e. rebuilding in watch mode)
-      moduleCache = new Map<string, Record<string, string>>()
+      moduleCache = new Map<string, CSSModuleData>()
       cssModulesCache.set(config, moduleCache)
 
       removedPureCssFilesCache.set(config, new Map<string, RenderedChunk>())
@@ -476,7 +478,36 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const modulesCode =
         modules &&
         !inlined &&
-        dataToEsm(modules, { namedExports: true, preferConst: true })
+        (async () => {
+          const { cssModuleToEsm } = await importCssModules()
+          const atImportResolvers = getAtImportResolvers(config)
+          const result = await cssModuleToEsm({
+            css,
+            id,
+            exports: modules.exports,
+            references: modules.references,
+            loadExports: async (id, importer) => {
+              for (const key of getCssResolversKeys(atImportResolvers)) {
+                const resolved = await atImportResolvers[key](id, importer)
+                if (resolved) {
+                  id = path.resolve(resolved)
+                  break
+                }
+              }
+
+              await this.load({ id})
+
+              const exports = cssModulesCache.get(config)!.get(id)
+              if (!exports)
+                throw new Error(
+                  `Failed to find exports for ${JSON.stringify(id)} from ${JSON.stringify(importer)}`,
+                )
+              return exports.exports
+            },
+          })
+
+          css = result.css
+        })()
 
       if (config.command === 'serve') {
         const getContentWithSourcemap = async (content: string) => {
@@ -1182,7 +1213,7 @@ async function compileCSS(
   code: string
   map?: SourceMapInput
   ast?: PostCSS.Result
-  modules?: Record<string, string>
+  modules?: CSSModuleData
   deps?: Set<string>
 }> {
   if (config.css?.transformer === 'lightningcss') {
@@ -1209,7 +1240,6 @@ async function compileCSS(
     return { code, map: null }
   }
 
-  let modules: Record<string, string> | undefined
   const deps = new Set<string>()
 
   // 2. pre-processors: sass etc.
@@ -1298,36 +1328,36 @@ async function compileCSS(
     )
   }
 
-  if (isModule) {
-    postcssPlugins.unshift(
-      (await importPostcssModules()).default({
-        ...modulesOptions,
-        localsConvention: modulesOptions?.localsConvention,
-        getJSON(
-          cssFileName: string,
-          _modules: Record<string, string>,
-          outputFileName: string,
-        ) {
-          modules = _modules
-          if (modulesOptions && typeof modulesOptions.getJSON === 'function') {
-            modulesOptions.getJSON(cssFileName, _modules, outputFileName)
-          }
-        },
-        async resolve(id: string, importer: string) {
-          for (const key of getCssResolversKeys(atImportResolvers)) {
-            const resolved = await atImportResolvers[key](id, importer)
-            if (resolved) {
-              return path.resolve(resolved)
-            }
-          }
+  // if (isModule) {
+  //   postcssPlugins.unshift(
+  //     (await importPostcssModules()).default({
+  //       ...modulesOptions,
+  //       localsConvention: modulesOptions?.localsConvention,
+  //       getJSON(
+  //         cssFileName: string,
+  //         _modules: Record<string, string>,
+  //         outputFileName: string,
+  //       ) {
+  //         modules = _modules
+  //         if (modulesOptions && typeof modulesOptions.getJSON === 'function') {
+  //           modulesOptions.getJSON(cssFileName, _modules, outputFileName)
+  //         }
+  //       },
+  //       async resolve(id: string, importer: string) {
+  //         for (const key of getCssResolversKeys(atImportResolvers)) {
+  //           const resolved = await atImportResolvers[key](id, importer)
+  //           if (resolved) {
+  //             return path.resolve(resolved)
+  //           }
+  //         }
 
-          return id
-        },
-      }),
-    )
-  }
+  //         return id
+  //       },
+  //     }),
+  //   )
+  // }
 
-  if (!postcssPlugins.length) {
+  if (!postcssPlugins.length && !isModule) {
     return {
       code,
       map: preprocessorMap,
@@ -1335,6 +1365,7 @@ async function compileCSS(
     }
   }
 
+  // TODO: skip postcss if isModule and no postcss plugins
   let postcssResult: PostCSS.Result
   try {
     const source = removeDirectQuery(id)
@@ -1407,15 +1438,27 @@ async function compileCSS(
     throw e
   }
 
+  let moduleResult: CompileCSSModuleResult | undefined
+  if (isModule) {
+    const { compileCSSModule } = await importCssModulesPostcss()
+    moduleResult = await compileCSSModule(
+      postcssResult.css,
+      removeDirectQuery(id),
+      { ...modulesOptions, sourcemap: devSourcemap },
+    )
+  }
+
   if (!devSourcemap) {
     return {
       ast: postcssResult,
-      code: postcssResult.css,
+      code: moduleResult?.css ?? postcssResult.css,
       map: { mappings: '' },
-      modules,
+      modules: moduleResult?.data,
       deps,
     }
   }
+
+  let map: ExistingRawSourceMap | undefined
 
   const rawPostcssMap = postcssResult.map.toJSON()
 
@@ -1426,11 +1469,21 @@ async function compileCSS(
     cleanUrl(id),
   )
 
+  map = combineSourcemapsIfExists(cleanUrl(id), postcssMap, preprocessorMap)
+
+  if (moduleResult?.map) {
+    map = combineSourcemapsIfExists(
+      cleanUrl(id),
+      map,
+      moduleResult.map as ExistingRawSourceMap,
+    )
+  }
+
   return {
     ast: postcssResult,
-    code: postcssResult.css,
-    map: combineSourcemapsIfExists(cleanUrl(id), postcssMap, preprocessorMap),
-    modules,
+    code: moduleResult?.css ?? postcssResult.css,
+    map,
+    modules: moduleResult?.data,
     deps,
   }
 }
@@ -1448,8 +1501,11 @@ function createCachedImport<T>(imp: () => Promise<T>): () => T | Promise<T> {
   }
 }
 const importPostcssImport = createCachedImport(() => import('postcss-import'))
-const importPostcssModules = createCachedImport(() => import('postcss-modules'))
 const importPostcss = createCachedImport(() => import('postcss'))
+const importCssModules = createCachedImport(() => import('@vitejs/css-modules'))
+const importCssModulesPostcss = createCachedImport(
+  () => import('@vitejs/css-modules/postcss'),
+)
 
 const preprocessorWorkerControllerCache = new WeakMap<
   ResolvedConfig,
@@ -1462,7 +1518,7 @@ let alwaysFakeWorkerWorkerControllerCache:
 export interface PreprocessCSSResult {
   code: string
   map?: SourceMapInput
-  modules?: Record<string, string>
+  modules?: CSSModuleData
   deps?: Set<string>
 }
 
@@ -2694,8 +2750,9 @@ async function compileLightningCSS(
   const filename = cleanUrl(path.relative(config.root, id))
   const toAbsolute = (filePath: string) =>
     path.isAbsolute(filePath) ? filePath : path.join(config.root, filePath)
+  const isStyleAttr = styleAttrRE.test(id)
 
-  const res = styleAttrRE.test(id)
+  const res = isStyleAttr
     ? (await importLightningCSS()).transformStyleAttribute({
         filename,
         code: Buffer.from(src),
@@ -2766,20 +2823,18 @@ async function compileLightningCSS(
     }
   }
 
-  let modules: Record<string, string> | undefined
-  if ('exports' in res && res.exports) {
-    modules = {}
+  let modules: CSSModuleData | undefined
+  if (!isStyleAttr && 'exports' in res && res.exports) {
+    const resolved = res as TransformResult
     // https://github.com/parcel-bundler/lightningcss/issues/291
-    const sortedEntries = Object.entries(res.exports).sort((a, b) =>
-      a[0].localeCompare(b[0]),
+    const exports = Object.fromEntries(
+      Object.entries(resolved.exports!).sort(
+        // Cheap alphabetical sort (localCompare is expensive)
+        ([a], [b]) => (a < b ? -1 : a > b ? 1 : 0),
+      ),
     )
-    for (const [key, value] of sortedEntries) {
-      modules[key] = value.name
-      // https://lightningcss.dev/css-modules.html#class-composition
-      for (const c of value.composes) {
-        modules[key] += ' ' + c.name
-      }
-    }
+
+    modules = { exports, references: resolved.references }
   }
 
   return {
