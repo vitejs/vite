@@ -99,7 +99,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    <!-- for cssFile of manifest[name].css -->
    <link rel="stylesheet" href="/{{ cssFile }}" />
 
-   <!-- for chunk of importedChunks(manifest, name)) -->
+   <!-- for chunk of importedChunks(manifest, name) -->
    <!-- for cssFile of chunk.css -->
    <link rel="stylesheet" href="/{{ cssFile }}" />
 
