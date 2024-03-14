@@ -76,7 +76,7 @@ import type { EnvironmentModuleNode, ModuleNode } from './moduleGraph'
 import { ModuleGraph } from './moduleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware, prepareError } from './middlewares/error'
-import type { HMRBroadcaster, HmrOptions } from './hmr'
+import type { HMRBroadcaster, HmrOptions, HmrTask } from './hmr'
 import {
   createHMRBroadcaster,
   createServerHMRChannel,
@@ -159,6 +159,11 @@ export interface ServerOptions extends CommonServerOptions {
   sourcemapIgnoreList?:
     | false
     | ((sourcePath: string, sourcemapPath: string) => boolean)
+  /**
+   * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
+   * @experimental
+   */
+  runHmrTasks?: (server: ViteDevServer, hmrTasks: HmrTask[]) => Promise<void>
 }
 
 export interface ResolvedServerOptions
@@ -361,7 +366,6 @@ export interface ViteDevServer {
    * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
    */
   restart(forceOptimize?: boolean): Promise<void>
-
   /**
    * Open browser
    */

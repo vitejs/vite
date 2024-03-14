@@ -173,6 +173,12 @@ function getSortedHotUpdatePlugins(config: ResolvedConfig): Plugin[] {
   return sortedPlugins
 }
 
+export interface HmrTask {
+  environment: ModuleExecutionEnvironment
+  run: () => Promise<void>
+  cancel: () => void
+}
+
 export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer,
@@ -229,7 +235,7 @@ export async function handleHMRUpdate(
   // For now, we only call updateModules for the browser. Later on it should
   // also be called for each runtime.
 
-  server.environments.forEach(async (environment) => {
+  async function applyHMR(environment: ModuleExecutionEnvironment) {
     const mods = environment.moduleGraph.getModulesByFile(file)
 
     // check if any plugin wants to perform custom HMR handling
@@ -306,7 +312,25 @@ export async function handleHMRUpdate(
     }
 
     updateModules(environment, shortFile, hotContext.modules, timestamp, server)
-  })
+  }
+
+  const hmrTasks: HmrTask[] = []
+  for (const environment of server.environments.values()) {
+    hmrTasks.push({
+      environment,
+      run: () => applyHMR(environment),
+      cancel: () => {}, // TODO: implement cancel, maybe it isn't needed
+    })
+  }
+
+  const runHmrTasks =
+    server.config.server.runHmrTasks ??
+    ((server, hmrTasks) => {
+      // Run HMR in parallel for all environments by default
+      return Promise.all(hmrTasks.map((task) => task.run()))
+    })
+
+  await runHmrTasks(server, hmrTasks)
 }
 
 type HasDeadEnd = boolean

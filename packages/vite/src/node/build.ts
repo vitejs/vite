@@ -1287,7 +1287,7 @@ export interface ViteBuilder {
 export interface BuildTask {
   environment: BuildEnvironment
   config: ResolvedConfig
-  build: () => Promise<void>
+  run: () => Promise<void>
   cancel: () => void
 }
 
@@ -1334,7 +1334,7 @@ export async function createViteBuilder(
     builderOptions.runBuildTasks ??
     async function (builder, buildTasks) {
       for (const task of buildTasks) {
-        await task.build()
+        await task.run()
       }
     }
 
@@ -1363,7 +1363,7 @@ export async function createViteBuilder(
         const buildTask = {
           environment,
           config,
-          build: async () => {
+          run: async () => {
             await buildEnvironment(config, environment)
           },
           cancel: () => {}, // TODO, maybe not needed
