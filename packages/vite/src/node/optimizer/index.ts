@@ -59,7 +59,6 @@ export interface DepsOptimizer {
   isOptimizedDepFile: (id: string) => boolean
   isOptimizedDepUrl: (url: string) => boolean
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
-  delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
 
   close: () => Promise<void>
 
