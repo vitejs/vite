@@ -28,14 +28,13 @@ Each environment can also be accessed through its name:
 server.environment('browser').transformRequest(url)
 ```
 
-An environment is an instance of the `ModuleExecutionEnvironment` class:
+An environment is an instance of the `DevEnvironment` class:
 
 ```ts
-class ModuleExecutionEnvironment {
+class DevEnvironment {
   /**
    * Unique identifier for the environment in a Vite server.
    * By default Vite exposes 'browser' and 'node' environments.
-   * The ecosystem has consensus on other environments, like 'workerd'.
    */
   name: string
   /**
@@ -60,10 +59,7 @@ class ModuleExecutionEnvironment {
    */
   config: ResolvedEnvironmentConfig
 
-  constructor(
-    server,
-    { name, hot, run, config }: ModuleExecutionEnvironmentOptions,
-  )
+  constructor(server, { name, hot, run, config }: DevEnvironmentOptions)
 
   /**
    * Resolve the URL to an id, load it, and process the code using the
@@ -461,7 +457,7 @@ One of the goals of this feature is to provide a customizable API to process and
 ```ts
 import { createModuleExectutionEnvironment } from 'vite'
 
-const environment = createModuleExecutionEnvironment({
+const environment = createDevEnvironment({
   name: 'workerd',
   config: {
     resolve: { conditions: ['custom'] }
@@ -469,7 +465,7 @@ const environment = createModuleExecutionEnvironment({
   run(url) {
     dispatchModuleRunInWorkerd(url)
   }
-}) => ModuleExecutionEnvironment
+}) => DevEnvironment
 ```
 
 ## `ModuleRunner`
@@ -670,7 +666,7 @@ Names for concepts and the API are the best we could currently find, which we sh
 
 ### ModuleLoader vs Environment
 
-Instead of `ModuleExecutionEnvironment`, we thought of calling the environment piece inside the Vite Server a `ModuleLoader`. So `server.environment('browser')` would be `server.moduleLoader('browser')`. It has some advantages, `transformRequest(url)` could be renamed to `moduleLoader.load(url)`. We could pass to hooks a `loader` string instead of an `environment` string. `vite build --loader=node` could also be ok. A `ModuleLoader` having a `run()` function that connects it to the `ModuleRunner` in the associated runtime didn't seem like a good fit though. And `loader` could be confused with a node loader, or with the module loader in the target runtime.
+Instead of `DevEnvironment`, we thought of calling the environment piece inside the Vite Server a `ModuleLoader`. So `server.environment('browser')` would be `server.moduleLoader('browser')`. It has some advantages, `transformRequest(url)` could be renamed to `moduleLoader.load(url)`. We could pass to hooks a `loader` string instead of an `environment` string. `vite build --loader=node` could also be ok. A `ModuleLoader` having a `run()` function that connects it to the `ModuleRunner` in the associated runtime didn't seem like a good fit though. And `loader` could be confused with a node loader, or with the module loader in the target runtime.
 
 ### Runtime vs Environment
 
@@ -678,4 +674,4 @@ We also discussed naming runtime to the concept we call environment in this prop
 
 ### Server and Client
 
-We could also call `ModuleExecutionEnvironment` a `ServerEnvironment`, and the `ModuleRunner` in the associated runtime a `ClientEnvironment`. Or some variation using Server and Client in the names. We discarded these ideas because there are already many things that are a "server" (the vite dev server, the HTTP server, etc), and client is also used right now to refer to the browser (as in `clientImportedModules`).
+We could also call `DevEnvironment` a `ServerEnvironment`, and the `ModuleRunner` in the associated runtime a `ClientEnvironment`. Or some variation using Server and Client in the names. We discarded these ideas because there are already many things that are a "server" (the vite dev server, the HTTP server, etc), and client is also used right now to refer to the browser (as in `clientImportedModules`).
