@@ -1,0 +1,8 @@
+{
+  "name": "docs",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@types/express": "^4.17.21"
+  }
+}
