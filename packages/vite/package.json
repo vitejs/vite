@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "5.1.4",
+  "version": "5.2.0-beta.1",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -85,17 +85,18 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.19.3",
+    "esbuild": "^0.20.1",
     "postcss": "^8.4.35",
-    "rollup": "^4.2.0"
+    "rollup": "^4.13.0"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
-    "@ampproject/remapping": "^2.2.1",
-    "@babel/parser": "^7.23.9",
-    "@jridgewell/trace-mapping": "^0.3.23",
+    "@ampproject/remapping": "^2.3.0",
+    "@babel/parser": "^7.24.0",
+    "@jridgewell/trace-mapping": "^0.3.25",
+    "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-dynamic-import-vars": "^2.1.2",
@@ -126,7 +127,7 @@
     "http-proxy": "^1.18.1",
     "launch-editor-middleware": "^2.6.1",
     "lightningcss": "^1.24.0",
-    "magic-string": "^0.30.7",
+    "magic-string": "^0.30.8",
     "micromatch": "^4.0.5",
     "mlly": "^1.6.1",
     "mrmime": "^2.0.0",
@@ -142,12 +143,12 @@
     "resolve.exports": "^2.0.2",
     "rollup-plugin-dts": "^6.1.0",
     "rollup-plugin-esbuild": "^6.1.1",
-    "rollup-plugin-license": "^3.2.0",
+    "rollup-plugin-license": "^3.3.1",
     "sirv": "^2.0.4",
     "source-map-support": "^0.5.21",
     "strip-ansi": "^7.1.0",
     "strip-literal": "^2.0.0",
-    "tsconfck": "^3.0.2",
+    "tsconfck": "^3.0.3",
     "tslib": "^2.6.2",
     "types": "link:./types",
     "ufo": "^1.4.0",

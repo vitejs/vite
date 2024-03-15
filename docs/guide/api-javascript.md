@@ -12,26 +12,24 @@ async function createServer(inlineConfig?: InlineConfig): Promise<ViteDevServer>
 
 **Example Usage:**
 
-```js
-import { fileURLToPath } from 'url'
+```ts twoslash
+import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
-;(async () => {
-  const server = await createServer({
-    // any valid user config options, plus `mode` and `configFile`
-    configFile: false,
-    root: __dirname,
-    server: {
-      port: 1337,
-    },
-  })
-  await server.listen()
+const server = await createServer({
+  // any valid user config options, plus `mode` and `configFile`
+  configFile: false,
+  root: __dirname,
+  server: {
+    port: 1337,
+  },
+})
+await server.listen()
 
-  server.printUrls()
-  server.bindCLIShortcuts({ print: true })
-})()
+server.printUrls()
+server.bindCLIShortcuts({ print: true })
 ```
 
 ::: tip NOTE
@@ -44,7 +42,7 @@ When using [middleware mode](/config/server-options.html#server-middlewaremode) 
 <details>
 <summary>Example</summary>
 
-```ts
+```ts twoslash
 import http from 'http'
 import { createServer } from 'vite'
 
@@ -57,16 +55,17 @@ const vite = await createServer({
       // Provide the parent http server for proxy WebSocket
       server: parentServer,
     },
-  },
-  proxy: {
-    '/ws': {
-      target: 'ws://localhost:3000',
-      // Proxying WebSocket
-      ws: true,
+    proxy: {
+      '/ws': {
+        target: 'ws://localhost:3000',
+        // Proxying WebSocket
+        ws: true,
+      },
     },
   },
 })
 
+// @noErrors: 2339
 parentServer.use(vite.middlewares)
 ```
 
@@ -183,8 +182,20 @@ interface ViteDevServer {
    * Bind CLI shortcuts
    */
   bindCLIShortcuts(options?: BindCLIShortcutsOptions<ViteDevServer>): void
+  /**
+   * Calling `await server.waitForRequestsIdle(id)` will wait until all static imports
+   * are processed. If called from a load or transform plugin hook, the id needs to be
+   * passed as a parameter to avoid deadlocks. Calling this function after the first
+   * static imports section of the module graph has been processed will resolve immediately.
+   * @experimental
+   */
+  waitForRequestsIdle: (ignoredId?: string) => Promise<void>
 }
 ```
+
+:::info
+`waitForRequestsIdle` is meant to be used as a escape hatch to improve DX for features that can't be implemented following the on-demand nature of the Vite dev server. It can be used during startup by tools like Tailwind to delay generating the app CSS classes until the app code has been seen, avoiding flashes of style changes. When this function is used in a load or transform hook, and the default HTTP1 server is used, one of the six http channels will be blocked until the server processes all static imports. Vite's dependency optimizer currently uses this function to avoid full-page reloads on missing dependencies by delaying loading of pre-bundled dependencies until all imported dependencies have been collected from static imported sources. Vite may switch to a different strategy in a future major release, setting `optimizeDeps.crawlUntilStaticImports: false` by default to avoid the performance hit in large applications during cold start.
+:::
 
 ## `build`
 
@@ -198,24 +209,22 @@ async function build(
 
 **Example Usage:**
 
-```js
-import path from 'path'
-import { fileURLToPath } from 'url'
+```ts twoslash
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
-;(async () => {
-  await build({
-    root: path.resolve(__dirname, './project'),
-    base: '/foo/',
-    build: {
-      rollupOptions: {
-        // ...
-      },
+await build({
+  root: path.resolve(__dirname, './project'),
+  base: '/foo/',
+  build: {
+    rollupOptions: {
+      // ...
     },
-  })
-})()
+  },
+})
 ```
 
 ## `preview`
@@ -228,20 +237,19 @@ async function preview(inlineConfig?: InlineConfig): Promise<PreviewServer>
 
 **Example Usage:**
 
-```js
+```ts twoslash
 import { preview } from 'vite'
-;(async () => {
-  const previewServer = await preview({
-    // any valid user config options, plus `mode` and `configFile`
-    preview: {
-      port: 8080,
-      open: true,
-    },
-  })
 
-  previewServer.printUrls()
-  previewServer.bindCLIShortcuts({ print: true })
-})()
+const previewServer = await preview({
+  // any valid user config options, plus `mode` and `configFile`
+  preview: {
+    port: 8080,
+    open: true,
+  },
+})
+
+previewServer.printUrls()
+previewServer.bindCLIShortcuts({ print: true })
 ```
 
 ## `PreviewServer`
@@ -316,7 +324,17 @@ Deeply merge two Vite configs. `isRoot` represents the level within the Vite con
 
 You can use the `defineConfig` helper to merge a config in callback form with another config:
 
-```ts
+```ts twoslash
+import {
+  defineConfig,
+  mergeConfig,
+  type UserConfigFnObject,
+  type UserConfig,
+} from 'vite'
+declare const configAsCallback: UserConfigFnObject
+declare const configAsObject: UserConfig
+
+// ---cut---
 export default defineConfig((configEnv) =>
   mergeConfig(configAsCallback(configEnv), configAsObject),
 )

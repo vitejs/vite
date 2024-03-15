@@ -232,8 +232,13 @@ export class HMRClient {
   // After an HMR update, some modules are no longer imported on the page
   // but they may have left behind side effects that need to be cleaned up
   // (.e.g style injections)
-  // TODO Trigger their dispose callbacks.
-  public prunePaths(paths: string[]): void {
+  public async prunePaths(paths: string[]): Promise<void> {
+    await Promise.all(
+      paths.map((path) => {
+        const disposer = this.disposeMap.get(path)
+        if (disposer) return disposer(this.dataMap.get(path))
+      }),
+    )
     paths.forEach((path) => {
       const fn = this.pruneMap.get(path)
       if (fn) {

@@ -263,3 +263,8 @@
   text('.clonedeep-slash', cloneDeepSlash({ name: 'clonedeep-slash' }).name)
   text('.clonedeep-dot', cloneDeepDot({ name: 'clonedeep-dot' }).name)
 </script>
+
+<script type="module">
+  import loadSub from '@vitejs/test-dep-incompatible'
+  loadSub() // should show an error that tells there's an incompatible dep
+</script>

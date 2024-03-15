@@ -67,7 +67,7 @@ export async function handleHMRPayload(
     }
     case 'prune':
       await hmrClient.notifyListeners('vite:beforePrune', payload)
-      hmrClient.prunePaths(payload.paths)
+      await hmrClient.prunePaths(payload.paths)
       break
     case 'error': {
       await hmrClient.notifyListeners('vite:error', payload)
