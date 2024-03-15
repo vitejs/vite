@@ -165,6 +165,16 @@ export async function httpServerStart(
       }
     }
 
+    const directoryName = getDirectoryName()
+
+    if (directoryName.includes('/mnt')) {
+      logger.warn(
+        colors.yellow(
+          '\nChange your current directory to the home directory. This is important to avoid potential slowdown of the development server.',
+        ),
+      )
+    }
+
     httpServer.on('error', onError)
 
     httpServer.listen(port, host, () => {
@@ -172,6 +182,11 @@ export async function httpServerStart(
       resolve(port)
     })
   })
+}
+
+function getDirectoryName(): string {
+  const currentFilePath = new URL(import.meta.url).pathname
+  return path.dirname(currentFilePath)
 }
 
 export function setClientErrorHandler(
