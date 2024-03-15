@@ -1,6 +1,8 @@
 import { h } from 'vue'
 import type { Theme } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
+import TwoslashFloatingVue from '@shikijs/vitepress-twoslash/client'
+import '@shikijs/vitepress-twoslash/style.css'
 import './styles/vars.css'
 import HomeSponsors from './components/HomeSponsors.vue'
 import AsideSponsors from './components/AsideSponsors.vue'
@@ -16,5 +18,6 @@ export default {
   },
   enhanceApp({ app }) {
     app.component('SvgImage', SvgImage)
+    app.use(TwoslashFloatingVue)
   },
 } satisfies Theme
