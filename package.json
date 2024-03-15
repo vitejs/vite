@@ -30,9 +30,9 @@
     "test-docs": "pnpm run docs-build",
     "debug-serve": "VITE_DEBUG_SERVE=1 vitest run -c vitest.config.e2e.ts",
     "debug-build": "VITE_TEST_BUILD=1 VITE_PRESERVE_BUILD_ARTIFACTS=1 vitest run -c vitest.config.e2e.ts",
-    "docs": "vitepress dev docs",
-    "docs-build": "vitepress build docs",
-    "docs-serve": "vitepress serve docs",
+    "docs": "pnpm --filter=docs run docs",
+    "docs-build": "pnpm --filter=docs run docs-build",
+    "docs-serve": "pnpm --filter=docs run docs-serve",
     "build": "pnpm -r --filter='./packages/*' run build",
     "dev": "pnpm -r --parallel --filter='./packages/*' run dev",
     "release": "tsx scripts/release.ts",
@@ -85,9 +85,7 @@
     "typescript": "^5.2.2",
     "unbuild": "^2.0.0",
     "vite": "workspace:*",
-    "vitepress": "1.0.0-rc.45",
-    "vitest": "^1.3.1",
-    "vue": "^3.4.21"
+    "vitest": "^1.3.1"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"

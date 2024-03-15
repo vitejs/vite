@@ -1,0 +1,16 @@
+{
+  "name": "docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs": "vitepress dev",
+    "docs-build": "vitepress build",
+    "docs-serve": "vitepress serve"
+  },
+  "devDependencies": {
+    "@shikijs/vitepress-twoslash": "^1.1.7",
+    "@types/express": "^4.17.21",
+    "vitepress": "1.0.0-rc.45",
+    "vue": "^3.4.21"
+  }
+}
