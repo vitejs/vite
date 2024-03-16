@@ -6,7 +6,7 @@ import { resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
 import type { PluginContainer } from '../pluginContainer'
 import { createPluginContainer } from '../pluginContainer'
-import { ModuleExecutionEnvironment } from '../environment'
+import { DevEnvironment } from '../environment'
 
 describe('plugin container', () => {
   describe('getModuleInfo', () => {
@@ -231,7 +231,7 @@ describe('plugin container', () => {
 
 async function getPluginContainer(inlineConfig?: UserConfig): Promise<{
   pluginContainer: PluginContainer
-  environment: ModuleExecutionEnvironment
+  environment: DevEnvironment
 }> {
   const config = await resolveConfig(
     { configFile: false, ...inlineConfig },
@@ -247,7 +247,7 @@ async function getPluginContainer(inlineConfig?: UserConfig): Promise<{
     pluginContainer,
   } as ViteDevServer
 
-  const environment = new ModuleExecutionEnvironment(mockedServer, 'browser', {
+  const environment = new DevEnvironment(mockedServer, 'browser', {
     type: 'browser',
   })
 

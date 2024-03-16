@@ -5,7 +5,7 @@ import colors from 'picocolors'
 import { FS_PREFIX } from '../constants'
 import { normalizePath } from '../utils'
 import type { ViteDevServer } from '../index'
-import type { ModuleExecutionEnvironment } from './environment'
+import type { DevEnvironment } from './environment'
 
 export function warmupFiles(server: ViteDevServer): void {
   const options = server.config.server.warmup
@@ -30,7 +30,7 @@ export function warmupFiles(server: ViteDevServer): void {
 
 async function warmupFile(
   server: ViteDevServer,
-  environment: ModuleExecutionEnvironment,
+  environment: DevEnvironment,
   file: string,
 ) {
   // transform html with the `transformIndexHtml` hook as Vite internals would

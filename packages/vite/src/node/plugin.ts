@@ -15,7 +15,7 @@ import type { IndexHtmlTransform } from './plugins/html'
 import type { EnvironmentModuleNode, ModuleNode } from './server/moduleGraph'
 import type { HmrContext, HotUpdateContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
-import type { ModuleExecutionEnvironment } from './server/environment'
+import type { DevEnvironment } from './server/environment'
 import type { BuildEnvironment } from './build'
 
 /**
@@ -171,7 +171,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
         attributes: Record<string, string>
         custom?: CustomPluginOptions
         ssr?: boolean
-        environment?: ModuleExecutionEnvironment | BuildEnvironment
+        environment?: DevEnvironment | BuildEnvironment
         /**
          * @internal
          */
@@ -186,7 +186,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       id: string,
       options?: {
         ssr?: boolean
-        environment?: ModuleExecutionEnvironment | BuildEnvironment
+        environment?: DevEnvironment | BuildEnvironment
       },
     ) => Promise<LoadResult> | LoadResult
   >
@@ -197,7 +197,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       id: string,
       options?: {
         ssr?: boolean
-        environment?: ModuleExecutionEnvironment | BuildEnvironment
+        environment?: DevEnvironment | BuildEnvironment
       },
     ) => Promise<TransformResult> | TransformResult
   >

@@ -81,7 +81,7 @@ import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import { buildErrorMessage } from './middlewares/error'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import type { ModuleExecutionEnvironment } from './environment'
+import type { DevEnvironment } from './environment'
 
 const noop = () => {}
 
@@ -115,7 +115,7 @@ export interface PluginContainer {
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
-      environment?: ModuleExecutionEnvironment
+      environment?: DevEnvironment
       /**
        * @internal
        */
@@ -129,14 +129,14 @@ export interface PluginContainer {
     options?: {
       inMap?: SourceDescription['map']
       ssr?: boolean
-      environment?: ModuleExecutionEnvironment
+      environment?: DevEnvironment
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }>
   load(
     id: string,
     options?: {
       ssr?: boolean
-      environment?: ModuleExecutionEnvironment
+      environment?: DevEnvironment
     },
   ): Promise<LoadResult | null>
   watchChange(
@@ -161,10 +161,8 @@ type PluginContext = Omit<
 export async function createPluginContainer(
   config: ResolvedConfig,
   watcher?: FSWatcher,
-  defaultEnvironment: () => ModuleExecutionEnvironment | undefined = () =>
-    undefined,
-  ssrEnvironment: () => ModuleExecutionEnvironment | undefined = () =>
-    undefined,
+  defaultEnvironment: () => DevEnvironment | undefined = () => undefined,
+  ssrEnvironment: () => DevEnvironment | undefined = () => undefined,
 ): Promise<PluginContainer> {
   const {
     plugins,
@@ -194,7 +192,7 @@ export async function createPluginContainer(
   // But there is code that is going to call it without passing an environment, or with the ssr flag to get the ssrEnvironment
   function resolveEnvironment(options?: {
     ssr?: boolean
-    environment?: ModuleExecutionEnvironment
+    environment?: DevEnvironment
   }) {
     const environment =
       options?.environment ??
@@ -286,7 +284,7 @@ export async function createPluginContainer(
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
-    environment: ModuleExecutionEnvironment | undefined
+    environment: DevEnvironment | undefined
     _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
@@ -294,10 +292,7 @@ export async function createPluginContainer(
     _resolveSkips?: Set<Plugin>
     _addedImports: Set<string> | null = null
 
-    constructor(
-      environment?: ModuleExecutionEnvironment,
-      initialPlugin?: Plugin,
-    ) {
+    constructor(environment?: DevEnvironment, initialPlugin?: Plugin) {
       this.environment = environment
       this._activePlugin = initialPlugin || null
     }
@@ -580,7 +575,7 @@ export async function createPluginContainer(
     constructor(
       id: string,
       code: string,
-      environment?: ModuleExecutionEnvironment,
+      environment?: DevEnvironment,
       inMap?: SourceMap | string,
     ) {
       super(environment)

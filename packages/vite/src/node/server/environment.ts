@@ -10,7 +10,7 @@ import type { TransformResult } from './transformRequest'
 import { ERR_CLOSED_SERVER } from './pluginContainer'
 
 // Maybe we will rename this to DevEnvironment
-export class ModuleExecutionEnvironment extends Environment {
+export class DevEnvironment extends Environment {
   mode = 'dev' as const // TODO: should this be 'serve'?
   moduleGraph: EnvironmentModuleGraph
   server: ViteDevServer

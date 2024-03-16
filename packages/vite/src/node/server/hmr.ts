@@ -17,7 +17,7 @@ import { getEnvFilesForMode } from '../env'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { Plugin } from '../plugin'
 import type { EnvironmentModuleNode, ModuleNode } from './moduleGraph'
-import type { ModuleExecutionEnvironment } from './environment'
+import type { DevEnvironment } from './environment'
 import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -45,7 +45,7 @@ export interface HotUpdateContext {
   modules: Array<EnvironmentModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
-  environment: ModuleExecutionEnvironment
+  environment: DevEnvironment
 }
 
 /**
@@ -174,7 +174,7 @@ function getSortedHotUpdatePlugins(config: ResolvedConfig): Plugin[] {
 }
 
 export interface HmrTask {
-  environment: ModuleExecutionEnvironment
+  environment: DevEnvironment
   run: () => Promise<void>
   cancel: () => void
 }
@@ -235,7 +235,7 @@ export async function handleHMRUpdate(
   // For now, we only call updateModules for the browser. Later on it should
   // also be called for each runtime.
 
-  async function applyHMR(environment: ModuleExecutionEnvironment) {
+  async function applyHMR(environment: DevEnvironment) {
     const mods = environment.moduleGraph.getModulesByFile(file)
 
     // check if any plugin wants to perform custom HMR handling
@@ -336,7 +336,7 @@ export async function handleHMRUpdate(
 type HasDeadEnd = boolean
 
 export function updateModules(
-  environment: ModuleExecutionEnvironment,
+  environment: DevEnvironment,
   file: string,
   modules: EnvironmentModuleNode[],
   timestamp: number,

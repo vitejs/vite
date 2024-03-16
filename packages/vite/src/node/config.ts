@@ -34,7 +34,7 @@ import type {
   ViteDevServer,
 } from './server'
 import { resolveServerOptions } from './server'
-import type { ModuleExecutionEnvironment } from './server/environment'
+import type { DevEnvironment } from './server/environment'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
 import {
@@ -164,7 +164,7 @@ export interface DevOptions {
   createEnvironment?: (
     server: ViteDevServer,
     config: DevEnvironmentConfig,
-  ) => ModuleExecutionEnvironment
+  ) => DevEnvironment
 }
 
 export interface SharedEnvironmentConfig {

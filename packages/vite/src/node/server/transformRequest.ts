@@ -27,7 +27,7 @@ import { cleanUrl, unwrapId } from '../../shared/utils'
 import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
-import type { ModuleExecutionEnvironment } from './environment'
+import type { DevEnvironment } from './environment'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -59,7 +59,7 @@ export function transformRequest(
   url: string,
   server: ViteDevServer,
   options: TransformOptions = {},
-  environment?: ModuleExecutionEnvironment,
+  environment?: DevEnvironment,
 ): Promise<TransformResult | null> {
   // Backward compatibility when only `ssr` is passed
   if (!environment) {
@@ -140,7 +140,7 @@ export function transformRequest(
 }
 
 async function doTransform(
-  environment: ModuleExecutionEnvironment,
+  environment: DevEnvironment,
   url: string,
   server: ViteDevServer,
   options: TransformOptions,
@@ -212,7 +212,7 @@ async function doTransform(
 }
 
 async function getCachedTransformResult(
-  environment: ModuleExecutionEnvironment,
+  environment: DevEnvironment,
   url: string,
   module: EnvironmentModuleNode,
   server: ViteDevServer,
@@ -239,7 +239,7 @@ async function getCachedTransformResult(
 }
 
 async function loadAndTransform(
-  environment: ModuleExecutionEnvironment,
+  environment: DevEnvironment,
   id: string,
   url: string,
   server: ViteDevServer,
@@ -448,7 +448,7 @@ function createConvertSourceMapReadMap(originalFileName: string) {
  * - SSR: We don't need to change anything as `ssrLoadModule` controls it
  */
 async function handleModuleSoftInvalidation(
-  environment: ModuleExecutionEnvironment,
+  environment: DevEnvironment,
   mod: EnvironmentModuleNode,
   timestamp: number,
   server: ViteDevServer,

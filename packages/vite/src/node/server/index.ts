@@ -95,7 +95,7 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { warmupFiles } from './warmup'
-import { ModuleExecutionEnvironment } from './environment'
+import { DevEnvironment } from './environment'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -269,12 +269,12 @@ export interface ViteDevServer {
   /**
    * Dev Environments. Module execution environments attached to the Vite server.
    */
-  environments: Map<string, ModuleExecutionEnvironment>
+  environments: Map<string, DevEnvironment>
   /**
    * Default environments
    */
-  browserEnvironment: ModuleExecutionEnvironment
-  nodeEnvironment: ModuleExecutionEnvironment
+  browserEnvironment: DevEnvironment
+  nodeEnvironment: DevEnvironment
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -505,8 +505,8 @@ export async function _createServer(
   // The Vite server has always passed the mixed module graph. Passing the browserEnvironment
   // should give us the best backward compatibility for now.
   // We can review this in the next Vite major.
-  let defaultEnvironment: ModuleExecutionEnvironment
-  let ssrEnvironment: ModuleExecutionEnvironment
+  let defaultEnvironment: DevEnvironment
+  let ssrEnvironment: DevEnvironment
   const pluginContainer = await createPluginContainer(
     config,
     watcher,
@@ -801,7 +801,7 @@ export async function _createServer(
   const createBrowserEnvironment =
     config.environments?.browser?.dev?.createEnvironment ??
     ((server: ViteDevServer, config: DevEnvironmentConfig) =>
-      new ModuleExecutionEnvironment(server, 'browser', {
+      new DevEnvironment(server, 'browser', {
         type: 'browser',
         hot: ws,
         config,
@@ -813,7 +813,7 @@ export async function _createServer(
   )
   environments.set('browser', server.browserEnvironment)
 
-  server.nodeEnvironment = new ModuleExecutionEnvironment(server, 'node', {
+  server.nodeEnvironment = new DevEnvironment(server, 'node', {
     type: 'node',
     hot: ssrHotChannel,
   })
@@ -832,7 +832,7 @@ export async function _createServer(
         const createEnvironment =
           environmentConfig.dev?.createEnvironment ??
           (() =>
-            new ModuleExecutionEnvironment(server, key, {
+            new DevEnvironment(server, key, {
               type: 'node',
               hot: ws,
               config,
@@ -922,7 +922,7 @@ export async function _createServer(
   })
 
   function invalidateModule(
-    environment: ModuleExecutionEnvironment,
+    environment: DevEnvironment,
     m: {
       path: string
       message?: string

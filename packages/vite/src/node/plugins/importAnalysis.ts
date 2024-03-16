@@ -55,7 +55,7 @@ import { checkPublicFile } from '../publicDir'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import type { ModuleExecutionEnvironment } from '../server/environment'
+import type { DevEnvironment } from '../server/environment'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import {
@@ -215,8 +215,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // running src/node/server/__tests__/pluginContainer.spec.ts
 
       const ssr = options?.ssr === true
-      const environment =
-        (options?.environment as ModuleExecutionEnvironment) || undefined
+      const environment = (options?.environment as DevEnvironment) || undefined
 
       if (!server || !environment) {
         return null
