@@ -161,8 +161,10 @@ type PluginContext = Omit<
 export async function createPluginContainer(
   config: ResolvedConfig,
   watcher?: FSWatcher,
-  defaultEnvironment?: ModuleExecutionEnvironment,
-  ssrEnvironment?: ModuleExecutionEnvironment,
+  defaultEnvironment: () => ModuleExecutionEnvironment | undefined = () =>
+    undefined,
+  ssrEnvironment: () => ModuleExecutionEnvironment | undefined = () =>
+    undefined,
 ): Promise<PluginContainer> {
   const {
     plugins,
@@ -196,7 +198,8 @@ export async function createPluginContainer(
   }) {
     const environment =
       options?.environment ??
-      (options?.ssr && ssrEnvironment ? ssrEnvironment : defaultEnvironment)
+      (options?.ssr ? ssrEnvironment() : undefined) ??
+      defaultEnvironment()
     const ssr = options?.ssr ?? (environment?.type === 'node' ? true : false)
     return { environment, ssr }
   }
@@ -703,7 +706,7 @@ export async function createPluginContainer(
       await handleHookPromise(
         hookParallel(
           'buildStart',
-          (plugin) => new Context(defaultEnvironment, plugin),
+          (plugin) => new Context(defaultEnvironment(), plugin),
           () => [container.options as NormalizedInputOptions],
         ),
       )
@@ -861,7 +864,7 @@ export async function createPluginContainer(
     },
 
     async watchChange(id, change) {
-      const ctx = new Context(defaultEnvironment)
+      const ctx = new Context(defaultEnvironment())
       await hookParallel(
         'watchChange',
         () => ctx,
@@ -873,7 +876,7 @@ export async function createPluginContainer(
       if (closed) return
       closed = true
       await Promise.allSettled(Array.from(processesing))
-      const ctx = new Context(defaultEnvironment)
+      const ctx = new Context(defaultEnvironment())
       await hookParallel(
         'buildEnd',
         () => ctx,

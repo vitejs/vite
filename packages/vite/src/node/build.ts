@@ -248,6 +248,13 @@ export interface BuildOptions {
    * @default null
    */
   watch?: WatcherOptions | null
+  /**
+   * create the Build Environment instance
+   */
+  createEnvironment?: (
+    builder: ViteBuilder,
+    config: BuildEnvironmentConfig,
+  ) => BuildEnvironment
 }
 
 export interface LibraryOptions {
@@ -1318,9 +1325,8 @@ export async function createViteBuilder(
       : (defaultInlineConfig as InlineConfig)
   }
 
-  // We need to resolve a default config to get the plugins and be able
-  // to run the configureBuildEnvironments hooks. Maybe we should expose
-  // this hook as a builder option instead to avoid this.
+  // We resolve the whole config including plugins here but later on we
+  // need to refactor resolveConfig to only resolve the environments config
   const defaultConfig = await resolveConfig(
     getDefaultInlineConfig(),
     'build',
@@ -1336,18 +1342,6 @@ export async function createViteBuilder(
   }
 
   const environments = new Map<string, BuildEnvironment>()
-
-  const browserEnvironment = new BuildEnvironment('browser', {
-    type: 'browser',
-    config: { build: { ssr: false } },
-  })
-  environments.set('browser', browserEnvironment)
-
-  // Backward compatibility for `ssr` option
-  if (defaultConfig.build.ssr) {
-    const ssrEnvironment = new BuildEnvironment('ssr', { type: 'node' })
-    environments.set('ssr', ssrEnvironment)
-  }
 
   const runBuildTasks =
     builderOptions.runBuildTasks ??
@@ -1370,7 +1364,7 @@ export async function createViteBuilder(
 
         let userConfig = getDefaultInlineConfig()
         const inlineConfigEnvironmentOverrides =
-          defaultInlineConfig.environment?.[environment.id]
+          defaultInlineConfig.environments?.[environment.id]
         if (inlineConfigEnvironmentOverrides) {
           userConfig = mergeConfig(userConfig, inlineConfigEnvironmentOverrides)
         }
@@ -1395,11 +1389,45 @@ export async function createViteBuilder(
     },
   }
 
-  // call configureBuildEnvironments hooks
-  for (const hook of defaultConfig.getSortedPluginHooks(
-    'configureBuildEnvironments',
-  )) {
-    await hook(environments, defaultConfig)
+  const createBrowserEnvironment =
+    defaultConfig.environments?.browser?.build?.createEnvironment ??
+    defaultConfig.build?.createEnvironment ??
+    ((builder: ViteBuilder, config: BuildEnvironmentConfig) =>
+      new BuildEnvironment('browser', {
+        type: 'browser',
+        config,
+      }))
+
+  // Force ssr: false so the Vite's build function works unmodified. TODO: this may not be needed if we pass the environment and compute the
+  // ssr flag from it.
+  const browserEnvironment = createBrowserEnvironment(builder, {
+    build: { ssr: false },
+  })
+
+  environments.set('browser', browserEnvironment)
+
+  // Backward compatibility for `ssr` option
+  if (defaultConfig.build.ssr) {
+    // TODO: config.ssr should be a EnvironmentConfig
+    const createSsrEnvironment =
+      /*defaultConfig.ssr?.createEnvironment ??*/
+      (builder: ViteBuilder, config: BuildEnvironmentConfig) =>
+        new BuildEnvironment('ssr', { type: 'node' })
+
+    const ssrEnvironment = createSsrEnvironment(builder, {})
+    environments.set('ssr', ssrEnvironment)
+  }
+
+  if (defaultConfig.environments) {
+    Object.entries(defaultConfig.environments).forEach((entry) => {
+      const [key, environmentConfig] = entry
+      if (key !== 'browser' && key !== 'ssr') {
+        const createEnvironment =
+          environmentConfig.build?.createEnvironment ??
+          (() => new BuildEnvironment(key, { type: 'node' }))
+        environments.set(key, createEnvironment(builder, environmentConfig))
+      }
+    })
   }
 
   return builder

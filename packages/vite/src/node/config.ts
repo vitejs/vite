@@ -28,8 +28,13 @@ import type {
   ResolvedBuildOptions,
 } from './build'
 import { resolveBuildOptions } from './build'
-import type { ResolvedServerOptions, ServerOptions } from './server'
+import type {
+  ResolvedServerOptions,
+  ServerOptions,
+  ViteDevServer,
+} from './server'
 import { resolveServerOptions } from './server'
+import type { ModuleExecutionEnvironment } from './server/environment'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
 import {
@@ -152,6 +157,14 @@ export interface DevOptions {
   sourcemapIgnoreList?:
     | false
     | ((sourcePath: string, sourcemapPath: string) => boolean)
+
+  /**
+   * create the Dev Environment instance
+   */
+  createEnvironment?: (
+    server: ViteDevServer,
+    config: DevEnvironmentConfig,
+  ) => ModuleExecutionEnvironment
 }
 
 export interface SharedEnvironmentConfig {
@@ -346,8 +359,9 @@ export interface UserConfig extends EnvironmentConfig {
   ssr?: SSROptions
   /**
    * Environment overrides
+   * TODO: this should probably be an array, following the plugins convention
    */
-  environment?: {
+  environments?: {
     [key: string]: EnvironmentConfig
   }
 }

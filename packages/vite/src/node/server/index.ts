@@ -23,7 +23,11 @@ import {
   resolveHttpsConfig,
   setClientErrorHandler,
 } from '../http'
-import type { InlineConfig, ResolvedConfig } from '../config'
+import type {
+  DevEnvironmentConfig,
+  InlineConfig,
+  ResolvedConfig,
+} from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
@@ -496,43 +500,20 @@ export async function _createServer(
 
   const environments = new Map()
 
-  // We need the () => server indirection here so the correct server is referenced when
-  // after a restart where newServer._setInternalServer(server) is called
-
-  const browserEnvironment = new ModuleExecutionEnvironment(
-    () => server,
-    'browser',
-    {
-      type: 'browser',
-      hot: ws,
-    },
-  )
-  environments.set('browser', browserEnvironment)
-
-  const nodeEnvironment = new ModuleExecutionEnvironment(() => server, 'node', {
-    type: 'node',
-    hot: ssrHotChannel,
-  })
-  environments.set('node', nodeEnvironment)
-
-  const moduleGraph = new ModuleGraph({
-    browser: browserEnvironment.moduleGraph,
-    node: nodeEnvironment.moduleGraph,
-  })
-
   // The global environment is used for buildStart, buildEnd, watchChange, and writeBundle hooks
   // that are called once and not per environment.
   // The Vite server has always passed the mixed module graph. Passing the browserEnvironment
   // should give us the best backward compatibility for now.
   // We can review this in the next Vite major.
-  const defaultEnvironment = browserEnvironment
-  const ssrEnvironment = nodeEnvironment
+  let defaultEnvironment: ModuleExecutionEnvironment
+  let ssrEnvironment: ModuleExecutionEnvironment
   const pluginContainer = await createPluginContainer(
     config,
     watcher,
-    defaultEnvironment,
-    ssrEnvironment,
+    () => defaultEnvironment,
+    () => ssrEnvironment,
   )
+
   const closeHttpServer = createServerCloseFn(httpServer)
 
   let exitProcess: () => void
@@ -562,9 +543,12 @@ export async function _createServer(
     ws,
     hot,
     environments,
-    browserEnvironment,
-    nodeEnvironment,
-    moduleGraph,
+
+    // We set these after the server is created
+    browserEnvironment: undefined as any,
+    nodeEnvironment: undefined as any,
+    moduleGraph: undefined as any,
+
     resolvedUrls: null, // will be set on listen
     ssrTransform(
       code: string,
@@ -580,11 +564,15 @@ export async function _createServer(
     // that is part of the internal control flow for the vite dev server to be able to bail
     // out and do the html fallback
     transformRequest(url, options) {
-      const environment = options?.ssr ? nodeEnvironment : browserEnvironment
+      const environment = options?.ssr
+        ? server.nodeEnvironment
+        : server.browserEnvironment
       return transformRequest(url, server, options, environment)
     },
     async warmupRequest(url, options) {
-      const environment = options?.ssr ? nodeEnvironment : browserEnvironment
+      const environment = options?.ssr
+        ? server.nodeEnvironment
+        : server.browserEnvironment
       await transformRequest(url, server, options, environment).catch((e) => {
         if (
           e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
@@ -616,10 +604,10 @@ export async function _createServer(
       return ssrFetchModule(server, url, importer)
     },
     ssrFixStacktrace(e) {
-      ssrFixStacktrace(e, moduleGraph)
+      ssrFixStacktrace(e, server.moduleGraph)
     },
     ssrRewriteStacktrace(stack: string) {
-      return ssrRewriteStacktrace(stack, moduleGraph)
+      return ssrRewriteStacktrace(stack, server.moduleGraph)
     },
     async reloadModule(module) {
       if (serverConfig.hmr !== false && module.file) {
@@ -795,6 +783,68 @@ export async function _createServer(
     },
   })
 
+  // Environments
+
+  function resolveDevEnvironmentConfig(name: string): DevEnvironmentConfig {
+    // Merge the resolved configs, TODO: make generic on DevEnvironmentConfig
+    const { resolve, optimizeDeps, dev } = server.config
+    let resolvedConfig: DevEnvironmentConfig = { resolve, optimizeDeps, dev }
+    if (server.config.environments?.[name]) {
+      resolvedConfig = mergeConfig(
+        resolvedConfig,
+        server.config.environments[name],
+      )
+    }
+    return resolvedConfig
+  }
+
+  const createBrowserEnvironment =
+    config.environments?.browser?.dev?.createEnvironment ??
+    ((server: ViteDevServer, config: DevEnvironmentConfig) =>
+      new ModuleExecutionEnvironment(server, 'browser', {
+        type: 'browser',
+        hot: ws,
+        config,
+      }))
+
+  server.browserEnvironment = createBrowserEnvironment(
+    server,
+    resolveDevEnvironmentConfig('browser'),
+  )
+  environments.set('browser', server.browserEnvironment)
+
+  server.nodeEnvironment = new ModuleExecutionEnvironment(server, 'node', {
+    type: 'node',
+    hot: ssrHotChannel,
+  })
+  environments.set('node', server.nodeEnvironment)
+
+  const moduleGraph = new ModuleGraph({
+    browser: server.browserEnvironment.moduleGraph,
+    node: server.nodeEnvironment.moduleGraph,
+  })
+  server.moduleGraph = moduleGraph
+
+  if (config.environments) {
+    Object.entries(config.environments).forEach((entry) => {
+      const [key, environmentConfig] = entry
+      if (key !== 'browser' && key !== 'ssr') {
+        const createEnvironment =
+          environmentConfig.dev?.createEnvironment ??
+          (() =>
+            new ModuleExecutionEnvironment(server, key, {
+              type: 'node',
+              hot: ws,
+              config,
+            }))
+        environments.set(
+          key,
+          createEnvironment(server, resolveDevEnvironmentConfig(key)),
+        )
+      }
+    })
+  }
+
   if (!middlewareMode) {
     exitProcess = async () => {
       try {
@@ -838,12 +888,12 @@ export async function _createServer(
         publicFiles[isUnlink ? 'delete' : 'add'](path)
         if (!isUnlink) {
           const moduleWithSamePath =
-            await browserEnvironment.moduleGraph.getModuleByUrl(path)
+            await server.browserEnvironment.moduleGraph.getModuleByUrl(path)
           const etag = moduleWithSamePath?.transformResult?.etag
           if (etag) {
             // The public file should win on the next request over a module with the
             // same path. Prevent the transform etag fast path from serving the module
-            browserEnvironment.moduleGraph.etagToModuleMap.delete(etag)
+            server.browserEnvironment.moduleGraph.etagToModuleMap.delete(etag)
           }
         }
       }
@@ -1002,11 +1052,6 @@ export async function _createServer(
 
   // error handler
   middlewares.use(errorMiddleware(server, !!middlewareMode))
-
-  // call configureDevEnvironments hooks
-  for (const hook of config.getSortedPluginHooks('configureDevEnvironments')) {
-    await hook(environments, config, server)
-  }
 
   // httpServer.listen can be called multiple times
   // when port when using next port number
