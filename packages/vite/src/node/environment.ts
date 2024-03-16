@@ -3,15 +3,8 @@
 // command at the hooks level. There could also be Preview environments later on.
 
 export class Environment {
-  id: string
-  type: string
-  constructor(
-    id: string,
-    options: {
-      type: string
-    },
-  ) {
-    this.id = id
-    this.type = options.type
+  name: string
+  constructor(name: string) {
+    this.name = name
   }
 }

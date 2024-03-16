@@ -262,7 +262,7 @@ export async function handleHMRUpdate(
           // Invalidate the hmrContext to force compat modules to be updated
           hmrContext = undefined
         }
-      } else if (environment.id === 'browser') {
+      } else if (environment.name === 'browser') {
         // later on, we'll need: if (runtime === 'browser')
         // Backward compatibility with mixed client and ssr moduleGraph
         hmrContext ??= {

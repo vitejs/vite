@@ -161,10 +161,7 @@ export interface DevOptions {
   /**
    * create the Dev Environment instance
    */
-  createEnvironment?: (
-    server: ViteDevServer,
-    config: DevEnvironmentConfig,
-  ) => DevEnvironment
+  createEnvironment?: (server: ViteDevServer) => DevEnvironment
 }
 
 export interface SharedEnvironmentConfig {

@@ -2,6 +2,7 @@ import { Environment } from '../environment'
 import type { ViteDevServer } from '../server'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
 import type { DevEnvironmentConfig } from '../config'
+import { mergeConfig } from '../utils'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { HMRChannel } from './hmr'
 import { createNoopHMRChannel } from './hmr'
@@ -14,7 +15,32 @@ export class DevEnvironment extends Environment {
   mode = 'dev' as const // TODO: should this be 'serve'?
   moduleGraph: EnvironmentModuleGraph
   server: ViteDevServer
-  config: DevEnvironmentConfig
+  get config(): DevEnvironmentConfig {
+    if (!this._config) {
+      // Merge the resolved configs, TODO: make generic on DevEnvironmentConfig
+      const { resolve, optimizeDeps, dev } = this.server.config
+      let resolvedConfig: DevEnvironmentConfig = { resolve, optimizeDeps, dev }
+      if (this.server.config.environments?.[this.name]) {
+        resolvedConfig = mergeConfig(
+          resolvedConfig,
+          this.server.config.environments[this.name],
+        )
+      }
+      if (this._inlineConfig) {
+        resolvedConfig = mergeConfig(resolvedConfig, this._inlineConfig)
+      }
+      this._config = resolvedConfig
+    }
+    return this._config
+  }
+  /**
+   * @internal
+   */
+  _config: DevEnvironmentConfig | undefined
+  /**
+   * @internal
+   */
+  _inlineConfig: DevEnvironmentConfig | undefined
   /**
    * HMR channel for this environment. If not provided or disabled,
    * it will be a noop channel that does nothing.
@@ -25,24 +51,22 @@ export class DevEnvironment extends Environment {
   hot: HMRChannel
   constructor(
     server: ViteDevServer,
-    id: string,
+    name: string,
     options: {
-      type: string
       // TODO: use `transport` instead to support any hmr channel?
       hot?: false | HMRChannel
       config?: DevEnvironmentConfig
     },
   ) {
-    super(id, options)
+    super(name)
     this.server = server
-    this.moduleGraph = new EnvironmentModuleGraph(options.type, (url: string) =>
+    this.moduleGraph = new EnvironmentModuleGraph(name, (url: string) =>
       this.server.pluginContainer.resolveId(url, undefined, {
-        ssr: this.type !== 'browser',
         environment: this,
       }),
     )
     this.hot = options.hot || createNoopHMRChannel()
-    this.config = options.config ?? { dev: {} }
+    this._inlineConfig = options.config
   }
 
   transformRequest(url: string): Promise<TransformResult | null> {

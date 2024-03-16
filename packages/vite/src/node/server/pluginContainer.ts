@@ -198,7 +198,7 @@ export async function createPluginContainer(
       options?.environment ??
       (options?.ssr ? ssrEnvironment() : undefined) ??
       defaultEnvironment()
-    const ssr = options?.ssr ?? (environment?.type === 'node' ? true : false)
+    const ssr = options?.ssr ?? (environment?.name === 'node' ? true : false)
     return { environment, ssr }
   }
 

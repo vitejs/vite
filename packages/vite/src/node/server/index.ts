@@ -23,11 +23,7 @@ import {
   resolveHttpsConfig,
   setClientErrorHandler,
 } from '../http'
-import type {
-  DevEnvironmentConfig,
-  InlineConfig,
-  ResolvedConfig,
-} from '../config'
+import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
@@ -783,40 +779,26 @@ export async function _createServer(
     },
   })
 
-  // Environments
-
-  function resolveDevEnvironmentConfig(name: string): DevEnvironmentConfig {
-    // Merge the resolved configs, TODO: make generic on DevEnvironmentConfig
-    const { resolve, optimizeDeps, dev } = server.config
-    let resolvedConfig: DevEnvironmentConfig = { resolve, optimizeDeps, dev }
-    if (server.config.environments?.[name]) {
-      resolvedConfig = mergeConfig(
-        resolvedConfig,
-        server.config.environments[name],
-      )
-    }
-    return resolvedConfig
-  }
+  // Create Environments
 
   const createBrowserEnvironment =
     config.environments?.browser?.dev?.createEnvironment ??
-    ((server: ViteDevServer, config: DevEnvironmentConfig) =>
-      new DevEnvironment(server, 'browser', {
-        type: 'browser',
-        hot: ws,
-        config,
-      }))
+    server.config.dev?.createEnvironment ??
+    ((server: ViteDevServer, name: string) =>
+      new DevEnvironment(server, name, { hot: ws }))
 
-  server.browserEnvironment = createBrowserEnvironment(
-    server,
-    resolveDevEnvironmentConfig('browser'),
-  )
+  server.browserEnvironment = createBrowserEnvironment(server, 'browser')
   environments.set('browser', server.browserEnvironment)
 
-  server.nodeEnvironment = new DevEnvironment(server, 'node', {
-    type: 'node',
-    hot: ssrHotChannel,
-  })
+  const createNodeEnvironment =
+    /* config.ssr?.dev?.createEnvironment ?? */
+    config.environments?.ssr?.dev?.createEnvironment ??
+    config.environments?.node?.dev?.createEnvironment ?? // TODO: should we include both?
+    server.config.dev?.createEnvironment ??
+    ((server: ViteDevServer, name: string) =>
+      new DevEnvironment(server, name, { hot: ssrHotChannel }))
+
+  server.nodeEnvironment = createNodeEnvironment(server, 'node')
   environments.set('node', server.nodeEnvironment)
 
   const moduleGraph = new ModuleGraph({
@@ -827,20 +809,16 @@ export async function _createServer(
 
   if (config.environments) {
     Object.entries(config.environments).forEach((entry) => {
-      const [key, environmentConfig] = entry
-      if (key !== 'browser' && key !== 'ssr') {
+      const [name, environmentConfig] = entry
+      if (name !== 'browser' && name !== 'ssr' && name !== 'node') {
         const createEnvironment =
           environmentConfig.dev?.createEnvironment ??
-          (() =>
-            new DevEnvironment(server, key, {
-              type: 'node',
-              hot: ws,
-              config,
+          server.config.dev?.createEnvironment ??
+          ((server: ViteDevServer, name: string) =>
+            new DevEnvironment(server, name, {
+              hot: ws, // TODO: what should we use here?
             }))
-        environments.set(
-          key,
-          createEnvironment(server, resolveDevEnvironmentConfig(key)),
-        )
+        environments.set(name, createEnvironment(server, name))
       }
     })
   }

@@ -251,10 +251,7 @@ export interface BuildOptions {
   /**
    * create the Build Environment instance
    */
-  createEnvironment?: (
-    builder: ViteBuilder,
-    config: BuildEnvironmentConfig,
-  ) => BuildEnvironment
+  createEnvironment?: (builder: ViteBuilder, name: string) => BuildEnvironment
 }
 
 export interface LibraryOptions {
@@ -1276,13 +1273,16 @@ function areSeparateFolders(a: string, b: string) {
 
 export class BuildEnvironment extends Environment {
   mode = 'build' as const
+  builder: ViteBuilder
   config: BuildEnvironmentConfig
   constructor(
-    id: string,
-    options: { type: string; config?: BuildEnvironmentConfig },
+    builder: ViteBuilder,
+    name: string,
+    options?: { config?: BuildEnvironmentConfig },
   ) {
-    super(id, options)
-    this.config = options.config ?? { build: {} }
+    super(name)
+    this.builder = builder
+    this.config = options?.config ?? { build: {} }
   }
 }
 
@@ -1364,7 +1364,7 @@ export async function createViteBuilder(
 
         let userConfig = getDefaultInlineConfig()
         const inlineConfigEnvironmentOverrides =
-          defaultInlineConfig.environments?.[environment.id]
+          defaultInlineConfig.environments?.[environment.name]
         if (inlineConfigEnvironmentOverrides) {
           userConfig = mergeConfig(userConfig, inlineConfigEnvironmentOverrides)
         }
@@ -1392,17 +1392,10 @@ export async function createViteBuilder(
   const createBrowserEnvironment =
     defaultConfig.environments?.browser?.build?.createEnvironment ??
     defaultConfig.build?.createEnvironment ??
-    ((builder: ViteBuilder, config: BuildEnvironmentConfig) =>
-      new BuildEnvironment('browser', {
-        type: 'browser',
-        config,
-      }))
+    ((builder: ViteBuilder, name: string) =>
+      new BuildEnvironment(builder, name))
 
-  // Force ssr: false so the Vite's build function works unmodified. TODO: this may not be needed if we pass the environment and compute the
-  // ssr flag from it.
-  const browserEnvironment = createBrowserEnvironment(builder, {
-    build: { ssr: false },
-  })
+  const browserEnvironment = createBrowserEnvironment(builder, 'browser')
 
   environments.set('browser', browserEnvironment)
 
@@ -1411,21 +1404,25 @@ export async function createViteBuilder(
     // TODO: config.ssr should be a EnvironmentConfig
     const createSsrEnvironment =
       /*defaultConfig.ssr?.createEnvironment ??*/
-      (builder: ViteBuilder, config: BuildEnvironmentConfig) =>
-        new BuildEnvironment('ssr', { type: 'node' })
+      defaultConfig.environments?.ssr?.build?.createEnvironment ??
+      defaultConfig.environments?.node?.build?.createEnvironment ??
+      defaultConfig.build?.createEnvironment ??
+      ((builder: ViteBuilder, name: string) =>
+        new BuildEnvironment(builder, name))
 
-    const ssrEnvironment = createSsrEnvironment(builder, {})
+    const ssrEnvironment = createSsrEnvironment(builder, 'ssr')
     environments.set('ssr', ssrEnvironment)
   }
 
   if (defaultConfig.environments) {
     Object.entries(defaultConfig.environments).forEach((entry) => {
-      const [key, environmentConfig] = entry
-      if (key !== 'browser' && key !== 'ssr') {
+      const [name, environmentConfig] = entry
+      if (name !== 'browser' && name !== 'ssr') {
         const createEnvironment =
           environmentConfig.build?.createEnvironment ??
-          (() => new BuildEnvironment(key, { type: 'node' }))
-        environments.set(key, createEnvironment(builder, environmentConfig))
+          ((builder: ViteBuilder, name: string) =>
+            new BuildEnvironment(builder, name))
+        environments.set(name, createEnvironment(builder, name))
       }
     })
   }

@@ -67,13 +67,13 @@ export function transformRequest(
   }
   if (!options?.ssr) {
     // Backward compatibility
-    options = { ...options, ssr: environment.type !== 'browser' }
+    options = { ...options, ssr: environment.name !== 'browser' }
   }
 
   if (server._restartPromise && !options.ssr) throwClosedServerError()
 
   // We could have a cache per environment instead of the global _pendingRequests
-  const cacheKey = `${options.html ? 'html:' : ''}${environment.id}:${url}`
+  const cacheKey = `${options.html ? 'html:' : ''}${environment.name}:${url}`
 
   // This module may get invalidated while we are processing it. For example
   // when a full page reload is needed after the re-processing of pre-bundled
@@ -469,7 +469,7 @@ async function handleModuleSoftInvalidation(
 
   let result: TransformResult
   // For SSR soft-invalidation, no transformation is needed
-  if (environment.id !== 'browser') {
+  if (environment.name !== 'browser') {
     result = transformResult
   }
   // For client soft-invalidation, we need to transform each imports with new timestamps if available
