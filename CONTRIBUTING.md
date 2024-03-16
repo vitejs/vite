@@ -6,6 +6,29 @@ You can use [StackBlitz Codeflow](https://stackblitz.com/codeflow) to fix bugs o
 
 [![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/vitejs/vite)
 
+
+## Multiple entry points in Vite.js
+
+One can use resolve to generate the paths, makes the code a lot more readable for multiple entrypoints
+
+// vite.config.js
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+
+export default defineConfig({
+  plugins: [vue()],
+  build: {
+    rollupOptions: {
+      input: {
+        appSchool: resolve(__dirname, 'resources/school/index.html'),
+        appStudent: resolve(__dirname, 'resources/student/index.html'),
+        appAuth: resolve(__dirname, 'resources/auth/index.html'),
+      },
+    },
+  },
+})
+
 ## Repo Setup
 
 To develop locally, fork the Vite repository and clone it in your local machine. The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/).
