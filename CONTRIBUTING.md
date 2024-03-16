@@ -7,7 +7,8 @@ You can use [StackBlitz Codeflow](https://stackblitz.com/codeflow) to fix bugs o
 [![Open in Codeflow](https://developer.stackblitz.com/img/open_in_codeflow.svg)](https://pr.new/vitejs/vite)
 
 
-## Multiple entry points in Vite.js
+docs:
+ ## Multiple entry points in Vite.js
 
 One can use resolve to generate the paths, makes the code a lot more readable for multiple entrypoints
 
