@@ -488,7 +488,7 @@ export async function buildEnvironment(
   environment?: BuildEnvironment,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const options = config.build
-  const ssr = !!options.ssr
+  const ssr = (environment && environment?.name !== 'browser') ?? !!options.ssr
   const libOptions = options.lib
 
   config.logger.info(
@@ -540,7 +540,9 @@ export async function buildEnvironment(
 
   // inject ssr arg to plugin load/transform hooks
   const plugins = (
-    ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
+    environment || ssr
+      ? config.plugins.map((p) => injectEnvironmentToHooks(p))
+      : config.plugins
   ) as Plugin[]
 
   const rollupOptions: RollupOptions = {
@@ -676,7 +678,8 @@ export async function buildEnvironment(
     const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
 
     // watch file changes with rollup
-    if (config.build.watch) {
+    // TODO: ignore if a environment is provided for now
+    if (!environment && config.build.watch) {
       config.logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
@@ -1015,22 +1018,33 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-function injectSsrFlagToHooks(plugin: Plugin): Plugin {
+function injectEnvironmentToHooks(
+  plugin: Plugin,
+  environment?: BuildEnvironment,
+): Plugin {
   const { resolveId, load, transform } = plugin
   return {
     ...plugin,
-    resolveId: wrapSsrResolveId(resolveId),
-    load: wrapSsrLoad(load),
-    transform: wrapSsrTransform(transform),
+    resolveId: wrapEnvironmentResolveId(resolveId, environment),
+    load: wrapEnvironmentLoad(load, environment),
+    transform: wrapEnvironmentTransform(transform, environment),
   }
 }
 
-function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
+function wrapEnvironmentResolveId(
+  hook?: Plugin['resolveId'],
+  environment?: BuildEnvironment,
+): Plugin['resolveId'] {
   if (!hook) return
 
   const fn = getHookHandler(hook)
   const handler: Plugin['resolveId'] = function (id, importer, options) {
-    return fn.call(this, id, importer, injectSsrFlag(options))
+    return fn.call(
+      this,
+      id,
+      importer,
+      injectEnvironmentFlag(options, environment),
+    )
   }
 
   if ('handler' in hook) {
@@ -1043,13 +1057,16 @@ function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
   }
 }
 
-function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
+function wrapEnvironmentLoad(
+  hook?: Plugin['load'],
+  environment?: BuildEnvironment,
+): Plugin['load'] {
   if (!hook) return
 
   const fn = getHookHandler(hook)
   const handler: Plugin['load'] = function (id, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
-    return fn.call(this, id, injectSsrFlag(args[0]))
+    return fn.call(this, id, injectEnvironmentFlag(args[0], environment))
   }
 
   if ('handler' in hook) {
@@ -1062,13 +1079,21 @@ function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
   }
 }
 
-function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
+function wrapEnvironmentTransform(
+  hook?: Plugin['transform'],
+  environment?: BuildEnvironment,
+): Plugin['transform'] {
   if (!hook) return
 
   const fn = getHookHandler(hook)
   const handler: Plugin['transform'] = function (code, importer, ...args) {
-    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
-    return fn.call(this, code, importer, injectSsrFlag(args[0]))
+    return fn.call(
+      this,
+      code,
+      importer,
+      // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
+      injectEnvironmentFlag(args[0], environment),
+    )
   }
 
   if ('handler' in hook) {
@@ -1081,10 +1106,15 @@ function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
   }
 }
 
-function injectSsrFlag<T extends Record<string, any>>(
+function injectEnvironmentFlag<T extends Record<string, any>>(
   options?: T,
-): T & { ssr: boolean } {
-  return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
+  environment?: BuildEnvironment,
+): T & { ssr?: boolean; environment?: BuildEnvironment } {
+  const ssr = environment ? environment.name !== 'browser' : true
+  return { ...(options ?? {}), ssr, environment } as T & {
+    ssr?: boolean
+    environment?: BuildEnvironment
+  }
 }
 
 /*
