@@ -248,13 +248,10 @@ function encodePublicUrlsInCSS(config: ResolvedConfig) {
 
 function getLineCount(str: string): number {
   if (str === '') {
-    return 0
+    return 1
   }
   const lines = str.match(splitRE)
-  if (lines == null) {
-    return 0
-  }
-  return lines.length + 1
+  return (lines?.length ?? 0) + 1
 }
 
 const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
