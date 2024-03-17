@@ -3,8 +3,8 @@ import javascriptLogo from './javascript.svg'
 import viteLogo from '/vite.svg'
 import { setupCounter } from './counter.js'
 
-const $ = document.getElementById.bind(document)
+const getElement = document.getElementById.bind(document)
 
-$('viteLogo').src = viteLogo
-$('javascriptLogo').src = javascriptLogo
-setupCounter($('counter'))
+getElement('javascriptLogo').src = javascriptLogo
+getElement('viteLogo').src = viteLogo
+setupCounter(getElement('counter'))
