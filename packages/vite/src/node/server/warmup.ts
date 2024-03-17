@@ -22,7 +22,7 @@ export function warmupFiles(server: ViteDevServer): void {
   if (options?.ssrFiles?.length) {
     mapFiles(options.ssrFiles, root).then((files) => {
       for (const file of files) {
-        warmupFile(server, server.nodeEnvironment, file)
+        warmupFile(server, server.ssrEnvironment, file)
       }
     })
   }

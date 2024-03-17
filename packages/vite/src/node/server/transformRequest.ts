@@ -63,7 +63,7 @@ export function transformRequest(
 ): Promise<TransformResult | null> {
   // Backward compatibility when only `ssr` is passed
   if (!environment) {
-    environment = server.environments.get(options.ssr ? 'node' : 'browser')!
+    environment = server.environments.get(options.ssr ? 'ssr' : 'browser')!
   }
   if (!options?.ssr) {
     // Backward compatibility

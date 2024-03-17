@@ -85,8 +85,8 @@ async function instantiateModule(
   urlStack: string[] = [],
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
-  const moduleGraph = server.nodeEnvironment.moduleGraph
-  const mod = await moduleGraph.ensureEntryFromUrl(url) // TODO: environment?
+  const moduleGraph = server.ssrEnvironment.moduleGraph
+  const mod = await moduleGraph.ensureEntryFromUrl(url)
 
   if (mod.ssrError) {
     throw mod.ssrError
@@ -96,7 +96,7 @@ async function instantiateModule(
     return mod.ssrModule
   }
   const result =
-    mod.transformResult || (await server.nodeEnvironment.transformRequest(url))
+    mod.transformResult || (await server.ssrEnvironment.transformRequest(url))
   if (!result) {
     // TODO more info? is this even necessary?
     throw new Error(`failed to load module for ssr: ${url}`)

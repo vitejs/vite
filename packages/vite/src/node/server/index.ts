@@ -270,7 +270,7 @@ export interface ViteDevServer {
    * Default environments
    */
   browserEnvironment: DevEnvironment
-  nodeEnvironment: DevEnvironment
+  ssrEnvironment: DevEnvironment
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -542,7 +542,7 @@ export async function _createServer(
 
     // We set these after the server is created
     browserEnvironment: undefined as any,
-    nodeEnvironment: undefined as any,
+    ssrEnvironment: undefined as any,
     moduleGraph: undefined as any,
 
     resolvedUrls: null, // will be set on listen
@@ -561,13 +561,13 @@ export async function _createServer(
     // out and do the html fallback
     transformRequest(url, options) {
       const environment = options?.ssr
-        ? server.nodeEnvironment
+        ? server.ssrEnvironment
         : server.browserEnvironment
       return transformRequest(url, server, options, environment)
     },
     async warmupRequest(url, options) {
       const environment = options?.ssr
-        ? server.nodeEnvironment
+        ? server.ssrEnvironment
         : server.browserEnvironment
       await transformRequest(url, server, options, environment).catch((e) => {
         if (
@@ -608,7 +608,7 @@ export async function _createServer(
     async reloadModule(module) {
       if (serverConfig.hmr !== false && module.file) {
         // TODO: Should we also update the node moduleGraph for backward compatibility?
-        const environmentModule = (module._browserModule ?? module._nodeModule)!
+        const environmentModule = (module._browserModule ?? module._ssrModule)!
         updateModules(
           environments.get(environmentModule.environment),
           module.file,
@@ -793,24 +793,23 @@ export async function _createServer(
   const createNodeEnvironment =
     /* config.ssr?.dev?.createEnvironment ?? */
     config.environments?.ssr?.dev?.createEnvironment ??
-    config.environments?.node?.dev?.createEnvironment ?? // TODO: should we include both?
     server.config.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
       new DevEnvironment(server, name, { hot: ssrHotChannel }))
 
-  server.nodeEnvironment = createNodeEnvironment(server, 'node')
-  environments.set('node', server.nodeEnvironment)
+  server.ssrEnvironment = createNodeEnvironment(server, 'ssr')
+  environments.set('ssr', server.ssrEnvironment)
 
   const moduleGraph = new ModuleGraph({
     browser: server.browserEnvironment.moduleGraph,
-    node: server.nodeEnvironment.moduleGraph,
+    ssr: server.ssrEnvironment.moduleGraph,
   })
   server.moduleGraph = moduleGraph
 
   if (config.environments) {
     Object.entries(config.environments).forEach((entry) => {
       const [name, environmentConfig] = entry
-      if (name !== 'browser' && name !== 'ssr' && name !== 'node') {
+      if (name !== 'browser' && name !== 'ssr') {
         const createEnvironment =
           environmentConfig.dev?.createEnvironment ??
           server.config.dev?.createEnvironment ??

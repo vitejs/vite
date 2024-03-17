@@ -520,9 +520,9 @@ describe('acceptExports', () => {
       beforeAll(async () => {
         clientLogs.length = 0
         // so it's in the module graph
-        const { nodeEnvironment } = server
-        await nodeEnvironment.transformRequest(testFile)
-        await nodeEnvironment.transformRequest('non-tested/dep.js')
+        const { ssrEnvironment } = server
+        await ssrEnvironment.transformRequest(testFile)
+        await ssrEnvironment.transformRequest('non-tested/dep.js')
       })
 
       test('does not full reload', async () => {
