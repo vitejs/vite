@@ -16,19 +16,15 @@ All these environments share Vite's HTTP server, middlewares, and Web Socket. Th
 
 A Vite dev server exposes two environments by default named `'browser'` and `'node'`. The browser environment runs in client apps that have imported the `/@vite/client` module. The Node environment runs in the same runtime as the Vite server and allows application servers to be used to render requests during dev with full HMR support. We'll discuss later how frameworks and users can create and register new environments.
 
-The available environments can be accessed using the `server.environments` read-only array:
+The available environments can be accessed using the `server.environments` map:
 
 ```js
 server.environments.forEach((environment) => log(environment.name))
+
+server.environments.get('browser').transformRequest(url)
 ```
 
-Each environment can also be accessed through its name:
-
-```js
-server.environment('browser').transformRequest(url)
-```
-
-An environment is an instance of the `DevEnvironment` class:
+An dev environment is an instance of the `DevEnvironment` class:
 
 ```ts
 class DevEnvironment {
@@ -48,6 +44,7 @@ class DevEnvironment {
    */
   moduleGraph: ModuleGraph
   /**
+   * TBD: This abstraction isn't yet clear
    * Trigger the execution of a module using the associated module runner
    * in the target runtime.
    */
@@ -303,41 +300,6 @@ We could also make the environment name or common environment object accessible 
 
 :::
 
-## Environment Configuration
-
-All environments share the Vite server configuration, but certain options can be overridden per environment.
-
-```js
-export default {
-  resolve: {
-    conditions: [] // shared by all environments
-  },
-  environment: {
-    browser: {
-      resolve: {
-        conditions: [] // override for the browser environment
-      }
-    }
-    node: {
-      optimizeDeps: {} // override for the node environment
-    },
-    workerd: {
-      noExternal: true // override for a third-party environment
-    }
-  }
-}
-```
-
-The subset of options that can be overridden are resolved and are available at `environment.config`.
-
-:::info What options can be overridden?
-
-Vite has already allowed defining some config for the [Node environment](https://vitejs.dev/config/ssr-options.html). Initially, these are the options that would be available to be overridden by any environment. Except for `ssr.target: 'node' | 'webworker'`, that could be deprecated as `webworker` could be implemented as a separate environment.
-
-We could discuss what other options we should allow to be overridden, although maybe it is better to add them when they are requested by users later on. Some examples: `define`, `resolve.alias`, `resolve.dedupe`, `resolve.mainFields`, `resolve.extensions`.
-
-:::
-
 ## Separate module graphs
 
 Vite currently has a mixed browser and ssr/node module graph. Given an unprocessed or invalidated node, it isn't possible to know if it corresponds to the browser, ssr, or both environments. Module nodes have some properties prefixed, like `clientImportedModules` and `ssrImportedModules` (and `importedModules` that returns the union of both). `importers` contains all importers from both the browser and ssr environment for each module node. A module node also has `transformResult` and `ssrTransformResult`.
@@ -430,43 +392,132 @@ export class ModuleGraph {
 }
 ```
 
-## Registering environments
-
-There is a new plugin hook called `registerEnvironment` that is called after `configResolved`:
-
-```js
-function workedPlugin() {
-  return {
-    name: 'vite-plugin-workerd',
-    registerEnvironment: (server, environments) => {
-      const workedEnvironment = new WorkerdEnvironment(server)
-      // This environment has 'workerd' as its name, a convention agreed upon by the ecosystem
-      // connect workerdEnviroment logic to its associated workerd module runner
-      environments.push(workedEnvironment)
-    },
-  }
-}
-```
-
-The environment will be accessible in middlewares or plugin hooks through `server.environment('workerd')`.
-
 ## Creating new environments
 
 One of the goals of this feature is to provide a customizable API to process and run code. A Vite dev server provides browser and node environments out of the box, but users can build new environments using the exposed primitives.
 
 ```ts
-import { createModuleExectutionEnvironment } from 'vite'
+import { createDevEnvironment } from 'vite'
 
-const environment = createDevEnvironment({
+const environment = new DevEnvironment({
   name: 'workerd',
   config: {
     resolve: { conditions: ['custom'] }
   },
+  // TBD
   run(url) {
     dispatchModuleRunInWorkerd(url)
   }
 }) => DevEnvironment
 ```
+
+## Environment Configuration
+
+All environments share the Vite server configuration, but certain options can be overriden per environment.
+
+```js
+export default {
+  resolve: {
+    conditions: [] // shared by all environments
+  },
+  environments: {
+    browser: {
+      resolve: {
+        conditions: [] // override for the browser environment
+      }
+    }
+    node: {
+      optimizeDeps: {} // override for the node environment
+    },
+    workerd: {
+      noExternal: true // override for a third-party environment
+    }
+  }
+}
+```
+
+The `EnvironmentConfig` interface exposes all the per-environment options. There are `SharedEnvironmentConfig` that apply to both `build` and `dev` environments, like `resolve`. And there are `DevOptions` and `BuildOptions`
+
+```ts
+interface EnvironmentConfig extends SharedEnvironmentConfig {
+  dev: DevOptions
+  build: BuildOptions
+}
+```
+
+The `UserConfig` interface extends from `EnvironmentConfig`. Environment specific options defined at the root level of user config are used as the default for all environments. A user can use the `environments` record to override default options for any environment.
+
+```ts
+interface UserConfig extends EnvironmentConfig {
+  environments: {
+    [id]: EnvironmentConfig
+  }
+  // other options
+}
+```
+
+## Registering environments
+
+To register a new dev or build environment, you can use a `create` function:
+
+```js
+export default {
+  environments: {
+    rsc: {
+      dev: {
+        create: (server) => new NodeDevEnvironment(server),
+      },
+      build: {
+        create: (builder) => new NodeBuildEnvironment(builder),
+        outDir: '/dist/rsc',
+      },
+    },
+  },
+}
+```
+
+Environment providers like Workerd, can expose an environment configurator for the most common case of using the same runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
+
+```js
+function workedEnvironment(userConfig) {
+  return mergeConfig(
+    {
+      resolve: {
+        conditions: [
+          /*...*/
+        ],
+      },
+      dev: {
+        createEnvironment: (server, name) =>
+          new WorkerdDevEnvironment(server, name),
+      },
+      build: {
+        createEnvironment: (builder, name) =>
+          new WorkerdBuildEnvironment(builder, name),
+      },
+    },
+    userConfig,
+  )
+}
+```
+
+Then the config file can be writen as
+
+```js
+import { workerdEnvironment } from 'vite-environment-workerd'
+
+export default {
+  environments: {
+    rsc: workerdEnvironment({
+      build: {
+        outDir: '/dist/rsc',
+      },
+    }),
+  },
+}
+```
+
+The environment will be accessible in middlewares or plugin hooks through `server.environment('workerd')`.
 
 ## `ModuleRunner`
 
@@ -634,11 +685,47 @@ Plugin hooks also receive the environment name during build. This replaces the `
 
 The Vite CLI would also be updated from `vite build --ssr` to `vite build --environment=node`. Applications can then call build for each environment (for example `vite build --environment=workerd`).
 
-In a future stage, or as part of this proposal, we could also review our stance on vite build being a simple wrapper around rollup. Instead, now that we have a proper environment concept, vite build could create a `ViteBuilder` that has knowledge of all the configured environments and build them all with a single call. This has been requested many times by framework authors that use the "Framework as a plugin" scheme. Right now they end up triggering the SSR build when the `buildEnd` hook for the browser build is called.
+Calling `vite build --all` will instantiate a `ViteBuilder` (equivalent to a `ViteDevServer`) and build all configured environments. By default the build of environment is runned in series, but a framework or user can configure it using:
 
-In its simpler form, the vite builder could call each build in series as defined by `config.environments` order (or by a new `config.build.environments` order). This should cover most current use cases out of the box, given that most frameworks build the client first and then node (as they use the client manifest).
+```js
+export default {
+  builder: {
+    runBuildTasks: asnyc (builder, buildTasks) => {
+      return Promise.all(buildTasks.map( task => task.run() ))
+    }
+  }
+}
+```
 
-It is an interesting design space to explore because it could make build and dev work more uniformly. For example, Vite Builder could also only load the config file once and do the overrides for each environment in the same way as it is done during dev. And there could also be a single plugin pipeline if we would like plugins to share state directly between the environments (as it happens during dev already).
+A build task implements the `BuildTask` interface:
+
+```js
+export interface BuildTask {
+  environment: BuildEnvironment
+  config: ResolvedConfig
+  run: () => Promise<void>
+  cancel: () => void
+}
+```
+
+::: info
+
+If we have a requirement to create environments dynamically, for example to create an environment depending on the folder structure of user projects at startup. We could let frameworks provide a function at the `server` and `builder` level to do so.
+
+```js
+builder: {
+  configureEnvironments: async (builder, environments) => {
+    // Dynamically add build environments
+  }
+},
+server: {
+  configureEnvironments: (server, environments) => {
+    // Dynamically add dev environments
+  }
+}
+```
+
+:::
 
 ## Backward Compatibility
 
