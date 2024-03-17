@@ -41,7 +41,7 @@ export function getDepsOptimizer(
 
 export async function initDepsOptimizer(
   config: ResolvedConfig,
-  server?: ViteDevServer,
+  server: ViteDevServer,
 ): Promise<void> {
   if (!getDepsOptimizer(config, false)) {
     await createDepsOptimizer(config, server)
@@ -78,7 +78,7 @@ export async function initDevSsrDepsOptimizer(
 
 async function createDepsOptimizer(
   config: ResolvedConfig,
-  server?: ViteDevServer,
+  server: ViteDevServer,
 ): Promise<void> {
   const { logger } = config
   const ssr = false
@@ -105,7 +105,6 @@ async function createDepsOptimizer(
     isOptimizedDepUrl: createIsOptimizedDepUrl(config),
     getOptimizedDepId: (depInfo: OptimizedDepInfo) =>
       `${depInfo.file}?v=${depInfo.browserHash}`,
-    delayDepsOptimizerUntil,
     close,
     options,
   }
@@ -167,9 +166,10 @@ async function createDepsOptimizer(
   // from the first request before resolving to minimize full page reloads.
   // On warm start or after the first optimization is run, we use a simpler
   // debounce strategy each time a new dep is discovered.
-  let crawlEndFinder: CrawlEndFinder | undefined
+  let waitingForCrawlEnd = false
   if (!cachedMetadata) {
-    crawlEndFinder = setupOnCrawlEnd(onCrawlEnd)
+    server._onCrawlEnd(onCrawlEnd)
+    waitingForCrawlEnd = true
   }
 
   let optimizationResult:
@@ -188,7 +188,6 @@ async function createDepsOptimizer(
 
   async function close() {
     closed = true
-    crawlEndFinder?.cancel()
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,
@@ -271,7 +270,7 @@ async function createDepsOptimizer(
               optimizationResult.result.then((result) => {
                 // Check if the crawling of static imports has already finished. In that
                 // case, the result is handled by the onCrawlEnd callback
-                if (!crawlEndFinder) return
+                if (!waitingForCrawlEnd) return
 
                 optimizationResult = undefined // signal that we'll be using the result
 
@@ -535,17 +534,15 @@ async function createDepsOptimizer(
   }
 
   function fullReload() {
-    if (server) {
-      // Cached transform results have stale imports (resolved to
-      // old locations) so they need to be invalidated before the page is
-      // reloaded.
-      server.moduleGraph.invalidateAll()
+    // Cached transform results have stale imports (resolved to
+    // old locations) so they need to be invalidated before the page is
+    // reloaded.
+    server.moduleGraph.invalidateAll()
 
-      server.hot.send({
-        type: 'full-reload',
-        path: '*',
-      })
-    }
+    server.hot.send({
+      type: 'full-reload',
+      path: '*',
+    })
   }
 
   async function rerun() {
@@ -594,7 +591,7 @@ async function createDepsOptimizer(
     // we can get a list of every missing dependency before giving to the
     // browser a dependency that may be outdated, thus avoiding full page reloads
 
-    if (!crawlEndFinder) {
+    if (!waitingForCrawlEnd) {
       // Debounced rerun, let other missing dependencies be discovered before
       // the running next optimizeDeps
       debouncedProcessing()
@@ -649,7 +646,7 @@ async function createDepsOptimizer(
   // be crawled if the browser requests them right away).
   async function onCrawlEnd() {
     // switch after this point to a simple debounce strategy
-    crawlEndFinder = undefined
+    waitingForCrawlEnd = false
 
     debug?.(colors.green(`✨ static imports crawl ended`))
     if (closed) {
@@ -757,71 +754,6 @@ async function createDepsOptimizer(
       debouncedProcessing(0)
     }
   }
-
-  function delayDepsOptimizerUntil(id: string, done: () => Promise<any>) {
-    if (crawlEndFinder && !depsOptimizer.isOptimizedDepFile(id)) {
-      crawlEndFinder.delayDepsOptimizerUntil(id, done)
-    }
-  }
-}
-
-const callCrawlEndIfIdleAfterMs = 50
-
-interface CrawlEndFinder {
-  delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
-  cancel: () => void
-}
-
-function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
-  const registeredIds = new Set<string>()
-  const seenIds = new Set<string>()
-  let timeoutHandle: NodeJS.Timeout | undefined
-
-  let cancelled = false
-  function cancel() {
-    cancelled = true
-  }
-
-  let crawlEndCalled = false
-  function callOnCrawlEnd() {
-    if (!cancelled && !crawlEndCalled) {
-      crawlEndCalled = true
-      onCrawlEnd()
-    }
-  }
-
-  function delayDepsOptimizerUntil(id: string, done: () => Promise<any>): void {
-    if (!seenIds.has(id)) {
-      seenIds.add(id)
-      registeredIds.add(id)
-      done()
-        .catch(() => {})
-        .finally(() => markIdAsDone(id))
-    }
-  }
-  function markIdAsDone(id: string): void {
-    registeredIds.delete(id)
-    checkIfCrawlEndAfterTimeout()
-  }
-
-  function checkIfCrawlEndAfterTimeout() {
-    if (cancelled || registeredIds.size > 0) return
-
-    if (timeoutHandle) clearTimeout(timeoutHandle)
-    timeoutHandle = setTimeout(
-      callOnCrawlEndWhenIdle,
-      callCrawlEndIfIdleAfterMs,
-    )
-  }
-  async function callOnCrawlEndWhenIdle() {
-    if (cancelled || registeredIds.size > 0) return
-    callOnCrawlEnd()
-  }
-
-  return {
-    delayDepsOptimizerUntil,
-    cancel,
-  }
 }
 
 async function createDevSsrDepsOptimizer(
@@ -844,7 +776,6 @@ async function createDevSsrDepsOptimizer(
     // noop, there is no scanning during dev SSR
     // the optimizer blocks the server start
     run: () => {},
-    delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => {},
 
     close: async () => {},
     options: config.ssr.optimizeDeps,

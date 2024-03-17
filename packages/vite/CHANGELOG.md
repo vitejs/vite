@@ -1,3 +1,36 @@
+## 5.2.0-beta.1 (2024-03-14)
+
+* feat: csp nonce support (#16052) ([1d5eec4](https://github.com/vitejs/vite/commit/1d5eec4)), closes [#16052](https://github.com/vitejs/vite/issues/16052)
+* feat: formalize waitForRequestsIdle (experimental) (#16135) ([9888843](https://github.com/vitejs/vite/commit/9888843)), closes [#16135](https://github.com/vitejs/vite/issues/16135)
+* feat(optimizer): show a friendly warning with 404 instead of 504 outdated optimize dep (#16080) ([7ee4261](https://github.com/vitejs/vite/commit/7ee4261)), closes [#16080](https://github.com/vitejs/vite/issues/16080)
+* fix: `sideEffects: []` should work as `sideEffects: false` (#16152) ([f377a84](https://github.com/vitejs/vite/commit/f377a84)), closes [#16152](https://github.com/vitejs/vite/issues/16152)
+* fix(esbuild): preserve import.meta even if esbuild.target is set to lower versions (#16151) ([6f77b2b](https://github.com/vitejs/vite/commit/6f77b2b)), closes [#16151](https://github.com/vitejs/vite/issues/16151)
+* fix(ssr): crash on circular import (#14441) ([8cd846c](https://github.com/vitejs/vite/commit/8cd846c)), closes [#14441](https://github.com/vitejs/vite/issues/14441)
+
+
+
+## 5.2.0-beta.0 (2024-03-12)
+
+* chore: use `@polka/compression` (#16146) ([592c95a](https://github.com/vitejs/vite/commit/592c95a)), closes [#16146](https://github.com/vitejs/vite/issues/16146)
+* chore(deps): bump rollup to 4.13.0 (#15295) ([2f95c2b](https://github.com/vitejs/vite/commit/2f95c2b)), closes [#15295](https://github.com/vitejs/vite/issues/15295)
+* feat: accept assets to be specified as input (#16087) ([75a9fc6](https://github.com/vitejs/vite/commit/75a9fc6)), closes [#16087](https://github.com/vitejs/vite/issues/16087)
+* feat: add entry name to manifest (#15849) ([6d6ae10](https://github.com/vitejs/vite/commit/6d6ae10)), closes [#15849](https://github.com/vitejs/vite/issues/15849)
+* feat: convert overlay template to DOM (#15852) ([dd49505](https://github.com/vitejs/vite/commit/dd49505)), closes [#15852](https://github.com/vitejs/vite/issues/15852)
+* feat: support for self-referencing (#16068) ([03b9674](https://github.com/vitejs/vite/commit/03b9674)), closes [#16068](https://github.com/vitejs/vite/issues/16068)
+* feat(config): `import.meta.filename`/`dirname` support (#15888) ([3efb1a1](https://github.com/vitejs/vite/commit/3efb1a1)), closes [#15888](https://github.com/vitejs/vite/issues/15888)
+* feat(resolve): auto externalize node builtins for `noExternal: true` in node (#16019) ([1cc88c1](https://github.com/vitejs/vite/commit/1cc88c1)), closes [#16019](https://github.com/vitejs/vite/issues/16019)
+* feat(ssr): `import.meta.filename`/`dirname` support (#15887) ([74dc73a](https://github.com/vitejs/vite/commit/74dc73a)), closes [#15887](https://github.com/vitejs/vite/issues/15887)
+* fix: apply correct fs restrictions for Yarn PnP when serving files from node_modules (#15957) ([a149d9e](https://github.com/vitejs/vite/commit/a149d9e)), closes [#15957](https://github.com/vitejs/vite/issues/15957)
+* fix: encode URLs correctly (fix #15298) (#15311) ([b10d162](https://github.com/vitejs/vite/commit/b10d162)), closes [#15298](https://github.com/vitejs/vite/issues/15298) [#15311](https://github.com/vitejs/vite/issues/15311)
+* fix: upgrade esbuild to 0.20.x (#16079) ([30e5ae3](https://github.com/vitejs/vite/commit/30e5ae3)), closes [#16079](https://github.com/vitejs/vite/issues/16079)
+* fix(css): treeshake css modules (#16051) ([17d71ec](https://github.com/vitejs/vite/commit/17d71ec)), closes [#16051](https://github.com/vitejs/vite/issues/16051)
+* fix(hmr): call dispose before prune (#15782) ([57628dc](https://github.com/vitejs/vite/commit/57628dc)), closes [#15782](https://github.com/vitejs/vite/issues/15782)
+* fix(ssr): apply alias to resolvable dependencies during dev (#15602) ([8e54af6](https://github.com/vitejs/vite/commit/8e54af6)), closes [#15602](https://github.com/vitejs/vite/issues/15602)
+* refactor: normalize cache package dir (#15546) ([e030f4b](https://github.com/vitejs/vite/commit/e030f4b)), closes [#15546](https://github.com/vitejs/vite/issues/15546)
+* style: update overlay style on mobile (#15760) ([4559ac0](https://github.com/vitejs/vite/commit/4559ac0)), closes [#15760](https://github.com/vitejs/vite/issues/15760)
+
+
+
 ## <small>5.1.6 (2024-03-11)</small>
 
 * chore(deps): update all non-major dependencies (#16131) ([a862ecb](https://github.com/vitejs/vite/commit/a862ecb)), closes [#16131](https://github.com/vitejs/vite/issues/16131)

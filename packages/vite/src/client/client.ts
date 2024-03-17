@@ -383,6 +383,11 @@ if ('document' in globalThis) {
     })
 }
 
+const cspNonce =
+  'document' in globalThis
+    ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
+    : undefined
+
 // all css imports should be inserted at the same position
 // because after build it will be a single css file
 let lastInsertedStyle: HTMLStyleElement | undefined
@@ -394,6 +399,9 @@ export function updateStyle(id: string, content: string): void {
     style.setAttribute('type', 'text/css')
     style.setAttribute('data-vite-dev-id', id)
     style.textContent = content
+    if (cspNonce) {
+      style.setAttribute('nonce', cspNonce)
+    }
 
     if (!lastInsertedStyle) {
       document.head.appendChild(style)
