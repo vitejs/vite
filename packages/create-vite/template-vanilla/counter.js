@@ -1,7 +1,7 @@
 export function setupCounter(element) {
-  let counter = 0
+  let count = 0
   function increment() {
-    element.textContent = `count is ${counter}`
+    element.textContent = `count is ${count}`
     count++
   }
   element.addEventListener('click', increment)
