@@ -1,8 +1,9 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
+import convertSourceMap from 'convert-source-map'
 import type { ExistingRawSourceMap, SourceMap } from 'rollup'
 import type { Logger } from '../logger'
-import { createDebugger } from '../utils'
+import { blankReplacer, createDebugger } from '../utils'
 
 const debug = createDebugger('vite:sourcemap', {
   onlyWhenFocused: true,
@@ -141,5 +142,34 @@ export function applySourcemapIgnoreList(
 
   if (x_google_ignoreList.length > 0) {
     if (!map.x_google_ignoreList) map.x_google_ignoreList = x_google_ignoreList
+  }
+}
+
+export async function extractSourcemapFromFile(
+  code: string,
+  filePath: string,
+): Promise<{ code: string; map: SourceMap } | undefined> {
+  const map = (
+    convertSourceMap.fromSource(code) ||
+    (await convertSourceMap.fromMapFileSource(
+      code,
+      createConvertSourceMapReadMap(filePath),
+    ))
+  )?.toObject()
+
+  if (map) {
+    return {
+      code: code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer),
+      map,
+    }
+  }
+}
+
+function createConvertSourceMapReadMap(originalFileName: string) {
+  return (filename: string) => {
+    return fsp.readFile(
+      path.resolve(path.dirname(originalFileName), filename),
+      'utf-8',
+    )
   }
 }
