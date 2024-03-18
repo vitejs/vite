@@ -26,6 +26,18 @@ export interface CSSModulesOptions {
       ) => string)
 }
 
+// https://github.com/jridgewell/trace-mapping/blob/5a658b10d9b6dea9c614ff545ca9c4df895fee9e/src/types.ts#L4-L16
+export interface RawSourceMap {
+  file?: string | null
+  names: string[]
+  sourceRoot?: string
+  sources: (string | null)[]
+  sourcesContent?: (string | null)[]
+  version: 3
+  ignoreList?: number[]
+  mappings: string
+}
+
 /**
  * This is designed for parity with LightningCSS
  * so it they can be used as a drop-in alternative

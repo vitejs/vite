@@ -1,5 +1,4 @@
 import MagicString from 'magic-string'
-import type { RawSourceMap } from '@ampproject/remapping'
 import type { Exports, Imports } from './utils/generate-esm'
 import { generateEsm } from './utils/generate-esm'
 import {
@@ -10,6 +9,7 @@ import type {
   CSSModuleExports,
   CSSModuleReferences,
   CSSModulesOptions,
+  RawSourceMap,
 } from './types'
 
 export interface CssModuleToEsmOptions {

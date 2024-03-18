@@ -204,9 +204,6 @@ importers:
 
   packages/css-modules:
     dependencies:
-      '@ampproject/remapping':
-        specifier: ^2.3.0
-        version: 2.3.0
       '@rollup/pluginutils':
         specifier: ^5.1.0
         version: 5.1.0(rollup@4.13.0)

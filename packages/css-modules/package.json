@@ -26,7 +26,6 @@
     }
   },
   "dependencies": {
-    "@ampproject/remapping": "^2.3.0",
     "@rollup/pluginutils": "^5.1.0",
     "generic-names": "^4.0.0",
     "icss-utils": "^5.1.0",

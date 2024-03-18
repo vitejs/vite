@@ -4,8 +4,7 @@ import postcssModulesExtractImports from 'postcss-modules-extract-imports'
 import postcssModulesScope from 'postcss-modules-scope'
 import genericNames from 'generic-names'
 import postcss from 'postcss'
-import type { RawSourceMap } from '@ampproject/remapping'
-import type { CSSModuleData, CSSModulesOptions } from '../types'
+import type { CSSModuleData, CSSModulesOptions, RawSourceMap } from '../types'
 import { postcssExtractIcss } from './postcss-extract-icss'
 
 export interface CompileOptions extends CSSModulesOptions {
