@@ -358,9 +358,7 @@ export interface UserConfig extends EnvironmentConfig {
    * Environment overrides
    * TODO: this should probably be an array, following the plugins convention
    */
-  environments?: {
-    [key: string]: EnvironmentConfig
-  }
+  environments?: (EnvironmentConfig & { name: string })[]
 }
 
 export interface HTMLOptions {

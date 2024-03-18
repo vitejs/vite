@@ -265,7 +265,7 @@ export interface ViteDevServer {
   /**
    * Dev Environments. Module execution environments attached to the Vite server.
    */
-  environments: Map<string, DevEnvironment>
+  environments: DevEnvironment[]
   /**
    * Default environments
    */
@@ -447,6 +447,10 @@ export function createServer(
   return _createServer(inlineConfig, { hotListen: true })
 }
 
+function getResolvedEnvironmentConfig(config: ResolvedConfig, name: string) {
+  return config.environments?.find((e) => e.name === name)
+}
+
 export async function _createServer(
   inlineConfig: InlineConfig = {},
   options: { hotListen: boolean },
@@ -494,7 +498,7 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
-  const environments = new Map()
+  const environments: DevEnvironment[] = []
 
   // The global environment is used for buildStart, buildEnd, watchChange, and writeBundle hooks
   // that are called once and not per environment.
@@ -610,7 +614,7 @@ export async function _createServer(
         // TODO: Should we also update the node moduleGraph for backward compatibility?
         const environmentModule = (module._browserModule ?? module._ssrModule)!
         updateModules(
-          environments.get(environmentModule.environment),
+          environments.find((e) => e.name === environmentModule.environment)!,
           module.file,
           [environmentModule],
           Date.now(),
@@ -622,7 +626,7 @@ export async function _createServer(
       // TODO: Should this be reloadEnvironmentModule(environment, module) ?
       if (serverConfig.hmr !== false && module.file) {
         updateModules(
-          environments.get(module.environment),
+          environments.find((e) => e.name === module.environment)!,
           module.file,
           [module],
           Date.now(),
@@ -782,23 +786,23 @@ export async function _createServer(
   // Create Environments
 
   const createBrowserEnvironment =
-    config.environments?.browser?.dev?.createEnvironment ??
+    getResolvedEnvironmentConfig(config, 'browser')?.dev?.createEnvironment ??
     server.config.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
       new DevEnvironment(server, name, { hot: ws }))
 
   server.browserEnvironment = createBrowserEnvironment(server, 'browser')
-  environments.set('browser', server.browserEnvironment)
+  environments.push(server.browserEnvironment)
 
   const createNodeEnvironment =
     /* config.ssr?.dev?.createEnvironment ?? */
-    config.environments?.ssr?.dev?.createEnvironment ??
+    getResolvedEnvironmentConfig(config, 'ssr')?.dev?.createEnvironment ??
     server.config.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
       new DevEnvironment(server, name, { hot: ssrHotChannel }))
 
   server.ssrEnvironment = createNodeEnvironment(server, 'ssr')
-  environments.set('ssr', server.ssrEnvironment)
+  environments.push(server.ssrEnvironment)
 
   const moduleGraph = new ModuleGraph({
     browser: server.browserEnvironment.moduleGraph,
@@ -817,7 +821,7 @@ export async function _createServer(
             new DevEnvironment(server, name, {
               hot: ws, // TODO: what should we use here?
             }))
-        environments.set(name, createEnvironment(server, name))
+        environments.push(createEnvironment(server, name))
       }
     })
   }
@@ -927,11 +931,14 @@ export async function _createServer(
 
   hot.on('vite:invalidate', async ({ path, message, environment }) => {
     if (environment) {
-      invalidateModule(environments.get(environment), { path, message })
-    } else {
-      environments.forEach((environment) => {
-        invalidateModule(environment, { path, message })
+      invalidateModule(environments.find((e) => e.name === environment)!, {
+        path,
+        message,
       })
+    } else {
+      for (const environment of environments) {
+        invalidateModule(environment, { path, message })
+      }
     }
   })
 
