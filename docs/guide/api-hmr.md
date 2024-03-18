@@ -8,13 +8,13 @@ The manual HMR API is primarily intended for framework and tooling authors. As a
 
 Vite exposes its manual HMR API via the special `import.meta.hot` object:
 
-```ts
+```ts twoslash
+import type { ModuleNamespace } from 'vite/types/hot.d.ts'
+import type { InferCustomEventPayload } from 'vite/types/customEvent.d.ts'
+
+// ---cut---
 interface ImportMeta {
   readonly hot?: ViteHotContext
-}
-
-type ModuleNamespace = Record<string, any> & {
-  [Symbol.toStringTag]: 'Module'
 }
 
 interface ViteHotContext {
@@ -32,7 +32,6 @@ interface ViteHotContext {
   prune(cb: (data: any) => void): void
   invalidate(message?: string): void
 
-  // `InferCustomEventPayload` provides types for built-in Vite events
   on<T extends string>(
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
@@ -67,7 +66,9 @@ Vite provides type definitions for `import.meta.hot` in [`vite/client.d.ts`](htt
 
 For a module to self-accept, use `import.meta.hot.accept` with a callback which receives the updated module:
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 export const count = 1
 
 if (import.meta.hot) {
@@ -90,7 +91,13 @@ Vite requires that the call to this function appears as `import.meta.hot.accept(
 
 A module can also accept updates from direct dependencies without reloading itself:
 
-```js
+```js twoslash
+// @filename: /foo.d.ts
+export declare const foo: () => void
+
+// @filename: /example.js
+import 'vite/client'
+// ---cut---
 import { foo } from './foo.js'
 
 foo()
@@ -117,7 +124,9 @@ if (import.meta.hot) {
 
 A self-accepting module or a module that expects to be accepted by others can use `hot.dispose` to clean-up any persistent side effects created by its updated copy:
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 function setupSideEffect() {}
 
 setupSideEffect()
@@ -133,7 +142,9 @@ if (import.meta.hot) {
 
 Register a callback that will call when the module is no longer imported on the page. Compared to `hot.dispose`, this can be used if the source code cleans up side-effects by itself on updates and you only need to clean-up when it's removed from the page. Vite currently uses this for `.css` imports.
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 function setupOrReuseSideEffect() {}
 
 setupOrReuseSideEffect()
@@ -151,7 +162,9 @@ The `import.meta.hot.data` object is persisted across different instances of the
 
 Note that re-assignment of `data` itself is not supported. Instead, you should mutate properties of the `data` object so information added from other handlers are preserved.
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 // ok
 import.meta.hot.data.someValue = 'hello'
 
@@ -169,7 +182,9 @@ A self-accepting module may realize during runtime that it can't handle a HMR up
 
 Note that you should always call `import.meta.hot.accept` even if you plan to call `invalidate` immediately afterwards, or else the HMR client won't listen for future changes to the self-accepting module. To communicate your intent clearly, we recommend calling `invalidate` within the `accept` callback like so:
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 import.meta.hot.accept((module) => {
   // You may use the new module instance to decide whether to invalidate.
   if (cannotHandleUpdate(module)) {
