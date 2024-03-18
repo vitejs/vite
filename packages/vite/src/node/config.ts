@@ -76,6 +76,10 @@ const debug = createDebugger('vite:config')
 const promisifiedRealpath = promisify(fs.realpath)
 
 export interface ConfigEnv {
+  /**
+   * 'serve': during dev (`vite` command)
+   * 'build': when building for production (`vite build` command)
+   */
   command: 'build' | 'serve'
   mode: string
   isSsrBuild?: boolean
@@ -105,8 +109,7 @@ export type UserConfigExport =
 /**
  * Type helper to make it easier to use vite.config.ts
  * accepts a direct {@link UserConfig} object, or a function that returns it.
- * The function receives a {@link ConfigEnv} object that exposes two properties:
- * `command` (either `'build'` or `'serve'`), and `mode`.
+ * The function receives a {@link ConfigEnv} object.
  */
 export function defineConfig(config: UserConfig): UserConfig
 export function defineConfig(config: Promise<UserConfig>): Promise<UserConfig>
