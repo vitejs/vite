@@ -253,6 +253,9 @@ importers:
       '@types/postcss-modules-values':
         specifier: ^4.0.2
         version: 4.0.2
+      lightningcss:
+        specifier: ^1.24.1
+        version: 1.24.1
       postcss:
         specifier: ^8.4.35
         version: 8.4.36

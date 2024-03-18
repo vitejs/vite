@@ -90,7 +90,7 @@ export async function resolvePlugins(
     ...normalPlugins,
     wasmFallbackPlugin(),
     definePlugin(config),
-    cssModulesPlugin(config),
+    config.css.modules !== false ? cssModulesPlugin(config) : null,
     cssPostPlugin(config),
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),

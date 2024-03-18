@@ -1424,3 +1424,18 @@ export function displayTime(time: number): string {
 export function partialEncodeURI(uri: string): string {
   return uri.replaceAll('%', '%25')
 }
+
+export function createCachedImport<T>(
+  imp: () => Promise<T>,
+): () => T | Promise<T> {
+  let cached: T | Promise<T>
+  return () => {
+    if (!cached) {
+      cached = imp().then((module) => {
+        cached = module
+        return module
+      })
+    }
+    return cached
+  }
+}

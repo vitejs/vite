@@ -7,7 +7,8 @@ import postcss from 'postcss'
 import type { CSSModuleData, CSSModulesOptions, RawSourceMap } from '../types'
 import { postcssExtractIcss } from './postcss-extract-icss'
 
-export interface CompileOptions extends CSSModulesOptions {
+export interface CompileOptions {
+  cssModules?: CSSModulesOptions
   sourcemap?: boolean
 }
 
@@ -37,14 +38,15 @@ export async function compileCSSModule(
   id: string,
   options?: CompileOptions,
 ): Promise<CompileResult> {
+  const cssModules = options?.cssModules ?? {}
   const generateScopedName =
-    typeof options?.generateScopedName === 'function'
-      ? options.generateScopedName
-      : genericNames(options?.generateScopedName ?? defaultScopedName, {
-          hashPrefix: options?.hashPrefix,
+    typeof cssModules.generateScopedName === 'function'
+      ? cssModules.generateScopedName
+      : genericNames(cssModules.generateScopedName ?? defaultScopedName, {
+          hashPrefix: cssModules.hashPrefix,
         })
 
-  const isGlobal = options?.globalModulePaths?.some((pattern) =>
+  const isGlobal = cssModules.globalModulePaths?.some((pattern) =>
     pattern.test(id),
   )
 
@@ -55,7 +57,7 @@ export async function compileCSSModule(
     postcssModulesValues,
 
     postcssModulesLocalByDefault({
-      mode: isGlobal ? 'global' : options?.scopeBehaviour,
+      mode: isGlobal ? 'global' : cssModules.scopeBehaviour,
     }),
 
     // Declares imports from composes
@@ -63,7 +65,7 @@ export async function compileCSSModule(
 
     // Resolves & removes composes
     postcssModulesScope({
-      exportGlobals: options?.exportGlobals,
+      exportGlobals: cssModules.exportGlobals,
       generateScopedName: (exportName, resourceFile, rawCss) => {
         const scopedName = generateScopedName(exportName, resourceFile, rawCss)
         localClasses.push(scopedName)
