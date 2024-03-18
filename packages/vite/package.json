@@ -86,7 +86,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.20.1",
-    "postcss": "^8.4.35",
+    "postcss": "^8.4.36",
     "rollup": "^4.13.0"
   },
   "optionalDependencies": {
@@ -126,7 +126,7 @@
     "fast-glob": "^3.3.2",
     "http-proxy": "^1.18.1",
     "launch-editor-middleware": "^2.6.1",
-    "lightningcss": "^1.24.0",
+    "lightningcss": "^1.24.1",
     "magic-string": "^0.30.8",
     "micromatch": "^4.0.5",
     "mlly": "^1.6.1",
@@ -151,7 +151,7 @@
     "tsconfck": "^3.0.3",
     "tslib": "^2.6.2",
     "types": "link:./types",
-    "ufo": "^1.4.0",
+    "ufo": "^1.5.1",
     "ws": "^8.16.0"
   },
   "peerDependencies": {
