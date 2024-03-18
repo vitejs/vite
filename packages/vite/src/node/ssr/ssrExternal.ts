@@ -6,6 +6,7 @@ import {
   createDebugger,
   createFilter,
   getNpmPackageName,
+  isBuildCommand,
   isBuiltin,
 } from '../utils'
 import type { ResolvedConfig } from '..'
@@ -63,7 +64,7 @@ export function createIsConfiguredAsSsrExternal(
         id,
         // Skip passing importer in build to avoid externalizing non-hoisted dependencies
         // unresolvable from root (which would be unresolvable from output bundles also)
-        config.command === 'build' ? undefined : importer,
+        isBuildCommand(config) ? undefined : importer,
         resolveOptions,
         ssr?.target === 'webworker',
         undefined,

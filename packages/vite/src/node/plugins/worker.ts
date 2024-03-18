@@ -5,7 +5,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import { getHash, injectQuery, prettifyUrl, urlRE } from '../utils'
+import { getHash, injectQuery, isBuildCommand, prettifyUrl, urlRE } from '../utils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   onRollupWarning,
@@ -196,7 +196,7 @@ export function webWorkerPostPlugin(): Plugin {
 }
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
-  const isBuild = config.command === 'build'
+  const isBuild = isBuildCommand(config)
   let server: ViteDevServer
   const isWorker = config.isWorker
 

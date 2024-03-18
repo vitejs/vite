@@ -4,7 +4,7 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { evalValue, injectQuery, transformStableResult } from '../utils'
+import { evalValue, injectQuery, isBuildCommand, transformStableResult } from '../utils'
 import type { ResolveFn } from '..'
 import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
@@ -101,14 +101,14 @@ function isIncludeWorkerImportMetaUrl(code: string): boolean {
 }
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
-  const isBuild = config.command === 'build'
+  const isBuild = isBuildCommand(config)
   let workerResolver: ResolveFn
 
   const fsResolveOptions: InternalResolveOptions = {
     ...config.resolve,
     root: config.root,
     isProduction: config.isProduction,
-    isBuild: config.command === 'build',
+    isBuild: isBuildCommand(config),
     packageCache: config.packageCache,
     ssrConfig: config.ssr,
     asSrc: true,

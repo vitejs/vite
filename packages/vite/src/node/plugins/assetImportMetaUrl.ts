@@ -4,7 +4,7 @@ import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { ResolveFn } from '../'
-import { injectQuery, isParentDirectory, transformStableResult } from '../utils'
+import { injectQuery, isBuildCommand, isParentDirectory, transformStableResult } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
 import { fileToUrl } from './asset'
@@ -30,7 +30,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     ...config.resolve,
     root: config.root,
     isProduction: config.isProduction,
-    isBuild: config.command === 'build',
+    isBuild: isBuildCommand(config),
     packageCache: config.packageCache,
     ssrConfig: config.ssr,
     asSrc: true,

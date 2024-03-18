@@ -1204,7 +1204,7 @@ export function transformStableResult(
   return {
     code: s.toString(),
     map:
-      config.command === 'build' && config.build.sourcemap
+      isBuildCommand(config) && config.build.sourcemap
         ? s.generateMap({ hires: 'boundary', source: id })
         : null,
   }
@@ -1424,3 +1424,5 @@ export function displayTime(time: number): string {
 export function partialEncodeURI(uri: string): string {
   return uri.replaceAll('%', '%25')
 }
+
+export const isBuildCommand = (config: ResolvedConfig) => config.command === 'build'

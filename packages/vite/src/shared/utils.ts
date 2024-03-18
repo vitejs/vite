@@ -54,3 +54,4 @@ export const asyncFunctionDeclarationPaddingLineCount =
     const source = new AsyncFunction('a', 'b', body).toString()
     return source.slice(0, source.indexOf(body)).split('\n').length - 1
   })()
+

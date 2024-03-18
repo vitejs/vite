@@ -26,6 +26,7 @@ import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
+import { isBuildCommand } from '../utils'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -33,7 +34,7 @@ export async function resolvePlugins(
   normalPlugins: Plugin[],
   postPlugins: Plugin[],
 ): Promise<Plugin[]> {
-  const isBuild = config.command === 'build'
+  const isBuild = isBuildCommand(config)
   const isWorker = config.isWorker
   const buildPlugins = isBuild
     ? await (await import('../build')).resolveBuildPlugins(config)

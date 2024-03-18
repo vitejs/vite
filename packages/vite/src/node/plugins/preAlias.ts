@@ -9,6 +9,7 @@ import type { Plugin } from '../plugin'
 import { createIsConfiguredAsSsrExternal } from '../ssr/ssrExternal'
 import {
   bareImportRE,
+  isBuildCommand,
   isInNodeModules,
   isOptimizable,
   moduleListContains,
@@ -24,7 +25,7 @@ import { tryOptimizedResolve } from './resolve'
 export function preAliasPlugin(config: ResolvedConfig): Plugin {
   const findPatterns = getAliasPatterns(config.resolve.alias)
   const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
-  const isBuild = config.command === 'build'
+  const isBuild = isBuildCommand(config)
   const fsUtils = getFsUtils(config)
   return {
     name: 'vite:pre-alias',

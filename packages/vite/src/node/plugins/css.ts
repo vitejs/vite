@@ -53,6 +53,7 @@ import {
   getHash,
   getPackageManagerCommand,
   injectQuery,
+  isBuildCommand,
   isDataUrl,
   isExternalUrl,
   isObject,
@@ -241,7 +242,7 @@ const postcssConfigCache = new WeakMap<
 >()
 
 function encodePublicUrlsInCSS(config: ResolvedConfig) {
-  return config.command === 'build'
+  return isBuildCommand(config)
 }
 
 const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
@@ -250,7 +251,7 @@ const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
  * Plugin applied before user plugins
  */
 export function cssPlugin(config: ResolvedConfig): Plugin {
-  const isBuild = config.command === 'build'
+  const isBuild = isBuildCommand(config)
   let moduleCache: Map<string, Record<string, string>>
 
   const resolveUrl = config.createResolver({
@@ -336,7 +337,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         if (resolved) {
           return fileToUrl(resolved, config, this)
         }
-        if (config.command === 'build') {
+        if (isBuildCommand(config)) {
           const isExternal = config.build.rollupOptions.external
             ? resolveUserExternal(
                 config.build.rollupOptions.external,
@@ -2739,7 +2740,7 @@ async function compileLightningCSS(
         },
         minify: config.isProduction && !!config.build.cssMinify,
         sourceMap:
-          config.command === 'build'
+          isBuildCommand(config)
             ? !!config.build.sourcemap
             : config.css?.devSourcemap,
         analyzeDependencies: true,

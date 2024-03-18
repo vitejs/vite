@@ -1,7 +1,7 @@
 import { transform } from 'esbuild'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { escapeRegex, getHash } from '../utils'
+import { escapeRegex, getHash, isBuildCommand } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -9,7 +9,7 @@ const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 
 export function definePlugin(config: ResolvedConfig): Plugin {
-  const isBuild = config.command === 'build'
+  const isBuild = isBuildCommand(config)
   const isBuildLib = isBuild && config.build.lib
 
   // ignore replace process.env in lib build
@@ -154,7 +154,7 @@ export async function replaceDefine(
     platform: 'neutral',
     define,
     sourcefile: id,
-    sourcemap: config.command === 'build' ? !!config.build.sourcemap : true,
+    sourcemap: isBuildCommand(config) ? !!config.build.sourcemap : true,
   })
 
   for (const marker in replacementMarkers) {

@@ -20,6 +20,7 @@ import { checkPublicFile } from '../publicDir'
 import {
   getHash,
   injectQuery,
+  isBuildCommand,
   joinUrlSegments,
   normalizePath,
   rawRE,
@@ -163,7 +164,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       // will fail to resolve in the main resolver. handle them here.
       const publicFile = checkPublicFile(id, config)
       if (publicFile) {
-        return config.command === 'build'
+        return isBuildCommand(config)
           ? `${viteBuildPublicIdPrefix}${id}`
           : id
       }
@@ -212,7 +213,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         // Force rollup to keep this module from being shared between other entry points if it's an entrypoint.
         // If the resulting chunk is empty, it will be removed in generateBundle.
         moduleSideEffects:
-          config.command === 'build' && this.getModuleInfo(id)?.isEntry
+          isBuildCommand(config) && this.getModuleInfo(id)?.isEntry
             ? 'no-treeshake'
             : false,
       }
@@ -249,7 +250,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       // do not emit assets for SSR build
       if (
-        config.command === 'build' &&
+        isBuildCommand(config) &&
         config.build.ssr &&
         !config.build.ssrEmitAssets
       ) {
