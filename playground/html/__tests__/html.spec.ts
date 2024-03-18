@@ -358,7 +358,7 @@ describe.runIf(isServe)('warmup', () => {
     // here might take a while to load
     await withRetry(async () => {
       const mod =
-        await viteServer.browserEnvironment.moduleGraph.getModuleByUrl(
+        await viteServer.clientEnvironment.moduleGraph.getModuleByUrl(
           '/warmup/warm.js',
         )
       expect(mod).toBeTruthy()

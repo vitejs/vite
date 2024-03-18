@@ -262,8 +262,8 @@ export async function handleHMRUpdate(
           // Invalidate the hmrContext to force compat modules to be updated
           hmrContext = undefined
         }
-      } else if (environment.name === 'browser') {
-        // later on, we'll need: if (runtime === 'browser')
+      } else if (environment.name === 'client') {
+        // later on, we'll need: if (runtime === 'client')
         // Backward compatibility with mixed client and ssr moduleGraph
         hmrContext ??= {
           ...hotContext,
@@ -279,7 +279,7 @@ export async function handleHMRUpdate(
           hotContext.modules = filteredModules
             .map((mod) =>
               mod.id
-                ? server.browserEnvironment.moduleGraph.getModuleById(mod.id) ??
+                ? server.clientEnvironment.moduleGraph.getModuleById(mod.id) ??
                   server.ssrEnvironment.moduleGraph.getModuleById(mod.id)
                 : undefined,
             )

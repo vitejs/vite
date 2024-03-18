@@ -156,7 +156,7 @@ type PluginContext = Omit<
 // wich are called once for all environments, or when no environment is passed in other hooks.
 // The ssrEnvironment is needed for backward compatibility when the ssr flag is passed without
 // an environment. The defaultEnvironment in the main pluginContainer in the server should be
-// the browserEnvironment for backward compatibility.
+// the clientEnvironment for backward compatibility.
 
 export async function createPluginContainer(
   config: ResolvedConfig,

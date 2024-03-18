@@ -15,7 +15,7 @@ export function warmupFiles(server: ViteDevServer): void {
   if (options?.clientFiles?.length) {
     mapFiles(options.clientFiles, root).then((files) => {
       for (const file of files) {
-        warmupFile(server, server.browserEnvironment, file)
+        warmupFile(server, server.clientEnvironment, file)
       }
     })
   }
