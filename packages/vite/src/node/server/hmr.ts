@@ -315,7 +315,7 @@ export async function handleHMRUpdate(
   }
 
   const hmrTasks: HmrTask[] = []
-  for (const environment of server.environments.values()) {
+  for (const environment of server.environments) {
     hmrTasks.push({
       environment,
       run: () => applyHMR(environment),

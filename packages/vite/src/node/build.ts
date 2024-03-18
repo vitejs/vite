@@ -29,6 +29,7 @@ import {
 } from './constants'
 import type {
   BuildEnvironmentConfig,
+  EnvironmentConfig,
   InlineConfig,
   ResolvedConfig,
 } from './config'
@@ -1317,7 +1318,7 @@ export class BuildEnvironment extends Environment {
 }
 
 export interface ViteBuilder {
-  environments: Map<string, BuildEnvironment>
+  environments: BuildEnvironment[]
   build(): Promise<void>
 }
 
@@ -1339,26 +1340,34 @@ export interface BuilderInlineConfig extends Omit<InlineConfig, 'plugins'> {
   plugins?: () => Plugin[]
 }
 
+function getEnvironmentConfig(
+  config: InlineConfig,
+  name: string,
+): EnvironmentConfig | undefined {
+  return config.environments?.find((e) => e.name === name)
+}
+
 export async function createViteBuilder(
   builderOptions: BuilderOptions = {},
-  defaultInlineConfig: BuilderInlineConfig = {},
+  defaultBuilderInlineConfig: BuilderInlineConfig = {},
 ): Promise<ViteBuilder> {
   // Plugins passed to the Builder inline config needs to be created
   // from a factory to ensure each build has their own instances
   const getDefaultInlineConfig = (): InlineConfig => {
-    const { plugins } = defaultInlineConfig
+    const { plugins } = defaultBuilderInlineConfig
     return plugins
       ? {
-          ...defaultInlineConfig,
+          ...defaultBuilderInlineConfig,
           plugins: plugins(),
         }
-      : (defaultInlineConfig as InlineConfig)
+      : (defaultBuilderInlineConfig as InlineConfig)
   }
 
   // We resolve the whole config including plugins here but later on we
   // need to refactor resolveConfig to only resolve the environments config
+  const defaultInlineConfig = getDefaultInlineConfig()
   const defaultConfig = await resolveConfig(
-    getDefaultInlineConfig(),
+    defaultInlineConfig,
     'build',
     'production',
     'production',
@@ -1371,7 +1380,7 @@ export async function createViteBuilder(
     throw new Error('Watch mode is not yet supported in ViteBuilder')
   }
 
-  const environments = new Map<string, BuildEnvironment>()
+  const environments: BuildEnvironment[] = []
 
   const runBuildTasks =
     builderOptions.runBuildTasks ??
@@ -1385,7 +1394,7 @@ export async function createViteBuilder(
     environments,
     async build() {
       const buildTasks = []
-      for (const environment of environments.values()) {
+      for (const environment of environments) {
         // We need to resolve the config again so we can properly merge options
         // and get a new set of plugins for each build environment. The ecosystem
         // expects plugins to be run for the same environment once they are created
@@ -1393,8 +1402,10 @@ export async function createViteBuilder(
         // plugins are built to handle multiple environments concurrently).
 
         let userConfig = getDefaultInlineConfig()
-        const inlineConfigEnvironmentOverrides =
-          defaultInlineConfig.environments?.[environment.name]
+        const inlineConfigEnvironmentOverrides = getEnvironmentConfig(
+          userConfig,
+          environment.name,
+        )
         if (inlineConfigEnvironmentOverrides) {
           userConfig = mergeConfig(userConfig, inlineConfigEnvironmentOverrides)
         }
@@ -1420,41 +1431,45 @@ export async function createViteBuilder(
   }
 
   const createBrowserEnvironment =
-    defaultConfig.environments?.browser?.build?.createEnvironment ??
+    getEnvironmentConfig(defaultInlineConfig, 'browser')?.build
+      ?.createEnvironment ??
     defaultConfig.build?.createEnvironment ??
     ((builder: ViteBuilder, name: string) =>
       new BuildEnvironment(builder, name))
 
   const browserEnvironment = createBrowserEnvironment(builder, 'browser')
 
-  environments.set('browser', browserEnvironment)
+  environments.push(browserEnvironment)
 
   // Backward compatibility for `ssr` option
   if (defaultConfig.build.ssr) {
     // TODO: config.ssr should be a EnvironmentConfig
     const createSsrEnvironment =
       /*defaultConfig.ssr?.createEnvironment ??*/
-      defaultConfig.environments?.ssr?.build?.createEnvironment ??
-      defaultConfig.environments?.node?.build?.createEnvironment ??
+      getEnvironmentConfig(defaultInlineConfig, 'ssr')?.build
+        ?.createEnvironment ??
       defaultConfig.build?.createEnvironment ??
       ((builder: ViteBuilder, name: string) =>
         new BuildEnvironment(builder, name))
 
     const ssrEnvironment = createSsrEnvironment(builder, 'ssr')
-    environments.set('ssr', ssrEnvironment)
+    environments.push(ssrEnvironment)
   }
 
   if (defaultConfig.environments) {
-    Object.entries(defaultConfig.environments).forEach((entry) => {
-      const [name, environmentConfig] = entry
-      if (name !== 'browser' && name !== 'ssr') {
+    for (const environmentConfig of defaultConfig.environments) {
+      if (
+        environmentConfig.name !== 'browser' &&
+        environmentConfig.name !== 'ssr'
+      ) {
         const createEnvironment =
           environmentConfig.build?.createEnvironment ??
           ((builder: ViteBuilder, name: string) =>
             new BuildEnvironment(builder, name))
-        environments.set(name, createEnvironment(builder, name))
+        const environment = createEnvironment(builder, environmentConfig.name)
+        environments.push(environment)
       }
-    })
+    }
   }
 
   return builder
