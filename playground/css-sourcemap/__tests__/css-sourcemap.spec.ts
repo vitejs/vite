@@ -155,7 +155,8 @@ describe.runIf(isServe)('serve', () => {
   })
 
   test('imported sass module', async () => {
-    const css = await getStyleTagContentIncluding('._imported-sass-module_')
+    const css = await getStyleTagContentIncluding('_imported-sass-module_')
+
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {

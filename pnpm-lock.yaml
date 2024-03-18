@@ -393,9 +393,6 @@ importers:
       postcss-load-config:
         specifier: ^4.0.2
         version: 4.0.2(postcss@8.4.36)(ts-node@10.9.2)
-      postcss-modules:
-        specifier: ^6.0.0
-        version: 6.0.0(postcss@8.4.36)
       resolve.exports:
         specifier: ^2.0.2
         version: 2.0.2
@@ -432,6 +429,9 @@ importers:
       ufo:
         specifier: ^1.5.1
         version: 1.5.1
+      vite-css-modules:
+        specifier: ^1.4.2
+        version: 1.4.2(lightningcss@1.24.1)(postcss@8.4.36)(rollup@4.13.0)(vite@packages+vite)
       ws:
         specifier: ^8.16.0
         version: 8.16.0
@@ -7434,10 +7434,6 @@ packages:
     resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
     dev: false
 
-  /lodash.camelcase@4.3.0:
-    resolution: {integrity: sha512-TwuEnCnxbc3rAvhf/LbG7tJUDzhqXyFnv3dtzLOPgCG/hODL7WFnsbwktkD7yUV0RrreP/l1PALq/YSg6VvjlA==}
-    dev: true
-
   /lodash.clonedeep@4.5.0:
     resolution: {integrity: sha512-H5ZhCF25riFd9uB5UCkVKo61m3S/xZk1x4wA6yp/L3RFP6Z/eHH1ymQcGLo7J3GMPfm0V/7m1tryHuGVxpqEBQ==}
     dev: false
@@ -8574,8 +8570,8 @@ packages:
       postcss: 8.4.36
     dev: true
 
-  /postcss-modules-local-by-default@4.0.0(postcss@8.4.36):
-    resolution: {integrity: sha512-sT7ihtmGSF9yhm6ggikHdV0hlziDTX7oFoXtuVWeDd3hHObNkcHRo9V3yg7vCAY7cONyxJC/XXCmmiHHcvX7bQ==}
+  /postcss-modules-local-by-default@4.0.4(postcss@8.4.36):
+    resolution: {integrity: sha512-L4QzMnOdVwRm1Qb8m4x8jsZzKAaPAgrUF1r/hjDR2Xj7R+8Zsf97jAlSQzWtKx5YNiNGN8QxmPFIc/sh+RQl+Q==}
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
       postcss: ^8.1.0
@@ -8589,8 +8585,8 @@ packages:
       postcss-value-parser: 4.2.0
     dev: true
 
-  /postcss-modules-scope@3.0.0(postcss@8.4.36):
-    resolution: {integrity: sha512-hncihwFA2yPath8oZ15PZqvWGkWf+XUfQgUGamS4LqoP1anQLOsOJw0vr7J7IwLpoY9fatA2qiGUGmuZL0Iqlg==}
+  /postcss-modules-scope@3.1.1(postcss@8.4.36):
+    resolution: {integrity: sha512-uZgqzdTleelWjzJY+Fhti6F3C9iF1JR/dODLs/JDefozYcKTBCdD8BIl6nNPbTbcLnGrk56hzwZC2DaGNvYjzA==}
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
       postcss: ^8.1.0
@@ -8613,25 +8609,6 @@ packages:
     dependencies:
       icss-utils: 5.1.0(postcss@8.4.36)
       postcss: 8.4.36
-    dev: true
-
-  /postcss-modules@6.0.0(postcss@8.4.36):
-    resolution: {integrity: sha512-7DGfnlyi/ju82BRzTIjWS5C4Tafmzl3R79YP/PASiocj+aa6yYphHhhKUOEoXQToId5rgyFgJ88+ccOUydjBXQ==}
-    peerDependencies:
-      postcss: ^8.0.0
-    peerDependenciesMeta:
-      postcss:
-        optional: true
-    dependencies:
-      generic-names: 4.0.0
-      icss-utils: 5.1.0(postcss@8.4.36)
-      lodash.camelcase: 4.3.0
-      postcss: 8.4.36
-      postcss-modules-extract-imports: 3.0.0(postcss@8.4.36)
-      postcss-modules-local-by-default: 4.0.0(postcss@8.4.36)
-      postcss-modules-scope: 3.0.0(postcss@8.4.36)
-      postcss-modules-values: 4.0.0(postcss@8.4.36)
-      string-hash: 1.1.3
     dev: true
 
   /postcss-nested@6.0.1(postcss@8.4.36):
@@ -9465,10 +9442,6 @@ packages:
     engines: {node: '>=0.6.19'}
     dev: true
 
-  /string-hash@1.1.3:
-    resolution: {integrity: sha512-kJUvRUFK49aub+a7T1nNE66EJbZBMnBgoC1UbCZ5n6bsZKBRga4KgBRTMn/pFkeCZSYtNeSyMxPDM0AXWELk2A==}
-    dev: true
-
   /string-width@4.2.3:
     resolution: {integrity: sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==}
     engines: {node: '>=8'}
@@ -10072,6 +10045,34 @@ packages:
       '@types/unist': 3.0.2
       unist-util-stringify-position: 4.0.0
       vfile-message: 4.0.2
+    dev: true
+
+  /vite-css-modules@1.4.2(lightningcss@1.24.1)(postcss@8.4.36)(rollup@4.13.0)(vite@packages+vite):
+    resolution: {integrity: sha512-WDTgxeSZ6Z0RR1dU+Y+0utFR98g0F4yRspBN4em8tUUIbv70knajR26marzJbkRyX0+Erhd4OKT3Zq0fKzu1rg==}
+    peerDependencies:
+      lightningcss: ^1.23.0
+      postcss: ^8.4.33
+      vite: '*'
+    peerDependenciesMeta:
+      lightningcss:
+        optional: true
+      postcss:
+        optional: true
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      '@rollup/pluginutils': 5.1.0(rollup@4.13.0)
+      generic-names: 4.0.0
+      icss-utils: 5.1.0(postcss@8.4.36)
+      lightningcss: 1.24.1
+      magic-string: 0.30.8
+      postcss: 8.4.36
+      postcss-modules-extract-imports: 3.0.0(postcss@8.4.36)
+      postcss-modules-local-by-default: 4.0.4(postcss@8.4.36)
+      postcss-modules-scope: 3.1.1(postcss@8.4.36)
+      postcss-modules-values: 4.0.0(postcss@8.4.36)
+      vite: link:packages/vite
+    transitivePeerDependencies:
+      - rollup
     dev: true
 
   /vite-node@1.4.0:

@@ -192,11 +192,11 @@ test('css modules composes/from path resolving', async () => {
   // check if the generated CSS module class name is indeed using the
   // format specified in vite.config.js
   expect(await imported.getAttribute('class')).toMatch(
-    /.composed-module__apply-color___[\w-]{5}/,
+    /composed-module__apply-color___[\w-]{5}/,
   )
 
   expect(await imported.getAttribute('class')).toMatch(
-    /.composes-path-resolving-module__path-resolving-css___[\w-]{5}/,
+    /composes-path-resolving-module__path-resolving-css___[\w-]{5}/,
   )
 
   // @todo HMR is not working on this situation.
@@ -213,11 +213,11 @@ test('sass modules composes/from path resolving', async () => {
   // check if the generated CSS module class name is indeed using the
   // format specified in vite.config.js
   expect(await imported.getAttribute('class')).toMatch(
-    /.composed-module__apply-color___[\w-]{5}/,
+    /composed-module__apply-color___[\w-]{5}/,
   )
 
   expect(await imported.getAttribute('class')).toMatch(
-    /.composes-path-resolving-module__path-resolving-sass___[\w-]{5}/,
+    /composes-path-resolving-module__path-resolving-sass___[\w-]{5}/,
   )
 
   // @todo HMR is not working on this situation.
@@ -234,11 +234,11 @@ test('less modules composes/from path resolving', async () => {
   // check if the generated CSS module class name is indeed using the
   // format specified in vite.config.js
   expect(await imported.getAttribute('class')).toMatch(
-    /.composed-module__apply-color___[\w-]{5}/,
+    /composed-module__apply-color___[\w-]{5}/,
   )
 
   expect(await imported.getAttribute('class')).toMatch(
-    /.composes-path-resolving-module__path-resolving-less___[\w-]{5}/,
+    /composes-path-resolving-module__path-resolving-less___[\w-]{5}/,
   )
 
   // @todo HMR is not working on this situation.
