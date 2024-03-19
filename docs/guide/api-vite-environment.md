@@ -16,12 +16,10 @@ All these environments share Vite's HTTP server, middlewares, and Web Socket. Th
 
 A Vite dev server exposes two environments by default named `'browser'` and `'node'`. The browser environment runs in client apps that have imported the `/@vite/client` module. The Node environment runs in the same runtime as the Vite server and allows application servers to be used to render requests during dev with full HMR support. We'll discuss later how frameworks and users can create and register new environments.
 
-The available environments can be accessed using the `server.environments` map:
+The available environments can be accessed using the `server.environments` array:
 
 ```js
 server.environments.forEach((environment) => log(environment.name))
-
-server.environments.get('browser').transformRequest(url)
 ```
 
 An dev environment is an instance of the `DevEnvironment` class:
@@ -418,21 +416,24 @@ All environments share the Vite server configuration, but certain options can be
 ```js
 export default {
   resolve: {
-    conditions: [] // shared by all environments
+    conditions: [], // shared by all environments
   },
-  environments: {
-    browser: {
+  environments: [
+    {
+      name: 'browser',
       resolve: {
-        conditions: [] // override for the browser environment
-      }
-    }
-    node: {
-      optimizeDeps: {} // override for the node environment
+        conditions: [], // override for the browser environment
+      },
     },
-    workerd: {
-      noExternal: true // override for a third-party environment
-    }
-  }
+    {
+      name: 'node',
+      optimizeDeps: {}, // override for the node environment
+    },
+    {
+      name: 'workerd',
+      noExternal: true, // override for a third-party environment
+    },
+  ],
 }
 ```
 
@@ -449,9 +450,7 @@ The `UserConfig` interface extends from `EnvironmentConfig`. Environment specifi
 
 ```ts
 interface UserConfig extends EnvironmentConfig {
-  environments: {
-    [id]: EnvironmentConfig
-  }
+  environments: (EnvironmentConfig & { name: string })[]
   // other options
 }
 ```
@@ -462,8 +461,9 @@ To register a new dev or build environment, you can use a `create` function:
 
 ```js
 export default {
-  environments: {
-    rsc: {
+  environments: [
+    {
+      name: 'rsc',
       dev: {
         create: (server) => new NodeDevEnvironment(server),
       },
@@ -472,7 +472,7 @@ export default {
         outDir: '/dist/rsc',
       },
     },
-  },
+  ],
 }
 ```
 
@@ -507,13 +507,14 @@ Then the config file can be writen as
 import { workerdEnvironment } from 'vite-environment-workerd'
 
 export default {
-  environments: {
-    rsc: workerdEnvironment({
+  environments: [
+    workerdEnvironment({
+      name: 'rsc',
       build: {
         outDir: '/dist/rsc',
       },
     }),
-  },
+  ],
 }
 ```
 
