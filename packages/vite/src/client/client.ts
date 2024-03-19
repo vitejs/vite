@@ -111,7 +111,7 @@ function setupWebSocket(
 }
 
 function cleanUrl(pathname: string): string {
-  const url = new URL(pathname, location.toString())
+  const url = new URL(pathname, 'http://vitejs.dev')
   url.searchParams.delete('direct')
   return url.pathname + url.search
 }
