@@ -108,6 +108,14 @@ declare module '*.webm' {
   const src: string
   export default src
 }
+declare module '*.mkv' {
+  const src: string
+  export default src
+}
+declare module '*.m4v' {
+  const src: string
+  export default src
+}
 declare module '*.ogg' {
   const src: string
   export default src
