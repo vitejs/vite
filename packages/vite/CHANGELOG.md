@@ -1,3 +1,9 @@
+## <small>5.2.2 (2024-03-20)</small>
+
+* fix(importAnalysis): skip encode in ssr (#16213) ([e4d2d60](https://github.com/vitejs/vite/commit/e4d2d60)), closes [#16213](https://github.com/vitejs/vite/issues/16213)
+
+
+
 ## <small>5.2.1 (2024-03-20)</small>
 
 * fix: encode path uri only (#16212) ([0b2e40b](https://github.com/vitejs/vite/commit/0b2e40b)), closes [#16212](https://github.com/vitejs/vite/issues/16212)
