@@ -16,6 +16,7 @@ import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
 import type { Matcher } from 'picomatch'
+import type { ModuleRunner } from 'vite/module-runner'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -50,8 +51,7 @@ import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
-import type { FetchResult } from '../../module-runner/types'
-import { ssrFetchModule } from '../ssr/ssrFetchModule'
+import { createServerModuleRunner } from '..'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -271,6 +271,7 @@ export interface ViteDevServer {
    */
   clientEnvironment: DevEnvironment
   ssrEnvironment: DevEnvironment
+  nodeModuleRunner: ModuleRunner
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -322,11 +323,6 @@ export interface ViteDevServer {
     url: string,
     opts?: { fixStacktrace?: boolean },
   ): Promise<Record<string, any>>
-  /**
-   * Fetch information about the module for Vite SSR runtime.
-   * @experimental
-   */
-  ssrFetchModule(id: string, importer?: string): Promise<FetchResult>
   /**
    * Returns a fixed version of the given stack
    */
@@ -534,6 +530,8 @@ export async function _createServer(
     onCrawlEndCallbacks.push(cb)
   }
 
+  let nodeModuleRunner: ModuleRunner | undefined
+
   let server: ViteDevServer = {
     config,
     middlewares,
@@ -548,6 +546,16 @@ export async function _createServer(
     clientEnvironment: undefined as any,
     ssrEnvironment: undefined as any,
     moduleGraph: undefined as any,
+
+    get nodeModuleRunner() {
+      if (!nodeModuleRunner) {
+        nodeModuleRunner = createServerModuleRunner(server.ssrEnvironment)
+      }
+      return nodeModuleRunner
+    },
+    set nodeModuleRunner(runner) {
+      nodeModuleRunner = runner
+    },
 
     resolvedUrls: null, // will be set on listen
     ssrTransform(
@@ -599,9 +607,6 @@ export async function _createServer(
         undefined,
         opts?.fixStacktrace,
       )
-    },
-    async ssrFetchModule(url: string, importer?: string) {
-      return ssrFetchModule(server, url, importer)
     },
     ssrFixStacktrace(e) {
       ssrFixStacktrace(e, server.moduleGraph)

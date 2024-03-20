@@ -3,6 +3,7 @@ import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type { ModuleEvaluator, ModuleRunnerOptions } from 'vite/module-runner'
 import type { ViteDevServer } from '../../server'
 import type { HMRLogger } from '../../../shared/hmr'
+import type { DevEnvironment } from '../../server/environment'
 import { ServerHMRConnector } from './serverHmrConnector'
 
 /**
@@ -66,16 +67,16 @@ function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
  * Create an instance of the Vite SSR runtime that support HMR.
  * @experimental
  */
-export async function createServerModuleRunner(
-  server: ViteDevServer,
+export function createServerModuleRunner(
+  environment: DevEnvironment,
   options: ServerModuleRunnerOptions = {},
-): Promise<ModuleRunner> {
-  const hmr = createHMROptions(server, options)
+): ModuleRunner {
+  const hmr = createHMROptions(environment.server, options)
   return new ModuleRunner(
     {
       ...options,
-      root: server.config.root,
-      fetchModule: server.ssrFetchModule,
+      root: environment.server.config.root,
+      fetchModule: (id, importer) => environment.ssrFetchModule(id, importer),
       hmr,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },

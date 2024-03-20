@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url'
-import type { EnvironmentModuleNode, TransformResult, ViteDevServer } from '..'
+import type { EnvironmentModuleNode, TransformResult } from '..'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
@@ -10,6 +10,7 @@ import {
   SOURCEMAPPING_URL,
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
+import type { DevEnvironment } from '../server/environment'
 
 export interface FetchModuleOptions {
   inlineSourceMap?: boolean
@@ -21,7 +22,7 @@ export interface FetchModuleOptions {
  * @experimental
  */
 export async function fetchModule(
-  server: ViteDevServer,
+  environment: DevEnvironment,
   url: string,
   importer?: string,
   options: FetchModuleOptions = {},
@@ -41,7 +42,7 @@ export async function fetchModule(
       resolve: { dedupe, preserveSymlinks },
       root,
       ssr,
-    } = server.config
+    } = environment.server.config
     const overrideConditions = ssr.resolve?.externalConditions || []
 
     const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
@@ -55,7 +56,7 @@ export async function fetchModule(
       isProduction,
       root,
       ssrConfig: ssr,
-      packageCache: server.config.packageCache,
+      packageCache: environment.server.config.packageCache,
     }
 
     const resolved = tryNodeResolve(
@@ -74,7 +75,10 @@ export async function fetchModule(
       throw err
     }
     const file = pathToFileURL(resolved.id).toString()
-    const type = isFilePathESM(resolved.id, server.config.packageCache)
+    const type = isFilePathESM(
+      resolved.id,
+      environment.server.config.packageCache,
+    )
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }
@@ -82,7 +86,7 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
-  let result = await server.ssrEnvironment.transformRequest(url)
+  let result = await environment.transformRequest(url)
 
   if (!result) {
     throw new Error(
@@ -93,7 +97,7 @@ export async function fetchModule(
   }
 
   // module entry should be created by transformRequest
-  const mod = await server.ssrEnvironment.moduleGraph.getModuleByUrl(url) // TODO: fetchModule should get a runtime?
+  const mod = await environment.moduleGraph.getModuleByUrl(url)
 
   if (!mod) {
     throw new Error(
