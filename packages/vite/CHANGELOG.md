@@ -1,3 +1,13 @@
+## 5.2.0 (2024-03-20)
+
+* fix: update client.ts@cleanUrl to accomodate blob protocol (#16182) ([1a3b1d7](https://github.com/vitejs/vite/commit/1a3b1d7)), closes [#16182](https://github.com/vitejs/vite/issues/16182)
+* fix(assets): avoid splitting `,` inside query parameter of image URI in srcset property (#16081) ([50caf67](https://github.com/vitejs/vite/commit/50caf67)), closes [#16081](https://github.com/vitejs/vite/issues/16081)
+* chore(deps): update all non-major dependencies (#16186) ([842643d](https://github.com/vitejs/vite/commit/842643d)), closes [#16186](https://github.com/vitejs/vite/issues/16186)
+* perf(transformRequest): fast-path watch and sourcemap handling (#16170) ([de60f1e](https://github.com/vitejs/vite/commit/de60f1e)), closes [#16170](https://github.com/vitejs/vite/issues/16170)
+* docs: add `@shikiji/vitepress-twoslash` (#16168) ([6f8a320](https://github.com/vitejs/vite/commit/6f8a320)), closes [#16168](https://github.com/vitejs/vite/issues/16168)
+
+
+
 ## 5.2.0-beta.1 (2024-03-14)
 
 * feat: csp nonce support (#16052) ([1d5eec4](https://github.com/vitejs/vite/commit/1d5eec4)), closes [#16052](https://github.com/vitejs/vite/issues/16052)
