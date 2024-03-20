@@ -117,6 +117,7 @@ export interface CSSOptions {
     | string
     | (PostCSS.ProcessOptions & {
         plugins?: PostCSS.AcceptedPlugin[]
+        exclude?: (fileName: string) => boolean
       })
   /**
    * Enables css sourcemaps during dev
@@ -1232,6 +1233,15 @@ async function compileCSS(
   const atImportResolvers = getAtImportResolvers(config)
   const postcssOptions = (postcssConfig && postcssConfig.options) || {}
 
+  const isExcldue = !!postcssConfig?.exclude?.(id)
+  if (isExcldue) {
+    return {
+      code,
+      map: preprocessorMap,
+      deps,
+    }
+  }
+
   const postcssPlugins =
     postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
 
@@ -1548,6 +1558,7 @@ async function finalizeCss(
 interface PostCSSConfigResult {
   options: PostCSS.ProcessOptions
   plugins: PostCSS.AcceptedPlugin[]
+  exclude?: (fileName: string) => boolean
 }
 
 async function resolvePostcssConfig(
@@ -1564,9 +1575,11 @@ async function resolvePostcssConfig(
     const options = { ...inlineOptions }
 
     delete options.plugins
+    delete options.exclude
     result = {
       options,
       plugins: inlineOptions.plugins || [],
+      exclude: inlineOptions.exclude,
     }
   } else {
     const searchPath =
