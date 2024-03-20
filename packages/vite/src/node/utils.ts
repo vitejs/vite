@@ -1418,9 +1418,20 @@ export function displayTime(time: number): string {
 }
 
 /**
- * Like `encodeURI`, but only replacing `%` as `%25`. This is useful for environments
+ * Encodes the URI path portion (ignores part after ? or #)
+ */
+export function encodeURIPath(uri: string): string {
+  const filePath = cleanUrl(uri)
+  const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
+  return encodeURI(filePath) + postfix
+}
+
+/**
+ * Like `encodeURIPath`, but only replacing `%` as `%25`. This is useful for environments
  * that can handle un-encoded URIs, where `%` is the only ambiguous character.
  */
-export function partialEncodeURI(uri: string): string {
-  return uri.replaceAll('%', '%25')
+export function partialEncodeURIPath(uri: string): string {
+  const filePath = cleanUrl(uri)
+  const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
+  return filePath.replaceAll('%', '%25') + postfix
 }
