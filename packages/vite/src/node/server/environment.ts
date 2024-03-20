@@ -52,7 +52,7 @@ export class DevEnvironment extends Environment {
   constructor(
     server: ViteDevServer,
     name: string,
-    options: {
+    options?: {
       // TODO: use `transport` instead to support any hmr channel?
       hot?: false | HMRChannel
       config?: DevEnvironmentConfig
@@ -65,8 +65,8 @@ export class DevEnvironment extends Environment {
         environment: this,
       }),
     )
-    this.hot = options.hot || createNoopHMRChannel()
-    this._inlineConfig = options.config
+    this.hot = options?.hot || createNoopHMRChannel()
+    this._inlineConfig = options?.config
   }
 
   transformRequest(url: string): Promise<TransformResult | null> {

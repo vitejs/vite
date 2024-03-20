@@ -408,7 +408,7 @@ export class EnvironmentModuleGraph {
     mod: EnvironmentModuleNode,
     result: TransformResult | null,
   ): void {
-    if (this.environment === 'browser') {
+    if (this.environment === 'client') {
       const prevEtag = mod.transformResult?.etag
       if (prevEtag) this.etagToModuleMap.delete(prevEtag)
       if (result?.etag) this.etagToModuleMap.set(result.etag, mod)
@@ -467,21 +467,21 @@ export class EnvironmentModuleGraph {
 
 export class ModuleNode {
   _moduleGraph: ModuleGraph
-  _browserModule: EnvironmentModuleNode | undefined
+  _clientModule: EnvironmentModuleNode | undefined
   _ssrModule: EnvironmentModuleNode | undefined
   constructor(
     moduleGraph: ModuleGraph,
-    browserModule?: EnvironmentModuleNode,
+    clientModule?: EnvironmentModuleNode,
     ssrModule?: EnvironmentModuleNode,
   ) {
     this._moduleGraph = moduleGraph
-    this._browserModule = browserModule
+    this._clientModule = clientModule
     this._ssrModule = ssrModule
   }
   _get<T extends keyof EnvironmentModuleNode>(
     prop: T,
   ): EnvironmentModuleNode[T] {
-    return (this._browserModule?.[prop] ?? this._ssrModule?.[prop])!
+    return (this._clientModule?.[prop] ?? this._ssrModule?.[prop])!
   }
   _wrapModuleSet(
     prop: ModuleSetNames,
@@ -497,8 +497,8 @@ export class ModuleNode {
     // the importedModules and importers from both the browser and server
     const importedModules = new Set<ModuleNode>()
     const ids = new Set<string>()
-    if (this._browserModule) {
-      for (const mod of this._browserModule[prop]) {
+    if (this._clientModule) {
+      for (const mod of this._clientModule[prop]) {
         if (mod.id) ids.add(mod.id)
         importedModules.add(
           this._moduleGraph.getBackwardCompatibleModuleNode(mod),
@@ -538,7 +538,7 @@ export class ModuleNode {
     return this._getModuleSetUnion('importers')
   }
   get clientImportedModules(): Set<ModuleNode> {
-    return this._wrapModuleSet('importedModules', this._browserModule)
+    return this._wrapModuleSet('importedModules', this._clientModule)
   }
   get ssrImportedModules(): Set<ModuleNode> {
     return this._wrapModuleSet('importedModules', this._ssrModule)
@@ -547,23 +547,23 @@ export class ModuleNode {
     return this._getModuleSetUnion('importedModules')
   }
   get acceptedHmrDeps(): Set<ModuleNode> {
-    return this._wrapModuleSet('acceptedHmrDeps', this._browserModule)
+    return this._wrapModuleSet('acceptedHmrDeps', this._clientModule)
   }
   get acceptedHmrExports(): Set<string> | null {
-    return this._browserModule?.acceptedHmrExports ?? null
+    return this._clientModule?.acceptedHmrExports ?? null
   }
   get importedBindings(): Map<string, Set<string>> | null {
-    return this._browserModule?.importedBindings ?? null
+    return this._clientModule?.importedBindings ?? null
   }
   get isSelfAccepting(): boolean | undefined {
-    return this._browserModule?.isSelfAccepting
+    return this._clientModule?.isSelfAccepting
   }
   get transformResult(): TransformResult | null {
-    return this._browserModule?.transformResult ?? null
+    return this._clientModule?.transformResult ?? null
   }
   set transformResult(value: TransformResult | null) {
-    if (this._browserModule) {
-      this._browserModule.transformResult = value
+    if (this._clientModule) {
+      this._clientModule.transformResult = value
     }
   }
   get ssrTransformResult(): TransformResult | null {
@@ -581,18 +581,18 @@ export class ModuleNode {
     return this._ssrModule?.ssrError ?? null
   }
   get lastHMRTimestamp(): number {
-    return this._browserModule?.lastHMRTimestamp ?? 0
+    return this._clientModule?.lastHMRTimestamp ?? 0
   }
   set lastHMRTimestamp(value: number) {
-    if (this._browserModule) {
-      this._browserModule.lastHMRTimestamp = value
+    if (this._clientModule) {
+      this._clientModule.lastHMRTimestamp = value
     }
   }
   get lastInvalidationTimestamp(): number {
-    return this._browserModule?.lastInvalidationTimestamp ?? 0
+    return this._clientModule?.lastInvalidationTimestamp ?? 0
   }
   get invalidationState(): TransformResult | 'HARD_INVALIDATED' | undefined {
-    return this._browserModule?.invalidationState
+    return this._clientModule?.invalidationState
   }
   get ssrInvalidationState(): TransformResult | 'HARD_INVALIDATED' | undefined {
     return this._ssrModule?.invalidationState
@@ -623,7 +623,7 @@ export class ModuleGraph {
   runtime = 'mixed'
 
   /** @internal */
-  _browser: EnvironmentModuleGraph
+  _client: EnvironmentModuleGraph
 
   /** @internal */
   _ssr: EnvironmentModuleGraph
@@ -635,10 +635,10 @@ export class ModuleGraph {
   fileToModulesMap: Map<string, Set<ModuleNode>>
 
   constructor(moduleGraphs: {
-    browser: EnvironmentModuleGraph
+    client: EnvironmentModuleGraph
     ssr: EnvironmentModuleGraph
   }) {
-    this._browser = moduleGraphs.browser
+    this._client = moduleGraphs.client
     this._ssr = moduleGraphs.ssr
 
     const getModuleMapUnion =
@@ -646,9 +646,9 @@ export class ModuleGraph {
         // A good approximation to the previous logic that returned the union of
         // the importedModules and importers from both the browser and server
         if (this._ssr[prop].size === 0) {
-          return this._browser[prop]
+          return this._client[prop]
         }
-        const map = new Map(this._browser[prop])
+        const map = new Map(this._client[prop])
         for (const [key, module] of this._ssr[prop]) {
           if (!map.has(key)) {
             map.set(key, module)
@@ -670,19 +670,19 @@ export class ModuleGraph {
     this.etagToModuleMap = createBackwardCompatibleModuleMap(
       this,
       'etagToModuleMap',
-      () => this._browser.etagToModuleMap,
+      () => this._client.etagToModuleMap,
     )
     this.fileToModulesMap = createBackwardCompatibleFileToModulesMap(this)
   }
 
   /** @deprecated */
   getModuleById(id: string): ModuleNode | undefined {
-    const browserModule = this._browser.getModuleById(id)
+    const clientModule = this._client.getModuleById(id)
     const ssrModule = this._ssr.getModuleById(id)
-    if (!browserModule && !ssrModule) {
+    if (!clientModule && !ssrModule) {
       return
     }
-    return this.getBackwardCompatibleModuleNodeDual(browserModule, ssrModule)
+    return this.getBackwardCompatibleModuleNodeDual(clientModule, ssrModule)
   }
 
   /** @deprecated */
@@ -691,14 +691,14 @@ export class ModuleGraph {
     ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
     // In the mixed graph, the ssr flag was used to resolve the id.
-    const [browserModule, ssrModule] = await Promise.all([
-      this._browser.getModuleByUrl(url),
+    const [clientModule, ssrModule] = await Promise.all([
+      this._client.getModuleByUrl(url),
       this._ssr.getModuleByUrl(url),
     ])
-    if (!browserModule && !ssrModule) {
+    if (!clientModule && !ssrModule) {
       return
     }
-    return this.getBackwardCompatibleModuleNodeDual(browserModule, ssrModule)
+    return this.getBackwardCompatibleModuleNodeDual(clientModule, ssrModule)
   }
 
   /** @deprecated */
@@ -706,10 +706,10 @@ export class ModuleGraph {
     // Until Vite 5.1.x, the moduleGraph contained modules from both the browser and server
     // We maintain backwards compatibility by returning a Set of module proxies assuming
     // that the modules for a certain file are the same in both the browser and server
-    const browserModules = this._browser.getModulesByFile(file)
-    if (browserModules) {
+    const clientModules = this._client.getModulesByFile(file)
+    if (clientModules) {
       return new Set(
-        [...browserModules].map(
+        [...clientModules].map(
           (mod) => this.getBackwardCompatibleBrowserModuleNode(mod)!,
         ),
       )
@@ -727,15 +727,15 @@ export class ModuleGraph {
 
   /** @deprecated */
   onFileChange(file: string): void {
-    this._browser.onFileChange(file)
+    this._client.onFileChange(file)
     this._ssr.onFileChange(file)
   }
 
   /** @internal */
   _getModuleGraph(environment: string): EnvironmentModuleGraph {
     switch (environment) {
-      case 'browser':
-        return this._browser
+      case 'client':
+        return this._client
       case 'ssr':
         return this._ssr
       default:
@@ -752,11 +752,11 @@ export class ModuleGraph {
     /** @internal */
     softInvalidate = false,
   ): void {
-    if (mod._browserModule) {
-      this._browser.invalidateModule(
-        mod._browserModule,
+    if (mod._clientModule) {
+      this._client.invalidateModule(
+        mod._clientModule,
         new Set(
-          [...seen].map((mod) => mod._browserModule).filter(Boolean),
+          [...seen].map((mod) => mod._clientModule).filter(Boolean),
         ) as Set<EnvironmentModuleNode>,
         timestamp,
         isHmr,
@@ -779,7 +779,7 @@ export class ModuleGraph {
 
   /** @deprecated */
   invalidateAll(): void {
-    this._browser.invalidateAll()
+    this._client.invalidateAll()
     this._ssr.invalidateAll()
   }
 
@@ -819,7 +819,7 @@ export class ModuleGraph {
     ssr?: boolean,
     setIsSelfAccepting = true,
   ): Promise<ModuleNode> {
-    const module = await (ssr ? this._ssr : this._browser).ensureEntryFromUrl(
+    const module = await (ssr ? this._ssr : this._client).ensureEntryFromUrl(
       rawUrl,
       setIsSelfAccepting,
     )
@@ -828,14 +828,14 @@ export class ModuleGraph {
 
   /** @deprecated */
   createFileOnlyEntry(file: string): ModuleNode {
-    const browserModule = this._browser.createFileOnlyEntry(file)
+    const clientModule = this._client.createFileOnlyEntry(file)
     const ssrModule = this._ssr.createFileOnlyEntry(file)
-    return this.getBackwardCompatibleModuleNodeDual(browserModule, ssrModule)!
+    return this.getBackwardCompatibleModuleNodeDual(clientModule, ssrModule)!
   }
 
   /** @deprecated */
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
-    return ssr ? this._ssr.resolveUrl(url) : this._browser.resolveUrl(url)
+    return ssr ? this._ssr.resolveUrl(url) : this._client.resolveUrl(url)
   }
 
   /** @deprecated */
@@ -844,25 +844,25 @@ export class ModuleGraph {
     result: TransformResult | null,
     ssr?: boolean,
   ): void {
-    const environment = ssr ? 'ssr' : 'browser'
+    const environment = ssr ? 'ssr' : 'client'
     this._getModuleGraph(environment).updateModuleTransformResult(
-      (environment === 'browser' ? mod._browserModule : mod._ssrModule)!,
+      (environment === 'client' ? mod._clientModule : mod._ssrModule)!,
       result,
     )
   }
 
   /** @deprecated */
   getModuleByEtag(etag: string): ModuleNode | undefined {
-    const mod = this._browser.etagToModuleMap.get(etag)
+    const mod = this._client.etagToModuleMap.get(etag)
     return mod && this.getBackwardCompatibleBrowserModuleNode(mod)
   }
 
   getBackwardCompatibleBrowserModuleNode(
-    browserModule: EnvironmentModuleNode,
+    clientModule: EnvironmentModuleNode,
   ): ModuleNode {
     return this.getBackwardCompatibleModuleNodeDual(
-      browserModule,
-      browserModule.id ? this._ssr.getModuleById(browserModule.id) : undefined,
+      clientModule,
+      clientModule.id ? this._ssr.getModuleById(clientModule.id) : undefined,
     )
   }
 
@@ -870,23 +870,23 @@ export class ModuleGraph {
     ssrModule: EnvironmentModuleNode,
   ): ModuleNode {
     return this.getBackwardCompatibleModuleNodeDual(
-      ssrModule.id ? this._browser.getModuleById(ssrModule.id) : undefined,
+      ssrModule.id ? this._client.getModuleById(ssrModule.id) : undefined,
       ssrModule,
     )
   }
 
   getBackwardCompatibleModuleNode(mod: EnvironmentModuleNode): ModuleNode {
-    return mod.environment === 'browser'
+    return mod.environment === 'client'
       ? this.getBackwardCompatibleBrowserModuleNode(mod)
       : this.getBackwardCompatibleServerModuleNode(mod)
   }
 
   getBackwardCompatibleModuleNodeDual(
-    browserModule?: EnvironmentModuleNode,
+    clientModule?: EnvironmentModuleNode,
     ssrModule?: EnvironmentModuleNode,
   ): ModuleNode {
     // ...
-    return new ModuleNode(this, browserModule, ssrModule)
+    return new ModuleNode(this, clientModule, ssrModule)
   }
 }
 
@@ -949,13 +949,13 @@ function createBackwardCompatibleModuleMap(
       return this.entries()
     },
     get(key) {
-      const browserModule = moduleGraph._browser[prop].get(key)
+      const clientModule = moduleGraph._client[prop].get(key)
       const ssrModule = moduleGraph._ssr[prop].get(key)
-      if (!browserModule && !ssrModule) {
+      if (!clientModule && !ssrModule) {
         return
       }
       return moduleGraph.getBackwardCompatibleModuleNodeDual(
-        browserModule,
+        clientModule,
         ssrModule,
       )
     },
@@ -974,7 +974,7 @@ function createBackwardCompatibleModuleMap(
       ])
     },
     get size() {
-      // TODO: Should we use Math.max(moduleGraph._browser[prop].size, moduleGraph._ssr[prop].size)
+      // TODO: Should we use Math.max(moduleGraph._client[prop].size, moduleGraph._ssr[prop].size)
       // for performance? I don't think there are many use cases of this method
       return getModuleMap().size
     },
@@ -995,9 +995,9 @@ function createBackwardCompatibleFileToModulesMap(
     // A good approximation to the previous logic that returned the union of
     // the importedModules and importers from both the browser and server
     if (!moduleGraph._ssr.fileToModulesMap.size) {
-      return moduleGraph._browser.fileToModulesMap
+      return moduleGraph._client.fileToModulesMap
     }
-    const map = new Map(moduleGraph._browser.fileToModulesMap)
+    const map = new Map(moduleGraph._client.fileToModulesMap)
     for (const [key, modules] of moduleGraph._ssr.fileToModulesMap) {
       const modulesSet = map.get(key)
       if (!modulesSet) {
@@ -1005,8 +1005,8 @@ function createBackwardCompatibleFileToModulesMap(
       } else {
         for (const ssrModule of modules) {
           let hasModule = false
-          for (const browserModule of modulesSet) {
-            hasModule ||= browserModule.id === ssrModule.id
+          for (const clientModule of modulesSet) {
+            hasModule ||= clientModule.id === ssrModule.id
             if (hasModule) {
               break
             }
@@ -1033,12 +1033,12 @@ function createBackwardCompatibleFileToModulesMap(
       return this.entries()
     },
     get(key) {
-      const browserModules = moduleGraph._browser.fileToModulesMap.get(key)
+      const clientModules = moduleGraph._client.fileToModulesMap.get(key)
       const ssrModules = moduleGraph._ssr.fileToModulesMap.get(key)
-      if (!browserModules && !ssrModules) {
+      if (!clientModules && !ssrModules) {
         return
       }
-      const modules = browserModules ?? new Set<EnvironmentModuleNode>()
+      const modules = clientModules ?? new Set<EnvironmentModuleNode>()
       if (ssrModules) {
         for (const ssrModule of ssrModules) {
           if (ssrModule.id) {

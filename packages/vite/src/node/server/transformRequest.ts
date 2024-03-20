@@ -63,13 +63,11 @@ export function transformRequest(
 ): Promise<TransformResult | null> {
   // Backward compatibility when only `ssr` is passed
   if (!environment) {
-    environment = options.ssr
-      ? server.ssrEnvironment
-      : server.browserEnvironment
+    environment = options.ssr ? server.ssrEnvironment : server.clientEnvironment
   }
   if (!options?.ssr) {
     // Backward compatibility
-    options = { ...options, ssr: environment.name !== 'browser' }
+    options = { ...options, ssr: environment.name !== 'client' }
   }
 
   if (server._restartPromise && !options.ssr) throwClosedServerError()
@@ -471,7 +469,7 @@ async function handleModuleSoftInvalidation(
 
   let result: TransformResult
   // For SSR soft-invalidation, no transformation is needed
-  if (environment.name !== 'browser') {
+  if (environment.name !== 'client') {
     result = transformResult
   }
   // For client soft-invalidation, we need to transform each imports with new timestamps if available

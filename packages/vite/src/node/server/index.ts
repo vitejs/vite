@@ -269,7 +269,7 @@ export interface ViteDevServer {
   /**
    * Default environments
    */
-  browserEnvironment: DevEnvironment
+  clientEnvironment: DevEnvironment
   ssrEnvironment: DevEnvironment
   /**
    * Module graph that tracks the import relationships, url to file mapping
@@ -502,7 +502,7 @@ export async function _createServer(
 
   // The global environment is used for buildStart, buildEnd, watchChange, and writeBundle hooks
   // that are called once and not per environment.
-  // The Vite server has always passed the mixed module graph. Passing the browserEnvironment
+  // The Vite server has always passed the mixed module graph. Passing the clientEnvironment
   // should give us the best backward compatibility for now.
   // We can review this in the next Vite major.
   let defaultEnvironment: DevEnvironment
@@ -545,7 +545,7 @@ export async function _createServer(
     environments,
 
     // We set these after the server is created
-    browserEnvironment: undefined as any,
+    clientEnvironment: undefined as any,
     ssrEnvironment: undefined as any,
     moduleGraph: undefined as any,
 
@@ -566,13 +566,13 @@ export async function _createServer(
     transformRequest(url, options) {
       const environment = options?.ssr
         ? server.ssrEnvironment
-        : server.browserEnvironment
+        : server.clientEnvironment
       return transformRequest(url, server, options, environment)
     },
     async warmupRequest(url, options) {
       const environment = options?.ssr
         ? server.ssrEnvironment
-        : server.browserEnvironment
+        : server.clientEnvironment
       await transformRequest(url, server, options, environment).catch((e) => {
         if (
           e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
@@ -612,7 +612,7 @@ export async function _createServer(
     async reloadModule(module) {
       if (serverConfig.hmr !== false && module.file) {
         // TODO: Should we also update the node moduleGraph for backward compatibility?
-        const environmentModule = (module._browserModule ?? module._ssrModule)!
+        const environmentModule = (module._clientModule ?? module._ssrModule)!
         updateModules(
           environments.find((e) => e.name === environmentModule.environment)!,
           module.file,
@@ -786,13 +786,13 @@ export async function _createServer(
   // Create Environments
 
   const createBrowserEnvironment =
-    getResolvedEnvironmentConfig(config, 'browser')?.dev?.createEnvironment ??
+    getResolvedEnvironmentConfig(config, 'client')?.dev?.createEnvironment ??
     server.config.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
       new DevEnvironment(server, name, { hot: ws }))
 
-  server.browserEnvironment = createBrowserEnvironment(server, 'browser')
-  environments.push(server.browserEnvironment)
+  server.clientEnvironment = createBrowserEnvironment(server, 'client')
+  environments.push(server.clientEnvironment)
 
   const createNodeEnvironment =
     /* config.ssr?.dev?.createEnvironment ?? */
@@ -805,7 +805,7 @@ export async function _createServer(
   environments.push(server.ssrEnvironment)
 
   const moduleGraph = new ModuleGraph({
-    browser: server.browserEnvironment.moduleGraph,
+    client: server.clientEnvironment.moduleGraph,
     ssr: server.ssrEnvironment.moduleGraph,
   })
   server.moduleGraph = moduleGraph
@@ -813,7 +813,7 @@ export async function _createServer(
   if (config.environments) {
     Object.entries(config.environments).forEach((entry) => {
       const [name, environmentConfig] = entry
-      if (name !== 'browser' && name !== 'ssr') {
+      if (name !== 'client' && name !== 'ssr') {
         const createEnvironment =
           environmentConfig.dev?.createEnvironment ??
           server.config.dev?.createEnvironment ??
@@ -869,12 +869,12 @@ export async function _createServer(
         publicFiles[isUnlink ? 'delete' : 'add'](path)
         if (!isUnlink) {
           const moduleWithSamePath =
-            await server.browserEnvironment.moduleGraph.getModuleByUrl(path)
+            await server.clientEnvironment.moduleGraph.getModuleByUrl(path)
           const etag = moduleWithSamePath?.transformResult?.etag
           if (etag) {
             // The public file should win on the next request over a module with the
             // same path. Prevent the transform etag fast path from serving the module
-            server.browserEnvironment.moduleGraph.etagToModuleMap.delete(etag)
+            server.clientEnvironment.moduleGraph.etagToModuleMap.delete(etag)
           }
         }
       }

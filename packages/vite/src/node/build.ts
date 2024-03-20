@@ -489,7 +489,7 @@ export async function buildEnvironment(
   environment?: BuildEnvironment,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const options = config.build
-  const ssr = (environment && environment?.name !== 'browser') ?? !!options.ssr
+  const ssr = (environment && environment?.name !== 'client') ?? !!options.ssr
   const libOptions = options.lib
 
   config.logger.info(
@@ -1111,7 +1111,7 @@ function injectEnvironmentFlag<T extends Record<string, any>>(
   options?: T,
   environment?: BuildEnvironment,
 ): T & { ssr?: boolean; environment?: BuildEnvironment } {
-  const ssr = environment ? environment.name !== 'browser' : true
+  const ssr = environment ? environment.name !== 'client' : true
   return { ...(options ?? {}), ssr, environment } as T & {
     ssr?: boolean
     environment?: BuildEnvironment
@@ -1431,15 +1431,15 @@ export async function createViteBuilder(
   }
 
   const createBrowserEnvironment =
-    getEnvironmentConfig(defaultInlineConfig, 'browser')?.build
+    getEnvironmentConfig(defaultInlineConfig, 'client')?.build
       ?.createEnvironment ??
     defaultConfig.build?.createEnvironment ??
     ((builder: ViteBuilder, name: string) =>
       new BuildEnvironment(builder, name))
 
-  const browserEnvironment = createBrowserEnvironment(builder, 'browser')
+  const clientEnvironment = createBrowserEnvironment(builder, 'client')
 
-  environments.push(browserEnvironment)
+  environments.push(clientEnvironment)
 
   // Backward compatibility for `ssr` option
   if (defaultConfig.build.ssr) {
@@ -1459,7 +1459,7 @@ export async function createViteBuilder(
   if (defaultConfig.environments) {
     for (const environmentConfig of defaultConfig.environments) {
       if (
-        environmentConfig.name !== 'browser' &&
+        environmentConfig.name !== 'client' &&
         environmentConfig.name !== 'ssr'
       ) {
         const createEnvironment =
