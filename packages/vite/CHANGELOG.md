@@ -1,3 +1,9 @@
+## <small>5.2.1 (2024-03-20)</small>
+
+* fix: encode path uri only (#16212) ([0b2e40b](https://github.com/vitejs/vite/commit/0b2e40b)), closes [#16212](https://github.com/vitejs/vite/issues/16212)
+
+
+
 ## 5.2.0 (2024-03-20)
 
 * fix: update client.ts@cleanUrl to accomodate blob protocol (#16182) ([1a3b1d7](https://github.com/vitejs/vite/commit/1a3b1d7)), closes [#16182](https://github.com/vitejs/vite/issues/16182)
