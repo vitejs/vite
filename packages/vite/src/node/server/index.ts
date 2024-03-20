@@ -53,7 +53,7 @@ import { getEnvFilesForMode } from '../env'
 import type { FetchResult } from '../../runtime/types'
 import { ssrFetchModule } from '../ssr/ssrFetchModule'
 import type { PluginContainer } from './pluginContainer'
-import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
+import { createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
 import { createWebSocketServer } from './ws'
 import { baseMiddleware } from './middlewares/base'
@@ -512,20 +512,24 @@ export async function _createServer(
       return transformRequest(url, server, options)
     },
     async warmupRequest(url, options) {
-      await transformRequest(url, server, options).catch((e) => {
-        if (
-          e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
-          e?.code === ERR_CLOSED_SERVER
-        ) {
-          // these are expected errors
-          return
-        }
-        // Unexpected error, log the issue but avoid an unhandled exception
-        server.config.logger.error(`Pre-transform error: ${e.message}`, {
-          error: e,
-          timestamp: true,
-        })
-      })
+      if (server._restartPromise) {
+        // The server is restarting, avoid warming up this request as it won't be used
+        // and it will trigger the processing of other requests
+        return
+      }
+      await transformRequest(url, server, { ...options, warmup: true }).catch(
+        (e) => {
+          if (e?.code === ERR_OUTDATED_OPTIMIZED_DEP) {
+            // expected error
+            return
+          }
+          // Unexpected error, log the issue but avoid an unhandled exception
+          server.config.logger.error(`Pre-transform error: ${e.message}`, {
+            error: e,
+            timestamp: true,
+          })
+        },
+      )
     },
     transformIndexHtml(url, html, originalUrl) {
       return devHtmlTransformFn(server, url, html, originalUrl)

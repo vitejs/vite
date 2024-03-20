@@ -28,7 +28,6 @@ import {
   injectSourcesContent,
 } from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
-import { throwClosedServerError } from './pluginContainer'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
@@ -48,6 +47,10 @@ export interface TransformResult {
 export interface TransformOptions {
   ssr?: boolean
   html?: boolean
+  /**
+   * @internal
+   */
+  warmup?: boolean
 }
 
 export function transformRequest(
@@ -55,8 +58,6 @@ export function transformRequest(
   server: ViteDevServer,
   options: TransformOptions = {},
 ): Promise<TransformResult | null> {
-  if (server._restartPromise && !options.ssr) throwClosedServerError()
-
   const cacheKey = (options.ssr ? 'ssr:' : options.html ? 'html:' : '') + url
 
   // This module may get invalidated while we are processing it. For example
@@ -315,7 +316,7 @@ async function loadAndTransform(
     throw err
   }
 
-  if (server._restartPromise && !ssr) throwClosedServerError()
+  if (options.warmup && server._restartPromise) return null
 
   // ensure module in graph after successful load
   mod ??= await moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
@@ -386,8 +387,7 @@ async function loadAndTransform(
       }
     }
   }
-
-  if (server._restartPromise && !ssr) throwClosedServerError()
+  if (options.warmup && server._restartPromise) return null
 
   const result =
     ssr && !server.config.experimental.skipSsrTransform
