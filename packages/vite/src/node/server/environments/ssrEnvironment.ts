@@ -4,11 +4,11 @@ import type { ViteDevServer } from '../index'
 import { asyncFunctionDeclarationPaddingLineCount } from '../../../shared/utils'
 
 export function createSsrEnvironment(
-  hotChannel: ServerHMRChannel,
   server: ViteDevServer,
   name: string,
+  hotChannel: ServerHMRChannel,
 ): DevEnvironment {
-  const environment = new DevEnvironment(server, name, {
+  return new DevEnvironment(server, name, {
     hot: hotChannel,
     runner: {
       processSourceMap(map) {
@@ -20,5 +20,4 @@ export function createSsrEnvironment(
       },
     },
   })
-  return environment
 }
