@@ -2,14 +2,12 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
-import convertSourceMap from 'convert-source-map'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { ModuleNode, ViteDevServer } from '..'
 import {
-  blankReplacer,
   createDebugger,
   ensureWatchedFile,
   injectQuery,
@@ -24,7 +22,11 @@ import { checkPublicFile } from '../publicDir'
 import { isDepsOptimizerEnabled } from '../config'
 import { getDepsOptimizer, initDevSsrDepsOptimizer } from '../optimizer'
 import { cleanUrl, unwrapId } from '../../shared/utils'
-import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
+import {
+  applySourcemapIgnoreList,
+  extractSourcemapFromFile,
+  injectSourcesContent,
+} from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
 
@@ -263,21 +265,19 @@ async function loadAndTransform(
           throw e
         }
       }
-      ensureWatchedFile(server.watcher, file, config.root)
+      if (code != null) {
+        ensureWatchedFile(server.watcher, file, config.root)
+      }
     }
     if (code) {
       try {
-        map = (
-          convertSourceMap.fromSource(code) ||
-          (await convertSourceMap.fromMapFileSource(
-            code,
-            createConvertSourceMapReadMap(file),
-          ))
-        )?.toObject()
-
-        code = code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer)
+        const extracted = await extractSourcemapFromFile(code, file)
+        if (extracted) {
+          code = extracted.code
+          map = extracted.map
+        }
       } catch (e) {
-        logger.warn(`Failed to load source map for ${url}.`, {
+        logger.warn(`Failed to load source map for ${file}.\n${e}`, {
           timestamp: true,
         })
       }
@@ -404,15 +404,6 @@ async function loadAndTransform(
     moduleGraph.updateModuleTransformResult(mod, result, ssr)
 
   return result
-}
-
-function createConvertSourceMapReadMap(originalFileName: string) {
-  return (filename: string) => {
-    return fsp.readFile(
-      path.resolve(path.dirname(originalFileName), filename),
-      'utf-8',
-    )
-  }
 }
 
 /**
