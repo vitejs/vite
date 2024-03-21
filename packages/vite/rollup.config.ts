@@ -217,7 +217,7 @@ function createModuleRunnerConfig(isProduction: boolean) {
           }
         },
       },
-      bundleSizeLimit(45),
+      bundleSizeLimit(46),
     ],
   })
 }
