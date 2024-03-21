@@ -212,6 +212,12 @@ function mapSourcePosition(position: OriginalMapping) {
   // Resolve the source URL relative to the URL of the source map
   if (sourceMap && sourceMap.map && sourceMap.url) {
     const originalPosition = getOriginalPosition(sourceMap.map, position)
+    // console.log({
+    //   _decoded: sourceMap.map._decoded?.map(v => JSON.stringify(v)),
+    //   _decodedMemo: sourceMap.map._decodedMemo,
+    //   position,
+    //   originalPosition,
+    // })
 
     // Only return the original position if a matching line was found. If no
     // matching line is found then we return position instead, which will cause

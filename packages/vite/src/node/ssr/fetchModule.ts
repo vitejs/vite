@@ -105,6 +105,8 @@ export async function fetchModule(
 
   if (options.inlineSourceMap !== false) {
     result = inlineSourceMap(mod, result, options.processSourceMap)
+    // console.log("@@@ result");
+    // console.log(result.code);
   }
 
   // remove shebang
