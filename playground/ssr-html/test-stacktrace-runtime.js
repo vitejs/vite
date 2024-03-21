@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
-import { createServer, createViteRuntime } from 'vite'
 import assert from 'node:assert'
+import { createServer, createViteRuntime } from 'vite'
 
 const server = await createServer({
   configFile: false,
