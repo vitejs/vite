@@ -42,11 +42,6 @@ export interface SSROptions {
      */
     externalConditions?: string[]
   }
-
-  /**
-   * Entry point exporting the render function.
-   */
-  entry?: string
 }
 
 export interface ResolvedSSROptions extends SSROptions {

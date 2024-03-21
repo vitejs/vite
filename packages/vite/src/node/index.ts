@@ -120,6 +120,7 @@ export type {
   EnvironmentModuleNode,
   ResolvedUrl,
 } from './server/moduleGraph'
+export { RemoteEnvironmentTransport } from './server/environmentTransport'
 export type { SendOptions } from './server/send'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type {

@@ -1,11 +1,10 @@
-import type http from 'node:http'
 import type { FetchResult } from 'vite/module-runner'
 import { Environment } from '../environment'
 import type { ViteDevServer } from '../server'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
 import type { DevEnvironmentConfig } from '../config'
 import { mergeConfig } from '../utils'
-import type { FetchModuleOptions} from '../ssr/fetchModule';
+import type { FetchModuleOptions } from '../ssr/fetchModule'
 import { fetchModule } from '../ssr/fetchModule'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { HMRChannel } from './hmr'
@@ -13,12 +12,7 @@ import { createNoopHMRChannel } from './hmr'
 import { transformRequest } from './transformRequest'
 import type { TransformResult } from './transformRequest'
 import { ERR_CLOSED_SERVER } from './pluginContainer'
-
-type EnvironmentMiddleware = (
-  this: DevEnvironment,
-  request: http.IncomingMessage,
-  response: http.ServerResponse,
-) => void
+import type { RemoteEnvironmentTransport } from './environmentTransport'
 
 // Maybe we will rename this to DevEnvironment
 export class DevEnvironment extends Environment {
@@ -54,11 +48,7 @@ export class DevEnvironment extends Environment {
   /**
    * @internal
    */
-  _processSsrRequest: EnvironmentMiddleware | undefined
-  /**
-   * @internal
-   */
-  _ssrModuleOptions: FetchModuleOptions | undefined
+  _ssrRunnerOptions: FetchModuleOptions | undefined
   /**
    * HMR channel for this environment. If not provided or disabled,
    * it will be a noop channel that does nothing.
@@ -71,11 +61,10 @@ export class DevEnvironment extends Environment {
     server: ViteDevServer,
     name: string,
     options?: {
-      // TODO: use `transport` instead to support any hmr channel?
       hot?: false | HMRChannel
       config?: DevEnvironmentConfig
-      ssr?: FetchModuleOptions & {
-        processRequest?: EnvironmentMiddleware
+      runner?: FetchModuleOptions & {
+        transport?: RemoteEnvironmentTransport
       }
     },
   ) {
@@ -88,23 +77,13 @@ export class DevEnvironment extends Environment {
     )
     this.hot = options?.hot || createNoopHMRChannel()
     this._inlineConfig = options?.config
-    const { processRequest, ...ssrModuleOptions } = options?.ssr || {}
-    this._processSsrRequest = processRequest
-    this._ssrModuleOptions = ssrModuleOptions
+    const ssrRunnerOptions = options?.runner || {}
+    this._ssrRunnerOptions = ssrRunnerOptions
+    options?.runner?.transport?.initialize(this)
   }
 
-  processSsrRequest(
-    request: http.IncomingMessage,
-    response: http.ServerResponse,
-  ): void {
-    if (!this._processSsrRequest) {
-      throw new Error(`The ${this.name} environment does not support SSR.`)
-    }
-    return this._processSsrRequest.call(this, request, response)
-  }
-
-  ssrFetchModule(id: string, importer?: string): Promise<FetchResult> {
-    return fetchModule(this, id, importer, this._ssrModuleOptions)
+  fetchModule(id: string, importer?: string): Promise<FetchResult> {
+    return fetchModule(this, id, importer, this._ssrRunnerOptions)
   }
 
   transformRequest(url: string): Promise<TransformResult | null> {

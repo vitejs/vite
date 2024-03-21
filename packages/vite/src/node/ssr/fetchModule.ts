@@ -18,7 +18,7 @@ export interface FetchModuleOptions {
 }
 
 /**
- * Fetch module information for Vite runtime.
+ * Fetch module information for Vite runner.
  * @experimental
  */
 export async function fetchModule(
