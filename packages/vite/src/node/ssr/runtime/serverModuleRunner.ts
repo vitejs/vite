@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from 'node:fs'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type { ModuleEvaluator, ModuleRunnerOptions } from 'vite/module-runner'
 import type { ViteDevServer } from '../../server'
-import type { HMRLogger } from '../../../shared/hmr'
 import type { DevEnvironment } from '../../server/environment'
 import { ServerHMRConnector } from './serverHmrConnector'
 
@@ -20,7 +19,10 @@ export interface ServerModuleRunnerOptions
   hmr?:
     | false
     | {
-        logger?: false | HMRLogger
+        logger?: Exclude<
+          ModuleRunnerOptions['hmr'],
+          false | undefined
+        >['logger']
       }
   /**
    * Provide a custom module runner. This controls how the code is executed.

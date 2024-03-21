@@ -1,9 +1,9 @@
 import { pathToFileURL } from 'node:url'
+import type { FetchResult } from 'vite/module-runner'
 import type { EnvironmentModuleNode, TransformResult } from '..'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import type { FetchResult } from '../../module-runner/types'
 import { unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,

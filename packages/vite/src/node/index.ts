@@ -136,7 +136,7 @@ export type {
   HMRBroadcasterClient,
 } from './server/hmr'
 
-export type { FetchFunction } from '../module-runner/index'
+export type { FetchFunction, FetchResult } from 'vite/module-runner'
 export { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
 export type { ServerModuleRunnerOptions } from './ssr/runtime/serverModuleRunner'
 export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
