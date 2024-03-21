@@ -49,6 +49,7 @@ import {
   combineSourcemaps,
   createSerialPromiseQueue,
   emptyCssComments,
+  encodeURIPath,
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
@@ -580,7 +581,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = this.getFileName(fileHash) + postfix
           chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
-          return encodeURI(
+          return encodeURIPath(
             toOutputFilePathInCss(
               filename,
               'asset',
@@ -599,7 +600,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
           chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
             const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
-            return encodeURI(
+            return encodeURIPath(
               toOutputFilePathInCss(
                 publicUrl,
                 'public',
@@ -702,7 +703,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
           const replacementString =
             typeof replacement === 'string'
-              ? JSON.stringify(encodeURI(replacement)).slice(1, -1)
+              ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
               : `"+${replacement.runtime}+"`
           s.update(start, end, replacementString)
         }
