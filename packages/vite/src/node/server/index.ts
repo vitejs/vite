@@ -512,7 +512,9 @@ export async function _createServer(
       return transformRequest(url, server, options)
     },
     async warmupRequest(url, options) {
-      await transformRequest(url, server, options).catch((e) => {
+      try {
+        await transformRequest(url, server, options)
+      } catch (e) {
         if (
           e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
           e?.code === ERR_CLOSED_SERVER
@@ -525,7 +527,7 @@ export async function _createServer(
           error: e,
           timestamp: true,
         })
-      })
+      }
     },
     transformIndexHtml(url, html, originalUrl) {
       return devHtmlTransformFn(server, url, html, originalUrl)
