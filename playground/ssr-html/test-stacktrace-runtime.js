@@ -2,6 +2,9 @@ import { fileURLToPath } from 'node:url'
 import assert from 'node:assert'
 import { createServer, createViteRuntime } from 'vite'
 
+// same test case as packages/vite/src/node/ssr/runtime/__tests__/server-source-maps.spec.ts
+// implemented for e2e to catch build specific behavior
+
 const server = await createServer({
   configFile: false,
   root: fileURLToPath(new URL('.', import.meta.url)),
@@ -23,9 +26,4 @@ try {
 } finally {
   await server.close()
 }
-// this fails as console.error(error) shows
-//   Error: crash
-//       at crash (.../src/has-error-deep.ts:2:9)
-//       at Module.main (.../src/has-error-deep.ts:6:9)
-//       at .../test-stacktrace-runtime.js:18:7
 assert.match(error?.stack, /has-error-deep.ts:6:3/)
