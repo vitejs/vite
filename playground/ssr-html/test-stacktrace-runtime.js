@@ -25,7 +25,7 @@ try {
 }
 // this fails as console.error(error) shows
 //   Error: crash
-//       at crash (/home/hiroshi/code/others/vite/playground/ssr-html/src/has-error-deep.ts:2:9)
-//       at Module.main (/home/hiroshi/code/others/vite/playground/ssr-html/src/has-error-deep.ts:6:9)
-//       at file:///home/hiroshi/code/others/vite/playground/ssr-html/test-stacktrace-runtime.js:18:7
+//       at crash (.../src/has-error-deep.ts:2:9)
+//       at Module.main (.../src/has-error-deep.ts:6:9)
+//       at .../test-stacktrace-runtime.js:18:7
 assert.match(error?.stack, /has-error-deep.ts:6:3/)

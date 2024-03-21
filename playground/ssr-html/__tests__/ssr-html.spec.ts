@@ -100,7 +100,7 @@ describe.runIf(isServe)('stacktrace', () => {
   }
 
   test('with Vite runtime', async () => {
-    await execFileAsync('node', ['test-stacktrace-runtime.js', '--runtime'], {
+    await execFileAsync('node', ['test-stacktrace-runtime.js'], {
       cwd: fileURLToPath(new URL('..', import.meta.url)),
     })
   })
