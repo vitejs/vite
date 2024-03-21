@@ -1,0 +1,12 @@
+@value primary as p1, simple-border from './utils1.css';
+@value primary as p2 from './utils2.css';
+
+.class-name1 {
+  color: p1;
+  border: simple-border;
+  composes: util-class from './utils1.css';
+  composes: util-class from './utils2.css';
+}
+.class-name2 {
+  color: p2;
+}

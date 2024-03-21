@@ -1,0 +1,67 @@
+<h1>CSS Modules</h1>
+
+<p>css-modules-value</p>
+<pre class="css-modules-value"></pre>
+
+<p>empty-css-module</p>
+<pre class="empty-css-module"></pre>
+
+<p>global-module</p>
+<pre class="global-module"></pre>
+
+<p>inline-query</p>
+<pre class="inline-query"></pre>
+
+<p>module-namespace</p>
+<pre class="module-namespace"></pre>
+
+<p>multi-css-modules</p>
+<pre class="multi-css-modules"></pre>
+
+<p>reserved-keywords</p>
+<pre class="reserved-keywords"></pre>
+
+<p>scss-modules</p>
+<pre class="scss-modules"></pre>
+
+<p>scss-modules-mixed</p>
+<pre class="scss-modules-mixed"></pre>
+
+<p>vue</p>
+<pre class="vue"></pre>
+
+<script type="module">
+  import * as cssModulesValue from './css-modules-value'
+  text('.css-modules-value', JSON.stringify(cssModulesValue, null, 2))
+
+  import * as emptyCssModule from './empty-css-module'
+  text('.empty-css-module', JSON.stringify(emptyCssModule, null, 2))
+
+  import * as globalModule from './global-module'
+  text('.global-module', JSON.stringify(globalModule, null, 2))
+
+  import * as inlineQuery from './inline-query'
+  text('.inline-query', JSON.stringify(inlineQuery, null, 2))
+
+  import * as moduleNamespace from './module-namespace'
+  text('.module-namespace', JSON.stringify(moduleNamespace, null, 2))
+
+  import * as multiCssModules from './multi-css-modules'
+  text('.multi-css-modules', JSON.stringify(multiCssModules, null, 2))
+
+  import * as reservedKeywords from './reserved-keywords'
+  text('.reserved-keywords', JSON.stringify(reservedKeywords, null, 2))
+
+  import * as scssModules from './scss-modules'
+  text('.scss-modules', JSON.stringify(scssModules, null, 2))
+
+  import * as scssModulesMixed from './scss-modules-mixed'
+  text('.scss-modules-mixed', JSON.stringify(scssModulesMixed, null, 2))
+
+  import * as vue from './vue'
+  text('.vue', JSON.stringify(vue, null, 2))
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>

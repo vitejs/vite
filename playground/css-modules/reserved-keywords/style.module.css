@@ -1,0 +1,8 @@
+.import {
+  composes: if from './utils.css';
+  color: red;
+}
+
+.export {
+  composes: with from './utils.css';
+}

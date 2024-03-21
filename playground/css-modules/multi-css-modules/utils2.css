@@ -1,0 +1,4 @@
+.util-class {
+  --name: 'bar';
+  color: green;
+}

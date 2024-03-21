@@ -1,0 +1,5 @@
+@value primary: #000;
+
+.util-class {
+  border: primary;
+}

@@ -1,0 +1,6 @@
+.page {
+  padding: 20px;
+}
+:local(.title) {
+  color: green;
+}

@@ -1,0 +1,6 @@
+@value primary: #fff;
+@value simple-border: 1px solid black;
+
+.util-class {
+  border: primary;
+}

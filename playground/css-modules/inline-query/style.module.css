@@ -1,0 +1,4 @@
+.class-name1 {
+  composes: util-class from './utils.css';
+  color: red;
+}

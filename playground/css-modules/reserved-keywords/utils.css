@@ -1,0 +1,8 @@
+.if {
+  --name: 'foo';
+  color: blue;
+}
+
+.with {
+  color: yellow;
+}

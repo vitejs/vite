@@ -1,0 +1,8 @@
+.util-class {
+  --name: 'foo';
+  color: blue;
+}
+
+.unused-class {
+  color: yellow;
+}

@@ -1,0 +1,4 @@
+.className1 {
+  composes: non-existent from './utils.css';
+  color: red;
+}

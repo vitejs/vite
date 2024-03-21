@@ -1,0 +1,3 @@
+.input {
+  color: var(--accent-color from './vars.module.css');
+}

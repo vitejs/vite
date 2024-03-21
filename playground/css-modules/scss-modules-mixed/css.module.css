@@ -1,0 +1,3 @@
+.text-primary {
+  composes: text-primary from './scss.module.scss';
+}

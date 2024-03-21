@@ -1,0 +1,5 @@
+.button {
+  &.primary {
+    color: red;
+  }
+}

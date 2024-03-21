@@ -1,0 +1,22 @@
+<h1>CSS Modules lightningcss</h1>
+
+<p>lightningcss-custom-properties-from</p>
+<pre class="lightningcss-custom-properties-from"></pre>
+
+<p>lightningcss-features</p>
+<pre class="lightningcss-features"></pre>
+
+<script type="module">
+  import * as lightningcssCustomPropertiesFrom from './lightningcss-custom-properties-from'
+  text(
+    '.lightningcss-custom-properties-from',
+    JSON.stringify(lightningcssCustomPropertiesFrom, null, 2),
+  )
+
+  import * as lightningcssFeatures from './lightningcss-features'
+  text('.lightningcss-features', JSON.stringify(lightningcssFeatures, null, 2))
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>
