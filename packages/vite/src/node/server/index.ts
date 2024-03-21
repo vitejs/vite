@@ -755,22 +755,33 @@ export async function _createServer(
     await onHMRUpdate(file, true)
   }
 
-  watcher.on('change', async (file) => {
+  async function onFileChange(file: string) {
     file = normalizePath(file)
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
     await onHMRUpdate(file, false)
-  })
+  }
 
-  getFsUtils(config).initWatcher?.(watcher)
+  const fsUtils = getFsUtils(config)
 
-  watcher.on('add', (file) => {
-    onFileAddUnlink(file, false)
-  })
-  watcher.on('unlink', (file) => {
-    onFileAddUnlink(file, true)
-  })
+  if (fsUtils.initWatcher) {
+    fsUtils.initWatcher(watcher)
+    setupDebouncedWatchEventsListeners(
+      watcher,
+      onFileAddUnlink,
+      onFileChange,
+      50,
+    )
+  } else {
+    watcher.on('add', (file) => {
+      onFileAddUnlink(file, false)
+    })
+    watcher.on('unlink', (file) => {
+      onFileAddUnlink(file, true)
+    })
+    watcher.on('change', onFileChange)
+  }
 
   hot.on('vite:invalidate', async ({ path, message }) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
@@ -1246,4 +1257,50 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
     waitForRequestsIdle,
     cancel,
   }
+}
+
+interface WatchEvent {
+  type: 'add' | 'unlink' | 'change'
+  file: string
+}
+function setupDebouncedWatchEventsListeners(
+  watcher: FSWatcher,
+  onFileAddUnlink: (file: string, isUnlink: boolean) => void,
+  onFileChange: (file: string) => void,
+  debounceMs: number,
+) {
+  let watchEvents: WatchEvent[] = []
+  let processWatchEventsHandle: NodeJS.Timeout | null = null
+  function processWatchEvent(event: WatchEvent) {
+    switch (event.type) {
+      case 'add':
+        return onFileAddUnlink(event.file, true)
+      case 'unlink':
+        return onFileAddUnlink(event.file, false)
+      case 'change':
+        return onFileChange(event.file)
+    }
+  }
+  function debouncedProcessWatchEvents() {
+    if (processWatchEventsHandle) {
+      clearTimeout(processWatchEventsHandle)
+      processWatchEventsHandle = null
+    }
+    processWatchEventsHandle = setTimeout(() => {
+      watchEvents.forEach(processWatchEvent)
+      watchEvents = []
+    }, debounceMs)
+  }
+  watcher.on('add', (file) => {
+    watchEvents.push({ type: 'add', file })
+    debouncedProcessWatchEvents()
+  })
+  watcher.on('unlink', (file) => {
+    watchEvents.push({ type: 'unlink', file })
+    debouncedProcessWatchEvents()
+  })
+  watcher.on('change', (file) => {
+    watchEvents.push({ type: 'change', file })
+    debouncedProcessWatchEvents()
+  })
 }
