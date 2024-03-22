@@ -73,8 +73,9 @@ import {
   serveStaticMiddleware,
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import type { EnvironmentModuleNode, ModuleNode } from './moduleGraph'
-import { ModuleGraph } from './moduleGraph'
+import type { EnvironmentModuleNode } from './moduleGraph'
+import { ModuleGraph } from './mixedModuleGraph'
+import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HMRBroadcaster, HmrOptions, HmrTask } from './hmr'

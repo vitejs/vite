@@ -114,8 +114,6 @@ export type {
 } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
 export type {
-  ModuleGraph,
-  ModuleNode,
   EnvironmentModuleGraph,
   EnvironmentModuleNode,
   ResolvedUrl,
@@ -186,3 +184,6 @@ export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
 export type { LightningCSSOptions } from 'dep-types/lightningcss'
+
+// Backward compatibility
+export type { ModuleGraph, ModuleNode } from './server/mixedModuleGraph'
