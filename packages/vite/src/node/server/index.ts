@@ -559,8 +559,10 @@ export async function _createServer(
       return transformRequest(url, server, options, environment)
     },
     async warmupRequest(url, options) {
-      const environment = server.environments[options?.ssr ? 'ssr' : 'client']
-      await transformRequest(url, server, options, environment).catch((e) => {
+      try {
+        const environment = server.environments[options?.ssr ? 'ssr' : 'client']
+        await transformRequest(url, server, options, environment)
+      } catch (e) {
         if (
           e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
           e?.code === ERR_CLOSED_SERVER
@@ -573,7 +575,7 @@ export async function _createServer(
           error: e,
           timestamp: true,
         })
-      })
+      }
     },
     transformIndexHtml(url, html, originalUrl) {
       return devHtmlTransformFn(server, url, html, originalUrl)

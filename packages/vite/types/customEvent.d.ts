@@ -32,5 +32,8 @@ export interface InvalidatePayload {
   environment?: string
 }
 
+/**
+ * provides types for built-in Vite events
+ */
 export type InferCustomEventPayload<T extends string> =
   T extends keyof CustomEventMap ? CustomEventMap[T] : any

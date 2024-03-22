@@ -8,7 +8,9 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
 1. In your Vite config, configure the entry and enable build manifest:
 
-   ```js
+   ```js twoslash
+   import { defineConfig } from 'vite'
+   // ---cut---
    // vite.config.js
    export default defineConfig({
      build: {
