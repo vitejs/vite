@@ -13,12 +13,13 @@ import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
+  encodeURIPath,
   generateCodeFrame,
   getHash,
   isDataUrl,
   isExternalUrl,
   normalizePath,
-  partialEncodeURI,
+  partialEncodeURIPath,
   processSrcSet,
   removeLeadingSlash,
   urlCanParse,
@@ -439,7 +440,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               overwriteAttrValue(
                 s,
                 sourceCodeLocation!,
-                partialEncodeURI(toOutputPublicFilePath(url)),
+                partialEncodeURIPath(toOutputPublicFilePath(url)),
               )
             }
 
@@ -498,7 +499,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                           if (!isExcludedUrl(decodedUrl)) {
                             const result = await processAssetUrl(url)
                             return result !== decodedUrl
-                              ? encodeURI(result)
+                              ? encodeURIPath(result)
                               : url
                           }
                           return url
@@ -519,7 +520,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     overwriteAttrValue(
                       s,
                       getAttrSourceCodeLocation(node, attrKey),
-                      partialEncodeURI(toOutputPublicFilePath(url)),
+                      partialEncodeURIPath(toOutputPublicFilePath(url)),
                     )
                   } else if (!isExcludedUrl(url)) {
                     if (
@@ -563,7 +564,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                             overwriteAttrValue(
                               s,
                               getAttrSourceCodeLocation(node, attrKey),
-                              partialEncodeURI(processedUrl),
+                              partialEncodeURIPath(processedUrl),
                             )
                           }
                         })(),
@@ -636,12 +637,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
           if (checkPublicFile(url, config)) {
-            s.update(start, end, partialEncodeURI(toOutputPublicFilePath(url)))
+            s.update(
+              start,
+              end,
+              partialEncodeURIPath(toOutputPublicFilePath(url)),
+            )
           } else if (!isExcludedUrl(url)) {
             s.update(
               start,
               end,
-              partialEncodeURI(await urlToBuiltUrl(url, id, config, this)),
+              partialEncodeURIPath(await urlToBuiltUrl(url, id, config, this)),
             )
           }
         }
@@ -904,7 +909,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (chunk) {
             chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
           }
-          return encodeURI(toOutputAssetFilePath(file)) + postfix
+          return encodeURIPath(toOutputAssetFilePath(file)) + postfix
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
@@ -912,7 +917,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             getPublicAssetFilename(fileHash, config)!,
           )
 
-          return encodeURI(
+          return encodeURIPath(
             urlCanParse(publicAssetPath)
               ? publicAssetPath
               : normalizePath(publicAssetPath),
