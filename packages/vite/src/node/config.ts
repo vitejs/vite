@@ -763,11 +763,6 @@ export async function resolveConfig(
 
   checkBadCharactersInPath(resolvedRoot, logger)
 
-  const resolvedDefaultEnvironmentResolve = resolveEnvironmentResolveOptions(
-    config.resolve,
-    logger,
-  )
-
   // Backward compatibility: merge optimizeDeps into environments.client.dev.optimizeDeps as defaults
   // TODO: should entries and force be in EnvironmentConfig?
   const { entries, force, ...deprecatedClientOptimizeDepsConfig } =
@@ -778,6 +773,20 @@ export async function resolveConfig(
     configEnvironmentsClient.dev.optimizeDeps ?? {},
     deprecatedClientOptimizeDepsConfig,
   )
+
+  // Backward compatibility: merge ssr into environments.ssr.config as defaults
+  // Done: ssr.optimizeDeps, ssr.resolve.conditions
+  // TODO: ssr.resolve.externalConditions, ssr.external, ssr.noExternal
+  const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
+  const configEnvironmentsSsr = config.environments!.ssr!
+  configEnvironmentsSsr.dev ??= {}
+  configEnvironmentsSsr.dev.optimizeDeps = mergeConfig(
+    configEnvironmentsSsr.dev.optimizeDeps ?? {},
+    deprecatedSsrOptimizeDepsConfig,
+  )
+  configEnvironmentsSsr.resolve ??= {}
+  const deprecatedSsrResolveConditions = config.ssr?.resolve?.conditions
+  configEnvironmentsSsr.resolve.conditions ??= deprecatedSsrResolveConditions // TODO: should we merge?
 
   // The client and ssr environment configs can't be removed by the user in the config hook
   if (
@@ -798,7 +807,6 @@ export async function resolveConfig(
       config.environments[name],
     )
   }
-  // TODO: Backward compatibility for `ssr.resolve`
 
   await runConfigEnvironmentHook(config.environments, userPlugins, configEnv)
 
@@ -811,10 +819,15 @@ export async function resolveConfig(
     )
   }
 
+  const resolvedDefaultEnvironmentResolve = resolveEnvironmentResolveOptions(
+    config.resolve,
+    logger,
+  )
+
   // Backward compatibility: merge environments.client.dev.optimizeDeps back into optimizeDeps
   configEnvironmentsClient = resolvedEnvironments.client
   const patchedOptimizeDeps = mergeConfig(
-    configEnvironmentsClient.dev!.optimizeDeps,
+    configEnvironmentsClient.dev?.optimizeDeps ?? {},
     config.optimizeDeps ?? {},
   )
   const backwardCompatibleOptimizeDeps = {
@@ -825,6 +838,34 @@ export async function resolveConfig(
       ...patchedOptimizeDeps.esbuildOptions,
     },
   }
+
+  const resolvedDevOptions = resolveDevOptions(
+    config.dev,
+    resolvedDefaultEnvironmentResolve.preserveSymlinks,
+  )
+
+  const resolvedBuildOptions = resolveBuildOptions(
+    config.build,
+    logger,
+    resolvedRoot,
+  )
+
+  // Backward compatibility: merge environments.ssr.dev.optimizeDeps back into ssr.optimizeDeps
+  const patchedConfigSsr = {
+    ...config.ssr,
+    optimizeDeps: mergeConfig(
+      resolvedEnvironments.ssr?.dev?.optimizeDeps ?? {},
+      config.ssr?.optimizeDeps ?? {},
+    ),
+    resolve: {
+      conditions: resolvedEnvironments.ssr?.resolve.conditions,
+      ...config.ssr?.resolve,
+    },
+  }
+  const ssr = resolveSSROptions(
+    patchedConfigSsr,
+    resolvedDefaultEnvironmentResolve.preserveSymlinks,
+  )
 
   // load .env files
   const envDir = config.envDir
@@ -865,17 +906,6 @@ export async function resolveConfig(
       ? '/'
       : './'
     : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
-
-  const resolvedDevOptions = resolveDevOptions(
-    config.dev,
-    resolvedDefaultEnvironmentResolve.preserveSymlinks,
-  )
-
-  const resolvedBuildOptions = resolveBuildOptions(
-    config.build,
-    logger,
-    resolvedRoot,
-  )
 
   // resolve cache directory
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
@@ -957,10 +987,6 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  const ssr = resolveSSROptions(
-    config.ssr,
-    resolvedDefaultEnvironmentResolve.preserveSymlinks,
-  ) // TODO
 
   const builder = resolveBuilderOptions(config.builder)
 
