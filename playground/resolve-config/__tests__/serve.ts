@@ -21,7 +21,7 @@ export async function serve() {
     await fs.rename(fromTestDir(configName, 'vite.config.ts'), pathToConf)
 
     if (['cjs', 'cts'].includes(configName)) {
-      const conf = await fs.readFile(pathToConf, 'utf8')
+      const conf = await fs.readFile(pathToConf, 'utf-8')
       await fs.writeFile(
         pathToConf,
         conf.replace('export default', 'module.exports = '),
@@ -30,7 +30,7 @@ export async function serve() {
 
     // Remove TS annotation for plain JavaScript file.
     if (configName.endsWith('js')) {
-      const conf = await fs.readFile(pathToConf, 'utf8')
+      const conf = await fs.readFile(pathToConf, 'utf-8')
       await fs.writeFile(pathToConf, conf.replace(': boolean', ''))
     }
 
