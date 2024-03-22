@@ -763,6 +763,22 @@ export async function resolveConfig(
 
   checkBadCharactersInPath(resolvedRoot, logger)
 
+  const resolvedDefaultEnvironmentResolve = resolveEnvironmentResolveOptions(
+    config.resolve,
+    logger,
+  )
+
+  // Backward compatibility: merge optimizeDeps into environments.client.dev.optimizeDeps as defaults
+  // TODO: should entries and force be in EnvironmentConfig?
+  const { entries, force, ...deprecatedClientOptimizeDepsConfig } =
+    config.optimizeDeps ?? {}
+  let configEnvironmentsClient = config.environments!.client!
+  configEnvironmentsClient.dev ??= {}
+  configEnvironmentsClient.dev.optimizeDeps = mergeConfig(
+    configEnvironmentsClient.dev.optimizeDeps ?? {},
+    deprecatedClientOptimizeDepsConfig,
+  )
+
   // The client and ssr environment configs can't be removed by the user in the config hook
   if (
     !config.environments ||
@@ -782,9 +798,8 @@ export async function resolveConfig(
       config.environments[name],
     )
   }
-  // TODO: Backward compatibility for `ssr.optimizeDeps` and `ssr.resolve`
+  // TODO: Backward compatibility for `ssr.resolve`
 
-  // run configEnvironment hooks
   await runConfigEnvironmentHook(config.environments, userPlugins, configEnv)
 
   const resolvedEnvironments: Record<string, ResolvedEnvironmentConfig> = {}
@@ -796,10 +811,20 @@ export async function resolveConfig(
     )
   }
 
-  const resolvedDefaultEnvironmentResolve = resolveEnvironmentResolveOptions(
-    config.resolve,
-    logger,
+  // Backward compatibility: merge environments.client.dev.optimizeDeps back into optimizeDeps
+  configEnvironmentsClient = resolvedEnvironments.client
+  const patchedOptimizeDeps = mergeConfig(
+    configEnvironmentsClient.dev!.optimizeDeps,
+    config.optimizeDeps ?? {},
   )
+  const backwardCompatibleOptimizeDeps = {
+    holdUntilCrawlEnd: true,
+    ...patchedOptimizeDeps,
+    esbuildOptions: {
+      preserveSymlinks: resolvedDefaultEnvironmentResolve.preserveSymlinks,
+      ...patchedOptimizeDeps.esbuildOptions,
+    },
+  }
 
   // load .env files
   const envDir = config.envDir
@@ -843,11 +868,6 @@ export async function resolveConfig(
 
   const resolvedDevOptions = resolveDevOptions(
     config.dev,
-    resolvedDefaultEnvironmentResolve.preserveSymlinks,
-  )
-
-  const resolvedOptimizeDepsConfig = resolveOptimizeDepsConfig(
-    config.optimizeDeps,
     resolvedDefaultEnvironmentResolve.preserveSymlinks,
   )
 
@@ -1067,14 +1087,8 @@ export async function resolveConfig(
       ...config.experimental,
     },
 
-    optimizeDeps: {
-      // Backward compatibility, now moved to dev.optimizeDeps
-      ...resolvedOptimizeDepsConfig,
-
-      // General options. TODO: should these be per-environment?
-      entries: config.optimizeDeps?.entries,
-      force: config.optimizeDeps?.force,
-    },
+    // Backward compatibility, users should use environment.config.dev.optimizeDeps
+    optimizeDeps: backwardCompatibleOptimizeDeps,
 
     resolve: resolvedDefaultEnvironmentResolve,
     dev: resolvedDevOptions,
