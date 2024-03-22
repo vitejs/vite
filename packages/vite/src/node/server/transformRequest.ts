@@ -65,7 +65,7 @@ export function transformRequest(
 ): Promise<TransformResult | null> {
   // Backward compatibility when only `ssr` is passed
   if (!environment) {
-    environment = options.ssr ? server.ssrEnvironment : server.clientEnvironment
+    environment = server.environments[options.ssr ? 'ssr' : 'client']
   }
   if (!options?.ssr) {
     // Backward compatibility

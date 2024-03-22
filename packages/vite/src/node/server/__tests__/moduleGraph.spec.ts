@@ -43,8 +43,8 @@ describe('moduleGraph', () => {
         id: url,
       }))
       const moduleGraph = new ModuleGraph({
-        client: clientModuleGraph,
-        ssr: ssrModuleGraph,
+        client: () => clientModuleGraph,
+        ssr: () => ssrModuleGraph,
       })
 
       const addBrowserModule = (url: string) =>

@@ -9,7 +9,6 @@ import {
 import { FS_PREFIX } from '../constants'
 import { cleanUrl } from '../../shared/utils'
 import type { TransformResult } from './transformRequest'
-
 export class EnvironmentModuleNode {
   environment: string
   /**
@@ -620,13 +619,21 @@ function mapIterator<T, K = T>(
 }
 
 export class ModuleGraph {
-  runtime = 'mixed'
+  /** @internal */
+  _moduleGraphs: {
+    client: () => EnvironmentModuleGraph
+    ssr: () => EnvironmentModuleGraph
+  }
 
   /** @internal */
-  _client: EnvironmentModuleGraph
+  get _client(): EnvironmentModuleGraph {
+    return this._moduleGraphs.client()
+  }
 
   /** @internal */
-  _ssr: EnvironmentModuleGraph
+  get _ssr(): EnvironmentModuleGraph {
+    return this._moduleGraphs.ssr()
+  }
 
   urlToModuleMap: Map<string, ModuleNode>
   idToModuleMap: Map<string, ModuleNode>
@@ -635,11 +642,10 @@ export class ModuleGraph {
   fileToModulesMap: Map<string, Set<ModuleNode>>
 
   constructor(moduleGraphs: {
-    client: EnvironmentModuleGraph
-    ssr: EnvironmentModuleGraph
+    client: () => EnvironmentModuleGraph
+    ssr: () => EnvironmentModuleGraph
   }) {
-    this._client = moduleGraphs.client
-    this._ssr = moduleGraphs.ssr
+    this._moduleGraphs = moduleGraphs
 
     const getModuleMapUnion =
       (prop: 'urlToModuleMap' | 'idToModuleMap') => () => {

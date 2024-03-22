@@ -265,12 +265,7 @@ export interface ViteDevServer {
   /**
    * Dev Environments. Module execution environments attached to the Vite server.
    */
-  environments: DevEnvironment[]
-  /**
-   * Default environments
-   */
-  clientEnvironment: DevEnvironment
-  ssrEnvironment: DevEnvironment
+  environments: Record<string, DevEnvironment>
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -447,10 +442,6 @@ export function createServer(
   return _createServer(inlineConfig, { hotListen: true })
 }
 
-function getResolvedEnvironmentConfig(config: ResolvedConfig, name: string) {
-  return config.environments?.find((e) => e.name === name)
-}
-
 export async function _createServer(
   inlineConfig: InlineConfig = {},
   options: { hotListen: boolean },
@@ -498,21 +489,23 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
-  const environments: DevEnvironment[] = []
+  const environments: Record<string, DevEnvironment> = {}
 
   // The global environment is used for buildStart, buildEnd, watchChange, and writeBundle hooks
   // that are called once and not per environment.
-  // The Vite server has always passed the mixed module graph. Passing the clientEnvironment
+  // The Vite server has always passed the mixed module graph. Passing the client environment
   // should give us the best backward compatibility for now.
   // We can review this in the next Vite major.
-  let defaultEnvironment: DevEnvironment
-  let ssrEnvironment: DevEnvironment
   const pluginContainer = await createPluginContainer(
     config,
     watcher,
-    () => defaultEnvironment,
-    () => ssrEnvironment,
+    environments,
   )
+
+  const moduleGraph = new ModuleGraph({
+    client: () => environments.client.moduleGraph,
+    ssr: () => environments.ssr.moduleGraph,
+  })
 
   const closeHttpServer = createServerCloseFn(httpServer)
 
@@ -539,15 +532,12 @@ export async function _createServer(
     middlewares,
     httpServer,
     watcher,
-    pluginContainer,
     ws,
     hot,
-    environments,
 
-    // We set these after the server is created
-    clientEnvironment: undefined as any,
-    ssrEnvironment: undefined as any,
-    moduleGraph: undefined as any,
+    environments,
+    pluginContainer,
+    moduleGraph,
 
     resolvedUrls: null, // will be set on listen
     ssrTransform(
@@ -564,16 +554,12 @@ export async function _createServer(
     // that is part of the internal control flow for the vite dev server to be able to bail
     // out and do the html fallback
     transformRequest(url, options) {
-      const environment = options?.ssr
-        ? server.ssrEnvironment
-        : server.clientEnvironment
+      const environment = server.environments[options?.ssr ? 'ssr' : 'client']
       return transformRequest(url, server, options, environment)
     },
     async warmupRequest(url, options) {
       try {
-        const environment = options?.ssr
-          ? server.ssrEnvironment
-          : server.clientEnvironment
+        const environment = server.environments[options?.ssr ? 'ssr' : 'client']
         await transformRequest(url, server, options, environment)
       } catch (e) {
         if (
@@ -616,7 +602,7 @@ export async function _createServer(
         // TODO: Should we also update the node moduleGraph for backward compatibility?
         const environmentModule = (module._clientModule ?? module._ssrModule)!
         updateModules(
-          environments.find((e) => e.name === environmentModule.environment)!,
+          environments[environmentModule.environment]!,
           module.file,
           [environmentModule],
           Date.now(),
@@ -628,7 +614,7 @@ export async function _createServer(
       // TODO: Should this be reloadEnvironmentModule(environment, module) ?
       if (serverConfig.hmr !== false && module.file) {
         updateModules(
-          environments.find((e) => e.name === module.environment)!,
+          environments[module.environment]!,
           module.file,
           [module],
           Date.now(),
@@ -787,34 +773,25 @@ export async function _createServer(
 
   // Create Environments
 
-  const createBrowserEnvironment =
-    getResolvedEnvironmentConfig(config, 'client')?.dev?.createEnvironment ??
+  const createClientEnvironment =
+    config.environments.client?.dev?.createEnvironment ??
     server.config.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
       new DevEnvironment(server, name, { hot: ws }))
 
-  server.clientEnvironment = createBrowserEnvironment(server, 'client')
-  environments.push(server.clientEnvironment)
+  environments.client = createClientEnvironment(server, 'client')
 
-  const createNodeEnvironment =
+  const createSsrEnvironment =
     /* config.ssr?.dev?.createEnvironment ?? */
-    getResolvedEnvironmentConfig(config, 'ssr')?.dev?.createEnvironment ??
+    config.environments.ssr?.dev?.createEnvironment ??
     server.config.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
       new DevEnvironment(server, name, { hot: ssrHotChannel }))
 
-  server.ssrEnvironment = createNodeEnvironment(server, 'ssr')
-  environments.push(server.ssrEnvironment)
-
-  const moduleGraph = new ModuleGraph({
-    client: server.clientEnvironment.moduleGraph,
-    ssr: server.ssrEnvironment.moduleGraph,
-  })
-  server.moduleGraph = moduleGraph
+  environments.ssr = createSsrEnvironment(server, 'ssr')
 
   if (config.environments) {
-    Object.entries(config.environments).forEach((entry) => {
-      const [name, environmentConfig] = entry
+    Object.entries(config.environments).forEach(([name, environmentConfig]) => {
       if (name !== 'client' && name !== 'ssr') {
         const createEnvironment =
           environmentConfig.dev?.createEnvironment ??
@@ -823,7 +800,7 @@ export async function _createServer(
             new DevEnvironment(server, name, {
               hot: ws, // TODO: what should we use here?
             }))
-        environments.push(createEnvironment(server, name))
+        environments[name] = createEnvironment(server, name)
       }
     })
   }
@@ -870,13 +847,14 @@ export async function _createServer(
         const path = file.slice(publicDir.length)
         publicFiles[isUnlink ? 'delete' : 'add'](path)
         if (!isUnlink) {
+          const clientModuleGraph = server.environments.client.moduleGraph
           const moduleWithSamePath =
-            await server.clientEnvironment.moduleGraph.getModuleByUrl(path)
+            await clientModuleGraph.getModuleByUrl(path)
           const etag = moduleWithSamePath?.transformResult?.etag
           if (etag) {
             // The public file should win on the next request over a module with the
             // same path. Prevent the transform etag fast path from serving the module
-            server.clientEnvironment.moduleGraph.etagToModuleMap.delete(etag)
+            clientModuleGraph.etagToModuleMap.delete(etag)
           }
         }
       }
@@ -889,9 +867,9 @@ export async function _createServer(
     file = normalizePath(file)
     await pluginContainer.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
-    environments.forEach((environment) =>
-      environment.moduleGraph.onFileChange(file),
-    )
+    for (const environment of Object.values(server.environments)) {
+      environment.moduleGraph.onFileChange(file)
+    }
     await onHMRUpdate(file, false)
   })
 
@@ -933,12 +911,12 @@ export async function _createServer(
 
   hot.on('vite:invalidate', async ({ path, message, environment }) => {
     if (environment) {
-      invalidateModule(environments.find((e) => e.name === environment)!, {
+      invalidateModule(environments[environment]!, {
         path,
         message,
       })
     } else {
-      for (const environment of environments) {
+      for (const environment of Object.values(environments)) {
         invalidateModule(environment, { path, message })
       }
     }

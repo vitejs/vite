@@ -20,9 +20,7 @@ export class DevEnvironment extends Environment {
       // Merge the resolved configs, TODO: make generic on DevEnvironmentConfig
       const { resolve, optimizeDeps, dev } = this.server.config
       let resolvedConfig: DevEnvironmentConfig = { resolve, optimizeDeps, dev }
-      const environmentConfig = this.server.config.environments?.find(
-        (e) => e.name === this.name,
-      )
+      const environmentConfig = this.server.config.environments[this.name] // TODO
       if (environmentConfig) {
         resolvedConfig = mergeConfig(resolvedConfig, environmentConfig)
       }

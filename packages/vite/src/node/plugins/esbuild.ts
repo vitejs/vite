@@ -491,7 +491,7 @@ async function reloadOnTsconfigChange(changedFile: string) {
     )
 
     // clear module graph to remove code compiled with outdated config
-    for (const environment of server.environments) {
+    for (const environment of Object.values(server.environments)) {
       environment.moduleGraph.invalidateAll()
     }
 

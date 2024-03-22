@@ -52,7 +52,7 @@ export function cachedTransformMiddleware(
     const ifNoneMatch = req.headers['if-none-match']
     if (ifNoneMatch) {
       const moduleByEtag =
-        server.clientEnvironment.moduleGraph.getModuleByEtag(ifNoneMatch)
+        server.environments.client.moduleGraph.getModuleByEtag(ifNoneMatch)
       if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
         // For CSS requests, if the same CSS file is imported in a module,
         // the browser sends the request for the direct CSS request with the etag
@@ -143,7 +143,7 @@ export function transformMiddleware(
         } else {
           const originalUrl = url.replace(/\.map($|\?)/, '$1')
           const map = (
-            await server.clientEnvironment.moduleGraph.getModuleByUrl(
+            await server.environments.client.moduleGraph.getModuleByUrl(
               originalUrl,
             )
           )?.transformResult?.map
@@ -188,7 +188,7 @@ export function transformMiddleware(
           const ifNoneMatch = req.headers['if-none-match']
           if (
             ifNoneMatch &&
-            (await server.clientEnvironment.moduleGraph.getModuleByUrl(url))
+            (await server.environments.client.moduleGraph.getModuleByUrl(url))
               ?.transformResult?.etag === ifNoneMatch
           ) {
             debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
@@ -204,7 +204,7 @@ export function transformMiddleware(
           {
             html: req.headers.accept?.includes('text/html'),
           },
-          server.clientEnvironment,
+          server.environments.client,
         )
         if (result) {
           const depsOptimizer = getDepsOptimizer(server.config, false) // non-ssr

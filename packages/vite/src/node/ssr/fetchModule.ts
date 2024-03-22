@@ -82,7 +82,7 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
-  let result = await server.ssrEnvironment.transformRequest(url)
+  let result = await server.environments.ssr.transformRequest(url)
 
   if (!result) {
     throw new Error(
@@ -93,7 +93,7 @@ export async function fetchModule(
   }
 
   // module entry should be created by transformRequest
-  const mod = await server.ssrEnvironment.moduleGraph.getModuleByUrl(url) // TODO: fetchModule should get a runtime?
+  const mod = await server.environments.ssr.moduleGraph.getModuleByUrl(url) // TODO: fetchModule should get a runtime?
 
   if (!mod) {
     throw new Error(

@@ -47,7 +47,7 @@ export const virtual = _virtual + '${num}';`
     configureServer(server) {
       server.hot.on('virtual:increment', async () => {
         const mod =
-          await server.ssrEnvironment.moduleGraph.getModuleByUrl(
+          await server.environments.ssr.moduleGraph.getModuleByUrl(
             '\0virtual:file',
           )
         if (mod) {

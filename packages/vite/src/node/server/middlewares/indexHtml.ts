@@ -131,7 +131,7 @@ const processNodeUrl = (
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
     if (server) {
-      const mod = server.clientEnvironment.moduleGraph.urlToModuleMap.get(url)
+      const mod = server.environments.client.moduleGraph.urlToModuleMap.get(url)
       if (mod && mod.lastHMRTimestamp > 0) {
         url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
@@ -242,7 +242,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
 
     // invalidate the module so the newly cached contents will be served
-    const clientModuleGraph = server?.clientEnvironment.moduleGraph
+    const clientModuleGraph = server?.environments.client.moduleGraph
     const module = clientModuleGraph?.getModuleById(modulePath)
     if (module) {
       clientModuleGraph!.invalidateModule(module)
@@ -352,14 +352,14 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
       // ensure module in graph after successful load
       const mod =
-        await server!.clientEnvironment.moduleGraph.ensureEntryFromUrl(
+        await server!.environments.client.moduleGraph.ensureEntryFromUrl(
           url,
           false,
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
       const result = await server!.pluginContainer.transform(code, mod.id!, {
-        environment: server!.clientEnvironment,
+        environment: server!.environments.client,
       })
       let content = ''
       if (result) {
@@ -383,14 +383,14 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       const url = `${proxyModulePath}?html-proxy&inline-css&style-attr&index=${index}.css`
 
       const mod =
-        await server!.clientEnvironment.moduleGraph.ensureEntryFromUrl(
+        await server!.environments.client.moduleGraph.ensureEntryFromUrl(
           url,
           false,
         )
       ensureWatchedFile(watcher, mod.file, config.root)
 
       await server?.pluginContainer.transform(code, mod.id!, {
-        environment: server!.clientEnvironment,
+        environment: server!.environments.client,
       })
 
       const hash = getHash(cleanUrl(mod.id!))
