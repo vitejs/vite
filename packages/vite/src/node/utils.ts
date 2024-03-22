@@ -772,10 +772,17 @@ export function processSrcSetSync(
 }
 
 const cleanSrcSetRE =
-  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+\-]+;base64,[\w+/=]+/g
+  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+\-]+;base64,[\w+/=]+|\?\S+,/g
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
-  // There could be a ',' inside of url(data:...), linear-gradient(...), "data:..." or data:...
+  /**
+   * There could be a ',' inside of:
+   * - url(data:...)
+   * - linear-gradient(...)
+   * - "data:..."
+   * - data:...
+   * - query parameter ?...
+   */
   const cleanedSrcs = srcs.replace(cleanSrcSetRE, blankReplacer)
   let startIndex = 0
   let splitIndex: number
@@ -1411,9 +1418,22 @@ export function displayTime(time: number): string {
 }
 
 /**
- * Like `encodeURI`, but only replacing `%` as `%25`. This is useful for environments
+ * Encodes the URI path portion (ignores part after ? or #)
+ */
+export function encodeURIPath(uri: string): string {
+  if (uri.startsWith('data:')) return uri
+  const filePath = cleanUrl(uri)
+  const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
+  return encodeURI(filePath) + postfix
+}
+
+/**
+ * Like `encodeURIPath`, but only replacing `%` as `%25`. This is useful for environments
  * that can handle un-encoded URIs, where `%` is the only ambiguous character.
  */
-export function partialEncodeURI(uri: string): string {
-  return uri.replaceAll('%', '%25')
+export function partialEncodeURIPath(uri: string): string {
+  if (uri.startsWith('data:')) return uri
+  const filePath = cleanUrl(uri)
+  const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
+  return filePath.replaceAll('%', '%25') + postfix
 }

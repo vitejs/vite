@@ -1,3 +1,35 @@
+## <small>5.2.3 (2024-03-22)</small>
+
+* fix: handle warmup request error correctly (#16223) ([d7c5256](https://github.com/vitejs/vite/commit/d7c5256)), closes [#16223](https://github.com/vitejs/vite/issues/16223)
+* fix: skip encode if is data uri (#16233) ([8617e76](https://github.com/vitejs/vite/commit/8617e76)), closes [#16233](https://github.com/vitejs/vite/issues/16233)
+* fix(optimizer): fix `optimizeDeps.include` glob syntax for `./*` exports (#16230) ([f184c80](https://github.com/vitejs/vite/commit/f184c80)), closes [#16230](https://github.com/vitejs/vite/issues/16230)
+* fix(runtime): fix sourcemap with `prepareStackTrace` (#16220) ([dad7f4f](https://github.com/vitejs/vite/commit/dad7f4f)), closes [#16220](https://github.com/vitejs/vite/issues/16220)
+* chore: `utf8` replaced with `utf-8` (#16232) ([9800c73](https://github.com/vitejs/vite/commit/9800c73)), closes [#16232](https://github.com/vitejs/vite/issues/16232)
+
+
+
+## <small>5.2.2 (2024-03-20)</small>
+
+* fix(importAnalysis): skip encode in ssr (#16213) ([e4d2d60](https://github.com/vitejs/vite/commit/e4d2d60)), closes [#16213](https://github.com/vitejs/vite/issues/16213)
+
+
+
+## <small>5.2.1 (2024-03-20)</small>
+
+* fix: encode path uri only (#16212) ([0b2e40b](https://github.com/vitejs/vite/commit/0b2e40b)), closes [#16212](https://github.com/vitejs/vite/issues/16212)
+
+
+
+## 5.2.0 (2024-03-20)
+
+* fix: update client.ts@cleanUrl to accomodate blob protocol (#16182) ([1a3b1d7](https://github.com/vitejs/vite/commit/1a3b1d7)), closes [#16182](https://github.com/vitejs/vite/issues/16182)
+* fix(assets): avoid splitting `,` inside query parameter of image URI in srcset property (#16081) ([50caf67](https://github.com/vitejs/vite/commit/50caf67)), closes [#16081](https://github.com/vitejs/vite/issues/16081)
+* chore(deps): update all non-major dependencies (#16186) ([842643d](https://github.com/vitejs/vite/commit/842643d)), closes [#16186](https://github.com/vitejs/vite/issues/16186)
+* perf(transformRequest): fast-path watch and sourcemap handling (#16170) ([de60f1e](https://github.com/vitejs/vite/commit/de60f1e)), closes [#16170](https://github.com/vitejs/vite/issues/16170)
+* docs: add `@shikiji/vitepress-twoslash` (#16168) ([6f8a320](https://github.com/vitejs/vite/commit/6f8a320)), closes [#16168](https://github.com/vitejs/vite/issues/16168)
+
+
+
 ## 5.2.0-beta.1 (2024-03-14)
 
 * feat: csp nonce support (#16052) ([1d5eec4](https://github.com/vitejs/vite/commit/1d5eec4)), closes [#16052](https://github.com/vitejs/vite/issues/16052)
