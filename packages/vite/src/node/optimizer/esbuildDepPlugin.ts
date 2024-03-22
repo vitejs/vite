@@ -23,7 +23,6 @@ const cjsExternalFacadeNamespace = 'vite:cjs-external-facade'
 const nonFacadePrefix = 'vite-cjs-external-facade:'
 
 const externalTypes = [
-  'css',
   // supported pre-processor types
   'less',
   'sass',
@@ -47,18 +46,31 @@ const externalTypes = [
   ...KNOWN_ASSET_TYPES,
 ]
 
+function getExternalTypes(
+  config: ResolvedConfig,
+  ssr: boolean,
+  cssBundle: boolean,
+) {
+  const allExternalTypes = externalTypes
+  if (!cssBundle) {
+    allExternalTypes.unshift('css')
+  }
+
+  const { extensions } = getDepOptimizationConfig(config, ssr)
+  return extensions
+    ? allExternalTypes.filter((type) => !extensions?.includes('.' + type))
+    : allExternalTypes
+}
+
 export function esbuildDepPlugin(
   qualified: Record<string, string>,
   external: string[],
   config: ResolvedConfig,
   ssr: boolean,
+  cssBundle: boolean,
 ): Plugin {
-  const { extensions } = getDepOptimizationConfig(config, ssr)
-
   // remove optimizable extensions from `externalTypes` list
-  const allExternalTypes = extensions
-    ? externalTypes.filter((type) => !extensions?.includes('.' + type))
-    : externalTypes
+  const allExternalTypes = getExternalTypes(config, ssr, cssBundle)
 
   // use separate package cache for optimizer as it caches paths around node_modules
   // and it's unlikely for the core Vite process to traverse into node_modules again
