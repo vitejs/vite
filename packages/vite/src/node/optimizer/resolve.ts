@@ -88,26 +88,13 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
             exportsValue.split('*').map(escapeRegex).join('(.*)'),
           )
 
-          // if (pkgName === "@vitejs/test-dep-optimize-exports-with-glob") {
-          //   console.log({ pkgName, pattern, key, exportsValue, exportValuePattern, exportsValueGlobRe }, glob
-          //     .sync(exportValuePattern, {
-          //       cwd: pkgData.dir,
-          //       ignore: ['node_modules'],
-          //     }));
-          // }
-
           possibleExportPaths.push(
             ...glob
               .sync(exportValuePattern, {
                 cwd: pkgData.dir,
-
                 ignore: ['node_modules'],
               })
               .map((filePath) => {
-                // if (pkgName === "@vitejs/test-dep-optimize-exports-with-glob") {
-                //   console.log({ filePath })
-                // }
-
                 // ensure "./" prefix for inconsistent fast-glob result
                 //   glob.sync("./some-dir/**/*") -> "./some-dir/some-file"
                 //   glob.sync("./**/*")          -> "some-dir/some-file"
@@ -120,11 +107,6 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
                 // we need to revert the file path back to the export key by
                 // matching value regex and replacing the capture groups to the key
                 const matched = slash(filePath).match(exportsValueGlobRe)
-
-                // if (pkgName === "@vitejs/test-dep-optimize-exports-with-glob") {
-                //   console.log({ filePath, matched })
-                // }
-
                 // `matched`: [..., 'foo', 'foo']
                 if (matched) {
                   let allGlobSame = matched.length === 2
@@ -158,10 +140,6 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
       path.posix.join(pkgName, match),
     )
     matched.unshift(pkgName)
-    // if (pkgName === "@vitejs/test-dep-optimize-exports-with-glob") {
-    //   console.log({ pkgName, pattern, possibleExportPaths, matched });
-    // }
-
     return matched
   } else {
     // for packages without exports, we can do a simple glob

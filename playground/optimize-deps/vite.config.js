@@ -14,7 +14,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    // holdUntilCrawlEnd: false,
     include: [
       '@vitejs/test-dep-linked-include',
       '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
