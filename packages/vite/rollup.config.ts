@@ -202,7 +202,7 @@ function createModuleRunnerConfig(isProduction: boolean) {
         isProduction ? false : './dist/node',
       ),
       esbuildMinifyPlugin({ minify: false, minifySyntax: true }),
-      bundleSizeLimit(45),
+      bundleSizeLimit(46),
     ],
   })
 }

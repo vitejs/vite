@@ -15,6 +15,7 @@ import type {
 } from './constants'
 import type { DecodedMap } from './sourcemap/decoder'
 import type { InterceptorOptions } from './sourcemap/interceptor'
+import type { RunnerTransport } from './transport'
 
 export type { DefineImportMetadata, SSRImportBaseMetadata as SSRImportMetadata }
 
@@ -123,11 +124,9 @@ export interface ModuleRunnerOptions {
    */
   root: string
   /**
-   * A method to get the information about the module.
-   * For SSR, Vite exposes `server.ssrFetchModule` function that you can use here.
-   * For other runner use cases, Vite also exposes `fetchModule` from its main entry point.
+   * A set of methods to communicate with the server.
    */
-  fetchModule: FetchFunction
+  transport: RunnerTransport
   /**
    * Configure how source maps are resolved. Prefers `node` if `process.setSourceMapsEnabled` is available.
    * Otherwise it will use `prepareStackTrace` by default which overrides `Error.prepareStackTrace` method.

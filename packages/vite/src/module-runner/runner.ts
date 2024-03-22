@@ -254,7 +254,7 @@ export class ModuleRunner {
     // fast return for established externalized patterns
     const fetchedModule = id.startsWith('data:')
       ? ({ externalize: id, type: 'builtin' } satisfies FetchResult)
-      : await this.options.fetchModule(id, importer)
+      : await this.options.transport.fetchModule(id, importer)
     // base moduleId on "file" and not on id
     // if `import(variable)` is called it's possible that it doesn't have an extension for example
     // if we used id for that, it's possible to have a duplicated module

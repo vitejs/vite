@@ -12,8 +12,10 @@ async function runTest(userRunner) {
   })
   let mod
   if (userRunner) {
-    const runtime = await createServerModuleRunner(server, { hmr: false })
-    mod = await runtime.import('/src/network-imports.js')
+    const runner = await createServerModuleRunner(server.environments.ssr, {
+      hmr: false,
+    })
+    mod = await runner.import('/src/network-imports.js')
   } else {
     mod = await server.ssrLoadModule('/src/network-imports.js')
   }

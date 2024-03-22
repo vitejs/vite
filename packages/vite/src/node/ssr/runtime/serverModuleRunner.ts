@@ -2,21 +2,27 @@ import { existsSync, readFileSync } from 'node:fs'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type { ModuleEvaluator, ModuleRunnerOptions } from 'vite/module-runner'
 import type { ViteDevServer } from '../../server'
-import type { HMRLogger } from '../../../shared/hmr'
+import type { DevEnvironment } from '../../server/environment'
 import { ServerHMRConnector } from './serverHmrConnector'
 
 /**
  * @experimental
  */
 export interface ServerModuleRunnerOptions
-  extends Omit<ModuleRunnerOptions, 'root' | 'fetchModule' | 'hmr'> {
+  extends Omit<
+    ModuleRunnerOptions,
+    'root' | 'fetchModule' | 'hmr' | 'transport'
+  > {
   /**
    * Disable HMR or configure HMR logger.
    */
   hmr?:
     | false
     | {
-        logger?: false | HMRLogger
+        logger?: Exclude<
+          ModuleRunnerOptions['hmr'],
+          false | undefined
+        >['logger']
       }
   /**
    * Provide a custom module runner. This controls how the code is executed.
@@ -66,16 +72,18 @@ function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
  * Create an instance of the Vite SSR runtime that support HMR.
  * @experimental
  */
-export async function createServerModuleRunner(
-  server: ViteDevServer,
+export function createServerModuleRunner(
+  environment: DevEnvironment,
   options: ServerModuleRunnerOptions = {},
-): Promise<ModuleRunner> {
-  const hmr = createHMROptions(server, options)
+): ModuleRunner {
+  const hmr = createHMROptions(environment.server, options)
   return new ModuleRunner(
     {
       ...options,
-      root: server.config.root,
-      fetchModule: server.ssrFetchModule,
+      root: environment.server.config.root,
+      transport: {
+        fetchModule: (id, importer) => environment.fetchModule(id, importer),
+      },
       hmr,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },
