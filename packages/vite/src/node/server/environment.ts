@@ -2,6 +2,7 @@ import { Environment } from '../environment'
 import type { ViteDevServer } from '../server'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
 import type { DevEnvironmentConfig } from '../config'
+import { getDefaultResolvedDevEnvironmentConfig } from '../config'
 import { mergeConfig } from '../utils'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { HMRChannel } from './hmr'
@@ -15,30 +16,7 @@ export class DevEnvironment extends Environment {
   mode = 'dev' as const // TODO: should this be 'serve'?
   moduleGraph: EnvironmentModuleGraph
   server: ViteDevServer
-  get config(): DevEnvironmentConfig {
-    if (!this._config) {
-      // Merge the resolved configs, TODO: make generic on DevEnvironmentConfig
-      const { resolve, optimizeDeps, dev } = this.server.config
-      let resolvedConfig: DevEnvironmentConfig = { resolve, optimizeDeps, dev }
-      const environmentConfig = this.server.config.environments[this.name] // TODO
-      if (environmentConfig) {
-        resolvedConfig = mergeConfig(resolvedConfig, environmentConfig)
-      }
-      if (this._inlineConfig) {
-        resolvedConfig = mergeConfig(resolvedConfig, this._inlineConfig)
-      }
-      this._config = resolvedConfig
-    }
-    return this._config
-  }
-  /**
-   * @internal
-   */
-  _config: DevEnvironmentConfig | undefined
-  /**
-   * @internal
-   */
-  _inlineConfig: DevEnvironmentConfig | undefined
+  config: DevEnvironmentConfig
   /**
    * HMR channel for this environment. If not provided or disabled,
    * it will be a noop channel that does nothing.
@@ -64,7 +42,12 @@ export class DevEnvironment extends Environment {
       }),
     )
     this.hot = options?.hot || createNoopHMRChannel()
-    this._inlineConfig = options?.config
+    this.config =
+      server.config.environments[name] ??
+      getDefaultResolvedDevEnvironmentConfig(server.config)
+    if (options?.config) {
+      this.config = mergeConfig(this.config, options?.config)
+    }
   }
 
   transformRequest(url: string): Promise<TransformResult | null> {
