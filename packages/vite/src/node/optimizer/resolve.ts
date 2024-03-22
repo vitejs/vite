@@ -98,7 +98,10 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
                 // ensure "./" prefix for inconsistent fast-glob result
                 //   glob.sync("./some-dir/**/*") -> "./some-dir/some-file"
                 //   glob.sync("./**/*")          -> "some-dir/some-file"
-                if (!filePath.startsWith('./')) {
+                if (
+                  exportsValue.startsWith('./') &&
+                  !filePath.startsWith('./')
+                ) {
                   filePath = './' + filePath
                 }
 
