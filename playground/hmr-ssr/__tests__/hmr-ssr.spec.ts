@@ -520,7 +520,7 @@ describe('acceptExports', () => {
       beforeAll(async () => {
         clientLogs.length = 0
         // so it's in the module graph
-        const { ssrEnvironment } = server
+        const ssrEnvironment = server.environments.ssr
         await ssrEnvironment.transformRequest(testFile)
         await ssrEnvironment.transformRequest('non-tested/dep.js')
       })

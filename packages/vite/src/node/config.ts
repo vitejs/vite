@@ -356,9 +356,8 @@ export interface UserConfig extends EnvironmentConfig {
   ssr?: SSROptions
   /**
    * Environment overrides
-   * TODO: this should probably be an array, following the plugins convention
    */
-  environments?: (EnvironmentConfig & { name: string })[]
+  environments?: Record<string, EnvironmentConfig>
 }
 
 export interface HTMLOptions {
@@ -470,6 +469,7 @@ export type ResolvedConfig = Readonly<
     worker: ResolvedWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
+    environments: Record<string, EnvironmentConfig>
   } & PluginHookUtils
 >
 
@@ -901,6 +901,7 @@ export async function resolveConfig(
       hmrPartialAccept: false,
       ...config.experimental,
     },
+    environments: config.environments || {}, // TODO
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
   }

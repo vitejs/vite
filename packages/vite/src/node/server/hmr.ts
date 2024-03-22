@@ -279,8 +279,9 @@ export async function handleHMRUpdate(
           hotContext.modules = filteredModules
             .map((mod) =>
               mod.id
-                ? server.clientEnvironment.moduleGraph.getModuleById(mod.id) ??
-                  server.ssrEnvironment.moduleGraph.getModuleById(mod.id)
+                ? server.environments.client.moduleGraph.getModuleById(
+                    mod.id,
+                  ) ?? server.environments.ssr.moduleGraph.getModuleById(mod.id)
                 : undefined,
             )
             .filter(Boolean) as EnvironmentModuleNode[]
@@ -315,7 +316,7 @@ export async function handleHMRUpdate(
   }
 
   const hmrTasks: HmrTask[] = []
-  for (const environment of server.environments) {
+  for (const environment of Object.values(server.environments)) {
     hmrTasks.push({
       environment,
       run: () => applyHMR(environment),
@@ -323,6 +324,7 @@ export async function handleHMRUpdate(
     })
   }
 
+  // TODO: should tasks also be an object?
   const runHmrTasks =
     server.config.server.runHmrTasks ??
     ((server, hmrTasks) => {
@@ -452,7 +454,7 @@ export async function handleFileAddUnlink(
   server: ViteDevServer,
   isUnlink: boolean,
 ): Promise<void> {
-  server.environments.forEach((environment) => {
+  Object.values(server.environments).forEach((environment) => {
     const modules = [...(environment.moduleGraph.getModulesByFile(file) || [])]
 
     if (isUnlink) {
