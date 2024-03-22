@@ -65,12 +65,12 @@ describe('module runner initialization', async () => {
     )
   })
 
-  it('deep stacktrace', async ({ runtime }) => {
+  it('deep stacktrace', async ({ runner }) => {
     const methodError = await getError(async () => {
-      const mod = await runtime.executeUrl('/fixtures/has-error-deep.ts')
+      const mod = await runner.import('/fixtures/has-error-deep.ts')
       mod.main()
     })
-    expect(serializeStackDeep(runtime, methodError).slice(0, 3)).toEqual([
+    expect(serializeStackDeep(runner, methodError).slice(0, 3)).toEqual([
       'Error: crash',
       '    at crash (<root>/fixtures/has-error-deep.ts:2:9)',
       '    at Module.main (<root>/fixtures/has-error-deep.ts:6:3)',
