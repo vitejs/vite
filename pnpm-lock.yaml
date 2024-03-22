@@ -7,9 +7,10 @@ settings:
 overrides:
   vite: workspace:*
 
-packageExtensionsChecksum: 4e49e84b7a11dfd4895fbffb006a7015
-
 patchedDependencies:
+  acorn@8.11.3:
+    hash: updblechagntmruccl446lr76a
+    path: patches/acorn@8.11.3.patch
   chokidar@3.6.0:
     hash: bckcfsslxcffppz65mxcq6naau
     path: patches/chokidar@3.6.0.patch
@@ -231,7 +232,7 @@ importers:
     devDependencies:
       acorn:
         specifier: ^8.11.3
-        version: 8.11.3
+        version: 8.11.3(patch_hash=updblechagntmruccl446lr76a)
       picocolors:
         specifier: ^1.0.0
         version: 1.0.0
@@ -294,12 +295,6 @@ importers:
       '@types/pnpapi':
         specifier: ^0.0.5
         version: 0.0.5
-      acorn:
-        specifier: ^8.11.3
-        version: 8.11.3
-      acorn-walk:
-        specifier: ^8.3.2
-        version: 8.3.2(acorn@8.11.3)
       artichokie:
         specifier: ^0.2.0
         version: 0.2.0
@@ -4882,19 +4877,12 @@ packages:
     peerDependencies:
       acorn: ^6.0.0 || ^7.0.0 || ^8.0.0
     dependencies:
-      acorn: 8.11.3
+      acorn: 8.11.3(patch_hash=updblechagntmruccl446lr76a)
     dev: true
 
-  /acorn-walk@8.3.2(acorn@8.11.3):
+  /acorn-walk@8.3.2:
     resolution: {integrity: sha512-cjkyv4OtNCIeqhHrfS81QWXoCBPExR/J62oyEqepVw8WaQeSqpW2uhuLPh1m9eWhDuOo/jUXVTlifvesOWp/4A==}
     engines: {node: '>=0.4.0'}
-    peerDependencies:
-      acorn: '*'
-    peerDependenciesMeta:
-      acorn:
-        optional: true
-    dependencies:
-      acorn: 8.11.3
 
   /acorn@7.4.1:
     resolution: {integrity: sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A==}
@@ -4902,10 +4890,11 @@ packages:
     hasBin: true
     dev: true
 
-  /acorn@8.11.3:
+  /acorn@8.11.3(patch_hash=updblechagntmruccl446lr76a):
     resolution: {integrity: sha512-Y9rRfJG5jcKOE0CLisYbojUjIrIEE7AGMzA/Sm4BslANhbS+cDMpgBdcPT91oJ7OuJ9hYJBx59RjbhxVnrF8Xg==}
     engines: {node: '>=0.4.0'}
     hasBin: true
+    patched: true
 
   /add-stream@1.0.0:
     resolution: {integrity: sha512-qQLMr+8o0WC4FZGQTcJiKBVC59JylcPSrTtk6usvmIDFUOCKegapy1VHQwRbFMOFyb/inzUVqHs+eMYKDM1YeQ==}
@@ -6264,7 +6253,7 @@ packages:
     resolution: {integrity: sha512-oruZaFkjorTpF32kDSI5/75ViwGeZginGGy2NoOSg3Q9bnwlnmDm4HLnkl0RE3n+njDXR037aY1+x58Z/zFdwQ==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dependencies:
-      acorn: 8.11.3
+      acorn: 8.11.3(patch_hash=updblechagntmruccl446lr76a)
       acorn-jsx: 5.3.2(acorn@8.11.3)
       eslint-visitor-keys: 3.4.3
     dev: true
@@ -7929,8 +7918,8 @@ packages:
     hasBin: true
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
-      acorn: 8.11.3
-      acorn-walk: 8.3.2(acorn@8.11.3)
+      acorn: 8.11.3(patch_hash=updblechagntmruccl446lr76a)
+      acorn-walk: 8.3.2
       capnp-ts: 0.7.0
       exit-hook: 2.2.1
       glob-to-regexp: 0.4.1
@@ -8036,7 +8025,7 @@ packages:
   /mlly@1.4.2:
     resolution: {integrity: sha512-i/Ykufi2t1EZ6NaPLdfnZk2AX8cs0d+mTzVKuPfqPKPatxLApaBoxJQ9x1/uckXtrS/U5oisPMDkNs0yQTaBRg==}
     dependencies:
-      acorn: 8.11.3
+      acorn: 8.11.3(patch_hash=updblechagntmruccl446lr76a)
       pathe: 1.1.2
       pkg-types: 1.0.3
       ufo: 1.5.1
@@ -8045,7 +8034,7 @@ packages:
   /mlly@1.6.1:
     resolution: {integrity: sha512-vLgaHvaeunuOXHSmEbZ9izxPx3USsk8KCQ8iC+aTlp5sKRSoZvwhHh5L9VbKSaVC6sJDqbyohIS76E2VmHIPAA==}
     dependencies:
-      acorn: 8.11.3
+      acorn: 8.11.3(patch_hash=updblechagntmruccl446lr76a)
       pathe: 1.1.2
       pkg-types: 1.0.3
       ufo: 1.5.1
@@ -9652,7 +9641,7 @@ packages:
     hasBin: true
     dependencies:
       '@jridgewell/source-map': 0.3.3
-      acorn: 8.11.3
+      acorn: 8.11.3(patch_hash=updblechagntmruccl446lr76a)
       commander: 2.20.3
       source-map-support: 0.5.21
     dev: true
@@ -9761,8 +9750,8 @@ packages:
       '@tsconfig/node14': 1.0.1
       '@tsconfig/node16': 1.0.2
       '@types/node': 20.11.28
-      acorn: 8.11.3
-      acorn-walk: 8.3.2(acorn@8.11.3)
+      acorn: 8.11.3(patch_hash=updblechagntmruccl446lr76a)
+      acorn-walk: 8.3.2
       arg: 4.1.3
       create-require: 1.1.1
       diff: 4.0.2
@@ -10167,7 +10156,7 @@ packages:
       '@vitest/snapshot': 1.4.0
       '@vitest/spy': 1.4.0
       '@vitest/utils': 1.4.0
-      acorn-walk: 8.3.2(acorn@8.11.3)
+      acorn-walk: 8.3.2
       chai: 4.3.10
       debug: 4.3.4
       execa: 8.0.1
@@ -10183,7 +10172,6 @@ packages:
       vite-node: 1.4.0
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
-      - acorn
       - supports-color
     dev: true
 

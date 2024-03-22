@@ -109,22 +109,11 @@
     "overrides": {
       "vite": "workspace:*"
     },
-    "packageExtensions": {
-      "acorn-walk": {
-        "peerDependencies": {
-          "acorn": "*"
-        },
-        "peerDependenciesMeta": {
-          "acorn": {
-            "optional": true
-          }
-        }
-      }
-    },
     "patchedDependencies": {
       "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
       "sirv@2.0.4": "patches/sirv@2.0.4.patch",
-      "postcss-import@16.0.1": "patches/postcss-import@16.0.1.patch"
+      "postcss-import@16.0.1": "patches/postcss-import@16.0.1.patch",
+      "acorn@8.11.3": "patches/acorn@8.11.3.patch"
     },
     "peerDependencyRules": {
       "allowedVersions": {
