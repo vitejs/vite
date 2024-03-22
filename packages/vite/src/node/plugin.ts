@@ -9,10 +9,16 @@ import type {
   TransformResult,
 } from 'rollup'
 export type { PluginContext } from 'rollup'
-import type { ConfigEnv, ResolvedConfig, UserConfig } from './config'
+import type {
+  ConfigEnv,
+  EnvironmentConfig,
+  ResolvedConfig,
+  UserConfig,
+} from './config'
 import type { ServerHook, ViteDevServer } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
-import type { EnvironmentModuleNode, ModuleNode } from './server/moduleGraph'
+import type { EnvironmentModuleNode } from './server/moduleGraph'
+import type { ModuleNode } from './server/mixedModuleGraph'
 import type { HmrContext, HotUpdateContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
 import type { DevEnvironment } from './server/environment'
@@ -78,6 +84,28 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       | null
       | void
       | Promise<Omit<UserConfig, 'plugins'> | null | void>
+  >
+  /**
+   * Modify environment configs before it's resolved. The hook can either mutate the
+   * passed-in environment config directly, or return a partial config object that will be
+   * deeply merged into existing config.
+   * This hook is called for each environment with a partially resolved environment config
+   * that already accounts for the default environment config values set at the root level.
+   * If plugins need to modify the config of a given environment, they should do it in this
+   * hook instead of the config hook. Leaving the config hook only for modifying the root
+   * default environment config.
+   */
+  configEnvironment?: ObjectHook<
+    (
+      this: void,
+      name: string,
+      config: EnvironmentConfig,
+      env: ConfigEnv,
+    ) =>
+      | EnvironmentConfig
+      | null
+      | void
+      | Promise<EnvironmentConfig | null | void>
   >
   /**
    * Use this hook to read and store the final resolved vite config.

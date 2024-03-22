@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import type { ModuleGraph } from '../server/moduleGraph'
+import type { ModuleGraph } from '../server/mixedModuleGraph'
 
 let offset: number
 

@@ -156,13 +156,12 @@ type PluginContext = Omit<
 // wich are called once for all environments, or when no environment is passed in other hooks.
 // The ssrEnvironment is needed for backward compatibility when the ssr flag is passed without
 // an environment. The defaultEnvironment in the main pluginContainer in the server should be
-// the clientEnvironment for backward compatibility.
+// the client environment for backward compatibility.
 
 export async function createPluginContainer(
   config: ResolvedConfig,
   watcher?: FSWatcher,
-  defaultEnvironment: () => DevEnvironment | undefined = () => undefined,
-  ssrEnvironment: () => DevEnvironment | undefined = () => undefined,
+  environments?: Record<string, DevEnvironment>,
 ): Promise<PluginContainer> {
   const {
     plugins,
@@ -189,15 +188,13 @@ export async function createPluginContainer(
 
   // Backward compatibility
   // Users should call pluginContainer.resolveId (and load/transform) passing the environment they want to work with
-  // But there is code that is going to call it without passing an environment, or with the ssr flag to get the ssrEnvironment
+  // But there is code that is going to call it without passing an environment, or with the ssr flag to get the ssr environment
   function resolveEnvironment(options?: {
     ssr?: boolean
     environment?: DevEnvironment
   }) {
     const environment =
-      options?.environment ??
-      (options?.ssr ? ssrEnvironment() : undefined) ??
-      defaultEnvironment()
+      options?.environment ?? environments?.[options?.ssr ? 'ssr' : 'client']
     const ssr = options?.ssr ?? (environment?.name === 'ssr' ? true : false)
     return { environment, ssr }
   }
@@ -701,7 +698,7 @@ export async function createPluginContainer(
       await handleHookPromise(
         hookParallel(
           'buildStart',
-          (plugin) => new Context(defaultEnvironment(), plugin),
+          (plugin) => new Context(environments?.client, plugin), // TODO: call buildStart per environment
           () => [container.options as NormalizedInputOptions],
         ),
       )
@@ -859,7 +856,7 @@ export async function createPluginContainer(
     },
 
     async watchChange(id, change) {
-      const ctx = new Context(defaultEnvironment())
+      const ctx = new Context()
       await hookParallel(
         'watchChange',
         () => ctx,
@@ -871,7 +868,7 @@ export async function createPluginContainer(
       if (closed) return
       closed = true
       await Promise.allSettled(Array.from(processesing))
-      const ctx = new Context(defaultEnvironment())
+      const ctx = new Context()
       await hookParallel(
         'buildEnd',
         () => ctx,

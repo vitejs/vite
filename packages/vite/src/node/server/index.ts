@@ -73,8 +73,9 @@ import {
   serveStaticMiddleware,
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import type { EnvironmentModuleNode, ModuleNode } from './moduleGraph'
-import { ModuleGraph } from './moduleGraph'
+import type { EnvironmentModuleNode } from './moduleGraph'
+import { ModuleGraph } from './mixedModuleGraph'
+import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware, prepareError } from './middlewares/error'
 import type { HMRBroadcaster, HmrOptions, HmrTask } from './hmr'
@@ -264,14 +265,12 @@ export interface ViteDevServer {
    */
   pluginContainer: PluginContainer
   /**
-   * Dev Environments. Module execution environments attached to the Vite server.
+   * Module execution environments attached to the Vite server.
    */
-  environments: DevEnvironment[]
+  environments: Record<string, DevEnvironment>
   /**
-   * Default environments
+   * Default SSR module runner.
    */
-  clientEnvironment: DevEnvironment
-  ssrEnvironment: DevEnvironment
   nodeModuleRunner: ModuleRunner
   /**
    * Module graph that tracks the import relationships, url to file mapping
@@ -444,10 +443,6 @@ export function createServer(
   return _createServer(inlineConfig, { hotListen: true })
 }
 
-function getResolvedEnvironmentConfig(config: ResolvedConfig, name: string) {
-  return config.environments?.find((e) => e.name === name)
-}
-
 export async function _createServer(
   inlineConfig: InlineConfig = {},
   options: { hotListen: boolean },
@@ -495,21 +490,23 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
-  const environments: DevEnvironment[] = []
+  const environments: Record<string, DevEnvironment> = {}
 
   // The global environment is used for buildStart, buildEnd, watchChange, and writeBundle hooks
   // that are called once and not per environment.
-  // The Vite server has always passed the mixed module graph. Passing the clientEnvironment
+  // The Vite server has always passed the mixed module graph. Passing the client environment
   // should give us the best backward compatibility for now.
   // We can review this in the next Vite major.
-  let defaultEnvironment: DevEnvironment
-  let ssrEnvironment: DevEnvironment
   const pluginContainer = await createPluginContainer(
     config,
     watcher,
-    () => defaultEnvironment,
-    () => ssrEnvironment,
+    environments,
   )
+
+  const moduleGraph = new ModuleGraph({
+    client: () => environments.client.moduleGraph,
+    ssr: () => environments.ssr.moduleGraph,
+  })
 
   const closeHttpServer = createServerCloseFn(httpServer)
 
@@ -538,19 +535,16 @@ export async function _createServer(
     middlewares,
     httpServer,
     watcher,
-    pluginContainer,
     ws,
     hot,
-    environments,
 
-    // We set these after the server is created
-    clientEnvironment: undefined as any,
-    ssrEnvironment: undefined as any,
-    moduleGraph: undefined as any,
+    environments,
+    pluginContainer,
+    moduleGraph,
 
     get nodeModuleRunner() {
       if (!nodeModuleRunner) {
-        nodeModuleRunner = createServerModuleRunner(server.ssrEnvironment)
+        nodeModuleRunner = createServerModuleRunner(server.environments.ssr)
       }
       return nodeModuleRunner
     },
@@ -573,16 +567,14 @@ export async function _createServer(
     // that is part of the internal control flow for the vite dev server to be able to bail
     // out and do the html fallback
     transformRequest(url, options) {
-      const environment = options?.ssr
-        ? server.ssrEnvironment
-        : server.clientEnvironment
+      const environment = server.environments[options?.ssr ? 'ssr' : 'client']
       return transformRequest(url, server, options, environment)
     },
     async warmupRequest(url, options) {
-      const environment = options?.ssr
-        ? server.ssrEnvironment
-        : server.clientEnvironment
-      await transformRequest(url, server, options, environment).catch((e) => {
+      try {
+        const environment = server.environments[options?.ssr ? 'ssr' : 'client']
+        await transformRequest(url, server, options, environment)
+      } catch (e) {
         if (
           e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
           e?.code === ERR_CLOSED_SERVER
@@ -595,7 +587,7 @@ export async function _createServer(
           error: e,
           timestamp: true,
         })
-      })
+      }
     },
     transformIndexHtml(url, html, originalUrl) {
       return devHtmlTransformFn(server, url, html, originalUrl)
@@ -620,7 +612,7 @@ export async function _createServer(
         // TODO: Should we also update the node moduleGraph for backward compatibility?
         const environmentModule = (module._clientModule ?? module._ssrModule)!
         updateModules(
-          environments.find((e) => e.name === environmentModule.environment)!,
+          environments[environmentModule.environment]!,
           module.file,
           [environmentModule],
           Date.now(),
@@ -632,7 +624,7 @@ export async function _createServer(
       // TODO: Should this be reloadEnvironmentModule(environment, module) ?
       if (serverConfig.hmr !== false && module.file) {
         updateModules(
-          environments.find((e) => e.name === module.environment)!,
+          environments[module.environment]!,
           module.file,
           [module],
           Date.now(),
@@ -791,46 +783,32 @@ export async function _createServer(
 
   // Create Environments
 
-  const createBrowserEnvironment =
-    getResolvedEnvironmentConfig(config, 'client')?.dev?.createEnvironment ??
-    server.config.dev?.createEnvironment ??
+  const client_createEnvironment =
+    config.environments.client?.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
       new DevEnvironment(server, name, { hot: ws }))
 
-  server.clientEnvironment = createBrowserEnvironment(server, 'client')
-  environments.push(server.clientEnvironment)
+  environments.client = client_createEnvironment(server, 'client')
 
-  const createNodeEnvironment =
-    /* config.ssr?.dev?.createEnvironment ?? */
-    getResolvedEnvironmentConfig(config, 'ssr')?.dev?.createEnvironment ??
-    server.config.dev?.createEnvironment ??
+  const ssr_createEnvironment =
+    config.environments.ssr?.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
       createSsrEnvironment(server, name, ssrHotChannel))
 
-  server.ssrEnvironment = createNodeEnvironment(server, 'ssr')
-  environments.push(server.ssrEnvironment)
+  environments.ssr = ssr_createEnvironment(server, 'ssr')
 
-  const moduleGraph = new ModuleGraph({
-    client: server.clientEnvironment.moduleGraph,
-    ssr: server.ssrEnvironment.moduleGraph,
+  Object.entries(config.environments).forEach(([name, environmentConfig]) => {
+    // TODO: move client and ssr inside the loop?
+    if (name !== 'client' && name !== 'ssr') {
+      const createEnvironment =
+        environmentConfig.dev?.createEnvironment ??
+        ((server: ViteDevServer, name: string) =>
+          new DevEnvironment(server, name, {
+            hot: ws, // TODO: what should we use here?
+          }))
+      environments[name] = createEnvironment(server, name)
+    }
   })
-  server.moduleGraph = moduleGraph
-
-  if (config.environments) {
-    Object.entries(config.environments).forEach((entry) => {
-      const [name, environmentConfig] = entry
-      if (name !== 'client' && name !== 'ssr') {
-        const createEnvironment =
-          environmentConfig.dev?.createEnvironment ??
-          server.config.dev?.createEnvironment ??
-          ((server: ViteDevServer, name: string) =>
-            new DevEnvironment(server, name, {
-              hot: ws, // TODO: what should we use here?
-            }))
-        environments.push(createEnvironment(server, name))
-      }
-    })
-  }
 
   if (!middlewareMode) {
     exitProcess = async () => {
@@ -874,13 +852,14 @@ export async function _createServer(
         const path = file.slice(publicDir.length)
         publicFiles[isUnlink ? 'delete' : 'add'](path)
         if (!isUnlink) {
+          const clientModuleGraph = server.environments.client.moduleGraph
           const moduleWithSamePath =
-            await server.clientEnvironment.moduleGraph.getModuleByUrl(path)
+            await clientModuleGraph.getModuleByUrl(path)
           const etag = moduleWithSamePath?.transformResult?.etag
           if (etag) {
             // The public file should win on the next request over a module with the
             // same path. Prevent the transform etag fast path from serving the module
-            server.clientEnvironment.moduleGraph.etagToModuleMap.delete(etag)
+            clientModuleGraph.etagToModuleMap.delete(etag)
           }
         }
       }
@@ -893,9 +872,9 @@ export async function _createServer(
     file = normalizePath(file)
     await pluginContainer.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
-    environments.forEach((environment) =>
-      environment.moduleGraph.onFileChange(file),
-    )
+    for (const environment of Object.values(server.environments)) {
+      environment.moduleGraph.onFileChange(file)
+    }
     await onHMRUpdate(file, false)
   })
 
@@ -937,12 +916,12 @@ export async function _createServer(
 
   hot.on('vite:invalidate', async ({ path, message, environment }) => {
     if (environment) {
-      invalidateModule(environments.find((e) => e.name === environment)!, {
+      invalidateModule(environments[environment]!, {
         path,
         message,
       })
     } else {
-      for (const environment of environments) {
+      for (const environment of Object.values(environments)) {
         invalidateModule(environment, { path, message })
       }
     }
@@ -1166,6 +1145,7 @@ export function resolveServerOptions(
   raw: ServerOptions | undefined,
   logger: Logger,
 ): ResolvedServerOptions {
+  // TODO: deprecated server options moved to the dev config
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),

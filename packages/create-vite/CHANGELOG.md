@@ -1,3 +1,13 @@
+## <small>5.2.3 (2024-03-20)</small>
+
+* docs: update volar name and remove takeover mode related docs (#16171) ([0a56177](https://github.com/vitejs/vite/commit/0a56177)), closes [#16171](https://github.com/vitejs/vite/issues/16171)
+* fix(create-vite): remove vue3 deprecated plugin (TypeScript Vue Plugin) (#16158) ([1645fc0](https://github.com/vitejs/vite/commit/1645fc0)), closes [#16158](https://github.com/vitejs/vite/issues/16158)
+* fix(create-vite): switch to default Remix template (#16203) ([ea480df](https://github.com/vitejs/vite/commit/ea480df)), closes [#16203](https://github.com/vitejs/vite/issues/16203)
+* chore(deps): update all non-major dependencies (#16186) ([842643d](https://github.com/vitejs/vite/commit/842643d)), closes [#16186](https://github.com/vitejs/vite/issues/16186)
+* chore(deps): update dependency vue-tsc to v2 (#16187) ([72104f6](https://github.com/vitejs/vite/commit/72104f6)), closes [#16187](https://github.com/vitejs/vite/issues/16187)
+
+
+
 ## <small>5.2.2 (2024-03-11)</small>
 
 * chore(deps): update all non-major dependencies (#16028) ([7cfe80d](https://github.com/vitejs/vite/commit/7cfe80d)), closes [#16028](https://github.com/vitejs/vite/issues/16028)

@@ -98,6 +98,12 @@ describe.runIf(isServe)('stacktrace', () => {
       })
     }
   }
+
+  test('with Vite runtime', async () => {
+    await execFileAsync('node', ['test-stacktrace-runtime.js'], {
+      cwd: fileURLToPath(new URL('..', import.meta.url)),
+    })
+  })
 })
 
 describe.runIf(isServe)('network-imports', () => {

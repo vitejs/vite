@@ -29,7 +29,6 @@ import {
 } from './constants'
 import type {
   BuildEnvironmentConfig,
-  EnvironmentConfig,
   InlineConfig,
   ResolvedConfig,
 } from './config'
@@ -45,7 +44,7 @@ import {
   emptyDir,
   joinUrlSegments,
   normalizePath,
-  partialEncodeURI,
+  partialEncodeURIPath,
   requireResolveFromRootWithFallback,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
@@ -1142,7 +1141,7 @@ const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
 
 const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
   getResolveUrl(
-    `'${escapeId(partialEncodeURI(relativePath))}', ${
+    `'${escapeId(partialEncodeURIPath(relativePath))}', ${
       umd ? `typeof document === 'undefined' ? location.href : ` : ''
     }document.currentScript && document.currentScript.src || document.baseURI`,
   )
@@ -1169,13 +1168,13 @@ const relativeUrlMechanisms: Record<
     )} : ${getRelativeUrlFromDocument(relativePath)})`,
   es: (relativePath) =>
     getResolveUrl(
-      `'${escapeId(partialEncodeURI(relativePath))}', import.meta.url`,
+      `'${escapeId(partialEncodeURIPath(relativePath))}', import.meta.url`,
     ),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
   // NOTE: make sure rollup generate `module` params
   system: (relativePath) =>
     getResolveUrl(
-      `'${escapeId(partialEncodeURI(relativePath))}', module.meta.url`,
+      `'${escapeId(partialEncodeURIPath(relativePath))}', module.meta.url`,
     ),
   umd: (relativePath) =>
     `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(
@@ -1188,7 +1187,7 @@ const customRelativeUrlMechanisms = {
   ...relativeUrlMechanisms,
   'worker-iife': (relativePath) =>
     getResolveUrl(
-      `'${escapeId(partialEncodeURI(relativePath))}', self.location.href`,
+      `'${escapeId(partialEncodeURIPath(relativePath))}', self.location.href`,
     ),
 } as const satisfies Record<string, (relativePath: string) => string>
 
@@ -1318,7 +1317,7 @@ export class BuildEnvironment extends Environment {
 }
 
 export interface ViteBuilder {
-  environments: BuildEnvironment[]
+  environments: Record<string, BuildEnvironment>
   build(): Promise<void>
 }
 
@@ -1336,15 +1335,27 @@ export interface BuilderOptions {
   ) => Promise<void>
 }
 
-export interface BuilderInlineConfig extends Omit<InlineConfig, 'plugins'> {
-  plugins?: () => Plugin[]
+async function defaultRunBuildTasks(
+  builder: ViteBuilder,
+  buildTasks: BuildTask[],
+): Promise<void> {
+  for (const task of buildTasks) {
+    await task.run()
+  }
 }
 
-function getEnvironmentConfig(
-  config: InlineConfig,
-  name: string,
-): EnvironmentConfig | undefined {
-  return config.environments?.find((e) => e.name === name)
+export function resolveBuilderOptions(
+  options: BuilderOptions = {},
+): ResolvedBuilderOptions {
+  return {
+    runBuildTasks: options.runBuildTasks ?? defaultRunBuildTasks,
+  }
+}
+
+export type ResolvedBuilderOptions = Required<BuilderOptions>
+
+export interface BuilderInlineConfig extends Omit<InlineConfig, 'plugins'> {
+  plugins?: () => Plugin[]
 }
 
 export async function createViteBuilder(
@@ -1363,6 +1374,8 @@ export async function createViteBuilder(
       : (defaultBuilderInlineConfig as InlineConfig)
   }
 
+  // TODO: defineEnvironments -> config
+
   // We resolve the whole config including plugins here but later on we
   // need to refactor resolveConfig to only resolve the environments config
   const defaultInlineConfig = getDefaultInlineConfig()
@@ -1380,21 +1393,13 @@ export async function createViteBuilder(
     throw new Error('Watch mode is not yet supported in ViteBuilder')
   }
 
-  const environments: BuildEnvironment[] = []
-
-  const runBuildTasks =
-    builderOptions.runBuildTasks ??
-    async function (builder, buildTasks) {
-      for (const task of buildTasks) {
-        await task.run()
-      }
-    }
+  const environments: Record<string, BuildEnvironment> = {}
 
   const builder: ViteBuilder = {
     environments,
     async build() {
       const buildTasks = []
-      for (const environment of environments) {
+      for (const environment of Object.values(environments)) {
         // We need to resolve the config again so we can properly merge options
         // and get a new set of plugins for each build environment. The ecosystem
         // expects plugins to be run for the same environment once they are created
@@ -1402,10 +1407,8 @@ export async function createViteBuilder(
         // plugins are built to handle multiple environments concurrently).
 
         let userConfig = getDefaultInlineConfig()
-        const inlineConfigEnvironmentOverrides = getEnvironmentConfig(
-          userConfig,
-          environment.name,
-        )
+        const inlineConfigEnvironmentOverrides =
+          userConfig.environments?.[environment.name]
         if (inlineConfigEnvironmentOverrides) {
           userConfig = mergeConfig(userConfig, inlineConfigEnvironmentOverrides)
         }
@@ -1426,49 +1429,41 @@ export async function createViteBuilder(
         buildTasks.push(buildTask)
       }
 
-      return runBuildTasks(builder, buildTasks)
+      return defaultConfig.builder.runBuildTasks(builder, buildTasks)
     },
   }
 
-  const createBrowserEnvironment =
-    getEnvironmentConfig(defaultInlineConfig, 'client')?.build
-      ?.createEnvironment ??
-    defaultConfig.build?.createEnvironment ??
+  const createClientEnvironment =
+    defaultInlineConfig.environments?.client?.build?.createEnvironment ??
     ((builder: ViteBuilder, name: string) =>
       new BuildEnvironment(builder, name))
 
-  const clientEnvironment = createBrowserEnvironment(builder, 'client')
+  environments.client = createClientEnvironment(builder, 'client')
 
-  environments.push(clientEnvironment)
+  // TODO: How to know if we should build for SSR or not?
+  // build.ssr should end up moved as an EnvironmentConfig option
 
   // Backward compatibility for `ssr` option
   if (defaultConfig.build.ssr) {
-    // TODO: config.ssr should be a EnvironmentConfig
     const createSsrEnvironment =
-      /*defaultConfig.ssr?.createEnvironment ??*/
-      getEnvironmentConfig(defaultInlineConfig, 'ssr')?.build
-        ?.createEnvironment ??
+      defaultInlineConfig.environments?.ssr?.build?.createEnvironment ??
       defaultConfig.build?.createEnvironment ??
       ((builder: ViteBuilder, name: string) =>
         new BuildEnvironment(builder, name))
 
-    const ssrEnvironment = createSsrEnvironment(builder, 'ssr')
-    environments.push(ssrEnvironment)
+    environments.ssr = createSsrEnvironment(builder, 'ssr')
   }
 
-  if (defaultConfig.environments) {
-    for (const environmentConfig of defaultConfig.environments) {
-      if (
-        environmentConfig.name !== 'client' &&
-        environmentConfig.name !== 'ssr'
-      ) {
-        const createEnvironment =
-          environmentConfig.build?.createEnvironment ??
-          ((builder: ViteBuilder, name: string) =>
-            new BuildEnvironment(builder, name))
-        const environment = createEnvironment(builder, environmentConfig.name)
-        environments.push(environment)
-      }
+  for (const name of Object.keys(defaultConfig.environments)) {
+    // TODO: We could directly create client and ssr here
+    if (name !== 'client' && name !== 'ssr') {
+      const environmentConfig = defaultConfig.environments[name]
+      const createEnvironment =
+        environmentConfig.build?.createEnvironment ??
+        ((builder: ViteBuilder, name: string) =>
+          new BuildEnvironment(builder, name))
+      const environment = createEnvironment(builder, name)
+      environments[name] = environment
     }
   }
 

@@ -15,14 +15,14 @@ export function warmupFiles(server: ViteDevServer): void {
   if (options?.clientFiles?.length) {
     mapFiles(options.clientFiles, root).then((files) => {
       for (const file of files) {
-        warmupFile(server, server.clientEnvironment, file)
+        warmupFile(server, server.environments.client, file)
       }
     })
   }
   if (options?.ssrFiles?.length) {
     mapFiles(options.ssrFiles, root).then((files) => {
       for (const file of files) {
-        warmupFile(server, server.ssrEnvironment, file)
+        warmupFile(server, server.environments.ssr, file)
       }
     })
   }

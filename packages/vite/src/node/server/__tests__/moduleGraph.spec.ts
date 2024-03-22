@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { EnvironmentModuleGraph, ModuleGraph } from '../moduleGraph'
-import type { ModuleNode } from '../moduleGraph'
+import { EnvironmentModuleGraph } from '../moduleGraph'
+import type { ModuleNode } from '../mixedModuleGraph'
+import { ModuleGraph } from '../mixedModuleGraph'
 
 describe('moduleGraph', () => {
   describe('invalidateModule', () => {
@@ -43,8 +44,8 @@ describe('moduleGraph', () => {
         id: url,
       }))
       const moduleGraph = new ModuleGraph({
-        client: clientModuleGraph,
-        ssr: ssrModuleGraph,
+        client: () => clientModuleGraph,
+        ssr: () => ssrModuleGraph,
       })
 
       const addBrowserModule = (url: string) =>
