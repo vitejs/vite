@@ -88,7 +88,7 @@ export default function licensePlugin(
         `${sortLicenses(licenses).join(', ')}\n\n` +
         `# Bundled dependencies:\n` +
         dependencyLicenseTexts
-      const existingLicenseText = fs.readFileSync(licenseFilePath, 'utf8')
+      const existingLicenseText = fs.readFileSync(licenseFilePath, 'utf-8')
       if (existingLicenseText !== licenseText) {
         fs.writeFileSync(licenseFilePath, licenseText)
         console.warn(

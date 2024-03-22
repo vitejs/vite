@@ -28,7 +28,7 @@ const setNonceHeader = (res, nonce) => {
 const createMiddleware = (file, transform) => async (req, res) => {
   const nonce = createNonce()
   setNonceHeader(res, nonce)
-  const content = await fs.readFile(path.join(__dirname, file), 'utf8')
+  const content = await fs.readFile(path.join(__dirname, file), 'utf-8')
   const transformedContent = await transform(content, req.originalUrl)
   res.setHeader('Content-Type', 'text/html')
   res.end(transformedContent.replaceAll(noncePlaceholder, nonce))

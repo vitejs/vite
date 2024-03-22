@@ -69,7 +69,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
       }
 
       const htmlLoc = resolve(`.${url}`)
-      let html = fs.readFileSync(htmlLoc, 'utf8')
+      let html = fs.readFileSync(htmlLoc, 'utf-8')
       html = await vite.transformIndexHtml(url, html)
 
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
