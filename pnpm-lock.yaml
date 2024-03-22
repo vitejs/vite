@@ -936,6 +936,9 @@ importers:
       '@vitejs/test-dep-optimize-exports-with-glob':
         specifier: file:./dep-optimize-exports-with-glob
         version: file:playground/optimize-deps/dep-optimize-exports-with-glob
+      '@vitejs/test-dep-optimize-exports-with-root-glob':
+        specifier: file:./dep-optimize-exports-with-root-glob
+        version: file:playground/optimize-deps/dep-optimize-exports-with-root-glob
       '@vitejs/test-dep-optimize-with-glob':
         specifier: file:./dep-optimize-with-glob
         version: file:playground/optimize-deps/dep-optimize-with-glob
@@ -1052,6 +1055,8 @@ importers:
   playground/optimize-deps/dep-not-js: {}
 
   playground/optimize-deps/dep-optimize-exports-with-glob: {}
+
+  playground/optimize-deps/dep-optimize-exports-with-root-glob: {}
 
   playground/optimize-deps/dep-optimize-with-glob: {}
 
@@ -10584,6 +10589,11 @@ packages:
   file:playground/optimize-deps/dep-optimize-exports-with-glob:
     resolution: {directory: playground/optimize-deps/dep-optimize-exports-with-glob, type: directory}
     name: '@vitejs/test-dep-optimize-exports-with-glob'
+    dev: false
+
+  file:playground/optimize-deps/dep-optimize-exports-with-root-glob:
+    resolution: {directory: playground/optimize-deps/dep-optimize-exports-with-root-glob, type: directory}
+    name: '@vitejs/test-dep-optimize-exports-with-root-glob'
     dev: false
 
   file:playground/optimize-deps/dep-optimize-with-glob:

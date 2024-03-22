@@ -1,0 +1,10 @@
+{
+  "name": "@vitejs/test-dep-optimize-exports-with-root-glob",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./*": "./*"
+  }
+}
