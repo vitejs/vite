@@ -1421,6 +1421,7 @@ export function displayTime(time: number): string {
  * Encodes the URI path portion (ignores part after ? or #)
  */
 export function encodeURIPath(uri: string): string {
+  if (uri.startsWith('data:')) return uri
   const filePath = cleanUrl(uri)
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
   return encodeURI(filePath) + postfix
@@ -1431,6 +1432,7 @@ export function encodeURIPath(uri: string): string {
  * that can handle un-encoded URIs, where `%` is the only ambiguous character.
  */
 export function partialEncodeURIPath(uri: string): string {
+  if (uri.startsWith('data:')) return uri
   const filePath = cleanUrl(uri)
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
   return filePath.replaceAll('%', '%25') + postfix

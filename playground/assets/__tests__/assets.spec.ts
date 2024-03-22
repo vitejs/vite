@@ -282,6 +282,26 @@ describe('css url() references', () => {
 })
 
 describe('image', () => {
+  test('src', async () => {
+    const img = await page.$('.img-src')
+    const src = await img.getAttribute('src')
+    expect(src).toMatch(
+      isBuild
+        ? /\/foo\/bar\/assets\/html-only-asset-[-\w]{8}\.jpg/
+        : /\/foo\/bar\/nested\/html-only-asset.jpg/,
+    )
+  })
+
+  test('src inline', async () => {
+    const img = await page.$('.img-src-inline')
+    const src = await img.getAttribute('src')
+    expect(src).toMatch(
+      isBuild
+        ? /^data:image\/svg\+xml,%3csvg/
+        : /\/foo\/bar\/nested\/inlined.svg/,
+    )
+  })
+
   test('srcset', async () => {
     const img = await page.$('.img-src-set')
     const srcset = await img.getAttribute('srcset')
