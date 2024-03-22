@@ -776,7 +776,6 @@ export async function _createServer(
 
   const createClientEnvironment =
     config.environments.client?.dev?.createEnvironment ??
-    server.config.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
       new DevEnvironment(server, name, { hot: ws }))
 
@@ -785,26 +784,23 @@ export async function _createServer(
   const createSsrEnvironment =
     /* config.ssr?.dev?.createEnvironment ?? */
     config.environments.ssr?.dev?.createEnvironment ??
-    server.config.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
       new DevEnvironment(server, name, { hot: ssrHotChannel }))
 
   environments.ssr = createSsrEnvironment(server, 'ssr')
 
-  if (config.environments) {
-    Object.entries(config.environments).forEach(([name, environmentConfig]) => {
-      if (name !== 'client' && name !== 'ssr') {
-        const createEnvironment =
-          environmentConfig.dev?.createEnvironment ??
-          server.config.dev?.createEnvironment ??
-          ((server: ViteDevServer, name: string) =>
-            new DevEnvironment(server, name, {
-              hot: ws, // TODO: what should we use here?
-            }))
-        environments[name] = createEnvironment(server, name)
-      }
-    })
-  }
+  Object.entries(config.environments).forEach(([name, environmentConfig]) => {
+    // TODO: move client and ssr inside the loop?
+    if (name !== 'client' && name !== 'ssr') {
+      const createEnvironment =
+        environmentConfig.dev?.createEnvironment ??
+        ((server: ViteDevServer, name: string) =>
+          new DevEnvironment(server, name, {
+            hot: ws, // TODO: what should we use here?
+          }))
+      environments[name] = createEnvironment(server, name)
+    }
+  })
 
   if (!middlewareMode) {
     exitProcess = async () => {
@@ -1141,6 +1137,7 @@ export function resolveServerOptions(
   raw: ServerOptions | undefined,
   logger: Logger,
 ): ResolvedServerOptions {
+  // TODO: deprecated server options moved to the dev config
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),

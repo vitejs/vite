@@ -245,9 +245,10 @@ async function getPluginContainer(inlineConfig?: UserConfig): Promise<{
 
   const mockedServer = {
     pluginContainer,
-  } as ViteDevServer
+    config,
+  }
 
-  const environment = new DevEnvironment(mockedServer, 'client')
+  const environment = new DevEnvironment(mockedServer as any, 'client')
 
   return { pluginContainer, environment }
 }

@@ -1335,6 +1335,25 @@ export interface BuilderOptions {
   ) => Promise<void>
 }
 
+async function defaultRunBuildTasks(
+  builder: ViteBuilder,
+  buildTasks: BuildTask[],
+): Promise<void> {
+  for (const task of buildTasks) {
+    await task.run()
+  }
+}
+
+export function resolveBuilderOptions(
+  options: BuilderOptions = {},
+): ResolvedBuilderOptions {
+  return {
+    runBuildTasks: options.runBuildTasks ?? defaultRunBuildTasks,
+  }
+}
+
+export type ResolvedBuilderOptions = Required<BuilderOptions>
+
 export interface BuilderInlineConfig extends Omit<InlineConfig, 'plugins'> {
   plugins?: () => Plugin[]
 }
@@ -1376,14 +1395,6 @@ export async function createViteBuilder(
 
   const environments: Record<string, BuildEnvironment> = {}
 
-  const runBuildTasks =
-    builderOptions.runBuildTasks ??
-    async function (builder, buildTasks) {
-      for (const task of buildTasks) {
-        await task.run()
-      }
-    }
-
   const builder: ViteBuilder = {
     environments,
     async build() {
@@ -1418,23 +1429,23 @@ export async function createViteBuilder(
         buildTasks.push(buildTask)
       }
 
-      return runBuildTasks(builder, buildTasks)
+      return defaultConfig.builder.runBuildTasks(builder, buildTasks)
     },
   }
 
   const createClientEnvironment =
     defaultInlineConfig.environments?.client?.build?.createEnvironment ??
-    defaultConfig.build?.createEnvironment ??
     ((builder: ViteBuilder, name: string) =>
       new BuildEnvironment(builder, name))
 
   environments.client = createClientEnvironment(builder, 'client')
 
+  // TODO: How to know if we should build for SSR or not?
+  // build.ssr should end up moved as an EnvironmentConfig option
+
   // Backward compatibility for `ssr` option
   if (defaultConfig.build.ssr) {
-    // TODO: config.ssr should be a EnvironmentConfig
     const createSsrEnvironment =
-      /*defaultConfig.ssr?.createEnvironment ??*/
       defaultInlineConfig.environments?.ssr?.build?.createEnvironment ??
       defaultConfig.build?.createEnvironment ??
       ((builder: ViteBuilder, name: string) =>
@@ -1443,17 +1454,16 @@ export async function createViteBuilder(
     environments.ssr = createSsrEnvironment(builder, 'ssr')
   }
 
-  if (defaultConfig.environments) {
-    for (const name of Object.keys(defaultConfig.environments)) {
-      if (name !== 'client' && name !== 'ssr') {
-        const environmentConfig = defaultConfig.environments[name]
-        const createEnvironment =
-          environmentConfig.build?.createEnvironment ??
-          ((builder: ViteBuilder, name: string) =>
-            new BuildEnvironment(builder, name))
-        const environment = createEnvironment(builder, name)
-        environments[name] = environment
-      }
+  for (const name of Object.keys(defaultConfig.environments)) {
+    // TODO: We could directly create client and ssr here
+    if (name !== 'client' && name !== 'ssr') {
+      const environmentConfig = defaultConfig.environments[name]
+      const createEnvironment =
+        environmentConfig.build?.createEnvironment ??
+        ((builder: ViteBuilder, name: string) =>
+          new BuildEnvironment(builder, name))
+      const environment = createEnvironment(builder, name)
+      environments[name] = environment
     }
   }
 

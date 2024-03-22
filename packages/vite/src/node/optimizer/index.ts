@@ -166,6 +166,9 @@ export type DepOptimizationOptions = DepOptimizationConfig & {
   force?: boolean
 }
 
+// TODO: We first need to define if entries and force should be per-environment
+// export type ResolvedDepOptimizationConfig = Required<DepOptimizationConfig>
+
 export interface DepOptimizationResult {
   metadata: DepOptimizationMetadata
   /**
