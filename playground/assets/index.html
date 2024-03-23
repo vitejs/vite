@@ -135,7 +135,7 @@
 <h2>Unicode URL</h2>
 <div>
   <code class="unicode-url"></code>
-  <img src="./nested/テスト-測試-white space%25.png" />
+  <img src="./nested/テスト-測試-white space.png" />
 </div>
 
 <h2>Filename including single quote</h2>
@@ -143,11 +143,17 @@
   <code class="filename-including-single-quote"></code>
 </div>
 
+<h2>Filename including percent</h2>
+<div>
+  <code class="percent-url"></code>
+  <img src="./asset/percent%25.png" />
+</div>
+
 <h2>encodeURI for the address</h2>
 <div>
   <img
     class="encodeURI"
-    src="./nested/%E3%83%86%E3%82%B9%E3%83%88-%E6%B8%AC%E8%A9%A6-white%20space%25.png"
+    src="./nested/%E3%83%86%E3%82%B9%E3%83%88-%E6%B8%AC%E8%A9%A6-white%20space.png"
   />
 </div>
 
@@ -447,11 +453,15 @@
   import fooUrl from './foo.js?url'
   text('.url', fooUrl)
 
-  import unicodeUrl from './テスト-測試-white space%.js?url'
+  import unicodeUrl from './テスト-測試-white space.js?url'
   text('.unicode-url', unicodeUrl)
 
   import filenameIncludingSingleQuoteUrl from "./nested/with-single'quote.png"
   text('.filename-including-single-quote', filenameIncludingSingleQuoteUrl)
+
+  // TODO: is not supported yet (https://github.com/vitejs/vite/pull/16243)
+  // import percentUrl from './asset/percent%25.png?url'
+  // text('.percent-url', percentUrl)
 
   import cssUrl from './css/icons.css?url'
   text('.url-css', cssUrl)
