@@ -32,6 +32,7 @@ import {
   isOptimizable,
   isTsRequest,
   normalizePath,
+  partialDecodeURIPath,
   safeRealpathSync,
   tryStatSync,
 } from '../utils'
@@ -262,7 +263,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           startsWithWordCharRE.test(id))
       ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
-        const fsPath = path.resolve(basedir, id)
+        const fsPath = path.resolve(basedir, partialDecodeURIPath(id))
         // handle browser field mapping for relative imports
 
         const normalizedFsPath = normalizePath(fsPath)

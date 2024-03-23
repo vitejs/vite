@@ -1435,3 +1435,11 @@ export function partialEncodeURIPath(uri: string): string {
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
   return filePath.replaceAll('%', '%25') + postfix
 }
+
+export function partialDecodeURIPath(uri: string): string {
+  if (!uri.includes('%25')) return uri
+  if (uri.startsWith('data:')) return uri
+  const filePath = cleanUrl(uri)
+  const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
+  return filePath.replaceAll('%25', '%') + postfix
+}
