@@ -1,3 +1,9 @@
+## <small>5.2.4 (2024-03-23)</small>
+
+* fix: dont resolve imports with malformed URI (#16244) ([fbf69d5](https://github.com/vitejs/vite/commit/fbf69d5)), closes [#16244](https://github.com/vitejs/vite/issues/16244)
+
+
+
 ## <small>5.2.3 (2024-03-22)</small>
 
 * fix: handle warmup request error correctly (#16223) ([d7c5256](https://github.com/vitejs/vite/commit/d7c5256)), closes [#16223](https://github.com/vitejs/vite/issues/16223)
