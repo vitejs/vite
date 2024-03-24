@@ -82,7 +82,6 @@ import {
   createHMRBroadcaster,
   createServerHMRChannel,
   getShortName,
-  handleFileAddUnlink,
   handleHMRUpdate,
   updateModules,
 } from './hmr'
@@ -719,10 +718,14 @@ export async function _createServer(
 
   const publicFiles = await initPublicFilesPromise
 
-  const onHMRUpdate = async (file: string, configOnly: boolean) => {
+  const onHMRUpdate = async (
+    type: 'create' | 'delete' | 'update',
+    file: string,
+    configOnly: boolean,
+  ) => {
     if (serverConfig.hmr !== false) {
       try {
-        await handleHMRUpdate(file, server, configOnly)
+        await handleHMRUpdate(type, file, server, configOnly)
       } catch (err) {
         hot.send({
           type: 'error',
@@ -754,8 +757,7 @@ export async function _createServer(
       }
     }
     if (isUnlink) moduleGraph.onFileDelete(file)
-    await handleFileAddUnlink(file, server, isUnlink)
-    await onHMRUpdate(file, true)
+    await onHMRUpdate(isUnlink ? 'delete' : 'create', file, false)
   }
 
   watcher.on('change', async (file) => {
@@ -763,7 +765,7 @@ export async function _createServer(
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
-    await onHMRUpdate(file, false)
+    await onHMRUpdate('update', file, false)
   })
 
   getFsUtils(config).initWatcher?.(watcher)
