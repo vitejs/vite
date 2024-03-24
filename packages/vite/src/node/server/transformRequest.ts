@@ -185,7 +185,7 @@ async function doTransform(
 
   if (!ssr) {
     // Only register client requests, server.waitForRequestsIdle should
-    // have been called server.waitForClientRequestesIdle. We can rename
+    // have been called server.waitForClientRequestsIdle. We can rename
     // it as part of the environment API work
     const depsOptimizer = getDepsOptimizer(config, ssr)
     if (!depsOptimizer?.isOptimizedDepFile(id)) {
