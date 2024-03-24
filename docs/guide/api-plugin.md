@@ -480,6 +480,8 @@ A Vite plugin can additionally specify an `enforce` property (similar to webpack
 - User plugins with `enforce: 'post'`
 - Vite post build plugins (minify, manifest, reporting)
 
+Note that this is separate from hooks ordering, those are still separately subject to their `order` attribute [as usual for Rollup hooks](https://rollupjs.org/plugin-development/#build-hooks).
+
 ## Conditional Application
 
 By default plugins are invoked for both serve and build. In cases where a plugin needs to be conditionally applied only during serve or build, use the `apply` property to only invoke them during `'build'` or `'serve'`:
