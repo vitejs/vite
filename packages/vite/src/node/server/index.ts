@@ -695,6 +695,7 @@ export async function _createServer(
       {
         matchBase: false,
         nocase: true,
+        dot: true,
       },
     ),
     _shortcutsOptions: undefined,
