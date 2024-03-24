@@ -1,3 +1,9 @@
+## <small>5.2.6 (2024-03-24)</small>
+
+* fix: `fs.deny` with globs with directories (#16250) ([ba5269c](https://github.com/vitejs/vite/commit/ba5269c)), closes [#16250](https://github.com/vitejs/vite/issues/16250)
+
+
+
 ## <small>5.2.5 (2024-03-24)</small>
 
 * fix: avoid SSR requests in waitForRequestIdle (#16246) ([7093f77](https://github.com/vitejs/vite/commit/7093f77)), closes [#16246](https://github.com/vitejs/vite/issues/16246)
