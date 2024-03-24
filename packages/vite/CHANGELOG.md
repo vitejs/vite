@@ -1,3 +1,9 @@
+## <small>5.1.7 (2024-03-24)</small>
+
+* fix: `fs.deny` with globs with directories (#16250) ([5a056dd](https://github.com/vitejs/vite/commit/5a056dd)), closes [#16250](https://github.com/vitejs/vite/issues/16250)
+
+
+
 ## <small>5.1.6 (2024-03-11)</small>
 
 * chore(deps): update all non-major dependencies (#16131) ([a862ecb](https://github.com/vitejs/vite/commit/a862ecb)), closes [#16131](https://github.com/vitejs/vite/issues/16131)
