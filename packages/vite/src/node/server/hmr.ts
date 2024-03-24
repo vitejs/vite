@@ -322,14 +322,6 @@ export async function handleFileAddUnlink(
 ): Promise<void> {
   const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
 
-  if (isUnlink) {
-    for (const deletedMod of modules) {
-      deletedMod.importedModules.forEach((importedMod) => {
-        importedMod.importers.delete(deletedMod)
-      })
-    }
-  }
-
   modules.push(...getAffectedGlobModules(file, server))
 
   if (modules.length > 0) {

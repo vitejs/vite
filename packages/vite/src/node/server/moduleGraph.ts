@@ -148,6 +148,17 @@ export class ModuleGraph {
     }
   }
 
+  onFileDelete(file: string): void {
+    const mods = this.getModulesByFile(file)
+    if (mods) {
+      mods.forEach((mod) => {
+        mod.importedModules.forEach((importedMod) => {
+          importedMod.importers.delete(mod)
+        })
+      })
+    }
+  }
+
   invalidateModule(
     mod: ModuleNode,
     seen: Set<ModuleNode> = new Set(),
