@@ -1,3 +1,10 @@
+## <small>5.2.5 (2024-03-24)</small>
+
+* fix: avoid SSR requests in waitForRequestIdle (#16246) ([7093f77](https://github.com/vitejs/vite/commit/7093f77)), closes [#16246](https://github.com/vitejs/vite/issues/16246)
+* docs: clarify enforce vs hook.order (#16226) ([3a73e48](https://github.com/vitejs/vite/commit/3a73e48)), closes [#16226](https://github.com/vitejs/vite/issues/16226)
+
+
+
 ## <small>5.2.4 (2024-03-23)</small>
 
 * fix: dont resolve imports with malformed URI (#16244) ([fbf69d5](https://github.com/vitejs/vite/commit/fbf69d5)), closes [#16244](https://github.com/vitejs/vite/issues/16244)
