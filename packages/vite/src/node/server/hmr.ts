@@ -186,29 +186,26 @@ export async function handleHMRUpdate(
         hmrContext.modules = filteredModules
       }
     }
+  }
 
-    if (!hmrContext.modules.length) {
-      // html file cannot be hot updated
-      if (file.endsWith('.html')) {
-        config.logger.info(
-          colors.green(`page reload `) + colors.dim(shortFile),
-          {
-            clear: true,
-            timestamp: true,
-          },
-        )
-        hot.send({
-          type: 'full-reload',
-          path: config.server.middlewareMode
-            ? '*'
-            : '/' + normalizePath(path.relative(config.root, file)),
-        })
-      } else {
-        // loaded but not in the module graph, probably not js
-        debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
-      }
-      return
+  if (!hmrContext.modules.length) {
+    // html file cannot be hot updated
+    if (file.endsWith('.html')) {
+      config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
+        clear: true,
+        timestamp: true,
+      })
+      hot.send({
+        type: 'full-reload',
+        path: config.server.middlewareMode
+          ? '*'
+          : '/' + normalizePath(path.relative(config.root, file)),
+      })
+    } else {
+      // loaded but not in the module graph, probably not js
+      debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
     }
+    return
   }
 
   updateModules(shortFile, hmrContext.modules, timestamp, server)
