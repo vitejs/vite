@@ -121,7 +121,6 @@ export async function handleHMRUpdate(
   type: 'create' | 'delete' | 'update',
   file: string,
   server: ViteDevServer,
-  configOnly: boolean,
 ): Promise<void> {
   const { hot, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
@@ -148,10 +147,6 @@ export async function handleHMRUpdate(
     } catch (e) {
       config.logger.error(colors.red(e))
     }
-    return
-  }
-
-  if (configOnly) {
     return
   }
 

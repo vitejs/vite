@@ -721,11 +721,10 @@ export async function _createServer(
   const onHMRUpdate = async (
     type: 'create' | 'delete' | 'update',
     file: string,
-    configOnly: boolean,
   ) => {
     if (serverConfig.hmr !== false) {
       try {
-        await handleHMRUpdate(type, file, server, configOnly)
+        await handleHMRUpdate(type, file, server)
       } catch (err) {
         hot.send({
           type: 'error',
@@ -757,7 +756,7 @@ export async function _createServer(
       }
     }
     if (isUnlink) moduleGraph.onFileDelete(file)
-    await onHMRUpdate(isUnlink ? 'delete' : 'create', file, false)
+    await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
   }
 
   watcher.on('change', async (file) => {
@@ -765,7 +764,7 @@ export async function _createServer(
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
-    await onHMRUpdate('update', file, false)
+    await onHMRUpdate('update', file)
   })
 
   getFsUtils(config).initWatcher?.(watcher)
