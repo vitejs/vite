@@ -1,0 +1,5 @@
+{
+  "name": "@vitejs/test-dep-cjs-external-package-omit-js-suffix",
+  "version": "0.0.1",
+  "main": "index.js"
+}
