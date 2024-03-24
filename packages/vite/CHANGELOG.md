@@ -1,3 +1,8 @@
+## <small>3.2.10 (2024-03-24)</small>
+
+
+
+
 ## <small>3.2.9 (2024-03-24)</small>
 
 * fix: port #15653 to v3 (#15655) ([99080ca](https://github.com/vitejs/vite/commit/99080ca)), closes [#15653](https://github.com/vitejs/vite/issues/15653) [#15655](https://github.com/vitejs/vite/issues/15655)
