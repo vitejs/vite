@@ -406,6 +406,7 @@ export interface PluginHookUtils {
   ) => PluginWithRequiredHook<K>[]
   getSortedPluginHooks: <K extends keyof Plugin>(
     hookName: K,
+    optInFlag?: keyof Plugin,
   ) => NonNullable<HookHandler<Plugin[K]>>[]
 }
 

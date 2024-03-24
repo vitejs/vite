@@ -9,7 +9,6 @@ import { CLIENT_DIR } from '../constants'
 import { createDebugger, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
-import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
@@ -36,6 +35,7 @@ export interface HmrOptions {
 }
 
 export interface HmrContext {
+  type: 'create' | 'update' | 'delete'
   file: string
   timestamp: number
   modules: Array<ModuleNode>
@@ -162,29 +162,27 @@ export async function handleHMRUpdate(
     return
   }
 
-  const mods = moduleGraph.getModulesByFile(file) || new Set()
-  if (type === 'create' || type === 'delete') {
-    for (const mod of getAffectedGlobModules(file, server)) {
-      mods.add(mod)
-    }
-  }
+  const mods = moduleGraph.getModulesByFile(file)
 
   // check if any plugin wants to perform custom HMR handling
   const timestamp = Date.now()
   const hmrContext: HmrContext = {
+    type,
     file,
     timestamp,
-    modules: [...mods],
+    modules: mods ? [...mods] : [],
     read: () => readModifiedFile(file),
     server,
   }
 
-  if (type === 'update') {
-    for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
-      const filteredModules = await hook(hmrContext)
-      if (filteredModules) {
-        hmrContext.modules = filteredModules
-      }
+  const hooks = config.getSortedPluginHooks(
+    'handleHotUpdate',
+    type === 'update' ? undefined : '_runHandleHotUpdateOnCreateAndDelete',
+  )
+  for (const hook of hooks) {
+    const filteredModules = await hook(hmrContext)
+    if (filteredModules) {
+      hmrContext.modules = filteredModules
     }
   }
 

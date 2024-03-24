@@ -176,6 +176,9 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       options?: { ssr?: boolean },
     ) => Promise<TransformResult> | TransformResult
   >
+
+  /** @internal */
+  _runHandleHotUpdateOnCreateAndDelete?: boolean
 }
 
 export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T
