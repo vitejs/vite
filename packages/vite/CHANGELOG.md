@@ -1,3 +1,9 @@
+## <small>4.5.3 (2024-03-24)</small>
+
+* fix: `fs.deny` with globs with directories (#16250) ([96a7f3a](https://github.com/vitejs/vite/commit/96a7f3a)), closes [#16250](https://github.com/vitejs/vite/issues/16250)
+
+
+
 ## <small>4.5.2 (2024-01-19)</small>
 
 * fix: fs deny for case insensitive systems (#15653) ([eeec23b](https://github.com/vitejs/vite/commit/eeec23b)), closes [#15653](https://github.com/vitejs/vite/issues/15653)
