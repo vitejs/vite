@@ -686,7 +686,7 @@ export async function _createServer(
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
     _fsDenyGlob: picomatch(config.server.fs.deny, {
-      matchBase: true,
+      matchBase: false,
       nocase: true,
     }),
     _shortcutsOptions: undefined,
