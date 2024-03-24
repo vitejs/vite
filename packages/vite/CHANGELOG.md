@@ -1,3 +1,9 @@
+## <small>5.0.13 (2024-03-24)</small>
+
+* fix: `fs.deny` with globs with directories (#16250) ([d2db33f](https://github.com/vitejs/vite/commit/d2db33f)), closes [#16250](https://github.com/vitejs/vite/issues/16250)
+
+
+
 ## <small>5.0.12 (2024-01-19)</small>
 
 * fix: await `configResolved` hooks of worker plugins (#15597) (#15605) ([ef89f80](https://github.com/vitejs/vite/commit/ef89f80)), closes [#15597](https://github.com/vitejs/vite/issues/15597) [#15605](https://github.com/vitejs/vite/issues/15605)
