@@ -156,7 +156,11 @@ export function serveRawFsMiddleware(
   }
 }
 
-const _matchOptions = { matchBase: true, nocase: true }
+const _matchOptions = {
+  matchBase: false,
+  nocase: true,
+  dot: true
+}
 
 export function isFileServingAllowed(
   url: string,
@@ -166,8 +170,10 @@ export function isFileServingAllowed(
 
   const file = fsPathFromUrl(url)
 
-  if (server.config.server.fs.deny.some((i) => isMatch(file, i, _matchOptions)))
-    return false
+  const deny = server.config.server.fs.deny.map((pattern) =>
+    pattern.includes('/') ? pattern : `**/${pattern}`
+  )
+  if (deny.some((i) => isMatch(file, i, _matchOptions))) return false
 
   if (server.moduleGraph.safeModulesPath.has(file)) return true
 
