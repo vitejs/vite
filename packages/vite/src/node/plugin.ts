@@ -39,7 +39,8 @@ import type { PreviewServerHook } from './preview'
  */
 export interface Plugin<A = any> extends RollupPlugin<A> {
   /**
-   * Enforce plugin invocation tier similar to webpack loaders.
+   * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
+   * is still subject to the `order` property in the hook object.
    *
    * Plugin invocation order:
    * - alias resolution
