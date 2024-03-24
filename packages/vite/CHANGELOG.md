@@ -1,3 +1,11 @@
+## <small>3.2.9 (2024-03-24)</small>
+
+* fix: port #15653 to v3 (#15655) ([99080ca](https://github.com/vitejs/vite/commit/99080ca)), closes [#15653](https://github.com/vitejs/vite/issues/15653) [#15655](https://github.com/vitejs/vite/issues/15655)
+* fix: port #16250 to v3 (#16253) ([89c7c64](https://github.com/vitejs/vite/commit/89c7c64)), closes [#16250](https://github.com/vitejs/vite/issues/16250) [#16253](https://github.com/vitejs/vite/issues/16253)
+* release: v3.2.8 ([8352b75](https://github.com/vitejs/vite/commit/8352b75))
+
+
+
 ## <small>3.2.8 (2024-01-19)</small>
 
 * fix: port #15653 to v3 (#15655) ([99080ca](https://github.com/vitejs/vite/commit/99080ca)), closes [#15653](https://github.com/vitejs/vite/issues/15653) [#15655](https://github.com/vitejs/vite/issues/15655)
