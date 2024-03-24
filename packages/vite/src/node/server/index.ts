@@ -762,6 +762,7 @@ export async function _createServer(
         }
       }
     }
+    if (isUnlink) moduleGraph.onFileDelete(file)
     await handleFileAddUnlink(file, server, isUnlink)
     await onHMRUpdate(file, true)
   }
