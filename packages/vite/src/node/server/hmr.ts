@@ -6,7 +6,7 @@ import colors from 'picocolors'
 import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, normalizePath, unique } from '../utils'
+import { createDebugger, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
@@ -118,6 +118,7 @@ export function getShortName(file: string, root: string): string {
 }
 
 export async function handleHMRUpdate(
+  type: 'create' | 'delete' | 'update',
   file: string,
   server: ViteDevServer,
   configOnly: boolean,
@@ -166,43 +167,53 @@ export async function handleHMRUpdate(
     return
   }
 
-  const mods = moduleGraph.getModulesByFile(file)
+  const mods = moduleGraph.getModulesByFile(file) || new Set()
+  if (type === 'create' || type === 'delete') {
+    for (const mod of getAffectedGlobModules(file, server)) {
+      mods.add(mod)
+    }
+  }
 
   // check if any plugin wants to perform custom HMR handling
   const timestamp = Date.now()
   const hmrContext: HmrContext = {
     file,
     timestamp,
-    modules: mods ? [...mods] : [],
+    modules: [...mods],
     read: () => readModifiedFile(file),
     server,
   }
 
-  for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
-    const filteredModules = await hook(hmrContext)
-    if (filteredModules) {
-      hmrContext.modules = filteredModules
+  if (type === 'update') {
+    for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
+      const filteredModules = await hook(hmrContext)
+      if (filteredModules) {
+        hmrContext.modules = filteredModules
+      }
     }
-  }
 
-  if (!hmrContext.modules.length) {
-    // html file cannot be hot updated
-    if (file.endsWith('.html')) {
-      config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
-        clear: true,
-        timestamp: true,
-      })
-      hot.send({
-        type: 'full-reload',
-        path: config.server.middlewareMode
-          ? '*'
-          : '/' + normalizePath(path.relative(config.root, file)),
-      })
-    } else {
-      // loaded but not in the module graph, probably not js
-      debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
+    if (!hmrContext.modules.length) {
+      // html file cannot be hot updated
+      if (file.endsWith('.html')) {
+        config.logger.info(
+          colors.green(`page reload `) + colors.dim(shortFile),
+          {
+            clear: true,
+            timestamp: true,
+          },
+        )
+        hot.send({
+          type: 'full-reload',
+          path: config.server.middlewareMode
+            ? '*'
+            : '/' + normalizePath(path.relative(config.root, file)),
+        })
+      } else {
+        // loaded but not in the module graph, probably not js
+        debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
+      }
+      return
     }
-    return
   }
 
   updateModules(shortFile, hmrContext.modules, timestamp, server)
@@ -313,25 +324,6 @@ function getSSRInvalidatedImporters(module: ModuleNode) {
   return [...populateSSRImporters(module, module.lastHMRTimestamp)].map(
     (m) => m.file!,
   )
-}
-
-export async function handleFileAddUnlink(
-  file: string,
-  server: ViteDevServer,
-  isUnlink: boolean,
-): Promise<void> {
-  const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
-
-  modules.push(...getAffectedGlobModules(file, server))
-
-  if (modules.length > 0) {
-    updateModules(
-      getShortName(file, server.config.root),
-      unique(modules),
-      Date.now(),
-      server,
-    )
-  }
 }
 
 function areAllImportsAccepted(
