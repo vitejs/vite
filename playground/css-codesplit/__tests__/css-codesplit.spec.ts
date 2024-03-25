@@ -3,6 +3,7 @@ import {
   findAssetFile,
   getColor,
   isBuild,
+  listAssets,
   page,
   readManifest,
   untilUpdated,
@@ -12,6 +13,7 @@ test('should load all stylesheets', async () => {
   expect(await getColor('h1')).toBe('red')
   expect(await getColor('h2')).toBe('blue')
   expect(await getColor('.dynamic')).toBe('green')
+  expect(await getColor('.async-js')).toBe('blue')
   expect(await getColor('.chunk')).toBe('magenta')
 })
 
@@ -40,7 +42,12 @@ describe.runIf(isBuild)('build', () => {
     expect(findAssetFile(/style-.*\.js$/)).toBe('')
     expect(findAssetFile('main.*.js$')).toMatch(`/* empty css`)
     expect(findAssetFile('other.*.js$')).toMatch(`/* empty css`)
-    expect(findAssetFile(/async.*\.js$/)).toBe('')
+    expect(findAssetFile(/async-[-\w]{8}\.js$/)).toBe('')
+
+    const assets = listAssets()
+    expect(assets).not.toContainEqual(
+      expect.stringMatching(/async-js-[-\w]{8}\.js$/),
+    )
   })
 
   test('should remove empty chunk, HTML without JS', async () => {
