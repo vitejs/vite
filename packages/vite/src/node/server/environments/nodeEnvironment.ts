@@ -1,4 +1,4 @@
-import type { DevEnvironmentOptions } from '../environment';
+import type { DevEnvironmentOptions } from '../environment'
 import { DevEnvironment } from '../environment'
 import type { ViteDevServer } from '../index'
 import { asyncFunctionDeclarationPaddingLineCount } from '../../../shared/utils'
