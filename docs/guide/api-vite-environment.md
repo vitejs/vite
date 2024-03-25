@@ -583,9 +583,9 @@ export interface ModuleRunnerOptions {
    */
   root: string
   /**
-   * A method to get the information about the module.
+   * A set of methods to communicate with the server.
    */
-  fetchModule: FetchFunction
+  transport: RunnerTransport
   /**
    * Configure how source maps are resolved. Prefers `node` if `process.setSourceMapsEnabled` is available.
    * Otherwise it will use `prepareStackTrace` by default which overrides `Error.prepareStackTrace` method.
@@ -644,6 +644,76 @@ export interface ModuleEvaluator {
 ```
 
 Vite exports `ESModulesEvaluator` that implements this interface by default. It uses `new AsyncFunction` to evaluate code, so if the code has inlined source map it should contain an [offset of 2 lines](https://tc39.es/ecma262/#sec-createdynamicfunction) to accommodate for new lines added. This is done automatically in the server node environment. If your runner implementation doesn't have this constraint, you should use `fetchModule` (exported from `vite`) directly.
+
+## RunnerTransport
+
+**Type Signature:**
+
+```ts
+interface RunnerTransport {
+  /**
+   * A method to get the information about the module.
+   */
+  fetchModule: FetchFunction
+}
+```
+
+Transport object that communicates with the environment via an RPC or by directly calling the function. By default, you need to pass an object with `fetchModule` method - it can use any type of RPC inside of it, but Vite also exposes `RemoteRunnerTransport` to make the configuration easier. You need to couple it with the `RemoteEnvironmentTransport` instance on the server like in this example where module runner is created in the worker thread:
+
+::: code-group
+
+```ts [worker.js]
+import { parentPort } from 'node:worker_threads'
+import { fileURLToPath } from 'node:url'
+import {
+  ESModulesEvaluator,
+  ModuleRunner,
+  RemoteRunnerTransport,
+} from 'vite/module-runner'
+
+const runner = new ModuleRunner(
+  {
+    root: fileURLToPath(new URL('./', import.meta.url)),
+    transport: new RemoteRunnerTransport({
+      send: (data) => parentPort.postMessage(data),
+      onMessage: (listener) => parentPort.on('message', listener),
+      timeout: 5000,
+    }),
+  },
+  new ESModulesEvaluator(),
+)
+```
+
+```ts [server.js]
+import { BroadcastChannel } from 'node:worker_threads'
+import { createServer, RemoteEnvironmentTransport, DevEnvironment } from 'vite'
+
+function createWorkerEnvironment(server) {
+  const worker = new Worker('./worker.js')
+  return new DevEnvironment(server, 'worker', {
+    runner: {
+      transport: new RemoteEnvironmentTransport({
+        send: (data) => worker.postMessage(data),
+        onMessage: (listener) => worker.on('message', listener),
+      }),
+    },
+  })
+}
+
+await createServer({
+  environments: {
+    worker: {
+      dev: {
+        createEnvironment: createWorkerEnvironment,
+      },
+    },
+  },
+})
+```
+
+:::
+
+`RemoteRunnerTransport` and `RemoteEnvironmentTransport` are meant to be used together. If you don't use either of them, then you can define your own function to communicate between the runner and the server.
 
 ## ModuleRunnerHMRConnection
 
