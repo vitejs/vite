@@ -48,6 +48,8 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
 const identifierReplacements: Record<string, Record<string, string>> = {
   rollup: {
     Plugin$1: 'rollup.Plugin',
+    PluginContext$1: 'rollup.PluginContext',
+    TransformPluginContext$1: 'rollup.TransformPluginContext',
     TransformResult$2: 'rollup.TransformResult',
   },
   esbuild: {
