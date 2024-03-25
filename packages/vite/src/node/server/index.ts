@@ -16,7 +16,6 @@ import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
 import type { Matcher } from 'picomatch'
-import type { ModuleRunner } from 'vite/module-runner'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -51,7 +50,6 @@ import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
-import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -268,10 +266,6 @@ export interface ViteDevServer {
    * Module execution environments attached to the Vite server.
    */
   environments: Record<string, DevEnvironment>
-  /**
-   * Default SSR module runner.
-   */
-  nodeModuleRunner: ModuleRunner
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -528,8 +522,6 @@ export async function _createServer(
     onCrawlEndCallbacks.push(cb)
   }
 
-  let nodeModuleRunner: ModuleRunner | undefined
-
   let server: ViteDevServer = {
     config,
     middlewares,
@@ -541,16 +533,6 @@ export async function _createServer(
     environments,
     pluginContainer,
     moduleGraph,
-
-    get nodeModuleRunner() {
-      if (!nodeModuleRunner) {
-        nodeModuleRunner = createServerModuleRunner(server.environments.ssr)
-      }
-      return nodeModuleRunner
-    },
-    set nodeModuleRunner(runner) {
-      nodeModuleRunner = runner
-    },
 
     resolvedUrls: null, // will be set on listen
     ssrTransform(
