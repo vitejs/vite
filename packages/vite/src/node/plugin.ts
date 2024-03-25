@@ -5,9 +5,9 @@ import type {
   ResolveIdResult,
   Plugin as RollupPlugin,
   PluginContext as RollupPluginContext,
-
   TransformPluginContext as RollupTransformPluginContext,
-  TransformResult} from 'rollup'
+  TransformResult,
+} from 'rollup'
 import type {
   ConfigEnv,
   EnvironmentConfig,
