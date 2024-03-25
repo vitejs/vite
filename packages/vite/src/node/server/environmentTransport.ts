@@ -8,7 +8,7 @@ export class RemoteEnvironmentTransport {
     },
   ) {}
 
-  initialize(environment: DevEnvironment): void {
+  register(environment: DevEnvironment): void {
     this.options.onMessage(async (data) => {
       if (typeof data !== 'object' || !data || !data.__v) return
 

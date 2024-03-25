@@ -15,7 +15,7 @@ import type {
 } from './constants'
 import type { DecodedMap } from './sourcemap/decoder'
 import type { InterceptorOptions } from './sourcemap/interceptor'
-import type { RunnerTransport } from './transport'
+import type { RunnerTransport } from './runnerTransport'
 
 export type { DefineImportMetadata, SSRImportBaseMetadata as SSRImportMetadata }
 

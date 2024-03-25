@@ -62,7 +62,7 @@ export class DevEnvironment extends Environment {
 
     const ssrRunnerOptions = options?.runner || {}
     this._ssrRunnerOptions = ssrRunnerOptions
-    options?.runner?.transport?.initialize(this)
+    options?.runner?.transport?.register(this)
   }
 
   fetchModule(id: string, importer?: string): Promise<FetchResult> {

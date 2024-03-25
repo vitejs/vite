@@ -4,7 +4,6 @@ export interface RunnerTransport {
   fetchModule: FetchFunction
 }
 
-// TODO: tests
 export class RemoteRunnerTransport implements RunnerTransport {
   private rpcPromises = new Map<
     string,
@@ -23,7 +22,7 @@ export class RemoteRunnerTransport implements RunnerTransport {
     },
   ) {
     this.options.onMessage(async (data) => {
-      if (typeof data !== 'object' || !data || !data._v) return
+      if (typeof data !== 'object' || !data || !data.__v) return
 
       const promise = this.rpcPromises.get(data.i)
       if (!promise) return
@@ -43,7 +42,7 @@ export class RemoteRunnerTransport implements RunnerTransport {
   private resolve<T>(method: string, ...args: any[]) {
     const promiseId = nanoid()
     this.options.send({
-      _v: true,
+      __v: true,
       m: method,
       a: args,
       i: promiseId,

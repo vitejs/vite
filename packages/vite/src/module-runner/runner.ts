@@ -67,7 +67,7 @@ export class ModuleRunner {
 
   constructor(
     public options: ModuleRunnerOptions,
-    public runner: ModuleEvaluator,
+    public evaluator: ModuleEvaluator,
     private debug?: ModuleRunnerDebugger,
   ) {
     this.moduleCache = options.moduleCache ?? new ModuleCacheMap(options.root)
@@ -310,7 +310,7 @@ export class ModuleRunner {
     if ('externalize' in fetchResult) {
       const { externalize } = fetchResult
       this.debug?.('[module runner] externalizing', externalize)
-      const exports = await this.runner.runExternalModule(externalize)
+      const exports = await this.evaluator.runExternalModule(externalize)
       mod.exports = exports
       return exports
     }
@@ -384,7 +384,7 @@ export class ModuleRunner {
 
     this.debug?.('[module runner] executing', href)
 
-    await this.runner.runInlinedModule(context, code, id)
+    await this.evaluator.runInlinedModule(context, code, id)
 
     return exports
   }
