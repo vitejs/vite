@@ -1,8 +1,8 @@
 // @ts-check
 
-import { ModuleRunner, RemoteRunnerTransport, ESModulesEvaluator } from 'vite/module-runner'
-import { parentPort, BroadcastChannel } from 'node:worker_threads'
+import { BroadcastChannel, parentPort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
+import { ESModulesEvaluator, ModuleRunner, RemoteRunnerTransport } from 'vite/module-runner'
 
 if (!parentPort) {
   throw new Error('File "worker.js" must be run in a worker thread')
