@@ -120,9 +120,31 @@ class ModuleRunner {
 In the previous iteration, we had `executeUrl` and `executeEntryPoint` methods - they are now merged into a single `import` method. If you want to opt-out of the HMR support, create a runner with `hmr: false` flag.
 :::
 
-The default SSR Node module runner instance is accessible through `server.ssrModuleRunner`. It isn't part of its associated environment instance because, as we explained before, other environments' module runners could live in a different runtime (for example for the browser, a module runner in a worker thread as used in Vitest, or an edge runtime like workerd). The communication between `server.ssrModuleRunner` and `server.ssrEnvironment` is implemented through direct function calls. Given a Vite server configured in middleware mode as described by the [SSR setup guide](#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
+The default SSR Node module runner is not exposed. You can use `createNodeEnvironment` API with `createServerModuleRunner` together to create a runner that runs code in the same thread, supports HMR and doesn't conflict with the SSR implementation (in case it's been overriden in the config). Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
 
 ```js
+import {
+  createServer,
+  createServerModuleRunner,
+  createNodeEnvironment,
+} from 'vite'
+
+const server = await createServer({
+  server: { middlewareMode: true },
+  appType: 'custom',
+  environments: {
+    node: {
+      dev: {
+        // Default Vite SSR environment can be overriden in the config, so
+        // make sure you have a Node environment before the request is received.
+        createEnvironment: createNodeEnvironment,
+      },
+    },
+  },
+})
+
+const runner = createServerModuleRunner(server.environments.node)
+
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
@@ -137,7 +159,7 @@ app.use('*', async (req, res, next) => {
   // 3. Load the server entry. import(url) automatically transforms
   //    ESM source code to be usable in Node.js! There is no bundling
   //    required, and provides full HMR support.
-  const { render } = await server.ssrModuleRunner.import('/src/entry-server.js')
+  const { render } = await runner.import('/src/entry-server.js')
 
   // 4. render the app HTML. This assumes entry-server.js's exported
   //     `render` function calls appropriate framework SSR APIs,
