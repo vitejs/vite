@@ -15,6 +15,14 @@ import type { TransformResult } from './transformRequest'
 import { ERR_CLOSED_SERVER } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
 
+export interface DevEnvironmentOptions {
+  hot?: false | HMRChannel
+  config?: DevEnvironmentConfig
+  runner?: FetchModuleOptions & {
+    transport?: RemoteEnvironmentTransport
+  }
+}
+
 // Maybe we will rename this to DevEnvironment
 export class DevEnvironment extends Environment {
   mode = 'dev' as const // TODO: should this be 'serve'?

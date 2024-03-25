@@ -91,7 +91,7 @@ import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { warmupFiles } from './warmup'
 import { DevEnvironment } from './environment'
-import { createSsrEnvironment } from './environments/ssrEnvironment'
+import { createNodeEnvironment } from './environments/nodeEnvironment'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -775,7 +775,7 @@ export async function _createServer(
   const ssr_createEnvironment =
     config.environments.ssr?.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
-      createSsrEnvironment(server, name, ssrHotChannel))
+      createNodeEnvironment(server, name, { hot: ssrHotChannel }))
 
   environments.ssr = ssr_createEnvironment(server, 'ssr')
 

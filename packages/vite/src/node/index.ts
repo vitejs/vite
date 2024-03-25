@@ -15,8 +15,19 @@ export { optimizeDeps } from './optimizer'
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
-export { fetchModule } from './ssr/fetchModule'
-export type { FetchModuleOptions } from './ssr/fetchModule'
+
+export { RemoteEnvironmentTransport } from './server/environmentTransport'
+export { createNodeEnvironment } from './server/environments/nodeEnvironment'
+export {
+  DevEnvironment,
+  type DevEnvironmentOptions,
+} from './server/environment'
+export { BuildEnvironment } from './build'
+
+export { fetchModule, type FetchModuleOptions } from './ssr/fetchModule'
+export { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
+export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
+
 export * from './publicUtils'
 
 // additional types
@@ -118,7 +129,6 @@ export type {
   EnvironmentModuleNode,
   ResolvedUrl,
 } from './server/moduleGraph'
-export { RemoteEnvironmentTransport } from './server/environmentTransport'
 export type { SendOptions } from './server/send'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type {
@@ -135,9 +145,7 @@ export type {
 } from './server/hmr'
 
 export type { FetchFunction, FetchResult } from 'vite/module-runner'
-export { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
 export type { ServerModuleRunnerOptions } from './ssr/runtime/serverModuleRunner'
-export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
 
 export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
 
