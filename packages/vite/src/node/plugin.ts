@@ -2,13 +2,12 @@ import type {
   CustomPluginOptions,
   LoadResult,
   ObjectHook,
-  PluginContext,
   ResolveIdResult,
   Plugin as RollupPlugin,
-  TransformPluginContext,
-  TransformResult,
-} from 'rollup'
-export type { PluginContext } from 'rollup'
+  PluginContext as RollupPluginContext,
+
+  TransformPluginContext as RollupTransformPluginContext,
+  TransformResult} from 'rollup'
 import type {
   ConfigEnv,
   EnvironmentConfig,
@@ -44,7 +43,19 @@ import type { BuildEnvironment } from './build'
  *
  * If a plugin should be applied only for server or build, a function format
  * config file can be used to conditional determine the plugins to use.
+ *
+ * The current module environment can be accessed from the context for the
+ * buildStart, resolveId, transform, load, and buildEnd, hooks
  */
+
+export interface PluginContext extends RollupPluginContext {
+  environment?: DevEnvironment | BuildEnvironment
+}
+
+export interface TransformPluginContext extends RollupTransformPluginContext {
+  environment?: DevEnvironment | BuildEnvironment
+}
+
 export interface Plugin<A = any> extends RollupPlugin<A> {
   /**
    * Enforce plugin invocation tier similar to webpack loaders.
@@ -198,8 +209,10 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       options: {
         attributes: Record<string, string>
         custom?: CustomPluginOptions
+        /**
+         * @deprecated use this.environment
+         */
         ssr?: boolean
-        environment?: DevEnvironment | BuildEnvironment
         /**
          * @internal
          */
@@ -213,8 +226,10 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: PluginContext,
       id: string,
       options?: {
+        /**
+         * @deprecated use this.environment
+         */
         ssr?: boolean
-        environment?: DevEnvironment | BuildEnvironment
       },
     ) => Promise<LoadResult> | LoadResult
   >
@@ -224,8 +239,10 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       code: string,
       id: string,
       options?: {
+        /**
+         * @deprecated use this.environment
+         */
         ssr?: boolean
-        environment?: DevEnvironment | BuildEnvironment
       },
     ) => Promise<TransformResult> | TransformResult
   >

@@ -14,6 +14,7 @@ import type {
   RollupLog,
   RollupOptions,
   RollupOutput,
+  PluginContext as RollupPluginContext,
   RollupWatcher,
   WatcherOptions,
 } from 'rollup'
@@ -1040,10 +1041,10 @@ function wrapEnvironmentResolveId(
   const fn = getHookHandler(hook)
   const handler: Plugin['resolveId'] = function (id, importer, options) {
     return fn.call(
-      this,
+      injectEnvironmentInContext(this),
       id,
       importer,
-      injectEnvironmentFlag(options, environment),
+      injectSsrFlag(options, environment),
     )
   }
 
@@ -1065,8 +1066,12 @@ function wrapEnvironmentLoad(
 
   const fn = getHookHandler(hook)
   const handler: Plugin['load'] = function (id, ...args) {
-    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
-    return fn.call(this, id, injectEnvironmentFlag(args[0], environment))
+    return fn.call(
+      injectEnvironmentInContext(this, environment),
+      id,
+      // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
+      injectSsrFlag(args[0], environment),
+    )
   }
 
   if ('handler' in hook) {
@@ -1088,11 +1093,11 @@ function wrapEnvironmentTransform(
   const fn = getHookHandler(hook)
   const handler: Plugin['transform'] = function (code, importer, ...args) {
     return fn.call(
-      this,
+      injectEnvironmentInContext(this, environment),
       code,
       importer,
       // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
-      injectEnvironmentFlag(args[0], environment),
+      injectSsrFlag(args[0], environment),
     )
   }
 
@@ -1106,14 +1111,27 @@ function wrapEnvironmentTransform(
   }
 }
 
-function injectEnvironmentFlag<T extends Record<string, any>>(
+function injectEnvironmentInContext(
+  context: RollupPluginContext,
+  environment?: BuildEnvironment,
+) {
+  return new Proxy(context, {
+    get(target, prop, receiver) {
+      if (prop === 'environment') {
+        return environment
+      }
+      return Reflect.get(target, prop, receiver)
+    },
+  })
+}
+
+function injectSsrFlag<T extends Record<string, any>>(
   options?: T,
   environment?: BuildEnvironment,
-): T & { ssr?: boolean; environment?: BuildEnvironment } {
+): T & { ssr?: boolean } {
   const ssr = environment ? environment.name !== 'client' : true
-  return { ...(options ?? {}), ssr, environment } as T & {
+  return { ...(options ?? {}), ssr } as T & {
     ssr?: boolean
-    environment?: BuildEnvironment
   }
 }
 
