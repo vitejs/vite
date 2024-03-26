@@ -18,6 +18,9 @@ export default defineConfig({
           if (name.endsWith('after-preload-dynamic-hashbang.js')) {
             return 'after-preload-dynamic-hashbang'
           }
+          if (name.endsWith('after-preload-dynamic-no-dep.js')) {
+            return 'after-preload-dynamic-no-dep'
+          }
         },
         banner(chunk) {
           if (chunk.name.endsWith('after-preload-dynamic-hashbang')) {
