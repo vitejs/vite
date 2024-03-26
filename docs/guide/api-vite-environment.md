@@ -433,12 +433,18 @@ In this case we see how a Workerd environment can be set for both the default SS
 
 ### Accessing the current environment in hooks
 
-The Vite server has a shared plugin pipeline, but when a module is processed it is always done in the context of a given environment. The `environment` instance is passed as a parameter to the `options` of `resolveId`, `load`, and `transform`.
+The Vite server has a shared plugin pipeline, but when a module is processed it is always done in the context of a given environment. The `environment` instance is available in the plugin context of `resolveId`, `load`, and `transform`.
 
 A plugin could use the `environment` instance to:
 
 - Only apply logic for certain environments.
 - Change the way they work depending on the configuration for the environment, which can be accessed using `environment.config`. The vite core resolve plugin modifies the way it resolves ids based on `environment.config.resolve.conditions` for example.
+
+```ts
+  transform(code, id) {
+    console.log(this.enviroment.config.resolve.conditions)
+  }
+```
 
 ### Registering new environments using hooks
 
@@ -474,14 +480,13 @@ The `hotUpdate` hook allows plugins to perform custom HMR update handling for a 
 interface HotContext {
   file: string
   timestamp: number
-  environment: string
   modules: Array<ModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
 }
 ```
 
-- `environment` is the module execution environment where a file update is currently being processed.
+- `this.environment` is the module execution environment where a file update is currently being processed.
 
 - `modules` is an array of modules in this environment that are affected by the changed file. It's an array because a single file may map to multiple served modules (e.g. Vue SFCs).
 
@@ -494,17 +499,15 @@ The hook can choose to:
 - Return an empty array and perform a full reload:
 
   ```js
-  hotUpdate({ environment, modules, timestamp }) {
-    if (environment !== 'browser')
+  hotUpdate({ modules, timestamp }) {
+    if (this.environment.name !== 'client')
       return
 
-    const serverEnvironment = server.environment(environment)
-
-    serverEnvironment.hot.send({ type: 'full-reload' })
+    this.environment.hot.send({ type: 'full-reload' })
     // Invalidate modules manually
     const invalidatedModules = new Set()
     for (const mod of modules) {
-      serverEnvironment.moduleGraph.invalidateModule(
+      this.environment.moduleGraph.invalidateModule(
         mod,
         invalidatedModules,
         timestamp,
@@ -518,11 +521,11 @@ The hook can choose to:
 - Return an empty array and perform complete custom HMR handling by sending custom events to the client:
 
   ```js
-  hotUpdate({ environment }) {
-    if (environment !== 'browser')
+  hotUpdate() {
+    if (this.environment.name !== 'client')
       return
 
-    server.environment(environment).hot.send({
+    this.environment.hot.send({
       type: 'custom',
       event: 'special-update',
       data: {}
