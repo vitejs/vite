@@ -44,7 +44,7 @@ export async function injectSourcesContent(
   for (let index = 0; index < map.sources.length; index++) {
     const sourcePath = map.sources[index]
     if (
-      !sourcesContent[index] &&
+      sourcesContent[index] == null &&
       sourcePath &&
       !virtualSourceRE.test(sourcePath)
     ) {
