@@ -731,7 +731,6 @@ export async function createPluginContainer(
             custom: options?.custom,
             isEntry: !!options?.isEntry,
             ssr,
-            environment,
             scan,
           }),
         )
@@ -786,7 +785,7 @@ export async function createPluginContainer(
         ctx._activePlugin = plugin
         const handler = getHookHandler(plugin.load)
         const result = await handleHookPromise(
-          handler.call(ctx as any, id, { ssr, environment }),
+          handler.call(ctx as any, id, { ssr }),
         )
         if (result != null) {
           if (isObject(result)) {
@@ -822,7 +821,7 @@ export async function createPluginContainer(
         const handler = getHookHandler(plugin.transform)
         try {
           result = await handleHookPromise(
-            handler.call(ctx as any, code, id, { ssr, environment }),
+            handler.call(ctx as any, code, id, { ssr }),
           )
         } catch (e) {
           ctx.error(e)

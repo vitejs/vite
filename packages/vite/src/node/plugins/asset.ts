@@ -200,7 +200,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       // Inherit HMR timestamp if this asset was invalidated
       if (server) {
-        const environment = options?.environment as DevEnvironment | undefined
+        const environment = this.environment as DevEnvironment | undefined
         const mod = environment?.moduleGraph.getModuleById(id)
         if (mod && mod.lastHMRTimestamp > 0) {
           url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)

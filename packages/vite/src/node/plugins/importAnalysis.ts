@@ -215,7 +215,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // running src/node/server/__tests__/pluginContainer.spec.ts
 
       const ssr = options?.ssr === true
-      const environment = (options?.environment as DevEnvironment) || undefined
+      const environment = this.environment as DevEnvironment | undefined
 
       if (!server || !environment) {
         return null

@@ -941,7 +941,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const environment = options?.environment
+      const environment = this.environment
       const moduleGraph =
         environment?.mode === 'dev' ? environment.moduleGraph : undefined
       const thisModule = moduleGraph?.getModuleById(id)
