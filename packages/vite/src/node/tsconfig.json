@@ -6,6 +6,7 @@
     "lib": ["ESNext", "DOM"],
     "stripInternal": true,
     "paths": {
+      "vite": ["./index.ts"],
       "vite/runtime": ["../runtime"]
     }
   }
