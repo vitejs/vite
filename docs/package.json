@@ -10,7 +10,7 @@
   "devDependencies": {
     "@shikijs/vitepress-twoslash": "^1.2.0",
     "@types/express": "^4.17.21",
-    "vitepress": "1.0.0-rc.45",
+    "vitepress": "1.0.1",
     "vue": "^3.4.21"
   }
 }
