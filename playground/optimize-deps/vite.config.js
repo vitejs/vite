@@ -54,9 +54,6 @@ export default defineConfig({
         warn(msg)
       },
     },
-    commonjsOptions: {
-      include: ['./dep-cjs-external-package-omit-js-suffix'],
-    },
   },
 
   plugins: [
