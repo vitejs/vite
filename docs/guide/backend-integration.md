@@ -108,7 +108,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    <script type="module" src="/{{ manifest[name].file }}"></script>
 
    <!-- for chunk of importedChunks(manifest, name) -->
-   <link rel="modulepreload" src="/{{ chunk.file }}" />
+   <link rel="modulepreload" href="/{{ chunk.file }}" />
    ```
 
    Specifically, a backend generating HTML should include the following tags given a manifest
@@ -129,7 +129,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    <link rel="stylesheet" href="assets/shared.a834bfc3.css" />
    <script type="module" src="assets/main.4889e940.js"></script>
    <!-- optional -->
-   <link rel="modulepreload" src="assets/shared.83069a53.js" />
+   <link rel="modulepreload" href="assets/shared.83069a53.js" />
    ```
 
    While the following should be included for the entry point `views/foo.js`:
@@ -138,5 +138,5 @@ If you need a custom integration, you can follow the steps in this guide to conf
    <link rel="stylesheet" href="assets/shared.a834bfc3.css" />
    <script type="module" src="assets/foo.869aea0d.js"></script>
    <!-- optional -->
-   <link rel="modulepreload" src="assets/shared.83069a53.js" />
+   <link rel="modulepreload" href="assets/shared.83069a53.js" />
    ```
