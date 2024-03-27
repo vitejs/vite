@@ -1,5 +1,8 @@
 import path from 'node:path'
+import colors from 'picocolors'
 import type { Connect } from 'dep-types/connect'
+
+import type { ResolvedConfig } from '../../config'
 import { createDebugger } from '../../utils'
 import type { FsUtils } from '../../fsUtils'
 import { commonFsUtils } from '../../fsUtils'
@@ -9,9 +12,10 @@ const debug = createDebugger('vite:html-fallback')
 
 export function htmlFallbackMiddleware(
   root: string,
-  spaFallback: boolean,
+  config: ResolvedConfig,
   fsUtils: FsUtils = commonFsUtils,
 ): Connect.NextHandleFunction {
+  const spaFallback = config.appType === 'spa'
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteHtmlFallbackMiddleware(req, res, next) {
     if (
@@ -65,7 +69,9 @@ export function htmlFallbackMiddleware(
     }
 
     if (spaFallback) {
-      debug?.(`Rewriting ${req.method} ${req.url} to /index.html`)
+      const info = `Rewriting ${req.method} ${req.url} to /index.html`
+      debug?.(info)
+      config.logger.warn(colors.yellow(info))
       req.url = '/index.html'
     }
 
