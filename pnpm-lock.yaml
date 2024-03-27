@@ -388,8 +388,8 @@ importers:
         specifier: ^16.1.0
         version: 16.1.0(postcss@8.4.38)
       postcss-load-config:
-        specifier: ^4.0.2
-        version: 4.0.2(postcss@8.4.38)(ts-node@10.9.2)
+        specifier: ^5.0.3
+        version: 5.0.3(postcss@8.4.38)
       postcss-modules:
         specifier: ^6.0.0
         version: 6.0.0(postcss@8.4.38)
@@ -8567,6 +8567,23 @@ packages:
       postcss: 8.4.38
       ts-node: 10.9.2(@types/node@20.11.30)(typescript@5.2.2)
       yaml: 2.3.4
+
+  /postcss-load-config@5.0.3(postcss@8.4.38):
+    resolution: {integrity: sha512-90pBBI5apUVruIEdCxZic93Wm+i9fTrp7TXbgdUCH+/L+2WnfpITSpq5dFU/IPvbv7aNiMlQISpUkAm3fEcvgQ==}
+    engines: {node: '>= 18'}
+    peerDependencies:
+      jiti: '>=1.21.0'
+      postcss: '>=8.0.9'
+    peerDependenciesMeta:
+      jiti:
+        optional: true
+      postcss:
+        optional: true
+    dependencies:
+      lilconfig: 3.0.0
+      postcss: 8.4.38
+      yaml: 2.3.4
+    dev: true
 
   /postcss-modules-extract-imports@3.0.0(postcss@8.4.38):
     resolution: {integrity: sha512-bdHleFnP3kZ4NYDhuGlVK+CMrQ/pqUm8bx/oGL93K6gVwiclvX5x0n76fYMKuIGKzlABOy13zsvqjb0f92TEXw==}
