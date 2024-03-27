@@ -1189,8 +1189,12 @@ export function injectNonceAttributeTagHook(
               parseRelAttr(attr.value).some((a) => processRelType.has(a)),
           ))
       ) {
+        // if there is no endTag, the end of the startTag will be `/>`
+        // therefore, the appendOffset should be 2 in this case, instead of 1
+        const appendOffset = node?.sourceCodeLocation?.endTag ? 1 : 2
+
         s.appendRight(
-          node.sourceCodeLocation!.startTag!.endOffset - 1,
+          node.sourceCodeLocation!.startTag!.endOffset - appendOffset,
           ` nonce="${nonce}"`,
         )
       }
