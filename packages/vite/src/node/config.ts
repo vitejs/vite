@@ -171,14 +171,16 @@ export interface DevOptions {
   /**
    * create the Dev Environment instance
    */
-  createEnvironment?: (server: ViteDevServer) => DevEnvironment
+  createEnvironment?: (server: ViteDevServer, name: string) => DevEnvironment
 }
 
 export type ResolvedDevOptions = Required<
   Omit<DevOptions, 'createEnvironment'>
 > & {
   // TODO: Should we set the default at config time? For now, it is defined on server init
-  createEnvironment: ((server: ViteDevServer) => DevEnvironment) | undefined
+  createEnvironment:
+    | ((server: ViteDevServer, name: string) => DevEnvironment)
+    | undefined
 }
 
 type EnvironmentResolveOptions = ResolveOptions & {
