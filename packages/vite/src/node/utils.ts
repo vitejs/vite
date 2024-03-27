@@ -433,7 +433,7 @@ export function isFilePathESM(
   }
 }
 
-const splitRE = /\r?\n/
+export const splitRE = /\r?\n/g
 
 const range: number = 2
 
