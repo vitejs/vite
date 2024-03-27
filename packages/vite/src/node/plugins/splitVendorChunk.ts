@@ -26,6 +26,9 @@ export const isCSSRequest = (request: string): boolean =>
 // The cache needs to be reset on buildStart for watch mode to work correctly
 // Don't use this manualChunks strategy for ssr, lib mode, and 'umd' or 'iife'
 
+/**
+ * @deprecated use build.rollupOutput.manualChunks or framework specific configuration
+ */
 export class SplitVendorChunkCache {
   cache: Map<string, boolean>
   constructor() {
@@ -36,6 +39,9 @@ export class SplitVendorChunkCache {
   }
 }
 
+/**
+ * @deprecated use build.rollupOutput.manualChunks or framework specific configuration
+ */
 export function splitVendorChunk(
   options: { cache?: SplitVendorChunkCache } = {},
 ): GetManualChunk {
@@ -87,6 +93,9 @@ function staticImportedByEntry(
   return someImporterIs
 }
 
+/**
+ * @deprecated use build.rollupOutput.manualChunks or framework specific configuration
+ */
 export function splitVendorChunkPlugin(): Plugin {
   const caches: SplitVendorChunkCache[] = []
   function createSplitVendorChunk(output: OutputOptions, config: UserConfig) {
