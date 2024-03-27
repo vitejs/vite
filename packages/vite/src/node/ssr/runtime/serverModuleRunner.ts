@@ -1,14 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
-import {
-  ESModulesEvaluator,
-  ModuleRunner
-} from 'vite/module-runner'
+import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type {
   ModuleEvaluator,
   ModuleRunnerHMRConnection,
   ModuleRunnerHmr,
-
-  ModuleRunnerOptions} from 'vite/module-runner'
+  ModuleRunnerOptions,
+} from 'vite/module-runner'
 import type { ViteDevServer } from '../../server'
 import type { DevEnvironment } from '../../server/environment'
 import { ServerHMRConnector } from './serverHmrConnector'
