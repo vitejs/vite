@@ -745,10 +745,19 @@ export async function _createServer(
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
     _safeModulesPath: new Set(),
-    _fsDenyGlob: picomatch(config.server.fs.deny, {
-      matchBase: true,
-      nocase: true,
-    }),
+    _fsDenyGlob: picomatch(
+      // matchBase: true does not work as it's documented
+      // https://github.com/micromatch/picomatch/issues/89
+      // convert patterns without `/` on our side for now
+      config.server.fs.deny.map((pattern) =>
+        pattern.includes('/') ? pattern : `**/${pattern}`,
+      ),
+      {
+        matchBase: false,
+        nocase: true,
+        dot: true,
+      },
+    ),
     _shortcutsOptions: undefined,
   }
 
@@ -1212,7 +1221,7 @@ async function restartServer(server: ViteDevServer) {
   // server instance and set the user instance to be used in the new server.
   // This allows us to keep the same server instance for the user.
   {
-    let newServer = null
+    let newServer: ViteDevServer | null = null
     try {
       // delay ws server listen
       newServer = await _createServer(inlineConfig, { hotListen: false })
