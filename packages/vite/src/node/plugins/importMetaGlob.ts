@@ -44,38 +44,18 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
   query?: string
 }
 
-export function getAffectedGlobModules(
-  file: string,
-  server: ViteDevServer,
-): ModuleNode[] {
-  const modules: ModuleNode[] = []
-  for (const [id, allGlobs] of server._importGlobMap!) {
-    // (glob1 || glob2) && !glob3 && !glob4...
-    if (
-      allGlobs.some(
-        ({ affirmed, negated }) =>
-          (!affirmed.length || affirmed.some((glob) => isMatch(file, glob))) &&
-          (!negated.length || negated.every((glob) => isMatch(file, glob))),
-      )
-    ) {
-      const mod = server.moduleGraph.getModuleById(id)
-      if (mod) modules.push(mod)
-    }
-  }
-  modules.forEach((i) => {
-    if (i?.file) server.moduleGraph.onFileChange(i.file)
-  })
-  return modules
-}
-
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
   let server: ViteDevServer | undefined
+  const importGlobMap = new Map<
+    string,
+    { affirmed: string[]; negated: string[] }[]
+  >()
 
   return {
     name: 'vite:import-glob',
     configureServer(_server) {
       server = _server
-      server._importGlobMap.clear()
+      importGlobMap.clear()
     },
     async transform(code, id) {
       if (!code.includes('import.meta.glob')) return
@@ -91,7 +71,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       if (result) {
         if (server) {
           const allGlobs = result.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(
+          importGlobMap.set(
             id,
             allGlobs.map((globs) => {
               const affirmed: string[] = []
@@ -107,6 +87,31 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         return transformStableResult(result.s, id, config)
       }
     },
+    handleHotUpdate({ type, file, modules: oldModules }) {
+      if (type === 'update') return
+
+      const modules: ModuleNode[] = []
+      for (const [id, allGlobs] of importGlobMap) {
+        // (glob1 || glob2) && !glob3 && !glob4...
+        if (
+          allGlobs.some(
+            ({ affirmed, negated }) =>
+              (!affirmed.length ||
+                affirmed.some((glob) => isMatch(file, glob))) &&
+              (!negated.length || negated.every((glob) => isMatch(file, glob))),
+          )
+        ) {
+          const mod = server!.moduleGraph.getModuleById(id)
+          if (mod) modules.push(mod)
+        }
+      }
+      modules.forEach((i) => {
+        if (i?.file) server!.moduleGraph.onFileChange(i.file)
+      })
+
+      return modules.length > 0 ? [...oldModules, ...modules] : undefined
+    },
+    _runHandleHotUpdateOnCreateAndDelete: true,
   }
 }
 

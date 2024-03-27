@@ -125,9 +125,12 @@ export function createPluginHookUtils(
   }
   function getSortedPluginHooks<K extends keyof Plugin>(
     hookName: K,
+    optInFlag?: keyof Plugin,
   ): NonNullable<HookHandler<Plugin[K]>>[] {
     const plugins = getSortedPlugins(hookName)
-    return plugins.map((p) => getHookHandler(p[hookName])).filter(Boolean)
+    return plugins
+      .map((p) => (!optInFlag || p[optInFlag]) && getHookHandler(p[hookName]))
+      .filter(Boolean)
   }
 
   return {
