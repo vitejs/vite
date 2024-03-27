@@ -118,6 +118,17 @@ export type FetchFunction = (
   importer?: string,
 ) => Promise<FetchResult>
 
+export interface ModuleRunnerHmr {
+  /**
+   * Configure how HMR communicates between the client and the server.
+   */
+  connection: ModuleRunnerHMRConnection
+  /**
+   * Configure HMR logger.
+   */
+  logger?: false | HMRLogger
+}
+
 export interface ModuleRunnerOptions {
   /**
    * Root of the project
@@ -140,18 +151,7 @@ export interface ModuleRunnerOptions {
   /**
    * Disable HMR or configure HMR options.
    */
-  hmr?:
-    | false
-    | {
-        /**
-         * Configure how HMR communicates between the client and the server.
-         */
-        connection: ModuleRunnerHMRConnection
-        /**
-         * Configure HMR logger.
-         */
-        logger?: false | HMRLogger
-      }
+  hmr?: false | ModuleRunnerHmr
   /**
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */

@@ -18,6 +18,7 @@ export type {
   ModuleRunnerHMRConnection,
   ModuleRunnerImportMeta,
   ModuleRunnerOptions,
+  ModuleRunnerHmr,
 } from './types'
 export {
   ssrDynamicImportKey,

@@ -1,6 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
-import type { ModuleEvaluator, ModuleRunnerOptions } from 'vite/module-runner'
+import {
+  ESModulesEvaluator,
+  ModuleRunner
+} from 'vite/module-runner'
+import type {
+  ModuleEvaluator,
+  ModuleRunnerHMRConnection,
+  ModuleRunnerHmr,
+
+  ModuleRunnerOptions} from 'vite/module-runner'
 import type { ViteDevServer } from '../../server'
 import type { DevEnvironment } from '../../server/environment'
 import { ServerHMRConnector } from './serverHmrConnector'
@@ -19,10 +27,8 @@ export interface ServerModuleRunnerOptions
   hmr?:
     | false
     | {
-        logger?: Exclude<
-          ModuleRunnerOptions['hmr'],
-          false | undefined
-        >['logger']
+        connection?: ModuleRunnerHMRConnection
+        logger?: ModuleRunnerHmr['logger']
       }
   /**
    * Provide a custom module runner. This controls how the code is executed.
@@ -36,6 +42,12 @@ function createHMROptions(
 ) {
   if (server.config.server.hmr === false || options.hmr === false) {
     return false
+  }
+  if (options.hmr?.connection) {
+    return {
+      connection: options.hmr.connection,
+      logger: options.hmr.logger,
+    }
   }
   const connection = new ServerHMRConnector(server)
   return {
