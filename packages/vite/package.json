@@ -32,9 +32,9 @@
     "./client": {
       "types": "./client.d.ts"
     },
-    "./runtime": {
-      "types": "./dist/node/runtime.d.ts",
-      "import": "./dist/node/runtime.js"
+    "./module-runner": {
+      "types": "./dist/node/module-runner.d.ts",
+      "import": "./dist/node/module-runner.js"
     },
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
@@ -44,8 +44,8 @@
   },
   "typesVersions": {
     "*": {
-      "runtime": [
-        "dist/node/runtime.d.ts"
+      "module-runner": [
+        "dist/node/module-runner.d.ts"
       ]
     }
   },

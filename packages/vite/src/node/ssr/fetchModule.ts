@@ -1,15 +1,16 @@
 import { pathToFileURL } from 'node:url'
-import type { ModuleNode, TransformResult, ViteDevServer } from '..'
+import type { FetchResult } from 'vite/module-runner'
+import type { EnvironmentModuleNode, TransformResult } from '..'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import type { FetchResult } from '../../runtime/types'
 import { unwrapId } from '../../shared/utils'
 import {
+  MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
-  VITE_RUNTIME_SOURCEMAPPING_SOURCE,
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
+import type { DevEnvironment } from '../server/environment'
 
 export interface FetchModuleOptions {
   inlineSourceMap?: boolean
@@ -17,11 +18,11 @@ export interface FetchModuleOptions {
 }
 
 /**
- * Fetch module information for Vite runtime.
+ * Fetch module information for Vite runner.
  * @experimental
  */
 export async function fetchModule(
-  server: ViteDevServer,
+  environment: DevEnvironment,
   url: string,
   importer?: string,
   options: FetchModuleOptions = {},
@@ -41,7 +42,7 @@ export async function fetchModule(
       resolve: { dedupe, preserveSymlinks },
       root,
       ssr,
-    } = server.config
+    } = environment.server.config
     const overrideConditions = ssr.resolve?.externalConditions || []
 
     const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
@@ -55,7 +56,7 @@ export async function fetchModule(
       isProduction,
       root,
       ssrConfig: ssr,
-      packageCache: server.config.packageCache,
+      packageCache: environment.server.config.packageCache,
     }
 
     const resolved = tryNodeResolve(
@@ -74,7 +75,10 @@ export async function fetchModule(
       throw err
     }
     const file = pathToFileURL(resolved.id).toString()
-    const type = isFilePathESM(resolved.id, server.config.packageCache)
+    const type = isFilePathESM(
+      resolved.id,
+      environment.server.config.packageCache,
+    )
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }
@@ -82,7 +86,7 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
-  let result = await server.transformRequest(url, { ssr: true })
+  let result = await environment.transformRequest(url)
 
   if (!result) {
     throw new Error(
@@ -93,7 +97,7 @@ export async function fetchModule(
   }
 
   // module entry should be created by transformRequest
-  const mod = await server.moduleGraph.getModuleByUrl(url, true)
+  const mod = await environment.moduleGraph.getModuleByUrl(url)
 
   if (!mod) {
     throw new Error(
@@ -120,7 +124,7 @@ const OTHER_SOURCE_MAP_REGEXP = new RegExp(
 )
 
 function inlineSourceMap(
-  mod: ModuleNode,
+  mod: EnvironmentModuleNode,
   result: TransformResult,
   processSourceMap?: FetchModuleOptions['processSourceMap'],
 ) {
@@ -130,7 +134,7 @@ function inlineSourceMap(
   if (
     !map ||
     !('version' in map) ||
-    code.includes(VITE_RUNTIME_SOURCEMAPPING_SOURCE)
+    code.includes(MODULE_RUNNER_SOURCEMAPPING_SOURCE)
   )
     return result
 
@@ -142,7 +146,7 @@ function inlineSourceMap(
   const sourceMap = processSourceMap?.(map) || map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
     mod.id
-  }\n${VITE_RUNTIME_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
+  }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
 }

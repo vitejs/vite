@@ -2,19 +2,26 @@ import type {
   CustomPluginOptions,
   LoadResult,
   ObjectHook,
-  PluginContext,
   ResolveIdResult,
   Plugin as RollupPlugin,
-  TransformPluginContext,
+  PluginContext as RollupPluginContext,
+  TransformPluginContext as RollupTransformPluginContext,
   TransformResult,
 } from 'rollup'
-export type { PluginContext } from 'rollup'
-import type { ConfigEnv, ResolvedConfig, UserConfig } from './config'
-import type { ServerHook } from './server'
+import type {
+  ConfigEnv,
+  EnvironmentConfig,
+  ResolvedConfig,
+  UserConfig,
+} from './config'
+import type { ServerHook, ViteDevServer } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
-import type { ModuleNode } from './server/moduleGraph'
-import type { HmrContext } from './server/hmr'
+import type { EnvironmentModuleNode } from './server/moduleGraph'
+import type { ModuleNode } from './server/mixedModuleGraph'
+import type { HmrContext, HotUpdateContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
+import type { DevEnvironment } from './server/environment'
+import type { BuildEnvironment } from './build'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -36,7 +43,19 @@ import type { PreviewServerHook } from './preview'
  *
  * If a plugin should be applied only for server or build, a function format
  * config file can be used to conditional determine the plugins to use.
+ *
+ * The current module environment can be accessed from the context for the
+ * buildStart, resolveId, transform, load, and buildEnd, hooks
  */
+
+export interface PluginContext extends RollupPluginContext {
+  environment?: DevEnvironment | BuildEnvironment
+}
+
+export interface TransformPluginContext extends RollupTransformPluginContext {
+  environment?: DevEnvironment | BuildEnvironment
+}
+
 export interface Plugin<A = any> extends RollupPlugin<A> {
   /**
    * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
@@ -77,6 +96,28 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       | null
       | void
       | Promise<Omit<UserConfig, 'plugins'> | null | void>
+  >
+  /**
+   * Modify environment configs before it's resolved. The hook can either mutate the
+   * passed-in environment config directly, or return a partial config object that will be
+   * deeply merged into existing config.
+   * This hook is called for each environment with a partially resolved environment config
+   * that already accounts for the default environment config values set at the root level.
+   * If plugins need to modify the config of a given environment, they should do it in this
+   * hook instead of the config hook. Leaving the config hook only for modifying the root
+   * default environment config.
+   */
+  configEnvironment?: ObjectHook<
+    (
+      this: void,
+      name: string,
+      config: EnvironmentConfig,
+      env: ConfigEnv,
+    ) =>
+      | EnvironmentConfig
+      | null
+      | void
+      | Promise<EnvironmentConfig | null | void>
   >
   /**
    * Use this hook to read and store the final resolved vite config.
@@ -120,6 +161,19 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * `{ order: 'pre', handler: hook }`
    */
   transformIndexHtml?: IndexHtmlTransform
+
+  /**
+   * @deprecated
+   * Compat support, ctx.modules is a backward compatible ModuleNode array
+   * with the mixed client and ssr moduleGraph. Use hotUpdate instead
+   */
+  handleHotUpdate?: ObjectHook<
+    (
+      this: void,
+      ctx: HmrContext,
+    ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+  >
+
   /**
    * Perform custom handling of HMR updates.
    * The handler receives a context containing changed filename, timestamp, a
@@ -135,11 +189,14 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * - If the hook doesn't return a value, the hmr update will be performed as
    *   normal.
    */
-  handleHotUpdate?: ObjectHook<
+  hotUpdate?: ObjectHook<
     (
       this: void,
-      ctx: HmrContext,
-    ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
+      ctx: HotUpdateContext,
+    ) =>
+      | Array<EnvironmentModuleNode>
+      | void
+      | Promise<Array<EnvironmentModuleNode> | void>
   >
 
   /**
@@ -153,6 +210,9 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       options: {
         attributes: Record<string, string>
         custom?: CustomPluginOptions
+        /**
+         * @deprecated use this.environment
+         */
         ssr?: boolean
         /**
          * @internal
@@ -166,7 +226,12 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
     (
       this: PluginContext,
       id: string,
-      options?: { ssr?: boolean },
+      options?: {
+        /**
+         * @deprecated use this.environment
+         */
+        ssr?: boolean
+      },
     ) => Promise<LoadResult> | LoadResult
   >
   transform?: ObjectHook<
@@ -174,7 +239,12 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: TransformPluginContext,
       code: string,
       id: string,
-      options?: { ssr?: boolean },
+      options?: {
+        /**
+         * @deprecated use this.environment
+         */
+        ssr?: boolean
+      },
     ) => Promise<TransformResult> | TransformResult
   >
 }

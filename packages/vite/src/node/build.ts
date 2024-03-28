@@ -14,6 +14,7 @@ import type {
   RollupLog,
   RollupOptions,
   RollupOutput,
+  PluginContext as RollupPluginContext,
   RollupWatcher,
   WatcherOptions,
 } from 'rollup'
@@ -27,7 +28,11 @@ import {
   ESBUILD_MODULES_TARGET,
   VERSION,
 } from './constants'
-import type { InlineConfig, ResolvedConfig } from './config'
+import type {
+  BuildEnvironmentConfig,
+  InlineConfig,
+  ResolvedConfig,
+} from './config'
 import { resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -56,6 +61,7 @@ import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
+import { Environment } from './environment'
 
 export interface BuildOptions {
   /**
@@ -243,6 +249,10 @@ export interface BuildOptions {
    * @default null
    */
   watch?: WatcherOptions | null
+  /**
+   * create the Build Environment instance
+   */
+  createEnvironment?: (builder: ViteBuilder, name: string) => BuildEnvironment
 }
 
 export interface LibraryOptions {
@@ -463,14 +473,23 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const config = await resolveConfig(
-    inlineConfig,
-    'build',
-    'production',
-    'production',
-  )
+  const config = await resolveConfigToBuild(inlineConfig)
+
+  // TODO: create a BuildEnvironment here?
+
+  return buildEnvironment(config)
+}
+
+function resolveConfigToBuild(inlineConfig: InlineConfig = {}) {
+  return resolveConfig(inlineConfig, 'build', 'production', 'production')
+}
+
+export async function buildEnvironment(
+  config: ResolvedConfig,
+  environment?: BuildEnvironment,
+): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const options = config.build
-  const ssr = !!options.ssr
+  const ssr = (environment && environment?.name !== 'client') ?? !!options.ssr
   const libOptions = options.lib
 
   config.logger.info(
@@ -522,7 +541,9 @@ export async function build(
 
   // inject ssr arg to plugin load/transform hooks
   const plugins = (
-    ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
+    environment || ssr
+      ? config.plugins.map((p) => injectEnvironmentToHooks(p))
+      : config.plugins
   ) as Plugin[]
 
   const rollupOptions: RollupOptions = {
@@ -658,7 +679,8 @@ export async function build(
     const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
 
     // watch file changes with rollup
-    if (config.build.watch) {
+    // TODO: ignore if a environment is provided for now
+    if (!environment && config.build.watch) {
       config.logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
@@ -997,22 +1019,33 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-function injectSsrFlagToHooks(plugin: Plugin): Plugin {
+function injectEnvironmentToHooks(
+  plugin: Plugin,
+  environment?: BuildEnvironment,
+): Plugin {
   const { resolveId, load, transform } = plugin
   return {
     ...plugin,
-    resolveId: wrapSsrResolveId(resolveId),
-    load: wrapSsrLoad(load),
-    transform: wrapSsrTransform(transform),
+    resolveId: wrapEnvironmentResolveId(resolveId, environment),
+    load: wrapEnvironmentLoad(load, environment),
+    transform: wrapEnvironmentTransform(transform, environment),
   }
 }
 
-function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
+function wrapEnvironmentResolveId(
+  hook?: Plugin['resolveId'],
+  environment?: BuildEnvironment,
+): Plugin['resolveId'] {
   if (!hook) return
 
   const fn = getHookHandler(hook)
   const handler: Plugin['resolveId'] = function (id, importer, options) {
-    return fn.call(this, id, importer, injectSsrFlag(options))
+    return fn.call(
+      injectEnvironmentInContext(this),
+      id,
+      importer,
+      injectSsrFlag(options, environment),
+    )
   }
 
   if ('handler' in hook) {
@@ -1025,13 +1058,20 @@ function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
   }
 }
 
-function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
+function wrapEnvironmentLoad(
+  hook?: Plugin['load'],
+  environment?: BuildEnvironment,
+): Plugin['load'] {
   if (!hook) return
 
   const fn = getHookHandler(hook)
   const handler: Plugin['load'] = function (id, ...args) {
-    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
-    return fn.call(this, id, injectSsrFlag(args[0]))
+    return fn.call(
+      injectEnvironmentInContext(this, environment),
+      id,
+      // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
+      injectSsrFlag(args[0], environment),
+    )
   }
 
   if ('handler' in hook) {
@@ -1044,13 +1084,21 @@ function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
   }
 }
 
-function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
+function wrapEnvironmentTransform(
+  hook?: Plugin['transform'],
+  environment?: BuildEnvironment,
+): Plugin['transform'] {
   if (!hook) return
 
   const fn = getHookHandler(hook)
   const handler: Plugin['transform'] = function (code, importer, ...args) {
-    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
-    return fn.call(this, code, importer, injectSsrFlag(args[0]))
+    return fn.call(
+      injectEnvironmentInContext(this, environment),
+      code,
+      importer,
+      // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
+      injectSsrFlag(args[0], environment),
+    )
   }
 
   if ('handler' in hook) {
@@ -1063,10 +1111,28 @@ function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
   }
 }
 
+function injectEnvironmentInContext(
+  context: RollupPluginContext,
+  environment?: BuildEnvironment,
+) {
+  return new Proxy(context, {
+    get(target, prop, receiver) {
+      if (prop === 'environment') {
+        return environment
+      }
+      return Reflect.get(target, prop, receiver)
+    },
+  })
+}
+
 function injectSsrFlag<T extends Record<string, any>>(
   options?: T,
-): T & { ssr: boolean } {
-  return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
+  environment?: BuildEnvironment,
+): T & { ssr?: boolean } {
+  const ssr = environment ? environment.name !== 'client' : true
+  return { ...(options ?? {}), ssr } as T & {
+    ssr?: boolean
+  }
 }
 
 /*
@@ -1251,4 +1317,156 @@ function areSeparateFolders(a: string, b: string) {
     !na.startsWith(withTrailingSlash(nb)) &&
     !nb.startsWith(withTrailingSlash(na))
   )
+}
+
+export class BuildEnvironment extends Environment {
+  mode = 'build' as const
+  builder: ViteBuilder
+  config: BuildEnvironmentConfig
+  constructor(
+    builder: ViteBuilder,
+    name: string,
+    options?: { config?: BuildEnvironmentConfig },
+  ) {
+    super(name)
+    this.builder = builder
+    this.config = options?.config ?? { build: {} }
+  }
+}
+
+export interface ViteBuilder {
+  environments: Record<string, BuildEnvironment>
+  build(): Promise<void>
+  buildEnvironment(environment: BuildEnvironment): Promise<void>
+}
+
+export interface BuildTask {
+  environment: BuildEnvironment
+  config: ResolvedConfig
+  run: () => Promise<void>
+  cancel: () => void
+}
+
+export interface BuilderOptions {
+  runBuildTasks?: (
+    builder: ViteBuilder,
+    buildTasks: BuildTask[],
+  ) => Promise<void>
+}
+
+async function defaultRunBuildTasks(
+  builder: ViteBuilder,
+  buildTasks: BuildTask[],
+): Promise<void> {
+  for (const task of buildTasks) {
+    await task.run()
+  }
+}
+
+export function resolveBuilderOptions(
+  options: BuilderOptions = {},
+): ResolvedBuilderOptions {
+  return {
+    runBuildTasks: options.runBuildTasks ?? defaultRunBuildTasks,
+  }
+}
+
+export type ResolvedBuilderOptions = Required<BuilderOptions>
+
+export interface BuilderInlineConfig extends Omit<InlineConfig, 'plugins'> {
+  plugins?: () => Plugin[]
+}
+
+export async function createViteBuilder(
+  builderOptions: BuilderOptions = {},
+  defaultBuilderInlineConfig: BuilderInlineConfig = {},
+): Promise<ViteBuilder> {
+  // Plugins passed to the Builder inline config needs to be created
+  // from a factory to ensure each build has their own instances
+  const getDefaultInlineConfig = (): InlineConfig => {
+    const { plugins } = defaultBuilderInlineConfig
+    return plugins
+      ? {
+          ...defaultBuilderInlineConfig,
+          plugins: plugins(),
+        }
+      : (defaultBuilderInlineConfig as InlineConfig)
+  }
+
+  // TODO: defineEnvironments -> config
+
+  // We resolve the whole config including plugins here but later on we
+  // need to refactor resolveConfig to only resolve the environments config
+  const defaultInlineConfig = getDefaultInlineConfig()
+  const defaultConfig = await resolveConfig(
+    defaultInlineConfig,
+    'build',
+    'production',
+    'production',
+  )
+
+  if (defaultConfig.build.lib) {
+    throw new Error('Library mode is not supported in ViteBuilder')
+  }
+  if (defaultConfig.build.watch) {
+    throw new Error('Watch mode is not yet supported in ViteBuilder')
+  }
+
+  const environments: Record<string, BuildEnvironment> = {}
+
+  async function resolveEnvironmentConfig(environment: BuildEnvironment) {
+    // We need to resolve the config again so we can properly merge options
+    // and get a new set of plugins for each build environment. The ecosystem
+    // expects plugins to be run for the same environment once they are created
+    // and to process a single bundle at a time (contrary to dev mode where
+    // plugins are built to handle multiple environments concurrently).
+
+    let userConfig = getDefaultInlineConfig()
+    const inlineConfigEnvironmentOverrides =
+      userConfig.environments?.[environment.name]
+    if (inlineConfigEnvironmentOverrides) {
+      userConfig = mergeConfig(userConfig, inlineConfigEnvironmentOverrides)
+    }
+    if (environment.config) {
+      userConfig = mergeConfig(userConfig, environment.config)
+    }
+
+    return await resolveConfigToBuild(userConfig)
+  }
+
+  const builder: ViteBuilder = {
+    environments,
+    async build() {
+      const buildTasks = []
+      for (const environment of Object.values(environments)) {
+        const config = await resolveEnvironmentConfig(environment)
+        const buildTask = {
+          environment,
+          config,
+          run: async () => {
+            await buildEnvironment(config, environment)
+          },
+          cancel: () => {}, // TODO, maybe not needed
+        }
+        buildTasks.push(buildTask)
+      }
+      await defaultConfig.builder.runBuildTasks(builder, buildTasks)
+    },
+    async buildEnvironment(environment: BuildEnvironment) {
+      const config = await resolveEnvironmentConfig(environment)
+      await buildEnvironment(config, environment)
+    },
+  }
+
+  for (const name of Object.keys(defaultConfig.environments)) {
+    const environmentConfig = defaultConfig.environments[name]
+    const createEnvironment =
+      environmentConfig.build?.createEnvironment ??
+      ((builder: ViteBuilder, name: string) =>
+        new BuildEnvironment(builder, name))
+    const environment = createEnvironment(builder, name)
+    environments[name] = environment
+  }
+
+  return builder
 }

@@ -1,5 +1,5 @@
 import type { CustomPayload, HMRPayload } from 'types/hmrPayload'
-import type { HMRRuntimeConnection } from 'vite/runtime'
+import type { ModuleRunnerHMRConnection } from 'vite/module-runner'
 import type { ViteDevServer } from '../../server'
 import type { HMRBroadcasterClient, ServerHMRChannel } from '../../server/hmr'
 
@@ -30,7 +30,7 @@ class ServerHMRBroadcasterClient implements HMRBroadcasterClient {
  * The connector class to establish HMR communication between the server and the Vite runtime.
  * @experimental
  */
-export class ServerHMRConnector implements HMRRuntimeConnection {
+export class ServerHMRConnector implements ModuleRunnerHMRConnection {
   private handlers: ((payload: HMRPayload) => void)[] = []
   private hmrChannel: ServerHMRChannel
   private hmrClient: ServerHMRBroadcasterClient

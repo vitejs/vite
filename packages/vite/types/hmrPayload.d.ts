@@ -25,7 +25,7 @@ export interface Update {
   /** @internal */
   isWithinCircularImport?: boolean
   /** @internal */
-  ssrInvalidates?: string[]
+  invalidates?: string[]
 }
 
 export interface PrunePayload {

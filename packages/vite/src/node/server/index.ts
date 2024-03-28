@@ -50,8 +50,6 @@ import { printServerUrls } from '../logger'
 import { createNoopWatcher, resolveChokidarOptions } from '../watch'
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
-import type { FetchResult } from '../../runtime/types'
-import { ssrFetchModule } from '../ssr/ssrFetchModule'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -73,15 +71,15 @@ import {
   serveStaticMiddleware,
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import type { ModuleNode } from './moduleGraph'
-import { ModuleGraph } from './moduleGraph'
+import type { EnvironmentModuleNode } from './moduleGraph'
+import { ModuleGraph } from './mixedModuleGraph'
+import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
-import { errorMiddleware, prepareError } from './middlewares/error'
-import type { HMRBroadcaster, HmrOptions } from './hmr'
+import { errorMiddleware } from './middlewares/error'
+import type { HMRBroadcaster, HmrOptions, HmrTask } from './hmr'
 import {
   createHMRBroadcaster,
   createServerHMRChannel,
-  getShortName,
   handleHMRUpdate,
   updateModules,
 } from './hmr'
@@ -90,6 +88,8 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { warmupFiles } from './warmup'
+import { DevEnvironment } from './environment'
+import { createNodeEnvironment } from './environments/nodeEnvironment'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -99,6 +99,7 @@ export interface ServerOptions extends CommonServerOptions {
   /**
    * Warm-up files to transform and cache the results in advance. This improves the
    * initial page load during server starts and prevents transform waterfalls.
+   * @deprecated use dev.warmup / environment.ssr.dev.warmup
    */
   warmup?: {
     /**
@@ -142,6 +143,7 @@ export interface ServerOptions extends CommonServerOptions {
   /**
    * Pre-transform known direct imports
    * @default true
+   * @deprecated use dev.preTransformRequests
    */
   preTransformRequests?: boolean
   /**
@@ -151,10 +153,16 @@ export interface ServerOptions extends CommonServerOptions {
    * By default, it excludes all paths containing `node_modules`. You can pass `false` to
    * disable this behavior, or, for full control, a function that takes the source path and
    * sourcemap path and returns whether to ignore the source path.
+   * @deprecated use dev.sourcemapIgnoreList
    */
   sourcemapIgnoreList?:
     | false
     | ((sourcePath: string, sourcemapPath: string) => boolean)
+  /**
+   * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
+   * @experimental
+   */
+  runHmrTasks?: (server: ViteDevServer, hmrTasks: HmrTask[]) => Promise<void>
 }
 
 export interface ResolvedServerOptions
@@ -245,6 +253,7 @@ export interface ViteDevServer {
    *
    * Always sends a message to at least a WebSocket client. Any third party can
    * add a channel to the broadcaster to process messages
+   * @deprecated use `environments.get(id).hot` instead
    */
   hot: HMRBroadcaster
   /**
@@ -252,8 +261,13 @@ export interface ViteDevServer {
    */
   pluginContainer: PluginContainer
   /**
+   * Module execution environments attached to the Vite server.
+   */
+  environments: Record<'client' | 'ssr' | (string & {}), DevEnvironment>
+  /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
+   * @deprecated use environment module graphs instead
    */
   moduleGraph: ModuleGraph
   /**
@@ -264,6 +278,7 @@ export interface ViteDevServer {
   /**
    * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
+   * @deprecated use environment.transformRequest
    */
   transformRequest(
     url: string,
@@ -273,6 +288,7 @@ export interface ViteDevServer {
    * Same as `transformRequest` but only warm up the URLs so the next request
    * will already be cached. The function will never throw as it handles and
    * reports errors internally.
+   * @deprecated use environment.warmupRequest
    */
   warmupRequest(url: string, options?: TransformOptions): Promise<void>
   /**
@@ -300,11 +316,6 @@ export interface ViteDevServer {
     opts?: { fixStacktrace?: boolean },
   ): Promise<Record<string, any>>
   /**
-   * Fetch information about the module for Vite SSR runtime.
-   * @experimental
-   */
-  ssrFetchModule(id: string, importer?: string): Promise<FetchResult>
-  /**
    * Returns a fixed version of the given stack
    */
   ssrRewriteStacktrace(stack: string): string
@@ -317,6 +328,11 @@ export interface ViteDevServer {
    * API to retrieve the module to be reloaded. If `hmr` is false, this is a no-op.
    */
   reloadModule(module: ModuleNode): Promise<void>
+  /**
+   * Triggers HMR for an environment module in the module graph.
+   * If `hmr` is false, this is a no-op.
+   */
+  reloadEnvironmentModule(module: EnvironmentModuleNode): Promise<void>
   /**
    * Start the server.
    */
@@ -339,7 +355,6 @@ export interface ViteDevServer {
    * @param forceOptimize - force the optimizer to re-bundle, same as --force cli flag
    */
   restart(forceOptimize?: boolean): Promise<void>
-
   /**
    * Open browser
    */
@@ -387,6 +402,10 @@ export interface ViteDevServer {
       abort: () => void
     }
   >
+  /**
+   * @internal
+   */
+  _safeModulesPath: Set<string>
   /**
    * @internal
    */
@@ -439,9 +458,8 @@ export async function _createServer(
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
 
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
-  const hot = createHMRBroadcaster()
-    .addChannel(ws)
-    .addChannel(createServerHMRChannel())
+  const ssrHotChannel = createServerHMRChannel()
+  const hot = createHMRBroadcaster().addChannel(ws).addChannel(ssrHotChannel)
   if (typeof config.server.hmr === 'object' && config.server.hmr.channels) {
     config.server.hmr.channels.forEach((channel) => hot.addChannel(channel))
   }
@@ -464,11 +482,24 @@ export async function _createServer(
       ) as FSWatcher)
     : createNoopWatcher(resolvedWatchOptions)
 
-  const moduleGraph: ModuleGraph = new ModuleGraph((url, ssr) =>
-    container.resolveId(url, undefined, { ssr }),
+  const environments: Record<string, DevEnvironment> = {}
+
+  // The global environment is used for buildStart, buildEnd, watchChange, and writeBundle hooks
+  // that are called once and not per environment.
+  // The Vite server has always passed the mixed module graph. Passing the client environment
+  // should give us the best backward compatibility for now.
+  // We can review this in the next Vite major.
+  const pluginContainer = await createPluginContainer(
+    config,
+    watcher,
+    environments,
   )
 
-  const container = await createPluginContainer(config, moduleGraph, watcher)
+  const moduleGraph = new ModuleGraph({
+    client: () => environments.client.moduleGraph,
+    ssr: () => environments.ssr.moduleGraph,
+  })
+
   const closeHttpServer = createServerCloseFn(httpServer)
 
   let exitProcess: () => void
@@ -494,10 +525,13 @@ export async function _createServer(
     middlewares,
     httpServer,
     watcher,
-    pluginContainer: container,
     ws,
     hot,
+
+    environments,
+    pluginContainer,
     moduleGraph,
+
     resolvedUrls: null, // will be set on listen
     ssrTransform(
       code: string,
@@ -507,12 +541,19 @@ export async function _createServer(
     ) {
       return ssrTransform(code, inMap, url, originalCode, server.config)
     },
+    // environment.transformRequest and .warmupRequest don't take an options param for now,
+    // so the logic and error handling needs to be duplicated here.
+    // The only param in options that could be important is `html`, but we may remove it as
+    // that is part of the internal control flow for the vite dev server to be able to bail
+    // out and do the html fallback
     transformRequest(url, options) {
-      return transformRequest(url, server, options)
+      const environment = server.environments[options?.ssr ? 'ssr' : 'client']
+      return transformRequest(url, server, options, environment)
     },
     async warmupRequest(url, options) {
       try {
-        await transformRequest(url, server, options)
+        const environment = server.environments[options?.ssr ? 'ssr' : 'client']
+        await transformRequest(url, server, options, environment)
       } catch (e) {
         if (
           e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
@@ -540,18 +581,35 @@ export async function _createServer(
         opts?.fixStacktrace,
       )
     },
-    async ssrFetchModule(url: string, importer?: string) {
-      return ssrFetchModule(server, url, importer)
-    },
     ssrFixStacktrace(e) {
-      ssrFixStacktrace(e, moduleGraph)
+      ssrFixStacktrace(e, server.environments.ssr.moduleGraph)
     },
     ssrRewriteStacktrace(stack: string) {
-      return ssrRewriteStacktrace(stack, moduleGraph)
+      return ssrRewriteStacktrace(stack, server.environments.ssr.moduleGraph)
     },
     async reloadModule(module) {
       if (serverConfig.hmr !== false && module.file) {
-        updateModules(module.file, [module], Date.now(), server)
+        // TODO: Should we also update the node moduleGraph for backward compatibility?
+        const environmentModule = (module._clientModule ?? module._ssrModule)!
+        updateModules(
+          environments[environmentModule.environment]!,
+          module.file,
+          [environmentModule],
+          Date.now(),
+          server,
+        )
+      }
+    },
+    async reloadEnvironmentModule(module) {
+      // TODO: Should this be reloadEnvironmentModule(environment, module) ?
+      if (serverConfig.hmr !== false && module.file) {
+        updateModules(
+          environments[module.environment]!,
+          module.file,
+          [module],
+          Date.now(),
+          server,
+        )
       }
     },
     async listen(port?: number, isRestart?: boolean) {
@@ -621,7 +679,7 @@ export async function _createServer(
       await Promise.allSettled([
         watcher.close(),
         hot.close(),
-        container.close(),
+        pluginContainer.close(),
         crawlEndFinder?.cancel(),
         getDepsOptimizer(server.config)?.close(),
         getDepsOptimizer(server.config, true)?.close(),
@@ -684,6 +742,7 @@ export async function _createServer(
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
+    _safeModulesPath: new Set(),
     _fsDenyGlob: picomatch(
       // matchBase: true does not work as it's documented
       // https://github.com/micromatch/picomatch/issues/89
@@ -711,6 +770,35 @@ export async function _createServer(
     },
   })
 
+  // Create Environments
+
+  const client_createEnvironment =
+    config.environments.client?.dev?.createEnvironment ??
+    ((server: ViteDevServer, name: string) =>
+      new DevEnvironment(server, name, { hot: ws }))
+
+  environments.client = client_createEnvironment(server, 'client')
+
+  const ssr_createEnvironment =
+    config.environments.ssr?.dev?.createEnvironment ??
+    ((server: ViteDevServer, name: string) =>
+      createNodeEnvironment(server, name, { hot: ssrHotChannel }))
+
+  environments.ssr = ssr_createEnvironment(server, 'ssr')
+
+  Object.entries(config.environments).forEach(([name, environmentConfig]) => {
+    // TODO: move client and ssr inside the loop?
+    if (name !== 'client' && name !== 'ssr') {
+      const createEnvironment =
+        environmentConfig.dev?.createEnvironment ??
+        ((server: ViteDevServer, name: string) =>
+          new DevEnvironment(server, name, {
+            hot: ws, // TODO: what should we use here?
+          }))
+      environments[name] = createEnvironment(server, name)
+    }
+  })
+
   if (!middlewareMode) {
     exitProcess = async () => {
       try {
@@ -732,14 +820,7 @@ export async function _createServer(
     file: string,
   ) => {
     if (serverConfig.hmr !== false) {
-      try {
-        await handleHMRUpdate(type, file, server)
-      } catch (err) {
-        hot.send({
-          type: 'error',
-          err: prepareError(err),
-        })
-      }
+      await handleHMRUpdate(type, file, server)
     }
   }
 
@@ -747,32 +828,43 @@ export async function _createServer(
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
-    await container.watchChange(file, { event: isUnlink ? 'delete' : 'create' })
+    await pluginContainer.watchChange(file, {
+      event: isUnlink ? 'delete' : 'create',
+    })
 
     if (publicDir && publicFiles) {
       if (file.startsWith(publicDir)) {
         const path = file.slice(publicDir.length)
         publicFiles[isUnlink ? 'delete' : 'add'](path)
         if (!isUnlink) {
-          const moduleWithSamePath = await moduleGraph.getModuleByUrl(path)
+          const clientModuleGraph = server.environments.client.moduleGraph
+          const moduleWithSamePath =
+            await clientModuleGraph.getModuleByUrl(path)
           const etag = moduleWithSamePath?.transformResult?.etag
           if (etag) {
             // The public file should win on the next request over a module with the
             // same path. Prevent the transform etag fast path from serving the module
-            moduleGraph.etagToModuleMap.delete(etag)
+            clientModuleGraph.etagToModuleMap.delete(etag)
           }
         }
       }
     }
-    if (isUnlink) moduleGraph.onFileDelete(file)
+    if (isUnlink) {
+      // invalidate module graph cache on file change
+      for (const environment of Object.values(server.environments)) {
+        environment.moduleGraph.onFileDelete(file)
+      }
+    }
     await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
   }
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
-    await container.watchChange(file, { event: 'update' })
+    await pluginContainer.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
-    moduleGraph.onFileChange(file)
+    for (const environment of Object.values(server.environments)) {
+      environment.moduleGraph.onFileChange(file)
+    }
     await onHMRUpdate('update', file)
   })
 
@@ -783,26 +875,6 @@ export async function _createServer(
   })
   watcher.on('unlink', (file) => {
     onFileAddUnlink(file, true)
-  })
-
-  hot.on('vite:invalidate', async ({ path, message }) => {
-    const mod = moduleGraph.urlToModuleMap.get(path)
-    if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
-      config.logger.info(
-        colors.yellow(`hmr invalidate `) +
-          colors.dim(path) +
-          (message ? ` ${message}` : ''),
-        { timestamp: true },
-      )
-      const file = getShortName(mod.file!, config.root)
-      updateModules(
-        file,
-        [...mod.importers],
-        mod.lastHMRTimestamp,
-        server,
-        true,
-      )
-    }
   })
 
   if (!middlewareMode && httpServer) {
@@ -910,7 +982,7 @@ export async function _createServer(
     if (initingServer) return initingServer
 
     initingServer = (async function () {
-      await container.buildStart({})
+      await pluginContainer.buildStart({})
       // start deps optimizer after all container plugins are ready
       if (isDepsOptimizerEnabled(config, false)) {
         await initDepsOptimizer(config, server)
@@ -1023,6 +1095,7 @@ export function resolveServerOptions(
   raw: ServerOptions | undefined,
   logger: Logger,
 ): ResolvedServerOptions {
+  // TODO: deprecated server options moved to the dev config
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
@@ -1107,7 +1180,7 @@ async function restartServer(server: ViteDevServer) {
   // server instance and set the user instance to be used in the new server.
   // This allows us to keep the same server instance for the user.
   {
-    let newServer = null
+    let newServer: ViteDevServer | null = null
     try {
       // delay ws server listen
       newServer = await _createServer(inlineConfig, { hotListen: false })

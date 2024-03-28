@@ -1,8 +1,8 @@
-import type { ViteRuntime } from '../runtime'
+import type { ModuleRunner } from '../runner'
 import { interceptStackTrace } from './interceptor'
 
-export function enableSourceMapSupport(runtime: ViteRuntime): () => void {
-  if (runtime.options.sourcemapInterceptor === 'node') {
+export function enableSourceMapSupport(runner: ModuleRunner): () => void {
+  if (runner.options.sourcemapInterceptor === 'node') {
     if (typeof process === 'undefined') {
       throw new TypeError(
         `Cannot use "sourcemapInterceptor: 'node'" because global "process" variable is not available.`,
@@ -18,9 +18,9 @@ export function enableSourceMapSupport(runtime: ViteRuntime): () => void {
     return () => !isEnabledAlready && process.setSourceMapsEnabled(false)
   }
   return interceptStackTrace(
-    runtime,
-    typeof runtime.options.sourcemapInterceptor === 'object'
-      ? runtime.options.sourcemapInterceptor
+    runner,
+    typeof runner.options.sourcemapInterceptor === 'object'
+      ? runner.options.sourcemapInterceptor
       : undefined,
   )
 }

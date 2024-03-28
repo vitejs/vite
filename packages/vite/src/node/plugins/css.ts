@@ -26,8 +26,8 @@ import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
-import type { ModuleNode } from '../server/moduleGraph'
-import type { ResolveFn, ViteDevServer } from '../'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
+import type { ResolveFn } from '../'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   resolveUserExternal,
@@ -122,6 +122,7 @@ export interface CSSOptions {
    * Enables css sourcemaps during dev
    * @default false
    * @experimental
+   * @deprecated use dev.sourcemap instead
    */
   devSourcemap?: boolean
 
@@ -928,14 +929,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 }
 
 export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
-  let server: ViteDevServer
-
   return {
     name: 'vite:css-analysis',
-
-    configureServer(_server) {
-      server = _server
-    },
 
     async transform(_, id, options) {
       if (
@@ -946,9 +941,10 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const ssr = options?.ssr === true
-      const { moduleGraph } = server
-      const thisModule = moduleGraph.getModuleById(id)
+      const environment = this.environment
+      const moduleGraph =
+        environment?.mode === 'dev' ? environment.moduleGraph : undefined
+      const thisModule = moduleGraph?.getModuleById(id)
 
       // Handle CSS @import dependency HMR and other added modules via this.addWatchFile.
       // JS-related HMR is handled in the import-analysis plugin.
@@ -965,22 +961,21 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (pluginImports) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
-          const depModules = new Set<string | ModuleNode>()
+          const depModules = new Set<string | EnvironmentModuleNode>()
           const devBase = config.base
           for (const file of pluginImports) {
             depModules.add(
               isCSSRequest(file)
-                ? moduleGraph.createFileOnlyEntry(file)
-                : await moduleGraph.ensureEntryFromUrl(
+                ? moduleGraph!.createFileOnlyEntry(file)
+                : await moduleGraph!.ensureEntryFromUrl(
                     stripBase(
                       await fileToUrl(file, config, this),
                       (config.server?.origin ?? '') + devBase,
                     ),
-                    ssr,
                   ),
             )
           }
-          moduleGraph.updateModuleInfo(
+          moduleGraph!.updateModuleInfo(
             thisModule,
             depModules,
             null,
@@ -989,7 +984,6 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
             new Set(),
             null,
             isSelfAccepting,
-            ssr,
           )
         } else {
           thisModule.isSelfAccepting = isSelfAccepting

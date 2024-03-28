@@ -3,7 +3,6 @@ import { pathToFileURL } from 'node:url'
 import colors from 'picocolors'
 import type { ViteDevServer } from '../server'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { genSourceMapUrl } from '../server/sourcemap'
@@ -86,8 +85,8 @@ async function instantiateModule(
   urlStack: string[] = [],
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
-  const { moduleGraph } = server
-  const mod = await moduleGraph.ensureEntryFromUrl(url, true)
+  const moduleGraph = server.environments.ssr.moduleGraph
+  const mod = await moduleGraph.ensureEntryFromUrl(url)
 
   if (mod.ssrError) {
     throw mod.ssrError
@@ -97,8 +96,7 @@ async function instantiateModule(
     return mod.ssrModule
   }
   const result =
-    mod.ssrTransformResult ||
-    (await transformRequest(url, server, { ssr: true }))
+    mod.transformResult || (await server.environments.ssr.transformRequest(url))
   if (!result) {
     // TODO more info? is this even necessary?
     throw new Error(`failed to load module for ssr: ${url}`)

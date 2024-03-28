@@ -24,13 +24,7 @@ export class ViteRuntime {
   /**
    * URL to execute. Accepts file path, server path, or id relative to the root.
    */
-  public async executeUrl<T = any>(url: string): Promise<T>
-  /**
-   * Entry point URL to execute. Accepts file path, server path or id relative to the root.
-   * In the case of a full reload triggered by HMR, this is the module that will be reloaded.
-   * If this method is called multiple times, all entry points will be reloaded one at a time.
-   */
-  public async executeEntrypoint<T = any>(url: string): Promise<T>
+  public async import<T = any>(url: string): Promise<T>
   /**
    * Clear all caches including HMR listeners.
    */
@@ -55,7 +49,7 @@ The `ViteRuntime` class requires `root` and `fetchModule` options when initiated
 
 Runner in `ViteRuntime` is responsible for executing the code. Vite exports `ESModulesRunner` out of the box, it uses `new AsyncFunction` to run the code. You can provide your own implementation if your JavaScript runtime doesn't support unsafe evaluation.
 
-The two main methods that runtime exposes are `executeUrl` and `executeEntrypoint`. The only difference between them is that all modules executed by `executeEntrypoint` will be reexecuted if HMR triggers `full-reload` event. Be aware that Vite Runtime doesn't update `exports` object when this happens (it overrides it), you would need to run `executeUrl` or get the module from `moduleCache` again if you rely on having the latest `exports` object.
+Module runner exposes `import` method. When Vite server triggers `full-reload` HMR event, all affected modules will be re-executed. Be aware that Module Runner doesn't update `exports` object when this happens (it overrides it), you would need to run `import` or get the module from `moduleCache` again if you rely on having the latest `exports` object.
 
 **Example Usage:**
 
@@ -72,7 +66,7 @@ const runtime = new ViteRuntime(
   new ESModulesRunner(),
 )
 
-await runtime.executeEntrypoint('/src/entry-point.js')
+await runtime.import('/src/entry-point.js')
 ```
 
 ## `ViteRuntimeOptions`
@@ -207,7 +201,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
   await server.listen()
 
   const runtime = await createViteRuntime(server)
-  await runtime.executeEntrypoint('/src/entry-point.js')
+  await runtime.import('/src/entry-point.js')
 })()
 ```
 

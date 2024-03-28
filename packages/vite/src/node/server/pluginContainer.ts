@@ -80,7 +80,8 @@ import type { ResolvedConfig } from '../config'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import { buildErrorMessage } from './middlewares/error'
-import type { ModuleGraph, ModuleNode } from './moduleGraph'
+import type { EnvironmentModuleNode } from './moduleGraph'
+import type { DevEnvironment } from './environment'
 
 const noop = () => {}
 
@@ -105,16 +106,16 @@ export interface PluginContainerOptions {
 
 export interface PluginContainer {
   options: InputOptions
-  getModuleInfo(id: string): ModuleInfo | null
   buildStart(options: InputOptions): Promise<void>
   resolveId(
     id: string,
-    importer?: string,
+    importer: string | undefined,
     options?: {
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
+      environment?: DevEnvironment
       /**
        * @internal
        */
@@ -128,12 +129,14 @@ export interface PluginContainer {
     options?: {
       inMap?: SourceDescription['map']
       ssr?: boolean
+      environment?: DevEnvironment
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }>
   load(
     id: string,
     options?: {
       ssr?: boolean
+      environment?: DevEnvironment
     },
   ): Promise<LoadResult | null>
   watchChange(
@@ -149,10 +152,16 @@ type PluginContext = Omit<
   'cache'
 >
 
+// The default environment is in buildStart, buildEnd, watchChange, and closeBundle hooks,
+// wich are called once for all environments, or when no environment is passed in other hooks.
+// The ssrEnvironment is needed for backward compatibility when the ssr flag is passed without
+// an environment. The defaultEnvironment in the main pluginContainer in the server should be
+// the client environment for backward compatibility.
+
 export async function createPluginContainer(
   config: ResolvedConfig,
-  moduleGraph?: ModuleGraph,
   watcher?: FSWatcher,
+  environments?: Record<string, DevEnvironment>,
 ): Promise<PluginContainer> {
   const {
     plugins,
@@ -177,12 +186,25 @@ export async function createPluginContainer(
     onlyWhenFocused: true,
   })
 
+  // Backward compatibility
+  // Users should call pluginContainer.resolveId (and load/transform) passing the environment they want to work with
+  // But there is code that is going to call it without passing an environment, or with the ssr flag to get the ssr environment
+  function resolveEnvironment(options?: {
+    ssr?: boolean
+    environment?: DevEnvironment
+  }) {
+    const environment =
+      options?.environment ?? environments?.[options?.ssr ? 'ssr' : 'client']
+    const ssr = options?.ssr ?? (environment?.name === 'ssr' ? true : false)
+    return { environment, ssr }
+  }
+
   // ---------------------------------------------------------------------------
 
   const watchFiles = new Set<string>()
   // _addedFiles from the `load()` hook gets saved here so it can be reused in the `transform()` hook
   const moduleNodeToLoadAddedImports = new WeakMap<
-    ModuleNode,
+    EnvironmentModuleNode,
     Set<string> | null
   >()
 
@@ -253,42 +275,13 @@ export async function createPluginContainer(
   // same default value of "moduleInfo.meta" as in Rollup
   const EMPTY_OBJECT = Object.freeze({})
 
-  function getModuleInfo(id: string) {
-    const module = moduleGraph?.getModuleById(id)
-    if (!module) {
-      return null
-    }
-    if (!module.info) {
-      module.info = new Proxy(
-        { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
-        ModuleInfoProxy,
-      )
-    }
-    return module.info
-  }
-
-  function updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
-    if (meta) {
-      const moduleInfo = getModuleInfo(id)
-      if (moduleInfo) {
-        moduleInfo.meta = { ...moduleInfo.meta, ...meta }
-      }
-    }
-  }
-
-  function updateModuleLoadAddedImports(id: string, ctx: Context) {
-    const module = moduleGraph?.getModuleById(id)
-    if (module) {
-      moduleNodeToLoadAddedImports.set(module, ctx._addedImports)
-    }
-  }
-
   // we should create a new context for each async hook pipeline so that the
   // active plugin in that pipeline can be tracked in a concurrency-safe manner.
   // using a class to make creating new contexts more efficient
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
+    environment: DevEnvironment | undefined
     _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
@@ -296,7 +289,8 @@ export async function createPluginContainer(
     _resolveSkips?: Set<Plugin>
     _addedImports: Set<string> | null = null
 
-    constructor(initialPlugin?: Plugin) {
+    constructor(environment?: DevEnvironment, initialPlugin?: Plugin) {
+      this.environment = environment
       this._activePlugin = initialPlugin || null
     }
 
@@ -325,6 +319,7 @@ export async function createPluginContainer(
         isEntry: !!options?.isEntry,
         skip,
         ssr: this.ssr,
+        environment: this.environment,
         scan: this._scan,
       })
       if (typeof out === 'string') out = { id: out }
@@ -338,16 +333,22 @@ export async function createPluginContainer(
       } & Partial<PartialNull<ModuleOptions>>,
     ): Promise<ModuleInfo> {
       // We may not have added this to our module graph yet, so ensure it exists
-      await moduleGraph?.ensureEntryFromUrl(unwrapId(options.id), this.ssr)
+      await this._moduleGraph?.ensureEntryFromUrl(unwrapId(options.id))
       // Not all options passed to this function make sense in the context of loading individual files,
       // but we can at least update the module info properties we support
-      updateModuleInfo(options.id, options)
+      this._updateModuleInfo(options.id, options)
 
-      const loadResult = await container.load(options.id, { ssr: this.ssr })
+      const loadResult = await container.load(options.id, {
+        ssr: this.ssr,
+        environment: this.environment,
+      })
       const code =
         typeof loadResult === 'object' ? loadResult?.code : loadResult
       if (code != null) {
-        await container.transform(code, options.id, { ssr: this.ssr })
+        await container.transform(code, options.id, {
+          ssr: this.ssr,
+          environment: this.environment,
+        })
       }
 
       const moduleInfo = this.getModuleInfo(options.id)
@@ -360,13 +361,40 @@ export async function createPluginContainer(
     }
 
     getModuleInfo(id: string) {
-      return getModuleInfo(id)
+      const module = this._moduleGraph?.getModuleById(id)
+      if (!module) {
+        return null
+      }
+      if (!module.info) {
+        module.info = new Proxy(
+          { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
+          ModuleInfoProxy,
+        )
+      }
+      return module.info
+    }
+
+    _updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
+      if (meta) {
+        const moduleInfo = this.getModuleInfo(id)
+        if (moduleInfo) {
+          moduleInfo.meta = { ...moduleInfo.meta, ...meta }
+        }
+      }
+    }
+
+    _updateModuleLoadAddedImports(id: string) {
+      const module = this._moduleGraph?.getModuleById(id)
+      if (module) {
+        moduleNodeToLoadAddedImports.set(module, this._addedImports)
+      }
     }
 
     getModuleIds() {
-      return moduleGraph
-        ? moduleGraph.idToModuleMap.keys()
-        : Array.prototype[Symbol.iterator]()
+      return (
+        this._moduleGraph?.idToModuleMap.keys() ??
+        Array.prototype[Symbol.iterator]()
+      )
     }
 
     addWatchFile(id: string) {
@@ -420,6 +448,16 @@ export async function createPluginContainer(
 
     debug = noop
     info = noop
+
+    /**
+     * @internal
+     */
+    get _moduleGraph() {
+      // Using this.environment.mode is causing an issue with Vitest
+      return this.environment?.mode === 'dev'
+        ? this.environment.moduleGraph
+        : undefined
+    }
   }
 
   function formatError(
@@ -531,8 +569,13 @@ export async function createPluginContainer(
     sourcemapChain: NonNullable<SourceDescription['map']>[] = []
     combinedMap: SourceMap | { mappings: '' } | null = null
 
-    constructor(id: string, code: string, inMap?: SourceMap | string) {
-      super()
+    constructor(
+      id: string,
+      code: string,
+      environment?: DevEnvironment,
+      inMap?: SourceMap | string,
+    ) {
+      super(environment)
       this.filename = id
       this.originalCode = code
       if (inMap) {
@@ -543,7 +586,7 @@ export async function createPluginContainer(
         this.sourcemapChain.push(inMap)
       }
       // Inherit `_addedImports` from the `load()` hook
-      const node = moduleGraph?.getModuleById(id)
+      const node = this._moduleGraph?.getModuleById(id)
       if (node) {
         this._addedImports = moduleNodeToLoadAddedImports.get(node) ?? null
       }
@@ -651,24 +694,23 @@ export async function createPluginContainer(
       return options
     })(),
 
-    getModuleInfo,
-
     async buildStart() {
       await handleHookPromise(
         hookParallel(
           'buildStart',
-          (plugin) => new Context(plugin),
+          (plugin) => new Context(environments?.client, plugin), // TODO: call buildStart per environment
           () => [container.options as NormalizedInputOptions],
         ),
       )
     },
 
     async resolveId(rawId, importer = join(root, 'index.html'), options) {
+      const { environment, ssr } = resolveEnvironment(options)
       const skip = options?.skip
-      const ssr = options?.ssr
       const scan = !!options?.scan
-      const ctx = new Context()
+      const ctx = new Context(environment)
       ctx.ssr = !!ssr
+      ctx.environment = environment
       ctx._scan = scan
       ctx._resolveSkips = skip
       const resolveStart = debugResolve ? performance.now() : 0
@@ -733,9 +775,10 @@ export async function createPluginContainer(
     },
 
     async load(id, options) {
-      const ssr = options?.ssr
-      const ctx = new Context()
+      const { environment, ssr } = resolveEnvironment(options)
+      const ctx = new Context(environment)
       ctx.ssr = !!ssr
+      ctx.environment = environment
       for (const plugin of getSortedPlugins('load')) {
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.load) continue
@@ -746,21 +789,27 @@ export async function createPluginContainer(
         )
         if (result != null) {
           if (isObject(result)) {
-            updateModuleInfo(id, result)
+            ctx._updateModuleInfo(id, result)
           }
-          updateModuleLoadAddedImports(id, ctx)
+          ctx._updateModuleLoadAddedImports(id)
           return result
         }
       }
-      updateModuleLoadAddedImports(id, ctx)
+      ctx._updateModuleLoadAddedImports(id)
       return null
     },
 
     async transform(code, id, options) {
+      const { environment, ssr } = resolveEnvironment(options)
       const inMap = options?.inMap
-      const ssr = options?.ssr
-      const ctx = new TransformContext(id, code, inMap as SourceMap)
+      const ctx = new TransformContext(
+        id,
+        code,
+        environment,
+        inMap as SourceMap,
+      )
       ctx.ssr = !!ssr
+      ctx.environment = environment
       for (const plugin of getSortedPlugins('transform')) {
         if (closed && !ssr) throwClosedServerError()
         if (!plugin.transform) continue
@@ -794,7 +843,7 @@ export async function createPluginContainer(
               ctx.sourcemapChain.push(result.map)
             }
           }
-          updateModuleInfo(id, result)
+          ctx._updateModuleInfo(id, result)
         } else {
           code = result
         }

@@ -1,5 +1,5 @@
 import type { OriginalMapping } from '@jridgewell/trace-mapping'
-import type { ViteRuntime } from '../runtime'
+import type { ModuleRunner } from '../runner'
 import { posixDirname, posixResolve } from '../utils'
 import type { ModuleCacheMap } from '../moduleCache'
 import { slash } from '../../shared/utils'
@@ -45,8 +45,8 @@ const retrieveSourceMapFromHandlers = createExecHandlers(
 let overridden = false
 const originalPrepare = Error.prepareStackTrace
 
-function resetInterceptor(runtime: ViteRuntime, options: InterceptorOptions) {
-  moduleGraphs.delete(runtime.moduleCache)
+function resetInterceptor(runner: ModuleRunner, options: InterceptorOptions) {
+  moduleGraphs.delete(runner.moduleCache)
   if (options.retrieveFile) retrieveFileHandlers.delete(options.retrieveFile)
   if (options.retrieveSourceMap)
     retrieveSourceMapHandlers.delete(options.retrieveSourceMap)
@@ -57,18 +57,18 @@ function resetInterceptor(runtime: ViteRuntime, options: InterceptorOptions) {
 }
 
 export function interceptStackTrace(
-  runtime: ViteRuntime,
+  runner: ModuleRunner,
   options: InterceptorOptions = {},
 ): () => void {
   if (!overridden) {
     Error.prepareStackTrace = prepareStackTrace
     overridden = true
   }
-  moduleGraphs.add(runtime.moduleCache)
+  moduleGraphs.add(runner.moduleCache)
   if (options.retrieveFile) retrieveFileHandlers.add(options.retrieveFile)
   if (options.retrieveSourceMap)
     retrieveSourceMapHandlers.add(options.retrieveSourceMap)
-  return () => resetInterceptor(runtime, options)
+  return () => resetInterceptor(runner, options)
 }
 
 interface CallSite extends NodeJS.CallSite {
@@ -101,7 +101,7 @@ function supportRelativeURL(file: string, url: string) {
   return protocol + posixResolve(startPath, url)
 }
 
-function getRuntimeSourceMap(position: OriginalMapping): CachedMapEntry | null {
+function getRunnerSourceMap(position: OriginalMapping): CachedMapEntry | null {
   for (const moduleCache of moduleGraphs) {
     const sourceMap = moduleCache.getSourceMap(position.source!)
     if (sourceMap) {
@@ -172,7 +172,7 @@ function retrieveSourceMap(source: string) {
 
 function mapSourcePosition(position: OriginalMapping) {
   if (!position.source) return position
-  let sourceMap = getRuntimeSourceMap(position)
+  let sourceMap = getRunnerSourceMap(position)
   if (!sourceMap) sourceMap = sourceMapCache[position.source]
   if (!sourceMap) {
     // Call the (overrideable) retrieveSourceMap function to get the source map.
