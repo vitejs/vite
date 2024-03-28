@@ -1,4 +1,5 @@
 import type { FetchResult } from 'vite/module-runner'
+import colors from 'picocolors'
 import { Environment } from '../environment'
 import type { ViteDevServer } from '../server'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
@@ -9,7 +10,7 @@ import type { FetchModuleOptions } from '../ssr/fetchModule'
 import { fetchModule } from '../ssr/fetchModule'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { HMRChannel } from './hmr'
-import { createNoopHMRChannel } from './hmr'
+import { createNoopHMRChannel, getShortName, updateModules } from './hmr'
 import { transformRequest } from './transformRequest'
 import type { TransformResult } from './transformRequest'
 import { ERR_CLOSED_SERVER } from './pluginContainer'
@@ -71,6 +72,13 @@ export class DevEnvironment extends Environment {
     const ssrRunnerOptions = options?.runner || {}
     this._ssrRunnerOptions = ssrRunnerOptions
     options?.runner?.transport?.register(this)
+
+    this.hot.on('vite:invalidate', async ({ path, message }) => {
+      invalidateModule(this, {
+        path,
+        message,
+      })
+    })
   }
 
   fetchModule(id: string, importer?: string): Promise<FetchResult> {
@@ -96,5 +104,33 @@ export class DevEnvironment extends Environment {
         timestamp: true,
       })
     })
+  }
+}
+
+function invalidateModule(
+  environment: DevEnvironment,
+  m: {
+    path: string
+    message?: string
+  },
+) {
+  const mod = environment.moduleGraph.urlToModuleMap.get(m.path)
+  if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
+    const server = environment.server
+    server.config.logger.info(
+      colors.yellow(`hmr invalidate `) +
+        colors.dim(m.path) +
+        (m.message ? ` ${m.message}` : ''),
+      { timestamp: true },
+    )
+    const file = getShortName(mod.file!, server.config.root)
+    updateModules(
+      environment,
+      file,
+      [...mod.importers],
+      mod.lastHMRTimestamp,
+      server,
+      true,
+    )
   }
 }

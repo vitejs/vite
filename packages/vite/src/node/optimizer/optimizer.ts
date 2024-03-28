@@ -539,7 +539,7 @@ async function createDepsOptimizer(
     // reloaded.
     server.environments.client.moduleGraph.invalidateAll()
 
-    server.hot.send({
+    server.environments.client.hot.send({
       type: 'full-reload',
       path: '*',
     })

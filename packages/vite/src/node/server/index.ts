@@ -75,12 +75,11 @@ import type { EnvironmentModuleNode } from './moduleGraph'
 import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
-import { errorMiddleware, prepareError } from './middlewares/error'
+import { errorMiddleware } from './middlewares/error'
 import type { HMRBroadcaster, HmrOptions, HmrTask } from './hmr'
 import {
   createHMRBroadcaster,
   createServerHMRChannel,
-  getShortName,
   handleHMRUpdate,
   updateModules,
 } from './hmr'
@@ -821,14 +820,7 @@ export async function _createServer(
     file: string,
   ) => {
     if (serverConfig.hmr !== false) {
-      try {
-        await handleHMRUpdate(type, file, server)
-      } catch (err) {
-        hot.send({
-          type: 'error',
-          err: prepareError(err),
-        })
-      }
+      await handleHMRUpdate(type, file, server)
     }
   }
 
@@ -883,46 +875,6 @@ export async function _createServer(
   })
   watcher.on('unlink', (file) => {
     onFileAddUnlink(file, true)
-  })
-
-  function invalidateModule(
-    environment: DevEnvironment,
-    m: {
-      path: string
-      message?: string
-    },
-  ) {
-    const mod = environment.moduleGraph.urlToModuleMap.get(m.path)
-    if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
-      config.logger.info(
-        colors.yellow(`hmr invalidate `) +
-          colors.dim(m.path) +
-          (m.message ? ` ${m.message}` : ''),
-        { timestamp: true },
-      )
-      const file = getShortName(mod.file!, config.root)
-      updateModules(
-        environment,
-        file,
-        [...mod.importers],
-        mod.lastHMRTimestamp,
-        server,
-        true,
-      )
-    }
-  }
-
-  hot.on('vite:invalidate', async ({ path, message, environment }) => {
-    if (environment) {
-      invalidateModule(environments[environment]!, {
-        path,
-        message,
-      })
-    } else {
-      for (const environment of Object.values(environments)) {
-        invalidateModule(environment, { path, message })
-      }
-    }
   })
 
   if (!middlewareMode && httpServer) {

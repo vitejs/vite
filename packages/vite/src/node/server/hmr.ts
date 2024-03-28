@@ -19,6 +19,7 @@ import type { Plugin } from '../plugin'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import type { DevEnvironment } from './environment'
+import { prepareError } from './middlewares/error'
 import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -185,7 +186,8 @@ export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer,
 ): Promise<void> {
-  const { hot, config } = server
+  const { config } = server
+  const environments = Object.values(server.environments)
   const shortFile = getShortName(file, config.root)
 
   const isConfig = file === config.configFile
@@ -217,11 +219,13 @@ export async function handleHMRUpdate(
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
-    hot.send({
-      type: 'full-reload',
-      path: '*',
-      triggeredBy: path.resolve(config.root, file),
-    })
+    environments.forEach(({ hot }) =>
+      hot.send({
+        type: 'full-reload',
+        path: '*',
+        triggeredBy: path.resolve(config.root, file),
+      }),
+    )
     return
   }
 
@@ -301,12 +305,14 @@ export async function handleHMRUpdate(
             timestamp: true,
           },
         )
-        hot.send({
-          type: 'full-reload',
-          path: config.server.middlewareMode
-            ? '*'
-            : '/' + normalizePath(path.relative(config.root, file)),
-        })
+        environments.forEach(({ hot }) =>
+          hot.send({
+            type: 'full-reload',
+            path: config.server.middlewareMode
+              ? '*'
+              : '/' + normalizePath(path.relative(config.root, file)),
+          }),
+        )
       } else {
         // loaded but not in the module graph, probably not js
         debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
@@ -321,7 +327,13 @@ export async function handleHMRUpdate(
   for (const environment of Object.values(server.environments)) {
     hmrTasks.push({
       environment,
-      run: () => applyHMR(environment),
+      run: () =>
+        applyHMR(environment).catch((err) => {
+          environment.hot.send({
+            type: 'error',
+            err: prepareError(err),
+          })
+        }),
       cancel: () => {}, // TODO: implement cancel, maybe it isn't needed
     })
   }
@@ -347,7 +359,8 @@ export function updateModules(
   server: ViteDevServer,
   afterInvalidation?: boolean,
 ): void {
-  const { config, hot } = server
+  const { hot } = environment
+  const { config } = server
   const updates: Update[] = []
   const invalidatedModules = new Set<EnvironmentModuleNode>()
   const traversedModules = new Set<EnvironmentModuleNode>()
@@ -385,9 +398,6 @@ export function updateModules(
               ? isExplicitImportRequired(acceptedVia.url)
               : false,
           isWithinCircularImport,
-          // browser modules are invalidated by changing ?t= query,
-          // but in ssr we control the module system, so we can directly remove them form cache
-          ssrInvalidates: getSSRInvalidatedImporters(acceptedVia),
         }),
       ),
     )
@@ -423,32 +433,6 @@ export function updateModules(
     type: 'update',
     updates,
   })
-}
-
-function populateSSRImporters(
-  module: EnvironmentModuleNode,
-  timestamp: number,
-  seen: Set<EnvironmentModuleNode> = new Set(),
-) {
-  module.importedModules.forEach((importer) => {
-    if (seen.has(importer)) {
-      return
-    }
-    if (
-      importer.lastHMRTimestamp === timestamp ||
-      importer.lastInvalidationTimestamp === timestamp
-    ) {
-      seen.add(importer)
-      populateSSRImporters(importer, timestamp, seen)
-    }
-  })
-  return seen
-}
-
-function getSSRInvalidatedImporters(module: EnvironmentModuleNode) {
-  return [...populateSSRImporters(module, module.lastHMRTimestamp)].map(
-    (m) => m.file!,
-  )
 }
 
 function areAllImportsAccepted(
@@ -653,7 +637,7 @@ function isNodeWithinCircularImports(
 
 export function handlePrunedModules(
   mods: Set<EnvironmentModuleNode>,
-  { hot }: ViteDevServer,
+  { hot }: DevEnvironment,
 ): void {
   // update the disposed modules' hmr timestamp
   // since if it's re-imported, it should re-apply side effects

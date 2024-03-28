@@ -77,11 +77,8 @@ export class ModuleRunner {
           ? silentConsole
           : options.hmr.logger || console,
         options.hmr.connection,
-        ({ acceptedPath, ssrInvalidates }) => {
-          this.moduleCache.invalidate(acceptedPath)
-          if (ssrInvalidates) {
-            this.invalidateFiles(ssrInvalidates)
-          }
+        ({ acceptedPath }) => {
+          this.moduleCache.invalidateDepTree([acceptedPath])
           return this.import(acceptedPath)
         },
       )
@@ -126,15 +123,6 @@ export class ModuleRunner {
    */
   public isDestroyed(): boolean {
     return this._destroyed
-  }
-
-  private invalidateFiles(files: string[]) {
-    files.forEach((file) => {
-      const ids = this.fileToIdMap.get(file)
-      if (ids) {
-        ids.forEach((id) => this.moduleCache.invalidate(id))
-      }
-    })
   }
 
   // we don't use moduleCache.normalize because this URL doesn't have to follow the same rules

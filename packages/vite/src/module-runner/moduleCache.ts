@@ -90,7 +90,7 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
       invalidated.add(id)
       const mod = super.get(id)
       if (mod?.importers) this.invalidateDepTree(mod.importers, invalidated)
-      super.delete(id)
+      this.invalidate(id)
     }
     return invalidated
   }
