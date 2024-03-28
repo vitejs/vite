@@ -247,7 +247,7 @@ async function instantiateModule(
     const errorData = importErrors.get(e)
 
     if (e.stack && fixStacktrace) {
-      ssrFixStacktrace(e, server.moduleGraph)
+      ssrFixStacktrace(e, moduleGraph)
     }
 
     server.config.logger.error(

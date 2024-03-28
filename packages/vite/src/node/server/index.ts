@@ -583,10 +583,10 @@ export async function _createServer(
       )
     },
     ssrFixStacktrace(e) {
-      ssrFixStacktrace(e, server.moduleGraph)
+      ssrFixStacktrace(e, server.environments.ssr.moduleGraph)
     },
     ssrRewriteStacktrace(stack: string) {
-      return ssrRewriteStacktrace(stack, server.moduleGraph)
+      return ssrRewriteStacktrace(stack, server.environments.ssr.moduleGraph)
     },
     async reloadModule(module) {
       if (serverConfig.hmr !== false && module.file) {
