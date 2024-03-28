@@ -784,7 +784,7 @@ export async function _createServer(
       watcher,
       onFileAddUnlink,
       onFileChange,
-      50,
+      5,
     )
   } else {
     watcher.on('add', (file) => {
