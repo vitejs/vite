@@ -118,20 +118,19 @@ function invalidateModule(
 ) {
   const mod = environment.moduleGraph.urlToModuleMap.get(m.path)
   if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
-    const server = environment.server
-    server.config.logger.info(
+    environment.logger.info(
       colors.yellow(`hmr invalidate `) +
         colors.dim(m.path) +
         (m.message ? ` ${m.message}` : ''),
       { timestamp: true },
     )
-    const file = getShortName(mod.file!, server.config.root)
+    const file = getShortName(mod.file!, environment.config.root)
     updateModules(
       environment,
       file,
       [...mod.importers],
       mod.lastHMRTimestamp,
-      server,
+      environment.server,
       true,
     )
   }

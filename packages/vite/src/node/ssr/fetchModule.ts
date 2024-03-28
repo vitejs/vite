@@ -42,7 +42,7 @@ export async function fetchModule(
       resolve: { dedupe, preserveSymlinks },
       root,
       ssr,
-    } = environment.server.config
+    } = environment.config
     const overrideConditions = ssr.resolve?.externalConditions || []
 
     const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
@@ -56,7 +56,7 @@ export async function fetchModule(
       isProduction,
       root,
       ssrConfig: ssr,
-      packageCache: environment.server.config.packageCache,
+      packageCache: environment.config.packageCache,
     }
 
     const resolved = tryNodeResolve(
@@ -75,10 +75,7 @@ export async function fetchModule(
       throw err
     }
     const file = pathToFileURL(resolved.id).toString()
-    const type = isFilePathESM(
-      resolved.id,
-      environment.server.config.packageCache,
-    )
+    const type = isFilePathESM(resolved.id, environment.config.packageCache)
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }

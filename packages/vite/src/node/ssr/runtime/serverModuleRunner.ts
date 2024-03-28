@@ -89,7 +89,7 @@ export function createServerModuleRunner(
   return new ModuleRunner(
     {
       ...options,
-      root: environment.server.config.root,
+      root: environment.config.root,
       transport: {
         fetchModule: (id, importer) => environment.fetchModule(id, importer),
       },
