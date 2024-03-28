@@ -264,7 +264,7 @@ export interface ViteDevServer {
   /**
    * Module execution environments attached to the Vite server.
    */
-  environments: Record<string, DevEnvironment>
+  environments: Record<'client' | 'ssr' | (string & {}), DevEnvironment>
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
