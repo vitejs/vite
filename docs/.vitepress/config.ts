@@ -281,10 +281,6 @@ export default defineConfig({
               link: '/guide/api-vite-environment',
             },
             {
-              text: 'Vite Runtime API',
-              link: '/guide/api-vite-runtime',
-            },
-            {
               text: 'Config Reference',
               link: '/config/',
             },
