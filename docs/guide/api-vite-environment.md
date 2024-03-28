@@ -280,8 +280,12 @@ One of the goals of this feature is to provide a customizable API to process and
 import { DevEnvironment } from 'vite'
 
 function createWorkerdDevEnvironment(server: ViteDevServer, name: string, config?: DevEnvironmentConfig) {
-  const workerdModuleRunner = /* ... */
   const hot = /* ... */
+  const connection = /* ... */
+  const transport = new RemoteEnvironmentTransport({
+    send: (data) => connection.send(data),
+    onMessage: (listener) => connection.on('message', listener),
+  })
 
   const workerdDevEnvironment = new DevEnvironment(server, name, {
     config: {
@@ -289,6 +293,9 @@ function createWorkerdDevEnvironment(server: ViteDevServer, name: string, config
       ...config,
     },
     hot,
+    runner: {
+      transport,
+    },
   })
   return workerdDevEnvironment
 }
