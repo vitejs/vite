@@ -1337,6 +1337,7 @@ export class BuildEnvironment extends Environment {
 export interface ViteBuilder {
   environments: Record<string, BuildEnvironment>
   build(): Promise<void>
+  buildEnvironment(environment: BuildEnvironment): Promise<void>
 }
 
 export interface BuildTask {
@@ -1413,28 +1414,32 @@ export async function createViteBuilder(
 
   const environments: Record<string, BuildEnvironment> = {}
 
+  async function resolveEnvironmentConfig(environment: BuildEnvironment) {
+    // We need to resolve the config again so we can properly merge options
+    // and get a new set of plugins for each build environment. The ecosystem
+    // expects plugins to be run for the same environment once they are created
+    // and to process a single bundle at a time (contrary to dev mode where
+    // plugins are built to handle multiple environments concurrently).
+
+    let userConfig = getDefaultInlineConfig()
+    const inlineConfigEnvironmentOverrides =
+      userConfig.environments?.[environment.name]
+    if (inlineConfigEnvironmentOverrides) {
+      userConfig = mergeConfig(userConfig, inlineConfigEnvironmentOverrides)
+    }
+    if (environment.config) {
+      userConfig = mergeConfig(userConfig, environment.config)
+    }
+
+    return await resolveConfigToBuild(userConfig)
+  }
+
   const builder: ViteBuilder = {
     environments,
     async build() {
       const buildTasks = []
       for (const environment of Object.values(environments)) {
-        // We need to resolve the config again so we can properly merge options
-        // and get a new set of plugins for each build environment. The ecosystem
-        // expects plugins to be run for the same environment once they are created
-        // and to process a single bundle at a time (contrary to dev mode where
-        // plugins are built to handle multiple environments concurrently).
-
-        let userConfig = getDefaultInlineConfig()
-        const inlineConfigEnvironmentOverrides =
-          userConfig.environments?.[environment.name]
-        if (inlineConfigEnvironmentOverrides) {
-          userConfig = mergeConfig(userConfig, inlineConfigEnvironmentOverrides)
-        }
-        if (environment.config) {
-          userConfig = mergeConfig(userConfig, environment.config)
-        }
-
-        const config = await resolveConfigToBuild(userConfig)
+        const config = await resolveEnvironmentConfig(environment)
         const buildTask = {
           environment,
           config,
@@ -1443,46 +1448,24 @@ export async function createViteBuilder(
           },
           cancel: () => {}, // TODO, maybe not needed
         }
-
         buildTasks.push(buildTask)
       }
-
-      return defaultConfig.builder.runBuildTasks(builder, buildTasks)
+      await defaultConfig.builder.runBuildTasks(builder, buildTasks)
+    },
+    async buildEnvironment(environment: BuildEnvironment) {
+      const config = await resolveEnvironmentConfig(environment)
+      await buildEnvironment(config, environment)
     },
   }
 
-  const createClientEnvironment =
-    defaultInlineConfig.environments?.client?.build?.createEnvironment ??
-    ((builder: ViteBuilder, name: string) =>
-      new BuildEnvironment(builder, name))
-
-  environments.client = createClientEnvironment(builder, 'client')
-
-  // TODO: How to know if we should build for SSR or not?
-  // build.ssr should end up moved as an EnvironmentConfig option
-
-  // Backward compatibility for `ssr` option
-  if (defaultConfig.build.ssr) {
-    const createSsrEnvironment =
-      defaultInlineConfig.environments?.ssr?.build?.createEnvironment ??
-      defaultConfig.build?.createEnvironment ??
+  for (const name of Object.keys(defaultConfig.environments)) {
+    const environmentConfig = defaultConfig.environments[name]
+    const createEnvironment =
+      environmentConfig.build?.createEnvironment ??
       ((builder: ViteBuilder, name: string) =>
         new BuildEnvironment(builder, name))
-
-    environments.ssr = createSsrEnvironment(builder, 'ssr')
-  }
-
-  for (const name of Object.keys(defaultConfig.environments)) {
-    // TODO: We could directly create client and ssr here
-    if (name !== 'client' && name !== 'ssr') {
-      const environmentConfig = defaultConfig.environments[name]
-      const createEnvironment =
-        environmentConfig.build?.createEnvironment ??
-        ((builder: ViteBuilder, name: string) =>
-          new BuildEnvironment(builder, name))
-      const environment = createEnvironment(builder, name)
-      environments[name] = environment
-    }
+    const environment = createEnvironment(builder, name)
+    environments[name] = environment
   }
 
   return builder

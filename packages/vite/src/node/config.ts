@@ -743,10 +743,26 @@ export async function resolveConfig(
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
 
+  const isBuild = command === 'build'
+
   // Ensure default client and ssr environments
+  // If there are present, ensure order { client, ssr, ...custom }
   config.environments ??= {}
-  config.environments.client ??= {}
-  config.environments.ssr ??= {}
+  if (
+    !config.environments.ssr &&
+    (!isBuild || config.ssr || config.build?.ssr)
+  ) {
+    // During dev, the ssr environment is always available even if it isn't configure
+    // There is no perf hit, because the optimizer is initialized only if ssrLoadModule
+    // is called.
+    // During build, we only build the ssr environment if it is configured
+    // through the deprecated ssr top level options or if it is explicitely defined
+    // in the environments config
+    config.environments = { ssr: {}, ...config.environments }
+  }
+  if (!config.environments.client) {
+    config.environments = { client: {}, ...config.environments }
+  }
 
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
@@ -780,21 +796,23 @@ export async function resolveConfig(
   // Done: ssr.optimizeDeps, ssr.resolve.conditions
   // TODO: ssr.resolve.externalConditions, ssr.external, ssr.noExternal
   const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
-  const configEnvironmentsSsr = config.environments!.ssr!
-  configEnvironmentsSsr.dev ??= {}
-  configEnvironmentsSsr.dev.optimizeDeps = mergeConfig(
-    configEnvironmentsSsr.dev.optimizeDeps ?? {},
-    deprecatedSsrOptimizeDepsConfig,
-  )
-  configEnvironmentsSsr.resolve ??= {}
-  const deprecatedSsrResolveConditions = config.ssr?.resolve?.conditions
-  configEnvironmentsSsr.resolve.conditions ??= deprecatedSsrResolveConditions // TODO: should we merge?
+  const configEnvironmentsSsr = config.environments!.ssr
+  if (configEnvironmentsSsr) {
+    configEnvironmentsSsr.dev ??= {}
+    configEnvironmentsSsr.dev.optimizeDeps = mergeConfig(
+      configEnvironmentsSsr.dev.optimizeDeps ?? {},
+      deprecatedSsrOptimizeDepsConfig,
+    )
+    configEnvironmentsSsr.resolve ??= {}
+    const deprecatedSsrResolveConditions = config.ssr?.resolve?.conditions
+    configEnvironmentsSsr.resolve.conditions ??= deprecatedSsrResolveConditions // TODO: should we merge?
+  }
 
   // The client and ssr environment configs can't be removed by the user in the config hook
   if (
     !config.environments ||
     !config.environments.client ||
-    !config.environments.ssr
+    (!config.environments.ssr && !isBuild)
   ) {
     throw new Error(
       'Required environments configuration were stripped out in the config hook',
@@ -897,7 +915,6 @@ export async function resolveConfig(
   const isProduction = process.env.NODE_ENV === 'production'
 
   // resolve public base url
-  const isBuild = command === 'build'
   const relativeBaseShortcut = config.base === '' || config.base === './'
 
   // During dev, we ignore relative base and fallback to '/'

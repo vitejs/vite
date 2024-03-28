@@ -286,6 +286,12 @@ export class ModuleGraph {
     this._ssr.onFileChange(file)
   }
 
+  /** @deprecated */
+  onFileDelete(file: string): void {
+    this._client.onFileDelete(file)
+    this._ssr.onFileDelete(file)
+  }
+
   /** @internal */
   _getModuleGraph(environment: string): EnvironmentModuleGraph {
     switch (environment) {

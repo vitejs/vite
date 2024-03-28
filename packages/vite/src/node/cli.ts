@@ -29,6 +29,10 @@ interface GlobalCLIOptions {
   m?: string
   mode?: string
   force?: boolean
+}
+
+interface BuilderCLIOptions {
+  environment?: string
   all?: boolean
 }
 
@@ -71,7 +75,7 @@ const filterDuplicateOptions = <T extends object>(options: T) => {
 /**
  * removing global flags before passing as command specific sub-configs
  */
-function cleanOptions<Options extends GlobalCLIOptions>(
+function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   options: Options,
 ): Omit<Options, keyof GlobalCLIOptions> {
   const ret = { ...options }
@@ -99,6 +103,19 @@ function cleanOptions<Options extends GlobalCLIOptions>(
           ? false
           : ret.sourcemap
   }
+
+  return ret
+}
+
+/**
+ * removing builder flags before passing as command specific sub-configs
+ */
+function cleanBuilderCLIOptions<Options extends BuilderCLIOptions>(
+  options: Options,
+): Omit<Options, keyof BuilderCLIOptions> {
+  const ret = { ...options }
+  delete ret.environment
+  delete ret.all
 
   return ret
 }
@@ -162,7 +179,7 @@ cli
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         optimizeDeps: { force: options.force },
-        server: cleanOptions(options),
+        server: cleanGlobalCLIOptions(options),
       })
 
       if (!server.httpServer) {
@@ -264,40 +281,59 @@ cli
     `[boolean] force empty outDir when it's outside of root`,
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
+  .option('--environment [name]', `[string] build a single environment`)
   .option('--all', `[boolean] build all environments`)
-  .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
-    filterDuplicateOptions(options)
-    const { build, createViteBuilder } = await import('./build')
-    const buildOptions: BuildOptions = cleanOptions(options)
+  .action(
+    async (
+      root: string,
+      options: BuildOptions & BuilderCLIOptions & GlobalCLIOptions,
+    ) => {
+      filterDuplicateOptions(options)
+      const { build, createViteBuilder } = await import('./build')
 
-    const config = {
-      root,
-      base: options.base,
-      mode: options.mode,
-      configFile: options.config,
-      logLevel: options.logLevel,
-      clearScreen: options.clearScreen,
-      build: buildOptions,
-    }
-
-    try {
-      if (options.all) {
-        // Build all environments
-        const builder = await createViteBuilder({}, config)
-        await builder.build()
-      } else {
-        await build(config)
-      }
-    } catch (e) {
-      createLogger(options.logLevel).error(
-        colors.red(`error during build:\n${e.stack}`),
-        { error: e },
+      const buildOptions: BuildOptions = cleanGlobalCLIOptions(
+        cleanBuilderCLIOptions(options),
       )
-      process.exit(1)
-    } finally {
-      stopProfiler((message) => createLogger(options.logLevel).info(message))
-    }
-  })
+
+      const config = {
+        root,
+        base: options.base,
+        mode: options.mode,
+        configFile: options.config,
+        logLevel: options.logLevel,
+        clearScreen: options.clearScreen,
+        build: buildOptions,
+      }
+
+      try {
+        if (options.all || options.environment) {
+          const builder = await createViteBuilder({}, config)
+          if (options.environment) {
+            const environment = builder.environments[options.environment]
+            if (!environment) {
+              throw new Error(
+                `The environment ${options.environment} isn't configured.`,
+              )
+            }
+            await builder.buildEnvironment(environment)
+          } else {
+            // Build all environments
+            await builder.build()
+          }
+        } else {
+          await build(config)
+        }
+      } catch (e) {
+        createLogger(options.logLevel).error(
+          colors.red(`error during build:\n${e.stack}`),
+          { error: e },
+        )
+        process.exit(1)
+      } finally {
+        stopProfiler((message) => createLogger(options.logLevel).info(message))
+      }
+    },
+  )
 
 // optimize
 cli

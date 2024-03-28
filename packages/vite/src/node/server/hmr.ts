@@ -7,7 +7,7 @@ import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
 import type { ResolvedConfig } from '../config'
-import { createDebugger, normalizePath, unique } from '../utils'
+import { createDebugger, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
 import { isCSSRequest } from '../plugins/css'
@@ -181,9 +181,9 @@ export interface HmrTask {
 }
 
 export async function handleHMRUpdate(
+  type: 'create' | 'delete' | 'update',
   file: string,
   server: ViteDevServer,
-  configOnly: boolean,
 ): Promise<void> {
   const { hot, config } = server
   const shortFile = getShortName(file, config.root)
@@ -213,10 +213,6 @@ export async function handleHMRUpdate(
     return
   }
 
-  if (configOnly) {
-    return
-  }
-
   debugHmr?.(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
@@ -237,14 +233,19 @@ export async function handleHMRUpdate(
   // also be called for each runtime.
 
   async function applyHMR(environment: DevEnvironment) {
-    const mods = environment.moduleGraph.getModulesByFile(file)
+    const mods = environment.moduleGraph.getModulesByFile(file) || new Set()
+    if (type === 'create' || type === 'delete') {
+      for (const mod of getAffectedGlobModules(file, server)) {
+        mods.add(mod)
+      }
+    }
 
     // check if any plugin wants to perform custom HMR handling
     const timestamp = Date.now()
     const hotContext: HotUpdateContext = {
       file,
       timestamp,
-      modules: mods ? [...mods] : [],
+      modules: [...mods],
       read: () => readModifiedFile(file),
       server,
       // later on hotUpdate will be called for each runtime with a new hotContext
@@ -448,36 +449,6 @@ function getSSRInvalidatedImporters(module: EnvironmentModuleNode) {
   return [...populateSSRImporters(module, module.lastHMRTimestamp)].map(
     (m) => m.file!,
   )
-}
-
-export async function handleFileAddUnlink(
-  file: string,
-  server: ViteDevServer,
-  isUnlink: boolean,
-): Promise<void> {
-  Object.values(server.environments).forEach((environment) => {
-    const modules = [...(environment.moduleGraph.getModulesByFile(file) || [])]
-
-    if (isUnlink) {
-      for (const deletedMod of modules) {
-        deletedMod.importedModules.forEach((importedMod) => {
-          importedMod.importers.delete(deletedMod)
-        })
-      }
-    }
-
-    modules.push(...getAffectedGlobModules(file, server))
-
-    if (modules.length > 0) {
-      updateModules(
-        environment,
-        getShortName(file, server.config.root),
-        unique(modules),
-        Date.now(),
-        server,
-      )
-    }
-  })
 }
 
 function areAllImportsAccepted(

@@ -141,6 +141,17 @@ export class EnvironmentModuleGraph {
     }
   }
 
+  onFileDelete(file: string): void {
+    const mods = this.getModulesByFile(file)
+    if (mods) {
+      mods.forEach((mod) => {
+        mod.importedModules.forEach((importedMod) => {
+          importedMod.importers.delete(mod)
+        })
+      })
+    }
+  }
+
   invalidateModule(
     mod: EnvironmentModuleNode,
     seen: Set<EnvironmentModuleNode> = new Set(),
