@@ -277,7 +277,7 @@ export class ModuleGraph {
 One of the goals of this feature is to provide a customizable API to process and run code. Users can create new environment types using the exposed primitives.
 
 ```ts
-import { DevEnvironment } from 'vite'
+import { DevEnvironment, RemoteEnvironmentTransport } from 'vite'
 
 function createWorkerdDevEnvironment(server: ViteDevServer, name: string, config?: DevEnvironmentConfig) {
   const hot = /* ... */
