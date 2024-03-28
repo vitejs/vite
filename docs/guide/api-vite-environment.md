@@ -366,7 +366,7 @@ To register a new dev or build environment, you can use a `create` function:
 ```js
 export default {
   environments: {
-    rsc: {,
+    rsc: {
       dev: {
         create: (server) => createNodeDevEnvironment(server),
       },
