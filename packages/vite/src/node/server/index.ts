@@ -89,7 +89,7 @@ import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { warmupFiles } from './warmup'
 import { DevEnvironment } from './environment'
-import { createNodeEnvironment } from './environments/nodeEnvironment'
+import { createNodeDevEnvironment } from './environments/nodeEnvironment'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -782,15 +782,15 @@ export async function _createServer(
   const ssr_createEnvironment =
     config.environments.ssr?.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
-      createNodeEnvironment(server, name, { hot: ssrHotChannel }))
+      createNodeDevEnvironment(server, name, { hot: ssrHotChannel }))
 
   environments.ssr = ssr_createEnvironment(server, 'ssr')
 
-  Object.entries(config.environments).forEach(([name, environmentConfig]) => {
+  Object.entries(config.environments).forEach(([name, EnvironmentOptions]) => {
     // TODO: move client and ssr inside the loop?
     if (name !== 'client' && name !== 'ssr') {
       const createEnvironment =
-        environmentConfig.dev?.createEnvironment ??
+        EnvironmentOptions.dev?.createEnvironment ??
         ((server: ViteDevServer, name: string) =>
           new DevEnvironment(server, name, {
             hot: ws, // TODO: what should we use here?

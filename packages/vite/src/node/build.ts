@@ -29,11 +29,12 @@ import {
   VERSION,
 } from './constants'
 import type {
-  BuildEnvironmentConfig,
+  EnvironmentOptions,
   InlineConfig,
   ResolvedConfig,
+  ResolvedEnvironmentOptions,
 } from './config'
-import { resolveConfig } from './config'
+import { getDefaultResolvedEnvironmentOptions, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
@@ -1322,20 +1323,31 @@ function areSeparateFolders(a: string, b: string) {
 export class BuildEnvironment extends Environment {
   mode = 'build' as const
   builder: ViteBuilder
-  config: BuildEnvironmentConfig
+
   constructor(
     builder: ViteBuilder,
     name: string,
-    options?: { config?: BuildEnvironmentConfig },
+    setup?: {
+      options?: EnvironmentOptions
+    },
   ) {
-    super(name)
+    let options =
+      builder.config.environments[name] ??
+      getDefaultResolvedEnvironmentOptions(builder.config)
+    if (setup?.options) {
+      options = mergeConfig(
+        options,
+        setup?.options,
+      ) as ResolvedEnvironmentOptions
+    }
+    super(name, builder.config, options)
     this.builder = builder
-    this.config = options?.config ?? { build: {} }
   }
 }
 
 export interface ViteBuilder {
   environments: Record<string, BuildEnvironment>
+  config: ResolvedConfig
   build(): Promise<void>
   buildEnvironment(environment: BuildEnvironment): Promise<void>
 }
@@ -1383,27 +1395,21 @@ export async function createViteBuilder(
 ): Promise<ViteBuilder> {
   // Plugins passed to the Builder inline config needs to be created
   // from a factory to ensure each build has their own instances
-  const getDefaultInlineConfig = (): InlineConfig => {
+  const resolveConfig = (): Promise<ResolvedConfig> => {
     const { plugins } = defaultBuilderInlineConfig
-    return plugins
+    const defaultInlineConfig = plugins
       ? {
           ...defaultBuilderInlineConfig,
           plugins: plugins(),
         }
       : (defaultBuilderInlineConfig as InlineConfig)
+
+    // We resolve the whole config including plugins here but later on we
+    // need to refactor resolveConfig to only resolve the environments config
+    return resolveConfigToBuild(defaultInlineConfig)
   }
 
-  // TODO: defineEnvironments -> config
-
-  // We resolve the whole config including plugins here but later on we
-  // need to refactor resolveConfig to only resolve the environments config
-  const defaultInlineConfig = getDefaultInlineConfig()
-  const defaultConfig = await resolveConfig(
-    defaultInlineConfig,
-    'build',
-    'production',
-    'production',
-  )
+  const defaultConfig = await resolveConfig()
 
   if (defaultConfig.build.lib) {
     throw new Error('Library mode is not supported in ViteBuilder')
@@ -1414,37 +1420,17 @@ export async function createViteBuilder(
 
   const environments: Record<string, BuildEnvironment> = {}
 
-  async function resolveEnvironmentConfig(environment: BuildEnvironment) {
-    // We need to resolve the config again so we can properly merge options
-    // and get a new set of plugins for each build environment. The ecosystem
-    // expects plugins to be run for the same environment once they are created
-    // and to process a single bundle at a time (contrary to dev mode where
-    // plugins are built to handle multiple environments concurrently).
-
-    let userConfig = getDefaultInlineConfig()
-    const inlineConfigEnvironmentOverrides =
-      userConfig.environments?.[environment.name]
-    if (inlineConfigEnvironmentOverrides) {
-      userConfig = mergeConfig(userConfig, inlineConfigEnvironmentOverrides)
-    }
-    if (environment.config) {
-      userConfig = mergeConfig(userConfig, environment.config)
-    }
-
-    return await resolveConfigToBuild(userConfig)
-  }
-
   const builder: ViteBuilder = {
     environments,
+    config: defaultConfig,
     async build() {
       const buildTasks = []
       for (const environment of Object.values(environments)) {
-        const config = await resolveEnvironmentConfig(environment)
         const buildTask = {
           environment,
-          config,
+          config: environment.config,
           run: async () => {
-            await buildEnvironment(config, environment)
+            await buildEnvironment(environment.config, environment)
           },
           cancel: () => {}, // TODO, maybe not needed
         }
@@ -1453,18 +1439,26 @@ export async function createViteBuilder(
       await defaultConfig.builder.runBuildTasks(builder, buildTasks)
     },
     async buildEnvironment(environment: BuildEnvironment) {
-      const config = await resolveEnvironmentConfig(environment)
-      await buildEnvironment(config, environment)
+      await buildEnvironment(environment.config, environment)
     },
   }
 
   for (const name of Object.keys(defaultConfig.environments)) {
-    const environmentConfig = defaultConfig.environments[name]
+    const environmentOptions = defaultConfig.environments[name]
     const createEnvironment =
-      environmentConfig.build?.createEnvironment ??
+      environmentOptions.build?.createEnvironment ??
       ((builder: ViteBuilder, name: string) =>
         new BuildEnvironment(builder, name))
-    const environment = createEnvironment(builder, name)
+
+    // We need to resolve the config again so we can properly merge options
+    // and get a new set of plugins for each build environment. The ecosystem
+    // expects plugins to be run for the same environment once they are created
+    // and to process a single bundle at a time (contrary to dev mode where
+    // plugins are built to handle multiple environments concurrently).
+    const environmentConfig = await resolveConfig()
+    const environmentBuilder = { ...builder, config: environmentConfig }
+
+    const environment = createEnvironment(environmentBuilder, name)
     environments[name] = environment
   }
 

@@ -1,10 +1,20 @@
-// We are using command: 'serve' | 'build' to aling with the command flag passed to hooks.
-// It would be better if we would use 'dev' here but can tackle that if we managed to modify
-// command at the hooks level. There could also be Preview environments later on.
+import type { Logger } from './logger'
+import type { ResolvedConfig, ResolvedEnvironmentOptions } from './config'
 
 export class Environment {
   name: string
-  constructor(name: string) {
+  config: ResolvedConfig
+  options: ResolvedEnvironmentOptions
+  get logger(): Logger {
+    return this.config.logger
+  }
+  constructor(
+    name: string,
+    config: ResolvedConfig,
+    options: ResolvedEnvironmentOptions,
+  ) {
     this.name = name
+    this.config = config
+    this.options = options
   }
 }

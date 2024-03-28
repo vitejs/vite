@@ -1,12 +1,12 @@
-import type { DevEnvironmentOptions } from '../environment'
+import type { DevEnvironmentSetup } from '../environment'
 import { DevEnvironment } from '../environment'
 import type { ViteDevServer } from '../index'
 import { asyncFunctionDeclarationPaddingLineCount } from '../../../shared/utils'
 
-export function createNodeEnvironment(
+export function createNodeDevEnvironment(
   server: ViteDevServer,
   name: string,
-  options?: DevEnvironmentOptions,
+  options?: DevEnvironmentSetup,
 ): DevEnvironment {
   return new DevEnvironment(server, name, {
     ...options,

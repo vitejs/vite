@@ -3,8 +3,8 @@ import colors from 'picocolors'
 import { Environment } from '../environment'
 import type { ViteDevServer } from '../server'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
-import type { DevEnvironmentConfig } from '../config'
-import { getDefaultResolvedDevEnvironmentConfig } from '../config'
+import type { EnvironmentOptions, ResolvedEnvironmentOptions } from '../config'
+import { getDefaultResolvedEnvironmentOptions } from '../config'
 import { mergeConfig } from '../utils'
 import type { FetchModuleOptions } from '../ssr/fetchModule'
 import { fetchModule } from '../ssr/fetchModule'
@@ -16,9 +16,9 @@ import type { TransformResult } from './transformRequest'
 import { ERR_CLOSED_SERVER } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
 
-export interface DevEnvironmentOptions {
+export interface DevEnvironmentSetup {
   hot?: false | HMRChannel
-  config?: DevEnvironmentConfig
+  options?: EnvironmentOptions
   runner?: FetchModuleOptions & {
     transport?: RemoteEnvironmentTransport
   }
@@ -29,7 +29,6 @@ export class DevEnvironment extends Environment {
   mode = 'dev' as const // TODO: should this be 'serve'?
   moduleGraph: EnvironmentModuleGraph
   server: ViteDevServer
-  config: DevEnvironmentConfig
   /**
    * @internal
    */
@@ -45,33 +44,36 @@ export class DevEnvironment extends Environment {
   constructor(
     server: ViteDevServer,
     name: string,
-    options?: {
+    setup?: {
       hot?: false | HMRChannel
-      config?: DevEnvironmentConfig
+      options?: EnvironmentOptions
       runner?: FetchModuleOptions & {
         transport?: RemoteEnvironmentTransport
       }
     },
   ) {
-    super(name)
+    let options =
+      server.config.environments[name] ??
+      getDefaultResolvedEnvironmentOptions(server.config)
+    if (setup?.options) {
+      options = mergeConfig(
+        options,
+        setup?.options,
+      ) as ResolvedEnvironmentOptions
+    }
+    super(name, server.config, options)
+
     this.server = server
     this.moduleGraph = new EnvironmentModuleGraph(name, (url: string) =>
       this.server.pluginContainer.resolveId(url, undefined, {
         environment: this,
       }),
     )
-    this.hot = options?.hot || createNoopHMRChannel()
+    this.hot = setup?.hot || createNoopHMRChannel()
 
-    this.config =
-      server.config.environments[name] ??
-      getDefaultResolvedDevEnvironmentConfig(server.config)
-    if (options?.config) {
-      this.config = mergeConfig(this.config, options?.config)
-    }
-
-    const ssrRunnerOptions = options?.runner || {}
+    const ssrRunnerOptions = setup?.runner || {}
     this._ssrRunnerOptions = ssrRunnerOptions
-    options?.runner?.transport?.register(this)
+    setup?.runner?.transport?.register(this)
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {

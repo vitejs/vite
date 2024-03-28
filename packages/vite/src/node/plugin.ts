@@ -10,7 +10,7 @@ import type {
 } from 'rollup'
 import type {
   ConfigEnv,
-  EnvironmentConfig,
+  EnvironmentOptions,
   ResolvedConfig,
   UserConfig,
 } from './config'
@@ -111,13 +111,13 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
     (
       this: void,
       name: string,
-      config: EnvironmentConfig,
+      config: EnvironmentOptions,
       env: ConfigEnv,
     ) =>
-      | EnvironmentConfig
+      | EnvironmentOptions
       | null
       | void
-      | Promise<EnvironmentConfig | null | void>
+      | Promise<EnvironmentOptions | null | void>
   >
   /**
    * Use this hook to read and store the final resolved vite config.

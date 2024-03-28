@@ -187,14 +187,14 @@ type EnvironmentResolveOptions = ResolveOptions & {
   alias?: AliasOptions
 }
 
-export interface SharedEnvironmentConfig {
+export interface SharedEnvironmentOptions {
   /**
    * Configure resolver
    */
   resolve?: EnvironmentResolveOptions
 }
 
-export interface EnvironmentConfig extends SharedEnvironmentConfig {
+export interface EnvironmentOptions extends SharedEnvironmentOptions {
   /**
    * Dev specific options
    */
@@ -205,21 +205,9 @@ export interface EnvironmentConfig extends SharedEnvironmentConfig {
   build?: BuildOptions
 }
 
-export type ResolvedEnvironmentConfig = Required<EnvironmentConfig>
+export type ResolvedEnvironmentOptions = Required<EnvironmentOptions>
 
-export interface DevEnvironmentConfig extends SharedEnvironmentConfig {
-  dev?: DevOptions
-}
-
-export type ResolvedDevEnvironmentConfig = Required<DevEnvironmentConfig>
-
-export interface BuildEnvironmentConfig extends SharedEnvironmentConfig {
-  build?: BuildOptions
-}
-
-export type ResolvedBuildEnvironmentConfig = Required<BuildEnvironmentConfig>
-
-export interface UserConfig extends EnvironmentConfig {
+export interface UserConfig extends EnvironmentOptions {
   /**
    * Project root directory. Can be an absolute path, or a path relative from
    * the location of the config file itself.
@@ -365,14 +353,14 @@ export interface UserConfig extends EnvironmentConfig {
   optimizeDeps?: DepOptimizationOptions
   /**
    * SSR specific options
-   * We could make SSROptions be a EnvironmentConfig if we can abstract
+   * We could make SSROptions be a EnvironmentOptions if we can abstract
    * external/noExternal for environments in general.
    */
   ssr?: SSROptions
   /**
    * Environment overrides
    */
-  environments?: Record<string, EnvironmentConfig>
+  environments?: Record<string, EnvironmentOptions>
   /**
    * Whether your application is a Single Page Application (SPA),
    * a Multi-Page Application (MPA), or Custom Application (SSR
@@ -500,7 +488,7 @@ export type ResolvedConfig = Readonly<
     worker: ResolvedWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
-    environments: Record<string, ResolvedEnvironmentConfig>
+    environments: Record<string, ResolvedEnvironmentOptions>
   } & PluginHookUtils
 >
 
@@ -526,11 +514,11 @@ export function resolveDevOptions(
   }
 }
 
-function resolveEnvironmentConfig(
-  config: EnvironmentConfig,
+function resolveEnvironmentOptions(
+  config: EnvironmentOptions,
   resolvedRoot: string,
   logger: Logger,
-): ResolvedEnvironmentConfig {
+): ResolvedEnvironmentOptions {
   const resolve = resolveEnvironmentResolveOptions(config.resolve, logger)
   return {
     resolve,
@@ -539,9 +527,9 @@ function resolveEnvironmentConfig(
   }
 }
 
-export function getDefaultEnvironmentConfig(
+export function getDefaultEnvironmentOptions(
   config: UserConfig,
-): EnvironmentConfig {
+): EnvironmentOptions {
   return {
     resolve: config.resolve,
     dev: config.dev,
@@ -549,20 +537,12 @@ export function getDefaultEnvironmentConfig(
   }
 }
 
-export function getDefaultResolvedDevEnvironmentConfig(
+export function getDefaultResolvedEnvironmentOptions(
   config: ResolvedConfig,
-): ResolvedDevEnvironmentConfig {
+): ResolvedEnvironmentOptions {
   return {
     resolve: config.resolve,
     dev: config.dev,
-  }
-}
-
-export function getDefaultResolvedBuildEnvironmentConfig(
-  config: ResolvedConfig,
-): ResolvedBuildEnvironmentConfig {
-  return {
-    resolve: config.resolve,
     build: config.build,
   }
 }
@@ -782,7 +762,7 @@ export async function resolveConfig(
   checkBadCharactersInPath(resolvedRoot, logger)
 
   // Backward compatibility: merge optimizeDeps into environments.client.dev.optimizeDeps as defaults
-  // TODO: should entries and force be in EnvironmentConfig?
+  // TODO: should entries and force be in EnvironmentOptions?
   const { entries, force, ...deprecatedClientOptimizeDepsConfig } =
     config.optimizeDeps ?? {}
   let configEnvironmentsClient = config.environments!.client!
@@ -820,19 +800,19 @@ export async function resolveConfig(
   }
 
   // Merge default environment config values
-  const defaultEnvironmentConfig = getDefaultEnvironmentConfig(config)
+  const defaultEnvironmentOptions = getDefaultEnvironmentOptions(config)
   for (const name of Object.keys(config.environments)) {
     config.environments[name] = mergeConfig(
-      defaultEnvironmentConfig,
+      defaultEnvironmentOptions,
       config.environments[name],
     )
   }
 
   await runConfigEnvironmentHook(config.environments, userPlugins, configEnv)
 
-  const resolvedEnvironments: Record<string, ResolvedEnvironmentConfig> = {}
+  const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
   for (const name of Object.keys(config.environments)) {
-    resolvedEnvironments[name] = resolveEnvironmentConfig(
+    resolvedEnvironments[name] = resolveEnvironmentOptions(
       config.environments[name],
       resolvedRoot,
       logger,
@@ -1593,7 +1573,7 @@ async function runConfigHook(
 }
 
 async function runConfigEnvironmentHook(
-  environments: Record<string, EnvironmentConfig>,
+  environments: Record<string, EnvironmentOptions>,
   plugins: Plugin[],
   configEnv: ConfigEnv,
 ): Promise<void> {

@@ -17,11 +17,8 @@ export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
 
 export { RemoteEnvironmentTransport } from './server/environmentTransport'
-export { createNodeEnvironment } from './server/environments/nodeEnvironment'
-export {
-  DevEnvironment,
-  type DevEnvironmentOptions,
-} from './server/environment'
+export { createNodeDevEnvironment } from './server/environments/nodeEnvironment'
+export { DevEnvironment, type DevEnvironmentSetup } from './server/environment'
 export { BuildEnvironment } from './build'
 
 export { fetchModule, type FetchModuleOptions } from './ssr/fetchModule'
