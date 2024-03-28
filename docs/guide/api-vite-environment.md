@@ -32,7 +32,7 @@ An dev environment is an instance of the `DevEnvironment` class:
 class DevEnvironment {
   /**
    * Unique identifier for the environment in a Vite server.
-   * By default Vite exposes 'browser' and 'node' environments.
+   * By default Vite exposes 'client' and 'ssr' environments.
    */
   name: string
   /**
