@@ -82,7 +82,6 @@ import {
   createHMRBroadcaster,
   createServerHMRChannel,
   getShortName,
-  handleFileAddUnlink,
   handleHMRUpdate,
   updateModules,
 } from './hmr'
@@ -512,7 +511,9 @@ export async function _createServer(
       return transformRequest(url, server, options)
     },
     async warmupRequest(url, options) {
-      await transformRequest(url, server, options).catch((e) => {
+      try {
+        await transformRequest(url, server, options)
+      } catch (e) {
         if (
           e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
           e?.code === ERR_CLOSED_SERVER
@@ -525,7 +526,7 @@ export async function _createServer(
           error: e,
           timestamp: true,
         })
-      })
+      }
     },
     transformIndexHtml(url, html, originalUrl) {
       return devHtmlTransformFn(server, url, html, originalUrl)
@@ -683,10 +684,19 @@ export async function _createServer(
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
-    _fsDenyGlob: picomatch(config.server.fs.deny, {
-      matchBase: true,
-      nocase: true,
-    }),
+    _fsDenyGlob: picomatch(
+      // matchBase: true does not work as it's documented
+      // https://github.com/micromatch/picomatch/issues/89
+      // convert patterns without `/` on our side for now
+      config.server.fs.deny.map((pattern) =>
+        pattern.includes('/') ? pattern : `**/${pattern}`,
+      ),
+      {
+        matchBase: false,
+        nocase: true,
+        dot: true,
+      },
+    ),
     _shortcutsOptions: undefined,
   }
 
@@ -717,10 +727,13 @@ export async function _createServer(
 
   const publicFiles = await initPublicFilesPromise
 
-  const onHMRUpdate = async (file: string, configOnly: boolean) => {
+  const onHMRUpdate = async (
+    type: 'create' | 'delete' | 'update',
+    file: string,
+  ) => {
     if (serverConfig.hmr !== false) {
       try {
-        await handleHMRUpdate(file, server, configOnly)
+        await handleHMRUpdate(type, file, server)
       } catch (err) {
         hot.send({
           type: 'error',
@@ -751,8 +764,8 @@ export async function _createServer(
         }
       }
     }
-    await handleFileAddUnlink(file, server, isUnlink)
-    await onHMRUpdate(file, true)
+    if (isUnlink) moduleGraph.onFileDelete(file)
+    await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
   }
 
   async function onFileChange(file: string) {
@@ -760,7 +773,7 @@ export async function _createServer(
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
-    await onHMRUpdate(file, false)
+    await onHMRUpdate('update', file)
   }
 
   const fsUtils = getFsUtils(config)
