@@ -385,10 +385,6 @@ export interface ViteDevServer {
   /**
    * @internal
    */
-  _importGlobMap: Map<string, { affirmed: string[]; negated: string[] }[]>
-  /**
-   * @internal
-   */
   _restartPromise: Promise<void> | null
   /**
    * @internal
@@ -742,7 +738,6 @@ export async function _createServer(
       server = _server
     },
     _restartPromise: null,
-    _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
     _safeModulesPath: new Set(),

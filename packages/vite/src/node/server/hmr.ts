@@ -11,7 +11,6 @@ import { createDebugger, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
 import { isCSSRequest } from '../plugins/css'
-import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
@@ -42,6 +41,7 @@ export interface HmrOptions {
 }
 
 export interface HotUpdateContext {
+  type: 'create' | 'update' | 'delete'
   file: string
   timestamp: number
   modules: Array<EnvironmentModuleNode>
@@ -233,15 +233,11 @@ export async function handleHMRUpdate(
   async function hmr(environment: DevEnvironment) {
     try {
       const mods = environment.moduleGraph.getModulesByFile(file) || new Set()
-      if (type === 'create' || type === 'delete') {
-        for (const mod of getAffectedGlobModules(file, server)) {
-          mods.add(mod)
-        }
-      }
 
       // check if any plugin wants to perform custom HMR handling
       const timestamp = Date.now()
       const hotContext: HotUpdateContext = {
+        type,
         file,
         timestamp,
         modules: [...mods],
@@ -263,7 +259,7 @@ export async function handleHMRUpdate(
             // Invalidate the hmrContext to force compat modules to be updated
             hmrContext = undefined
           }
-        } else if (environment.name === 'client') {
+        } else if (environment.name === 'client' && type === 'update') {
           // later on, we'll need: if (runtime === 'client')
           // Backward compatibility with mixed client and ssr moduleGraph
           hmrContext ??= {
@@ -271,6 +267,7 @@ export async function handleHMRUpdate(
             modules: hotContext.modules.map((mod) =>
               server.moduleGraph.getBackwardCompatibleModuleNode(mod),
             ),
+            type: undefined,
           } as HmrContext
           const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(
             hmrContext,
