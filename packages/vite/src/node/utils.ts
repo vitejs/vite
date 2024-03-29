@@ -1321,10 +1321,6 @@ export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
 }
 
-export function escapeReplaceValue(str: string): string {
-  return str.replaceAll('$', '$$$$' /* this is escaped $$ */)
-}
-
 type CommandType = 'install' | 'uninstall' | 'update'
 export function getPackageManagerCommand(
   type: CommandType = 'install',
