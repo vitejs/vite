@@ -1,6 +1,6 @@
 import ReactDomServer from 'react-dom/server'
-import Root from './root'
 import type { Connect, ViteDevServer } from 'vite'
+import Root from './root'
 
 const hanlder: Connect.NextHandleFunction = async (_req, res) => {
   const ssrHtml = ReactDomServer.renderToString(<Root />)
