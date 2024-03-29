@@ -1042,7 +1042,7 @@ function wrapEnvironmentResolveId(
   const fn = getHookHandler(hook)
   const handler: Plugin['resolveId'] = function (id, importer, options) {
     return fn.call(
-      injectEnvironmentInContext(this),
+      injectEnvironmentInContext(this, environment),
       id,
       importer,
       injectSsrFlag(options, environment),
