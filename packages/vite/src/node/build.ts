@@ -543,7 +543,7 @@ export async function buildEnvironment(
   // inject ssr arg to plugin load/transform hooks
   const plugins = (
     environment || ssr
-      ? config.plugins.map((p) => injectEnvironmentToHooks(p))
+      ? config.plugins.map((p) => injectEnvironmentToHooks(p, environment))
       : config.plugins
   ) as Plugin[]
 
@@ -1042,7 +1042,7 @@ function wrapEnvironmentResolveId(
   const fn = getHookHandler(hook)
   const handler: Plugin['resolveId'] = function (id, importer, options) {
     return fn.call(
-      injectEnvironmentInContext(this),
+      injectEnvironmentInContext(this, environment),
       id,
       importer,
       injectSsrFlag(options, environment),
