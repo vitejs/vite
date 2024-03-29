@@ -116,10 +116,10 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    - A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list
    - Recursively follow all chunks in the entry point's `imports` list and include a
-     `<link rel="stylesheet">` tag for each css file of each imported chunk.
-   - A tag for the `file` key of the entry point chunk (`<script type="module">` for Javascript,
-     or `<link rel="stylesheet">` for css)
-   - Optionally, `<link rel="modulepreload">` tag for the `file` of each imported Javascript
+     `<link rel="stylesheet">` tag for each CSS file of each imported chunk.
+   - A tag for the `file` key of the entry point chunk (`<script type="module">` for JavaScript,
+     or `<link rel="stylesheet">` for CSS)
+   - Optionally, `<link rel="modulepreload">` tag for the `file` of each imported JavaScript
      chunk, again recursively following the imports starting from the entry point chunk.
 
    Following the above example manifest, for the entry point `main.js` the following tags should be included in production:
