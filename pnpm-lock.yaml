@@ -27,9 +27,6 @@ importers:
       '@eslint-types/typescript-eslint':
         specifier: ^7.2.0
         version: 7.2.0
-      '@playwright/test':
-        specifier: ^1.42.1
-        version: 1.42.1
       '@rollup/plugin-typescript':
         specifier: ^11.1.6
         version: 11.1.6(rollup@4.13.0)(tslib@2.6.2)(typescript@5.2.2)
