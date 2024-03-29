@@ -1,4 +1,3 @@
-import { fileURLToPath } from 'node:url'
 import {
   type Connect,
   type Plugin,
@@ -13,9 +12,7 @@ export default defineConfig((env) => ({
   plugins: [
     vitePluginSsrMiddleware({
       entry: '/src/entry-server',
-      preview: fileURLToPath(
-        new URL('./dist/server/index.js', import.meta.url),
-      ),
+      preview: new URL('./dist/server/index.js', import.meta.url).toString(),
     }),
     {
       name: 'global-server',
