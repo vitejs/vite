@@ -543,7 +543,7 @@ export async function buildEnvironment(
   // inject ssr arg to plugin load/transform hooks
   const plugins = (
     environment || ssr
-      ? config.plugins.map((p) => injectEnvironmentToHooks(p))
+      ? config.plugins.map((p) => injectEnvironmentToHooks(p, environment))
       : config.plugins
   ) as Plugin[]
 
