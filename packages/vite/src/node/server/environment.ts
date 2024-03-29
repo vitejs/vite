@@ -117,7 +117,13 @@ function invalidateModule(
   },
 ) {
   const mod = environment.moduleGraph.urlToModuleMap.get(m.path)
-  if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
+  if (
+    mod &&
+    mod.isSelfAccepting &&
+    mod.lastHMRTimestamp > 0 &&
+    !mod.lastHMRInvalidationReceived
+  ) {
+    mod.lastHMRInvalidationReceived = true
     environment.logger.info(
       colors.yellow(`hmr invalidate `) +
         colors.dim(m.path) +

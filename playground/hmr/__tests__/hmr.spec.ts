@@ -1,7 +1,9 @@
 import { beforeAll, describe, expect, it, test } from 'vitest'
+import type { Page } from 'playwright-chromium'
 import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   addFile,
+  browser,
   browserLogs,
   editFile,
   getBg,
@@ -173,6 +175,38 @@ if (!isBuild) {
       true,
     )
     await untilUpdated(() => el.textContent(), 'child updated')
+  })
+
+  test('invalidate works with multiple tabs', async () => {
+    let page2: Page
+    try {
+      page2 = await browser.newPage()
+      await page2.goto(viteTestUrl)
+
+      const el = await page.$('.invalidation')
+      await untilBrowserLogAfter(
+        () =>
+          editFile('invalidation/child.js', (code) =>
+            code.replace('child', 'child updated'),
+          ),
+        [
+          '>>> vite:beforeUpdate -- update',
+          '>>> vite:invalidate -- /invalidation/child.js',
+          '[vite] invalidate /invalidation/child.js',
+          '[vite] hot updated: /invalidation/child.js',
+          '>>> vite:afterUpdate -- update',
+          // if invalidate dedupe doesn't work correctly, this beforeUpdate will be called twice
+          '>>> vite:beforeUpdate -- update',
+          '(invalidation) parent is executing',
+          '[vite] hot updated: /invalidation/parent.js',
+          '>>> vite:afterUpdate -- update',
+        ],
+        true,
+      )
+      await untilUpdated(() => el.textContent(), 'child updated')
+    } finally {
+      await page2.close()
+    }
   })
 
   test('soft invalidate', async () => {

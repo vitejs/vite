@@ -40,6 +40,13 @@ export class EnvironmentModuleNode {
   ssrError: Error | null = null
 
   lastHMRTimestamp = 0
+  /**
+   * `import.meta.hot.invalidate` is called by the client.
+   * If there's multiple clients, multiple `invalidate` request is received.
+   * This property is used to dedupe those request to avoid multiple updates happening.
+   * @internal
+   */
+  lastHMRInvalidationReceived = false
   lastInvalidationTimestamp = 0
   /**
    * If the module only needs to update its imports timestamp (e.g. within an HMR chain),
@@ -190,6 +197,7 @@ export class EnvironmentModuleGraph {
 
     if (isHmr) {
       mod.lastHMRTimestamp = timestamp
+      mod.lastHMRInvalidationReceived = false
     } else {
       // Save the timestamp for this invalidation, so we can avoid caching the result of possible already started
       // processing being done for this module
