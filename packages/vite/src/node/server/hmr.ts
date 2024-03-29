@@ -232,7 +232,13 @@ export async function handleHMRUpdate(
 
   async function hmr(environment: DevEnvironment) {
     try {
-      const mods = environment.moduleGraph.getModulesByFile(file) || new Set()
+      const mods = new Set(environment.moduleGraph.getModulesByFile(file))
+      if (type === 'create') {
+        for (const mod of environment.moduleGraph
+          ._hasResolveFailedErrorModules) {
+          mods.add(mod)
+        }
+      }
 
       // check if any plugin wants to perform custom HMR handling
       const timestamp = Date.now()
