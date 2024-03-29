@@ -10,7 +10,7 @@ export {
 } from './config'
 export { createServer } from './server'
 export { preview } from './preview'
-export { build } from './build'
+export { build, createViteBuilder } from './build'
 export { optimizeDeps } from './optimizer'
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'

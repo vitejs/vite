@@ -14,6 +14,7 @@ import type {
 import {
   build,
   createServer,
+  createViteBuilder,
   loadConfigFromFile,
   mergeConfig,
   preview,
@@ -257,15 +258,20 @@ export async function startDefaultServe(): Promise<void> {
         plugins: [resolvedPlugin()],
       },
     )
-    const rollupOutput = await build(buildConfig)
-    const isWatch = !!resolvedConfig!.build.watch
-    // in build watch,call startStaticServer after the build is complete
-    if (isWatch) {
-      watcher = rollupOutput as RollupWatcher
-      await notifyRebuildComplete(watcher)
-    }
-    if (buildConfig.__test__) {
-      buildConfig.__test__()
+    if (buildConfig.builder) {
+      const builder = await createViteBuilder({}, { root: rootDir })
+      await builder.buildEnvironments()
+    } else {
+      const rollupOutput = await build(buildConfig)
+      const isWatch = !!resolvedConfig!.build.watch
+      // in build watch,call startStaticServer after the build is complete
+      if (isWatch) {
+        watcher = rollupOutput as RollupWatcher
+        await notifyRebuildComplete(watcher)
+      }
+      if (buildConfig.__test__) {
+        buildConfig.__test__()
+      }
     }
 
     const previewConfig = await loadConfig({

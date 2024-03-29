@@ -1388,14 +1388,20 @@ export async function createViteBuilder(
 ): Promise<ViteBuilder> {
   // Plugins passed to the Builder inline config needs to be created
   // from a factory to ensure each build has their own instances
-  const resolveConfig = (): Promise<ResolvedConfig> => {
+  const resolveConfig = (
+    environmentOptions?: EnvironmentOptions,
+  ): Promise<ResolvedConfig> => {
     const { plugins } = defaultBuilderInlineConfig
-    const defaultInlineConfig = plugins
+    let defaultInlineConfig = plugins
       ? {
           ...defaultBuilderInlineConfig,
           plugins: plugins(),
         }
       : (defaultBuilderInlineConfig as InlineConfig)
+
+    if (environmentOptions) {
+      defaultInlineConfig = mergeConfig(defaultInlineConfig, environmentOptions)
+    }
 
     // We resolve the whole config including plugins here but later on we
     // need to refactor resolveConfig to only resolve the environments config
@@ -1436,7 +1442,7 @@ export async function createViteBuilder(
     // expects plugins to be run for the same environment once they are created
     // and to process a single bundle at a time (contrary to dev mode where
     // plugins are built to handle multiple environments concurrently).
-    const environmentConfig = await resolveConfig()
+    const environmentConfig = await resolveConfig(environmentOptions)
     const environmentBuilder = { ...builder, config: environmentConfig }
 
     const environment = createEnvironment(environmentBuilder, name)
