@@ -1,3 +1,15 @@
+## <small>5.2.7 (2024-03-29)</small>
+
+* chore: deprecate splitVendorChunkPlugin (#16274) ([45a06da](https://github.com/vitejs/vite/commit/45a06da)), closes [#16274](https://github.com/vitejs/vite/issues/16274)
+* fix: skip injecting `__vite__mapDeps` when it's not used (#16271) ([890538a](https://github.com/vitejs/vite/commit/890538a)), closes [#16271](https://github.com/vitejs/vite/issues/16271)
+* fix(deps): update all non-major dependencies (#16258) ([7caef42](https://github.com/vitejs/vite/commit/7caef42)), closes [#16258](https://github.com/vitejs/vite/issues/16258)
+* fix(hmr): don't mutate module graph when collecting modules (#16302) ([dfffea1](https://github.com/vitejs/vite/commit/dfffea1)), closes [#16302](https://github.com/vitejs/vite/issues/16302)
+* fix(hmr): trigger hmr for missing file import errored module after file creation (#16303) ([ffedc06](https://github.com/vitejs/vite/commit/ffedc06)), closes [#16303](https://github.com/vitejs/vite/issues/16303)
+* fix(sourcemap): don't warn even if the sourcesContent is an empty string (#16273) ([24e376a](https://github.com/vitejs/vite/commit/24e376a)), closes [#16273](https://github.com/vitejs/vite/issues/16273)
+* feat(hmr): reload when HTML file is created/deleted (#16288) ([1f53796](https://github.com/vitejs/vite/commit/1f53796)), closes [#16288](https://github.com/vitejs/vite/issues/16288)
+
+
+
 ## <small>5.2.6 (2024-03-24)</small>
 
 * fix: `fs.deny` with globs with directories (#16250) ([ba5269c](https://github.com/vitejs/vite/commit/ba5269c)), closes [#16250](https://github.com/vitejs/vite/issues/16250)
