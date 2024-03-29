@@ -187,11 +187,17 @@ type EnvironmentResolveOptions = ResolveOptions & {
   alias?: AliasOptions
 }
 
+type ResolvedEnvironmentResolveOptions = EnvironmentResolveOptions // TODO
+
 export interface SharedEnvironmentOptions {
   /**
    * Configure resolver
    */
   resolve?: EnvironmentResolveOptions
+}
+
+export interface ResolvedSharedEnvironmentOptions {
+  resolve: ResolvedEnvironmentResolveOptions
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -205,7 +211,11 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
   build?: BuildOptions
 }
 
-export type ResolvedEnvironmentOptions = Required<EnvironmentOptions>
+export interface ResolvedEnvironmentOptions
+  extends ResolvedSharedEnvironmentOptions {
+  dev: ResolvedDevOptions
+  build: ResolvedBuildOptions
+}
 
 export interface UserConfig extends EnvironmentOptions {
   /**
@@ -1590,20 +1600,6 @@ async function runConfigEnvironmentHook(
       }
     }
   }
-}
-
-export function getDepOptimizationConfig(
-  config: ResolvedConfig,
-  ssr: boolean,
-): DepOptimizationConfig {
-  return ssr ? config.ssr.optimizeDeps : config.optimizeDeps
-}
-export function isDepsOptimizerEnabled(
-  config: ResolvedConfig,
-  ssr: boolean,
-): boolean {
-  const optimizeDeps = getDepOptimizationConfig(config, ssr)
-  return !(optimizeDeps.noDiscovery && !optimizeDeps.include?.length)
 }
 
 function optimizeDepsDisabledBackwardCompatibility(

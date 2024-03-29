@@ -5,11 +5,13 @@ import type { ResolvedConfig } from '../config'
 import { escapeRegex, getNpmPackageName } from '../utils'
 import { resolvePackageData } from '../packages'
 import { slash } from '../../shared/utils'
+import type { Environment } from '../environment'
 
 export function createOptimizeDepsIncludeResolver(
-  config: ResolvedConfig,
-  ssr: boolean,
+  environment: Environment,
 ): (id: string) => Promise<string | undefined> {
+  const { config } = environment
+  const ssr = environment.name !== 'client' // TODO:depsOptimizer
   const resolve = config.createResolver({
     asSrc: false,
     scan: true,

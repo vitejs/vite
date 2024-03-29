@@ -19,8 +19,6 @@ import {
   timeFrom,
 } from '../utils'
 import { checkPublicFile } from '../publicDir'
-import { isDepsOptimizerEnabled } from '../config'
-import { getDepsOptimizer, initDevSsrDepsOptimizer } from '../optimizer'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import {
   applySourcemapIgnoreList,
@@ -150,13 +148,11 @@ async function doTransform(
 ) {
   url = removeTimestampQuery(url)
 
-  const { config, pluginContainer } = server
+  const { pluginContainer } = server
 
   const ssr = !!options.ssr
 
-  if (ssr && isDepsOptimizerEnabled(config, true)) {
-    await initDevSsrDepsOptimizer(config, server)
-  }
+  await environment.depsOptimizer?.init()
 
   let module = await environment.moduleGraph.getModuleByUrl(url)
   if (module) {
@@ -209,7 +205,7 @@ async function doTransform(
     // Only register client requests, server.waitForRequestsIdle should
     // have been called server.waitForClientRequestsIdle. We can rename
     // it as part of the environment API work
-    const depsOptimizer = getDepsOptimizer(config, ssr)
+    const { depsOptimizer } = environment
     if (!depsOptimizer?.isOptimizedDepFile(id)) {
       server._registerRequestProcessing(id, () => result)
     }

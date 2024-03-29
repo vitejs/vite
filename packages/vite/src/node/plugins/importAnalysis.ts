@@ -51,12 +51,11 @@ import {
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { checkPublicFile } from '../publicDir'
-import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { DevEnvironment } from '../server/environment'
 import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
-import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
+import { optimizedDepNeedsInterop } from '../optimizer'
 import {
   cleanUrl,
   unwrapId,
@@ -243,7 +242,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         this.error(message, showCodeFrame ? e.idx : undefined)
       }
 
-      const depsOptimizer = getDepsOptimizer(config, ssr)
+      const { depsOptimizer } = environment
 
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
@@ -288,11 +287,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         let importerFile = importer
 
-        const optimizeDeps = getDepOptimizationConfig(config, ssr)
+        // TODO: Can we remove this? Or move it to the optimizer?
+        const { optimizeDeps } = environment.options.dev
         if (moduleListContains(optimizeDeps?.exclude, url)) {
           if (depsOptimizer) {
             await depsOptimizer.scanProcessing
-
             // if the dependency encountered in the optimized file was excluded from the optimization
             // the dependency needs to be resolved starting from the original source location of the optimized file
             // because starting from node_modules/.vite will not find the dependency if it was not hoisted
@@ -547,10 +546,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
                 const needsInterop = await optimizedDepNeedsInterop(
+                  environment,
                   depsOptimizer.metadata,
                   file,
-                  config,
-                  ssr,
                 )
 
                 if (needsInterop === undefined) {

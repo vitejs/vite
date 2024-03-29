@@ -2,8 +2,6 @@ import path from 'node:path'
 import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
-import { getDepOptimizationConfig } from '../config'
-import type { ResolvedConfig } from '../config'
 import {
   escapeRegex,
   flattenId,
@@ -14,6 +12,7 @@ import {
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isCSSRequest, isModuleCSSRequest } from '../plugins/css'
+import type { Environment } from '../environment'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -48,12 +47,12 @@ const externalTypes = [
 ]
 
 export function esbuildDepPlugin(
+  environment: Environment,
   qualified: Record<string, string>,
   external: string[],
-  config: ResolvedConfig,
-  ssr: boolean,
 ): Plugin {
-  const { extensions } = getDepOptimizationConfig(config, ssr)
+  const { config } = environment
+  const { extensions } = environment.options.dev.optimizeDeps
 
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = extensions
@@ -96,6 +95,8 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
+    const ssr = environment.name !== 'client' // TODO:depsOptimizer
+    // We need to deprecate createResolver
     return resolver(id, _importer, undefined, ssr)
   }
 
@@ -112,6 +113,7 @@ export function esbuildDepPlugin(
         namespace: 'optional-peer-dep',
       }
     }
+    const ssr = environment.name !== 'client' // TODO:depsOptimizer how to avoid depending on environment name?
     if (ssr && isBuiltin(resolved)) {
       return
     }

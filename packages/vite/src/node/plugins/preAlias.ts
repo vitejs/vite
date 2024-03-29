@@ -14,7 +14,6 @@ import {
   moduleListContains,
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
-import { getDepsOptimizer } from '../optimizer'
 import { cleanUrl, withTrailingSlash } from '../../shared/utils'
 import { tryOptimizedResolve } from './resolve'
 
@@ -30,7 +29,10 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
       const ssr = options?.ssr === true
-      const depsOptimizer = !isBuild && getDepsOptimizer(config, ssr)
+      const depsOptimizer =
+        this.environment?.mode === 'dev'
+          ? this.environment?.depsOptimizer
+          : undefined
       if (
         importer &&
         depsOptimizer &&
