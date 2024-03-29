@@ -1,4 +1,4 @@
-import type { ExecaChildProcess } from 'execa';
+import type { ExecaChildProcess } from 'execa'
 import { $ as $_ } from 'execa'
 import { isBuild, page } from '~utils'
 
