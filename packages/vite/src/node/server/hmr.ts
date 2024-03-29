@@ -162,7 +162,7 @@ export async function handleHMRUpdate(
     return
   }
 
-  const mods = moduleGraph.getModulesByFile(file) || new Set()
+  const mods = new Set(moduleGraph.getModulesByFile(file))
   if (type === 'create' || type === 'delete') {
     for (const mod of getAffectedGlobModules(file, server)) {
       mods.add(mod)
