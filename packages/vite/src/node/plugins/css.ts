@@ -50,7 +50,7 @@ import {
   createSerialPromiseQueue,
   emptyCssComments,
   encodeURIPath,
-  escapeRegex,
+  escapeReplaceValue,
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
@@ -2755,12 +2755,12 @@ async function compileLightningCSS(
     switch (dep.type) {
       case 'url':
         if (skipUrlReplacer(dep.url)) {
-          css = css.replace(dep.placeholder, escapeRegex(dep.url))
+          css = css.replace(dep.placeholder, escapeReplaceValue(dep.url))
           break
         }
         deps.add(dep.url)
         if (urlReplacer) {
-          css = css.replace(dep.placeholder, escapeRegex(await urlReplacer(dep.url, id)))
+          css = css.replace(dep.placeholder, escapeReplaceValue(await urlReplacer(dep.url, id)))
         }
         break
       default:
