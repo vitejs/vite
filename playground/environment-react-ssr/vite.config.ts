@@ -24,13 +24,6 @@ export default defineConfig((env) => ({
       },
     },
   ],
-  // [feedback] no automatic process.env.NODE_ENV replacement applied for build?
-  define:
-    env.command === 'build'
-      ? {
-          'process.env.NODE_ENV': `"production"`,
-        }
-      : {},
   environments: {
     client: {
       build: {
