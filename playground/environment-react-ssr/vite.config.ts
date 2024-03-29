@@ -53,10 +53,9 @@ export default defineConfig((env) => ({
   build: env.isPreview ? { outDir: 'dist/client' } : {},
 
   builder: {
-    runBuildTasks: async (_builder, buildTasks) => {
-      for (const task of buildTasks) {
-        await task.run()
-      }
+    async buildEnvironments(builder, build) {
+      await build(builder.environments.client)
+      await build(builder.environments.ssr)
     },
   },
 }))
