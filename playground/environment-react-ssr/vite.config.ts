@@ -1,12 +1,12 @@
-import {
-  defineConfig,
-  createNodeDevEnvironment,
-  type PluginOption,
-  type Plugin,
-  createServerModuleRunner,
-  Connect,
-} from 'vite'
 import { fileURLToPath } from 'node:url'
+import {
+  type Connect,
+  type Plugin,
+  type PluginOption,
+  createNodeDevEnvironment,
+  createServerModuleRunner,
+  defineConfig,
+} from 'vite'
 
 export default defineConfig((env) => ({
   clearScreen: false,
