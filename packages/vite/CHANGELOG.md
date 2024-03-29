@@ -1,3 +1,32 @@
+## <small>5.2.6 (2024-03-24)</small>
+
+* fix: `fs.deny` with globs with directories (#16250) ([ba5269c](https://github.com/vitejs/vite/commit/ba5269c)), closes [#16250](https://github.com/vitejs/vite/issues/16250)
+
+
+
+## <small>5.2.5 (2024-03-24)</small>
+
+* fix: avoid SSR requests in waitForRequestIdle (#16246) ([7093f77](https://github.com/vitejs/vite/commit/7093f77)), closes [#16246](https://github.com/vitejs/vite/issues/16246)
+* docs: clarify enforce vs hook.order (#16226) ([3a73e48](https://github.com/vitejs/vite/commit/3a73e48)), closes [#16226](https://github.com/vitejs/vite/issues/16226)
+
+
+
+## <small>5.2.4 (2024-03-23)</small>
+
+* fix: dont resolve imports with malformed URI (#16244) ([fbf69d5](https://github.com/vitejs/vite/commit/fbf69d5)), closes [#16244](https://github.com/vitejs/vite/issues/16244)
+
+
+
+## <small>5.2.3 (2024-03-22)</small>
+
+* fix: handle warmup request error correctly (#16223) ([d7c5256](https://github.com/vitejs/vite/commit/d7c5256)), closes [#16223](https://github.com/vitejs/vite/issues/16223)
+* fix: skip encode if is data uri (#16233) ([8617e76](https://github.com/vitejs/vite/commit/8617e76)), closes [#16233](https://github.com/vitejs/vite/issues/16233)
+* fix(optimizer): fix `optimizeDeps.include` glob syntax for `./*` exports (#16230) ([f184c80](https://github.com/vitejs/vite/commit/f184c80)), closes [#16230](https://github.com/vitejs/vite/issues/16230)
+* fix(runtime): fix sourcemap with `prepareStackTrace` (#16220) ([dad7f4f](https://github.com/vitejs/vite/commit/dad7f4f)), closes [#16220](https://github.com/vitejs/vite/issues/16220)
+* chore: `utf8` replaced with `utf-8` (#16232) ([9800c73](https://github.com/vitejs/vite/commit/9800c73)), closes [#16232](https://github.com/vitejs/vite/issues/16232)
+
+
+
 ## <small>5.2.2 (2024-03-20)</small>
 
 * fix(importAnalysis): skip encode in ssr (#16213) ([e4d2d60](https://github.com/vitejs/vite/commit/e4d2d60)), closes [#16213](https://github.com/vitejs/vite/issues/16213)

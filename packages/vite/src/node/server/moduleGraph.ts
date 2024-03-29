@@ -108,6 +108,9 @@ export class ModuleGraph {
     Promise<ModuleNode> | ModuleNode
   >()
 
+  /** @internal */
+  _hasResolveFailedErrorModules = new Set<ModuleNode>()
+
   constructor(
     private resolveId: (
       url: string,
@@ -144,6 +147,17 @@ export class ModuleGraph {
       const seen = new Set<ModuleNode>()
       mods.forEach((mod) => {
         this.invalidateModule(mod, seen)
+      })
+    }
+  }
+
+  onFileDelete(file: string): void {
+    const mods = this.getModulesByFile(file)
+    if (mods) {
+      mods.forEach((mod) => {
+        mod.importedModules.forEach((importedMod) => {
+          importedMod.importers.delete(mod)
+        })
       })
     }
   }
@@ -218,6 +232,8 @@ export class ModuleGraph {
         )
       }
     })
+
+    this._hasResolveFailedErrorModules.delete(mod)
   }
 
   invalidateAll(): void {

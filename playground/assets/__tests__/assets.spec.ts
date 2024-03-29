@@ -282,6 +282,26 @@ describe('css url() references', () => {
 })
 
 describe('image', () => {
+  test('src', async () => {
+    const img = await page.$('.img-src')
+    const src = await img.getAttribute('src')
+    expect(src).toMatch(
+      isBuild
+        ? /\/foo\/bar\/assets\/html-only-asset-[-\w]{8}\.jpg/
+        : /\/foo\/bar\/nested\/html-only-asset.jpg/,
+    )
+  })
+
+  test('src inline', async () => {
+    const img = await page.$('.img-src-inline')
+    const src = await img.getAttribute('src')
+    expect(src).toMatch(
+      isBuild
+        ? /^data:image\/svg\+xml,%3csvg/
+        : /\/foo\/bar\/nested\/inlined.svg/,
+    )
+  })
+
   test('srcset', async () => {
     const img = await page.$('.img-src-set')
     const srcset = await img.getAttribute('srcset')
@@ -369,11 +389,11 @@ test('?url import on css', async () => {
 
 describe('unicode url', () => {
   test('from js import', async () => {
-    const src = readFile('テスト-測試-white space%.js')
+    const src = readFile('テスト-測試-white space.js')
     expect(await page.textContent('.unicode-url')).toMatch(
       isBuild
         ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
-        : encodeURI(`/foo/bar/テスト-測試-white space%.js`),
+        : encodeURI(`/foo/bar/テスト-測試-white space.js`),
     )
   })
 })

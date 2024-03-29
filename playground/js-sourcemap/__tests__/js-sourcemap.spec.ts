@@ -152,9 +152,22 @@ describe.runIf(isBuild)('build tests', () => {
       }
     `)
     // verify sourcemap comment is preserved at the last line
-    const js = findAssetFile(/after-preload-dynamic.*\.js$/)
+    const js = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js$/)
     expect(js).toMatch(
-      /\n\/\/# sourceMappingURL=after-preload-dynamic.*\.js\.map\n$/,
+      /\n\/\/# sourceMappingURL=after-preload-dynamic-[-\w]{8}\.js\.map\n$/,
     )
+  })
+
+  test('__vite__mapDeps injected after banner', async () => {
+    const js = findAssetFile(/after-preload-dynamic-hashbang-[-\w]{8}\.js$/)
+    expect(js.split('\n').slice(0, 2)).toEqual([
+      '#!/usr/bin/env node',
+      'function __vite__mapDeps(indexes) {',
+    ])
+  })
+
+  test('no unused __vite__mapDeps', async () => {
+    const js = findAssetFile(/after-preload-dynamic-no-dep-[-\w]{8}\.js$/)
+    expect(js).not.toMatch(/__vite__mapDeps/)
   })
 })

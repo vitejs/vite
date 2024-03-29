@@ -207,9 +207,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
 
       return {
-        code: `export default ${JSON.stringify(
-          url.startsWith('data:') ? url : encodeURIPath(url),
-        )}`,
+        code: `export default ${JSON.stringify(encodeURIPath(url))}`,
         // Force rollup to keep this module from being shared between other entry points if it's an entrypoint.
         // If the resulting chunk is empty, it will be removed in generateBundle.
         moduleSideEffects:
