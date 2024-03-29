@@ -175,12 +175,6 @@ function getSortedHotUpdatePlugins(config: ResolvedConfig): Plugin[] {
   return sortedPlugins
 }
 
-export interface HmrTask {
-  environment: DevEnvironment
-  run: () => Promise<void>
-  cancel: () => void
-}
-
 export async function handleHMRUpdate(
   type: 'create' | 'delete' | 'update',
   file: string,
@@ -236,114 +230,117 @@ export async function handleHMRUpdate(
   // For now, we only call updateModules for the browser. Later on it should
   // also be called for each runtime.
 
-  async function applyHMR(environment: DevEnvironment) {
-    const mods = environment.moduleGraph.getModulesByFile(file) || new Set()
+  async function hmr(environment: DevEnvironment) {
+    try {
+      const mods = environment.moduleGraph.getModulesByFile(file) || new Set()
 
-    // check if any plugin wants to perform custom HMR handling
-    const timestamp = Date.now()
-    const hotContext: HotUpdateContext = {
-      type,
-      file,
-      timestamp,
-      modules: [...mods],
-      read: () => readModifiedFile(file),
-      server,
-      // later on hotUpdate will be called for each runtime with a new hotContext
-      environment,
-    }
+      // check if any plugin wants to perform custom HMR handling
+      const timestamp = Date.now()
+      const hotContext: HotUpdateContext = {
+        type,
+        file,
+        timestamp,
+        modules: [...mods],
+        read: () => readModifiedFile(file),
+        server,
+        // later on hotUpdate will be called for each runtime with a new hotContext
+        environment,
+      }
 
-    let hmrContext
+      let hmrContext
 
-    for (const plugin of getSortedHotUpdatePlugins(config)) {
-      if (plugin.hotUpdate) {
-        const filteredModules = await getHookHandler(plugin.hotUpdate)(
-          hotContext,
-        )
-        if (filteredModules) {
-          hotContext.modules = filteredModules
-          // Invalidate the hmrContext to force compat modules to be updated
-          hmrContext = undefined
-        }
-      } else if (environment.name === 'client' && type === 'update') {
-        // later on, we'll need: if (runtime === 'client')
-        // Backward compatibility with mixed client and ssr moduleGraph
-        hmrContext ??= {
-          ...hotContext,
-          modules: hotContext.modules.map((mod) =>
-            server.moduleGraph.getBackwardCompatibleModuleNode(mod),
-          ),
-          type: undefined,
-        } as HmrContext
-        const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(
-          hmrContext,
-        )
-        if (filteredModules) {
-          hmrContext.modules = filteredModules
-          hotContext.modules = filteredModules
-            .map((mod) =>
-              mod.id
-                ? server.environments.client.moduleGraph.getModuleById(
-                    mod.id,
-                  ) ?? server.environments.ssr.moduleGraph.getModuleById(mod.id)
-                : undefined,
-            )
-            .filter(Boolean) as EnvironmentModuleNode[]
+      for (const plugin of getSortedHotUpdatePlugins(config)) {
+        if (plugin.hotUpdate) {
+          const filteredModules = await getHookHandler(plugin.hotUpdate)(
+            hotContext,
+          )
+          if (filteredModules) {
+            hotContext.modules = filteredModules
+            // Invalidate the hmrContext to force compat modules to be updated
+            hmrContext = undefined
+          }
+        } else if (environment.name === 'client' && type === 'update') {
+          // later on, we'll need: if (runtime === 'client')
+          // Backward compatibility with mixed client and ssr moduleGraph
+          hmrContext ??= {
+            ...hotContext,
+            modules: hotContext.modules.map((mod) =>
+              server.moduleGraph.getBackwardCompatibleModuleNode(mod),
+            ),
+            type: undefined,
+          } as HmrContext
+          const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(
+            hmrContext,
+          )
+          if (filteredModules) {
+            hmrContext.modules = filteredModules
+            hotContext.modules = filteredModules
+              .map((mod) =>
+                mod.id
+                  ? server.environments.client.moduleGraph.getModuleById(
+                      mod.id,
+                    ) ??
+                    server.environments.ssr.moduleGraph.getModuleById(mod.id)
+                  : undefined,
+              )
+              .filter(Boolean) as EnvironmentModuleNode[]
+          }
         }
       }
-    }
 
-    if (!hotContext.modules.length) {
-      // html file cannot be hot updated
-      if (file.endsWith('.html')) {
-        config.logger.info(
-          colors.green(`page reload `) + colors.dim(shortFile),
-          {
-            clear: true,
-            timestamp: true,
-          },
-        )
-        environments.forEach(({ hot }) =>
-          hot.send({
-            type: 'full-reload',
-            path: config.server.middlewareMode
-              ? '*'
-              : '/' + normalizePath(path.relative(config.root, file)),
-          }),
-        )
-      } else {
-        // loaded but not in the module graph, probably not js
-        debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
+      if (!hotContext.modules.length) {
+        // html file cannot be hot updated
+        if (file.endsWith('.html')) {
+          config.logger.info(
+            colors.green(`page reload `) + colors.dim(shortFile),
+            {
+              clear: true,
+              timestamp: true,
+            },
+          )
+          environments.forEach(({ hot }) =>
+            hot.send({
+              type: 'full-reload',
+              path: config.server.middlewareMode
+                ? '*'
+                : '/' + normalizePath(path.relative(config.root, file)),
+            }),
+          )
+        } else {
+          // loaded but not in the module graph, probably not js
+          debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
+        }
+        return
       }
-      return
+
+      updateModules(
+        environment,
+        shortFile,
+        hotContext.modules,
+        timestamp,
+        server,
+      )
+    } catch (err) {
+      environment.hot.send({
+        type: 'error',
+        err: prepareError(err),
+      })
     }
-
-    updateModules(environment, shortFile, hotContext.modules, timestamp, server)
-  }
-
-  const hmrTasks: HmrTask[] = []
-  for (const environment of Object.values(server.environments)) {
-    hmrTasks.push({
-      environment,
-      run: () =>
-        applyHMR(environment).catch((err) => {
-          environment.hot.send({
-            type: 'error',
-            err: prepareError(err),
-          })
-        }),
-      cancel: () => {}, // TODO: implement cancel, maybe it isn't needed
-    })
   }
 
   // TODO: should tasks also be an object?
-  const runHmrTasks =
-    server.config.server.runHmrTasks ??
-    ((server, hmrTasks) => {
+  const hmrEnvironments =
+    server.config.server.hmrEnvironments ??
+    ((server, hmr) => {
       // Run HMR in parallel for all environments by default
-      return Promise.all(hmrTasks.map((task) => task.run()))
+      return Promise.all(
+        Object.values(server.environments).map((environment) =>
+          hmr(environment),
+        ),
+      )
     })
 
-  await runHmrTasks(server, hmrTasks)
+  await hmrEnvironments(server, hmr)
 }
 
 type HasDeadEnd = boolean

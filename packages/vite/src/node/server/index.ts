@@ -76,7 +76,7 @@ import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware } from './middlewares/error'
-import type { HMRBroadcaster, HmrOptions, HmrTask } from './hmr'
+import type { HMRBroadcaster, HmrOptions } from './hmr'
 import {
   createHMRBroadcaster,
   createServerHMRChannel,
@@ -162,7 +162,10 @@ export interface ServerOptions extends CommonServerOptions {
    * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
    * @experimental
    */
-  runHmrTasks?: (server: ViteDevServer, hmrTasks: HmrTask[]) => Promise<void>
+  hmrEnvironments?: (
+    server: ViteDevServer,
+    hmr: (environment: DevEnvironment) => Promise<void>,
+  ) => Promise<void>
 }
 
 export interface ResolvedServerOptions
