@@ -962,4 +962,23 @@ if (!isBuild) {
     editFile('css-deps/dep.js', (code) => code.replace(`red`, `green`))
     await untilUpdated(() => getColor('.css-deps'), 'green')
   })
+
+  test('hmr should happen after missing file is created', async () => {
+    const file = 'missing-file/a.js'
+    const code = 'console.log("a.js")'
+
+    await untilBrowserLogAfter(
+      () =>
+        page.goto(viteTestUrl + '/missing-file/index.html', {
+          waitUntil: 'load',
+        }),
+      /connected/, // wait for HMR connection
+    )
+
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      addFile(file, code)
+      await loadPromise
+    }, [/connected/, 'a.js'])
+  })
 }

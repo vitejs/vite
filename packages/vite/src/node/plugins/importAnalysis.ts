@@ -311,6 +311,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
+          moduleGraph._hasResolveFailedErrorModules.add(importerModule)
           return this.error(
             `Failed to resolve import "${url}" from "${normalizePath(
               path.relative(process.cwd(), importerFile),

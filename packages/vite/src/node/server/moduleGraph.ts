@@ -108,6 +108,9 @@ export class ModuleGraph {
     Promise<ModuleNode> | ModuleNode
   >()
 
+  /** @internal */
+  _hasResolveFailedErrorModules = new Set<ModuleNode>()
+
   constructor(
     private resolveId: (
       url: string,
@@ -229,6 +232,8 @@ export class ModuleGraph {
         )
       }
     })
+
+    this._hasResolveFailedErrorModules.delete(mod)
   }
 
   invalidateAll(): void {
