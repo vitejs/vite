@@ -6,6 +6,9 @@ const $ = $_({
   cwd: new URL('..', import.meta.url),
   // stdio: "inherit",
   // verbose: true,
+  env: {
+    NO_COLOR: '1',
+  },
 })
 
 export async function serve() {
