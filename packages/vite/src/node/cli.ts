@@ -315,10 +315,10 @@ cli
                 `The environment ${options.environment} isn't configured.`,
               )
             }
-            await builder.buildEnvironment(environment)
+            await builder.build(environment)
           } else {
-            // Build all environments
-            await builder.build()
+            // --all: build all environments
+            await builder.buildEnvironments()
           }
         } else {
           await build(config)

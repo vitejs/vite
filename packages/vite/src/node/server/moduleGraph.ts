@@ -101,6 +101,9 @@ export class EnvironmentModuleGraph {
    */
   _resolveId: (url: string) => Promise<PartialResolvedId | null>
 
+  /** @internal */
+  _hasResolveFailedErrorModules = new Set<EnvironmentModuleNode>()
+
   constructor(
     environment: string,
     resolveId: (url: string) => Promise<PartialResolvedId | null>,
@@ -220,6 +223,8 @@ export class EnvironmentModuleGraph {
         )
       }
     })
+
+    this._hasResolveFailedErrorModules.delete(mod)
   }
 
   invalidateAll(): void {

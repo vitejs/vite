@@ -1348,30 +1348,23 @@ export class BuildEnvironment extends Environment {
 export interface ViteBuilder {
   environments: Record<string, BuildEnvironment>
   config: ResolvedConfig
-  build(): Promise<void>
-  buildEnvironment(environment: BuildEnvironment): Promise<void>
-}
-
-export interface BuildTask {
-  environment: BuildEnvironment
-  config: ResolvedConfig
-  run: () => Promise<void>
-  cancel: () => void
+  buildEnvironments(): Promise<void>
+  build(environment: BuildEnvironment): Promise<void>
 }
 
 export interface BuilderOptions {
-  runBuildTasks?: (
+  buildEnvironments?: (
     builder: ViteBuilder,
-    buildTasks: BuildTask[],
+    build: (environment: BuildEnvironment) => Promise<void>,
   ) => Promise<void>
 }
 
-async function defaultRunBuildTasks(
+async function defaultBuildEnvironments(
   builder: ViteBuilder,
-  buildTasks: BuildTask[],
+  build: (environment: BuildEnvironment) => Promise<void>,
 ): Promise<void> {
-  for (const task of buildTasks) {
-    await task.run()
+  for (const environment of Object.values(builder.environments)) {
+    await build(environment)
   }
 }
 
@@ -1379,7 +1372,7 @@ export function resolveBuilderOptions(
   options: BuilderOptions = {},
 ): ResolvedBuilderOptions {
   return {
-    runBuildTasks: options.runBuildTasks ?? defaultRunBuildTasks,
+    buildEnvironments: options.buildEnvironments ?? defaultBuildEnvironments,
   }
 }
 
@@ -1429,22 +1422,10 @@ export async function createViteBuilder(
   const builder: ViteBuilder = {
     environments,
     config: defaultConfig,
-    async build() {
-      const buildTasks = []
-      for (const environment of Object.values(environments)) {
-        const buildTask = {
-          environment,
-          config: environment.config,
-          run: async () => {
-            await buildEnvironment(environment.config, environment)
-          },
-          cancel: () => {}, // TODO, maybe not needed
-        }
-        buildTasks.push(buildTask)
-      }
-      await defaultConfig.builder.runBuildTasks(builder, buildTasks)
+    async buildEnvironments() {
+      return defaultConfig.builder.buildEnvironments(builder, this.build)
     },
-    async buildEnvironment(environment: BuildEnvironment) {
+    async build(environment: BuildEnvironment) {
       await buildEnvironment(environment.config, environment)
     },
   }
