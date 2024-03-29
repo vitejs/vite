@@ -6,13 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build --all",
-    "preview": "vite preview",
-    "test-e2e": "playwright test",
-    "test-e2e-preview": "E2E_PREVIEW=1 playwright test"
+    "preview": "vite preview"
   },
   "devDependencies": {
-    "@playwright/test": "^1.42.1",
-    "@tsconfig/strictest": "^2.0.5",
     "@types/react": "^18.2.73",
     "@types/react-dom": "^18.2.23",
     "react": "^18.2.0",
