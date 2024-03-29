@@ -3,7 +3,6 @@ import {
   type Connect,
   type Plugin,
   type PluginOption,
-  createNodeDevEnvironment,
   createServerModuleRunner,
   defineConfig,
 } from 'vite'
@@ -41,9 +40,6 @@ export default defineConfig((env) => ({
       },
     },
     ssr: {
-      dev: {
-        createEnvironment: createNodeDevEnvironment,
-      },
       build: {
         outDir: 'dist/server',
         // [feedback]
