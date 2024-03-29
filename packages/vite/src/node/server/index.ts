@@ -162,7 +162,7 @@ export interface ServerOptions extends CommonServerOptions {
    * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
    * @experimental
    */
-  hmrEnvironments?: (
+  hotUpdateEnvironments?: (
     server: ViteDevServer,
     hmr: (environment: DevEnvironment) => Promise<void>,
   ) => Promise<void>

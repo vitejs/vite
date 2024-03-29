@@ -334,9 +334,8 @@ export async function handleHMRUpdate(
     }
   }
 
-  // TODO: should tasks also be an object?
-  const hmrEnvironments =
-    server.config.server.hmrEnvironments ??
+  const hotUpdateEnvironments =
+    server.config.server.hotUpdateEnvironments ??
     ((server, hmr) => {
       // Run HMR in parallel for all environments by default
       return Promise.all(
@@ -346,7 +345,7 @@ export async function handleHMRUpdate(
       )
     })
 
-  await hmrEnvironments(server, hmr)
+  await hotUpdateEnvironments(server, hmr)
 }
 
 type HasDeadEnd = boolean
