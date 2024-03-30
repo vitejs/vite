@@ -79,6 +79,7 @@ export interface ResolveOptions {
    */
   mainFields?: string[]
   conditions?: string[]
+  externalConditions?: string[]
   /**
    * @default ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
    */

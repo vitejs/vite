@@ -43,12 +43,13 @@ export async function fetchModule(
       root,
       ssr,
     } = environment.config
-    const overrideConditions = ssr.resolve?.externalConditions || []
+    const externalConditions = ssr.resolve?.externalConditions || []
 
     const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
       mainFields: ['main'],
       conditions: [],
-      overrideConditions: [...overrideConditions, 'production', 'development'],
+      externalConditions,
+      overrideConditions: [...externalConditions, 'production', 'development'],
       extensions: ['.js', '.cjs', '.json'],
       dedupe,
       preserveSymlinks,
