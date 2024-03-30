@@ -624,6 +624,7 @@ function resolveEnvironmentResolveOptions(
   const resolvedResolve: ResolvedConfig['resolve'] = {
     mainFields: resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
     conditions: resolve?.conditions ?? [],
+    externalConditions: resolve?.externalConditions ?? [],
     extensions: resolve?.extensions ?? DEFAULT_EXTENSIONS,
     dedupe: resolve?.dedupe ?? [],
     preserveSymlinks: resolve?.preserveSymlinks ?? false,
@@ -783,8 +784,8 @@ export async function resolveConfig(
   )
 
   // Backward compatibility: merge ssr into environments.ssr.config as defaults
-  // Done: ssr.optimizeDeps, ssr.resolve.conditions
-  // TODO: ssr.resolve.externalConditions, ssr.external, ssr.noExternal
+  // Done: ssr.optimizeDeps, ssr.resolve.conditions, ssr.resolve.externalConditions,
+  // TODO: ssr.external, ssr.noExternal
   const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
   const configEnvironmentsSsr = config.environments!.ssr
   if (configEnvironmentsSsr) {
@@ -796,6 +797,10 @@ export async function resolveConfig(
     configEnvironmentsSsr.resolve ??= {}
     const deprecatedSsrResolveConditions = config.ssr?.resolve?.conditions
     configEnvironmentsSsr.resolve.conditions ??= deprecatedSsrResolveConditions // TODO: should we merge?
+    const deprecatedSsrResolveExternalConditions =
+      config.ssr?.resolve?.externalConditions
+    configEnvironmentsSsr.resolve.externalConditions ??=
+      deprecatedSsrResolveExternalConditions // TODO: should we merge?
   }
 
   // The client and ssr environment configs can't be removed by the user in the config hook
@@ -1404,6 +1409,7 @@ async function bundleConfigFile(
                 tryIndex: true,
                 mainFields: [],
                 conditions: [],
+                externalConditions: [],
                 overrideConditions: ['node'],
                 dedupe: [],
                 extensions: DEFAULT_EXTENSIONS,
