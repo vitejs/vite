@@ -1189,8 +1189,13 @@ export function injectNonceAttributeTagHook(
               parseRelAttr(attr.value).some((a) => processRelType.has(a)),
           ))
       ) {
+        // if the closing of the start tag includes a `/`, the offset should be 2 so the nonce
+        // is appended prior to the `/`
+        const appendOffset =
+          html[node.sourceCodeLocation!.startTag!.endOffset - 2] === '/' ? 2 : 1
+
         s.appendRight(
-          node.sourceCodeLocation!.startTag!.endOffset - 1,
+          node.sourceCodeLocation!.startTag!.endOffset - appendOffset,
           ` nonce="${nonce}"`,
         )
       }
