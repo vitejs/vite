@@ -864,6 +864,7 @@ export async function resolveConfig(
     ),
     resolve: {
       conditions: resolvedEnvironments.ssr?.resolve.conditions,
+      externalConditions: resolvedEnvironments.ssr?.resolve.externalConditions,
       ...config.ssr?.resolve,
     },
   }

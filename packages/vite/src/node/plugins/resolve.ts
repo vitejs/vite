@@ -702,6 +702,7 @@ function tryCleanFsResolve(
 export type InternalResolveOptionsWithOverrideConditions =
   InternalResolveOptions & {
     /**
+     * TODO: Is this needed if we have `externalConditions` in `resolve`?
      * @internal
      */
     overrideConditions?: string[]
