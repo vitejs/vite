@@ -1192,9 +1192,7 @@ export function injectNonceAttributeTagHook(
         // if the closing of the start tag includes a `/`, the offset should be 2 so the nonce
         // is appended prior to the `/`
         const appendOffset =
-          html.charAt(node.sourceCodeLocation!.startTag!.endOffset - 2) === '/'
-            ? 2
-            : 1
+          html[node.sourceCodeLocation!.startTag!.endOffset - 2] === '/' ? 2 : 1
 
         s.appendRight(
           node.sourceCodeLocation!.startTag!.endOffset - appendOffset,
