@@ -251,7 +251,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       if (
         config.command === 'build' &&
         config.build.ssr &&
-        !config.build.ssrEmitAssets
+        !config.build.emitAssets
       ) {
         for (const file in bundle) {
           if (

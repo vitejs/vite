@@ -518,12 +518,18 @@ function resolveEnvironmentOptions(
   config: EnvironmentOptions,
   resolvedRoot: string,
   logger: Logger,
+  environmentName: string,
 ): ResolvedEnvironmentOptions {
   const resolve = resolveEnvironmentResolveOptions(config.resolve, logger)
   return {
     resolve,
     dev: resolveDevOptions(config.dev, resolve.preserveSymlinks),
-    build: resolveBuildOptions(config.build, logger, resolvedRoot),
+    build: resolveBuildOptions(
+      config.build,
+      logger,
+      resolvedRoot,
+      environmentName,
+    ),
   }
 }
 
@@ -821,6 +827,7 @@ export async function resolveConfig(
       config.environments[name],
       resolvedRoot,
       logger,
+      name,
     )
   }
 
@@ -853,6 +860,7 @@ export async function resolveConfig(
     config.build,
     logger,
     resolvedRoot,
+    undefined, // default environment
   )
 
   // Backward compatibility: merge environments.ssr.dev.optimizeDeps back into ssr.optimizeDeps

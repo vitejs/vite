@@ -231,8 +231,16 @@ export interface BuildOptions {
   /**
    * Emit assets during SSR.
    * @default false
+   * @deprecated use emitAssets
    */
   ssrEmitAssets?: boolean
+  /**
+   * Emit assets during build. Frameworks can set environments.ssr.build.emitAssets
+   * By default, it is true for the client and false for other environments.
+   * TODO: Should this be true for all environments by default? Or should this be
+   * controlled by the builder so so we can avoid emitting duplicated assets.
+   */
+  emitAssets?: boolean
   /**
    * Set to false to disable reporting compressed chunk sizes.
    * Can slightly improve build speed.
@@ -317,6 +325,7 @@ export function resolveBuildOptions(
   raw: BuildOptions | undefined,
   logger: Logger,
   root: string,
+  environmentName: string | undefined,
 ): ResolvedBuildOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
   if (raw) {
@@ -357,6 +366,7 @@ export function resolveBuildOptions(
     ssr: false,
     ssrManifest: false,
     ssrEmitAssets: false,
+    emitAssets: environmentName === 'client',
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
