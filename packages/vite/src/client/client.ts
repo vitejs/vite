@@ -190,7 +190,9 @@ async function handleMessage(payload: HMRPayload) {
         window.location.reload()
         return
       } else {
-        clearErrorOverlay()
+        if (enableOverlay) {
+          clearErrorOverlay()
+        }
         isFirstUpdate = false
       }
       await Promise.all(
