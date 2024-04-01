@@ -745,7 +745,7 @@ export function createExplicitDepsOptimizer(
     run: () => {},
 
     close: async () => {},
-    options: environment.config.dev.optimizeDeps,
+    options: environment.options.dev.optimizeDeps,
   }
 
   let inited = false
