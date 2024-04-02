@@ -365,8 +365,7 @@ export class ModuleRunner {
             throw new Error(`[module runner] HMR client was destroyed.`)
           }
           this.debug?.('[module runner] creating hmr context for', moduleId)
-          // TODO: the environmnet passed to HMRContext shouldn't be harcoded here
-          hotContext ||= new HMRContext(this.hmrClient, moduleId, 'ssr')
+          hotContext ||= new HMRContext(this.hmrClient, moduleId)
           return hotContext
         },
         set: (value) => {

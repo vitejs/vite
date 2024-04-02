@@ -430,7 +430,7 @@ export function removeStyle(id: string): void {
 }
 
 export function createHotContext(ownerPath: string): ViteHotContext {
-  return new HMRContext(hmrClient, ownerPath, 'client')
+  return new HMRContext(hmrClient, ownerPath)
 }
 
 /**
