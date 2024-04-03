@@ -174,7 +174,7 @@ export async function replaceDefine(
           return index === sourceIndex
         }),
       )
-      result.map = JSON.stringify(encodedMap(new TraceMap(decoded)))
+      result.map = JSON.stringify(encodedMap(new TraceMap(decoded as any)))
     }
   }
 
