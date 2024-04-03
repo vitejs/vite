@@ -1,4 +1,6 @@
-import { URL } from 'node:url'
+import { URL, fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
+import { execFile } from 'node:child_process'
 import { describe, expect, test } from 'vitest'
 import { mapFileCommentRegex } from 'convert-source-map'
 import { commentSourceMap } from '../foo-with-sourcemap-plugin'
@@ -169,5 +171,40 @@ describe.runIf(isBuild)('build tests', () => {
   test('no unused __vite__mapDeps', async () => {
     const js = findAssetFile(/after-preload-dynamic-no-dep-[-\w]{8}\.js$/)
     expect(js).not.toMatch(/__vite__mapDeps/)
+  })
+
+  test('sourcemap is correct when using object as "define" value', async () => {
+    const map = findAssetFile(/with-define-object.*\.js\.map/)
+    expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
+      {
+        "mappings": "qBAEA,SAASA,GAAO,CACJC,GACZ,CAEA,SAASA,GAAY,CAEX,QAAA,MAAM,qBAAsBC,CAAkB,CACxD,CAEAF,EAAK",
+        "sources": [
+          "../../with-define-object.ts",
+        ],
+        "sourcesContent": [
+          "// test complicated stack since broken sourcemap
+      // might still look correct with a simple case
+      function main() {
+        mainInner()
+      }
+
+      function mainInner() {
+        // @ts-expect-error "define"
+        console.trace('with-define-object', __testDefineObject)
+      }
+
+      main()
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
+  test('correct sourcemap during ssr dev when using object as "define" value', async () => {
+    const execFileAsync = promisify(execFile)
+    await execFileAsync('node', ['test-ssr-dev.js'], {
+      cwd: fileURLToPath(new URL('..', import.meta.url)),
+    })
   })
 })
