@@ -98,6 +98,7 @@ export interface ServerOptions extends CommonServerOptions {
   hmr?: HmrOptions | boolean
   /**
    * Do not start the websocket connection.
+   * @experimental
    */
   ws?: false
   /**
