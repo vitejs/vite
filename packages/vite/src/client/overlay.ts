@@ -165,6 +165,7 @@ kbd {
 `
 
 // Error Template
+let template: HTMLElement
 const createTemplate = () =>
   h(
     'div',
@@ -214,7 +215,8 @@ export class ErrorOverlay extends HTMLElement {
     super()
     this.root = this.attachShadow({ mode: 'open' })
 
-    this.root.appendChild(createTemplate())
+    template ??= createTemplate()
+    this.root.appendChild(template)
 
     codeframeRE.lastIndex = 0
     const hasFrame = err.frame && codeframeRE.test(err.frame)
