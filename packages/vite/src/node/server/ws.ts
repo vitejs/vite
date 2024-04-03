@@ -95,11 +95,10 @@ export function createWebSocketServer(
   httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
   if (config.server.ws === false) {
-    const clients = new Set<WebSocketClient>()
     return {
       name: 'ws',
       get clients() {
-        return clients
+        return new Set<WebSocketClient>()
       },
       async close() {
         // noop
