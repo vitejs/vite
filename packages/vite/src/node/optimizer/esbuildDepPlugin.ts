@@ -13,6 +13,7 @@ import {
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isCSSRequest, isModuleCSSRequest } from '../plugins/css'
 import type { Environment } from '../environment'
+import { createIdResolver } from '../idResolver'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -65,14 +66,14 @@ export function esbuildDepPlugin(
   const cjsPackageCache: PackageCache = new Map()
 
   // default resolver which prefers ESM
-  const _resolve = config.createResolver({
+  const _resolve = createIdResolver(config, {
     asSrc: false,
     scan: true,
     packageCache: esmPackageCache,
   })
 
   // cjs resolver that prefers Node
-  const _resolveRequire = config.createResolver({
+  const _resolveRequire = createIdResolver(config, {
     asSrc: false,
     isRequire: true,
     scan: true,
@@ -95,9 +96,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    const ssr = environment.name !== 'client' // TODO:depsOptimizer
-    // We need to deprecate createResolver
-    return resolver(id, _importer, undefined, ssr)
+    return resolver(environment, id, _importer)
   }
 
   const resolveResult = (id: string, resolved: string) => {
@@ -211,7 +210,7 @@ export function esbuildDepPlugin(
           if (!importer) {
             if ((entry = resolveEntry(id))) return entry
             // check if this is aliased to an entry - also return entry namespace
-            const aliased = await _resolve(id, undefined, true)
+            const aliased = await _resolve(environment, id, undefined, true)
             if (aliased && (entry = resolveEntry(aliased))) {
               return entry
             }

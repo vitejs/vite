@@ -358,11 +358,7 @@ cli
           },
           'serve',
         )
-        const environment = new Environment(
-          'client',
-          config,
-          config.environments.client,
-        )
+        const environment = new Environment('client', config)
         await optimizeDeps(environment, options.force, true)
       } catch (e) {
         createLogger(options.logLevel).error(
