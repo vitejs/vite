@@ -1,6 +1,5 @@
 import { beforeAll, describe, expect, it, test } from 'vitest'
 import type { Page } from 'playwright-chromium'
-import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   addFile,
   browser,
@@ -253,24 +252,21 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '3')
   })
 
-  test.skipIf(hasWindowsUnicodeFsBug)(
-    'full-reload encodeURI path',
-    async () => {
-      await page.goto(
-        viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-      )
-      const el = await page.$('#app')
-      expect(await el.textContent()).toBe('title')
-      editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
-        code.replace('title', 'title2'),
-      )
-      await page.waitForEvent('load')
-      await untilUpdated(
-        async () => (await page.$('#app')).textContent(),
-        'title2',
-      )
-    },
-  )
+  test('full-reload encodeURI path', async () => {
+    await page.goto(
+      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+    )
+    const el = await page.$('#app')
+    expect(await el.textContent()).toBe('title')
+    editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
+      code.replace('title', 'title2'),
+    )
+    await page.waitForEvent('load')
+    await untilUpdated(
+      async () => (await page.$('#app')).textContent(),
+      'title2',
+    )
+  })
 
   test('CSS update preserves query params', async () => {
     await page.goto(viteTestUrl)
