@@ -31,6 +31,7 @@ import {
 import type {
   EnvironmentOptions,
   InlineConfig,
+  PluginOption,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
@@ -231,8 +232,16 @@ export interface BuildOptions {
   /**
    * Emit assets during SSR.
    * @default false
+   * @deprecated use emitAssets
    */
   ssrEmitAssets?: boolean
+  /**
+   * Emit assets during build. Frameworks can set environments.ssr.build.emitAssets
+   * By default, it is true for the client and false for other environments.
+   * TODO: Should this be true for all environments by default? Or should this be
+   * controlled by the builder so so we can avoid emitting duplicated assets.
+   */
+  emitAssets?: boolean
   /**
    * Set to false to disable reporting compressed chunk sizes.
    * Can slightly improve build speed.
@@ -317,6 +326,7 @@ export function resolveBuildOptions(
   raw: BuildOptions | undefined,
   logger: Logger,
   root: string,
+  environmentName: string | undefined,
 ): ResolvedBuildOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
   if (raw) {
@@ -357,6 +367,7 @@ export function resolveBuildOptions(
     ssr: false,
     ssrManifest: false,
     ssrEmitAssets: false,
+    emitAssets: environmentName === 'client',
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
@@ -474,11 +485,13 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const config = await resolveConfigToBuild(inlineConfig)
-
-  // TODO: create a BuildEnvironment here?
-
-  return buildEnvironment(config)
+  const builder = await createViteBuilder(
+    {},
+    { ...inlineConfig, plugins: () => inlineConfig.plugins ?? [] },
+  )
+  const ssr = !!builder.config.build.ssr
+  const environment = builder.environments[ssr ? 'ssr' : 'client']
+  return builder.build(environment)
 }
 
 function resolveConfigToBuild(inlineConfig: InlineConfig = {}) {
@@ -487,10 +500,10 @@ function resolveConfigToBuild(inlineConfig: InlineConfig = {}) {
 
 export async function buildEnvironment(
   config: ResolvedConfig,
-  environment?: BuildEnvironment,
+  environment: BuildEnvironment,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const options = config.build
-  const ssr = (environment && environment?.name !== 'client') ?? !!options.ssr
+  const ssr = environment.name !== 'client'
   const libOptions = options.lib
 
   config.logger.info(
@@ -540,7 +553,7 @@ export async function buildEnvironment(
 
   const outDir = resolve(options.outDir)
 
-  // inject ssr arg to plugin load/transform hooks
+  // inject environment and ssr arg to plugin load/transform hooks
   const plugins = (
     environment || ssr
       ? config.plugins.map((p) => injectEnvironmentToHooks(p, environment))
@@ -680,8 +693,7 @@ export async function buildEnvironment(
     const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
 
     // watch file changes with rollup
-    // TODO: ignore if a environment is provided for now
-    if (!environment && config.build.watch) {
+    if (config.build.watch) {
       config.logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
@@ -1020,7 +1032,7 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-function injectEnvironmentToHooks(
+export function injectEnvironmentToHooks(
   plugin: Plugin,
   environment?: BuildEnvironment,
 ): Plugin {
@@ -1349,7 +1361,9 @@ export interface ViteBuilder {
   environments: Record<string, BuildEnvironment>
   config: ResolvedConfig
   buildEnvironments(): Promise<void>
-  build(environment: BuildEnvironment): Promise<void>
+  build(
+    environment: BuildEnvironment,
+  ): Promise<RollupOutput | RollupOutput[] | RollupWatcher>
 }
 
 export interface BuilderOptions {
@@ -1379,7 +1393,7 @@ export function resolveBuilderOptions(
 export type ResolvedBuilderOptions = Required<BuilderOptions>
 
 export interface BuilderInlineConfig extends Omit<InlineConfig, 'plugins'> {
-  plugins?: () => Plugin[]
+  plugins?: () => PluginOption[]
 }
 
 export async function createViteBuilder(
@@ -1410,23 +1424,26 @@ export async function createViteBuilder(
 
   const defaultConfig = await resolveConfig()
 
-  if (defaultConfig.build.lib) {
-    throw new Error('Library mode is not supported in ViteBuilder')
-  }
-  if (defaultConfig.build.watch) {
-    throw new Error('Watch mode is not yet supported in ViteBuilder')
-  }
-
   const environments: Record<string, BuildEnvironment> = {}
 
   const builder: ViteBuilder = {
     environments,
     config: defaultConfig,
     async buildEnvironments() {
-      return defaultConfig.builder.buildEnvironments(builder, this.build)
+      if (defaultConfig.build.watch) {
+        throw new Error(
+          'Watch mode is not yet supported in viteBuilder.buildEnvironments()',
+        )
+      }
+      return defaultConfig.builder.buildEnvironments(
+        builder,
+        async (environment) => {
+          await this.build(environment)
+        },
+      )
     },
     async build(environment: BuildEnvironment) {
-      await buildEnvironment(environment.config, environment)
+      return buildEnvironment(environment.config, environment)
     },
   }
 

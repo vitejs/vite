@@ -50,20 +50,23 @@ export async function resolvePlugins(
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin(config)
       : null,
-    resolvePlugin({
-      ...config.resolve,
-      root: config.root,
-      isProduction: config.isProduction,
-      isBuild,
-      packageCache: config.packageCache,
-      ssrConfig: config.ssr,
-      asSrc: true,
-      fsUtils: getFsUtils(config),
-      shouldExternalize:
-        isBuild && config.build.ssr
-          ? (id, importer) => shouldExternalizeForSSR(id, importer, config)
-          : undefined,
-    }),
+    resolvePlugin(
+      {
+        ...config.resolve,
+        root: config.root,
+        isProduction: config.isProduction,
+        isBuild,
+        packageCache: config.packageCache,
+        ssrConfig: config.ssr,
+        asSrc: true,
+        fsUtils: getFsUtils(config),
+        shouldExternalize:
+          isBuild && config.build.ssr
+            ? (id, importer) => shouldExternalizeForSSR(id, importer, config)
+            : undefined,
+      },
+      config.environments,
+    ),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config) : null,

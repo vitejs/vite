@@ -46,14 +46,21 @@ import type { BuildEnvironment } from './build'
  *
  * The current module environment can be accessed from the context for the
  * buildStart, resolveId, transform, load, and buildEnd, hooks
+ *
+ * The current environment can be accessed from the context for the
+ * buildStart, resolveId, transform, load, and buildEnd, hooks. It can be a dev
+ * or a build environment. Plugins can use this.environment.mode === 'dev' to
+ * check if they have access to dev specific APIs.
  */
 
+export type PluginEnvironment = DevEnvironment | BuildEnvironment
+
 export interface PluginContext extends RollupPluginContext {
-  environment?: DevEnvironment | BuildEnvironment
+  environment?: PluginEnvironment
 }
 
 export interface TransformPluginContext extends RollupTransformPluginContext {
-  environment?: DevEnvironment | BuildEnvironment
+  environment?: PluginEnvironment
 }
 
 export interface Plugin<A = any> extends RollupPlugin<A> {

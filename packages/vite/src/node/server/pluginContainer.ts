@@ -61,7 +61,7 @@ import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
-import type { Plugin } from '../plugin'
+import type { Plugin, PluginEnvironment } from '../plugin'
 import {
   combineSourcemaps,
   createDebugger,
@@ -81,7 +81,6 @@ import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import { buildErrorMessage } from './middlewares/error'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import type { DevEnvironment } from './environment'
 
 const noop = () => {}
 
@@ -115,7 +114,7 @@ export interface PluginContainer {
       custom?: CustomPluginOptions
       skip?: Set<Plugin>
       ssr?: boolean
-      environment?: DevEnvironment
+      environment?: PluginEnvironment
       /**
        * @internal
        */
@@ -129,14 +128,14 @@ export interface PluginContainer {
     options?: {
       inMap?: SourceDescription['map']
       ssr?: boolean
-      environment?: DevEnvironment
+      environment?: PluginEnvironment
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }>
   load(
     id: string,
     options?: {
       ssr?: boolean
-      environment?: DevEnvironment
+      environment?: PluginEnvironment
     },
   ): Promise<LoadResult | null>
   watchChange(
@@ -161,7 +160,7 @@ type PluginContext = Omit<
 export async function createPluginContainer(
   config: ResolvedConfig,
   watcher?: FSWatcher,
-  environments?: Record<string, DevEnvironment>,
+  environments?: Record<string, PluginEnvironment>,
 ): Promise<PluginContainer> {
   const {
     plugins,
@@ -191,7 +190,7 @@ export async function createPluginContainer(
   // But there is code that is going to call it without passing an environment, or with the ssr flag to get the ssr environment
   function resolveEnvironment(options?: {
     ssr?: boolean
-    environment?: DevEnvironment
+    environment?: PluginEnvironment
   }) {
     const environment =
       options?.environment ?? environments?.[options?.ssr ? 'ssr' : 'client']
@@ -281,7 +280,7 @@ export async function createPluginContainer(
   class Context implements PluginContext {
     meta = minimalContext.meta
     ssr = false
-    environment: DevEnvironment | undefined
+    environment: PluginEnvironment | undefined
     _scan = false
     _activePlugin: Plugin | null
     _activeId: string | null = null
@@ -289,7 +288,7 @@ export async function createPluginContainer(
     _resolveSkips?: Set<Plugin>
     _addedImports: Set<string> | null = null
 
-    constructor(environment?: DevEnvironment, initialPlugin?: Plugin) {
+    constructor(environment?: PluginEnvironment, initialPlugin?: Plugin) {
       this.environment = environment
       this._activePlugin = initialPlugin || null
     }
@@ -572,7 +571,7 @@ export async function createPluginContainer(
     constructor(
       id: string,
       code: string,
-      environment?: DevEnvironment,
+      environment?: PluginEnvironment,
       inMap?: SourceMap | string,
     ) {
       super(environment)

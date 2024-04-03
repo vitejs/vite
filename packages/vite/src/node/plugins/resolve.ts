@@ -35,6 +35,7 @@ import {
   safeRealpathSync,
   tryStatSync,
 } from '../utils'
+import type { ResolvedEnvironmentOptions } from '../config'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
@@ -91,7 +92,7 @@ export interface ResolveOptions {
   preserveSymlinks?: boolean
 }
 
-export interface InternalResolveOptions extends Required<ResolveOptions> {
+interface ResolvePluginOptions {
   root: string
   isBuild: boolean
   isProduction: boolean
@@ -108,6 +109,7 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   tryPrefix?: string
   preferRelative?: boolean
   isRequire?: boolean
+  nodeCompatible?: boolean
   // #3040
   // when the importer is a ts module,
   // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
@@ -128,7 +130,28 @@ export interface InternalResolveOptions extends Required<ResolveOptions> {
   idOnly?: boolean
 }
 
-export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
+export interface InternalResolveOptions
+  extends Required<ResolveOptions>,
+    ResolvePluginOptions {}
+
+// Defined ResolveOptions are used to overwrite the values for all environments
+// It is used when creating custom resolvers (for CSS, scanning, etc)
+// TODO: It could be more clear to make the plugin constructor be:
+// resolvePlugin(pluginOptions: ResolvePluginOptions, overrideResolveOptions?: ResolveOptions)
+export interface ResolvePluginOptionsWithOverrides
+  extends ResolveOptions,
+    ResolvePluginOptions {}
+
+export function resolvePlugin(
+  resolveOptions: ResolvePluginOptionsWithOverrides,
+  /**
+   * @internal
+   * The deprecated config.createResolver creates a pluginContainer before
+   * environments are created. The resolve plugin is especial as it works without
+   * environments to enable this use case. It only needs access to the resolve options.
+   */
+  environmentsOptions: Record<string, ResolvedEnvironmentOptions>,
+): Plugin {
   const {
     root,
     isProduction,
@@ -182,17 +205,20 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
       const isRequire: boolean =
         resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
 
-      // end user can configure different conditions for ssr and client.
-      // falls back to client conditions if no ssr conditions supplied
-      const ssrConditions =
-        resolveOptions.ssrConfig?.resolve?.conditions ||
-        resolveOptions.conditions
-
+      const environmentName = this.environment?.name ?? (ssr ? 'ssr' : 'client')
+      const environmentResolveOptions =
+        environmentsOptions[environmentName].resolve
+      if (!environmentResolveOptions) {
+        throw new Error(
+          `Missing ResolveOptions for ${environmentName} environment`,
+        )
+      }
       const options: InternalResolveOptions = {
         isRequire,
-        ...resolveOptions,
+        ...environmentResolveOptions,
+        nodeCompatible: environmentsOptions[environmentName].nodeCompatible,
+        ...resolveOptions, // plugin options + resolve options overrides
         scan: resolveOpts?.scan ?? resolveOptions.scan,
-        conditions: ssr ? ssrConditions : resolveOptions.conditions,
       }
 
       const resolvedImports = resolveSubpathImports(
@@ -272,10 +298,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (depsOptimizer?.isOptimizedDepFile(normalizedFsPath)) {
           // Optimized files could not yet exist in disk, resolve to the full path
           // Inject the current browserHash version if the path doesn't have one
-          if (
-            !resolveOptions.isBuild &&
-            !DEP_VERSION_RE.test(normalizedFsPath)
-          ) {
+          if (!options.isBuild && !DEP_VERSION_RE.test(normalizedFsPath)) {
             const browserHash = optimizedDepInfoFromFile(
               depsOptimizer.metadata,
               normalizedFsPath,
@@ -400,9 +423,9 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         }
 
         // node built-ins.
-        // externalize if building for SSR, otherwise redirect to empty module
+        // externalize if building for a node compatible environment, otherwise redirect to empty module
         if (isBuiltin(id)) {
-          if (ssr) {
+          if (options.nodeCompatible) {
             if (
               targetWeb &&
               ssrNoExternal === true &&
@@ -417,7 +440,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
                   importer,
                 )}"`
               }
-              message += `. Consider disabling ssr.noExternal or remove the built-in dependency.`
+              message += `. Consider disabling environments.${this.environment?.name}.noExternal or remove the built-in dependency.`
               this.error(message)
             }
 
@@ -703,6 +726,7 @@ function tryCleanFsResolve(
 export type InternalResolveOptionsWithOverrideConditions =
   InternalResolveOptions & {
     /**
+     * TODO: Is this needed if we have `externalConditions` in `resolve`?
      * @internal
      */
     overrideConditions?: string[]
