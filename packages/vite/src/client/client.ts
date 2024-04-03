@@ -102,9 +102,11 @@ function setupWebSocket(
 
     notifyListeners('vite:ws:disconnect', { webSocket: socket })
 
-    console.log(`[vite] server connection lost. polling for restart...`)
-    await waitForSuccessfulPing(protocol, hostAndPath)
-    location.reload()
+    if (hasDocument) {
+      console.log(`[vite] server connection lost. polling for restart...`)
+      await waitForSuccessfulPing(protocol, hostAndPath)
+      location.reload()
+    }
   })
 
   return socket
@@ -182,16 +184,20 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'update':
       notifyListeners('vite:beforeUpdate', payload)
-      // if this is the first update and there's already an error overlay, it
-      // means the page opened with existing server compile error and the whole
-      // module script failed to load (since one of the nested imports is 500).
-      // in this case a normal update won't work and a full reload is needed.
-      if (isFirstUpdate && hasErrorOverlay()) {
-        window.location.reload()
-        return
-      } else {
-        clearErrorOverlay()
-        isFirstUpdate = false
+      if (hasDocument) {
+        // if this is the first update and there's already an error overlay, it
+        // means the page opened with existing server compile error and the whole
+        // module script failed to load (since one of the nested imports is 500).
+        // in this case a normal update won't work and a full reload is needed.
+        if (isFirstUpdate && hasErrorOverlay()) {
+          window.location.reload()
+          return
+        } else {
+          if (enableOverlay) {
+            clearErrorOverlay()
+          }
+          isFirstUpdate = false
+        }
       }
       await Promise.all(
         payload.updates.map(async (update): Promise<void> => {
@@ -249,21 +255,23 @@ async function handleMessage(payload: HMRPayload) {
     }
     case 'full-reload':
       notifyListeners('vite:beforeFullReload', payload)
-      if (payload.path && payload.path.endsWith('.html')) {
-        // if html file is edited, only reload the page if the browser is
-        // currently on that page.
-        const pagePath = decodeURI(location.pathname)
-        const payloadPath = base + payload.path.slice(1)
-        if (
-          pagePath === payloadPath ||
-          payload.path === '/index.html' ||
-          (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
-        ) {
+      if (hasDocument) {
+        if (payload.path && payload.path.endsWith('.html')) {
+          // if html file is edited, only reload the page if the browser is
+          // currently on that page.
+          const pagePath = decodeURI(location.pathname)
+          const payloadPath = base + payload.path.slice(1)
+          if (
+            pagePath === payloadPath ||
+            payload.path === '/index.html' ||
+            (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
+          ) {
+            pageReload()
+          }
+          return
+        } else {
           pageReload()
         }
-        return
-      } else {
-        pageReload()
       }
       break
     case 'prune':
@@ -272,13 +280,15 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'error': {
       notifyListeners('vite:error', payload)
-      const err = payload.err
-      if (enableOverlay) {
-        createErrorOverlay(err)
-      } else {
-        console.error(
-          `[vite] Internal Server Error\n${err.message}\n${err.stack}`,
-        )
+      if (hasDocument) {
+        const err = payload.err
+        if (enableOverlay) {
+          createErrorOverlay(err)
+        } else {
+          console.error(
+            `[vite] Internal Server Error\n${err.message}\n${err.stack}`,
+          )
+        }
       }
       break
     }
@@ -298,6 +308,7 @@ function notifyListeners(event: string, data: any): void {
 }
 
 const enableOverlay = __HMR_ENABLE_OVERLAY__
+const hasDocument = 'document' in globalThis
 
 function createErrorOverlay(err: ErrorPayload['err']) {
   clearErrorOverlay()

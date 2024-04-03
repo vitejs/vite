@@ -200,7 +200,7 @@ test('emit chunk', async () => {
   )
   await untilUpdated(
     () => page.textContent('.emit-chunk-dynamic-import-worker'),
-    '"A string/es/"',
+    '"A stringmodule1/es/"',
     true,
   )
 })

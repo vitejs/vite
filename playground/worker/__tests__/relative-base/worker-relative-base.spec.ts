@@ -141,7 +141,7 @@ test.runIf(isBuild)('emit chunk', async () => {
   )
   await untilUpdated(
     () => page.textContent('.emit-chunk-dynamic-import-worker'),
-    '"A string./"',
+    '"A stringmodule1./"',
     true,
   )
 })
