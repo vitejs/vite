@@ -1,4 +1,5 @@
 import { transform } from 'esbuild'
+import { TraceMap, decodedMap, encodedMap } from '@jridgewell/trace-mapping'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { escapeRegex, getHash } from '../utils'
@@ -156,6 +157,26 @@ export async function replaceDefine(
     sourcefile: id,
     sourcemap: config.command === 'build' ? !!config.build.sourcemap : true,
   })
+
+  // remove esbuild's <define:...> source entries
+  // since they would confuse source map remapping/collapsing which expects a single source
+  if (result.map.includes('<define:')) {
+    const originalMap = new TraceMap(result.map)
+    if (originalMap.sources.length >= 2) {
+      const sourceIndex = originalMap.sources.indexOf(id)
+      const decoded = decodedMap(originalMap)
+      decoded.sources = [id]
+      decoded.mappings = decoded.mappings.map((segments) =>
+        segments.filter((segment) => {
+          // modify and filter
+          const index = segment[1]
+          segment[1] = 0
+          return index === sourceIndex
+        }),
+      )
+      result.map = JSON.stringify(encodedMap(new TraceMap(decoded as any)))
+    }
+  }
 
   for (const marker in replacementMarkers) {
     result.code = result.code.replaceAll(marker, replacementMarkers[marker])
