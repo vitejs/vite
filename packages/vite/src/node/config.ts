@@ -192,6 +192,10 @@ export interface SharedEnvironmentOptions {
    * Configure resolver
    */
   resolve?: EnvironmentResolveOptions
+  /**
+   * Node compatibility
+   */
+  nodeCompatible?: boolean
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -205,9 +209,19 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
   build?: BuildOptions
 }
 
-export type ResolvedEnvironmentOptions = Required<EnvironmentOptions>
+export type ResolvedEnvironmentResolveOptions =
+  Required<EnvironmentResolveOptions>
 
-export interface UserConfig extends EnvironmentOptions {
+export type ResolvedEnvironmentOptions = Required<EnvironmentOptions> & {
+  resolve: ResolvedEnvironmentResolveOptions
+}
+
+export type DefaultEnvironmentOptions = Omit<
+  EnvironmentOptions,
+  'nodeCompatible'
+>
+
+export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Project root directory. Can be an absolute path, or a path relative from
    * the location of the config file itself.
@@ -523,6 +537,7 @@ function resolveEnvironmentOptions(
   const resolve = resolveEnvironmentResolveOptions(config.resolve, logger)
   return {
     resolve,
+    nodeCompatible: config.nodeCompatible ?? environmentName !== 'client',
     dev: resolveDevOptions(config.dev, resolve.preserveSymlinks),
     build: resolveBuildOptions(
       config.build,
@@ -548,6 +563,7 @@ export function getDefaultResolvedEnvironmentOptions(
 ): ResolvedEnvironmentOptions {
   return {
     resolve: config.resolve,
+    nodeCompatible: true,
     dev: config.dev,
     build: config.build,
   }
@@ -936,58 +952,6 @@ export async function resolveConfig(
       ? createFilter(config.assetsInclude)
       : () => false
 
-  // create an internal resolver to be used in special scenarios, e.g.
-  // optimizer & handling css @imports
-  const createResolver: ResolvedConfig['createResolver'] = (options) => {
-    let aliasContainer: PluginContainer | undefined
-    let resolverContainer: PluginContainer | undefined
-    // The scanner only runs for the browser environment
-    async function resolve(
-      id: string,
-      importer?: string,
-      aliasOnly?: boolean,
-      ssr?: boolean,
-    ): Promise<PartialResolvedId | null> {
-      let container: PluginContainer
-      if (aliasOnly) {
-        container =
-          aliasContainer ||
-          (aliasContainer = await createPluginContainer({
-            ...resolved,
-            plugins: [aliasPlugin({ entries: resolved.resolve.alias })],
-          }))
-      } else {
-        container =
-          resolverContainer ||
-          (resolverContainer = await createPluginContainer({
-            ...resolved,
-            plugins: [
-              aliasPlugin({ entries: resolved.resolve.alias }),
-              resolvePlugin({
-                ...resolved.resolve,
-                root: resolvedRoot,
-                isProduction,
-                isBuild: command === 'build',
-                ssrConfig: resolved.ssr,
-                asSrc: true,
-                preferRelative: false,
-                tryIndex: true,
-                ...options,
-                idOnly: true,
-                fsUtils: getFsUtils(resolved),
-              }),
-            ],
-          }))
-      }
-      return await container.resolveId(id, importer, {
-        ssr,
-        scan: options?.scan,
-      })
-    }
-    return async (id, importer, aliasOnly, ssr) =>
-      (await resolve(id, importer, aliasOnly, ssr))?.id
-  }
-
   const { publicDir } = config
   const resolvedPublicDir =
     publicDir !== false && publicDir !== ''
@@ -1117,7 +1081,6 @@ export async function resolveConfig(
     },
     logger,
     packageCache,
-    createResolver,
     worker: resolvedWorkerOptions,
     appType: config.appType ?? 'spa',
     experimental: {
@@ -1138,6 +1101,64 @@ export async function resolveConfig(
 
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
+
+    // createResolver is deprecated. It only works for the client and ssr
+    // environments. The `aliasOnly` option is also not being used any more
+    // Plugins should move to createIdResolver(environment) instead.
+    // create an internal resolver to be used in special scenarios, e.g.
+    // optimizer & handling css @imports
+    createResolver(options) {
+      let aliasContainer: PluginContainer | undefined
+      let resolverContainer: PluginContainer | undefined
+      const environments = this.environments ?? resolvedEnvironments
+      async function resolve(
+        id: string,
+        importer?: string,
+        aliasOnly?: boolean,
+        ssr?: boolean,
+      ): Promise<PartialResolvedId | null> {
+        let container: PluginContainer
+        if (aliasOnly) {
+          container =
+            aliasContainer ||
+            (aliasContainer = await createPluginContainer({
+              ...resolved,
+              plugins: [aliasPlugin({ entries: resolved.resolve.alias })],
+            }))
+        } else {
+          container =
+            resolverContainer ||
+            (resolverContainer = await createPluginContainer({
+              ...resolved,
+              plugins: [
+                aliasPlugin({ entries: resolved.resolve.alias }),
+                resolvePlugin(
+                  {
+                    ...resolved.resolve,
+                    root: resolvedRoot,
+                    isProduction,
+                    isBuild: command === 'build',
+                    ssrConfig: resolved.ssr,
+                    asSrc: true,
+                    preferRelative: false,
+                    tryIndex: true,
+                    ...options,
+                    idOnly: true,
+                    fsUtils: getFsUtils(resolved),
+                  },
+                  environments,
+                ),
+              ],
+            }))
+        }
+        return await container.resolveId(id, importer, {
+          ssr,
+          scan: options?.scan,
+        })
+      }
+      return async (id, importer, aliasOnly, ssr) =>
+        (await resolve(id, importer, aliasOnly, ssr))?.id
+    },
   }
   resolved = {
     ...config,
