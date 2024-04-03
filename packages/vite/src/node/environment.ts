@@ -11,7 +11,7 @@ export class Environment {
   constructor(
     name: string,
     config: ResolvedConfig,
-    options: ResolvedEnvironmentOptions,
+    options: ResolvedEnvironmentOptions = config.environments[name],
   ) {
     this.name = name
     this.config = config
