@@ -3,10 +3,11 @@ import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import type { ResolveFn } from '../'
 import { injectQuery, isParentDirectory, transformStableResult } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
+import { createIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
@@ -24,7 +25,7 @@ import { tryFsResolve } from './resolve'
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const { publicDir } = config
-  let assetResolver: ResolveFn
+  let assetResolver: ResolveIdFn
 
   const fsResolveOptions: InternalResolveOptions = {
     ...config.resolve,
@@ -39,7 +40,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:asset-import-meta-url',
     async transform(code, id, options) {
+      const { environment } = this
       if (
+        environment &&
         !options?.ssr &&
         id !== preloadHelperId &&
         id !== CLIENT_ENTRY &&
@@ -103,13 +106,13 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             file = slash(path.resolve(path.dirname(id), url))
             file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
-            assetResolver ??= config.createResolver({
+            assetResolver ??= createIdResolver(config, {
               extensions: [],
               mainFields: [],
               tryIndex: false,
               preferRelative: true,
             })
-            file = await assetResolver(url, id)
+            file = await assetResolver(environment, url, id)
             file ??=
               url[0] === '/'
                 ? slash(path.join(publicDir, url))
