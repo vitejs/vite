@@ -129,17 +129,17 @@ jobs:
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
-    name: "Lint: node-18, ubuntu-latest"
+    name: "Lint: node-20, ubuntu-latest"
     steps:
       - uses: actions/checkout@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v3.0.0
 
-      - name: Set node version to 18
+      - name: Set node version to 20
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: "pnpm"
 
       - name: Install deps
