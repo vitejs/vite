@@ -248,7 +248,7 @@ function encodePublicUrlsInCSS(config: ResolvedConfig) {
 
 function getLineCount(str: string): number {
   if (str === '') {
-    return 1
+    return 0
   }
   const lines = str.match(splitRE)
   return (lines?.length ?? 0) + 1
@@ -566,14 +566,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (styles.has(id)) {
           // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
           if (!transformOnlyRE.test(id)) {
-            const content = styles.get(id)!
-            if (chunkCSS !== '') {
-              chunkCSS += '\n' + content
-            } else {
-              chunkCSS = content
+            const content = styles.get(id)
+            if (content !== undefined && content !== '') {
+              if (chunkCSS !== '') {
+                chunkCSS += '\n' + content
+              } else {
+                chunkCSS = content
+              }
+              line += getLineCount(content)
+              concatCssEndLines.push({ file: id, end: line })
             }
-            line += getLineCount(content)
-            concatCssEndLines.push({ file: id, end: line })
             // a css module contains JS, so it makes this not a pure css chunk
             if (cssModuleRE.test(id)) {
               isPureCssChunk = false
@@ -943,7 +945,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           chunk.imports.forEach(collect)
 
           const content = chunkCSSMap.get(chunk.preliminaryFileName) ?? null
-          if (content == null) {
+          if (content == null || content === '') {
             return
           }
           if (css !== '') {
