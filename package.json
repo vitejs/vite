@@ -55,7 +55,6 @@
     "@types/micromatch": "^4.0.6",
     "@types/node": "^20.11.30",
     "@types/picomatch": "^2.3.3",
-    "@types/sass": "~1.43.1",
     "@types/semver": "^7.5.8",
     "@types/stylus": "^0.48.42",
     "@types/ws": "^8.5.10",
