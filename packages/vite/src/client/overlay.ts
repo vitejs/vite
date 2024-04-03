@@ -165,42 +165,40 @@ kbd {
 `
 
 // Error Template
-const template =
-  'document' in globalThis
-    ? h(
+const createTemplate = () =>
+  h(
+    'div',
+    { class: 'backdrop', part: 'backdrop' },
+    h(
+      'div',
+      { class: 'window', part: 'window' },
+      h(
+        'pre',
+        { class: 'message', part: 'message' },
+        h('span', { class: 'plugin', part: 'plugin' }),
+        h('span', { class: 'message-body', part: 'message-body' }),
+      ),
+      h('pre', { class: 'file', part: 'file' }),
+      h('pre', { class: 'frame', part: 'frame' }),
+      h('pre', { class: 'stack', part: 'stack' }),
+      h(
         'div',
-        { class: 'backdrop', part: 'backdrop' },
-        h(
-          'div',
-          { class: 'window', part: 'window' },
-          h(
-            'pre',
-            { class: 'message', part: 'message' },
-            h('span', { class: 'plugin', part: 'plugin' }),
-            h('span', { class: 'message-body', part: 'message-body' }),
-          ),
-          h('pre', { class: 'file', part: 'file' }),
-          h('pre', { class: 'frame', part: 'frame' }),
-          h('pre', { class: 'stack', part: 'stack' }),
-          h(
-            'div',
-            { class: 'tip', part: 'tip' },
-            'Click outside, press ',
-            h('kbd', {}, 'Esc'),
-            ' key, or fix the code to dismiss.',
-            h('br'),
-            'You can also disable this overlay by setting ',
-            h('code', { part: 'config-option-name' }, 'server.hmr.overlay'),
-            ' to ',
-            h('code', { part: 'config-option-value' }, 'false'),
-            ' in ',
-            h('code', { part: 'config-file-name' }, hmrConfigName),
-            '.',
-          ),
-        ),
-        h('style', {}, templateStyle),
-      )
-    : undefined
+        { class: 'tip', part: 'tip' },
+        'Click outside, press ',
+        h('kbd', {}, 'Esc'),
+        ' key, or fix the code to dismiss.',
+        h('br'),
+        'You can also disable this overlay by setting ',
+        h('code', { part: 'config-option-name' }, 'server.hmr.overlay'),
+        ' to ',
+        h('code', { part: 'config-option-value' }, 'false'),
+        ' in ',
+        h('code', { part: 'config-file-name' }, hmrConfigName),
+        '.',
+      ),
+    ),
+    h('style', {}, templateStyle),
+  )
 
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
 const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
@@ -216,9 +214,7 @@ export class ErrorOverlay extends HTMLElement {
     super()
     this.root = this.attachShadow({ mode: 'open' })
 
-    if (template) {
-      this.root.appendChild(template)
-    }
+    this.root.appendChild(createTemplate())
 
     codeframeRE.lastIndex = 0
     const hasFrame = err.frame && codeframeRE.test(err.frame)
