@@ -1,9 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import sirv from 'sirv'
+import compression from '@polka/compression'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
+import { DEFAULT_PREVIEW_PORT } from './constants'
 import type {
   HttpServer,
   ResolvedServerOptions,
@@ -18,7 +20,6 @@ import {
   setClientErrorHandler,
 } from './http'
 import { openBrowser } from './server/openBrowser'
-import compression from './server/middlewares/compression'
 import { baseMiddleware } from './server/middlewares/base'
 import { htmlFallbackMiddleware } from './server/middlewares/htmlFallback'
 import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
@@ -28,7 +29,6 @@ import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
-import { DEFAULT_PREVIEW_PORT } from './constants'
 import { resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 

@@ -18,7 +18,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import {
-  cleanUrl,
+  encodeURIPath,
   getHash,
   injectQuery,
   joinUrlSegments,
@@ -27,10 +27,10 @@ import {
   removeLeadingSlash,
   removeUrlQuery,
   urlRE,
-  withTrailingSlash,
 } from '../utils'
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
 import type { ModuleGraph } from '../server/moduleGraph'
+import { cleanUrl, withTrailingSlash } from '../../shared/utils'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
@@ -101,7 +101,7 @@ export function renderAssetUrlInJS(
     )
     const replacementString =
       typeof replacement === 'string'
-        ? JSON.stringify(replacement).slice(1, -1)
+        ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
         : `"+${replacement.runtime}+"`
     s.update(match.index, match.index + full.length, replacementString)
   }
@@ -124,7 +124,7 @@ export function renderAssetUrlInJS(
     )
     const replacementString =
       typeof replacement === 'string'
-        ? JSON.stringify(replacement).slice(1, -1)
+        ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
         : `"+${replacement.runtime}+"`
     s.update(match.index, match.index + full.length, replacementString)
   }
@@ -206,7 +206,15 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      return `export default ${JSON.stringify(url)}`
+      return {
+        code: `export default ${JSON.stringify(encodeURIPath(url))}`,
+        // Force rollup to keep this module from being shared between other entry points if it's an entrypoint.
+        // If the resulting chunk is empty, it will be removed in generateBundle.
+        moduleSideEffects:
+          config.command === 'build' && this.getModuleInfo(id)?.isEntry
+            ? 'no-treeshake'
+            : false,
+      }
     },
 
     renderChunk(code, chunk, opts) {
@@ -225,6 +233,19 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle(_, bundle) {
+      // Remove empty entry point file
+      for (const file in bundle) {
+        const chunk = bundle[file]
+        if (
+          chunk.type === 'chunk' &&
+          chunk.isEntry &&
+          chunk.moduleIds.length === 1 &&
+          config.assetsInclude(chunk.moduleIds[0])
+        ) {
+          delete bundle[file]
+        }
+      }
+
       // do not emit assets for SSR build
       if (
         config.command === 'build' &&
@@ -341,7 +362,7 @@ async function fileToBuiltUrl(
   const content = await fsp.readFile(file)
 
   let url: string
-  if (shouldInline(config, file, id, content, forceInline)) {
+  if (shouldInline(config, file, id, content, pluginContext, forceInline)) {
     if (config.build.lib && isGitLfsPlaceholder(content)) {
       config.logger.warn(
         colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`),
@@ -406,9 +427,11 @@ const shouldInline = (
   file: string,
   id: string,
   content: Buffer,
+  pluginContext: PluginContext,
   forceInline: boolean | undefined,
 ): boolean => {
   if (config.build.lib) return true
+  if (pluginContext.getModuleInfo(id)?.isEntry) return false
   if (forceInline !== undefined) return forceInline
   let limit: number
   if (typeof config.build.assetsInlineLimit === 'function') {

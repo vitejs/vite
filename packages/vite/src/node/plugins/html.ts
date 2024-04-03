@@ -13,12 +13,13 @@ import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
-  cleanUrl,
+  encodeURIPath,
   generateCodeFrame,
   getHash,
   isDataUrl,
   isExternalUrl,
   normalizePath,
+  partialEncodeURIPath,
   processSrcSet,
   removeLeadingSlash,
   urlCanParse,
@@ -28,6 +29,7 @@ import { checkPublicFile } from '../publicDir'
 import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
 import type { Logger } from '../logger'
+import { cleanUrl } from '../../shared/utils'
 import {
   assetUrlRE,
   getPublicAssetFilename,
@@ -308,8 +310,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     config.plugins,
     config.logger,
   )
+  preHooks.unshift(injectCspNonceMetaTagHook(config))
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
+  postHooks.push(injectNonceAttributeTagHook(config))
   postHooks.push(postImportMapHook())
   const processedHtml = new Map<string, string>()
 
@@ -436,7 +440,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               overwriteAttrValue(
                 s,
                 sourceCodeLocation!,
-                toOutputPublicFilePath(url),
+                partialEncodeURIPath(toOutputPublicFilePath(url)),
               )
             }
 
@@ -488,22 +492,24 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 if (attrKey === 'srcset') {
                   assetUrlsPromises.push(
                     (async () => {
-                      const processedUrl = await processSrcSet(
+                      const processedEncodedUrl = await processSrcSet(
                         p.value,
                         async ({ url }) => {
                           const decodedUrl = decodeURI(url)
                           if (!isExcludedUrl(decodedUrl)) {
                             const result = await processAssetUrl(url)
-                            return result !== decodedUrl ? result : url
+                            return result !== decodedUrl
+                              ? encodeURIPath(result)
+                              : url
                           }
                           return url
                         },
                       )
-                      if (processedUrl !== p.value) {
+                      if (processedEncodedUrl !== p.value) {
                         overwriteAttrValue(
                           s,
                           getAttrSourceCodeLocation(node, attrKey),
-                          processedUrl,
+                          processedEncodedUrl,
                         )
                       }
                     })(),
@@ -514,7 +520,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     overwriteAttrValue(
                       s,
                       getAttrSourceCodeLocation(node, attrKey),
-                      toOutputPublicFilePath(url),
+                      partialEncodeURIPath(toOutputPublicFilePath(url)),
                     )
                   } else if (!isExcludedUrl(url)) {
                     if (
@@ -543,11 +549,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         node.attrs.some(
                           (p) =>
                             p.name === 'rel' &&
-                            p.value
-                              .split(spaceRe)
-                              .some((v) =>
-                                noInlineLinkRels.has(v.toLowerCase()),
-                              ),
+                            parseRelAttr(p.value).some((v) =>
+                              noInlineLinkRels.has(v),
+                            ),
                         )
                       const shouldInline = isNoInlineLink ? false : undefined
                       assetUrlsPromises.push(
@@ -560,7 +564,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                             overwriteAttrValue(
                               s,
                               getAttrSourceCodeLocation(node, attrKey),
-                              processedUrl,
+                              partialEncodeURIPath(processedUrl),
                             )
                           }
                         })(),
@@ -633,9 +637,17 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // emit <script>import("./aaa")</script> asset
         for (const { start, end, url } of scriptUrls) {
           if (checkPublicFile(url, config)) {
-            s.update(start, end, toOutputPublicFilePath(url))
+            s.update(
+              start,
+              end,
+              partialEncodeURIPath(toOutputPublicFilePath(url)),
+            )
           } else if (!isExcludedUrl(url)) {
-            s.update(start, end, await urlToBuiltUrl(url, id, config, this))
+            s.update(
+              start,
+              end,
+              partialEncodeURIPath(await urlToBuiltUrl(url, id, config, this)),
+            )
           }
         }
 
@@ -897,7 +909,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (chunk) {
             chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
           }
-          return toOutputAssetFilePath(file) + postfix
+          return encodeURIPath(toOutputAssetFilePath(file)) + postfix
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
@@ -905,9 +917,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             getPublicAssetFilename(fileHash, config)!,
           )
 
-          return urlCanParse(publicAssetPath)
-            ? publicAssetPath
-            : normalizePath(publicAssetPath)
+          return encodeURIPath(
+            urlCanParse(publicAssetPath)
+              ? publicAssetPath
+              : normalizePath(publicAssetPath),
+          )
         })
 
         if (chunk && canInlineEntry) {
@@ -928,6 +942,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+export function parseRelAttr(attr: string): string[] {
+  return attr.split(spaceRe).map((v) => v.toLowerCase())
 }
 
 // <tag style="... url(...) or image-set(...) ..."></tag>
@@ -1079,6 +1097,24 @@ export function postImportMapHook(): IndexHtmlTransformHook {
   }
 }
 
+export function injectCspNonceMetaTagHook(
+  config: ResolvedConfig,
+): IndexHtmlTransformHook {
+  return () => {
+    if (!config.html?.cspNonce) return
+
+    return [
+      {
+        tag: 'meta',
+        injectTo: 'head',
+        // use nonce attribute so that it's hidden
+        // https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/nonce#accessing_nonces_and_nonce_hiding
+        attrs: { property: 'csp-nonce', nonce: config.html.cspNonce },
+      },
+    ]
+  }
+}
+
 /**
  * Support `%ENV_NAME%` syntax in html files
  */
@@ -1125,6 +1161,47 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
         return text
       }
     })
+  }
+}
+
+export function injectNonceAttributeTagHook(
+  config: ResolvedConfig,
+): IndexHtmlTransformHook {
+  const processRelType = new Set(['stylesheet', 'modulepreload', 'preload'])
+
+  return async (html, { filename }) => {
+    const nonce = config.html?.cspNonce
+    if (!nonce) return
+
+    const s = new MagicString(html)
+
+    await traverseHtml(html, filename, (node) => {
+      if (!nodeIsElement(node)) {
+        return
+      }
+
+      if (
+        node.nodeName === 'script' ||
+        (node.nodeName === 'link' &&
+          node.attrs.some(
+            (attr) =>
+              attr.name === 'rel' &&
+              parseRelAttr(attr.value).some((a) => processRelType.has(a)),
+          ))
+      ) {
+        // if the closing of the start tag includes a `/`, the offset should be 2 so the nonce
+        // is appended prior to the `/`
+        const appendOffset =
+          html[node.sourceCodeLocation!.startTag!.endOffset - 2] === '/' ? 2 : 1
+
+        s.appendRight(
+          node.sourceCodeLocation!.startTag!.endOffset - appendOffset,
+          ` nonce="${nonce}"`,
+        )
+      }
+    })
+
+    return s.toString()
   }
 }
 

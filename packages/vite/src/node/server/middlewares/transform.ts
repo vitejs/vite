@@ -5,7 +5,6 @@ import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
 import type { ViteDevServer } from '..'
 import {
-  cleanUrl,
   createDebugger,
   fsPathFromId,
   injectQuery,
@@ -15,30 +14,27 @@ import {
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
-  unwrapId,
   urlRE,
-  withTrailingSlash,
 } from '../../utils'
 import { send } from '../send'
 import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
-import {
-  DEP_VERSION_RE,
-  FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
-} from '../../constants'
+import { DEP_VERSION_RE, FS_PREFIX } from '../../constants'
 import {
   isCSSRequest,
   isDirectCSSRequest,
   isDirectRequest,
 } from '../../plugins/css'
 import {
+  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
   ERR_OUTDATED_OPTIMIZED_DEP,
 } from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
+import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
+import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
 
 const debugCache = createDebugger('vite:cache')
 
@@ -57,13 +53,11 @@ export function cachedTransformMiddleware(
     if (ifNoneMatch) {
       const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch)
       if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
-        // For direct CSS requests, if the same CSS file is imported in a module,
+        // For CSS requests, if the same CSS file is imported in a module,
         // the browser sends the request for the direct CSS request with the etag
         // from the imported CSS module. We ignore the etag in this case.
-        const mixedEtag =
-          !req.headers.accept?.includes('text/css') &&
-          isDirectRequest(moduleByEtag.url)
-        if (!mixedEtag) {
+        const maybeMixedEtag = isCSSRequest(req.url!)
+        if (!maybeMixedEtag) {
           debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
           res.statusCode = 304
           return res.end()
@@ -176,14 +170,28 @@ export function transformMiddleware(
         // not valid browser import specifiers by the importAnalysis plugin.
         url = unwrapId(url)
 
-        // for CSS, we need to differentiate between normal CSS requests and
-        // imports
-        if (
-          isCSSRequest(url) &&
-          !isDirectRequest(url) &&
-          req.headers.accept?.includes('text/css')
-        ) {
-          url = injectQuery(url, 'direct')
+        // for CSS, we differentiate between normal CSS requests and imports
+        if (isCSSRequest(url)) {
+          if (
+            req.headers.accept?.includes('text/css') &&
+            !isDirectRequest(url)
+          ) {
+            url = injectQuery(url, 'direct')
+          }
+
+          // check if we can return 304 early for CSS requests. These aren't handled
+          // by the cachedTransformMiddleware due to the browser possibly mixing the
+          // etags of direct and imported CSS
+          const ifNoneMatch = req.headers['if-none-match']
+          if (
+            ifNoneMatch &&
+            (await server.moduleGraph.getModuleByUrl(url, false))
+              ?.transformResult?.etag === ifNoneMatch
+          ) {
+            debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
+            res.statusCode = 304
+            return res.end()
+          }
         }
 
         // resolve, load and transform using the plugin container
@@ -244,6 +252,15 @@ export function transformMiddleware(
         // A full-page reload has been issued, and these old requests
         // can't be properly fulfilled. This isn't an unexpected
         // error but a normal part of the missing deps discovery flow
+        return
+      }
+      if (e?.code === ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR) {
+        // Skip if response has already been sent
+        if (!res.writableEnded) {
+          res.statusCode = 404
+          res.end()
+        }
+        server.config.logger.warn(colors.yellow(e.message))
         return
       }
       if (e?.code === ERR_LOAD_URL) {

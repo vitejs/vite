@@ -2,8 +2,9 @@ import path from 'node:path'
 import glob from 'fast-glob'
 import micromatch from 'micromatch'
 import type { ResolvedConfig } from '../config'
-import { escapeRegex, getNpmPackageName, slash } from '../utils'
+import { escapeRegex, getNpmPackageName } from '../utils'
 import { resolvePackageData } from '../packages'
+import { slash } from '../../shared/utils'
 
 export function createOptimizeDepsIncludeResolver(
   config: ResolvedConfig,
@@ -94,6 +95,16 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
                 ignore: ['node_modules'],
               })
               .map((filePath) => {
+                // ensure "./" prefix for inconsistent fast-glob result
+                //   glob.sync("./some-dir/**/*") -> "./some-dir/some-file"
+                //   glob.sync("./**/*")          -> "some-dir/some-file"
+                if (
+                  exportsValue.startsWith('./') &&
+                  !filePath.startsWith('./')
+                ) {
+                  filePath = './' + filePath
+                }
+
                 // "./glob/*": "./dist/glob/*-browser/*.js"
                 // `filePath`: "./dist/glob/foo-browser/foo.js"
                 // we need to revert the file path back to the export key by

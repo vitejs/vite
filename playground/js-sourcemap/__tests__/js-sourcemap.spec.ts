@@ -136,10 +136,11 @@ describe.runIf(isBuild)('build tests', () => {
   })
 
   test('sourcemap is correct when preload information is injected', async () => {
-    const map = findAssetFile(/after-preload-dynamic.*\.js\.map/)
+    const map = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
-        "mappings": "i3BAAA,OAAO,2BAAuB,EAAC,wBAE/B,QAAQ,IAAI,uBAAuB",
+        "ignoreList": [],
+        "mappings": ";;;;;;w+BAAA,OAAO,2BAAuB,EAAC,wBAE/B,QAAQ,IAAI,uBAAuB",
         "sources": [
           "../../after-preload-dynamic.js",
         ],
@@ -152,11 +153,24 @@ describe.runIf(isBuild)('build tests', () => {
         "version": 3,
       }
     `)
-    //
-    const js = findAssetFile(/after-preload-dynamic.*\.js$/)
-    expect(js.trim().split('\n').at(-1)).toMatch(
-      /^\/\/# sourceMappingURL=after-preload-dynamic.*\.js\.map$/,
+    // verify sourcemap comment is preserved at the last line
+    const js = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js$/)
+    expect(js).toMatch(
+      /\n\/\/# sourceMappingURL=after-preload-dynamic-[-\w]{8}\.js\.map\n$/,
     )
+  })
+
+  test('__vite__mapDeps injected after banner', async () => {
+    const js = findAssetFile(/after-preload-dynamic-hashbang-[-\w]{8}\.js$/)
+    expect(js.split('\n').slice(0, 2)).toEqual([
+      '#!/usr/bin/env node',
+      'function __vite__mapDeps(indexes) {',
+    ])
+  })
+
+  test('no unused __vite__mapDeps', async () => {
+    const js = findAssetFile(/after-preload-dynamic-no-dep-[-\w]{8}\.js$/)
+    expect(js).not.toMatch(/__vite__mapDeps/)
   })
 
   test('sourcemap is correct when using object as "define" value', async () => {

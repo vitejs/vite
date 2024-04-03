@@ -20,6 +20,11 @@ import sassMod from './mod.module.scss'
 document.querySelector('.modules-sass').classList.add(sassMod['apply-color'])
 text('.modules-sass-code', JSON.stringify(sassMod, null, 2))
 
+import { a as treeshakeMod } from './treeshake-module/index.js'
+document
+  .querySelector('.modules-treeshake')
+  .classList.add(treeshakeMod()['treeshake-module-a'])
+
 import composesPathResolvingMod from './composes-path-resolving.module.css'
 document
   .querySelector('.path-resolved-modules-css')
@@ -126,3 +131,5 @@ import './async/index'
 
 import('./same-name/sub1/sub')
 import('./same-name/sub2/sub')
+
+import './imports-imports-field.css'

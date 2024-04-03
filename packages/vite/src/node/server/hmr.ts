@@ -6,18 +6,13 @@ import colors from 'picocolors'
 import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import {
-  createDebugger,
-  normalizePath,
-  unique,
-  withTrailingSlash,
-  wrapId,
-} from '../utils'
+import { createDebugger, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { isCSSRequest } from '../plugins/css'
 import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
+import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { ModuleNode } from './moduleGraph'
 import { restartServerWithUrls } from '.'
 
@@ -123,9 +118,9 @@ export function getShortName(file: string, root: string): string {
 }
 
 export async function handleHMRUpdate(
+  type: 'create' | 'delete' | 'update',
   file: string,
   server: ViteDevServer,
-  configOnly: boolean,
 ): Promise<void> {
   const { hot, config, moduleGraph } = server
   const shortFile = getShortName(file, config.root)
@@ -155,10 +150,6 @@ export async function handleHMRUpdate(
     return
   }
 
-  if (configOnly) {
-    return
-  }
-
   debugHmr?.(`[file change] ${colors.dim(shortFile)}`)
 
   // (dev only) the client itself cannot be hot updated.
@@ -166,26 +157,39 @@ export async function handleHMRUpdate(
     hot.send({
       type: 'full-reload',
       path: '*',
+      triggeredBy: path.resolve(config.root, file),
     })
     return
   }
 
-  const mods = moduleGraph.getModulesByFile(file)
+  const mods = new Set(moduleGraph.getModulesByFile(file))
+  if (type === 'create') {
+    for (const mod of moduleGraph._hasResolveFailedErrorModules) {
+      mods.add(mod)
+    }
+  }
+  if (type === 'create' || type === 'delete') {
+    for (const mod of getAffectedGlobModules(file, server)) {
+      mods.add(mod)
+    }
+  }
 
   // check if any plugin wants to perform custom HMR handling
   const timestamp = Date.now()
   const hmrContext: HmrContext = {
     file,
     timestamp,
-    modules: mods ? [...mods] : [],
+    modules: [...mods],
     read: () => readModifiedFile(file),
     server,
   }
 
-  for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
-    const filteredModules = await hook(hmrContext)
-    if (filteredModules) {
-      hmrContext.modules = filteredModules
+  if (type === 'update') {
+    for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
+      const filteredModules = await hook(hmrContext)
+      if (filteredModules) {
+        hmrContext.modules = filteredModules
+      }
     }
   }
 
@@ -272,6 +276,7 @@ export function updateModules(
     )
     hot.send({
       type: 'full-reload',
+      triggeredBy: path.resolve(config.root, file),
     })
     return
   }
@@ -295,7 +300,7 @@ export function updateModules(
 function populateSSRImporters(
   module: ModuleNode,
   timestamp: number,
-  seen: Set<ModuleNode>,
+  seen: Set<ModuleNode> = new Set(),
 ) {
   module.ssrImportedModules.forEach((importer) => {
     if (seen.has(importer)) {
@@ -313,36 +318,9 @@ function populateSSRImporters(
 }
 
 function getSSRInvalidatedImporters(module: ModuleNode) {
-  return [
-    ...populateSSRImporters(module, module.lastHMRTimestamp, new Set()),
-  ].map((m) => m.file!)
-}
-
-export async function handleFileAddUnlink(
-  file: string,
-  server: ViteDevServer,
-  isUnlink: boolean,
-): Promise<void> {
-  const modules = [...(server.moduleGraph.getModulesByFile(file) || [])]
-
-  if (isUnlink) {
-    for (const deletedMod of modules) {
-      deletedMod.importedModules.forEach((importedMod) => {
-        importedMod.importers.delete(deletedMod)
-      })
-    }
-  }
-
-  modules.push(...getAffectedGlobModules(file, server))
-
-  if (modules.length > 0) {
-    updateModules(
-      getShortName(file, server.config.root),
-      unique(modules),
-      Date.now(),
-      server,
-    )
-  }
+  return [...populateSSRImporters(module, module.lastHMRTimestamp)].map(
+    (m) => m.file!,
+  )
 }
 
 function areAllImportsAccepted(
@@ -555,6 +533,7 @@ export function handlePrunedModules(
   const t = Date.now()
   mods.forEach((mod) => {
     mod.lastHMRTimestamp = t
+    mod.lastHMRInvalidationReceived = false
     debugHmr?.(`[dispose] ${colors.dim(mod.file)}`)
   })
   hot.send({

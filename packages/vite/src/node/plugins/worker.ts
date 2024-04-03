@@ -1,21 +1,30 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { EmittedAsset, OutputChunk } from 'rollup'
+import type { OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import { cleanUrl, getHash, injectQuery, urlRE } from '../utils'
+import {
+  encodeURIPath,
+  getHash,
+  injectQuery,
+  prettifyUrl,
+  urlRE,
+} from '../utils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   onRollupWarning,
   toOutputFilePathInJS,
 } from '../build'
+import { cleanUrl } from '../../shared/utils'
 import { fileToUrl } from './asset'
+
+type WorkerBundleAsset = { fileName: string; source: string | Uint8Array }
 
 interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
-  assets: Map<string, EmittedAsset>
+  assets: Map<string, WorkerBundleAsset>
 
   // worker bundle don't deps on any more worker runtime info an id only had a result.
   // save worker bundled file id to avoid repeated execution of bundles
@@ -37,24 +46,32 @@ const workerCache = new WeakMap<ResolvedConfig, WorkerCache>()
 
 function saveEmitWorkerAsset(
   config: ResolvedConfig,
-  asset: EmittedAsset,
+  asset: WorkerBundleAsset,
 ): void {
-  const fileName = asset.fileName!
   const workerMap = workerCache.get(config.mainConfig || config)!
-  workerMap.assets.set(fileName, asset)
+  workerMap.assets.set(asset.fileName, asset)
 }
 
 async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
 ): Promise<OutputChunk> {
+  const input = cleanUrl(id)
+  const newBundleChain = [...config.bundleChain, input]
+  if (config.bundleChain.includes(input)) {
+    throw new Error(
+      'Circular worker imports detected. Vite does not support it. ' +
+        `Import chain: ${newBundleChain.map((id) => prettifyUrl(id, config.root)).join(' -> ')}`,
+    )
+  }
+
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
   const bundle = await rollup({
     ...rollupOptions,
-    input: cleanUrl(id),
-    plugins: await plugins(),
+    input,
+    plugins: await plugins(newBundleChain),
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },
@@ -95,7 +112,6 @@ async function bundleWorkerEntry(
         saveEmitWorkerAsset(config, {
           fileName: outputChunk.fileName,
           source: outputChunk.code,
-          type: 'asset',
         })
       }
     })
@@ -120,7 +136,6 @@ function emitSourcemapForWorkerEntry(
       const mapFileName = chunk.fileName + '.map'
       saveEmitWorkerAsset(config, {
         fileName: mapFileName,
-        type: 'asset',
         source: data,
       })
     }
@@ -155,7 +170,6 @@ export async function workerFileToUrl(
     saveEmitWorkerAsset(config, {
       fileName,
       source: outputChunk.code,
-      type: 'asset',
     })
     workerMap.bundle.set(id, fileName)
   }
@@ -263,8 +277,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       const workerMatch = workerOrSharedWorkerRE.exec(id)
       if (!workerMatch) return
 
-      // stringified url or `new URL(...)`
-      let url: string
       const { format } = config.worker
       const workerConstructor =
         workerMatch[1] === 'sharedworker' ? 'SharedWorker' : 'Worker'
@@ -278,8 +290,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         name: options?.name
       }`
 
+      let urlCode: string
       if (isBuild) {
-        if (inlineRE.test(id)) {
+        if (isWorker && this.getModuleInfo(cleanUrl(id))?.isEntry) {
+          urlCode = 'self.location.href'
+        } else if (inlineRE.test(id)) {
           const chunk = await bundleWorkerEntry(config, id)
           const encodedJs = `const encodedJs = "${Buffer.from(
             chunk.code,
@@ -289,12 +304,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             // Using blob URL for SharedWorker results in multiple instances of a same worker
             workerConstructor === 'Worker'
               ? `${encodedJs}
+          const decodeBase64 = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
           const blob = typeof window !== "undefined" && window.Blob && new Blob([${
             workerType === 'classic'
               ? ''
               : // `URL` is always available, in `Worker[type="module"]`
-                `'URL.revokeObjectURL(import.meta.url);'+`
-          }atob(encodedJs)], { type: "text/javascript;charset=utf-8" });
+                `'URL.revokeObjectURL(import.meta.url);',`
+          }decodeBase64(encodedJs)], { type: "text/javascript;charset=utf-8" });
           export default function WorkerWrapper(options) {
             let objURL;
             try {
@@ -335,16 +351,17 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             map: { mappings: '' },
           }
         } else {
-          url = await workerFileToUrl(config, id)
+          urlCode = JSON.stringify(await workerFileToUrl(config, id))
         }
       } else {
-        url = await fileToUrl(cleanUrl(id), config, this)
+        let url = await fileToUrl(cleanUrl(id), config, this)
         url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
+        urlCode = JSON.stringify(url)
       }
 
       if (urlRE.test(id)) {
         return {
-          code: `export default ${JSON.stringify(url)}`,
+          code: `export default ${urlCode}`,
           map: { mappings: '' }, // Empty sourcemap to suppress Rollup warning
         }
       }
@@ -352,7 +369,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       return {
         code: `export default function WorkerWrapper(options) {
           return new ${workerConstructor}(
-            ${JSON.stringify(url)},
+            ${urlCode},
             ${workerTypeOption}
           );
         }`,
@@ -400,7 +417,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           )
           const replacementString =
             typeof replacement === 'string'
-              ? JSON.stringify(replacement).slice(1, -1)
+              ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
               : `"+${replacement.runtime}+"`
           s.update(match.index, match.index + full.length, replacementString)
         }
@@ -408,16 +425,42 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       return result()
     },
 
-    generateBundle(opts) {
+    generateBundle(opts, bundle) {
       // @ts-expect-error asset emits are skipped in legacy bundle
       if (opts.__vite_skip_asset_emit__ || isWorker) {
         return
       }
       const workerMap = workerCache.get(config)!
       workerMap.assets.forEach((asset) => {
-        this.emitFile(asset)
-        workerMap.assets.delete(asset.fileName!)
+        const duplicateAsset = bundle[asset.fileName]
+        if (duplicateAsset) {
+          const content =
+            duplicateAsset.type === 'asset'
+              ? duplicateAsset.source
+              : duplicateAsset.code
+          // don't emit if the file name and the content is same
+          if (isSameContent(content, asset.source)) {
+            return
+          }
+        }
+
+        this.emitFile({
+          type: 'asset',
+          fileName: asset.fileName,
+          source: asset.source,
+        })
       })
+      workerMap.assets.clear()
     },
   }
+}
+
+function isSameContent(a: string | Uint8Array, b: string | Uint8Array) {
+  if (typeof a === 'string') {
+    if (typeof b === 'string') {
+      return a === b
+    }
+    return Buffer.from(a).equals(b)
+  }
+  return Buffer.from(b).equals(a)
 }

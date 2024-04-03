@@ -4,13 +4,9 @@ import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { ResolveFn } from '../'
-import {
-  injectQuery,
-  isParentDirectory,
-  slash,
-  transformStableResult,
-} from '../utils'
+import { injectQuery, isParentDirectory, transformStableResult } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
+import { slash } from '../../shared/utils'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
@@ -125,7 +121,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let builtUrl: string | undefined
           if (file) {
             try {
-              if (isParentDirectory(publicDir, file)) {
+              if (publicDir && isParentDirectory(publicDir, file)) {
                 const publicPath = '/' + path.posix.relative(publicDir, file)
                 builtUrl = await fileToUrl(publicPath, config, this)
               } else {

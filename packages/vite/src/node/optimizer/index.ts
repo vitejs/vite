@@ -15,7 +15,6 @@ import {
   flattenId,
   getHash,
   isOptimizable,
-  isWindows,
   lookupFile,
   normalizeId,
   normalizePath,
@@ -23,8 +22,12 @@ import {
   tryStatSync,
   unique,
 } from '../utils'
-import { transformWithEsbuild } from '../plugins/esbuild'
+import {
+  defaultEsbuildSupported,
+  transformWithEsbuild,
+} from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
+import { isWindows } from '../../shared/utils'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
@@ -56,7 +59,6 @@ export interface DepsOptimizer {
   isOptimizedDepFile: (id: string) => boolean
   isOptimizedDepUrl: (url: string) => boolean
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
-  delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
 
   close: () => Promise<void>
 
@@ -799,8 +801,7 @@ async function prepareEsbuildOptimizerRun(
     charset: 'utf8',
     ...esbuildOptions,
     supported: {
-      'dynamic-import': true,
-      'import-meta': true,
+      ...defaultEsbuildSupported,
       ...esbuildOptions.supported,
     },
   })

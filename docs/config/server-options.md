@@ -18,10 +18,10 @@ The first case is when `localhost` is used. Node.js under v17 reorders the resul
 
 You can set [`dns.setDefaultResultOrder('verbatim')`](https://nodejs.org/api/dns.html#dns_dns_setdefaultresultorder_order) to disable the reordering behavior. Vite will then print the address as `localhost`.
 
-```js
+```js twoslash
 // vite.config.js
 import { defineConfig } from 'vite'
-import dns from 'dns'
+import dns from 'node:dns'
 
 dns.setDefaultResultOrder('verbatim')
 
@@ -152,6 +152,8 @@ Disable or configure HMR connection (in cases where the HMR websocket must use a
 
 Set `server.hmr.overlay` to `false` to disable the server error overlay.
 
+`protocol` sets the WebSocket protocol used for the HMR connection: `ws` (WebSocket) or `wss` (WebSocket Secure).
+
 `clientPort` is an advanced option that overrides the port only on the client side, allowing you to serve the websocket on a different port than the client code looks for it on.
 
 When `server.hmr.server` is defined, Vite will process the HMR connection requests through the provided server. If not in middleware mode, Vite will attempt to process HMR connection requests through the existing server. This can be helpful when using self-signed certificates or when you want to expose Vite over a network on a single port.
@@ -236,7 +238,7 @@ Create Vite server in middleware mode.
 
 - **Example:**
 
-```js
+```js twoslash
 import express from 'express'
 import { createServer as createViteServer } from 'vite'
 
@@ -356,9 +358,9 @@ export default defineConfig({
     // in their paths to the ignore list.
     sourcemapIgnoreList(sourcePath, sourcemapPath) {
       return sourcePath.includes('node_modules')
-    }
-  }
-};
+    },
+  },
+})
 ```
 
 ::: tip Note

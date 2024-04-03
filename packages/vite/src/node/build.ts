@@ -21,6 +21,12 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
+import { withTrailingSlash } from '../shared/utils'
+import {
+  DEFAULT_ASSETS_INLINE_LIMIT,
+  ESBUILD_MODULES_TARGET,
+  VERSION,
+} from './constants'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
@@ -30,11 +36,12 @@ import {
   arraify,
   asyncFlatten,
   copyDir,
+  displayTime,
   emptyDir,
   joinUrlSegments,
   normalizePath,
+  partialEncodeURIPath,
   requireResolveFromRootWithFallback,
-  withTrailingSlash,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
@@ -44,11 +51,6 @@ import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
-import {
-  DEFAULT_ASSETS_INLINE_LIMIT,
-  ESBUILD_MODULES_TARGET,
-  VERSION,
-} from './constants'
 import { resolveChokidarOptions } from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
@@ -559,6 +561,7 @@ export async function build(
   }
 
   let bundle: RollupBuild | undefined
+  let startTime: number | undefined
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
@@ -692,6 +695,7 @@ export async function build(
 
     // write or generate files with rollup
     const { rollup } = await import('rollup')
+    startTime = Date.now()
     bundle = await rollup(rollupOptions)
 
     if (options.write) {
@@ -702,10 +706,19 @@ export async function build(
     for (const output of normalizedOutputs) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
+    config.logger.info(
+      `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
+    )
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
     e.message = mergeRollupError(e)
     clearLine()
+    if (startTime) {
+      config.logger.error(
+        `${colors.red('x')} Build failed in ${displayTime(Date.now() - startTime)}`,
+      )
+      startTime = undefined
+    }
     throw e
   } finally {
     if (bundle) await bundle.close()
@@ -1058,7 +1071,7 @@ function injectSsrFlag<T extends Record<string, any>>(
 
 /*
   The following functions are copied from rollup
-  https://github.com/rollup/rollup/blob/0bcf0a672ac087ff2eb88fbba45ec62389a4f45f/src/ast/nodes/MetaProperty.ts#L145-L193
+  https://github.com/rollup/rollup/blob/ce6cb93098850a46fa242e37b74a919e99a5de28/src/ast/nodes/MetaProperty.ts#L155-L203
 
   https://github.com/rollup/rollup
   The MIT License (MIT)
@@ -1080,7 +1093,7 @@ const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
 
 const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
   getResolveUrl(
-    `'${escapeId(relativePath)}', ${
+    `'${escapeId(partialEncodeURIPath(relativePath))}', ${
       umd ? `typeof document === 'undefined' ? location.href : ` : ''
     }document.currentScript && document.currentScript.src || document.baseURI`,
   )
@@ -1089,7 +1102,7 @@ const getFileUrlFromFullPath = (path: string) =>
   `require('u' + 'rl').pathToFileURL(${path}).href`
 
 const getFileUrlFromRelativePath = (path: string) =>
-  getFileUrlFromFullPath(`__dirname + '/${path}'`)
+  getFileUrlFromFullPath(`__dirname + '/${escapeId(path)}'`)
 
 const relativeUrlMechanisms: Record<
   InternalModuleFormat,
@@ -1097,16 +1110,24 @@ const relativeUrlMechanisms: Record<
 > = {
   amd: (relativePath) => {
     if (relativePath[0] !== '.') relativePath = './' + relativePath
-    return getResolveUrl(`require.toUrl('${relativePath}'), document.baseURI`)
+    return getResolveUrl(
+      `require.toUrl('${escapeId(relativePath)}'), document.baseURI`,
+    )
   },
   cjs: (relativePath) =>
     `(typeof document === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
     )} : ${getRelativeUrlFromDocument(relativePath)})`,
-  es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
+  es: (relativePath) =>
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', import.meta.url`,
+    ),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
   // NOTE: make sure rollup generate `module` params
-  system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
+  system: (relativePath) =>
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', module.meta.url`,
+    ),
   umd: (relativePath) =>
     `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
@@ -1117,7 +1138,9 @@ const relativeUrlMechanisms: Record<
 const customRelativeUrlMechanisms = {
   ...relativeUrlMechanisms,
   'worker-iife': (relativePath) =>
-    getResolveUrl(`'${relativePath}', self.location.href`),
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', self.location.href`,
+    ),
 } as const satisfies Record<string, (relativePath: string) => string>
 
 export type RenderBuiltAssetUrl = (

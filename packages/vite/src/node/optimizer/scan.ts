@@ -20,7 +20,7 @@ import {
   SPECIAL_QUERY_RE,
 } from '../constants'
 import {
-  cleanUrl,
+  arraify,
   createDebugger,
   dataUrlRE,
   externalRE,
@@ -37,6 +37,8 @@ import {
 import type { PluginContainer } from '../server/pluginContainer'
 import { createPluginContainer } from '../server/pluginContainer'
 import { transformGlobImport } from '../plugins/importMetaGlob'
+import { cleanUrl } from '../../shared/utils'
+import { loadTsconfigJsonForFile } from '../plugins/esbuild'
 
 type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
 
@@ -216,6 +218,21 @@ async function prepareEsbuildScanner(
   const { plugins = [], ...esbuildOptions } =
     config.optimizeDeps?.esbuildOptions ?? {}
 
+  // The plugin pipeline automatically loads the closest tsconfig.json.
+  // But esbuild doesn't support reading tsconfig.json if the plugin has resolved the path (https://github.com/evanw/esbuild/issues/2265).
+  // Due to syntax incompatibilities between the experimental decorators in TypeScript and TC39 decorators,
+  // we cannot simply set `"experimentalDecorators": true` or `false`. (https://github.com/vitejs/vite/pull/15206#discussion_r1417414715)
+  // Therefore, we use the closest tsconfig.json from the root to make it work in most cases.
+  let tsconfigRaw = esbuildOptions.tsconfigRaw
+  if (!tsconfigRaw && !esbuildOptions.tsconfig) {
+    const tsconfigResult = await loadTsconfigJsonForFile(
+      path.join(config.root, '_dummy.js'),
+    )
+    if (tsconfigResult.compilerOptions?.experimentalDecorators) {
+      tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
+    }
+  }
+
   return await esbuild.context({
     absWorkingDir: process.cwd(),
     write: false,
@@ -228,6 +245,7 @@ async function prepareEsbuildScanner(
     logLevel: 'silent',
     plugins: [...plugins, plugin],
     ...esbuildOptions,
+    tsconfigRaw,
   })
 }
 
@@ -239,6 +257,12 @@ function orderedDependencies(deps: Record<string, string>) {
 }
 
 function globEntries(pattern: string | string[], config: ResolvedConfig) {
+  const resolvedPatterns = arraify(pattern)
+  if (resolvedPatterns.every((str) => !glob.isDynamicPattern(str))) {
+    return resolvedPatterns.map((p) =>
+      normalizePath(path.resolve(config.root, p)),
+    )
+  }
   return glob(pattern, {
     cwd: config.root,
     ignore: [
@@ -385,12 +409,10 @@ function esbuildScanPlugin(
         // Avoid matching the content of the comment
         raw = raw.replace(commentRE, '<!---->')
         const isHtml = p.endsWith('.html')
-        scriptRE.lastIndex = 0
         let js = ''
         let scriptId = 0
-        let match: RegExpExecArray | null
-        while ((match = scriptRE.exec(raw))) {
-          const [, openTag, content] = match
+        const matches = raw.matchAll(scriptRE)
+        for (const [, openTag, content] of matches) {
           const typeMatch = openTag.match(typeRE)
           const type =
             typeMatch && (typeMatch[1] || typeMatch[2] || typeMatch[3])

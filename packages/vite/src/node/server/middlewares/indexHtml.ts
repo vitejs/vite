@@ -15,6 +15,8 @@ import {
   getScriptInfo,
   htmlEnvHook,
   htmlProxyResult,
+  injectCspNonceMetaTagHook,
+  injectNonceAttributeTagHook,
   nodeIsElement,
   overwriteAttrValue,
   postImportMapHook,
@@ -26,7 +28,6 @@ import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import {
-  cleanUrl,
   ensureWatchedFile,
   fsPathFromId,
   getHash,
@@ -37,13 +38,12 @@ import {
   normalizePath,
   processSrcSetSync,
   stripBase,
-  unwrapId,
-  wrapId,
 } from '../../utils'
 import { getFsUtils } from '../../fsUtils'
 import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
+import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
 
 interface AssetNode {
   start: number
@@ -71,11 +71,13 @@ export function createDevHtmlTransformFn(
   )
   const transformHooks = [
     preImportMapHook(config),
+    injectCspNonceMetaTagHook(config),
     ...preHooks,
     htmlEnvHook(config),
     devHtmlHook,
     ...normalHooks,
     ...postHooks,
+    injectNonceAttributeTagHook(config),
     postImportMapHook(),
   ]
   return (

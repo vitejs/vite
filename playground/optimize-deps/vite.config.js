@@ -3,9 +3,6 @@ import module from 'node:module'
 import { defineConfig } from 'vite'
 const require = module.createRequire(import.meta.url)
 
-// Overriding the NODE_ENV set by vitest
-process.env.NODE_ENV = ''
-
 export default defineConfig({
   resolve: {
     dedupe: ['react'],
@@ -23,6 +20,7 @@ export default defineConfig({
       // will throw if optimized (should log warning instead)
       '@vitejs/test-non-optimizable-include',
       '@vitejs/test-dep-optimize-exports-with-glob/**/*',
+      '@vitejs/test-dep-optimize-exports-with-root-glob/**/*.js',
       '@vitejs/test-dep-optimize-with-glob/**/*.js',
     ],
     exclude: ['@vitejs/test-nested-exclude', '@vitejs/test-dep-non-optimized'],

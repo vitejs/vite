@@ -3,14 +3,12 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { TestAPI } from 'vitest'
 import { afterEach, beforeEach, test } from 'vitest'
-import type {
-  InlineConfig,
-  MainThreadRuntimeOptions,
-  ViteDevServer,
-} from '../../../index'
-import { createServer } from '../../../index'
-import type { ViteRuntime } from '../runtime'
-import { createViteRuntime } from '../node/mainThreadRuntime'
+import type { ViteRuntime } from 'vite/runtime'
+import type { MainThreadRuntimeOptions } from '../mainThreadRuntime'
+import type { ViteDevServer } from '../../../server'
+import type { InlineConfig } from '../../../config'
+import { createServer } from '../../../server'
+import { createViteRuntime } from '../mainThreadRuntime'
 
 interface TestClient {
   server: ViteDevServer

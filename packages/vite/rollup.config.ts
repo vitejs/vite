@@ -8,6 +8,7 @@ import json from '@rollup/plugin-json'
 import MagicString from 'magic-string'
 import type { Plugin, RollupOptions } from 'rollup'
 import { defineConfig } from 'rollup'
+import { minify as esbuildMinifyPlugin } from 'rollup-plugin-esbuild'
 import licensePlugin from './rollupLicensePlugin'
 
 const pkg = JSON.parse(
@@ -153,13 +154,13 @@ function createNodeConfig(isProduction: boolean) {
       index: path.resolve(__dirname, 'src/node/index.ts'),
       cli: path.resolve(__dirname, 'src/node/cli.ts'),
       constants: path.resolve(__dirname, 'src/node/constants.ts'),
-      runtime: path.resolve(__dirname, 'src/node/ssr/runtime/index.ts'),
     },
     output: {
       ...sharedNodeOptions.output,
       sourcemap: !isProduction,
     },
     external: [
+      /^vite\//,
       'fsevents',
       'lightningcss',
       'rollup/parseAst',
@@ -173,6 +174,36 @@ function createNodeConfig(isProduction: boolean) {
       // in development we need to rely on the rollup ts plugin
       isProduction ? false : './dist/node',
     ),
+  })
+}
+
+function createRuntimeConfig(isProduction: boolean) {
+  return defineConfig({
+    ...sharedNodeOptions,
+    input: {
+      runtime: path.resolve(__dirname, 'src/runtime/index.ts'),
+    },
+    output: {
+      ...sharedNodeOptions.output,
+      sourcemap: !isProduction,
+    },
+    external: [
+      'fsevents',
+      'lightningcss',
+      'rollup/parseAst',
+      ...Object.keys(pkg.dependencies),
+    ],
+    plugins: [
+      ...createNodePlugins(
+        false,
+        !isProduction,
+        // in production we use rollup.dts.config.ts for dts generation
+        // in development we need to rely on the rollup ts plugin
+        isProduction ? false : './dist/node',
+      ),
+      esbuildMinifyPlugin({ minify: false, minifySyntax: true }),
+      bundleSizeLimit(45),
+    ],
   })
 }
 
@@ -197,7 +228,7 @@ function createCjsConfig(isProduction: boolean) {
       ...Object.keys(pkg.dependencies),
       ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
     ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(163)],
+    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(175)],
   })
 }
 
@@ -209,6 +240,7 @@ export default (commandLineArgs: any): RollupOptions[] => {
     envConfig,
     clientConfig,
     createNodeConfig(isProduction),
+    createRuntimeConfig(isProduction),
     createCjsConfig(isProduction),
   ])
 }
@@ -327,18 +359,22 @@ const __require = require;
  * @param limit size in kB
  */
 function bundleSizeLimit(limit: number): Plugin {
+  let size = 0
+
   return {
     name: 'bundle-limit',
-    generateBundle(options, bundle) {
-      const size = Buffer.byteLength(
+    generateBundle(_, bundle) {
+      size = Buffer.byteLength(
         Object.values(bundle)
           .map((i) => ('code' in i ? i.code : ''))
           .join(''),
         'utf-8',
       )
+    },
+    closeBundle() {
       const kb = size / 1000
       if (kb > limit) {
-        throw new Error(
+        this.error(
           `Bundle size exceeded ${limit} kB, current size is ${kb.toFixed(
             2,
           )}kb.`,

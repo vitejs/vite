@@ -24,7 +24,6 @@ import type {
 } from '@babel/core'
 import colors from 'picocolors'
 import browserslist from 'browserslist'
-import { resolveToEsbuildTarget } from 'esbuild-plugin-browserslist'
 import type { Options } from './types'
 import {
   detectModernBrowserCode,
@@ -189,7 +188,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
 
-    config(config, env) {
+    async config(config, env) {
       if (env.command === 'build' && !config.build?.ssr) {
         if (!config.build) {
           config.build = {}
@@ -209,9 +208,16 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
           overriddenBuildTarget = config.build.target !== undefined
           overriddenDefaultModernTargets = options.modernTargets !== undefined
-          config.build.target = options.modernTargets
-            ? resolveToEsbuildTarget(browserslist(options.modernTargets))
-            : modernTargetsEsbuild
+
+          if (options.modernTargets) {
+            // Package is ESM only
+            const { default: browserslistToEsbuild } = await import(
+              'browserslist-to-esbuild'
+            )
+            config.build.target = browserslistToEsbuild(options.modernTargets)
+          } else {
+            config.build.target = modernTargetsEsbuild
+          }
         }
       }
 
@@ -325,6 +331,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
       config = _config
 
+      modernTargets = options.modernTargets || modernTargetsBabel
+      isDebug &&
+        console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
+
       if (!genLegacy || config.build.ssr) {
         return
       }
@@ -334,10 +344,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         browserslistLoadConfig({ path: config.root }) ||
         'last 2 versions and not dead, > 0.3%, Firefox ESR'
       isDebug && console.log(`[@vitejs/plugin-legacy] targets:`, targets)
-
-      modernTargets = options.modernTargets || modernTargetsBabel
-      isDebug &&
-        console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
 
       const getLegacyOutputFileName = (
         fileNames:

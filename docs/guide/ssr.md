@@ -53,7 +53,9 @@ You can use any placeholder you prefer instead of `<!--ssr-outlet-->`, as long a
 
 If you need to perform conditional logic based on SSR vs. client, you can use
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 if (import.meta.env.SSR) {
   // ... server only logic
 }
@@ -67,10 +69,10 @@ When building an SSR app, you likely want to have full control over your main se
 
 **server.js**
 
-```js{15-18}
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+```js{15-18} twoslash
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 import { createServer as createViteServer } from 'vite'
 
@@ -109,7 +111,18 @@ Here `vite` is an instance of [ViteDevServer](./api-javascript#vitedevserver). `
 
 The next step is implementing the `*` handler to serve server-rendered HTML:
 
-```js
+```js twoslash
+// @noErrors
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+/** @type {import('express').Express} */
+var app
+/** @type {import('vite').ViteDevServer}  */
+var vite
+
+// ---cut---
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
@@ -129,7 +142,8 @@ app.use('*', async (req, res, next) => {
     //    ESM source code to be usable in Node.js! There is no bundling
     //    required, and provides efficient invalidation similar to HMR.
     const { render } = await vite.ssrLoadModule('/src/entry-server.js')
-    // 3b. Since Vite 5.1, you can use createViteRuntime API instead.
+    // 3b. Since Vite 5.1, you can use the experimental createViteRuntime API
+    //    instead.
     //    It fully supports HMR and works in a simillar way to ssrLoadModule
     //    More advanced use case would be creating a runtime in a separate
     //    thread or even a different machine using ViteRuntime class
@@ -245,7 +259,9 @@ Some frameworks such as Vue or Svelte compile components into different formats 
 
 **Example:**
 
-```js
+```js twoslash
+/** @type {() => import('vite').Plugin} */
+// ---cut---
 export function mySSRPlugin() {
   return {
     name: 'my-ssr',

@@ -45,9 +45,15 @@ const cachedFsUtilsMap = new WeakMap<ResolvedConfig, FsUtils>()
 export function getFsUtils(config: ResolvedConfig): FsUtils {
   let fsUtils = cachedFsUtilsMap.get(config)
   if (!fsUtils) {
-    if (config.command !== 'serve' || !config.server.fs.cachedChecks) {
-      // cached fsUtils is only used in the dev server for now, and only when the watcher isn't configured
-      // we can support custom ignored patterns later
+    if (
+      config.command !== 'serve' ||
+      config.server.fs.cachedChecks === false ||
+      config.server.watch?.ignored ||
+      process.versions.pnp
+    ) {
+      // cached fsUtils is only used in the dev server for now
+      // it is enabled by default only when there aren't custom watcher ignored patterns configured
+      // and if yarn pnp isn't used
       fsUtils = commonFsUtils
     } else if (
       !config.resolve.preserveSymlinks &&
@@ -148,11 +154,11 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
           return
         }
         if (nextDirentCache.type === 'directory_maybe_symlink') {
-          dirPath ??= pathUntilPart(root, parts, i)
+          dirPath ??= pathUntilPart(root, parts, i + 1)
           const isSymlink = fs
             .lstatSync(dirPath, { throwIfNoEntry: false })
             ?.isSymbolicLink()
-          direntCache.type = isSymlink ? 'symlink' : 'directory'
+          nextDirentCache.type = isSymlink ? 'symlink' : 'directory'
         }
         direntCache = nextDirentCache
       } else if (direntCache.type === 'symlink') {
@@ -183,6 +189,10 @@ export function createCachedFsUtils(config: ResolvedConfig): FsUtils {
   function getDirentCacheFromPath(
     normalizedFile: string,
   ): DirentCache | false | undefined {
+    // path.posix.normalize may return a path either with / or without /
+    if (normalizedFile[normalizedFile.length - 1] === '/') {
+      normalizedFile = normalizedFile.slice(0, -1)
+    }
     if (normalizedFile === root) {
       return rootCache
     }

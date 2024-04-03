@@ -10,11 +10,11 @@ import {
   getLocalhostAddressIfDiffersFromDNS,
   injectQuery,
   isFileReadable,
-  isWindows,
   posToNumber,
   processSrcSetSync,
   resolveHostname,
 } from '../utils'
+import { isWindows } from '../../shared/utils'
 
 describe('bareImportRE', () => {
   test('should work with normal package name', () => {
@@ -337,6 +337,27 @@ describe('processSrcSetSync', () => {
     const base64 =
       'data:image/avif;base64,aA+/0= 400w, data:image/avif;base64,bB+/9= 800w'
     expect(processSrcSetSync(base64, ({ url }) => url)).toBe(base64)
+  })
+
+  test('should not split the comma inside image URI', async () => {
+    const imageURIWithComma =
+      'asset.png?param1=true,param2=false 400w, asset.png?param1=true,param2=false 800w'
+    expect(processSrcSetSync(imageURIWithComma, ({ url }) => url)).toBe(
+      imageURIWithComma,
+    )
+  })
+
+  test('should handle srcset when descriptor is not present', async () => {
+    const srcsetNoDescriptor = 'asset.png, test.png 400w'
+    const result = 'asset.png, test.png 400w'
+    expect(processSrcSetSync(srcsetNoDescriptor, ({ url }) => url)).toBe(result)
+  })
+
+  test('should not break a regular URL in srcSet', async () => {
+    const source = 'https://anydomain/image.jpg'
+    expect(
+      processSrcSetSync('https://anydomain/image.jpg', ({ url }) => url),
+    ).toBe(source)
   })
 })
 

@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest'
-import type { ViteRuntime } from '../runtime'
+import type { ViteRuntime } from 'vite/runtime'
 import { createViteRuntimeTester, editFile, resolvePath } from './utils'
 
 describe('vite-runtime initialization', async () => {
@@ -20,6 +20,11 @@ describe('vite-runtime initialization', async () => {
   }
   const serializeStack = (runtime: ViteRuntime, err: Error) => {
     return err.stack!.split('\n')[1].replace(runtime.options.root, '<root>')
+  }
+  const serializeStackDeep = (runtime: ViteRuntime, err: Error) => {
+    return err
+      .stack!.split('\n')
+      .map((s) => s.replace(runtime.options.root, '<root>'))
   }
 
   it('source maps are correctly applied to stack traces', async ({
@@ -58,5 +63,17 @@ describe('vite-runtime initialization', async () => {
     expect(serializeStack(runtime, methodErrorNew)).toBe(
       '    at Module.throwError (<root>/fixtures/throws-error-method.ts:11:9)',
     )
+  })
+
+  it('deep stacktrace', async ({ runtime }) => {
+    const methodError = await getError(async () => {
+      const mod = await runtime.executeUrl('/fixtures/has-error-deep.ts')
+      mod.main()
+    })
+    expect(serializeStackDeep(runtime, methodError).slice(0, 3)).toEqual([
+      'Error: crash',
+      '    at crash (<root>/fixtures/has-error-deep.ts:2:9)',
+      '    at Module.main (<root>/fixtures/has-error-deep.ts:6:3)',
+    ])
   })
 })

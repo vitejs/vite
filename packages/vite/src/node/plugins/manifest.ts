@@ -11,6 +11,8 @@ import { normalizePath, sortObjectKeys } from '../utils'
 import { generatedAssets } from './asset'
 import type { GeneratedAssetMeta } from './asset'
 
+const endsWithJSRE = /\.[cm]?js$/
+
 export type Manifest = Record<string, ManifestChunk>
 
 export interface ManifestChunk {
@@ -19,6 +21,7 @@ export interface ManifestChunk {
   css?: string[]
   assets?: string[]
   isEntry?: boolean
+  name?: string
   isDynamicEntry?: boolean
   imports?: string[]
   dynamicImports?: string[]
@@ -58,6 +61,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       function createChunk(chunk: OutputChunk): ManifestChunk {
         const manifestChunk: ManifestChunk = {
           file: chunk.fileName,
+          name: chunk.name,
         }
 
         if (chunk.facadeModuleId) {
@@ -134,7 +138,9 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
 
           // If JS chunk and asset chunk are both generated from the same source file,
           // prioritize JS chunk as it contains more information
-          if (manifest[src]?.file.endsWith('.js')) continue
+          const file = manifest[src]?.file
+          if (file && endsWithJSRE.test(file)) continue
+
           manifest[src] = asset
           fileNameToAsset.set(chunk.fileName, asset)
         }

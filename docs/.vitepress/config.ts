@@ -1,4 +1,5 @@
 import { defineConfig, DefaultTheme } from 'vitepress'
+import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { buildEnd } from './buildEnd.config'
 
 const ogDescription = 'Next Generation Frontend Tooling'
@@ -168,10 +169,6 @@ export default defineConfig({
                 link: 'https://dev.to/t/vite',
               },
               {
-                text: 'Rollup Plugins Compat',
-                link: 'https://vite-rollup-plugins.patak.dev/',
-              },
-              {
                 text: 'Changelog',
                 link: 'https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md',
               },
@@ -334,6 +331,20 @@ export default defineConfig({
     outline: {
       level: [2, 3],
     },
+  },
+  transformPageData(pageData) {
+    const canonicalUrl = `${ogUrl}/${pageData.relativePath}`
+      .replace(/\/index\.md$/, '/')
+      .replace(/\.md$/, '/')
+    pageData.frontmatter.head ??= []
+    pageData.frontmatter.head.unshift([
+      'link',
+      { rel: 'canonical', href: canonicalUrl },
+    ])
+    return pageData
+  },
+  markdown: {
+    codeTransformers: [transformerTwoslash()],
   },
   buildEnd,
 })

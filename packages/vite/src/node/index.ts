@@ -24,6 +24,7 @@ export type {
   AppType,
   ConfigEnv,
   ExperimentalOptions,
+  HTMLOptions,
   InlineConfig,
   LegacyOptions,
   PluginHookUtils,
@@ -128,10 +129,10 @@ export type {
   HMRBroadcasterClient,
 } from './server/hmr'
 
-export type { FetchFunction } from './ssr/runtime/index'
-export { createViteRuntime } from './ssr/runtime/node/mainThreadRuntime'
-export type { MainThreadRuntimeOptions } from './ssr/runtime/node/mainThreadRuntime'
-export { ServerHMRConnector } from './ssr/runtime/node/serverHmrConnector'
+export type { FetchFunction } from '../runtime/index'
+export { createViteRuntime } from './ssr/runtime/mainThreadRuntime'
+export type { MainThreadRuntimeOptions } from './ssr/runtime/mainThreadRuntime'
+export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
 
 export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
 

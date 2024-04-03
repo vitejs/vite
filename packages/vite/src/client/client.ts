@@ -111,7 +111,7 @@ function setupWebSocket(
 }
 
 function cleanUrl(pathname: string): string {
-  const url = new URL(pathname, location.toString())
+  const url = new URL(pathname, 'http://vitejs.dev')
   url.searchParams.delete('direct')
   return url.pathname + url.search
 }
@@ -268,7 +268,7 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'prune':
       notifyListeners('vite:beforePrune', payload)
-      hmrClient.prunePaths(payload.paths)
+      await hmrClient.prunePaths(payload.paths)
       break
     case 'error': {
       notifyListeners('vite:error', payload)
@@ -383,6 +383,11 @@ if ('document' in globalThis) {
     })
 }
 
+const cspNonce =
+  'document' in globalThis
+    ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
+    : undefined
+
 // all css imports should be inserted at the same position
 // because after build it will be a single css file
 let lastInsertedStyle: HTMLStyleElement | undefined
@@ -394,6 +399,9 @@ export function updateStyle(id: string, content: string): void {
     style.setAttribute('type', 'text/css')
     style.setAttribute('data-vite-dev-id', id)
     style.textContent = content
+    if (cspNonce) {
+      style.setAttribute('nonce', cspNonce)
+    }
 
     if (!lastInsertedStyle) {
       document.head.appendChild(style)
@@ -435,7 +443,7 @@ export function injectQuery(url: string, queryToInject: string): string {
   }
 
   // can't use pathname from URL since it may be relative like ../
-  const pathname = url.replace(/[?#].*$/s, '')
+  const pathname = url.replace(/[?#].*$/, '')
   const { search, hash } = new URL(url, 'http://vitejs.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${

@@ -46,10 +46,10 @@ import { checkPublicFile } from '../publicDir'
 import {
   arraify,
   asyncReplace,
-  cleanUrl,
   combineSourcemaps,
   createSerialPromiseQueue,
   emptyCssComments,
+  encodeURIPath,
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
@@ -63,12 +63,12 @@ import {
   removeDirectQuery,
   removeUrlQuery,
   requireResolveFromRootWithFallback,
-  slash,
   stripBase,
   stripBomTag,
   urlRE,
 } from '../utils'
 import type { Logger } from '../logger'
+import { cleanUrl, slash } from '../../shared/utils'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -543,7 +543,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
-        moduleSideEffects: inlined ? false : 'no-treeshake',
+        moduleSideEffects: modulesCode || inlined ? false : 'no-treeshake',
       }
     },
 
@@ -594,13 +594,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = this.getFileName(fileHash) + postfix
           chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
-          return toOutputFilePathInCss(
-            filename,
-            'asset',
-            cssAssetName,
-            'css',
-            config,
-            toRelative,
+          return encodeURIPath(
+            toOutputFilePathInCss(
+              filename,
+              'asset',
+              cssAssetName,
+              'css',
+              config,
+              toRelative,
+            ),
           )
         })
         // resolve public URL from CSS paths
@@ -611,13 +613,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
           chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
             const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
-            return toOutputFilePathInCss(
-              publicUrl,
-              'public',
-              cssAssetName,
-              'css',
-              config,
-              () => `${relativePathToPublicFromCSS}/${publicUrl}`,
+            return encodeURIPath(
+              toOutputFilePathInCss(
+                publicUrl,
+                'public',
+                cssAssetName,
+                'css',
+                config,
+                () => `${relativePathToPublicFromCSS}/${publicUrl}`,
+              ),
             )
           })
         }
@@ -712,98 +716,96 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
           const replacementString =
             typeof replacement === 'string'
-              ? JSON.stringify(replacement).slice(1, -1)
+              ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
               : `"+${replacement.runtime}+"`
           s.update(start, end, replacementString)
         }
       }
 
-      if (!chunkCSS && !s) {
-        return null
-      }
+      if (chunkCSS) {
+        if (config.build.cssCodeSplit) {
+          if (opts.format === 'es' || opts.format === 'cjs') {
+            if (isPureCssChunk) {
+              // this is a shared CSS-only chunk that is empty.
+              pureCssChunks.add(chunk)
+            }
 
-      if (config.build.cssCodeSplit) {
-        if (opts.format === 'es' || opts.format === 'cjs') {
-          if (isPureCssChunk) {
-            // this is a shared CSS-only chunk that is empty.
-            pureCssChunks.add(chunk)
-          }
-
-          const isEntry = chunk.isEntry && isPureCssChunk
-          const cssFullAssetName = ensureFileExt(chunk.name, '.css')
-          // if facadeModuleId doesn't exist or doesn't have a CSS extension,
-          // that means a JS entry file imports a CSS file.
-          // in this case, only use the filename for the CSS chunk name like JS chunks.
-          const cssAssetName =
-            chunk.isEntry &&
-            (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
-              ? path.basename(cssFullAssetName)
-              : cssFullAssetName
-          const originalFilename = getChunkOriginalFileName(
-            chunk,
-            config.root,
-            opts.format,
-          )
-
-          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
-
-          // wait for previous tasks as well
-          chunkCSS = await codeSplitEmitQueue.run(async () => {
-            return finalizeCss(chunkCSS, true, config)
-          })
-
-          // emit corresponding css file
-          const referenceId = this.emitFile({
-            name: cssAssetName,
-            type: 'asset',
-            source: chunkCSS,
-          })
-          generatedAssets
-            .get(config)!
-            .set(referenceId, { originalName: originalFilename, isEntry })
-          chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
-        } else if (!config.build.ssr) {
-          // legacy build and inline css
-
-          // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
-          // and injected later by the `'vite:build-html'` plugin into the `index.html`
-          // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
-          // But because entry chunk can be imported by dynamic import,
-          // we shouldn't remove the inlined CSS. (#10285)
-
-          chunkCSS = await finalizeCss(chunkCSS, true, config)
-          let cssString = JSON.stringify(chunkCSS)
-          cssString =
-            renderAssetUrlInJS(
-              this,
-              config,
+            const isEntry = chunk.isEntry && isPureCssChunk
+            const cssFullAssetName = ensureFileExt(chunk.name, '.css')
+            // if facadeModuleId doesn't exist or doesn't have a CSS extension,
+            // that means a JS entry file imports a CSS file.
+            // in this case, only use the filename for the CSS chunk name like JS chunks.
+            const cssAssetName =
+              chunk.isEntry &&
+              (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
+                ? path.basename(cssFullAssetName)
+                : cssFullAssetName
+            const originalFilename = getChunkOriginalFileName(
               chunk,
-              opts,
-              cssString,
-            )?.toString() || cssString
-          const style = `__vite_style__`
-          const injectCode =
-            `var ${style} = document.createElement('style');` +
-            `${style}.textContent = ${cssString};` +
-            `document.head.appendChild(${style});`
-          let injectionPoint
-          const wrapIdx = code.indexOf('System.register')
-          if (wrapIdx >= 0) {
-            const executeFnStart = code.indexOf('execute:', wrapIdx)
-            injectionPoint = code.indexOf('{', executeFnStart) + 1
-          } else {
-            const insertMark = "'use strict';"
-            injectionPoint = code.indexOf(insertMark) + insertMark.length
-          }
-          s ||= new MagicString(code)
-          s.appendRight(injectionPoint, injectCode)
-        }
-      } else {
-        // resolve public URL from CSS paths, we need to use absolute paths
-        chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
-        // finalizeCss is called for the aggregated chunk in generateBundle
+              config.root,
+              opts.format,
+            )
 
-        chunkCSSMap.set(chunk.fileName, chunkCSS)
+            chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssAssetName)
+
+            // wait for previous tasks as well
+            chunkCSS = await codeSplitEmitQueue.run(async () => {
+              return finalizeCss(chunkCSS, true, config)
+            })
+
+            // emit corresponding css file
+            const referenceId = this.emitFile({
+              name: cssAssetName,
+              type: 'asset',
+              source: chunkCSS,
+            })
+            generatedAssets
+              .get(config)!
+              .set(referenceId, { originalName: originalFilename, isEntry })
+            chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
+          } else if (!config.build.ssr) {
+            // legacy build and inline css
+
+            // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
+            // and injected later by the `'vite:build-html'` plugin into the `index.html`
+            // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
+            // But because entry chunk can be imported by dynamic import,
+            // we shouldn't remove the inlined CSS. (#10285)
+
+            chunkCSS = await finalizeCss(chunkCSS, true, config)
+            let cssString = JSON.stringify(chunkCSS)
+            cssString =
+              renderAssetUrlInJS(
+                this,
+                config,
+                chunk,
+                opts,
+                cssString,
+              )?.toString() || cssString
+            const style = `__vite_style__`
+            const injectCode =
+              `var ${style} = document.createElement('style');` +
+              `${style}.textContent = ${cssString};` +
+              `document.head.appendChild(${style});`
+            let injectionPoint
+            const wrapIdx = code.indexOf('System.register')
+            if (wrapIdx >= 0) {
+              const executeFnStart = code.indexOf('execute:', wrapIdx)
+              injectionPoint = code.indexOf('{', executeFnStart) + 1
+            } else {
+              const insertMark = "'use strict';"
+              injectionPoint = code.indexOf(insertMark) + insertMark.length
+            }
+            s ||= new MagicString(code)
+            s.appendRight(injectionPoint, injectCode)
+          }
+        } else {
+          // resolve public URL from CSS paths, we need to use absolute paths
+          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
+          // finalizeCss is called for the aggregated chunk in generateBundle
+
+          chunkCSSMap.set(chunk.fileName, chunkCSS)
+        }
       }
 
       if (s) {
@@ -1911,7 +1913,8 @@ type StylePreprocessorOptions = {
   enableSourcemap: boolean
 }
 
-type SassStylePreprocessorOptions = StylePreprocessorOptions & Sass.Options
+type SassStylePreprocessorOptions = StylePreprocessorOptions &
+  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'>
 
 type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
   define?: Record<string, any>
@@ -2015,8 +2018,8 @@ function cleanScssBugUrl(url: string) {
 }
 
 function fixScssBugImportValue(
-  data: Sass.ImporterReturnType,
-): Sass.ImporterReturnType {
+  data: Sass.LegacyImporterResult,
+): Sass.LegacyImporterResult {
   // the scss bug doesn't load files properly so we have to load it ourselves
   // to prevent internal error when it loads itself
   if (
@@ -2079,7 +2082,11 @@ const makeScssWorker = (
 
         // NOTE: `sass` always runs it's own importer first, and only falls back to
         // the `importer` option when it can't resolve a path
-        const _internalImporter: Sass.Importer = (url, importer, done) => {
+        const _internalImporter: Sass.LegacyAsyncImporter = (
+          url,
+          importer,
+          done,
+        ) => {
           internalImporter(url, importer, options.filename).then((data) =>
             done?.(data),
           )
@@ -2091,7 +2098,7 @@ const makeScssWorker = (
             : importer.unshift(options.importer)
         }
 
-        const finalOptions: Sass.Options = {
+        const finalOptions: Sass.LegacyOptions<'async'> = {
           ...options,
           data,
           file: options.filename,
@@ -2108,16 +2115,16 @@ const makeScssWorker = (
         return new Promise<{
           css: string
           map?: string | undefined
-          stats: Sass.Result['stats']
+          stats: Sass.LegacyResult['stats']
         }>((resolve, reject) => {
           sass.render(finalOptions, (err, res) => {
             if (err) {
               reject(err)
             } else {
               resolve({
-                css: res.css.toString(),
-                map: res.map?.toString(),
-                stats: res.stats,
+                css: res!.css.toString(),
+                map: res!.map?.toString(),
+                stats: res!.stats,
               })
             }
           })
@@ -2211,7 +2218,7 @@ async function rebaseUrls(
   alias: Alias[],
   variablePrefix: string,
   resolver: ResolveFn,
-): Promise<Sass.ImporterReturnType> {
+): Promise<Sass.LegacyImporterResult> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
   const fileDir = path.dirname(file)
@@ -2752,12 +2759,13 @@ async function compileLightningCSS(
     switch (dep.type) {
       case 'url':
         if (skipUrlReplacer(dep.url)) {
-          css = css.replace(dep.placeholder, dep.url)
+          css = css.replace(dep.placeholder, () => dep.url)
           break
         }
         deps.add(dep.url)
         if (urlReplacer) {
-          css = css.replace(dep.placeholder, await urlReplacer(dep.url, id))
+          const replaceUrl = await urlReplacer(dep.url, id)
+          css = css.replace(dep.placeholder, () => replaceUrl)
         }
         break
       default:

@@ -14,7 +14,7 @@
     "noImplicitReturns": true,
 
     "useDefineForClassFields": true,
-    "importsNotUsedAsValues": "preserve",
+    "importsNotUsedAsValues": "preserve"
   },
-  "include": ["./src"],
+  "include": ["./src"]
 }

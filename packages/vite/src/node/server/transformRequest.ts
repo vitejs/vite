@@ -2,15 +2,12 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
-import convertSourceMap from 'convert-source-map'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
 import type { ModuleNode, ViteDevServer } from '..'
 import {
-  blankReplacer,
-  cleanUrl,
   createDebugger,
   ensureWatchedFile,
   injectQuery,
@@ -20,12 +17,16 @@ import {
   removeTimestampQuery,
   stripBase,
   timeFrom,
-  unwrapId,
 } from '../utils'
 import { checkPublicFile } from '../publicDir'
 import { isDepsOptimizerEnabled } from '../config'
 import { getDepsOptimizer, initDevSsrDepsOptimizer } from '../optimizer'
-import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
+import { cleanUrl, unwrapId } from '../../shared/utils'
+import {
+  applySourcemapIgnoreList,
+  extractSourcemapFromFile,
+  injectSourcesContent,
+} from './sourcemap'
 import { isFileServingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
 
@@ -131,14 +132,78 @@ async function doTransform(
   url = removeTimestampQuery(url)
 
   const { config, pluginContainer } = server
-  const prettyUrl = debugCache ? prettifyUrl(url, config.root) : ''
   const ssr = !!options.ssr
 
   if (ssr && isDepsOptimizerEnabled(config, true)) {
     await initDevSsrDepsOptimizer(config, server)
   }
 
-  const module = await server.moduleGraph.getModuleByUrl(url, ssr)
+  let module = await server.moduleGraph.getModuleByUrl(url, ssr)
+  if (module) {
+    // try use cache from url
+    const cached = await getCachedTransformResult(
+      url,
+      module,
+      server,
+      ssr,
+      timestamp,
+    )
+    if (cached) return cached
+  }
+
+  const resolved = module
+    ? undefined
+    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
+
+  // resolve
+  const id = module?.id ?? resolved?.id ?? url
+
+  module ??= server.moduleGraph.getModuleById(id)
+  if (module) {
+    // if a different url maps to an existing loaded id,  make sure we relate this url to the id
+    await server.moduleGraph._ensureEntryFromUrl(url, ssr, undefined, resolved)
+    // try use cache from id
+    const cached = await getCachedTransformResult(
+      url,
+      module,
+      server,
+      ssr,
+      timestamp,
+    )
+    if (cached) return cached
+  }
+
+  const result = loadAndTransform(
+    id,
+    url,
+    server,
+    options,
+    timestamp,
+    module,
+    resolved,
+  )
+
+  if (!ssr) {
+    // Only register client requests, server.waitForRequestsIdle should
+    // have been called server.waitForClientRequestsIdle. We can rename
+    // it as part of the environment API work
+    const depsOptimizer = getDepsOptimizer(config, ssr)
+    if (!depsOptimizer?.isOptimizedDepFile(id)) {
+      server._registerRequestProcessing(id, () => result)
+    }
+  }
+
+  return result
+}
+
+async function getCachedTransformResult(
+  url: string,
+  module: ModuleNode,
+  server: ViteDevServer,
+  ssr: boolean,
+  timestamp: number,
+) {
+  const prettyUrl = debugCache ? prettifyUrl(url, server.config.root) : ''
 
   // tries to handle soft invalidation of the module if available,
   // returns a boolean true is successful, or false if no handling is needed
@@ -157,27 +222,6 @@ async function doTransform(
     debugCache?.(`[memory] ${prettyUrl}`)
     return cached
   }
-
-  const resolved = module
-    ? undefined
-    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
-
-  // resolve
-  const id = module?.id ?? resolved?.id ?? url
-
-  const result = loadAndTransform(
-    id,
-    url,
-    server,
-    options,
-    timestamp,
-    module,
-    resolved,
-  )
-
-  getDepsOptimizer(config, ssr)?.delayDepsOptimizerUntil(id, () => result)
-
-  return result
 }
 
 async function loadAndTransform(
@@ -226,21 +270,19 @@ async function loadAndTransform(
           throw e
         }
       }
-      ensureWatchedFile(server.watcher, file, config.root)
+      if (code != null) {
+        ensureWatchedFile(server.watcher, file, config.root)
+      }
     }
     if (code) {
       try {
-        map = (
-          convertSourceMap.fromSource(code) ||
-          (await convertSourceMap.fromMapFileSource(
-            code,
-            createConvertSourceMapReadMap(file),
-          ))
-        )?.toObject()
-
-        code = code.replace(convertSourceMap.mapFileCommentRegex, blankReplacer)
+        const extracted = await extractSourcemapFromFile(code, file)
+        if (extracted) {
+          code = extracted.code
+          map = extracted.map
+        }
       } catch (e) {
-        logger.warn(`Failed to load source map for ${url}.`, {
+        logger.warn(`Failed to load source map for ${file}.\n${e}`, {
           timestamp: true,
         })
       }
@@ -367,15 +409,6 @@ async function loadAndTransform(
     moduleGraph.updateModuleTransformResult(mod, result, ssr)
 
   return result
-}
-
-function createConvertSourceMapReadMap(originalFileName: string) {
-  return (filename: string) => {
-    return fsp.readFile(
-      path.resolve(path.dirname(originalFileName), filename),
-      'utf-8',
-    )
-  }
 }
 
 /**
