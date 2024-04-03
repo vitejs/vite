@@ -77,7 +77,6 @@ jobs:
         with:
           node-version: ${{ matrix.node_version }}
           cache: "pnpm"
-          check-latest: true
 
       - name: Install deps
         if: steps.changed-files.outputs.only_changed != 'true'
