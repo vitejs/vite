@@ -42,7 +42,9 @@ Vite uses [esbuild defines](https://esbuild.github.io/api/#define) to perform re
 
 **Example:**
 
-```js
+```js twoslash
+import { defineConfig } from 'vite'
+// ---cut---
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify('v1.0.0'),
@@ -231,7 +233,9 @@ Specify options to pass to CSS pre-processors. The file extensions are used as k
 
 **Example:**
 
-```js
+```js twoslash
+import { defineConfig } from 'vite'
+// ---cut---
 export default defineConfig({
   css: {
     preprocessorOptions: {
@@ -256,7 +260,9 @@ This option can be used to inject extra code for each style content. Note that i
 
 **Example:**
 
-```js
+```js twoslash
+import { defineConfig } from 'vite'
+// ---cut---
 export default defineConfig({
   css: {
     preprocessorOptions: {
@@ -350,7 +356,9 @@ Enabling this disables named imports.
 
 `ESBuildOptions` extends [esbuild's own transform options](https://esbuild.github.io/api/#transform). The most common use case is customizing JSX:
 
-```js
+```js twoslash
+import { defineConfig } from 'vite'
+// ---cut---
 export default defineConfig({
   esbuild: {
     jsxFactory: 'h',
@@ -363,7 +371,9 @@ By default, esbuild is applied to `ts`, `jsx` and `tsx` files. You can customize
 
 In addition, you can also use `esbuild.jsxInject` to automatically inject JSX helper imports for every file transformed by esbuild:
 
-```js
+```js twoslash
+import { defineConfig } from 'vite'
+// ---cut---
 export default defineConfig({
   esbuild: {
     jsxInject: `import React from 'react'`,
