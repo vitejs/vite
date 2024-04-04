@@ -38,7 +38,7 @@ import {
 import type { ResolvedEnvironmentOptions } from '../config'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
-import type { SSROptions } from '..'
+import type { DepOptimizationConfig, SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import type { FsUtils } from '../fsUtils'
 import { commonFsUtils } from '../fsUtils'
@@ -239,6 +239,8 @@ export function resolvePlugin(
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
 
+      const depsOptimizerOptions = this.environment?.options.dev.optimizeDeps
+
       const resolvedImports = resolveSubpathImports(
         id,
         importer,
@@ -331,7 +333,14 @@ export function resolvePlugin(
         if (
           targetWeb &&
           options.mainFields.includes('browser') &&
-          (res = tryResolveBrowserMapping(fsPath, importer, options, true))
+          (res = tryResolveBrowserMapping(
+            fsPath,
+            importer,
+            options,
+            true,
+            undefined,
+            depsOptimizerOptions,
+          ))
         ) {
           return res
         }
@@ -421,6 +430,7 @@ export function resolvePlugin(
             options,
             false,
             external,
+            depsOptimizerOptions,
           ))
         ) {
           return res
@@ -435,6 +445,8 @@ export function resolvePlugin(
             depsOptimizer,
             ssr,
             external,
+            undefined,
+            depsOptimizerOptions,
           ))
         ) {
           return res
@@ -759,6 +771,7 @@ export function tryNodeResolve(
   ssr: boolean = false,
   externalize?: boolean,
   allowLinkedExternal: boolean = true,
+  depsOptimizerOptions?: DepOptimizationConfig,
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
@@ -907,8 +920,8 @@ export function tryNodeResolve(
   let include = depsOptimizer?.options.include
   if (options.ssrOptimizeCheck) {
     // we don't have the depsOptimizer
-    exclude = options.ssrConfig?.optimizeDeps?.exclude
-    include = options.ssrConfig?.optimizeDeps?.include
+    exclude = depsOptimizerOptions?.exclude
+    include = depsOptimizerOptions?.include
   }
 
   const skipOptimization =
@@ -1249,6 +1262,7 @@ function tryResolveBrowserMapping(
   options: InternalResolveOptions,
   isFilePath: boolean,
   externalize?: boolean,
+  depsOptimizerOptions?: DepOptimizationConfig,
 ) {
   let res: string | undefined
   const pkg =
@@ -1260,7 +1274,17 @@ function tryResolveBrowserMapping(
     if (browserMappedPath) {
       if (
         (res = bareImportRE.test(browserMappedPath)
-          ? tryNodeResolve(browserMappedPath, importer, options, true)?.id
+          ? tryNodeResolve(
+              browserMappedPath,
+              importer,
+              options,
+              true,
+              undefined,
+              undefined,
+              undefined,
+              undefined,
+              depsOptimizerOptions,
+            )?.id
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
         debug?.(`[browser mapped] ${colors.cyan(id)} -> ${colors.dim(res)}`)
