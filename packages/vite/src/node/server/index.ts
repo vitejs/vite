@@ -24,7 +24,7 @@ import {
   setClientErrorHandler,
 } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { isDepsOptimizerEnabled, resolveConfig } from '../config'
+import { resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
   isInNodeModules,
@@ -41,7 +41,6 @@ import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
-import { getDepsOptimizer, initDepsOptimizer } from '../optimizer'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
@@ -675,13 +674,17 @@ export async function _createServer(
           process.stdin.off('end', exitProcess)
         }
       }
+
       await Promise.allSettled([
         watcher.close(),
         hot.close(),
         pluginContainer.close(),
+        Promise.allSettled(
+          Object.values(server.environments).map((environment) =>
+            environment.close(),
+          ),
+        ),
         crawlEndFinder?.cancel(),
-        getDepsOptimizer(server.config)?.close(),
-        getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer(),
       ])
       // Await pending requests. We throw early in transformRequest
@@ -982,9 +985,7 @@ export async function _createServer(
     initingServer = (async function () {
       await pluginContainer.buildStart({})
       // start deps optimizer after all container plugins are ready
-      if (isDepsOptimizerEnabled(config, false)) {
-        await initDepsOptimizer(config, server)
-      }
+      await server.environments.client.depsOptimizer?.init()
       warmupFiles(server)
       initingServer = undefined
       serverInited = true

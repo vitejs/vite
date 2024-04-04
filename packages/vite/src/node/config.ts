@@ -212,8 +212,11 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
 export type ResolvedEnvironmentResolveOptions =
   Required<EnvironmentResolveOptions>
 
-export type ResolvedEnvironmentOptions = Required<EnvironmentOptions> & {
+export type ResolvedEnvironmentOptions = {
   resolve: ResolvedEnvironmentResolveOptions
+  nodeCompatible: boolean
+  dev: ResolvedDevOptions
+  build: ResolvedBuildOptions
 }
 
 export type DefaultEnvironmentOptions = Omit<

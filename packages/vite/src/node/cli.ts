@@ -10,6 +10,7 @@ import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { resolveConfig } from './config'
+import { Environment } from './environment'
 
 const cli = cac('vite')
 
@@ -357,7 +358,8 @@ cli
           },
           'serve',
         )
-        await optimizeDeps(config, options.force, true)
+        const environment = new Environment('client', config)
+        await optimizeDeps(environment, options.force, true)
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when optimizing deps:\n${e.stack}`),

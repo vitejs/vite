@@ -5,22 +5,24 @@ import type { ResolvedConfig } from '../config'
 import { escapeRegex, getNpmPackageName } from '../utils'
 import { resolvePackageData } from '../packages'
 import { slash } from '../../shared/utils'
+import type { Environment } from '../environment'
+import { createIdResolver } from '../idResolver'
 
 export function createOptimizeDepsIncludeResolver(
-  config: ResolvedConfig,
-  ssr: boolean,
+  environment: Environment,
 ): (id: string) => Promise<string | undefined> {
-  const resolve = config.createResolver({
+  const { config } = environment
+  const resolve = createIdResolver(config, {
     asSrc: false,
     scan: true,
-    ssrOptimizeCheck: ssr,
+    ssrOptimizeCheck: environment.name !== 'client', // TODO:depsOptimizer
     ssrConfig: config.ssr,
     packageCache: new Map(),
   })
   return async (id: string) => {
     const lastArrowIndex = id.lastIndexOf('>')
     if (lastArrowIndex === -1) {
-      return await resolve(id, undefined, undefined, ssr)
+      return await resolve(environment, id, undefined)
     }
     // split nested selected id by last '>', for example:
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
@@ -32,10 +34,9 @@ export function createOptimizeDepsIncludeResolver(
       config.resolve.preserveSymlinks,
     )
     return await resolve(
+      environment,
       nestedPath,
       path.resolve(basedir, 'package.json'),
-      undefined,
-      ssr,
     )
   }
 }

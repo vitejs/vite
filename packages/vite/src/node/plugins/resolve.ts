@@ -120,8 +120,24 @@ interface ResolvePluginOptions {
   scan?: boolean
   // Appends ?__vite_skip_optimization to the resolved id if shouldn't be optimized
   ssrOptimizeCheck?: boolean
-  // Resolve using esbuild deps optimization
+
+  /**
+   * Optimize deps during dev
+   * @internal
+   */
+  optimizeDeps?: boolean
+
+  /**
+   * Previous deps optimizer logic
+   * @internal
+   * @deprecated
+   */
   getDepsOptimizer?: (ssr: boolean) => DepsOptimizer | undefined
+
+  /**
+   * Externalize logic for SSR builds
+   * @internal
+   */
   shouldExternalize?: (id: string, importer?: string) => boolean | undefined
 
   /**
@@ -190,9 +206,12 @@ export function resolvePlugin(
 
       const ssr = resolveOpts?.ssr === true
 
-      // We need to delay depsOptimizer until here instead of passing it as an option
-      // the resolvePlugin because the optimizer is created on server listen during dev
-      const depsOptimizer = resolveOptions.getDepsOptimizer?.(ssr)
+      // The resolve plugin is used for createIdResolver and the depsOptimizer should be
+      // disabled in that case, so deps optimization is opt-in when creating the plugin.
+      const depsOptimizer =
+        resolveOptions.optimizeDeps && this.environment?.mode === 'dev'
+          ? this.environment?.depsOptimizer
+          : undefined
 
       if (id.startsWith(browserExternalId)) {
         return id

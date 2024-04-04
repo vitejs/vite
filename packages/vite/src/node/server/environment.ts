@@ -8,6 +8,11 @@ import { getDefaultResolvedEnvironmentOptions } from '../config'
 import { mergeConfig } from '../utils'
 import type { FetchModuleOptions } from '../ssr/fetchModule'
 import { fetchModule } from '../ssr/fetchModule'
+import {
+  createDepsOptimizer,
+  createExplicitDepsOptimizer,
+} from '../optimizer/optimizer'
+import type { DepsOptimizer } from '../optimizer'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { HMRChannel } from './hmr'
 import { createNoopHMRChannel, getShortName, updateModules } from './hmr'
@@ -29,6 +34,7 @@ export class DevEnvironment extends Environment {
   mode = 'dev' as const // TODO: should this be 'serve'?
   moduleGraph: EnvironmentModuleGraph
   server: ViteDevServer
+  depsOptimizer?: DepsOptimizer
   /**
    * @internal
    */
@@ -50,6 +56,7 @@ export class DevEnvironment extends Environment {
       runner?: FetchModuleOptions & {
         transport?: RemoteEnvironmentTransport
       }
+      depsOptimizer?: DepsOptimizer
     },
   ) {
     let options =
@@ -81,6 +88,28 @@ export class DevEnvironment extends Environment {
         message,
       })
     })
+
+    const { optimizeDeps } = this.options.dev
+    if (setup?.depsOptimizer) {
+      this.depsOptimizer = setup?.depsOptimizer
+    } else if (
+      optimizeDeps?.noDiscovery &&
+      optimizeDeps?.include?.length === 0
+    ) {
+      this.depsOptimizer = undefined
+    } else {
+      // We only support auto-discovery for the client environment, for all other
+      // environments `noDiscovery` has no effect and an simpler explicit deps
+      // optimizer is used that only optimizes explicitely included dependencies
+      // so it doesn't need to reload the environment. Now that we have proper HMR
+      // and full reload for general environments, we can enable autodiscovery for
+      // them in the future
+      this.depsOptimizer = (
+        optimizeDeps.noDiscovery || name !== 'client'
+          ? createExplicitDepsOptimizer
+          : createDepsOptimizer
+      )(this)
+    }
   }
 
   fetchModule(id: string, importer?: string): Promise<FetchResult> {
@@ -106,6 +135,10 @@ export class DevEnvironment extends Environment {
         timestamp: true,
       })
     })
+  }
+
+  async close(): Promise<void> {
+    await this.depsOptimizer?.close()
   }
 }
 
