@@ -8,7 +8,13 @@ export type SsrDepOptimizationOptions = DepOptimizationConfig
  * @deprecated use environments.ssr
  */
 export interface SSROptions {
+  /**
+   * @deprecated use environment.resolve.noExternal
+   */
   noExternal?: string | RegExp | (string | RegExp)[] | true
+  /**
+   * @deprecated use environment.resolve.external
+   */
   external?: string[] | true
 
   /**

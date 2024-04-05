@@ -6,7 +6,7 @@ import type {
   ResolvedConfig,
 } from '..'
 import type { Plugin } from '../plugin'
-import { createIsConfiguredAsSsrExternal } from '../ssr/ssrExternal'
+import { isConfiguredAsExternal } from '../external'
 import {
   bareImportRE,
   isInNodeModules,
@@ -22,18 +22,17 @@ import { tryOptimizedResolve } from './resolve'
  */
 export function preAliasPlugin(config: ResolvedConfig): Plugin {
   const findPatterns = getAliasPatterns(config.resolve.alias)
-  const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
   const isBuild = config.command === 'build'
   const fsUtils = getFsUtils(config)
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
+      const { environment } = this
       const ssr = options?.ssr === true
       const depsOptimizer =
-        this.environment?.mode === 'dev'
-          ? this.environment.depsOptimizer
-          : undefined
+        environment?.mode === 'dev' ? environment.depsOptimizer : undefined
       if (
+        environment &&
         importer &&
         depsOptimizer &&
         bareImportRE.test(id) &&
@@ -71,7 +70,11 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
               (isInNodeModules(resolvedId) ||
                 optimizeDeps.include?.includes(id)) &&
               isOptimizable(resolvedId, optimizeDeps) &&
-              !(isBuild && ssr && isConfiguredAsExternal(id, importer)) &&
+              !(
+                isBuild &&
+                ssr &&
+                isConfiguredAsExternal(environment, id, importer)
+              ) &&
               (!ssr || optimizeAliasReplacementForSSR(resolvedId, optimizeDeps))
             ) {
               // aliased dep has not yet been optimized

@@ -42,6 +42,7 @@ import type { DepOptimizationConfig, SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import type { FsUtils } from '../fsUtils'
 import { commonFsUtils } from '../fsUtils'
+import { shouldExternalize } from '../external'
 import {
   findNearestMainPackageData,
   findNearestPackageData,
@@ -90,13 +91,19 @@ export interface ResolveOptions {
    * @default false
    */
   preserveSymlinks?: boolean
+  /**
+   * external/noExternal logic, this only works for certain environments
+   * Previously this was ssr.external/ssr.noExternal
+   * TODO: better abstraction that works for the client environment too?
+   */
+  noExternal?: string | RegExp | (string | RegExp)[] | true
+  external?: string[] | true
 }
 
 interface ResolvePluginOptions {
   root: string
   isBuild: boolean
   isProduction: boolean
-  ssrConfig?: SSROptions
   packageCache?: PackageCache
   fsUtils?: FsUtils
   /**
@@ -123,10 +130,16 @@ interface ResolvePluginOptions {
   ssrOptimizeCheck?: boolean
 
   /**
-   * Optimize deps during dev
+   * Optimize deps during dev, defaults to false // TODO: Review default
    * @internal
    */
   optimizeDeps?: boolean
+
+  /**
+   * externalize using external/noExternal, defaults to false // TODO: Review default
+   * @internal
+   */
+  externalize?: boolean
 
   /**
    * Previous deps optimizer logic
@@ -138,6 +151,7 @@ interface ResolvePluginOptions {
   /**
    * Externalize logic for SSR builds
    * @internal
+   * @deprecated
    */
   shouldExternalize?: (id: string, importer?: string) => boolean | undefined
 
@@ -147,6 +161,11 @@ interface ResolvePluginOptions {
    * @internal
    */
   idOnly?: boolean
+
+  /**
+   * @deprecated environment.options are used instead
+   */
+  ssrConfig?: SSROptions
 }
 
 export interface InternalResolveOptions
@@ -171,15 +190,7 @@ export function resolvePlugin(
    */
   environmentsOptions: Record<string, ResolvedEnvironmentOptions>,
 ): Plugin {
-  const {
-    root,
-    isProduction,
-    asSrc,
-    ssrConfig,
-    preferRelative = false,
-  } = resolveOptions
-
-  const { noExternal: ssrNoExternal, external: ssrExternal } = ssrConfig ?? {}
+  const { root, isProduction, asSrc, preferRelative = false } = resolveOptions
 
   // In unix systems, absolute paths inside root first needs to be checked as an
   // absolute URL (/root/root/path-to-file) resulting in failed checks before falling
@@ -395,7 +406,9 @@ export function resolvePlugin(
 
       // bare package imports, perform node resolve
       if (bareImportRE.test(id)) {
-        const external = options.shouldExternalize?.(id, importer)
+        const external =
+          options.externalize &&
+          shouldExternalize(this.environment!, id, importer) // TODO
         if (
           !external &&
           asSrc &&
@@ -448,10 +461,10 @@ export function resolvePlugin(
           if (options.nodeCompatible) {
             if (
               options.webCompatible &&
-              ssrNoExternal === true &&
+              options.noExternal === true &&
               // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
               // only if the id is explicitly listed in external, we will externalize it and skip this error.
-              (ssrExternal === true || !ssrExternal?.includes(id))
+              (options.external === true || !options.external.includes(id))
             ) {
               let message = `Cannot bundle Node.js built-in "${id}"`
               if (importer) {
@@ -460,7 +473,7 @@ export function resolvePlugin(
                   importer,
                 )}"`
               }
-              message += `. Consider disabling environments.${this.environment?.name}.noExternal or remove the built-in dependency.`
+              message += `. Consider disabling environments.${environmentName}.noExternal or remove the built-in dependency.`
               this.error(message)
             }
 

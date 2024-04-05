@@ -645,6 +645,8 @@ function resolveEnvironmentResolveOptions(
     mainFields: resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
     conditions: resolve?.conditions ?? [],
     externalConditions: resolve?.externalConditions ?? [],
+    external: resolve?.external ?? [],
+    noExternal: resolve?.noExternal ?? [],
     extensions: resolve?.extensions ?? DEFAULT_EXTENSIONS,
     dedupe: resolve?.dedupe ?? [],
     preserveSymlinks: resolve?.preserveSymlinks ?? false,
@@ -804,8 +806,6 @@ export async function resolveConfig(
   )
 
   // Backward compatibility: merge ssr into environments.ssr.config as defaults
-  // Done: ssr.optimizeDeps, ssr.resolve.conditions, ssr.resolve.externalConditions,
-  // TODO: ssr.external, ssr.noExternal
   const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
   const configEnvironmentsSsr = config.environments!.ssr
   if (configEnvironmentsSsr) {
@@ -814,13 +814,13 @@ export async function resolveConfig(
       configEnvironmentsSsr.dev.optimizeDeps ?? {},
       deprecatedSsrOptimizeDepsConfig,
     )
+    // TODO: should we merge here?
     configEnvironmentsSsr.resolve ??= {}
-    const deprecatedSsrResolveConditions = config.ssr?.resolve?.conditions
-    configEnvironmentsSsr.resolve.conditions ??= deprecatedSsrResolveConditions // TODO: should we merge?
-    const deprecatedSsrResolveExternalConditions =
-      config.ssr?.resolve?.externalConditions
+    configEnvironmentsSsr.resolve.conditions ??= config.ssr?.resolve?.conditions
     configEnvironmentsSsr.resolve.externalConditions ??=
-      deprecatedSsrResolveExternalConditions // TODO: should we merge?
+      config.ssr?.resolve?.externalConditions
+    configEnvironmentsSsr.resolve.external ??= config.ssr?.external
+    configEnvironmentsSsr.resolve.noExternal ??= config.ssr?.noExternal
 
     if (config.ssr?.target === 'webworker') {
       configEnvironmentsSsr.webCompatible = true
@@ -891,17 +891,20 @@ export async function resolveConfig(
     undefined, // default environment
   )
 
-  // Backward compatibility: merge environments.ssr.dev.optimizeDeps back into ssr.optimizeDeps
+  // Backward compatibility: merge config.environments.ssr back into config.ssr
+  // so ecosystem SSR plugins continue to work if only environments.ssr is configured
   const patchedConfigSsr = {
     ...config.ssr,
+    external: resolvedEnvironments.ssr?.resolve.external,
+    noExternal: resolvedEnvironments.ssr?.resolve.noExternal,
     optimizeDeps: mergeConfig(
-      resolvedEnvironments.ssr?.dev?.optimizeDeps ?? {},
       config.ssr?.optimizeDeps ?? {},
+      resolvedEnvironments.ssr?.dev?.optimizeDeps ?? {},
     ),
     resolve: {
+      ...config.ssr?.resolve,
       conditions: resolvedEnvironments.ssr?.resolve.conditions,
       externalConditions: resolvedEnvironments.ssr?.resolve.externalConditions,
-      ...config.ssr?.resolve,
     },
   }
   const ssr = resolveSSROptions(
@@ -1150,7 +1153,6 @@ export async function resolveConfig(
                     root: resolvedRoot,
                     isProduction,
                     isBuild: command === 'build',
-                    ssrConfig: resolved.ssr,
                     asSrc: true,
                     preferRelative: false,
                     tryIndex: true,
@@ -1439,6 +1441,8 @@ async function bundleConfigFile(
               mainFields: [],
               conditions: [],
               externalConditions: [],
+              external: [],
+              noExternal: [],
               overrideConditions: ['node'],
               dedupe: [],
               extensions: DEFAULT_EXTENSIONS,

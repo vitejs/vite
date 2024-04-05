@@ -3,7 +3,6 @@ import type { ObjectHook } from 'rollup'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
-import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { watchPackageDataPlugin } from '../packages'
 import { getFsUtils } from '../fsUtils'
 import { jsonPlugin } from './json'
@@ -65,10 +64,7 @@ export async function resolvePlugins(
         asSrc: true,
         fsUtils: getFsUtils(config),
         optimizeDeps: true,
-        shouldExternalize:
-          isBuild && config.build.ssr
-            ? (id, importer) => shouldExternalizeForSSR(id, importer, config)
-            : undefined,
+        externalize: isBuild && !!config.build.ssr, // TODO: should we do this for all environments?
       },
       config.environments,
     ),

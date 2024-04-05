@@ -41,7 +41,6 @@ export function createIdResolver(
             root: config.root,
             isProduction: config.isProduction,
             isBuild: config.command === 'build',
-            ssrConfig: config.ssr,
             asSrc: true,
             preferRelative: false,
             tryIndex: true,

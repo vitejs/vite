@@ -137,6 +137,8 @@ async function instantiateModule(
     mainFields: ['main'],
     conditions: [],
     externalConditions,
+    external: [], // TODO, should it be ssr.resolve.external?
+    noExternal: [],
     overrideConditions: [...externalConditions, 'production', 'development'],
     extensions: ['.js', '.cjs', '.json'],
     dedupe,

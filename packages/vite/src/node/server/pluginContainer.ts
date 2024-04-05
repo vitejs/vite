@@ -194,7 +194,7 @@ export async function createPluginContainer(
   }) {
     const environment =
       options?.environment ?? environments?.[options?.ssr ? 'ssr' : 'client']
-    const ssr = options?.ssr ?? (environment?.name === 'ssr' ? true : false)
+    const ssr = environment?.name === 'ssr' ? true : !!options?.ssr
     return { environment, ssr }
   }
 

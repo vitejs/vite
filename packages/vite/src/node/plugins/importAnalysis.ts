@@ -55,7 +55,7 @@ import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { DevEnvironment } from '../server/environment'
-import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
+import { shouldExternalize } from '../external'
 import { optimizedDepNeedsInterop } from '../optimizer'
 import {
   cleanUrl,
@@ -493,7 +493,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             // skip ssr external
             if (ssr && !matchAlias(specifier)) {
-              if (shouldExternalizeForSSR(specifier, importer, config)) {
+              if (shouldExternalize(environment, specifier, importer)) {
                 return
               }
               if (isBuiltin(specifier)) {

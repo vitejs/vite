@@ -433,6 +433,14 @@ importers:
         specifier: ^8.16.0
         version: 8.16.0
 
+  packages/vite/src/node/__tests__:
+    dependencies:
+      '@vitejs/cjs-ssr-dep':
+        specifier: link:./fixtures/cjs-ssr-dep
+        version: link:fixtures/cjs-ssr-dep
+
+  packages/vite/src/node/__tests__/fixtures/cjs-ssr-dep: {}
+
   packages/vite/src/node/__tests__/packages/module: {}
 
   packages/vite/src/node/__tests__/packages/name: {}
@@ -450,14 +458,6 @@ importers:
   packages/vite/src/node/server/__tests__/fixtures/yarn: {}
 
   packages/vite/src/node/server/__tests__/fixtures/yarn/nested: {}
-
-  packages/vite/src/node/ssr/__tests__:
-    dependencies:
-      '@vitejs/cjs-ssr-dep':
-        specifier: link:./fixtures/cjs-ssr-dep
-        version: link:fixtures/cjs-ssr-dep
-
-  packages/vite/src/node/ssr/__tests__/fixtures/cjs-ssr-dep: {}
 
   packages/vite/src/node/ssr/runtime/__tests__:
     dependencies:

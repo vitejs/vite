@@ -49,6 +49,8 @@ export async function fetchModule(
       mainFields: ['main'],
       conditions: [],
       externalConditions,
+      external: [], // TODO, should it be ssr.resolve.external?
+      noExternal: [],
       overrideConditions: [...externalConditions, 'production', 'development'],
       extensions: ['.js', '.cjs', '.json'],
       dedupe,
