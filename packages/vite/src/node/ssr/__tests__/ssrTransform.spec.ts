@@ -341,6 +341,64 @@ test('sourcemap source', async () => {
   expect(map?.sourcesContent).toStrictEqual(['export const a = 1 /* */'])
 })
 
+test('sourcemap is correct for hoisted imports', async () => {
+  // Mapping from Base64 character to integer
+  const base64Chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+  const base64ToInt = Object.fromEntries(
+    base64Chars.split('').map((c, i) => [c, i]),
+  )
+
+  // Decode a single Base64 VLQ segment
+  function decodeVLQ(segment) {
+    const result: number[] = []
+    let cur = 0
+    let shift = 0
+    let continuation, sign, value
+
+    for (const char of segment) {
+      const integer = base64ToInt[char]
+
+      continuation = integer & 32
+      value = integer & 31
+      cur += value << shift
+      shift += 5
+
+      if (!continuation) {
+        sign = cur & 1
+        cur >>= 1
+        if (sign) {
+          cur = -cur
+        }
+        result.push(cur)
+        cur = 0
+        shift = 0
+      }
+    }
+
+    const [, , originalLine] = result
+    return originalLine
+  }
+
+  // Split the mappings string and decode each segment
+  function decodeMappings(mappings) {
+    const lines = mappings.split(';')
+    return lines.map((line) => line.split(',').map(decodeVLQ))
+  }
+
+  const map = (
+    await ssrTransform(
+      `\n\n\nimport { foo } from 'vue';`,
+      null,
+      'input.js',
+      'export const a = 1 /* */',
+    )
+  )?.map
+
+  const decodedMappings = decodeMappings(map?.mappings || '')
+  expect(decodedMappings[0]).toEqual([3])
+})
+
 test('overwrite bindings', async () => {
   expect(
     await ssrTransformSimpleCode(

@@ -92,10 +92,12 @@ async function ssrTransformScript(
   const declaredConst = new Set<string>()
 
   // hoist at the start of the file, after the hashbang
-  const hoistIndex = code.match(hashbangRE)?.[0].length ?? 0
+  let hoistIndex = code.match(hashbangRE)?.[0].length ?? 0
 
   function defineImport(
     index: number,
+    start: number,
+    end: number,
     source: string,
     metadata?: DefineImportMetadata,
   ) {
@@ -113,12 +115,22 @@ async function ssrTransformScript(
 
     // There will be an error if the module is called before it is imported,
     // so the module import statement is hoisted to the top
-    s.appendLeft(
-      index,
+    s.update(
+      start,
+      end,
       `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
         source,
       )}${metadataStr});\n`,
     )
+
+    if (start !== index) {
+      s.move(start, end, index)
+    }
+
+    if (index === hoistIndex) {
+      hoistIndex = end
+    }
+
     return importId
   }
 
@@ -136,15 +148,20 @@ async function ssrTransformScript(
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
     if (node.type === 'ImportDeclaration') {
-      const importId = defineImport(hoistIndex, node.source.value as string, {
-        importedNames: node.specifiers
-          .map((s) => {
-            if (s.type === 'ImportSpecifier') return s.imported.name
-            else if (s.type === 'ImportDefaultSpecifier') return 'default'
-          })
-          .filter(isDefined),
-      })
-      s.remove(node.start, node.end)
+      const importId = defineImport(
+        hoistIndex,
+        node.start,
+        node.end,
+        node.source.value as string,
+        {
+          importedNames: node.specifiers
+            .map((s) => {
+              if (s.type === 'ImportSpecifier') return s.imported.name
+              else if (s.type === 'ImportDefaultSpecifier') return 'default'
+            })
+            .filter(isDefined),
+        },
+      )
       for (const spec of node.specifiers) {
         if (spec.type === 'ImportSpecifier') {
           idToImportMap.set(
@@ -188,6 +205,8 @@ async function ssrTransformScript(
           // export { foo, bar } from './foo'
           const importId = defineImport(
             node.start,
+            node.start,
+            node.end,
             node.source.value as string,
             {
               importedNames: node.specifiers.map((s) => s.local.name),
@@ -195,7 +214,7 @@ async function ssrTransformScript(
           )
           for (const spec of node.specifiers) {
             defineExport(
-              node.start,
+              node.end,
               spec.exported.name,
               `${importId}.${spec.local.name}`,
             )
@@ -240,12 +259,16 @@ async function ssrTransformScript(
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      s.remove(node.start, node.end)
-      const importId = defineImport(node.start, node.source.value as string)
+      const importId = defineImport(
+        node.start,
+        node.start,
+        node.end,
+        node.source.value as string,
+      )
       if (node.exported) {
-        defineExport(node.start, node.exported.name, `${importId}`)
+        defineExport(node.end, node.exported.name, `${importId}`)
       } else {
-        s.appendLeft(node.start, `${ssrExportAllKey}(${importId});\n`)
+        s.appendLeft(node.end, `${ssrExportAllKey}(${importId});\n`)
       }
     }
   }
