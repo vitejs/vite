@@ -193,9 +193,11 @@ export interface SharedEnvironmentOptions {
    */
   resolve?: EnvironmentResolveOptions
   /**
-   * Node compatibility
+   * Runtime Compatibility
+   * Temporal options, we should remove these in favor of fine-grained control
    */
   nodeCompatible?: boolean
+  webCompatible?: boolean // was ssr.target === 'webworker'
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -215,13 +217,14 @@ export type ResolvedEnvironmentResolveOptions =
 export type ResolvedEnvironmentOptions = {
   resolve: ResolvedEnvironmentResolveOptions
   nodeCompatible: boolean
+  webCompatible: boolean
   dev: ResolvedDevOptions
   build: ResolvedBuildOptions
 }
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  'nodeCompatible'
+  'nodeCompatible' | 'webCompatible'
 >
 
 export interface UserConfig extends DefaultEnvironmentOptions {
@@ -541,6 +544,7 @@ function resolveEnvironmentOptions(
   return {
     resolve,
     nodeCompatible: config.nodeCompatible ?? environmentName !== 'client',
+    webCompatible: config.webCompatible ?? environmentName === 'client',
     dev: resolveDevOptions(config.dev, resolve.preserveSymlinks),
     build: resolveBuildOptions(
       config.build,
@@ -567,6 +571,7 @@ export function getDefaultResolvedEnvironmentOptions(
   return {
     resolve: config.resolve,
     nodeCompatible: true,
+    webCompatible: false,
     dev: config.dev,
     build: config.build,
   }
@@ -816,6 +821,10 @@ export async function resolveConfig(
       config.ssr?.resolve?.externalConditions
     configEnvironmentsSsr.resolve.externalConditions ??=
       deprecatedSsrResolveExternalConditions // TODO: should we merge?
+
+    if (config.ssr?.target === 'webworker') {
+      configEnvironmentsSsr.webCompatible = true
+    }
   }
 
   // The client and ssr environment configs can't be removed by the user in the config hook
@@ -1421,27 +1430,24 @@ async function bundleConfigFile(
             importer: string,
             isRequire: boolean,
           ) => {
-            return tryNodeResolve(
-              id,
-              importer,
-              {
-                root: path.dirname(fileName),
-                isBuild: true,
-                isProduction: true,
-                preferRelative: false,
-                tryIndex: true,
-                mainFields: [],
-                conditions: [],
-                externalConditions: [],
-                overrideConditions: ['node'],
-                dedupe: [],
-                extensions: DEFAULT_EXTENSIONS,
-                preserveSymlinks: false,
-                packageCache,
-                isRequire,
-              },
-              false,
-            )?.id
+            return tryNodeResolve(id, importer, {
+              root: path.dirname(fileName),
+              isBuild: true,
+              isProduction: true,
+              preferRelative: false,
+              tryIndex: true,
+              mainFields: [],
+              conditions: [],
+              externalConditions: [],
+              overrideConditions: ['node'],
+              dedupe: [],
+              extensions: DEFAULT_EXTENSIONS,
+              preserveSymlinks: false,
+              packageCache,
+              isRequire,
+              webCompatible: false,
+              nodeCompatible: true,
+            })?.id
           }
 
           // externalize bare imports

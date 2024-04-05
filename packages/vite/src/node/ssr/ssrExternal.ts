@@ -48,6 +48,8 @@ export function createIsConfiguredAsSsrExternal(
     isProduction: false,
     isBuild: true,
     conditions: targetConditions,
+    webCompatible: ssr.target === 'webworker', // TODO: back compat
+    nodeCompatible: true,
   }
 
   const isExternalizable = (
@@ -65,7 +67,6 @@ export function createIsConfiguredAsSsrExternal(
         // unresolvable from root (which would be unresolvable from output bundles also)
         config.command === 'build' ? undefined : importer,
         resolveOptions,
-        ssr?.target === 'webworker',
         undefined,
         true,
         // try to externalize, will return undefined or an object without

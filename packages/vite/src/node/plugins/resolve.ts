@@ -110,6 +110,7 @@ interface ResolvePluginOptions {
   preferRelative?: boolean
   isRequire?: boolean
   nodeCompatible?: boolean
+  webCompatible?: boolean
   // #3040
   // when the importer is a ts module,
   // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
@@ -178,11 +179,7 @@ export function resolvePlugin(
     preferRelative = false,
   } = resolveOptions
 
-  const {
-    target: ssrTarget,
-    noExternal: ssrNoExternal,
-    external: ssrExternal,
-  } = ssrConfig ?? {}
+  const { noExternal: ssrNoExternal, external: ssrExternal } = ssrConfig ?? {}
 
   // In unix systems, absolute paths inside root first needs to be checked as an
   // absolute URL (/root/root/path-to-file) resulting in failed checks before falling
@@ -217,8 +214,6 @@ export function resolvePlugin(
         return id
       }
 
-      const targetWeb = !ssr || ssrTarget === 'webworker'
-
       // this is passed by @rollup/plugin-commonjs
       const isRequire: boolean =
         resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
@@ -235,18 +230,14 @@ export function resolvePlugin(
         isRequire,
         ...environmentResolveOptions,
         nodeCompatible: environmentsOptions[environmentName].nodeCompatible,
+        webCompatible: environmentsOptions[environmentName].webCompatible,
         ...resolveOptions, // plugin options + resolve options overrides
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
 
       const depsOptimizerOptions = this.environment?.options.dev.optimizeDeps
 
-      const resolvedImports = resolveSubpathImports(
-        id,
-        importer,
-        options,
-        targetWeb,
-      )
+      const resolvedImports = resolveSubpathImports(id, importer, options)
       if (resolvedImports) {
         id = resolvedImports
 
@@ -331,7 +322,7 @@ export function resolvePlugin(
         }
 
         if (
-          targetWeb &&
+          options.webCompatible &&
           options.mainFields.includes('browser') &&
           (res = tryResolveBrowserMapping(
             fsPath,
@@ -422,7 +413,7 @@ export function resolvePlugin(
         }
 
         if (
-          targetWeb &&
+          options.webCompatible &&
           options.mainFields.includes('browser') &&
           (res = tryResolveBrowserMapping(
             id,
@@ -441,7 +432,6 @@ export function resolvePlugin(
             id,
             importer,
             options,
-            targetWeb,
             depsOptimizer,
             ssr,
             external,
@@ -457,7 +447,7 @@ export function resolvePlugin(
         if (isBuiltin(id)) {
           if (options.nodeCompatible) {
             if (
-              targetWeb &&
+              options.webCompatible &&
               ssrNoExternal === true &&
               // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
               // only if the id is explicitly listed in external, we will externalize it and skip this error.
@@ -529,7 +519,6 @@ function resolveSubpathImports(
   id: string,
   importer: string | undefined,
   options: InternalResolveOptions,
-  targetWeb: boolean,
 ) {
   if (!importer || !id.startsWith(subpathImportsPrefix)) return
   const basedir = path.dirname(importer)
@@ -543,7 +532,6 @@ function resolveSubpathImports(
     pkgData.data,
     idWithoutPostfix,
     options,
-    targetWeb,
     'imports',
   )
 
@@ -722,7 +710,7 @@ function tryCleanFsResolve(
           }
           // path points to a node package
           const pkg = loadPackageData(pkgPath)
-          return resolvePackageEntry(dirPath, pkg, targetWeb, options)
+          return resolvePackageEntry(dirPath, pkg, options)
         }
       } catch (e) {
         // This check is best effort, so if an entry is not found, skip error for now
@@ -766,7 +754,6 @@ export function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
   options: InternalResolveOptionsWithOverrideConditions,
-  targetWeb: boolean,
   depsOptimizer?: DepsOptimizer,
   ssr: boolean = false,
   externalize?: boolean,
@@ -839,14 +826,14 @@ export function tryNodeResolve(
 
   let resolved: string | undefined
   try {
-    resolved = resolveId(unresolvedId, pkg, targetWeb, options)
+    resolved = resolveId(unresolvedId, pkg, options)
   } catch (err) {
     if (!options.tryEsmOnly) {
       throw err
     }
   }
   if (!resolved && options.tryEsmOnly) {
-    resolved = resolveId(unresolvedId, pkg, targetWeb, {
+    resolved = resolveId(unresolvedId, pkg, {
       ...options,
       isRequire: false,
       mainFields: DEFAULT_MAIN_FIELDS,
@@ -1037,12 +1024,11 @@ export async function tryOptimizedResolve(
 export function resolvePackageEntry(
   id: string,
   { dir, data, setResolvedCache, getResolvedCache }: PackageData,
-  targetWeb: boolean,
   options: InternalResolveOptions,
 ): string | undefined {
   const { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id)
 
-  const cached = getResolvedCache('.', targetWeb)
+  const cached = getResolvedCache('.', !!options.webCompatible)
   if (cached) {
     return cached + postfix
   }
@@ -1053,20 +1039,14 @@ export function resolvePackageEntry(
     // resolve exports field with highest priority
     // using https://github.com/lukeed/resolve.exports
     if (data.exports) {
-      entryPoint = resolveExportsOrImports(
-        data,
-        '.',
-        options,
-        targetWeb,
-        'exports',
-      )
+      entryPoint = resolveExportsOrImports(data, '.', options, 'exports')
     }
 
     // fallback to mainFields if still not resolved
     if (!entryPoint) {
       for (const field of options.mainFields) {
         if (field === 'browser') {
-          if (targetWeb) {
+          if (options.webCompatible) {
             entryPoint = tryResolveBrowserEntry(dir, data, options)
             if (entryPoint) {
               break
@@ -1099,7 +1079,7 @@ export function resolvePackageEntry(
         // resolve object browser field in package.json
         const { browser: browserField } = data
         if (
-          targetWeb &&
+          options.webCompatible &&
           options.mainFields.includes('browser') &&
           isObject(browserField)
         ) {
@@ -1121,7 +1101,7 @@ export function resolvePackageEntry(
             resolvedEntryPoint,
           )}${postfix !== '' ? ` (postfix: ${postfix})` : ''}`,
         )
-        setResolvedCache('.', resolvedEntryPoint, targetWeb)
+        setResolvedCache('.', resolvedEntryPoint, !!options.webCompatible)
         return resolvedEntryPoint + postfix
       }
     }
@@ -1145,7 +1125,6 @@ function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
   options: InternalResolveOptionsWithOverrideConditions,
-  targetWeb: boolean,
   type: 'imports' | 'exports',
 ) {
   const additionalConditions = new Set(
@@ -1169,7 +1148,7 @@ function resolveExportsOrImports(
 
   const fn = type === 'imports' ? imports : exports
   const result = fn(pkg, key, {
-    browser: targetWeb && !additionalConditions.has('node'),
+    browser: options.webCompatible && !additionalConditions.has('node'),
     require: options.isRequire && !additionalConditions.has('import'),
     conditions,
   })
@@ -1186,10 +1165,9 @@ function resolveDeepImport(
     dir,
     data,
   }: PackageData,
-  targetWeb: boolean,
   options: InternalResolveOptions,
 ): string | undefined {
-  const cache = getResolvedCache(id, targetWeb)
+  const cache = getResolvedCache(id, !!options.webCompatible)
   if (cache) {
     return cache
   }
@@ -1202,13 +1180,7 @@ function resolveDeepImport(
     if (isObject(exportsField) && !Array.isArray(exportsField)) {
       // resolve without postfix (see #7098)
       const { file, postfix } = splitFileAndPostfix(relativeId)
-      const exportsId = resolveExportsOrImports(
-        data,
-        file,
-        options,
-        targetWeb,
-        'exports',
-      )
+      const exportsId = resolveExportsOrImports(data, file, options, 'exports')
       if (exportsId !== undefined) {
         relativeId = exportsId + postfix
       } else {
@@ -1225,7 +1197,7 @@ function resolveDeepImport(
       )
     }
   } else if (
-    targetWeb &&
+    options.webCompatible &&
     options.mainFields.includes('browser') &&
     isObject(browserField)
   ) {
@@ -1244,13 +1216,13 @@ function resolveDeepImport(
       path.join(dir, relativeId),
       options,
       !exportsField, // try index only if no exports field
-      targetWeb,
+      !!options.webCompatible,
     )
     if (resolved) {
       debug?.(
         `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`,
       )
-      setResolvedCache(id, resolved, targetWeb)
+      setResolvedCache(id, resolved, !!options.webCompatible)
       return resolved
     }
   }
@@ -1278,7 +1250,6 @@ function tryResolveBrowserMapping(
               browserMappedPath,
               importer,
               options,
-              true,
               undefined,
               undefined,
               undefined,

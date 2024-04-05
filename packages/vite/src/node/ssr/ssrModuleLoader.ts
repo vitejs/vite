@@ -287,8 +287,12 @@ async function nodeImport(
     const resolved = tryNodeResolve(
       id,
       importer,
-      { ...resolveOptions, tryEsmOnly: true },
-      false,
+      {
+        ...resolveOptions,
+        tryEsmOnly: true,
+        webCompatible: false,
+        nodeCompatible: true,
+      },
       undefined,
       true,
     )

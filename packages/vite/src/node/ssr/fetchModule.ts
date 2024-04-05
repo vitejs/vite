@@ -63,8 +63,12 @@ export async function fetchModule(
     const resolved = tryNodeResolve(
       url,
       importer,
-      { ...resolveOptions, tryEsmOnly: true },
-      false,
+      {
+        ...resolveOptions,
+        tryEsmOnly: true,
+        webCompatible: environment.options.webCompatible,
+        nodeCompatible: environment.options.nodeCompatible,
+      },
       undefined,
       true,
     )

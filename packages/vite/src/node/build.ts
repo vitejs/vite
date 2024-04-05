@@ -622,6 +622,12 @@ export async function buildEnvironment(
         )
       }
 
+      /**
+       * if (ssr.target === 'webworker') {
+       *   build.rollupOptions.entryFileNames = '[name].js'
+       *   build.rollupOptions.inlineDynamicImports = (typeof input === 'string' || Object.keys(input).length === 1))
+       * }
+       */
       const ssrNodeBuild = ssr && config.ssr.target === 'node'
       const ssrWorkerBuild = ssr && config.ssr.target === 'webworker'
 
