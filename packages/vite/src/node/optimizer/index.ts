@@ -503,6 +503,7 @@ export function runOptimizeDeps(
       // are unique per run
       debug?.(colors.green(`removing cache dir ${processingCacheDir}`))
       try {
+        // When exiting the process, `fsp.rm` may not take effect, so we use `fs.rmSync`
         fs.rmSync(processingCacheDir, { recursive: true, force: true })
       } catch (error) {
         // Ignore errors
