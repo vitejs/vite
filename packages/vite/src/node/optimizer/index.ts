@@ -504,9 +504,12 @@ export function runOptimizeDeps(
       // No need to wait, we can clean up in the background because temp folders
       // are unique per run
       debug?.(colors.green(`removing cache dir ${processingCacheDir}`))
-      fsp.rm(processingCacheDir, { recursive: true, force: true }).catch(() => {
+      try {
+        // When exiting the process, `fsp.rm` may not take effect, so we use `fs.rmSync`
+        fs.rmSync(processingCacheDir, { recursive: true, force: true })
+      } catch (error) {
         // Ignore errors
-      })
+      }
     }
   }
 
