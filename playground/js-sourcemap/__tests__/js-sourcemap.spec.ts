@@ -140,7 +140,7 @@ describe.runIf(isBuild)('build tests', () => {
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
         "ignoreList": [],
-        "mappings": ";;;;;;w+BAAA,OAAO,2BAAuB,EAAC,wBAE/B,QAAQ,IAAI,uBAAuB",
+        "mappings": ";w+BAAA,OAAO,2BAAuB,EAAC,wBAE/B,QAAQ,IAAI,uBAAuB",
         "sources": [
           "../../after-preload-dynamic.js",
         ],
@@ -164,7 +164,7 @@ describe.runIf(isBuild)('build tests', () => {
     const js = findAssetFile(/after-preload-dynamic-hashbang-[-\w]{8}\.js$/)
     expect(js.split('\n').slice(0, 2)).toEqual([
       '#!/usr/bin/env node',
-      'function __vite__mapDeps(indexes) {',
+      expect.stringContaining('const __vite__fileDeps=['),
     ])
   })
 
