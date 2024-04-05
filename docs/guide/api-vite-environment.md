@@ -1,7 +1,15 @@
 # Vite Environment API
 
 :::warning Low-level API
-Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". In Vite 5.3 the API was reviewed and renamed as Vite Environment API. It remains an experimental feature. We are gathering feedback about the revised proposal [here](https://github.com/vitejs/vite/discussions/15774). There will probably be breaking changes to it in Vite 5.4, so make sure to pin the Vite version to `~5.3.0` when using it. This is a low-level API meant for library and framework authors. If your goal is to create an application, make sure to check out the higher-level SSR plugins and tools at [Awesome Vite SSR section](https://github.com/vitejs/awesome-vite#ssr) first.
+Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Vite Environment API. This API will be released in Vite 6. You can already test it in the latest `vite@6.0.0-alpha.x` version.
+
+Resources:
+
+- [PR for the new API docs](https://github.com/vitejs/vite/pull/16089).
+- [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
+- [Environment API branch](https://github.com/vitejs/vite/pull/16129) where the new API is implemented.
+
+Feel free to send us PRs against this branch to fix the issues you discover. Please share with us your feedback as you test the proposal.
 :::
 
 A single Vite dev server can be used to interact with different module execution environments concurrently. We'll use the word environment to refer to a configured Vite processing pipeline that can resolve ids, load, and process source code and is connected to a runtime where the code is executed. The transformed source code is called a module, and the relationships between the modules processed in each environment are kept in a module graph. The code for these modules is sent to the runtimes associated with each environment to be executed. When a module is evaluated, the runtime will request its imported modules triggering the processing of a section of the module graph. In a typical Vite app, an environments will be used for the ES modules served to the client and for the server program that does SSR. An app can do SSR on a Node server, but also on an edge runtime like Workerd. So we can have different types of environments on the same Vite server: browser environments, node environments, and workerd environments to name a few.
