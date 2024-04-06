@@ -280,7 +280,10 @@ async function loadAndTransform(
     // as string
     // only try the fallback if access is allowed, skip for out of root url
     // like /service-worker.js or /api/users
-    if (options.ssr || isFileServingAllowed(file, server)) {
+    if (
+      environment.options.nodeCompatible ||
+      isFileServingAllowed(file, server)
+    ) {
       try {
         code = await fsp.readFile(file, 'utf-8')
         debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
