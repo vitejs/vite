@@ -67,8 +67,8 @@ export function createIsConfiguredAsExternal(
     isProduction: false,
     isBuild: true,
     conditions: targetConditions,
-    webCompatible: config.ssr.target === 'webworker', // TODO: back compat
-    nodeCompatible: true,
+    webCompatible: options.webCompatible,
+    nodeCompatible: options.nodeCompatible,
   }
 
   const isExternalizable = (
