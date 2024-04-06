@@ -255,23 +255,21 @@ async function handleMessage(payload: HMRPayload) {
     }
     case 'full-reload':
       notifyListeners('vite:beforeFullReload', payload)
-      if (hasDocument) {
-        if (payload.path && payload.path.endsWith('.html')) {
-          // if html file is edited, only reload the page if the browser is
-          // currently on that page.
-          const pagePath = decodeURI(location.pathname)
-          const payloadPath = base + payload.path.slice(1)
-          if (
-            pagePath === payloadPath ||
-            payload.path === '/index.html' ||
-            (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
-          ) {
-            pageReload()
-          }
-          return
-        } else {
+      if (hasDocument && payload.path && payload.path.endsWith('.html')) {
+        // if html file is edited, only reload the page if the browser is
+        // currently on that page.
+        const pagePath = decodeURI(location.pathname)
+        const payloadPath = base + payload.path.slice(1)
+        if (
+          pagePath === payloadPath ||
+          payload.path === '/index.html' ||
+          (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
+        ) {
           pageReload()
         }
+        return
+      } else {
+        pageReload()
       }
       break
     case 'prune':
