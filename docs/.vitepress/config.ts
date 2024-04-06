@@ -149,6 +149,10 @@ export default defineConfig({
           {
             items: [
               {
+                text: 'Mastodon',
+                link: mastodon,
+              },
+              {
                 text: 'Twitter',
                 link: 'https://twitter.com/vite_js',
               },
