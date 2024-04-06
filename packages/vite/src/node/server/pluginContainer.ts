@@ -716,7 +716,8 @@ export async function createPluginContainer(
       let id: string | null = null
       const partial: Partial<PartialResolvedId> = {}
       for (const plugin of getSortedPlugins('resolveId')) {
-        if (closed && !ssr) throwClosedServerError()
+        if (closed && environment?.options.dev.recoverable)
+          throwClosedServerError()
         if (!plugin.resolveId) continue
         if (skip?.has(plugin)) continue
 
@@ -779,7 +780,8 @@ export async function createPluginContainer(
       ctx.ssr = !!ssr
       ctx.environment = environment
       for (const plugin of getSortedPlugins('load')) {
-        if (closed && !ssr) throwClosedServerError()
+        if (closed && environment?.options.dev.recoverable)
+          throwClosedServerError()
         if (!plugin.load) continue
         ctx._activePlugin = plugin
         const handler = getHookHandler(plugin.load)
@@ -810,7 +812,8 @@ export async function createPluginContainer(
       ctx.ssr = !!ssr
       ctx.environment = environment
       for (const plugin of getSortedPlugins('transform')) {
-        if (closed && !ssr) throwClosedServerError()
+        if (closed && environment?.options.dev.recoverable)
+          throwClosedServerError()
         if (!plugin.transform) continue
         ctx._activePlugin = plugin
         ctx._activeId = id

@@ -70,7 +70,8 @@ export function transformRequest(
     options = { ...options, ssr: environment.name !== 'client' }
   }
 
-  if (server._restartPromise && !options.ssr) throwClosedServerError()
+  if (server._restartPromise && environment?.options.dev.recoverable)
+    throwClosedServerError()
 
   // We could have a cache per environment instead of the global _pendingRequests
   const cacheKey = `${options.html ? 'html:' : ''}${environment.name}:${url}`
@@ -343,7 +344,8 @@ async function loadAndTransform(
     throw err
   }
 
-  if (server._restartPromise && !ssr) throwClosedServerError()
+  if (server._restartPromise && environment.options.dev.recoverable)
+    throwClosedServerError()
 
   // ensure module in graph after successful load
   mod ??= await moduleGraph._ensureEntryFromUrl(url, undefined, resolved)
@@ -416,7 +418,8 @@ async function loadAndTransform(
     }
   }
 
-  if (server._restartPromise && !ssr) throwClosedServerError()
+  if (server._restartPromise && environment.options.dev.recoverable)
+    throwClosedServerError()
 
   const result =
     ssr && !server.config.experimental.skipSsrTransform

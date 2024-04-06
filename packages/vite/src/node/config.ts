@@ -174,6 +174,14 @@ export interface DevOptions {
   createEnvironment?: (server: ViteDevServer, name: string) => DevEnvironment
 
   /**
+   * For environments that support a full-reload, like the client, we can short-circuit when
+   * restarting the server throwing early to stop processing current files. We avoided this for
+   * SSR requests. Maybe this is no longer needed.
+   * @experimental
+   */
+  recoverable?: boolean
+
+  /**
    * Defaults to true for the client environment and false for others, following node permissive
    * security model.
    * TODO: We need to move at least server.fs.strict to dev options because we want to restrict
@@ -526,6 +534,7 @@ export type ResolvedConfig = Readonly<
 export function resolveDevOptions(
   dev: DevOptions | undefined,
   preserverSymlinks: boolean,
+  environmentName: string | undefined,
 ): ResolvedDevOptions {
   return {
     sourcemap: dev?.sourcemap ?? { js: true },
@@ -542,6 +551,7 @@ export function resolveDevOptions(
       preserverSymlinks,
     ),
     createEnvironment: dev?.createEnvironment,
+    recoverable: dev?.recoverable ?? environmentName === 'client',
   }
 }
 
@@ -556,7 +566,11 @@ function resolveEnvironmentOptions(
     resolve,
     nodeCompatible: config.nodeCompatible ?? environmentName !== 'client',
     webCompatible: config.webCompatible ?? environmentName === 'client',
-    dev: resolveDevOptions(config.dev, resolve.preserveSymlinks),
+    dev: resolveDevOptions(
+      config.dev,
+      resolve.preserveSymlinks,
+      environmentName,
+    ),
     build: resolveBuildOptions(
       config.build,
       logger,
@@ -890,9 +904,12 @@ export async function resolveConfig(
     },
   }
 
+  // TODO: Deprecate and remove resolve, dev and build options at the root level of the resolved config
+
   const resolvedDevOptions = resolveDevOptions(
     config.dev,
     resolvedDefaultEnvironmentResolve.preserveSymlinks,
+    undefined, // default environment
   )
 
   const resolvedBuildOptions = resolveBuildOptions(
