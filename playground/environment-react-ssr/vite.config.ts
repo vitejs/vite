@@ -46,9 +46,6 @@ export default defineConfig((env) => ({
     },
   },
 
-  // [feedback] should preview automatically pick up environments.client.build.outDir?
-  build: env.isPreview ? { outDir: 'dist/client' } : {},
-
   builder: {
     async buildEnvironments(builder, build) {
       await build(builder.environments.client)
