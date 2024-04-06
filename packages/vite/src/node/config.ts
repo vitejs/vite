@@ -192,6 +192,12 @@ export interface SharedEnvironmentOptions {
    * Configure resolver
    */
   resolve?: EnvironmentResolveOptions
+  /**
+   * Runtime Compatibility
+   * Temporal options, we should remove these in favor of fine-grained control
+   */
+  nodeCompatible?: boolean
+  webCompatible?: boolean // was ssr.target === 'webworker'
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -205,9 +211,23 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
   build?: BuildOptions
 }
 
-export type ResolvedEnvironmentOptions = Required<EnvironmentOptions>
+export type ResolvedEnvironmentResolveOptions =
+  Required<EnvironmentResolveOptions>
 
-export interface UserConfig extends EnvironmentOptions {
+export type ResolvedEnvironmentOptions = {
+  resolve: ResolvedEnvironmentResolveOptions
+  nodeCompatible: boolean
+  webCompatible: boolean
+  dev: ResolvedDevOptions
+  build: ResolvedBuildOptions
+}
+
+export type DefaultEnvironmentOptions = Omit<
+  EnvironmentOptions,
+  'nodeCompatible' | 'webCompatible'
+>
+
+export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Project root directory. Can be an absolute path, or a path relative from
    * the location of the config file itself.
@@ -518,12 +538,20 @@ function resolveEnvironmentOptions(
   config: EnvironmentOptions,
   resolvedRoot: string,
   logger: Logger,
+  environmentName: string,
 ): ResolvedEnvironmentOptions {
   const resolve = resolveEnvironmentResolveOptions(config.resolve, logger)
   return {
     resolve,
+    nodeCompatible: config.nodeCompatible ?? environmentName !== 'client',
+    webCompatible: config.webCompatible ?? environmentName === 'client',
     dev: resolveDevOptions(config.dev, resolve.preserveSymlinks),
-    build: resolveBuildOptions(config.build, logger, resolvedRoot),
+    build: resolveBuildOptions(
+      config.build,
+      logger,
+      resolvedRoot,
+      environmentName,
+    ),
   }
 }
 
@@ -542,6 +570,8 @@ export function getDefaultResolvedEnvironmentOptions(
 ): ResolvedEnvironmentOptions {
   return {
     resolve: config.resolve,
+    nodeCompatible: true,
+    webCompatible: false,
     dev: config.dev,
     build: config.build,
   }
@@ -614,6 +644,9 @@ function resolveEnvironmentResolveOptions(
   const resolvedResolve: ResolvedConfig['resolve'] = {
     mainFields: resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
     conditions: resolve?.conditions ?? [],
+    externalConditions: resolve?.externalConditions ?? [],
+    external: resolve?.external ?? [],
+    noExternal: resolve?.noExternal ?? [],
     extensions: resolve?.extensions ?? DEFAULT_EXTENSIONS,
     dedupe: resolve?.dedupe ?? [],
     preserveSymlinks: resolve?.preserveSymlinks ?? false,
@@ -773,8 +806,6 @@ export async function resolveConfig(
   )
 
   // Backward compatibility: merge ssr into environments.ssr.config as defaults
-  // Done: ssr.optimizeDeps, ssr.resolve.conditions
-  // TODO: ssr.resolve.externalConditions, ssr.external, ssr.noExternal
   const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
   const configEnvironmentsSsr = config.environments!.ssr
   if (configEnvironmentsSsr) {
@@ -783,9 +814,17 @@ export async function resolveConfig(
       configEnvironmentsSsr.dev.optimizeDeps ?? {},
       deprecatedSsrOptimizeDepsConfig,
     )
+    // TODO: should we merge here?
     configEnvironmentsSsr.resolve ??= {}
-    const deprecatedSsrResolveConditions = config.ssr?.resolve?.conditions
-    configEnvironmentsSsr.resolve.conditions ??= deprecatedSsrResolveConditions // TODO: should we merge?
+    configEnvironmentsSsr.resolve.conditions ??= config.ssr?.resolve?.conditions
+    configEnvironmentsSsr.resolve.externalConditions ??=
+      config.ssr?.resolve?.externalConditions
+    configEnvironmentsSsr.resolve.external ??= config.ssr?.external
+    configEnvironmentsSsr.resolve.noExternal ??= config.ssr?.noExternal
+
+    if (config.ssr?.target === 'webworker') {
+      configEnvironmentsSsr.webCompatible = true
+    }
   }
 
   // The client and ssr environment configs can't be removed by the user in the config hook
@@ -816,6 +855,7 @@ export async function resolveConfig(
       config.environments[name],
       resolvedRoot,
       logger,
+      name,
     )
   }
 
@@ -848,18 +888,23 @@ export async function resolveConfig(
     config.build,
     logger,
     resolvedRoot,
+    undefined, // default environment
   )
 
-  // Backward compatibility: merge environments.ssr.dev.optimizeDeps back into ssr.optimizeDeps
+  // Backward compatibility: merge config.environments.ssr back into config.ssr
+  // so ecosystem SSR plugins continue to work if only environments.ssr is configured
   const patchedConfigSsr = {
     ...config.ssr,
+    external: resolvedEnvironments.ssr?.resolve.external,
+    noExternal: resolvedEnvironments.ssr?.resolve.noExternal,
     optimizeDeps: mergeConfig(
-      resolvedEnvironments.ssr?.dev?.optimizeDeps ?? {},
       config.ssr?.optimizeDeps ?? {},
+      resolvedEnvironments.ssr?.dev?.optimizeDeps ?? {},
     ),
     resolve: {
-      conditions: resolvedEnvironments.ssr?.resolve.conditions,
       ...config.ssr?.resolve,
+      conditions: resolvedEnvironments.ssr?.resolve.conditions,
+      externalConditions: resolvedEnvironments.ssr?.resolve.externalConditions,
     },
   }
   const ssr = resolveSSROptions(
@@ -921,58 +966,6 @@ export async function resolveConfig(
     (!Array.isArray(config.assetsInclude) || config.assetsInclude.length)
       ? createFilter(config.assetsInclude)
       : () => false
-
-  // create an internal resolver to be used in special scenarios, e.g.
-  // optimizer & handling css @imports
-  const createResolver: ResolvedConfig['createResolver'] = (options) => {
-    let aliasContainer: PluginContainer | undefined
-    let resolverContainer: PluginContainer | undefined
-    // The scanner only runs for the browser environment
-    async function resolve(
-      id: string,
-      importer?: string,
-      aliasOnly?: boolean,
-      ssr?: boolean,
-    ): Promise<PartialResolvedId | null> {
-      let container: PluginContainer
-      if (aliasOnly) {
-        container =
-          aliasContainer ||
-          (aliasContainer = await createPluginContainer({
-            ...resolved,
-            plugins: [aliasPlugin({ entries: resolved.resolve.alias })],
-          }))
-      } else {
-        container =
-          resolverContainer ||
-          (resolverContainer = await createPluginContainer({
-            ...resolved,
-            plugins: [
-              aliasPlugin({ entries: resolved.resolve.alias }),
-              resolvePlugin({
-                ...resolved.resolve,
-                root: resolvedRoot,
-                isProduction,
-                isBuild: command === 'build',
-                ssrConfig: resolved.ssr,
-                asSrc: true,
-                preferRelative: false,
-                tryIndex: true,
-                ...options,
-                idOnly: true,
-                fsUtils: getFsUtils(resolved),
-              }),
-            ],
-          }))
-      }
-      return await container.resolveId(id, importer, {
-        ssr,
-        scan: options?.scan,
-      })
-    }
-    return async (id, importer, aliasOnly, ssr) =>
-      (await resolve(id, importer, aliasOnly, ssr))?.id
-  }
 
   const { publicDir } = config
   const resolvedPublicDir =
@@ -1103,7 +1096,6 @@ export async function resolveConfig(
     },
     logger,
     packageCache,
-    createResolver,
     worker: resolvedWorkerOptions,
     appType: config.appType ?? 'spa',
     experimental: {
@@ -1124,6 +1116,63 @@ export async function resolveConfig(
 
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
+
+    // createResolver is deprecated. It only works for the client and ssr
+    // environments. The `aliasOnly` option is also not being used any more
+    // Plugins should move to createIdResolver(environment) instead.
+    // create an internal resolver to be used in special scenarios, e.g.
+    // optimizer & handling css @imports
+    createResolver(options) {
+      let aliasContainer: PluginContainer | undefined
+      let resolverContainer: PluginContainer | undefined
+      const environments = this.environments ?? resolvedEnvironments
+      async function resolve(
+        id: string,
+        importer?: string,
+        aliasOnly?: boolean,
+        ssr?: boolean,
+      ): Promise<PartialResolvedId | null> {
+        let container: PluginContainer
+        if (aliasOnly) {
+          container =
+            aliasContainer ||
+            (aliasContainer = await createPluginContainer({
+              ...resolved,
+              plugins: [aliasPlugin({ entries: resolved.resolve.alias })],
+            }))
+        } else {
+          container =
+            resolverContainer ||
+            (resolverContainer = await createPluginContainer({
+              ...resolved,
+              plugins: [
+                aliasPlugin({ entries: resolved.resolve.alias }),
+                resolvePlugin(
+                  {
+                    ...resolved.resolve,
+                    root: resolvedRoot,
+                    isProduction,
+                    isBuild: command === 'build',
+                    asSrc: true,
+                    preferRelative: false,
+                    tryIndex: true,
+                    ...options,
+                    idOnly: true,
+                    fsUtils: getFsUtils(resolved),
+                  },
+                  environments,
+                ),
+              ],
+            }))
+        }
+        return await container.resolveId(id, importer, {
+          ssr,
+          scan: options?.scan,
+        })
+      }
+      return async (id, importer, aliasOnly, ssr) =>
+        (await resolve(id, importer, aliasOnly, ssr))?.id
+    },
   }
   resolved = {
     ...config,
@@ -1383,26 +1432,26 @@ async function bundleConfigFile(
             importer: string,
             isRequire: boolean,
           ) => {
-            return tryNodeResolve(
-              id,
-              importer,
-              {
-                root: path.dirname(fileName),
-                isBuild: true,
-                isProduction: true,
-                preferRelative: false,
-                tryIndex: true,
-                mainFields: [],
-                conditions: [],
-                overrideConditions: ['node'],
-                dedupe: [],
-                extensions: DEFAULT_EXTENSIONS,
-                preserveSymlinks: false,
-                packageCache,
-                isRequire,
-              },
-              false,
-            )?.id
+            return tryNodeResolve(id, importer, {
+              root: path.dirname(fileName),
+              isBuild: true,
+              isProduction: true,
+              preferRelative: false,
+              tryIndex: true,
+              mainFields: [],
+              conditions: [],
+              externalConditions: [],
+              external: [],
+              noExternal: [],
+              overrideConditions: ['node'],
+              dedupe: [],
+              extensions: DEFAULT_EXTENSIONS,
+              preserveSymlinks: false,
+              packageCache,
+              isRequire,
+              webCompatible: false,
+              nodeCompatible: true,
+            })?.id
           }
 
           // externalize bare imports

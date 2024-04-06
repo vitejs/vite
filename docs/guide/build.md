@@ -47,21 +47,7 @@ For example, you can specify multiple Rollup outputs with plugins that are only 
 
 ## Chunking Strategy
 
-You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/configuration-options/#output-manualchunks)). Until Vite 2.8, the default chunking strategy divided the chunks into `index` and `vendor`. It is a good strategy for some SPAs, but it is hard to provide a general solution for every Vite target use case. From Vite 2.9, `manualChunks` is no longer modified by default. You can continue to use the Split Vendor Chunk strategy by adding the `splitVendorChunkPlugin` in your config file:
-
-```js
-// vite.config.js
-import { splitVendorChunkPlugin } from 'vite'
-export default defineConfig({
-  plugins: [splitVendorChunkPlugin()],
-})
-```
-
-This strategy is also provided as a `splitVendorChunk({ cache: SplitVendorChunkCache })` factory, in case composition with custom logic is needed. `cache.reset()` needs to be called at `buildStart` for build watch mode to work correctly in this case.
-
-::: warning
-You should use `build.rollupOptions.output.manualChunks` function form when using this plugin. If the object form is used, the plugin won't have any effect.
-:::
+You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/configuration-options/#output-manualchunks)). If you use a framework, refer to their documentation for configuring how chunks are splitted.
 
 ## Load Error Handling
 

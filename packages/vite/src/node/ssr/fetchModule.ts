@@ -43,12 +43,15 @@ export async function fetchModule(
       root,
       ssr,
     } = environment.config
-    const overrideConditions = ssr.resolve?.externalConditions || []
+    const externalConditions = ssr.resolve?.externalConditions || []
 
     const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
       mainFields: ['main'],
       conditions: [],
-      overrideConditions: [...overrideConditions, 'production', 'development'],
+      externalConditions,
+      external: [], // TODO, should it be ssr.resolve.external?
+      noExternal: [],
+      overrideConditions: [...externalConditions, 'production', 'development'],
       extensions: ['.js', '.cjs', '.json'],
       dedupe,
       preserveSymlinks,
@@ -62,8 +65,12 @@ export async function fetchModule(
     const resolved = tryNodeResolve(
       url,
       importer,
-      { ...resolveOptions, tryEsmOnly: true },
-      false,
+      {
+        ...resolveOptions,
+        tryEsmOnly: true,
+        webCompatible: environment.options.webCompatible,
+        nodeCompatible: environment.options.nodeCompatible,
+      },
       undefined,
       true,
     )

@@ -55,8 +55,8 @@ import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { DevEnvironment } from '../server/environment'
-import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
-import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
+import { shouldExternalize } from '../external'
+import { optimizedDepNeedsInterop } from '../optimizer'
 import {
   cleanUrl,
   unwrapId,
@@ -243,7 +243,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         this.error(message, showCodeFrame ? e.idx : undefined)
       }
 
-      const depsOptimizer = getDepsOptimizer(config, ssr)
+      const depsOptimizer = environment.depsOptimizer
 
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
@@ -315,6 +315,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
+          moduleGraph._hasResolveFailedErrorModules.add(importerModule)
           return this.error(
             `Failed to resolve import "${url}" from "${normalizePath(
               path.relative(process.cwd(), importerFile),
@@ -492,7 +493,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             // skip ssr external
             if (ssr && !matchAlias(specifier)) {
-              if (shouldExternalizeForSSR(specifier, importer, config)) {
+              if (shouldExternalize(environment, specifier, importer)) {
                 return
               }
               if (isBuiltin(specifier)) {
@@ -546,10 +547,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
                 const needsInterop = await optimizedDepNeedsInterop(
+                  environment,
                   depsOptimizer.metadata,
                   file,
-                  config,
-                  ssr,
                 )
 
                 if (needsInterop === undefined) {

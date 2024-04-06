@@ -131,12 +131,15 @@ async function instantiateModule(
     ssr,
   } = server.config
 
-  const overrideConditions = ssr.resolve?.externalConditions || []
+  const externalConditions = ssr.resolve?.externalConditions || []
 
   const resolveOptions: NodeImportResolveOptions = {
     mainFields: ['main'],
     conditions: [],
-    overrideConditions: [...overrideConditions, 'production', 'development'],
+    externalConditions,
+    external: [], // TODO, should it be ssr.resolve.external?
+    noExternal: [],
+    overrideConditions: [...externalConditions, 'production', 'development'],
     extensions: ['.js', '.cjs', '.json'],
     dedupe,
     preserveSymlinks,
@@ -286,8 +289,12 @@ async function nodeImport(
     const resolved = tryNodeResolve(
       id,
       importer,
-      { ...resolveOptions, tryEsmOnly: true },
-      false,
+      {
+        ...resolveOptions,
+        tryEsmOnly: true,
+        webCompatible: false,
+        nodeCompatible: true,
+      },
       undefined,
       true,
     )

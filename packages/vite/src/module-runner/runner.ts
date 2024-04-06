@@ -39,6 +39,7 @@ import {
 import { silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
+import type { RunnerTransport } from './runnerTransport'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -61,6 +62,7 @@ export class ModuleRunner {
       )
     },
   })
+  private transport: RunnerTransport
 
   private _destroyed = false
   private _resetSourceMapSupport?: () => void
@@ -71,6 +73,7 @@ export class ModuleRunner {
     private debug?: ModuleRunnerDebugger,
   ) {
     this.moduleCache = options.moduleCache ?? new ModuleCacheMap(options.root)
+    this.transport = options.transport
     if (typeof options.hmr === 'object') {
       this.hmrClient = new HMRClient(
         options.hmr.logger === false
@@ -255,7 +258,7 @@ export class ModuleRunner {
     // fast return for established externalized patterns
     const fetchedModule = id.startsWith('data:')
       ? ({ externalize: id, type: 'builtin' } satisfies FetchResult)
-      : await this.options.transport.fetchModule(id, importer)
+      : await this.transport.fetchModule(id, importer)
     // base moduleId on "file" and not on id
     // if `import(variable)` is called it's possible that it doesn't have an extension for example
     // if we used id for that, it's possible to have a duplicated module
@@ -365,8 +368,7 @@ export class ModuleRunner {
             throw new Error(`[module runner] HMR client was destroyed.`)
           }
           this.debug?.('[module runner] creating hmr context for', moduleId)
-          // TODO: the environmnet passed to HMRContext shouldn't be harcoded here
-          hotContext ||= new HMRContext(this.hmrClient, moduleId, 'ssr')
+          hotContext ||= new HMRContext(this.hmrClient, moduleId)
           return hotContext
         },
         set: (value) => {
