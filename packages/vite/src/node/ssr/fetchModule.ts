@@ -58,7 +58,6 @@ export async function fetchModule(
       isBuild: false,
       isProduction,
       root,
-      ssrConfig: ssr,
       packageCache: environment.config.packageCache,
     }
 

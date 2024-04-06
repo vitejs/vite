@@ -60,7 +60,6 @@ export async function resolvePlugins(
         isProduction: config.isProduction,
         isBuild,
         packageCache: config.packageCache,
-        ssrConfig: config.ssr,
         asSrc: true,
         fsUtils: getFsUtils(config),
         optimizeDeps: true,

@@ -16,7 +16,6 @@ export function createOptimizeDepsIncludeResolver(
     asSrc: false,
     scan: true,
     ssrOptimizeCheck: environment.name !== 'client', // TODO:depsOptimizer
-    ssrConfig: config.ssr,
     packageCache: new Map(),
   })
   return async (id: string) => {

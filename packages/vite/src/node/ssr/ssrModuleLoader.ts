@@ -146,7 +146,6 @@ async function instantiateModule(
     isBuild: false,
     isProduction,
     root,
-    ssrConfig: ssr,
     legacyProxySsrExternalModules:
       server.config.legacy?.proxySsrExternalModules,
     packageCache: server.config.packageCache,
