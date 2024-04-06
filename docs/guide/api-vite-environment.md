@@ -321,22 +321,23 @@ Environments are explicitely configured with the `environments` config option.
 
 ```js
 export default {
-  environments: [
-    {
-      name: 'client',
+  environments: {
+    client: {
       resolve: {
         conditions: [], // configure the Client environment
       },
     },
-    {
-      name: 'ssr',
-      optimizeDeps: {}, // configure the SSR environment
+    ssr: {
+      dev: {
+        optimizeDeps: {}, // configure the SSR environment
+      },
     },
-    {
-      name: 'rsc',
-      noExternal: true, // configure a custom environment
+    rsc: {
+      resolve: {
+        noExternal: true, // configure a custom environment
+      },
     },
-  ],
+  },
 }
 ```
 
