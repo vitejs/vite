@@ -19,7 +19,7 @@ const profileIndex = process.argv.indexOf('--profile')
 
 if (debugIndex > 0) {
   let value = process.argv[debugIndex + 1]
-  if (!value || value.startsWith('-')) {
+  if (!value || value.startsWith('-') || debugIndex + 1 === filterIndex) {
     value = 'vite:*'
   } else {
     // support debugging multiple flags with comma-separated list
