@@ -778,16 +778,18 @@ export async function _createServer(
     ((server: ViteDevServer, name: string) =>
       new DevEnvironment(server, name, { hot: ws }))
 
-  environments.client = client_createEnvironment(server, 'client')
+  environments.client = await client_createEnvironment(server, 'client')
 
   const ssr_createEnvironment =
     config.environments.ssr?.dev?.createEnvironment ??
     ((server: ViteDevServer, name: string) =>
       createNodeDevEnvironment(server, name, { hot: ssrHotChannel }))
 
-  environments.ssr = ssr_createEnvironment(server, 'ssr')
+  environments.ssr = await ssr_createEnvironment(server, 'ssr')
 
-  Object.entries(config.environments).forEach(([name, EnvironmentOptions]) => {
+  for (const [name, EnvironmentOptions] of Object.entries(
+    config.environments,
+  )) {
     // TODO: move client and ssr inside the loop?
     if (name !== 'client' && name !== 'ssr') {
       const createEnvironment =
@@ -796,9 +798,9 @@ export async function _createServer(
           new DevEnvironment(server, name, {
             hot: ws, // TODO: what should we use here?
           }))
-      environments[name] = createEnvironment(server, name)
+      environments[name] = await createEnvironment(server, name)
     }
-  })
+  }
 
   if (!middlewareMode) {
     exitProcess = async () => {

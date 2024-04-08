@@ -177,7 +177,10 @@ export interface DevEnvironmentOptions {
   /**
    * create the Dev Environment instance
    */
-  createEnvironment?: (server: ViteDevServer, name: string) => DevEnvironment
+  createEnvironment?: (
+    server: ViteDevServer,
+    name: string,
+  ) => Promise<DevEnvironment> | DevEnvironment
 
   /**
    * For environments that support a full-reload, like the client, we can short-circuit when
@@ -204,7 +207,10 @@ export type ResolvedDevEnvironmentOptions = Required<
 > & {
   // TODO: Should we set the default at config time? For now, it is defined on server init
   createEnvironment:
-    | ((server: ViteDevServer, name: string) => DevEnvironment)
+    | ((
+        server: ViteDevServer,
+        name: string,
+      ) => Promise<DevEnvironment> | DevEnvironment)
     | undefined
 }
 

@@ -255,7 +255,10 @@ export interface BuildEnvironmentOptions {
   /**
    * create the Build Environment instance
    */
-  createEnvironment?: (builder: ViteBuilder, name: string) => BuildEnvironment
+  createEnvironment?: (
+    builder: ViteBuilder,
+    name: string,
+  ) => Promise<BuildEnvironment> | BuildEnvironment
 }
 
 export interface BuildOptions extends BuildEnvironmentOptions {
@@ -1506,7 +1509,7 @@ export async function createViteBuilder(
     const environmentConfig = await resolveConfig(environmentOptions)
     const environmentBuilder = { ...builder, config: environmentConfig }
 
-    const environment = createEnvironment(environmentBuilder, name)
+    const environment = await createEnvironment(environmentBuilder, name)
     environments[name] = environment
   }
 
