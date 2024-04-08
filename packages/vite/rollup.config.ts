@@ -245,7 +245,7 @@ export default (commandLineArgs: any): RollupOptions[] => {
   ])
 }
 
-// #region ======== Plugins ========
+// #region Plugins
 
 interface ShimOptions {
   src?: string
