@@ -85,7 +85,8 @@ async function instantiateModule(
   urlStack: string[] = [],
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
-  const moduleGraph = server.environments.ssr.moduleGraph
+  const environment = server.environments.ssr
+  const moduleGraph = environment.moduleGraph
   const mod = await moduleGraph.ensureEntryFromUrl(url)
 
   if (mod.ssrError) {
@@ -96,7 +97,7 @@ async function instantiateModule(
     return mod.ssrModule
   }
   const result =
-    mod.transformResult || (await server.environments.ssr.transformRequest(url))
+    mod.transformResult || (await environment.transformRequest(url))
   if (!result) {
     // TODO more info? is this even necessary?
     throw new Error(`failed to load module for ssr: ${url}`)
@@ -124,14 +125,10 @@ async function instantiateModule(
   urlStack = urlStack.concat(url)
   const isCircular = (url: string) => urlStack.includes(url)
 
-  const {
-    isProduction,
-    resolve: { dedupe, preserveSymlinks },
-    root,
-    ssr,
-  } = server.config
+  const { isProduction, root } = server.config
 
-  const externalConditions = ssr.resolve?.externalConditions || []
+  const { externalConditions, dedupe, preserveSymlinks } =
+    environment.options.resolve
 
   const resolveOptions: NodeImportResolveOptions = {
     mainFields: ['main'],

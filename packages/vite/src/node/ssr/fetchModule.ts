@@ -37,19 +37,15 @@ export async function fetchModule(
   }
 
   if (url[0] !== '.' && url[0] !== '/') {
-    const {
-      isProduction,
-      resolve: { dedupe, preserveSymlinks },
-      root,
-      ssr,
-    } = environment.config
-    const externalConditions = ssr.resolve?.externalConditions || []
+    const { isProduction, root } = environment.config
+    const { externalConditions, dedupe, preserveSymlinks } =
+      environment.options.resolve
 
     const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
       mainFields: ['main'],
       conditions: [],
       externalConditions,
-      external: [], // TODO, should it be ssr.resolve.external?
+      external: [], // TODO, should it be environment.options.resolve.external?
       noExternal: [],
       overrideConditions: [...externalConditions, 'production', 'development'],
       extensions: ['.js', '.cjs', '.json'],
