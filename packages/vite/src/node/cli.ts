@@ -4,7 +4,7 @@ import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import { VERSION } from './constants'
-import type { BuildOptions } from './build'
+import type { BuildEnvironmentOptions } from './build'
 import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
@@ -287,12 +287,12 @@ cli
   .action(
     async (
       root: string,
-      options: BuildOptions & BuilderCLIOptions & GlobalCLIOptions,
+      options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
     ) => {
       filterDuplicateOptions(options)
       const { build, createViteBuilder } = await import('./build')
 
-      const buildOptions: BuildOptions = cleanGlobalCLIOptions(
+      const buildOptions: BuildEnvironmentOptions = cleanGlobalCLIOptions(
         cleanBuilderCLIOptions(options),
       )
 

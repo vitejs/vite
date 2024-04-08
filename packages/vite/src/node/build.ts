@@ -65,7 +65,7 @@ import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
 import { Environment } from './environment'
 
-export interface BuildOptions {
+export interface BuildEnvironmentOptions {
   /**
    * Compatibility transform target. The transform is performed with esbuild
    * and the lowest supported target is es2015/es6. Note this only handles
@@ -211,13 +211,6 @@ export interface BuildOptions {
    */
   manifest?: boolean | string
   /**
-   * Build in library mode. The value should be the global name of the lib in
-   * UMD mode. This will produce esm + cjs + umd bundle formats with default
-   * configurations that are suitable for distributing libraries.
-   * @default false
-   */
-  lib?: LibraryOptions | false
-  /**
    * Produce SSR oriented build. Note this requires specifying SSR entry via
    * `rollupOptions.input`.
    * @default false
@@ -263,6 +256,16 @@ export interface BuildOptions {
    * create the Build Environment instance
    */
   createEnvironment?: (builder: ViteBuilder, name: string) => BuildEnvironment
+}
+
+export interface BuildOptions extends BuildEnvironmentOptions {
+  /**
+   * Build in library mode. The value should be the global name of the lib in
+   * UMD mode. This will produce esm + cjs + umd bundle formats with default
+   * configurations that are suitable for distributing libraries.
+   * @default false
+   */
+  lib?: LibraryOptions | false
 }
 
 export interface LibraryOptions {
@@ -317,53 +320,72 @@ export type ResolveModulePreloadDependenciesFn = (
   },
 ) => string[]
 
+export interface ResolvedBuildEnvironmentOptions
+  extends Required<Omit<BuildEnvironmentOptions, 'polyfillModulePreload'>> {
+  modulePreload: false | ResolvedModulePreloadOptions
+}
+
 export interface ResolvedBuildOptions
   extends Required<Omit<BuildOptions, 'polyfillModulePreload'>> {
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
 export function resolveBuildOptions(
-  raw: BuildOptions | undefined,
+  raw: BuildOptions,
+  logger: Logger,
+  root: string,
+): ResolvedBuildOptions {
+  const libMode = raw.lib ?? false
+  const buildOptions = resolveBuildEnvironmentOptions(
+    raw,
+    logger,
+    root,
+    undefined,
+    libMode,
+  )
+  return { ...buildOptions, lib: libMode }
+}
+
+export function resolveBuildEnvironmentOptions(
+  raw: BuildEnvironmentOptions,
   logger: Logger,
   root: string,
   environmentName: string | undefined,
-): ResolvedBuildOptions {
+  libMode: false | LibraryOptions = false,
+): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
-  if (raw) {
-    const { polyfillModulePreload, ...rest } = raw
-    raw = rest
-    if (deprecatedPolyfillModulePreload !== undefined) {
-      logger.warn(
-        'polyfillModulePreload is deprecated. Use modulePreload.polyfill instead.',
-      )
-    }
-    if (
-      deprecatedPolyfillModulePreload === false &&
-      raw.modulePreload === undefined
-    ) {
-      raw.modulePreload = { polyfill: false }
-    }
+  const { polyfillModulePreload, ...rest } = raw
+  raw = rest
+  if (deprecatedPolyfillModulePreload !== undefined) {
+    logger.warn(
+      'polyfillModulePreload is deprecated. Use modulePreload.polyfill instead.',
+    )
+  }
+  if (
+    deprecatedPolyfillModulePreload === false &&
+    raw.modulePreload === undefined
+  ) {
+    raw.modulePreload = { polyfill: false }
   }
 
-  const modulePreload = raw?.modulePreload
+  const modulePreload = raw.modulePreload
   const defaultModulePreload = {
     polyfill: true,
   }
 
-  const defaultBuildOptions: BuildOptions = {
+  const defaultBuildEnvironmentOptions: BuildEnvironmentOptions = {
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
-    cssCodeSplit: !raw?.lib,
+    cssCodeSplit: !libMode,
     sourcemap: false,
     rollupOptions: {},
-    minify: raw?.ssr ? false : 'esbuild',
+    minify: raw.ssr ? false : 'esbuild',
     terserOptions: {},
     write: true,
     emptyOutDir: null,
     copyPublicDir: true,
     manifest: false,
-    lib: false,
     ssr: false,
     ssrManifest: false,
     ssrEmitAssets: false,
@@ -373,24 +395,24 @@ export function resolveBuildOptions(
     watch: null,
   }
 
-  const userBuildOptions = raw
-    ? mergeConfig(defaultBuildOptions, raw)
-    : defaultBuildOptions
+  const userBuildEnvironmentOptions = raw
+    ? mergeConfig(defaultBuildEnvironmentOptions, raw)
+    : defaultBuildEnvironmentOptions
 
   // @ts-expect-error Fallback options instead of merging
-  const resolved: ResolvedBuildOptions = {
+  const resolved: ResolvedBuildEnvironmentOptions = {
     target: 'modules',
     cssTarget: false,
-    ...userBuildOptions,
+    ...userBuildEnvironmentOptions,
     commonjsOptions: {
       include: [/node_modules/],
       extensions: ['.js', '.cjs'],
-      ...userBuildOptions.commonjsOptions,
+      ...userBuildEnvironmentOptions.commonjsOptions,
     },
     dynamicImportVarsOptions: {
       warnOnError: true,
       exclude: [/node_modules/],
-      ...userBuildOptions.dynamicImportVarsOptions,
+      ...userBuildEnvironmentOptions.dynamicImportVarsOptions,
     },
     // Resolve to false | object
     modulePreload:
@@ -489,22 +511,37 @@ export async function build(
     {},
     { ...inlineConfig, plugins: () => inlineConfig.plugins ?? [] },
   )
-  const ssr = !!builder.config.build.ssr
-  const environment = builder.environments[ssr ? 'ssr' : 'client']
-  return builder.build(environment)
+
+  if (builder.config.build.lib) {
+    // TODO: temporal workaround. Should we support `libraries: Record<string, LibraryOptions & EnvironmentOptions>`
+    // to build multiple libraries and be able to target different environments (for example for a Svelte components
+    // library generating both client and SSR builds)?
+    return buildEnvironment(
+      builder.config,
+      builder.environments.client,
+      builder.config.build.lib,
+    )
+  } else {
+    const ssr = !!builder.config.build.ssr
+    const environment = builder.environments[ssr ? 'ssr' : 'client']
+    return builder.build(environment)
+  }
 }
 
 function resolveConfigToBuild(inlineConfig: InlineConfig = {}) {
   return resolveConfig(inlineConfig, 'build', 'production', 'production')
 }
 
+/**
+ * Build an App environment, or a App library (if librayOptions is provided)
+ **/
 export async function buildEnvironment(
   config: ResolvedConfig,
   environment: BuildEnvironment,
+  libOptions: LibraryOptions | false = false,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const options = config.build
   const ssr = environment.name !== 'client'
-  const libOptions = options.lib
 
   config.logger.info(
     colors.cyan(
@@ -623,6 +660,7 @@ export async function buildEnvironment(
       }
 
       /**
+       * TODO:
        * if (ssr.target === 'webworker') {
        *   build.rollupOptions.entryFileNames = '[name].js'
        *   build.rollupOptions.inlineDynamicImports = (typeof input === 'string' || Object.keys(input).length === 1))

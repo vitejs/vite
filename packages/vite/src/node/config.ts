@@ -22,13 +22,19 @@ import {
 } from './constants'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from './plugin'
 import type {
+  BuildEnvironmentOptions,
   BuildOptions,
   BuilderOptions,
   RenderBuiltAssetUrl,
+  ResolvedBuildEnvironmentOptions,
   ResolvedBuildOptions,
   ResolvedBuilderOptions,
 } from './build'
-import { resolveBuildOptions, resolveBuilderOptions } from './build'
+import {
+  resolveBuildEnvironmentOptions,
+  resolveBuildOptions,
+  resolveBuilderOptions,
+} from './build'
 import type {
   ResolvedServerOptions,
   ServerOptions,
@@ -135,7 +141,7 @@ export type PluginOption =
   | PluginOption[]
   | Promise<Plugin | false | null | undefined | PluginOption[]>
 
-export interface DevOptions {
+export interface DevEnvironmentOptions {
   /**
    * The files to be pre-transformed. Supports glob patterns.
    */
@@ -193,8 +199,8 @@ export interface DevOptions {
   // fs: { strict?: boolean, allow, deny }
 }
 
-export type ResolvedDevOptions = Required<
-  Omit<DevOptions, 'createEnvironment'>
+export type ResolvedDevEnvironmentOptions = Required<
+  Omit<DevEnvironmentOptions, 'createEnvironment'>
 > & {
   // TODO: Should we set the default at config time? For now, it is defined on server init
   createEnvironment:
@@ -223,11 +229,11 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
   /**
    * Dev specific options
    */
-  dev?: DevOptions
+  dev?: DevEnvironmentOptions
   /**
    * Build specific options
    */
-  build?: BuildOptions
+  build?: BuildEnvironmentOptions
 }
 
 export type ResolvedEnvironmentResolveOptions =
@@ -237,14 +243,17 @@ export type ResolvedEnvironmentOptions = {
   resolve: ResolvedEnvironmentResolveOptions
   nodeCompatible: boolean
   webCompatible: boolean
-  dev: ResolvedDevOptions
-  build: ResolvedBuildOptions
+  dev: ResolvedDevEnvironmentOptions
+  build: ResolvedBuildEnvironmentOptions
 }
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  'nodeCompatible' | 'webCompatible'
->
+  'build' | 'nodeCompatible' | 'webCompatible'
+> & {
+  // Includes lib mode support
+  build?: BuildOptions
+}
 
 export interface UserConfig extends DefaultEnvironmentOptions {
   /**
@@ -513,7 +522,7 @@ export type ResolvedConfig = Readonly<
     css: ResolvedCSSOptions
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
-    dev: ResolvedDevOptions
+    dev: ResolvedDevEnvironmentOptions
     builder: ResolvedBuilderOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
@@ -531,11 +540,11 @@ export type ResolvedConfig = Readonly<
   } & PluginHookUtils
 >
 
-export function resolveDevOptions(
-  dev: DevOptions | undefined,
+export function resolveDevEnvironmentOptions(
+  dev: DevEnvironmentOptions | undefined,
   preserverSymlinks: boolean,
   environmentName: string | undefined,
-): ResolvedDevOptions {
+): ResolvedDevEnvironmentOptions {
   return {
     sourcemap: dev?.sourcemap ?? { js: true },
     sourcemapIgnoreList:
@@ -566,13 +575,13 @@ function resolveEnvironmentOptions(
     resolve,
     nodeCompatible: config.nodeCompatible ?? environmentName !== 'client',
     webCompatible: config.webCompatible ?? environmentName === 'client',
-    dev: resolveDevOptions(
+    dev: resolveDevEnvironmentOptions(
       config.dev,
       resolve.preserveSymlinks,
       environmentName,
     ),
-    build: resolveBuildOptions(
-      config.build,
+    build: resolveBuildEnvironmentOptions(
+      config.build ?? {},
       logger,
       resolvedRoot,
       environmentName,
@@ -906,17 +915,16 @@ export async function resolveConfig(
 
   // TODO: Deprecate and remove resolve, dev and build options at the root level of the resolved config
 
-  const resolvedDevOptions = resolveDevOptions(
+  const resolvedDevEnvironmentOptions = resolveDevEnvironmentOptions(
     config.dev,
     resolvedDefaultEnvironmentResolve.preserveSymlinks,
     undefined, // default environment
   )
 
   const resolvedBuildOptions = resolveBuildOptions(
-    config.build,
+    config.build ?? {},
     logger,
     resolvedRoot,
-    undefined, // default environment
   )
 
   // Backward compatibility: merge config.environments.ssr back into config.ssr
@@ -1134,12 +1142,13 @@ export async function resolveConfig(
 
     // Backward compatibility, users should use environment.config.dev.optimizeDeps
     optimizeDeps: backwardCompatibleOptimizeDeps,
+    ssr,
 
+    // TODO: deprecate and later remove from ResolvedConfig?
     resolve: resolvedDefaultEnvironmentResolve,
-    dev: resolvedDevOptions,
+    dev: resolvedDevEnvironmentOptions,
     build: resolvedBuildOptions,
 
-    ssr,
     environments: resolvedEnvironments,
 
     getSortedPlugins: undefined!,
@@ -1238,20 +1247,6 @@ export async function resolveConfig(
   })
 
   // validate config
-
-  if (
-    config.build?.terserOptions &&
-    config.build.minify &&
-    config.build.minify !== 'terser'
-  ) {
-    logger.warn(
-      colors.yellow(
-        `build.terserOptions is specified but build.minify is not set to use Terser. ` +
-          `Note Vite now defaults to use esbuild for minification. If you still ` +
-          `prefer Terser, set build.minify to "terser".`,
-      ),
-    )
-  }
 
   // Check if all assetFileNames have the same reference.
   // If not, display a warn for user.

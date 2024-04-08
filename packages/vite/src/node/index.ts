@@ -57,11 +57,11 @@ export type {
   ResolvedServerUrls,
 } from './server'
 export type {
-  BuildOptions,
+  BuildEnvironmentOptions,
   LibraryOptions,
   LibraryFormats,
   RenderBuiltAssetUrl,
-  ResolvedBuildOptions,
+  ResolvedBuildEnvironmentOptions,
   ModulePreloadOptions,
   ResolvedModulePreloadOptions,
   ResolveModulePreloadDependenciesFn,
