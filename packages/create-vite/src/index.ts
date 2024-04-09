@@ -22,7 +22,8 @@ import {
 const argv = minimist<{
   t?: string
   template?: string
-}>(process.argv.slice(2), { string: ['_'] })
+  help: boolean
+}>(process.argv.slice(2), { default: { help: false }, string: ['_'] })
 const cwd = process.cwd()
 
 type ColorFunc = (str: string | number) => string
