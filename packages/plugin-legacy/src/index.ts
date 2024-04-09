@@ -139,7 +139,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   // es2020 = chrome 80+, safari 13.1+, firefox 72+, edge 80+
   // https://github.com/evanw/esbuild/issues/121#issuecomment-646956379
   const modernTargetsBabel =
-    'edge>=80, firefox>=72, chrome>=80, safari>=13.1, chromeAndroid>=80, iOS>=13.1'
+    'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'
 
   const genLegacy = options.renderLegacyChunks !== false
   const genModern = options.renderModernChunks !== false
