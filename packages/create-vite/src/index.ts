@@ -251,7 +251,8 @@ const defaultTargetDir = 'vite-project'
 async function init() {
   const argTargetDir = formatTargetDir(argv._[0])
   const argTemplate = argv.template || argv.t
-
+  const help = argv.help
+  showHelper(help)
   let targetDir = argTargetDir || defaultTargetDir
   const getProjectName = () =>
     targetDir === '.' ? path.basename(path.resolve()) : targetDir
@@ -564,6 +565,51 @@ function setupReactSwc(root: string, isTs: boolean) {
 function editFile(file: string, callback: (content: string) => string) {
   const content = fs.readFileSync(file, 'utf-8')
   fs.writeFileSync(file, callback(content), 'utf-8')
+}
+
+function showHelper(help: boolean) {
+  const formattedHelpText = getUsageInfo()
+
+  if (help) {
+    prompts({
+      type: 'text',
+      name: 'help text',
+      message: formattedHelpText,
+    })
+    process.exit(0)
+  }
+}
+
+function getUsageInfo() {
+  const formattedFrameworkNames = getFormattedVariantNames()
+  return `Usage: create-vite [OPTION]... [DIRECTORY]
+Create a new JavaScript project based on Vite.
+
+With no arguments, start an interactive command line dialog.
+
+Options:
+  -t, --template NAME        use this template
+
+Available templates:
+${formattedFrameworkNames.join('\n')}`
+}
+
+function getFormattedVariantNames() {
+  const variantNames: string[] = []
+  FRAMEWORKS.forEach((framework) => {
+    if (
+      framework.name !== 'others' &&
+      framework.variants &&
+      framework.variants.length > 0
+    ) {
+      framework.variants.forEach((variant) => {
+        const colorize = framework.color
+        variantNames.push(colorize(variant.name))
+      })
+    }
+  })
+
+  return variantNames
 }
 
 init().catch((e) => {
