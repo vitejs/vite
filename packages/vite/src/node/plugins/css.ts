@@ -502,7 +502,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (isDirectCSSRequest(id)) {
           return null
         }
-        // server only
+        // server only, TODO: environment
         if (options?.ssr) {
           return modulesCode || `export default ${JSON.stringify(css)}`
         }

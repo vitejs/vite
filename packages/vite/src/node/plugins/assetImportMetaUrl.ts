@@ -42,7 +42,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       const { environment } = this
       if (
         environment &&
-        !options?.ssr &&
+        // TODO: Should this be done only for the client or for any webCompatible environment?
+        environment.name === 'client' &&
         id !== preloadHelperId &&
         id !== CLIENT_ENTRY &&
         code.includes('new URL') &&
