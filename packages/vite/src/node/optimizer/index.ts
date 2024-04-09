@@ -755,9 +755,7 @@ async function prepareEsbuildOptimizerRun(
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
   }
 
-  const ssr = environment.name !== 'client' // TODO:depsOptimizer
-  const platform =
-    ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser'
+  const platform = environment.options.webCompatible ? 'browser' : 'node'
 
   const external = [...(optimizeDeps?.exclude ?? [])]
 

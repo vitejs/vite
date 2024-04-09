@@ -662,19 +662,9 @@ export async function buildEnvironment(
         )
       }
 
-      /**
-       * TODO:
-       * if (ssr.target === 'webworker') {
-       *   build.rollupOptions.entryFileNames = '[name].js'
-       *   build.rollupOptions.inlineDynamicImports = (typeof input === 'string' || Object.keys(input).length === 1))
-       * }
-       */
-      const ssrNodeBuild = ssr && config.ssr.target === 'node'
-      const ssrWorkerBuild = ssr && config.ssr.target === 'webworker'
-
       const format = output.format || 'es'
       const jsExt =
-        ssrNodeBuild || libOptions
+        !environment.options.webCompatible || libOptions
           ? resolveOutputJsExtension(
               format,
               findNearestPackageData(config.root, config.packageCache)?.data
@@ -715,7 +705,11 @@ export async function buildEnvironment(
         inlineDynamicImports:
           output.format === 'umd' ||
           output.format === 'iife' ||
-          (ssrWorkerBuild &&
+          // TODO: We need an abstraction for non-client environments?
+          // We should remove the explicit 'client' hcek here.
+          // Or maybe `inlineDynamicImports` should be an environment option?
+          (environment.name !== 'client' &&
+            environment.options.webCompatible &&
             (typeof input === 'string' || Object.keys(input).length === 1)),
         ...output,
       }
