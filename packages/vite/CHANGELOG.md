@@ -1,3 +1,11 @@
+## 6.0.0-alpha.2 (2024-04-09)
+
+* chore: update ([46c8910](https://github.com/vitejs/vite/commit/46c8910))
+* feat: environment aware define ([9f9a716](https://github.com/vitejs/vite/commit/9f9a716))
+* feat: rework more ssr.target webworker branches ([1f644d0](https://github.com/vitejs/vite/commit/1f644d0))
+
+
+
 ## 6.0.0-alpha.1 (2024-04-08)
 
 * fix: `fsp.rm` removing files does not take effect (#16032) ([b05c405](https://github.com/vitejs/vite/commit/b05c405)), closes [#16032](https://github.com/vitejs/vite/issues/16032)
