@@ -240,7 +240,7 @@ describe('link with props', () => {
   })
 })
 
-describe.runIf(isServe)('invalid', () => {
+describe.runIf(isServe).only('invalid', () => {
   test('should be 500 with overlay', async () => {
     const response = await page.goto(viteTestUrl + '/invalid.html')
     expect(response.status()).toBe(500)
@@ -274,15 +274,6 @@ describe.runIf(isServe)('invalid', () => {
     expect(isVisbleOverlay).toBeFalsy()
   })
 
-  test('should reload when fixed', async () => {
-    await page.goto(viteTestUrl + '/invalid.html')
-    await editFile('invalid.html', (content) => {
-      return content.replace('<div Bad', '<div> Good')
-    })
-    const content = await page.waitForSelector('text=Good HTML')
-    expect(content).toBeTruthy()
-  })
-
   test('stack', async () => {
     await page.goto(viteTestUrl + '/invalid.html')
 
@@ -304,6 +295,15 @@ describe.runIf(isServe)('invalid', () => {
     const newErrorOverlay = await page.waitForSelector('vite-error-overlay')
     const stack = await newErrorOverlay.$$eval('.stack', (m) => m[0].innerHTML)
     expect(stack).toMatch(/^Error: someError/)
+  })
+
+  test('should reload when fixed', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+    await editFile('invalid.html', (content) => {
+      return content.replace('<div Bad', '<div> Good')
+    })
+    const content = await page.waitForSelector('text=Good HTML')
+    expect(content).toBeTruthy()
   })
 })
 
