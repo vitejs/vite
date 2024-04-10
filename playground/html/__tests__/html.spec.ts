@@ -240,7 +240,7 @@ describe('link with props', () => {
   })
 })
 
-describe.runIf(isServe).only('invalid', () => {
+describe.runIf(isServe)('invalid', () => {
   test('should be 500 with overlay', async () => {
     const response = await page.goto(viteTestUrl + '/invalid.html')
     expect(response.status()).toBe(500)
