@@ -282,6 +282,29 @@ describe.runIf(isServe)('invalid', () => {
     const content = await page.waitForSelector('text=Good HTML')
     expect(content).toBeTruthy()
   })
+
+  test('stack', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    const hiddenPromise = errorOverlay.waitForElementState('hidden')
+    await page.keyboard.press('Escape')
+    await hiddenPromise
+
+    viteServer.hot.send({
+      type: 'error',
+      err: {
+        message: 'someError',
+        stack: [
+          'Error: someError',
+          '    at someMethod (/some/file.ts:1:2)',
+        ].join('\n'),
+      },
+    })
+    const newErrorOverlay = await page.waitForSelector('vite-error-overlay')
+    const stack = await newErrorOverlay.$$eval('.stack', (m) => m[0].innerHTML)
+    expect(stack).toMatch(/^Error: someError/)
+  })
 })
 
 describe('Valid HTML', () => {
