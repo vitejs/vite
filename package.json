@@ -65,7 +65,7 @@
     "eslint": "^8.57.0",
     "eslint-define-config": "^2.1.0",
     "eslint-plugin-i": "^2.29.1",
-    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-n": "^17.2.0",
     "eslint-plugin-regexp": "^2.5.0",
     "execa": "^8.0.1",
     "feed": "^4.2.2",
