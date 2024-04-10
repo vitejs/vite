@@ -3,7 +3,7 @@
 :::warning Low-level API
 This API was introduced in Vite 5.1 as an experimental feature. It was added to [gather feedback](https://github.com/vitejs/vite/discussions/15774). There will likely be breaking changes, so make sure to pin the Vite version to `~5.1.0` when using it. This is a low-level API meant for library and framework authors. If your goal is to create an application, make sure to check out the higher-level SSR plugins and tools at [Awesome Vite SSR section](https://github.com/vitejs/awesome-vite#ssr) first.
 
-Currently, the API is being revised as [Environment API](https://github.com/vitejs/vite/pull/16089) which is released at `6.0.0-alpha.0`.
+Currently, the API is being revised as [Environment API](https://github.com/vitejs/vite/pull/16089) which is released at `^6.0.0-alpha.0`.
 :::
 
 The "Vite Runtime" is a tool that allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runtime implementation is decoupled from the server. This allows library and framework authors to implement their own layer of communication between the server and the runtime.
