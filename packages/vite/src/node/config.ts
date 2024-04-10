@@ -143,10 +143,10 @@ export type PluginOption =
 
 export interface DevEnvironmentOptions {
   /**
-   * The files to be pre-transformed. Supports glob patterns.
+   * Files tßo be pre-transformed. Supports glob patterns.
    */
-  warmup?: { files: string[] }
-  /**
+  warmup?: string[]
+  /**ß
    * Pre-transform known direct imports
    * @default true
    */
@@ -558,9 +558,7 @@ export function resolveDevEnvironmentOptions(
         ? () => false
         : dev?.sourcemapIgnoreList || isInNodeModules,
     preTransformRequests: dev?.preTransformRequests ?? true,
-    warmup: {
-      files: dev?.warmup?.files ?? [],
-    },
+    warmup: dev?.warmup ?? [],
     optimizeDeps: resolveOptimizeDepsConfig(
       dev?.optimizeDeps,
       preserverSymlinks,
@@ -845,9 +843,21 @@ export async function resolveConfig(
     deprecatedClientOptimizeDepsConfig,
   )
 
-  // Backward compatibility: merge ssr into environments.ssr.config as defaults
   const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
-  const configEnvironmentsSsr = config.environments!.ssr
+  let configEnvironmentsSsr = config.environments!.ssr
+
+  // Backward compatibility: server.warmup.clientFiles/ssrFiles -> environment.dev.warmup
+  const warmupOptions = config.server?.warmup
+  if (warmupOptions?.clientFiles) {
+    configEnvironmentsClient.dev.warmup = warmupOptions?.clientFiles
+  }
+  if (warmupOptions?.ssrFiles) {
+    configEnvironmentsSsr ??= {}
+    configEnvironmentsSsr.dev ??= {}
+    configEnvironmentsSsr.dev.warmup = warmupOptions?.ssrFiles
+  }
+
+  // Backward compatibility: merge ssr into environments.ssr.config as defaults
   if (configEnvironmentsSsr) {
     configEnvironmentsSsr.dev ??= {}
     configEnvironmentsSsr.dev.optimizeDeps = mergeConfig(

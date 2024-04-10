@@ -8,21 +8,11 @@ import type { ViteDevServer } from '../index'
 import type { DevEnvironment } from './environment'
 
 export function warmupFiles(server: ViteDevServer): void {
-  const options = server.config.server.warmup
-  const root = server.config.root
-
-  // TODO: move warmup as an environment config option?
-  if (options?.clientFiles?.length) {
-    mapFiles(options.clientFiles, root).then((files) => {
+  const { root } = server.config
+  for (const environment of Object.values(server.environments)) {
+    mapFiles(environment.options.dev.warmup, root).then((files) => {
       for (const file of files) {
         warmupFile(server, server.environments.client, file)
-      }
-    })
-  }
-  if (options?.ssrFiles?.length) {
-    mapFiles(options.ssrFiles, root).then((files) => {
-      for (const file of files) {
-        warmupFile(server, server.environments.ssr, file)
       }
     })
   }
