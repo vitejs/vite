@@ -359,50 +359,45 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = wrapId(resolved.id)
         }
 
-        // make the URL browser-valid if not SSR
-        if (!ssr) {
-          // mark non-js/css imports with `?import`
-          if (isExplicitImportRequired(url)) {
-            url = injectQuery(url, 'import')
-          } else if (
-            (isRelative || isSelfImport) &&
-            !DEP_VERSION_RE.test(url)
-          ) {
-            // If the url isn't a request for a pre-bundled common chunk,
-            // for relative js/css imports, or self-module virtual imports
-            // (e.g. vue blocks), inherit importer's version query
-            // do not do this for unknown type imports, otherwise the appended
-            // query can break 3rd party plugin's extension checks.
-            const versionMatch = importer.match(DEP_VERSION_RE)
-            if (versionMatch) {
-              url = injectQuery(url, versionMatch[1])
-            }
+        // make the URL browser-valid
+        // mark non-js/css imports with `?import`
+        if (isExplicitImportRequired(url)) {
+          url = injectQuery(url, 'import')
+        } else if ((isRelative || isSelfImport) && !DEP_VERSION_RE.test(url)) {
+          // If the url isn't a request for a pre-bundled common chunk,
+          // for relative js/css imports, or self-module virtual imports
+          // (e.g. vue blocks), inherit importer's version query
+          // do not do this for unknown type imports, otherwise the appended
+          // query can break 3rd party plugin's extension checks.
+          const versionMatch = importer.match(DEP_VERSION_RE)
+          if (versionMatch) {
+            url = injectQuery(url, versionMatch[1])
           }
-
-          // check if the dep has been hmr updated. If yes, we need to attach
-          // its last updated timestamp to force the browser to fetch the most
-          // up-to-date version of this module.
-          try {
-            // delay setting `isSelfAccepting` until the file is actually used (#7870)
-            // We use an internal function to avoid resolving the url again
-            const depModule = await moduleGraph._ensureEntryFromUrl(
-              unwrapId(url),
-              canSkipImportAnalysis(url) || forceSkipImportAnalysis,
-              resolved,
-            )
-            if (depModule.lastHMRTimestamp > 0) {
-              url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
-            }
-          } catch (e: any) {
-            // it's possible that the dep fails to resolve (non-existent import)
-            // attach location to the missing import
-            e.pos = pos
-            throw e
-          }
-
-          // prepend base
-          url = joinUrlSegments(base, url)
         }
+
+        // check if the dep has been hmr updated. If yes, we need to attach
+        // its last updated timestamp to force the browser to fetch the most
+        // up-to-date version of this module.
+        try {
+          // delay setting `isSelfAccepting` until the file is actually used (#7870)
+          // We use an internal function to avoid resolving the url again
+          const depModule = await moduleGraph._ensureEntryFromUrl(
+            unwrapId(url),
+            canSkipImportAnalysis(url) || forceSkipImportAnalysis,
+            resolved,
+          )
+          if (depModule.lastHMRTimestamp > 0) {
+            url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
+          }
+        } catch (e: any) {
+          // it's possible that the dep fails to resolve (non-existent import)
+          // attach location to the missing import
+          e.pos = pos
+          throw e
+        }
+
+        // prepend base
+        url = joinUrlSegments(base, url)
 
         return [url, resolved.id]
       }
