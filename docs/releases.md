@@ -15,7 +15,7 @@ Vite does not have a fixed release cycle.
 The Vite team supports previous Vite versions until their End of Life (EOL). The EOL for each release is automatically determined by:
 
 - **Current Minor** gets regular fixes.
-- **Previous Major** (only for its lastest minor) and **Previous Minor** receives important fixes and security patches.
+- **Previous Major** (only for its latest minor) and **Previous Minor** receives important fixes and security patches.
 - **Second-to-last Major** (only for its latest minor) and **Second-to-last Minor** receives security patches.
 - All versions before these are considered to have reached their EOL.
 
