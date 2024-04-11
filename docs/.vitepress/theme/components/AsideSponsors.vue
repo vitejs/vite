@@ -19,7 +19,7 @@ const sponsors = computed(() => {
 
 <template>
   <a class="vite-event" href="https://lu.ma/vite" target="_blank">
-    <img width="22" height="22" src="/viteconf.svg" />
+    <img width="22" height="22" src="/logo.svg" />
     <span>
       <p class="extra-info">May 9th, 2024</p>
       <p class="heading">Vite Meetup SF</p>
