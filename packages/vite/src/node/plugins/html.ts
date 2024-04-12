@@ -440,7 +440,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               overwriteAttrValue(
                 s,
                 sourceCodeLocation!,
-                partialEncodeURIPath(toOutputPublicFilePath(url)),
+                toOutputPublicFilePath(partialEncodeURIPath(url)),
               )
             }
 
@@ -520,7 +520,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                     overwriteAttrValue(
                       s,
                       getAttrSourceCodeLocation(node, attrKey),
-                      partialEncodeURIPath(toOutputPublicFilePath(url)),
+                      toOutputPublicFilePath(partialEncodeURIPath(url)),
                     )
                   } else if (!isExcludedUrl(url)) {
                     if (
@@ -640,7 +640,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.update(
               start,
               end,
-              partialEncodeURIPath(toOutputPublicFilePath(url)),
+              toOutputPublicFilePath(partialEncodeURIPath(url)),
             )
           } else if (!isExcludedUrl(url)) {
             s.update(
@@ -909,19 +909,17 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           if (chunk) {
             chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
           }
-          return encodeURIPath(toOutputAssetFilePath(file)) + postfix
+          return toOutputAssetFilePath(encodeURIPath(file)) + postfix
         })
 
         result = result.replace(publicAssetUrlRE, (_, fileHash) => {
           const publicAssetPath = toOutputPublicAssetFilePath(
-            getPublicAssetFilename(fileHash, config)!,
+            encodeURIPath(getPublicAssetFilename(fileHash, config)!),
           )
 
-          return encodeURIPath(
-            urlCanParse(publicAssetPath)
-              ? publicAssetPath
-              : normalizePath(publicAssetPath),
-          )
+          return urlCanParse(publicAssetPath)
+            ? publicAssetPath
+            : normalizePath(publicAssetPath)
         })
 
         if (chunk && canInlineEntry) {

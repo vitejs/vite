@@ -92,17 +92,19 @@ export function renderAssetUrlInJS(
     chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
     const replacement = toOutputFilePathInJS(
-      filename,
+      encodeURIPath(filename),
       'asset',
       chunk.fileName,
       'js',
       config,
       toRelativeRuntime,
     )
+
     const replacementString =
       typeof replacement === 'string'
-        ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
+        ? JSON.stringify(replacement).slice(1, -1)
         : `"+${replacement.runtime}+"`
+
     s.update(match.index, match.index + full.length, replacementString)
   }
 
@@ -115,7 +117,7 @@ export function renderAssetUrlInJS(
     const [full, hash] = match
     const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
     const replacement = toOutputFilePathInJS(
-      publicUrl,
+      encodeURIPath(publicUrl),
       'public',
       chunk.fileName,
       'js',
@@ -124,7 +126,7 @@ export function renderAssetUrlInJS(
     )
     const replacementString =
       typeof replacement === 'string'
-        ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
+        ? JSON.stringify(replacement).slice(1, -1)
         : `"+${replacement.runtime}+"`
     s.update(match.index, match.index + full.length, replacementString)
   }
