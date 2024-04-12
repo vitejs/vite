@@ -36,7 +36,7 @@ import {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
-import { silentConsole } from './hmrLogger'
+import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
 import type { RunnerTransport } from './runnerTransport'
@@ -78,7 +78,7 @@ export class ModuleRunner {
       this.hmrClient = new HMRClient(
         options.hmr.logger === false
           ? silentConsole
-          : options.hmr.logger || console,
+          : options.hmr.logger || hmrLogger,
         options.hmr.connection,
         ({ acceptedPath, invalidates }) => {
           this.moduleCache.invalidate(acceptedPath)
@@ -245,7 +245,7 @@ export class ModuleRunner {
     importer?: string,
   ): Promise<ResolvedResult> {
     if (this._destroyed) {
-      throw new Error(`[vite] Vite runtime has been destroyed.`)
+      throw new Error(`Vite module runner has been destroyed.`)
     }
     const normalized = this.idToUrlMap.get(id)
     if (normalized) {

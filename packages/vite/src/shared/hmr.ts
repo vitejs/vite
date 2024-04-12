@@ -116,7 +116,7 @@ export class HMRContext implements ViteHotContext {
       message,
     })
     this.hmrClient.logger.debug(
-      `[vite] invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
+      `invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
     )
   }
 
@@ -255,7 +255,7 @@ export class HMRClient {
       this.logger.error(err)
     }
     this.logger.error(
-      `[hmr] Failed to reload ${path}. ` +
+      `Failed to reload ${path}. ` +
         `This could be due to syntax errors or importing non-existent ` +
         `modules. (see errors above)`,
     )
@@ -316,7 +316,7 @@ export class HMRClient {
         )
       }
       const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
-      this.logger.debug(`[vite] hot updated: ${loggedPath}`)
+      this.logger.debug(`hot updated: ${loggedPath}`)
     }
   }
 }

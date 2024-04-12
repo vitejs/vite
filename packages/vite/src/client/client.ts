@@ -136,7 +136,10 @@ const debounceReload = (time: number) => {
 const pageReload = debounceReload(50)
 
 const hmrClient = new HMRClient(
-  console,
+  {
+    error: (err) => console.error('[vite]', err),
+    debug: (...msg) => console.debug('[vite]', ...msg),
+  },
   {
     isReady: () => socket && socket.readyState === 1,
     send: (message) => socket.send(message),
