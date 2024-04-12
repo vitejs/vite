@@ -1158,12 +1158,13 @@ async function setupModuleRunner(
 
 class HMRMockLogger {
   debug(...msg: unknown[]) {
-    const log = msg.join(' ')
+    const log = ['[vite]', ...msg].join(' ')
     clientLogs.push(log)
     logsEmitter.emit('log', log)
   }
   error(msg: string) {
-    clientLogs.push(msg)
-    logsEmitter.emit('log', msg)
+    const log = ['[vite]', msg].join(' ')
+    clientLogs.push(log)
+    logsEmitter.emit('log', log)
   }
 }
