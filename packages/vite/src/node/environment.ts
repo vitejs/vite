@@ -6,7 +6,33 @@ export class Environment {
   config: ResolvedConfig
   options: ResolvedEnvironmentOptions
   get logger(): Logger {
-    return this.config.logger
+    const logger = this.config.logger
+    const format = (msg: string) => {
+      return `(${this.name}) ${msg}`
+    }
+    return {
+      get hasWarned() {
+        return logger.hasWarned
+      },
+      info(msg, opts) {
+        return logger.info(format(msg), opts)
+      },
+      warn(msg, opts) {
+        return logger.warn(format(msg), opts)
+      },
+      warnOnce(msg, opts) {
+        return logger.warnOnce(format(msg), opts)
+      },
+      error(msg, opts) {
+        return logger.error(format(msg), opts)
+      },
+      clearScreen(type) {
+        return logger.clearScreen(type)
+      },
+      hasErrorLogged(error) {
+        return logger.hasErrorLogged(error)
+      },
+    }
   }
   constructor(
     name: string,
