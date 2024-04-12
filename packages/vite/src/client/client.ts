@@ -175,7 +175,7 @@ const hmrClient = new HMRClient(
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
-      console.debug(`[vite] connected.`)
+      console.debug(`connected.`)
       hmrClient.messenger.flush()
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
