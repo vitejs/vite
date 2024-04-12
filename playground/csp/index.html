@@ -11,3 +11,13 @@
 <p class="dynamic">dynamic</p>
 <p class="js">js: error</p>
 <p class="dynamic-js">dynamic-js: error</p>
+<p class="inline-js">inline-js: error</p>
+<p class="double-nonce-js">double-nonce-js: error</p>
+<script>
+  document.querySelector('.inline-js').textContent = 'inline-js: ok'
+</script>
+<script nonce="#$NONCE$#">
+  // this test case is to ensure that the nonce isn't being
+  // double-applied if an existing attribute is present.
+  document.querySelector('.double-nonce-js').textContent = 'double-nonce-js: ok'
+</script>
