@@ -1138,7 +1138,7 @@ async function setupModuleRunner(
 
   const logger = new HMRMockLogger()
   // @ts-expect-error not typed for HMR
-  globalThis.log = (...msg) => logger.debug(...msg)
+  globalThis.log = (...msg) => logger.log(...msg)
 
   runner = createServerModuleRunner(server.environments.ssr, {
     hmr: {
@@ -1157,6 +1157,12 @@ async function setupModuleRunner(
 }
 
 class HMRMockLogger {
+  log(...msg: unknown[]) {
+    const log = msg.join(' ')
+    clientLogs.push(log)
+    logsEmitter.emit('log', log)
+  }
+
   debug(...msg: unknown[]) {
     const log = ['[vite]', ...msg].join(' ')
     clientLogs.push(log)
