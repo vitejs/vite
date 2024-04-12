@@ -5,12 +5,16 @@ export class Environment {
   name: string
   config: ResolvedConfig
   options: ResolvedEnvironmentOptions
+  #logger: Logger | undefined
   get logger(): Logger {
+    if (this.#logger) {
+      return this.#logger
+    }
     const logger = this.config.logger
     const format = (msg: string) => {
       return `(${this.name}) ${msg}`
     }
-    return {
+    this.#logger = {
       get hasWarned() {
         return logger.hasWarned
       },
@@ -33,6 +37,7 @@ export class Environment {
         return logger.hasErrorLogged(error)
       },
     }
+    return this.#logger
   }
   constructor(
     name: string,
