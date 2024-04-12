@@ -868,7 +868,7 @@ export function tryNodeResolve(
   const skipOptimization =
     (!options.ssrOptimizeCheck && depsOptimizer?.options.noDiscovery) ||
     !isJsType ||
-    (importer && isInNodeModules(importer)) ||
+    (!options.ssrOptimizeCheck && importer && isInNodeModules(importer)) ||
     exclude?.includes(pkgId) ||
     exclude?.includes(id) ||
     SPECIAL_QUERY_RE.test(resolved) ||
