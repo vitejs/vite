@@ -18,7 +18,7 @@ export async function handleHMRPayload(
   if (!hmrClient || runner.isDestroyed()) return
   switch (payload.type) {
     case 'connected':
-      hmrClient.logger.debug(`[vite] connected.`)
+      hmrClient.logger.debug(`connected.`)
       hmrClient.messenger.flush()
       break
     case 'update':
@@ -32,9 +32,7 @@ export async function handleHMRPayload(
             return hmrClient.queueUpdate(update)
           }
 
-          hmrClient.logger.error(
-            '[vite] css hmr is not supported in runner mode.',
-          )
+          hmrClient.logger.error('css hmr is not supported in runner mode.')
         }),
       )
       await hmrClient.notifyListeners('vite:afterUpdate', payload)
@@ -54,7 +52,7 @@ export async function handleHMRPayload(
 
       if (!clearEntrypoints.size) break
 
-      hmrClient.logger.debug(`[vite] program reload`)
+      hmrClient.logger.debug(`program reload`)
       await hmrClient.notifyListeners('vite:beforeFullReload', payload)
       runner.moduleCache.clear()
 
@@ -71,7 +69,7 @@ export async function handleHMRPayload(
       await hmrClient.notifyListeners('vite:error', payload)
       const err = payload.err
       hmrClient.logger.error(
-        `[vite] Internal Server Error\n${err.message}\n${err.stack}`,
+        `Internal Server Error\n${err.message}\n${err.stack}`,
       )
       break
     }
