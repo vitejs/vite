@@ -297,7 +297,7 @@ export async function handleHMRUpdate(
       if (!hotContext.modules.length) {
         // html file cannot be hot updated
         if (file.endsWith('.html')) {
-          config.logger.info(
+          environment.logger.info(
             colors.green(`page reload `) + colors.dim(shortFile),
             {
               clear: true,
@@ -408,7 +408,7 @@ export function updateModules(
       typeof needFullReload === 'string'
         ? colors.dim(` (${needFullReload})`)
         : ''
-    config.logger.info(
+    environment.logger.info(
       colors.green(`page reload `) + colors.dim(file) + reason,
       { clear: !afterInvalidation, timestamp: true },
     )
@@ -424,7 +424,7 @@ export function updateModules(
     return
   }
 
-  config.logger.info(
+  environment.logger.info(
     colors.green(`hmr update `) +
       colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
     { clear: !afterInvalidation, timestamp: true },

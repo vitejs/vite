@@ -34,7 +34,7 @@ async function warmupFile(
         await server.transformIndexHtml(url, html)
       } catch (e) {
         // Unexpected error, log the issue but avoid an unhandled exception
-        server.config.logger.error(
+        environment.logger.error(
           `Pre-transform error (${colors.cyan(file)}): ${e.message}`,
           {
             error: e,

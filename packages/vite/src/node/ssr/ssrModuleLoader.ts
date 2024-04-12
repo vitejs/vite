@@ -249,7 +249,7 @@ async function instantiateModule(
       ssrFixStacktrace(e, moduleGraph)
     }
 
-    server.config.logger.error(
+    environment.logger.error(
       colors.red(
         `Error when evaluating SSR module ${url}:` +
           (errorData?.importee

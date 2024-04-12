@@ -130,7 +130,7 @@ export class DevEnvironment extends Environment {
         return
       }
       // Unexpected error, log the issue but avoid an unhandled exception
-      this.server.config.logger.error(`Pre-transform error: ${e.message}`, {
+      this.logger.error(`Pre-transform error: ${e.message}`, {
         error: e,
         timestamp: true,
       })

@@ -1,3 +1,4 @@
+import colors from 'picocolors'
 import type { Logger } from './logger'
 import type { ResolvedConfig, ResolvedEnvironmentOptions } from './config'
 
@@ -10,25 +11,39 @@ export class Environment {
     if (this.#logger) {
       return this.#logger
     }
+    const environment = colors.dim(`(${this.name})`)
+    const colorIndex =
+      Number([...environment].map((c) => c.charCodeAt(0))) %
+      environmentColors.length
+    const infoColor = environmentColors[colorIndex || 0]
     const logger = this.config.logger
-    const format = (msg: string) => {
-      return `(${this.name}) ${msg}`
-    }
     this.#logger = {
       get hasWarned() {
         return logger.hasWarned
       },
       info(msg, opts) {
-        return logger.info(format(msg), opts)
+        return logger.info(msg, {
+          ...opts,
+          environment: infoColor(environment),
+        })
       },
       warn(msg, opts) {
-        return logger.warn(format(msg), opts)
+        return logger.warn(msg, {
+          ...opts,
+          environment: colors.yellow(environment),
+        })
       },
       warnOnce(msg, opts) {
-        return logger.warnOnce(format(msg), opts)
+        return logger.warnOnce(msg, {
+          ...opts,
+          environment: colors.yellow(environment),
+        })
       },
       error(msg, opts) {
-        return logger.error(format(msg), opts)
+        return logger.error(msg, {
+          ...opts,
+          environment: colors.red(environment),
+        })
       },
       clearScreen(type) {
         return logger.clearScreen(type)
@@ -49,3 +64,10 @@ export class Environment {
     this.options = options
   }
 }
+
+const environmentColors = [
+  colors.blue,
+  colors.magenta,
+  colors.green,
+  colors.gray,
+]

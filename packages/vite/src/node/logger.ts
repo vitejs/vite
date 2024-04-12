@@ -20,6 +20,7 @@ export interface Logger {
 export interface LogOptions {
   clear?: boolean
   timestamp?: boolean
+  environment?: string
 }
 
 export interface LogErrorOptions extends LogOptions {
@@ -80,15 +81,17 @@ export function createLogger(
 
   function format(type: LogType, msg: string, options: LogErrorOptions = {}) {
     if (options.timestamp) {
-      const tag =
+      const color =
         type === 'info'
-          ? colors.cyan(colors.bold(prefix))
+          ? colors.cyan
           : type === 'warn'
-            ? colors.yellow(colors.bold(prefix))
-            : colors.red(colors.bold(prefix))
+            ? colors.yellow
+            : colors.red
+      const tag = color(colors.bold(prefix))
+      const environment = options.environment ? options.environment + ' ' : ''
       return `${colors.dim(
         getTimeFormatter().format(new Date()),
-      )} ${tag} ${msg}`
+      )} ${tag} ${environment}${msg}`
     } else {
       return msg
     }
