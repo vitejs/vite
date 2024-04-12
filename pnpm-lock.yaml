@@ -1335,6 +1335,9 @@ importers:
       '@vitejs/test-module-condition':
         specifier: file:./module-condition
         version: file:playground/ssr-deps/module-condition
+      '@vitejs/test-nested-exclude':
+        specifier: file:./nested-exclude
+        version: file:playground/ssr-deps/nested-exclude
       '@vitejs/test-no-external-cjs':
         specifier: file:./no-external-cjs
         version: file:playground/ssr-deps/no-external-cjs
@@ -1405,9 +1408,17 @@ importers:
 
   playground/ssr-deps/module-condition: {}
 
+  playground/ssr-deps/nested-exclude:
+    dependencies:
+      '@vitejs/test-nested-include':
+        specifier: file:../nested-include
+        version: file:playground/ssr-deps/nested-include
+
   playground/ssr-deps/nested-external: {}
 
   playground/ssr-deps/nested-external-cjs: {}
+
+  playground/ssr-deps/nested-include: {}
 
   playground/ssr-deps/no-external-cjs: {}
 
@@ -10749,6 +10760,13 @@ packages:
     name: '@vitejs/test-module-condition'
     dev: false
 
+  file:playground/ssr-deps/nested-exclude:
+    resolution: {directory: playground/ssr-deps/nested-exclude, type: directory}
+    name: '@vitejs/test-nested-exclude'
+    dependencies:
+      '@vitejs/test-nested-include': file:playground/ssr-deps/nested-include
+    dev: false
+
   file:playground/ssr-deps/nested-external:
     resolution: {directory: playground/ssr-deps/nested-external, type: directory}
     name: '@vitejs/test-nested-external'
@@ -10757,6 +10775,11 @@ packages:
   file:playground/ssr-deps/nested-external-cjs:
     resolution: {directory: playground/ssr-deps/nested-external-cjs, type: directory}
     name: nested-external-cjs
+    dev: false
+
+  file:playground/ssr-deps/nested-include:
+    resolution: {directory: playground/ssr-deps/nested-include, type: directory}
+    name: '@vitejs/test-nested-include'
     dev: false
 
   file:playground/ssr-deps/no-external-cjs:
