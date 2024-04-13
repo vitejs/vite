@@ -274,6 +274,29 @@ describe.runIf(isServe)('invalid', () => {
     expect(isVisbleOverlay).toBeFalsy()
   })
 
+  test('stack is updated', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    const hiddenPromise = errorOverlay.waitForElementState('hidden')
+    await page.keyboard.press('Escape')
+    await hiddenPromise
+
+    viteServer.hot.send({
+      type: 'error',
+      err: {
+        message: 'someError',
+        stack: [
+          'Error: someError',
+          '    at someMethod (/some/file.ts:1:2)',
+        ].join('\n'),
+      },
+    })
+    const newErrorOverlay = await page.waitForSelector('vite-error-overlay')
+    const stack = await newErrorOverlay.$$eval('.stack', (m) => m[0].innerHTML)
+    expect(stack).toMatch(/^Error: someError/)
+  })
+
   test('should reload when fixed', async () => {
     await page.goto(viteTestUrl + '/invalid.html')
     await editFile('invalid.html', (content) => {
