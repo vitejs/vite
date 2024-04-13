@@ -1561,8 +1561,13 @@ importers:
       '@vitejs/test-dep-to-optimize':
         specifier: file:./dep-to-optimize
         version: file:playground/worker/dep-to-optimize
+      '@vitejs/test-dep-with-worker':
+        specifier: file:./dep-with-worker
+        version: file:playground/worker/dep-with-worker
 
   playground/worker/dep-to-optimize: {}
+
+  playground/worker/dep-with-worker: {}
 
 packages:
 
@@ -3404,6 +3409,9 @@ packages:
     peerDependenciesMeta:
       foobar:
         optional: true
+
+  '@vitejs/test-dep-with-worker@file:playground/worker/dep-with-worker':
+    resolution: {directory: playground/worker/dep-with-worker, type: directory}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries':
     resolution: {directory: playground/ssr-resolve/entries, type: directory}
@@ -8630,6 +8638,8 @@ snapshots:
   '@vitejs/test-dep-with-optional-peer-dep-submodule@file:playground/optimize-deps/dep-with-optional-peer-dep-submodule': {}
 
   '@vitejs/test-dep-with-optional-peer-dep@file:playground/optimize-deps/dep-with-optional-peer-dep': {}
+
+  '@vitejs/test-dep-with-worker@file:playground/worker/dep-with-worker': {}
 
   '@vitejs/test-entries@file:playground/ssr-resolve/entries': {}
 

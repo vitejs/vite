@@ -1,3 +1,4 @@
+import { startWorker as startDepWorker } from '@vitejs/test-dep-to-optimize'
 import myWorker from '../my-worker.ts?worker'
 import InlineWorker from '../my-worker.ts?worker&inline'
 import InlineSharedWorker from '../my-inline-shared-worker?sharedworker&inline'
@@ -174,3 +175,5 @@ selfReferenceUrlWorker.addEventListener('message', (e) => {
   document.querySelector('.self-reference-url-worker').textContent +=
     `${e.data}\n`
 })
+
+startDepWorker('.dep-with-worker')

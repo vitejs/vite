@@ -192,3 +192,9 @@ function decodeSourceMapUrl(content: string) {
     ).toString(),
   )
 }
+
+test('dep with worker', async () => {
+  expectWithRetry(() => page.textContent('.dep-with-worker')).toBe(
+    'ping: main\npong: worker',
+  )
+})
