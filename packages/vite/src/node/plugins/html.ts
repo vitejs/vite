@@ -775,9 +775,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
 
       for (const [id, html] of processedHtml) {
+        const normalizedId = normalizePath(id)
         const relativeUrlPath = path.posix.relative(
           config.root,
-          normalizePath(id),
+          normalizedId,
         )
         const assetsBase = getBaseInHTML(relativeUrlPath, config)
         const toOutputFilePath = (
@@ -813,7 +814,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           (chunk) =>
             chunk.type === 'chunk' &&
             chunk.isEntry &&
-            chunk.facadeModuleId === id,
+            chunk.facadeModuleId === normalizedId,
         ) as OutputChunk | undefined
 
         let canInlineEntry = false
