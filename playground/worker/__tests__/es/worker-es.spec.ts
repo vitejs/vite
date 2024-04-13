@@ -242,7 +242,9 @@ test('self reference url worker', async () => {
 })
 
 test('dep with worker', async () => {
-  expectWithRetry(() => page.textContent('.dep-with-worker')).toBe(
-    'ping: main\npong: worker',
+  await untilUpdated(
+    () => page.textContent('.dep-with-worker'),
+    'entry: main\nentry: worker\npong: worker',
+    true,
   )
 })

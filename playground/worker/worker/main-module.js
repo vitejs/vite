@@ -1,4 +1,4 @@
-import { startWorker as startDepWorker } from '@vitejs/test-dep-to-optimize'
+import { startWorker as startDepWorker } from '@vitejs/test-dep-with-worker'
 import myWorker from '../my-worker.ts?worker'
 import InlineWorker from '../my-worker.ts?worker&inline'
 import InlineSharedWorker from '../my-inline-shared-worker?sharedworker&inline'
