@@ -274,7 +274,7 @@ describe.runIf(isServe)('invalid', () => {
     expect(isVisbleOverlay).toBeFalsy()
   })
 
-  test('stack', async () => {
+  test('stack is updated', async () => {
     await page.goto(viteTestUrl + '/invalid.html')
 
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
