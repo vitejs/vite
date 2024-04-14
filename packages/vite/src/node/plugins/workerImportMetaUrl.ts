@@ -123,10 +123,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const workerConstructorRE = config.worker.constructors
     .map((c) => escapeStringRegexp(c.constructor))
     .join('|')
-  const workerImportMetaUrlRE = new RegExp(
-    `\\bnew\\s+(?:${workerConstructorRE})\\s*\\(\\s*(new\\s+URL\\s*\\(\\s*('[^']+'|"[^"]+"|\`[^\`]+\`)\\s*,\\s*import\\.meta\\.url\\s*\\))`,
-    'dg',
-  )
 
   return {
     name: 'vite:worker-import-meta-url',
@@ -151,8 +147,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
 
-        // reset pattern for new matching loop
-        workerImportMetaUrlRE.lastIndex = 0
+        const workerImportMetaUrlRE = new RegExp(
+          `\\bnew\\s+(?:${workerConstructorRE})\\s*\\(\\s*(new\\s+URL\\s*\\(\\s*('[^']+'|"[^"]+"|\`[^\`]+\`)\\s*,\\s*import\\.meta\\.url\\s*\\))`,
+          'dg',
+        )
 
         let match: RegExpExecArray | null
         while ((match = workerImportMetaUrlRE.exec(cleanString))) {

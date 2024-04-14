@@ -32,6 +32,10 @@ export default (sourcemap) => {
           entryFileNames: 'assets/[name]-worker_entry[hash].js',
         },
       },
+      constructors: [
+        'defaults',
+        { constructor: 'Custom.Constructor', kind: 'worker' },
+      ],
     },
     build: {
       outDir: `dist/iife-${typeName}/`,

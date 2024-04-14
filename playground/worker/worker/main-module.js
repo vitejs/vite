@@ -175,13 +175,12 @@ selfReferenceUrlWorker.addEventListener('message', (e) => {
     `${e.data}\n`
 })
 
+// url import worker
 const Custom = {
   Constructor: Worker,
 }
-
-// url import worker
 const customConstructorWorker = new Custom.Constructor(
-  new URL('../url-worker.js', import.meta.url),
+  new URL('../url-worker-custom-constructor.js', import.meta.url),
   /* @vite-ignore */ workerOptions,
 )
 customConstructorWorker.addEventListener('message', (ev) =>
