@@ -192,3 +192,11 @@ function decodeSourceMapUrl(content: string) {
     ).toString(),
   )
 }
+
+test('custom constructor', async () => {
+  await untilUpdated(
+    () => page.textContent('.worker-custom-constructor'),
+    'A string',
+    true,
+  )
+})

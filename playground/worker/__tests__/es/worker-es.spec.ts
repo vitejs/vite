@@ -240,3 +240,11 @@ test('self reference url worker', async () => {
     'pong: main\npong: nested\n',
   )
 })
+
+test('custom constructor', async () => {
+  await untilUpdated(
+    () => page.textContent('.worker-custom-constructor'),
+    'A string',
+    true,
+  )
+})
