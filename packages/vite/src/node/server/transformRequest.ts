@@ -467,7 +467,6 @@ async function handleModuleSoftInvalidation(
     )
   }
 
-  let result: TransformResult
   const source = transformResult.code
   const s = new MagicString(source)
   const imports = transformResult.ssr
@@ -515,7 +514,7 @@ async function handleModuleSoftInvalidation(
   // Update `transformResult` with new code. We don't have to update the sourcemap
   // as the timestamp changes doesn't affect the code lines (stable).
   const code = s.toString()
-  result = {
+  const result = {
     ...transformResult,
     code,
     etag: getEtag(code, { weak: true }),
