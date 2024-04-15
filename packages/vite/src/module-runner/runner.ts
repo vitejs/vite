@@ -233,7 +233,7 @@ export class ModuleRunner {
   private async cachedModule(
     url: string,
     importer?: string,
-  ): Promise<ResolvedResult> {
+  ): Promise<ModuleCache> {
     if (this.destroyed) {
       throw new Error(`Vite module runner has been destroyed.`)
     }
