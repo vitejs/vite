@@ -1,3 +1,14 @@
+## <small>5.2.9 (2024-04-15)</small>
+
+* fix: `fsp.rm` removing files does not take effect (#16032) ([b05c405](https://github.com/vitejs/vite/commit/b05c405)), closes [#16032](https://github.com/vitejs/vite/issues/16032)
+* fix: fix accumulated stacks in error overlay (#16393) ([102c2fd](https://github.com/vitejs/vite/commit/102c2fd)), closes [#16393](https://github.com/vitejs/vite/issues/16393)
+* fix(deps): update all non-major dependencies (#16376) ([58a2938](https://github.com/vitejs/vite/commit/58a2938)), closes [#16376](https://github.com/vitejs/vite/issues/16376)
+* chore: update region comment (#16380) ([77562c3](https://github.com/vitejs/vite/commit/77562c3)), closes [#16380](https://github.com/vitejs/vite/issues/16380)
+* perf: reduce size of injected __vite__mapDeps code (#16184) ([c0ec6be](https://github.com/vitejs/vite/commit/c0ec6be)), closes [#16184](https://github.com/vitejs/vite/issues/16184)
+* perf(css): only replace empty chunk if imported (#16349) ([e2658ad](https://github.com/vitejs/vite/commit/e2658ad)), closes [#16349](https://github.com/vitejs/vite/issues/16349)
+
+
+
 ## <small>5.2.8 (2024-04-03)</small>
 
 * fix: csp nonce injection when no closing tag (#16281) (#16282) ([3c85c6b](https://github.com/vitejs/vite/commit/3c85c6b)), closes [#16281](https://github.com/vitejs/vite/issues/16281) [#16282](https://github.com/vitejs/vite/issues/16282)
