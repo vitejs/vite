@@ -468,9 +468,13 @@ async function handleModuleSoftInvalidation(
   }
 
   let result: TransformResult
+  // No transformation is needed if it's disabled manually
+  // This is primarily for backwards compatible SSR
   if (!environment.options.injectInvalidationTimestamp) {
     result = transformResult
-  } else {
+  }
+  // We need to transform each imports with new timestamps if available
+  else {
     const source = transformResult.code
     const s = new MagicString(source)
     const imports = transformResult.ssr
