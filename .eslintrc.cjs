@@ -175,19 +175,8 @@ module.exports = defineConfig({
         'n/no-extraneous-require': 'off',
         'n/no-missing-import': 'off',
         'n/no-missing-require': 'off',
-        // engine field doesn't exist in playgrounds
-        'n/no-unsupported-features/es-builtins': [
-          'error',
-          {
-            version: pkg.engines.node,
-          },
-        ],
-        'n/no-unsupported-features/node-builtins': [
-          'error',
-          {
-            version: pkg.engines.node,
-          },
-        ],
+        'n/no-unsupported-features/es-builtins': 'off',
+        'n/no-unsupported-features/node-builtins': 'off',
         '@typescript-eslint/explicit-module-boundary-types': 'off',
       },
     },
@@ -214,6 +203,24 @@ module.exports = defineConfig({
       ],
       rules: {
         'i/no-commonjs': 'error',
+      },
+    },
+    {
+      files: ['playground/**/__tests__/**'],
+      rules: {
+        // engine field doesn't exist in playgrounds
+        'n/no-unsupported-features/es-builtins': [
+          'error',
+          {
+            version: pkg.engines.node,
+          },
+        ],
+        'n/no-unsupported-features/node-builtins': [
+          'error',
+          {
+            version: pkg.engines.node,
+          },
+        ],
       },
     },
     {
