@@ -1,4 +1,4 @@
-import { fileURLToPath } from 'url'
+import { fileURLToPath } from 'node:url'
 import { createServer, createServerModuleRunner } from 'vite'
 
 // node playground/environment-custom/src/test-esm-dep.mjs
@@ -8,9 +8,6 @@ const server = await createServer({
   clearScreen: false,
   configFile: false,
   root: fileURLToPath(new URL('..', import.meta.url)),
-  optimizeDeps: {
-    force: true,
-  },
   environments: {
     custom: {
       dev: {
@@ -33,6 +30,12 @@ try {
     // ok
     const runner = createServerModuleRunner(server.environments.custom)
     await runner.import('@vite/test-esm-optimized')
+  }
+
+  {
+    // ok
+    const runner = createServerModuleRunner(server.environments.custom)
+    await runner.import('/src/indirect-esm-dep.ts')
   }
 
   {
