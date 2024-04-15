@@ -20,6 +20,7 @@ import {
 } from '../utils'
 import { checkPublicFile } from '../publicDir'
 import { cleanUrl, unwrapId } from '../../shared/utils'
+import { ssrParseImports } from '../ssr/ssrTransform'
 import {
   applySourcemapIgnoreList,
   extractSourcemapFromFile,
@@ -39,6 +40,7 @@ const debugCache = createDebugger('vite:cache')
 export interface TransformResult {
   code: string
   map: SourceMap | { mappings: '' } | null
+  ssr?: boolean
   etag?: string
   deps?: string[]
   dynamicDeps?: string[]
@@ -466,60 +468,57 @@ async function handleModuleSoftInvalidation(
   }
 
   let result: TransformResult
-  // For SSR soft-invalidation, no transformation is needed
-  if (environment.name !== 'client') {
-    result = transformResult
+  const source = transformResult.code
+  const s = new MagicString(source)
+  const imports = transformResult.ssr
+    ? await ssrParseImports(mod.url, source)
+    : await (async () => {
+        await init
+        return parseImports(source, mod.id || undefined)[0]
+      })()
+
+  for (const imp of imports) {
+    let rawUrl = source.slice(imp.s, imp.e)
+    if (rawUrl === 'import.meta') continue
+
+    const hasQuotes = rawUrl[0] === '"' || rawUrl[0] === "'"
+    if (hasQuotes) {
+      rawUrl = rawUrl.slice(1, -1)
+    }
+
+    const urlWithoutTimestamp = removeTimestampQuery(rawUrl)
+    // hmrUrl must be derived the same way as importAnalysis
+    const hmrUrl = unwrapId(
+      stripBase(removeImportQuery(urlWithoutTimestamp), server.config.base),
+    )
+    for (const importedMod of mod.importedModules) {
+      if (importedMod.url !== hmrUrl) continue
+      if (importedMod.lastHMRTimestamp > 0) {
+        const replacedUrl = injectQuery(
+          urlWithoutTimestamp,
+          `t=${importedMod.lastHMRTimestamp}`,
+        )
+        const start = hasQuotes ? imp.s + 1 : imp.s
+        const end = hasQuotes ? imp.e - 1 : imp.e
+        s.overwrite(start, end, replacedUrl)
+      }
+
+      if (imp.d === -1 && server.config.server.preTransformRequests) {
+        // pre-transform known direct imports
+        environment.warmupRequest(hmrUrl)
+      }
+
+      break
+    }
   }
-  // For client soft-invalidation, we need to transform each imports with new timestamps if available
-  else {
-    await init
-    const source = transformResult.code
-    const s = new MagicString(source)
-    const [imports] = parseImports(source, mod.id || undefined)
 
-    for (const imp of imports) {
-      let rawUrl = source.slice(imp.s, imp.e)
-      if (rawUrl === 'import.meta') continue
-
-      const hasQuotes = rawUrl[0] === '"' || rawUrl[0] === "'"
-      if (hasQuotes) {
-        rawUrl = rawUrl.slice(1, -1)
-      }
-
-      const urlWithoutTimestamp = removeTimestampQuery(rawUrl)
-      // hmrUrl must be derived the same way as importAnalysis
-      const hmrUrl = unwrapId(
-        stripBase(removeImportQuery(urlWithoutTimestamp), server.config.base),
-      )
-      for (const importedMod of mod.importedModules) {
-        if (importedMod.url !== hmrUrl) continue
-        if (importedMod.lastHMRTimestamp > 0) {
-          const replacedUrl = injectQuery(
-            urlWithoutTimestamp,
-            `t=${importedMod.lastHMRTimestamp}`,
-          )
-          const start = hasQuotes ? imp.s + 1 : imp.s
-          const end = hasQuotes ? imp.e - 1 : imp.e
-          s.overwrite(start, end, replacedUrl)
-        }
-
-        if (imp.d === -1 && server.config.server.preTransformRequests) {
-          // pre-transform known direct imports
-          environment.warmupRequest(hmrUrl)
-        }
-
-        break
-      }
-    }
-
-    // Update `transformResult` with new code. We don't have to update the sourcemap
-    // as the timestamp changes doesn't affect the code lines (stable).
-    const code = s.toString()
-    result = {
-      ...transformResult,
-      code,
-      etag: getEtag(code, { weak: true }),
-    }
+  // Update `transformResult` with new code. We don't have to update the sourcemap
+  // as the timestamp changes doesn't affect the code lines (stable).
+  const code = s.toString()
+  result = {
+    ...transformResult,
+    code,
+    etag: getEtag(code, { weak: true }),
   }
 
   // Only cache the result if the module wasn't invalidated while it was

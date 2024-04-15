@@ -397,7 +397,6 @@ export function updateModules(
               ? isExplicitImportRequired(acceptedVia.url)
               : false,
           isWithinCircularImport,
-          invalidates: getInvalidatedImporters(acceptedVia),
         }),
       ),
     )
@@ -433,32 +432,6 @@ export function updateModules(
     type: 'update',
     updates,
   })
-}
-
-function populateImporters(
-  module: EnvironmentModuleNode,
-  timestamp: number,
-  seen: Set<EnvironmentModuleNode> = new Set(),
-) {
-  module.importedModules.forEach((importer) => {
-    if (seen.has(importer)) {
-      return
-    }
-    if (
-      importer.lastHMRTimestamp === timestamp ||
-      importer.lastInvalidationTimestamp === timestamp
-    ) {
-      seen.add(importer)
-      populateImporters(importer, timestamp, seen)
-    }
-  })
-  return seen
-}
-
-function getInvalidatedImporters(module: EnvironmentModuleNode) {
-  return [...populateImporters(module, module.lastHMRTimestamp)].map(
-    (m) => m.file!,
-  )
 }
 
 function areAllImportsAccepted(
