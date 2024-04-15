@@ -1,0 +1,15 @@
+{
+  "name": "@vitejs/test-environment-custom",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --all",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vite/test-esm": "file:./deps/esm",
+    "@vite/test-esm-optimized": "file:./deps/esm"
+  }
+}

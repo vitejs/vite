@@ -680,6 +680,17 @@ importers:
 
   playground/env-nested: {}
 
+  playground/environment-custom:
+    dependencies:
+      '@vite/test-esm':
+        specifier: file:./deps/esm
+        version: file:playground/environment-custom/deps/esm
+      '@vite/test-esm-optimized':
+        specifier: file:./deps/esm
+        version: file:playground/environment-custom/deps/esm
+
+  playground/environment-custom/deps/esm: {}
+
   playground/environment-react-ssr:
     devDependencies:
       '@types/react':
@@ -10503,6 +10514,11 @@ packages:
   file:playground/dynamic-import/pkg:
     resolution: {directory: playground/dynamic-import/pkg, type: directory}
     name: '@vitejs/test-pkg'
+    dev: false
+
+  file:playground/environment-custom/deps/esm:
+    resolution: {directory: playground/environment-custom/deps/esm, type: directory}
+    name: '@vite/test-esm'
     dev: false
 
   file:playground/external/dep-that-imports(typescript@5.2.2):
