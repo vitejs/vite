@@ -294,7 +294,9 @@ export class ModuleRunner {
     const mod = this.moduleCache.getByModuleId(moduleId)
 
     const request = async (dep: string, metadata?: SSRImportMetadata) => {
-      const fetchedModule = await this.cachedModule(dep, moduleId)
+      const importer =
+        (mod.meta && 'file' in mod.meta && mod.meta.file) || moduleId
+      const fetchedModule = await this.cachedModule(dep, importer)
       const depMod = this.moduleCache.getByModuleId(fetchedModule.id)
       depMod.importers!.add(moduleId)
       mod.imports!.add(fetchedModule.id)
