@@ -294,11 +294,10 @@ export class ModuleRunner {
     const callstack = [..._callstack, moduleId]
 
     const request = async (dep: string, metadata?: SSRImportMetadata) => {
-      const importer =
-        (mod.meta && 'file' in mod.meta && mod.meta.file) || moduleId
+      const importer = ('file' in fetchResult && fetchResult.file) || moduleId
       const fetchedModule = await this.cachedModule(dep, importer)
       const resolvedId = fetchedModule.meta!.id
-      const depMod = this.moduleCache.getByModuleId(fetchedModule.id)
+      const depMod = this.moduleCache.getByModuleId(resolvedId)
       depMod.importers!.add(moduleId)
       mod.imports!.add(resolvedId)
 
