@@ -30,6 +30,9 @@ export async function ssrLoadModule(
     server._ssrCompatModuleRunner ||
     (server._ssrCompatModuleRunner = createServerModuleRunner(
       server.environments.ssr,
+      {
+        sourcemapInterceptor: false,
+      },
     ))
 
   url = unwrapId(url)
