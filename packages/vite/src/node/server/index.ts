@@ -16,6 +16,7 @@ import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
 import type { Matcher } from 'picomatch'
+import type { ModuleRunner } from 'vite/module-runner'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -420,6 +421,10 @@ export interface ViteDevServer {
    * @internal
    */
   _configServerPort?: number | undefined
+  /**
+   * @internal
+   */
+  _ssrCompatModuleRunner?: ModuleRunner
 }
 
 export interface ResolvedServerUrls {
