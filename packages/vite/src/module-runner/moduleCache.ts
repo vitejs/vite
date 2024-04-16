@@ -46,6 +46,7 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
       Object.assign(mod, {
         imports: new Set(),
         importers: new Set(),
+        timestamp: 0,
       })
     }
     return mod
@@ -63,8 +64,12 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     return this.deleteByModuleId(this.normalize(fsPath))
   }
 
-  invalidate(id: string): void {
+  invalidateUrl(id: string): void {
     const module = this.get(id)
+    this.invalidateModule(module)
+  }
+
+  invalidateModule(module: ModuleCache): void {
     module.evaluated = false
     module.meta = undefined
     module.map = undefined
@@ -90,7 +95,7 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
       invalidated.add(id)
       const mod = super.get(id)
       if (mod?.importers) this.invalidateDepTree(mod.importers, invalidated)
-      this.invalidate(id)
+      this.invalidateUrl(id)
     }
     return invalidated
   }

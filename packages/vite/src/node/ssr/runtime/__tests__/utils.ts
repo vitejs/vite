@@ -9,10 +9,12 @@ import type { ViteDevServer } from '../../../server'
 import type { InlineConfig } from '../../../config'
 import { createServer } from '../../../server'
 import { createServerModuleRunner } from '../serverModuleRunner'
+import type { DevEnvironment } from '../../../server/environment'
 
 interface TestClient {
   server: ViteDevServer
   runner: ModuleRunner
+  environment: DevEnvironment
 }
 
 export async function createModuleRunnerTester(
@@ -73,7 +75,8 @@ export async function createModuleRunnerTester(
       ],
       ...config,
     })
-    t.runner = await createServerModuleRunner(t.server.environments.ssr, {
+    t.environment = t.server.environments.ssr
+    t.runner = await createServerModuleRunner(t.environment, {
       hmr: {
         logger: false,
       },
