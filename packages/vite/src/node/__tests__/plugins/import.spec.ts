@@ -44,7 +44,7 @@ describe('transformCjsImport', () => {
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react',
+        'const React = __vite__cjsImport0_react.__esModule && Object.prototype.hasOwnProperty.call(__vite__cjsImport0_react, "default") ? __vite__cjsImport0_react.default : __vite__cjsImport0_react',
     )
 
     expect(
@@ -58,7 +58,7 @@ describe('transformCjsImport', () => {
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        'const React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react',
+        'const React = __vite__cjsImport0_react.__esModule && Object.prototype.hasOwnProperty.call(__vite__cjsImport0_react, "default") ? __vite__cjsImport0_react.default : __vite__cjsImport0_react',
     )
   })
 
@@ -154,7 +154,7 @@ describe('transformCjsImport', () => {
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        'const __vite__cjsExportDefault_0 = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
+        'const __vite__cjsExportDefault_0 = __vite__cjsImport0_react.__esModule && Object.prototype.hasOwnProperty.call(__vite__cjsImport0_react, "default") ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
         'export default __vite__cjsExportDefault_0',
     )
 
@@ -169,7 +169,7 @@ describe('transformCjsImport', () => {
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        'const __vite__cjsExport_React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
+        'const __vite__cjsExport_React = __vite__cjsImport0_react.__esModule && Object.prototype.hasOwnProperty.call(__vite__cjsImport0_react, "default") ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
         'export { __vite__cjsExport_React as React }',
     )
 

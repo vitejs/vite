@@ -1010,7 +1010,7 @@ export function transformCjsImport(
         )
       } else if (importedName === 'default') {
         lines.push(
-          `const ${localName} = ${cjsModuleName}.__esModule ? ${cjsModuleName}.default : ${cjsModuleName}`,
+          `const ${localName} = ${cjsModuleName}.__esModule && Object.prototype.hasOwnProperty.call(${cjsModuleName}, "default") ? ${cjsModuleName}.default : ${cjsModuleName}`,
         )
       } else {
         lines.push(`const ${localName} = ${cjsModuleName}["${importedName}"]`)
