@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/vue-query": "^5.29.0",
     "@vite/test-esm": "file:./deps/esm",
     "@vite/test-esm-optimized": "file:./deps/esm"
   }
