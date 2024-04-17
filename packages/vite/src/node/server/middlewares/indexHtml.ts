@@ -200,7 +200,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // and ids are properly handled
     const validPath = `${htmlPath}${trailingSlash ? 'index.html' : ''}`
     proxyModulePath = `\0${validPath}`
-    proxyModuleUrl = wrapId(proxyModulePath)
+    proxyModuleUrl = joinUrlSegments(base, wrapId(proxyModulePath))
   }
 
   const s = new MagicString(html)
