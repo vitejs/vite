@@ -14,7 +14,6 @@ import {
 } from '../shared/ssrTransform'
 import { ModuleCacheMap } from './moduleCache'
 import type {
-  FetchResult,
   ModuleCache,
   ModuleEvaluator,
   ModuleRunnerContext,
@@ -24,6 +23,7 @@ import type {
   SSRImportMetadata,
 } from './types'
 import {
+  parseUrl,
   posixDirname,
   posixPathToFileHref,
   posixResolve,
@@ -53,19 +53,19 @@ export class ModuleRunner {
   public moduleCache: ModuleCacheMap
   public hmrClient?: HMRClient
 
-  private idToUrlMap = new Map<string, string>()
-  private fileToIdMap = new Map<string, string[]>()
-  private envProxy = new Proxy({} as any, {
+  private readonly urlToIdMap = new Map<string, string>()
+  private readonly fileToIdMap = new Map<string, string[]>()
+  private readonly envProxy = new Proxy({} as any, {
     get(_, p) {
       throw new Error(
         `[module runner] Dynamic access of "import.meta.env" is not supported. Please, use "import.meta.env.${String(p)}" instead.`,
       )
     },
   })
-  private transport: RunnerTransport
+  private readonly transport: RunnerTransport
+  private readonly resetSourceMapSupport?: () => void
 
-  private _destroyed = false
-  private _resetSourceMapSupport?: () => void
+  private destroyed = false
 
   constructor(
     public options: ModuleRunnerOptions,
@@ -80,18 +80,20 @@ export class ModuleRunner {
           ? silentConsole
           : options.hmr.logger || hmrLogger,
         options.hmr.connection,
-        ({ acceptedPath, invalidates }) => {
-          this.moduleCache.invalidate(acceptedPath)
-          if (invalidates) {
-            this.invalidateFiles(invalidates)
-          }
-          return this.import(acceptedPath)
+        ({ acceptedPath, explicitImportRequired, timestamp }) => {
+          const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
+          const url =
+            acceptedPathWithoutQuery +
+            `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
+              query ? `&${query}` : ''
+            }`
+          return this.import(url)
         },
       )
       options.hmr.connection.onUpdate(createHMRHandler(this))
     }
     if (options.sourcemapInterceptor !== false) {
-      this._resetSourceMapSupport = enableSourceMapSupport(this)
+      this.resetSourceMapSupport = enableSourceMapSupport(this)
     }
   }
 
@@ -109,7 +111,7 @@ export class ModuleRunner {
    */
   public clearCache(): void {
     this.moduleCache.clear()
-    this.idToUrlMap.clear()
+    this.urlToIdMap.clear()
     this.hmrClient?.clear()
   }
 
@@ -118,27 +120,17 @@ export class ModuleRunner {
    * This method doesn't stop the HMR connection.
    */
   public async destroy(): Promise<void> {
-    this._resetSourceMapSupport?.()
+    this.resetSourceMapSupport?.()
     this.clearCache()
     this.hmrClient = undefined
-    this._destroyed = true
+    this.destroyed = true
   }
 
   /**
    * Returns `true` if the runtime has been destroyed by calling `destroy()` method.
    */
   public isDestroyed(): boolean {
-    return this._destroyed
-  }
-
-  // map files to modules and invalidate them
-  private invalidateFiles(files: string[]) {
-    files.forEach((file) => {
-      const ids = this.fileToIdMap.get(file)
-      if (ids) {
-        ids.forEach((id) => this.moduleCache.invalidate(id))
-      }
-    })
+    return this.destroyed
   }
 
   // we don't use moduleCache.normalize because this URL doesn't have to follow the same rules
@@ -187,13 +179,12 @@ export class ModuleRunner {
 
   private async cachedRequest(
     id: string,
-    fetchedModule: ResolvedResult,
+    mod: ModuleCache,
     callstack: string[] = [],
     metadata?: SSRImportMetadata,
   ): Promise<any> {
-    const moduleId = fetchedModule.id
-
-    const mod = this.moduleCache.getByModuleId(moduleId)
+    const meta = mod.meta!
+    const moduleId = meta.id
 
     const { imports, importers } = mod as Required<ModuleCache>
 
@@ -206,8 +197,7 @@ export class ModuleRunner {
       callstack.includes(moduleId) ||
       Array.from(imports.values()).some((i) => importers.has(i))
     ) {
-      if (mod.exports)
-        return this.processImport(mod.exports, fetchedModule, metadata)
+      if (mod.exports) return this.processImport(mod.exports, meta, metadata)
     }
 
     let debugTimer: any
@@ -228,12 +218,12 @@ export class ModuleRunner {
     try {
       // cached module
       if (mod.promise)
-        return this.processImport(await mod.promise, fetchedModule, metadata)
+        return this.processImport(await mod.promise, meta, metadata)
 
-      const promise = this.directRequest(id, fetchedModule, callstack)
+      const promise = this.directRequest(id, mod, callstack)
       mod.promise = promise
       mod.evaluated = false
-      return this.processImport(await promise, fetchedModule, metadata)
+      return this.processImport(await promise, meta, metadata)
     } finally {
       mod.evaluated = true
       if (debugTimer) clearTimeout(debugTimer)
@@ -241,35 +231,46 @@ export class ModuleRunner {
   }
 
   private async cachedModule(
-    id: string,
+    url: string,
     importer?: string,
-  ): Promise<ResolvedResult> {
-    if (this._destroyed) {
+  ): Promise<ModuleCache> {
+    if (this.destroyed) {
       throw new Error(`Vite module runner has been destroyed.`)
     }
-    const normalized = this.idToUrlMap.get(id)
+    const normalized = this.urlToIdMap.get(url)
     if (normalized) {
       const mod = this.moduleCache.getByModuleId(normalized)
       if (mod.meta) {
-        return mod.meta as ResolvedResult
+        return mod
       }
     }
-    this.debug?.('[module runner] fetching', id)
+
+    this.debug?.('[module runner] fetching', url)
     // fast return for established externalized patterns
-    const fetchedModule = id.startsWith('data:')
-      ? ({ externalize: id, type: 'builtin' } satisfies FetchResult)
-      : await this.transport.fetchModule(id, importer)
+    const fetchedModule = (
+      url.startsWith('data:')
+        ? { externalize: url, type: 'builtin' }
+        : await this.transport.fetchModule(url, importer)
+    ) as ResolvedResult
+
     // base moduleId on "file" and not on id
     // if `import(variable)` is called it's possible that it doesn't have an extension for example
-    // if we used id for that, it's possible to have a duplicated module
-    const idQuery = id.split('?')[1]
-    const query = idQuery ? `?${idQuery}` : ''
+    // if we used id for that, then a module will be duplicated
+    const { query, timestamp } = parseUrl(url)
     const file = 'file' in fetchedModule ? fetchedModule.file : undefined
-    const fullFile = file ? `${file}${query}` : id
-    const moduleId = this.moduleCache.normalize(fullFile)
+    const fileId = file ? `${file}${query}` : url
+    const moduleId = this.moduleCache.normalize(fileId)
     const mod = this.moduleCache.getByModuleId(moduleId)
-    ;(fetchedModule as ResolvedResult).id = moduleId
+
+    // if URL has a ?t= query, it might've been invalidated due to HMR
+    // checking if we should also invalidate the module
+    if (mod.timestamp != null && timestamp > 0 && mod.timestamp < timestamp) {
+      this.moduleCache.invalidateModule(mod)
+    }
+
+    fetchedModule.id = moduleId
     mod.meta = fetchedModule
+    mod.timestamp = timestamp
 
     if (file) {
       const fileModules = this.fileToIdMap.get(file) || []
@@ -277,27 +278,28 @@ export class ModuleRunner {
       this.fileToIdMap.set(file, fileModules)
     }
 
-    this.idToUrlMap.set(id, moduleId)
-    this.idToUrlMap.set(unwrapId(id), moduleId)
-    return fetchedModule as ResolvedResult
+    this.urlToIdMap.set(url, moduleId)
+    this.urlToIdMap.set(unwrapId(url), moduleId)
+    return mod
   }
 
   // override is allowed, consider this a public API
   protected async directRequest(
     id: string,
-    fetchResult: ResolvedResult,
+    mod: ModuleCache,
     _callstack: string[],
   ): Promise<any> {
+    const fetchResult = mod.meta!
     const moduleId = fetchResult.id
     const callstack = [..._callstack, moduleId]
 
-    const mod = this.moduleCache.getByModuleId(moduleId)
-
     const request = async (dep: string, metadata?: SSRImportMetadata) => {
-      const fetchedModule = await this.cachedModule(dep, moduleId)
-      const depMod = this.moduleCache.getByModuleId(fetchedModule.id)
+      const importer = ('file' in fetchResult && fetchResult.file) || moduleId
+      const fetchedModule = await this.cachedModule(dep, importer)
+      const resolvedId = fetchedModule.meta!.id
+      const depMod = this.moduleCache.getByModuleId(resolvedId)
       depMod.importers!.add(moduleId)
-      mod.imports!.add(fetchedModule.id)
+      mod.imports!.add(resolvedId)
 
       return this.cachedRequest(dep, fetchedModule, callstack, metadata)
     }

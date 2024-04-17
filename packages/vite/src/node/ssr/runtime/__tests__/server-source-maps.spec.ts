@@ -21,7 +21,7 @@ describe('module runner initialization', async () => {
   const serializeStack = (runner: ModuleRunner, err: Error) => {
     return err.stack!.split('\n')[1].replace(runner.options.root, '<root>')
   }
-  const serializeStackDeep = (runtime: ViteRuntime, err: Error) => {
+  const serializeStackDeep = (runtime: ModuleRunner, err: Error) => {
     return err
       .stack!.split('\n')
       .map((s) => s.replace(runtime.options.root, '<root>'))
