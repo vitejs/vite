@@ -27,6 +27,20 @@ test('dynamic js', async () => {
   )
 })
 
+test('inline js', async () => {
+  await expectWithRetry(() => page.textContent('.inline-js')).toBe(
+    'inline-js: ok',
+  )
+})
+
+test('nonce attributes are not repeated', async () => {
+  const htmlSource = await page.content()
+  expect(htmlSource).not.toContain(/nonce=""[^>]*nonce=""/)
+  await expectWithRetry(() => page.textContent('.double-nonce-js')).toBe(
+    'double-nonce-js: ok',
+  )
+})
+
 test('meta[property=csp-nonce] is injected', async () => {
   const meta = await page.$('meta[property=csp-nonce]')
   expect(await (await meta.getProperty('nonce')).jsonValue()).not.toBe('')

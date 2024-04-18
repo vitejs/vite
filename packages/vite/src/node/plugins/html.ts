@@ -1180,24 +1180,29 @@ export function injectNonceAttributeTagHook(
         return
       }
 
+      const { nodeName, attrs, sourceCodeLocation } = node
+
       if (
-        node.nodeName === 'script' ||
-        (node.nodeName === 'link' &&
-          node.attrs.some(
+        nodeName === 'script' ||
+        (nodeName === 'link' &&
+          attrs.some(
             (attr) =>
               attr.name === 'rel' &&
               parseRelAttr(attr.value).some((a) => processRelType.has(a)),
           ))
       ) {
+        // If we already have a nonce attribute, we don't need to add another one
+        if (attrs.some(({ name }) => name === 'nonce')) {
+          return
+        }
+
+        const startTagEndOffset = sourceCodeLocation!.startTag!.endOffset
+
         // if the closing of the start tag includes a `/`, the offset should be 2 so the nonce
         // is appended prior to the `/`
-        const appendOffset =
-          html[node.sourceCodeLocation!.startTag!.endOffset - 2] === '/' ? 2 : 1
+        const appendOffset = html[startTagEndOffset - 2] === '/' ? 2 : 1
 
-        s.appendRight(
-          node.sourceCodeLocation!.startTag!.endOffset - appendOffset,
-          ` nonce="${nonce}"`,
-        )
+        s.appendRight(startTagEndOffset - appendOffset, ` nonce="${nonce}"`)
       }
     })
 
