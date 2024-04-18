@@ -50,6 +50,7 @@ export default defineConfig({
     },
     warmup: {
       clientFiles: ['./warmup/*'],
+      clientIds: ['virtual:warmup'],
     },
   },
 
@@ -213,6 +214,15 @@ ${
             injectTo: 'head',
           },
         ]
+      },
+    },
+    {
+      name: 'virtual-warmup-file',
+      resolveId(id) {
+        if (id === 'virtual:warmup') return '\0virtual:warmup'
+      },
+      load(id) {
+        if (id === '\0virtual:warmup') return `console.log('From virtual:warm')`
       },
     },
   ],

@@ -17,12 +17,22 @@ export function warmupFiles(server: ViteDevServer): void {
       }
     })
   }
+  if (options?.clientIds?.length) {
+    for (const id of options.clientIds) {
+      server.warmupRequest(id)
+    }
+  }
   if (options?.ssrFiles?.length) {
     mapFiles(options.ssrFiles, root).then((files) => {
       for (const file of files) {
         warmupFile(server, file, true)
       }
     })
+  }
+  if (options?.ssrIds?.length) {
+    for (const id of options.ssrIds) {
+      server.warmupRequest(id, { ssr: true })
+    }
   }
 }
 
