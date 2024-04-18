@@ -1,9 +1,8 @@
 import type {
   TransportMethods,
-  TransportOptions} from '../shared/remoteTransport';
-import {
-  RemoteTransport
+  TransportOptions,
 } from '../shared/remoteTransport'
+import { RemoteTransport } from '../shared/remoteTransport'
 import type { FetchFunction, FetchResult } from './types'
 import type { ModuleRunner } from './runner'
 
@@ -54,7 +53,7 @@ export class RemoteRunnerTransport<
   async fetchModule(id: string, importer?: string): Promise<FetchResult> {
     // TODO: url gives a type error for some reason here, but works when
     // the class is contructed from the outside
-    return await (this.dispatch as any)('fetchModule', id, importer)
+    return await (this.invoke as any)('fetchModule', id, importer)
   }
 
   register(runner: ModuleRunner): void {

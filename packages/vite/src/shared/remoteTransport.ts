@@ -56,7 +56,7 @@ export class RemoteTransport<
     })
   }
 
-  dispatch<K extends string & keyof E>(
+  invoke<K extends string & keyof E>(
     method: K,
     ...args: Parameters<E[K]>
   ): Promise<ReturnType<E[K]>> {
