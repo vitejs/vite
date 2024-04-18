@@ -29,9 +29,9 @@ export interface RequestEvent {
 
 export class RemoteTransport<
   // events that will be called when this transport is envoked from the other side of the RPC
-  M extends TransportMethods = any,
+  M extends TransportMethods = {},
   // events that will be called on the other side of the RPC, only used in types
-  E extends TransportMethods = any,
+  E extends TransportMethods = {},
 > {
   private readonly _rpcPromises = new Map<
     string,

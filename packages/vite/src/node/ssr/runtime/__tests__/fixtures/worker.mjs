@@ -1,6 +1,6 @@
 // @ts-check
 
-import { BroadcastChannel, parentPort } from 'node:worker_threads'
+import { parentPort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
 import { ESModulesEvaluator, ModuleRunner, RemoteRunnerTransport } from 'vite/module-runner'
 
@@ -17,19 +17,18 @@ const runner = new ModuleRunner(
       },
       send: message => {
         parentPort?.postMessage(message)
+      },
+      methods: {
+        import(id) {
+          return runner.import(id)
+        },
+        ping() {
+          return runner.transport.invoke('pong', 'ping')
+        }
       }
     })
   },
   new ESModulesEvaluator(),
 )
 
-const channel = new BroadcastChannel('vite-worker')
-channel.onmessage = async (message) => {
-  try {
-    const mod = await runner.import(message.data.id)
-    channel.postMessage({ result: mod.default })
-  } catch (e) {
-    channel.postMessage({ error: e.stack })
-  }
-}
 parentPort.postMessage('ready')

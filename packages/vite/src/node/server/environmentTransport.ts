@@ -1,8 +1,4 @@
 import type {
-  RemoteRunnerTransportEvents,
-  RemoteRunnerTransportMethods,
-} from 'vite/module-runner'
-import type {
   TransportMethods,
   TransportOptions,
 } from '../../shared/remoteTransport'
@@ -17,10 +13,7 @@ interface RemoteEnvironmentTransportOptions<M extends TransportMethods = any>
 export class RemoteEnvironmentTransport<
   M extends TransportMethods = {},
   E extends TransportMethods = {},
-> extends RemoteTransport<
-  M & RemoteRunnerTransportEvents,
-  E & RemoteRunnerTransportMethods
-> {
+> extends RemoteTransport<M, E> {
   private _environment: DevEnvironment | undefined
 
   constructor(options: RemoteEnvironmentTransportOptions<M>) {
@@ -39,8 +32,7 @@ export class RemoteEnvironmentTransport<
   }
 
   async evaluate(url: string): Promise<void> {
-    // TODO: url gives a type error for some reason here, but works when
-    // the class is contructed from the outside
+    // evaluate is a special method that we don't expoe in types
     await (this.invoke as any)('evaluate', url)
   }
 

@@ -5,11 +5,6 @@ export { ModuleRunner } from './runner'
 export { ESModulesEvaluator } from './esmEvaluator'
 export { RemoteRunnerTransport } from './runnerTransport'
 
-export type {
-  RemoteRunnerTransportEvents,
-  RemoteRunnerTransportMethods,
-} from './runnerTransport'
-
 export type { RunnerTransport } from './runnerTransport'
 export type { HMRLogger, HMRConnection } from '../shared/hmr'
 export type {
