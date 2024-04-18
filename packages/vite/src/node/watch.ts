@@ -30,7 +30,7 @@ export function resolveEmptyOutDir(
   outDirs: Set<string>,
   logger?: Logger,
 ): boolean {
-  if (emptyOutDir !== null) return emptyOutDir
+  if (emptyOutDir != null) return emptyOutDir
 
   for (const outDir of outDirs) {
     if (!normalizePath(outDir).startsWith(withTrailingSlash(root))) {
