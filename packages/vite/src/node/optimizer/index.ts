@@ -43,7 +43,7 @@ const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
 
 export type ExportsData = {
-  hasImports: boolean
+  hasModuleSyntax: boolean
   // exported names (for `export { a as b }`, `b` is exported name)
   exports: readonly string[]
   // hint if the dep requires loading as jsx
@@ -1079,9 +1079,9 @@ export async function extractExportsData(
       write: false,
       format: 'esm',
     })
-    const [imports, exports] = parse(result.outputFiles[0].text)
+    const [, exports, , hasModuleSyntax] = parse(result.outputFiles[0].text)
     return {
-      hasImports: imports.length > 0,
+      hasModuleSyntax,
       exports: exports.map((e) => e.n),
     }
   }
@@ -1104,9 +1104,9 @@ export async function extractExportsData(
     usedJsxLoader = true
   }
 
-  const [imports, exports] = parseResult
+  const [, exports, , hasModuleSyntax] = parseResult
   const exportsData: ExportsData = {
-    hasImports: imports.length > 0,
+    hasModuleSyntax,
     exports: exports.map((e) => e.n),
     jsxLoader: usedJsxLoader,
   }
@@ -1123,9 +1123,9 @@ function needsInterop(
   if (getDepOptimizationConfig(config, ssr)?.needsInterop?.includes(id)) {
     return true
   }
-  const { hasImports, exports } = exportsData
+  const { hasModuleSyntax, exports } = exportsData
   // entry has no ESM syntax - likely CJS or UMD
-  if (!exports.length && !hasImports) {
+  if (!hasModuleSyntax) {
     return true
   }
 
