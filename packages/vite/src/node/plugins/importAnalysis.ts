@@ -18,6 +18,7 @@ import {
   CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
   FS_PREFIX,
+  SPECIAL_QUERY_RE,
 } from '../constants'
 import {
   debugHmr,
@@ -743,7 +744,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // update the module graph for HMR analysis.
       // node CSS imports does its own graph update in the css-analysis plugin so we
       // only handle js graph updates here.
-      if (!isCSSRequest(importer)) {
+      // note that we want to handle .css?raw and .css?url here
+      if (!isCSSRequest(importer) || SPECIAL_QUERY_RE.test(importer)) {
         // attached by pluginContainer.addWatchFile
         const pluginImports = (this as any)._addedImports as
           | Set<string>
