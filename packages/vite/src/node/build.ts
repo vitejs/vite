@@ -51,7 +51,11 @@ import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
-import { resolveChokidarOptions } from './watch'
+import {
+  getResolvedOutDirs,
+  resolveChokidarOptions,
+  resolveEmptyOutDir,
+} from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
@@ -655,7 +659,17 @@ export async function build(
       normalizedOutputs.push(buildOutputOptions(outputs))
     }
 
-    const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
+    const resolvedOutDirs = getResolvedOutDirs(
+      config.root,
+      options.outDir,
+      options.rollupOptions?.output,
+    )
+    const emptyOutDir = resolveEmptyOutDir(
+      options.emptyOutDir,
+      config.root,
+      resolvedOutDirs,
+      config.logger,
+    )
 
     // watch file changes with rollup
     if (config.build.watch) {
@@ -664,6 +678,8 @@ export async function build(
       const resolvedChokidarOptions = resolveChokidarOptions(
         config,
         config.build.watch.chokidar,
+        resolvedOutDirs,
+        emptyOutDir,
       )
 
       const { watch } = await import('rollup')
@@ -680,7 +696,7 @@ export async function build(
         if (event.code === 'BUNDLE_START') {
           config.logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
-            prepareOutDir(outDirs, options.emptyOutDir, config)
+            prepareOutDir(resolvedOutDirs, emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
@@ -699,7 +715,7 @@ export async function build(
     bundle = await rollup(rollupOptions)
 
     if (options.write) {
-      prepareOutDir(outDirs, options.emptyOutDir, config)
+      prepareOutDir(resolvedOutDirs, emptyOutDir, config)
     }
 
     const res: RollupOutput[] = []
@@ -726,36 +742,15 @@ export async function build(
 }
 
 function prepareOutDir(
-  outDirs: string[],
+  outDirs: Set<string>,
   emptyOutDir: boolean | null,
   config: ResolvedConfig,
 ) {
-  const nonDuplicateDirs = new Set(outDirs)
-  let outside = false
-  if (emptyOutDir == null) {
-    for (const outDir of nonDuplicateDirs) {
-      if (
-        fs.existsSync(outDir) &&
-        !normalizePath(outDir).startsWith(withTrailingSlash(config.root))
-      ) {
-        // warn if outDir is outside of root
-        config.logger.warn(
-          colors.yellow(
-            `\n${colors.bold(`(!)`)} outDir ${colors.white(
-              colors.dim(outDir),
-            )} is not inside project root and will not be emptied.\n` +
-              `Use --emptyOutDir to override.\n`,
-          ),
-        )
-        outside = true
-        break
-      }
-    }
-  }
-  for (const outDir of nonDuplicateDirs) {
-    if (!outside && emptyOutDir !== false && fs.existsSync(outDir)) {
+  const outDirsArray = [...outDirs]
+  for (const outDir of outDirs) {
+    if (emptyOutDir !== false && fs.existsSync(outDir)) {
       // skip those other outDirs which are nested in current outDir
-      const skipDirs = outDirs
+      const skipDirs = outDirsArray
         .map((dir) => {
           const relative = path.relative(outDir, dir)
           if (
