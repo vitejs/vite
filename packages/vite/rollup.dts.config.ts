@@ -92,11 +92,14 @@ function patchTypes(): Plugin {
       }
     },
     renderChunk(code, chunk) {
-      if (
-        chunk.fileName.startsWith('module-runner') ||
-        chunk.fileName.startsWith('types.d-')
-      ) {
-        validateRunnerChunk.call(this, chunk)
+      const isNonMainChunk =
+        chunk.moduleIds.length &&
+        chunk.moduleIds.every(
+          (id) => id.includes('/module-runner/') || id.includes('/shared/'),
+        )
+
+      if (isNonMainChunk) {
+        validateNonMainChunk.call(this, chunk)
       } else {
         validateChunkImports.call(this, chunk)
         code = replaceConfusingTypeNames.call(this, code, chunk)
@@ -111,11 +114,12 @@ function patchTypes(): Plugin {
 /**
  * Runner chunk should only import local dependencies to stay lightweight
  */
-function validateRunnerChunk(this: PluginContext, chunk: RenderedChunk) {
+function validateNonMainChunk(this: PluginContext, chunk: RenderedChunk) {
   for (const id of chunk.imports) {
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
+      !id.startsWith('remoteTransport.d') &&
       !id.startsWith('types.d')
     ) {
       this.warn(`${chunk.fileName} imports "${id}" which is not allowed`)
@@ -134,6 +138,7 @@ function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
       !id.startsWith('./') &&
       !id.startsWith('../') &&
       !id.startsWith('node:') &&
+      !id.startsWith('remoteTransport.d') &&
       !id.startsWith('types.d') &&
       !id.startsWith('vite/') &&
       !deps.includes(id) &&
