@@ -1,3 +1,4 @@
+import type { ModuleRunner } from 'vite/module-runner'
 import type { DevEnvironmentSetup } from '../environment'
 import { DevEnvironment } from '../environment'
 import type { ViteDevServer } from '../index'
@@ -25,9 +26,11 @@ export function createNodeDevEnvironment(
 }
 
 class NodeDevEnvironment extends DevEnvironment {
-  private runner = createServerModuleRunner(this)
+  private runner: ModuleRunner | undefined
 
   override async evaluate(url: string): Promise<void> {
-    await this.runner.import(url)
+    if (this._ssrRunnerOptions?.transport) return super.evaluate(url)
+    const runner = this.runner || (this.runner = createServerModuleRunner(this))
+    await runner.import(url)
   }
 }
