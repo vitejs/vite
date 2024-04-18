@@ -5,7 +5,8 @@ import React, { useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { Socket } from 'phoenix'
 import clip from 'clipboard'
-import m from '@vitejs/test-dep-cjs-with-es-module'
+import m from '@vitejs/test-dep-cjs-with-es-module-flag'
+// Test exporting a name that was already imported
 export { useState } from 'react'
 export { useState as anotherNameForUseState } from 'react'
 export { default as React } from 'react'
@@ -18,7 +19,7 @@ if (typeof Socket === 'function') {
   text('.cjs-phoenix', 'ok')
 }
 
-text('.cjs-with-es-module', m.info)
+text('.cjs-with-es-module-flag', m.info)
 
 function App() {
   const [count, setCount] = useState(0)
