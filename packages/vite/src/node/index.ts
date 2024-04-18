@@ -11,7 +11,10 @@ export {
 export { createServer } from './server'
 export { preview } from './preview'
 export { build, createViteBuilder } from './build'
-export { optimizeDeps } from './optimizer'
+
+// TODO: Can we remove this?
+// export { optimizeDeps } from './optimizer'
+
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
@@ -36,7 +39,6 @@ export type {
   InlineConfig,
   LegacyOptions,
   PluginHookUtils,
-  PluginOption,
   ResolveFn,
   ResolvedWorkerOptions,
   ResolvedConfig,
@@ -46,6 +48,7 @@ export type {
   UserConfigFnObject,
   UserConfigFnPromise,
 } from './config'
+export type { PluginOption } from './plugin'
 export type { FilterPattern } from './utils'
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
 export type {

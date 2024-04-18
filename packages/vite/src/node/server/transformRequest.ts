@@ -1,4 +1,3 @@
-import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
@@ -6,10 +5,9 @@ import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
 import colors from 'picocolors'
-import type { EnvironmentModuleNode, ViteDevServer } from '..'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
   createDebugger,
-  ensureWatchedFile,
   injectQuery,
   isObject,
   prettifyUrl,
@@ -18,19 +16,11 @@ import {
   stripBase,
   timeFrom,
 } from '../utils'
-import { checkPublicFile } from '../publicDir'
-import { cleanUrl, unwrapId } from '../../shared/utils'
-import {
-  applySourcemapIgnoreList,
-  extractSourcemapFromFile,
-  injectSourcesContent,
-} from './sourcemap'
-import { isFileServingAllowed } from './middlewares/static'
+import { ssrTransform } from '../ssr/ssrTransform'
+import { unwrapId } from '../../shared/utils'
+import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
 import { throwClosedServerError } from './pluginContainer'
 import type { DevEnvironment } from './environment'
-
-export const ERR_LOAD_URL = 'ERR_LOAD_URL'
-export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -44,6 +34,7 @@ export interface TransformResult {
   dynamicDeps?: string[]
 }
 
+// TODO: Rename to LoadOptions and move to /plugin.ts ?
 export interface TransformOptions {
   /**
    * @deprecated infered from environment
@@ -55,26 +46,28 @@ export interface TransformOptions {
   html?: boolean
 }
 
+// TODO: This function could be moved to the DevEnvironment class.
+// It was already using private fields from the server before, and it now does
+// the same with environment._closing, environment._pendingRequests and
+// environment._registerRequestProcessing. Maybe it makes sense to keep it in
+// separate file to preserve the history or keep the DevEnvironment class cleaner,
+// but conceptually this is: `environment.transformRequest(url, options)`
+
 export function transformRequest(
+  environment: DevEnvironment,
   url: string,
-  server: ViteDevServer,
   options: TransformOptions = {},
-  environment?: DevEnvironment,
 ): Promise<TransformResult | null> {
   // Backward compatibility when only `ssr` is passed
-  if (!environment) {
-    environment = server.environments[options.ssr ? 'ssr' : 'client']
-  }
   if (!options?.ssr) {
     // Backward compatibility
     options = { ...options, ssr: environment.name !== 'client' }
   }
 
-  if (server._restartPromise && environment?.options.dev.recoverable)
+  if (environment._closing && environment?.options.dev.recoverable)
     throwClosedServerError()
 
-  // We could have a cache per environment instead of the global _pendingRequests
-  const cacheKey = `${options.html ? 'html:' : ''}${environment.name}:${url}`
+  const cacheKey = `${options.html ? 'html:' : ''}${url}`
 
   // This module may get invalidated while we are processing it. For example
   // when a full page reload is needed after the re-processing of pre-bundled
@@ -98,7 +91,7 @@ export function transformRequest(
   // last time this module is invalidated
   const timestamp = Date.now()
 
-  const pending = server._pendingRequests.get(cacheKey)
+  const pending = environment._pendingRequests.get(cacheKey)
   if (pending) {
     return environment.moduleGraph
       .getModuleByUrl(removeTimestampQuery(url))
@@ -114,24 +107,24 @@ export function transformRequest(
           // First request has been invalidated, abort it to clear the cache,
           // then perform a new doTransform.
           pending.abort()
-          return transformRequest(url, server, options, environment)
+          return transformRequest(environment, url, options)
         }
       })
   }
 
-  const request = doTransform(environment, url, server, options, timestamp)
+  const request = doTransform(environment, url, options, timestamp)
 
   // Avoid clearing the cache of future requests if aborted
   let cleared = false
   const clearCache = () => {
     if (!cleared) {
-      server._pendingRequests.delete(cacheKey)
+      environment._pendingRequests.delete(cacheKey)
       cleared = true
     }
   }
 
   // Cache the request and clear it once processing is done
-  server._pendingRequests.set(cacheKey, {
+  environment._pendingRequests.set(cacheKey, {
     request,
     timestamp,
     abort: clearCache,
@@ -143,17 +136,14 @@ export function transformRequest(
 async function doTransform(
   environment: DevEnvironment,
   url: string,
-  server: ViteDevServer,
   options: TransformOptions,
   timestamp: number,
 ) {
   url = removeTimestampQuery(url)
 
-  const { pluginContainer } = server
+  await environment.init()
 
-  const ssr = !!options.ssr
-
-  await environment.depsOptimizer?.init()
+  const { pluginContainer } = environment
 
   let module = await environment.moduleGraph.getModuleByUrl(url)
   if (module) {
@@ -162,16 +152,15 @@ async function doTransform(
       environment,
       url,
       module,
-      server,
       timestamp,
     )
     if (cached) return cached
   }
 
+  // TODO: Simplify
   const resolved = module
     ? undefined
-    : (await pluginContainer.resolveId(url, undefined, { ssr, environment })) ??
-      undefined
+    : (await pluginContainer.resolveId(url, undefined)) ?? undefined
 
   // resolve
   const id = module?.id ?? resolved?.id ?? url
@@ -185,7 +174,6 @@ async function doTransform(
       environment,
       url,
       module,
-      server,
       timestamp,
     )
     if (cached) return cached
@@ -195,21 +183,15 @@ async function doTransform(
     environment,
     id,
     url,
-    server,
     options,
     timestamp,
     module,
     resolved,
   )
 
-  if (!ssr) {
-    // Only register client requests, server.waitForRequestsIdle should
-    // have been called server.waitForClientRequestsIdle. We can rename
-    // it as part of the environment API work
-    const { depsOptimizer } = environment
-    if (!depsOptimizer?.isOptimizedDepFile(id)) {
-      server._registerRequestProcessing(id, () => result)
-    }
+  const { depsOptimizer } = environment
+  if (!depsOptimizer?.isOptimizedDepFile(id)) {
+    environment._registerRequestProcessing(id, () => result)
   }
 
   return result
@@ -219,16 +201,15 @@ async function getCachedTransformResult(
   environment: DevEnvironment,
   url: string,
   module: EnvironmentModuleNode,
-  server: ViteDevServer,
   timestamp: number,
 ) {
-  const prettyUrl = debugCache ? prettifyUrl(url, server.config.root) : ''
+  const prettyUrl = debugCache ? prettifyUrl(url, environment.config.root) : ''
 
   // tries to handle soft invalidation of the module if available,
   // returns a boolean true is successful, or false if no handling is needed
   const softInvalidatedTransformResult =
     module &&
-    (await handleModuleSoftInvalidation(environment, module, timestamp, server))
+    (await handleModuleSoftInvalidation(environment, module, timestamp))
   if (softInvalidatedTransformResult) {
     debugCache?.(`[memory-hmr] ${prettyUrl}`)
     return softInvalidatedTransformResult
@@ -246,105 +227,39 @@ async function loadAndTransform(
   environment: DevEnvironment,
   id: string,
   url: string,
-  server: ViteDevServer,
   options: TransformOptions,
   timestamp: number,
   mod?: EnvironmentModuleNode,
   resolved?: PartialResolvedId,
 ) {
-  const { config, pluginContainer } = server
+  const { config, pluginContainer } = environment
   const { logger } = config
   const prettyUrl =
     debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
 
-  // options.environment is always defined at this point
-  const ssr = !!options.ssr
-
   const moduleGraph = environment.moduleGraph
 
-  const file = cleanUrl(id)
-
-  let code: string | null = null
-  let map: SourceDescription['map'] = null
+  let code: string
+  let map: SourceDescription['map']
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id, { ssr, environment })
-  if (loadResult == null) {
-    // if this is an html request and there is no load result, skip ahead to
-    // SPA fallback.
-    if (options.html && !id.endsWith('.html')) {
-      return null
-    }
-    // try fallback loading it from fs as string
-    // if the file is a binary, there should be a plugin that already loaded it
-    // as string
-    // only try the fallback if access is allowed, skip for out of root url
-    // like /service-worker.js or /api/users
-    if (
-      environment.options.nodeCompatible ||
-      isFileServingAllowed(file, server)
-    ) {
-      try {
-        code = await fsp.readFile(file, 'utf-8')
-        debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
-      } catch (e) {
-        if (e.code !== 'ENOENT') {
-          if (e.code === 'EISDIR') {
-            e.message = `${e.message} ${file}`
-          }
-          throw e
-        }
-      }
-      if (code != null) {
-        ensureWatchedFile(server.watcher, file, config.root)
-      }
-    }
-    if (code) {
-      try {
-        const extracted = await extractSourcemapFromFile(code, file)
-        if (extracted) {
-          code = extracted.code
-          map = extracted.map
-        }
-      } catch (e) {
-        logger.warn(`Failed to load source map for ${file}.\n${e}`, {
-          timestamp: true,
-        })
-      }
-    }
-  } else {
-    debugLoad?.(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
-    if (isObject(loadResult)) {
-      code = loadResult.code
-      map = loadResult.map
-    } else {
-      code = loadResult
-    }
-  }
-  if (code == null) {
-    const isPublicFile = checkPublicFile(url, config)
-    let publicDirName = path.relative(config.root, config.publicDir)
-    if (publicDirName[0] !== '.') publicDirName = '/' + publicDirName
-    const msg = isPublicFile
-      ? `This file is in ${publicDirName} and will be copied as-is during ` +
-        `build without going through the plugin transforms, and therefore ` +
-        `should not be imported from source code. It can only be referenced ` +
-        `via HTML tags.`
-      : `Does the file exist?`
-    const importerMod: EnvironmentModuleNode | undefined =
-      moduleGraph.idToModuleMap.get(id)?.importers.values().next().value
-    const importer = importerMod?.file || importerMod?.url
-    const err: any = new Error(
-      `Failed to load url ${url} (resolved id: ${id})${
-        importer ? ` in ${importer}` : ''
-      }. ${msg}`,
-    )
-    err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
-    throw err
+  const loadResult = await pluginContainer.load(id, options)
+
+  debugLoad?.(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
+
+  if (!loadResult) {
+    return null
   }
 
-  if (server._restartPromise && environment.options.dev.recoverable)
+  if (isObject(loadResult)) {
+    code = loadResult.code
+    map = loadResult.map
+  } else {
+    code = loadResult
+  }
+
+  if (environment._closing && environment.options.dev.recoverable)
     throwClosedServerError()
 
   // ensure module in graph after successful load
@@ -354,8 +269,6 @@ async function loadAndTransform(
   const transformStart = debugTransform ? performance.now() : 0
   const transformResult = await pluginContainer.transform(code, id, {
     inMap: map,
-    ssr,
-    environment,
   })
   const originalCode = code
   if (
@@ -418,17 +331,22 @@ async function loadAndTransform(
     }
   }
 
-  if (server._restartPromise && environment.options.dev.recoverable)
+  if (environment._closing && environment.options.dev.recoverable)
     throwClosedServerError()
 
-  const result =
-    ssr && !server.config.experimental.skipSsrTransform
-      ? await server.ssrTransform(code, normalizedMap, url, originalCode)
-      : ({
-          code,
-          map: normalizedMap,
-          etag: getEtag(code, { weak: true }),
-        } satisfies TransformResult)
+  const result = environment.options.dev.moduleRunnerTransform
+    ? await ssrTransform(
+        code,
+        normalizedMap,
+        url,
+        originalCode,
+        environment.config,
+      )
+    : ({
+        code,
+        map: normalizedMap,
+        etag: getEtag(code, { weak: true }),
+      } satisfies TransformResult)
 
   // Only cache the result if the module wasn't invalidated while it was
   // being processed, so it is re-processed next time if it is stale
@@ -449,7 +367,6 @@ async function handleModuleSoftInvalidation(
   environment: DevEnvironment,
   mod: EnvironmentModuleNode,
   timestamp: number,
-  server: ViteDevServer,
 ) {
   const transformResult = mod.invalidationState
 
@@ -489,7 +406,10 @@ async function handleModuleSoftInvalidation(
       const urlWithoutTimestamp = removeTimestampQuery(rawUrl)
       // hmrUrl must be derived the same way as importAnalysis
       const hmrUrl = unwrapId(
-        stripBase(removeImportQuery(urlWithoutTimestamp), server.config.base),
+        stripBase(
+          removeImportQuery(urlWithoutTimestamp),
+          environment.config.base,
+        ),
       )
       for (const importedMod of mod.importedModules) {
         if (importedMod.url !== hmrUrl) continue
@@ -503,7 +423,7 @@ async function handleModuleSoftInvalidation(
           s.overwrite(start, end, replacedUrl)
         }
 
-        if (imp.d === -1 && server.config.server.preTransformRequests) {
+        if (imp.d === -1 && environment.options.dev.preTransformRequests) {
           // pre-transform known direct imports
           environment.warmupRequest(hmrUrl)
         }

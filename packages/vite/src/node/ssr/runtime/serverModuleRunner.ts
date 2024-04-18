@@ -82,10 +82,11 @@ function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
  * @experimental
  */
 export function createServerModuleRunner(
+  server: ViteDevServer,
   environment: DevEnvironment,
   options: ServerModuleRunnerOptions = {},
 ): ModuleRunner {
-  const hmr = createHMROptions(environment.server, options)
+  const hmr = createHMROptions(server, options)
   return new ModuleRunner(
     {
       ...options,

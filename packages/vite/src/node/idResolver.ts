@@ -3,11 +3,11 @@ import aliasPlugin from '@rollup/plugin-alias'
 import type { ResolvedConfig } from './config'
 import type { Environment } from './environment'
 import type { PluginEnvironment } from './plugin'
-import type { PluginContainer } from './server/pluginContainer'
+import type { BoundedPluginContainer } from './server/pluginContainer'
+import { createBoundedPluginContainer } from './server/pluginContainer'
 import { resolvePlugin } from './plugins/resolve'
 import type { InternalResolveOptions } from './plugins/resolve'
 import { getFsUtils } from './fsUtils'
-import { createPluginContainer } from './server/pluginContainer'
 
 export type ResolveIdFn = (
   environment: Environment,
@@ -26,15 +26,15 @@ export function createIdResolver(
 ): ResolveIdFn {
   const scan = options?.scan
 
-  let pluginContainer: PluginContainer | undefined
+  const pluginContainerMap = new Map<Environment, BoundedPluginContainer>()
   async function resolve(
     environment: PluginEnvironment,
     id: string,
     importer?: string,
   ): Promise<PartialResolvedId | null> {
-    pluginContainer ??= await createPluginContainer({
-      ...config,
-      plugins: [
+    let pluginContainer = pluginContainerMap.get(environment)
+    if (!pluginContainer) {
+      pluginContainer = await createBoundedPluginContainer(environment, [
         aliasPlugin({ entries: config.resolve.alias }), // TODO: resolve.alias per environment?
         resolvePlugin(
           {
@@ -51,27 +51,29 @@ export function createIdResolver(
           },
           config.environments,
         ),
-      ],
-    })
-    return await pluginContainer.resolveId(id, importer, { environment, scan })
+      ])
+      pluginContainerMap.set(environment, pluginContainer)
+    }
+    return await pluginContainer.resolveId(id, importer, { scan })
   }
 
-  let aliasOnlyPluginContainer: PluginContainer | undefined
+  const aliasOnlyPluginContainerMap = new Map<
+    Environment,
+    BoundedPluginContainer
+  >()
   async function resolveAlias(
     environment: PluginEnvironment,
     id: string,
     importer?: string,
   ): Promise<PartialResolvedId | null> {
-    aliasOnlyPluginContainer ??= await createPluginContainer({
-      ...config,
-      plugins: [
+    let pluginContainer = aliasOnlyPluginContainerMap.get(environment)
+    if (!pluginContainer) {
+      pluginContainer = await createBoundedPluginContainer(environment, [
         aliasPlugin({ entries: config.resolve.alias }), // TODO: resolve.alias per environment?
-      ],
-    })
-    return await aliasOnlyPluginContainer.resolveId(id, importer, {
-      environment,
-      scan,
-    })
+      ])
+      aliasOnlyPluginContainerMap.set(environment, pluginContainer)
+    }
+    return await pluginContainer.resolveId(id, importer, { scan })
   }
 
   return async (environment, id, importer, aliasOnly) => {

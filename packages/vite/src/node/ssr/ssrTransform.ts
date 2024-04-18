@@ -37,6 +37,8 @@ export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
 const hashbangRE = /^#!.*\n/
 
+// TODO: Should we rename to moduleRunnerTransform?
+
 export async function ssrTransform(
   code: string,
   inMap: SourceMap | { mappings: '' } | null,

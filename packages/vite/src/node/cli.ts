@@ -9,8 +9,6 @@ import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
-import { resolveConfig } from './config'
-import { Environment } from './environment'
 
 const cli = cac('vite')
 
@@ -345,6 +343,8 @@ cli
   )
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
+      /* TODO: do we need this command?
+
       filterDuplicateOptions(options)
       const { optimizeDeps } = await import('./optimizer')
       try {
@@ -367,6 +367,7 @@ cli
         )
         process.exit(1)
       }
+      */
     },
   )
 

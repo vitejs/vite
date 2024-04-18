@@ -319,13 +319,7 @@ export async function handleHMRUpdate(
         return
       }
 
-      updateModules(
-        environment,
-        shortFile,
-        hotContext.modules,
-        timestamp,
-        server,
-      )
+      updateModules(environment, shortFile, hotContext.modules, timestamp)
     } catch (err) {
       environment.hot.send({
         type: 'error',
@@ -355,11 +349,9 @@ export function updateModules(
   file: string,
   modules: EnvironmentModuleNode[],
   timestamp: number,
-  server: ViteDevServer,
   afterInvalidation?: boolean,
 ): void {
-  const { hot } = environment
-  const { config } = server
+  const { hot, config } = environment
   const updates: Update[] = []
   const invalidatedModules = new Set<EnvironmentModuleNode>()
   const traversedModules = new Set<EnvironmentModuleNode>()

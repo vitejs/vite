@@ -35,14 +35,72 @@ import {
   virtualModulePrefix,
   virtualModuleRE,
 } from '../utils'
-import type { PluginContainer } from '../server/pluginContainer'
-import { createPluginContainer } from '../server/pluginContainer'
+import { resolveBoundedPlugins } from '../plugin'
+import type { BoundedPluginContainer } from '../server/pluginContainer'
+import { createBoundedPluginContainer } from '../server/pluginContainer'
+import { Environment } from '../environment'
+import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 import { cleanUrl } from '../../shared/utils'
 import { loadTsconfigJsonForFile } from '../plugins/esbuild'
 
+export class ScanEnvironment extends Environment {
+  mode = 'scan' as const
+
+  get pluginContainer(): BoundedPluginContainer {
+    if (!this._pluginContainer)
+      throw new Error(
+        `${this.name} environment.pluginContainer called before initialized`,
+      )
+    return this._pluginContainer
+  }
+  /**
+   * @internal
+   */
+  _pluginContainer: BoundedPluginContainer | undefined
+
+  async init(): Promise<void> {
+    if (this._inited) {
+      return
+    }
+    this._inited = true
+    this._plugins = await resolveBoundedPlugins(this)
+    this._pluginContainer = await createBoundedPluginContainer(
+      this,
+      this.plugins,
+    )
+  }
+}
+
+// Restric access to the module graph and the server while scanning
+export function devToScanEnvironment(
+  environment: DevEnvironment,
+): ScanEnvironment {
+  return {
+    mode: 'scan',
+    get name() {
+      return environment.name
+    },
+    get config() {
+      return environment.config
+    },
+    get options() {
+      return environment.options
+    },
+    get logger() {
+      return environment.logger
+    },
+    get pluginContainer() {
+      return environment.pluginContainer
+    },
+    get plugins() {
+      return environment.plugins
+    },
+  } as unknown as ScanEnvironment
+}
+
 type ResolveIdOptions = Omit<
-  Parameters<PluginContainer['resolveId']>[2],
+  Parameters<BoundedPluginContainer['resolveId']>[2],
   'environment'
 >
 
@@ -61,7 +119,7 @@ const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
 export const importsRE =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
-export function scanImports(config: ResolvedConfig): {
+export function scanImports(environment: ScanEnvironment): {
   cancel: () => Promise<void>
   result: Promise<{
     deps: Record<string, string>
@@ -78,13 +136,16 @@ export function scanImports(config: ResolvedConfig): {
   const scanContext = { cancelled: false }
 
   const esbuildContext: Promise<BuildContext | undefined> = computeEntries(
-    config,
+    environment.config,
   ).then((computedEntries) => {
     entries = computedEntries
 
     if (!entries.length) {
-      if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
-        config.logger.warn(
+      if (
+        !environment.config.optimizeDeps.entries &&
+        !environment.options.dev.optimizeDeps.include
+      ) {
+        environment.logger.warn(
           colors.yellow(
             '(!) Could not auto-determine entry point from rollupOptions or html files ' +
               'and there are no explicit optimizeDeps.include patterns. ' +
@@ -101,14 +162,22 @@ export function scanImports(config: ResolvedConfig): {
         .map((entry) => `\n  ${colors.dim(entry)}`)
         .join('')}`,
     )
-    return prepareEsbuildScanner(config, entries, deps, missing, scanContext)
+    return prepareEsbuildScanner(
+      environment,
+      entries,
+      deps,
+      missing,
+      scanContext,
+    )
   })
 
   const result = esbuildContext
     .then((context) => {
       function disposeContext() {
         return context?.dispose().catch((e) => {
-          config.logger.error('Failed to dispose esbuild context', { error: e })
+          environment.logger.error('Failed to dispose esbuild context', {
+            error: e,
+          })
         })
       }
       if (!context || scanContext?.cancelled) {
@@ -175,6 +244,7 @@ export function scanImports(config: ResolvedConfig): {
 async function computeEntries(config: ResolvedConfig) {
   let entries: string[] = []
 
+  // TODO: Should entries be per-environment?
   const explicitEntryPatterns = config.optimizeDeps.entries
   const buildInput = config.build.rollupOptions?.input
 
@@ -207,20 +277,18 @@ async function computeEntries(config: ResolvedConfig) {
 }
 
 async function prepareEsbuildScanner(
-  config: ResolvedConfig,
+  environment: ScanEnvironment,
   entries: string[],
   deps: Record<string, string>,
   missing: Record<string, string>,
   scanContext?: { cancelled: boolean },
 ): Promise<BuildContext | undefined> {
-  const container = await createPluginContainer(config)
-
   if (scanContext?.cancelled) return
 
-  const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
+  const plugin = esbuildScanPlugin(environment, deps, missing, entries)
 
   const { plugins = [], ...esbuildOptions } =
-    config.optimizeDeps?.esbuildOptions ?? {}
+    environment.options.dev.optimizeDeps.esbuildOptions ?? {}
 
   // The plugin pipeline automatically loads the closest tsconfig.json.
   // But esbuild doesn't support reading tsconfig.json if the plugin has resolved the path (https://github.com/evanw/esbuild/issues/2265).
@@ -230,7 +298,7 @@ async function prepareEsbuildScanner(
   let tsconfigRaw = esbuildOptions.tsconfigRaw
   if (!tsconfigRaw && !esbuildOptions.tsconfig) {
     const tsconfigResult = await loadTsconfigJsonForFile(
-      path.join(config.root, '_dummy.js'),
+      path.join(environment.config.root, '_dummy.js'),
     )
     if (tsconfigResult.compilerOptions?.experimentalDecorators) {
       tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
@@ -291,8 +359,7 @@ const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const contextRE = /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 
 function esbuildScanPlugin(
-  config: ResolvedConfig,
-  container: PluginContainer,
+  environment: ScanEnvironment,
   depImports: Record<string, string>,
   missing: Record<string, string>,
   entries: string[],
@@ -303,10 +370,14 @@ function esbuildScanPlugin(
     importer?: string,
     options?: ResolveIdOptions,
   ): Promise<PartialResolvedId | null> {
-    return container.resolveId(id, importer && normalizePath(importer), {
-      ...options,
-      scan: true,
-    })
+    return environment.pluginContainer.resolveId(
+      id,
+      importer && normalizePath(importer),
+      {
+        ...options,
+        scan: true,
+      },
+    )
   }
   const resolve = async (
     id: string,
@@ -323,9 +394,10 @@ function esbuildScanPlugin(
     return res
   }
 
-  const include = config.optimizeDeps?.include
+  const optimizeDepsOptions = environment.options.dev.optimizeDeps
+  const include = optimizeDepsOptions.include
   const exclude = [
-    ...(config.optimizeDeps?.exclude || []),
+    ...(optimizeDepsOptions.exclude ?? []),
     '@vite/client',
     '@vite/env',
   ]
@@ -353,7 +425,7 @@ function esbuildScanPlugin(
     const result = await transformGlobImport(
       transpiledContents,
       id,
-      config.root,
+      environment.config.root,
       resolve,
     )
 
@@ -399,7 +471,7 @@ function esbuildScanPlugin(
         // bare import resolve, and recorded as optimization dep.
         if (
           isInNodeModules(resolved) &&
-          isOptimizable(resolved, config.optimizeDeps)
+          isOptimizable(resolved, optimizeDepsOptions)
         )
           return
         return {
@@ -553,11 +625,11 @@ function esbuildScanPlugin(
             }
             if (isInNodeModules(resolved) || include?.includes(id)) {
               // dependency or forced included, externalize and stop crawling
-              if (isOptimizable(resolved, config.optimizeDeps)) {
+              if (isOptimizable(resolved, optimizeDepsOptions)) {
                 depImports[id] = resolved
               }
               return externalUnlessEntry({ path: id })
-            } else if (isScannable(resolved, config.optimizeDeps.extensions)) {
+            } else if (isScannable(resolved, optimizeDepsOptions.extensions)) {
               const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
               // linked package, keep crawling
               return {
@@ -618,7 +690,7 @@ function esbuildScanPlugin(
           if (resolved) {
             if (
               shouldExternalizeDep(resolved, id) ||
-              !isScannable(resolved, config.optimizeDeps.extensions)
+              !isScannable(resolved, optimizeDepsOptions.extensions)
             ) {
               return externalUnlessEntry({ path: id })
             }
@@ -643,13 +715,15 @@ function esbuildScanPlugin(
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
 
+        // TODO: Why are we using config.esbuild instead of config.optimizeDeps.esbuildOptions here?
+        const esbuildConfig = environment.config.esbuild
         let contents = await fsp.readFile(id, 'utf-8')
-        if (ext.endsWith('x') && config.esbuild && config.esbuild.jsxInject) {
-          contents = config.esbuild.jsxInject + `\n` + contents
+        if (ext.endsWith('x') && esbuildConfig && esbuildConfig.jsxInject) {
+          contents = esbuildConfig.jsxInject + `\n` + contents
         }
 
         const loader =
-          config.optimizeDeps?.esbuildOptions?.loader?.[`.${ext}`] ||
+          optimizeDepsOptions.esbuildOptions?.loader?.[`.${ext}`] ??
           (ext as Loader)
 
         if (contents.includes('import.meta.glob')) {

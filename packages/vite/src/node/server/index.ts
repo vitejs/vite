@@ -32,7 +32,6 @@ import {
   isParentDirectory,
   mergeConfig,
   normalizePath,
-  promiseWithResolvers,
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
@@ -303,6 +302,7 @@ export interface ViteDevServer {
   ): Promise<string>
   /**
    * Transform module code into SSR format.
+   * TODO: expose this to any environment?
    */
   ssrTransform(
     code: string,
@@ -367,16 +367,9 @@ export interface ViteDevServer {
    * passed as a parameter to avoid deadlocks. Calling this function after the first
    * static imports section of the module graph has been processed will resolve immediately.
    * @experimental
+   * @deprecated use environment.waitForRequestsIdle()
    */
   waitForRequestsIdle: (ignoredId?: string) => Promise<void>
-  /**
-   * @internal
-   */
-  _registerRequestProcessing: (id: string, done: () => Promise<unknown>) => void
-  /**
-   * @internal
-   */
-  _onCrawlEnd(cb: () => void): void
   /**
    * @internal
    */
@@ -389,17 +382,6 @@ export interface ViteDevServer {
    * @internal
    */
   _forceOptimizeOnRestart: boolean
-  /**
-   * @internal
-   */
-  _pendingRequests: Map<
-    string,
-    {
-      request: Promise<TransformResult | null>
-      timestamp: number
-      abort: () => void
-    }
-  >
   /**
    * @internal
    */
@@ -482,41 +464,17 @@ export async function _createServer(
 
   const environments: Record<string, DevEnvironment> = {}
 
-  // The global environment is used for buildStart, buildEnd, watchChange, and writeBundle hooks
-  // that are called once and not per environment.
-  // The Vite server has always passed the mixed module graph. Passing the client environment
-  // should give us the best backward compatibility for now.
-  // We can review this in the next Vite major.
-  const pluginContainer = await createPluginContainer(
-    config,
-    watcher,
-    environments,
-  )
-
   const moduleGraph = new ModuleGraph({
     client: () => environments.client.moduleGraph,
     ssr: () => environments.ssr.moduleGraph,
   })
+  const pluginContainer = createPluginContainer(environments)
 
   const closeHttpServer = createServerCloseFn(httpServer)
 
   let exitProcess: () => void
 
   const devHtmlTransformFn = createDevHtmlTransformFn(config)
-
-  const onCrawlEndCallbacks: (() => void)[] = []
-  const crawlEndFinder = setupOnCrawlEnd(() => {
-    onCrawlEndCallbacks.forEach((cb) => cb())
-  })
-  function waitForRequestsIdle(ignoredId?: string): Promise<void> {
-    return crawlEndFinder.waitForRequestsIdle(ignoredId)
-  }
-  function _registerRequestProcessing(id: string, done: () => Promise<any>) {
-    crawlEndFinder.registerRequestProcessing(id, done)
-  }
-  function _onCrawlEnd(cb: () => void) {
-    onCrawlEndCallbacks.push(cb)
-  }
 
   let server: ViteDevServer = {
     config,
@@ -546,12 +504,12 @@ export async function _createServer(
     // out and do the html fallback
     transformRequest(url, options) {
       const environment = server.environments[options?.ssr ? 'ssr' : 'client']
-      return transformRequest(url, server, options, environment)
+      return transformRequest(environment, url, options)
     },
     async warmupRequest(url, options) {
       try {
         const environment = server.environments[options?.ssr ? 'ssr' : 'client']
-        await transformRequest(url, server, options, environment)
+        await transformRequest(environment, url, options)
       } catch (e) {
         if (
           e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
@@ -594,7 +552,6 @@ export async function _createServer(
           module.file,
           [environmentModule],
           Date.now(),
-          server,
         )
       }
     },
@@ -606,7 +563,6 @@ export async function _createServer(
           module.file,
           [module],
           Date.now(),
-          server,
         )
       }
     },
@@ -678,28 +634,13 @@ export async function _createServer(
       await Promise.allSettled([
         watcher.close(),
         hot.close(),
-        pluginContainer.close(),
         Promise.allSettled(
           Object.values(server.environments).map((environment) =>
             environment.close(),
           ),
         ),
-        crawlEndFinder?.cancel(),
         closeHttpServer(),
       ])
-      // Await pending requests. We throw early in transformRequest
-      // and in hooks if the server is closing for non-ssr requests,
-      // so the import analysis plugin stops pre-transforming static
-      // imports and this block is resolved sooner.
-      // During SSR, we let pending requests finish to avoid exposing
-      // the server closed error to the users.
-      while (server._pendingRequests.size > 0) {
-        await Promise.allSettled(
-          [...server._pendingRequests.values()].map(
-            (pending) => pending.request,
-          ),
-        )
-      }
       server.resolvedUrls = null
     },
     printUrls() {
@@ -731,9 +672,9 @@ export async function _createServer(
       return server._restartPromise
     },
 
-    waitForRequestsIdle,
-    _registerRequestProcessing,
-    _onCrawlEnd,
+    waitForRequestsIdle(ignoredId?: string): Promise<void> {
+      return environments.client.waitForRequestsIdle(ignoredId)
+    },
 
     _setInternalServer(_server: ViteDevServer) {
       // Rebind internal the server variable so functions reference the user
@@ -742,7 +683,7 @@ export async function _createServer(
     },
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
-    _pendingRequests: new Map(),
+
     _safeModulesPath: new Set(),
     _fsDenyGlob: picomatch(
       // matchBase: true does not work as it's documented
@@ -775,17 +716,17 @@ export async function _createServer(
 
   const client_createEnvironment =
     config.environments.client?.dev?.createEnvironment ??
-    ((server: ViteDevServer, name: string) =>
-      new DevEnvironment(server, name, { hot: ws }))
+    ((name: string, config: ResolvedConfig) =>
+      new DevEnvironment(name, config, { hot: ws }))
 
-  environments.client = await client_createEnvironment(server, 'client')
+  environments.client = await client_createEnvironment('client', config)
 
   const ssr_createEnvironment =
     config.environments.ssr?.dev?.createEnvironment ??
-    ((server: ViteDevServer, name: string) =>
-      createNodeDevEnvironment(server, name, { hot: ssrHotChannel }))
+    ((name: string, config: ResolvedConfig) =>
+      createNodeDevEnvironment(name, config, { hot: ssrHotChannel }))
 
-  environments.ssr = await ssr_createEnvironment(server, 'ssr')
+  environments.ssr = await ssr_createEnvironment('ssr', config)
 
   for (const [name, EnvironmentOptions] of Object.entries(
     config.environments,
@@ -794,11 +735,11 @@ export async function _createServer(
     if (name !== 'client' && name !== 'ssr') {
       const createEnvironment =
         EnvironmentOptions.dev?.createEnvironment ??
-        ((server: ViteDevServer, name: string) =>
-          new DevEnvironment(server, name, {
+        ((name: string, config: ResolvedConfig) =>
+          new DevEnvironment(name, config, {
             hot: ws, // TODO: what should we use here?
           }))
-      environments[name] = await createEnvironment(server, name)
+      environments[name] = await createEnvironment(name, config)
     }
   }
 
@@ -985,9 +926,14 @@ export async function _createServer(
     if (initingServer) return initingServer
 
     initingServer = (async function () {
-      await pluginContainer.buildStart({})
-      // start deps optimizer after all container plugins are ready
-      await server.environments.client.depsOptimizer?.init()
+      // Resolve environment plugins, pluginContainer, and deps optimizer
+      await Promise.all(
+        Object.values(server.environments).map((environment) =>
+          environment.init(),
+        ),
+      )
+
+      // TODO: move warmup call inside environment init()
       warmupFiles(server)
       initingServer = undefined
       serverInited = true
@@ -1254,83 +1200,5 @@ export async function restartServerWithUrls(
   ) {
     logger.info('')
     server.printUrls()
-  }
-}
-
-const callCrawlEndIfIdleAfterMs = 50
-
-interface CrawlEndFinder {
-  registerRequestProcessing: (id: string, done: () => Promise<any>) => void
-  waitForRequestsIdle: (ignoredId?: string) => Promise<void>
-  cancel: () => void
-}
-
-function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
-  const registeredIds = new Set<string>()
-  const seenIds = new Set<string>()
-  const onCrawlEndPromiseWithResolvers = promiseWithResolvers<void>()
-
-  let timeoutHandle: NodeJS.Timeout | undefined
-
-  let cancelled = false
-  function cancel() {
-    cancelled = true
-  }
-
-  let crawlEndCalled = false
-  function callOnCrawlEnd() {
-    if (!cancelled && !crawlEndCalled) {
-      crawlEndCalled = true
-      onCrawlEnd()
-    }
-    onCrawlEndPromiseWithResolvers.resolve()
-  }
-
-  function registerRequestProcessing(
-    id: string,
-    done: () => Promise<any>,
-  ): void {
-    if (!seenIds.has(id)) {
-      seenIds.add(id)
-      registeredIds.add(id)
-      done()
-        .catch(() => {})
-        .finally(() => markIdAsDone(id))
-    }
-  }
-
-  function waitForRequestsIdle(ignoredId?: string): Promise<void> {
-    if (ignoredId) {
-      seenIds.add(ignoredId)
-      markIdAsDone(ignoredId)
-    }
-    return onCrawlEndPromiseWithResolvers.promise
-  }
-
-  function markIdAsDone(id: string): void {
-    if (registeredIds.has(id)) {
-      registeredIds.delete(id)
-      checkIfCrawlEndAfterTimeout()
-    }
-  }
-
-  function checkIfCrawlEndAfterTimeout() {
-    if (cancelled || registeredIds.size > 0) return
-
-    if (timeoutHandle) clearTimeout(timeoutHandle)
-    timeoutHandle = setTimeout(
-      callOnCrawlEndWhenIdle,
-      callCrawlEndIfIdleAfterMs,
-    )
-  }
-  async function callOnCrawlEndWhenIdle() {
-    if (cancelled || registeredIds.size > 0) return
-    callOnCrawlEnd()
-  }
-
-  return {
-    registerRequestProcessing,
-    waitForRequestsIdle,
-    cancel,
   }
 }

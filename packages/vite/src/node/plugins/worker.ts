@@ -70,8 +70,7 @@ async function bundleWorkerEntry(
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
-  const builder = { environments: {}, config } as any // TODO
-  const workerEnvironment = new BuildEnvironment(builder, 'client') // TODO: should this be 'worker'?
+  const workerEnvironment = new BuildEnvironment('client', config) // TODO: should this be 'worker'?
   const resolvedPlugins = await plugins(newBundleChain)
   const bundle = await rollup({
     ...rollupOptions,
