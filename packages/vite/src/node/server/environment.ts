@@ -21,12 +21,15 @@ import type { TransformResult } from './transformRequest'
 import { ERR_CLOSED_SERVER } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
 
+export interface DevEnvironmentRunnerOptions extends FetchModuleOptions {
+  transport?: RemoteEnvironmentTransport
+}
+
 export interface DevEnvironmentSetup {
   hot?: false | HMRChannel
   options?: EnvironmentOptions
-  runner?: FetchModuleOptions & {
-    transport?: RemoteEnvironmentTransport
-  }
+  runner?: DevEnvironmentRunnerOptions
+  depsOptimizer?: DepsOptimizer
 }
 
 // Maybe we will rename this to DevEnvironment
@@ -38,7 +41,7 @@ export class DevEnvironment extends Environment {
   /**
    * @internal
    */
-  _ssrRunnerOptions: FetchModuleOptions | undefined
+  _ssrRunnerOptions: DevEnvironmentRunnerOptions | undefined
   /**
    * HMR channel for this environment. If not provided or disabled,
    * it will be a noop channel that does nothing.
@@ -50,14 +53,7 @@ export class DevEnvironment extends Environment {
   constructor(
     server: ViteDevServer,
     name: string,
-    setup?: {
-      hot?: false | HMRChannel
-      options?: EnvironmentOptions
-      runner?: FetchModuleOptions & {
-        transport?: RemoteEnvironmentTransport
-      }
-      depsOptimizer?: DepsOptimizer
-    },
+    setup?: DevEnvironmentSetup,
   ) {
     let options =
       server.config.environments[name] ??
@@ -80,7 +76,7 @@ export class DevEnvironment extends Environment {
 
     const ssrRunnerOptions = setup?.runner || {}
     this._ssrRunnerOptions = ssrRunnerOptions
-    setup?.runner?.transport?.register(this)
+    ssrRunnerOptions.transport?.register(this)
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {
@@ -135,6 +131,15 @@ export class DevEnvironment extends Environment {
         timestamp: true,
       })
     })
+  }
+
+  async evaluate(url: string): Promise<void> {
+    if (!this._ssrRunnerOptions?.transport) {
+      throw new Error(
+        `Cannot evaluate module ${url} in ${this.name} environment without a configured remote transport.`,
+      )
+    }
+    await this._ssrRunnerOptions.transport.evaluate(url)
   }
 
   async close(): Promise<void> {

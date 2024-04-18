@@ -39,7 +39,7 @@ import {
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
-import type { RunnerTransport } from './runnerTransport'
+import { RemoteRunnerTransport, type RunnerTransport } from './runnerTransport'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -74,6 +74,9 @@ export class ModuleRunner {
   ) {
     this.moduleCache = options.moduleCache ?? new ModuleCacheMap(options.root)
     this.transport = options.transport
+    if (options.transport instanceof RemoteRunnerTransport) {
+      options.transport.register(this)
+    }
     if (typeof options.hmr === 'object') {
       this.hmrClient = new HMRClient(
         options.hmr.logger === false

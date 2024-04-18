@@ -1,38 +1,51 @@
+import type {
+  RemoteRunnerTransportEvents,
+  RemoteRunnerTransportMethods,
+} from 'vite/module-runner'
+import type {
+  TransportMethods,
+  TransportOptions} from '../../shared/remoteTransport';
+import {
+  RemoteTransport
+} from '../../shared/remoteTransport'
 import type { DevEnvironment } from './environment'
 
-export class RemoteEnvironmentTransport {
-  constructor(
-    private readonly options: {
-      send: (data: any) => void
-      onMessage: (handler: (data: any) => void) => void
-    },
-  ) {}
+interface RemoteEnvironmentTransportOptions<M extends TransportMethods = any>
+  extends Omit<TransportOptions<M>, 'methods'> {
+  methods?: M
+}
+
+export class RemoteEnvironmentTransport<
+  M extends TransportMethods = {},
+  E extends TransportMethods = {},
+> extends RemoteTransport<
+  M & RemoteRunnerTransportEvents,
+  E & RemoteRunnerTransportMethods
+> {
+  private _environment: DevEnvironment | undefined
+
+  constructor(options: RemoteEnvironmentTransportOptions<M>) {
+    super({
+      ...options,
+      methods: {
+        ...(options.methods as M),
+        fetchModule: (url: string) => {
+          if (!this._environment) {
+            throw new Error('[vite-transport] Environment is not registered')
+          }
+          return this._environment.fetchModule(url)
+        },
+      },
+    })
+  }
+
+  async evaluate(url: string): Promise<void> {
+    // TODO: url gives a type error for some reason here, but works when
+    // the class is contructed from the outside
+    await (this.dispatch as any)('evaluate', url)
+  }
 
   register(environment: DevEnvironment): void {
-    this.options.onMessage(async (data) => {
-      if (typeof data !== 'object' || !data || !data.__v) return
-
-      const method = data.m as 'fetchModule'
-      const parameters = data.a as [string, string]
-
-      try {
-        const result = await environment[method](...parameters)
-        this.options.send({
-          __v: true,
-          r: result,
-          i: data.i,
-        })
-      } catch (error) {
-        this.options.send({
-          __v: true,
-          e: {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          },
-          i: data.i,
-        })
-      }
-    })
+    this._environment = environment
   }
 }

@@ -2,13 +2,14 @@ import type { DevEnvironmentSetup } from '../environment'
 import { DevEnvironment } from '../environment'
 import type { ViteDevServer } from '../index'
 import { asyncFunctionDeclarationPaddingLineCount } from '../../../shared/utils'
+import { createServerModuleRunner } from '../../ssr/runtime/serverModuleRunner'
 
 export function createNodeDevEnvironment(
   server: ViteDevServer,
   name: string,
   options?: DevEnvironmentSetup,
 ): DevEnvironment {
-  return new DevEnvironment(server, name, {
+  return new NodeDevEnvironment(server, name, {
     ...options,
     runner: {
       processSourceMap(map) {
@@ -21,4 +22,12 @@ export function createNodeDevEnvironment(
       ...options?.runner,
     },
   })
+}
+
+class NodeDevEnvironment extends DevEnvironment {
+  private runner = createServerModuleRunner(this)
+
+  override async evaluate(url: string): Promise<void> {
+    await this.runner.import(url)
+  }
 }
