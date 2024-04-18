@@ -1184,6 +1184,7 @@ export function injectNonceAttributeTagHook(
 
       if (
         nodeName === 'script' ||
+        nodeName === 'style' ||
         (nodeName === 'link' &&
           attrs.some(
             (attr) =>
