@@ -1205,8 +1205,12 @@ export async function resolveConfig(
         // environment so we can safely cast to a base Environment instance to a
         // PluginEnvironment here
         const environment = new ScanEnvironment(environmentName, this)
-        await environment.init()
-        return createBoundedPluginContainer(environment, plugins)
+        const pluginContainer = await createBoundedPluginContainer(
+          environment,
+          plugins,
+        )
+        await pluginContainer.buildStart({})
+        return pluginContainer
       }
       async function resolve(
         id: string,

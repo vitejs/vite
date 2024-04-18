@@ -176,7 +176,10 @@ export class DevEnvironment extends Environment {
       this,
       this._plugins,
     )
-    await this.depsOptimizer?.init()
+    await this._pluginContainer.buildStart({})
+
+    // The deps optimizer init is delayed. TODO: add internal option?
+
     // TODO: move warmup here
   }
 

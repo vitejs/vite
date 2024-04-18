@@ -464,6 +464,41 @@ export async function _createServer(
 
   const environments: Record<string, DevEnvironment> = {}
 
+  const client_createEnvironment =
+    config.environments.client?.dev?.createEnvironment ??
+    ((name: string, config: ResolvedConfig) =>
+      new DevEnvironment(name, config, { hot: ws }))
+
+  environments.client = await client_createEnvironment('client', config)
+
+  const ssr_createEnvironment =
+    config.environments.ssr?.dev?.createEnvironment ??
+    ((name: string, config: ResolvedConfig) =>
+      createNodeDevEnvironment(name, config, { hot: ssrHotChannel }))
+
+  environments.ssr = await ssr_createEnvironment('ssr', config)
+
+  for (const [name, EnvironmentOptions] of Object.entries(
+    config.environments,
+  )) {
+    // TODO: move client and ssr inside the loop?
+    if (name !== 'client' && name !== 'ssr') {
+      const createEnvironment =
+        EnvironmentOptions.dev?.createEnvironment ??
+        ((name: string, config: ResolvedConfig) =>
+          new DevEnvironment(name, config, {
+            hot: ws, // TODO: what should we use here?
+          }))
+      environments[name] = await createEnvironment(name, config)
+    }
+  }
+
+  for (const environment of Object.values(environments)) {
+    await environment.init()
+  }
+
+  // Backward compatibility
+
   const moduleGraph = new ModuleGraph({
     client: () => environments.client.moduleGraph,
     ssr: () => environments.ssr.moduleGraph,
@@ -712,37 +747,6 @@ export async function _createServer(
     },
   })
 
-  // Create Environments
-
-  const client_createEnvironment =
-    config.environments.client?.dev?.createEnvironment ??
-    ((name: string, config: ResolvedConfig) =>
-      new DevEnvironment(name, config, { hot: ws }))
-
-  environments.client = await client_createEnvironment('client', config)
-
-  const ssr_createEnvironment =
-    config.environments.ssr?.dev?.createEnvironment ??
-    ((name: string, config: ResolvedConfig) =>
-      createNodeDevEnvironment(name, config, { hot: ssrHotChannel }))
-
-  environments.ssr = await ssr_createEnvironment('ssr', config)
-
-  for (const [name, EnvironmentOptions] of Object.entries(
-    config.environments,
-  )) {
-    // TODO: move client and ssr inside the loop?
-    if (name !== 'client' && name !== 'ssr') {
-      const createEnvironment =
-        EnvironmentOptions.dev?.createEnvironment ??
-        ((name: string, config: ResolvedConfig) =>
-          new DevEnvironment(name, config, {
-            hot: ws, // TODO: what should we use here?
-          }))
-      environments[name] = await createEnvironment(name, config)
-    }
-  }
-
   if (!middlewareMode) {
     exitProcess = async () => {
       try {
@@ -926,10 +930,9 @@ export async function _createServer(
     if (initingServer) return initingServer
 
     initingServer = (async function () {
-      // Resolve environment plugins, pluginContainer, and deps optimizer
       await Promise.all(
         Object.values(server.environments).map((environment) =>
-          environment.init(),
+          environment.depsOptimizer?.init(),
         ),
       )
 

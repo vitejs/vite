@@ -160,6 +160,9 @@ export async function createBoundedPluginContainer(
   } = environment
   const { root } = config
 
+  // Backward compatibility
+  const ssr = environment.name !== 'client'
+
   const moduleGraph =
     environment.mode === 'dev' ? environment.moduleGraph : undefined
 
@@ -668,11 +671,6 @@ export async function createBoundedPluginContainer(
       const ctx = new Context()
       ctx._resolveSkips = skip
       ctx._scan = scan
-      /* TODO
-      if (scan) {
-        ctx.environment = devToScanEnvironment(environment as DevEnvironment)
-      }
-      */
 
       const resolveStart = debugResolve ? performance.now() : 0
       let id: string | null = null
@@ -692,6 +690,7 @@ export async function createBoundedPluginContainer(
             attributes: options?.attributes ?? {},
             custom: options?.custom,
             isEntry: !!options?.isEntry,
+            ssr,
             scan,
           }),
         )
@@ -736,6 +735,7 @@ export async function createBoundedPluginContainer(
     },
 
     async load(id, options) {
+      options = options ? { ...options, ssr } : { ssr }
       const ctx = new Context()
       for (const plugin of getSortedPlugins('load')) {
         if (closed && environment?.options.dev.recoverable)
@@ -743,7 +743,9 @@ export async function createBoundedPluginContainer(
         if (!plugin.load) continue
         ctx._activePlugin = plugin
         const handler = getHookHandler(plugin.load)
-        const result = await handleHookPromise(handler.call(ctx as any, id))
+        const result = await handleHookPromise(
+          handler.call(ctx as any, id, options),
+        )
         if (result != null) {
           if (isObject(result)) {
             ctx._updateModuleInfo(id, result)
@@ -757,6 +759,7 @@ export async function createBoundedPluginContainer(
     },
 
     async transform(code, id, options) {
+      options = options ? { ...options, ssr } : { ssr }
       const inMap = options?.inMap
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       for (const plugin of getSortedPlugins('transform')) {
@@ -770,7 +773,9 @@ export async function createBoundedPluginContainer(
         let result: TransformResult | string | undefined
         const handler = getHookHandler(plugin.transform)
         try {
-          result = await handleHookPromise(handler.call(ctx as any, code, id))
+          result = await handleHookPromise(
+            handler.call(ctx as any, code, id, options),
+          )
         } catch (e) {
           ctx.error(e)
         }
