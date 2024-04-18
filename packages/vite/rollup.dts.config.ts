@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { findStaticImports } from 'mlly'
 import path from 'node:path'
+import { findStaticImports } from 'mlly'
 import { defineConfig } from 'rollup'
 import type { Plugin, PluginContext, RenderedChunk } from 'rollup'
 import dts from 'rollup-plugin-dts'
