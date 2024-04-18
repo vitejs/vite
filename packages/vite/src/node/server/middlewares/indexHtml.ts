@@ -191,7 +191,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const trailingSlash = htmlPath.endsWith('/')
   if (!trailingSlash && getFsUtils(config).existsSync(filename)) {
     proxyModulePath = htmlPath
-    proxyModuleUrl = joinUrlSegments(base, htmlPath)
+    proxyModuleUrl = proxyModulePath
   } else {
     // There are users of vite.transformIndexHtml calling it with url '/'
     // for SSR integrations #7993, filename is root for this case
@@ -202,6 +202,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     proxyModulePath = `\0${validPath}`
     proxyModuleUrl = wrapId(proxyModulePath)
   }
+  proxyModuleUrl = joinUrlSegments(base, proxyModuleUrl)
 
   const s = new MagicString(html)
   let inlineModuleIndex = -1
