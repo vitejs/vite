@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { findStaticImports } from 'mlly'
+import path from 'node:path'
 import { defineConfig } from 'rollup'
 import type { Plugin, PluginContext, RenderedChunk } from 'rollup'
 import dts from 'rollup-plugin-dts'
@@ -92,10 +93,13 @@ function patchTypes(): Plugin {
       }
     },
     renderChunk(code, chunk) {
+      const directory = (dir: string) => `${path.sep}${dir}${path.sep}`
       const isNonMainChunk =
         chunk.moduleIds.length &&
         chunk.moduleIds.every(
-          (id) => id.includes('/module-runner/') || id.includes('/shared/'),
+          (id) =>
+            id.includes(directory('module-runner')) ||
+            id.includes(directory('shared')),
         )
 
       if (isNonMainChunk) {

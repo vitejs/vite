@@ -335,7 +335,9 @@ const __require = require;
       // don't patch runner utils chunk because it should stay lightweight and we know it doesn't use require
       if (
         chunk.name === 'utils' &&
-        chunk.moduleIds.some((id) => id.endsWith('/ssr/module-runner/utils.ts'))
+        chunk.moduleIds.some((id) =>
+          id.endsWith('/ssr/module-runner/utils.ts'.replace(/\//g, path.sep)),
+        )
       )
         return
       const match = code.match(/^(?:import[\s\S]*?;\s*)+/)
