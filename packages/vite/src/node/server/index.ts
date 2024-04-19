@@ -456,7 +456,7 @@ export async function _createServer(
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root
         [
-          root,
+          searchForWorkspaceRoot(config.root),
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
         ],
