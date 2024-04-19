@@ -29,18 +29,6 @@
 * perf: reduce size of injected __vite__mapDeps code (#16184) ([a9bf430](https://github.com/vitejs/vite/commit/a9bf430)), closes [#16184](https://github.com/vitejs/vite/issues/16184)
 * perf: reduce size of injected __vite__mapDeps code (#16184) ([c0ec6be](https://github.com/vitejs/vite/commit/c0ec6be)), closes [#16184](https://github.com/vitejs/vite/issues/16184)
 * perf(css): only replace empty chunk if imported (#16349) ([f61d8b1](https://github.com/vitejs/vite/commit/f61d8b1)), closes [#16349](https://github.com/vitejs/vite/issues/16349)
-* perf(css): only replace empty chunk if imported (#16349) ([e2658ad](https://github.com/vitejs/vite/commit/e2658ad)), closes [#16349](https://github.com/vitejs/vite/issues/16349)
-
-
-
-## <small>5.2.8 (2024-04-03)</small>
-
-* release: v5.2.8 ([8b8d402](https://github.com/vitejs/vite/commit/8b8d402))
-* fix: csp nonce injection when no closing tag (#16281) (#16282) ([3c85c6b](https://github.com/vitejs/vite/commit/3c85c6b)), closes [#16281](https://github.com/vitejs/vite/issues/16281) [#16282](https://github.com/vitejs/vite/issues/16282)
-* fix: do not access document in `/@vite/client` when not defined (#16318) ([646319c](https://github.com/vitejs/vite/commit/646319c)), closes [#16318](https://github.com/vitejs/vite/issues/16318)
-* fix: fix sourcemap when using object as `define` value  (#15805) ([445c4f2](https://github.com/vitejs/vite/commit/445c4f2)), closes [#15805](https://github.com/vitejs/vite/issues/15805)
-* chore(deps): update all non-major dependencies (#16325) ([a78e265](https://github.com/vitejs/vite/commit/a78e265)), closes [#16325](https://github.com/vitejs/vite/issues/16325)
-* refactor: use types from sass instead of @types/sass (#16340) ([4581e83](https://github.com/vitejs/vite/commit/4581e83)), closes [#16340](https://github.com/vitejs/vite/issues/16340)
 
 
 
@@ -118,6 +106,29 @@
 * chore: update ([9a600fe](https://github.com/vitejs/vite/commit/9a600fe))
 * chore: update environment.server.config ([2ddf28e](https://github.com/vitejs/vite/commit/2ddf28e))
 * wip: environment config overrides ([81abf6e](https://github.com/vitejs/vite/commit/81abf6e))
+
+
+
+## <small>5.2.9 (2024-04-15)</small>
+
+* fix: `fsp.rm` removing files does not take effect (#16032) ([b05c405](https://github.com/vitejs/vite/commit/b05c405)), closes [#16032](https://github.com/vitejs/vite/issues/16032)
+* fix: fix accumulated stacks in error overlay (#16393) ([102c2fd](https://github.com/vitejs/vite/commit/102c2fd)), closes [#16393](https://github.com/vitejs/vite/issues/16393)
+* fix(deps): update all non-major dependencies (#16376) ([58a2938](https://github.com/vitejs/vite/commit/58a2938)), closes [#16376](https://github.com/vitejs/vite/issues/16376)
+* chore: update region comment (#16380) ([77562c3](https://github.com/vitejs/vite/commit/77562c3)), closes [#16380](https://github.com/vitejs/vite/issues/16380)
+* perf: reduce size of injected __vite__mapDeps code (#16184) ([c0ec6be](https://github.com/vitejs/vite/commit/c0ec6be)), closes [#16184](https://github.com/vitejs/vite/issues/16184)
+* perf(css): only replace empty chunk if imported (#16349) ([e2658ad](https://github.com/vitejs/vite/commit/e2658ad)), closes [#16349](https://github.com/vitejs/vite/issues/16349)
+
+
+
+## <small>5.2.8 (2024-04-03)</small>
+
+* release: v5.2.8 ([8b8d402](https://github.com/vitejs/vite/commit/8b8d402))
+* fix: csp nonce injection when no closing tag (#16281) (#16282) ([3c85c6b](https://github.com/vitejs/vite/commit/3c85c6b)), closes [#16281](https://github.com/vitejs/vite/issues/16281) [#16282](https://github.com/vitejs/vite/issues/16282)
+* fix: do not access document in `/@vite/client` when not defined (#16318) ([646319c](https://github.com/vitejs/vite/commit/646319c)), closes [#16318](https://github.com/vitejs/vite/issues/16318)
+* fix: fix sourcemap when using object as `define` value  (#15805) ([445c4f2](https://github.com/vitejs/vite/commit/445c4f2)), closes [#15805](https://github.com/vitejs/vite/issues/15805)
+* chore(deps): update all non-major dependencies (#16325) ([a78e265](https://github.com/vitejs/vite/commit/a78e265)), closes [#16325](https://github.com/vitejs/vite/issues/16325)
+* refactor: use types from sass instead of @types/sass (#16340) ([4581e83](https://github.com/vitejs/vite/commit/4581e83)), closes [#16340](https://github.com/vitejs/vite/issues/16340)
+
 
 
 

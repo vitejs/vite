@@ -62,6 +62,7 @@ import {
   isInNodeModules,
   isNodeBuiltin,
   isObject,
+  isParentDirectory,
   mergeAlias,
   mergeConfig,
   normalizeAlias,
@@ -1343,6 +1344,20 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
       colors.yellow(`
 (!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format were be removed in Vite 5.
     The only SSR Output format is ESM. Find more information at https://github.com/vitejs/vite/discussions/13816.
+`),
+    )
+  }
+
+  const resolvedBuildOutDir = normalizePath(
+    path.resolve(resolved.root, resolved.build.outDir),
+  )
+  if (
+    isParentDirectory(resolvedBuildOutDir, resolved.root) ||
+    resolvedBuildOutDir === resolved.root
+  ) {
+    resolved.logger.warn(
+      colors.yellow(`
+(!) build.outDir must not be the same directory of root or a parent directory of root as this could cause Vite to overwriting source files with build outputs.
 `),
     )
   }
