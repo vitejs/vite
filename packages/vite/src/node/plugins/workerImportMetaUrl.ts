@@ -5,7 +5,8 @@ import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { evalValue, injectQuery, transformStableResult } from '../utils'
-import type { ResolveFn } from '..'
+import { createIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
 import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
@@ -102,7 +103,7 @@ function isIncludeWorkerImportMetaUrl(code: string): boolean {
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  let workerResolver: ResolveFn
+  let workerResolver: ResolveIdFn
 
   const fsResolveOptions: InternalResolveOptions = {
     ...config.resolve,
@@ -110,7 +111,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     isProduction: config.isProduction,
     isBuild: config.command === 'build',
     packageCache: config.packageCache,
-    ssrConfig: config.ssr,
     asSrc: true,
   }
 
@@ -123,8 +123,14 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(code, id, options) {
-      if (!options?.ssr && isIncludeWorkerImportMetaUrl(code)) {
+    async transform(code, id) {
+      const { environment } = this
+      // TODO: environment, same as with assetImportMetaUrlPlugin
+      if (
+        environment &&
+        environment.name === 'client' &&
+        isIncludeWorkerImportMetaUrl(code)
+      ) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
@@ -153,12 +159,12 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             file = path.resolve(path.dirname(id), url)
             file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
-            workerResolver ??= config.createResolver({
+            workerResolver ??= createIdResolver(config, {
               extensions: [],
               tryIndex: false,
               preferRelative: true,
             })
-            file = await workerResolver(url, id)
+            file = await workerResolver(environment, url, id)
             file ??=
               url[0] === '/'
                 ? slash(path.join(config.publicDir, url))

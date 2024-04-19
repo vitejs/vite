@@ -7,6 +7,7 @@ import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
+import { createIdResolver } from '../idResolver'
 import {
   createFilter,
   normalizePath,
@@ -152,7 +153,7 @@ export async function transformDynamicImport(
 }
 
 export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
-  const resolve = config.createResolver({
+  const resolve = createIdResolver(config, {
     preferRelative: true,
     tryIndex: false,
     extensions: [],
@@ -177,7 +178,9 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
+      const { environment } = this
       if (
+        !environment ||
         !filter(importer) ||
         importer === CLIENT_ENTRY ||
         !hasDynamicImportRE.test(source)
@@ -225,7 +228,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           result = await transformDynamicImport(
             source.slice(start, end),
             importer,
-            resolve,
+            (id, importer) => resolve(environment, id, importer),
             config.root,
           )
         } catch (error) {

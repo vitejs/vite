@@ -14,16 +14,16 @@ import {
 } from '../shared/ssrTransform'
 import { ModuleCacheMap } from './moduleCache'
 import type {
-  FetchResult,
   ModuleCache,
+  ModuleEvaluator,
+  ModuleRunnerContext,
+  ModuleRunnerImportMeta,
+  ModuleRunnerOptions,
   ResolvedResult,
   SSRImportMetadata,
-  ViteModuleRunner,
-  ViteRuntimeImportMeta,
-  ViteRuntimeModuleContext,
-  ViteRuntimeOptions,
 } from './types'
 import {
+  parseUrl,
   posixDirname,
   posixPathToFileHref,
   posixResolve,
@@ -36,83 +36,74 @@ import {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
-import { silentConsole } from './hmrLogger'
+import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
+import type { RunnerTransport } from './runnerTransport'
 
-interface ViteRuntimeDebugger {
+interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
 }
 
-export class ViteRuntime {
+export class ModuleRunner {
   /**
    * Holds the cache of modules
    * Keys of the map are ids
    */
   public moduleCache: ModuleCacheMap
   public hmrClient?: HMRClient
-  public entrypoints = new Set<string>()
 
-  private idToUrlMap = new Map<string, string>()
-  private fileToIdMap = new Map<string, string[]>()
-  private envProxy = new Proxy({} as any, {
+  private readonly urlToIdMap = new Map<string, string>()
+  private readonly fileToIdMap = new Map<string, string[]>()
+  private readonly envProxy = new Proxy({} as any, {
     get(_, p) {
       throw new Error(
-        `[vite-runtime] Dynamic access of "import.meta.env" is not supported. Please, use "import.meta.env.${String(p)}" instead.`,
+        `[module runner] Dynamic access of "import.meta.env" is not supported. Please, use "import.meta.env.${String(p)}" instead.`,
       )
     },
   })
+  private readonly transport: RunnerTransport
+  private readonly resetSourceMapSupport?: () => void
 
-  private _destroyed = false
-  private _resetSourceMapSupport?: () => void
+  private destroyed = false
 
   constructor(
-    public options: ViteRuntimeOptions,
-    public runner: ViteModuleRunner,
-    private debug?: ViteRuntimeDebugger,
+    public options: ModuleRunnerOptions,
+    public evaluator: ModuleEvaluator,
+    private debug?: ModuleRunnerDebugger,
   ) {
     this.moduleCache = options.moduleCache ?? new ModuleCacheMap(options.root)
+    this.transport = options.transport
     if (typeof options.hmr === 'object') {
       this.hmrClient = new HMRClient(
         options.hmr.logger === false
           ? silentConsole
-          : options.hmr.logger || console,
+          : options.hmr.logger || hmrLogger,
         options.hmr.connection,
-        ({ acceptedPath, ssrInvalidates }) => {
-          this.moduleCache.invalidate(acceptedPath)
-          if (ssrInvalidates) {
-            this.invalidateFiles(ssrInvalidates)
-          }
-          return this.executeUrl(acceptedPath)
+        ({ acceptedPath, explicitImportRequired, timestamp }) => {
+          const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
+          const url =
+            acceptedPathWithoutQuery +
+            `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
+              query ? `&${query}` : ''
+            }`
+          return this.import(url)
         },
       )
       options.hmr.connection.onUpdate(createHMRHandler(this))
     }
     if (options.sourcemapInterceptor !== false) {
-      this._resetSourceMapSupport = enableSourceMapSupport(this)
+      this.resetSourceMapSupport = enableSourceMapSupport(this)
     }
   }
 
   /**
    * URL to execute. Accepts file path, server path or id relative to the root.
    */
-  public async executeUrl<T = any>(url: string): Promise<T> {
+  public async import<T = any>(url: string): Promise<T> {
     url = this.normalizeEntryUrl(url)
     const fetchedModule = await this.cachedModule(url)
     return await this.cachedRequest(url, fetchedModule)
-  }
-
-  /**
-   * Entrypoint URL to execute. Accepts file path, server path or id relative to the root.
-   * In the case of a full reload triggered by HMR, this is the module that will be reloaded.
-   * If this method is called multiple times, all entrypoints will be reloaded one at a time.
-   */
-  public async executeEntrypoint<T = any>(url: string): Promise<T> {
-    url = this.normalizeEntryUrl(url)
-    const fetchedModule = await this.cachedModule(url)
-    return await this.cachedRequest(url, fetchedModule, [], {
-      entrypoint: true,
-    })
   }
 
   /**
@@ -120,8 +111,7 @@ export class ViteRuntime {
    */
   public clearCache(): void {
     this.moduleCache.clear()
-    this.idToUrlMap.clear()
-    this.entrypoints.clear()
+    this.urlToIdMap.clear()
     this.hmrClient?.clear()
   }
 
@@ -130,26 +120,17 @@ export class ViteRuntime {
    * This method doesn't stop the HMR connection.
    */
   public async destroy(): Promise<void> {
-    this._resetSourceMapSupport?.()
+    this.resetSourceMapSupport?.()
     this.clearCache()
     this.hmrClient = undefined
-    this._destroyed = true
+    this.destroyed = true
   }
 
   /**
    * Returns `true` if the runtime has been destroyed by calling `destroy()` method.
    */
   public isDestroyed(): boolean {
-    return this._destroyed
-  }
-
-  private invalidateFiles(files: string[]) {
-    files.forEach((file) => {
-      const ids = this.fileToIdMap.get(file)
-      if (ids) {
-        ids.forEach((id) => this.moduleCache.invalidate(id))
-      }
-    })
+    return this.destroyed
   }
 
   // we don't use moduleCache.normalize because this URL doesn't have to follow the same rules
@@ -198,17 +179,12 @@ export class ViteRuntime {
 
   private async cachedRequest(
     id: string,
-    fetchedModule: ResolvedResult,
+    mod: ModuleCache,
     callstack: string[] = [],
     metadata?: SSRImportMetadata,
   ): Promise<any> {
-    const moduleId = fetchedModule.id
-
-    if (metadata?.entrypoint) {
-      this.entrypoints.add(moduleId)
-    }
-
-    const mod = this.moduleCache.getByModuleId(moduleId)
+    const meta = mod.meta!
+    const moduleId = meta.id
 
     const { imports, importers } = mod as Required<ModuleCache>
 
@@ -221,8 +197,7 @@ export class ViteRuntime {
       callstack.includes(moduleId) ||
       Array.from(imports.values()).some((i) => importers.has(i))
     ) {
-      if (mod.exports)
-        return this.processImport(mod.exports, fetchedModule, metadata)
+      if (mod.exports) return this.processImport(mod.exports, meta, metadata)
     }
 
     let debugTimer: any
@@ -235,7 +210,7 @@ export class ViteRuntime {
             .join('\n')}`
 
         this.debug!(
-          `[vite-runtime] module ${moduleId} takes over 2s to load.\n${getStack()}`,
+          `[module runner] module ${moduleId} takes over 2s to load.\n${getStack()}`,
         )
       }, 2000)
     }
@@ -243,12 +218,12 @@ export class ViteRuntime {
     try {
       // cached module
       if (mod.promise)
-        return this.processImport(await mod.promise, fetchedModule, metadata)
+        return this.processImport(await mod.promise, meta, metadata)
 
-      const promise = this.directRequest(id, fetchedModule, callstack)
+      const promise = this.directRequest(id, mod, callstack)
       mod.promise = promise
       mod.evaluated = false
-      return this.processImport(await promise, fetchedModule, metadata)
+      return this.processImport(await promise, meta, metadata)
     } finally {
       mod.evaluated = true
       if (debugTimer) clearTimeout(debugTimer)
@@ -256,35 +231,46 @@ export class ViteRuntime {
   }
 
   private async cachedModule(
-    id: string,
+    url: string,
     importer?: string,
-  ): Promise<ResolvedResult> {
-    if (this._destroyed) {
-      throw new Error(`[vite] Vite runtime has been destroyed.`)
+  ): Promise<ModuleCache> {
+    if (this.destroyed) {
+      throw new Error(`Vite module runner has been destroyed.`)
     }
-    const normalized = this.idToUrlMap.get(id)
+    const normalized = this.urlToIdMap.get(url)
     if (normalized) {
       const mod = this.moduleCache.getByModuleId(normalized)
       if (mod.meta) {
-        return mod.meta as ResolvedResult
+        return mod
       }
     }
-    this.debug?.('[vite-runtime] fetching', id)
+
+    this.debug?.('[module runner] fetching', url)
     // fast return for established externalized patterns
-    const fetchedModule = id.startsWith('data:')
-      ? ({ externalize: id, type: 'builtin' } satisfies FetchResult)
-      : await this.options.fetchModule(id, importer)
+    const fetchedModule = (
+      url.startsWith('data:')
+        ? { externalize: url, type: 'builtin' }
+        : await this.transport.fetchModule(url, importer)
+    ) as ResolvedResult
+
     // base moduleId on "file" and not on id
     // if `import(variable)` is called it's possible that it doesn't have an extension for example
-    // if we used id for that, it's possible to have a duplicated module
-    const idQuery = id.split('?')[1]
-    const query = idQuery ? `?${idQuery}` : ''
+    // if we used id for that, then a module will be duplicated
+    const { query, timestamp } = parseUrl(url)
     const file = 'file' in fetchedModule ? fetchedModule.file : undefined
-    const fullFile = file ? `${file}${query}` : id
-    const moduleId = this.moduleCache.normalize(fullFile)
+    const fileId = file ? `${file}${query}` : url
+    const moduleId = this.moduleCache.normalize(fileId)
     const mod = this.moduleCache.getByModuleId(moduleId)
-    ;(fetchedModule as ResolvedResult).id = moduleId
+
+    // if URL has a ?t= query, it might've been invalidated due to HMR
+    // checking if we should also invalidate the module
+    if (mod.timestamp != null && timestamp > 0 && mod.timestamp < timestamp) {
+      this.moduleCache.invalidateModule(mod)
+    }
+
+    fetchedModule.id = moduleId
     mod.meta = fetchedModule
+    mod.timestamp = timestamp
 
     if (file) {
       const fileModules = this.fileToIdMap.get(file) || []
@@ -292,27 +278,28 @@ export class ViteRuntime {
       this.fileToIdMap.set(file, fileModules)
     }
 
-    this.idToUrlMap.set(id, moduleId)
-    this.idToUrlMap.set(unwrapId(id), moduleId)
-    return fetchedModule as ResolvedResult
+    this.urlToIdMap.set(url, moduleId)
+    this.urlToIdMap.set(unwrapId(url), moduleId)
+    return mod
   }
 
   // override is allowed, consider this a public API
   protected async directRequest(
     id: string,
-    fetchResult: ResolvedResult,
+    mod: ModuleCache,
     _callstack: string[],
   ): Promise<any> {
+    const fetchResult = mod.meta!
     const moduleId = fetchResult.id
     const callstack = [..._callstack, moduleId]
 
-    const mod = this.moduleCache.getByModuleId(moduleId)
-
     const request = async (dep: string, metadata?: SSRImportMetadata) => {
-      const fetchedModule = await this.cachedModule(dep, moduleId)
-      const depMod = this.moduleCache.getByModuleId(fetchedModule.id)
+      const importer = ('file' in fetchResult && fetchResult.file) || moduleId
+      const fetchedModule = await this.cachedModule(dep, importer)
+      const resolvedId = fetchedModule.meta!.id
+      const depMod = this.moduleCache.getByModuleId(resolvedId)
       depMod.importers!.add(moduleId)
-      mod.imports!.add(fetchedModule.id)
+      mod.imports!.add(resolvedId)
 
       return this.cachedRequest(dep, fetchedModule, callstack, metadata)
     }
@@ -328,8 +315,8 @@ export class ViteRuntime {
 
     if ('externalize' in fetchResult) {
       const { externalize } = fetchResult
-      this.debug?.('[vite-runtime] externalizing', externalize)
-      const exports = await this.runner.runExternalModule(externalize)
+      this.debug?.('[module runner] externalizing', externalize)
+      const exports = await this.evaluator.runExternalModule(externalize)
       mod.exports = exports
       return exports
     }
@@ -339,7 +326,7 @@ export class ViteRuntime {
     if (code == null) {
       const importer = callstack[callstack.length - 2]
       throw new Error(
-        `[vite-runtime] Failed to load "${id}"${
+        `[module runner] Failed to load "${id}"${
           importer ? ` imported from ${importer}` : ''
         }`,
       )
@@ -350,19 +337,19 @@ export class ViteRuntime {
     const href = posixPathToFileHref(modulePath)
     const filename = modulePath
     const dirname = posixDirname(modulePath)
-    const meta: ViteRuntimeImportMeta = {
+    const meta: ModuleRunnerImportMeta = {
       filename: isWindows ? toWindowsPath(filename) : filename,
       dirname: isWindows ? toWindowsPath(dirname) : dirname,
       url: href,
       env: this.envProxy,
       resolve(id, parent) {
         throw new Error(
-          '[vite-runtime] "import.meta.resolve" is not supported.',
+          '[module runner] "import.meta.resolve" is not supported.',
         )
       },
       // should be replaced during transformation
       glob() {
-        throw new Error('[vite-runtime] "import.meta.glob" is not supported.')
+        throw new Error('[module runner] "import.meta.glob" is not supported.')
       },
     }
     const exports = Object.create(null)
@@ -380,9 +367,9 @@ export class ViteRuntime {
         enumerable: true,
         get: () => {
           if (!this.hmrClient) {
-            throw new Error(`[vite-runtime] HMR client was destroyed.`)
+            throw new Error(`[module runner] HMR client was destroyed.`)
           }
-          this.debug?.('[vite-runtime] creating hmr context for', moduleId)
+          this.debug?.('[module runner] creating hmr context for', moduleId)
           hotContext ||= new HMRContext(this.hmrClient, moduleId)
           return hotContext
         },
@@ -392,7 +379,7 @@ export class ViteRuntime {
       })
     }
 
-    const context: ViteRuntimeModuleContext = {
+    const context: ModuleRunnerContext = {
       [ssrImportKey]: request,
       [ssrDynamicImportKey]: dynamicRequest,
       [ssrModuleExportsKey]: exports,
@@ -400,9 +387,9 @@ export class ViteRuntime {
       [ssrImportMetaKey]: meta,
     }
 
-    this.debug?.('[vite-runtime] executing', href)
+    this.debug?.('[module runner] executing', href)
 
-    await this.runner.runViteModule(context, code, id)
+    await this.evaluator.runInlinedModule(context, code, id)
 
     return exports
   }

@@ -6,11 +6,11 @@ import {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
-import type { ViteModuleRunner, ViteRuntimeModuleContext } from './types'
+import type { ModuleEvaluator, ModuleRunnerContext } from './types'
 
-export class ESModulesRunner implements ViteModuleRunner {
-  async runViteModule(
-    context: ViteRuntimeModuleContext,
+export class ESModulesEvaluator implements ModuleEvaluator {
+  async runInlinedModule(
+    context: ModuleRunnerContext,
     code: string,
   ): Promise<any> {
     // use AsyncFunction instead of vm module to support broader array of environments out of the box

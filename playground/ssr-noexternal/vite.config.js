@@ -15,5 +15,6 @@ export default defineConfig({
     rollupOptions: {
       external: ['@vitejs/test-external-cjs'],
     },
+    ssr: 'src/entry-server.js', // for 'all'
   },
 })

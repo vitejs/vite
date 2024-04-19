@@ -274,6 +274,29 @@ describe.runIf(isServe)('invalid', () => {
     expect(isVisbleOverlay).toBeFalsy()
   })
 
+  test('stack is updated', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    const hiddenPromise = errorOverlay.waitForElementState('hidden')
+    await page.keyboard.press('Escape')
+    await hiddenPromise
+
+    viteServer.hot.send({
+      type: 'error',
+      err: {
+        message: 'someError',
+        stack: [
+          'Error: someError',
+          '    at someMethod (/some/file.ts:1:2)',
+        ].join('\n'),
+      },
+    })
+    const newErrorOverlay = await page.waitForSelector('vite-error-overlay')
+    const stack = await newErrorOverlay.$$eval('.stack', (m) => m[0].innerHTML)
+    expect(stack).toMatch(/^Error: someError/)
+  })
+
   test('should reload when fixed', async () => {
     await page.goto(viteTestUrl + '/invalid.html')
     await editFile('invalid.html', (content) => {
@@ -357,7 +380,10 @@ describe.runIf(isServe)('warmup', () => {
     // warmup transform files async during server startup, so the module check
     // here might take a while to load
     await withRetry(async () => {
-      const mod = await viteServer.moduleGraph.getModuleByUrl('/warmup/warm.js')
+      const mod =
+        await viteServer.environments.client.moduleGraph.getModuleByUrl(
+          '/warmup/warm.js',
+        )
       expect(mod).toBeTruthy()
     })
   })

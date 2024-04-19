@@ -1,7 +1,9 @@
 import { transform } from 'esbuild'
+import { TraceMap, decodedMap, encodedMap } from '@jridgewell/trace-mapping'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { escapeRegex, getHash } from '../utils'
+import type { Environment } from '../environment'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -53,8 +55,13 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
   }
 
-  function generatePattern(ssr: boolean) {
-    const replaceProcessEnv = !ssr || config.ssr?.target === 'webworker'
+  function generatePattern(environment: Environment) {
+    // This is equivalent to the old `!ssr || config.ssr?.target === 'webworker'`
+    // TODO: We shouldn't keep options.nodeCompatible and options.webCompatible
+    // This is a place where using `!options.nodeCompatible` fails and it is confusing why
+    // Do we need a per-environment replaceProcessEnv option?
+    // Is it useful to have define be configured per-environment?
+    const replaceProcessEnv = environment.options.webCompatible
 
     const define: Record<string, string> = {
       ...(replaceProcessEnv ? processEnv : {}),
@@ -64,6 +71,11 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     // Additional define fixes based on `ssr` value
+    // Backward compatibility. Any non client environment will get import.meta.env.SSR = true
+    // TODO: Check if we should only do this for the SSR environment and how to abstract
+    // maybe we need import.meta.env.environmentName ?
+    const ssr = environment.name !== 'client'
+
     if ('import.meta.env.SSR' in define) {
       define['import.meta.env.SSR'] = ssr + ''
     }
@@ -90,15 +102,29 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     return [define, pattern] as const
   }
 
-  const defaultPattern = generatePattern(false)
-  const ssrPattern = generatePattern(true)
+  const patternsCache = new WeakMap<
+    Environment,
+    readonly [Record<string, string>, RegExp | null]
+  >()
+  function getPattern(environment: Environment) {
+    let pattern = patternsCache.get(environment)
+    if (!pattern) {
+      pattern = generatePattern(environment)
+      patternsCache.set(environment, pattern)
+    }
+    return pattern
+  }
 
   return {
     name: 'vite:define',
 
-    async transform(code, id, options) {
-      const ssr = options?.ssr === true
-      if (!ssr && !isBuild) {
+    async transform(code, id) {
+      const { environment } = this
+      if (!environment) {
+        return
+      }
+
+      if (environment.name === 'client' && !isBuild) {
         // for dev we inject actual global defines in the vite client to
         // avoid the transform cost. see the `clientInjection` and
         // `importAnalysis` plugin.
@@ -115,7 +141,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const [define, pattern] = ssr ? ssrPattern : defaultPattern
+      const [define, pattern] = getPattern(environment)
       if (!pattern) return
 
       // Check if our code needs any replacements before running esbuild
@@ -156,6 +182,26 @@ export async function replaceDefine(
     sourcefile: id,
     sourcemap: config.command === 'build' ? !!config.build.sourcemap : true,
   })
+
+  // remove esbuild's <define:...> source entries
+  // since they would confuse source map remapping/collapsing which expects a single source
+  if (result.map.includes('<define:')) {
+    const originalMap = new TraceMap(result.map)
+    if (originalMap.sources.length >= 2) {
+      const sourceIndex = originalMap.sources.indexOf(id)
+      const decoded = decodedMap(originalMap)
+      decoded.sources = [id]
+      decoded.mappings = decoded.mappings.map((segments) =>
+        segments.filter((segment) => {
+          // modify and filter
+          const index = segment[1]
+          segment[1] = 0
+          return index === sourceIndex
+        }),
+      )
+      result.map = JSON.stringify(encodedMap(new TraceMap(decoded as any)))
+    }
+  }
 
   for (const marker in replacementMarkers) {
     result.code = result.code.replaceAll(marker, replacementMarkers[marker])

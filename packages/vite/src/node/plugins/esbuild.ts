@@ -251,6 +251,8 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:esbuild',
+    // TODO: Decouple server, the resolved config should be enough
+    // We may need a `configureWatcher` hook
     configureServer(_server) {
       server = _server
       server.watcher
@@ -491,7 +493,9 @@ async function reloadOnTsconfigChange(changedFile: string) {
     )
 
     // clear module graph to remove code compiled with outdated config
-    server.moduleGraph.invalidateAll()
+    for (const environment of Object.values(server.environments)) {
+      environment.moduleGraph.invalidateAll()
+    }
 
     // reset tsconfck so that recompile works with up2date configs
     tsconfckCache?.clear()

@@ -177,11 +177,11 @@ function createNodeConfig(isProduction: boolean) {
   })
 }
 
-function createRuntimeConfig(isProduction: boolean) {
+function createModuleRunnerConfig(isProduction: boolean) {
   return defineConfig({
     ...sharedNodeOptions,
     input: {
-      runtime: path.resolve(__dirname, 'src/runtime/index.ts'),
+      'module-runner': path.resolve(__dirname, 'src/module-runner/index.ts'),
     },
     output: {
       ...sharedNodeOptions.output,
@@ -202,7 +202,7 @@ function createRuntimeConfig(isProduction: boolean) {
         isProduction ? false : './dist/node',
       ),
       esbuildMinifyPlugin({ minify: false, minifySyntax: true }),
-      bundleSizeLimit(45),
+      bundleSizeLimit(47),
     ],
   })
 }
@@ -240,12 +240,12 @@ export default (commandLineArgs: any): RollupOptions[] => {
     envConfig,
     clientConfig,
     createNodeConfig(isProduction),
-    createRuntimeConfig(isProduction),
+    createModuleRunnerConfig(isProduction),
     createCjsConfig(isProduction),
   ])
 }
 
-// #region ======== Plugins ========
+// #region Plugins
 
 interface ShimOptions {
   src?: string
@@ -332,10 +332,10 @@ const __require = require;
     name: 'cjs-chunk-patch',
     renderChunk(code, chunk) {
       if (!chunk.fileName.includes('chunks/dep-')) return
-      // don't patch runtime utils chunk because it should stay lightweight and we know it doesn't use require
+      // don't patch runner utils chunk because it should stay lightweight and we know it doesn't use require
       if (
         chunk.name === 'utils' &&
-        chunk.moduleIds.some((id) => id.endsWith('/ssr/runtime/utils.ts'))
+        chunk.moduleIds.some((id) => id.endsWith('/ssr/module-runner/utils.ts'))
       )
         return
       const match = code.match(/^(?:import[\s\S]*?;\s*)+/)

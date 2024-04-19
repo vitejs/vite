@@ -2,6 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test, vi } from 'vitest'
 import { resolveConfig } from '../../config'
+import { Environment } from '../../environment'
+import type { PluginEnvironment } from '../../plugin'
 import type { InlineConfig } from '../../config'
 import {
   convertTargets,
@@ -213,6 +215,8 @@ async function createCssPluginTransform(
   inlineConfig: InlineConfig = {},
 ) {
   const config = await resolveConfig(inlineConfig, 'serve')
+  const environment = new Environment('client', config) as PluginEnvironment
+
   const { transform, buildStart } = cssPlugin(config)
 
   // @ts-expect-error buildStart is function
@@ -233,6 +237,7 @@ async function createCssPluginTransform(
           addWatchFile() {
             return
           },
+          environment,
         },
         code,
         id,

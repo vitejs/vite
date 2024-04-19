@@ -135,6 +135,7 @@ interface ViteDevServer {
   /**
    * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
+   * @deprecated use environment.transformRequest
    */
   transformRequest(
     url: string,
