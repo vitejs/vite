@@ -1,3 +1,4 @@
+import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
@@ -8,6 +9,7 @@ import colors from 'picocolors'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
   createDebugger,
+  ensureWatchedFile,
   injectQuery,
   isObject,
   prettifyUrl,
@@ -17,10 +19,19 @@ import {
   timeFrom,
 } from '../utils'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { unwrapId } from '../../shared/utils'
-import { applySourcemapIgnoreList, injectSourcesContent } from './sourcemap'
+import { checkPublicFile } from '../publicDir'
+import { cleanUrl, unwrapId } from '../../shared/utils'
+import {
+  applySourcemapIgnoreList,
+  extractSourcemapFromFile,
+  injectSourcesContent,
+} from './sourcemap'
+import { isFileLoadingAllowed } from './middlewares/static'
 import { throwClosedServerError } from './pluginContainer'
 import type { DevEnvironment } from './environment'
+
+export const ERR_LOAD_URL = 'ERR_LOAD_URL'
+export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -239,24 +250,88 @@ async function loadAndTransform(
 
   const moduleGraph = environment.moduleGraph
 
-  let code: string
-  let map: SourceDescription['map']
+  let code: string | null = null
+  let map: SourceDescription['map'] = null
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
   const loadResult = await pluginContainer.load(id, options)
 
-  debugLoad?.(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
+  // TODO: Replace this with pluginLoadFallback
+  if (loadResult == null) {
+    const file = cleanUrl(id)
 
-  if (!loadResult) {
-    return null
-  }
-
-  if (isObject(loadResult)) {
-    code = loadResult.code
-    map = loadResult.map
+    // if this is an html request and there is no load result, skip ahead to
+    // SPA fallback.
+    if (options.html && !id.endsWith('.html')) {
+      return null
+    }
+    // try fallback loading it from fs as string
+    // if the file is a binary, there should be a plugin that already loaded it
+    // as string
+    // only try the fallback if access is allowed, skip for out of root url
+    // like /service-worker.js or /api/users
+    if (
+      environment.options.nodeCompatible ||
+      isFileLoadingAllowed(config, file)
+    ) {
+      try {
+        code = await fsp.readFile(file, 'utf-8')
+        debugLoad?.(`${timeFrom(loadStart)} [fs] ${prettyUrl}`)
+      } catch (e) {
+        if (e.code !== 'ENOENT') {
+          if (e.code === 'EISDIR') {
+            e.message = `${e.message} ${file}`
+          }
+          throw e
+        }
+      }
+      if (code != null && environment.watcher) {
+        ensureWatchedFile(environment.watcher, file, config.root)
+      }
+    }
+    if (code) {
+      try {
+        const extracted = await extractSourcemapFromFile(code, file)
+        if (extracted) {
+          code = extracted.code
+          map = extracted.map
+        }
+      } catch (e) {
+        logger.warn(`Failed to load source map for ${file}.\n${e}`, {
+          timestamp: true,
+        })
+      }
+    }
   } else {
-    code = loadResult
+    debugLoad?.(`${timeFrom(loadStart)} [plugin] ${prettyUrl}`)
+    if (isObject(loadResult)) {
+      code = loadResult.code
+      map = loadResult.map
+    } else {
+      code = loadResult
+    }
+  }
+  if (code == null) {
+    const isPublicFile = checkPublicFile(url, config)
+    let publicDirName = path.relative(config.root, config.publicDir)
+    if (publicDirName[0] !== '.') publicDirName = '/' + publicDirName
+    const msg = isPublicFile
+      ? `This file is in ${publicDirName} and will be copied as-is during ` +
+        `build without going through the plugin transforms, and therefore ` +
+        `should not be imported from source code. It can only be referenced ` +
+        `via HTML tags.`
+      : `Does the file exist?`
+    const importerMod: EnvironmentModuleNode | undefined =
+      moduleGraph.idToModuleMap.get(id)?.importers.values().next().value
+    const importer = importerMod?.file || importerMod?.url
+    const err: any = new Error(
+      `Failed to load url ${url} (resolved id: ${id})${
+        importer ? ` in ${importer}` : ''
+      }. ${msg}`,
+    )
+    err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
+    throw err
   }
 
   if (environment._closing && environment.options.dev.recoverable)

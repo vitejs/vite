@@ -4,7 +4,6 @@ import type { SourceMap } from 'rollup'
 import { cleanUrl } from '../../shared/utils'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import type { ViteDevServer } from '../server'
 import { extractSourcemapFromFile } from '../server/sourcemap'
 import { isFileLoadingAllowed } from '../server/middlewares/static'
 import type { DevEnvironment } from '../server/environment'
@@ -12,26 +11,18 @@ import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import { ensureWatchedFile } from '../utils'
 import { checkPublicFile } from '../publicDir'
 
-export const ERR_LOAD_URL = 'ERR_LOAD_URL'
-export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
-
 /**
  * A plugin to provide build load fallback for arbitrary request with queries.
+ *
+ * TODO: This plugin isn't currently being use. The idea is to consolidate the way
+ * we handle the fallback during build (also with a plugin) instead of handling this
+ * in transformRequest(). There are some CI fails right now with the current
+ * implementation. Reverting for now to be able to merge the other changes.
  */
 export function loadFallbackPlugin(config: ResolvedConfig): Plugin {
-  let server: ViteDevServer | undefined
   return {
     name: 'vite:load-fallback',
-    configureServer(_server) {
-      server = _server
-    },
     async load(id, options) {
-      if (!server) {
-        // If the DevEnvironment is created as standalone, the configureServer server
-        // won't be called
-        return
-      }
-
       const environment = this.environment as DevEnvironment
       if (!environment) {
         return
@@ -102,11 +93,9 @@ export function loadFallbackPlugin(config: ResolvedConfig): Plugin {
           ?.importers.values()
           .next().value
       const importer = importerMod?.file || importerMod?.url
-      const err: any = new Error(
+      environment.logger.warn(
         `Failed to load ${id}${importer ? ` in ${importer}` : ''}. ${msg}`,
       )
-      err.code = isPublicFile ? ERR_LOAD_PUBLIC_URL : ERR_LOAD_URL
-      throw err
     },
   }
 }

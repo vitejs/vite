@@ -23,6 +23,7 @@ import {
 import type {
   HookHandler,
   Plugin,
+  PluginEnvironment,
   PluginOption,
   PluginWithRequiredHook,
 } from './plugin'
@@ -42,7 +43,7 @@ import {
 } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
-import { ScanEnvironment } from './optimizer/scan'
+import { Environment } from './environment'
 import type { DevEnvironment } from './server/environment'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
@@ -1204,9 +1205,9 @@ export async function resolveConfig(
         // The used alias and resolve plugins only use configuration options from the
         // environment so we can safely cast to a base Environment instance to a
         // PluginEnvironment here
-        const environment = new ScanEnvironment(environmentName, this)
+        const environment = new Environment(environmentName, this)
         const pluginContainer = await createBoundedPluginContainer(
-          environment,
+          environment as PluginEnvironment,
           plugins,
         )
         await pluginContainer.buildStart({})

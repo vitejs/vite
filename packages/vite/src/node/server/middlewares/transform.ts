@@ -17,10 +17,9 @@ import {
   urlRE,
 } from '../../utils'
 import { send } from '../send'
-import { transformRequest } from '../transformRequest'
+import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
-import { ERR_LOAD_URL } from '../../plugins/loadFallback'
 import { DEP_VERSION_RE, FS_PREFIX } from '../../constants'
 import {
   isCSSRequest,

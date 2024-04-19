@@ -176,7 +176,9 @@ export class DevEnvironment extends Environment {
       this,
       this._plugins,
     )
-    await this._pluginContainer.buildStart({})
+
+    // TODO: Should buildStart be called here? It break backward compatibility if we do,
+    // and it may be better to delay it for performance
 
     // The deps optimizer init is delayed. TODO: add internal option?
 
