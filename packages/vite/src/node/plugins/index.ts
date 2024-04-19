@@ -3,8 +3,6 @@ import type { ObjectHook } from 'rollup'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
-import { getDepsOptimizer } from '../optimizer'
-import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { watchPackageDataPlugin } from '../packages'
 import { getFsUtils } from '../fsUtils'
 import { jsonPlugin } from './json'
@@ -26,6 +24,7 @@ import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
+// TODO: import { loadFallbackPlugin } from './loadFallback'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -56,23 +55,19 @@ export async function resolvePlugins(
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin(config)
       : null,
-    resolvePlugin({
-      ...config.resolve,
-      root: config.root,
-      isProduction: config.isProduction,
-      isBuild,
-      packageCache: config.packageCache,
-      ssrConfig: config.ssr,
-      asSrc: true,
-      fsUtils: getFsUtils(config),
-      getDepsOptimizer: isBuild
-        ? undefined
-        : (ssr: boolean) => getDepsOptimizer(config, ssr),
-      shouldExternalize:
-        isBuild && config.build.ssr
-          ? (id, importer) => shouldExternalizeForSSR(id, importer, config)
-          : undefined,
-    }),
+    resolvePlugin(
+      {
+        root: config.root,
+        isProduction: config.isProduction,
+        isBuild,
+        packageCache: config.packageCache,
+        asSrc: true,
+        fsUtils: getFsUtils(config),
+        optimizeDeps: true,
+        externalize: isBuild && !!config.build.ssr, // TODO: should we do this for all environments?
+      },
+      config.environments,
+    ),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config) : null,
@@ -105,6 +100,7 @@ export async function resolvePlugins(
           clientInjectionsPlugin(config),
           cssAnalysisPlugin(config),
           importAnalysisPlugin(config),
+          // TODO: loadFallbackPlugin(config),
         ]),
   ].filter(Boolean) as Plugin[]
 }

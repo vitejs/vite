@@ -9,7 +9,7 @@ import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
-import type { RollupOptions } from 'rollup'
+import type { PartialResolvedId, RollupOptions } from 'rollup'
 import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
@@ -20,15 +20,31 @@ import {
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
-import type { HookHandler, Plugin, PluginWithRequiredHook } from './plugin'
 import type {
+  HookHandler,
+  Plugin,
+  PluginEnvironment,
+  PluginOption,
+  PluginWithRequiredHook,
+} from './plugin'
+import type {
+  BuildEnvironmentOptions,
   BuildOptions,
+  BuilderOptions,
   RenderBuiltAssetUrl,
+  ResolvedBuildEnvironmentOptions,
   ResolvedBuildOptions,
+  ResolvedBuilderOptions,
 } from './build'
-import { resolveBuildOptions } from './build'
+import {
+  resolveBuildEnvironmentOptions,
+  resolveBuildOptions,
+  resolveBuilderOptions,
+} from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
+import { Environment } from './environment'
+import type { DevEnvironment } from './server/environment'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
 import {
@@ -43,6 +59,7 @@ import {
   isBuiltin,
   isExternalUrl,
   isFilePathESM,
+  isInNodeModules,
   isNodeBuiltin,
   isObject,
   isParentDirectory,
@@ -65,8 +82,8 @@ import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
-import type { PluginContainer } from './server/pluginContainer'
-import { createPluginContainer } from './server/pluginContainer'
+import type { BoundedPluginContainer } from './server/pluginContainer'
+import { createBoundedPluginContainer } from './server/pluginContainer'
 import type { PackageCache } from './packages'
 import { findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
@@ -120,15 +137,142 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
-export type PluginOption =
-  | Plugin
-  | false
-  | null
-  | undefined
-  | PluginOption[]
-  | Promise<Plugin | false | null | undefined | PluginOption[]>
+export interface DevEnvironmentOptions {
+  /**
+   * Files tßo be pre-transformed. Supports glob patterns.
+   */
+  warmup?: string[]
+  /**
+   * Pre-transform known direct imports
+   * defaults to true for the client environment, false for the rest
+   */
+  preTransformRequests?: boolean
+  /**
+   * Enables sourcemaps during dev
+   * @default { js: true }
+   * @experimental
+   */
+  sourcemap?: boolean | { js?: boolean; css?: boolean }
+  /**
+   * Whether or not to ignore-list source files in the dev server sourcemap, used to populate
+   * the [`x_google_ignoreList` source map extension](https://developer.chrome.com/blog/devtools-better-angular-debugging/#the-x_google_ignorelist-source-map-extension).
+   *
+   * By default, it excludes all paths containing `node_modules`. You can pass `false` to
+   * disable this behavior, or, for full control, a function that takes the source path and
+   * sourcemap path and returns whether to ignore the source path.
+   */
+  sourcemapIgnoreList?:
+    | false
+    | ((sourcePath: string, sourcemapPath: string) => boolean)
 
-export interface UserConfig {
+  /**
+   * Optimize deps config
+   */
+  optimizeDeps?: DepOptimizationConfig
+
+  /**
+   * create the Dev Environment instance
+   */
+  createEnvironment?: (
+    name: string,
+    config: ResolvedConfig,
+  ) => Promise<DevEnvironment> | DevEnvironment
+
+  /**
+   * For environments that support a full-reload, like the client, we can short-circuit when
+   * restarting the server throwing early to stop processing current files. We avoided this for
+   * SSR requests. Maybe this is no longer needed.
+   * @experimental
+   */
+  recoverable?: boolean
+
+  /**
+   * For environments associated with a module runner.
+   * By default it is true for the client environment and false for non-client environments.
+   * This option can also be used instead of the removed config.experimental.skipSsrTransform.
+   */
+  moduleRunnerTransform?: boolean
+
+  /**
+   * Defaults to true for the client environment and false for others, following node permissive
+   * security model.
+   * TODO: We need to move at least server.fs.strict to dev options because we want to restrict
+   * fs access from the client, but keep it open for SSR running on node. For now, we moved
+   * the check to use environment.nodeCompatible
+   * Should we only have a boolean toggle per environment and a keep allow/deny configuration
+   * in server.fs, or move the whole configuration to the environment?
+   */
+  // fs: { strict?: boolean, allow, deny }
+}
+
+export type ResolvedDevEnvironmentOptions = Required<
+  Omit<DevEnvironmentOptions, 'createEnvironment'>
+> & {
+  // TODO: Should we set the default at config time? For now, it is defined on server init
+  createEnvironment:
+    | ((
+        name: string,
+        config: ResolvedConfig,
+      ) => Promise<DevEnvironment> | DevEnvironment)
+    | undefined
+}
+
+type EnvironmentResolveOptions = ResolveOptions & {
+  alias?: AliasOptions
+}
+
+export interface SharedEnvironmentOptions {
+  /**
+   * Configure resolver
+   */
+  resolve?: EnvironmentResolveOptions
+  /**
+   * Runtime Compatibility
+   * Temporal options, we should remove these in favor of fine-grained control
+   */
+  nodeCompatible?: boolean
+  webCompatible?: boolean // was ssr.target === 'webworker'
+  /**
+   * Should Vite inject timestamp if module is invalidated
+   * Disabling this will break built-in HMR support
+   * @experimental
+   * @default true
+   */
+  injectInvalidationTimestamp?: boolean
+}
+
+export interface EnvironmentOptions extends SharedEnvironmentOptions {
+  /**
+   * Dev specific options
+   */
+  dev?: DevEnvironmentOptions
+  /**
+   * Build specific options
+   */
+  build?: BuildEnvironmentOptions
+}
+
+export type ResolvedEnvironmentResolveOptions =
+  Required<EnvironmentResolveOptions>
+
+export type ResolvedEnvironmentOptions = {
+  resolve: ResolvedEnvironmentResolveOptions
+  nodeCompatible: boolean
+  webCompatible: boolean
+  injectInvalidationTimestamp: boolean
+  dev: ResolvedDevEnvironmentOptions
+  build: ResolvedBuildEnvironmentOptions
+}
+
+export type DefaultEnvironmentOptions = Omit<
+  EnvironmentOptions,
+  'build' | 'nodeCompatible' | 'webCompatible'
+> & {
+  // Includes lib mode support
+  build?: BuildOptions
+}
+
+export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Project root directory. Can be an absolute path, or a path relative from
    * the location of the config file itself.
@@ -174,10 +318,6 @@ export interface UserConfig {
    */
   plugins?: PluginOption[]
   /**
-   * Configure resolver
-   */
-  resolve?: ResolveOptions & { alias?: AliasOptions }
-  /**
    * HTML related options
    */
   html?: HTMLOptions
@@ -199,25 +339,17 @@ export interface UserConfig {
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
   /**
+   * Builder specific options
+   */
+  builder?: BuilderOptions
+  /**
    * Server specific options, e.g. host, port, https...
    */
   server?: ServerOptions
   /**
-   * Build specific options
-   */
-  build?: BuildOptions
-  /**
    * Preview specific options, e.g. host, port, https...
    */
   preview?: PreviewOptions
-  /**
-   * Dep optimization options
-   */
-  optimizeDeps?: DepOptimizationOptions
-  /**
-   * SSR specific options
-   */
-  ssr?: SSROptions
   /**
    * Experimental features
    *
@@ -280,6 +412,20 @@ export interface UserConfig {
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
   }
+  /**
+   * Dep optimization options
+   */
+  optimizeDeps?: DepOptimizationOptions
+  /**
+   * SSR specific options
+   * We could make SSROptions be a EnvironmentOptions if we can abstract
+   * external/noExternal for environments in general.
+   */
+  ssr?: SSROptions
+  /**
+   * Environment overrides
+   */
+  environments?: Record<string, EnvironmentOptions>
   /**
    * Whether your application is a Single Page Application (SPA),
    * a Multi-Page Application (MPA), or Custom Application (SSR
@@ -357,7 +503,14 @@ export interface InlineConfig extends UserConfig {
 export type ResolvedConfig = Readonly<
   Omit<
     UserConfig,
-    'plugins' | 'css' | 'assetsInclude' | 'optimizeDeps' | 'worker' | 'build'
+    | 'plugins'
+    | 'css'
+    | 'assetsInclude'
+    | 'optimizeDeps'
+    | 'worker'
+    | 'build'
+    | 'dev'
+    | 'environments'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -386,6 +539,8 @@ export type ResolvedConfig = Readonly<
     css: ResolvedCSSOptions
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
+    dev: ResolvedDevEnvironmentOptions
+    builder: ResolvedBuilderOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
@@ -398,8 +553,91 @@ export type ResolvedConfig = Readonly<
     worker: ResolvedWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
+    environments: Record<string, ResolvedEnvironmentOptions>
   } & PluginHookUtils
 >
+
+export function resolveDevEnvironmentOptions(
+  dev: DevEnvironmentOptions | undefined,
+  preserverSymlinks: boolean,
+  environmentName: string | undefined,
+  // Backward compatibility
+  skipSsrTransform?: boolean,
+): ResolvedDevEnvironmentOptions {
+  return {
+    sourcemap: dev?.sourcemap ?? { js: true },
+    sourcemapIgnoreList:
+      dev?.sourcemapIgnoreList === false
+        ? () => false
+        : dev?.sourcemapIgnoreList || isInNodeModules,
+    preTransformRequests:
+      dev?.preTransformRequests ?? environmentName === 'client',
+    warmup: dev?.warmup ?? [],
+    optimizeDeps: resolveOptimizeDepsConfig(
+      dev?.optimizeDeps,
+      preserverSymlinks,
+    ),
+    createEnvironment: dev?.createEnvironment,
+    recoverable: dev?.recoverable ?? environmentName === 'client',
+    moduleRunnerTransform:
+      dev?.moduleRunnerTransform ??
+      (skipSsrTransform !== undefined && environmentName === 'ssr'
+        ? skipSsrTransform
+        : environmentName !== 'client'),
+  }
+}
+
+function resolveEnvironmentOptions(
+  options: EnvironmentOptions,
+  resolvedRoot: string,
+  logger: Logger,
+  environmentName: string,
+  // Backward compatibility
+  skipSsrTransform?: boolean,
+): ResolvedEnvironmentOptions {
+  const resolve = resolveEnvironmentResolveOptions(options.resolve, logger)
+  return {
+    resolve,
+    nodeCompatible: options.nodeCompatible ?? environmentName !== 'client',
+    webCompatible: options.webCompatible ?? environmentName === 'client',
+    injectInvalidationTimestamp: options.injectInvalidationTimestamp ?? true,
+    dev: resolveDevEnvironmentOptions(
+      options.dev,
+      resolve.preserveSymlinks,
+      environmentName,
+      skipSsrTransform,
+    ),
+    build: resolveBuildEnvironmentOptions(
+      options.build ?? {},
+      logger,
+      resolvedRoot,
+      environmentName,
+    ),
+  }
+}
+
+export function getDefaultEnvironmentOptions(
+  config: UserConfig,
+): EnvironmentOptions {
+  return {
+    resolve: config.resolve,
+    dev: config.dev,
+    build: config.build,
+  }
+}
+
+export function getDefaultResolvedEnvironmentOptions(
+  config: ResolvedConfig,
+): ResolvedEnvironmentOptions {
+  return {
+    resolve: config.resolve,
+    nodeCompatible: true,
+    webCompatible: false,
+    injectInvalidationTimestamp: true,
+    dev: config.dev,
+    build: config.build,
+  }
+}
 
 export interface PluginHookUtils {
   getSortedPlugins: <K extends keyof Plugin>(
@@ -442,6 +680,75 @@ function checkBadCharactersInPath(path: string, logger: Logger): void {
         )}), which may not work when running Vite. Consider renaming the directory to remove the characters.`,
       ),
     )
+  }
+}
+
+const clientAlias = [
+  {
+    find: /^\/?@vite\/env/,
+    replacement: path.posix.join(FS_PREFIX, normalizePath(ENV_ENTRY)),
+  },
+  {
+    find: /^\/?@vite\/client/,
+    replacement: path.posix.join(FS_PREFIX, normalizePath(CLIENT_ENTRY)),
+  },
+]
+
+function resolveEnvironmentResolveOptions(
+  resolve: EnvironmentResolveOptions | undefined,
+  logger: Logger,
+): ResolvedConfig['resolve'] {
+  // resolve alias with internal client alias
+  const resolvedAlias = normalizeAlias(
+    mergeAlias(clientAlias, resolve?.alias || []),
+  )
+
+  const resolvedResolve: ResolvedConfig['resolve'] = {
+    mainFields: resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
+    conditions: resolve?.conditions ?? [],
+    externalConditions: resolve?.externalConditions ?? [],
+    external: resolve?.external ?? [],
+    noExternal: resolve?.noExternal ?? [],
+    extensions: resolve?.extensions ?? DEFAULT_EXTENSIONS,
+    dedupe: resolve?.dedupe ?? [],
+    preserveSymlinks: resolve?.preserveSymlinks ?? false,
+    alias: resolvedAlias,
+  }
+
+  if (
+    // @ts-expect-error removed field
+    resolve?.browserField === false &&
+    resolvedResolve.mainFields.includes('browser')
+  ) {
+    logger.warn(
+      colors.yellow(
+        `\`resolve.browserField\` is set to false, but the option is removed in favour of ` +
+          `the 'browser' string in \`resolve.mainFields\`. You may want to update \`resolve.mainFields\` ` +
+          `to remove the 'browser' string and preserve the previous browser behaviour.`,
+      ),
+    )
+  }
+  return resolvedResolve
+}
+
+// TODO: Introduce ResolvedDepOptimizationConfig
+function resolveOptimizeDepsConfig(
+  optimizeDeps: DepOptimizationConfig | undefined,
+  preserveSymlinks: boolean,
+): DepOptimizationConfig {
+  optimizeDeps ??= {}
+  return {
+    include: optimizeDeps.include ?? [],
+    exclude: optimizeDeps.exclude ?? [],
+    needsInterop: optimizeDeps.needsInterop ?? [],
+    extensions: optimizeDeps.extensions ?? [],
+    noDiscovery: optimizeDeps.noDiscovery ?? false,
+    holdUntilCrawlEnd: optimizeDeps.holdUntilCrawlEnd ?? true,
+    esbuildOptions: {
+      preserveSymlinks, // TODO: ?
+      ...optimizeDeps.esbuildOptions,
+    },
+    disabled: optimizeDeps.disabled,
   }
 }
 
@@ -511,6 +818,27 @@ export async function resolveConfig(
   const [prePlugins, normalPlugins, postPlugins] =
     sortUserPlugins(rawUserPlugins)
 
+  const isBuild = command === 'build'
+
+  // Ensure default client and ssr environments
+  // If there are present, ensure order { client, ssr, ...custom }
+  config.environments ??= {}
+  if (
+    !config.environments.ssr &&
+    (!isBuild || config.ssr || config.build?.ssr)
+  ) {
+    // During dev, the ssr environment is always available even if it isn't configure
+    // There is no perf hit, because the optimizer is initialized only if ssrLoadModule
+    // is called.
+    // During build, we only build the ssr environment if it is configured
+    // through the deprecated ssr top level options or if it is explicitely defined
+    // in the environments config
+    config.environments = { ssr: {}, ...config.environments }
+  }
+  if (!config.environments.client) {
+    config.environments = { client: {}, ...config.environments }
+  }
+
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
@@ -528,44 +856,138 @@ export async function resolveConfig(
 
   checkBadCharactersInPath(resolvedRoot, logger)
 
-  const clientAlias = [
-    {
-      find: /^\/?@vite\/env/,
-      replacement: path.posix.join(FS_PREFIX, normalizePath(ENV_ENTRY)),
-    },
-    {
-      find: /^\/?@vite\/client/,
-      replacement: path.posix.join(FS_PREFIX, normalizePath(CLIENT_ENTRY)),
-    },
-  ]
-
-  // resolve alias with internal client alias
-  const resolvedAlias = normalizeAlias(
-    mergeAlias(clientAlias, config.resolve?.alias || []),
+  // Backward compatibility: merge optimizeDeps into environments.client.dev.optimizeDeps as defaults
+  // TODO: should entries and force be in EnvironmentOptions?
+  const { entries, force, ...deprecatedClientOptimizeDepsConfig } =
+    config.optimizeDeps ?? {}
+  let configEnvironmentsClient = config.environments!.client!
+  configEnvironmentsClient.dev ??= {}
+  configEnvironmentsClient.dev.optimizeDeps = mergeConfig(
+    configEnvironmentsClient.dev.optimizeDeps ?? {},
+    deprecatedClientOptimizeDepsConfig,
   )
 
-  const resolveOptions: ResolvedConfig['resolve'] = {
-    mainFields: config.resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
-    conditions: config.resolve?.conditions ?? [],
-    extensions: config.resolve?.extensions ?? DEFAULT_EXTENSIONS,
-    dedupe: config.resolve?.dedupe ?? [],
-    preserveSymlinks: config.resolve?.preserveSymlinks ?? false,
-    alias: resolvedAlias,
+  const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
+  let configEnvironmentsSsr = config.environments!.ssr
+
+  // Backward compatibility: server.warmup.clientFiles/ssrFiles -> environment.dev.warmup
+  const warmupOptions = config.server?.warmup
+  if (warmupOptions?.clientFiles) {
+    configEnvironmentsClient.dev.warmup = warmupOptions?.clientFiles
+  }
+  if (warmupOptions?.ssrFiles) {
+    configEnvironmentsSsr ??= {}
+    configEnvironmentsSsr.dev ??= {}
+    configEnvironmentsSsr.dev.warmup = warmupOptions?.ssrFiles
   }
 
+  // Backward compatibility: merge ssr into environments.ssr.config as defaults
+  if (configEnvironmentsSsr) {
+    configEnvironmentsSsr.dev ??= {}
+    configEnvironmentsSsr.dev.optimizeDeps = mergeConfig(
+      configEnvironmentsSsr.dev.optimizeDeps ?? {},
+      deprecatedSsrOptimizeDepsConfig,
+    )
+    // TODO: should we merge here?
+    configEnvironmentsSsr.resolve ??= {}
+    configEnvironmentsSsr.resolve.conditions ??= config.ssr?.resolve?.conditions
+    configEnvironmentsSsr.resolve.externalConditions ??=
+      config.ssr?.resolve?.externalConditions
+    configEnvironmentsSsr.resolve.external ??= config.ssr?.external
+    configEnvironmentsSsr.resolve.noExternal ??= config.ssr?.noExternal
+
+    if (config.ssr?.target === 'webworker') {
+      configEnvironmentsSsr.webCompatible = true
+    }
+  }
+
+  // The client and ssr environment configs can't be removed by the user in the config hook
   if (
-    // @ts-expect-error removed field
-    config.resolve?.browserField === false &&
-    resolveOptions.mainFields.includes('browser')
+    !config.environments ||
+    !config.environments.client ||
+    (!config.environments.ssr && !isBuild)
   ) {
-    logger.warn(
-      colors.yellow(
-        `\`resolve.browserField\` is set to false, but the option is removed in favour of ` +
-          `the 'browser' string in \`resolve.mainFields\`. You may want to update \`resolve.mainFields\` ` +
-          `to remove the 'browser' string and preserve the previous browser behaviour.`,
-      ),
+    throw new Error(
+      'Required environments configuration were stripped out in the config hook',
     )
   }
+
+  // Merge default environment config values
+  const defaultEnvironmentOptions = getDefaultEnvironmentOptions(config)
+  for (const name of Object.keys(config.environments)) {
+    config.environments[name] = mergeConfig(
+      defaultEnvironmentOptions,
+      config.environments[name],
+    )
+  }
+
+  await runConfigEnvironmentHook(config.environments, userPlugins, configEnv)
+
+  const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
+  for (const name of Object.keys(config.environments)) {
+    resolvedEnvironments[name] = resolveEnvironmentOptions(
+      config.environments[name],
+      resolvedRoot,
+      logger,
+      name,
+      config.experimental?.skipSsrTransform,
+    )
+  }
+
+  const resolvedDefaultEnvironmentResolve = resolveEnvironmentResolveOptions(
+    config.resolve,
+    logger,
+  )
+
+  // Backward compatibility: merge environments.client.dev.optimizeDeps back into optimizeDeps
+  configEnvironmentsClient = resolvedEnvironments.client
+  const patchedOptimizeDeps = mergeConfig(
+    configEnvironmentsClient.dev?.optimizeDeps ?? {},
+    config.optimizeDeps ?? {},
+  )
+  const backwardCompatibleOptimizeDeps = {
+    holdUntilCrawlEnd: true,
+    ...patchedOptimizeDeps,
+    esbuildOptions: {
+      preserveSymlinks: resolvedDefaultEnvironmentResolve.preserveSymlinks,
+      ...patchedOptimizeDeps.esbuildOptions,
+    },
+  }
+
+  // TODO: Deprecate and remove resolve, dev and build options at the root level of the resolved config
+
+  const resolvedDevEnvironmentOptions = resolveDevEnvironmentOptions(
+    config.dev,
+    resolvedDefaultEnvironmentResolve.preserveSymlinks,
+    undefined, // default environment
+  )
+
+  const resolvedBuildOptions = resolveBuildOptions(
+    config.build ?? {},
+    logger,
+    resolvedRoot,
+  )
+
+  // Backward compatibility: merge config.environments.ssr back into config.ssr
+  // so ecosystem SSR plugins continue to work if only environments.ssr is configured
+  const patchedConfigSsr = {
+    ...config.ssr,
+    external: resolvedEnvironments.ssr?.resolve.external,
+    noExternal: resolvedEnvironments.ssr?.resolve.noExternal,
+    optimizeDeps: mergeConfig(
+      config.ssr?.optimizeDeps ?? {},
+      resolvedEnvironments.ssr?.dev?.optimizeDeps ?? {},
+    ),
+    resolve: {
+      ...config.ssr?.resolve,
+      conditions: resolvedEnvironments.ssr?.resolve.conditions,
+      externalConditions: resolvedEnvironments.ssr?.resolve.externalConditions,
+    },
+  }
+  const ssr = resolveSSROptions(
+    patchedConfigSsr,
+    resolvedDefaultEnvironmentResolve.preserveSymlinks,
+  )
 
   // load .env files
   const envDir = config.envDir
@@ -595,7 +1017,6 @@ export async function resolveConfig(
   const isProduction = process.env.NODE_ENV === 'production'
 
   // resolve public base url
-  const isBuild = command === 'build'
   const relativeBaseShortcut = config.base === '' || config.base === './'
 
   // During dev, we ignore relative base and fallback to '/'
@@ -606,12 +1027,6 @@ export async function resolveConfig(
       ? '/'
       : './'
     : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
-
-  const resolvedBuildOptions = resolveBuildOptions(
-    config.build,
-    logger,
-    resolvedRoot,
-  )
 
   // resolve cache directory
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
@@ -629,52 +1044,6 @@ export async function resolveConfig(
       ? createFilter(config.assetsInclude)
       : () => false
 
-  // create an internal resolver to be used in special scenarios, e.g.
-  // optimizer & handling css @imports
-  const createResolver: ResolvedConfig['createResolver'] = (options) => {
-    let aliasContainer: PluginContainer | undefined
-    let resolverContainer: PluginContainer | undefined
-    return async (id, importer, aliasOnly, ssr) => {
-      let container: PluginContainer
-      if (aliasOnly) {
-        container =
-          aliasContainer ||
-          (aliasContainer = await createPluginContainer({
-            ...resolved,
-            plugins: [aliasPlugin({ entries: resolved.resolve.alias })],
-          }))
-      } else {
-        container =
-          resolverContainer ||
-          (resolverContainer = await createPluginContainer({
-            ...resolved,
-            plugins: [
-              aliasPlugin({ entries: resolved.resolve.alias }),
-              resolvePlugin({
-                ...resolved.resolve,
-                root: resolvedRoot,
-                isProduction,
-                isBuild: command === 'build',
-                ssrConfig: resolved.ssr,
-                asSrc: true,
-                preferRelative: false,
-                tryIndex: true,
-                ...options,
-                idOnly: true,
-                fsUtils: getFsUtils(resolved),
-              }),
-            ],
-          }))
-      }
-      return (
-        await container.resolveId(id, importer, {
-          ssr,
-          scan: options?.scan,
-        })
-      )?.id
-    }
-  }
-
   const { publicDir } = config
   const resolvedPublicDir =
     publicDir !== false && publicDir !== ''
@@ -687,9 +1056,8 @@ export async function resolveConfig(
       : ''
 
   const server = resolveServerOptions(resolvedRoot, config.server, logger)
-  const ssr = resolveSSROptions(config.ssr, resolveOptions.preserveSymlinks)
 
-  const optimizeDeps = config.optimizeDeps || {}
+  const builder = resolveBuilderOptions(config.builder)
 
   const BASE_URL = resolvedBase
 
@@ -772,12 +1140,10 @@ export async function resolveConfig(
     root: resolvedRoot,
     base: withTrailingSlash(resolvedBase),
     rawBase: resolvedBase,
-    resolve: resolveOptions,
     publicDir: resolvedPublicDir,
     cacheDir,
     command,
     mode,
-    ssr,
     isWorker: false,
     mainConfig: null,
     bundleChain: [],
@@ -792,7 +1158,7 @@ export async function resolveConfig(
             ...config.esbuild,
           },
     server,
-    build: resolvedBuildOptions,
+    builder,
     preview: resolvePreviewOptions(config.preview, server),
     envDir,
     env: {
@@ -807,15 +1173,6 @@ export async function resolveConfig(
     },
     logger,
     packageCache,
-    createResolver,
-    optimizeDeps: {
-      holdUntilCrawlEnd: true,
-      ...optimizeDeps,
-      esbuildOptions: {
-        preserveSymlinks: resolveOptions.preserveSymlinks,
-        ...optimizeDeps.esbuildOptions,
-      },
-    },
     worker: resolvedWorkerOptions,
     appType: config.appType ?? 'spa',
     experimental: {
@@ -823,8 +1180,98 @@ export async function resolveConfig(
       hmrPartialAccept: false,
       ...config.experimental,
     },
+
+    // Backward compatibility, users should use environment.config.dev.optimizeDeps
+    optimizeDeps: backwardCompatibleOptimizeDeps,
+    ssr,
+
+    // TODO: deprecate and later remove from ResolvedConfig?
+    resolve: resolvedDefaultEnvironmentResolve,
+    dev: resolvedDevEnvironmentOptions,
+    build: resolvedBuildOptions,
+
+    environments: resolvedEnvironments,
+
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
+
+    // createResolver is deprecated. It only works for the client and ssr
+    // environments. The `aliasOnly` option is also not being used any more
+    // Plugins should move to createIdResolver(environment) instead.
+    // create an internal resolver to be used in special scenarios, e.g.
+    // optimizer & handling css @imports
+    createResolver(options) {
+      const alias: {
+        client?: BoundedPluginContainer
+        ssr?: BoundedPluginContainer
+      } = {}
+      const resolver: {
+        client?: BoundedPluginContainer
+        ssr?: BoundedPluginContainer
+      } = {}
+      const environments = this.environments ?? resolvedEnvironments
+      const createPluginContainer = async (
+        environmentName: string,
+        plugins: Plugin[],
+      ) => {
+        // The used alias and resolve plugins only use configuration options from the
+        // environment so we can safely cast to a base Environment instance to a
+        // PluginEnvironment here
+        const environment = new Environment(environmentName, this)
+        const pluginContainer = await createBoundedPluginContainer(
+          environment as PluginEnvironment,
+          plugins,
+        )
+        await pluginContainer.buildStart({})
+        return pluginContainer
+      }
+      async function resolve(
+        id: string,
+        importer?: string,
+        aliasOnly?: boolean,
+        ssr?: boolean,
+      ): Promise<PartialResolvedId | null> {
+        const environmentName = ssr ? 'ssr' : 'client'
+        let container: BoundedPluginContainer
+        if (aliasOnly) {
+          let aliasContainer = alias[environmentName]
+          if (!aliasContainer) {
+            aliasContainer = alias[environmentName] =
+              await createPluginContainer(environmentName, [
+                aliasPlugin({ entries: resolved.resolve.alias }),
+              ])
+          }
+          container = aliasContainer
+        } else {
+          let resolverContainer = resolver[environmentName]
+          if (!resolverContainer) {
+            resolverContainer = resolver[environmentName] =
+              await createPluginContainer(environmentName, [
+                aliasPlugin({ entries: resolved.resolve.alias }),
+                resolvePlugin(
+                  {
+                    ...resolved.resolve,
+                    root: resolvedRoot,
+                    isProduction,
+                    isBuild: command === 'build',
+                    asSrc: true,
+                    preferRelative: false,
+                    tryIndex: true,
+                    ...options,
+                    idOnly: true,
+                    fsUtils: getFsUtils(resolved),
+                  },
+                  environments,
+                ),
+              ])
+          }
+          container = resolverContainer
+        }
+        return await container.resolveId(id, importer, { scan: options?.scan })
+      }
+      return async (id, importer, aliasOnly, ssr) =>
+        (await resolve(id, importer, aliasOnly, ssr))?.id
+    },
   }
   resolved = {
     ...config,
@@ -862,20 +1309,6 @@ export async function resolveConfig(
   })
 
   // validate config
-
-  if (
-    config.build?.terserOptions &&
-    config.build.minify &&
-    config.build.minify !== 'terser'
-  ) {
-    logger.warn(
-      colors.yellow(
-        `build.terserOptions is specified but build.minify is not set to use Terser. ` +
-          `Note Vite now defaults to use esbuild for minification. If you still ` +
-          `prefer Terser, set build.minify to "terser".`,
-      ),
-    )
-  }
 
   // Check if all assetFileNames have the same reference.
   // If not, display a warn for user.
@@ -1098,26 +1531,26 @@ async function bundleConfigFile(
             importer: string,
             isRequire: boolean,
           ) => {
-            return tryNodeResolve(
-              id,
-              importer,
-              {
-                root: path.dirname(fileName),
-                isBuild: true,
-                isProduction: true,
-                preferRelative: false,
-                tryIndex: true,
-                mainFields: [],
-                conditions: [],
-                overrideConditions: ['node'],
-                dedupe: [],
-                extensions: DEFAULT_EXTENSIONS,
-                preserveSymlinks: false,
-                packageCache,
-                isRequire,
-              },
-              false,
-            )?.id
+            return tryNodeResolve(id, importer, {
+              root: path.dirname(fileName),
+              isBuild: true,
+              isProduction: true,
+              preferRelative: false,
+              tryIndex: true,
+              mainFields: [],
+              conditions: [],
+              externalConditions: [],
+              external: [],
+              noExternal: [],
+              overrideConditions: ['node'],
+              dedupe: [],
+              extensions: DEFAULT_EXTENSIONS,
+              preserveSymlinks: false,
+              packageCache,
+              isRequire,
+              webCompatible: false,
+              nodeCompatible: true,
+            })?.id
           }
 
           // externalize bare imports
@@ -1285,6 +1718,26 @@ async function runConfigHook(
   }
 
   return conf
+}
+
+async function runConfigEnvironmentHook(
+  environments: Record<string, EnvironmentOptions>,
+  plugins: Plugin[],
+  configEnv: ConfigEnv,
+): Promise<void> {
+  const environmentNames = Object.keys(environments)
+  for (const p of getSortedPluginsByHook('configEnvironment', plugins)) {
+    const hook = p.configEnvironment
+    const handler = getHookHandler(hook)
+    if (handler) {
+      for (const name of environmentNames) {
+        const res = await handler(name, environments[name], configEnv)
+        if (res) {
+          environments[name] = mergeConfig(environments[name], res)
+        }
+      }
+    }
+  }
 }
 
 export function getDepOptimizationConfig(

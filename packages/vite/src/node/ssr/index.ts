@@ -4,14 +4,31 @@ export type SSRTarget = 'node' | 'webworker'
 
 export type SsrDepOptimizationOptions = DepOptimizationConfig
 
+/**
+ * @deprecated use environments.ssr
+ */
 export interface SSROptions {
+  /**
+   * @deprecated use environment.resolve.noExternal
+   */
   noExternal?: string | RegExp | (string | RegExp)[] | true
+  /**
+   * @deprecated use environment.resolve.external
+   */
   external?: string[] | true
 
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
+   *
+   * if (ssr.target === 'webworker') {
+   *   build.rollupOptions.entryFileNames = '[name].js'
+   *   build.rollupOptions.inlineDynamicImports = (typeof input === 'string' || Object.keys(input).length === 1))
+   *   webCompatible = true
+   * }
+   *
    * @default 'node'
+   * @deprecated use environment.webCompatible
    */
   target?: SSRTarget
 
@@ -22,9 +39,13 @@ export interface SSROptions {
    * During dev:
    *   explicit no external CJS dependencies are optimized by default
    * @experimental
+   * @deprecated
    */
   optimizeDeps?: SsrDepOptimizationOptions
 
+  /**
+   * @deprecated
+   */
   resolve?: {
     /**
      * Conditions that are used in the plugin pipeline. The default value is the root config's `resolve.conditions`.
@@ -32,6 +53,7 @@ export interface SSROptions {
      * Use this to override the default ssr conditions for the ssr build.
      *
      * @default rootConfig.resolve.conditions
+     * @deprecated
      */
     conditions?: string[]
 
@@ -39,6 +61,7 @@ export interface SSROptions {
      * Conditions that are used during ssr import (including `ssrLoadModule`) of externalized dependencies.
      *
      * @default []
+     * @deprecated
      */
     externalConditions?: string[]
   }

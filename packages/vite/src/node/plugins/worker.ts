@@ -13,7 +13,9 @@ import {
   urlRE,
 } from '../utils'
 import {
+  BuildEnvironment,
   createToImportMetaURLBasedRelativeRuntime,
+  injectEnvironmentToHooks,
   onRollupWarning,
   toOutputFilePathInJS,
 } from '../build'
@@ -68,10 +70,14 @@ async function bundleWorkerEntry(
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
+  const workerEnvironment = new BuildEnvironment('client', config) // TODO: should this be 'worker'?
+  const resolvedPlugins = await plugins(newBundleChain)
   const bundle = await rollup({
     ...rollupOptions,
     input,
-    plugins: await plugins(newBundleChain),
+    plugins: resolvedPlugins.map((p) =>
+      injectEnvironmentToHooks(p, workerEnvironment),
+    ),
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },
@@ -236,7 +242,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(raw, id) {
+    async transform(raw, id, options) {
       const workerFileMatch = workerFileRE.exec(id)
       if (workerFileMatch) {
         // if import worker by worker constructor will have query.type
@@ -258,8 +264,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           } else if (server) {
             // dynamic worker type we can't know how import the env
             // so we copy /@vite/env code of server transform result into file header
-            const { moduleGraph } = server
-            const module = moduleGraph.getModuleById(ENV_ENTRY)
+            const environment = this.environment
+            const moduleGraph =
+              environment?.mode === 'dev' ? environment.moduleGraph : undefined
+            const module = moduleGraph?.getModuleById(ENV_ENTRY)
             injectEnv = module?.transformResult?.code || ''
           }
         }

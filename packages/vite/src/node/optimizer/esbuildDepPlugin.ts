@@ -2,8 +2,6 @@ import path from 'node:path'
 import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
-import { getDepOptimizationConfig } from '../config'
-import type { ResolvedConfig } from '../config'
 import {
   escapeRegex,
   flattenId,
@@ -14,6 +12,8 @@ import {
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isCSSRequest, isModuleCSSRequest } from '../plugins/css'
+import type { Environment } from '../environment'
+import { createIdResolver } from '../idResolver'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -48,12 +48,12 @@ const externalTypes = [
 ]
 
 export function esbuildDepPlugin(
+  environment: Environment,
   qualified: Record<string, string>,
   external: string[],
-  config: ResolvedConfig,
-  ssr: boolean,
 ): Plugin {
-  const { extensions } = getDepOptimizationConfig(config, ssr)
+  const { config } = environment
+  const { extensions } = environment.options.dev.optimizeDeps
 
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = extensions
@@ -66,14 +66,14 @@ export function esbuildDepPlugin(
   const cjsPackageCache: PackageCache = new Map()
 
   // default resolver which prefers ESM
-  const _resolve = config.createResolver({
+  const _resolve = createIdResolver(config, {
     asSrc: false,
     scan: true,
     packageCache: esmPackageCache,
   })
 
   // cjs resolver that prefers Node
-  const _resolveRequire = config.createResolver({
+  const _resolveRequire = createIdResolver(config, {
     asSrc: false,
     isRequire: true,
     scan: true,
@@ -96,7 +96,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined, ssr)
+    return resolver(environment, id, _importer)
   }
 
   const resolveResult = (id: string, resolved: string) => {
@@ -112,6 +112,7 @@ export function esbuildDepPlugin(
         namespace: 'optional-peer-dep',
       }
     }
+    const ssr = environment.name !== 'client' // TODO:depsOptimizer how to avoid depending on environment name?
     if (ssr && isBuiltin(resolved)) {
       return
     }
@@ -209,7 +210,7 @@ export function esbuildDepPlugin(
           if (!importer) {
             if ((entry = resolveEntry(id))) return entry
             // check if this is aliased to an entry - also return entry namespace
-            const aliased = await _resolve(id, undefined, true)
+            const aliased = await _resolve(environment, id, undefined, true)
             if (aliased && (entry = resolveEntry(aliased))) {
               return entry
             }

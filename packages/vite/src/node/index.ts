@@ -10,13 +10,24 @@ export {
 } from './config'
 export { createServer } from './server'
 export { preview } from './preview'
-export { build } from './build'
-export { optimizeDeps } from './optimizer'
+export { build, createViteBuilder } from './build'
+
+// TODO: Can we remove this?
+// export { optimizeDeps } from './optimizer'
+
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
-export { fetchModule } from './ssr/fetchModule'
-export type { FetchModuleOptions } from './ssr/fetchModule'
+
+export { RemoteEnvironmentTransport } from './server/environmentTransport'
+export { createNodeDevEnvironment } from './server/environments/nodeEnvironment'
+export { DevEnvironment, type DevEnvironmentSetup } from './server/environment'
+export { BuildEnvironment } from './build'
+
+export { fetchModule, type FetchModuleOptions } from './ssr/fetchModule'
+export { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
+export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
+
 export * from './publicUtils'
 
 // additional types
@@ -28,7 +39,6 @@ export type {
   InlineConfig,
   LegacyOptions,
   PluginHookUtils,
-  PluginOption,
   ResolveFn,
   ResolvedWorkerOptions,
   ResolvedConfig,
@@ -38,6 +48,7 @@ export type {
   UserConfigFnObject,
   UserConfigFnPromise,
 } from './config'
+export type { PluginOption } from './plugin'
 export type { FilterPattern } from './utils'
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
 export type {
@@ -50,10 +61,12 @@ export type {
 } from './server'
 export type {
   BuildOptions,
+  BuildEnvironmentOptions,
   LibraryOptions,
   LibraryFormats,
   RenderBuiltAssetUrl,
   ResolvedBuildOptions,
+  ResolvedBuildEnvironmentOptions,
   ModulePreloadOptions,
   ResolvedModulePreloadOptions,
   ResolveModulePreloadDependenciesFn,
@@ -113,14 +126,18 @@ export type {
   WebSocketCustomListener,
 } from './server/ws'
 export type { PluginContainer } from './server/pluginContainer'
-export type { ModuleGraph, ModuleNode, ResolvedUrl } from './server/moduleGraph'
+export type {
+  EnvironmentModuleGraph,
+  EnvironmentModuleNode,
+  ResolvedUrl,
+} from './server/moduleGraph'
 export type { SendOptions } from './server/send'
 export type { ProxyOptions } from './server/middlewares/proxy'
 export type {
   TransformOptions,
   TransformResult,
 } from './server/transformRequest'
-export type { HmrOptions, HmrContext } from './server/hmr'
+export type { HmrOptions, HmrContext, HotUpdateContext } from './server/hmr'
 
 export type {
   HMRBroadcaster,
@@ -129,10 +146,8 @@ export type {
   HMRBroadcasterClient,
 } from './server/hmr'
 
-export type { FetchFunction } from '../runtime/index'
-export { createViteRuntime } from './ssr/runtime/mainThreadRuntime'
-export type { MainThreadRuntimeOptions } from './ssr/runtime/mainThreadRuntime'
-export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
+export type { FetchFunction, FetchResult } from 'vite/module-runner'
+export type { ServerModuleRunnerOptions } from './ssr/runtime/serverModuleRunner'
 
 export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
 
@@ -180,3 +195,6 @@ export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
 export type { LightningCSSOptions } from 'dep-types/lightningcss'
+
+// Backward compatibility
+export type { ModuleGraph, ModuleNode } from './server/mixedModuleGraph'

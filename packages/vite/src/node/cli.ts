@@ -4,12 +4,11 @@ import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import { VERSION } from './constants'
-import type { BuildOptions } from './build'
+import type { BuildEnvironmentOptions } from './build'
 import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
-import { resolveConfig } from './config'
 
 const cli = cac('vite')
 
@@ -29,6 +28,11 @@ interface GlobalCLIOptions {
   m?: string
   mode?: string
   force?: boolean
+}
+
+interface BuilderCLIOptions {
+  environment?: string
+  all?: boolean
 }
 
 let profileSession = global.__vite_profile_session
@@ -70,7 +74,7 @@ const filterDuplicateOptions = <T extends object>(options: T) => {
 /**
  * removing global flags before passing as command specific sub-configs
  */
-function cleanOptions<Options extends GlobalCLIOptions>(
+function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   options: Options,
 ): Omit<Options, keyof GlobalCLIOptions> {
   const ret = { ...options }
@@ -98,6 +102,19 @@ function cleanOptions<Options extends GlobalCLIOptions>(
           ? false
           : ret.sourcemap
   }
+
+  return ret
+}
+
+/**
+ * removing builder flags before passing as command specific sub-configs
+ */
+function cleanBuilderCLIOptions<Options extends BuilderCLIOptions>(
+  options: Options,
+): Omit<Options, keyof BuilderCLIOptions> {
+  const ret = { ...options }
+  delete ret.environment
+  delete ret.all
 
   return ret
 }
@@ -161,7 +178,7 @@ cli
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         optimizeDeps: { force: options.force },
-        server: cleanOptions(options),
+        server: cleanGlobalCLIOptions(options),
       })
 
       if (!server.httpServer) {
@@ -263,13 +280,21 @@ cli
     `[boolean] force empty outDir when it's outside of root`,
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
-  .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
-    filterDuplicateOptions(options)
-    const { build } = await import('./build')
-    const buildOptions: BuildOptions = cleanOptions(options)
+  .option('--environment [name]', `[string] build a single environment`)
+  .option('--all', `[boolean] build all environments`)
+  .action(
+    async (
+      root: string,
+      options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
+    ) => {
+      filterDuplicateOptions(options)
+      const { build, createViteBuilder } = await import('./build')
 
-    try {
-      await build({
+      const buildOptions: BuildEnvironmentOptions = cleanGlobalCLIOptions(
+        cleanBuilderCLIOptions(options),
+      )
+
+      const config = {
         root,
         base: options.base,
         mode: options.mode,
@@ -277,17 +302,37 @@ cli
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         build: buildOptions,
-      })
-    } catch (e) {
-      createLogger(options.logLevel).error(
-        colors.red(`error during build:\n${e.stack}`),
-        { error: e },
-      )
-      process.exit(1)
-    } finally {
-      stopProfiler((message) => createLogger(options.logLevel).info(message))
-    }
-  })
+      }
+
+      try {
+        if (options.all || options.environment) {
+          const builder = await createViteBuilder({}, config)
+          if (options.environment) {
+            const environment = builder.environments[options.environment]
+            if (!environment) {
+              throw new Error(
+                `The environment ${options.environment} isn't configured.`,
+              )
+            }
+            await builder.build(environment)
+          } else {
+            // --all: build all environments
+            await builder.buildEnvironments()
+          }
+        } else {
+          await build(config)
+        }
+      } catch (e) {
+        createLogger(options.logLevel).error(
+          colors.red(`error during build:\n${e.stack}`),
+          { error: e },
+        )
+        process.exit(1)
+      } finally {
+        stopProfiler((message) => createLogger(options.logLevel).info(message))
+      }
+    },
+  )
 
 // optimize
 cli
@@ -298,6 +343,8 @@ cli
   )
   .action(
     async (root: string, options: { force?: boolean } & GlobalCLIOptions) => {
+      /* TODO: do we need this command?
+
       filterDuplicateOptions(options)
       const { optimizeDeps } = await import('./optimizer')
       try {
@@ -311,7 +358,8 @@ cli
           },
           'serve',
         )
-        await optimizeDeps(config, options.force, true)
+        const environment = new Environment('client', config)
+        await optimizeDeps(environment, options.force, true)
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error when optimizing deps:\n${e.stack}`),
@@ -319,6 +367,7 @@ cli
         )
         process.exit(1)
       }
+      */
     },
   )
 

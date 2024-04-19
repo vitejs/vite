@@ -136,7 +136,10 @@ const debounceReload = (time: number) => {
 const pageReload = debounceReload(50)
 
 const hmrClient = new HMRClient(
-  console,
+  {
+    error: (err) => console.error('[vite]', err),
+    debug: (...msg) => console.debug('[vite]', ...msg),
+  },
   {
     isReady: () => socket && socket.readyState === 1,
     send: (message) => socket.send(message),
@@ -172,7 +175,7 @@ const hmrClient = new HMRClient(
 async function handleMessage(payload: HMRPayload) {
   switch (payload.type) {
     case 'connected':
-      console.debug(`[vite] connected.`)
+      console.debug(`connected.`)
       hmrClient.messenger.flush()
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.

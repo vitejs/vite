@@ -15,13 +15,11 @@ import type {
 } from './constants'
 import type { DecodedMap } from './sourcemap/decoder'
 import type { InterceptorOptions } from './sourcemap/interceptor'
+import type { RunnerTransport } from './runnerTransport'
 
-export type { DefineImportMetadata }
-export interface SSRImportMetadata extends SSRImportBaseMetadata {
-  entrypoint?: boolean
-}
+export type { DefineImportMetadata, SSRImportBaseMetadata as SSRImportMetadata }
 
-export interface HMRRuntimeConnection extends HMRConnection {
+export interface ModuleRunnerHMRConnection extends HMRConnection {
   /**
    * Configure how HMR is handled when this connection triggers an update.
    * This method expects that connection will start listening for HMR updates and call this callback when it's received.
@@ -29,14 +27,14 @@ export interface HMRRuntimeConnection extends HMRConnection {
   onUpdate(callback: (payload: HMRPayload) => void): void
 }
 
-export interface ViteRuntimeImportMeta extends ImportMeta {
+export interface ModuleRunnerImportMeta extends ImportMeta {
   url: string
   env: ImportMetaEnv
   hot?: ViteHotContext
   [key: string]: any
 }
 
-export interface ViteRuntimeModuleContext {
+export interface ModuleRunnerContext {
   [ssrModuleExportsKey]: Record<string, any>
   [ssrImportKey]: (id: string, metadata?: DefineImportMetadata) => Promise<any>
   [ssrDynamicImportKey]: (
@@ -44,18 +42,18 @@ export interface ViteRuntimeModuleContext {
     options?: ImportCallOptions,
   ) => Promise<any>
   [ssrExportAllKey]: (obj: any) => void
-  [ssrImportMetaKey]: ViteRuntimeImportMeta
+  [ssrImportMetaKey]: ModuleRunnerImportMeta
 }
 
-export interface ViteModuleRunner {
+export interface ModuleEvaluator {
   /**
    * Run code that was transformed by Vite.
    * @param context Function context
    * @param code Transformed code
    * @param id ID that was used to fetch the module
    */
-  runViteModule(
-    context: ViteRuntimeModuleContext,
+  runInlinedModule(
+    context: ModuleRunnerContext,
     code: string,
     id: string,
   ): Promise<any>
@@ -71,7 +69,8 @@ export interface ModuleCache {
   exports?: any
   evaluated?: boolean
   map?: DecodedMap
-  meta?: FetchResult
+  meta?: ResolvedResult
+  timestamp?: number
   /**
    * Module ids that imports this module
    */
@@ -85,7 +84,7 @@ export interface ExternalFetchResult {
   /**
    * The path to the externalized module starting with file://,
    * by default this will be imported via a dynamic "import"
-   * instead of being transformed by vite and loaded with vite runtime
+   * instead of being transformed by vite and loaded with vite runner
    */
   externalize: string
   /**
@@ -97,7 +96,7 @@ export interface ExternalFetchResult {
 
 export interface ViteFetchResult {
   /**
-   * Code that will be evaluated by vite runtime
+   * Code that will be evaluated by vite runner
    * by default this will be wrapped in an async function
    */
   code: string
@@ -120,21 +119,26 @@ export type FetchFunction = (
   importer?: string,
 ) => Promise<FetchResult>
 
-export interface ViteRuntimeOptions {
+export interface ModuleRunnerHmr {
+  /**
+   * Configure how HMR communicates between the client and the server.
+   */
+  connection: ModuleRunnerHMRConnection
+  /**
+   * Configure HMR logger.
+   */
+  logger?: false | HMRLogger
+}
+
+export interface ModuleRunnerOptions {
   /**
    * Root of the project
    */
   root: string
   /**
-   * A method to get the information about the module.
-   * For SSR, Vite exposes `server.ssrFetchModule` function that you can use here.
-   * For other runtime use cases, Vite also exposes `fetchModule` from its main entry point.
+   * A set of methods to communicate with the server.
    */
-  fetchModule: FetchFunction
-  /**
-   * Custom environment variables available on `import.meta.env`. This doesn't modify the actual `process.env`.
-   */
-  environmentVariables?: Record<string, any>
+  transport: RunnerTransport
   /**
    * Configure how source maps are resolved. Prefers `node` if `process.setSourceMapsEnabled` is available.
    * Otherwise it will use `prepareStackTrace` by default which overrides `Error.prepareStackTrace` method.
@@ -148,20 +152,9 @@ export interface ViteRuntimeOptions {
   /**
    * Disable HMR or configure HMR options.
    */
-  hmr?:
-    | false
-    | {
-        /**
-         * Configure how HMR communicates between the client and the server.
-         */
-        connection: HMRRuntimeConnection
-        /**
-         * Configure HMR logger.
-         */
-        logger?: false | HMRLogger
-      }
+  hmr?: false | ModuleRunnerHmr
   /**
-   * Custom module cache. If not provided, creates a separate module cache for each ViteRuntime instance.
+   * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */
   moduleCache?: ModuleCacheMap
 }
