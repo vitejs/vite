@@ -20,7 +20,13 @@ import {
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
-import type { HookHandler, Plugin, PluginWithRequiredHook } from './plugin'
+import type {
+  HookHandler,
+  Plugin,
+  PluginEnvironment,
+  PluginOption,
+  PluginWithRequiredHook,
+} from './plugin'
 import type {
   BuildEnvironmentOptions,
   BuildOptions,
@@ -35,12 +41,9 @@ import {
   resolveBuildOptions,
   resolveBuilderOptions,
 } from './build'
-import type {
-  ResolvedServerOptions,
-  ServerOptions,
-  ViteDevServer,
-} from './server'
+import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
+import { Environment } from './environment'
 import type { DevEnvironment } from './server/environment'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
@@ -78,8 +81,8 @@ import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
-import type { PluginContainer } from './server/pluginContainer'
-import { createPluginContainer } from './server/pluginContainer'
+import type { BoundedPluginContainer } from './server/pluginContainer'
+import { createBoundedPluginContainer } from './server/pluginContainer'
 import type { PackageCache } from './packages'
 import { findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
@@ -133,22 +136,14 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
-export type PluginOption =
-  | Plugin
-  | false
-  | null
-  | undefined
-  | PluginOption[]
-  | Promise<Plugin | false | null | undefined | PluginOption[]>
-
 export interface DevEnvironmentOptions {
   /**
    * Files tßo be pre-transformed. Supports glob patterns.
    */
   warmup?: string[]
-  /**ß
+  /**
    * Pre-transform known direct imports
-   * @default true
+   * defaults to true for the client environment, false for the rest
    */
   preTransformRequests?: boolean
   /**
@@ -178,8 +173,8 @@ export interface DevEnvironmentOptions {
    * create the Dev Environment instance
    */
   createEnvironment?: (
-    server: ViteDevServer,
     name: string,
+    config: ResolvedConfig,
   ) => Promise<DevEnvironment> | DevEnvironment
 
   /**
@@ -189,6 +184,13 @@ export interface DevEnvironmentOptions {
    * @experimental
    */
   recoverable?: boolean
+
+  /**
+   * For environments associated with a module runner.
+   * By default it is true for the client environment and false for non-client environments.
+   * This option can also be used instead of the removed config.experimental.skipSsrTransform.
+   */
+  moduleRunnerTransform?: boolean
 
   /**
    * Defaults to true for the client environment and false for others, following node permissive
@@ -208,8 +210,8 @@ export type ResolvedDevEnvironmentOptions = Required<
   // TODO: Should we set the default at config time? For now, it is defined on server init
   createEnvironment:
     | ((
-        server: ViteDevServer,
         name: string,
+        config: ResolvedConfig,
       ) => Promise<DevEnvironment> | DevEnvironment)
     | undefined
 }
@@ -558,6 +560,8 @@ export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
   preserverSymlinks: boolean,
   environmentName: string | undefined,
+  // Backward compatibility
+  skipSsrTransform?: boolean,
 ): ResolvedDevEnvironmentOptions {
   return {
     sourcemap: dev?.sourcemap ?? { js: true },
@@ -565,7 +569,8 @@ export function resolveDevEnvironmentOptions(
       dev?.sourcemapIgnoreList === false
         ? () => false
         : dev?.sourcemapIgnoreList || isInNodeModules,
-    preTransformRequests: dev?.preTransformRequests ?? true,
+    preTransformRequests:
+      dev?.preTransformRequests ?? environmentName === 'client',
     warmup: dev?.warmup ?? [],
     optimizeDeps: resolveOptimizeDepsConfig(
       dev?.optimizeDeps,
@@ -573,28 +578,36 @@ export function resolveDevEnvironmentOptions(
     ),
     createEnvironment: dev?.createEnvironment,
     recoverable: dev?.recoverable ?? environmentName === 'client',
+    moduleRunnerTransform:
+      dev?.moduleRunnerTransform ??
+      (skipSsrTransform !== undefined && environmentName === 'ssr'
+        ? skipSsrTransform
+        : environmentName !== 'client'),
   }
 }
 
 function resolveEnvironmentOptions(
-  config: EnvironmentOptions,
+  options: EnvironmentOptions,
   resolvedRoot: string,
   logger: Logger,
   environmentName: string,
+  // Backward compatibility
+  skipSsrTransform?: boolean,
 ): ResolvedEnvironmentOptions {
-  const resolve = resolveEnvironmentResolveOptions(config.resolve, logger)
+  const resolve = resolveEnvironmentResolveOptions(options.resolve, logger)
   return {
     resolve,
-    nodeCompatible: config.nodeCompatible ?? environmentName !== 'client',
-    webCompatible: config.webCompatible ?? environmentName === 'client',
-    injectInvalidationTimestamp: config.injectInvalidationTimestamp ?? true,
+    nodeCompatible: options.nodeCompatible ?? environmentName !== 'client',
+    webCompatible: options.webCompatible ?? environmentName === 'client',
+    injectInvalidationTimestamp: options.injectInvalidationTimestamp ?? true,
     dev: resolveDevEnvironmentOptions(
-      config.dev,
+      options.dev,
       resolve.preserveSymlinks,
       environmentName,
+      skipSsrTransform,
     ),
     build: resolveBuildEnvironmentOptions(
-      config.build ?? {},
+      options.build ?? {},
       logger,
       resolvedRoot,
       environmentName,
@@ -916,6 +929,7 @@ export async function resolveConfig(
       resolvedRoot,
       logger,
       name,
+      config.experimental?.skipSsrTransform,
     )
   }
 
@@ -1186,29 +1200,52 @@ export async function resolveConfig(
     // create an internal resolver to be used in special scenarios, e.g.
     // optimizer & handling css @imports
     createResolver(options) {
-      let aliasContainer: PluginContainer | undefined
-      let resolverContainer: PluginContainer | undefined
+      const alias: {
+        client?: BoundedPluginContainer
+        ssr?: BoundedPluginContainer
+      } = {}
+      const resolver: {
+        client?: BoundedPluginContainer
+        ssr?: BoundedPluginContainer
+      } = {}
       const environments = this.environments ?? resolvedEnvironments
+      const createPluginContainer = async (
+        environmentName: string,
+        plugins: Plugin[],
+      ) => {
+        // The used alias and resolve plugins only use configuration options from the
+        // environment so we can safely cast to a base Environment instance to a
+        // PluginEnvironment here
+        const environment = new Environment(environmentName, this)
+        const pluginContainer = await createBoundedPluginContainer(
+          environment as PluginEnvironment,
+          plugins,
+        )
+        await pluginContainer.buildStart({})
+        return pluginContainer
+      }
       async function resolve(
         id: string,
         importer?: string,
         aliasOnly?: boolean,
         ssr?: boolean,
       ): Promise<PartialResolvedId | null> {
-        let container: PluginContainer
+        const environmentName = ssr ? 'ssr' : 'client'
+        let container: BoundedPluginContainer
         if (aliasOnly) {
-          container =
-            aliasContainer ||
-            (aliasContainer = await createPluginContainer({
-              ...resolved,
-              plugins: [aliasPlugin({ entries: resolved.resolve.alias })],
-            }))
+          let aliasContainer = alias[environmentName]
+          if (!aliasContainer) {
+            aliasContainer = alias[environmentName] =
+              await createPluginContainer(environmentName, [
+                aliasPlugin({ entries: resolved.resolve.alias }),
+              ])
+          }
+          container = aliasContainer
         } else {
-          container =
-            resolverContainer ||
-            (resolverContainer = await createPluginContainer({
-              ...resolved,
-              plugins: [
+          let resolverContainer = resolver[environmentName]
+          if (!resolverContainer) {
+            resolverContainer = resolver[environmentName] =
+              await createPluginContainer(environmentName, [
                 aliasPlugin({ entries: resolved.resolve.alias }),
                 resolvePlugin(
                   {
@@ -1225,13 +1262,11 @@ export async function resolveConfig(
                   },
                   environments,
                 ),
-              ],
-            }))
+              ])
+          }
+          container = resolverContainer
         }
-        return await container.resolveId(id, importer, {
-          ssr,
-          scan: options?.scan,
-        })
+        return await container.resolveId(id, importer, { scan: options?.scan })
       }
       return async (id, importer, aliasOnly, ssr) =>
         (await resolve(id, importer, aliasOnly, ssr))?.id

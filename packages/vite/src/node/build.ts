@@ -31,10 +31,10 @@ import {
 import type {
   EnvironmentOptions,
   InlineConfig,
-  PluginOption,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
+import type { PluginOption } from './plugin'
 import { getDefaultResolvedEnvironmentOptions, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -55,7 +55,7 @@ import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { loadFallbackPlugin } from './plugins/loadFallback'
+import { buildLoadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import { resolveChokidarOptions } from './watch'
@@ -256,8 +256,8 @@ export interface BuildEnvironmentOptions {
    * create the Build Environment instance
    */
   createEnvironment?: (
-    builder: ViteBuilder,
     name: string,
+    config: ResolvedConfig,
   ) => Promise<BuildEnvironment> | BuildEnvironment
 }
 
@@ -498,7 +498,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
             buildReporterPlugin(config),
           ]
         : []),
-      loadFallbackPlugin(),
+      buildLoadFallbackPlugin(),
     ],
   }
 }
@@ -1375,26 +1375,24 @@ function areSeparateFolders(a: string, b: string) {
 
 export class BuildEnvironment extends Environment {
   mode = 'build' as const
-  builder: ViteBuilder
 
   constructor(
-    builder: ViteBuilder,
     name: string,
+    config: ResolvedConfig,
     setup?: {
       options?: EnvironmentOptions
     },
   ) {
+    // TODO: move this to the base Environment class?
     let options =
-      builder.config.environments[name] ??
-      getDefaultResolvedEnvironmentOptions(builder.config)
+      config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
     if (setup?.options) {
       options = mergeConfig(
         options,
         setup?.options,
       ) as ResolvedEnvironmentOptions
     }
-    super(name, builder.config, options)
-    this.builder = builder
+    super(name, config, options)
   }
 }
 
@@ -1492,8 +1490,8 @@ export async function createViteBuilder(
     const environmentOptions = defaultConfig.environments[name]
     const createEnvironment =
       environmentOptions.build?.createEnvironment ??
-      ((builder: ViteBuilder, name: string) =>
-        new BuildEnvironment(builder, name))
+      ((name: string, config: ResolvedConfig) =>
+        new BuildEnvironment(name, config))
 
     // We need to resolve the config again so we can properly merge options
     // and get a new set of plugins for each build environment. The ecosystem
@@ -1501,9 +1499,8 @@ export async function createViteBuilder(
     // and to process a single bundle at a time (contrary to dev mode where
     // plugins are built to handle multiple environments concurrently).
     const environmentConfig = await resolveConfig(environmentOptions)
-    const environmentBuilder = { ...builder, config: environmentConfig }
 
-    const environment = await createEnvironment(environmentBuilder, name)
+    const environment = await createEnvironment(name, environmentConfig)
     environments[name] = environment
   }
 

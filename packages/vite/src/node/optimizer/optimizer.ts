@@ -2,6 +2,7 @@ import colors from 'picocolors'
 import { createDebugger, getHash, promiseWithResolvers } from '../utils'
 import type { PromiseWithResolvers } from '../utils'
 import type { DevEnvironment } from '../server/environment'
+import { devToScanEnvironment } from './scan'
 import {
   addManuallyIncludedOptimizeDeps,
   addOptimizedDepInfo,
@@ -23,7 +24,7 @@ import type {
   DepOptimizationResult,
   DepsOptimizer,
   OptimizedDepInfo,
-} from '.'
+} from './index'
 
 const debug = createDebugger('vite:deps')
 
@@ -158,7 +159,7 @@ export function createDepsOptimizer(
       cachedMetadata || initDepsOptimizerMetadata(environment, sessionTimestamp)
 
     if (!cachedMetadata) {
-      environment.server._onCrawlEnd(onCrawlEnd) // TODO: depsOptimizer
+      environment._onCrawlEnd(onCrawlEnd)
       waitingForCrawlEnd = true
 
       // Enter processing state until crawl of static imports ends
@@ -195,7 +196,9 @@ export function createDepsOptimizer(
             try {
               debug?.(colors.green(`scanning for dependencies...`))
 
-              discover = discoverProjectDependencies(environment)
+              discover = discoverProjectDependencies(
+                devToScanEnvironment(environment),
+              )
               const deps = await discover.result
               discover = undefined
 

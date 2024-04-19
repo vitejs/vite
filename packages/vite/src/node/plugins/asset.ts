@@ -30,8 +30,6 @@ import {
 } from '../utils'
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
 import { cleanUrl, withTrailingSlash } from '../../shared/utils'
-import type { ViteDevServer } from '../server'
-import type { DevEnvironment } from '../server/environment'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
@@ -142,7 +140,6 @@ const viteBuildPublicIdPrefix = '\0vite:asset:public'
  */
 export function assetPlugin(config: ResolvedConfig): Plugin {
   registerCustomMime()
-  let server: ViteDevServer
 
   return {
     name: 'vite:asset',
@@ -150,10 +147,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       assetCache.set(config, new Map())
       generatedAssets.set(config, new Map())
-    },
-
-    configureServer(_server) {
-      server = _server
     },
 
     resolveId(id) {
@@ -199,12 +192,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       let url = await fileToUrl(id, config, this)
 
       // Inherit HMR timestamp if this asset was invalidated
-      if (server) {
-        const environment = this.environment as DevEnvironment | undefined
-        const mod = environment?.moduleGraph.getModuleById(id)
-        if (mod && mod.lastHMRTimestamp > 0) {
-          url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
-        }
+      const environment = this.environment
+      const mod =
+        environment?.mode === 'dev' &&
+        environment?.moduleGraph.getModuleById(id)
+      if (mod && mod.lastHMRTimestamp > 0) {
+        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
 
       return {

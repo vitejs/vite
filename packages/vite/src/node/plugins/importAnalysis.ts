@@ -12,7 +12,6 @@ import { parse as parseJS } from 'acorn'
 import type { Node } from 'estree'
 import { findStaticImports, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import type { ViteDevServer } from '..'
 import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
@@ -55,6 +54,7 @@ import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { DevEnvironment } from '../server/environment'
+import { addSafeModulePath } from '../server/middlewares/static'
 import { shouldExternalize } from '../external'
 import { optimizedDepNeedsInterop } from '../optimizer'
 import {
@@ -140,7 +140,7 @@ function extractImportedBindings(
 }
 
 /**
- * Server-only plugin that lexes, resolves, rewrites and analyzes url imports.
+ * Dev-only plugin that lexes, resolves, rewrites and analyzes url imports.
  *
  * - Imports are resolved to ensure they exist on disk
  *
@@ -174,7 +174,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
   const matchAlias = getAliasPatternMatcher(config.resolve.alias)
-  let server: ViteDevServer
 
   let _env: string | undefined
   let _ssrEnv: string | undefined
@@ -205,19 +204,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:import-analysis',
 
-    configureServer(_server) {
-      server = _server
-    },
-
     async transform(source, importer, options) {
-      // In a real app `server` is always defined, but it is undefined when
-      // running src/node/server/__tests__/pluginContainer.spec.ts
-
       const ssr = options?.ssr === true
-      const environment = this.environment as DevEnvironment | undefined
 
-      if (!server || !environment) {
-        return null
+      const environment = this.environment as DevEnvironment | undefined
+      if (!environment) {
+        return
       }
 
       const moduleGraph = environment.moduleGraph
@@ -531,7 +523,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // record as safe modules
             // safeModulesPath should not include the base prefix.
             // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
-            server?._safeModulesPath.add(fsPathFromUrl(stripBase(url, base)))
+            addSafeModulePath(config, fsPathFromUrl(stripBase(url, base)))
 
             if (url !== specifier) {
               let rewriteDone = false
@@ -623,7 +615,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (
               !isDynamicImport &&
               isLocalImport &&
-              config.server.preTransformRequests
+              environment.options.dev.preTransformRequests
             ) {
               // pre-transform known direct imports
               // These requests will also be registered in transformRequest to be awaited

@@ -1,11 +1,30 @@
 import colors from 'picocolors'
 import type { Logger } from './logger'
 import type { ResolvedConfig, ResolvedEnvironmentOptions } from './config'
+import type { BoundedPlugin } from './plugin'
 
 export class Environment {
   name: string
+
   config: ResolvedConfig
   options: ResolvedEnvironmentOptions
+
+  get plugins(): BoundedPlugin[] {
+    if (!this._plugins)
+      throw new Error(
+        `${this.name} environment.plugins called before initialized`,
+      )
+    return this._plugins
+  }
+  /**
+   * @internal
+   */
+  _plugins: BoundedPlugin[] | undefined
+  /**
+   * @internal
+   */
+  _inited: boolean = false
+
   #logger: Logger | undefined
   get logger(): Logger {
     if (this.#logger) {
@@ -54,6 +73,7 @@ export class Environment {
     }
     return this.#logger
   }
+
   constructor(
     name: string,
     config: ResolvedConfig,

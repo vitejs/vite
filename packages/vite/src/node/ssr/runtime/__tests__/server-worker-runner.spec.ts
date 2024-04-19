@@ -30,8 +30,8 @@ describe('running module runner inside a worker', () => {
       environments: {
         worker: {
           dev: {
-            createEnvironment: (server) => {
-              return new DevEnvironment(server, 'worker', {
+            createEnvironment: (name, config) => {
+              return new DevEnvironment(name, config, {
                 runner: {
                   transport: new RemoteEnvironmentTransport({
                     send: (data) => worker.postMessage(data),

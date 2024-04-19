@@ -1,14 +1,14 @@
+import type { ResolvedConfig } from '../../config'
 import type { DevEnvironmentSetup } from '../environment'
 import { DevEnvironment } from '../environment'
-import type { ViteDevServer } from '../index'
 import { asyncFunctionDeclarationPaddingLineCount } from '../../../shared/utils'
 
 export function createNodeDevEnvironment(
-  server: ViteDevServer,
   name: string,
+  config: ResolvedConfig,
   options?: DevEnvironmentSetup,
 ): DevEnvironment {
-  return new DevEnvironment(server, name, {
+  return new DevEnvironment(name, config, {
     ...options,
     runner: {
       processSourceMap(map) {

@@ -29,7 +29,7 @@ import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
 import { isWindows } from '../../shared/utils'
 import type { Environment } from '../environment'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
-import { scanImports } from './scan'
+import { ScanEnvironment, scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
 
 const debug = createDebugger('vite:deps')
@@ -240,12 +240,19 @@ export interface DepOptimizationMetadata {
  * Scan and optimize dependencies within a project.
  * Used by Vite CLI when running `vite optimize`.
  */
+// TODO: do we need this? It is exposed for the CLI command `vite optimize`
+
 export async function optimizeDeps(
-  environment: Environment,
-  force = environment.config.optimizeDeps.force,
+  config: ResolvedConfig,
+  force = config.optimizeDeps.force,
   asCommand = false,
 ): Promise<DepOptimizationMetadata> {
-  const log = asCommand ? environment.logger.info : debug
+  const log = asCommand ? config.logger.info : debug
+
+  // TODO: Could we avoid the creation of a DevEnvironment moving the plugin resolving to
+  // the Environment base class?
+  const environment = new ScanEnvironment('client', config)
+  await environment.init()
 
   const cachedMetadata = await loadCachedDepOptimizationMetadata(
     environment,
@@ -384,13 +391,13 @@ export async function loadCachedDepOptimizationMetadata(
  * Initial optimizeDeps at server start. Perform a fast scan using esbuild to
  * find deps to pre-bundle and include user hard-coded dependencies
  */
-export function discoverProjectDependencies(environment: Environment): {
+export function discoverProjectDependencies(environment: ScanEnvironment): {
   cancel: () => Promise<void>
   result: Promise<Record<string, string>>
 } {
   // Should the scanner be per-environment?
   // we only use it for the client right now
-  const { cancel, result } = scanImports(environment.config)
+  const { cancel, result } = scanImports(environment)
 
   return {
     cancel,

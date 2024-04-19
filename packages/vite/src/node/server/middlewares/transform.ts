@@ -47,11 +47,12 @@ export function cachedTransformMiddleware(
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteCachedTransformMiddleware(req, res, next) {
+    const environment = server.environments.client
+
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
     if (ifNoneMatch) {
-      const moduleByEtag =
-        server.environments.client.moduleGraph.getModuleByEtag(ifNoneMatch)
+      const moduleByEtag = environment.moduleGraph.getModuleByEtag(ifNoneMatch)
       if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
         // For CSS requests, if the same CSS file is imported in a module,
         // the browser sends the request for the direct CSS request with the etag
@@ -80,6 +81,9 @@ export function transformMiddleware(
   const publicPath = `${publicDir.slice(root.length)}/`
 
   return async function viteTransformMiddleware(req, res, next) {
+    // TODO: We could do this for all browser like environments, and avoid the harcoded environments.client here
+    const environment = server.environments.client
+
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
     }
@@ -100,7 +104,7 @@ export function transformMiddleware(
       const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
-        const depsOptimizer = server.environments.client.depsOptimizer
+        const depsOptimizer = environment.depsOptimizer
         if (depsOptimizer?.isOptimizedDepUrl(url)) {
           // If the browser is requesting a source map for an optimized dep, it
           // means that the dependency has already been pre-bundled and loaded
@@ -142,9 +146,7 @@ export function transformMiddleware(
         } else {
           const originalUrl = url.replace(/\.map($|\?)/, '$1')
           const map = (
-            await server.environments.client.moduleGraph.getModuleByUrl(
-              originalUrl,
-            )
+            await environment.moduleGraph.getModuleByUrl(originalUrl)
           )?.transformResult?.map
           if (map) {
             return send(req, res, JSON.stringify(map), 'json', {
@@ -187,8 +189,8 @@ export function transformMiddleware(
           const ifNoneMatch = req.headers['if-none-match']
           if (
             ifNoneMatch &&
-            (await server.environments.client.moduleGraph.getModuleByUrl(url))
-              ?.transformResult?.etag === ifNoneMatch
+            (await environment.moduleGraph.getModuleByUrl(url))?.transformResult
+              ?.etag === ifNoneMatch
           ) {
             debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
             res.statusCode = 304
@@ -197,16 +199,11 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
-        const result = await transformRequest(
-          url,
-          server,
-          {
-            html: req.headers.accept?.includes('text/html'),
-          },
-          server.environments.client,
-        )
+        const result = await transformRequest(environment, url, {
+          html: req.headers.accept?.includes('text/html'),
+        })
         if (result) {
-          const depsOptimizer = server.environments.client.depsOptimizer
+          const depsOptimizer = environment.depsOptimizer
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
@@ -271,6 +268,7 @@ export function transformMiddleware(
         return
       }
       if (e?.code === ERR_LOAD_URL) {
+        // TODO: Why not also do this on ERR_LOAD_PUBLIC_URL?
         // Let other middleware handle if we can't load the url via transformRequest
         return next()
       }
