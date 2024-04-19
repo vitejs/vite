@@ -166,12 +166,12 @@ export type BoundedPlugin<A = any> = BasePlugin<A>
 
 export interface Plugin<A = any> extends BasePlugin<A> {
   /**
-   * Split the plugin into multiple plugins based on the environment.
+   * Spawn the plugin into multiple plugins based on the environment.
    * This hook is called when the config has already been resolved, allowing to
    * create per environment plugin pipelines or easily inject plugins for a
    * only specific environments.
    */
-  split?: (environment: PluginEnvironment) => BoundedPluginOption
+  create?: (environment: PluginEnvironment) => BoundedPluginOption
   /**
    * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
    * is still subject to the `order` property in the hook object.
@@ -319,8 +319,8 @@ export async function resolveBoundedPlugins(
 ): Promise<BoundedPlugin[]> {
   const resolvedPlugins: BoundedPlugin[] = []
   for (const plugin of environment.config.plugins) {
-    if (plugin.split) {
-      const boundedPlugin = await plugin.split(environment)
+    if (plugin.create) {
+      const boundedPlugin = await plugin.create(environment)
       if (boundedPlugin) {
         const flatPlugins = await asyncFlattenBoundedPlugin(
           environment,
