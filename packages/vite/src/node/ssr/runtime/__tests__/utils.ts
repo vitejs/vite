@@ -80,6 +80,9 @@ export async function createModuleRunnerTester(
       hmr: {
         logger: false,
       },
+      // don't override by default so Vitest source maps are correct
+      sourcemapInterceptor: false,
+      ...runnerConfig,
     })
     if (config.server?.watch) {
       await waitForWatcher(t.server)
