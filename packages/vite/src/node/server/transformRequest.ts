@@ -18,7 +18,7 @@ import {
   stripBase,
   timeFrom,
 } from '../utils'
-import { ssrParseImports , ssrTransform } from '../ssr/ssrTransform'
+import { ssrParseImports, ssrTransform } from '../ssr/ssrTransform'
 import { checkPublicFile } from '../publicDir'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import {
