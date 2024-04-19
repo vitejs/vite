@@ -69,7 +69,8 @@ export interface ModuleCache {
   exports?: any
   evaluated?: boolean
   map?: DecodedMap
-  meta?: FetchResult
+  meta?: ResolvedResult
+  timestamp?: number
   /**
    * Module ids that imports this module
    */

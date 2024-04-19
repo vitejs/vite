@@ -1,7 +1,6 @@
 import { pathToFileURL } from 'node:url'
 import type { FetchResult } from 'vite/module-runner'
 import type { EnvironmentModuleNode, TransformResult } from '..'
-import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
 import { unwrapId } from '../../shared/utils'
@@ -41,27 +40,27 @@ export async function fetchModule(
     const { externalConditions, dedupe, preserveSymlinks } =
       environment.options.resolve
 
-    const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
-      mainFields: ['main'],
-      conditions: [],
-      externalConditions,
-      external: [], // TODO, should it be environment.options.resolve.external?
-      noExternal: [],
-      overrideConditions: [...externalConditions, 'production', 'development'],
-      extensions: ['.js', '.cjs', '.json'],
-      dedupe,
-      preserveSymlinks,
-      isBuild: false,
-      isProduction,
-      root,
-      packageCache: environment.config.packageCache,
-    }
-
     const resolved = tryNodeResolve(
       url,
       importer,
       {
-        ...resolveOptions,
+        mainFields: ['main'],
+        conditions: [],
+        externalConditions,
+        external: [],
+        noExternal: [],
+        overrideConditions: [
+          ...externalConditions,
+          'production',
+          'development',
+        ],
+        extensions: ['.js', '.cjs', '.json'],
+        dedupe,
+        preserveSymlinks,
+        isBuild: false,
+        isProduction,
+        root,
+        packageCache: environment.config.packageCache,
         tryEsmOnly: true,
         webCompatible: environment.options.webCompatible,
         nodeCompatible: environment.options.nodeCompatible,

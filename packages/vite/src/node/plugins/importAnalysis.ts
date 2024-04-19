@@ -351,8 +351,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = wrapId(resolved.id)
         }
 
-        // make the URL browser-valid if not SSR
-        if (!ssr) {
+        // make the URL browser-valid
+        if (environment.options.injectInvalidationTimestamp) {
           // mark non-js/css imports with `?import`
           if (isExplicitImportRequired(url)) {
             url = injectQuery(url, 'import')

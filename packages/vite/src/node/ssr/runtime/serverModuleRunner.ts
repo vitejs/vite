@@ -28,9 +28,9 @@ export interface ServerModuleRunnerOptions
         logger?: ModuleRunnerHmr['logger']
       }
   /**
-   * Provide a custom module runner. This controls how the code is executed.
+   * Provide a custom module evaluator. This controls how the code is executed.
    */
-  runner?: ModuleEvaluator
+  evaluator?: ModuleEvaluator
 }
 
 function createHMROptions(
@@ -97,6 +97,6 @@ export function createServerModuleRunner(
       hmr,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },
-    options.runner || new ESModulesEvaluator(),
+    options.evaluator || new ESModulesEvaluator(),
   )
 }

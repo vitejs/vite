@@ -9,10 +9,12 @@ import type { ViteDevServer } from '../../../server'
 import type { InlineConfig } from '../../../config'
 import { createServer } from '../../../server'
 import { createServerModuleRunner } from '../serverModuleRunner'
+import type { DevEnvironment } from '../../../server/environment'
 
 interface TestClient {
   server: ViteDevServer
   runner: ModuleRunner
+  environment: DevEnvironment
 }
 
 export async function createModuleRunnerTester(
@@ -73,18 +75,12 @@ export async function createModuleRunnerTester(
       ],
       ...config,
     })
-    t.runner = await createServerModuleRunner(
-      t.server,
-      t.server.environments.ssr,
-      {
-        hmr: {
-          logger: false,
-        },
-        // don't override by default so Vitest source maps are correct
-        sourcemapInterceptor: false,
-        ...runnerConfig,
+    t.environment = t.server.environments.ssr
+    t.runner = await createServerModuleRunner(t.server, t.environment, {
+      hmr: {
+        logger: false,
       },
-    )
+    })
     if (config.server?.watch) {
       await waitForWatcher(t.server)
     }
