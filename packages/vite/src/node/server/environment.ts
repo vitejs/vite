@@ -32,10 +32,12 @@ import type { BoundedPluginContainer } from './pluginContainer'
 
 export interface DevEnvironmentSetup {
   hot?: false | HMRChannel
+  watcher?: FSWatcher
   options?: EnvironmentOptions
   runner?: FetchModuleOptions & {
     transport?: RemoteEnvironmentTransport
   }
+  depsOptimizer?: DepsOptimizer
 }
 
 // Maybe we will rename this to DevEnvironment
@@ -98,15 +100,7 @@ export class DevEnvironment extends Environment {
   constructor(
     name: string,
     config: ResolvedConfig,
-    setup?: {
-      hot?: false | HMRChannel
-      watcher?: FSWatcher
-      options?: EnvironmentOptions
-      runner?: FetchModuleOptions & {
-        transport?: RemoteEnvironmentTransport
-      }
-      depsOptimizer?: DepsOptimizer
-    },
+    setup?: DevEnvironmentSetup,
   ) {
     let options =
       config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)

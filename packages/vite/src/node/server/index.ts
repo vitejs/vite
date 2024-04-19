@@ -458,14 +458,14 @@ export async function _createServer(
   const client_createEnvironment =
     config.environments.client?.dev?.createEnvironment ??
     ((name: string, config: ResolvedConfig) =>
-      new DevEnvironment(name, config, { hot: ws }))
+      new DevEnvironment(name, config, { hot: ws, watcher }))
 
   environments.client = await client_createEnvironment('client', config)
 
   const ssr_createEnvironment =
     config.environments.ssr?.dev?.createEnvironment ??
     ((name: string, config: ResolvedConfig) =>
-      createNodeDevEnvironment(name, config, { hot: ssrHotChannel }))
+      createNodeDevEnvironment(name, config, { hot: ssrHotChannel, watcher }))
 
   environments.ssr = await ssr_createEnvironment('ssr', config)
 
