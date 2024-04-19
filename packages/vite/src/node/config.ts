@@ -143,7 +143,7 @@ export interface DevEnvironmentOptions {
   warmup?: string[]
   /**
    * Pre-transform known direct imports
-   * @default true
+   * defaults to true for the client environment, false for the rest
    */
   preTransformRequests?: boolean
   /**
@@ -569,7 +569,8 @@ export function resolveDevEnvironmentOptions(
       dev?.sourcemapIgnoreList === false
         ? () => false
         : dev?.sourcemapIgnoreList || isInNodeModules,
-    preTransformRequests: dev?.preTransformRequests ?? true,
+    preTransformRequests:
+      dev?.preTransformRequests ?? environmentName === 'client',
     warmup: dev?.warmup ?? [],
     optimizeDeps: resolveOptimizeDepsConfig(
       dev?.optimizeDeps,
