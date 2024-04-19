@@ -47,6 +47,8 @@ export type {
   UserConfigFn,
   UserConfigFnObject,
   UserConfigFnPromise,
+  DevEnvironmentOptions,
+  ResolvedDevEnvironmentOptions,
 } from './config'
 export type { PluginOption } from './plugin'
 export type { FilterPattern } from './utils'
@@ -60,6 +62,8 @@ export type {
   ResolvedServerUrls,
 } from './server'
 export type {
+  ViteBuilder,
+  BuilderOptions,
   BuildOptions,
   BuildEnvironmentOptions,
   LibraryOptions,
