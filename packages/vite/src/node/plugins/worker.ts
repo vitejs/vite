@@ -3,7 +3,6 @@ import MagicString from 'magic-string'
 import type { OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import {
   encodeURIPath,
@@ -209,15 +208,10 @@ export function webWorkerPostPlugin(): Plugin {
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  let server: ViteDevServer
   const isWorker = config.isWorker
 
   return {
     name: 'vite:worker',
-
-    configureServer(_server) {
-      server = _server
-    },
 
     buildStart() {
       if (isWorker) {
@@ -261,7 +255,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         } else if (workerType === 'ignore') {
           if (isBuild) {
             injectEnv = ''
-          } else if (server) {
+          } else {
             // dynamic worker type we can't know how import the env
             // so we copy /@vite/env code of server transform result into file header
             const environment = this.environment

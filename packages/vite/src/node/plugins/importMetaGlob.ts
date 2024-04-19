@@ -52,10 +52,10 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:import-glob',
-    configureServer() {
+    buildStart() {
       importGlobMaps.clear()
     },
-    async transform(code, id, options) {
+    async transform(code, id) {
       if (!code.includes('import.meta.glob')) return
       const result = await transformGlobImport(
         code,
