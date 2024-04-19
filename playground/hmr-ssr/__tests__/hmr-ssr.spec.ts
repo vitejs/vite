@@ -1140,7 +1140,7 @@ async function setupModuleRunner(
   // @ts-expect-error not typed for HMR
   globalThis.log = (...msg) => logger.log(...msg)
 
-  runner = createServerModuleRunner(server.environments.ssr, {
+  runner = createServerModuleRunner(server, server.environments.ssr, {
     hmr: {
       logger,
     },

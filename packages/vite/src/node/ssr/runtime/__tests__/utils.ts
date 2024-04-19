@@ -73,14 +73,18 @@ export async function createModuleRunnerTester(
       ],
       ...config,
     })
-    t.runner = await createServerModuleRunner(t.server.environments.ssr, {
-      hmr: {
-        logger: false,
+    t.runner = await createServerModuleRunner(
+      t.server,
+      t.server.environments.ssr,
+      {
+        hmr: {
+          logger: false,
+        },
+        // don't override by default so Vitest source maps are correct
+        sourcemapInterceptor: false,
+        ...runnerConfig,
       },
-      // don't override by default so Vitest source maps are correct
-      sourcemapInterceptor: false,
-      ...runnerConfig,
-    })
+    )
     if (config.server?.watch) {
       await waitForWatcher(t.server)
     }
