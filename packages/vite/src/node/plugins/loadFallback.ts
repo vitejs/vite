@@ -6,7 +6,7 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { extractSourcemapFromFile } from '../server/sourcemap'
-import { isFileServingAllowed } from '../server/middlewares/static'
+import { isFileLoadingAllowed } from '../server/middlewares/static'
 import type { DevEnvironment } from '../server/environment'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import { ensureWatchedFile } from '../utils'
@@ -19,13 +19,19 @@ export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
  * A plugin to provide build load fallback for arbitrary request with queries.
  */
 export function loadFallbackPlugin(config: ResolvedConfig): Plugin {
-  let server: ViteDevServer
+  let server: ViteDevServer | undefined
   return {
     name: 'vite:load-fallback',
     configureServer(_server) {
       server = _server
     },
     async load(id, options) {
+      if (!server) {
+        // If the DevEnvironment is created as standalone, the configureServer server
+        // won't be called
+        return
+      }
+
       const environment = this.environment as DevEnvironment
       if (!environment) {
         return
@@ -47,7 +53,7 @@ export function loadFallbackPlugin(config: ResolvedConfig): Plugin {
       const file = cleanUrl(id)
       if (
         environment.options.nodeCompatible ||
-        isFileServingAllowed(file, server)
+        isFileLoadingAllowed(config, file) // Do we need fsPathFromId here?
       ) {
         try {
           code = await fsp.readFile(file, 'utf-8')

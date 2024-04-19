@@ -251,6 +251,8 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:esbuild',
+    // TODO: Decouple server, the resolved config should be enough
+    // We may need a `configureWatcher` hook
     configureServer(_server) {
       server = _server
       server.watcher

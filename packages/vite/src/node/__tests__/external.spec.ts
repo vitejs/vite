@@ -1,6 +1,5 @@
 import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
-import type { SSROptions } from '../ssr'
 import { resolveConfig } from '../config'
 import { createIsConfiguredAsExternal } from '../external'
 import { Environment } from '../environment'
@@ -27,6 +26,5 @@ async function createIsExternal(external?: true) {
     'serve',
   )
   const environment = new Environment('ssr', resolvedConfig)
-  console.log(environment.options)
   return createIsConfiguredAsExternal(environment)
 }

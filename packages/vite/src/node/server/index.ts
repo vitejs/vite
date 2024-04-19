@@ -14,8 +14,6 @@ import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
 import type { Connect } from 'dep-types/connect'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
-import picomatch from 'picomatch'
-import type { Matcher } from 'picomatch'
 import type { CommonServerOptions } from '../http'
 import {
   httpServerStart,
@@ -254,11 +252,12 @@ export interface ViteDevServer {
    *
    * Always sends a message to at least a WebSocket client. Any third party can
    * add a channel to the broadcaster to process messages
-   * @deprecated use `environments.get(id).hot` instead
+   * @deprecated use `environment.hot` instead
    */
   hot: HMRBroadcaster
   /**
    * Rollup plugin container that can run plugin hooks on a given file
+   * @deprecated use `environment.pluginContainer` instead
    */
   pluginContainer: PluginContainer
   /**
@@ -268,7 +267,7 @@ export interface ViteDevServer {
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
-   * @deprecated use environment module graphs instead
+   * @deprecated use `environment.moduleGraph` instead
    */
   moduleGraph: ModuleGraph
   /**
@@ -382,14 +381,6 @@ export interface ViteDevServer {
    * @internal
    */
   _forceOptimizeOnRestart: boolean
-  /**
-   * @internal
-   */
-  _safeModulesPath: Set<string>
-  /**
-   * @internal
-   */
-  _fsDenyGlob: Matcher
   /**
    * @internal
    */
@@ -718,21 +709,6 @@ export async function _createServer(
     },
     _restartPromise: null,
     _forceOptimizeOnRestart: false,
-
-    _safeModulesPath: new Set(),
-    _fsDenyGlob: picomatch(
-      // matchBase: true does not work as it's documented
-      // https://github.com/micromatch/picomatch/issues/89
-      // convert patterns without `/` on our side for now
-      config.server.fs.deny.map((pattern) =>
-        pattern.includes('/') ? pattern : `**/${pattern}`,
-      ),
-      {
-        matchBase: false,
-        nocase: true,
-        dot: true,
-      },
-    ),
     _shortcutsOptions: undefined,
   }
 

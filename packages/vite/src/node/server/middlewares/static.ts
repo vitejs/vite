@@ -2,9 +2,12 @@ import path from 'node:path'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
+import picomatch from 'picomatch'
+import type { Matcher } from 'picomatch'
 import type { Connect } from 'dep-types/connect'
 import escapeHtml from 'escape-html'
-import type { ViteDevServer } from '../..'
+import type { ViteDevServer } from '../../server'
+import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
 import {
   fsPathFromId,
@@ -204,27 +207,80 @@ export function serveRawFsMiddleware(
   }
 }
 
+const safeModulePathsCache = new WeakMap<ResolvedConfig, Set<string>>()
+function isSafeModulePath(config: ResolvedConfig, filePath: string) {
+  let safeModulePaths = safeModulePathsCache.get(config)
+  if (!safeModulePaths) {
+    safeModulePaths = new Set()
+    safeModulePathsCache.set(config, safeModulePaths)
+  }
+  return safeModulePaths.has(filePath)
+}
+export function addSafeModulePath(
+  config: ResolvedConfig,
+  filePath: string,
+): void {
+  let safeModulePaths = safeModulePathsCache.get(config)
+  if (!safeModulePaths) {
+    safeModulePaths = new Set()
+    safeModulePathsCache.set(config, safeModulePaths)
+  }
+  safeModulePaths.add(filePath)
+}
+
+const fsDenyGlobCache = new WeakMap<ResolvedConfig, Matcher>()
+function fsDenyGlob(config: ResolvedConfig, filePath: string): boolean {
+  let matcher = fsDenyGlobCache.get(config)
+  if (!matcher) {
+    ;(matcher = picomatch(
+      // matchBase: true does not work as it's documented
+      // https://github.com/micromatch/picomatch/issues/89
+      // convert patterns without `/` on our side for now
+      config.server.fs.deny.map((pattern) =>
+        pattern.includes('/') ? pattern : `**/${pattern}`,
+      ),
+      {
+        matchBase: false,
+        nocase: true,
+        dot: true,
+      },
+    )),
+      fsDenyGlobCache.set(config, matcher)
+  }
+  return matcher(filePath)
+}
+
 /**
  * Check if the url is allowed to be served, via the `server.fs` config.
+ * @deprecate use isFileLoadingAllowed
  */
 export function isFileServingAllowed(
   url: string,
   server: ViteDevServer,
 ): boolean {
-  if (!server.config.server.fs.strict) return true
+  const { config } = server
+  if (!config.server.fs.strict) return true
+  const filePath = fsPathFromUrl(url)
+  return isFileLoadingAllowed(config, filePath)
+}
 
-  const file = fsPathFromUrl(url)
+function isUriInFilePath(uri: string, filePath: string) {
+  return isSameFileUri(uri, filePath) || isParentDirectory(uri, filePath)
+}
 
-  if (server._fsDenyGlob(file)) return false
+export function isFileLoadingAllowed(
+  config: ResolvedConfig,
+  filePath: string,
+): boolean {
+  const { fs } = config.server
 
-  if (server._safeModulesPath.has(file)) return true
+  if (!fs.strict) return true
 
-  if (
-    server.config.server.fs.allow.some(
-      (uri) => isSameFileUri(uri, file) || isParentDirectory(uri, file),
-    )
-  )
-    return true
+  if (fsDenyGlob(config, filePath)) return false
+
+  if (isSafeModulePath(config, filePath)) return true
+
+  if (fs.allow.some((uri) => isUriInFilePath(uri, filePath))) return true
 
   return false
 }
