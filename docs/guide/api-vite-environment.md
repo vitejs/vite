@@ -52,7 +52,17 @@ class DevEnvironment {
    * Graph of module nodes, with the imported relationship between
    * processed modules and the cached result of the processed code.
    */
-  moduleGraph: ModuleGraph
+  moduleGraph: EnvironmentModuleGraph
+  /**
+   * Resolved plugins for this environment, including the ones
+   * created using the per-environment `create` hook
+   */
+  plugins: BoundedPlugin[]
+  /**
+   * Allows to resolve, load, and transform code through the
+   * environment plugins pipeline
+   */
+  pluginContainer: BoundedPluginContatiner
   /**
    * TBD: This abstraction isn't yet clear
    * Trigger the execution of a module using the associated module runner
@@ -66,7 +76,7 @@ class DevEnvironment {
    */
   config: ResolvedDevEnvironmentConfig
 
-  constructor(server, { name, hot, run, config }: DevEnvironmentOptions)
+  constructor(name, config, { hot, run, options }: DevEnvironmentOptions)
 
   /**
    * Resolve the URL to an id, load it, and process the code using the
@@ -287,7 +297,7 @@ One of the goals of this feature is to provide a customizable API to process and
 ```ts
 import { DevEnvironment, RemoteEnvironmentTransport } from 'vite'
 
-function createWorkerdDevEnvironment(server: ViteDevServer, name: string, config?: DevEnvironmentConfig) {
+function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, options?: DevEnvironmentOptions) {
   const hot = /* ... */
   const connection = /* ... */
   const transport = new RemoteEnvironmentTransport({
@@ -295,10 +305,10 @@ function createWorkerdDevEnvironment(server: ViteDevServer, name: string, config
     onMessage: (listener) => connection.on('message', listener),
   })
 
-  const workerdDevEnvironment = new DevEnvironment(server, name, {
-    config: {
+  const workerdDevEnvironment = new DevEnvironment(name, config, {
+    options: {
       resolve: { conditions: ['custom'] },
-      ...config,
+      ...options,
     },
     hot,
     runner: {
@@ -312,7 +322,7 @@ function createWorkerdDevEnvironment(server: ViteDevServer, name: string, config
 Then users can create a workerd environment to do SSR using:
 
 ```js
-const ssrEnvironment = createWorkerdEnvironment(server, 'ssr')
+const ssrEnvironment = createWorkerdEnvironment('ssr', config)
 ```
 
 ## Environment Configuration
@@ -384,10 +394,14 @@ export default {
   environments: {
     rsc: {
       dev: {
-        create: (server) => createNodeDevEnvironment(server),
+        createEnvironment(name, config) {
+          return createNodeDevEnvironment(name, config)
+        }
       },
       build: {
-        create: (builder) => createNodeBuildEnvironment(builder),
+        createEnvironment(name, config) {
+          return createNodeBuildEnvironment(name, config)
+        }
         outDir: '/dist/rsc',
       },
     },
@@ -409,12 +423,14 @@ function createWorkedEnvironment(userConfig) {
         ],
       },
       dev: {
-        createEnvironment: (server, name) =>
-          createWorkerdDevEnvironment(server, name),
+        createEnvironment(name, config) {
+          return createWorkerdDevEnvironment(name, config)
+        },
       },
       build: {
-        createEnvironment: (builder, name) =>
-          createWorkerdBuildEnvironment(builder, name),
+        createEnvironment(name, config) {
+          return createWorkerdBuildEnvironment(builder, name)
+        },
       },
     },
     userConfig,
@@ -729,9 +745,9 @@ const runner = new ModuleRunner(
 import { BroadcastChannel } from 'node:worker_threads'
 import { createServer, RemoteEnvironmentTransport, DevEnvironment } from 'vite'
 
-function createWorkerEnvironment(server) {
+function createWorkerEnvironment(name, config) {
   const worker = new Worker('./worker.js')
-  return new DevEnvironment(server, 'worker', {
+  return new DevEnvironment(name, config, {
     runner: {
       transport: new RemoteEnvironmentTransport({
         send: (data) => worker.postMessage(data),
