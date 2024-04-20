@@ -5,14 +5,13 @@ Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime
 
 Resources:
 
-- [PR for the new API docs](https://github.com/vitejs/vite/pull/16089).
+- [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new API is implemented and reviewed.
 - [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
-- [Environment API branch](https://github.com/vitejs/vite/pull/16129) where the new API is implemented.
 
-Feel free to send us PRs against this branch to fix the issues you discover. Please share with us your feedback as you test the proposal.
+Feel free to send us PRs against the `v6/environment-api` branch to fix the issues you discover. Please share with us your feedback as you test the proposal.
 :::
 
-A single Vite dev server can be used to interact with different module execution environments concurrently. We'll use the word environment to refer to a configured Vite processing pipeline that can resolve ids, load, and process source code and is connected to a runtime where the code is executed. The transformed source code is called a module, and the relationships between the modules processed in each environment are kept in a module graph. The code for these modules is sent to the runtimes associated with each environment to be executed. When a module is evaluated, the runtime will request its imported modules triggering the processing of a section of the module graph. In a typical Vite app, an environments will be used for the ES modules served to the client and for the server program that does SSR. An app can do SSR on a Node server, but also on an edge runtime like Workerd. So we can have different types of environments on the same Vite server: browser environments, node environments, and workerd environments to name a few.
+A single Vite dev server can be used to interact with different module execution environments concurrently. We'll use the word environment to refer to a configured Vite processing pipeline that can resolve ids, load, and process source code and is connected to a runtime where the code is executed. The transformed source code is called a module, and the relationships between the modules processed in each environment are kept in a module graph. The code for these modules is sent to the runtimes associated with each environment to be executed. When a module is evaluated, the runtime will request its imported modules triggering the processing of a section of the module graph. In a typical Vite app, an environments will be used for the ES modules served to the client and for the server program that does SSR. An app can do SSR on a Node server, but also on an edge runtime like Workerd. So we can have different types of environments on the same Vite server: browser environments, node environments, and workerd environments, to name a few.
 
 A Vite Module Runner allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runner implementation is decoupled from the server. This allows library and framework authors to implement their layer of communication between the Vite server and the runner. The browser communicates with its corresponding environment using the server Web Socket and through HTTP requests. The Node Module runner can directly do function calls to process modules as it is running in the same process. Other environments could run modules connecting to an edge runtime like workerd, or a Worker Thread as Vitest does.
 
@@ -27,14 +26,16 @@ A Vite dev server exposes two environments by default: a Client environment and 
 The available environments can be accessed using `server.environments`:
 
 ```js
-server.environments.client.transformRequest(url)
+const environment = server.environments.client
+
+environment.transformRequest(url)
 
 console.log(server.environments.ssr.moduleGraph)
 ```
 
-Normally, the current `environment` instance will be available as part of the context of the code being run so the need to access them through `server.environments` should be rare. For example, inside plugin hooks.
+Most of the time, the current `environment` instance will be available as part of the context of the code being run so the need to access them through `server.environments` should be rare. For example, inside plugin hooks the enviornment is exposed as part of the `PluginContext`, so it can be accessed using `this.environment`.
 
-An dev environment is an instance of the `DevEnvironment` class:
+A dev environment is an instance of the `DevEnvironment` class:
 
 ```ts
 class DevEnvironment {
@@ -135,7 +136,7 @@ class ModuleRunner {
 ```
 
 :::info
-In the previous iteration, we had `executeUrl` and `executeEntryPoint` methods - they are now merged into a single `import` method. If you want to opt-out of the HMR support, create a runner with `hmr: false` flag.
+In the v5.1 Runtime API, there were `executeUrl` and `executeEntryPoint` methods - they are now merged into a single `import` method. If you want to opt-out of the HMR support, create a runner with `hmr: false` flag.
 :::
 
 The default SSR Node module runner is not exposed. You can use `createNodeEnvironment` API with `createServerModuleRunner` together to create a runner that runs code in the same thread, supports HMR and doesn't conflict with the SSR implementation (in case it's been overriden in the config). Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
@@ -200,14 +201,16 @@ It isn't clear yet what APIs Vite should provide to cover the most common SSR us
 
 ## Separate module graphs
 
-Vite currently has a mixed Client and SSR module graph. Given an unprocessed or invalidated node, it isn't possible to know if it corresponds to the Client, SSR, or both environments. Module nodes have some properties prefixed, like `clientImportedModules` and `ssrImportedModules` (and `importedModules` that returns the union of both). `importers` contains all importers from both the Client and SSR environment for each module node. A module node also has `transformResult` and `ssrTransformResult`.
+Each environment has an isolated module graph. All module graphs have the same signature, so generic algorithms can be implemented to crawl or query the graph without depending on the environment. `hotUpdate` is a good example. When a file is modified, the module graph of each environment will be used to discover the affected modules and perform HMR for each environment independently.
 
-In this proposal, each environment has its module graph (and a backward compatibility layer will be implemented to give time to the ecosystem to migrate). All module graphs have the same signature, so generic algorithms can be implemented to crawl or query the graph without depending on the environment. `hotUpdate` is a good example. When a file is modified, the module graph of each environment will be used to discover the affected modules and perform HMR for each environment independently.
+::: info
+Vite v5 had a mixed Client and SSR module graph. Given an unprocessed or invalidated node, it isn't possible to know if it corresponds to the Client, SSR, or both environments. Module nodes have some properties prefixed, like `clientImportedModules` and `ssrImportedModules` (and `importedModules` that returns the union of both). `importers` contains all importers from both the Client and SSR environment for each module node. A module node also has `transformResult` and `ssrTransformResult`. A backward compatibility layer allows the ecosystem to migrate from the deprecated `server.moduleGraph`.
+:::
 
-Each module is represented by a `ModuleNode` instance. Modules may be registered in the graph without yet being processed (`transformResult` would be `null` in that case). `importers` and `importedModules` are also updated after the module is processed.
+Each module is represented by a `EnvironmentModuleNode` instance. Modules may be registered in the graph without yet being processed (`transformResult` would be `null` in that case). `importers` and `importedModules` are also updated after the module is processed.
 
 ```ts
-class ModuleNode {
+class EnvironmentModuleNode {
   environment: string
 
   url: string
@@ -232,10 +235,10 @@ class ModuleNode {
 }
 ```
 
-`environment.moduleGraph` is an instance of `ModuleGraph`:
+`environment.moduleGraph` is an instance of `EnvironmentModuleGraph`:
 
 ```ts
-export class ModuleGraph {
+export class EnvironmentModuleGraph {
   environment: string
 
   urlToModuleMap = new Map<string, ModuleNode>()
@@ -361,10 +364,10 @@ export default {
 }
 ```
 
-The `EnvironmentConfig` interface exposes all the per-environment options. There are `SharedEnvironmentConfig` that apply to both `build` and `dev` environments, like `resolve`. And there are `DevOptions` and `BuildOptions`
+The `EnvironmentOptions` interface exposes all the per-environment options. There are `SharedEnvironmentOptions` that apply to both `build` and `dev` environments, like `resolve`. And there are `DevOptions` and `BuildOptions`
 
 ```ts
-interface EnvironmentConfig extends SharedEnvironmentConfig {
+interface EnvironmentOptions extends SharedEnvironmentOptions {
   dev: DevOptions
   build: BuildOptions
 }
@@ -373,15 +376,15 @@ interface EnvironmentConfig extends SharedEnvironmentConfig {
 As we explained, the `UserConfig` interface extends from `EnvironmentConfig`. Environment specific options defined at the root level of user config are used for the default client environment. And environments can be configured explicitely using the `environments` array. The Client and SSR environments, are always present, even if an empty object is set to `environments`.
 
 ```ts
-interface UserConfig extends EnvironmentConfig {
-  environments: Record<string, EnvironmentConfig>
+interface UserConfig extends EnvironmentOptions {
+  environments: Record<string, EnvironmentOptions>
   // other options
 }
 ```
 
 ::: info
 
-The `ssr` top level property has many options in common with `EnvironmentConfig`. This option was created for the same use case as `environments` but only allowed configuration of a small number of options. We're going to deprecate it in favour of a unified way to define environment configuration.
+The `ssr` top level property has many options in common with `EnvironmentOptions`. This option was created for the same use case as `environments` but only allowed configuration of a small number of options. We're going to deprecate it in favour of a unified way to define environment configuration.
 
 :::
 
@@ -470,7 +473,7 @@ The Vite server has a shared plugin pipeline, but when a module is processed it 
 A plugin could use the `environment` instance to:
 
 - Only apply logic for certain environments.
-- Change the way they work depending on the configuration for the environment, which can be accessed using `environment.config`. The vite core resolve plugin modifies the way it resolves ids based on `environment.config.resolve.conditions` for example.
+- Change the way they work depending on the configuration for the environment, which can be accessed using `environment.options`. The vite core resolve plugin modifies the way it resolves ids based on `environment.options.resolve.conditions` for example.
 
 ```ts
   transform(code, id) {
