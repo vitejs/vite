@@ -7,7 +7,7 @@ import type { Plugin } from '../plugin'
 import { evalValue, injectQuery, transformStableResult } from '../utils'
 import type { ResolveFn } from '..'
 import { cleanUrl, slash } from '../../shared/utils'
-import { getDepsOptimizer, optimizedDepInfoFromFile } from '../optimizer'
+import { tryOptimizedDepResolve } from '../optimizer'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
@@ -115,22 +115,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     asSrc: true,
   }
 
-  function tryOptimizedDepResolve(ssr: boolean, url: string, depId: string) {
-    const depsOptimizer = getDepsOptimizer(config, ssr)
-
-    if (depsOptimizer?.isOptimizedDepFile(depId)) {
-      const depFile = cleanUrl(depId)
-      const info = optimizedDepInfoFromFile(depsOptimizer.metadata, depFile)
-      const depSrc = info?.src
-      if (depSrc) {
-        const resolvedFile = path.resolve(path.dirname(depSrc), url)
-        return tryFsResolve(resolvedFile, fsResolveOptions)
-      }
-    }
-
-    return undefined
-  }
-
   return {
     name: 'vite:worker-import-meta-url',
 
@@ -171,7 +155,13 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             file = path.resolve(path.dirname(id), url)
             file =
               tryFsResolve(file, fsResolveOptions) ??
-              tryOptimizedDepResolve(options?.ssr === true, url, id) ??
+              tryOptimizedDepResolve(
+                config,
+                options?.ssr === true,
+                url,
+                id,
+                fsResolveOptions,
+              ) ??
               file
           } else {
             workerResolver ??= config.createResolver({

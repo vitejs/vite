@@ -7,6 +7,7 @@ import type { ResolveFn } from '../'
 import { injectQuery, isParentDirectory, transformStableResult } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
+import { tryOptimizedDepResolve } from '../optimizer'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
@@ -104,7 +105,16 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let file: string | undefined
           if (url[0] === '.') {
             file = slash(path.resolve(path.dirname(id), url))
-            file = tryFsResolve(file, fsResolveOptions) ?? file
+            file =
+              tryFsResolve(file, fsResolveOptions) ??
+              tryOptimizedDepResolve(
+                config,
+                options?.ssr === true,
+                url,
+                id,
+                fsResolveOptions,
+              ) ??
+              file
           } else {
             assetResolver ??= config.createResolver({
               extensions: [],

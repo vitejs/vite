@@ -493,9 +493,15 @@ importers:
 
   playground/alias/dir/module: {}
 
-  playground/assets: {}
+  playground/assets:
+    dependencies:
+      '@vitejs/test-dep-with-asset':
+        specifier: file:./dep-with-asset
+        version: file:playground/assets/dep-with-asset
 
   playground/assets-sanitize: {}
+
+  playground/assets/dep-with-asset: {}
 
   playground/backend-integration:
     devDependencies:
@@ -3384,6 +3390,9 @@ packages:
 
   '@vitejs/test-dep-to-optimize@file:playground/worker/dep-to-optimize':
     resolution: {directory: playground/worker/dep-to-optimize, type: directory}
+
+  '@vitejs/test-dep-with-asset@file:playground/assets/dep-with-asset':
+    resolution: {directory: playground/assets/dep-with-asset, type: directory}
 
   '@vitejs/test-dep-with-builtin-module-cjs@file:playground/optimize-deps/dep-with-builtin-module-cjs':
     resolution: {directory: playground/optimize-deps/dep-with-builtin-module-cjs, type: directory}
@@ -8628,6 +8637,8 @@ snapshots:
       - typescript
 
   '@vitejs/test-dep-to-optimize@file:playground/worker/dep-to-optimize': {}
+
+  '@vitejs/test-dep-with-asset@file:playground/assets/dep-with-asset': {}
 
   '@vitejs/test-dep-with-builtin-module-cjs@file:playground/optimize-deps/dep-with-builtin-module-cjs': {}
 
