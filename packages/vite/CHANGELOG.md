@@ -1,3 +1,19 @@
+## 6.0.0-alpha.3 (2024-04-20)
+
+* fix: add base to virtual html (#16442) ([721f94d](https://github.com/vitejs/vite/commit/721f94d)), closes [#16442](https://github.com/vitejs/vite/issues/16442)
+* fix: adjust esm syntax judgment logic (#16436) ([af72eab](https://github.com/vitejs/vite/commit/af72eab)), closes [#16436](https://github.com/vitejs/vite/issues/16436)
+* fix: don't add outDirs to watch.ignored if emptyOutDir is false (#16453) ([6a127d6](https://github.com/vitejs/vite/commit/6a127d6)), closes [#16453](https://github.com/vitejs/vite/issues/16453)
+* fix: export missing types ([431cd4b](https://github.com/vitejs/vite/commit/431cd4b))
+* fix(cspNonce): don't overwrite existing nonce values (#16415) ([b872635](https://github.com/vitejs/vite/commit/b872635)), closes [#16415](https://github.com/vitejs/vite/issues/16415)
+* chore: remove configureServer from more plugins ([ad2b0bf](https://github.com/vitejs/vite/commit/ad2b0bf))
+* chore: rename plugin.split to plugin.create ([5f6b62f](https://github.com/vitejs/vite/commit/5f6b62f))
+* chore(deps): update dependency eslint-plugin-n to v17 (#16381) ([6cccef7](https://github.com/vitejs/vite/commit/6cccef7)), closes [#16381](https://github.com/vitejs/vite/issues/16381)
+* feat: environment api (#16129) ([f684d4c](https://github.com/vitejs/vite/commit/f684d4c)), closes [#16129](https://github.com/vitejs/vite/issues/16129)
+* feat: show warning if root is in build.outDir (#16454) ([11444dc](https://github.com/vitejs/vite/commit/11444dc)), closes [#16454](https://github.com/vitejs/vite/issues/16454)
+* feat: write cspNonce to style tags (#16419) ([8e54bbd](https://github.com/vitejs/vite/commit/8e54bbd)), closes [#16419](https://github.com/vitejs/vite/issues/16419)
+
+
+
 ## 6.0.0-alpha.2 (2024-04-09)
 
 * chore: update ([46c8910](https://github.com/vitejs/vite/commit/46c8910))
