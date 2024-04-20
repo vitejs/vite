@@ -846,17 +846,3 @@ The current Vite server API will be deprecated but keep working during the next 
 The last one is just an idea. We may want to keep `server.open(url)` around.
 
 The `server.moduleGraph` will keep returning a mixed view of the client and ssr module graphs. Backward compatible mixed module nodes will be returned from all previous functions. The same scheme is used for the module nodes passed to `handleHotUpdate`. This is the most difficult change to get right regarding backward compatibility. We may need to accept small breaking changes when we release the API in Vite 6, making it opt-in until then when releasing the API as experimental in Vite 5.2.
-
-## Open Questions and Alternatives
-
-There are some open questions and alternatives as info boxes interlined in the guide.
-
-Names for concepts and the API are the best we could currently find, which we should keep discussing before releasing if we end up adopting this proposal. Here are some of the alternative names we discussed in the process of creating this proposal.
-
-### ModuleLoader vs Environment
-
-Instead of `DevEnvironment`, we thought of calling the environment piece inside the Vite Server a `ModuleLoader`. So `server.environments.client` would be `server.moduleLoaders.client`. It has some advantages, `transformRequest(url)` could be renamed to `moduleLoader.load(url)`. We could pass to hooks a `loader` string instead of an `environment` string. `vite build --loader=node` could also be ok, but it is already a stretch. A `ModuleLoader` having a `run()` function that connects it to the `ModuleRunner` in the associated runtime also didn't seem like a good fit though. And `loader` could be confused with a node loader, or with the module loader in the target runtime.
-
-### Runtime vs Environment
-
-We also discussed naming runtime to the concept we call environment in this proposal. We decided to go with Environment because a Runtime refers to node, bun, deno, workerd, a browser. But we need to be able to define two different module execution "environments" for the same runtime. For example SSR and RSC environments, both running in the same node runtime.
