@@ -576,6 +576,32 @@ describe('resolveBuildOutputs', () => {
       ),
     )
   })
+
+  test('ssrEmitAssets', async () => {
+    const result = await build({
+      root: resolve(__dirname, 'fixtures/emit-assets'),
+      logLevel: 'silent',
+      build: {
+        ssr: true,
+        ssrEmitAssets: true,
+        rollupOptions: {
+          input: {
+            index: '/entry',
+          },
+        },
+      },
+    })
+    expect(result).toMatchObject({
+      output: [
+        {
+          fileName: 'index.mjs',
+        },
+        {
+          fileName: expect.stringMatching(/assets\/index-\w*\.css/),
+        },
+      ],
+    })
+  })
 })
 
 /**

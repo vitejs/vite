@@ -396,7 +396,7 @@ export function resolveBuildEnvironmentOptions(
     ssr: false,
     ssrManifest: false,
     ssrEmitAssets: false,
-    emitAssets: environmentName === 'client',
+    emitAssets: (raw.ssr && raw.ssrEmitAssets) || environmentName === 'client',
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
