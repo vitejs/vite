@@ -901,6 +901,12 @@ export async function resolveConfig(
     }
   }
 
+  if (config.build?.ssrEmitAssets !== undefined) {
+    configEnvironmentsSsr ??= {}
+    configEnvironmentsSsr.build ??= {}
+    configEnvironmentsSsr.build.emitAssets = config.build.ssrEmitAssets
+  }
+
   // The client and ssr environment configs can't be removed by the user in the config hook
   if (
     !config.environments ||

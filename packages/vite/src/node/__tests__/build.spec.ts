@@ -4,7 +4,12 @@ import colors from 'picocolors'
 import { describe, expect, test, vi } from 'vitest'
 import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
-import { build, resolveBuildOutputs, resolveLibFilename } from '../build'
+import {
+  build,
+  createViteBuilder,
+  resolveBuildOutputs,
+  resolveLibFilename,
+} from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
 
@@ -575,6 +580,65 @@ describe('resolveBuildOutputs', () => {
         `"build.lib.formats" will be ignored because "build.rollupOptions.output" is already an array format.`,
       ),
     )
+  })
+
+  test('ssrEmitAssets', async () => {
+    const result = await build({
+      root: resolve(__dirname, 'fixtures/emit-assets'),
+      logLevel: 'silent',
+      build: {
+        ssr: true,
+        ssrEmitAssets: true,
+        rollupOptions: {
+          input: {
+            index: '/entry',
+          },
+        },
+      },
+    })
+    expect(result).toMatchObject({
+      output: [
+        {
+          fileName: 'index.mjs',
+        },
+        {
+          fileName: expect.stringMatching(/assets\/index-\w*\.css/),
+        },
+      ],
+    })
+  })
+
+  test('emitAssets', async () => {
+    const builder = await createViteBuilder(
+      {},
+      {
+        root: resolve(__dirname, 'fixtures/emit-assets'),
+        environments: {
+          ssr: {
+            build: {
+              ssr: true,
+              emitAssets: true,
+              rollupOptions: {
+                input: {
+                  index: '/entry',
+                },
+              },
+            },
+          },
+        },
+      },
+    )
+    const result = await builder.build(builder.environments.ssr)
+    expect(result).toMatchObject({
+      output: [
+        {
+          fileName: 'index.mjs',
+        },
+        {
+          fileName: expect.stringMatching(/assets\/index-\w*\.css/),
+        },
+      ],
+    })
   })
 })
 
