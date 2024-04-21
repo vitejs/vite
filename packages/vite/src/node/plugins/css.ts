@@ -81,6 +81,7 @@ import {
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
 import { getChunkOriginalFileName } from './manifest'
+import { createChunkMap } from './chunkMap'
 
 // const debug = createDebugger('vite:css')
 
@@ -837,6 +838,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      const chunkMap = createChunkMap(bundle)
+      const reverseChunkMap = Object.fromEntries(
+        Object.entries(chunkMap).map(([k, v]) => [v, k]),
+      )
+
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
         // map each pure css chunk (rendered chunk) to it's corresponding bundle
@@ -848,9 +854,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .map((chunk) => [chunk.preliminaryFileName, chunk.fileName]),
         )
 
-        const pureCssChunkNames = [...pureCssChunks].map(
-          (pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName],
-        )
+        const pureCssChunkNames = [...pureCssChunks].flatMap((pureCssChunk) => {
+          const chunkName = prelimaryNameToChunkMap[pureCssChunk.fileName]
+          return [chunkName, reverseChunkMap[chunkName]]
+        })
 
         const replaceEmptyChunk = getEmptyChunkReplacer(
           pureCssChunkNames,
@@ -888,7 +895,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunkNames.forEach((fileName) => {
-          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
+          const chunk = bundle[fileName] as RenderedChunk
+          if (!chunk) return
+          removedPureCssFiles.set(fileName, chunk)
+          removedPureCssFiles.set(reverseChunkMap[fileName], chunk)
           delete bundle[fileName]
           delete bundle[`${fileName}.map`]
         })

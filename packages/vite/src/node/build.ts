@@ -46,6 +46,7 @@ import {
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
+import { chunkMapPlugin } from './plugins/chunkMap'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { loadFallbackPlugin } from './plugins/loadFallback'
@@ -443,6 +444,15 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
         Boolean,
       ) as Plugin[]),
       ...(config.isWorker ? [webWorkerPostPlugin()] : []),
+      ...(!config.isWorker &&
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      // TODO: Change to an opt-in option (temporarily disable only for VitePress)
+      !config.vitepress &&
+      // TODO: Legacy support
+      config.plugins.every((plugin) => !plugin.name.includes('vite:legacy'))
+        ? [chunkMapPlugin()]
+        : []),
     ],
     post: [
       buildImportAnalysisPlugin(config),
