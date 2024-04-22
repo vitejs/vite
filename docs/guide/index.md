@@ -69,7 +69,7 @@ $ bun create vite
 
 Then follow the prompts!
 
-You can also directly specify the project name and the template you want to use via additional command line options. For example, to scaffold a Vite + Vue project, run:
+You can also directly specify the project name as the first parameter, and then template you want to use via additional command line options. For example, to scaffold a Vite + Vue project, run:
 
 ```bash
 # npm 7+, extra double-dash is needed:
@@ -84,6 +84,20 @@ pnpm create vite my-vue-app --template vue
 # bun
 bun create vite my-vue-app --template vue
 ```
+
+The project name parameter also doubles as the target folder for your new Vite project. So the command:
+
+```bash
+npm create vite@latest my-vue-app -- --template vue
+```
+
+Will create your new project in the folder ./my-vue-app as a sub-folder of the folder from which you invoked the command, as well as setting its project name to "my-vue-app". If your project name/folder parameter contains a path then the project name will be taken from the deepest level folder of that path. So the the command:
+
+```bash
+npm create vite@latest ./my-sub-folder/my-vue-app -- --template vue
+```
+
+will create the project in that target folder, but set its project name to just "my-vue-app" again.
 
 See [create-vite](https://github.com/vitejs/vite/tree/main/packages/create-vite) for more details on each supported template: `vanilla`, `vanilla-ts`, `vue`, `vue-ts`, `react`, `react-ts`, `react-swc`, `react-swc-ts`, `preact`, `preact-ts`, `lit`, `lit-ts`, `svelte`, `svelte-ts`, `solid`, `solid-ts`, `qwik`, `qwik-ts`.
 
