@@ -25,7 +25,9 @@ vi.mock('../../config', async () => {
   vi.spyOn(config, 'resolveConfig').mockImplementation(async (...args) => {
     const resolved: Awaited<ReturnType<typeof resolveConfig>> =
       await resolveConfig.call(config, ...args)
-    resolved.configFileDependencies.push(resolve('fake/config/dependency.js'))
+    resolved.configFileDependencies.push(
+      resolve('fake/config/dependency.js').replace(/\\/g, '/'),
+    )
     return resolved
   })
   return config
