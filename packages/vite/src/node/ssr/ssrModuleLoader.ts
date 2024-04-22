@@ -18,14 +18,6 @@ export async function ssrLoadModule(
   _urlStack: string[] = [],
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
-  server.config.logger.warnOnce(
-    colors.yellow(
-      '`ssrLoadModule` is deprecated and will be removed in the next major version. ' +
-        'Use `createServerModuleRunner(environment).import(url)` from "vite/module-runner" ' +
-        'to load modules instead.',
-    ),
-  )
-
   const runner =
     server._ssrCompatModuleRunner ||
     (server._ssrCompatModuleRunner = createServerModuleRunner(
