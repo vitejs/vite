@@ -260,7 +260,7 @@ export async function startDefaultServe(): Promise<void> {
     )
     if (buildConfig.builder) {
       const builder = await createViteBuilder({}, { root: rootDir })
-      await builder.buildEnvironments()
+      await builder.buildApp()
     } else {
       const rollupOutput = await build(buildConfig)
       const isWatch = !!resolvedConfig!.build.watch

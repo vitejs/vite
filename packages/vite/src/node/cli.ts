@@ -281,7 +281,7 @@ cli
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .option('--environment [name]', `[string] build a single environment`)
-  .option('--all', `[boolean] build all environments`)
+  .option('--app', `[boolean] build all the environments`)
   .action(
     async (
       root: string,
@@ -316,8 +316,8 @@ cli
             }
             await builder.build(environment)
           } else {
-            // --all: build all environments
-            await builder.buildEnvironments()
+            // --app: build all environments
+            await builder.buildApp()
           }
         } else {
           await build(config)

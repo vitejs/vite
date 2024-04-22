@@ -821,13 +821,14 @@ Other non-default environments can be build using `vite build --environment=name
 
 ## Building all environments
 
-Calling `vite build --all` will instantiate a `ViteBuilder` (build-time equivalent to a `ViteDevServer`) to build all configured environments for production. By default the build of environments is run in series respecting the order of the `environments` record. A framework or user can further configure how the environments are built using:
+Calling `vite build --app` will instantiate a `ViteBuilder` (build-time equivalent to a `ViteDevServer`) to build all configured environments for production. By default the build of environments is run in series respecting the order of the `environments` record. A framework or user can further configure how the environments are built using:
 
 ```js
 export default {
   builder: {
-    buildEnvironments: asnyc (builder) => {
-      return Promise.all(Object.values(builder.environments).map( environment => builder.build(environment) ))
+    buildApp: asnyc (builder) => {
+      const environments = Object.values(builder.environments)
+      return Promise.all(environments.map(environment => builder.build(environment)))
     }
   }
 }

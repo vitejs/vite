@@ -1394,25 +1394,19 @@ export class BuildEnvironment extends Environment {
 export interface ViteBuilder {
   environments: Record<string, BuildEnvironment>
   config: ResolvedConfig
-  buildEnvironments(): Promise<void>
+  buildApp(): Promise<void>
   build(
     environment: BuildEnvironment,
   ): Promise<RollupOutput | RollupOutput[] | RollupWatcher>
 }
 
 export interface BuilderOptions {
-  buildEnvironments?: (
-    builder: ViteBuilder,
-    build: (environment: BuildEnvironment) => Promise<void>,
-  ) => Promise<void>
+  buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
-async function defaultBuildEnvironments(
-  builder: ViteBuilder,
-  build: (environment: BuildEnvironment) => Promise<void>,
-): Promise<void> {
+async function defaultBuildApp(builder: ViteBuilder): Promise<void> {
   for (const environment of Object.values(builder.environments)) {
-    await build(environment)
+    await builder.build(environment)
   }
 }
 
@@ -1420,7 +1414,7 @@ export function resolveBuilderOptions(
   options: BuilderOptions = {},
 ): ResolvedBuilderOptions {
   return {
-    buildEnvironments: options.buildEnvironments ?? defaultBuildEnvironments,
+    buildApp: options.buildApp ?? defaultBuildApp,
   }
 }
 
@@ -1463,18 +1457,13 @@ export async function createViteBuilder(
   const builder: ViteBuilder = {
     environments,
     config: defaultConfig,
-    async buildEnvironments() {
+    async buildApp() {
       if (defaultConfig.build.watch) {
         throw new Error(
-          'Watch mode is not yet supported in viteBuilder.buildEnvironments()',
+          'Watch mode is not yet supported in viteBuilder.buildApp()',
         )
       }
-      return defaultConfig.builder.buildEnvironments(
-        builder,
-        async (environment) => {
-          await this.build(environment)
-        },
-      )
+      return defaultConfig.builder.buildApp(builder)
     },
     async build(environment: BuildEnvironment) {
       return buildEnvironment(environment.config, environment)
