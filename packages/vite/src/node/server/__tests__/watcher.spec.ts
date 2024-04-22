@@ -66,15 +66,17 @@ describe('watcher configuration', () => {
       publicDir: '__test_public__',
     })
     expect(watchSpy).toHaveBeenLastCalledWith(
-      expect.arrayContaining([
-        process.cwd(),
-        resolve('fake/config/dependency.js'),
-        resolve('.env'),
-        resolve('.env.local'),
-        resolve('.env.development'),
-        resolve('.env.development.local'),
-        resolve('__test_public__'),
-      ]),
+      expect.arrayContaining(
+        [
+          process.cwd(),
+          resolve('fake/config/dependency.js'),
+          resolve('.env'),
+          resolve('.env.local'),
+          resolve('.env.development'),
+          resolve('.env.development.local'),
+          resolve('__test_public__'),
+        ].map((file) => file.replace(/\\/g, '/')),
+      ),
       expect.anything(),
     )
   })
