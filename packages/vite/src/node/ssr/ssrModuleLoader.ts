@@ -33,6 +33,7 @@ export async function ssrLoadModule(
       server.environments.ssr,
       {
         sourcemapInterceptor: false,
+        hmr: false,
       },
     ))
 
