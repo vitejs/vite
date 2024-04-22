@@ -1,6 +1,5 @@
 import colors from 'picocolors'
 import { createDebugger, getHash, promiseWithResolvers } from '../utils'
-import type { PromiseWithResolvers } from '../utils'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig, ViteDevServer } from '..'
 import {
@@ -147,7 +146,7 @@ async function createDepsOptimizer(
   }
 
   let depOptimizationProcessing = promiseWithResolvers<void>()
-  let depOptimizationProcessingQueue: PromiseWithResolvers<void>[] = []
+  let depOptimizationProcessingQueue = [depOptimizationProcessing]
   const resolveEnqueuedProcessingPromises = () => {
     // Resolve all the processings (including the ones which were delayed)
     for (const processing of depOptimizationProcessingQueue) {
@@ -188,6 +187,8 @@ async function createDepsOptimizer(
 
   async function close() {
     closed = true
+    // Unconditionally resolve processing to not hang server pending requests
+    resolveEnqueuedProcessingPromises()
     await Promise.allSettled([
       discover?.cancel(),
       depsOptimizer.scanProcessing,
@@ -291,13 +292,13 @@ async function createDepsOptimizer(
   function startNextDiscoveredBatch() {
     newDepsDiscovered = false
 
-    // Add the current depOptimizationProcessing to the queue, these
-    // promises are going to be resolved once a rerun is committed
-    depOptimizationProcessingQueue.push(depOptimizationProcessing)
-
     // Create a new promise for the next rerun, discovered missing
     // dependencies will be assigned this promise from this point
     depOptimizationProcessing = promiseWithResolvers()
+
+    // Add the current depOptimizationProcessing to the queue, these
+    // promises are going to be resolved once a rerun is committed
+    depOptimizationProcessingQueue.push(depOptimizationProcessing)
   }
 
   function prepareKnownDeps() {
