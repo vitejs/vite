@@ -42,25 +42,17 @@ const templateFilesReact = fs
   .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
   .sort()
 
-// beforeAll(() => fs.remove(genPath))
-// afterEach(() => fs.remove(genPath))
-beforeAll(() => {
+const clearAnyPreviousFolders = () => {
   if (fs.existsSync(genPath)) {
     fs.removeSync(genPath)
   }
   if (fs.existsSync(genPathWithSubfolder)) {
     fs.removeSync(genPathWithSubfolder)
   }
-})
+}
 
-afterEach(() => {
-  if (fs.existsSync(genPath)) {
-    fs.removeSync(genPath)
-  }
-  if (fs.existsSync(genPathWithSubfolder)) {
-    fs.removeSync(genPathWithSubfolder)
-  }
-})
+beforeAll(() => clearAnyPreviousFolders())
+afterEach(() => clearAnyPreviousFolders())
 
 test('prompts for the project name if none supplied', () => {
   const { stdout } = run([])
