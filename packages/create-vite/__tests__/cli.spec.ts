@@ -5,12 +5,10 @@ import fs from 'fs-extra'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
 const CLI_PATH = join(__dirname, '..')
-console.log('TCL ~ CLI_PATH:', CLI_PATH)
 
 const projectName = 'test-app'
 const genPath = join(__dirname, projectName)
 const genPathWithSubfolder = join(__dirname, 'subfolder', projectName)
-console.log('TCL ~ genPathWithSubfolder:', { genPath, genPathWithSubfolder })
 
 const run = <SO extends SyncOptions>(
   args: string[],
@@ -37,8 +35,32 @@ const templateFiles = fs
   .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
   .sort()
 
-beforeAll(() => fs.remove(genPath))
-afterEach(() => fs.remove(genPath))
+// React starter template
+const templateFilesReact = fs
+  .readdirSync(join(CLI_PATH, 'template-react'))
+  // _gitignore is renamed to .gitignore
+  .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
+  .sort()
+
+// beforeAll(() => fs.remove(genPath))
+// afterEach(() => fs.remove(genPath))
+beforeAll(() => {
+  if (fs.existsSync(genPath)) {
+    fs.removeSync(genPath)
+  }
+  if (fs.existsSync(genPathWithSubfolder)) {
+    fs.removeSync(genPathWithSubfolder)
+  }
+})
+
+afterEach(() => {
+  if (fs.existsSync(genPath)) {
+    fs.removeSync(genPath)
+  }
+  if (fs.existsSync(genPathWithSubfolder)) {
+    fs.removeSync(genPathWithSubfolder)
+  }
+})
 
 test('prompts for the project name if none supplied', () => {
   const { stdout } = run([])
@@ -97,6 +119,17 @@ test('successfully scaffolds a project based on vue starter template', () => {
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
   expect(templateFiles).toEqual(generatedFiles)
+})
+
+test('successfully scaffolds a project with subfolder based on react starter template', () => {
+  const { stdout } = run([`subfolder/${projectName}`, '--template', 'react'], {
+    cwd: __dirname,
+  })
+  const generatedFiles = fs.readdirSync(genPathWithSubfolder).sort()
+
+  // Assertions
+  expect(stdout).toContain(`Scaffolding project in ${genPathWithSubfolder}`)
+  expect(templateFilesReact).toEqual(generatedFiles)
 })
 
 test('works with the -t alias', () => {
