@@ -6,8 +6,8 @@ import type {
   ModuleRunnerHmr,
   ModuleRunnerOptions,
 } from 'vite/module-runner'
-import type { ViteDevServer } from '../../server'
 import type { DevEnvironment } from '../../server/environment'
+import type { ServerHMRChannel } from '../../server/hmr'
 import { ServerHMRConnector } from './serverHmrConnector'
 
 /**
@@ -34,10 +34,10 @@ export interface ServerModuleRunnerOptions
 }
 
 function createHMROptions(
-  server: ViteDevServer,
+  environment: DevEnvironment,
   options: ServerModuleRunnerOptions,
 ) {
-  if (server.config.server.hmr === false || options.hmr === false) {
+  if (environment.config.server.hmr === false || options.hmr === false) {
     return false
   }
   if (options.hmr?.connection) {
@@ -46,7 +46,8 @@ function createHMROptions(
       logger: options.hmr.logger,
     }
   }
-  const connection = new ServerHMRConnector(server)
+  if (!('api' in environment.hot)) return false
+  const connection = new ServerHMRConnector(environment.hot as ServerHMRChannel)
   return {
     connection,
     logger: options.hmr?.logger,
@@ -82,11 +83,10 @@ function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
  * @experimental
  */
 export function createServerModuleRunner(
-  server: ViteDevServer,
   environment: DevEnvironment,
   options: ServerModuleRunnerOptions = {},
 ): ModuleRunner {
-  const hmr = createHMROptions(server, options)
+  const hmr = createHMROptions(environment, options)
   return new ModuleRunner(
     {
       ...options,

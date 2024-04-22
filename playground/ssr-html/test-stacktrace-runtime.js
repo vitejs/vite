@@ -13,7 +13,7 @@ const server = await createServer({
   },
 })
 
-const runner = await createServerModuleRunner(server, server.environments.ssr, {
+const runner = await createServerModuleRunner(server.environments.ssr, {
   sourcemapInterceptor: 'prepareStackTrace',
 })
 

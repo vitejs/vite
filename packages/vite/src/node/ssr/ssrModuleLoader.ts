@@ -21,7 +21,6 @@ export async function ssrLoadModule(
   const runner =
     server._ssrCompatModuleRunner ||
     (server._ssrCompatModuleRunner = createServerModuleRunner(
-      server,
       server.environments.ssr,
       {
         sourcemapInterceptor: false,

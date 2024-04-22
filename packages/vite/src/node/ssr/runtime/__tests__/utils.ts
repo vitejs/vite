@@ -76,7 +76,7 @@ export async function createModuleRunnerTester(
       ...config,
     })
     t.environment = t.server.environments.ssr
-    t.runner = await createServerModuleRunner(t.server, t.environment, {
+    t.runner = await createServerModuleRunner(t.environment, {
       hmr: {
         logger: false,
       },

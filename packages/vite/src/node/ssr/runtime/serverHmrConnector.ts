@@ -1,6 +1,5 @@
 import type { CustomPayload, HMRPayload } from 'types/hmrPayload'
 import type { ModuleRunnerHMRConnection } from 'vite/module-runner'
-import type { ViteDevServer } from '../../server'
 import type { HMRBroadcasterClient, ServerHMRChannel } from '../../server/hmr'
 
 class ServerHMRBroadcasterClient implements HMRBroadcasterClient {
@@ -32,20 +31,11 @@ class ServerHMRBroadcasterClient implements HMRBroadcasterClient {
  */
 export class ServerHMRConnector implements ModuleRunnerHMRConnection {
   private handlers: ((payload: HMRPayload) => void)[] = []
-  private hmrChannel: ServerHMRChannel
   private hmrClient: ServerHMRBroadcasterClient
 
   private connected = false
 
-  constructor(server: ViteDevServer) {
-    const hmrChannel = server.hot?.channels.find(
-      (c) => c.name === 'ssr',
-    ) as ServerHMRChannel
-    if (!hmrChannel) {
-      throw new Error(
-        "Your version of Vite doesn't support HMR during SSR. Please, use Vite 5.1 or higher.",
-      )
-    }
+  constructor(private hmrChannel: ServerHMRChannel) {
     this.hmrClient = new ServerHMRBroadcasterClient(hmrChannel)
     hmrChannel.api.outsideEmitter.on('send', (payload: HMRPayload) => {
       this.handlers.forEach((listener) => listener(payload))
