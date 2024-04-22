@@ -5,9 +5,12 @@ import fs from 'fs-extra'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
 const CLI_PATH = join(__dirname, '..')
+console.log('TCL ~ CLI_PATH:', CLI_PATH)
 
 const projectName = 'test-app'
 const genPath = join(__dirname, projectName)
+const genPathWithSubfolder = join(__dirname, 'subfolder', projectName)
+console.log('TCL ~ genPathWithSubfolder:', { genPath, genPathWithSubfolder })
 
 const run = <SO extends SyncOptions>(
   args: string[],
@@ -17,12 +20,13 @@ const run = <SO extends SyncOptions>(
 }
 
 // Helper to create a non-empty directory
-const createNonEmptyDir = () => {
+const createNonEmptyDir = (overrideFolder?: string) => {
   // Create the temporary directory
-  fs.mkdirpSync(genPath)
+  const newNonEmptyFolder = overrideFolder || genPath
+  fs.mkdirpSync(newNonEmptyFolder)
 
   // Create a package.json file
-  const pkgJson = join(genPath, 'package.json')
+  const pkgJson = join(newNonEmptyFolder, 'package.json')
   fs.writeFileSync(pkgJson, '{ "foo": "bar" }')
 }
 
@@ -68,6 +72,14 @@ test('asks to overwrite non-empty target directory', () => {
   createNonEmptyDir()
   const { stdout } = run([projectName], { cwd: __dirname })
   expect(stdout).toContain(`Target directory "${projectName}" is not empty.`)
+})
+
+test('asks to overwrite non-empty target directory with subfolder', () => {
+  createNonEmptyDir(genPathWithSubfolder)
+  const { stdout } = run([`subfolder/${projectName}`], { cwd: __dirname })
+  expect(stdout).toContain(
+    `Target directory "subfolder/${projectName}" is not empty.`,
+  )
 })
 
 test('asks to overwrite non-empty current directory', () => {
