@@ -4,7 +4,7 @@ export interface Options {
    */
   targets?: string | string[] | { [key: string]: string }
   /**
-   * default: 'edge>=80, firefox>=72, chrome>=80, safari>=13.1, chromeAndroid>=80, iOS>=13.1'
+   * default: 'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'
    */
   modernTargets?: string | string[]
   /**
