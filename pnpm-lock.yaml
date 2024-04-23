@@ -130,7 +130,7 @@ importers:
         specifier: ^5.0.5
         version: 5.0.5
       rollup:
-        specifier: ^4.13.0
+        specifier: '>=4.13.0 <4.16.0'
         version: 4.13.0
       semver:
         specifier: ^7.6.0
@@ -242,7 +242,7 @@ importers:
         specifier: ^8.4.38
         version: 8.4.38
       rollup:
-        specifier: ^4.13.0
+        specifier: '>=4.13.0 <4.16.0'
         version: 4.13.0
     optionalDependencies:
       fsevents:
