@@ -43,6 +43,9 @@ export const DEFAULT_CONFIG_FILES = [
   'vite.config.cjs',
   'vite.config.mts',
   'vite.config.cts',
+  '.config/vite.js',
+  '.config/vite.mjs',
+  '.config/vite.ts',
 ]
 
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
