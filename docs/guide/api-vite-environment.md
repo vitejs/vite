@@ -579,6 +579,28 @@ The hook can choose to:
   }
   ```
 
+### Per-environment Plugins
+
+There is a new `create` hook that plugins can define to lazily create per-environment plugins.
+
+```js
+function perEnvironmentPlugin() {
+  return {
+    name: 'per-environment-plugin',
+    // Return a plugin, an array, a Promise, or a falsy value for each environment
+    create(environment: Environment) {
+      if (!passesCondition(environment)) {
+        return undefined
+      }
+      return [
+        createEnvironmentPlugin(environment),
+        otherPlugin(environment)
+      ]
+    }
+  }
+}
+```
+
 ## `ModuleRunner`
 
 A module runner is instantiated in the target runtime. All APIs in the next section are imported from `vite/module-runner` unless stated otherwise. This export entry point is kept as lightweight as possible, only exporting the minimal needed to create runners in the
