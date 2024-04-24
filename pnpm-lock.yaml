@@ -534,6 +534,23 @@ importers:
         specifier: ^0.11.3
         version: 0.11.3
 
+  playground/config-dir/packages/entry:
+    dependencies:
+      '@vite/test-config-plugin-module-condition':
+        specifier: link:../plugin-config-dir-module-condition
+        version: link:../plugin-config-dir-module-condition
+
+  playground/config-dir/packages/plugin-config-dir-module-condition: {}
+
+  playground/config-dir/packages/siblings:
+    devDependencies:
+      '@types/lodash':
+        specifier: ^4.17.0
+        version: 4.17.0
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+
   playground/config/packages/entry:
     dependencies:
       '@vite/test-config-plugin-module-condition':

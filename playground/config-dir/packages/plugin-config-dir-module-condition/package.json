@@ -1,5 +1,5 @@
 {
-  "name": "@vite/test-config-plugin-module-condition",
+  "name": "@vite/test-config-dir-plugin-module-condition",
   "type": "module",
   "exports": {
     ".": {
