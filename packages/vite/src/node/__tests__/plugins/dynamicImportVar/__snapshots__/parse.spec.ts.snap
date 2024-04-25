@@ -8,6 +8,8 @@ exports[`parse positives > ? in worker 1`] = `"__variableDynamicImportRuntimeHel
 
 exports[`parse positives > alias path 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mods/*.js")), \`./mods/\${base}.js\`)"`;
 
+exports[`parse positives > alias path with multi ../ 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("../../*.js")), \`../../\${base}.js\`)"`;
+
 exports[`parse positives > basic 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("./mods/*.js")), \`./mods/\${base}.js\`)"`;
 
 exports[`parse positives > with ../ and itself 1`] = `"__variableDynamicImportRuntimeHelper((import.meta.glob("../dynamicImportVar/*.js")), \`./\${name}.js\`)"`;
