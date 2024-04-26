@@ -860,11 +860,11 @@ export async function resolveConfig(
   // TODO: should entries and force be in EnvironmentOptions?
   const { entries, force, ...deprecatedClientOptimizeDepsConfig } =
     config.optimizeDeps ?? {}
-  let configEnvironmentsClient = config.environments!.client!
+  const configEnvironmentsClient = config.environments!.client!
   configEnvironmentsClient.dev ??= {}
   configEnvironmentsClient.dev.optimizeDeps = mergeConfig(
-    configEnvironmentsClient.dev.optimizeDeps ?? {},
     deprecatedClientOptimizeDepsConfig,
+    configEnvironmentsClient.dev.optimizeDeps ?? {},
   )
 
   const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
@@ -885,8 +885,8 @@ export async function resolveConfig(
   if (configEnvironmentsSsr) {
     configEnvironmentsSsr.dev ??= {}
     configEnvironmentsSsr.dev.optimizeDeps = mergeConfig(
-      configEnvironmentsSsr.dev.optimizeDeps ?? {},
       deprecatedSsrOptimizeDepsConfig,
+      configEnvironmentsSsr.dev.optimizeDeps ?? {},
     )
     // TODO: should we merge here?
     configEnvironmentsSsr.resolve ??= {}
@@ -946,10 +946,10 @@ export async function resolveConfig(
   )
 
   // Backward compatibility: merge environments.client.dev.optimizeDeps back into optimizeDeps
-  configEnvironmentsClient = resolvedEnvironments.client
+  const resolvedConfigEnvironmentsClient = resolvedEnvironments.client
   const patchedOptimizeDeps = mergeConfig(
-    configEnvironmentsClient.dev?.optimizeDeps ?? {},
     config.optimizeDeps ?? {},
+    resolvedConfigEnvironmentsClient.dev?.optimizeDeps ?? {},
   )
   const backwardCompatibleOptimizeDeps = {
     holdUntilCrawlEnd: true,
