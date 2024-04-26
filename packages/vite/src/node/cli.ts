@@ -32,7 +32,7 @@ interface GlobalCLIOptions {
 
 interface BuilderCLIOptions {
   environment?: string
-  all?: boolean
+  app?: boolean
 }
 
 let profileSession = global.__vite_profile_session
@@ -114,7 +114,7 @@ function cleanBuilderCLIOptions<Options extends BuilderCLIOptions>(
 ): Omit<Options, keyof BuilderCLIOptions> {
   const ret = { ...options }
   delete ret.environment
-  delete ret.all
+  delete ret.app
 
   return ret
 }
@@ -305,7 +305,7 @@ cli
       }
 
       try {
-        if (options.all || options.environment) {
+        if (options.app || options.environment) {
           const builder = await createViteBuilder({}, config)
           if (options.environment) {
             const environment = builder.environments[options.environment]
