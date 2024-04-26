@@ -531,8 +531,18 @@ export async function build(
   }
 }
 
-function resolveConfigToBuild(inlineConfig: InlineConfig = {}) {
-  return resolveConfig(inlineConfig, 'build', 'production', 'production')
+function resolveConfigToBuild(
+  inlineConfig: InlineConfig = {},
+  patchConfig?: (config: ResolvedConfig) => void,
+) {
+  return resolveConfig(
+    inlineConfig,
+    'build',
+    'production',
+    'production',
+    false,
+    patchConfig,
+  )
 }
 
 /**
@@ -1458,45 +1468,39 @@ export async function createBuilder(
     // expects plugins to be run for the same environment once they are created
     // and to process a single bundle at a time (contrary to dev mode where
     // plugins are built to handle multiple environments concurrently).
-    const environmentConfig = config.builder.sharedConfigBuild
-      ? config
-      : await resolveConfigToBuild(
-          mergeConfig(inlineConfig, environmentOptions),
-        )
-    if (environmentConfig !== config) {
-      // Force opt-in shared plugins
-      const plugins = [...environmentConfig.plugins]
-      let validPlugins = true
-      for (let i = 0; i < plugins.length; i++) {
-        const environmentPlugin = plugins[i]
-        const sharedPlugin = config.plugins[i]
-        if (
-          config.builder.sharedPlugins ||
-          environmentPlugin.sharedDuringBuild
-        ) {
-          if (environmentPlugin.name !== sharedPlugin.name) {
-            validPlugins = false
-            break
+    let environmentConfig = config
+    if (!config.builder.sharedConfigBuild) {
+      const patchConfig = (resolved: ResolvedConfig) => {
+        // Force opt-in shared plugins
+        const environmentPlugins = [...resolved.plugins]
+        let validMixedPlugins = true
+        for (let i = 0; i < environmentPlugins.length; i++) {
+          const environmentPlugin = environmentPlugins[i]
+          const sharedPlugin = config.plugins[i]
+          if (
+            config.builder.sharedPlugins ||
+            environmentPlugin.sharedDuringBuild
+          ) {
+            if (environmentPlugin.name !== sharedPlugin.name) {
+              validMixedPlugins = false
+              break
+            }
+            environmentPlugins[i] = sharedPlugin
           }
-          plugins[i] = sharedPlugin
+        }
+        if (validMixedPlugins) {
+          ;(resolved.plugins as Plugin[]) = environmentPlugins
+        }
+        // Until the ecosystem updates to use `environment.options.build` instead of `config.build`,
+        // we need to make override `config.build` for the current environment.
+        // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
+        // remove the default values that shouldn't be used at all once the config is resolved
+        ;(resolved.build as ResolvedBuildOptions) = {
+          ...resolved.environments[name].build,
+          lib: false,
         }
       }
-      if (validPlugins) {
-        ;(environmentConfig.plugins as Plugin[]) = plugins
-      }
-      /*
-      // TODO: This is implementing by merging environmentOptions into inlineConfig before resolving
-      // We should be instead doing the patching as the commented code below but we need to understand
-      // why some tests are failing first.
-      //
-      // Until the ecosystem updates to use `environment.options.build` instead of `config.build`,
-      // we need to make override `config.build` for the current environment.
-      // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
-      // remove the default values that shouldn't be used at all once the config is resolved
-      if (!config.builder.sharedConfigBuild) {
-        ;(environmentConfig.build as ResolvedBuildOptions) = { ...environmentConfig.environments[name].build, lib: false }
-      }
-      */
+      environmentConfig = await resolveConfigToBuild(inlineConfig, patchConfig)
     }
 
     const environment = await createEnvironment(name, environmentConfig)

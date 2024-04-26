@@ -758,6 +758,7 @@ export async function resolveConfig(
   defaultMode = 'development',
   defaultNodeEnv = 'development',
   isPreview = false,
+  patchConfig: ((config: ResolvedConfig) => void) | undefined = undefined,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   let configFileDependencies: string[] = []
@@ -1289,6 +1290,10 @@ export async function resolveConfig(
     normalPlugins,
     postPlugins,
   )
+
+  // Backward compatibility hook used in builder
+  patchConfig?.(resolved)
+
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))
 
   // call configResolved hooks
