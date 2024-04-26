@@ -1,3 +1,9 @@
+## 6.0.0-alpha.5 (2024-04-26)
+
+* fix: use environment.plugins during build, support create hook ([a44810a](https://github.com/vitejs/vite/commit/a44810a))
+
+
+
 ## 6.0.0-alpha.4 (2024-04-26)
 
 * fix: backcompat merging ([294a84e](https://github.com/vitejs/vite/commit/294a84e))
