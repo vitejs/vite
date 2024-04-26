@@ -460,6 +460,9 @@ export async function _createServer(
     config.server.hmr.channels.forEach((channel) => hot.addChannel(channel))
   }
 
+  const publicFiles = await initPublicFilesPromise
+  const { publicDir } = config
+
   if (httpServer) {
     setClientErrorHandler(httpServer, config.logger)
   }
@@ -473,6 +476,9 @@ export async function _createServer(
           root,
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
+          // Watch the public directory explicitly because it might be outside
+          // of the root directory.
+          ...(publicDir && publicFiles ? [publicDir] : []),
         ],
         resolvedWatchOptions,
       ) as FSWatcher)
@@ -762,8 +768,6 @@ export async function _createServer(
     }
   }
 
-  const publicFiles = await initPublicFilesPromise
-
   const onHMRUpdate = async (
     type: 'create' | 'delete' | 'update',
     file: string,
@@ -772,8 +776,6 @@ export async function _createServer(
       await handleHMRUpdate(type, file, server)
     }
   }
-
-  const { publicDir } = config
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
