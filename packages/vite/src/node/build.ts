@@ -514,7 +514,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const builder = await createViteBuilder(
+  const builder = await createBuilder(
     {},
     { ...inlineConfig, plugins: () => inlineConfig.plugins ?? [] },
   )
@@ -1424,7 +1424,7 @@ export interface BuilderInlineConfig extends Omit<InlineConfig, 'plugins'> {
   plugins?: () => PluginOption[]
 }
 
-export async function createViteBuilder(
+export async function createBuilder(
   builderOptions: BuilderOptions = {},
   defaultBuilderInlineConfig: BuilderInlineConfig = {},
 ): Promise<ViteBuilder> {

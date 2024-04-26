@@ -288,7 +288,7 @@ cli
       options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
     ) => {
       filterDuplicateOptions(options)
-      const { build, createViteBuilder } = await import('./build')
+      const { build, createBuilder } = await import('./build')
 
       const buildOptions: BuildEnvironmentOptions = cleanGlobalCLIOptions(
         cleanBuilderCLIOptions(options),
@@ -306,7 +306,7 @@ cli
 
       try {
         if (options.app || options.environment) {
-          const builder = await createViteBuilder({}, config)
+          const builder = await createBuilder({}, config)
           if (options.environment) {
             const environment = builder.environments[options.environment]
             if (!environment) {

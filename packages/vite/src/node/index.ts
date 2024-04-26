@@ -10,7 +10,7 @@ export {
 } from './config'
 export { createServer } from './server'
 export { preview } from './preview'
-export { build, createViteBuilder } from './build'
+export { build, createBuilder } from './build'
 
 // TODO: Can we remove this?
 // export { optimizeDeps } from './optimizer'

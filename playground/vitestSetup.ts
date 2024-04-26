@@ -14,7 +14,7 @@ import type {
 import {
   build,
   createServer,
-  createViteBuilder,
+  createBuilder,
   loadConfigFromFile,
   mergeConfig,
   preview,
@@ -259,7 +259,7 @@ export async function startDefaultServe(): Promise<void> {
       },
     )
     if (buildConfig.builder) {
-      const builder = await createViteBuilder({}, { root: rootDir })
+      const builder = await createBuilder({}, { root: rootDir })
       await builder.buildApp()
     } else {
       const rollupOutput = await build(buildConfig)

@@ -6,7 +6,7 @@ import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
   build,
-  createViteBuilder,
+  createBuilder,
   resolveBuildOutputs,
   resolveLibFilename,
 } from '../build'
@@ -609,7 +609,7 @@ describe('resolveBuildOutputs', () => {
   })
 
   test('emitAssets', async () => {
-    const builder = await createViteBuilder(
+    const builder = await createBuilder(
       {},
       {
         root: resolve(__dirname, 'fixtures/emit-assets'),
