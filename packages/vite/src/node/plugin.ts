@@ -166,6 +166,15 @@ export type BoundedPlugin<A = any> = BasePlugin<A>
 
 export interface Plugin<A = any> extends BasePlugin<A> {
   /**
+   * Opt-in this plugin into the shared plugins pipeline.
+   * For backward-compatibility, plugins are re-recreated for each environment
+   * during `vite build --app`
+   * We have an opt-in per plugin, and a general `builder.sharedPlugins`
+   * In a future major, we'll flip the default to be shared by default
+   * @experimental
+   */
+  sharedDuringBuild?: boolean
+  /**
    * Spawn the plugin into multiple plugins based on the environment.
    * This hook is called when the config has already been resolved, allowing to
    * create per environment plugin pipelines or easily inject plugins for a

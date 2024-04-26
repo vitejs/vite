@@ -1398,6 +1398,8 @@ export interface ViteBuilder {
 }
 
 export interface BuilderOptions {
+  sharedConfigBuild?: boolean
+  sharedPlugins?: boolean
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
@@ -1411,6 +1413,8 @@ export function resolveBuilderOptions(
   options: BuilderOptions = {},
 ): ResolvedBuilderOptions {
   return {
+    sharedConfigBuild: options.sharedConfigBuild ?? false,
+    sharedPlugins: options.sharedPlugins ?? false,
     buildApp: options.buildApp ?? defaultBuildApp,
   }
 }
@@ -1420,42 +1424,32 @@ export type ResolvedBuilderOptions = Required<BuilderOptions>
 export async function createBuilder(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteBuilder> {
-  // Plugins passed to the Builder inline config needs to be created
-  // from a factory to ensure each build has their own instances
-  const resolveConfig = (
-    environmentOptions?: EnvironmentOptions,
-  ): Promise<ResolvedConfig> => {
-    const environmentInlineConfig = environmentOptions
-      ? mergeConfig(inlineConfig, environmentOptions)
-      : inlineConfig
-
-    // We resolve the whole config including plugins here but later on we
-    // need to refactor resolveConfig to only resolve the environments config
-    return resolveConfigToBuild(environmentInlineConfig)
-  }
-
-  const defaultConfig = await resolveConfig()
+  const config = await resolveConfigToBuild(inlineConfig)
 
   const environments: Record<string, BuildEnvironment> = {}
 
   const builder: ViteBuilder = {
     environments,
-    config: defaultConfig,
+    config,
     async buildApp() {
-      if (defaultConfig.build.watch) {
+      if (config.build.watch) {
         throw new Error(
           'Watch mode is not yet supported in viteBuilder.buildApp()',
         )
       }
-      return defaultConfig.builder.buildApp(builder)
+      return config.builder.buildApp(builder)
     },
     async build(environment: BuildEnvironment) {
       return buildEnvironment(environment.config, environment)
     },
   }
 
-  for (const name of Object.keys(defaultConfig.environments)) {
-    const environmentOptions = defaultConfig.environments[name]
+  const allSharedPlugins =
+    config.builder.sharedPlugins ||
+    config.plugins.every((plugin) => plugin.sharedDuringBuild === true)
+
+  for (const name of Object.keys(config.environments)) {
+    const environmentOptions = config.environments[name]
     const createEnvironment =
       environmentOptions.build?.createEnvironment ??
       ((name: string, config: ResolvedConfig) =>
@@ -1466,7 +1460,44 @@ export async function createBuilder(
     // expects plugins to be run for the same environment once they are created
     // and to process a single bundle at a time (contrary to dev mode where
     // plugins are built to handle multiple environments concurrently).
-    const environmentConfig = await resolveConfig(environmentOptions)
+    const environmentConfig =
+      allSharedPlugins && config.builder.sharedConfigBuild
+        ? config
+        : await resolveConfigToBuild(
+            mergeConfig(inlineConfig, environmentOptions),
+          )
+    if (environmentConfig !== config) {
+      // Force opt-in shared plugins
+      const plugins = [...environmentConfig.plugins]
+      let validPlugins = true
+      for (let i = 0; i < plugins.length; i++) {
+        const environmentPlugin = plugins[i]
+        const sharedPlugin = config.plugins[i]
+        if (environmentPlugin.sharedDuringBuild) {
+          if (environmentPlugin.name !== sharedPlugin.name) {
+            validPlugins = false
+            break
+          }
+          plugins[i] = sharedPlugin
+        }
+      }
+      if (validPlugins) {
+        ;(environmentConfig.plugins as Plugin[]) = plugins
+      }
+    }
+    /*
+    // TODO: This is implementing by merging environmentOptions into inlineConfig before resolving
+    // We should be instead doing the patching as the commented code below but we need to understand
+    // why some tests are failing first.
+    //
+    // Until the ecosystem updates to use `environment.options.build` instead of `config.build`,
+    // we need to make override `config.build` for the current environment.
+    // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
+    // remove the default values that shouldn't be used at all once the config is resolved
+    if (!config.builder.sharedConfigBuild) {
+      ;(environmentConfig.build as ResolvedBuildOptions) = { ...environmentConfig.environments[name].build, lib: false }
+    }
+    */
 
     const environment = await createEnvironment(name, environmentConfig)
     environments[name] = environment
