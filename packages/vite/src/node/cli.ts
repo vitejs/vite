@@ -31,7 +31,6 @@ interface GlobalCLIOptions {
 }
 
 interface BuilderCLIOptions {
-  environment?: string
   app?: boolean
 }
 
@@ -113,9 +112,7 @@ function cleanBuilderCLIOptions<Options extends BuilderCLIOptions>(
   options: Options,
 ): Omit<Options, keyof BuilderCLIOptions> {
   const ret = { ...options }
-  delete ret.environment
   delete ret.app
-
   return ret
 }
 
@@ -281,14 +278,14 @@ cli
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
   .option('--environment [name]', `[string] build a single environment`)
-  .option('--app', `[boolean] build all the environments`)
+  .option('--app', `[boolean] same as builder.entireApp`)
   .action(
     async (
       root: string,
       options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
     ) => {
       filterDuplicateOptions(options)
-      const { build, createBuilder } = await import('./build')
+      const { createBuilder, buildEnvironment } = await import('./build')
 
       const buildOptions: BuildEnvironmentOptions = cleanGlobalCLIOptions(
         cleanBuilderCLIOptions(options),
@@ -305,22 +302,21 @@ cli
       }
 
       try {
-        if (options.app || options.environment) {
-          const builder = await createBuilder(config)
-          if (options.environment) {
-            const environment = builder.environments[options.environment]
-            if (!environment) {
-              throw new Error(
-                `The environment ${options.environment} isn't configured.`,
-              )
-            }
-            await builder.build(environment)
-          } else {
-            // --app: build all environments
-            await builder.buildApp()
-          }
+        const builder = await createBuilder(config)
+        // TODO: Backward compatibility with lib and single environment build
+        // Ideally we would move to only building the entire app with this command
+        if (builder.config.build.lib) {
+          await buildEnvironment(
+            builder.config,
+            builder.environments.client,
+            builder.config.build.lib,
+          )
+        } else if (builder.config.builder.entireApp || options.app) {
+          await builder.buildApp()
         } else {
-          await build(config)
+          const ssr = !!builder.config.build.ssr
+          const environment = builder.environments[ssr ? 'ssr' : 'client']
+          await builder.build(environment)
         }
       } catch (e) {
         createLogger(options.logLevel).error(

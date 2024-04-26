@@ -1400,6 +1400,7 @@ export interface ViteBuilder {
 export interface BuilderOptions {
   sharedConfigBuild?: boolean
   sharedPlugins?: boolean
+  entireApp?: boolean
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
@@ -1415,6 +1416,7 @@ export function resolveBuilderOptions(
   return {
     sharedConfigBuild: options.sharedConfigBuild ?? false,
     sharedPlugins: options.sharedPlugins ?? false,
+    entireApp: options.entireApp ?? false,
     buildApp: options.buildApp ?? defaultBuildApp,
   }
 }
