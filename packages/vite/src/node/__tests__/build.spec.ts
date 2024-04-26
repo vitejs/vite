@@ -609,25 +609,22 @@ describe('resolveBuildOutputs', () => {
   })
 
   test('emitAssets', async () => {
-    const builder = await createBuilder(
-      {},
-      {
-        root: resolve(__dirname, 'fixtures/emit-assets'),
-        environments: {
-          ssr: {
-            build: {
-              ssr: true,
-              emitAssets: true,
-              rollupOptions: {
-                input: {
-                  index: '/entry',
-                },
+    const builder = await createBuilder({
+      root: resolve(__dirname, 'fixtures/emit-assets'),
+      environments: {
+        ssr: {
+          build: {
+            ssr: true,
+            emitAssets: true,
+            rollupOptions: {
+              input: {
+                index: '/entry',
               },
             },
           },
         },
       },
-    )
+    })
     const result = await builder.build(builder.environments.ssr)
     expect(result).toMatchObject({
       output: [

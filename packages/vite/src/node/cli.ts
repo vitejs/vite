@@ -306,7 +306,7 @@ cli
 
       try {
         if (options.app || options.environment) {
-          const builder = await createBuilder({}, config)
+          const builder = await createBuilder(config)
           if (options.environment) {
             const environment = builder.environments[options.environment]
             if (!environment) {

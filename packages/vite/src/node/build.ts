@@ -34,7 +34,6 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
-import type { PluginOption } from './plugin'
 import { getDefaultResolvedEnvironmentOptions, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -514,10 +513,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const builder = await createBuilder(
-    {},
-    { ...inlineConfig, plugins: () => inlineConfig.plugins ?? [] },
-  )
+  const builder = await createBuilder(inlineConfig)
 
   if (builder.config.build.lib) {
     // TODO: temporal workaround. Should we support `libraries: Record<string, LibraryOptions & EnvironmentOptions>`
@@ -1421,34 +1417,21 @@ export function resolveBuilderOptions(
 
 export type ResolvedBuilderOptions = Required<BuilderOptions>
 
-export interface BuilderInlineConfig extends Omit<InlineConfig, 'plugins'> {
-  plugins?: () => PluginOption[]
-}
-
 export async function createBuilder(
-  builderOptions: BuilderOptions = {},
-  defaultBuilderInlineConfig: BuilderInlineConfig = {},
+  inlineConfig: InlineConfig = {},
 ): Promise<ViteBuilder> {
   // Plugins passed to the Builder inline config needs to be created
   // from a factory to ensure each build has their own instances
   const resolveConfig = (
     environmentOptions?: EnvironmentOptions,
   ): Promise<ResolvedConfig> => {
-    const { plugins } = defaultBuilderInlineConfig
-    let defaultInlineConfig = plugins
-      ? {
-          ...defaultBuilderInlineConfig,
-          plugins: plugins(),
-        }
-      : (defaultBuilderInlineConfig as InlineConfig)
-
-    if (environmentOptions) {
-      defaultInlineConfig = mergeConfig(defaultInlineConfig, environmentOptions)
-    }
+    const environmentInlineConfig = environmentOptions
+      ? mergeConfig(inlineConfig, environmentOptions)
+      : inlineConfig
 
     // We resolve the whole config including plugins here but later on we
     // need to refactor resolveConfig to only resolve the environments config
-    return resolveConfigToBuild(defaultInlineConfig)
+    return resolveConfigToBuild(environmentInlineConfig)
   }
 
   const defaultConfig = await resolveConfig()
