@@ -1,3 +1,35 @@
+## 6.0.0-alpha.4 (2024-04-26)
+
+* fix: backcompat merging ([294a84e](https://github.com/vitejs/vite/commit/294a84e))
+* fix: disable hmr for ssrLoadModule ([33ef0fb](https://github.com/vitejs/vite/commit/33ef0fb))
+* fix: dynamic-import-vars plugin normalize path issue (#16518) ([f71ba5b](https://github.com/vitejs/vite/commit/f71ba5b)), closes [#16518](https://github.com/vitejs/vite/issues/16518)
+* fix: rework backcompat patching of environment config ([72150d6](https://github.com/vitejs/vite/commit/72150d6))
+* fix: sharedPlugins ([a63190c](https://github.com/vitejs/vite/commit/a63190c))
+* fix(cli):  -> ([4cf322d](https://github.com/vitejs/vite/commit/4cf322d))
+* fix(deps): update all non-major dependencies (#16488) ([2d50be2](https://github.com/vitejs/vite/commit/2d50be2)), closes [#16488](https://github.com/vitejs/vite/issues/16488)
+* fix(dev): watch publicDir explicitly to include it outside the root (#16502) ([4d83eb5](https://github.com/vitejs/vite/commit/4d83eb5)), closes [#16502](https://github.com/vitejs/vite/issues/16502)
+* fix(v6): fix `ssrEmitAssets` compat (#16480) ([5c5efe4](https://github.com/vitejs/vite/commit/5c5efe4)), closes [#16480](https://github.com/vitejs/vite/issues/16480)
+* feat: builder.entireApp, remove --environment ([1925eeb](https://github.com/vitejs/vite/commit/1925eeb))
+* feat: opt-in shared plugins during build ([2866d4f](https://github.com/vitejs/vite/commit/2866d4f))
+* feat: use environment.logger in buildEnvironment ([8843221](https://github.com/vitejs/vite/commit/8843221))
+* refactor: align createBuilder params with createServer ([62921e6](https://github.com/vitejs/vite/commit/62921e6))
+* refactor: build --app ([29dd26e](https://github.com/vitejs/vite/commit/29dd26e))
+* refactor: remove server from createServerModuleRunner ([9d6a152](https://github.com/vitejs/vite/commit/9d6a152))
+* refactor: rename createViteBuilder to createBuilder, align with createServer ([4dc2a75](https://github.com/vitejs/vite/commit/4dc2a75))
+* chore: remove the deprecation notice from ssrLoadModule for now ([bf65476](https://github.com/vitejs/vite/commit/bf65476))
+
+
+
+## 6.0.0-alpha.3 (2024-04-20)
+
+* release: v6.0.0-alpha.3 ([635aad5](https://github.com/vitejs/vite/commit/635aad5))
+* fix: export missing types ([431cd4b](https://github.com/vitejs/vite/commit/431cd4b))
+* chore: remove configureServer from more plugins ([ad2b0bf](https://github.com/vitejs/vite/commit/ad2b0bf))
+* chore: rename plugin.split to plugin.create ([5f6b62f](https://github.com/vitejs/vite/commit/5f6b62f))
+* feat: environment api (#16129) ([f684d4c](https://github.com/vitejs/vite/commit/f684d4c)), closes [#16129](https://github.com/vitejs/vite/issues/16129)
+
+
+
 ## 6.0.0-alpha.3 (2024-04-20)
 
 * fix: add base to virtual html (#16442) ([721f94d](https://github.com/vitejs/vite/commit/721f94d)), closes [#16442](https://github.com/vitejs/vite/issues/16442)
