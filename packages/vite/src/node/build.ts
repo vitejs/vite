@@ -49,6 +49,7 @@ import {
   partialEncodeURIPath,
   requireResolveFromRootWithFallback,
 } from './utils'
+import { resolveBoundedPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -605,11 +606,10 @@ export async function buildEnvironment(
   const outDir = resolve(options.outDir)
 
   // inject environment and ssr arg to plugin load/transform hooks
-  const plugins = (
-    environment || ssr
-      ? config.plugins.map((p) => injectEnvironmentToHooks(p, environment))
-      : config.plugins
-  ) as Plugin[]
+  // TODO: rework lib mode
+  const plugins = (libOptions ? config : environment).plugins.map((p) =>
+    injectEnvironmentToHooks(p, environment),
+  )
 
   const rollupOptions: RollupOptions = {
     preserveEntrySignatures: ssr
@@ -1396,6 +1396,14 @@ export class BuildEnvironment extends Environment {
     }
     super(name, config, options)
   }
+
+  async init(): Promise<void> {
+    if (this._inited) {
+      return
+    }
+    this._inited = true
+    this._plugins = await resolveBoundedPlugins(this)
+  }
 }
 
 export interface ViteBuilder {
@@ -1504,6 +1512,9 @@ export async function createBuilder(
     }
 
     const environment = await createEnvironment(name, environmentConfig)
+
+    await environment.init()
+
     environments[name] = environment
   }
 
