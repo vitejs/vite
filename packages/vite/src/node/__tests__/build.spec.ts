@@ -638,7 +638,27 @@ describe('resolveBuildOutputs', () => {
     })
   })
 
-  test('custom environment ssr', async () => {
+  test('ssr builtin', async () => {
+    const builder = await createBuilder({
+      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      environments: {
+        ssr: {
+          build: {
+            ssr: true,
+            rollupOptions: {
+              input: {
+                index: '/entry',
+              },
+            },
+          },
+        },
+      },
+    })
+    const result = await builder.build(builder.environments.ssr)
+    expect((result as RollupOutput).output[0].code).not.toContain('preload')
+  })
+
+  test('ssr custom', async () => {
     const builder = await createBuilder({
       root: resolve(__dirname, 'fixtures/dynamic-import'),
       environments: {
