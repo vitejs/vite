@@ -14,6 +14,7 @@ import type {
 import type {
   NormalizedOutputOptions,
   OutputBundle,
+  OutputChunk,
   OutputOptions,
   PreRenderedChunk,
   RenderedChunk,
@@ -122,6 +123,51 @@ const _require = createRequire(import.meta.url)
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(:\d+)?\]/
 
+const hashPlaceholderLeft = '!~{'
+const hashPlaceholderRight = '}~'
+const hashPlaceholderOverhead =
+  hashPlaceholderLeft.length + hashPlaceholderRight.length
+const maxHashSize = 22
+// from https://github.com/rollup/rollup/blob/fbc25afcc2e494b562358479524a88ab8fe0f1bf/src/utils/hashPlaceholders.ts#L41-L46
+const REPLACER_REGEX = new RegExp(
+  // eslint-disable-next-line regexp/strict, regexp/prefer-w
+  `${hashPlaceholderLeft}[0-9a-zA-Z_$]{1,${
+    maxHashSize - hashPlaceholderOverhead
+  }}${hashPlaceholderRight}`,
+  'g',
+)
+
+const hashPlaceholderToFacadeModuleIdHashMap: Map<string, string> = new Map()
+
+function augmentFacadeModuleIdHash(name: string): string {
+  return name.replace(
+    REPLACER_REGEX,
+    (match) => hashPlaceholderToFacadeModuleIdHashMap.get(match) ?? match,
+  )
+}
+
+function createChunkMap(
+  bundle: OutputBundle,
+  base: string,
+): Record<string, string> {
+  return Object.fromEntries(
+    Object.values(bundle)
+      .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
+      .map((output) => {
+        return [
+          base + augmentFacadeModuleIdHash(output.preliminaryFileName),
+          base + output.fileName,
+        ]
+      }),
+  )
+}
+
+export function getHash(text: Buffer | string, length = 8): string {
+  const h = createHash('sha256').update(text).digest('hex').substring(0, length)
+  if (length <= 64) return h
+  return h.padEnd(length, '_')
+}
+
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
@@ -153,6 +199,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const isDebug =
     debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
 
+  const chunkMap = new Map()
   const facadeToLegacyChunkMap = new Map()
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
@@ -405,7 +452,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
     },
 
-    async renderChunk(raw, chunk, opts) {
+    async renderChunk(raw, chunk, opts, meta) {
       if (config.build.ssr) {
         return null
       }
@@ -449,6 +496,17 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           code: ms.toString(),
         }
       }
+
+      Object.values(meta.chunks).forEach((chunk) => {
+        const hashPlaceholder = chunk.fileName.match(REPLACER_REGEX)?.[0]
+        if (!hashPlaceholder) return
+        if (hashPlaceholderToFacadeModuleIdHashMap.get(hashPlaceholder)) return
+
+        hashPlaceholderToFacadeModuleIdHashMap.set(
+          hashPlaceholder,
+          getHash(chunk.facadeModuleId ?? chunk.fileName),
+        )
+      })
 
       if (!genLegacy) {
         return null
@@ -505,13 +563,21 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       return null
     },
 
-    transformIndexHtml(html, { chunk }) {
+    transformIndexHtml(html, { chunk, filename, bundle }) {
       if (config.build.ssr) return
       if (!chunk) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually emitted if
         // modern bundle will be generated. Here we simply record its corresponding legacy chunk.
         facadeToLegacyChunkMap.set(chunk.facadeModuleId, chunk.fileName)
+
+        const relativeUrlPath = path.posix.relative(
+          config.root,
+          normalizePath(filename),
+        )
+        const assetsBase = getBaseInHTML(relativeUrlPath, config)
+        chunkMap.set(chunk.facadeModuleId, createChunkMap(bundle!, assetsBase))
+
         if (genModern) {
           return
         }
@@ -631,6 +697,17 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           attrs: { type: 'module' },
           children: dynamicFallbackInlineCode,
           injectTo: 'head',
+        })
+      }
+
+      if (chunkMap.get(chunk.facadeModuleId)) {
+        tags.push({
+          tag: 'script',
+          attrs: { type: 'systemjs-importmap' },
+          children: JSON.stringify({
+            imports: chunkMap.get(chunk.facadeModuleId),
+          }),
+          injectTo: 'head-prepend',
         })
       }
 

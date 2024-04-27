@@ -448,9 +448,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       // TODO: Change to an opt-in option (temporarily disable only for VitePress)
-      !config.vitepress &&
-      // TODO: Legacy support
-      config.plugins.every((plugin) => !plugin.name.includes('vite:legacy'))
+      !config.vitepress
         ? [chunkMapPlugin()]
         : []),
     ],
