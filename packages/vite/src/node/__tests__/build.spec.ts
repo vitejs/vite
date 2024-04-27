@@ -637,6 +637,26 @@ describe('resolveBuildOutputs', () => {
       ],
     })
   })
+
+  test('custom environment ssr', async () => {
+    const builder = await createBuilder({
+      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      environments: {
+        custom: {
+          build: {
+            ssr: true,
+            rollupOptions: {
+              input: {
+                index: '/entry',
+              },
+            },
+          },
+        },
+      },
+    })
+    const result = await builder.build(builder.environments.custom)
+    expect((result as RollupOutput).output[0].code).not.toContain('preload')
+  })
 })
 
 /**
