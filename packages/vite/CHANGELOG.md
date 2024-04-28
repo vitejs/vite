@@ -1,3 +1,9 @@
+## 6.0.0-alpha.6 (2024-04-28)
+
+* fix: custom environment preload injection (#16541) ([00079da](https://github.com/vitejs/vite/commit/00079da)), closes [#16541](https://github.com/vitejs/vite/issues/16541)
+
+
+
 ## 6.0.0-alpha.5 (2024-04-26)
 
 * fix: use environment.plugins during build, support create hook ([a44810a](https://github.com/vitejs/vite/commit/a44810a))
