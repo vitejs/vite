@@ -8,13 +8,11 @@ import type {
   LoggingFunction,
   ModuleFormat,
   OutputOptions,
-  Plugin,
   RollupBuild,
   RollupError,
   RollupLog,
   RollupOptions,
   RollupOutput,
-  PluginContext as RollupPluginContext,
   RollupWatcher,
   WatcherOptions,
 } from 'rollup'
@@ -68,6 +66,7 @@ import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
 import { Environment } from './environment'
+import type { Plugin, PluginContext } from './plugin'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -535,6 +534,7 @@ export async function build(
 function resolveConfigToBuild(
   inlineConfig: InlineConfig = {},
   patchConfig?: (config: ResolvedConfig) => void,
+  patchPlugins?: (plugins: Plugin[]) => void,
 ) {
   return resolveConfig(
     inlineConfig,
@@ -543,6 +543,7 @@ function resolveConfigToBuild(
     'production',
     false,
     patchConfig,
+    patchPlugins,
   )
 }
 
@@ -1125,7 +1126,6 @@ function wrapEnvironmentLoad(
     return fn.call(
       injectEnvironmentInContext(this, environment),
       id,
-      // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
       injectSsrFlag(args[0], environment),
     )
   }
@@ -1152,7 +1152,6 @@ function wrapEnvironmentTransform(
       injectEnvironmentInContext(this, environment),
       code,
       importer,
-      // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
       injectSsrFlag(args[0], environment),
     )
   }
@@ -1167,8 +1166,8 @@ function wrapEnvironmentTransform(
   }
 }
 
-function injectEnvironmentInContext(
-  context: RollupPluginContext,
+function injectEnvironmentInContext<Context extends PluginContext>(
+  context: Context,
   environment?: BuildEnvironment,
 ) {
   return new Proxy(context, {
@@ -1479,8 +1478,18 @@ export async function createBuilder(
     let environmentConfig = config
     if (!config.builder.sharedConfigBuild) {
       const patchConfig = (resolved: ResolvedConfig) => {
+        // Until the ecosystem updates to use `environment.options.build` instead of `config.build`,
+        // we need to make override `config.build` for the current environment.
+        // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
+        // remove the default values that shouldn't be used at all once the config is resolved
+        ;(resolved.build as ResolvedBuildOptions) = {
+          ...resolved.environments[name].build,
+          lib: false,
+        }
+      }
+      const patchPlugins = (resolvedPlugins: Plugin[]) => {
         // Force opt-in shared plugins
-        const environmentPlugins = [...resolved.plugins]
+        const environmentPlugins = [...resolvedPlugins]
         let validMixedPlugins = true
         for (let i = 0; i < environmentPlugins.length; i++) {
           const environmentPlugin = environmentPlugins[i]
@@ -1497,18 +1506,16 @@ export async function createBuilder(
           }
         }
         if (validMixedPlugins) {
-          ;(resolved.plugins as Plugin[]) = environmentPlugins
-        }
-        // Until the ecosystem updates to use `environment.options.build` instead of `config.build`,
-        // we need to make override `config.build` for the current environment.
-        // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
-        // remove the default values that shouldn't be used at all once the config is resolved
-        ;(resolved.build as ResolvedBuildOptions) = {
-          ...resolved.environments[name].build,
-          lib: false,
+          for (let i = 0; i < environmentPlugins.length; i++) {
+            resolvedPlugins[i] = environmentPlugins[i]
+          }
         }
       }
-      environmentConfig = await resolveConfigToBuild(inlineConfig, patchConfig)
+      environmentConfig = await resolveConfigToBuild(
+        inlineConfig,
+        patchConfig,
+        patchPlugins,
+      )
     }
 
     const environment = await createEnvironment(name, environmentConfig)
