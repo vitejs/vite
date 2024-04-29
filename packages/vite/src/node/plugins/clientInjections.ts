@@ -89,26 +89,27 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       }
     },
-    async transform(code, id, options) {
+    async transform(code, id) {
+      const { environment } = this
+      if (!environment) {
+        return
+      }
+      // TODO: !environment.options.nodeCompatible ?
+      const ssr = environment.name !== 'client'
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
         return injectConfigValues(code)
-      } else if (!options?.ssr && code.includes('process.env.NODE_ENV')) {
+      } else if (!ssr && code.includes('process.env.NODE_ENV')) {
         // replace process.env.NODE_ENV instead of defining a global
         // for it to avoid shimming a `process` object during dev,
         // avoiding inconsistencies between dev and build
         const nodeEnv =
           config.define?.['process.env.NODE_ENV'] ||
           JSON.stringify(process.env.NODE_ENV || config.mode)
-        return await replaceDefine(
-          code,
-          id,
-          {
-            'process.env.NODE_ENV': nodeEnv,
-            'global.process.env.NODE_ENV': nodeEnv,
-            'globalThis.process.env.NODE_ENV': nodeEnv,
-          },
-          config,
-        )
+        return await replaceDefine(environment, code, id, {
+          'process.env.NODE_ENV': nodeEnv,
+          'global.process.env.NODE_ENV': nodeEnv,
+          'globalThis.process.env.NODE_ENV': nodeEnv,
+        })
       }
     },
   }

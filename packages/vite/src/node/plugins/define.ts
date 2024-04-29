@@ -148,16 +148,16 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       pattern.lastIndex = 0
       if (!pattern.test(code)) return
 
-      return await replaceDefine(code, id, define, config)
+      return await replaceDefine(environment, code, id, define)
     },
   }
 }
 
 export async function replaceDefine(
+  environment: Environment,
   code: string,
   id: string,
   define: Record<string, string>,
-  config: ResolvedConfig,
 ): Promise<{ code: string; map: string | null }> {
   // Because esbuild only allows JSON-serializable values, and `import.meta.env`
   // may contain values with raw identifiers, making it non-JSON-serializable,
@@ -172,7 +172,7 @@ export async function replaceDefine(
     define = { ...define, 'import.meta.env': marker }
   }
 
-  const esbuildOptions = config.esbuild || {}
+  const esbuildOptions = environment.config.esbuild || {}
 
   const result = await transform(code, {
     loader: 'js',
@@ -180,7 +180,10 @@ export async function replaceDefine(
     platform: 'neutral',
     define,
     sourcefile: id,
-    sourcemap: config.command === 'build' ? !!config.build.sourcemap : true,
+    sourcemap:
+      environment.config.command === 'build'
+        ? !!environment.options.build.sourcemap
+        : true,
   })
 
   // remove esbuild's <define:...> source entries

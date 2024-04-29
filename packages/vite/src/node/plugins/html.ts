@@ -328,6 +328,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
+        const { environment } = this
+        if (!environment) {
+          return
+        }
+        const { modulePreload } = environment.options.build
+
         id = normalizePath(id)
         const relativeUrlPath = path.posix.relative(config.root, id)
         const publicPath = `/${relativeUrlPath}`
@@ -673,7 +679,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         processedHtml.set(id, s.toString())
 
         // inject module preload polyfill only when configured and needed
-        const { modulePreload } = config.build
         if (
           modulePreload !== false &&
           modulePreload.polyfill &&
@@ -689,6 +694,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
+      const { environment } = this
+      if (!environment) {
+        return
+      }
+      const { modulePreload } = environment.options.build
+
       const analyzedChunk: Map<OutputChunk, number> = new Map()
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
@@ -837,7 +848,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             )
           } else {
             assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
-            const { modulePreload } = config.build
             if (modulePreload !== false) {
               const resolveDependencies =
                 typeof modulePreload === 'object' &&
