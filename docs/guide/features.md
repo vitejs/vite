@@ -715,6 +715,10 @@ By default, during build, Vite inlines small assets as data URIs. Allowing `data
 Do not allow `data:` for [`script-src`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src). It will allow injection of arbitrary scripts.
 :::
 
+## Chunk importmap
+
+Creating an importmap for chunks helps prevent the cascading cache invalidation issue. This importmap features a list of stable file id linked to filenames with content-based hashes. When one chunk references another, it utilizes the file id instead of the filename hashed by content. As a result, only the updated chunk needs cache invalidation in the browser, leaving intermediary chunks unchanged. This strategy enhances the cache hit rate following deployments.
+
 ## Build Optimizations
 
 > Features listed below are automatically applied as part of the build process and there is no need for explicit configuration unless you want to disable them.

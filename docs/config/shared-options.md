@@ -170,6 +170,13 @@ Enabling this setting causes vite to determine file identity by the original fil
 
 A nonce value placeholder that will be used when generating script / style tags. Setting this value will also generate a meta tag with nonce value.
 
+## html.chunkImportMap
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Whether to inject importmap for generated chunks. This importmap is used to optimize caching efficiency.
+
 ## css.modules
 
 - **Type:**
