@@ -477,7 +477,7 @@ A plugin could use the `environment` instance to:
 
 ```ts
   transform(code, id) {
-    console.log(this.enviroment.config.resolve.conditions)
+    console.log(this.enviroment.options.resolve.conditions)
   }
 ```
 
@@ -499,9 +499,9 @@ While the `config` hook is running, the complete list of environments isn't yet 
 Plugins should set default values using the `config` hook. To configure each environment, they can use the new `configEnvironment` hook. This hook is called for each environment with its partially resolved config including resolution of final defaults.
 
 ```ts
-  configEnvironment(name: string, config: EnvironmentConfig) {
+  configEnvironment(name: string, options: EnvironmentOptions) {
     if (name === 'rsc') {
-      config.resolve.conditions = // ...
+      options.resolve.conditions = // ...
 ```
 
 ### The `hotUpdate` hook
