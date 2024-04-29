@@ -90,6 +90,19 @@ export function proxyMiddleware(
     })
 
     proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
+      // Browsers may send Origin headers even with same-origin
+      // requests. It is common for WebSocket servers to check the Origin
+      // header, so we have to change the Origin to match
+      // the target URL.
+      if (proxyReq.getHeader('origin') && options.target) {
+        const target =
+          typeof options.target === 'object'
+            ? `${options.target.protocol}//${options.target.host}`
+            : options.target
+
+        proxyReq.setHeader('origin', target)
+      }
+
       socket.on('error', (err) => {
         config.logger.error(
           `${colors.red(`ws proxy socket error:`)}\n${err.stack}`,
