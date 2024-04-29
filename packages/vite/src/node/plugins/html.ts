@@ -328,11 +328,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
-        const { environment } = this
-        if (!environment) {
-          return
-        }
-        const { modulePreload } = environment.options.build
+        if (!this.environment) return
+        const { modulePreload } = this.environment.options.build
 
         id = normalizePath(id)
         const relativeUrlPath = path.posix.relative(config.root, id)
@@ -694,11 +691,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
-      const { environment } = this
-      if (!environment) {
-        return
-      }
-      const { modulePreload } = environment.options.build
+      if (!this.environment) return
+      const { modulePreload } = this.environment.options.build
 
       const analyzedChunk: Map<OutputChunk, number> = new Map()
       const inlineEntryChunk = new Set<string>()

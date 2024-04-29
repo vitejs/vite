@@ -556,11 +556,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts) {
-      const { environment } = this
-      if (!environment) {
-        return
-      }
-      const generatedAssets = generatedAssetsMap.get(environment)!
+      if (!this.environment) return
+      const generatedAssets = generatedAssetsMap.get(this.environment)!
 
       let chunkCSS = ''
       let isPureCssChunk = true

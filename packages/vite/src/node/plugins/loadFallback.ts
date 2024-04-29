@@ -23,10 +23,8 @@ export function loadFallbackPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:load-fallback',
     async load(id, options) {
+      if (!this.environment) return
       const environment = this.environment as DevEnvironment
-      if (!environment) {
-        return
-      }
 
       let code: string | null = null
       let map: SourceMap | null = null
@@ -43,7 +41,7 @@ export function loadFallbackPlugin(config: ResolvedConfig): Plugin {
       // like /service-worker.js or /api/users
       const file = cleanUrl(id)
       if (
-        environment.options.nodeCompatible ||
+        this.environment.options.nodeCompatible ||
         isFileLoadingAllowed(config, file) // Do we need fsPathFromId here?
       ) {
         try {

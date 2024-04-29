@@ -119,12 +119,9 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     name: 'vite:define',
 
     async transform(code, id) {
-      const { environment } = this
-      if (!environment) {
-        return
-      }
+      if (!this.environment) return
 
-      if (environment.name === 'client' && !isBuild) {
+      if (this.environment.name === 'client' && !isBuild) {
         // for dev we inject actual global defines in the vite client to
         // avoid the transform cost. see the `clientInjection` and
         // `importAnalysis` plugin.
@@ -141,14 +138,14 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const [define, pattern] = getPattern(environment)
+      const [define, pattern] = getPattern(this.environment)
       if (!pattern) return
 
       // Check if our code needs any replacements before running esbuild
       pattern.lastIndex = 0
       if (!pattern.test(code)) return
 
-      return await replaceDefine(environment, code, id, define)
+      return await replaceDefine(this.environment, code, id, define)
     },
   }
 }

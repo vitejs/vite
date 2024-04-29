@@ -144,12 +144,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:asset',
 
     buildStart() {
-      const { environment } = this
-      if (!environment) {
-        return
-      }
-      assetCache.set(environment, new Map())
-      generatedAssetsMap.set(environment, new Map())
+      if (!this.environment) return
+      assetCache.set(this.environment, new Map())
+      generatedAssetsMap.set(this.environment, new Map())
     },
 
     resolveId(id) {

@@ -90,12 +90,9 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       }
     },
     async transform(code, id) {
-      const { environment } = this
-      if (!environment) {
-        return
-      }
+      if (!this.environment) return
       // TODO: !environment.options.nodeCompatible ?
-      const ssr = environment.name !== 'client'
+      const ssr = this.environment.name !== 'client'
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
         return injectConfigValues(code)
       } else if (!ssr && code.includes('process.env.NODE_ENV')) {
@@ -105,7 +102,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         const nodeEnv =
           config.define?.['process.env.NODE_ENV'] ||
           JSON.stringify(process.env.NODE_ENV || config.mode)
-        return await replaceDefine(environment, code, id, {
+        return await replaceDefine(this.environment, code, id, {
           'process.env.NODE_ENV': nodeEnv,
           'global.process.env.NODE_ENV': nodeEnv,
           'globalThis.process.env.NODE_ENV': nodeEnv,

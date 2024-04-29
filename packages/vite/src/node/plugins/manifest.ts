@@ -39,12 +39,9 @@ export function manifestPlugin(): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      const { environment } = this
-      if (!environment) {
-        return
-      }
-      const { root } = environment.config
-      const buildOptions = environment.options.build
+      if (!this.environment) return
+      const { root } = this.environment.config
+      const buildOptions = this.environment.options.build
 
       function getChunkName(chunk: OutputChunk) {
         return getChunkOriginalFileName(chunk, root, format)
@@ -118,7 +115,7 @@ export function manifestPlugin(): Plugin {
       }
 
       const fileNameToAssetMeta = new Map<string, GeneratedAssetMeta>()
-      const assets = generatedAssetsMap.get(environment)!
+      const assets = generatedAssetsMap.get(this.environment)!
       assets.forEach((asset, referenceId) => {
         try {
           const fileName = this.getFileName(referenceId)

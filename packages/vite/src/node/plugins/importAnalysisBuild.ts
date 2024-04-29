@@ -332,15 +332,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      const { environment } = this
-      const ssr = environment?.options.build.ssr
-      if (!environment || format !== 'es' || ssr || isWorker) {
+      if (!this.environment) return
+      const ssr = this.environment.name !== 'client' // TODO
+      if (format !== 'es' || ssr || isWorker) {
         return
       }
-      const buildSourcemap = environment.options.build.sourcemap
-      const { modulePreload } = environment.options.build
+      const buildSourcemap = this.environment.options.build.sourcemap
+      const { modulePreload } = this.environment.options.build
       const { customModulePreloadPaths, optimizeModulePreloadRelativePaths } =
-        getModulePreloadData(environment)
+        getModulePreloadData(this.environment)
 
       for (const file in bundle) {
         const chunk = bundle[file]

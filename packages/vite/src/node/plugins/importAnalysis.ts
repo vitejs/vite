@@ -204,14 +204,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:import-analysis',
 
-    async transform(source, importer, options) {
-      const ssr = options?.ssr === true
-
-      const environment = this.environment as DevEnvironment | undefined
-      if (!environment) {
-        return
-      }
-
+    async transform(source, importer) {
+      if (!this.environment) return
+      const environment = this.environment as DevEnvironment
+      const ssr = environment.name !== 'client' // TODO
       const moduleGraph = environment.moduleGraph
 
       if (canSkipImportAnalysis(importer)) {
