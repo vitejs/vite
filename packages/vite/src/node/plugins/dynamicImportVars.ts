@@ -5,6 +5,8 @@ import type { ImportSpecifier } from 'es-module-lexer'
 import { parse as parseJS } from 'acorn'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { Plugin } from '../plugin'
+import type { Environment } from '../environment'
+import { cachedByEnvironment } from '../environment'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import { createIdResolver } from '../idResolver'
@@ -159,9 +161,12 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     tryIndex: false,
     extensions: [],
   })
-  const { include, exclude, warnOnError } =
-    config.build.dynamicImportVarsOptions
-  const filter = createFilter(include, exclude)
+
+  const getFilter = cachedByEnvironment((environment: Environment) => {
+    const { include, exclude } =
+      environment.options.build.dynamicImportVarsOptions
+    return createFilter(include, exclude)
+  })
 
   return {
     name: 'vite:dynamic-import-vars',
@@ -182,7 +187,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
       const { environment } = this
       if (
         !environment ||
-        !filter(importer) ||
+        !getFilter(environment)(importer) ||
         importer === CLIENT_ENTRY ||
         !hasDynamicImportRE.test(source)
       ) {
@@ -233,7 +238,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
             config.root,
           )
         } catch (error) {
-          if (warnOnError) {
+          if (environment.options.build.dynamicImportVarsOptions.warnOnError) {
             this.warn(error)
           } else {
             this.error(error)
