@@ -126,9 +126,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             try {
               if (publicDir && isParentDirectory(publicDir, file)) {
                 const publicPath = '/' + path.posix.relative(publicDir, file)
-                builtUrl = await fileToUrl(publicPath, config, this)
+                builtUrl = await fileToUrl(this, publicPath)
               } else {
-                builtUrl = await fileToUrl(file, config, this)
+                builtUrl = await fileToUrl(this, file)
               }
             } catch {
               // do nothing, we'll log a warning after this

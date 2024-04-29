@@ -182,7 +182,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             if (isBuild) {
               builtUrl = await workerFileToUrl(config, file)
             } else {
-              builtUrl = await fileToUrl(cleanUrl(file), config, this)
+              builtUrl = await fileToUrl(this, cleanUrl(file))
               builtUrl = injectQuery(
                 builtUrl,
                 `${WORKER_FILE_ID}&type=${workerType}`,

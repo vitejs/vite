@@ -75,7 +75,7 @@ import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
   fileToUrl,
-  generatedAssets,
+  generatedAssetsMap,
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
@@ -343,7 +343,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         }
         const resolved = await resolveUrl(decodedUrl, importer)
         if (resolved) {
-          return fileToUrl(resolved, config, this)
+          return fileToUrl(this, resolved)
         }
         if (config.command === 'build') {
           const isExternal = config.build.rollupOptions.external
@@ -556,6 +556,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts) {
+      const { environment } = this
+      if (!environment) {
+        return
+      }
+      const generatedAssets = generatedAssetsMap.get(environment)!
+
       let chunkCSS = ''
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
@@ -710,9 +716,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: content,
           })
-          generatedAssets
-            .get(config)!
-            .set(referenceId, { originalName: originalFilename })
+          generatedAssets.set(referenceId, { originalName: originalFilename })
 
           const replacement = toOutputFilePathInJS(
             this.getFileName(referenceId),
@@ -767,9 +771,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               type: 'asset',
               source: chunkCSS,
             })
-            generatedAssets
-              .get(config)!
-              .set(referenceId, { originalName: originalFilename, isEntry })
+            generatedAssets.set(referenceId, {
+              originalName: originalFilename,
+              isEntry,
+            })
             chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
           } else if (!config.build.ssr) {
             // legacy build and inline css
@@ -783,13 +788,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             chunkCSS = await finalizeCss(chunkCSS, true, config)
             let cssString = JSON.stringify(chunkCSS)
             cssString =
-              renderAssetUrlInJS(
-                this,
-                config,
-                chunk,
-                opts,
-                cssString,
-              )?.toString() || cssString
+              renderAssetUrlInJS(this, chunk, opts, cssString)?.toString() ||
+              cssString
             const style = `__vite_style__`
             const injectCode =
               `var ${style} = document.createElement('style');` +
@@ -980,7 +980,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
                 ? moduleGraph!.createFileOnlyEntry(file)
                 : await moduleGraph!.ensureEntryFromUrl(
                     stripBase(
-                      await fileToUrl(file, config, this),
+                      await fileToUrl(this, file),
                       (config.server?.origin ?? '') + devBase,
                     ),
                   ),

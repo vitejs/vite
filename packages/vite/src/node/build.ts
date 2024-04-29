@@ -496,7 +496,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ...(options.minify ? [terserPlugin(config)] : []),
       ...(!config.isWorker
         ? [
-            ...(options.manifest ? [manifestPlugin(config)] : []),
+            ...(options.manifest ? [manifestPlugin()] : []),
             ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
             buildReporterPlugin(config),
           ]
@@ -1083,12 +1083,20 @@ export function injectEnvironmentToHooks(
   plugin: Plugin,
   environment?: BuildEnvironment,
 ): Plugin {
-  const { resolveId, load, transform, generateBundle, renderChunk } = plugin
+  const {
+    buildStart,
+    resolveId,
+    load,
+    transform,
+    generateBundle,
+    renderChunk,
+  } = plugin
   return {
     ...plugin,
     resolveId: wrapEnvironmentResolveId(resolveId, environment),
     load: wrapEnvironmentLoad(load, environment),
     transform: wrapEnvironmentTransform(transform, environment),
+    buildStart: wrapEnvironmentHook(buildStart, environment),
     generateBundle: wrapEnvironmentHook(generateBundle, environment),
     renderChunk: wrapEnvironmentHook(renderChunk, environment),
   }
@@ -1303,6 +1311,7 @@ export type RenderBuiltAssetUrl = (
   },
 ) => string | { relative?: boolean; runtime?: string } | undefined
 
+// TODO: experimental.renderBuiltUrl => environment.build.renderBuiltUrl?
 export function toOutputFilePathInJS(
   filename: string,
   type: 'asset' | 'public',

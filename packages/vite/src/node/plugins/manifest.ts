@@ -5,10 +5,9 @@ import type {
   OutputChunk,
   RenderedChunk,
 } from 'rollup'
-import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath, sortObjectKeys } from '../utils'
-import { generatedAssets } from './asset'
+import { generatedAssetsMap } from './asset'
 import type { GeneratedAssetMeta } from './asset'
 
 const endsWithJSRE = /\.[cm]?js$/
@@ -27,7 +26,7 @@ export interface ManifestChunk {
   dynamicImports?: string[]
 }
 
-export function manifestPlugin(config: ResolvedConfig): Plugin {
+export function manifestPlugin(): Plugin {
   const manifest: Manifest = {}
 
   let outputCount: number
@@ -40,8 +39,15 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
+      const { environment } = this
+      if (!environment) {
+        return
+      }
+      const { root } = environment.config
+      const buildOptions = environment.options.build
+
       function getChunkName(chunk: OutputChunk) {
-        return getChunkOriginalFileName(chunk, config.root, format)
+        return getChunkOriginalFileName(chunk, root, format)
       }
 
       function getInternalImports(imports: string[]): string[] {
@@ -112,7 +118,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       }
 
       const fileNameToAssetMeta = new Map<string, GeneratedAssetMeta>()
-      const assets = generatedAssets.get(config)!
+      const assets = generatedAssetsMap.get(environment)!
       assets.forEach((asset, referenceId) => {
         try {
           const fileName = this.getFileName(referenceId)
@@ -158,13 +164,13 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
       })
 
       outputCount++
-      const output = config.build.rollupOptions?.output
+      const output = buildOptions.rollupOptions?.output
       const outputLength = Array.isArray(output) ? output.length : 1
       if (outputCount >= outputLength) {
         this.emitFile({
           fileName:
-            typeof config.build.manifest === 'string'
-              ? config.build.manifest
+            typeof buildOptions.manifest === 'string'
+              ? buildOptions.manifest
               : '.vite/manifest.json',
           type: 'asset',
           source: JSON.stringify(sortObjectKeys(manifest), undefined, 2),

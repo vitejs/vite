@@ -491,7 +491,9 @@ export interface LegacyOptions {
 
 export interface ResolvedWorkerOptions {
   format: 'es' | 'iife'
-  plugins: (bundleChain: string[]) => Promise<Plugin[]>
+  plugins: (
+    bundleChain: string[],
+  ) => Promise<{ plugins: Plugin[]; config: ResolvedConfig }>
   rollupOptions: RollupOptions
 }
 
@@ -1084,6 +1086,7 @@ export async function resolveConfig(
     )
   }
 
+  // TODO: Workers as environments could allow us to remove a lot of complexity
   const createWorkerPlugins = async function (bundleChain: string[]) {
     // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
     // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
@@ -1130,7 +1133,7 @@ export async function resolveConfig(
         .map((hook) => hook(workerResolved)),
     )
 
-    return resolvedWorkerPlugins
+    return { plugins: resolvedWorkerPlugins, config: workerResolved }
   }
 
   const resolvedWorkerOptions: ResolvedWorkerOptions = {

@@ -69,8 +69,9 @@ async function bundleWorkerEntry(
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
-  const workerEnvironment = new BuildEnvironment('client', config) // TODO: should this be 'worker'?
-  const resolvedPlugins = await plugins(newBundleChain)
+  const { plugins: resolvedPlugins, config: workerConfig } =
+    await plugins(newBundleChain)
+  const workerEnvironment = new BuildEnvironment('client', workerConfig) // TODO: should this be 'worker'?
   const bundle = await rollup({
     ...rollupOptions,
     input,
@@ -356,7 +357,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           urlCode = JSON.stringify(await workerFileToUrl(config, id))
         }
       } else {
-        let url = await fileToUrl(cleanUrl(id), config, this)
+        let url = await fileToUrl(this, cleanUrl(id))
         url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
         urlCode = JSON.stringify(url)
       }

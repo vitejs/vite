@@ -15,6 +15,7 @@ import {
   numberToPos,
 } from '../utils'
 import type { Plugin } from '../plugin'
+import type { Environment } from '../environment'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
@@ -152,14 +153,11 @@ function preload(
     })
 }
 
-/**
- * Build only. During serve this is performed as part of ./importAnalysis.
- */
-export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
-  const isWorker = config.isWorker
-
+function getModulePreloadData(environment: Environment) {
+  const { modulePreload } = environment.options.build
+  const { config } = environment
   const resolveModulePreloadDependencies =
-    config.build.modulePreload && config.build.modulePreload.resolveDependencies
+    modulePreload && modulePreload.resolveDependencies
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const customModulePreloadPaths = !!(
     resolveModulePreloadDependencies || renderBuiltUrl
@@ -167,34 +165,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const isRelativeBase = config.base === './' || config.base === ''
   const optimizeModulePreloadRelativePaths =
     isRelativeBase && !customModulePreloadPaths
+  return {
+    customModulePreloadPaths,
+    optimizeModulePreloadRelativePaths,
+  }
+}
 
-  const { modulePreload } = config.build
-  const scriptRel =
-    modulePreload && modulePreload.polyfill
-      ? `'modulepreload'`
-      : `(${detectScriptRel.toString()})()`
-
-  // There are three different cases for the preload list format in __vitePreload
-  //
-  // __vitePreload(() => import(asyncChunk), [ ...deps... ])
-  //
-  // This is maintained to keep backwards compatibility as some users developed plugins
-  // using regex over this list to workaround the fact that module preload wasn't
-  // configurable.
-  const assetsURL = customModulePreloadPaths
-    ? // If `experimental.renderBuiltUrl` or `build.modulePreload.resolveDependencies` are used
-      // the dependencies are already resolved. To avoid the need for `new URL(dep, import.meta.url)`
-      // a helper `__vitePreloadRelativeDep` is used to resolve from relative paths which can be minimized.
-      `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
-    : optimizeModulePreloadRelativePaths
-      ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
-        // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
-        // The importerUrl is passed as third parameter to __vitePreload in this case
-        `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
-      : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
-        // is appended inside __vitePreload too.
-        `function(dep) { return ${JSON.stringify(config.base)}+dep }`
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+/**
+ * Build only. During serve this is performed as part of ./importAnalysis.
+ */
+export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
+  const isWorker = config.isWorker
 
   return {
     name: 'vite:build-import-analysis',
@@ -205,7 +186,39 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     load(id) {
-      if (id === preloadHelperId) {
+      const { environment } = this
+      if (environment && id === preloadHelperId) {
+        const { modulePreload } = environment.options.build
+
+        const { customModulePreloadPaths, optimizeModulePreloadRelativePaths } =
+          getModulePreloadData(environment)
+
+        const scriptRel =
+          modulePreload && modulePreload.polyfill
+            ? `'modulepreload'`
+            : `(${detectScriptRel.toString()})()`
+
+        // There are three different cases for the preload list format in __vitePreload
+        //
+        // __vitePreload(() => import(asyncChunk), [ ...deps... ])
+        //
+        // This is maintained to keep backwards compatibility as some users developed plugins
+        // using regex over this list to workaround the fact that module preload wasn't
+        // configurable.
+        const assetsURL = customModulePreloadPaths
+          ? // If `experimental.renderBuiltUrl` or `build.modulePreload.resolveDependencies` are used
+            // the dependencies are already resolved. To avoid the need for `new URL(dep, import.meta.url)`
+            // a helper `__vitePreloadRelativeDep` is used to resolve from relative paths which can be minimized.
+            `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
+          : optimizeModulePreloadRelativePaths
+            ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
+              // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
+              // The importerUrl is passed as third parameter to __vitePreload in this case
+              `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
+            : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
+              // is appended inside __vitePreload too.
+              `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+        const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
         return preloadCode
       }
     },
@@ -243,6 +256,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       const ssr = environment.options.build.ssr
       const insertPreload = !(ssr || !!config.build.lib || isWorker)
+
+      const { customModulePreloadPaths, optimizeModulePreloadRelativePaths } =
+        getModulePreloadData(environment)
 
       for (let index = 0; index < imports.length; index++) {
         const {
@@ -322,6 +338,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
       const buildSourcemap = environment.options.build.sourcemap
+      const { modulePreload } = environment.options.build
+      const { customModulePreloadPaths, optimizeModulePreloadRelativePaths } =
+        getModulePreloadData(environment)
 
       for (const file in bundle) {
         const chunk = bundle[file]

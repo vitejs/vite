@@ -183,6 +183,7 @@ export interface BasePlugin<A = any> extends RollupPlugin<A> {
   >
 
   // TODO: abstract to every hook in RollupPlugin?
+  buildStart?: ModifyHookContext<RollupPlugin<A>['buildStart'], PluginContext>
   generateBundle?: ModifyHookContext<
     RollupPlugin<A>['generateBundle'],
     PluginContext
