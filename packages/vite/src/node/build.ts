@@ -1076,16 +1076,21 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
+// TODO:
+// - Could we get Rollup to let us extends PluginContext in a more performant way?
+// - Extend for all hooks?
 export function injectEnvironmentToHooks(
   plugin: Plugin,
   environment?: BuildEnvironment,
 ): Plugin {
-  const { resolveId, load, transform } = plugin
+  const { resolveId, load, transform, generateBundle, renderChunk } = plugin
   return {
     ...plugin,
     resolveId: wrapEnvironmentResolveId(resolveId, environment),
     load: wrapEnvironmentLoad(load, environment),
     transform: wrapEnvironmentTransform(transform, environment),
+    generateBundle: wrapEnvironmentHook(generateBundle, environment),
+    renderChunk: wrapEnvironmentHook(renderChunk, environment),
   }
 }
 
@@ -1161,6 +1166,30 @@ function wrapEnvironmentTransform(
       ...hook,
       handler,
     } as Plugin['transform']
+  } else {
+    return handler
+  }
+}
+
+function wrapEnvironmentHook<HookName extends keyof Plugin>(
+  hook?: Plugin[HookName],
+  environment?: BuildEnvironment,
+): Plugin[HookName] {
+  if (!hook) return
+
+  const fn = getHookHandler(hook)
+  const handler: Plugin[HookName] = function (
+    this: PluginContext,
+    ...args: any[]
+  ) {
+    return fn.call(injectEnvironmentInContext(this, environment), ...args)
+  }
+
+  if ('handler' in hook) {
+    return {
+      ...hook,
+      handler,
+    } as Plugin[HookName]
   } else {
     return handler
   }

@@ -156,9 +156,7 @@ function preload(
  * Build only. During serve this is performed as part of ./importAnalysis.
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
-  const ssr = !!config.build.ssr
   const isWorker = config.isWorker
-  const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
   const resolveModulePreloadDependencies =
     config.build.modulePreload && config.build.modulePreload.resolveDependencies
@@ -213,7 +211,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      if (isInNodeModules(importer) && !dynamicImportPrefixRE.test(source)) {
+      const { environment } = this
+      if (
+        !environment ||
+        (isInNodeModules(importer) && !dynamicImportPrefixRE.test(source))
+      ) {
         return
       }
 
@@ -238,6 +240,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       let needPreloadHelper = false
+
+      const ssr = environment.options.build.ssr
+      const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
       for (let index = 0; index < imports.length; index++) {
         const {
@@ -280,7 +285,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (s) {
         return {
           code: s.toString(),
-          map: config.build.sourcemap
+          map: environment.options.build.sourcemap
             ? s.generateMap({ hires: 'boundary' })
             : null,
         }
@@ -289,10 +294,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     renderChunk(code, _, { format }) {
       // make sure we only perform the preload logic in modern builds.
-      if (code.indexOf(isModernFlag) > -1) {
+      const { environment } = this
+      if (environment && code.indexOf(isModernFlag) > -1) {
         const re = new RegExp(isModernFlag, 'g')
         const isModern = String(format === 'es')
-        if (config.build.sourcemap) {
+        if (environment.options.build.sourcemap) {
           const s = new MagicString(code)
           let match: RegExpExecArray | null
           while ((match = re.exec(code))) {
@@ -310,9 +316,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      if (format !== 'es' || ssr || isWorker) {
+      const { environment } = this
+      const ssr = environment?.options.build.ssr
+      if (!environment || format !== 'es' || ssr || isWorker) {
         return
       }
+      const buildSourcemap = environment.options.build.sourcemap
 
       for (const file in bundle) {
         const chunk = bundle[file]
@@ -544,7 +553,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (s.hasChanged()) {
             chunk.code = s.toString()
-            if (config.build.sourcemap && chunk.map) {
+            if (buildSourcemap && chunk.map) {
               const nextMap = s.generateMap({
                 source: chunk.fileName,
                 hires: 'boundary',
@@ -556,13 +565,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               map.toUrl = () => genSourceMapUrl(map)
               chunk.map = map
 
-              if (config.build.sourcemap === 'inline') {
+              if (buildSourcemap === 'inline') {
                 chunk.code = chunk.code.replace(
                   convertSourceMap.mapFileCommentRegex,
                   '',
                 )
                 chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
-              } else if (config.build.sourcemap) {
+              } else if (buildSourcemap) {
                 const mapAsset = bundle[chunk.fileName + '.map']
                 if (mapAsset && mapAsset.type === 'asset') {
                   mapAsset.source = map.toString()

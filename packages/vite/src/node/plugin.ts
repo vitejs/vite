@@ -82,6 +82,27 @@ export interface TransformPluginContext extends RollupTransformPluginContext {
  * app level hooks (like config, configResolved, configureServer, etc).
  */
 
+type ModifyFunctionContext<Function_, NewContext> = Function_ extends (
+  this: infer This,
+  ...parameters: infer Arguments
+) => infer Return
+  ? (this: NewContext, ...parameters: Arguments) => Return
+  : never
+
+type ModifyObjectHookContext<
+  Handler,
+  Object_ extends { handler: Handler },
+  NewContext,
+> = Object_ & {
+  handler: ModifyFunctionContext<Handler, NewContext>
+}
+
+type ModifyHookContext<Hook, NewContext> = Hook extends {
+  handler: infer Handler
+}
+  ? ModifyObjectHookContext<Handler, Hook, NewContext>
+  : ModifyFunctionContext<Hook, NewContext>
+
 export interface BasePlugin<A = any> extends RollupPlugin<A> {
   /**
    * Perform custom handling of HMR updates.
@@ -160,6 +181,13 @@ export interface BasePlugin<A = any> extends RollupPlugin<A> {
       },
     ) => Promise<TransformResult> | TransformResult
   >
+
+  // TODO: abstract to every hook in RollupPlugin?
+  generateBundle?: ModifyHookContext<
+    RollupPlugin<A>['generateBundle'],
+    PluginContext
+  >
+  renderChunk?: ModifyHookContext<RollupPlugin<A>['renderChunk'], PluginContext>
 }
 
 export type BoundedPlugin<A = any> = BasePlugin<A>
