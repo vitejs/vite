@@ -357,6 +357,7 @@ export async function resolveBoundedPlugins(
 ): Promise<BoundedPlugin[]> {
   const resolvedPlugins: BoundedPlugin[] = []
   for (const plugin of environment.config.plugins) {
+    resolvedPlugins.push(plugin)
     if (plugin.create) {
       const boundedPlugin = await plugin.create(environment)
       if (boundedPlugin) {
@@ -366,8 +367,6 @@ export async function resolveBoundedPlugins(
         )
         resolvedPlugins.push(...flatPlugins)
       }
-    } else {
-      resolvedPlugins.push(plugin)
     }
   }
   return resolvedPlugins
