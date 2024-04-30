@@ -31,13 +31,13 @@ To make this file used by `git blame`, you need to run the following command.
 git config --local blame.ignoreRevsFile .git-blame-ignore-revs
 ```
 
-## docs
+## Documentation
 
-For local development check out the documentation:
+To develop the `docs/` site:
 
-1. Run `pnpm run build` in Vite's root folder.(Since `twoslash` is configured in the document, to prevent errors, perform a global build before starting the document)
+1. Run `pnpm run build` in Vite's root folder. This will generate the types for `twoslash` to work in the code examples. If the types are not available, errors will be logged in step 2 but does not prevent the site from working.
 
-2. Run `pnpm run docs` in Vite's root folder..
+2. Run `pnpm run docs` in Vite's root folder.
 
 ## Debugging
 
