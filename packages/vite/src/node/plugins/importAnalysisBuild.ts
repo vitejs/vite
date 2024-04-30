@@ -38,7 +38,7 @@ export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
 const preloadMarkerWithQuote = new RegExp(
-  `['"]${['', ...preloadMarker.split(''), ''].join('(\\\\[\r\n])?')}['"]`,
+  `['"]${['', ...preloadMarker.split(''), ''].join('\\\\?(\r\n|\r|\n)?')}['"]`,
   'g',
 )
 
@@ -321,8 +321,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         const chunk = bundle[file]
         // can't use chunk.dynamicImports.length here since some modules e.g.
         // dynamic import to constant json may get inlined.
-        if (chunk.type === 'chunk' && chunk.code.indexOf(preloadMarker) > -1) {
-          const code = chunk.code
+        if (chunk.type === 'chunk' && preloadMarkerWithQuote.test(chunk.code)) {
+          const code = (chunk.code = chunk.code.replaceAll(
+            preloadMarkerWithQuote,
+            `"${preloadMarker}"`,
+          ))
           let imports!: ImportSpecifier[]
           try {
             imports = parseImports(code)[0].filter((i) => i.d > -1)
