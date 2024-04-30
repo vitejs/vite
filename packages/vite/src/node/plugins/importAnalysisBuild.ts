@@ -241,6 +241,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       for (let index = 0; index < imports.length; index++) {
         const {
+          s: start,
           e: end,
           ss: expStart,
           se: expEnd,
@@ -255,7 +256,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().remove(end + 1, expEnd)
         }
 
-        if (isDynamicImport && insertPreload) {
+        if (
+          isDynamicImport &&
+          insertPreload &&
+          // Only preload static urls
+          (source[start] === '"' ||
+            source[start] === "'" ||
+            source[start] === '`')
+        ) {
           needPreloadHelper = true
           str().prependLeft(expStart, `${preloadMethod}(() => `)
           str().appendRight(
