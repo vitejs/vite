@@ -1,3 +1,11 @@
+## 6.0.0-alpha.8 (2024-04-30)
+
+* fix: keep plugins with create hook ([12d467f](https://github.com/vitejs/vite/commit/12d467f))
+* refactor: environment hooks guard ([527621e](https://github.com/vitejs/vite/commit/527621e))
+* feat: define and html plugins ([7566aae](https://github.com/vitejs/vite/commit/7566aae))
+
+
+
 ## 6.0.0-alpha.7 (2024-04-29)
 
 * feat: remove config.build from dynamicImportVars plugin ([8231283](https://github.com/vitejs/vite/commit/8231283))
