@@ -3,6 +3,7 @@ import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   browserLogs,
   editFile,
+  expectWithRetry,
   getColor,
   isBuild,
   isServe,
@@ -372,6 +373,16 @@ describe('special character', () => {
 
   test('should fetch html proxy', async () => {
     expect(browserLogs).toContain('special character')
+  })
+})
+
+describe('relative input', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/relative-input.html')
+  })
+
+  test('passing relative path to rollupOptions.input works', async () => {
+    await expectWithRetry(() => page.textContent('.relative-input')).toBe('OK')
   })
 })
 
