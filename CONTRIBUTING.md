@@ -31,6 +31,14 @@ To make this file used by `git blame`, you need to run the following command.
 git config --local blame.ignoreRevsFile .git-blame-ignore-revs
 ```
 
+## docs
+
+For local development check out the documentation:
+
+1. Run `pnpm run build` in Vite's root folder.(Since `twoslash` is configured in the document, to prevent errors, perform a global build before starting the document)
+
+2. Run `pnpm run docs` in Vite's root folder..
+
 ## Debugging
 
 To use breakpoints and explore code execution, you can use the ["Run and Debug"](https://code.visualstudio.com/docs/editor/debugging) feature from VS Code.
@@ -166,7 +174,7 @@ For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package
 
 ## Debug Logging
 
-You can set the `DEBUG` environment variable to turn on debugging logs (e.g. `DEBUG="vite:resolve"`). To see all debug logs, you can set `DEBUG="vite:*"`, but be warned that it will be quite noisy. You can run `grep -r "createDebugger('vite:" packages/vite/src/` to see a list of available debug scopes.
+You can set the `--debug` option to turn on debugging logs (e.g. `vite --debug resolve`). To see all debug logs, you can set `vite --debug *`, but be warned that it will be quite noisy. You can run `grep -r "createDebugger('vite:" packages/vite/src/` to see a list of available debug scopes.
 
 ## Pull Request Guidelines
 
