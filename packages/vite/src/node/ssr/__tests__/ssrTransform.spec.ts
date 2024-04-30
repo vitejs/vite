@@ -249,6 +249,28 @@ test('do not rewrite when function declaration is in scope', async () => {
   expect(result?.deps).toEqual(['vue'])
 })
 
+// #16452
+test('do not rewrite when function expression is in scope', async () => {
+  const result = await ssrTransformSimple(
+    `import {fn} from './vue';var a = function() { return function fn() { console.log(fn) } }`,
+  )
+  expect(result?.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("./vue", {"importedNames":["fn"]});
+    var a = function() { return function fn() { console.log(fn) } }"
+  `)
+})
+
+// #16452
+test('do not rewrite when function expression is in global scope', async () => {
+  const result = await ssrTransformSimple(
+    `import {fn} from './vue';foo(function fn(a = fn) { console.log(fn) })`,
+  )
+  expect(result?.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("./vue", {"importedNames":["fn"]});
+    foo(function fn(a = fn) { console.log(fn) })"
+  `)
+})
+
 test('do not rewrite catch clause', async () => {
   const result = await ssrTransformSimple(
     `import {error} from './dependency';try {} catch(error) {}`,
