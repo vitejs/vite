@@ -42,12 +42,16 @@ interface DynamicImportPattern {
 const dynamicImportHelper = (
   glob: Record<string, any>,
   path: string,
-  pattern: string,
+  rawPath: string,
 ) => {
   const v = glob[path]
   if (v) {
     return typeof v === 'function' ? v() : Promise.resolve(v)
   }
+  let _path = path
+  rawPath.split(/\$\{.+\}/).forEach((str) => {
+    _path = _path.replace(str, '')
+  })
   return new Promise((_, reject) => {
     ;(typeof queueMicrotask === 'function' ? queueMicrotask : setTimeout)(
       reject.bind(
@@ -55,7 +59,9 @@ const dynamicImportHelper = (
         new Error(
           'Unknown variable dynamic import: ' +
             path +
-            `. It seems that the corresponding file was not imported by import.meta.global("${pattern}").`,
+            (_path.includes('/')
+              ? '. Note that variables only represent file names one level deep.'
+              : ''),
         ),
       ),
     )
@@ -251,13 +257,13 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           continue
         }
 
-        const { rawPattern, glob, pattern } = result
+        const { rawPattern, glob } = result
 
         needDynamicImportHelper = true
         s.overwrite(
           expStart,
           expEnd,
-          `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`, \`${pattern}\`)`,
+          `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`, "${rawPattern}")`,
         )
       }
 
