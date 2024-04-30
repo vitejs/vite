@@ -318,7 +318,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         const chunk = bundle[file]
         // can't use chunk.dynamicImports.length here since some modules e.g.
         // dynamic import to constant json may get inlined.
-        if (chunk.type === 'chunk' && preloadMarkerWithQuote.test(chunk.code)) {
+        if (chunk.type === 'chunk' && chunk.code.indexOf(preloadMarker) > -1) {
           const code = chunk.code
           let imports!: ImportSpecifier[]
           try {
@@ -497,7 +497,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
                 s.update(
                   markerStartPos,
-                  markerStartPos + preloadMarker.length + 2,
+                  markerStartPos + preloadMarker.length,
                   renderedDeps.length > 0
                     ? `__vite__mapDeps([${renderedDeps.join(',')}])`
                     : `[]`,
@@ -531,14 +531,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
                 markerStartPos,
-                markerStartPos + preloadMarker.length + 2,
+                markerStartPos + preloadMarker.length,
                 'void 0',
               )
             }
             markerStartPos = indexOfMatchInSlice(
               code,
               preloadMarkerWithQuote,
-              markerStartPos + preloadMarker.length + 2,
+              markerStartPos + preloadMarker.length,
             )
           }
 
