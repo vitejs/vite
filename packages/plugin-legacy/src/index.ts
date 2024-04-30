@@ -166,6 +166,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       )
     })
   }
+  if (Array.isArray(options.additionalModernPolyfills)) {
+    options.additionalModernPolyfills.forEach((i) => {
+      modernPolyfills.add(i)
+    })
+  }
   if (Array.isArray(options.polyfills)) {
     options.polyfills.forEach((i) => {
       if (i.startsWith(`regenerator`)) {
