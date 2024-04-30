@@ -241,6 +241,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       for (let index = 0; index < imports.length; index++) {
         const {
+          s: start,
           e: end,
           ss: expStart,
           se: expEnd,
@@ -255,7 +256,14 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().remove(end + 1, expEnd)
         }
 
-        if (isDynamicImport && insertPreload) {
+        if (
+          isDynamicImport &&
+          insertPreload &&
+          // Only preload static urls
+          (source[start] === '"' ||
+            source[start] === "'" ||
+            source[start] === '`')
+        ) {
           needPreloadHelper = true
           str().prependLeft(expStart, `${preloadMethod}(() => `)
           str().appendRight(
@@ -498,32 +506,30 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 s.update(
                   markerStartPos,
                   markerStartPos + preloadMarker.length + 2,
-                  `__vite__mapDeps([${renderedDeps.join(',')}])`,
+                  renderedDeps.length > 0
+                    ? `__vite__mapDeps([${renderedDeps.join(',')}])`
+                    : `[]`,
                 )
                 rewroteMarkerStartPos.add(markerStartPos)
               }
             }
           }
 
-          const fileDepsCode = `[${fileDeps
-            .map((fileDep) =>
-              fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url),
-            )
-            .join(',')}]`
+          if (fileDeps.length > 0) {
+            const fileDepsCode = `[${fileDeps
+              .map((fileDep) =>
+                fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url),
+              )
+              .join(',')}]`
 
-          const mapDepsCode = `\
-function __vite__mapDeps(indexes) {
-  if (!__vite__mapDeps.viteFileDeps) {
-    __vite__mapDeps.viteFileDeps = ${fileDepsCode}
-  }
-  return indexes.map((i) => __vite__mapDeps.viteFileDeps[i])
-}\n`
+            const mapDepsCode = `const __vite__fileDeps=${fileDepsCode},__vite__mapDeps=i=>i.map(i=>__vite__fileDeps[i]);\n`
 
-          // inject extra code at the top or next line of hashbang
-          if (code.startsWith('#!')) {
-            s.prependLeft(code.indexOf('\n') + 1, mapDepsCode)
-          } else {
-            s.prepend(mapDepsCode)
+            // inject extra code at the top or next line of hashbang
+            if (code.startsWith('#!')) {
+              s.prependLeft(code.indexOf('\n') + 1, mapDepsCode)
+            } else {
+              s.prepend(mapDepsCode)
+            }
           }
 
           // there may still be markers due to inlined dynamic imports, remove

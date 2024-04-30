@@ -1,4 +1,5 @@
 import { defineConfig, DefaultTheme } from 'vitepress'
+import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { buildEnd } from './buildEnd.config'
 
 const ogDescription = 'Next Generation Frontend Tooling'
@@ -147,6 +148,10 @@ export default defineConfig({
           { text: 'Releases', link: '/releases' },
           {
             items: [
+              {
+                text: 'Mastodon',
+                link: 'https://elk.zone/m.webtoo.ls/@vite',
+              },
               {
                 text: 'Twitter',
                 link: 'https://twitter.com/vite_js',
@@ -341,6 +346,9 @@ export default defineConfig({
       { rel: 'canonical', href: canonicalUrl },
     ])
     return pageData
+  },
+  markdown: {
+    codeTransformers: [transformerTwoslash()],
   },
   buildEnd,
 })

@@ -292,6 +292,10 @@ Whether to enable sourcemaps during dev.
 
 Selects the engine used for CSS processing. Check out [Lightning CSS](../guide/features.md#lightning-css) for more information.
 
+::: info Duplicate `@import`s
+Note that postcss (postcss-import) has a different behavior with duplicated `@import` from browsers. See [postcss/postcss-import#462](https://github.com/postcss/postcss-import/issues/462).
+:::
+
 ## css.lightningcss
 
 - **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13835)
@@ -415,7 +419,7 @@ Adjust console output verbosity. Default is `'info'`.
 
 Use a custom logger to log messages. You can use Vite's `createLogger` API to get the default logger and customize it to, for example, change the message or filter out certain warnings.
 
-```js
+```ts twoslash
 import { createLogger, defineConfig } from 'vite'
 
 const logger = createLogger()

@@ -32,6 +32,7 @@ import {
   isParentDirectory,
   mergeConfig,
   normalizePath,
+  promiseWithResolvers,
   resolveHostname,
   resolveServerUrls,
 } from '../utils'
@@ -46,7 +47,12 @@ import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
-import { createNoopWatcher, resolveChokidarOptions } from '../watch'
+import {
+  createNoopWatcher,
+  getResolvedOutDirs,
+  resolveChokidarOptions,
+  resolveEmptyOutDir,
+} from '../watch'
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
 import type { FetchResult } from '../../runtime/types'
@@ -81,7 +87,6 @@ import {
   createHMRBroadcaster,
   createServerHMRChannel,
   getShortName,
-  handleFileAddUnlink,
   handleHMRUpdate,
   updateModules,
 } from './hmr'
@@ -345,6 +350,22 @@ export interface ViteDevServer {
    */
   openBrowser(): void
   /**
+   * Calling `await server.waitForRequestsIdle(id)` will wait until all static imports
+   * are processed. If called from a load or transform plugin hook, the id needs to be
+   * passed as a parameter to avoid deadlocks. Calling this function after the first
+   * static imports section of the module graph has been processed will resolve immediately.
+   * @experimental
+   */
+  waitForRequestsIdle: (ignoredId?: string) => Promise<void>
+  /**
+   * @internal
+   */
+  _registerRequestProcessing: (id: string, done: () => Promise<unknown>) => void
+  /**
+   * @internal
+   */
+  _onCrawlEnd(cb: () => void): void
+  /**
    * @internal
    */
   _setInternalServer(server: ViteDevServer): void
@@ -412,10 +433,25 @@ export async function _createServer(
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
 
-  const resolvedWatchOptions = resolveChokidarOptions(config, {
-    disableGlobbing: true,
-    ...serverConfig.watch,
-  })
+  const resolvedOutDirs = getResolvedOutDirs(
+    config.root,
+    config.build.outDir,
+    config.build.rollupOptions?.output,
+  )
+  const emptyOutDir = resolveEmptyOutDir(
+    config.build.emptyOutDir,
+    config.root,
+    resolvedOutDirs,
+  )
+  const resolvedWatchOptions = resolveChokidarOptions(
+    config,
+    {
+      disableGlobbing: true,
+      ...serverConfig.watch,
+    },
+    resolvedOutDirs,
+    emptyOutDir,
+  )
 
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
@@ -430,6 +466,9 @@ export async function _createServer(
     config.server.hmr.channels.forEach((channel) => hot.addChannel(channel))
   }
 
+  const publicFiles = await initPublicFilesPromise
+  const { publicDir } = config
+
   if (httpServer) {
     setClientErrorHandler(httpServer, config.logger)
   }
@@ -443,6 +482,9 @@ export async function _createServer(
           root,
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
+          // Watch the public directory explicitly because it might be outside
+          // of the root directory.
+          ...(publicDir && publicFiles ? [publicDir] : []),
         ],
         resolvedWatchOptions,
       ) as FSWatcher)
@@ -458,6 +500,20 @@ export async function _createServer(
   let exitProcess: () => void
 
   const devHtmlTransformFn = createDevHtmlTransformFn(config)
+
+  const onCrawlEndCallbacks: (() => void)[] = []
+  const crawlEndFinder = setupOnCrawlEnd(() => {
+    onCrawlEndCallbacks.forEach((cb) => cb())
+  })
+  function waitForRequestsIdle(ignoredId?: string): Promise<void> {
+    return crawlEndFinder.waitForRequestsIdle(ignoredId)
+  }
+  function _registerRequestProcessing(id: string, done: () => Promise<any>) {
+    crawlEndFinder.registerRequestProcessing(id, done)
+  }
+  function _onCrawlEnd(cb: () => void) {
+    onCrawlEndCallbacks.push(cb)
+  }
 
   let server: ViteDevServer = {
     config,
@@ -481,7 +537,9 @@ export async function _createServer(
       return transformRequest(url, server, options)
     },
     async warmupRequest(url, options) {
-      await transformRequest(url, server, options).catch((e) => {
+      try {
+        await transformRequest(url, server, options)
+      } catch (e) {
         if (
           e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
           e?.code === ERR_CLOSED_SERVER
@@ -494,7 +552,7 @@ export async function _createServer(
           error: e,
           timestamp: true,
         })
-      })
+      }
     },
     transformIndexHtml(url, html, originalUrl) {
       return devHtmlTransformFn(server, url, html, originalUrl)
@@ -590,6 +648,7 @@ export async function _createServer(
         watcher.close(),
         hot.close(),
         container.close(),
+        crawlEndFinder?.cancel(),
         getDepsOptimizer(server.config)?.close(),
         getDepsOptimizer(server.config, true)?.close(),
         closeHttpServer(),
@@ -638,6 +697,10 @@ export async function _createServer(
       return server._restartPromise
     },
 
+    waitForRequestsIdle,
+    _registerRequestProcessing,
+    _onCrawlEnd,
+
     _setInternalServer(_server: ViteDevServer) {
       // Rebind internal the server variable so functions reference the user
       // server instance after a restart
@@ -647,10 +710,19 @@ export async function _createServer(
     _importGlobMap: new Map(),
     _forceOptimizeOnRestart: false,
     _pendingRequests: new Map(),
-    _fsDenyGlob: picomatch(config.server.fs.deny, {
-      matchBase: true,
-      nocase: true,
-    }),
+    _fsDenyGlob: picomatch(
+      // matchBase: true does not work as it's documented
+      // https://github.com/micromatch/picomatch/issues/89
+      // convert patterns without `/` on our side for now
+      config.server.fs.deny.map((pattern) =>
+        pattern.includes('/') ? pattern : `**/${pattern}`,
+      ),
+      {
+        matchBase: false,
+        nocase: true,
+        dot: true,
+      },
+    ),
     _shortcutsOptions: undefined,
   }
 
@@ -679,12 +751,13 @@ export async function _createServer(
     }
   }
 
-  const publicFiles = await initPublicFilesPromise
-
-  const onHMRUpdate = async (file: string, configOnly: boolean) => {
+  const onHMRUpdate = async (
+    type: 'create' | 'delete' | 'update',
+    file: string,
+  ) => {
     if (serverConfig.hmr !== false) {
       try {
-        await handleHMRUpdate(file, server, configOnly)
+        await handleHMRUpdate(type, file, server)
       } catch (err) {
         hot.send({
           type: 'error',
@@ -693,8 +766,6 @@ export async function _createServer(
       }
     }
   }
-
-  const { publicDir } = config
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
@@ -715,8 +786,8 @@ export async function _createServer(
         }
       }
     }
-    await handleFileAddUnlink(file, server, isUnlink)
-    await onHMRUpdate(file, true)
+    if (isUnlink) moduleGraph.onFileDelete(file)
+    await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
   }
 
   watcher.on('change', async (file) => {
@@ -724,7 +795,7 @@ export async function _createServer(
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
-    await onHMRUpdate(file, false)
+    await onHMRUpdate('update', file)
   })
 
   getFsUtils(config).initWatcher?.(watcher)
@@ -738,7 +809,13 @@ export async function _createServer(
 
   hot.on('vite:invalidate', async ({ path, message }) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
-    if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
+    if (
+      mod &&
+      mod.isSelfAccepting &&
+      mod.lastHMRTimestamp > 0 &&
+      !mod.lastHMRInvalidationReceived
+    ) {
+      mod.lastHMRInvalidationReceived = true
       config.logger.info(
         colors.yellow(`hmr invalidate `) +
           colors.dim(path) +
@@ -1131,5 +1208,83 @@ export async function restartServerWithUrls(
   ) {
     logger.info('')
     server.printUrls()
+  }
+}
+
+const callCrawlEndIfIdleAfterMs = 50
+
+interface CrawlEndFinder {
+  registerRequestProcessing: (id: string, done: () => Promise<any>) => void
+  waitForRequestsIdle: (ignoredId?: string) => Promise<void>
+  cancel: () => void
+}
+
+function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
+  const registeredIds = new Set<string>()
+  const seenIds = new Set<string>()
+  const onCrawlEndPromiseWithResolvers = promiseWithResolvers<void>()
+
+  let timeoutHandle: NodeJS.Timeout | undefined
+
+  let cancelled = false
+  function cancel() {
+    cancelled = true
+  }
+
+  let crawlEndCalled = false
+  function callOnCrawlEnd() {
+    if (!cancelled && !crawlEndCalled) {
+      crawlEndCalled = true
+      onCrawlEnd()
+    }
+    onCrawlEndPromiseWithResolvers.resolve()
+  }
+
+  function registerRequestProcessing(
+    id: string,
+    done: () => Promise<any>,
+  ): void {
+    if (!seenIds.has(id)) {
+      seenIds.add(id)
+      registeredIds.add(id)
+      done()
+        .catch(() => {})
+        .finally(() => markIdAsDone(id))
+    }
+  }
+
+  function waitForRequestsIdle(ignoredId?: string): Promise<void> {
+    if (ignoredId) {
+      seenIds.add(ignoredId)
+      markIdAsDone(ignoredId)
+    }
+    return onCrawlEndPromiseWithResolvers.promise
+  }
+
+  function markIdAsDone(id: string): void {
+    if (registeredIds.has(id)) {
+      registeredIds.delete(id)
+      checkIfCrawlEndAfterTimeout()
+    }
+  }
+
+  function checkIfCrawlEndAfterTimeout() {
+    if (cancelled || registeredIds.size > 0) return
+
+    if (timeoutHandle) clearTimeout(timeoutHandle)
+    timeoutHandle = setTimeout(
+      callOnCrawlEndWhenIdle,
+      callCrawlEndIfIdleAfterMs,
+    )
+  }
+  async function callOnCrawlEndWhenIdle() {
+    if (cancelled || registeredIds.size > 0) return
+    callOnCrawlEnd()
+  }
+
+  return {
+    registerRequestProcessing,
+    waitForRequestsIdle,
+    cancel,
   }
 }
