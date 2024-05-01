@@ -7,7 +7,7 @@ import type {
   TransformResult,
 } from 'esbuild'
 import { transform } from 'esbuild'
-import type { FSWatcher } from 'chokidar'
+// TODO: import type { FSWatcher } from 'chokidar'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rollup'
 import type { TSConfckParseResult } from 'tsconfck'
@@ -81,7 +81,7 @@ export async function transformWithEsbuild(
   options?: TransformOptions,
   inMap?: object,
   root?: string,
-  watcher?: FSWatcher,
+  watcher?: any, // TODO: module-runner bundling issue with FSWatcher,
 ): Promise<ESBuildTransformResult> {
   let loader = options?.loader
 
@@ -445,7 +445,7 @@ let tsconfckCache: TSConfckCache<TSConfckParseResult> | undefined
 export async function loadTsconfigJsonForFile(
   filename: string,
   root?: string,
-  watcher?: FSWatcher,
+  watcher?: any, // TODO: module-runner issue with FSWatcher,
 ): Promise<TSConfigJSON> {
   try {
     if (!tsconfckCache) {
