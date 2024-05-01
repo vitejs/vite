@@ -14,6 +14,7 @@ import type {
   ResolvedConfig,
   UserConfig,
 } from './config'
+import { sortUserPlugins } from './config'
 import type { ServerHook, ViteDevServer } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { EnvironmentModuleNode } from './server/moduleGraph'
@@ -104,6 +105,20 @@ type ModifyHookContext<Hook, NewContext> = Hook extends {
   : ModifyFunctionContext<Hook, NewContext>
 
 export interface BasePlugin<A = any> extends RollupPlugin<A> {
+  /**
+   * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
+   * is still subject to the `order` property in the hook object.
+   *
+   * Plugin invocation order:
+   * - alias resolution
+   * - `enforce: 'pre'` plugins
+   * - vite core plugins
+   * - normal plugins
+   * - vite build plugins
+   * - `enforce: 'post'` plugins
+   * - vite build post plugins
+   */
+  enforce?: 'pre' | 'post'
   /**
    * Perform custom handling of HMR updates.
    * The handler receives a context containing changed filename, timestamp, a
@@ -203,27 +218,6 @@ export interface Plugin<A = any> extends BasePlugin<A> {
    * @experimental
    */
   sharedDuringBuild?: boolean
-  /**
-   * Spawn the plugin into multiple plugins based on the environment.
-   * This hook is called when the config has already been resolved, allowing to
-   * create per environment plugin pipelines or easily inject plugins for a
-   * only specific environments.
-   */
-  create?: (environment: PluginEnvironment) => BoundedPluginOption
-  /**
-   * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
-   * is still subject to the `order` property in the hook object.
-   *
-   * Plugin invocation order:
-   * - alias resolution
-   * - `enforce: 'pre'` plugins
-   * - vite core plugins
-   * - normal plugins
-   * - vite build plugins
-   * - `enforce: 'post'` plugins
-   * - vite build post plugins
-   */
-  enforce?: 'pre' | 'post'
   /**
    * Apply the plugin only for serve or build, or on certain conditions.
    */
@@ -345,7 +339,12 @@ export type BoundedPluginOption =
   | BoundedPluginOption[]
   | Promise<MaybeBoundedPlugin | BoundedPluginOption[]>
 
-export type MaybePlugin = Plugin | false | null | undefined
+export type MaybePlugin =
+  | Plugin
+  | BoundedPluginConstructor
+  | false
+  | null
+  | undefined
 
 export type PluginOption =
   | MaybePlugin
@@ -355,21 +354,22 @@ export type PluginOption =
 export async function resolveBoundedPlugins(
   environment: PluginEnvironment,
 ): Promise<BoundedPlugin[]> {
-  const resolvedPlugins: BoundedPlugin[] = []
-  for (const plugin of environment.config.plugins) {
-    resolvedPlugins.push(plugin)
-    if (plugin.create) {
-      const boundedPlugin = await plugin.create(environment)
+  const userPlugins: BoundedPlugin[] = []
+  for (const plugin of environment.config.rawPlugins) {
+    if (typeof plugin === 'function') {
+      const boundedPlugin = await plugin(environment)
       if (boundedPlugin) {
         const flatPlugins = await asyncFlattenBoundedPlugin(
           environment,
           boundedPlugin,
         )
-        resolvedPlugins.push(...flatPlugins)
+        userPlugins.push(...flatPlugins)
       }
+    } else {
+      userPlugins.push(plugin)
     }
   }
-  return resolvedPlugins
+  return environment.config.resolvePlugins(...sortUserPlugins(userPlugins))
 }
 
 async function asyncFlattenBoundedPlugin(
@@ -382,7 +382,7 @@ async function asyncFlattenBoundedPlugin(
   do {
     plugins = (
       await Promise.all(
-        plugins.map((p: any) => (p && p.split ? p.split(environment) : p)),
+        plugins.map((p: any) => (typeof p === 'function' ? p(environment) : p)),
       )
     )
       .flat(Infinity)

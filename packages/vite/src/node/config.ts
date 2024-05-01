@@ -21,6 +21,7 @@ import {
   FS_PREFIX,
 } from './constants'
 import type {
+  BoundedPluginConstructor,
   HookHandler,
   Plugin,
   PluginEnvironment,
@@ -71,9 +72,9 @@ import {
 import { getFsUtils } from './fsUtils'
 import {
   createPluginHookUtils,
+  createResolvePlugins,
   getHookHandler,
   getSortedPluginsByHook,
-  resolvePlugins,
 } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
@@ -538,6 +539,13 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
+    rawPlugins: readonly (Plugin | BoundedPluginConstructor)[]
+    /** @internal inject user plugins into the shared vite pipeline */
+    resolvePlugins: (
+      prePlugins: Plugin[],
+      normalPlugins: Plugin[],
+      postPlugins: Plugin[],
+    ) => Plugin[]
     css: ResolvedCSSOptions
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
@@ -761,7 +769,9 @@ export async function resolveConfig(
   defaultNodeEnv = 'development',
   isPreview = false,
   patchConfig: ((config: ResolvedConfig) => void) | undefined = undefined,
-  patchPlugins: ((plugins: Plugin[]) => void) | undefined = undefined,
+  patchPlugins:
+    | ((plugins: (Plugin | BoundedPluginConstructor)[]) => void)
+    | undefined = undefined,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   let configFileDependencies: string[] = []
@@ -802,10 +812,10 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
-  const filterPlugin = (p: Plugin) => {
+  const filterPlugin = (p: Plugin | BoundedPluginConstructor) => {
     if (!p) {
       return false
-    } else if (!p.apply) {
+    } else if (typeof p === 'function' || !p.apply) {
       return true
     } else if (typeof p.apply === 'function') {
       return p.apply({ ...config, mode }, configEnv)
@@ -815,12 +825,22 @@ export async function resolveConfig(
   }
 
   // resolve plugins
-  const rawUserPlugins = (
-    (await asyncFlatten(config.plugins || [])) as Plugin[]
+  const rawPlugins = (
+    (await asyncFlatten(config.plugins || [])) as (
+      | Plugin
+      | BoundedPluginConstructor
+    )[]
   ).filter(filterPlugin)
 
+  // Backward compatibility hook used in builder, opt-in to shared plugins during build
+  patchPlugins?.(rawPlugins)
+
+  const sharedPlugins = rawPlugins.filter(
+    (plugin) => typeof plugin !== 'function',
+  ) as Plugin[]
+
   const [prePlugins, normalPlugins, postPlugins] =
-    sortUserPlugins(rawUserPlugins)
+    sortUserPlugins(sharedPlugins)
 
   const isBuild = command === 'build'
 
@@ -1119,8 +1139,8 @@ export async function resolveConfig(
       mainConfig: resolved,
       bundleChain,
     }
-    const resolvedWorkerPlugins = await resolvePlugins(
-      workerResolved,
+    const resolveWorkerPlugins = await createResolvePlugins(workerResolved)
+    const resolvedWorkerPlugins = resolveWorkerPlugins(
       workerPrePlugins,
       workerNormalPlugins,
       workerPostPlugins,
@@ -1159,7 +1179,9 @@ export async function resolveConfig(
     mainConfig: null,
     bundleChain: [],
     isProduction,
-    plugins: userPlugins,
+    plugins: userPlugins, // placeholder to be replaced
+    rawPlugins,
+    resolvePlugins: null as any, // placeholder to be replaced
     css: resolveCSSOptions(config.css),
     esbuild:
       config.esbuild === false
@@ -1296,15 +1318,12 @@ export async function resolveConfig(
   // gets called
   patchConfig?.(resolved)
 
-  const resolvedPlugins = await resolvePlugins(
-    resolved,
-    prePlugins,
-    normalPlugins,
-    postPlugins,
-  )
+  const resolvePlugins = await createResolvePlugins(resolved)
 
-  // Backward compatibility hook used in builder
-  patchPlugins?.(resolvedPlugins)
+  ;(resolved.resolvePlugins as any) = resolvePlugins
+
+  const resolvedPlugins = resolvePlugins(prePlugins, normalPlugins, postPlugins)
+
   ;(resolved.plugins as Plugin[]) = resolvedPlugins
 
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))

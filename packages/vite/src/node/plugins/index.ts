@@ -26,12 +26,15 @@ import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
 // TODO: import { loadFallbackPlugin } from './loadFallback'
 
-export async function resolvePlugins(
+export async function createResolvePlugins(
   config: ResolvedConfig,
-  prePlugins: Plugin[],
-  normalPlugins: Plugin[],
-  postPlugins: Plugin[],
-): Promise<Plugin[]> {
+): Promise<
+  (
+    prePlugins: Plugin[],
+    normalPlugins: Plugin[],
+    postPlugins: Plugin[],
+  ) => Plugin[]
+> {
   const isBuild = config.command === 'build'
   const isWorker = config.isWorker
   const buildPlugins = isBuild
@@ -42,7 +45,8 @@ export async function resolvePlugins(
     !isBuild &&
     (isDepsOptimizerEnabled(config, false) ||
       isDepsOptimizerEnabled(config, true))
-  return [
+
+  const preVitePlugins = [
     depsOptimizerEnabled ? optimizedDepsPlugin(config) : null,
     isBuild ? metadataPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
@@ -51,7 +55,9 @@ export async function resolvePlugins(
       entries: config.resolve.alias,
       customResolver: viteAliasCustomResolver,
     }),
-    ...prePlugins,
+  ]
+  // then ...prePlugins
+  const normalVitePlugins = [
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin(config)
       : null,
@@ -81,7 +87,9 @@ export async function resolvePlugins(
     wasmHelperPlugin(config),
     webWorkerPlugin(config),
     assetPlugin(config),
-    ...normalPlugins,
+  ]
+  // then ...normalPlugins
+  const postVitePlugins = [
     wasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
@@ -91,7 +99,9 @@ export async function resolvePlugins(
     ...buildPlugins.pre,
     dynamicImportVarsPlugin(config),
     importGlobPlugin(config),
-    ...postPlugins,
+  ]
+  // then ...postVitePlugins
+  const finalVitePlugins = [
     ...buildPlugins.post,
     // internal server-only plugins are always applied after everything else
     ...(isBuild
@@ -102,7 +112,18 @@ export async function resolvePlugins(
           importAnalysisPlugin(config),
           // TODO: loadFallbackPlugin(config),
         ]),
-  ].filter(Boolean) as Plugin[]
+  ]
+  return (prePlugins, normalPlugins, postPlugins) => {
+    return [
+      ...preVitePlugins,
+      ...prePlugins,
+      ...normalVitePlugins,
+      ...normalPlugins,
+      ...postVitePlugins,
+      ...postPlugins,
+      ...finalVitePlugins,
+    ].filter(Boolean) as Plugin[]
+  }
 }
 
 export function createPluginHookUtils(

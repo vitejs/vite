@@ -66,7 +66,7 @@ import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
 import { Environment } from './environment'
-import type { Plugin, PluginContext } from './plugin'
+import type { BoundedPluginConstructor, Plugin, PluginContext } from './plugin'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -534,7 +534,7 @@ export async function build(
 function resolveConfigToBuild(
   inlineConfig: InlineConfig = {},
   patchConfig?: (config: ResolvedConfig) => void,
-  patchPlugins?: (plugins: Plugin[]) => void,
+  patchPlugins?: (rawPlugins: (Plugin | BoundedPluginConstructor)[]) => void,
 ) {
   return resolveConfig(
     inlineConfig,
@@ -1525,13 +1525,18 @@ export async function createBuilder(
           lib: false,
         }
       }
-      const patchPlugins = (resolvedPlugins: Plugin[]) => {
+      const patchPlugins = (
+        rawPlugins: (Plugin | BoundedPluginConstructor)[],
+      ) => {
         // Force opt-in shared plugins
-        const environmentPlugins = [...resolvedPlugins]
+        const environmentPlugins = [...rawPlugins]
         let validMixedPlugins = true
         for (let i = 0; i < environmentPlugins.length; i++) {
           const environmentPlugin = environmentPlugins[i]
-          const sharedPlugin = config.plugins[i]
+          if (typeof environmentPlugin === 'function') {
+            continue
+          }
+          const sharedPlugin = config.rawPlugins[i]
           if (
             config.builder.sharedPlugins ||
             environmentPlugin.sharedDuringBuild
@@ -1545,7 +1550,7 @@ export async function createBuilder(
         }
         if (validMixedPlugins) {
           for (let i = 0; i < environmentPlugins.length; i++) {
-            resolvedPlugins[i] = environmentPlugins[i]
+            rawPlugins[i] = environmentPlugins[i]
           }
         }
       }

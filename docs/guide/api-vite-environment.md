@@ -581,22 +581,19 @@ The hook can choose to:
 
 ### Per-environment Plugins
 
-There is a new `create` hook that plugins can define to lazily create per-environment plugins.
+A plugin can now also be a constructor to lazily create per-environment plugins.
 
 ```js
 function perEnvironmentPlugin() {
-  return {
-    name: 'per-environment-plugin',
+  return (environment: Environment) => {
     // Return a plugin, an array, a Promise, or a falsy value for each environment
-    create(environment: Environment) {
-      if (!passesCondition(environment)) {
-        return undefined
-      }
-      return [
-        createEnvironmentPlugin(environment),
-        otherPlugin(environment)
-      ]
+    if (!passesCondition(environment)) {
+      return undefined
     }
+    return [
+      createEnvironmentPlugin(environment),
+      otherPlugin(environment)
+    ]
   }
 }
 ```
