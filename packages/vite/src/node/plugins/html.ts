@@ -779,11 +779,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         return tags
       }
 
-      for (const [id, html] of processedHtml) {
-        const relativeUrlPath = path.posix.relative(
-          config.root,
-          normalizePath(id),
-        )
+      for (const [normalizedId, html] of processedHtml) {
+        const relativeUrlPath = path.posix.relative(config.root, normalizedId)
         const assetsBase = getBaseInHTML(relativeUrlPath, config)
         const toOutputFilePath = (
           filename: string,
@@ -809,7 +806,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const toOutputPublicAssetFilePath = (filename: string) =>
           toOutputFilePath(filename, 'public')
 
-        const isAsync = isAsyncScriptMap.get(config)!.get(id)!
+        const isAsync = isAsyncScriptMap.get(config)!.get(normalizedId)!
 
         let result = html
 
@@ -818,7 +815,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           (chunk) =>
             chunk.type === 'chunk' &&
             chunk.isEntry &&
-            chunk.facadeModuleId === id,
+            chunk.facadeModuleId &&
+            normalizePath(chunk.facadeModuleId) === normalizedId,
         ) as OutputChunk | undefined
 
         let canInlineEntry = false
@@ -902,7 +900,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           [...normalHooks, ...postHooks],
           {
             path: '/' + relativeUrlPath,
-            filename: id,
+            filename: normalizedId,
             bundle,
             chunk,
           },
@@ -932,7 +930,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           inlineEntryChunk.add(chunk.fileName)
         }
 
-        const shortEmitName = normalizePath(path.relative(config.root, id))
+        const shortEmitName = normalizePath(
+          path.relative(config.root, normalizedId),
+        )
         this.emitFile({
           type: 'asset',
           fileName: shortEmitName,
