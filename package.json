@@ -40,7 +40,7 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@babel/types": "^7.24.0",
+    "@babel/types": "^7.24.5",
     "@eslint-types/typescript-eslint": "^7.5.0",
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/babel__core": "^7.20.5",
@@ -58,14 +58,14 @@
     "@types/semver": "^7.5.8",
     "@types/stylus": "^0.48.42",
     "@types/ws": "^8.5.10",
-    "@typescript-eslint/eslint-plugin": "^7.7.1",
-    "@typescript-eslint/parser": "^7.7.1",
+    "@typescript-eslint/eslint-plugin": "^7.8.0",
+    "@typescript-eslint/parser": "^7.8.0",
     "@vitejs/release-scripts": "^1.3.1",
     "conventional-changelog-cli": "^4.1.0",
     "eslint": "^8.57.0",
     "eslint-define-config": "^2.1.0",
     "eslint-plugin-i": "^2.29.1",
-    "eslint-plugin-n": "^17.2.1",
+    "eslint-plugin-n": "^17.4.0",
     "eslint-plugin-regexp": "^2.5.0",
     "execa": "^8.0.1",
     "feed": "^4.2.2",
@@ -80,11 +80,11 @@
     "semver": "^7.6.0",
     "simple-git-hooks": "^2.11.1",
     "tslib": "^2.6.2",
-    "tsx": "^4.7.2",
+    "tsx": "^4.8.0",
     "typescript": "^5.2.2",
     "unbuild": "^2.0.0",
     "vite": "workspace:*",
-    "vitest": "^1.5.0"
+    "vitest": "^1.5.3"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -103,7 +103,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@8.15.7",
+  "packageManager": "pnpm@8.15.8",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
