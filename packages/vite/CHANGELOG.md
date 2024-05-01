@@ -1,3 +1,17 @@
+## 6.0.0-alpha.9 (2024-05-01)
+
+* fix: lint ([848af54](https://github.com/vitejs/vite/commit/848af54))
+* fix: module-runner bundle issue with chokidar dep ([b8ef8ff](https://github.com/vitejs/vite/commit/b8ef8ff))
+* fix: scripts and styles were missing from built HTML on Windows (#16421) ([0e93f58](https://github.com/vitejs/vite/commit/0e93f58)), closes [#16421](https://github.com/vitejs/vite/issues/16421)
+* fix(deps): update all non-major dependencies (#16549) ([2d6a13b](https://github.com/vitejs/vite/commit/2d6a13b)), closes [#16549](https://github.com/vitejs/vite/issues/16549)
+* fix(preload): skip preload for non-static urls (#16556) ([bb79c9b](https://github.com/vitejs/vite/commit/bb79c9b)), closes [#16556](https://github.com/vitejs/vite/issues/16556)
+* fix(ssr): handle class declaration and expression name scoping (#16569) ([c071eb3](https://github.com/vitejs/vite/commit/c071eb3)), closes [#16569](https://github.com/vitejs/vite/issues/16569)
+* fix(ssr): handle function expression name scoping (#16563) ([02db947](https://github.com/vitejs/vite/commit/02db947)), closes [#16563](https://github.com/vitejs/vite/issues/16563)
+* refactor: bounded plugins factory instead of create hook ([6b74221](https://github.com/vitejs/vite/commit/6b74221))
+* refactor: move reload on tsconfig change to the server ([1bcb67d](https://github.com/vitejs/vite/commit/1bcb67d))
+
+
+
 ## 6.0.0-alpha.8 (2024-04-30)
 
 * fix: keep plugins with create hook ([12d467f](https://github.com/vitejs/vite/commit/12d467f))
