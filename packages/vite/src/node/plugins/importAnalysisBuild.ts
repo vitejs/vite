@@ -33,11 +33,11 @@ type FileDep = {
  */
 export const isModernFlag = `__VITE_IS_MODERN__`
 export const preloadMethod = `__vitePreload`
-export const preloadMarker = `__VITE_PRELOAD__`
+export const preloadMarker = `import.meta.__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
-const preloadMarkerRE = new RegExp(preloadMarker, 'g')
+const preloadMarkerRE = new RegExp(preloadMarker.split('.').join('\\.'), 'g')
 
 const dynamicImportPrefixRE = /import\s*\(/
 
