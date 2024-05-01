@@ -334,17 +334,27 @@ By default, any new commit pushed to the specified branch will automatically tri
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
 
+<!--
+  NOTE: The sections below are reserved for more deployment platforms not listed above.
+  Feel free to submit a PR that adds a new section with a link to your platform's
+  deployment guide, as long as it meets these criteria:
+
+  1. Users should be able to deploy their site for free.
+  2. Free tier offerings should host the site indefinitely and are not time-bound.
+     Offering a limited number of computation resource or site counts in exchange is fine.
+  3. The linked guides should not contain any malicious content.
+
+  The Vite team may change the criteria and audit the current list from time to time.
+  If a section is removed, we will ping the original PR authors before doing so.
+-->
+
 ## Flightcontrol
 
-Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref=docs-vite), by following these [instructions](https://www.flightcontrol.dev/docs/reference/examples/vite?ref=docs-vite)
-
-## AWS Amplify Hosting
-
-Deploy your static site using [AWS Amplify Hosting](https://aws.amazon.com/amplify/hosting/), by following these [instructions](https://docs.amplify.aws/guides/hosting/vite/q/platform/js/)
+Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref=docs-vite) by following these [instructions](https://www.flightcontrol.dev/docs/reference/examples/vite?ref=docs-vite).
 
 ## Kinsta Static Site Hosting
 
-You can deploy your Vite app as a Static Site on [Kinsta](https://kinsta.com/static-site-hosting/) by following these [instructions](https://kinsta.com/docs/react-vite-example/).
+Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) by following these [instructions](https://kinsta.com/docs/react-vite-example/).
 
 ## xmit Static Site Hosting
 
