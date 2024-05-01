@@ -4,6 +4,6 @@
   "version": "0.0.0",
   "main": "index.mjs",
   "dependencies": {
-    "react": "18.2.0"
+    "react": "18.3.1"
   }
 }
