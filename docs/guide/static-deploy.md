@@ -345,3 +345,7 @@ Deploy your static site using [AWS Amplify Hosting](https://aws.amazon.com/ampli
 ## Kinsta Static Site Hosting
 
 You can deploy your Vite app as a Static Site on [Kinsta](https://kinsta.com/static-site-hosting/) by following these [instructions](https://kinsta.com/docs/react-vite-example/).
+
+## xmit Static Site Hosting
+
+Deploy your static site using [xmit](https://xmit.co) by following this [guide](https://xmit.dev/posts/vite-quickstart/).
