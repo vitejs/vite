@@ -690,10 +690,10 @@ importers:
         version: 18.2.23
       react:
         specifier: ^18.2.0
-        version: 18.2.0
+        version: 18.3.1
       react-dom:
         specifier: ^18.2.0
-        version: 18.2.0(react@18.2.0)
+        version: 18.3.1(react@18.3.1)
 
   playground/extensions:
     dependencies:
@@ -9237,14 +9237,8 @@ packages:
       react: ^18.3.1
     dependencies:
       loose-envify: 1.4.0
-<<<<<<< HEAD
-      react: 18.2.0
-      scheduler: 0.23.0
-=======
       react: 18.3.1
       scheduler: 0.23.2
-    dev: false
->>>>>>> origin/main
 
   /react-is@18.2.0:
     resolution: {integrity: sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==}
