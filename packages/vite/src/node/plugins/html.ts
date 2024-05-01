@@ -22,6 +22,7 @@ import {
   partialEncodeURIPath,
   processSrcSet,
   removeLeadingSlash,
+  unique,
   urlCanParse,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
@@ -1266,7 +1267,7 @@ export function resolveHtmlTransforms(
 }
 
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/head#see_also
-const HeadElement: Record<string, boolean> = [
+const elementsAllowedInHead = new Set([
   'title',
   'base',
   'link',
@@ -1275,13 +1276,7 @@ const HeadElement: Record<string, boolean> = [
   'script',
   'noscript',
   'template',
-].reduce(
-  (res, tag) => ({
-    ...res,
-    [tag]: true,
-  }),
-  {},
-)
+])
 
 function headTagInsertCheck(
   tags: HtmlTagDescriptor[],
@@ -1289,15 +1284,18 @@ function headTagInsertCheck(
 ) {
   if (!tags.length) return
   const { logger } = ctx.server?.config || {}
-  const message = tags.reduce<string[]>((res, tagDescriptor) => {
-    if (!HeadElement[tagDescriptor.tag]) res.push(`<${tagDescriptor.tag}>`)
-    return res
-  }, [])
-  if (message.length) {
+  const disallowedTags = tags.filter(
+    (tagDescriptor) => !elementsAllowedInHead.has(tagDescriptor.tag),
+  )
+
+  if (disallowedTags.length) {
+    const dedupedTags = unique(
+      disallowedTags.map((tagDescriptor) => `<${tagDescriptor.tag}>`),
+    )
     logger?.warn(
       colors.yellow(
         colors.bold(
-          `[${message.join(',')}] can not be used inside the <head> Element, please check the 'injectTo' value`,
+          `[${dedupedTags.join(',')}] can not be used inside the <head> Element, please check the 'injectTo' value`,
         ),
       ),
     )
