@@ -206,7 +206,7 @@ export interface BasePlugin<A = any> extends RollupPlugin<A> {
   renderChunk?: ModifyHookContext<RollupPlugin<A>['renderChunk'], PluginContext>
 }
 
-export type BoundedPlugin<A = any> = BasePlugin<A>
+export type IsolatedPlugin<A = any> = BasePlugin<A>
 
 export interface Plugin<A = any> extends BasePlugin<A> {
   /**
@@ -328,21 +328,21 @@ export type PluginWithRequiredHook<K extends keyof Plugin> = Plugin & {
   [P in K]: NonNullable<Plugin[P]>
 }
 
-export type BoundedPluginConstructor = {
-  (environment: PluginEnvironment): BoundedPluginOption
+export type IsolatedPluginConstructor = {
+  (environment: PluginEnvironment): IsolatedPluginOption
   sharedDuringBuild?: boolean
 }
 
-export type MaybeBoundedPlugin = BoundedPlugin | false | null | undefined
+export type MaybeIsolatedPlugin = IsolatedPlugin | false | null | undefined
 
-export type BoundedPluginOption =
-  | MaybeBoundedPlugin
-  | BoundedPluginOption[]
-  | Promise<MaybeBoundedPlugin | BoundedPluginOption[]>
+export type IsolatedPluginOption =
+  | MaybeIsolatedPlugin
+  | IsolatedPluginOption[]
+  | Promise<MaybeIsolatedPlugin | IsolatedPluginOption[]>
 
 export type MaybePlugin =
   | Plugin
-  | BoundedPluginConstructor
+  | IsolatedPluginConstructor
   | false
   | null
   | undefined
@@ -352,17 +352,17 @@ export type PluginOption =
   | PluginOption[]
   | Promise<MaybePlugin | PluginOption[]>
 
-export async function resolveBoundedPlugins(
+export async function resolveIsolatedPlugins(
   environment: PluginEnvironment,
-): Promise<BoundedPlugin[]> {
-  const userPlugins: BoundedPlugin[] = []
+): Promise<IsolatedPlugin[]> {
+  const userPlugins: IsolatedPlugin[] = []
   for (const plugin of environment.config.rawPlugins) {
     if (typeof plugin === 'function') {
-      const boundedPlugin = await plugin(environment)
-      if (boundedPlugin) {
-        const flatPlugins = await asyncFlattenBoundedPlugin(
+      const isolatedPlugin = await plugin(environment)
+      if (isolatedPlugin) {
+        const flatPlugins = await asyncFlattenIsolatedPlugin(
           environment,
-          boundedPlugin,
+          isolatedPlugin,
         )
         userPlugins.push(...flatPlugins)
       }
@@ -373,10 +373,10 @@ export async function resolveBoundedPlugins(
   return environment.config.resolvePlugins(...sortUserPlugins(userPlugins))
 }
 
-async function asyncFlattenBoundedPlugin(
+async function asyncFlattenIsolatedPlugin(
   environment: PluginEnvironment,
-  plugins: BoundedPluginOption,
-): Promise<BoundedPlugin[]> {
+  plugins: IsolatedPluginOption,
+): Promise<IsolatedPlugin[]> {
   if (!Array.isArray(plugins)) {
     plugins = [plugins]
   }
@@ -387,7 +387,7 @@ async function asyncFlattenBoundedPlugin(
       )
     )
       .flat(Infinity)
-      .filter(Boolean) as BoundedPluginOption[]
+      .filter(Boolean) as IsolatedPluginOption[]
   } while (plugins.some((v: any) => v?.then || v?.split))
-  return plugins as BoundedPlugin[]
+  return plugins as IsolatedPlugin[]
 }

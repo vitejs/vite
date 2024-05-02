@@ -21,8 +21,8 @@ import {
   FS_PREFIX,
 } from './constants'
 import type {
-  BoundedPluginConstructor,
   HookHandler,
+  IsolatedPluginConstructor,
   Plugin,
   PluginEnvironment,
   PluginOption,
@@ -83,8 +83,8 @@ import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
-import type { BoundedPluginContainer } from './server/pluginContainer'
-import { createBoundedPluginContainer } from './server/pluginContainer'
+import type { IsolatedPluginContainer } from './server/pluginContainer'
+import { createIsolatedPluginContainer } from './server/pluginContainer'
 import type { PackageCache } from './packages'
 import { findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
@@ -539,7 +539,7 @@ export type ResolvedConfig = Readonly<
       alias: Alias[]
     }
     plugins: readonly Plugin[]
-    rawPlugins: readonly (Plugin | BoundedPluginConstructor)[]
+    rawPlugins: readonly (Plugin | IsolatedPluginConstructor)[]
     /** @internal inject user plugins into the shared vite pipeline */
     resolvePlugins: (
       prePlugins: Plugin[],
@@ -770,7 +770,7 @@ export async function resolveConfig(
   isPreview = false,
   patchConfig: ((config: ResolvedConfig) => void) | undefined = undefined,
   patchPlugins:
-    | ((plugins: (Plugin | BoundedPluginConstructor)[]) => void)
+    | ((plugins: (Plugin | IsolatedPluginConstructor)[]) => void)
     | undefined = undefined,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
@@ -812,7 +812,7 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
-  const filterPlugin = (p: Plugin | BoundedPluginConstructor) => {
+  const filterPlugin = (p: Plugin | IsolatedPluginConstructor) => {
     if (!p) {
       return false
     } else if (typeof p === 'function' || !p.apply) {
@@ -828,7 +828,7 @@ export async function resolveConfig(
   const rawPlugins = (
     (await asyncFlatten(config.plugins || [])) as (
       | Plugin
-      | BoundedPluginConstructor
+      | IsolatedPluginConstructor
     )[]
   ).filter(filterPlugin)
 
@@ -1235,12 +1235,12 @@ export async function resolveConfig(
     // optimizer & handling css @imports
     createResolver(options) {
       const alias: {
-        client?: BoundedPluginContainer
-        ssr?: BoundedPluginContainer
+        client?: IsolatedPluginContainer
+        ssr?: IsolatedPluginContainer
       } = {}
       const resolver: {
-        client?: BoundedPluginContainer
-        ssr?: BoundedPluginContainer
+        client?: IsolatedPluginContainer
+        ssr?: IsolatedPluginContainer
       } = {}
       const environments = this.environments ?? resolvedEnvironments
       const createPluginContainer = async (
@@ -1251,7 +1251,7 @@ export async function resolveConfig(
         // environment so we can safely cast to a base Environment instance to a
         // PluginEnvironment here
         const environment = new Environment(environmentName, this)
-        const pluginContainer = await createBoundedPluginContainer(
+        const pluginContainer = await createIsolatedPluginContainer(
           environment as PluginEnvironment,
           plugins,
         )
@@ -1265,7 +1265,7 @@ export async function resolveConfig(
         ssr?: boolean,
       ): Promise<PartialResolvedId | null> {
         const environmentName = ssr ? 'ssr' : 'client'
-        let container: BoundedPluginContainer
+        let container: IsolatedPluginContainer
         if (aliasOnly) {
           let aliasContainer = alias[environmentName]
           if (!aliasContainer) {

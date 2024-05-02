@@ -47,7 +47,7 @@ import {
   partialEncodeURIPath,
   requireResolveFromRootWithFallback,
 } from './utils'
-import { resolveBoundedPlugins } from './plugin'
+import { resolveIsolatedPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -66,7 +66,7 @@ import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
 import { Environment } from './environment'
-import type { BoundedPluginConstructor, Plugin, PluginContext } from './plugin'
+import type { IsolatedPluginConstructor, Plugin, PluginContext } from './plugin'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -534,7 +534,7 @@ export async function build(
 function resolveConfigToBuild(
   inlineConfig: InlineConfig = {},
   patchConfig?: (config: ResolvedConfig) => void,
-  patchPlugins?: (rawPlugins: (Plugin | BoundedPluginConstructor)[]) => void,
+  patchPlugins?: (rawPlugins: (Plugin | IsolatedPluginConstructor)[]) => void,
 ) {
   return resolveConfig(
     inlineConfig,
@@ -1439,7 +1439,7 @@ export class BuildEnvironment extends Environment {
       return
     }
     this._inited = true
-    this._plugins = await resolveBoundedPlugins(this)
+    this._plugins = await resolveIsolatedPlugins(this)
   }
 }
 
@@ -1526,7 +1526,7 @@ export async function createBuilder(
         }
       }
       const patchPlugins = (
-        rawPlugins: (Plugin | BoundedPluginConstructor)[],
+        rawPlugins: (Plugin | IsolatedPluginConstructor)[],
       ) => {
         // Force opt-in shared plugins
         const environmentPlugins = [...rawPlugins]

@@ -1,7 +1,7 @@
 import colors from 'picocolors'
 import type { Logger } from './logger'
 import type { ResolvedConfig, ResolvedEnvironmentOptions } from './config'
-import type { BoundedPlugin } from './plugin'
+import type { IsolatedPlugin } from './plugin'
 
 export class Environment {
   name: string
@@ -9,7 +9,7 @@ export class Environment {
   config: ResolvedConfig
   options: ResolvedEnvironmentOptions
 
-  get plugins(): BoundedPlugin[] {
+  get plugins(): IsolatedPlugin[] {
     if (!this._plugins)
       throw new Error(
         `${this.name} environment.plugins called before initialized`,
@@ -19,7 +19,7 @@ export class Environment {
   /**
    * @internal
    */
-  _plugins: BoundedPlugin[] | undefined
+  _plugins: IsolatedPlugin[] | undefined
   /**
    * @internal
    */

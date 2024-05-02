@@ -58,12 +58,12 @@ class DevEnvironment {
    * Resolved plugins for this environment, including the ones
    * created using the per-environment `create` hook
    */
-  plugins: BoundedPlugin[]
+  plugins: IsolatedPlugin[]
   /**
    * Allows to resolve, load, and transform code through the
    * environment plugins pipeline
    */
-  pluginContainer: BoundedPluginContatiner
+  pluginContainer: IsolatedPluginContatiner
   /**
    * TBD: This abstraction isn't yet clear
    * Trigger the execution of a module using the associated module runner
@@ -871,7 +871,7 @@ This option would only work of a small subset of projects at first, so plugin au
 
 ```js
 function myPlugin() {
-  // Share state between all environments in dev and build
+  // Share state among all environments in dev and build
   const sharedState = ...
   return {
     name: 'shared-plugin',
@@ -887,7 +887,7 @@ And for per-environment plugins:
 
 ```js
 function myPlugin() {
-  // Share state between all environments in dev and build
+  // Share state among all environments in dev and build
   const sharedState = ...
 
   const plugin = (environment) => {
@@ -895,7 +895,7 @@ function myPlugin() {
     const isolatedState = ...
 
     return {
-      name: 'bounded-plugin',
+      name: 'isolated-plugin',
       transform(code, id) { ... }
     }
   }

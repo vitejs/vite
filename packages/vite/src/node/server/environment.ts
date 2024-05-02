@@ -16,7 +16,7 @@ import {
   createDepsOptimizer,
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
-import { resolveBoundedPlugins } from '../plugin'
+import { resolveIsolatedPlugins } from '../plugin'
 import type { DepsOptimizer } from '../optimizer'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { HMRChannel } from './hmr'
@@ -25,10 +25,10 @@ import { transformRequest } from './transformRequest'
 import type { TransformResult } from './transformRequest'
 import {
   ERR_CLOSED_SERVER,
-  createBoundedPluginContainer,
+  createIsolatedPluginContainer,
 } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
-import type { BoundedPluginContainer } from './pluginContainer'
+import type { IsolatedPluginContainer } from './pluginContainer'
 
 export interface DevEnvironmentSetup {
   hot?: false | HMRChannel
@@ -52,7 +52,7 @@ export class DevEnvironment extends Environment {
    */
   _ssrRunnerOptions: FetchModuleOptions | undefined
 
-  get pluginContainer(): BoundedPluginContainer {
+  get pluginContainer(): IsolatedPluginContainer {
     if (!this._pluginContainer)
       throw new Error(
         `${this.name} environment.pluginContainer called before initialized`,
@@ -62,7 +62,7 @@ export class DevEnvironment extends Environment {
   /**
    * @internal
    */
-  _pluginContainer: BoundedPluginContainer | undefined
+  _pluginContainer: IsolatedPluginContainer | undefined
 
   /**
    * TODO: should this be public?
@@ -165,8 +165,8 @@ export class DevEnvironment extends Environment {
       return
     }
     this._inited = true
-    this._plugins = await resolveBoundedPlugins(this)
-    this._pluginContainer = await createBoundedPluginContainer(
+    this._plugins = await resolveIsolatedPlugins(this)
+    this._pluginContainer = await createIsolatedPluginContainer(
       this,
       this._plugins,
     )

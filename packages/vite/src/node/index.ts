@@ -95,8 +95,8 @@ export type {
   SSRTarget,
 } from './ssr'
 export type {
-  BoundedPlugin,
-  BoundedPluginConstructor,
+  IsolatedPlugin,
+  IsolatedPluginConstructor,
   Plugin,
   HookHandler,
 } from './plugin'
