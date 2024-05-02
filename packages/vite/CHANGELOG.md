@@ -1,3 +1,9 @@
+## 6.0.0-alpha.10 (2024-05-02)
+
+* feat: sharedDuringBuild for bounded plugins ([d213865](https://github.com/vitejs/vite/commit/d213865))
+
+
+
 ## 6.0.0-alpha.9 (2024-05-01)
 
 * fix: lint ([848af54](https://github.com/vitejs/vite/commit/848af54))
