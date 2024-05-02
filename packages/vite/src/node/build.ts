@@ -1533,9 +1533,6 @@ export async function createBuilder(
         let validMixedPlugins = true
         for (let i = 0; i < environmentPlugins.length; i++) {
           const environmentPlugin = environmentPlugins[i]
-          if (typeof environmentPlugin === 'function') {
-            continue
-          }
           const sharedPlugin = config.rawPlugins[i]
           if (
             config.builder.sharedPlugins ||

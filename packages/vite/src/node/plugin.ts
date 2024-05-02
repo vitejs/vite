@@ -328,9 +328,10 @@ export type PluginWithRequiredHook<K extends keyof Plugin> = Plugin & {
   [P in K]: NonNullable<Plugin[P]>
 }
 
-export type BoundedPluginConstructor = (
-  Environment: PluginEnvironment,
-) => BoundedPluginOption
+export type BoundedPluginConstructor = {
+  (environment: PluginEnvironment): BoundedPluginOption
+  sharedDuringBuild?: boolean
+}
 
 export type MaybeBoundedPlugin = BoundedPlugin | false | null | undefined
 
