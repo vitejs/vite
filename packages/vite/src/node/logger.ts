@@ -63,6 +63,8 @@ function getTimeFormatter() {
   return timeFormatter
 }
 
+const MAX_LOG_CHAR = 5000
+
 export function createLogger(
   level: LogLevel = 'info',
   options: LoggerOptions = {},
@@ -78,7 +80,15 @@ export function createLogger(
     allowClearScreen && process.stdout.isTTY && !process.env.CI
   const clear = canClearScreen ? clearScreen : () => {}
 
-  function format(type: LogType, msg: string, options: LogErrorOptions = {}) {
+  function format(
+    type: LogType,
+    rawMsg: string,
+    options: LogErrorOptions = {},
+  ) {
+    const msg =
+      rawMsg.length > MAX_LOG_CHAR
+        ? rawMsg.slice(0, MAX_LOG_CHAR) + '... (log truncated)'
+        : rawMsg
     if (options.timestamp) {
       const tag =
         type === 'info'
