@@ -830,17 +830,9 @@ The callback is queued and it will wait for the current update to be resolved be
 
 ## Environments during build
 
-Plugin hooks also receive the environment instance during build. This replaces the `ssr` boolean we have been passing them so far.
+In the CLI, calling `vite build` and `vite build --ssr` will still build the client only and ssr only environments for backward compatibility.
 
-In the CLI, calling `vite build` will build the Client. It is equivalent to calling `vite build --environment=client`.
-
-The build the SSR server, the `--ssr` shourcut can be used: `vite build --ssr`. This is equivalent to calling `vite build --environment=ssr`.
-
-Other non-default environments can be build using `vite build --environment=name`.
-
-## Building all environments
-
-Calling `vite build --app` will instantiate a `ViteBuilder` (build-time equivalent to a `ViteDevServer`) to build all configured environments for production. By default the build of environments is run in series respecting the order of the `environments` record. A framework or user can further configure how the environments are built using:
+When `builder.entireApp` is `true` (or when calling `vite build --app`), `vite build` will opt-in into building the entire app instead. This would later on become the default in a future major. A `ViteBuilder` instance will be created (build-time equivalent to a `ViteDevServer`) to build all configured environments for production. By default the build of environments is run in series respecting the order of the `environments` record. A framework or user can further configure how the environments are built using:
 
 ```js
 export default {
@@ -850,6 +842,67 @@ export default {
       return Promise.all(environments.map(environment => builder.build(environment)))
     }
   }
+}
+```
+
+### Environment in build hooks
+
+In the same way as during dev, plugin hooks also receive the environment instance during build, replacing the `ssr` boolean.
+This also works for `renderChunk`, `generateBundle`, and other build only hooks.
+
+### Shared plugins during build
+
+Before Vite 6, the plugins pipelines worked in a different way during dev and build:
+
+- **During dev:** plugins are shared
+- **During Build:** plugins are isolated for each environment (in different processes: `vite build` then `vite build --ssr`).
+
+This forced frameworks to share state between the `client` build and the `ssr` build through manifest files written to the file system. In Vite 6, we are now building all environments in a single process so the way the plugins pipeline and inter-environment communication can be aligned with dev.
+
+In a future major (Vite 7 or 8), we aim to have complete alignment:
+
+- **During both dev and build:** plugins are shared, opt-in to [per-environment isolation with functional plugins](#per-environment-plugins)
+
+There will also be a single `ResolvedConfig` instance shared during build, allowing for caching at entire app build process level in the same way as we have been doing with `WeakMap<ResolvedConfig, CachedData>` during dev.
+
+For Vite 6, we need to do a smaller step to keep backward compatibility. Ecosystem plugins are currently using `config.build` instead of `environment.options.build` to access configuration, so we need to create a new `ResolvedConfig` per environment by default. A project can opt-in into sharing the full config and plugins pipeline setting `builder.sharedConfig` to `true`.
+
+This option would only work of a small subset of projects at first, so plugin authors can opt-in for a particular plugin to be shared by setting the `sharedDuringBuild` flag to `true`. This allows for easily sharing state both for regular plugins:
+
+```js
+function myPlugin() {
+  // Share state between all environments in dev and build
+  const sharedState = ...
+  return {
+    name: 'shared-plugin',
+    transform(code, id) { ... },
+
+    // Opt-in into a single instance for all environments
+    sharedDuringBuild: true,
+  }
+}
+```
+
+And for per-environment plugins:
+
+```js
+function myPlugin() {
+  // Share state between all environments in dev and build
+  const sharedState = ...
+
+  const plugin = (environment) => {
+    // Isolated state for each environment during dev and build
+    const isolatedState = ...
+
+    return {
+      name: 'bounded-plugin',
+      transform(code, id) { ... }
+    }
+  }
+
+  // Opt-in into a single instance for all environments
+  plugin.sharedDuringBuild = true
+  return plugin
 }
 ```
 
