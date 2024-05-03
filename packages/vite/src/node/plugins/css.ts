@@ -7,6 +7,7 @@ import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
   ModuleFormat,
+  OutputAsset,
   OutputChunk,
   RenderedChunk,
   RollupError,
@@ -844,23 +845,28 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       function extractCss() {
         let css = ''
         const collected = new Set<OutputChunk>()
-        const prelimaryNameToChunkMap = new Map(
-          Object.values(bundle)
-            .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
-            .map((chunk) => [chunk.preliminaryFileName, chunk]),
-        )
 
-        function collect(fileName: string) {
-          const chunk = bundle[fileName]
+        function collect(chunk: OutputChunk | OutputAsset) {
           if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
           collected.add(chunk)
 
-          chunk.imports.forEach(collect)
+          chunk.imports.forEach((importName) => collect(bundle[importName]))
+          chunk.dynamicImports.forEach((importName) =>
+            collect(bundle[importName]),
+          )
           css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
         }
 
-        for (const chunkName of chunkCSSMap.keys())
-          collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
+        // The bundle is guaranteed to be deterministic, if not then we have a bug in rollup.
+        // So we use it to ensure a deterministic order of styles
+        for (const chunk of Object.values(bundle)) {
+          if (
+            chunk.type === 'chunk' &&
+            (chunk.isEntry || chunk.isDynamicEntry)
+          ) {
+            collect(chunk)
+          }
+        }
 
         return css
       }
