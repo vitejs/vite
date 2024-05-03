@@ -81,7 +81,7 @@ export function createLogger(
     allowClearScreen && process.stdout.isTTY && !process.env.CI
   const clear = canClearScreen ? clearScreen : () => {}
 
-  function shortenMessage(msg: string) {
+  function preventOverflow(msg: string) {
     if (msg.length > MAX_LOG_CHAR) {
       const shorten = msg.slice(0, MAX_LOG_CHAR)
       const shortenLines = shorten.match(splitRE)?.length || 0
@@ -97,7 +97,7 @@ export function createLogger(
     rawMsg: string,
     options: LogErrorOptions = {},
   ) {
-    const msg = shortenMessage(rawMsg)
+    const msg = preventOverflow(rawMsg)
     if (options.timestamp) {
       const tag =
         type === 'info'
