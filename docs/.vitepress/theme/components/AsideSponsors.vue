@@ -18,18 +18,23 @@ const sponsors = computed(() => {
 </script>
 
 <template>
-  <a class="vite-event" href="https://lu.ma/vite" target="_blank">
-    <img width="22" height="22" src="/logo.svg" />
+  <a
+    class="viteconf"
+    href="https://viteconf.org/23/replay?utm=vite-sidebar"
+    target="_blank"
+  >
+    <img width="22" height="22" src="/viteconf.svg" />
     <span>
-      <p class="extra-info">May 9th, 2024</p>
-      <p class="heading">Vite Meetup SF</p>
+      <p class="extra-info">Beyond Fast</p>
+      <p class="heading">ViteConf 2023</p>
+      <p class="extra-info">Watch the replay!</p>
     </span>
   </a>
   <VPDocAsideSponsors v-if="data" :data="sponsors" />
 </template>
 
 <style>
-.vite-event {
+.viteconf {
   margin-top: 1rem;
   margin-bottom: 1rem;
   border-radius: 14px;
@@ -48,26 +53,35 @@ const sponsors = computed(() => {
   border: 2px solid var(--vp-c-bg-alt);
   transition: border-color 0.5s;
 }
-.vite-event:hover {
+.viteconf:hover {
   border: 2px solid var(--vp-c-brand-light);
 }
-.vite-event img {
+.viteconf img {
   transition: transform 0.5s;
   transform: scale(1.25);
 }
-.vite-event:hover img {
+.viteconf:hover img {
   transform: scale(1.75);
 }
-.vite-event .heading {
-  background-image: var(--vp-home-hero-name-background);
+.viteconf .heading {
+  background-image: linear-gradient(
+    120deg,
+    #b047ff 16%,
+    var(--vp-c-brand-lighter),
+    var(--vp-c-brand-lighter)
+  );
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-.vite-event .extra-info {
+.viteconf .extra-info {
   color: var(--vp-c-text-1);
+  opacity: 0;
   font-size: 0.7rem;
   padding-left: 0.1rem;
   transition: opacity 0.5s;
+}
+.viteconf:hover .extra-info {
+  opacity: 0.9;
 }
 </style>
