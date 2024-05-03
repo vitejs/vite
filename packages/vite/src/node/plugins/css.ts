@@ -723,13 +723,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (chunkCSS) {
+        // for module output we need to remove pure css chunks
+        if (isPureCssChunk && (opts.format === 'es' || opts.format === 'cjs')) {
+          // this is a shared CSS-only chunk that is empty.
+          pureCssChunks.add(chunk)
+        }
         if (config.build.cssCodeSplit) {
           if (opts.format === 'es' || opts.format === 'cjs') {
-            if (isPureCssChunk) {
-              // this is a shared CSS-only chunk that is empty.
-              pureCssChunks.add(chunk)
-            }
-
             const isEntry = chunk.isEntry && isPureCssChunk
             const cssFullAssetName = ensureFileExt(chunk.name, '.css')
             // if facadeModuleId doesn't exist or doesn't have a CSS extension,
@@ -838,6 +838,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       // remove empty css chunks and their imports
+      let pureCssChunkNames: string[] = []
       if (pureCssChunks.size) {
         // map each pure css chunk (rendered chunk) to it's corresponding bundle
         // chunk. we check that by `preliminaryFileName` as they have different
@@ -848,7 +849,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .map((chunk) => [chunk.preliminaryFileName, chunk.fileName]),
         )
 
-        const pureCssChunkNames = [...pureCssChunks].map(
+        pureCssChunkNames = [...pureCssChunks].map(
           (pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName],
         )
 
@@ -885,13 +886,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             }
           }
         }
-
-        const removedPureCssFiles = removedPureCssFilesCache.get(config)!
-        pureCssChunkNames.forEach((fileName) => {
-          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
-          delete bundle[fileName]
-          delete bundle[`${fileName}.map`]
-        })
       }
 
       function extractCss() {
@@ -927,6 +921,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           source: extractedCss,
         })
       }
+
+      // remove pure CSS chunks only after the css has been extracted
+      const removedPureCssFiles = removedPureCssFilesCache.get(config)!
+      pureCssChunkNames.forEach((fileName) => {
+        removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
+        delete bundle[fileName]
+        delete bundle[`${fileName}.map`]
+      })
     },
   }
 }
