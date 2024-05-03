@@ -4,6 +4,7 @@ import readline from 'node:readline'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
 import type { ResolvedServerUrls } from './server'
+import { splitRE } from './utils'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -80,15 +81,23 @@ export function createLogger(
     allowClearScreen && process.stdout.isTTY && !process.env.CI
   const clear = canClearScreen ? clearScreen : () => {}
 
+  function shortenMessage(msg: string) {
+    if (msg.length > MAX_LOG_CHAR) {
+      const shorten = msg.slice(0, MAX_LOG_CHAR)
+      const shortenLines = shorten.match(splitRE)?.length || 0
+      const lines = msg.match(splitRE)?.length || 0 - shortenLines
+
+      return `${shorten}\n... and ${lines} lines more`
+    }
+    return msg
+  }
+
   function format(
     type: LogType,
     rawMsg: string,
     options: LogErrorOptions = {},
   ) {
-    const msg =
-      rawMsg.length > MAX_LOG_CHAR
-        ? rawMsg.slice(0, MAX_LOG_CHAR) + '... (log truncated)'
-        : rawMsg
+    const msg = shortenMessage(rawMsg)
     if (options.timestamp) {
       const tag =
         type === 'info'
