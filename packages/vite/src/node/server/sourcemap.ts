@@ -3,7 +3,7 @@ import fsp from 'node:fs/promises'
 import convertSourceMap from 'convert-source-map'
 import type { ExistingRawSourceMap, SourceMap } from 'rollup'
 import type { Logger } from '../logger'
-import { blankReplacer, createDebugger } from '../utils'
+import { blankReplacer, createDebugger, fsPathFromUrl } from '../utils'
 
 const debug = createDebugger('vite:sourcemap', {
   onlyWhenFocused: true,
@@ -53,7 +53,7 @@ export async function injectSourcesContent(
           // inject content from source file when sourcesContent is null
           sourceRootPromise ??= computeSourceRoute(map, file)
           const sourceRoot = await sourceRootPromise
-          let resolvedSourcePath = decodeURI(sourcePath)
+          let resolvedSourcePath = fsPathFromUrl(decodeURI(sourcePath))
           if (sourceRoot) {
             resolvedSourcePath = path.resolve(sourceRoot, resolvedSourcePath)
           }
