@@ -937,9 +937,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         function collect(fileName: string) {
           const chunk = bundle[fileName]
-          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) {
-            return
-          }
+          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
           collected.add(chunk)
 
           chunk.imports.forEach(collect)
@@ -957,9 +955,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           concatCssEndLines.push({ file: fileName, end: line })
         }
 
-        for (const chunkName of chunkCSSMap.keys()) {
+        for (const chunkName of chunkCSSMap.keys())
           collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
-        }
         return await finalizeCss(
           css,
           false,
