@@ -115,8 +115,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-remix',
         display: 'Remix ↗',
         color: cyan,
-        customCommand:
-          'npm create remix@latest TARGET_DIR -- --template remix-run/remix/templates/vite',
+        customCommand: 'npm create remix@latest TARGET_DIR',
       },
     ],
   },

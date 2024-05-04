@@ -49,6 +49,7 @@ import {
   combineSourcemaps,
   createSerialPromiseQueue,
   emptyCssComments,
+  encodeURIPath,
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
@@ -542,7 +543,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
-        moduleSideEffects: inlined ? false : 'no-treeshake',
+        moduleSideEffects: modulesCode || inlined ? false : 'no-treeshake',
       }
     },
 
@@ -594,13 +595,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = this.getFileName(fileHash) + postfix
           chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
-          return toOutputFilePathInCss(
-            filename,
-            'asset',
-            cssAssetName,
-            'css',
-            config,
-            toRelative,
+          return encodeURIPath(
+            toOutputFilePathInCss(
+              filename,
+              'asset',
+              cssAssetName,
+              'css',
+              config,
+              toRelative,
+            ),
           )
         })
         // resolve public URL from CSS paths
@@ -611,13 +614,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
           chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
             const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
-            return toOutputFilePathInCss(
-              publicUrl,
-              'public',
-              cssAssetName,
-              'css',
-              config,
-              () => `${relativePathToPublicFromCSS}/${publicUrl}`,
+            return encodeURIPath(
+              toOutputFilePathInCss(
+                publicUrl,
+                'public',
+                cssAssetName,
+                'css',
+                config,
+                () => `${relativePathToPublicFromCSS}/${publicUrl}`,
+              ),
             )
           })
         }
@@ -712,7 +717,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
           const replacementString =
             typeof replacement === 'string'
-              ? JSON.stringify(replacement).slice(1, -1)
+              ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
               : `"+${replacement.runtime}+"`
           s.update(start, end, replacementString)
         }
@@ -890,6 +895,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         for (const file in bundle) {
           const chunk = bundle[file]
           if (chunk.type === 'chunk') {
+            let chunkImportsPureCssChunk = false
             // remove pure css chunk from other chunk's imports,
             // and also register the emitted CSS files under the importer
             // chunks instead.
@@ -904,11 +910,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
                 importedAssets.forEach((file) =>
                   chunk.viteMetadata!.importedAssets.add(file),
                 )
+                chunkImportsPureCssChunk = true
                 return false
               }
               return true
             })
-            chunk.code = replaceEmptyChunk(chunk.code)
+            if (chunkImportsPureCssChunk) {
+              chunk.code = replaceEmptyChunk(chunk.code)
+            }
           }
         }
 
@@ -1909,7 +1918,8 @@ type StylePreprocessorOptions = {
   enableSourcemap: boolean
 }
 
-type SassStylePreprocessorOptions = StylePreprocessorOptions & Sass.Options
+type SassStylePreprocessorOptions = StylePreprocessorOptions &
+  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'>
 
 type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
   define?: Record<string, any>
@@ -2013,8 +2023,8 @@ function cleanScssBugUrl(url: string) {
 }
 
 function fixScssBugImportValue(
-  data: Sass.ImporterReturnType,
-): Sass.ImporterReturnType {
+  data: Sass.LegacyImporterResult,
+): Sass.LegacyImporterResult {
   // the scss bug doesn't load files properly so we have to load it ourselves
   // to prevent internal error when it loads itself
   if (
@@ -2077,7 +2087,11 @@ const makeScssWorker = (
 
         // NOTE: `sass` always runs it's own importer first, and only falls back to
         // the `importer` option when it can't resolve a path
-        const _internalImporter: Sass.Importer = (url, importer, done) => {
+        const _internalImporter: Sass.LegacyAsyncImporter = (
+          url,
+          importer,
+          done,
+        ) => {
           internalImporter(url, importer, options.filename).then((data) =>
             done?.(data),
           )
@@ -2089,7 +2103,7 @@ const makeScssWorker = (
             : importer.unshift(options.importer)
         }
 
-        const finalOptions: Sass.Options = {
+        const finalOptions: Sass.LegacyOptions<'async'> = {
           ...options,
           data,
           file: options.filename,
@@ -2106,16 +2120,16 @@ const makeScssWorker = (
         return new Promise<{
           css: string
           map?: string | undefined
-          stats: Sass.Result['stats']
+          stats: Sass.LegacyResult['stats']
         }>((resolve, reject) => {
           sass.render(finalOptions, (err, res) => {
             if (err) {
               reject(err)
             } else {
               resolve({
-                css: res.css.toString(),
-                map: res.map?.toString(),
-                stats: res.stats,
+                css: res!.css.toString(),
+                map: res!.map?.toString(),
+                stats: res!.stats,
               })
             }
           })
@@ -2209,7 +2223,7 @@ async function rebaseUrls(
   alias: Alias[],
   variablePrefix: string,
   resolver: ResolveFn,
-): Promise<Sass.ImporterReturnType> {
+): Promise<Sass.LegacyImporterResult> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
   const fileDir = path.dirname(file)
@@ -2750,12 +2764,13 @@ async function compileLightningCSS(
     switch (dep.type) {
       case 'url':
         if (skipUrlReplacer(dep.url)) {
-          css = css.replace(dep.placeholder, dep.url)
+          css = css.replace(dep.placeholder, () => dep.url)
           break
         }
         deps.add(dep.url)
         if (urlReplacer) {
-          css = css.replace(dep.placeholder, await urlReplacer(dep.url, id))
+          const replaceUrl = await urlReplacer(dep.url, id)
+          css = css.replace(dep.placeholder, () => replaceUrl)
         }
         break
       default:

@@ -45,6 +45,7 @@ import {
   isFilePathESM,
   isNodeBuiltin,
   isObject,
+  isParentDirectory,
   mergeAlias,
   mergeConfig,
   normalizeAlias,
@@ -76,6 +77,10 @@ const debug = createDebugger('vite:config')
 const promisifiedRealpath = promisify(fs.realpath)
 
 export interface ConfigEnv {
+  /**
+   * 'serve': during dev (`vite` command)
+   * 'build': when building for production (`vite build` command)
+   */
   command: 'build' | 'serve'
   mode: string
   isSsrBuild?: boolean
@@ -105,8 +110,7 @@ export type UserConfigExport =
 /**
  * Type helper to make it easier to use vite.config.ts
  * accepts a direct {@link UserConfig} object, or a function that returns it.
- * The function receives a {@link ConfigEnv} object that exposes two properties:
- * `command` (either `'build'` or `'serve'`), and `mode`.
+ * The function receives a {@link ConfigEnv} object.
  */
 export function defineConfig(config: UserConfig): UserConfig
 export function defineConfig(config: Promise<UserConfig>): Promise<UserConfig>
@@ -173,6 +177,10 @@ export interface UserConfig {
    * Configure resolver
    */
   resolve?: ResolveOptions & { alias?: AliasOptions }
+  /**
+   * HTML related options
+   */
+  html?: HTMLOptions
   /**
    * CSS related options (preprocessors and CSS modules)
    */
@@ -281,6 +289,15 @@ export interface UserConfig {
   appType?: AppType
 }
 
+export interface HTMLOptions {
+  /**
+   * A nonce value placeholder that will be used when generating script/style tags.
+   *
+   * Make sure that this placeholder will be replaced with a unique value for each request by the server.
+   */
+  cspNonce?: string
+}
+
 export interface ExperimentalOptions {
   /**
    * Append fake `&lang.(ext)` when queries are specified, to preserve the file extension for following plugins to process.
@@ -328,7 +345,7 @@ export interface LegacyOptions {
 
 export interface ResolvedWorkerOptions {
   format: 'es' | 'iife'
-  plugins: () => Promise<Plugin[]>
+  plugins: (bundleChain: string[]) => Promise<Plugin[]>
   rollupOptions: RollupOptions
 }
 
@@ -357,6 +374,8 @@ export type ResolvedConfig = Readonly<
     // in nested worker bundle to find the main config
     /** @internal */
     mainConfig: ResolvedConfig | null
+    /** @internal list of bundle entry id. used to detect recursive worker bundle. */
+    bundleChain: string[]
     isProduction: boolean
     envDir: string
     env: Record<string, any>
@@ -689,7 +708,7 @@ export async function resolveConfig(
     )
   }
 
-  const createWorkerPlugins = async function () {
+  const createWorkerPlugins = async function (bundleChain: string[]) {
     // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
     // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
     // So we need to separate the worker plugin from the plugin that vite needs to run.
@@ -719,6 +738,7 @@ export async function resolveConfig(
       ...resolved,
       isWorker: true,
       mainConfig: resolved,
+      bundleChain,
     }
     const resolvedWorkerPlugins = await resolvePlugins(
       workerResolved,
@@ -760,6 +780,7 @@ export async function resolveConfig(
     ssr,
     isWorker: false,
     mainConfig: null,
+    bundleChain: [],
     isProduction,
     plugins: userPlugins,
     css: resolveCSSOptions(config.css),
@@ -890,6 +911,20 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
       colors.yellow(`
 (!) Experimental legacy.buildSsrCjsExternalHeuristics and ssr.format were be removed in Vite 5.
     The only SSR Output format is ESM. Find more information at https://github.com/vitejs/vite/discussions/13816.
+`),
+    )
+  }
+
+  const resolvedBuildOutDir = normalizePath(
+    path.resolve(resolved.root, resolved.build.outDir),
+  )
+  if (
+    isParentDirectory(resolvedBuildOutDir, resolved.root) ||
+    resolvedBuildOutDir === resolved.root
+  ) {
+    resolved.logger.warn(
+      colors.yellow(`
+(!) build.outDir must not be the same directory of root or a parent directory of root as this could cause Vite to overwriting source files with build outputs.
 `),
     )
   }
@@ -1050,6 +1085,8 @@ async function bundleConfigFile(
       __dirname: dirnameVarName,
       __filename: filenameVarName,
       'import.meta.url': importMetaUrlVarName,
+      'import.meta.dirname': dirnameVarName,
+      'import.meta.filename': filenameVarName,
     },
     plugins: [
       {
@@ -1152,7 +1189,7 @@ async function bundleConfigFile(
         name: 'inject-file-scope-variables',
         setup(build) {
           build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
-            const contents = await fsp.readFile(args.path, 'utf8')
+            const contents = await fsp.readFile(args.path, 'utf-8')
             const injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
                 path.dirname(args.path),

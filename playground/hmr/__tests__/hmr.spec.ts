@@ -1,13 +1,16 @@
 import { beforeAll, describe, expect, it, test } from 'vitest'
+import type { Page } from 'playwright-chromium'
 import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   addFile,
+  browser,
   browserLogs,
   editFile,
   getBg,
   getColor,
   isBuild,
   page,
+  readFile,
   removeFile,
   serverLogs,
   untilBrowserLogAfter,
@@ -172,6 +175,38 @@ if (!isBuild) {
       true,
     )
     await untilUpdated(() => el.textContent(), 'child updated')
+  })
+
+  test('invalidate works with multiple tabs', async () => {
+    let page2: Page
+    try {
+      page2 = await browser.newPage()
+      await page2.goto(viteTestUrl)
+
+      const el = await page.$('.invalidation')
+      await untilBrowserLogAfter(
+        () =>
+          editFile('invalidation/child.js', (code) =>
+            code.replace('child', 'child updated'),
+          ),
+        [
+          '>>> vite:beforeUpdate -- update',
+          '>>> vite:invalidate -- /invalidation/child.js',
+          '[vite] invalidate /invalidation/child.js',
+          '[vite] hot updated: /invalidation/child.js',
+          '>>> vite:afterUpdate -- update',
+          // if invalidate dedupe doesn't work correctly, this beforeUpdate will be called twice
+          '>>> vite:beforeUpdate -- update',
+          '(invalidation) parent is executing',
+          '[vite] hot updated: /invalidation/parent.js',
+          '>>> vite:afterUpdate -- update',
+        ],
+        true,
+      )
+      await untilUpdated(() => el.textContent(), 'child updated')
+    } finally {
+      await page2.close()
+    }
   })
 
   test('soft invalidate', async () => {
@@ -784,34 +819,21 @@ if (!isBuild) {
       'parent:child1',
     )
 
+    // delete the file
     editFile(parentFile, (code) =>
       code.replace(
         "export { value as childValue } from './child'",
         "export const childValue = 'not-child'",
       ),
     )
+    const originalChildFileCode = readFile(childFile)
     removeFile(childFile)
     await untilUpdated(
       () => page.textContent('.file-delete-restore'),
       'parent:not-child',
     )
 
-    addFile(
-      childFile,
-      `
-import { rerender } from './runtime'
-
-export const value = 'child'
-
-if (import.meta.hot) {
-  import.meta.hot.accept((newMod) => {
-    if (!newMod) return
-
-    rerender({ child: newMod.value })
-  })
-}
-`,
-    )
+    addFile(childFile, originalChildFileCode)
     editFile(parentFile, (code) =>
       code.replace(
         "export const childValue = 'not-child'",
@@ -872,6 +894,42 @@ if (import.meta.hot) {
     await untilUpdated(
       () => page.textContent('.intermediate-file-delete-display'),
       'count is 2',
+    )
+  })
+
+  test('deleted file should trigger dispose and prune callbacks', async () => {
+    await page.goto(viteTestUrl)
+
+    const parentFile = 'file-delete-restore/parent.js'
+    const childFile = 'file-delete-restore/child.js'
+
+    // delete the file
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export { value as childValue } from './child'",
+        "export const childValue = 'not-child'",
+      ),
+    )
+    const originalChildFileCode = readFile(childFile)
+    removeFile(childFile)
+    await untilUpdated(
+      () => page.textContent('.file-delete-restore'),
+      'parent:not-child',
+    )
+    expect(browserLogs).to.include('file-delete-restore/child.js is disposed')
+    expect(browserLogs).to.include('file-delete-restore/child.js is pruned')
+
+    // restore the file
+    addFile(childFile, originalChildFileCode)
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export const childValue = 'not-child'",
+        "export { value as childValue } from './child'",
+      ),
+    )
+    await untilUpdated(
+      () => page.textContent('.file-delete-restore'),
+      'parent:child',
     )
   })
 
@@ -937,5 +995,24 @@ if (import.meta.hot) {
     expect(await getColor('.css-deps')).toMatch('red')
     editFile('css-deps/dep.js', (code) => code.replace(`red`, `green`))
     await untilUpdated(() => getColor('.css-deps'), 'green')
+  })
+
+  test('hmr should happen after missing file is created', async () => {
+    const file = 'missing-file/a.js'
+    const code = 'console.log("a.js")'
+
+    await untilBrowserLogAfter(
+      () =>
+        page.goto(viteTestUrl + '/missing-file/index.html', {
+          waitUntil: 'load',
+        }),
+      /connected/, // wait for HMR connection
+    )
+
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      addFile(file, code)
+      await loadPromise
+    }, [/connected/, 'a.js'])
   })
 }

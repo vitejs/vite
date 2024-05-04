@@ -8,7 +8,7 @@
 
 By default, Vite will crawl all your `.html` files to detect dependencies that need to be pre-bundled (ignoring `node_modules`, `build.outDir`, `__tests__` and `coverage`). If `build.rollupOptions.input` is specified, Vite will crawl those entry points instead.
 
-If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from Vite project root. This will overwrite default entries inference. Only `node_modules` and `build.outDir` folders will be ignored by default when `optimizeDeps.entries` is explicitly defined. If other folders need to be ignored, you can use an ignore pattern as part of the entries list, marked with an initial `!`.
+If neither of these fit your needs, you can specify custom entries using this option - the value should be a [fast-glob pattern](https://github.com/mrmlnc/fast-glob#basic-syntax) or array of patterns that are relative from Vite project root. This will overwrite default entries inference. Only `node_modules` and `build.outDir` folders will be ignored by default when `optimizeDeps.entries` is explicitly defined. If other folders need to be ignored, you can use an ignore pattern as part of the entries list, marked with an initial `!`. If you don't want to ignore `node_modules` and `build.outDir`, you can specify using literal string paths (without fast-glob patterns) instead.
 
 ## optimizeDeps.exclude
 
@@ -19,7 +19,9 @@ Dependencies to exclude from pre-bundling.
 :::warning CommonJS
 CommonJS dependencies should not be excluded from optimization. If an ESM dependency is excluded from optimization, but has a nested CommonJS dependency, the CommonJS dependency should be added to `optimizeDeps.include`. Example:
 
-```js
+```js twoslash
+import { defineConfig } from 'vite'
+// ---cut---
 export default defineConfig({
   optimizeDeps: {
     include: ['esm-dep > cjs-dep'],
@@ -37,7 +39,9 @@ By default, linked packages not inside `node_modules` are not pre-bundled. Use t
 
 **Experimental:** If you're using a library with many deep imports, you can also specify a trailing glob pattern to pre-bundle all deep imports at once. This will avoid constantly pre-bundling whenever a new deep import is used. [Give Feedback](https://github.com/vitejs/vite/discussions/15833). For example:
 
-```js
+```js twoslash
+import { defineConfig } from 'vite'
+// ---cut---
 export default defineConfig({
   optimizeDeps: {
     include: ['my-lib/components/**/*.vue'],

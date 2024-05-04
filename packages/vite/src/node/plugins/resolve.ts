@@ -402,6 +402,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         if (isBuiltin(id)) {
           if (ssr) {
             if (
+              targetWeb &&
               ssrNoExternal === true &&
               // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
               // only if the id is explicitly listed in external, we will externalize it and skip this error.
@@ -480,9 +481,12 @@ function resolveSubpathImports(
   const pkgData = findNearestPackageData(basedir, options.packageCache)
   if (!pkgData) return
 
+  let { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id.slice(1))
+  idWithoutPostfix = '#' + idWithoutPostfix
+
   let importsPath = resolveExportsOrImports(
     pkgData.data,
-    id,
+    idWithoutPostfix,
     options,
     targetWeb,
     'imports',
@@ -496,7 +500,7 @@ function resolveSubpathImports(
     }
   }
 
-  return importsPath
+  return importsPath + postfix
 }
 
 function ensureVersionQuery(
@@ -732,7 +736,19 @@ export function tryNodeResolve(
     basedir = root
   }
 
-  const pkg = resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)
+  let selfPkg = null
+  if (!isBuiltin(id) && !id.includes('\0') && bareImportRE.test(id)) {
+    // check if it's a self reference dep.
+    const selfPackageData = findNearestPackageData(basedir, packageCache)
+    selfPkg =
+      selfPackageData?.data.exports && selfPackageData?.data.name === pkgId
+        ? selfPackageData
+        : null
+  }
+
+  const pkg =
+    selfPkg ||
+    resolvePackageData(pkgId, basedir, preserveSymlinks, packageCache)
   if (!pkg) {
     // if import can't be found, check if it's an optional peer dep.
     // if so, we can resolve to a special id that errors only when imported.

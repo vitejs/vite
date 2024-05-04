@@ -27,6 +27,7 @@ import {
   isDirectRequest,
 } from '../../plugins/css'
 import {
+  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
   ERR_OUTDATED_OPTIMIZED_DEP,
 } from '../../plugins/optimizedDeps'
@@ -251,6 +252,15 @@ export function transformMiddleware(
         // A full-page reload has been issued, and these old requests
         // can't be properly fulfilled. This isn't an unexpected
         // error but a normal part of the missing deps discovery flow
+        return
+      }
+      if (e?.code === ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR) {
+        // Skip if response has already been sent
+        if (!res.writableEnded) {
+          res.statusCode = 404
+          res.end()
+        }
+        server.config.logger.warn(colors.yellow(e.message))
         return
       }
       if (e?.code === ERR_LOAD_URL) {

@@ -304,6 +304,10 @@ describe.runIf(isServe)('optimizeDeps config', () => {
       '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/foo',
       '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/bar',
       '@vitejs/test-dep-optimize-exports-with-glob/glob-dir/nested/baz',
+      '@vitejs/test-dep-optimize-exports-with-root-glob',
+      '@vitejs/test-dep-optimize-exports-with-root-glob/file1.js',
+      '@vitejs/test-dep-optimize-exports-with-root-glob/index.js',
+      '@vitejs/test-dep-optimize-exports-with-root-glob/dir/file2.js',
       '@vitejs/test-dep-optimize-with-glob',
       '@vitejs/test-dep-optimize-with-glob/index.js',
       '@vitejs/test-dep-optimize-with-glob/named.js',
@@ -317,5 +321,13 @@ describe.runIf(isServe)('optimizeDeps config', () => {
 test('long file name should work', async () => {
   await expectWithRetry(() => page.textContent('.long-file-name')).toMatch(
     `hello world`,
+  )
+})
+
+test.runIf(isServe)('warn on incompatible dependency', () => {
+  expect(serverLogs).toContainEqual(
+    expect.stringContaining(
+      'The dependency might be incompatible with the dep optimizer.',
+    ),
   )
 })

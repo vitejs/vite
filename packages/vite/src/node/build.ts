@@ -40,6 +40,7 @@ import {
   emptyDir,
   joinUrlSegments,
   normalizePath,
+  partialEncodeURIPath,
   requireResolveFromRootWithFallback,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
@@ -50,7 +51,11 @@ import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
-import { resolveChokidarOptions } from './watch'
+import {
+  getResolvedOutDirs,
+  resolveChokidarOptions,
+  resolveEmptyOutDir,
+} from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
@@ -654,7 +659,17 @@ export async function build(
       normalizedOutputs.push(buildOutputOptions(outputs))
     }
 
-    const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
+    const resolvedOutDirs = getResolvedOutDirs(
+      config.root,
+      options.outDir,
+      options.rollupOptions?.output,
+    )
+    const emptyOutDir = resolveEmptyOutDir(
+      options.emptyOutDir,
+      config.root,
+      resolvedOutDirs,
+      config.logger,
+    )
 
     // watch file changes with rollup
     if (config.build.watch) {
@@ -663,6 +678,8 @@ export async function build(
       const resolvedChokidarOptions = resolveChokidarOptions(
         config,
         config.build.watch.chokidar,
+        resolvedOutDirs,
+        emptyOutDir,
       )
 
       const { watch } = await import('rollup')
@@ -679,7 +696,7 @@ export async function build(
         if (event.code === 'BUNDLE_START') {
           config.logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
-            prepareOutDir(outDirs, options.emptyOutDir, config)
+            prepareOutDir(resolvedOutDirs, emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
@@ -698,7 +715,7 @@ export async function build(
     bundle = await rollup(rollupOptions)
 
     if (options.write) {
-      prepareOutDir(outDirs, options.emptyOutDir, config)
+      prepareOutDir(resolvedOutDirs, emptyOutDir, config)
     }
 
     const res: RollupOutput[] = []
@@ -725,36 +742,15 @@ export async function build(
 }
 
 function prepareOutDir(
-  outDirs: string[],
+  outDirs: Set<string>,
   emptyOutDir: boolean | null,
   config: ResolvedConfig,
 ) {
-  const nonDuplicateDirs = new Set(outDirs)
-  let outside = false
-  if (emptyOutDir == null) {
-    for (const outDir of nonDuplicateDirs) {
-      if (
-        fs.existsSync(outDir) &&
-        !normalizePath(outDir).startsWith(withTrailingSlash(config.root))
-      ) {
-        // warn if outDir is outside of root
-        config.logger.warn(
-          colors.yellow(
-            `\n${colors.bold(`(!)`)} outDir ${colors.white(
-              colors.dim(outDir),
-            )} is not inside project root and will not be emptied.\n` +
-              `Use --emptyOutDir to override.\n`,
-          ),
-        )
-        outside = true
-        break
-      }
-    }
-  }
-  for (const outDir of nonDuplicateDirs) {
-    if (!outside && emptyOutDir !== false && fs.existsSync(outDir)) {
+  const outDirsArray = [...outDirs]
+  for (const outDir of outDirs) {
+    if (emptyOutDir !== false && fs.existsSync(outDir)) {
       // skip those other outDirs which are nested in current outDir
-      const skipDirs = outDirs
+      const skipDirs = outDirsArray
         .map((dir) => {
           const relative = path.relative(outDir, dir)
           if (
@@ -1070,7 +1066,7 @@ function injectSsrFlag<T extends Record<string, any>>(
 
 /*
   The following functions are copied from rollup
-  https://github.com/rollup/rollup/blob/0bcf0a672ac087ff2eb88fbba45ec62389a4f45f/src/ast/nodes/MetaProperty.ts#L145-L193
+  https://github.com/rollup/rollup/blob/ce6cb93098850a46fa242e37b74a919e99a5de28/src/ast/nodes/MetaProperty.ts#L155-L203
 
   https://github.com/rollup/rollup
   The MIT License (MIT)
@@ -1092,7 +1088,7 @@ const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
 
 const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
   getResolveUrl(
-    `'${escapeId(relativePath)}', ${
+    `'${escapeId(partialEncodeURIPath(relativePath))}', ${
       umd ? `typeof document === 'undefined' ? location.href : ` : ''
     }document.currentScript && document.currentScript.src || document.baseURI`,
   )
@@ -1101,7 +1097,7 @@ const getFileUrlFromFullPath = (path: string) =>
   `require('u' + 'rl').pathToFileURL(${path}).href`
 
 const getFileUrlFromRelativePath = (path: string) =>
-  getFileUrlFromFullPath(`__dirname + '/${path}'`)
+  getFileUrlFromFullPath(`__dirname + '/${escapeId(path)}'`)
 
 const relativeUrlMechanisms: Record<
   InternalModuleFormat,
@@ -1109,16 +1105,24 @@ const relativeUrlMechanisms: Record<
 > = {
   amd: (relativePath) => {
     if (relativePath[0] !== '.') relativePath = './' + relativePath
-    return getResolveUrl(`require.toUrl('${relativePath}'), document.baseURI`)
+    return getResolveUrl(
+      `require.toUrl('${escapeId(relativePath)}'), document.baseURI`,
+    )
   },
   cjs: (relativePath) =>
     `(typeof document === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
     )} : ${getRelativeUrlFromDocument(relativePath)})`,
-  es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
+  es: (relativePath) =>
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', import.meta.url`,
+    ),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
   // NOTE: make sure rollup generate `module` params
-  system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
+  system: (relativePath) =>
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', module.meta.url`,
+    ),
   umd: (relativePath) =>
     `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
@@ -1129,7 +1133,9 @@ const relativeUrlMechanisms: Record<
 const customRelativeUrlMechanisms = {
   ...relativeUrlMechanisms,
   'worker-iife': (relativePath) =>
-    getResolveUrl(`'${relativePath}', self.location.href`),
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', self.location.href`,
+    ),
 } as const satisfies Record<string, (relativePath: string) => string>
 
 export type RenderBuiltAssetUrl = (
