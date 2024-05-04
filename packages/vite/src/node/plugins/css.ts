@@ -957,6 +957,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         for (const chunkName of chunkCSSMap.keys())
           collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
+
         return await finalizeCss(
           css,
           false,
