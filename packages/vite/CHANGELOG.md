@@ -1,3 +1,88 @@
+## 6.0.0-alpha.11 (2024-05-04)
+
+* refactor: BoundedPlugin -> IsolatedPlugin ([1ec07a4](https://github.com/vitejs/vite/commit/1ec07a4))
+
+
+
+## 6.0.0-alpha.10 (2024-05-02)
+
+* release: v6.0.0-alpha.10 ([57871a4](https://github.com/vitejs/vite/commit/57871a4))
+* feat: sharedDuringBuild for bounded plugins ([d213865](https://github.com/vitejs/vite/commit/d213865))
+
+
+
+## 6.0.0-alpha.9 (2024-05-01)
+
+* release: v6.0.0-alpha.9 ([2e6abb3](https://github.com/vitejs/vite/commit/2e6abb3))
+* fix: lint ([848af54](https://github.com/vitejs/vite/commit/848af54))
+* fix: module-runner bundle issue with chokidar dep ([b8ef8ff](https://github.com/vitejs/vite/commit/b8ef8ff))
+* refactor: bounded plugins factory instead of create hook ([6b74221](https://github.com/vitejs/vite/commit/6b74221))
+* refactor: move reload on tsconfig change to the server ([1bcb67d](https://github.com/vitejs/vite/commit/1bcb67d))
+
+
+
+## 6.0.0-alpha.8 (2024-04-30)
+
+* release: v6.0.0-alpha.8 ([1d9caef](https://github.com/vitejs/vite/commit/1d9caef))
+* fix: keep plugins with create hook ([12d467f](https://github.com/vitejs/vite/commit/12d467f))
+* refactor: environment hooks guard ([527621e](https://github.com/vitejs/vite/commit/527621e))
+* feat: define and html plugins ([7566aae](https://github.com/vitejs/vite/commit/7566aae))
+
+
+
+## 6.0.0-alpha.7 (2024-04-29)
+
+* release: v6.0.0-alpha.7 ([05943cf](https://github.com/vitejs/vite/commit/05943cf))
+* feat: remove config.build from dynamicImportVars plugin ([8231283](https://github.com/vitejs/vite/commit/8231283))
+* feat: this.environment in buildStart, rework more internal plugins ([bda0dc5](https://github.com/vitejs/vite/commit/bda0dc5))
+* feat: this.environment in renderChunk and generateBundle ([a6fc1dd](https://github.com/vitejs/vite/commit/a6fc1dd))
+
+
+
+## 6.0.0-alpha.6 (2024-04-28)
+
+* release: v6.0.0-alpha.6 ([e8473a6](https://github.com/vitejs/vite/commit/e8473a6))
+* fix: custom environment preload injection (#16541) ([00079da](https://github.com/vitejs/vite/commit/00079da)), closes [#16541](https://github.com/vitejs/vite/issues/16541)
+
+
+
+## 6.0.0-alpha.5 (2024-04-26)
+
+* release: v6.0.0-alpha.5 ([a8adcac](https://github.com/vitejs/vite/commit/a8adcac))
+* fix: use environment.plugins during build, support create hook ([a44810a](https://github.com/vitejs/vite/commit/a44810a))
+
+
+
+## 6.0.0-alpha.4 (2024-04-26)
+
+* release: v6.0.0-alpha.4 ([e6fa9d9](https://github.com/vitejs/vite/commit/e6fa9d9))
+* fix: backcompat merging ([294a84e](https://github.com/vitejs/vite/commit/294a84e))
+* fix: disable hmr for ssrLoadModule ([33ef0fb](https://github.com/vitejs/vite/commit/33ef0fb))
+* fix: rework backcompat patching of environment config ([72150d6](https://github.com/vitejs/vite/commit/72150d6))
+* fix: sharedPlugins ([a63190c](https://github.com/vitejs/vite/commit/a63190c))
+* fix(cli):  -> ([4cf322d](https://github.com/vitejs/vite/commit/4cf322d))
+* fix(v6): fix `ssrEmitAssets` compat (#16480) ([5c5efe4](https://github.com/vitejs/vite/commit/5c5efe4)), closes [#16480](https://github.com/vitejs/vite/issues/16480)
+* feat: builder.entireApp, remove --environment ([1925eeb](https://github.com/vitejs/vite/commit/1925eeb))
+* feat: opt-in shared plugins during build ([2866d4f](https://github.com/vitejs/vite/commit/2866d4f))
+* feat: use environment.logger in buildEnvironment ([8843221](https://github.com/vitejs/vite/commit/8843221))
+* refactor: align createBuilder params with createServer ([62921e6](https://github.com/vitejs/vite/commit/62921e6))
+* refactor: build --app ([29dd26e](https://github.com/vitejs/vite/commit/29dd26e))
+* refactor: remove server from createServerModuleRunner ([9d6a152](https://github.com/vitejs/vite/commit/9d6a152))
+* refactor: rename createViteBuilder to createBuilder, align with createServer ([4dc2a75](https://github.com/vitejs/vite/commit/4dc2a75))
+* chore: remove the deprecation notice from ssrLoadModule for now ([bf65476](https://github.com/vitejs/vite/commit/bf65476))
+
+
+
+## 6.0.0-alpha.3 (2024-04-20)
+
+* release: v6.0.0-alpha.3 ([635aad5](https://github.com/vitejs/vite/commit/635aad5))
+* fix: export missing types ([431cd4b](https://github.com/vitejs/vite/commit/431cd4b))
+* chore: remove configureServer from more plugins ([ad2b0bf](https://github.com/vitejs/vite/commit/ad2b0bf))
+* chore: rename plugin.split to plugin.create ([5f6b62f](https://github.com/vitejs/vite/commit/5f6b62f))
+* feat: environment api (#16129) ([f684d4c](https://github.com/vitejs/vite/commit/f684d4c)), closes [#16129](https://github.com/vitejs/vite/issues/16129)
+
+
+
 ## 6.0.0-alpha.10 (2024-05-02)
 
 * feat: sharedDuringBuild for bounded plugins ([d213865](https://github.com/vitejs/vite/commit/d213865))
