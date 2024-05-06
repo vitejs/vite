@@ -222,6 +222,26 @@ If called before connected, the data will be buffered and sent once the connecti
 
 See [Client-server Communication](/guide/api-plugin.html#client-server-communication) for more details.
 
+## Typescript for Custom Events
+
+It is possible It is possible to type custom events by extending the `CustomEventMap` interface:
+
+:::tip Note
+Be sure to include the .d.ts extension when specifying TypeScript declaration files. Vite exposes its exports as `/types/*` (as seen in its [package.json](https://github.com/vitejs/vite/blob/main/packages/vite/package.json#L40C1-L42)), so without the extension, the library may not know which file the module is trying to extend.
+:::
+
+```ts
+// events.d.ts
+import 'vite/types/customEvent.d.ts'
+
+declare module 'vite/types/customEvent.d.ts' {
+  interface CustomEventMap {
+    'custom:foo': { msg: string }
+    // 'event-key': payload
+  }
+}
+```
+
 ## Further Reading
 
 If you'd like to learn more about how to use the HMR API and how it works under-the-hood. Check out these resources:
