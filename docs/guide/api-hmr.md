@@ -247,6 +247,16 @@ This interface extension is utilized by `InferCustomEventPayload<T>` to infer th
 ```ts
 export type InferCustomEventPayload<T extends string> =
   T extends keyof CustomEventMap ? CustomEventMap[T] : any
+
+type CustomFooPayload = InferCustomEventPayload<'custom:foo'>
+           ^ { msg: string }
+
+import.meta.hot.on("custom:foo", (payload) => {
+  // The type of payload will be { msg: string }
+})
+import.meta.hot.on("unknown:event", (payload) => {
+  // The type of payload will be any
+})
 ```
 
 ## Further Reading
