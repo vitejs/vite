@@ -39,14 +39,27 @@ interface DynamicImportPattern {
   rawPattern: string
 }
 
-const dynamicImportHelper = (glob: Record<string, any>, path: string) => {
+const dynamicImportHelper = (
+  glob: Record<string, any>,
+  path: string,
+  segs: number,
+) => {
   const v = glob[path]
   if (v) {
     return typeof v === 'function' ? v() : Promise.resolve(v)
   }
   return new Promise((_, reject) => {
     ;(typeof queueMicrotask === 'function' ? queueMicrotask : setTimeout)(
-      reject.bind(null, new Error('Unknown variable dynamic import: ' + path)),
+      reject.bind(
+        null,
+        new Error(
+          'Unknown variable dynamic import: ' +
+            path +
+            (path.split('/').length !== segs
+              ? '. Note that variables only represent file names one level deep.'
+              : ''),
+        ),
+      ),
     )
   })
 }
@@ -117,13 +130,14 @@ export async function transformDynamicImport(
     if (!resolvedFileName) {
       return null
     }
-    const relativeFileName = posix.relative(
-      posix.dirname(normalizePath(importer)),
-      normalizePath(resolvedFileName),
+    const relativeFileName = normalizePath(
+      posix.relative(
+        posix.dirname(normalizePath(importer)),
+        normalizePath(resolvedFileName),
+      ),
     )
-    importSource = normalizePath(
-      '`' + (relativeFileName[0] === '.' ? '' : './') + relativeFileName + '`',
-    )
+    importSource =
+      '`' + (relativeFileName[0] === '.' ? '' : './') + relativeFileName + '`'
   }
 
   const dynamicImportPattern = parseDynamicImportPattern(importSource)
@@ -246,7 +260,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         s.overwrite(
           expStart,
           expEnd,
-          `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`,
+          `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`, ${rawPattern.split('/').length})`,
         )
       }
 

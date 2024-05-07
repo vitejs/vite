@@ -1,4 +1,4 @@
-import { resolve } from 'node:path'
+import { relative, resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -35,6 +35,10 @@ export default defineConfig({
         serveBothFile: resolve(__dirname, 'serve/both.html'),
         serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
         write: resolve(__dirname, 'write.html'),
+        relativeInput: relative(
+          process.cwd(),
+          resolve(__dirname, 'relative-input.html'),
+        ),
       },
     },
   },

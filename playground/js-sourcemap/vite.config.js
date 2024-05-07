@@ -21,6 +21,9 @@ export default defineConfig({
           if (name.endsWith('after-preload-dynamic-no-dep.js')) {
             return 'after-preload-dynamic-no-dep'
           }
+          if (name.includes('with-define-object')) {
+            return 'with-define-object'
+          }
         },
         banner(chunk) {
           if (chunk.name.endsWith('after-preload-dynamic-hashbang')) {
@@ -29,5 +32,8 @@ export default defineConfig({
         },
       },
     },
+  },
+  define: {
+    __testDefineObject: '{ "hello": "test" }',
   },
 })
