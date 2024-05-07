@@ -11,6 +11,6 @@
     "@shikijs/vitepress-twoslash": "^1.4.0",
     "@types/express": "^4.17.21",
     "vitepress": "1.1.4",
-    "vue": "^3.4.26"
+    "vue": "^3.4.27"
   }
 }
