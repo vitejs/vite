@@ -100,7 +100,7 @@ function getHtmlFilename(url: string, server: ViteDevServer) {
     return decodeURIComponent(fsPathFromId(url))
   } else {
     return decodeURIComponent(
-      normalizePath(path.join(server.config.entryRoot, url.slice(1))),
+      normalizePath(path.join(server.config.root, url.slice(1))),
     )
   }
 }
