@@ -485,7 +485,8 @@ export async function build(
     ),
   )
 
-  const resolve = (p: string) => path.resolve(config.root, p)
+  const entryRoot = config.entryRoot || config.root
+  const resolve = (p: string) => path.resolve(entryRoot, p)
   const input = libOptions
     ? options.rollupOptions?.input ||
       (typeof libOptions.entry === 'string'
@@ -522,7 +523,7 @@ export async function build(
     }
   }
 
-  const outDir = resolve(options.outDir)
+  const outDir = path.resolve(config.root, options.outDir)
 
   // inject ssr arg to plugin load/transform hooks
   const plugins = (
@@ -731,7 +732,9 @@ export async function build(
     clearLine()
     if (startTime) {
       config.logger.error(
-        `${colors.red('x')} Build failed in ${displayTime(Date.now() - startTime)}`,
+        `${colors.red('x')} Build failed in ${displayTime(
+          Date.now() - startTime,
+        )}`,
       )
       startTime = undefined
     }

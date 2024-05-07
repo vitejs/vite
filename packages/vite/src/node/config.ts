@@ -136,6 +136,12 @@ export interface UserConfig {
    */
   root?: string
   /**
+   * Entry root directory. Can be an absolute path, or a path relative from the
+   * project's `root` option. If defined, any `.html` entry files are resolved
+   * relative to this directory.
+   */
+  entryRoot?: string
+  /**
    * Base public path when served in development or production.
    * @default '/'
    */
@@ -363,6 +369,7 @@ export type ResolvedConfig = Readonly<
     configFileDependencies: string[]
     inlineConfig: InlineConfig
     root: string
+    entryRoot: string
     base: string
     /** @internal */
     rawBase: string
@@ -527,6 +534,10 @@ export async function resolveConfig(
   )
 
   checkBadCharactersInPath(resolvedRoot, logger)
+
+  const resolvedEntryRoot = config.entryRoot
+    ? normalizePath(path.resolve(resolvedRoot, config.entryRoot))
+    : resolvedRoot
 
   const clientAlias = [
     {
@@ -770,6 +781,7 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
+    entryRoot: resolvedEntryRoot,
     base: withTrailingSlash(resolvedBase),
     rawBase: resolvedBase,
     resolve: resolveOptions,
