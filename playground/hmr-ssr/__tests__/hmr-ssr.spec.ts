@@ -253,7 +253,7 @@ describe('hmr works correctly', () => {
   })
 
   // TODO
-  // test.skipIf(hasWindowsUnicodeFsBug)('full-reload encodeURI path', async () => {
+  // test('full-reload encodeURI path', async () => {
   //   await page.goto(
   //     viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
   //   )

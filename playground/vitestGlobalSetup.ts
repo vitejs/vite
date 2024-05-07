@@ -3,7 +3,6 @@ import fs from 'fs-extra'
 import type { GlobalSetupContext } from 'vitest/node'
 import type { BrowserServer } from 'playwright-chromium'
 import { chromium } from 'playwright-chromium'
-import { hasWindowsUnicodeFsBug } from './hasWindowsUnicodeFsBug'
 
 let browserServer: BrowserServer | undefined
 
@@ -28,9 +27,6 @@ export async function setup({ provide }: GlobalSetupContext): Promise<void> {
     .copy(path.resolve(__dirname, '../playground'), tempDir, {
       dereference: false,
       filter(file) {
-        if (file.includes('中文-にほんご-한글-🌕🌖🌗')) {
-          return !hasWindowsUnicodeFsBug
-        }
         file = file.replace(/\\/g, '/')
         return !file.includes('__tests__') && !/dist(?:\/|$)/.test(file)
       },
