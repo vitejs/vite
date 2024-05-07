@@ -435,7 +435,14 @@ export function indexHtmlMiddleware(
         try {
           let html = await fsp.readFile(filePath, 'utf-8')
           if (isDev) {
-            html = await server.transformIndexHtml(url, html, req.originalUrl)
+            const resolvedUrl =
+              '/' + path.relative(server.config.root, filePath)
+
+            html = await server.transformIndexHtml(
+              resolvedUrl,
+              html,
+              req.originalUrl,
+            )
           }
           return send(req, res, html, 'html', { headers })
         } catch (e) {
