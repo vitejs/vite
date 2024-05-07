@@ -151,6 +151,13 @@ module.exports = defineConfig({
       },
     },
     {
+      files: ['packages/vite/src/client/**'],
+      excludedFiles: '**/__tests__/**',
+      rules: {
+        'n/no-unsupported-features/node-builtins': 'off',
+      },
+    },
+    {
       files: [
         'packages/vite/src/types/**',
         'packages/vite/scripts/**',
@@ -219,6 +226,9 @@ module.exports = defineConfig({
           'error',
           {
             version: pkg.engines.node,
+            // ideally we would like to allow all experimental features
+            // https://github.com/eslint-community/eslint-plugin-n/issues/199
+            ignores: ['fetch'],
           },
         ],
       },
