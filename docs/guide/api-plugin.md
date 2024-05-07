@@ -623,7 +623,7 @@ export default defineConfig({
 })
 ```
 
-### Typescript for Custom Events
+### TypeScript for Custom Events
 
 Internally, vite infers the type of a payload from the `CustomEventMap` interface, it is possible to type custom events by extending the interface:
 
