@@ -1,5 +1,4 @@
 import { beforeAll, describe, expect, test } from 'vitest'
-import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   browserLogs,
   editFile,
@@ -220,7 +219,7 @@ describe('noBody', () => {
   })
 })
 
-describe.skipIf(hasWindowsUnicodeFsBug)('Unicode path', () => {
+describe('Unicode path', () => {
   test('direct access', async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
