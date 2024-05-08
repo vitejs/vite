@@ -1,3 +1,16 @@
+## 5.4.0 (2024-05-08)
+
+* fix(deps): update all non-major dependencies (#16258) ([7caef42](https://github.com/vitejs/vite/commit/7caef42)), closes [#16258](https://github.com/vitejs/vite/issues/16258)
+* fix(deps): update all non-major dependencies (#16376) ([58a2938](https://github.com/vitejs/vite/commit/58a2938)), closes [#16376](https://github.com/vitejs/vite/issues/16376)
+* fix(deps): update all non-major dependencies (#16488) ([2d50be2](https://github.com/vitejs/vite/commit/2d50be2)), closes [#16488](https://github.com/vitejs/vite/issues/16488)
+* fix(deps): update all non-major dependencies (#16549) ([2d6a13b](https://github.com/vitejs/vite/commit/2d6a13b)), closes [#16549](https://github.com/vitejs/vite/issues/16549)
+* fix(legacy): modern polyfill autodetection was not injecting enough polyfills (#16367) ([4af9f97](https://github.com/vitejs/vite/commit/4af9f97)), closes [#16367](https://github.com/vitejs/vite/issues/16367)
+* feat(plugin-legacy): support `additionalModernPolyfills` (#16514) ([2322657](https://github.com/vitejs/vite/commit/2322657)), closes [#16514](https://github.com/vitejs/vite/issues/16514)
+* docs(legacy): update `modernTargets` option default value description (#16491) ([7171837](https://github.com/vitejs/vite/commit/7171837)), closes [#16491](https://github.com/vitejs/vite/issues/16491)
+* chore(deps): update all non-major dependencies (#16131) ([a862ecb](https://github.com/vitejs/vite/commit/a862ecb)), closes [#16131](https://github.com/vitejs/vite/issues/16131)
+
+
+
 ## <small>5.3.2 (2024-03-08)</small>
 
 * fix(plugin-legacy): dynamic import browserslist-to-esbuild (#16011) ([42fd11c](https://github.com/vitejs/vite/commit/42fd11c)), closes [#16011](https://github.com/vitejs/vite/issues/16011)
