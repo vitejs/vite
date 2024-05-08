@@ -84,8 +84,7 @@ export function createLogger(
   function preventOverflow(msg: string) {
     if (msg.length > MAX_LOG_CHAR) {
       const shorten = msg.slice(0, MAX_LOG_CHAR)
-      const shortenLines = shorten.match(splitRE)?.length || 0
-      const lines = msg.match(splitRE)?.length || 0 - shortenLines
+      const lines = msg.slice(MAX_LOG_CHAR).match(splitRE)?.length || 0
 
       return `${shorten}\n... and ${lines} lines more`
     }
