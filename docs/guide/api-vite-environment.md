@@ -65,19 +65,13 @@ class DevEnvironment {
    */
   pluginContainer: IsolatedPluginContatiner
   /**
-   * TBD: This abstraction isn't yet clear
-   * Trigger the execution of a module using the associated module runner
-   * in the target runtime.
-   */
-  run: ModuleRunFunction
-  /**
    * Resolved config options for this environment. Options at the server
    * global scope are taken as defaults for all environments, and can
    * be overridden (resolve conditions, external, optimizedDeps)
    */
   config: ResolvedDevEnvironmentConfig
 
-  constructor(name, config, { hot, run, options }: DevEnvironmentOptions)
+  constructor(name, config, { hot, options }: DevEnvironmentOptions)
 
   /**
    * Resolve the URL to an id, load it, and process the code using the
@@ -119,6 +113,10 @@ But the environment instance can't execute the code itself, as the runtime where
 
 :::info transformRequest naming
 We are using `transformRequest(url)` and `warmupRequest(url)` in the current version of this proposal so it is easier to discuss and understand for users used to Vite's current API. Before releasing, we can take the opportunity to review these names too. For example, it could be named `environment.processModule(url)` or `environment.loadModule(url)` taking a page from Rollup's `context.load(id)` in plugin hooks. For the moment, we think keeping the current names and delaying this discussion is better.
+:::
+
+:::info Running a module
+The initial proposal had a `run` method that would allow consumers to invoke an import on the runner side by using the `transport` option. During our testing we found out that the API was not unversal enough to start recommending it. We are open to implement a built-in layer for remote SSR implementation based on the frameworks feedback. In the meantime, Vite still exposes a [`RunnerTransport` API](#runnertransport) to hide the complexity of the runner RPC.
 :::
 
 For the default Node environment, Vite creates a module runner that implements evaluation using `new AsyncFunction` running in the same runtime as the server. This runner is an instance of `ModuleRunner` that exposes:
