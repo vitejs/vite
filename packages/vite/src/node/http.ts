@@ -152,19 +152,23 @@ export async function httpServerStart(
   let { port, strictPort, host, logger } = serverOptions
 
   return new Promise((resolve, reject) => {
-    const onError = (e: Error & { code?: string }) => {
-      if (e.code === 'EADDRINUSE') {
-        if (strictPort) {
-          httpServer.removeListener('error', onError)
-          reject(new Error(`Port ${port} is already in use`))
+    const createErrorHandler = (host: string, reject: any) => {
+      const onError = (e: Error & { code?: string }) => {
+        if (e.code === 'EADDRINUSE') {
+          if (strictPort) {
+            httpServer.removeListener('error', onError)
+            reject(new Error(`Port ${port} is already in use`))
+          } else {
+            logger.info(`Port ${port} is in use, trying another one...`)
+            httpServer.listen(++port, host)
+          }
         } else {
-          logger.info(`Port ${port} is in use, trying another one...`)
-          httpServer.listen(++port, host)
+          httpServer.removeListener('error', onError)
+          reject(e)
         }
-      } else {
-        httpServer.removeListener('error', onError)
-        reject(e)
       }
+
+      return onError
     }
 
     ;(async () => {
@@ -175,8 +179,8 @@ export async function httpServerStart(
 
         for (;;) {
           allGood = true
-
-          if (hosts.length === 0) {
+          if (hosts.length === 0 || strictPort) {
+            // strictPort is true, we don't care if the port is in use
             break
           }
           for (const host of hosts) {
@@ -206,9 +210,18 @@ export async function httpServerStart(
           port++
         }
       } else {
-        httpServer.on('error', onError)
+        await new Promise((resolve, reject) => {
+          const onError = createErrorHandler(host!, reject)
+          httpServer.on('error', onError)
+          httpServer.listen(port, '0.0.0.0', () => {
+            resolve(null)
+            httpServer.close()
+          })
+        })
       }
 
+      const onError = createErrorHandler(host!, reject)
+      httpServer.on('error', onError)
       httpServer.listen(port, host, () => {
         httpServer.removeListener('error', onError)
         resolve(port)
