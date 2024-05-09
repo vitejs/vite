@@ -51,14 +51,15 @@ The `resolveDependencies` function will be called for each dynamic import with a
 ```js twoslash
 /** @type {import('vite').UserConfig} */
 const config = {
+  // prettier-ignore
   build: {
-    // ---cut-before---
-    modulePreload: {
-      resolveDependencies: (filename, deps, { hostId, hostType }) => {
-        return deps.filter(condition)
-      },
-    },
-    // ---cut-after---
+// ---cut-before---
+modulePreload: {
+  resolveDependencies: (filename, deps, { hostId, hostType }) => {
+    return deps.filter(condition)
+  },
+},
+// ---cut-after---
   },
 }
 ```

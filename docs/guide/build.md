@@ -240,18 +240,19 @@ A single static [base](#public-base-path) isn't enough in these scenarios. Vite 
 
 ```ts twoslash
 import type { UserConfig } from 'vite'
+// prettier-ignore
 const config: UserConfig = {
-  // ---cut-before---
-  experimental: {
-    renderBuiltUrl(filename, { hostType }) {
-      if (hostType === 'js') {
-        return { runtime: `window.__toCdnUrl(${JSON.stringify(filename)})` }
-      } else {
-        return { relative: true }
-      }
-    },
+// ---cut-before---
+experimental: {
+  renderBuiltUrl(filename, { hostType }) {
+    if (hostType === 'js') {
+      return { runtime: `window.__toCdnUrl(${JSON.stringify(filename)})` }
+    } else {
+      return { relative: true }
+    }
   },
-  // ---cut-after---
+},
+// ---cut-after---
 }
 ```
 
@@ -260,20 +261,21 @@ If the hashed assets and public files aren't deployed together, options for each
 ```ts twoslash
 import type { UserConfig } from 'vite'
 import path from 'node:path'
+// prettier-ignore
 const config: UserConfig = {
-  // ---cut-before---
-  experimental: {
-    renderBuiltUrl(filename, { hostId, hostType, type }) {
-      if (type === 'public') {
-        return 'https://www.domain.com/' + filename
-      } else if (path.extname(hostId) === '.js') {
-        return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
-      } else {
-        return 'https://cdn.domain.com/assets/' + filename
-      }
-    },
+// ---cut-before---
+experimental: {
+  renderBuiltUrl(filename, { hostId, hostType, type }) {
+    if (type === 'public') {
+      return 'https://www.domain.com/' + filename
+    } else if (path.extname(hostId) === '.js') {
+      return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
+    } else {
+      return 'https://cdn.domain.com/assets/' + filename
+    }
   },
-  // ---cut-after---
+},
+// ---cut-after---
 }
 ```
 
