@@ -238,47 +238,43 @@ A user may choose to deploy in three different paths:
 
 A single static [base](#public-base-path) isn't enough in these scenarios. Vite provides experimental support for advanced base options during build, using `experimental.renderBuiltUrl`.
 
-<!-- prettier-ignore-start -->
 ```ts twoslash
 import type { UserConfig } from 'vite'
 const config: UserConfig = {
-// ---cut-before---
-experimental: {
-  renderBuiltUrl(filename, { hostType }) {
-    if (hostType === 'js') {
-      return { runtime: `window.__toCdnUrl(${JSON.stringify(filename)})` }
-    } else {
-      return { relative: true }
-    }
+  // ---cut-before---
+  experimental: {
+    renderBuiltUrl(filename, { hostType }) {
+      if (hostType === 'js') {
+        return { runtime: `window.__toCdnUrl(${JSON.stringify(filename)})` }
+      } else {
+        return { relative: true }
+      }
+    },
   },
-},
-// ---cut-after---
+  // ---cut-after---
 }
 ```
-<!-- prettier-ignore-end -->
 
 If the hashed assets and public files aren't deployed together, options for each group can be defined independently using asset `type` included in the second `context` param given to the function.
 
-<!-- prettier-ignore-start -->
 ```ts twoslash
 import type { UserConfig } from 'vite'
 import path from 'node:path'
 const config: UserConfig = {
-// ---cut-before---
-experimental: {
-  renderBuiltUrl(filename, { hostId, hostType, type }) {
-    if (type === 'public') {
-      return 'https://www.domain.com/' + filename
-    } else if (path.extname(hostId) === '.js') {
-      return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
-    } else {
-      return 'https://cdn.domain.com/assets/' + filename
-    }
+  // ---cut-before---
+  experimental: {
+    renderBuiltUrl(filename, { hostId, hostType, type }) {
+      if (type === 'public') {
+        return 'https://www.domain.com/' + filename
+      } else if (path.extname(hostId) === '.js') {
+        return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
+      } else {
+        return 'https://cdn.domain.com/assets/' + filename
+      }
+    },
   },
-},
-// ---cut-after---
+  // ---cut-after---
 }
 ```
-<!-- prettier-ignore-end -->
 
 Note that the `filename` passed is a decoded URL, and if the function returns a URL string, it should also be decoded. Vite will handle the encoding automatically when rendering the URLs. If an object with `runtime` is returned, encoding should be handled yourself where needed as the runtime code will be rendered as is.
