@@ -1,13 +1,15 @@
 import { fileURLToPath } from 'node:url'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import { createServer } from '../../server'
+import type { InlineConfig } from '../../config'
 
 describe('exports', () => {
-  async function testServer() {
+  async function testServer(config?: InlineConfig) {
     const server = await createServer({
       clearScreen: false,
       configFile: false,
       root: fileURLToPath(new URL('.', import.meta.url)),
+      ...config,
     })
     await server.pluginContainer.buildStart({})
     onTestFinished(async () => {
@@ -44,6 +46,16 @@ describe('exports', () => {
 
   test('ssrLoadModule external', async () => {
     const server = await testServer()
+    const mod = await server.ssrLoadModule('/fixtures/entry-mix-dep')
+    expect(mod.default).toEqual('import')
+  })
+
+  test('ssrLoadModule inline', async () => {
+    const server = await testServer({
+      ssr: {
+        noExternal: ['@vitejs/test-mix-dep'],
+      },
+    })
     const mod = await server.ssrLoadModule('/fixtures/entry-mix-dep')
     expect(mod.default).toEqual('import')
   })
