@@ -4,10 +4,10 @@
   "exports": {
     ".": {
       "module": {
-        "default": "./emotion-react.esm.js"
+        "default": "./index.esm.js"
       },
-      "import": "./emotion-react.cjs.mjs",
-      "default": "./emotion-react.cjs.js"
+      "import": "./index.cjs.mjs",
+      "default": "./index.cjs.js"
     }
   }
 }
