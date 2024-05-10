@@ -387,16 +387,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
           (res = tryNodeResolve(
             id,
             importer,
-            {
-              ...options,
-              overrideConditions: ssr
-                ? [
-                    ...(ssrConfig?.resolve?.externalConditions ?? []),
-                    'production',
-                    'development',
-                  ]
-                : undefined,
-            },
+            options,
             targetWeb,
             depsOptimizer,
             ssr,
@@ -1102,7 +1093,7 @@ function resolveExportsOrImports(
     options.overrideConditions || [
       'production',
       'development',
-      'module',
+      ...(targetWeb ? ['module'] : []),
       ...options.conditions,
     ],
   )
