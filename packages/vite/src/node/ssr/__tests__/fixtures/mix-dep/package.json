@@ -1,0 +1,13 @@
+{
+  "name": "@vitejs/test-mix-dep",
+  "private": true,
+  "exports": {
+    ".": {
+      "module": {
+        "default": "./emotion-react.esm.js"
+      },
+      "import": "./emotion-react.cjs.mjs",
+      "default": "./emotion-react.cjs.js"
+    }
+  }
+}
