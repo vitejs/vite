@@ -2,16 +2,16 @@ import { readdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import semver from 'semver'
 import colors from 'picocolors'
-import type { Options as ExecaOptions, ExecaReturnValue } from 'execa'
+import type { Options as ExecaOptions, ResultPromise } from 'execa'
 import { execa } from 'execa'
 import fs from 'fs-extra'
 
-export async function run(
+export function run<EO extends ExecaOptions>(
   bin: string,
   args: string[],
-  opts: ExecaOptions = {},
-): Promise<ExecaReturnValue> {
-  return execa(bin, args, { stdio: 'inherit', ...opts })
+  opts?: EO,
+): ResultPromise<EO & (keyof EO extends 'stdio' ? {} : { stdio: 'inherit' })> {
+  return execa(bin, args, { stdio: 'inherit', ...opts }) as any
 }
 
 export async function getLatestTag(pkgName: string): Promise<string> {
