@@ -21,8 +21,6 @@ on:
       - feat/*
       - fix/*
       - perf/*
-      - test/*
-      - chore/*
       - v1
       - v2
       - v2.*
