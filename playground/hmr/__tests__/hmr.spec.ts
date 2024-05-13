@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it, test } from 'vitest'
-import type { Page } from 'playwright-chromium'
+import type { ConsoleMessage, Page } from 'playwright-chromium'
 import {
   addFile,
   browser,
@@ -801,8 +801,12 @@ if (!isBuild) {
       console.log('page load start', req.url())
     }
   }
+  const l = (c: ConsoleMessage) => {
+    console.log('console', c.text())
+  }
   test('should hmr when file is deleted and restored', async () => {
     page.on('request', r)
+    page.on('console', l)
     await page.goto(viteTestUrl)
 
     const parentFile = 'file-delete-restore/parent.js'
@@ -851,11 +855,9 @@ if (!isBuild) {
   test('delete file should not break hmr', async () => {
     try {
       await page.goto(viteTestUrl)
-    } catch (e) {
-      console.error('err', e)
-      throw e
     } finally {
       page.off('request', r)
+      page.off('console', l)
     }
 
     await untilUpdated(
