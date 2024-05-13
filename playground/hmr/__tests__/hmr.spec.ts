@@ -829,21 +829,21 @@ if (!isBuild) {
       'parent:not-child',
     )
 
-    addFile(childFile, originalChildFileCode)
-    editFile(parentFile, (code) =>
-      code.replace(
-        "export const childValue = 'not-child'",
-        "export { value as childValue } from './child'",
-      ),
-    )
-    await untilUpdated(
-      () => page.textContent('.file-delete-restore'),
-      'parent:child',
-    )
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      addFile(childFile, originalChildFileCode)
+      editFile(parentFile, (code) =>
+        code.replace(
+          "export const childValue = 'not-child'",
+          "export { value as childValue } from './child'",
+        ),
+      )
+      await loadPromise
+    }, [/connected/])
+    expect(await page.textContent('.file-delete-restore')).toBe('parent:child')
   })
 
   test('delete file should not break hmr', async () => {
-    await page.waitForEvent('load')
     await page.goto(viteTestUrl)
 
     await untilUpdated(
