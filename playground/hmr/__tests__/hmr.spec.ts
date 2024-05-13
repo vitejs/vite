@@ -829,13 +829,17 @@ if (!isBuild) {
       'parent:not-child',
     )
 
-    addFile(childFile, originalChildFileCode)
-    editFile(parentFile, (code) =>
-      code.replace(
-        "export const childValue = 'not-child'",
-        "export { value as childValue } from './child'",
-      ),
-    )
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      addFile(childFile, originalChildFileCode)
+      editFile(parentFile, (code) =>
+        code.replace(
+          "export const childValue = 'not-child'",
+          "export { value as childValue } from './child'",
+        ),
+      )
+      await loadPromise
+    }, [/connected/])
     await untilUpdated(
       () => page.textContent('.file-delete-restore'),
       'parent:child',
