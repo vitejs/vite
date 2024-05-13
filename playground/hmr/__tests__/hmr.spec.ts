@@ -796,11 +796,13 @@ if (!isBuild) {
     }, [/500/, /connected/])
   })
 
-  const onload = () => {
-    console.log('page load')
+  const r = (req) => {
+    if (req.resourceType() === 'document') {
+      console.log('page load start', req.url())
+    }
   }
   test('should hmr when file is deleted and restored', async () => {
-    page.on('load', onload)
+    page.on('request', r)
     await page.goto(viteTestUrl)
 
     const parentFile = 'file-delete-restore/parent.js'
@@ -850,7 +852,7 @@ if (!isBuild) {
     try {
       await page.goto(viteTestUrl)
     } finally {
-      page.off('load', onload)
+      page.off('request', r)
     }
 
     await untilUpdated(
