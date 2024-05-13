@@ -67,7 +67,7 @@
     "eslint-plugin-i": "^2.29.1",
     "eslint-plugin-n": "^17.6.0",
     "eslint-plugin-regexp": "^2.5.0",
-    "execa": "^8.0.1",
+    "execa": "^9.0.2",
     "feed": "^4.2.2",
     "fs-extra": "^11.2.0",
     "lint-staged": "^15.2.2",
