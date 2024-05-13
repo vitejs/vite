@@ -853,6 +853,7 @@ if (!isBuild) {
       await page.goto(viteTestUrl)
     } catch (e) {
       console.error('err', e)
+      throw e
     } finally {
       page.off('request', r)
     }
