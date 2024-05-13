@@ -840,7 +840,10 @@ if (!isBuild) {
       )
       await loadPromise
     }, [/connected/])
-    expect(await page.textContent('.file-delete-restore')).toBe('parent:child')
+    await untilUpdated(
+      () => page.textContent('.file-delete-restore'),
+      'parent:child',
+    )
   })
 
   test('delete file should not break hmr', async () => {
