@@ -800,6 +800,7 @@ if (!isBuild) {
     console.log('page load')
   }
   test('should hmr when file is deleted and restored', async () => {
+    page.on('load', onload)
     await page.goto(viteTestUrl)
 
     const parentFile = 'file-delete-restore/parent.js'
@@ -832,7 +833,6 @@ if (!isBuild) {
       'parent:not-child',
     )
 
-    page.on('load', onload)
     addFile(childFile, originalChildFileCode)
     editFile(parentFile, (code) =>
       code.replace(
