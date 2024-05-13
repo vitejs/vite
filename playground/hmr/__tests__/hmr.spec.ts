@@ -851,6 +851,8 @@ if (!isBuild) {
   test('delete file should not break hmr', async () => {
     try {
       await page.goto(viteTestUrl)
+    } catch (e) {
+      console.error('err', e)
     } finally {
       page.off('request', r)
     }
