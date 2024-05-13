@@ -847,8 +847,11 @@ if (!isBuild) {
   })
 
   test('delete file should not break hmr', async () => {
-    await page.goto(viteTestUrl)
-    page.off('load', onload)
+    try {
+      await page.goto(viteTestUrl)
+    } finally {
+      page.off('load', onload)
+    }
 
     await untilUpdated(
       () => page.textContent('.intermediate-file-delete-display'),
