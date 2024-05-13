@@ -796,6 +796,9 @@ if (!isBuild) {
     }, [/500/, /connected/])
   })
 
+  const onload = () => {
+    console.log('page load')
+  }
   test('should hmr when file is deleted and restored', async () => {
     await page.goto(viteTestUrl)
 
@@ -829,6 +832,7 @@ if (!isBuild) {
       'parent:not-child',
     )
 
+    page.on('load', onload)
     addFile(childFile, originalChildFileCode)
     editFile(parentFile, (code) =>
       code.replace(
@@ -844,6 +848,7 @@ if (!isBuild) {
 
   test('delete file should not break hmr', async () => {
     await page.goto(viteTestUrl)
+    page.off('load', onload)
 
     await untilUpdated(
       () => page.textContent('.intermediate-file-delete-display'),
