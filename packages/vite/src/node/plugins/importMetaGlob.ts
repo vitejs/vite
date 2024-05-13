@@ -330,17 +330,17 @@ function findCorrespondingCloseParenthesisPosition(
 
   if (!cleanCode.slice(openPos, closePos).includes('(')) return closePos
 
-  let remainingParensisCount = 0
+  let remainingParenthesisCount = 0
   const cleanCodeLen = cleanCode.length
   for (let pos = openPos; pos < cleanCodeLen; pos++) {
     switch (cleanCode[pos]) {
       case '(': {
-        remainingParensisCount++
+        remainingParenthesisCount++
         break
       }
       case ')': {
-        remainingParensisCount--
-        if (remainingParensisCount <= 0) {
+        remainingParenthesisCount--
+        if (remainingParenthesisCount <= 0) {
           return pos
         }
       }
