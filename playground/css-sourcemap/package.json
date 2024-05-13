@@ -12,7 +12,7 @@
   "devDependencies": {
     "less": "^4.2.0",
     "magic-string": "^0.30.10",
-    "sass": "^1.77.0",
+    "sass": "^1.77.1",
     "stylus": "^0.63.0",
     "sugarss": "^4.0.1"
   }
