@@ -196,6 +196,7 @@ function testCaseInsensitiveFS() {
 }
 
 export const urlCanParse =
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins
   URL.canParse ??
   // URL.canParse is supported from Node.js 18.17.0+, 20.0.0+
   ((path: string, base?: string | undefined): boolean => {
@@ -433,7 +434,7 @@ export function isFilePathESM(
   }
 }
 
-const splitRE = /\r?\n/
+export const splitRE = /\r?\n/g
 
 const range: number = 2
 
@@ -1421,6 +1422,7 @@ export function displayTime(time: number): string {
  * Encodes the URI path portion (ignores part after ? or #)
  */
 export function encodeURIPath(uri: string): string {
+  if (uri.startsWith('data:')) return uri
   const filePath = cleanUrl(uri)
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
   return encodeURI(filePath) + postfix
@@ -1431,6 +1433,7 @@ export function encodeURIPath(uri: string): string {
  * that can handle un-encoded URIs, where `%` is the only ambiguous character.
  */
 export function partialEncodeURIPath(uri: string): string {
+  if (uri.startsWith('data:')) return uri
   const filePath = cleanUrl(uri)
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
   return filePath.replaceAll('%', '%25') + postfix

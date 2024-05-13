@@ -62,24 +62,36 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    ```json
    {
-     "main.js": {
-       "file": "assets/main.4889e940.js",
-       "src": "main.js",
+     "_shared-!~{003}~.js": {
+       "file": "assets/shared-ChJ_j-JJ.css",
+       "src": "_shared-!~{003}~.js"
+     },
+     "_shared-B7PI925R.js": {
+       "file": "assets/shared-B7PI925R.js",
+       "name": "shared",
+       "css": ["assets/shared-ChJ_j-JJ.css"]
+     },
+     "baz.js": {
+       "file": "assets/baz-B2H3sXNv.js",
+       "name": "baz",
+       "src": "baz.js",
+       "isDynamicEntry": true
+     },
+     "views/bar.js": {
+       "file": "assets/bar-gkvgaI9m.js",
+       "name": "bar",
+       "src": "views/bar.js",
        "isEntry": true,
-       "dynamicImports": ["views/foo.js"],
-       "css": ["assets/main.b82dbe22.css"],
-       "assets": ["assets/asset.0ab0f9cd.png"],
-       "imports": ["_shared.83069a53.js"]
+       "imports": ["_shared-B7PI925R.js"],
+       "dynamicImports": ["baz.js"]
      },
      "views/foo.js": {
-       "file": "assets/foo.869aea0d.js",
+       "file": "assets/foo-BRBmoGS9.js",
+       "name": "foo",
        "src": "views/foo.js",
-       "isDynamicEntry": true,
-       "imports": ["_shared.83069a53.js"]
-     },
-     "_shared.83069a53.js": {
-       "file": "assets/shared.83069a53.js",
-       "css": ["assets/shared.a834bfc3.css"]
+       "isEntry": true,
+       "imports": ["_shared-B7PI925R.js"],
+       "css": ["assets/foo-5UjPuW-k.css"]
      }
    }
    ```
@@ -108,7 +120,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    <script type="module" src="/{{ manifest[name].file }}"></script>
 
    <!-- for chunk of importedChunks(manifest, name) -->
-   <link rel="modulepreload" src="/{{ chunk.file }}" />
+   <link rel="modulepreload" href="/{{ chunk.file }}" />
    ```
 
    Specifically, a backend generating HTML should include the following tags given a manifest
@@ -116,27 +128,27 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    - A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list
    - Recursively follow all chunks in the entry point's `imports` list and include a
-     `<link rel="stylesheet">` tag for each css file of each imported chunk.
-   - A tag for the `file` key of the entry point chunk (`<script type="moudle">` for Javascript,
-     or `<link rel="stylesheet">` for css)
-   - Optionally, `<link rel="modulepreload">` tag for the `file` of each imported Javascript
+     `<link rel="stylesheet">` tag for each CSS file of each imported chunk.
+   - A tag for the `file` key of the entry point chunk (`<script type="module">` for JavaScript,
+     or `<link rel="stylesheet">` for CSS)
+   - Optionally, `<link rel="modulepreload">` tag for the `file` of each imported JavaScript
      chunk, again recursively following the imports starting from the entry point chunk.
 
-   Following the above example manifest, for the entry point `main.js` the following tags should be included in production:
+   Following the above example manifest, for the entry point `views/foo.js` the following tags should be included in production:
 
    ```html
-   <link rel="stylesheet" href="assets/main.b82dbe22.css" />
-   <link rel="stylesheet" href="assets/shared.a834bfc3.css" />
-   <script type="module" src="assets/main.4889e940.js"></script>
+   <link rel="stylesheet" href="assets/foo-5UjPuW-k.css" />
+   <link rel="stylesheet" href="assets/shared-ChJ_j-JJ.css" />
+   <script type="module" src="assets/foo-BRBmoGS9.js"></script>
    <!-- optional -->
-   <link rel="modulepreload" src="assets/shared.83069a53.js" />
+   <link rel="modulepreload" href="assets/shared-B7PI925R.js" />
    ```
 
-   While the following should be included for the entry point `views/foo.js`:
+   While the following should be included for the entry point `views/bar.js`:
 
    ```html
-   <link rel="stylesheet" href="assets/shared.a834bfc3.css" />
-   <script type="module" src="assets/foo.869aea0d.js"></script>
+   <link rel="stylesheet" href="assets/shared-ChJ_j-JJ.css" />
+   <script type="module" src="assets/bar-gkvgaI9m.js"></script>
    <!-- optional -->
-   <link rel="modulepreload" src="assets/shared.83069a53.js" />
+   <link rel="modulepreload" href="assets/shared-B7PI925R.js" />
    ```

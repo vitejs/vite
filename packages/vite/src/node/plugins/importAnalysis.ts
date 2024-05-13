@@ -40,7 +40,6 @@ import {
   joinUrlSegments,
   moduleListContains,
   normalizePath,
-  partialEncodeURIPath,
   prettifyUrl,
   removeImportQuery,
   removeTimestampQuery,
@@ -322,6 +321,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
+          moduleGraph._hasResolveFailedErrorModules.add(importerModule)
           return this.error(
             `Failed to resolve import "${url}" from "${normalizePath(
               path.relative(process.cwd(), importerFile),
@@ -604,9 +604,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 rewriteDone = true
               }
               if (!rewriteDone) {
-                const rewrittenUrl = JSON.stringify(
-                  ssr ? url : partialEncodeURIPath(url),
-                )
+                const rewrittenUrl = JSON.stringify(url)
                 const s = isDynamicImport ? start : start - 1
                 const e = isDynamicImport ? end : end + 1
                 str().overwrite(s, e, rewrittenUrl, {

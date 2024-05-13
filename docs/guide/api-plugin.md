@@ -480,6 +480,8 @@ A Vite plugin can additionally specify an `enforce` property (similar to webpack
 - User plugins with `enforce: 'post'`
 - Vite post build plugins (minify, manifest, reporting)
 
+Note that this is separate from hooks ordering, those are still separately subject to their `order` attribute [as usual for Rollup hooks](https://rollupjs.org/plugin-development/#build-hooks).
+
 ## Conditional Application
 
 By default plugins are invoked for both serve and build. In cases where a plugin needs to be conditionally applied only during serve or build, use the `apply` property to only invoke them during `'build'` or `'serve'`:
@@ -623,16 +625,40 @@ export default defineConfig({
 
 ### TypeScript for Custom Events
 
-It is possible to type custom events by extending the `CustomEventMap` interface:
+Internally, vite infers the type of a payload from the `CustomEventMap` interface, it is possible to type custom events by extending the interface:
+
+:::tip Note
+Make sure to include the `.d.ts` extension when specifying TypeScript declaration files. Otherwise, Typescript may not know which file the module is trying to extend.
+:::
 
 ```ts
 // events.d.ts
-import 'vite/types/customEvent'
+import 'vite/types/customEvent.d.ts'
 
-declare module 'vite/types/customEvent' {
+declare module 'vite/types/customEvent.d.ts' {
   interface CustomEventMap {
     'custom:foo': { msg: string }
     // 'event-key': payload
   }
 }
+```
+
+This interface extension is utilized by `InferCustomEventPayload<T>` to infer the payload type for event `T`. For more information on how this interface is utilized, refer to the [HMR API Documentation](./api-hmr#hmr-api).
+
+```ts twoslash
+import 'vite/client'
+import type { InferCustomEventPayload } from 'vite/types/customEvent.d.ts'
+declare module 'vite/types/customEvent.d.ts' {
+  interface CustomEventMap {
+    'custom:foo': { msg: string }
+  }
+}
+// ---cut---
+type CustomFooPayload = InferCustomEventPayload<'custom:foo'>
+import.meta.hot?.on('custom:foo', (payload) => {
+  // The type of payload will be { msg: string }
+})
+import.meta.hot?.on('unknown:event', (payload) => {
+  // The type of payload will be any
+})
 ```

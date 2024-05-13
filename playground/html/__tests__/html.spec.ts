@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from 'vitest'
-import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   browserLogs,
   editFile,
+  expectWithRetry,
   getColor,
   isBuild,
   isServe,
@@ -219,7 +219,7 @@ describe('noBody', () => {
   })
 })
 
-describe.skipIf(hasWindowsUnicodeFsBug)('Unicode path', () => {
+describe('Unicode path', () => {
   test('direct access', async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
@@ -272,6 +272,29 @@ describe.runIf(isServe)('invalid', () => {
     await page.keyboard.press('Escape')
     const isVisbleOverlay = await errorOverlay.isVisible()
     expect(isVisbleOverlay).toBeFalsy()
+  })
+
+  test('stack is updated', async () => {
+    await page.goto(viteTestUrl + '/invalid.html')
+
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    const hiddenPromise = errorOverlay.waitForElementState('hidden')
+    await page.keyboard.press('Escape')
+    await hiddenPromise
+
+    viteServer.hot.send({
+      type: 'error',
+      err: {
+        message: 'someError',
+        stack: [
+          'Error: someError',
+          '    at someMethod (/some/file.ts:1:2)',
+        ].join('\n'),
+      },
+    })
+    const newErrorOverlay = await page.waitForSelector('vite-error-overlay')
+    const stack = await newErrorOverlay.$$eval('.stack', (m) => m[0].innerHTML)
+    expect(stack).toMatch(/^Error: someError/)
   })
 
   test('should reload when fixed', async () => {
@@ -349,6 +372,16 @@ describe('special character', () => {
 
   test('should fetch html proxy', async () => {
     expect(browserLogs).toContain('special character')
+  })
+})
+
+describe('relative input', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/relative-input.html')
+  })
+
+  test('passing relative path to rollupOptions.input works', async () => {
+    await expectWithRetry(() => page.textContent('.relative-input')).toBe('OK')
   })
 })
 

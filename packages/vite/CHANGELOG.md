@@ -1,3 +1,95 @@
+## <small>5.2.11 (2024-05-02)</small>
+
+* feat: improve dynamic import variable failure error message (#16519) ([f8feeea](https://github.com/vitejs/vite/commit/f8feeea)), closes [#16519](https://github.com/vitejs/vite/issues/16519)
+* fix: dynamic-import-vars plugin normalize path issue (#16518) ([f71ba5b](https://github.com/vitejs/vite/commit/f71ba5b)), closes [#16518](https://github.com/vitejs/vite/issues/16518)
+* fix: scripts and styles were missing from built HTML on Windows (#16421) ([0e93f58](https://github.com/vitejs/vite/commit/0e93f58)), closes [#16421](https://github.com/vitejs/vite/issues/16421)
+* fix(deps): update all non-major dependencies (#16488) ([2d50be2](https://github.com/vitejs/vite/commit/2d50be2)), closes [#16488](https://github.com/vitejs/vite/issues/16488)
+* fix(deps): update all non-major dependencies (#16549) ([2d6a13b](https://github.com/vitejs/vite/commit/2d6a13b)), closes [#16549](https://github.com/vitejs/vite/issues/16549)
+* fix(dev): watch publicDir explicitly to include it outside the root (#16502) ([4d83eb5](https://github.com/vitejs/vite/commit/4d83eb5)), closes [#16502](https://github.com/vitejs/vite/issues/16502)
+* fix(preload): skip preload for non-static urls (#16556) ([bb79c9b](https://github.com/vitejs/vite/commit/bb79c9b)), closes [#16556](https://github.com/vitejs/vite/issues/16556)
+* fix(ssr): handle class declaration and expression name scoping (#16569) ([c071eb3](https://github.com/vitejs/vite/commit/c071eb3)), closes [#16569](https://github.com/vitejs/vite/issues/16569)
+* fix(ssr): handle function expression name scoping (#16563) ([02db947](https://github.com/vitejs/vite/commit/02db947)), closes [#16563](https://github.com/vitejs/vite/issues/16563)
+
+
+
+## <small>5.2.10 (2024-04-20)</small>
+
+* revert: perf: use workspace root for fs cache (#15712) (#16476) ([77e7359](https://github.com/vitejs/vite/commit/77e7359)), closes [#15712](https://github.com/vitejs/vite/issues/15712) [#16476](https://github.com/vitejs/vite/issues/16476)
+* fix: add base to virtual html (#16442) ([721f94d](https://github.com/vitejs/vite/commit/721f94d)), closes [#16442](https://github.com/vitejs/vite/issues/16442)
+* fix: adjust esm syntax judgment logic (#16436) ([af72eab](https://github.com/vitejs/vite/commit/af72eab)), closes [#16436](https://github.com/vitejs/vite/issues/16436)
+* fix: don't add outDirs to watch.ignored if emptyOutDir is false (#16453) ([6a127d6](https://github.com/vitejs/vite/commit/6a127d6)), closes [#16453](https://github.com/vitejs/vite/issues/16453)
+* fix(cspNonce): don't overwrite existing nonce values (#16415) ([b872635](https://github.com/vitejs/vite/commit/b872635)), closes [#16415](https://github.com/vitejs/vite/issues/16415)
+* feat: show warning if root is in build.outDir (#16454) ([11444dc](https://github.com/vitejs/vite/commit/11444dc)), closes [#16454](https://github.com/vitejs/vite/issues/16454)
+* feat: write cspNonce to style tags (#16419) ([8e54bbd](https://github.com/vitejs/vite/commit/8e54bbd)), closes [#16419](https://github.com/vitejs/vite/issues/16419)
+* chore(deps): update dependency eslint-plugin-n to v17 (#16381) ([6cccef7](https://github.com/vitejs/vite/commit/6cccef7)), closes [#16381](https://github.com/vitejs/vite/issues/16381)
+
+
+
+## <small>5.2.9 (2024-04-15)</small>
+
+* fix: `fsp.rm` removing files does not take effect (#16032) ([b05c405](https://github.com/vitejs/vite/commit/b05c405)), closes [#16032](https://github.com/vitejs/vite/issues/16032)
+* fix: fix accumulated stacks in error overlay (#16393) ([102c2fd](https://github.com/vitejs/vite/commit/102c2fd)), closes [#16393](https://github.com/vitejs/vite/issues/16393)
+* fix(deps): update all non-major dependencies (#16376) ([58a2938](https://github.com/vitejs/vite/commit/58a2938)), closes [#16376](https://github.com/vitejs/vite/issues/16376)
+* chore: update region comment (#16380) ([77562c3](https://github.com/vitejs/vite/commit/77562c3)), closes [#16380](https://github.com/vitejs/vite/issues/16380)
+* perf: reduce size of injected __vite__mapDeps code (#16184) ([c0ec6be](https://github.com/vitejs/vite/commit/c0ec6be)), closes [#16184](https://github.com/vitejs/vite/issues/16184)
+* perf(css): only replace empty chunk if imported (#16349) ([e2658ad](https://github.com/vitejs/vite/commit/e2658ad)), closes [#16349](https://github.com/vitejs/vite/issues/16349)
+
+
+
+## <small>5.2.8 (2024-04-03)</small>
+
+* fix: csp nonce injection when no closing tag (#16281) (#16282) ([3c85c6b](https://github.com/vitejs/vite/commit/3c85c6b)), closes [#16281](https://github.com/vitejs/vite/issues/16281) [#16282](https://github.com/vitejs/vite/issues/16282)
+* fix: do not access document in `/@vite/client` when not defined (#16318) ([646319c](https://github.com/vitejs/vite/commit/646319c)), closes [#16318](https://github.com/vitejs/vite/issues/16318)
+* fix: fix sourcemap when using object as `define` value  (#15805) ([445c4f2](https://github.com/vitejs/vite/commit/445c4f2)), closes [#15805](https://github.com/vitejs/vite/issues/15805)
+* fix(css): unknown file error happened with lightningcss (#16306) ([01af308](https://github.com/vitejs/vite/commit/01af308)), closes [#16306](https://github.com/vitejs/vite/issues/16306)
+* fix(hmr): multiple updates happened when invalidate is called while multiple tabs open (#16307) ([21cc10b](https://github.com/vitejs/vite/commit/21cc10b)), closes [#16307](https://github.com/vitejs/vite/issues/16307)
+* fix(scanner): duplicate modules for same id if glob is used in html-like types (#16305) ([eca68fa](https://github.com/vitejs/vite/commit/eca68fa)), closes [#16305](https://github.com/vitejs/vite/issues/16305)
+* chore(deps): update all non-major dependencies (#16325) ([a78e265](https://github.com/vitejs/vite/commit/a78e265)), closes [#16325](https://github.com/vitejs/vite/issues/16325)
+* refactor: use types from sass instead of @types/sass (#16340) ([4581e83](https://github.com/vitejs/vite/commit/4581e83)), closes [#16340](https://github.com/vitejs/vite/issues/16340)
+
+
+
+## <small>5.2.7 (2024-03-29)</small>
+
+* chore: deprecate splitVendorChunkPlugin (#16274) ([45a06da](https://github.com/vitejs/vite/commit/45a06da)), closes [#16274](https://github.com/vitejs/vite/issues/16274)
+* fix: skip injecting `__vite__mapDeps` when it's not used (#16271) ([890538a](https://github.com/vitejs/vite/commit/890538a)), closes [#16271](https://github.com/vitejs/vite/issues/16271)
+* fix(deps): update all non-major dependencies (#16258) ([7caef42](https://github.com/vitejs/vite/commit/7caef42)), closes [#16258](https://github.com/vitejs/vite/issues/16258)
+* fix(hmr): don't mutate module graph when collecting modules (#16302) ([dfffea1](https://github.com/vitejs/vite/commit/dfffea1)), closes [#16302](https://github.com/vitejs/vite/issues/16302)
+* fix(hmr): trigger hmr for missing file import errored module after file creation (#16303) ([ffedc06](https://github.com/vitejs/vite/commit/ffedc06)), closes [#16303](https://github.com/vitejs/vite/issues/16303)
+* fix(sourcemap): don't warn even if the sourcesContent is an empty string (#16273) ([24e376a](https://github.com/vitejs/vite/commit/24e376a)), closes [#16273](https://github.com/vitejs/vite/issues/16273)
+* feat(hmr): reload when HTML file is created/deleted (#16288) ([1f53796](https://github.com/vitejs/vite/commit/1f53796)), closes [#16288](https://github.com/vitejs/vite/issues/16288)
+
+
+
+## <small>5.2.6 (2024-03-24)</small>
+
+* fix: `fs.deny` with globs with directories (#16250) ([ba5269c](https://github.com/vitejs/vite/commit/ba5269c)), closes [#16250](https://github.com/vitejs/vite/issues/16250)
+
+
+
+## <small>5.2.5 (2024-03-24)</small>
+
+* fix: avoid SSR requests in waitForRequestIdle (#16246) ([7093f77](https://github.com/vitejs/vite/commit/7093f77)), closes [#16246](https://github.com/vitejs/vite/issues/16246)
+* docs: clarify enforce vs hook.order (#16226) ([3a73e48](https://github.com/vitejs/vite/commit/3a73e48)), closes [#16226](https://github.com/vitejs/vite/issues/16226)
+
+
+
+## <small>5.2.4 (2024-03-23)</small>
+
+* fix: dont resolve imports with malformed URI (#16244) ([fbf69d5](https://github.com/vitejs/vite/commit/fbf69d5)), closes [#16244](https://github.com/vitejs/vite/issues/16244)
+
+
+
+## <small>5.2.3 (2024-03-22)</small>
+
+* fix: handle warmup request error correctly (#16223) ([d7c5256](https://github.com/vitejs/vite/commit/d7c5256)), closes [#16223](https://github.com/vitejs/vite/issues/16223)
+* fix: skip encode if is data uri (#16233) ([8617e76](https://github.com/vitejs/vite/commit/8617e76)), closes [#16233](https://github.com/vitejs/vite/issues/16233)
+* fix(optimizer): fix `optimizeDeps.include` glob syntax for `./*` exports (#16230) ([f184c80](https://github.com/vitejs/vite/commit/f184c80)), closes [#16230](https://github.com/vitejs/vite/issues/16230)
+* fix(runtime): fix sourcemap with `prepareStackTrace` (#16220) ([dad7f4f](https://github.com/vitejs/vite/commit/dad7f4f)), closes [#16220](https://github.com/vitejs/vite/issues/16220)
+* chore: `utf8` replaced with `utf-8` (#16232) ([9800c73](https://github.com/vitejs/vite/commit/9800c73)), closes [#16232](https://github.com/vitejs/vite/issues/16232)
+
+
+
 ## <small>5.2.2 (2024-03-20)</small>
 
 * fix(importAnalysis): skip encode in ssr (#16213) ([e4d2d60](https://github.com/vitejs/vite/commit/e4d2d60)), closes [#16213](https://github.com/vitejs/vite/issues/16213)
