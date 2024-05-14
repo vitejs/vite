@@ -228,7 +228,7 @@ export function updateModules(
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   const traversedModules = new Set<ModuleNode>()
-  // This should be possible only when a root module is invalidated via import.meta.hot.invalidate()
+  // Modules could be empty if a root module is invalidated via import.meta.hot.invalidate()
   let needFullReload: HasDeadEnd = modules.length === 0
 
   for (const mod of modules) {
