@@ -1,7 +1,6 @@
 import { virtual } from 'virtual:file'
 import { foo as depFoo, nestedFoo } from './hmrDep'
 import './importing-updated'
-import './invalidation/parent'
 import './file-delete-restore'
 import './optional-chaining/parent'
 import './intermediate-file-delete'
