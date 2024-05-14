@@ -29,6 +29,29 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
   ) => void | null | undefined | false | string
 }
 
+const setOriginHeader = (
+  proxyReq: http.ClientRequest,
+  options: HttpProxy.ServerOptions,
+) => {
+  // Browsers may send Origin headers even with same-origin
+  // requests. It is common for WebSocket servers to check the Origin
+  // header, so if changeOrigin is true we change the Origin to match
+  // the target URL.
+  // https://github.com/http-party/node-http-proxy/issues/1669
+  if (options.changeOrigin) {
+    const { target } = options
+
+    if (proxyReq.getHeader('origin') && target) {
+      const changedOrigin =
+        typeof target === 'object'
+          ? `${target.protocol}//${target.host}`
+          : target
+
+      proxyReq.setHeader('origin', changedOrigin)
+    }
+  }
+}
+
 export function proxyMiddleware(
   httpServer: HttpServer | null,
   options: NonNullable<CommonServerOptions['proxy']>,
@@ -89,19 +112,12 @@ export function proxyMiddleware(
       }
     })
 
-    proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
-      // Browsers may send Origin headers even with same-origin
-      // requests. It is common for WebSocket servers to check the Origin
-      // header, so we have to change the Origin to match
-      // the target URL.
-      if (proxyReq.getHeader('origin') && options.target) {
-        const target =
-          typeof options.target === 'object'
-            ? `${options.target.protocol}//${options.target.host}`
-            : options.target
+    proxy.on('proxyReq', (proxyReq, req, res, options) => {
+      setOriginHeader(proxyReq, options)
+    })
 
-        proxyReq.setHeader('origin', target)
-      }
+    proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
+      setOriginHeader(proxyReq, options)
 
       socket.on('error', (err) => {
         config.logger.error(
