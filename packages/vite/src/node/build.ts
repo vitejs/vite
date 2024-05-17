@@ -46,6 +46,7 @@ import {
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
+import { chunkImportMapPlugin } from './plugins/chunkImportMap'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { loadFallbackPlugin } from './plugins/loadFallback'
@@ -247,6 +248,12 @@ export interface BuildOptions {
    * @default null
    */
   watch?: WatcherOptions | null
+  /**
+   * Whether to inject importmap for generated chunks.
+   * This importmap is used to optimize caching efficiency.
+   * @default false
+   */
+  chunkImportMap?: boolean
 }
 
 export interface LibraryOptions {
@@ -353,6 +360,7 @@ export function resolveBuildOptions(
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
+    chunkImportMap: false,
   }
 
   const userBuildOptions = raw
@@ -443,6 +451,9 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
         Boolean,
       ) as Plugin[]),
       ...(config.isWorker ? [webWorkerPostPlugin()] : []),
+      ...(!config.isWorker && options.chunkImportMap
+        ? [chunkImportMapPlugin()]
+        : []),
     ],
     post: [
       buildImportAnalysisPlugin(config),

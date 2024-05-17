@@ -37,6 +37,7 @@ import {
   urlToBuiltUrl,
 } from './asset'
 import { isCSSRequest } from './css'
+import { postChunkImportMapHook } from './chunkImportMap'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 
 interface ScriptAssetsUrl {
@@ -57,7 +58,7 @@ const htmlLangRE = /\.(?:html|htm)$/
 const spaceRe = /[\t\n\f\r ]/
 
 const importMapRE =
-  /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>.*?<\/script>/is
+  /[ \t]*<script[^>]*type\s*=\s*(?:"importmap"|'importmap'|importmap)[^>]*>(.*?)<\/script>/gis
 const moduleScriptRE =
   /[ \t]*<script[^>]*type\s*=\s*(?:"module"|'module'|module)[^>]*>/i
 const modulePreloadLinkRE =
@@ -313,8 +314,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   preHooks.unshift(injectCspNonceMetaTagHook(config))
   preHooks.unshift(preImportMapHook(config))
   preHooks.push(htmlEnvHook(config))
-  postHooks.push(injectNonceAttributeTagHook(config))
+  postHooks.push(postChunkImportMapHook(config))
   postHooks.push(postImportMapHook())
+  postHooks.push(injectNonceAttributeTagHook(config))
+
   const processedHtml = new Map<string, string>()
 
   const isExcludedUrl = (url: string) =>
@@ -1075,22 +1078,27 @@ export function preImportMapHook(
 
 /**
  * Move importmap before the first module script and modulepreload link
+ * Merge all importmaps into one
  */
 export function postImportMapHook(): IndexHtmlTransformHook {
   return (html) => {
     if (!importMapAppendRE.test(html)) return
 
-    let importMap: string | undefined
-    html = html.replace(importMapRE, (match) => {
-      importMap = match
+    let imports = {}
+
+    html = html.replaceAll(importMapRE, (_, p1) => {
+      imports = { ...imports, ...JSON.parse(p1).imports }
       return ''
     })
 
-    if (importMap) {
-      html = html.replace(
-        importMapAppendRE,
-        (match) => `${importMap}\n${match}`,
-      )
+    if (Object.keys(imports).length > 0) {
+      html = html.replace(importMapAppendRE, (match) => {
+        return `${serializeTag({
+          tag: 'script',
+          attrs: { type: 'importmap' },
+          children: JSON.stringify({ imports }),
+        })}\n${match}`
+      })
     }
 
     return html
