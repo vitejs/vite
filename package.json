@@ -122,7 +122,8 @@
     },
     "patchedDependencies": {
       "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
-      "sirv@2.0.4": "patches/sirv@2.0.4.patch"
+      "sirv@2.0.4": "patches/sirv@2.0.4.patch",
+      "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch"
     },
     "peerDependencyRules": {
       "allowedVersions": {

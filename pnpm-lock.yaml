@@ -13,6 +13,9 @@ patchedDependencies:
   chokidar@3.6.0:
     hash: bckcfsslxcffppz65mxcq6naau
     path: patches/chokidar@3.6.0.patch
+  http-proxy@1.18.1:
+    hash: qqiqxx62zlcu62nljjmhlvexni
+    path: patches/http-proxy@1.18.1.patch
   sirv@2.0.4:
     hash: amdes53ifqfntejkflpaq5ifce
     path: patches/sirv@2.0.4.patch
@@ -344,7 +347,7 @@ importers:
         version: 3.3.2
       http-proxy:
         specifier: ^1.18.1
-        version: 1.18.1(debug@4.3.4)
+        version: 1.18.1(patch_hash=qqiqxx62zlcu62nljjmhlvexni)(debug@4.3.4)
       launch-editor-middleware:
         specifier: ^2.6.1
         version: 2.6.1
@@ -7224,7 +7227,7 @@ packages:
       statuses: 2.0.1
       toidentifier: 1.0.1
 
-  /http-proxy@1.18.1(debug@4.3.4):
+  /http-proxy@1.18.1(patch_hash=qqiqxx62zlcu62nljjmhlvexni)(debug@4.3.4):
     resolution: {integrity: sha512-7mz/721AbnJwIVbnaSv1Cz3Am0ZLT/UBwkC92VlxhXv/k/BBQfM2fXElQNC27BVGr0uwUpplYPQM9LnaBMR5NQ==}
     engines: {node: '>=8.0.0'}
     dependencies:
@@ -7234,6 +7237,7 @@ packages:
     transitivePeerDependencies:
       - debug
     dev: true
+    patched: true
 
   /https-proxy-agent@5.0.1:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
