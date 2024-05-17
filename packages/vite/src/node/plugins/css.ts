@@ -21,10 +21,11 @@ import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
 import type { LightningCSSOptions } from 'dep-types/lightningcss'
-import type { TransformOptions } from 'esbuild'
+import type { Message, TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
+import type { Warning } from 'lightningcss'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -63,6 +64,7 @@ import {
   removeDirectQuery,
   removeUrlQuery,
   requireResolveFromRootWithFallback,
+  splitRE,
   stripBase,
   stripBomTag,
   urlRE,
@@ -243,6 +245,14 @@ const postcssConfigCache = new WeakMap<
 
 function encodePublicUrlsInCSS(config: ResolvedConfig) {
   return config.command === 'build'
+}
+
+function getLineCount(str: string): number {
+  if (str === '') {
+    return 0
+  }
+  const lines = str.match(splitRE)
+  return (lines?.length ?? 0) + 1
 }
 
 const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
@@ -530,7 +540,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       } else if (inlined) {
         let content = css
         if (config.build.cssMinify) {
-          content = await minifyCSS(content, config, true)
+          content = await minifyCSS(content, config, true, id)
         }
         code = `export default ${JSON.stringify(content)}`
       } else {
@@ -549,13 +559,24 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
+      let line = 1
+      const concatCssEndLines: Array<{ file: string; end: number }> = []
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
         if (styles.has(id)) {
           // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
           if (!transformOnlyRE.test(id)) {
-            chunkCSS += styles.get(id)
+            const content = styles.get(id)
+            if (content !== undefined && content !== '') {
+              if (chunkCSS !== '') {
+                chunkCSS += '\n' + content
+              } else {
+                chunkCSS = content
+              }
+              line += getLineCount(content)
+              concatCssEndLines.push({ file: id, end: line })
+            }
             // a css module contains JS, so it makes this not a pure css chunk
             if (cssModuleRE.test(id)) {
               isPureCssChunk = false
@@ -679,7 +700,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       await urlEmitQueue.run(async () =>
         Promise.all(
           urlEmitTasks.map(async (info) => {
-            info.content = await finalizeCss(info.content, true, config)
+            info.content = await finalizeCss(
+              info.content,
+              true,
+              config,
+              info.originalFilename,
+            )
           }),
         ),
       )
@@ -724,6 +750,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       if (chunkCSS) {
         if (config.build.cssCodeSplit) {
+          const cssFullAssetName = ensureFileExt(chunk.name, '.css')
+          // if facadeModuleId doesn't exist or doesn't have a CSS extension,
+          // that means a JS entry file imports a CSS file.
+          // in this case, only use the filename for the CSS chunk name like JS chunks.
+          const cssAssetName =
+            chunk.isEntry &&
+            (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
+              ? path.basename(cssFullAssetName)
+              : cssFullAssetName
+
           if (opts.format === 'es' || opts.format === 'cjs') {
             if (isPureCssChunk) {
               // this is a shared CSS-only chunk that is empty.
@@ -731,15 +767,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             }
 
             const isEntry = chunk.isEntry && isPureCssChunk
-            const cssFullAssetName = ensureFileExt(chunk.name, '.css')
-            // if facadeModuleId doesn't exist or doesn't have a CSS extension,
-            // that means a JS entry file imports a CSS file.
-            // in this case, only use the filename for the CSS chunk name like JS chunks.
-            const cssAssetName =
-              chunk.isEntry &&
-              (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
-                ? path.basename(cssFullAssetName)
-                : cssFullAssetName
             const originalFilename = getChunkOriginalFileName(
               chunk,
               config.root,
@@ -750,7 +777,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
             // wait for previous tasks as well
             chunkCSS = await codeSplitEmitQueue.run(async () => {
-              return finalizeCss(chunkCSS, true, config)
+              return finalizeCss(
+                chunkCSS,
+                true,
+                config,
+                cssAssetName,
+                concatCssEndLines,
+              )
             })
 
             // emit corresponding css file
@@ -771,8 +804,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // so it will be duplicated. (https://github.com/vitejs/vite/issues/2062#issuecomment-782388010)
             // But because entry chunk can be imported by dynamic import,
             // we shouldn't remove the inlined CSS. (#10285)
-
-            chunkCSS = await finalizeCss(chunkCSS, true, config)
+            chunkCSS = await finalizeCss(
+              chunkCSS,
+              true,
+              config,
+              cssAssetName,
+              concatCssEndLines,
+            )
             let cssString = JSON.stringify(chunkCSS)
             cssString =
               renderAssetUrlInJS(
@@ -894,14 +932,17 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         })
       }
 
-      function extractCss() {
+      async function extractCss() {
         let css = ''
         const collected = new Set<OutputChunk>()
+        const concatCssEndLines: Array<{ file: string; end: number }> = []
         const prelimaryNameToChunkMap = new Map(
           Object.values(bundle)
             .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
             .map((chunk) => [chunk.preliminaryFileName, chunk]),
         )
+
+        let line = 1
 
         function collect(fileName: string) {
           const chunk = bundle[fileName]
@@ -909,23 +950,41 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           collected.add(chunk)
 
           chunk.imports.forEach(collect)
-          css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+
+          const content = chunkCSSMap.get(chunk.preliminaryFileName) ?? null
+          if (content == null || content === '') {
+            return
+          }
+          if (css !== '') {
+            css += '\n' + content
+          } else {
+            css = content
+          }
+          line += getLineCount(content)
+          concatCssEndLines.push({ file: fileName, end: line })
         }
 
         for (const chunkName of chunkCSSMap.keys())
           collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
 
-        return css
+        return await finalizeCss(
+          css,
+          false,
+          config,
+          cssBundleName,
+          concatCssEndLines,
+        )
       }
-      let extractedCss = !hasEmitted && extractCss()
-      if (extractedCss) {
-        hasEmitted = true
-        extractedCss = await finalizeCss(extractedCss, true, config)
-        this.emitFile({
-          name: cssBundleName,
-          type: 'asset',
-          source: extractedCss,
-        })
+      if (!hasEmitted) {
+        const extractedCss = await extractCss()
+        if (extractedCss) {
+          hasEmitted = true
+          this.emitFile({
+            name: cssBundleName,
+            type: 'asset',
+            source: extractedCss,
+          })
+        }
       }
     },
   }
@@ -1538,13 +1597,15 @@ async function finalizeCss(
   css: string,
   minify: boolean,
   config: ResolvedConfig,
+  filename: string,
+  concatCssEndLines?: Array<{ file: string; end: number }>,
 ) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
     css = await hoistAtRules(css)
   }
   if (minify && config.build.cssMinify) {
-    css = await minifyCSS(css, config, false)
+    css = await minifyCSS(css, config, false, filename, concatCssEndLines)
   }
   return css
 }
@@ -1775,10 +1836,64 @@ async function doImportCSSReplace(
   return `@import ${wrap}${await replacer(rawUrl)}${wrap}`
 }
 
+function formatLightningCssWarning(
+  warnings: Warning[],
+  concatCssEndLines?: Array<{ file: string; end: number }>,
+): Warning[] {
+  if (concatCssEndLines && concatCssEndLines.length > 0) {
+    for (const warning of warnings) {
+      if (warning.loc) {
+        const { file, line } = mapLineWithEndLines(
+          concatCssEndLines,
+          warning.loc.line,
+        )
+        warning.loc.filename = file
+        warning.loc.line = line
+      }
+    }
+  }
+  return warnings
+}
+
+function formatEsbuildWarning(
+  messages: Message[],
+  concatCssEndLines?: Array<{ file: string; end: number }>,
+): Message[] {
+  if (concatCssEndLines && concatCssEndLines.length > 0) {
+    for (const message of messages) {
+      if (message.location) {
+        const { file, line } = mapLineWithEndLines(
+          concatCssEndLines,
+          message.location.line,
+        )
+        message.location.file = file
+        message.location.line = line
+      }
+    }
+  }
+  return messages
+}
+
+function mapLineWithEndLines(
+  concatCssEndLines: Array<{ file: string; end: number }>,
+  line: number,
+): { file: string; line: number } {
+  let start = 0
+  for (const { file, end } of concatCssEndLines) {
+    if (start < line && line <= end) {
+      return { file, line: line - start }
+    }
+    start = end - 1
+  }
+  return { file: '', line }
+}
+
 async function minifyCSS(
   css: string,
   config: ResolvedConfig,
   inlined: boolean,
+  filename: string,
+  concatCssEndLines?: Array<{ file: string; end: number }>,
 ) {
   // We want inlined CSS to not end with a linebreak, while ensuring that
   // regular CSS assets do end with a linebreak.
@@ -1789,15 +1904,19 @@ async function minifyCSS(
       ...config.css?.lightningcss,
       targets: convertTargets(config.build.cssTarget),
       cssModules: undefined,
-      filename: cssBundleName,
+      filename: filename,
       code: Buffer.from(css),
       minify: true,
     })
     if (warnings.length) {
+      const msgs = formatLightningCssWarning(warnings, concatCssEndLines)
       config.logger.warn(
         colors.yellow(
-          `warnings when minifying css:\n${warnings
-            .map((w) => w.message)
+          `warnings when minifying css:\n${msgs
+            .map(
+              (w) =>
+                `${w.message}\n\n\t${w.loc.filename}:${w.loc.line}:${w.loc.column}\n\n`,
+            )
             .join('\n')}`,
         ),
       )
@@ -1809,10 +1928,14 @@ async function minifyCSS(
     const { code, warnings } = await transform(css, {
       loader: 'css',
       target: config.build.cssTarget || undefined,
+      sourcefile: filename,
       ...resolveMinifyCssEsbuildOptions(config.esbuild || {}),
     })
     if (warnings.length) {
-      const msgs = await formatMessages(warnings, { kind: 'warning' })
+      const msgs = await formatMessages(
+        formatEsbuildWarning(warnings, concatCssEndLines),
+        { kind: 'warning' },
+      )
       config.logger.warn(
         colors.yellow(`warnings when minifying css:\n${msgs.join('\n')}`),
       )
@@ -1822,7 +1945,10 @@ async function minifyCSS(
   } catch (e) {
     if (e.errors) {
       e.message = '[esbuild css minify] ' + e.message
-      const msgs = await formatMessages(e.errors, { kind: 'error' })
+      const msgs = await formatMessages(
+        formatEsbuildWarning(e.errors, concatCssEndLines),
+        { kind: 'error' },
+      )
       e.frame = '\n' + msgs.join('\n')
       e.loc = e.errors[0].location
     }
