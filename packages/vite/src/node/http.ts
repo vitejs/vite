@@ -43,8 +43,8 @@ export interface CommonServerOptions {
    * ``` js
    * module.exports = {
    *   proxy: {
-   *     // string shorthand
-   *     '/foo': 'http://localhost:4567/foo',
+   *     // string shorthand: /foo -> http://localhost:4567/foo
+   *     '/foo': 'http://localhost:4567',
    *     // with options
    *     '/api': {
    *       target: 'http://jsonplaceholder.typicode.com',
