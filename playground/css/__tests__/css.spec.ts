@@ -448,6 +448,16 @@ test('?raw', async () => {
   expect(await rawImportCss.textContent()).toBe(
     readFileSync(require.resolve('../raw-imported.css'), 'utf-8'),
   )
+
+  if (!isBuild) {
+    editFile('raw-imported.css', (code) =>
+      code.replace('color: yellow', 'color: blue'),
+    )
+    await untilUpdated(
+      () => page.textContent('.raw-imported-css'),
+      'color: blue',
+    )
+  }
 })
 
 test('import css in less', async () => {
