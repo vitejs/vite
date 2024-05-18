@@ -20,7 +20,7 @@ const sponsors = computed(() => {
 <template>
   <a
     class="viteconf"
-    href="https://viteconf.org/23/replay?utm=vite-sidebar"
+    href="https://www.youtube.com/playlist?list=PLqGQbXn_GDmkOsHI7-Wrbv1GgAA4tJZhg"
     target="_blank"
   >
     <img width="22" height="22" src="/viteconf.svg" />
