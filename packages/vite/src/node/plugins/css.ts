@@ -549,6 +549,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
+      // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
+      const isJsChunkEmpty = code === '' && !chunk.isEntry
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
@@ -561,7 +563,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               isPureCssChunk = false
             }
           }
-        } else {
+        } else if (!isJsChunkEmpty) {
           // if the module does not have a style, then it's not a pure css chunk.
           // this is true because in the `transform` hook above, only modules
           // that are css gets added to the `styles` map.
@@ -723,13 +725,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (chunkCSS) {
+        if (isPureCssChunk && (opts.format === 'es' || opts.format === 'cjs')) {
+          // this is a shared CSS-only chunk that is empty.
+          pureCssChunks.add(chunk)
+        }
+
         if (config.build.cssCodeSplit) {
           if (opts.format === 'es' || opts.format === 'cjs') {
-            if (isPureCssChunk) {
-              // this is a shared CSS-only chunk that is empty.
-              pureCssChunks.add(chunk)
-            }
-
             const isEntry = chunk.isEntry && isPureCssChunk
             const cssFullAssetName = ensureFileExt(chunk.name, '.css')
             // if facadeModuleId doesn't exist or doesn't have a CSS extension,
@@ -837,59 +839,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      // remove empty css chunks and their imports
-      if (pureCssChunks.size) {
-        // map each pure css chunk (rendered chunk) to it's corresponding bundle
-        // chunk. we check that by `preliminaryFileName` as they have different
-        // `filename`s (rendered chunk has the !~{XXX}~ placeholder)
-        const prelimaryNameToChunkMap = Object.fromEntries(
-          Object.values(bundle)
-            .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
-            .map((chunk) => [chunk.preliminaryFileName, chunk.fileName]),
-        )
-
-        const pureCssChunkNames = [...pureCssChunks].map(
-          (pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName],
-        )
-
-        const replaceEmptyChunk = getEmptyChunkReplacer(
-          pureCssChunkNames,
-          opts.format,
-        )
-
-        for (const file in bundle) {
-          const chunk = bundle[file]
-          if (chunk.type === 'chunk') {
-            // remove pure css chunk from other chunk's imports,
-            // and also register the emitted CSS files under the importer
-            // chunks instead.
-            chunk.imports = chunk.imports.filter((file) => {
-              if (pureCssChunkNames.includes(file)) {
-                const { importedCss, importedAssets } = (
-                  bundle[file] as OutputChunk
-                ).viteMetadata!
-                importedCss.forEach((file) =>
-                  chunk.viteMetadata!.importedCss.add(file),
-                )
-                importedAssets.forEach((file) =>
-                  chunk.viteMetadata!.importedAssets.add(file),
-                )
-                return false
-              }
-              return true
-            })
-            chunk.code = replaceEmptyChunk(chunk.code)
-          }
-        }
-
-        const removedPureCssFiles = removedPureCssFilesCache.get(config)!
-        pureCssChunkNames.forEach((fileName) => {
-          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
-          delete bundle[fileName]
-          delete bundle[`${fileName}.map`]
-        })
-      }
-
       function extractCss() {
         let css = ''
         const collected = new Set<OutputChunk>()
@@ -921,6 +870,63 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           name: cssBundleName,
           type: 'asset',
           source: extractedCss,
+        })
+      }
+
+      // remove empty css chunks and their imports
+      if (pureCssChunks.size) {
+        // map each pure css chunk (rendered chunk) to it's corresponding bundle
+        // chunk. we check that by `preliminaryFileName` as they have different
+        // `filename`s (rendered chunk has the !~{XXX}~ placeholder)
+        const prelimaryNameToChunkMap = Object.fromEntries(
+          Object.values(bundle)
+            .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
+            .map((chunk) => [chunk.preliminaryFileName, chunk.fileName]),
+        )
+
+        const pureCssChunkNames = [...pureCssChunks].map(
+          (pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName],
+        )
+
+        const replaceEmptyChunk = getEmptyChunkReplacer(
+          pureCssChunkNames,
+          opts.format,
+        )
+
+        for (const file in bundle) {
+          const chunk = bundle[file]
+          if (chunk.type === 'chunk') {
+            let chunkImportsPureCssChunk = false
+            // remove pure css chunk from other chunk's imports,
+            // and also register the emitted CSS files under the importer
+            // chunks instead.
+            chunk.imports = chunk.imports.filter((file) => {
+              if (pureCssChunkNames.includes(file)) {
+                const { importedCss, importedAssets } = (
+                  bundle[file] as OutputChunk
+                ).viteMetadata!
+                importedCss.forEach((file) =>
+                  chunk.viteMetadata!.importedCss.add(file),
+                )
+                importedAssets.forEach((file) =>
+                  chunk.viteMetadata!.importedAssets.add(file),
+                )
+                chunkImportsPureCssChunk = true
+                return false
+              }
+              return true
+            })
+            if (chunkImportsPureCssChunk) {
+              chunk.code = replaceEmptyChunk(chunk.code)
+            }
+          }
+        }
+
+        const removedPureCssFiles = removedPureCssFilesCache.get(config)!
+        pureCssChunkNames.forEach((fileName) => {
+          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
+          delete bundle[fileName]
+          delete bundle[`${fileName}.map`]
         })
       }
     },
@@ -1913,7 +1919,8 @@ type StylePreprocessorOptions = {
   enableSourcemap: boolean
 }
 
-type SassStylePreprocessorOptions = StylePreprocessorOptions & Sass.Options
+type SassStylePreprocessorOptions = StylePreprocessorOptions &
+  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'>
 
 type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
   define?: Record<string, any>
@@ -2017,8 +2024,8 @@ function cleanScssBugUrl(url: string) {
 }
 
 function fixScssBugImportValue(
-  data: Sass.ImporterReturnType,
-): Sass.ImporterReturnType {
+  data: Sass.LegacyImporterResult,
+): Sass.LegacyImporterResult {
   // the scss bug doesn't load files properly so we have to load it ourselves
   // to prevent internal error when it loads itself
   if (
@@ -2081,7 +2088,11 @@ const makeScssWorker = (
 
         // NOTE: `sass` always runs it's own importer first, and only falls back to
         // the `importer` option when it can't resolve a path
-        const _internalImporter: Sass.Importer = (url, importer, done) => {
+        const _internalImporter: Sass.LegacyAsyncImporter = (
+          url,
+          importer,
+          done,
+        ) => {
           internalImporter(url, importer, options.filename).then((data) =>
             done?.(data),
           )
@@ -2093,7 +2104,7 @@ const makeScssWorker = (
             : importer.unshift(options.importer)
         }
 
-        const finalOptions: Sass.Options = {
+        const finalOptions: Sass.LegacyOptions<'async'> = {
           ...options,
           data,
           file: options.filename,
@@ -2110,16 +2121,16 @@ const makeScssWorker = (
         return new Promise<{
           css: string
           map?: string | undefined
-          stats: Sass.Result['stats']
+          stats: Sass.LegacyResult['stats']
         }>((resolve, reject) => {
           sass.render(finalOptions, (err, res) => {
             if (err) {
               reject(err)
             } else {
               resolve({
-                css: res.css.toString(),
-                map: res.map?.toString(),
-                stats: res.stats,
+                css: res!.css.toString(),
+                map: res!.map?.toString(),
+                stats: res!.stats,
               })
             }
           })
@@ -2213,7 +2224,7 @@ async function rebaseUrls(
   alias: Alias[],
   variablePrefix: string,
   resolver: ResolveFn,
-): Promise<Sass.ImporterReturnType> {
+): Promise<Sass.LegacyImporterResult> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
   const fileDir = path.dirname(file)
