@@ -26,7 +26,7 @@ type Node = _Node & {
   end: number
 }
 
-interface TransformOptions {
+export interface ModuleRunnerTransformOptions {
   json?: {
     stringify?: boolean
   }
@@ -47,7 +47,7 @@ export async function ssrTransform(
   inMap: SourceMap | { mappings: '' } | null,
   url: string,
   originalCode: string,
-  options?: TransformOptions,
+  options?: ModuleRunnerTransformOptions, // TODO: Should we export two functions instead of using options here?
 ): Promise<TransformResult | null> {
   if (options?.json?.stringify && isJSONRequest(url)) {
     return ssrTransformJSON(code, inMap)
