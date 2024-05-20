@@ -1,3 +1,11 @@
+## 6.0.0-alpha.12 (2024-05-20)
+
+* chore: export ssrTransform ([0b3cf69](https://github.com/vitejs/vite/commit/0b3cf69))
+* chore: respect ssr flag in clientInjectsions transform ([8c5674e](https://github.com/vitejs/vite/commit/8c5674e))
+* fix: remove enforce inside IsolatedPlugins ([a5efd56](https://github.com/vitejs/vite/commit/a5efd56))
+
+
+
 ## 6.0.0-alpha.11 (2024-05-04)
 
 * refactor: BoundedPlugin -> IsolatedPlugin ([1ec07a4](https://github.com/vitejs/vite/commit/1ec07a4))
