@@ -910,7 +910,7 @@ export function createPluginContainer(
     },
 
     async buildStart() {
-      // noop, buildStart will be called for each environment
+      ;(environments.client as DevEnvironment).pluginContainer!.buildStart({})
     },
 
     async resolveId(rawId, importer, options) {
