@@ -16,6 +16,7 @@ import spawn from 'cross-spawn'
 import colors from 'picocolors'
 import type { Logger } from '../logger'
 import { VITE_PACKAGE_DIR } from '../constants'
+import { buildErrorMessage } from './middlewares/error'
 
 /**
  * Reads the BROWSER environment variable and decides what to do with it.
@@ -34,7 +35,7 @@ export function openBrowser(
     const browserArgs = process.env.BROWSER_ARGS
       ? process.env.BROWSER_ARGS.split(' ')
       : []
-    startBrowserProcess(browser, browserArgs, url)
+    startBrowserProcess(browser, browserArgs, url, logger)
   }
 }
 
@@ -72,6 +73,7 @@ async function startBrowserProcess(
   browser: string | undefined,
   browserArgs: string[],
   url: string,
+  logger: Logger,
 ) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
@@ -122,7 +124,19 @@ async function startBrowserProcess(
     const options: open.Options = browser
       ? { app: { name: browser, arguments: browserArgs } }
       : {}
-    open(url, options).catch(() => {}) // Prevent `unhandledRejection` error.
+    open(url, options)
+      .then((subprocess) => {
+        subprocess.on('error', (err) => {
+          logger.error(
+            buildErrorMessage(err, [
+              `An error occurred while trying to open the browser`,
+              err.message,
+            ]),
+            { error: err },
+          )
+        })
+      })
+      .catch(() => {}) // Prevent `unhandledRejection` error.
     return true
   } catch (err) {
     return false
