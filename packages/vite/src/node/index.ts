@@ -27,6 +27,7 @@ export { BuildEnvironment } from './build'
 export { fetchModule, type FetchModuleOptions } from './ssr/fetchModule'
 export { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
 export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
+export { ssrTransform as moduleRunnerTransform } from './ssr/ssrTransform'
 
 export * from './publicUtils'
 
