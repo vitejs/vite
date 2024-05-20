@@ -844,7 +844,7 @@ export interface PluginContainer {
   buildStart(options: InputOptions): Promise<void>
   resolveId(
     id: string,
-    importer: string | undefined,
+    importer?: string,
     options?: {
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
