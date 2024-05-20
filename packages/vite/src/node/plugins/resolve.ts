@@ -188,7 +188,7 @@ export function resolvePlugin(
    * environments are created. The resolve plugin is especial as it works without
    * environments to enable this use case. It only needs access to the resolve options.
    */
-  environmentsOptions: Record<string, ResolvedEnvironmentOptions>,
+  environmentsOptions?: Record<string, ResolvedEnvironmentOptions>,
 ): Plugin {
   const { root, isProduction, asSrc, preferRelative = false } = resolveOptions
 
@@ -230,8 +230,9 @@ export function resolvePlugin(
         resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
 
       const environmentName = this.environment?.name ?? (ssr ? 'ssr' : 'client')
-      const environmentResolveOptions =
-        environmentsOptions[environmentName].resolve
+      const currentEnvironmentOptions =
+        this.environment?.options || environmentsOptions?.[environmentName]
+      const environmentResolveOptions = currentEnvironmentOptions?.resolve
       if (!environmentResolveOptions) {
         throw new Error(
           `Missing ResolveOptions for ${environmentName} environment`,
@@ -240,8 +241,8 @@ export function resolvePlugin(
       const options: InternalResolveOptions = {
         isRequire,
         ...environmentResolveOptions,
-        nodeCompatible: environmentsOptions[environmentName].nodeCompatible,
-        webCompatible: environmentsOptions[environmentName].webCompatible,
+        nodeCompatible: currentEnvironmentOptions.nodeCompatible,
+        webCompatible: currentEnvironmentOptions.webCompatible,
         ...resolveOptions, // plugin options + resolve options overrides
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }

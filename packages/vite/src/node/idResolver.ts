@@ -36,21 +36,18 @@ export function createIdResolver(
     if (!pluginContainer) {
       pluginContainer = await createIsolatedPluginContainer(environment, [
         aliasPlugin({ entries: config.resolve.alias }), // TODO: resolve.alias per environment?
-        resolvePlugin(
-          {
-            root: config.root,
-            isProduction: config.isProduction,
-            isBuild: config.command === 'build',
-            asSrc: true,
-            preferRelative: false,
-            tryIndex: true,
-            ...options,
-            fsUtils: getFsUtils(config),
-            // Ignore sideEffects and other computations as we only need the id
-            idOnly: true,
-          },
-          config.environments,
-        ),
+        resolvePlugin({
+          root: config.root,
+          isProduction: config.isProduction,
+          isBuild: config.command === 'build',
+          asSrc: true,
+          preferRelative: false,
+          tryIndex: true,
+          ...options,
+          fsUtils: getFsUtils(config),
+          // Ignore sideEffects and other computations as we only need the id
+          idOnly: true,
+        }),
       ])
       pluginContainerMap.set(environment, pluginContainer)
     }
