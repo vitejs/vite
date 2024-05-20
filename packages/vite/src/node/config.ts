@@ -823,6 +823,10 @@ export async function resolveConfig(
 
   const isBuild = command === 'build'
 
+  // run config hooks
+  const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
+  config = await runConfigHook(config, userPlugins, configEnv)
+
   // Ensure default client and ssr environments
   // If there are present, ensure order { client, ssr, ...custom }
   config.environments ??= {}
@@ -841,10 +845,6 @@ export async function resolveConfig(
   if (!config.environments.client) {
     config.environments = { client: {}, ...config.environments }
   }
-
-  // run config hooks
-  const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
-  config = await runConfigHook(config, userPlugins, configEnv)
 
   // Define logger
   const logger = createLogger(config.logLevel, {
