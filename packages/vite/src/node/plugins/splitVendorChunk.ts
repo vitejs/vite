@@ -27,7 +27,7 @@ export const isCSSRequest = (request: string): boolean =>
 // Don't use this manualChunks strategy for ssr, lib mode, and 'umd' or 'iife'
 
 /**
- * @deprecated use build.rollupOutput.manualChunks or framework specific configuration
+ * @deprecated use build.rollupOptions.output.manualChunks or framework specific configuration
  */
 export class SplitVendorChunkCache {
   cache: Map<string, boolean>
@@ -40,7 +40,7 @@ export class SplitVendorChunkCache {
 }
 
 /**
- * @deprecated use build.rollupOutput.manualChunks or framework specific configuration
+ * @deprecated use build.rollupOptions.output.manualChunks or framework specific configuration
  */
 export function splitVendorChunk(
   options: { cache?: SplitVendorChunkCache } = {},
@@ -94,7 +94,7 @@ function staticImportedByEntry(
 }
 
 /**
- * @deprecated use build.rollupOutput.manualChunks or framework specific configuration
+ * @deprecated use build.rollupOptions.output.manualChunks or framework specific configuration
  */
 export function splitVendorChunkPlugin(): Plugin {
   const caches: SplitVendorChunkCache[] = []
