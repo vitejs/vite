@@ -96,12 +96,7 @@ export type {
   SSROptions,
   SSRTarget,
 } from './ssr'
-export type {
-  IsolatedPlugin,
-  IsolatedPluginConstructor,
-  Plugin,
-  HookHandler,
-} from './plugin'
+export type { EnvironmentPlugin, Plugin, HookHandler } from './plugin'
 export type {
   Logger,
   LogOptions,

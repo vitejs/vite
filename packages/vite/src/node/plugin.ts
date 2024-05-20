@@ -77,7 +77,7 @@ export interface TransformPluginContext extends RollupTransformPluginContext {
  * once per each environment allowing users to have completely different plugins
  * for each of them. The constructor gets the resolved environment after the server
  * and builder has already been created simplifying config access and cache
- * managementfor for environment specific plugins.
+ * management for for environment specific plugins.
  * Environment Plugins are closer to regular rollup plugins. They can't define
  * app level hooks (like config, configResolved, configureServer, etc).
  */
@@ -103,21 +103,7 @@ type ModifyHookContext<Hook, NewContext> = Hook extends {
   ? ModifyObjectHookContext<Handler, Hook, NewContext>
   : ModifyFunctionContext<Hook, NewContext>
 
-export interface BasePlugin<A = any> extends RollupPlugin<A> {
-  /**
-   * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
-   * is still subject to the `order` property in the hook object.
-   *
-   * Plugin invocation order:
-   * - alias resolution
-   * - `enforce: 'pre'` plugins
-   * - vite core plugins
-   * - normal plugins
-   * - vite build plugins
-   * - `enforce: 'post'` plugins
-   * - vite build post plugins
-   */
-  enforce?: 'pre' | 'post'
+export interface EnvironmentPlugin<A = any> extends RollupPlugin<A> {
   /**
    * Perform custom handling of HMR updates.
    * The handler receives a context containing changed filename, timestamp, a
@@ -205,9 +191,7 @@ export interface BasePlugin<A = any> extends RollupPlugin<A> {
   renderChunk?: ModifyHookContext<RollupPlugin<A>['renderChunk'], PluginContext>
 }
 
-export type IsolatedPlugin<A = any> = BasePlugin<A>
-
-export interface Plugin<A = any> extends BasePlugin<A> {
+export interface Plugin<A = any> extends EnvironmentPlugin<A> {
   /**
    * Opt-in this plugin into the shared plugins pipeline.
    * For backward-compatibility, plugins are re-recreated for each environment
@@ -217,6 +201,20 @@ export interface Plugin<A = any> extends BasePlugin<A> {
    * @experimental
    */
   sharedDuringBuild?: boolean
+  /**
+   * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
+   * is still subject to the `order` property in the hook object.
+   *
+   * Plugin invocation order:
+   * - alias resolution
+   * - `enforce: 'pre'` plugins
+   * - vite core plugins
+   * - normal plugins
+   * - vite build plugins
+   * - `enforce: 'post'` plugins
+   * - vite build post plugins
+   */
+  enforce?: 'pre' | 'post'
   /**
    * Apply the plugin only for serve or build, or on certain conditions.
    */
@@ -307,6 +305,12 @@ export interface Plugin<A = any> extends BasePlugin<A> {
    * `{ order: 'pre', handler: hook }`
    */
   transformIndexHtml?: IndexHtmlTransform
+  /**
+   * Inject per environment plugins after the shared plugin
+   */
+  environmentPlugins?: (
+    environment: PluginEnvironment,
+  ) => PluginOption[] | undefined
 
   /**
    * @deprecated
@@ -327,43 +331,35 @@ export type PluginWithRequiredHook<K extends keyof Plugin> = Plugin & {
   [P in K]: NonNullable<Plugin[P]>
 }
 
-export type IsolatedPluginConstructor = {
-  (environment: PluginEnvironment): IsolatedPluginOption
-  sharedDuringBuild?: boolean
-}
-
-export type MaybeIsolatedPlugin = IsolatedPlugin | false | null | undefined
-
-export type IsolatedPluginOption =
-  | MaybeIsolatedPlugin
-  | IsolatedPluginOption[]
-  | Promise<MaybeIsolatedPlugin | IsolatedPluginOption[]>
-
-export type MaybePlugin =
-  | Plugin
-  | IsolatedPluginConstructor
+export type MaybeEnvironmentPlugin =
+  | EnvironmentPlugin
   | false
   | null
   | undefined
+
+export type EnvironmentPluginOption =
+  | MaybeEnvironmentPlugin
+  | EnvironmentPluginOption[]
+  | Promise<MaybeEnvironmentPlugin | EnvironmentPluginOption[]>
+
+export type MaybePlugin = Plugin | false | null | undefined
 
 export type PluginOption =
   | MaybePlugin
   | PluginOption[]
   | Promise<MaybePlugin | PluginOption[]>
 
-export async function resolveIsolatedPlugins(
+export async function resolveEnvironmentPlugins(
   environment: PluginEnvironment,
-): Promise<IsolatedPlugin[]> {
-  const resolvedPlugins: IsolatedPlugin[] = []
+): Promise<EnvironmentPlugin[]> {
+  const resolvedPlugins: EnvironmentPlugin[] = []
   for (const plugin of environment.config.plugins) {
-    if (typeof plugin === 'function') {
-      const isolatedPlugin = await plugin(environment)
-      if (isolatedPlugin) {
-        const flatPlugins = await asyncFlattenIsolatedPlugin(
-          environment,
-          isolatedPlugin,
-        )
-        resolvedPlugins.push(...flatPlugins)
+    if (plugin.environmentPlugins) {
+      const environmentPlugins = await plugin.environmentPlugins(environment)
+      if (environmentPlugins) {
+        const newPlugins =
+          await asyncFlattenEnvironmentPlugins(environmentPlugins)
+        resolvedPlugins.push(...newPlugins)
       }
     } else {
       resolvedPlugins.push(plugin)
@@ -372,21 +368,13 @@ export async function resolveIsolatedPlugins(
   return resolvedPlugins
 }
 
-async function asyncFlattenIsolatedPlugin(
-  environment: PluginEnvironment,
-  plugins: IsolatedPluginOption,
-): Promise<IsolatedPlugin[]> {
-  if (!Array.isArray(plugins)) {
-    plugins = [plugins]
-  }
+async function asyncFlattenEnvironmentPlugins(
+  plugins: EnvironmentPluginOption[],
+): Promise<EnvironmentPlugin[]> {
   do {
-    plugins = (
-      await Promise.all(
-        plugins.map((p: any) => (typeof p === 'function' ? p(environment) : p)),
-      )
-    )
+    plugins = ((await Promise.all(plugins)) as any[])
       .flat(Infinity)
-      .filter(Boolean) as IsolatedPluginOption[]
-  } while (plugins.some((v: any) => v?.then || v?.split))
-  return plugins as IsolatedPlugin[]
+      .filter(Boolean) as EnvironmentPluginOption[]
+  } while (plugins.some((v: any) => v?.then))
+  return plugins as EnvironmentPlugin[]
 }

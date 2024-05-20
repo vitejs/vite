@@ -61,7 +61,7 @@ import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
-import type { IsolatedPlugin, Plugin, PluginEnvironment } from '../plugin'
+import type { EnvironmentPlugin, Plugin, PluginEnvironment } from '../plugin'
 import {
   combineSourcemaps,
   createDebugger,
@@ -103,7 +103,7 @@ export interface PluginContainerOptions {
   writeFile?: (name: string, source: string | Uint8Array) => void
 }
 
-export interface IsolatedPluginContainer {
+export interface EnvironmentPluginContainer {
   options: InputOptions
   buildStart(options: InputOptions): Promise<void>
   resolveId(
@@ -146,11 +146,11 @@ type PluginContext = Omit<
  * instead of using environment.plugins to allow the creation of different
  * pipelines working with the same environment (used for createIdResolver).
  */
-export async function createIsolatedPluginContainer(
+export async function createEnvironmentPluginContainer(
   environment: PluginEnvironment,
-  plugins: IsolatedPlugin[],
+  plugins: EnvironmentPlugin[],
   watcher?: FSWatcher,
-): Promise<IsolatedPluginContainer> {
+): Promise<EnvironmentPluginContainer> {
   const {
     config,
     logger,

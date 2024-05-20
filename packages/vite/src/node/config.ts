@@ -22,7 +22,6 @@ import {
 } from './constants'
 import type {
   HookHandler,
-  IsolatedPluginConstructor,
   Plugin,
   PluginEnvironment,
   PluginOption,
@@ -83,8 +82,8 @@ import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
-import type { IsolatedPluginContainer } from './server/pluginContainer'
-import { createIsolatedPluginContainer } from './server/pluginContainer'
+import type { EnvironmentPluginContainer } from './server/pluginContainer'
+import { createEnvironmentPluginContainer } from './server/pluginContainer'
 import type { PackageCache } from './packages'
 import { findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
@@ -538,7 +537,7 @@ export type ResolvedConfig = Readonly<
     resolve: Required<ResolveOptions> & {
       alias: Alias[]
     }
-    plugins: readonly (Plugin | IsolatedPluginConstructor)[]
+    plugins: readonly Plugin[]
     css: ResolvedCSSOptions
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
@@ -762,9 +761,7 @@ export async function resolveConfig(
   defaultNodeEnv = 'development',
   isPreview = false,
   patchConfig: ((config: ResolvedConfig) => void) | undefined = undefined,
-  patchPlugins:
-    | ((resolvedPlugins: (Plugin | IsolatedPluginConstructor)[]) => void)
-    | undefined = undefined,
+  patchPlugins: ((resolvedPlugins: Plugin[]) => void) | undefined = undefined,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   let configFileDependencies: string[] = []
@@ -805,7 +802,7 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
-  const filterPlugin = (p: Plugin | IsolatedPluginConstructor) => {
+  const filterPlugin = (p: Plugin) => {
     if (!p) {
       return false
     } else if (typeof p === 'function' || !p.apply) {
@@ -819,18 +816,10 @@ export async function resolveConfig(
 
   // resolve plugins
   const rawPlugins = (
-    (await asyncFlatten(config.plugins || [])) as (
-      | Plugin
-      | IsolatedPluginConstructor
-    )[]
+    (await asyncFlatten(config.plugins || [])) as Plugin[]
   ).filter(filterPlugin)
 
-  const sharedPlugins = rawPlugins.filter(
-    (plugin) => typeof plugin !== 'function',
-  ) as Plugin[]
-
-  const [prePlugins, normalPlugins, postPlugins] =
-    sortUserPlugins(sharedPlugins)
+  const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(rawPlugins)
 
   const isBuild = command === 'build'
 
@@ -1226,12 +1215,12 @@ export async function resolveConfig(
      */
     createResolver(options) {
       const alias: {
-        client?: IsolatedPluginContainer
-        ssr?: IsolatedPluginContainer
+        client?: EnvironmentPluginContainer
+        ssr?: EnvironmentPluginContainer
       } = {}
       const resolver: {
-        client?: IsolatedPluginContainer
-        ssr?: IsolatedPluginContainer
+        client?: EnvironmentPluginContainer
+        ssr?: EnvironmentPluginContainer
       } = {}
       const environments = this.environments ?? resolvedEnvironments
       const createPluginContainer = async (
@@ -1242,7 +1231,7 @@ export async function resolveConfig(
         // environment so we can safely cast to a base Environment instance to a
         // PluginEnvironment here
         const environment = new Environment(environmentName, this)
-        const pluginContainer = await createIsolatedPluginContainer(
+        const pluginContainer = await createEnvironmentPluginContainer(
           environment as PluginEnvironment,
           plugins,
         )
@@ -1256,7 +1245,7 @@ export async function resolveConfig(
         ssr?: boolean,
       ): Promise<PartialResolvedId | null> {
         const environmentName = ssr ? 'ssr' : 'client'
-        let container: IsolatedPluginContainer
+        let container: EnvironmentPluginContainer
         if (aliasOnly) {
           let aliasContainer = alias[environmentName]
           if (!aliasContainer) {
@@ -1318,18 +1307,10 @@ export async function resolveConfig(
 
   // Backward compatibility hook used in builder, opt-in to shared plugins during build
   patchPlugins?.(resolvedPlugins)
-  ;(resolved.plugins as (Plugin | IsolatedPluginConstructor)[]) =
-    resolvedPlugins
+  ;(resolved.plugins as Plugin[]) = resolvedPlugins
 
   // TODO: Deprecate config.getSortedPlugins and config.getSortedPluginHooks
-  Object.assign(
-    resolved,
-    createPluginHookUtils(
-      resolved.plugins.filter(
-        (plugin) => typeof plugin !== 'function',
-      ) as Plugin[],
-    ),
-  )
+  Object.assign(resolved, createPluginHookUtils(resolved.plugins))
 
   // call configResolved hooks
   await Promise.all(

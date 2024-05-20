@@ -16,7 +16,7 @@ import {
   createDepsOptimizer,
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
-import { resolveIsolatedPlugins } from '../plugin'
+import { resolveEnvironmentPlugins } from '../plugin'
 import type { DepsOptimizer } from '../optimizer'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { HMRChannel } from './hmr'
@@ -25,10 +25,10 @@ import { transformRequest } from './transformRequest'
 import type { TransformResult } from './transformRequest'
 import {
   ERR_CLOSED_SERVER,
-  createIsolatedPluginContainer,
+  createEnvironmentPluginContainer,
 } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
-import type { IsolatedPluginContainer } from './pluginContainer'
+import type { EnvironmentPluginContainer } from './pluginContainer'
 
 export interface DevEnvironmentSetup {
   hot?: false | HMRChannel
@@ -52,7 +52,7 @@ export class DevEnvironment extends Environment {
    */
   _ssrRunnerOptions: FetchModuleOptions | undefined
 
-  get pluginContainer(): IsolatedPluginContainer {
+  get pluginContainer(): EnvironmentPluginContainer {
     if (!this._pluginContainer)
       throw new Error(
         `${this.name} environment.pluginContainer called before initialized`,
@@ -62,7 +62,7 @@ export class DevEnvironment extends Environment {
   /**
    * @internal
    */
-  _pluginContainer: IsolatedPluginContainer | undefined
+  _pluginContainer: EnvironmentPluginContainer | undefined
 
   /**
    * TODO: should this be public?
@@ -165,8 +165,8 @@ export class DevEnvironment extends Environment {
       return
     }
     this._inited = true
-    this._plugins = await resolveIsolatedPlugins(this)
-    this._pluginContainer = await createIsolatedPluginContainer(
+    this._plugins = await resolveEnvironmentPlugins(this)
+    this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this._plugins,
     )

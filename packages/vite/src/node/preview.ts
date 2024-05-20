@@ -26,7 +26,6 @@ import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
 import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
-import type { Plugin } from './plugin'
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
@@ -115,13 +114,10 @@ export async function preview(
   const clientOutDir =
     config.environments.client.build.outDir ?? config.build.outDir
   const distDir = path.resolve(config.root, clientOutDir)
-  const plugins = config.plugins.filter(
-    (plugin) => typeof plugin !== 'function',
-  ) as Plugin[]
   if (
     !fs.existsSync(distDir) &&
     // error if no plugins implement `configurePreviewServer`
-    plugins.every((plugin) => !plugin.configurePreviewServer) &&
+    config.plugins.every((plugin) => !plugin.configurePreviewServer) &&
     // error if called in CLI only. programmatic usage could access `httpServer`
     // and affect file serving
     process.argv[1]?.endsWith(path.normalize('bin/vite.js')) &&
