@@ -21,6 +21,8 @@ export { send } from './server/send'
 export { createLogger } from './logger'
 export { searchForWorkspaceRoot } from './server/searchRoot'
 
-// TODO: export isFileLoadingAllowed?
-export { isFileServingAllowed } from './server/middlewares/static'
+export {
+  isFileServingAllowed,
+  isFileLoadingAllowed,
+} from './server/middlewares/static'
 export { loadEnv, resolveEnvPrefix } from './env'

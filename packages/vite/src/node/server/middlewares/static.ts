@@ -252,7 +252,7 @@ function fsDenyGlob(config: ResolvedConfig, filePath: string): boolean {
 
 /**
  * Check if the url is allowed to be served, via the `server.fs` config.
- * @deprecate use isFileLoadingAllowed
+ * @deprecated use isFileLoadingAllowed
  */
 export function isFileServingAllowed(
   url: string,
