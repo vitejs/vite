@@ -1,3 +1,11 @@
+## 6.0.0-alpha.15 (2024-05-20)
+
+* fix: only join base url in none ssr env ([7e9dd25](https://github.com/vitejs/vite/commit/7e9dd25))
+* fix: svelte back compat ([0166bfe](https://github.com/vitejs/vite/commit/0166bfe))
+* fix hmr connected message on client ([acb208e](https://github.com/vitejs/vite/commit/acb208e))
+
+
+
 ## 6.0.0-alpha.14 (2024-05-20)
 
 * feat: back to environmentPlugins hook (#16732) ([54c219e](https://github.com/vitejs/vite/commit/54c219e)), closes [#16732](https://github.com/vitejs/vite/issues/16732)
