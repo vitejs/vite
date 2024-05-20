@@ -29,6 +29,7 @@ const wasmHelper = async (opts = {}, url: string) => {
     // correct MIME type for .wasm files, which unfortunately doesn't work for
     // a lot of static file servers, so we just work around it by getting the
     // raw buffer.
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- this function runs in browsers
     const response = await fetch(url)
     const contentType = response.headers.get('Content-Type') || ''
     if (

@@ -560,6 +560,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const generatedAssets = generatedAssetsMap.get(this.environment)!
 
       let chunkCSS = ''
+      // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
+      const isJsChunkEmpty = code === '' && !chunk.isEntry
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
@@ -572,7 +574,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               isPureCssChunk = false
             }
           }
-        } else {
+        } else if (!isJsChunkEmpty) {
           // if the module does not have a style, then it's not a pure css chunk.
           // this is true because in the `transform` hook above, only modules
           // that are css gets added to the `styles` map.
@@ -732,13 +734,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (chunkCSS) {
+        if (isPureCssChunk && (opts.format === 'es' || opts.format === 'cjs')) {
+          // this is a shared CSS-only chunk that is empty.
+          pureCssChunks.add(chunk)
+        }
+
         if (config.build.cssCodeSplit) {
           if (opts.format === 'es' || opts.format === 'cjs') {
-            if (isPureCssChunk) {
-              // this is a shared CSS-only chunk that is empty.
-              pureCssChunks.add(chunk)
-            }
-
             const isEntry = chunk.isEntry && isPureCssChunk
             const cssFullAssetName = ensureFileExt(chunk.name, '.css')
             // if facadeModuleId doesn't exist or doesn't have a CSS extension,
@@ -842,6 +844,40 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      function extractCss() {
+        let css = ''
+        const collected = new Set<OutputChunk>()
+        const prelimaryNameToChunkMap = new Map(
+          Object.values(bundle)
+            .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
+            .map((chunk) => [chunk.preliminaryFileName, chunk]),
+        )
+
+        function collect(fileName: string) {
+          const chunk = bundle[fileName]
+          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
+          collected.add(chunk)
+
+          chunk.imports.forEach(collect)
+          css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+        }
+
+        for (const chunkName of chunkCSSMap.keys())
+          collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
+
+        return css
+      }
+      let extractedCss = !hasEmitted && extractCss()
+      if (extractedCss) {
+        hasEmitted = true
+        extractedCss = await finalizeCss(extractedCss, true, config)
+        this.emitFile({
+          name: cssBundleName,
+          type: 'asset',
+          source: extractedCss,
+        })
+      }
+
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
         // map each pure css chunk (rendered chunk) to it's corresponding bundle
@@ -896,40 +932,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
           delete bundle[fileName]
           delete bundle[`${fileName}.map`]
-        })
-      }
-
-      function extractCss() {
-        let css = ''
-        const collected = new Set<OutputChunk>()
-        const prelimaryNameToChunkMap = new Map(
-          Object.values(bundle)
-            .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
-            .map((chunk) => [chunk.preliminaryFileName, chunk]),
-        )
-
-        function collect(fileName: string) {
-          const chunk = bundle[fileName]
-          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
-          collected.add(chunk)
-
-          chunk.imports.forEach(collect)
-          css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
-        }
-
-        for (const chunkName of chunkCSSMap.keys())
-          collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
-
-        return css
-      }
-      let extractedCss = !hasEmitted && extractCss()
-      if (extractedCss) {
-        hasEmitted = true
-        extractedCss = await finalizeCss(extractedCss, true, config)
-        this.emitFile({
-          name: cssBundleName,
-          type: 'asset',
-          source: extractedCss,
         })
       }
     },

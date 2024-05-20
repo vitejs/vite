@@ -355,7 +355,8 @@ export function updateModules(
   const updates: Update[] = []
   const invalidatedModules = new Set<EnvironmentModuleNode>()
   const traversedModules = new Set<EnvironmentModuleNode>()
-  let needFullReload: HasDeadEnd = false
+  // Modules could be empty if a root module is invalidated via import.meta.hot.invalidate()
+  let needFullReload: HasDeadEnd = modules.length === 0
 
   for (const mod of modules) {
     const boundaries: PropagationBoundary[] = []
