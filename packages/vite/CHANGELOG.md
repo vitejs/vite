@@ -1,3 +1,24 @@
+## 6.0.0-alpha.14 (2024-05-20)
+
+* feat: back to environmentPlugins hook (#16732) ([54c219e](https://github.com/vitejs/vite/commit/54c219e)), closes [#16732](https://github.com/vitejs/vite/issues/16732)
+* fix: export isFileLoadingAllowed ([34d8518](https://github.com/vitejs/vite/commit/34d8518))
+* fix: mention `build.rollupOptions.output.manualChunks` instead of  `build.rollupOutput.manualChunks` ([89378c0](https://github.com/vitejs/vite/commit/89378c0)), closes [#16721](https://github.com/vitejs/vite/issues/16721)
+* fix: rely on the current environment in resolveId, if known ([8ee7fcd](https://github.com/vitejs/vite/commit/8ee7fcd))
+* fix: revert resolveId importer require ([3546d1e](https://github.com/vitejs/vite/commit/3546d1e))
+* fix(build): make SystemJSWrapRE match lazy (#16633) ([6583ad2](https://github.com/vitejs/vite/commit/6583ad2)), closes [#16633](https://github.com/vitejs/vite/issues/16633)
+* fix(css): avoid generating empty JS files when JS files becomes empty but has CSS files imported (#1 ([95fe5a7](https://github.com/vitejs/vite/commit/95fe5a7)), closes [#16078](https://github.com/vitejs/vite/issues/16078)
+* fix(css): page reload was not happening with .css?raw (#16455) ([8041846](https://github.com/vitejs/vite/commit/8041846)), closes [#16455](https://github.com/vitejs/vite/issues/16455)
+* fix(deps): update all non-major dependencies (#16603) ([6711553](https://github.com/vitejs/vite/commit/6711553)), closes [#16603](https://github.com/vitejs/vite/issues/16603)
+* fix(deps): update all non-major dependencies (#16660) ([bf2f014](https://github.com/vitejs/vite/commit/bf2f014)), closes [#16660](https://github.com/vitejs/vite/issues/16660)
+* fix(error-logging): rollup errors weren't displaying id and codeframe (#16540) ([22dc196](https://github.com/vitejs/vite/commit/22dc196)), closes [#16540](https://github.com/vitejs/vite/issues/16540)
+* fix(hmr): trigger page reload when calling invalidate on root module (#16636) ([2b61cc3](https://github.com/vitejs/vite/commit/2b61cc3)), closes [#16636](https://github.com/vitejs/vite/issues/16636)
+* fix(logger): truncate log over 5000 characters long (#16581) ([b0b839a](https://github.com/vitejs/vite/commit/b0b839a)), closes [#16581](https://github.com/vitejs/vite/issues/16581)
+* fix(sourcemap): improve sourcemap compatibility for vue2 (#16594) ([913c040](https://github.com/vitejs/vite/commit/913c040)), closes [#16594](https://github.com/vitejs/vite/issues/16594)
+* chore(deps): update all non-major dependencies (#16722) ([b45922a](https://github.com/vitejs/vite/commit/b45922a)), closes [#16722](https://github.com/vitejs/vite/issues/16722)
+* docs: correct proxy shorthand example (#15938) ([abf766e](https://github.com/vitejs/vite/commit/abf766e)), closes [#15938](https://github.com/vitejs/vite/issues/15938)
+
+
+
 ## 6.0.0-alpha.13 (2024-05-20)
 
 * fix: types ([82111bf](https://github.com/vitejs/vite/commit/82111bf))
