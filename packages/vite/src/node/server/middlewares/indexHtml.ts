@@ -4,6 +4,7 @@ import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
 import type { Connect } from 'dep-types/connect'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
+import type { Plugin } from '../../plugin'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
@@ -66,7 +67,8 @@ export function createDevHtmlTransformFn(
   originalUrl?: string,
 ) => Promise<string> {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
-    config.plugins,
+    // TODO: interaction between transformIndexHtml and plugin constructors
+    config.plugins.filter((plugin) => typeof plugin !== 'function') as Plugin[],
     config.logger,
   )
   const transformHooks = [

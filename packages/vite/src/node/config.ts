@@ -72,9 +72,9 @@ import {
 import { getFsUtils } from './fsUtils'
 import {
   createPluginHookUtils,
-  createResolvePlugins,
   getHookHandler,
   getSortedPluginsByHook,
+  resolvePlugins,
 } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
@@ -538,14 +538,7 @@ export type ResolvedConfig = Readonly<
     resolve: Required<ResolveOptions> & {
       alias: Alias[]
     }
-    plugins: readonly Plugin[]
-    rawPlugins: readonly (Plugin | IsolatedPluginConstructor)[]
-    /** @internal inject user plugins into the shared vite pipeline */
-    resolvePlugins: (
-      prePlugins: Plugin[],
-      normalPlugins: Plugin[],
-      postPlugins: Plugin[],
-    ) => Plugin[]
+    plugins: readonly (Plugin | IsolatedPluginConstructor)[]
     css: ResolvedCSSOptions
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
@@ -770,7 +763,7 @@ export async function resolveConfig(
   isPreview = false,
   patchConfig: ((config: ResolvedConfig) => void) | undefined = undefined,
   patchPlugins:
-    | ((plugins: (Plugin | IsolatedPluginConstructor)[]) => void)
+    | ((resolvedPlugins: (Plugin | IsolatedPluginConstructor)[]) => void)
     | undefined = undefined,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
@@ -832,9 +825,6 @@ export async function resolveConfig(
     )[]
   ).filter(filterPlugin)
 
-  // Backward compatibility hook used in builder, opt-in to shared plugins during build
-  patchPlugins?.(rawPlugins)
-
   const sharedPlugins = rawPlugins.filter(
     (plugin) => typeof plugin !== 'function',
   ) as Plugin[]
@@ -855,7 +845,7 @@ export async function resolveConfig(
     // There is no perf hit, because the optimizer is initialized only if ssrLoadModule
     // is called.
     // During build, we only build the ssr environment if it is configured
-    // through the deprecated ssr top level options or if it is explicitely defined
+    // through the deprecated ssr top level options or if it is explicitly defined
     // in the environments config
     config.environments = { ssr: {}, ...config.environments }
   }
@@ -1139,12 +1129,12 @@ export async function resolveConfig(
       mainConfig: resolved,
       bundleChain,
     }
-    const resolveWorkerPlugins = await createResolvePlugins(workerResolved)
-    const resolvedWorkerPlugins = resolveWorkerPlugins(
+    const resolvedWorkerPlugins = (await resolvePlugins(
+      workerResolved,
       workerPrePlugins,
       workerNormalPlugins,
       workerPostPlugins,
-    )
+    )) as Plugin[] // TODO: worker plugins and isolated constructor
 
     // run configResolved hooks
     await Promise.all(
@@ -1180,8 +1170,6 @@ export async function resolveConfig(
     bundleChain: [],
     isProduction,
     plugins: userPlugins, // placeholder to be replaced
-    rawPlugins,
-    resolvePlugins: null as any, // placeholder to be replaced
     css: resolveCSSOptions(config.css),
     esbuild:
       config.esbuild === false
@@ -1312,21 +1300,33 @@ export async function resolveConfig(
   }
 
   // Backward compatibility hook, modify the resolved config before it is used
-  // to create inernal plugins. For example, `config.build.ssr`. Once we rework
+  // to create internal plugins. For example, `config.build.ssr`. Once we rework
   // internal plugins to use environment.options, we can remove the dual
   // patchConfig/patchPlugins and have a single patchConfig before configResolved
   // gets called
   patchConfig?.(resolved)
 
-  const resolvePlugins = await createResolvePlugins(resolved)
+  const resolvedPlugins = await resolvePlugins(
+    resolved,
+    prePlugins,
+    normalPlugins,
+    postPlugins,
+  )
 
-  ;(resolved.resolvePlugins as any) = resolvePlugins
+  // Backward compatibility hook used in builder, opt-in to shared plugins during build
+  patchPlugins?.(resolvedPlugins)
+  ;(resolved.plugins as (Plugin | IsolatedPluginConstructor)[]) =
+    resolvedPlugins
 
-  const resolvedPlugins = resolvePlugins(prePlugins, normalPlugins, postPlugins)
-
-  ;(resolved.plugins as Plugin[]) = resolvedPlugins
-
-  Object.assign(resolved, createPluginHookUtils(resolved.plugins))
+  // TODO: Deprecate config.getSortedPlugins and config.getSortedPluginHooks
+  Object.assign(
+    resolved,
+    createPluginHookUtils(
+      resolved.plugins.filter(
+        (plugin) => typeof plugin !== 'function',
+      ) as Plugin[],
+    ),
+  )
 
   // call configResolved hooks
   await Promise.all(

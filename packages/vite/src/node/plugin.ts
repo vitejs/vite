@@ -14,7 +14,6 @@ import type {
   ResolvedConfig,
   UserConfig,
 } from './config'
-import { sortUserPlugins } from './config'
 import type { ServerHook, ViteDevServer } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { EnvironmentModuleNode } from './server/moduleGraph'
@@ -355,8 +354,8 @@ export type PluginOption =
 export async function resolveIsolatedPlugins(
   environment: PluginEnvironment,
 ): Promise<IsolatedPlugin[]> {
-  const userPlugins: IsolatedPlugin[] = []
-  for (const plugin of environment.config.rawPlugins) {
+  const resolvedPlugins: IsolatedPlugin[] = []
+  for (const plugin of environment.config.plugins) {
     if (typeof plugin === 'function') {
       const isolatedPlugin = await plugin(environment)
       if (isolatedPlugin) {
@@ -364,13 +363,13 @@ export async function resolveIsolatedPlugins(
           environment,
           isolatedPlugin,
         )
-        userPlugins.push(...flatPlugins)
+        resolvedPlugins.push(...flatPlugins)
       }
     } else {
-      userPlugins.push(plugin)
+      resolvedPlugins.push(plugin)
     }
   }
-  return environment.config.resolvePlugins(...sortUserPlugins(userPlugins))
+  return resolvedPlugins
 }
 
 async function asyncFlattenIsolatedPlugin(

@@ -534,7 +534,9 @@ export async function build(
 function resolveConfigToBuild(
   inlineConfig: InlineConfig = {},
   patchConfig?: (config: ResolvedConfig) => void,
-  patchPlugins?: (rawPlugins: (Plugin | IsolatedPluginConstructor)[]) => void,
+  patchPlugins?: (
+    resolvedPlugins: (Plugin | IsolatedPluginConstructor)[],
+  ) => void,
 ) {
   return resolveConfig(
     inlineConfig,
@@ -548,7 +550,7 @@ function resolveConfigToBuild(
 }
 
 /**
- * Build an App environment, or a App library (if librayOptions is provided)
+ * Build an App environment, or a App library (if libraryOptions is provided)
  **/
 export async function buildEnvironment(
   config: ResolvedConfig,
@@ -608,9 +610,11 @@ export async function buildEnvironment(
 
   // inject environment and ssr arg to plugin load/transform hooks
   // TODO: rework lib mode
-  const plugins = (libOptions ? config : environment).plugins.map((p) =>
-    injectEnvironmentToHooks(p, environment),
-  )
+  const plugins = (
+    libOptions
+      ? (config.plugins.filter((p) => typeof p !== 'function') as Plugin[])
+      : environment.plugins
+  ).map((p) => injectEnvironmentToHooks(p, environment))
 
   const rollupOptions: RollupOptions = {
     preserveEntrySignatures: ssr
@@ -1526,14 +1530,14 @@ export async function createBuilder(
         }
       }
       const patchPlugins = (
-        rawPlugins: (Plugin | IsolatedPluginConstructor)[],
+        resolvedPlugins: (Plugin | IsolatedPluginConstructor)[],
       ) => {
         // Force opt-in shared plugins
-        const environmentPlugins = [...rawPlugins]
+        const environmentPlugins = [...resolvedPlugins]
         let validMixedPlugins = true
         for (let i = 0; i < environmentPlugins.length; i++) {
           const environmentPlugin = environmentPlugins[i]
-          const sharedPlugin = config.rawPlugins[i]
+          const sharedPlugin = config.plugins[i]
           if (
             config.builder.sharedPlugins ||
             environmentPlugin.sharedDuringBuild
@@ -1547,7 +1551,7 @@ export async function createBuilder(
         }
         if (validMixedPlugins) {
           for (let i = 0; i < environmentPlugins.length; i++) {
-            rawPlugins[i] = environmentPlugins[i]
+            resolvedPlugins[i] = environmentPlugins[i]
           }
         }
       }

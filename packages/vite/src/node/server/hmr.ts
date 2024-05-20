@@ -6,7 +6,7 @@ import colors from 'picocolors'
 import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
-import type { ResolvedConfig } from '../config'
+import type { Environment } from '../environment'
 import { createDebugger, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
@@ -165,12 +165,12 @@ export function getSortedPluginsByHotUpdateHook(
   return sortedPlugins
 }
 
-const sortedHotUpdatePluginsCache = new WeakMap<ResolvedConfig, Plugin[]>()
-function getSortedHotUpdatePlugins(config: ResolvedConfig): Plugin[] {
-  let sortedPlugins = sortedHotUpdatePluginsCache.get(config) as Plugin[]
+const sortedHotUpdatePluginsCache = new WeakMap<Environment, Plugin[]>()
+function getSortedHotUpdatePlugins(environment: Environment): Plugin[] {
+  let sortedPlugins = sortedHotUpdatePluginsCache.get(environment) as Plugin[]
   if (!sortedPlugins) {
-    sortedPlugins = getSortedPluginsByHotUpdateHook(config.plugins)
-    sortedHotUpdatePluginsCache.set(config, sortedPlugins)
+    sortedPlugins = getSortedPluginsByHotUpdateHook(environment.plugins)
+    sortedHotUpdatePluginsCache.set(environment, sortedPlugins)
   }
   return sortedPlugins
 }
@@ -255,7 +255,7 @@ export async function handleHMRUpdate(
 
       let hmrContext
 
-      for (const plugin of getSortedHotUpdatePlugins(config)) {
+      for (const plugin of getSortedHotUpdatePlugins(environment)) {
         if (plugin.hotUpdate) {
           const filteredModules = await getHookHandler(plugin.hotUpdate)(
             hotContext,
