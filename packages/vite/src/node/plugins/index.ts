@@ -2,12 +2,7 @@ import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rollup'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'
-import type {
-  HookHandler,
-  IsolatedPluginConstructor,
-  Plugin,
-  PluginWithRequiredHook,
-} from '../plugin'
+import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
 import { getFsUtils } from '../fsUtils'
 import { jsonPlugin } from './json'
@@ -36,7 +31,7 @@ export async function resolvePlugins(
   prePlugins: Plugin[],
   normalPlugins: Plugin[],
   postPlugins: Plugin[],
-): Promise<(Plugin | IsolatedPluginConstructor)[]> {
+): Promise<Plugin[]> {
   const isBuild = config.command === 'build'
   const isWorker = config.isWorker
   const buildPlugins = isBuild
@@ -115,7 +110,7 @@ export async function resolvePlugins(
           importAnalysisPlugin(config),
           // TODO: loadFallbackPlugin(config),
         ]),
-  ].filter(Boolean) as (Plugin | IsolatedPluginConstructor)[]
+  ].filter(Boolean) as Plugin[]
 }
 
 export function createPluginHookUtils(

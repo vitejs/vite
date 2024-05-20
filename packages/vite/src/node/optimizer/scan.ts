@@ -35,9 +35,9 @@ import {
   virtualModulePrefix,
   virtualModuleRE,
 } from '../utils'
-import { resolveIsolatedPlugins } from '../plugin'
-import type { IsolatedPluginContainer } from '../server/pluginContainer'
-import { createIsolatedPluginContainer } from '../server/pluginContainer'
+import { resolveEnvironmentPlugins } from '../plugin'
+import type { EnvironmentPluginContainer } from '../server/pluginContainer'
+import { createEnvironmentPluginContainer } from '../server/pluginContainer'
 import { Environment } from '../environment'
 import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
@@ -47,7 +47,7 @@ import { loadTsconfigJsonForFile } from '../plugins/esbuild'
 export class ScanEnvironment extends Environment {
   mode = 'scan' as const
 
-  get pluginContainer(): IsolatedPluginContainer {
+  get pluginContainer(): EnvironmentPluginContainer {
     if (!this._pluginContainer)
       throw new Error(
         `${this.name} environment.pluginContainer called before initialized`,
@@ -57,15 +57,15 @@ export class ScanEnvironment extends Environment {
   /**
    * @internal
    */
-  _pluginContainer: IsolatedPluginContainer | undefined
+  _pluginContainer: EnvironmentPluginContainer | undefined
 
   async init(): Promise<void> {
     if (this._inited) {
       return
     }
     this._inited = true
-    this._plugins = await resolveIsolatedPlugins(this)
-    this._pluginContainer = await createIsolatedPluginContainer(
+    this._plugins = await resolveEnvironmentPlugins(this)
+    this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this.plugins,
     )
@@ -101,7 +101,7 @@ export function devToScanEnvironment(
 }
 
 type ResolveIdOptions = Omit<
-  Parameters<IsolatedPluginContainer['resolveId']>[2],
+  Parameters<EnvironmentPluginContainer['resolveId']>[2],
   'environment'
 >
 

@@ -3,8 +3,8 @@ import aliasPlugin from '@rollup/plugin-alias'
 import type { ResolvedConfig } from './config'
 import type { Environment } from './environment'
 import type { PluginEnvironment } from './plugin'
-import type { IsolatedPluginContainer } from './server/pluginContainer'
-import { createIsolatedPluginContainer } from './server/pluginContainer'
+import type { EnvironmentPluginContainer } from './server/pluginContainer'
+import { createEnvironmentPluginContainer } from './server/pluginContainer'
 import { resolvePlugin } from './plugins/resolve'
 import type { InternalResolveOptions } from './plugins/resolve'
 import { getFsUtils } from './fsUtils'
@@ -26,7 +26,7 @@ export function createIdResolver(
 ): ResolveIdFn {
   const scan = options?.scan
 
-  const pluginContainerMap = new Map<Environment, IsolatedPluginContainer>()
+  const pluginContainerMap = new Map<Environment, EnvironmentPluginContainer>()
   async function resolve(
     environment: PluginEnvironment,
     id: string,
@@ -34,7 +34,7 @@ export function createIdResolver(
   ): Promise<PartialResolvedId | null> {
     let pluginContainer = pluginContainerMap.get(environment)
     if (!pluginContainer) {
-      pluginContainer = await createIsolatedPluginContainer(environment, [
+      pluginContainer = await createEnvironmentPluginContainer(environment, [
         aliasPlugin({ entries: config.resolve.alias }), // TODO: resolve.alias per environment?
         resolvePlugin({
           root: config.root,
@@ -56,7 +56,7 @@ export function createIdResolver(
 
   const aliasOnlyPluginContainerMap = new Map<
     Environment,
-    IsolatedPluginContainer
+    EnvironmentPluginContainer
   >()
   async function resolveAlias(
     environment: PluginEnvironment,
@@ -65,7 +65,7 @@ export function createIdResolver(
   ): Promise<PartialResolvedId | null> {
     let pluginContainer = aliasOnlyPluginContainerMap.get(environment)
     if (!pluginContainer) {
-      pluginContainer = await createIsolatedPluginContainer(environment, [
+      pluginContainer = await createEnvironmentPluginContainer(environment, [
         aliasPlugin({ entries: config.resolve.alias }), // TODO: resolve.alias per environment?
       ])
       aliasOnlyPluginContainerMap.set(environment, pluginContainer)

@@ -58,12 +58,12 @@ class DevEnvironment {
    * Resolved plugins for this environment, including the ones
    * created using the per-environment `create` hook
    */
-  plugins: IsolatedPlugin[]
+  plugins: EnvironmentPlugin[]
   /**
    * Allows to resolve, load, and transform code through the
    * environment plugins pipeline
    */
-  pluginContainer: IsolatedPluginContatiner
+  pluginContainer: EnvironmentPluginContainer
   /**
    * Resolved config options for this environment. Options at the server
    * global scope are taken as defaults for all environments, and can
@@ -888,19 +888,19 @@ function myPlugin() {
   // Share state among all environments in dev and build
   const sharedState = ...
 
-  const plugin = (environment) => {
-    // Isolated state for each environment during dev and build
-    const isolatedState = ...
-
-    return {
-      name: 'isolated-plugin',
-      transform(code, id) { ... }
-    }
+  return {
+    name: 'with-environment-plugins',
+    environmentPlugins(environment) {
+      // Isolated state for each environment during dev and build
+      const isolatedState = ...
+      return {
+        name: 'per-environment-plugin',
+        transform(code, id) { ... },
+      }
+    },
+    // Opt-in into a single instance for all environments
+    sharedDuringBuild: true
   }
-
-  // Opt-in into a single instance for all environments
-  plugin.sharedDuringBuild = true
-  return plugin
 }
 ```
 

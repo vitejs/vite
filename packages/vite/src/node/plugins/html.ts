@@ -307,7 +307,7 @@ function handleParseError(
  */
 export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   const [preHooks, normalHooks, postHooks] = resolveHtmlTransforms(
-    config.plugins.filter((plugin) => typeof plugin !== 'function') as Plugin[],
+    config.plugins,
     config.logger,
   )
   preHooks.unshift(injectCspNonceMetaTagHook(config))

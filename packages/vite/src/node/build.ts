@@ -47,7 +47,7 @@ import {
   partialEncodeURIPath,
   requireResolveFromRootWithFallback,
 } from './utils'
-import { resolveIsolatedPlugins } from './plugin'
+import { resolveEnvironmentPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -66,7 +66,7 @@ import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
 import { Environment } from './environment'
-import type { IsolatedPluginConstructor, Plugin, PluginContext } from './plugin'
+import type { Plugin, PluginContext } from './plugin'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -534,9 +534,7 @@ export async function build(
 function resolveConfigToBuild(
   inlineConfig: InlineConfig = {},
   patchConfig?: (config: ResolvedConfig) => void,
-  patchPlugins?: (
-    resolvedPlugins: (Plugin | IsolatedPluginConstructor)[],
-  ) => void,
+  patchPlugins?: (resolvedPlugins: Plugin[]) => void,
 ) {
   return resolveConfig(
     inlineConfig,
@@ -610,11 +608,9 @@ export async function buildEnvironment(
 
   // inject environment and ssr arg to plugin load/transform hooks
   // TODO: rework lib mode
-  const plugins = (
-    libOptions
-      ? (config.plugins.filter((p) => typeof p !== 'function') as Plugin[])
-      : environment.plugins
-  ).map((p) => injectEnvironmentToHooks(p, environment))
+  const plugins = (libOptions ? config : environment).plugins.map((p) =>
+    injectEnvironmentToHooks(p, environment),
+  )
 
   const rollupOptions: RollupOptions = {
     preserveEntrySignatures: ssr
@@ -1443,7 +1439,7 @@ export class BuildEnvironment extends Environment {
       return
     }
     this._inited = true
-    this._plugins = await resolveIsolatedPlugins(this)
+    this._plugins = await resolveEnvironmentPlugins(this)
   }
 }
 
@@ -1529,9 +1525,7 @@ export async function createBuilder(
           lib: false,
         }
       }
-      const patchPlugins = (
-        resolvedPlugins: (Plugin | IsolatedPluginConstructor)[],
-      ) => {
+      const patchPlugins = (resolvedPlugins: Plugin[]) => {
         // Force opt-in shared plugins
         const environmentPlugins = [...resolvedPlugins]
         let validMixedPlugins = true
