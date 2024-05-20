@@ -390,7 +390,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // prepend base
-          url = joinUrlSegments(base, url)
+          if (!ssr) url = joinUrlSegments(base, url)
         }
 
         return [url, resolved.id]
