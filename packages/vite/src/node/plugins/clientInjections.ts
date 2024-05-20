@@ -89,10 +89,11 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
       }
     },
-    async transform(code, id) {
+    async transform(code, id, options) {
       if (!this.environment) return
       // TODO: !environment.options.nodeCompatible ?
-      const ssr = this.environment.name !== 'client'
+      // TODO: Remove options?.ssr, Vitest currently hijacks this plugin
+      const ssr = options?.ssr ?? this.environment.name !== 'client'
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
         return injectConfigValues(code)
       } else if (!ssr && code.includes('process.env.NODE_ENV')) {
