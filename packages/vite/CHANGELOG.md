@@ -1,3 +1,9 @@
+## 6.0.0-alpha.13 (2024-05-20)
+
+* fix: types ([82111bf](https://github.com/vitejs/vite/commit/82111bf))
+
+
+
 ## 6.0.0-alpha.12 (2024-05-20)
 
 * chore: export ssrTransform ([0b3cf69](https://github.com/vitejs/vite/commit/0b3cf69))
