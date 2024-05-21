@@ -310,7 +310,7 @@ export interface Plugin<A = any> extends EnvironmentPlugin<A> {
    */
   environmentPlugins?: (
     environment: PluginEnvironment,
-  ) => PluginOption[] | undefined
+  ) => EnvironmentPluginOptionArray
 
   /**
    * @deprecated
@@ -331,23 +331,18 @@ export type PluginWithRequiredHook<K extends keyof Plugin> = Plugin & {
   [P in K]: NonNullable<Plugin[P]>
 }
 
-export type MaybeEnvironmentPlugin =
-  | EnvironmentPlugin
-  | false
-  | null
-  | undefined
+type Thenable<T> = T | Promise<T>
+type FalsyPlugin = false | null | undefined
 
-export type EnvironmentPluginOption =
-  | MaybeEnvironmentPlugin
-  | EnvironmentPluginOption[]
-  | Promise<MaybeEnvironmentPlugin | EnvironmentPluginOption[]>
+export type EnvironmentPluginOption = Thenable<
+  EnvironmentPlugin | FalsyPlugin | EnvironmentPluginOption[]
+>
 
-export type MaybePlugin = Plugin | false | null | undefined
+export type EnvironmentPluginOptionArray = Thenable<
+  EnvironmentPluginOption[] | FalsyPlugin
+>
 
-export type PluginOption =
-  | MaybePlugin
-  | PluginOption[]
-  | Promise<MaybePlugin | PluginOption[]>
+export type PluginOption = Thenable<Plugin | FalsyPlugin | PluginOption[]>
 
 export async function resolveEnvironmentPlugins(
   environment: PluginEnvironment,
