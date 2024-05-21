@@ -265,7 +265,7 @@ class EnvironmentPluginContainer {
     await Promise.all(parallelPromises)
   }
 
-  async buildStart(): Promise<void> {
+  async buildStart(_options?: InputOptions): Promise<void> {
     await this.handleHookPromise(
       this.hookParallel(
         'buildStart',
