@@ -967,7 +967,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           !htmlProxyRE.test(id)
         // attached by pluginContainer.addWatchFile
         const pluginImports = (this as unknown as TransformPluginContext)
-          ._addedImports as Set<string> | undefined
+          ._addedImports
         if (pluginImports) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update

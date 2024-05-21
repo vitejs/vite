@@ -737,7 +737,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (!isCSSRequest(importer) || SPECIAL_QUERY_RE.test(importer)) {
         // attached by pluginContainer.addWatchFile
         const pluginImports = (this as unknown as TransformPluginContext)
-          ._addedImports as Set<string> | undefined
+          ._addedImports
         if (pluginImports) {
           ;(
             await Promise.all(
