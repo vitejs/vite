@@ -193,6 +193,7 @@ export default tseslint.config(
     rules: {
       'no-undef': 'off',
       'n/no-missing-import': 'off',
+      'n/no-extraneous-import': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
     },
   },
