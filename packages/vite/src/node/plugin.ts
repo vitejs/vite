@@ -354,6 +354,7 @@ export async function resolveEnvironmentPlugins(
 ): Promise<EnvironmentPlugin[]> {
   const resolvedPlugins: EnvironmentPlugin[] = []
   for (const plugin of environment.config.plugins) {
+    resolvedPlugins.push(plugin)
     if (plugin.environmentPlugins) {
       const environmentPlugins = await plugin.environmentPlugins(environment)
       if (environmentPlugins) {
@@ -361,8 +362,6 @@ export async function resolveEnvironmentPlugins(
           await asyncFlattenEnvironmentPlugins(environmentPlugins)
         resolvedPlugins.push(...newPlugins)
       }
-    } else {
-      resolvedPlugins.push(plugin)
     }
   }
   return resolvedPlugins
