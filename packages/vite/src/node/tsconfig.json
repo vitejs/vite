@@ -4,10 +4,11 @@
     "./",
     "../module-runner",
     "../dep-types",
+    "./__tests_dts__",
     "../types",
     "constants.ts"
   ],
-  "exclude": ["../**/__tests__"],
+  "exclude": ["../**/__tests__/"],
   "compilerOptions": {
     "lib": ["ESNext", "DOM"],
     "stripInternal": true,

@@ -33,6 +33,9 @@ importers:
       '@rollup/plugin-typescript':
         specifier: ^11.1.6
         version: 11.1.6(rollup@4.13.0)(tslib@2.6.2)(typescript@5.2.2)
+      '@type-challenges/utils':
+        specifier: ^0.1.1
+        version: 0.1.1
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
@@ -4446,6 +4449,10 @@ packages:
 
   /@tsconfig/node16@1.0.2:
     resolution: {integrity: sha512-eZxlbI8GZscaGS7kkc/trHTT5xgrjH3/1n2JDwusC9iahPKWMRvRjJSAN5mCXviuTGQ/lHnhvv8Q1YTpnfz9gA==}
+
+  /@type-challenges/utils@0.1.1:
+    resolution: {integrity: sha512-A7ljYfBM+FLw+NDyuYvGBJiCEV9c0lPWEAdzfOAkb3JFqfLl0Iv/WhWMMARHiRKlmmiD1g8gz/507yVvHdQUYA==}
+    dev: true
 
   /@types/babel__core@7.20.5:
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}

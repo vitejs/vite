@@ -78,7 +78,7 @@
     "build-types-temp": "tsc --emitDeclarationOnly --outDir temp -p src/node",
     "build-types-roll": "rollup --config rollup.dts.config.ts --configPlugin typescript && rimraf temp",
     "build-types-check": "tsc --project tsconfig.check.json",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/node",
     "lint": "eslint --cache --ext .ts src/**",
     "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
     "prepublishOnly": "npm run build"

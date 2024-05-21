@@ -24,6 +24,7 @@ import { withTrailingSlash } from '../shared/utils'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   ESBUILD_MODULES_TARGET,
+  ROLLUP_HOOKS,
   VERSION,
 } from './constants'
 import type {
@@ -67,6 +68,7 @@ import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
 import { Environment } from './environment'
 import type { Plugin, PluginContext } from './plugin'
+import type { RollupPluginHooks } from './typeUtils'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -1124,23 +1126,30 @@ export function injectEnvironmentToHooks(
   plugin: Plugin,
   environment?: BuildEnvironment,
 ): Plugin {
-  const {
-    buildStart,
-    resolveId,
-    load,
-    transform,
-    generateBundle,
-    renderChunk,
-  } = plugin
-  return {
-    ...plugin,
-    resolveId: wrapEnvironmentResolveId(resolveId, environment),
-    load: wrapEnvironmentLoad(load, environment),
-    transform: wrapEnvironmentTransform(transform, environment),
-    buildStart: wrapEnvironmentHook(buildStart, environment),
-    generateBundle: wrapEnvironmentHook(generateBundle, environment),
-    renderChunk: wrapEnvironmentHook(renderChunk, environment),
+  const { resolveId, load, transform } = plugin
+
+  const clone = { ...plugin }
+
+  for (const hook of Object.keys(clone) as RollupPluginHooks[]) {
+    switch (hook) {
+      case 'resolveId':
+        clone[hook] = wrapEnvironmentResolveId(resolveId, environment)
+        break
+      case 'load':
+        clone[hook] = wrapEnvironmentLoad(load, environment)
+        break
+      case 'transform':
+        clone[hook] = wrapEnvironmentTransform(transform, environment)
+        break
+      default:
+        if (ROLLUP_HOOKS.includes(hook)) {
+          ;(clone as any)[hook] = wrapEnvironmentHook(clone[hook], environment)
+        }
+        break
+    }
   }
+
+  return clone
 }
 
 function wrapEnvironmentResolveId(
@@ -1227,6 +1236,8 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
   if (!hook) return
 
   const fn = getHookHandler(hook)
+  if (typeof fn !== 'function') return hook
+
   const handler: Plugin[HookName] = function (
     this: PluginContext,
     ...args: any[]
@@ -1248,14 +1259,8 @@ function injectEnvironmentInContext<Context extends PluginContext>(
   context: Context,
   environment?: BuildEnvironment,
 ) {
-  return new Proxy(context, {
-    get(target, prop, receiver) {
-      if (prop === 'environment') {
-        return environment
-      }
-      return Reflect.get(target, prop, receiver)
-    },
-  })
+  context.environment ??= environment
+  return context
 }
 
 function injectSsrFlag<T extends Record<string, any>>(

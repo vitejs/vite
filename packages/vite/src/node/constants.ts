@@ -1,10 +1,39 @@
 import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
+import type { RollupPluginHooks } from './typeUtils'
 
 const { version } = JSON.parse(
   readFileSync(new URL('../../package.json', import.meta.url)).toString(),
 )
+
+export const ROLLUP_HOOKS = [
+  'buildStart',
+  'buildEnd',
+  'renderStart',
+  'renderError',
+  'renderChunk',
+  'writeBundle',
+  'generateBundle',
+  'banner',
+  'footer',
+  'augmentChunkHash',
+  'outputOptions',
+  'renderDynamicImport',
+  'resolveFileUrl',
+  'resolveImportMeta',
+  'intro',
+  'outro',
+  'closeBundle',
+  'closeWatcher',
+  'load',
+  'moduleParsed',
+  'watchChange',
+  'resolveDynamicImport',
+  'resolveId',
+  'shouldTransformCachedModule',
+  'transform',
+] satisfies RollupPluginHooks[]
 
 export const VERSION = version as string
 
