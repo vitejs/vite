@@ -75,6 +75,11 @@ export interface TransformPluginContext
   extends RollupTransformPluginContext,
     PluginContextExtension {}
 
+// Argument Rollup types to have the PluginContextExtension
+declare module 'rollup' {
+  export interface PluginContext extends PluginContextExtension {}
+}
+
 /**
  * There are two types of plugins in Vite. App plugins and environment plugins.
  * Environment Plugins are defined by a constructor function that will be called
@@ -85,28 +90,6 @@ export interface TransformPluginContext
  * Environment Plugins are closer to regular rollup plugins. They can't define
  * app level hooks (like config, configResolved, configureServer, etc).
  */
-
-type ModifyFunctionContext<Function_, NewContext> = Function_ extends (
-  this: infer This,
-  ...parameters: infer Arguments
-) => infer Return
-  ? (this: NewContext, ...parameters: Arguments) => Return
-  : Function_
-
-type ModifyObjectHookContext<
-  Handler,
-  Object_ extends { handler: Handler },
-  NewContext,
-> = Object_ & {
-  handler: ModifyFunctionContext<Handler, NewContext>
-}
-
-type ModifyHookContext<Hook, NewContext> = Hook extends {
-  handler: infer Handler
-}
-  ? ModifyObjectHookContext<Handler, Hook, NewContext>
-  : ModifyFunctionContext<Hook, NewContext>
-
 export interface EnvironmentPlugin<A = any> extends RollupPlugin<A> {
   /**
    * Perform custom handling of HMR updates.
@@ -184,61 +167,6 @@ export interface EnvironmentPlugin<A = any> extends RollupPlugin<A> {
         ssr?: boolean
       },
     ) => Promise<TransformResult> | TransformResult
-  >
-
-  // Extends rollup hooks
-  // ./__tests_dts__/plugin.ts will guard this to ensure we have all hooks
-  augmentChunkHash?: ModifyHookContext<
-    RollupPlugin<A>['augmentChunkHash'],
-    PluginContext
-  >
-  banner?: ModifyHookContext<RollupPlugin<A>['banner'], PluginContext>
-  buildEnd?: ModifyHookContext<RollupPlugin<A>['buildEnd'], PluginContext>
-  buildStart?: ModifyHookContext<RollupPlugin<A>['buildStart'], PluginContext>
-  closeBundle?: ModifyHookContext<RollupPlugin<A>['closeBundle'], PluginContext>
-  closeWatcher?: ModifyHookContext<
-    RollupPlugin<A>['closeWatcher'],
-    PluginContext
-  >
-  footer?: ModifyHookContext<RollupPlugin<A>['footer'], PluginContext>
-  generateBundle?: ModifyHookContext<
-    RollupPlugin<A>['generateBundle'],
-    PluginContext
-  >
-  intro?: ModifyHookContext<RollupPlugin<A>['intro'], PluginContext>
-  moduleParsed?: ModifyHookContext<
-    RollupPlugin<A>['moduleParsed'],
-    PluginContext
-  >
-  outputOptions?: ModifyHookContext<
-    RollupPlugin<A>['outputOptions'],
-    PluginContext
-  >
-  outro?: ModifyHookContext<RollupPlugin<A>['outro'], PluginContext>
-  renderChunk?: ModifyHookContext<RollupPlugin<A>['renderChunk'], PluginContext>
-  renderDynamicImport?: ModifyHookContext<
-    RollupPlugin<A>['renderDynamicImport'],
-    PluginContext
-  >
-  renderError?: ModifyHookContext<RollupPlugin<A>['renderError'], PluginContext>
-  renderStart?: ModifyHookContext<RollupPlugin<A>['renderStart'], PluginContext>
-  resolveDynamicImport?: ModifyHookContext<
-    RollupPlugin<A>['resolveDynamicImport'],
-    PluginContext
-  >
-  resolveFileUrl?: ModifyHookContext<
-    RollupPlugin<A>['resolveFileUrl'],
-    PluginContext
-  >
-  resolveImportMeta?: ModifyHookContext<
-    RollupPlugin<A>['resolveImportMeta'],
-    PluginContext
-  >
-  watchChange?: ModifyHookContext<RollupPlugin<A>['watchChange'], PluginContext>
-  writeBundle?: ModifyHookContext<RollupPlugin<A>['writeBundle'], PluginContext>
-  shouldTransformCachedModule?: ModifyHookContext<
-    RollupPlugin<A>['shouldTransformCachedModule'],
-    PluginContext
   >
 }
 
