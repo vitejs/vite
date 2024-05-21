@@ -14,9 +14,8 @@ const pkgVite = require('./packages/vite/package.json')
 
 export default tseslint.config(
   {
-    name: 'ignore',
     ignores: [
-      'packages/create-vite/template-**',
+      'packages/create-vite/template-*',
       '**/dist/**',
       '**/fixtures/**',
       '**/playground-temp/**',
@@ -166,55 +165,6 @@ export default tseslint.config(
     },
   },
   {
-    name: 'vite/client',
-    files: ['packages/vite/src/client/**/*.?([cm])[jt]s?(x)'],
-    ignores: ['**/__tests__/**'],
-    rules: {
-      'n/no-unsupported-features/node-builtins': 'off',
-    },
-  },
-  {
-    name: 'vite/types',
-    files: [
-      'packages/vite/src/types/**/*.?([cm])[jt]s?(x)',
-      'packages/vite/scripts/**/*.?([cm])[jt]s?(x)',
-      '**/*.spec.ts',
-    ],
-    rules: {
-      'n/no-extraneous-import': 'off',
-    },
-  },
-  {
-    name: 'template/disables',
-    files: [
-      'packages/create-vite/template-*/**/*.?([cm])[jt]s?(x)',
-      '**/build.config.ts',
-    ],
-    rules: {
-      'no-undef': 'off',
-      'n/no-missing-import': 'off',
-      'n/no-extraneous-import': 'off',
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-    },
-  },
-  {
-    name: 'playground/disables',
-    files: ['playground/**/*.?([cm])[jt]s?(x)', 'docs/**/*.?([cm])[jt]s?(x)'],
-    rules: {
-      'n/no-extraneous-import': 'off',
-      'n/no-extraneous-require': 'off',
-      'n/no-missing-import': 'off',
-      'n/no-missing-require': 'off',
-      'n/no-unsupported-features/es-builtins': 'off',
-      'n/no-unsupported-features/node-builtins': 'off',
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-      'no-undef': 'off',
-      'no-empty': 'off',
-      'no-constant-condition': 'off',
-      '@typescript-eslint/no-empty-function': 'off',
-    },
-  },
-  {
     name: 'playground/enforce-esm',
     files: ['playground/**/*.?([cm])[jt]s?(x)'],
     ignores: [
@@ -252,8 +202,59 @@ export default tseslint.config(
       ],
     },
   },
+
   {
-    name: 'playground/tsconfig-json',
+    name: 'disables/vite/client',
+    files: ['packages/vite/src/client/**/*.?([cm])[jt]s?(x)'],
+    ignores: ['**/__tests__/**'],
+    rules: {
+      'n/no-unsupported-features/node-builtins': 'off',
+    },
+  },
+  {
+    name: 'disables/vite/types',
+    files: [
+      'packages/vite/src/types/**/*.?([cm])[jt]s?(x)',
+      'packages/vite/scripts/**/*.?([cm])[jt]s?(x)',
+      '**/*.spec.ts',
+    ],
+    rules: {
+      'n/no-extraneous-import': 'off',
+    },
+  },
+  {
+    name: 'disables/create-vite/templates',
+    files: [
+      'packages/create-vite/template-*/**/*.?([cm])[jt]s?(x)',
+      '**/build.config.ts',
+    ],
+    rules: {
+      'no-undef': 'off',
+      'n/no-missing-import': 'off',
+      'n/no-extraneous-import': 'off',
+      'n/no-extraneous-require': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+    },
+  },
+  {
+    name: 'disables/playground',
+    files: ['playground/**/*.?([cm])[jt]s?(x)', 'docs/**/*.?([cm])[jt]s?(x)'],
+    rules: {
+      'n/no-extraneous-import': 'off',
+      'n/no-extraneous-require': 'off',
+      'n/no-missing-import': 'off',
+      'n/no-missing-require': 'off',
+      'n/no-unsupported-features/es-builtins': 'off',
+      'n/no-unsupported-features/node-builtins': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      'no-undef': 'off',
+      'no-empty': 'off',
+      'no-constant-condition': 'off',
+      '@typescript-eslint/no-empty-function': 'off',
+    },
+  },
+  {
+    name: 'disables/playground/tsconfig-json',
     files: [
       'playground/tsconfig-json/**/*.?([cm])[jt]s?(x)',
       'playground/tsconfig-json-load-error/**/*.?([cm])[jt]s?(x)',
@@ -264,21 +265,21 @@ export default tseslint.config(
     },
   },
   {
-    name: 'js/disables',
+    name: 'disables/js',
     files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
     rules: {
       '@typescript-eslint/explicit-module-boundary-types': 'off',
     },
   },
   {
-    name: 'dts/disables',
+    name: 'disables/dts',
     files: ['**/*.d.ts'],
     rules: {
       '@typescript-eslint/triple-slash-reference': 'off',
     },
   },
   {
-    name: 'test/disables',
+    name: 'disables/test',
     files: ['**/__tests__/**/*.?([cm])[jt]s?(x)'],
     rules: {
       'no-console': 'off',
