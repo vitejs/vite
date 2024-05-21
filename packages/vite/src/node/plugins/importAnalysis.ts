@@ -54,6 +54,7 @@ import { checkPublicFile } from '../publicDir'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
+import type { TransformPluginContext } from '../server/pluginContainer'
 import type { DevEnvironment } from '../server/environment'
 import { addSafeModulePath } from '../server/middlewares/static'
 import { shouldExternalize } from '../external'
@@ -245,7 +246,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         throwOutdatedRequest(importer)
       }
 
-      if (!imports.length && !(this as any)._addedImports) {
+      if (
+        !imports.length &&
+        !(this as unknown as TransformPluginContext)._addedImports
+      ) {
         importerModule.isSelfAccepting = false
         debug?.(
           `${timeFrom(msAtStart)} ${colors.dim(
@@ -732,9 +736,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // note that we want to handle .css?raw and .css?url here
       if (!isCSSRequest(importer) || SPECIAL_QUERY_RE.test(importer)) {
         // attached by pluginContainer.addWatchFile
-        const pluginImports = (this as any)._addedImports as
-          | Set<string>
-          | undefined
+        const pluginImports = (this as unknown as TransformPluginContext)
+          ._addedImports as Set<string> | undefined
         if (pluginImports) {
           ;(
             await Promise.all(
