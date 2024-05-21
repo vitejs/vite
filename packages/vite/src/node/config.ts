@@ -950,10 +950,8 @@ export async function resolveConfig(
 
   // Backward compatibility: merge environments.client.dev.optimizeDeps back into optimizeDeps
   const resolvedConfigEnvironmentsClient = resolvedEnvironments.client
-  const patchedOptimizeDeps = mergeConfig(
-    config.optimizeDeps ?? {},
-    resolvedConfigEnvironmentsClient.dev?.optimizeDeps ?? {},
-  )
+  const patchedOptimizeDeps =
+    resolvedConfigEnvironmentsClient.dev?.optimizeDeps ?? {}
   const backwardCompatibleOptimizeDeps = {
     holdUntilCrawlEnd: true,
     ...patchedOptimizeDeps,
@@ -983,10 +981,7 @@ export async function resolveConfig(
     ...config.ssr,
     external: resolvedEnvironments.ssr?.resolve.external,
     noExternal: resolvedEnvironments.ssr?.resolve.noExternal,
-    optimizeDeps: mergeConfig(
-      config.ssr?.optimizeDeps ?? {},
-      resolvedEnvironments.ssr?.dev?.optimizeDeps ?? {},
-    ),
+    optimizeDeps: resolvedEnvironments.ssr?.dev?.optimizeDeps,
     resolve: {
       ...config.ssr?.resolve,
       conditions: resolvedEnvironments.ssr?.resolve.conditions,
