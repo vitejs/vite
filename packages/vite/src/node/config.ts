@@ -139,7 +139,7 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
 
 export interface DevEnvironmentOptions {
   /**
-   * Files tßo be pre-transformed. Supports glob patterns.
+   * Files to be pre-transformed. Supports glob patterns.
    */
   warmup?: string[]
   /**
