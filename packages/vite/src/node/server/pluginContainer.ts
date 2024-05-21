@@ -30,8 +30,8 @@ SOFTWARE.
 */
 
 import fs from 'node:fs'
-import { performance } from 'node:perf_hooks'
 import { join } from 'node:path'
+import { performance } from 'node:perf_hooks'
 import { parseAst as rollupParseAst } from 'rollup/parseAst'
 import type {
   AsyncPluginHooks,
@@ -60,7 +60,7 @@ import type {
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
-import type { FSWatcher } from 'chokidar'
+import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
 import type { EnvironmentPlugin, Plugin, PluginEnvironment } from '../plugin'
 import {
