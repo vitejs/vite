@@ -10,6 +10,7 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
+import { parse } from 'tsconfck'
 import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
@@ -1033,14 +1034,14 @@ export async function loadConfigFromFile(
   const isESM = isFilePathESM(resolvedPath)
 
   try {
-    const bundled = await bundleConfigFile(resolvedPath, isESM)
+    const tsConfigPaths = await getPathsFromClosestTsconfig(resolvedPath)
+    const bundled = await bundleConfigFile(resolvedPath, isESM, tsConfigPaths)
     const userConfig = await loadConfigFromBundledFile(
       resolvedPath,
       bundled.code,
       isESM,
     )
     debug?.(`bundled config file loaded in ${getTime()}`)
-
     const config = await (typeof userConfig === 'function'
       ? userConfig(configEnv)
       : userConfig)
@@ -1063,9 +1064,18 @@ export async function loadConfigFromFile(
   }
 }
 
+async function getPathsFromClosestTsconfig(
+  resolvedPath: string,
+): Promise<string[]> {
+  const { tsconfig } = await parse(resolvedPath)
+  const paths = tsconfig?.compilerOptions?.paths
+  return Object.keys(paths)
+}
+
 async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
+  tsConfigPaths: string[],
 ): Promise<{ code: string; dependencies: string[] }> {
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
@@ -1119,6 +1129,14 @@ async function bundleConfigFile(
               false,
             )?.id
           }
+          const isTsConfigPathImport = (id: string): boolean => {
+            if (!tsConfigPaths.length) {
+              return false
+            }
+            return tsConfigPaths.some((tsPath) =>
+              id.startsWith(tsPath.split('/*')[0]),
+            )
+          }
 
           // externalize bare imports
           build.onResolve(
@@ -1127,7 +1145,8 @@ async function bundleConfigFile(
               if (
                 kind === 'entry-point' ||
                 path.isAbsolute(id) ||
-                isNodeBuiltin(id)
+                isNodeBuiltin(id) ||
+                isTsConfigPathImport(id)
               ) {
                 return
               }
