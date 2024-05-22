@@ -54,6 +54,7 @@ export type {
 } from './config'
 export type {
   EnvironmentPlugin,
+  PluginEnvironment,
   Plugin,
   EnvironmentPluginOptionArray,
   PluginOption,
