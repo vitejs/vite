@@ -74,10 +74,10 @@ function setupWebSocket(
   hostAndPath: string,
   onCloseWithoutOpen?: () => void,
 ) {
-  const socket = new WebSocket(`${protocol}://${hostAndPath}`, 'vite-hmr')
+  const _socket = new WebSocket(`${protocol}://${hostAndPath}`, 'vite-hmr')
   let isOpened = false
 
-  socket.addEventListener(
+  _socket.addEventListener(
     'open',
     () => {
       isOpened = true
@@ -87,12 +87,12 @@ function setupWebSocket(
   )
 
   // Listen for messages
-  socket.addEventListener('message', async ({ data }) => {
+  _socket.addEventListener('message', async ({ data }) => {
     handleMessage(JSON.parse(data))
   })
 
   // ping server
-  socket.addEventListener('close', async ({ wasClean }) => {
+  _socket.addEventListener('close', async ({ wasClean }) => {
     if (wasClean) return
 
     if (!isOpened && onCloseWithoutOpen) {
@@ -105,11 +105,13 @@ function setupWebSocket(
     if (hasDocument) {
       console.log(`[vite] server connection lost. polling for restart...`)
       await waitForSuccessfulPing(protocol, hostAndPath)
-      location.reload()
+      if (_socket.readyState === WebSocket.CLOSED) {
+        socket = setupWebSocket(protocol, hostAndPath, onCloseWithoutOpen)
+      }
     }
   })
 
-  return socket
+  return _socket
 }
 
 function cleanUrl(pathname: string): string {
