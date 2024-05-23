@@ -281,12 +281,12 @@ class PluginContainer {
     },
   ): Promise<PartialResolvedId | null> {
     const skip = options?.skip
+    const ssr = options?.ssr
     const scan = !!options?.scan
-    const ssr = !!options?.ssr
 
-    const context = new ResolvedIdContext(this, ssr)
-    context._resolveSkips = skip
-    context._scan = scan
+    const ctx = new ResolvedIdContext(this, !!ssr)
+    ctx._resolveSkips = skip
+    ctx._scan = scan
 
     const resolveStart = debugResolve ? performance.now() : 0
     let id: string | null = null
@@ -297,12 +297,12 @@ class PluginContainer {
       if (!plugin.resolveId) continue
       if (skip?.has(plugin)) continue
 
-      context._plugin = plugin
+      ctx._plugin = plugin
 
       const pluginResolveStart = debugPluginResolve ? performance.now() : 0
       const handler = getHookHandler(plugin.resolveId)
       const result = await this.handleHookPromise(
-        handler.call(context as any, rawId, importer, {
+        handler.call(ctx as any, rawId, importer, {
           attributes: options?.attributes ?? {},
           custom: options?.custom,
           isEntry: !!options?.isEntry,
@@ -356,8 +356,8 @@ class PluginContainer {
       ssr?: boolean
     },
   ): Promise<LoadResult | null> {
-    const ssr = !!options?.ssr
-    const ctx = new LoadPluginContext(this, ssr)
+    const ssr = options?.ssr
+    const ctx = new LoadPluginContext(this, !!ssr)
 
     for (const plugin of this.getSortedPlugins('load')) {
       if (this._closed) throwClosedServerError()
@@ -388,14 +388,14 @@ class PluginContainer {
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }> {
     const inMap = options?.inMap
-    const ssr = !!options?.ssr
+    const ssr = options?.ssr
 
     const ctx = new TransformPluginContext(
       this,
       id,
       code,
       inMap as SourceMap,
-      ssr,
+      !!ssr,
     )
     ctx._addedImports = this._getAddedImports(id)
 
@@ -501,7 +501,6 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     },
   ): ReturnType<RollupPluginContext['resolve']> {
     let skip: Set<Plugin> | undefined
-    const ssr = !this?.ssr
 
     if (options?.skipSelf !== false && this._plugin) {
       skip = new Set(this._resolveSkips)
@@ -512,7 +511,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       custom: options?.custom,
       isEntry: !!options?.isEntry,
       skip,
-      ssr,
+      ssr: this?.ssr,
       scan: this._scan,
     })
     if (typeof out === 'string') out = { id: out }
@@ -525,18 +524,18 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       resolveDependencies?: boolean
     } & Partial<PartialNull<ModuleOptions>>,
   ): Promise<ModuleInfo> {
-    const ssr = this?.ssr
-
     // We may not have added this to our module graph yet, so ensure it exists
     await this._container.moduleGraph?.ensureEntryFromUrl(unwrapId(options.id))
     // Not all options passed to this function make sense in the context of loading individual files,
     // but we can at least update the module info properties we support
     this._updateModuleInfo(options.id, options)
 
-    const loadResult = await this._container.load(options.id, { ssr })
+    const loadResult = await this._container.load(options.id, {
+      ssr: this?.ssr,
+    })
     const code = typeof loadResult === 'object' ? loadResult?.code : loadResult
     if (code != null) {
-      await this._container.transform(code, options.id, { ssr })
+      await this._container.transform(code, options.id, { ssr: this?.ssr })
     }
 
     const moduleInfo = this.getModuleInfo(options.id)
