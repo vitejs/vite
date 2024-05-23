@@ -401,12 +401,12 @@ export interface ResolvedServerUrls {
 export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
-  return _createServer(inlineConfig, { wsListen: true })
+  return _createServer(inlineConfig, { hotListen: true })
 }
 
 export async function _createServer(
   inlineConfig: InlineConfig = {},
-  options: { wsListen: boolean },
+  options: { hotListen: boolean },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
@@ -945,7 +945,7 @@ export async function _createServer(
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
         // ensure ws server started
-        ws.listen()
+        Object.values(environments).forEach((e) => e.hot.listen())
         await initServer()
       } catch (e) {
         httpServer.emit('error', e)
@@ -954,8 +954,8 @@ export async function _createServer(
       return listen(port, ...args)
     }) as any
   } else {
-    if (options.wsListen) {
-      ws.listen()
+    if (options.hotListen) {
+      Object.values(environments).forEach((e) => e.hot.listen())
     }
     await initServer()
   }
@@ -1128,7 +1128,7 @@ async function restartServer(server: ViteDevServer) {
     let newServer: ViteDevServer | null = null
     try {
       // delay ws server listen
-      newServer = await _createServer(inlineConfig, { wsListen: false })
+      newServer = await _createServer(inlineConfig, { hotListen: false })
     } catch (err: any) {
       server.config.logger.error(err.message, {
         timestamp: true,

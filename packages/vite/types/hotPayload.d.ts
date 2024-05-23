@@ -1,3 +1,5 @@
+/** @deprecated use HotPayload */
+export type HMRPayload = HotPayload
 export type HotPayload =
   | ConnectedPayload
   | UpdatePayload
