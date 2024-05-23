@@ -428,8 +428,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
     ```js
     handleHotUpdate({ server, modules, timestamp }) {
-      // Also use `server.ws.send` to support Vite <5.1 if needed
-      server.hot.send({ type: 'full-reload' })
+      server.ws.send({ type: 'full-reload' })
       // Invalidate modules manually
       const invalidatedModules = new Set()
       for (const mod of modules) {
@@ -448,8 +447,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
     ```js
     handleHotUpdate({ server }) {
-      // Also use `server.ws.send` to support Vite <5.1 if needed
-      server.hot.send({
+      server.ws.send({
         type: 'custom',
         event: 'special-update',
         data: {}
@@ -556,7 +554,7 @@ Since Vite 2.9, we provide some utilities for plugins to help handle the communi
 
 ### Server to Client
 
-On the plugin side, we could use `server.hot.send` (since Vite 5.1) or `server.ws.send` to broadcast events to all the clients:
+On the plugin side, we could use `server.ws.send` to broadcast events to the client:
 
 ```js
 // vite.config.js
@@ -565,9 +563,8 @@ export default defineConfig({
     {
       // ...
       configureServer(server) {
-        // Example: wait for a client to connect before sending a message
-        server.hot.on('connection', () => {
-          server.hot.send('my:greetings', { msg: 'hello' })
+        server.ws.on('connection', () => {
+          server.ws.send('my:greetings', { msg: 'hello' })
         })
       },
     },
@@ -603,7 +600,7 @@ if (import.meta.hot) {
 }
 ```
 
-Then use `server.hot.on` (since Vite 5.1) or `server.ws.on` and listen to the events on the server side:
+Then use `server.ws.on` and listen to the events on the server side:
 
 ```js
 // vite.config.js
@@ -612,7 +609,7 @@ export default defineConfig({
     {
       // ...
       configureServer(server) {
-        server.hot.on('my:from-client', (data, client) => {
+        server.ws.on('my:from-client', (data, client) => {
           console.log('Message from client:', data.msg) // Hey!
           // reply only to the client (if needed)
           client.send('my:ack', { msg: 'Hi! I got your message!' })
