@@ -386,7 +386,7 @@ class PluginContainer {
     const ctx = new LoadPluginContext(this, !!ssr)
 
     for (const plugin of this.getSortedPlugins('load')) {
-      if (this._closed) throwClosedServerError()
+      if (this._closed && !ssr) throwClosedServerError()
       if (!plugin.load) continue
       ctx._plugin = plugin
       const handler = getHookHandler(plugin.load)
