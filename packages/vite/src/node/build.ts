@@ -500,7 +500,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
         ? [
             ...(options.manifest ? [manifestPlugin()] : []),
             ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
-            buildReporterPlugin(config),
+            buildReporterPlugin(),
           ]
         : []),
       buildLoadFallbackPlugin(),

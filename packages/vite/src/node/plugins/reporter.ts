@@ -2,11 +2,11 @@ import path from 'node:path'
 import { gzip } from 'node:zlib'
 import { promisify } from 'node:util'
 import colors from 'picocolors'
-import type { Plugin } from 'rollup'
-import type { ResolvedConfig } from '../config'
+import type { Plugin } from '../plugin'
 import { isDefined, isInNodeModules, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 import { withTrailingSlash } from '../../shared/utils'
+import type { Environment } from '../environment'
 
 const groups = [
   { name: 'Assets', color: colors.green },
@@ -23,9 +23,65 @@ type LogEntry = {
 
 const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml)$/
 
-export function buildReporterPlugin(config: ResolvedConfig): Plugin {
+function createPerEnvPlugin(factory: () => Plugin): Plugin {
+  const defaultPlugin = factory()
+
+  let init = false
+  const pluginMap = new WeakMap<Environment, Plugin>()
+
+  function getPlugin(env: Environment) {
+    // reuse the default plugin for the first environment
+    if (!init) {
+      init = true
+      pluginMap.set(env, defaultPlugin)
+    }
+    if (!pluginMap.has(env)) {
+      pluginMap.set(env, factory())
+    }
+    return pluginMap.get(env)!
+  }
+
+  const plugin: any = {}
+
+  for (const [key, value] of Object.entries(defaultPlugin)) {
+    if (typeof value === 'function') {
+      plugin[key] = function (...args: any[]) {
+        if (!this.environment) {
+          throw new Error(
+            'Hook "' + key + '" is not supported in `createPerEnvPlugin`',
+          )
+        }
+        const plugin = getPlugin(this.environment)
+        return (plugin as any)[key].apply(this, args)
+      }
+    } else if (value && value.handler && typeof value.handler === 'function') {
+      plugin[key] = {
+        ...value,
+        handler(...args: any[]) {
+          if (!this.environment) {
+            throw new Error(
+              'Hook "' + key + '" is not supported in `createPerEnvPlugin`',
+            )
+          }
+          const plugin = getPlugin(this.environment)
+          return (plugin as any)[key].handler.apply(this, args)
+        },
+      }
+    } else {
+      plugin[key] = value
+    }
+  }
+
+  return plugin
+}
+
+export function buildReporterPlugin(): Plugin {
+  return createPerEnvPlugin(() => _buildReporterPlugin())
+}
+
+function _buildReporterPlugin(): Plugin {
   const compress = promisify(gzip)
-  const chunkLimit = config.build.chunkSizeWarningLimit
+  let chunkLimit = 500
 
   const numberFormatter = new Intl.NumberFormat('en', {
     maximumFractionDigits: 2,
@@ -36,7 +92,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   }
 
   const tty = process.stdout.isTTY && !process.env.CI
-  const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
+  let shouldLogInfo = false
   let hasTransformed = false
   let hasRenderedChunk = false
   let hasCompressChunk = false
@@ -46,13 +102,14 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
   async function getCompressedSize(
     code: string | Uint8Array,
+    env: Environment,
   ): Promise<number | null> {
-    if (config.build.ssr || !config.build.reportCompressedSize) {
+    if (env.options.build.ssr || !env.options.build.reportCompressedSize) {
       return null
     }
     if (shouldLogInfo && !hasCompressChunk) {
       if (!tty) {
-        config.logger.info('computing gzip size...')
+        env.logger.info('computing gzip size...')
       } else {
         writeLine('computing gzip size (0)...')
       }
@@ -68,10 +125,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     return compressed.length
   }
 
-  const logTransform = throttle((id: string) => {
+  const logTransform = throttle((id: string, root: string) => {
     writeLine(
       `transforming (${transformedCount}) ${colors.dim(
-        path.relative(config.root, id),
+        path.relative(root, id),
       )}`,
     )
   })
@@ -79,16 +136,18 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:reporter',
 
+    sharedDuringBuild: true,
+
     transform(_, id) {
       transformedCount++
       if (shouldLogInfo) {
         if (!tty) {
           if (!hasTransformed) {
-            config.logger.info(`transforming...`)
+            this.environment!.logger.info(`transforming...`)
           }
         } else {
           if (id.includes(`?`)) return
-          logTransform(id)
+          logTransform(id, this.environment!.config.root)
         }
         hasTransformed = true
       }
@@ -96,6 +155,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     buildStart() {
+      chunkLimit = this.environment!.options.build.chunkSizeWarningLimit
+      shouldLogInfo =
+        LogLevels[this.environment!.config.logLevel || 'info'] >= LogLevels.info
       transformedCount = 0
     },
 
@@ -104,7 +166,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         if (tty) {
           clearLine()
         }
-        config.logger.info(
+        this.environment!.logger.info(
           `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
         )
       }
@@ -150,7 +212,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       if (shouldLogInfo) {
         if (!tty) {
           if (!hasRenderedChunk) {
-            config.logger.info('rendering chunks...')
+            this.environment!.logger.info('rendering chunks...')
           }
         } else {
           writeLine(`rendering chunks (${chunkCount})...`)
@@ -165,6 +227,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     async writeBundle({ dir: outDir }, output) {
+      const env = this.environment!
       let hasLargeChunks = false
 
       if (shouldLogInfo) {
@@ -177,7 +240,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     name: chunk.fileName,
                     group: 'JS',
                     size: chunk.code.length,
-                    compressedSize: await getCompressedSize(chunk.code),
+                    compressedSize: await getCompressedSize(chunk.code, env),
                     mapSize: chunk.map ? chunk.map.toString().length : null,
                   }
                 } else {
@@ -191,7 +254,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     size: chunk.source.length,
                     mapSize: null, // Rollup doesn't support CSS maps?
                     compressedSize: isCompressible
-                      ? await getCompressedSize(chunk.source)
+                      ? await getCompressedSize(chunk.source, env)
                       : null,
                   }
                 }
@@ -225,11 +288,11 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
         const relativeOutDir = normalizePath(
           path.relative(
-            config.root,
-            path.resolve(config.root, outDir ?? config.build.outDir),
+            env.config.root,
+            path.resolve(env.config.root, outDir ?? env.options.build.outDir),
           ),
         )
-        const assetsDir = path.join(config.build.assetsDir, '/')
+        const assetsDir = path.join(env.options.build.assetsDir, '/')
 
         for (const group of groups) {
           const filtered = entries.filter((e) => e.group === group.name)
@@ -241,7 +304,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
             const sizeColor = isLarge ? colors.yellow : colors.dim
             let log = colors.dim(withTrailingSlash(relativeOutDir))
             log +=
-              !config.build.lib &&
+              !env.config.build.lib &&
               entry.name.startsWith(withTrailingSlash(assetsDir))
                 ? colors.dim(assetsDir) +
                   group.color(
@@ -265,7 +328,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                 ` │ map: ${displaySize(entry.mapSize).padStart(mapPad)}`,
               )
             }
-            config.logger.info(log)
+            env.logger.info(log)
           }
         }
       } else {
@@ -276,11 +339,11 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
       if (
         hasLargeChunks &&
-        config.build.minify &&
-        !config.build.lib &&
-        !config.build.ssr
+        env.options.build.minify &&
+        !env.config.build.lib &&
+        !env.options.build.ssr
       ) {
-        config.logger.warn(
+        env.logger.warn(
           colors.yellow(
             `\n(!) Some chunks are larger than ${chunkLimit} kB after minification. Consider:\n` +
               `- Using dynamic import() to code-split the application\n` +

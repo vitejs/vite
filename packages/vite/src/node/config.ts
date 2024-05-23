@@ -1762,6 +1762,20 @@ async function runConfigEnvironmentHook(
   }
 }
 
+export function getDepOptimizationOptions(
+  config: ResolvedConfig,
+  ssr: boolean,
+): DepOptimizationOptions {
+  return ssr ? config.ssr.optimizeDeps : config.optimizeDeps
+}
+export function isDepsOptimizerEnabled(
+  config: ResolvedConfig,
+  ssr: boolean,
+): boolean {
+  const optimizeDeps = getDepOptimizationOptions(config, ssr)
+  return !(optimizeDeps.noDiscovery && !optimizeDeps.include?.length)
+}
+
 function optimizeDepsDisabledBackwardCompatibility(
   resolved: ResolvedConfig,
   optimizeDeps: DepOptimizationOptions,

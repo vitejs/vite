@@ -12,13 +12,12 @@ import { getDefaultResolvedEnvironmentOptions } from '../config'
 import { mergeConfig, promiseWithResolvers } from '../utils'
 import type { FetchModuleOptions } from '../ssr/fetchModule'
 import { fetchModule } from '../ssr/fetchModule'
-import type { DepsOptimizer } from '../optimizer'
-import { isDepOptimizationEnabled } from '../optimizer'
 import {
   createDepsOptimizer,
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
 import { resolveEnvironmentPlugins } from '../plugin'
+import type { DepsOptimizer } from '../optimizer'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { HMRChannel } from './hmr'
 import { createNoopHMRChannel, getShortName, updateModules } from './hmr'
@@ -140,7 +139,11 @@ export class DevEnvironment extends BaseEnvironment {
     const { optimizeDeps } = this.options.dev
     if (setup?.depsOptimizer) {
       this.depsOptimizer = setup?.depsOptimizer
-    } else if (!isDepOptimizationEnabled(optimizeDeps)) {
+    } else if (
+      optimizeDeps?.disabled === true ||
+      optimizeDeps?.disabled === 'build' ||
+      (optimizeDeps?.noDiscovery && optimizeDeps?.include?.length === 0)
+    ) {
       this.depsOptimizer = undefined
     } else {
       // We only support auto-discovery for the client environment, for all other
