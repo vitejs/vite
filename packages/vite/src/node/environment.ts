@@ -8,17 +8,3 @@ export type Environment =
   | BuildEnvironment
   | ScanEnvironment
   | FutureCompatEnvironment
-
-export function cachedByEnvironment<Data>(
-  create: (environment: Environment) => Data,
-): (environment: Environment) => Data {
-  const cache = new WeakMap<Environment, Data>()
-  return function (environment: Environment) {
-    let data = cache.get(environment)
-    if (!data) {
-      data = create(environment)
-      cache.set(environment, data)
-    }
-    return data
-  }
-}

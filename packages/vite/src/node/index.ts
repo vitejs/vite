@@ -12,8 +12,7 @@ export { createServer } from './server'
 export { preview } from './preview'
 export { build, createBuilder } from './build'
 
-// TODO: Can we remove this?
-// export { optimizeDeps } from './optimizer'
+export { optimizeDeps } from './optimizer'
 
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
@@ -53,6 +52,7 @@ export type {
   ResolvedDevEnvironmentOptions,
 } from './config'
 export type { Plugin, PluginOption, HookHandler } from './plugin'
+export type { Environment } from './environment'
 export type { FilterPattern } from './utils'
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
 export type {

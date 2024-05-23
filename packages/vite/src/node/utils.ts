@@ -1438,3 +1438,22 @@ export function partialEncodeURIPath(uri: string): string {
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
   return filePath.replaceAll('%', '%25') + postfix
 }
+
+/**
+ * Creates a function that hides the complexities of a WeakMap with an initial value
+ * to implement object metadata. Used by plugins to implement cross hooks per
+ * environment metadata
+ */
+export function createWeakData<Key extends WeakKey, Data>(
+  initial: (key: Key) => Data,
+): (key: Key) => Data {
+  const cache = new WeakMap<Key, Data>()
+  return function (key: Key) {
+    let data = cache.get(key)
+    if (!data) {
+      data = initial(key)
+      cache.set(key, data)
+    }
+    return data
+  }
+}
