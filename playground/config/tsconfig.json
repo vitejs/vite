@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@test/siblings": ["packages/siblings/foo.ts"],
+      "@test/wildcard/*": ["packages/wildcard/*"]
+    }
+  }
+}
