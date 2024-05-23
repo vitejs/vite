@@ -312,7 +312,7 @@ class PluginContainer {
     const skip = options?.skip
     const ssr = options?.ssr
     const scan = !!options?.scan
-    const ctx = new ResolvedIdContext(this, !!ssr, skip, scan)
+    const ctx = new ResolveIdContext(this, !!ssr, skip, scan)
 
     const resolveStart = debugResolve ? performance.now() : 0
     let id: string | null = null
@@ -764,7 +764,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
   }
 }
 
-class ResolvedIdContext extends PluginContext {
+class ResolveIdContext extends PluginContext {
   constructor(
     container: PluginContainer,
     ssr: boolean,
