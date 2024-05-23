@@ -191,6 +191,35 @@ class PluginContainer {
       : null
   }
 
+  getModuleInfo(id: string): ModuleInfo | null {
+    const module = this.moduleGraph?.getModuleById(id)
+    if (!module) {
+      return null
+    }
+    if (!module.info) {
+      module.info = new Proxy(
+        { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
+        // throw when an unsupported ModuleInfo property is accessed,
+        // so that incompatible plugins fail in a non-cryptic way.
+        {
+          get(info: any, key: string) {
+            if (key in info) {
+              return info[key]
+            }
+            // Don't throw an error when returning from an async function
+            if (key === 'then') {
+              return undefined
+            }
+            throw Error(
+              `[vite] The "${key}" property of ModuleInfo is not supported.`,
+            )
+          },
+        },
+      )
+    }
+    return module.info ?? null
+  }
+
   // keeps track of hook promises so that we can wait for them all to finish upon closing the server
   private handleHookPromise<T>(maybePromise: undefined | T | Promise<T>) {
     if (!(maybePromise as any)?.then) {
@@ -490,6 +519,10 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     return rollupParseAst(code, opts)
   }
 
+  getModuleInfo(id: string): ModuleInfo | null {
+    return this._container.getModuleInfo(id)
+  }
+
   async resolve(
     id: string,
     importer?: string,
@@ -501,7 +534,6 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     },
   ): ReturnType<RollupPluginContext['resolve']> {
     let skip: Set<Plugin> | undefined
-
     if (options?.skipSelf !== false && this._plugin) {
       skip = new Set(this._resolveSkips)
       skip.add(this._plugin)
@@ -511,7 +543,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       custom: options?.custom,
       isEntry: !!options?.isEntry,
       skip,
-      ssr: this?.ssr,
+      ssr: this.ssr,
       scan: this._scan,
     })
     if (typeof out === 'string') out = { id: out }
@@ -531,11 +563,11 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     this._updateModuleInfo(options.id, options)
 
     const loadResult = await this._container.load(options.id, {
-      ssr: this?.ssr,
+      ssr: this.ssr,
     })
     const code = typeof loadResult === 'object' ? loadResult?.code : loadResult
     if (code != null) {
-      await this._container.transform(code, options.id, { ssr: this?.ssr })
+      await this._container.transform(code, options.id, { ssr: this.ssr })
     }
 
     const moduleInfo = this.getModuleInfo(options.id)
@@ -544,35 +576,6 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     // we should never have plugins calling this.load)
     if (!moduleInfo) throw Error(`Failed to load module with id ${options.id}`)
     return moduleInfo
-  }
-
-  getModuleInfo(id: string): ModuleInfo | null {
-    const module = this._container.moduleGraph?.getModuleById(id)
-    if (!module) {
-      return null
-    }
-    if (!module.info) {
-      module.info = new Proxy(
-        { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
-        // throw when an unsupported ModuleInfo property is accessed,
-        // so that incompatible plugins fail in a non-cryptic way.
-        {
-          get(info: any, key: string) {
-            if (key in info) {
-              return info[key]
-            }
-            // Don't throw an error when returning from an async function
-            if (key === 'then') {
-              return undefined
-            }
-            throw Error(
-              `[vite] The "${key}" property of ModuleInfo is not supported.`,
-            )
-          },
-        },
-      )
-    }
-    return module.info ?? null
   }
 
   _updateModuleInfo(id: string, { meta }: { meta?: object | null }): void {
@@ -585,10 +588,9 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
   }
 
   getModuleIds(): IterableIterator<string> {
-    return (
-      this._container.moduleGraph?.idToModuleMap.keys() ??
-      Array.prototype[Symbol.iterator]()
-    )
+    return this._container.moduleGraph
+      ? this._container.moduleGraph.idToModuleMap.keys()
+      : Array.prototype[Symbol.iterator]()
   }
 
   addWatchFile(id: string): void {
@@ -623,11 +625,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     e: string | RollupLog | (() => string | RollupLog),
     position?: number | { column: number; line: number },
   ): void {
-    const err = this._formatError(
-      typeof e === 'function' ? e() : e,
-      position,
-      this,
-    )
+    const err = this._formatError(typeof e === 'function' ? e() : e, position)
     const msg = buildErrorMessage(
       err,
       [colors.yellow(`warning: ${err.message}`)],
@@ -645,7 +643,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
   ): never {
     // error thrown here is caught by the transform middleware and passed on
     // the the error middleware.
-    throw this._formatError(e, position, this)
+    throw this._formatError(e, position)
   }
 
   debug = noop
@@ -654,16 +652,15 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
   _formatError(
     e: string | RollupError,
     position: number | { column: number; line: number } | undefined,
-    ctx: PluginContext,
   ): RollupError {
     const err = (typeof e === 'string' ? new Error(e) : e) as RollupError
     if (err.pluginCode) {
       return err // The plugin likely called `this.error`
     }
-    if (ctx._plugin) err.plugin = ctx._plugin.name
-    if (ctx._activeId && !err.id) err.id = ctx._activeId
-    if (ctx._activeCode) {
-      err.pluginCode = ctx._activeCode
+    if (this._plugin) err.plugin = this._plugin.name
+    if (this._activeId && !err.id) err.id = this._activeId
+    if (this._activeCode) {
+      err.pluginCode = this._activeCode
 
       // some rollup plugins, e.g. json, sets err.position instead of err.pos
       const pos = position ?? err.pos ?? (err as any).position
@@ -671,9 +668,9 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       if (pos != null) {
         let errLocation
         try {
-          errLocation = numberToPos(ctx._activeCode, pos)
+          errLocation = numberToPos(this._activeCode, pos)
         } catch (err2) {
-          ctx._container.config.logger.error(
+          this._container.config.logger.error(
             colors.red(
               `Error in error handler:\n${err2.stack || err2.message}\n`,
             ),
@@ -686,11 +683,11 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
           file: err.id,
           ...errLocation,
         }
-        err.frame = err.frame || generateCodeFrame(ctx._activeCode, pos)
+        err.frame = err.frame || generateCodeFrame(this._activeCode, pos)
       } else if (err.loc) {
         // css preprocessors may report errors in an included file
         if (!err.frame) {
-          let code = ctx._activeCode
+          let code = this._activeCode
           if (err.loc.file) {
             err.id = normalizePath(err.loc.file)
             try {
@@ -705,15 +702,16 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
           line: (err as any).line,
           column: (err as any).column,
         }
-        err.frame = err.frame || generateCodeFrame(ctx._activeCode, err.loc)
+        err.frame = err.frame || generateCodeFrame(this._activeCode, err.loc)
       }
 
+      // TODO: move it to overrides
       if (
-        ctx instanceof TransformPluginContext &&
+        this instanceof TransformPluginContext &&
         typeof err.loc?.line === 'number' &&
         typeof err.loc?.column === 'number'
       ) {
-        const rawSourceMap = ctx._getCombinedSourcemap()
+        const rawSourceMap = this._getCombinedSourcemap()
         if (rawSourceMap && 'version' in rawSourceMap) {
           const traced = new TraceMap(rawSourceMap as any)
           const { source, line, column } = originalPositionFor(traced, {
