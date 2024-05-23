@@ -312,10 +312,7 @@ class PluginContainer {
     const skip = options?.skip
     const ssr = options?.ssr
     const scan = !!options?.scan
-
-    const ctx = new ResolvedIdContext(this, !!ssr)
-    ctx._resolveSkips = skip
-    ctx._scan = scan
+    const ctx = new ResolvedIdContext(this, !!ssr, skip, scan)
 
     const resolveStart = debugResolve ? performance.now() : 0
     let id: string | null = null
@@ -431,9 +428,9 @@ class PluginContainer {
     for (const plugin of this.getSortedPlugins('transform')) {
       if (this._closed && !ssr) throwClosedServerError()
       if (!plugin.transform) continue
-      ctx._plugin = plugin
-      ctx._activeId = id
-      ctx._activeCode = code
+
+      ctx._updateActiveInfo(plugin, id, code)
+
       const start = debugPluginTransform ? performance.now() : 0
       let result: TransformResult | string | undefined
       const handler = getHookHandler(plugin.transform)
@@ -501,10 +498,11 @@ class PluginContainer {
 }
 
 class PluginContext implements Omit<RollupPluginContext, 'cache'> {
-  _scan = false
-  _resolveSkips?: Set<Plugin>
-  _activeId: string | null = null
-  _activeCode: string | null = null
+  protected _scan = false
+  protected _resolveSkips?: Set<Plugin>
+  protected _activeId: string | null = null
+  protected _activeCode: string | null = null
+
   meta: RollupPluginContext['meta']
 
   constructor(
@@ -557,7 +555,10 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     } & Partial<PartialNull<ModuleOptions>>,
   ): Promise<ModuleInfo> {
     // We may not have added this to our module graph yet, so ensure it exists
-    await this._container.moduleGraph?.ensureEntryFromUrl(unwrapId(options.id))
+    await this._container.moduleGraph?.ensureEntryFromUrl(
+      unwrapId(options.id),
+      this.ssr,
+    )
     // Not all options passed to this function make sense in the context of loading individual files,
     // but we can at least update the module info properties we support
     this._updateModuleInfo(options.id, options)
@@ -649,7 +650,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
   debug = noop
   info = noop
 
-  _formatError(
+  private _formatError(
     e: string | RollupError,
     position: number | { column: number; line: number } | undefined,
   ): RollupError {
@@ -764,8 +765,15 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
 }
 
 class ResolvedIdContext extends PluginContext {
-  constructor(container: PluginContainer, ssr: boolean) {
+  constructor(
+    container: PluginContainer,
+    ssr: boolean,
+    skip: Set<Plugin> | undefined,
+    scan: boolean,
+  ) {
     super(null!, container, ssr)
+    this._resolveSkips = skip
+    this._scan = scan
   }
 }
 
@@ -889,6 +897,12 @@ class TransformPluginContext
       })
     }
     return map
+  }
+
+  _updateActiveInfo(plugin: Plugin, id: string, code: string): void {
+    this._plugin = plugin
+    this._activeId = id
+    this._activeCode = code
   }
 }
 
