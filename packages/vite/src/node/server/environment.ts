@@ -20,8 +20,8 @@ import {
 } from '../optimizer/optimizer'
 import { resolveEnvironmentPlugins } from '../plugin'
 import { EnvironmentModuleGraph } from './moduleGraph'
-import type { HMRChannel } from './hmr'
-import { createNoopHMRChannel, getShortName, updateModules } from './hmr'
+import type { HotChannel } from './hmr'
+import { createNoopHotChannel, getShortName, updateModules } from './hmr'
 import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import type { EnvironmentPluginContainer } from './pluginContainer'
@@ -32,7 +32,7 @@ import {
 import type { RemoteEnvironmentTransport } from './environmentTransport'
 
 export interface DevEnvironmentSetup {
-  hot?: false | HMRChannel
+  hot: false | HotChannel
   watcher?: FSWatcher
   options?: EnvironmentOptions
   runner?: FetchModuleOptions & {
@@ -90,24 +90,24 @@ export class DevEnvironment extends BaseEnvironment {
   _crawlEndFinder: CrawlEndFinder
 
   /**
-   * HMR channel for this environment. If not provided or disabled,
+   * Hot channel for this environment. If not provided or disabled,
    * it will be a noop channel that does nothing.
    *
    * @example
    * environment.hot.send({ type: 'full-reload' })
    */
-  hot: HMRChannel
+  hot: HotChannel
   constructor(
     name: string,
     config: ResolvedConfig,
-    setup?: DevEnvironmentSetup,
+    setup: DevEnvironmentSetup,
   ) {
     let options =
       config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
-    if (setup?.options) {
+    if (setup.options) {
       options = mergeConfig(
         options,
-        setup?.options,
+        setup.options,
       ) as ResolvedEnvironmentOptions
     }
     super(name, config, options)
@@ -118,17 +118,16 @@ export class DevEnvironment extends BaseEnvironment {
       this.pluginContainer!.resolveId(url, undefined),
     )
 
-    this.hot = setup?.hot || createNoopHMRChannel()
-    this.watcher = setup?.watcher
+    this.hot = setup.hot || createNoopHotChannel()
+    this.watcher = setup.watcher
 
     this._onCrawlEndCallbacks = []
     this._crawlEndFinder = setupOnCrawlEnd(() => {
       this._onCrawlEndCallbacks.forEach((cb) => cb())
     })
 
-    const ssrRunnerOptions = setup?.runner || {}
-    this._ssrRunnerOptions = ssrRunnerOptions
-    setup?.runner?.transport?.register(this)
+    this._ssrRunnerOptions = setup.runner || {}
+    setup.runner?.transport?.register(this)
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {
@@ -138,8 +137,8 @@ export class DevEnvironment extends BaseEnvironment {
     })
 
     const { optimizeDeps } = this.options.dev
-    if (setup?.depsOptimizer) {
-      this.depsOptimizer = setup?.depsOptimizer
+    if (setup.depsOptimizer) {
+      this.depsOptimizer = setup.depsOptimizer
     } else if (!isDepOptimizationEnabled(optimizeDeps)) {
       this.depsOptimizer = undefined
     } else {

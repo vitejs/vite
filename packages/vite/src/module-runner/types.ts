@@ -1,5 +1,5 @@
 import type { ViteHotContext } from 'types/hot'
-import type { HMRPayload } from 'types/hmrPayload'
+import type { HotPayload } from 'types/hotPayload'
 import type { HMRConnection, HMRLogger } from '../shared/hmr'
 import type {
   DefineImportMetadata,
@@ -24,7 +24,7 @@ export interface ModuleRunnerHMRConnection extends HMRConnection {
    * Configure how HMR is handled when this connection triggers an update.
    * This method expects that connection will start listening for HMR updates and call this callback when it's received.
    */
-  onUpdate(callback: (payload: HMRPayload) => void): void
+  onUpdate(callback: (payload: HotPayload) => void): void
 }
 
 export interface ModuleRunnerImportMeta extends ImportMeta {

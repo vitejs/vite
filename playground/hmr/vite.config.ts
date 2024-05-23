@@ -10,18 +10,21 @@ export default defineConfig({
   plugins: [
     {
       name: 'mock-custom',
-      async handleHotUpdate({ file, read, server }) {
+      async hotUpdate({ environment, file, read }) {
         if (file.endsWith('customFile.js')) {
           const content = await read()
           const msg = content.match(/export const msg = '(\w+)'/)[1]
-          server.hot.send('custom:foo', { msg })
-          server.hot.send('custom:remove', { msg })
+          environment.hot.send('custom:foo', { msg })
+          environment.hot.send('custom:remove', { msg })
         }
       },
       configureServer(server) {
-        server.hot.on('custom:remote-add', ({ a, b }, client) => {
-          client.send('custom:remote-add-result', { result: a + b })
-        })
+        server.environments.client.hot.on(
+          'custom:remote-add',
+          ({ a, b }, client) => {
+            client.send('custom:remote-add-result', { result: a + b })
+          },
+        )
       },
     },
     virtualPlugin(),
@@ -47,7 +50,7 @@ export const virtual = _virtual + '${num}';`
       }
     },
     configureServer(server) {
-      server.hot.on('virtual:increment', async () => {
+      server.environments.client.hot.on('virtual:increment', async () => {
         const mod =
           await server.environments.client.moduleGraph.getModuleByUrl(
             '\0virtual:file',

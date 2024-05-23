@@ -282,7 +282,7 @@ describe.runIf(isServe)('invalid', () => {
     await page.keyboard.press('Escape')
     await hiddenPromise
 
-    viteServer.hot.send({
+    viteServer.environments.client.hot.send({
       type: 'error',
       err: {
         message: 'someError',

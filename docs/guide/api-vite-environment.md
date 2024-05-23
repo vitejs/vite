@@ -48,7 +48,7 @@ class DevEnvironment {
    * Communication channel to send and receive messages from the
    * associated module runner in the target runtime.
    */
-  hot: HMRChannel | null
+  hot: HotChannel | null
   /**
    * Graph of module nodes, with the imported relationship between
    * processed modules and the cached result of the processed code.
@@ -816,7 +816,7 @@ export interface ModuleRunnerHMRConnection {
    * Configure how HMR is handled when this connection triggers an update.
    * This method expects that the connection will start listening for HMR updates and call this callback when it's received.
    */
-  onUpdate(callback: (payload: HMRPayload) => void): void
+  onUpdate(callback: (payload: HotPayload) => void): void
 }
 ```
 

@@ -479,7 +479,7 @@ export async function reloadOnTsconfigChange(
   // any json file in the tsconfig cache could have been used to compile ts
   if (
     path.basename(changedFile) === 'tsconfig.json' ||
-    changedFile.endsWith('.json') /* 
+    changedFile.endsWith('.json') /*
       TODO: the tsconfckCache?.clear() line will make this fail if there are several servers
             we may need a cache per server if we don't want all servers to share the reset
             leaving it commented for now because it should still work
@@ -500,7 +500,7 @@ export async function reloadOnTsconfigChange(
     tsconfckCache?.clear()
 
     // force full reload
-    server.hot.send({
+    server.ws.send({
       type: 'full-reload',
       path: '*',
     })

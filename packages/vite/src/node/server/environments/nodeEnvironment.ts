@@ -6,7 +6,7 @@ import { asyncFunctionDeclarationPaddingLineCount } from '../../../shared/utils'
 export function createNodeDevEnvironment(
   name: string,
   config: ResolvedConfig,
-  options?: DevEnvironmentSetup,
+  options: DevEnvironmentSetup,
 ): DevEnvironment {
   return new DevEnvironment(name, config, {
     ...options,
