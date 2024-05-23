@@ -1,7 +1,7 @@
 import colors from 'picocolors'
 import type { Logger } from './logger'
 import type { ResolvedConfig, ResolvedEnvironmentOptions } from './config'
-import type { EnvironmentPlugin } from './plugin'
+import type { Plugin } from './plugin'
 
 export class PartialEnvironment {
   name: string
@@ -61,7 +61,7 @@ export class PartialEnvironment {
 }
 
 export class BaseEnvironment extends PartialEnvironment {
-  get plugins(): EnvironmentPlugin[] {
+  get plugins(): Plugin[] {
     if (!this._plugins)
       throw new Error(
         `${this.name} environment.plugins called before initialized`,
@@ -72,7 +72,7 @@ export class BaseEnvironment extends PartialEnvironment {
   /**
    * @internal
    */
-  _plugins: EnvironmentPlugin[] | undefined
+  _plugins: Plugin[] | undefined
   /**
    * @internal
    */

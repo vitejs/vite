@@ -1480,12 +1480,13 @@ export class BuildEnvironment extends BaseEnvironment {
     super(name, config, options)
   }
 
+  // TODO: This could be sync, discuss if applyToEnvironment should support async
   async init(): Promise<void> {
     if (this._initiated) {
       return
     }
     this._initiated = true
-    this._plugins = await resolveEnvironmentPlugins(this)
+    this._plugins = resolveEnvironmentPlugins(this)
   }
 }
 

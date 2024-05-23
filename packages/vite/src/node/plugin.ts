@@ -83,7 +83,7 @@ declare module 'rollup' {
  * Environment Plugins are closer to regular rollup plugins. They can't define
  * app level hooks (like config, configResolved, configureServer, etc).
  */
-export interface EnvironmentPlugin<A = any> extends RollupPlugin<A> {
+export interface Plugin<A = any> extends RollupPlugin<A> {
   /**
    * Perform custom handling of HMR updates.
    * The handler receives a context containing changed filename, timestamp, a
@@ -161,9 +161,6 @@ export interface EnvironmentPlugin<A = any> extends RollupPlugin<A> {
       },
     ) => Promise<TransformResult> | TransformResult
   >
-}
-
-export interface Plugin<A = any> extends EnvironmentPlugin<A> {
   /**
    * Opt-in this plugin into the shared plugins pipeline.
    * For backward-compatibility, plugins are re-recreated for each environment
@@ -194,6 +191,11 @@ export interface Plugin<A = any> extends EnvironmentPlugin<A> {
     | 'serve'
     | 'build'
     | ((this: void, config: UserConfig, env: ConfigEnv) => boolean)
+  /**
+   * Define environments where this plugin should be active
+   * By default, the plugin is active in all environments
+   */
+  applyToEnvironment?: (environment: Environment) => boolean
   /**
    * Modify vite config before it's resolved. The hook can either mutate the
    * passed-in config directly, or return a partial config object that will be
@@ -277,12 +279,6 @@ export interface Plugin<A = any> extends EnvironmentPlugin<A> {
    * `{ order: 'pre', handler: hook }`
    */
   transformIndexHtml?: IndexHtmlTransform
-  /**
-   * Inject per environment plugins after the shared plugin
-   */
-  environmentPlugins?: (
-    environment: Environment,
-  ) => EnvironmentPluginOptionArray
 
   /**
    * @deprecated
@@ -304,43 +300,14 @@ export type PluginWithRequiredHook<K extends keyof Plugin> = Plugin & {
 }
 
 type Thenable<T> = T | Promise<T>
+
 type FalsyPlugin = false | null | undefined
-
-export type EnvironmentPluginOption = Thenable<
-  EnvironmentPlugin | FalsyPlugin | EnvironmentPluginOption[]
->
-
-export type EnvironmentPluginOptionArray = Thenable<
-  EnvironmentPluginOption[] | FalsyPlugin
->
 
 export type PluginOption = Thenable<Plugin | FalsyPlugin | PluginOption[]>
 
-export async function resolveEnvironmentPlugins(
-  environment: Environment,
-): Promise<EnvironmentPlugin[]> {
-  const resolvedPlugins: EnvironmentPlugin[] = []
-  for (const plugin of environment.config.plugins) {
-    resolvedPlugins.push(plugin)
-    if (plugin.environmentPlugins) {
-      const environmentPlugins = await plugin.environmentPlugins(environment)
-      if (environmentPlugins) {
-        const newPlugins =
-          await asyncFlattenEnvironmentPlugins(environmentPlugins)
-        resolvedPlugins.push(...newPlugins)
-      }
-    }
-  }
-  return resolvedPlugins
-}
-
-async function asyncFlattenEnvironmentPlugins(
-  plugins: EnvironmentPluginOption[],
-): Promise<EnvironmentPlugin[]> {
-  do {
-    plugins = ((await Promise.all(plugins)) as any[])
-      .flat(Infinity)
-      .filter(Boolean) as EnvironmentPluginOption[]
-  } while (plugins.some((v: any) => v?.then))
-  return plugins as EnvironmentPlugin[]
+export function resolveEnvironmentPlugins(environment: Environment): Plugin[] {
+  return environment.config.plugins.filter(
+    (plugin) =>
+      !plugin.applyToEnvironment || plugin.applyToEnvironment(environment),
+  )
 }

@@ -52,13 +52,7 @@ export type {
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
 } from './config'
-export type {
-  EnvironmentPlugin,
-  Plugin,
-  EnvironmentPluginOptionArray,
-  PluginOption,
-  HookHandler,
-} from './plugin'
+export type { Plugin, PluginOption, HookHandler } from './plugin'
 export type { FilterPattern } from './utils'
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
 export type {
