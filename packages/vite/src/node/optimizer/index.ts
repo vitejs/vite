@@ -62,7 +62,7 @@ export interface DepsOptimizer {
   options: DepOptimizationOptions
 }
 
-export interface DepOptimizationConfig {
+export interface DepOptimizationOptions {
   /**
    * Force optimize listed dependencies (must be resolvable import paths,
    * cannot be globs).
@@ -135,16 +135,13 @@ export interface DepOptimizationConfig {
    * When enabled, it will hold the first optimized deps results until all static
    * imports are crawled on cold start. This avoids the need for full-page reloads
    * when new dependencies are discovered and they trigger the generation of new
-   * common chunks. If all dependencies are found by the scanner plus the explicitely
+   * common chunks. If all dependencies are found by the scanner plus the explicitly
    * defined ones in `include`, it is better to disable this option to let the
    * browser process more requests in parallel.
    * @default true
    * @experimental
    */
   holdUntilCrawlEnd?: boolean
-}
-
-export type DepOptimizationOptions = DepOptimizationConfig & {
   /**
    * By default, Vite will crawl your `index.html` to detect dependencies that
    * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
@@ -164,7 +161,7 @@ export type DepOptimizationOptions = DepOptimizationConfig & {
 }
 
 // TODO: We first need to define if entries and force should be per-environment
-// export type ResolvedDepOptimizationConfig = Required<DepOptimizationConfig>
+// export type ResolvedDepOptimizationOptions = Required<DepOptimizationOptions>
 
 export interface DepOptimizationResult {
   metadata: DepOptimizationMetadata

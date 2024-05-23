@@ -86,7 +86,6 @@ export type {
 export type {
   DepOptimizationMetadata,
   DepOptimizationOptions,
-  DepOptimizationConfig,
   OptimizedDepInfo,
   ExportsData,
 } from './optimizer'

@@ -78,7 +78,7 @@ import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
-import type { DepOptimizationConfig, DepOptimizationOptions } from './optimizer'
+import type { DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
 import type { EnvironmentPluginContainer } from './server/pluginContainer'
 import { createEnvironmentPluginContainer } from './server/pluginContainer'
@@ -167,7 +167,7 @@ export interface DevEnvironmentOptions {
   /**
    * Optimize deps config
    */
-  optimizeDeps?: DepOptimizationConfig
+  optimizeDeps?: DepOptimizationOptions
 
   /**
    * create the Dev Environment instance
@@ -574,7 +574,7 @@ export function resolveDevEnvironmentOptions(
     preTransformRequests:
       dev?.preTransformRequests ?? environmentName === 'client',
     warmup: dev?.warmup ?? [],
-    optimizeDeps: resolveOptimizeDepsConfig(
+    optimizeDeps: resolveDepOptimizationOptions(
       dev?.optimizeDeps,
       preserverSymlinks,
     ),
@@ -732,11 +732,11 @@ function resolveEnvironmentResolveOptions(
   return resolvedResolve
 }
 
-// TODO: Introduce ResolvedDepOptimizationConfig
-function resolveOptimizeDepsConfig(
-  optimizeDeps: DepOptimizationConfig | undefined,
+// TODO: Introduce ResolvedDepOptimizationOptions
+function resolveDepOptimizationOptions(
+  optimizeDeps: DepOptimizationOptions | undefined,
   preserveSymlinks: boolean,
-): DepOptimizationConfig {
+): DepOptimizationOptions {
   optimizeDeps ??= {}
   return {
     include: optimizeDeps.include ?? [],
@@ -750,6 +750,8 @@ function resolveOptimizeDepsConfig(
       ...optimizeDeps.esbuildOptions,
     },
     disabled: optimizeDeps.disabled,
+    entries: optimizeDeps.entries,
+    force: optimizeDeps.force ?? false,
   }
 }
 
@@ -949,8 +951,8 @@ export async function resolveConfig(
 
   // Backward compatibility: merge environments.client.dev.optimizeDeps back into optimizeDeps
   const resolvedConfigEnvironmentsClient = resolvedEnvironments.client
-  const patchedOptimizeDeps =
-    resolvedConfigEnvironmentsClient.dev?.optimizeDeps ?? {}
+  const patchedOptimizeDeps = resolvedConfigEnvironmentsClient.dev?.optimizeDeps
+
   const backwardCompatibleOptimizeDeps = {
     holdUntilCrawlEnd: true,
     ...patchedOptimizeDeps,
@@ -1760,23 +1762,23 @@ async function runConfigEnvironmentHook(
   }
 }
 
-export function getDepOptimizationConfig(
+export function getDepOptimizationOptions(
   config: ResolvedConfig,
   ssr: boolean,
-): DepOptimizationConfig {
+): DepOptimizationOptions {
   return ssr ? config.ssr.optimizeDeps : config.optimizeDeps
 }
 export function isDepsOptimizerEnabled(
   config: ResolvedConfig,
   ssr: boolean,
 ): boolean {
-  const optimizeDeps = getDepOptimizationConfig(config, ssr)
+  const optimizeDeps = getDepOptimizationOptions(config, ssr)
   return !(optimizeDeps.noDiscovery && !optimizeDeps.include?.length)
 }
 
 function optimizeDepsDisabledBackwardCompatibility(
   resolved: ResolvedConfig,
-  optimizeDeps: DepOptimizationConfig,
+  optimizeDeps: DepOptimizationOptions,
   optimizeDepsPath: string = '',
 ) {
   const optimizeDepsDisabled = optimizeDeps.disabled

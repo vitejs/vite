@@ -1,8 +1,8 @@
-import type { DepOptimizationConfig } from '../optimizer'
+import type { DepOptimizationOptions } from '../optimizer'
 
 export type SSRTarget = 'node' | 'webworker'
 
-export type SsrDepOptimizationOptions = DepOptimizationConfig
+export type SsrDepOptimizationOptions = DepOptimizationOptions
 
 /**
  * @deprecated use environments.ssr
