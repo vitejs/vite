@@ -160,6 +160,15 @@ export interface DepOptimizationOptions {
   force?: boolean
 }
 
+export function isDepOptimizationEnabled(
+  optimizeDeps: DepOptimizationOptions,
+): boolean {
+  return (
+    !(optimizeDeps.disabled === true || optimizeDeps.disabled === 'dev') &&
+    !(optimizeDeps.noDiscovery && !optimizeDeps.include?.length)
+  )
+}
+
 // TODO: We first need to define if entries and force should be per-environment
 // export type ResolvedDepOptimizationOptions = Required<DepOptimizationOptions>
 

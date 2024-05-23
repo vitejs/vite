@@ -51,7 +51,6 @@ import {
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { checkPublicFile } from '../publicDir'
-import { getDepOptimizationOptions } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { DevEnvironment } from '../server/environment'
@@ -277,20 +276,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         let importerFile = importer
 
-        const optimizeDeps = getDepOptimizationOptions(config, ssr)
-        if (moduleListContains(optimizeDeps?.exclude, url)) {
-          if (depsOptimizer) {
-            await depsOptimizer.scanProcessing
+        if (
+          depsOptimizer &&
+          moduleListContains(depsOptimizer.options.exclude, url)
+        ) {
+          await depsOptimizer.scanProcessing
 
-            // if the dependency encountered in the optimized file was excluded from the optimization
-            // the dependency needs to be resolved starting from the original source location of the optimized file
-            // because starting from node_modules/.vite will not find the dependency if it was not hoisted
-            // (that is, if it is under node_modules directory in the package source of the optimized file)
-            for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
-              if (!optimizedModule.src) continue // Ignore chunks
-              if (optimizedModule.file === importerModule.file) {
-                importerFile = optimizedModule.src
-              }
+          // if the dependency encountered in the optimized file was excluded from the optimization
+          // the dependency needs to be resolved starting from the original source location of the optimized file
+          // because starting from node_modules/.vite will not find the dependency if it was not hoisted
+          // (that is, if it is under node_modules directory in the package source of the optimized file)
+          for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
+            if (!optimizedModule.src) continue // Ignore chunks
+            if (optimizedModule.file === importerModule.file) {
+              importerFile = optimizedModule.src
             }
           }
         }
