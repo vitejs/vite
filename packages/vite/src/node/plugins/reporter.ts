@@ -2,9 +2,15 @@ import path from 'node:path'
 import { gzip } from 'node:zlib'
 import { promisify } from 'node:util'
 import colors from 'picocolors'
-import type { Plugin } from 'rollup'
+import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { isDefined, isInNodeModules, normalizePath } from '../utils'
+import type { Environment } from '../environment'
+import {
+  createWeakData,
+  isDefined,
+  isInNodeModules,
+  normalizePath,
+} from '../utils'
 import { LogLevels } from '../logger'
 import { withTrailingSlash } from '../../shared/utils'
 
@@ -25,7 +31,6 @@ const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml)$/
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
-  const chunkLimit = config.build.chunkSizeWarningLimit
 
   const numberFormatter = new Intl.NumberFormat('en', {
     maximumFractionDigits: 2,
@@ -37,66 +42,78 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
-  let hasTransformed = false
-  let hasRenderedChunk = false
-  let hasCompressChunk = false
-  let transformedCount = 0
-  let chunkCount = 0
-  let compressedCount = 0
+  const getData = createWeakData((environment: Environment) => {
+    const data = {
+      hasTransformed: false,
+      hasRenderedChunk: false,
+      hasCompressChunk: false,
+      transformedCount: 0,
+      chunkCount: 0,
+      compressedCount: 0,
+      logTransform: throttle((id: string) => {
+        writeLine(
+          `transforming (${data.transformedCount}) ${colors.dim(
+            path.relative(config.root, id),
+          )}`,
+        )
+      }),
+    }
+    return data
+  })
 
   async function getCompressedSize(
+    environment: Environment,
     code: string | Uint8Array,
   ): Promise<number | null> {
-    if (config.build.ssr || !config.build.reportCompressedSize) {
+    if (
+      environment.options.build.ssr ||
+      !environment.options.build.reportCompressedSize
+    ) {
       return null
     }
-    if (shouldLogInfo && !hasCompressChunk) {
+    const data = getData(environment)
+    if (shouldLogInfo && !data.hasCompressChunk) {
       if (!tty) {
         config.logger.info('computing gzip size...')
       } else {
         writeLine('computing gzip size (0)...')
       }
-      hasCompressChunk = true
+      data.hasCompressChunk = true
     }
     const compressed = await compress(
       typeof code === 'string' ? code : Buffer.from(code),
     )
-    compressedCount++
+    data.compressedCount++
     if (shouldLogInfo && tty) {
-      writeLine(`computing gzip size (${compressedCount})...`)
+      writeLine(`computing gzip size (${data.compressedCount})...`)
     }
     return compressed.length
   }
 
-  const logTransform = throttle((id: string) => {
-    writeLine(
-      `transforming (${transformedCount}) ${colors.dim(
-        path.relative(config.root, id),
-      )}`,
-    )
-  })
-
   return {
     name: 'vite:reporter',
+    sharedDuringBuild: true,
 
     transform(_, id) {
-      transformedCount++
+      const data = getData(this.environment!)
+
+      data.transformedCount++
       if (shouldLogInfo) {
         if (!tty) {
-          if (!hasTransformed) {
+          if (!data.hasTransformed) {
             config.logger.info(`transforming...`)
           }
         } else {
           if (id.includes(`?`)) return
-          logTransform(id)
+          data.logTransform(id)
         }
-        hasTransformed = true
+        data.hasTransformed = true
       }
       return null
     },
 
     buildStart() {
-      transformedCount = 0
+      getData(this.environment!).transformedCount = 0
     },
 
     buildEnd() {
@@ -105,14 +122,15 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           clearLine()
         }
         config.logger.info(
-          `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
+          `${colors.green(`✓`)} ${getData(this.environment!).transformedCount} modules transformed.`,
         )
       }
     },
 
     renderStart() {
-      chunkCount = 0
-      compressedCount = 0
+      const data = getData(this.environment!)
+      data.chunkCount = 0
+      data.compressedCount = 0
     },
 
     renderChunk(code, chunk, options) {
@@ -145,17 +163,17 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           }
         }
       }
-
-      chunkCount++
+      const data = getData(this.environment!)
+      data.chunkCount++
       if (shouldLogInfo) {
         if (!tty) {
-          if (!hasRenderedChunk) {
+          if (!data.hasRenderedChunk) {
             config.logger.info('rendering chunks...')
           }
         } else {
-          writeLine(`rendering chunks (${chunkCount})...`)
+          writeLine(`rendering chunks (${data.chunkCount})...`)
         }
-        hasRenderedChunk = true
+        data.hasRenderedChunk = true
       }
       return null
     },
@@ -165,6 +183,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     async writeBundle({ dir: outDir }, output) {
+      const environment = this.environment!
+      const chunkLimit = environment.options.build.chunkSizeWarningLimit
+
       let hasLargeChunks = false
 
       if (shouldLogInfo) {
@@ -177,7 +198,10 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     name: chunk.fileName,
                     group: 'JS',
                     size: chunk.code.length,
-                    compressedSize: await getCompressedSize(chunk.code),
+                    compressedSize: await getCompressedSize(
+                      environment,
+                      chunk.code,
+                    ),
                     mapSize: chunk.map ? chunk.map.toString().length : null,
                   }
                 } else {
@@ -191,7 +215,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     size: chunk.source.length,
                     mapSize: null, // Rollup doesn't support CSS maps?
                     compressedSize: isCompressible
-                      ? await getCompressedSize(chunk.source)
+                      ? await getCompressedSize(environment, chunk.source)
                       : null,
                   }
                 }
@@ -226,10 +250,13 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         const relativeOutDir = normalizePath(
           path.relative(
             config.root,
-            path.resolve(config.root, outDir ?? config.build.outDir),
+            path.resolve(
+              config.root,
+              outDir ?? environment.options.build.outDir,
+            ),
           ),
         )
-        const assetsDir = path.join(config.build.assetsDir, '/')
+        const assetsDir = path.join(environment.options.build.assetsDir, '/')
 
         for (const group of groups) {
           const filtered = entries.filter((e) => e.group === group.name)
@@ -276,9 +303,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
       if (
         hasLargeChunks &&
-        config.build.minify &&
+        environment.options.build.minify &&
         !config.build.lib &&
-        !config.build.ssr
+        !environment.options.build.ssr
       ) {
         config.logger.warn(
           colors.yellow(
