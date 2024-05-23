@@ -9,6 +9,7 @@ import {
   isBuiltin,
 } from './utils'
 import type { Environment } from './environment'
+import type { PartialEnvironment } from './baseEnvironment'
 
 const debug = createDebugger('vite:external')
 
@@ -49,7 +50,7 @@ export function isConfiguredAsExternal(
 }
 
 export function createIsConfiguredAsExternal(
-  environment: Environment,
+  environment: PartialEnvironment,
 ): (id: string, importer?: string) => boolean {
   const { config, options } = environment
   const { root } = config

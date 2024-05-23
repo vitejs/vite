@@ -2,8 +2,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test, vi } from 'vitest'
 import { resolveConfig } from '../../config'
-import { Environment } from '../../environment'
-import type { PluginEnvironment } from '../../plugin'
 import type { InlineConfig } from '../../config'
 import {
   convertTargets,
@@ -12,6 +10,7 @@ import {
   getEmptyChunkReplacer,
   hoistAtRules,
 } from '../../plugins/css'
+import { PartialEnvironment } from '../../baseEnvironment'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -215,7 +214,7 @@ async function createCssPluginTransform(
   inlineConfig: InlineConfig = {},
 ) {
   const config = await resolveConfig(inlineConfig, 'serve')
-  const environment = new Environment('client', config) as PluginEnvironment
+  const environment = new PartialEnvironment('client', config)
 
   const { transform, buildStart } = cssPlugin(config)
 

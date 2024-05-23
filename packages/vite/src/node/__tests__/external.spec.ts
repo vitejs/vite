@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, test } from 'vitest'
 import { resolveConfig } from '../config'
 import { createIsConfiguredAsExternal } from '../external'
-import { Environment } from '../environment'
+import { PartialEnvironment } from '../baseEnvironment'
 
 describe('createIsConfiguredAsExternal', () => {
   test('default', async () => {
@@ -25,6 +25,6 @@ async function createIsExternal(external?: true) {
     },
     'serve',
   )
-  const environment = new Environment('ssr', resolvedConfig)
+  const environment = new PartialEnvironment('ssr', resolvedConfig)
   return createIsConfiguredAsExternal(environment)
 }
