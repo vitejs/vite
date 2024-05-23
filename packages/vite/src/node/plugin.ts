@@ -20,9 +20,7 @@ import type { EnvironmentModuleNode } from './server/moduleGraph'
 import type { ModuleNode } from './server/mixedModuleGraph'
 import type { HmrContext, HotUpdateContext } from './server/hmr'
 import type { PreviewServerHook } from './preview'
-import type { DevEnvironment } from './server/environment'
-import type { BuildEnvironment } from './build'
-import type { ScanEnvironment } from './optimizer/scan'
+import type { Environment } from './environment'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -54,13 +52,8 @@ import type { ScanEnvironment } from './optimizer/scan'
  * check if they have access to dev specific APIs.
  */
 
-export type PluginEnvironment =
-  | DevEnvironment
-  | BuildEnvironment
-  | ScanEnvironment
-
 export interface PluginContextExtension {
-  environment?: PluginEnvironment
+  environment?: Environment
 }
 
 export interface PluginContext
@@ -288,7 +281,7 @@ export interface Plugin<A = any> extends EnvironmentPlugin<A> {
    * Inject per environment plugins after the shared plugin
    */
   environmentPlugins?: (
-    environment: PluginEnvironment,
+    environment: Environment,
   ) => EnvironmentPluginOptionArray
 
   /**
@@ -324,7 +317,7 @@ export type EnvironmentPluginOptionArray = Thenable<
 export type PluginOption = Thenable<Plugin | FalsyPlugin | PluginOption[]>
 
 export async function resolveEnvironmentPlugins(
-  environment: PluginEnvironment,
+  environment: Environment,
 ): Promise<EnvironmentPlugin[]> {
   const resolvedPlugins: EnvironmentPlugin[] = []
   for (const plugin of environment.config.plugins) {

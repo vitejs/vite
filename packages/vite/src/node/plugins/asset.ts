@@ -11,7 +11,6 @@ import {
   toOutputFilePathInJS,
 } from '../build'
 import type { Plugin, PluginContext } from '../plugin'
-import type { Environment } from '../environment'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import {
@@ -27,6 +26,7 @@ import {
 } from '../utils'
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
 import { cleanUrl, withTrailingSlash } from '../../shared/utils'
+import type { Environment } from '../environment'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g

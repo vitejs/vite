@@ -38,13 +38,13 @@ import {
 import { resolveEnvironmentPlugins } from '../plugin'
 import type { EnvironmentPluginContainer } from '../server/pluginContainer'
 import { createEnvironmentPluginContainer } from '../server/pluginContainer'
-import { Environment } from '../environment'
+import { BaseEnvironment } from '../baseEnvironment'
 import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 import { cleanUrl } from '../../shared/utils'
 import { loadTsconfigJsonForFile } from '../plugins/esbuild'
 
-export class ScanEnvironment extends Environment {
+export class ScanEnvironment extends BaseEnvironment {
   mode = 'scan' as const
 
   get pluginContainer(): EnvironmentPluginContainer {
@@ -60,10 +60,10 @@ export class ScanEnvironment extends Environment {
   _pluginContainer: EnvironmentPluginContainer | undefined
 
   async init(): Promise<void> {
-    if (this._inited) {
+    if (this._initiated) {
       return
     }
-    this._inited = true
+    this._initiated = true
     this._plugins = await resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,

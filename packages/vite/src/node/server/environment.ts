@@ -1,7 +1,7 @@
 import type { FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
-import { Environment } from '../environment'
+import { BaseEnvironment } from '../baseEnvironment'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
 import type {
   EnvironmentOptions,
@@ -21,14 +21,14 @@ import type { DepsOptimizer } from '../optimizer'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { HMRChannel } from './hmr'
 import { createNoopHMRChannel, getShortName, updateModules } from './hmr'
-import { transformRequest } from './transformRequest'
 import type { TransformResult } from './transformRequest'
+import { transformRequest } from './transformRequest'
+import type { EnvironmentPluginContainer } from './pluginContainer'
 import {
   ERR_CLOSED_SERVER,
   createEnvironmentPluginContainer,
 } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
-import type { EnvironmentPluginContainer } from './pluginContainer'
 
 export interface DevEnvironmentSetup {
   hot?: false | HMRChannel
@@ -40,8 +40,7 @@ export interface DevEnvironmentSetup {
   depsOptimizer?: DepsOptimizer
 }
 
-// Maybe we will rename this to DevEnvironment
-export class DevEnvironment extends Environment {
+export class DevEnvironment extends BaseEnvironment {
   mode = 'dev' as const // TODO: should this be 'serve'?
   moduleGraph: EnvironmentModuleGraph
 
@@ -147,8 +146,8 @@ export class DevEnvironment extends Environment {
       this.depsOptimizer = undefined
     } else {
       // We only support auto-discovery for the client environment, for all other
-      // environments `noDiscovery` has no effect and an simpler explicit deps
-      // optimizer is used that only optimizes explicitely included dependencies
+      // environments `noDiscovery` has no effect and a simpler explicit deps
+      // optimizer is used that only optimizes explicitly included dependencies
       // so it doesn't need to reload the environment. Now that we have proper HMR
       // and full reload for general environments, we can enable autodiscovery for
       // them in the future
@@ -161,10 +160,10 @@ export class DevEnvironment extends Environment {
   }
 
   async init(): Promise<void> {
-    if (this._inited) {
+    if (this._initiated) {
       return
     }
-    this._inited = true
+    this._initiated = true
     this._plugins = await resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
@@ -207,9 +206,9 @@ export class DevEnvironment extends Environment {
   async close(): Promise<void> {
     this._closing = true
 
+    this._crawlEndFinder?.cancel()
     await Promise.allSettled([
       this.pluginContainer.close(),
-      this._crawlEndFinder?.cancel(),
       this.depsOptimizer?.close(),
       (async () => {
         while (this._pendingRequests.size > 0) {

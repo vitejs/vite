@@ -66,7 +66,7 @@ import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
-import { Environment } from './environment'
+import { BaseEnvironment } from './baseEnvironment'
 import type { Plugin, PluginContext } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
 
@@ -1458,7 +1458,7 @@ function areSeparateFolders(a: string, b: string) {
   )
 }
 
-export class BuildEnvironment extends Environment {
+export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
 
   constructor(
@@ -1481,10 +1481,10 @@ export class BuildEnvironment extends Environment {
   }
 
   async init(): Promise<void> {
-    if (this._inited) {
+    if (this._initiated) {
       return
     }
-    this._inited = true
+    this._initiated = true
     this._plugins = await resolveEnvironmentPlugins(this)
   }
 }
