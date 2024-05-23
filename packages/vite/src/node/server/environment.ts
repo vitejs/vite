@@ -140,8 +140,9 @@ export class DevEnvironment extends BaseEnvironment {
     if (setup?.depsOptimizer) {
       this.depsOptimizer = setup?.depsOptimizer
     } else if (
-      optimizeDeps?.noDiscovery &&
-      optimizeDeps?.include?.length === 0
+      optimizeDeps?.disabled === true ||
+      optimizeDeps?.disabled === 'build' ||
+      (optimizeDeps?.noDiscovery && optimizeDeps?.include?.length === 0)
     ) {
       this.depsOptimizer = undefined
     } else {
