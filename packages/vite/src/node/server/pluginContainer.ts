@@ -61,7 +61,7 @@ import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
 import type { FSWatcher } from 'chokidar'
 import colors from 'picocolors'
-import type { EnvironmentPlugin, Plugin } from '../plugin'
+import type { Plugin } from '../plugin'
 import {
   combineSourcemaps,
   createDebugger,
@@ -149,7 +149,7 @@ type PluginContext = Omit<
  */
 export async function createEnvironmentPluginContainer(
   environment: Environment,
-  plugins: EnvironmentPlugin[],
+  plugins: Plugin[],
   watcher?: FSWatcher,
 ): Promise<EnvironmentPluginContainer> {
   const {

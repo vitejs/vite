@@ -58,7 +58,7 @@ class DevEnvironment {
    * Resolved plugins for this environment, including the ones
    * created using the per-environment `create` hook
    */
-  plugins: EnvironmentPlugin[]
+  plugins: Plugin[]
   /**
    * Allows to resolve, load, and transform code through the
    * environment plugins pipeline
@@ -579,19 +579,25 @@ The hook can choose to:
 
 ### Per-environment Plugins
 
-A plugin can now also be a constructor to lazily create per-environment plugins.
+A plugin can define what are the environments it should apply to with the `applyToEnvironment` function.
 
 ```js
-function perEnvironmentPlugin() {
-  return (environment: Environment) => {
-    // Return a plugin, an array, a Promise, or a falsy value for each environment
-    if (!passesCondition(environment)) {
-      return undefined
-    }
-    return [
-      createEnvironmentPlugin(environment),
-      otherPlugin(environment)
-    ]
+const UnoCssPlugin = () => {
+  // shared global state
+  return {
+    buildStart() {
+      // init per environment state with WeakMap<Environment,Data>, this.environment
+    },
+    configureServer() {
+      // use global hooks normally
+    },
+    applyToEnvironment(environment) {
+      // return true if this plugin should be active in this environment
+      // if the function isn't provided, the plugin is active in all environments
+    },
+    resolveId(id, importer) {
+      // only called for environments this plugin apply to
+    },
   }
 }
 ```
@@ -877,29 +883,6 @@ function myPlugin() {
 
     // Opt-in into a single instance for all environments
     sharedDuringBuild: true,
-  }
-}
-```
-
-And for per-environment plugins:
-
-```js
-function myPlugin() {
-  // Share state among all environments in dev and build
-  const sharedState = ...
-
-  return {
-    name: 'with-environment-plugins',
-    environmentPlugins(environment) {
-      // Isolated state for each environment during dev and build
-      const isolatedState = ...
-      return {
-        name: 'per-environment-plugin',
-        transform(code, id) { ... },
-      }
-    },
-    // Opt-in into a single instance for all environments
-    sharedDuringBuild: true
   }
 }
 ```
