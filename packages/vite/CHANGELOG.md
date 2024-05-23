@@ -1,3 +1,20 @@
+## 6.0.0-alpha.16 (2024-05-23)
+
+* feat: createWeakData ([bcb1959](https://github.com/vitejs/vite/commit/bcb1959))
+* feat: improve Plugin option types ([21225c9](https://github.com/vitejs/vite/commit/21225c9))
+* feat: only shared plugins (#17289) ([e36f2f3](https://github.com/vitejs/vite/commit/e36f2f3)), closes [#17289](https://github.com/vitejs/vite/issues/17289)
+* feat: provide `environment` in every hook context ([53734a8](https://github.com/vitejs/vite/commit/53734a8))
+* feat(types): expose PluginEnvironment type ([4d03124](https://github.com/vitejs/vite/commit/4d03124))
+* fix: argument rollup types for plugin context instead of wrapping ([89ec69c](https://github.com/vitejs/vite/commit/89ec69c))
+* fix: avoid duplicating values in shared optimizeDeps config (#16737) ([a3ee7f5](https://github.com/vitejs/vite/commit/a3ee7f5)), closes [#16737](https://github.com/vitejs/vite/issues/16737)
+* fix: back compat for server.pluginContainer.buildStart ([46f21b8](https://github.com/vitejs/vite/commit/46f21b8))
+* fix: backcompat with config.optimizeDeps ([778e39d](https://github.com/vitejs/vite/commit/778e39d))
+* fix: keep plugin with environmentPlugins hook ([63de43a](https://github.com/vitejs/vite/commit/63de43a))
+* chore: remove extra symbol ([431455f](https://github.com/vitejs/vite/commit/431455f))
+* chore: rename to BaseEnvironment (#16797) ([d86553a](https://github.com/vitejs/vite/commit/d86553a)), closes [#16797](https://github.com/vitejs/vite/issues/16797)
+
+
+
 ## 6.0.0-alpha.15 (2024-05-20)
 
 * fix: only join base url in none ssr env ([7e9dd25](https://github.com/vitejs/vite/commit/7e9dd25))
