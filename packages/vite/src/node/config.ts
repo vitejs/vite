@@ -1068,7 +1068,7 @@ async function getPathsFromClosestTsconfig(
   resolvedPath: string,
 ): Promise<string[]> {
   const { tsconfig } = await parse(resolvedPath)
-  const paths = tsconfig?.compilerOptions?.paths
+  const paths = tsconfig?.compilerOptions?.paths || {}
   return Object.keys(paths)
 }
 
