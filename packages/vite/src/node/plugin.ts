@@ -282,8 +282,19 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
 
   /**
    * @deprecated
-   * Compat support, ctx.modules is a backward compatible ModuleNode array
-   * with the mixed client and ssr moduleGraph. Use hotUpdate instead
+   * Perform custom handling of HMR updates.
+   * The handler receives a context containing changed filename, timestamp, a
+   * list of modules affected by the file change, and the dev server instance.
+   *
+   * - The hook can return a filtered list of modules to narrow down the update.
+   *   e.g. for a Vue SFC, we can narrow down the part to update by comparing
+   *   the descriptors.
+   *
+   * - The hook can also return an empty array and then perform custom updates
+   *   by sending a custom hmr payload via server.ws.send().
+   *
+   * - If the hook doesn't return a value, the hmr update will be performed as
+   *   normal.
    */
   handleHotUpdate?: ObjectHook<
     (
