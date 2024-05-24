@@ -1,25 +1,24 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-// whether or not an error occurs on `import depends on the environment, so only `@ts-ignore` can be used
-
-// test if the json file is imported correctly
+// Test if the JSON file is imported correctly
+// Using `@ts-ignore` instead of `@ts-expect-error` due to environment-specific errors during `import`
 
 let value: string
 
-// try import attributes
+// Attempt to import with attributes
 try {
   value = (
     await import('./package.json', {
-      // @ts-ignore import attributes are not supported on older Node versions
+      // @ts-ignore Import attributes are not supported in older Node versions
       with: { type: 'json' },
     })
   ).default.name
 } catch {}
 
-// try import assertions
+// Attempt to import with assertions
 try {
   value = (
     await import('./package.json', {
-      // @ts-ignore import assertions are not supported on Node v22.0.0 and above
+      // @ts-ignore Import assertions are deprecated and not supported in Node v22.0.0 and above
       assert: { type: 'json' },
     })
   ).default.name
