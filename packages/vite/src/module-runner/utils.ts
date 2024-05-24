@@ -20,12 +20,12 @@ const timestampRegex = /[?&]t=(\d{13})(&?)/
 
 interface ParsedPath {
   query: string
-  timestamp: number
+  timestamp: number | undefined
 }
 
 export function parseUrl(url: string): ParsedPath {
   const idQuery = url.split('?')[1]
-  let timestamp = 0
+  let timestamp = undefined
   // for performance, we avoid using URL constructor and parsing twice
   // it's not really needed, but it's a micro-optimization that we can do for free
   const query = idQuery

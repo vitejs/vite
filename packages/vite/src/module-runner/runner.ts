@@ -102,7 +102,7 @@ export class ModuleRunner {
    */
   public async import<T = any>(url: string): Promise<T> {
     url = this.normalizeEntryUrl(url)
-    const fetchedModule = await this.cachedModule(url)
+    const fetchedModule = await this.cachedModule(url, undefined, false)
     return await this.cachedRequest(url, fetchedModule)
   }
 
@@ -233,12 +233,14 @@ export class ModuleRunner {
   private async cachedModule(
     url: string,
     importer?: string,
+    // the entry point should check if time is different
+    cache = true,
   ): Promise<ModuleCache> {
     if (this.destroyed) {
       throw new Error(`Vite module runner has been destroyed.`)
     }
     const normalized = this.urlToIdMap.get(url)
-    if (normalized) {
+    if (cache && normalized) {
       const mod = this.moduleCache.getByModuleId(normalized)
       if (mod.meta) {
         return mod
@@ -253,10 +255,14 @@ export class ModuleRunner {
         : await this.transport.fetchModule(url, importer)
     ) as ResolvedResult
 
+    const lastHMRTimestamp =
+      'lastHMRTimestamp' in fetchedModule
+        ? fetchedModule.lastHMRTimestamp || 0
+        : 0
     // base moduleId on "file" and not on id
     // if `import(variable)` is called it's possible that it doesn't have an extension for example
     // if we used id for that, then a module will be duplicated
-    const { query, timestamp } = parseUrl(url)
+    const { query, timestamp = lastHMRTimestamp } = parseUrl(url)
     const file = 'file' in fetchedModule ? fetchedModule.file : undefined
     const fileId = file ? `${file}${query}` : url
     const moduleId = this.moduleCache.normalize(fileId)

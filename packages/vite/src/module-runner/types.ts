@@ -103,8 +103,14 @@ export interface ViteFetchResult {
   /**
    * File path of the module on disk.
    * This will be resolved as import.meta.url/filename
+   * Will be equal to `null` for virtual modules
    */
   file: string | null
+  /**
+   * Timestamp when HMR was triggered for this module
+   * Usually automatically comes with ?t=timestamp query
+   */
+  lastHMRTimestamp?: number
 }
 
 export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {
