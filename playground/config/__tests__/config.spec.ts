@@ -20,6 +20,7 @@ it('loadConfigFromFile', async () => {
           4,
         ],
       ],
+      "jsonValue": "@vite/test-config-entry",
       "moduleCondition": "import condition",
     }
   `)
