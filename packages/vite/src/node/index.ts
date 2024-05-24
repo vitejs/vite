@@ -85,13 +85,13 @@ export type {
 } from './preview'
 export type {
   DepOptimizationMetadata,
-  DepOptimizationOptions,
+  DepOptimizationConfig,
   OptimizedDepInfo,
   ExportsData,
 } from './optimizer'
 export type {
   ResolvedSSROptions,
-  SsrDepOptimizationOptions,
+  SsrDepOptimizationConfig,
   SSROptions,
   SSRTarget,
 } from './ssr'

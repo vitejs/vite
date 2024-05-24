@@ -2,7 +2,7 @@ import path from 'node:path'
 import type {
   Alias,
   AliasOptions,
-  DepOptimizationOptions,
+  DepOptimizationConfig,
   ResolvedConfig,
 } from '..'
 import type { Plugin } from '../plugin'
@@ -95,7 +95,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
 // TODO: environment?
 function optimizeAliasReplacementForSSR(
   id: string,
-  optimizeDeps: DepOptimizationOptions,
+  optimizeDeps: DepOptimizationConfig,
 ) {
   if (optimizeDeps.include?.includes(id)) {
     return true

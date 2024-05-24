@@ -59,10 +59,10 @@ export interface DepsOptimizer {
 
   close: () => Promise<void>
 
-  options: DepOptimizationOptions
+  options: DepOptimizationConfig
 }
 
-export interface DepOptimizationOptions {
+export interface DepOptimizationConfig {
   /**
    * Force optimize listed dependencies (must be resolvable import paths,
    * cannot be globs).
@@ -161,7 +161,7 @@ export interface DepOptimizationOptions {
 }
 
 export function isDepOptimizationEnabled(
-  optimizeDeps: DepOptimizationOptions,
+  optimizeDeps: DepOptimizationConfig,
 ): boolean {
   return (
     !(optimizeDeps.disabled === true || optimizeDeps.disabled === 'dev') &&
@@ -170,7 +170,7 @@ export function isDepOptimizationEnabled(
 }
 
 // TODO: We first need to define if entries and force should be per-environment
-// export type ResolvedDepOptimizationOptions = Required<DepOptimizationOptions>
+// export type ResolvedDepOptimizationConfig = Required<DepOptimizationConfig>
 
 export interface DepOptimizationResult {
   metadata: DepOptimizationMetadata

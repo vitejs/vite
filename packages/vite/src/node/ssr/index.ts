@@ -1,8 +1,8 @@
-import type { DepOptimizationOptions } from '../optimizer'
+import type { DepOptimizationConfig } from '../optimizer'
 
 export type SSRTarget = 'node' | 'webworker'
 
-export type SsrDepOptimizationOptions = DepOptimizationOptions
+export type SsrDepOptimizationConfig = DepOptimizationConfig
 
 /**
  * @deprecated use environments.ssr
@@ -41,7 +41,7 @@ export interface SSROptions {
    * @experimental
    * @deprecated
    */
-  optimizeDeps?: SsrDepOptimizationOptions
+  optimizeDeps?: SsrDepOptimizationConfig
 
   /**
    * @deprecated
@@ -69,7 +69,7 @@ export interface SSROptions {
 
 export interface ResolvedSSROptions extends SSROptions {
   target: SSRTarget
-  optimizeDeps: SsrDepOptimizationOptions
+  optimizeDeps: SsrDepOptimizationConfig
 }
 
 export function resolveSSROptions(
