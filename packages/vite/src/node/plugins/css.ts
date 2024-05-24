@@ -2759,8 +2759,9 @@ async function compileLightningCSS(
           ? config.css?.lightningcss?.cssModules ?? true
           : undefined,
       })
-
-  let css = res.code.toString()
+  // Deno res.code returns incorrect format and needs conversion to buffer
+  const code = res.code instanceof Uint8Array ? Buffer.from(res.code) : res.code
+  let css = code.toString()
   for (const dep of res.dependencies!) {
     switch (dep.type) {
       case 'url':
