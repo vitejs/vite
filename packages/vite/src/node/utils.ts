@@ -1444,7 +1444,7 @@ export function partialEncodeURIPath(uri: string): string {
  * to implement object metadata. Used by plugins to implement cross hooks per
  * environment metadata
  */
-export function createWeakData<Key extends WeakKey, Data>(
+export function createWeakData<Key extends object | symbol, Data>(
   initial: (key: Key) => Data,
 ): (key: Key) => Data {
   const cache = new WeakMap<Key, Data>()
