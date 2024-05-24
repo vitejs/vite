@@ -254,8 +254,42 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     },
   }
 
+  let server: ViteDevServer
+
   return {
     name: 'vite:esbuild',
+    configureServer(_server) {
+      server = _server
+    },
+    watchChange(id) {
+      if (
+        path.basename(id) === 'tsconfig.json' ||
+        (id.endsWith('.json') && tsconfckCache?.hasParseResult(id))
+      ) {
+        server.config.logger.info(
+          `changed tsconfig file detected: ${id} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
+          { clear: server.config.clearScreen, timestamp: true },
+        )
+
+        // TODO: more finegrained invalidation than the nuclear option below
+
+        // clear module graph to remove code compiled with outdated config
+        for (const environment of Object.values(server.environments)) {
+          environment.moduleGraph.invalidateAll()
+        }
+
+        // reset tsconfck cache so that recompile works with up2date configs
+        tsconfckCache?.clear()
+
+        // reload environments
+        for (const environment of Object.values(server.environments)) {
+          environment.hot.send({
+            type: 'full-reload',
+            path: '*',
+          })
+        }
+      }
+    },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
         const result = await transformWithEsbuild(code, id, transformOptions)
@@ -468,41 +502,5 @@ export async function loadTsconfigJsonForFile(
       }
     }
     throw e
-  }
-}
-
-export async function reloadOnTsconfigChange(
-  server: ViteDevServer,
-  changedFile: string,
-): Promise<void> {
-  // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
-  // any json file in the tsconfig cache could have been used to compile ts
-  if (
-    path.basename(changedFile) === 'tsconfig.json' ||
-    changedFile.endsWith('.json') /*
-      TODO: the tsconfckCache?.clear() line will make this fail if there are several servers
-            we may need a cache per server if we don't want all servers to share the reset
-            leaving it commented for now because it should still work
-      && tsconfckCache?.hasParseResult(changedFile)
-      */
-  ) {
-    server.config.logger.info(
-      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
-      { clear: server.config.clearScreen, timestamp: true },
-    )
-
-    // clear module graph to remove code compiled with outdated config
-    for (const environment of Object.values(server.environments)) {
-      environment.moduleGraph.invalidateAll()
-    }
-
-    // reset tsconfck so that recompile works with up2date configs
-    tsconfckCache?.clear()
-
-    // force full reload
-    server.ws.send({
-      type: 'full-reload',
-      path: '*',
-    })
   }
 }

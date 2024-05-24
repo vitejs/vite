@@ -40,7 +40,6 @@ import { getFsUtils } from '../fsUtils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
 import {
@@ -752,7 +751,6 @@ export async function _createServer(
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
-    reloadOnTsconfigChange(server, file)
 
     await pluginContainer.watchChange(file, {
       event: isUnlink ? 'delete' : 'create',
@@ -786,7 +784,6 @@ export async function _createServer(
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
-    reloadOnTsconfigChange(server, file)
 
     await pluginContainer.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
