@@ -162,6 +162,7 @@ export type { ServerModuleRunnerOptions } from './ssr/runtime/serverModuleRunner
 export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
 
 export type {
+  HMRPayload,
   HotPayload,
   ConnectedPayload,
   UpdatePayload,
