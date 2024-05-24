@@ -205,7 +205,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:import-analysis',
 
     async transform(source, importer) {
-      if (!this.environment) return
       const environment = this.environment as DevEnvironment
       const ssr = environment.name !== 'client' // TODO
       const moduleGraph = environment.moduleGraph

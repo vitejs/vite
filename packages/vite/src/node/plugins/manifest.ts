@@ -39,7 +39,6 @@ export function manifestPlugin(): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      if (!this.environment) return
       const { root } = this.environment.config
       const buildOptions = this.environment.options.build
 

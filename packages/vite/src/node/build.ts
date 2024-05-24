@@ -611,7 +611,7 @@ export async function buildEnvironment(
   // inject environment and ssr arg to plugin load/transform hooks
   // TODO: rework lib mode
   const plugins = (libOptions ? config : environment).plugins.map((p) =>
-    injectEnvironmentToHooks(p, environment),
+    injectEnvironmentToHooks(environment, p),
   )
 
   const rollupOptions: RollupOptions = {
@@ -1119,12 +1119,10 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-// TODO:
-// - Could we get Rollup to let us extends PluginContext in a more performant way?
-// - Extend for all hooks?
+// TODO: Could we get Rollup to let us extends PluginContext in a more performant way?
 export function injectEnvironmentToHooks(
+  environment: BuildEnvironment,
   plugin: Plugin,
-  environment?: BuildEnvironment,
 ): Plugin {
   const { resolveId, load, transform } = plugin
 
@@ -1133,17 +1131,17 @@ export function injectEnvironmentToHooks(
   for (const hook of Object.keys(clone) as RollupPluginHooks[]) {
     switch (hook) {
       case 'resolveId':
-        clone[hook] = wrapEnvironmentResolveId(resolveId, environment)
+        clone[hook] = wrapEnvironmentResolveId(environment, resolveId)
         break
       case 'load':
-        clone[hook] = wrapEnvironmentLoad(load, environment)
+        clone[hook] = wrapEnvironmentLoad(environment, load)
         break
       case 'transform':
-        clone[hook] = wrapEnvironmentTransform(transform, environment)
+        clone[hook] = wrapEnvironmentTransform(environment, transform)
         break
       default:
         if (ROLLUP_HOOKS.includes(hook)) {
-          ;(clone as any)[hook] = wrapEnvironmentHook(clone[hook], environment)
+          ;(clone as any)[hook] = wrapEnvironmentHook(environment, clone[hook])
         }
         break
     }
@@ -1153,8 +1151,8 @@ export function injectEnvironmentToHooks(
 }
 
 function wrapEnvironmentResolveId(
+  environment: BuildEnvironment,
   hook?: Plugin['resolveId'],
-  environment?: BuildEnvironment,
 ): Plugin['resolveId'] {
   if (!hook) return
 
@@ -1179,8 +1177,8 @@ function wrapEnvironmentResolveId(
 }
 
 function wrapEnvironmentLoad(
+  environment: BuildEnvironment,
   hook?: Plugin['load'],
-  environment?: BuildEnvironment,
 ): Plugin['load'] {
   if (!hook) return
 
@@ -1204,8 +1202,8 @@ function wrapEnvironmentLoad(
 }
 
 function wrapEnvironmentTransform(
+  environment: BuildEnvironment,
   hook?: Plugin['transform'],
-  environment?: BuildEnvironment,
 ): Plugin['transform'] {
   if (!hook) return
 
@@ -1230,8 +1228,8 @@ function wrapEnvironmentTransform(
 }
 
 function wrapEnvironmentHook<HookName extends keyof Plugin>(
+  environment: BuildEnvironment,
   hook?: Plugin[HookName],
-  environment?: BuildEnvironment,
 ): Plugin[HookName] {
   if (!hook) return
 
@@ -1257,7 +1255,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
 
 function injectEnvironmentInContext<Context extends PluginContext>(
   context: Context,
-  environment?: BuildEnvironment,
+  environment: BuildEnvironment,
 ) {
   context.environment ??= environment
   return context
