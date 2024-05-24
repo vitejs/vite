@@ -18,8 +18,9 @@ import {
   createFilter,
   ensureWatchedFile,
   generateCodeFrame,
+  normalizePath,
 } from '../utils'
-import type { ViteDevServer } from '../server'
+
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
@@ -254,41 +255,45 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     },
   }
 
-  let server: ViteDevServer
-
   return {
     name: 'vite:esbuild',
-    configureServer(_server) {
-      server = _server
-    },
-    watchChange(id) {
-      if (
-        path.basename(id) === 'tsconfig.json' ||
-        (id.endsWith('.json') && tsconfckCache?.hasParseResult(id))
-      ) {
-        server.config.logger.info(
-          `changed tsconfig file detected: ${id} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
-          { clear: server.config.clearScreen, timestamp: true },
-        )
+    configureServer(server) {
+      // we need to watch all files to find changes to previously unknown tsconfig.json files
+      server.watcher.on('all', (event, file) => {
+        if (
+          (event === 'add' || event === 'change' || event === 'unlink') &&
+          file.slice(-5) === '.json'
+        ) {
+          const filename = normalizePath(file)
+          if (
+            filename.slice(-14) === '/tsconfig.json' ||
+            tsconfckCache?.hasParseResult(filename)
+          ) {
+            server.config.logger.info(
+              `changed tsconfig file detected: ${filename} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
+              { clear: server.config.clearScreen, timestamp: true },
+            )
 
-        // TODO: more finegrained invalidation than the nuclear option below
+            // TODO: more finegrained invalidation than the nuclear option below
 
-        // clear module graph to remove code compiled with outdated config
-        for (const environment of Object.values(server.environments)) {
-          environment.moduleGraph.invalidateAll()
+            // clear module graph to remove code compiled with outdated config
+            for (const environment of Object.values(server.environments)) {
+              environment.moduleGraph.invalidateAll()
+            }
+
+            // reset tsconfck cache so that recompile works with up2date configs
+            tsconfckCache?.clear()
+
+            // reload environments
+            for (const environment of Object.values(server.environments)) {
+              environment.hot.send({
+                type: 'full-reload',
+                path: '*',
+              })
+            }
+          }
         }
-
-        // reset tsconfck cache so that recompile works with up2date configs
-        tsconfckCache?.clear()
-
-        // reload environments
-        for (const environment of Object.values(server.environments)) {
-          environment.hot.send({
-            type: 'full-reload',
-            path: '*',
-          })
-        }
-      }
+      })
     },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
