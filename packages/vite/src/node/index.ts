@@ -145,10 +145,9 @@ export type {
 export type { HmrOptions, HmrContext, HotUpdateContext } from './server/hmr'
 
 export type {
-  HMRBroadcaster,
-  HMRChannel,
-  ServerHMRChannel,
-  HMRBroadcasterClient,
+  HotChannel,
+  ServerHotChannel,
+  HotChannelClient,
 } from './server/hmr'
 
 export type { FetchFunction, FetchResult } from 'vite/module-runner'
@@ -157,7 +156,7 @@ export type { ServerModuleRunnerOptions } from './ssr/runtime/serverModuleRunner
 export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
 
 export type {
-  HMRPayload,
+  HotPayload,
   ConnectedPayload,
   UpdatePayload,
   Update,
@@ -165,7 +164,7 @@ export type {
   CustomPayload,
   PrunePayload,
   ErrorPayload,
-} from 'types/hmrPayload'
+} from 'types/hotPayload'
 export type {
   CustomEventMap,
   InferCustomEventPayload,

@@ -79,13 +79,8 @@ import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware } from './middlewares/error'
-import type { HMRBroadcaster, HmrOptions } from './hmr'
-import {
-  createHMRBroadcaster,
-  createServerHMRChannel,
-  handleHMRUpdate,
-  updateModules,
-} from './hmr'
+import type { HmrOptions } from './hmr'
+import { createServerHotChannel, handleHMRUpdate, updateModules } from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
@@ -251,17 +246,9 @@ export interface ViteDevServer {
   watcher: FSWatcher
   /**
    * web socket server with `send(payload)` method
-   * @deprecated use `hot` instead
-   */
-  ws: WebSocketServer
-  /**
-   * HMR broadcaster that can be used to send custom HMR messages to the client
-   *
-   * Always sends a message to at least a WebSocket client. Any third party can
-   * add a channel to the broadcaster to process messages
    * @deprecated use `environment.hot` instead
    */
-  hot: HMRBroadcaster
+  ws: WebSocketServer
   /**
    * Rollup plugin container that can run plugin hooks on a given file
    * @deprecated use `environment.pluginContainer` instead
@@ -455,11 +442,7 @@ export async function _createServer(
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
 
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
-  const ssrHotChannel = createServerHMRChannel()
-  const hot = createHMRBroadcaster().addChannel(ws).addChannel(ssrHotChannel)
-  if (typeof config.server.hmr === 'object' && config.server.hmr.channels) {
-    config.server.hmr.channels.forEach((channel) => hot.addChannel(channel))
-  }
+  const ssrHotChannel = createServerHotChannel()
 
   const publicFiles = await initPublicFilesPromise
   const { publicDir } = config
@@ -540,7 +523,6 @@ export async function _createServer(
     httpServer,
     watcher,
     ws,
-    hot,
 
     environments,
     pluginContainer,
@@ -691,7 +673,7 @@ export async function _createServer(
 
       await Promise.allSettled([
         watcher.close(),
-        hot.close(),
+        ws.close(),
         Promise.allSettled(
           Object.values(server.environments).map((environment) =>
             environment.close(),
@@ -963,7 +945,7 @@ export async function _createServer(
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
         // ensure ws server started
-        hot.listen()
+        Object.values(environments).forEach((e) => e.hot.listen())
         await initServer()
       } catch (e) {
         httpServer.emit('error', e)
@@ -973,7 +955,7 @@ export async function _createServer(
     }) as any
   } else {
     if (options.hotListen) {
-      hot.listen()
+      Object.values(environments).forEach((e) => e.hot.listen())
     }
     await initServer()
   }
@@ -1179,7 +1161,7 @@ async function restartServer(server: ViteDevServer) {
   if (!middlewareMode) {
     await server.listen(port, true)
   } else {
-    server.hot.listen()
+    server.ws.listen()
   }
   logger.info('server restarted.', { timestamp: true })
 

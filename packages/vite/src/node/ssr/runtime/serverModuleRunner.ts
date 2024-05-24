@@ -7,7 +7,7 @@ import type {
   ModuleRunnerOptions,
 } from 'vite/module-runner'
 import type { DevEnvironment } from '../../server/environment'
-import type { ServerHMRChannel } from '../../server/hmr'
+import type { ServerHotChannel } from '../../server/hmr'
 import { ServerHMRConnector } from './serverHmrConnector'
 
 /**
@@ -47,7 +47,7 @@ function createHMROptions(
     }
   }
   if (!('api' in environment.hot)) return false
-  const connection = new ServerHMRConnector(environment.hot as ServerHMRChannel)
+  const connection = new ServerHMRConnector(environment.hot as ServerHotChannel)
   return {
     connection,
     logger: options.hmr?.logger,

@@ -1,4 +1,6 @@
-export type HMRPayload =
+/** @deprecated use HotPayload */
+export type HMRPayload = HotPayload
+export type HotPayload =
   | ConnectedPayload
   | UpdatePayload
   | FullReloadPayload
