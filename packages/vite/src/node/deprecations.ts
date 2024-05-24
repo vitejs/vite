@@ -5,7 +5,6 @@ import type { ResolvedConfig } from './config'
 const docsURL = 'https://deploy-preview-16471--vite-docs-main.netlify.app'
 
 export interface FutureDeprecationWarningsOptions {
-  // TODO: have a "migration guide" page for each deprecation
   pluginHookHandleHotUpdate?: boolean
   pluginHookSsrArgument?: boolean
 
