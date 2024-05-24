@@ -85,6 +85,7 @@ export type {
 } from './preview'
 export type {
   DepOptimizationMetadata,
+  DepOptimizationOptions,
   DepOptimizationConfig,
   OptimizedDepInfo,
   ExportsData,

@@ -38,7 +38,7 @@ import {
 import type { ResolvedEnvironmentOptions } from '../config'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
-import type { DepOptimizationConfig, SSROptions } from '..'
+import type { DepOptimizationOptions, SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import type { FsUtils } from '../fsUtils'
 import { commonFsUtils } from '../fsUtils'
@@ -772,7 +772,7 @@ export function tryNodeResolve(
   ssr: boolean = false,
   externalize?: boolean,
   allowLinkedExternal: boolean = true,
-  depsOptimizerOptions?: DepOptimizationConfig,
+  depsOptimizerOptions?: DepOptimizationOptions,
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
@@ -1248,7 +1248,7 @@ function tryResolveBrowserMapping(
   options: InternalResolveOptions,
   isFilePath: boolean,
   externalize?: boolean,
-  depsOptimizerOptions?: DepOptimizationConfig,
+  depsOptimizerOptions?: DepOptimizationOptions,
 ) {
   let res: string | undefined
   const pkg =

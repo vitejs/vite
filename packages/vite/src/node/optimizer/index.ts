@@ -59,7 +59,7 @@ export interface DepsOptimizer {
 
   close: () => Promise<void>
 
-  options: DepOptimizationConfig
+  options: DepOptimizationOptions
 }
 
 export interface DepOptimizationConfig {
@@ -142,6 +142,9 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   holdUntilCrawlEnd?: boolean
+}
+
+export type DepOptimizationOptions = DepOptimizationConfig & {
   /**
    * By default, Vite will crawl your `index.html` to detect dependencies that
    * need to be pre-bundled. If `build.rollupOptions.input` is specified, Vite
@@ -161,16 +164,13 @@ export interface DepOptimizationConfig {
 }
 
 export function isDepOptimizationEnabled(
-  optimizeDeps: DepOptimizationConfig,
+  optimizeDeps: DepOptimizationOptions,
 ): boolean {
   return (
     !(optimizeDeps.disabled === true || optimizeDeps.disabled === 'dev') &&
     !(optimizeDeps.noDiscovery && !optimizeDeps.include?.length)
   )
 }
-
-// TODO: We first need to define if entries and force should be per-environment
-// export type ResolvedDepOptimizationConfig = Required<DepOptimizationConfig>
 
 export interface DepOptimizationResult {
   metadata: DepOptimizationMetadata

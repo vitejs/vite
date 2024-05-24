@@ -78,7 +78,7 @@ import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
 import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
-import type { DepOptimizationConfig } from './optimizer'
+import type { DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
 import type { EnvironmentPluginContainer } from './server/pluginContainer'
 import { createEnvironmentPluginContainer } from './server/pluginContainer'
@@ -167,7 +167,7 @@ export interface DevEnvironmentOptions {
   /**
    * Optimize deps config
    */
-  optimizeDeps?: DepOptimizationConfig
+  optimizeDeps?: DepOptimizationOptions
 
   /**
    * create the Dev Environment instance
@@ -414,7 +414,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Dep optimization options
    */
-  optimizeDeps?: DepOptimizationConfig
+  optimizeDeps?: DepOptimizationOptions
   /**
    * SSR specific options
    * We could make SSROptions be a EnvironmentOptions if we can abstract
@@ -548,7 +548,7 @@ export type ResolvedConfig = Readonly<
     assetsInclude: (file: string) => boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
-    optimizeDeps: DepOptimizationConfig
+    optimizeDeps: DepOptimizationOptions
     /** @internal */
     packageCache: PackageCache
     worker: ResolvedWorkerOptions
@@ -574,7 +574,7 @@ export function resolveDevEnvironmentOptions(
     preTransformRequests:
       dev?.preTransformRequests ?? environmentName === 'client',
     warmup: dev?.warmup ?? [],
-    optimizeDeps: resolveDepOptimizationConfig(
+    optimizeDeps: resolveDepOptimizationOptions(
       dev?.optimizeDeps,
       preserverSymlinks,
     ),
@@ -732,11 +732,11 @@ function resolveEnvironmentResolveOptions(
   return resolvedResolve
 }
 
-// TODO: Introduce ResolvedDepOptimizationConfig
-function resolveDepOptimizationConfig(
-  optimizeDeps: DepOptimizationConfig | undefined,
+// TODO: Introduce ResolvedDepOptimizationOptions
+function resolveDepOptimizationOptions(
+  optimizeDeps: DepOptimizationOptions | undefined,
   preserveSymlinks: boolean,
-): DepOptimizationConfig {
+): DepOptimizationOptions {
   optimizeDeps ??= {}
   return {
     include: optimizeDeps.include ?? [],
@@ -1764,7 +1764,7 @@ async function runConfigEnvironmentHook(
 
 function optimizeDepsDisabledBackwardCompatibility(
   resolved: ResolvedConfig,
-  optimizeDeps: DepOptimizationConfig,
+  optimizeDeps: DepOptimizationOptions,
   optimizeDepsPath: string = '',
 ) {
   const optimizeDepsDisabled = optimizeDeps.disabled
