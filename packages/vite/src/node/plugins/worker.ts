@@ -76,7 +76,7 @@ async function bundleWorkerEntry(
     ...rollupOptions,
     input,
     plugins: resolvedPlugins.map((p) =>
-      injectEnvironmentToHooks(p, workerEnvironment),
+      injectEnvironmentToHooks(workerEnvironment, p),
     ),
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)

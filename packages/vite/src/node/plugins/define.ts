@@ -119,8 +119,6 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     name: 'vite:define',
 
     async transform(code, id) {
-      if (!this.environment) return
-
       if (this.environment.name === 'client' && !isBuild) {
         // for dev we inject actual global defines in the vite client to
         // avoid the transform cost. see the `clientInjection` and

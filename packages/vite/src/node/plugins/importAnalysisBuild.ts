@@ -340,7 +340,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      if (!this.environment) return
       const ssr = this.environment.name !== 'client' // TODO
       if (format !== 'es' || ssr || isWorker) {
         return

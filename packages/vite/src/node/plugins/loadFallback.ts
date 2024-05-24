@@ -23,7 +23,6 @@ export function loadFallbackPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:load-fallback',
     async load(id, options) {
-      if (!this.environment) return
       const environment = this.environment as DevEnvironment
 
       let code: string | null = null

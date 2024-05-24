@@ -21,13 +21,6 @@ export function usePerEnvironmentState<State>(
   const stateMap = new WeakMap<Environment, State>()
   return function (context: PluginContext) {
     const { environment } = context
-    if (!environment) {
-      context.error(
-        new Error(
-          `Per environment state called with undefined environment. You may be using a Vite v6+ plugin in Vite v5 or Rollup.`,
-        ),
-      )
-    }
     let state = stateMap.get(environment)
     if (!state) {
       state = initial(environment)

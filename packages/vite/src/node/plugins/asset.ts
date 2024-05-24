@@ -227,8 +227,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle(_, bundle) {
-      const environment = this.environment!
-
       // Remove empty entry point file
       for (const file in bundle) {
         const chunk = bundle[file]
@@ -243,7 +241,10 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
 
       // do not emit assets for SSR build
-      if (config.command === 'build' && !environment.options.build.emitAssets) {
+      if (
+        config.command === 'build' &&
+        !this.environment.options.build.emitAssets
+      ) {
         for (const file in bundle) {
           if (
             bundle[file].type === 'asset' &&

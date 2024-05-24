@@ -217,7 +217,7 @@ export function resolvePlugin(
       // The resolve plugin is used for createIdResolver and the depsOptimizer should be
       // disabled in that case, so deps optimization is opt-in when creating the plugin.
       const depsOptimizer =
-        resolveOptions.optimizeDeps && this.environment?.mode === 'dev'
+        resolveOptions.optimizeDeps && this.environment.mode === 'dev'
           ? this.environment?.depsOptimizer
           : undefined
 
@@ -229,7 +229,7 @@ export function resolvePlugin(
       const isRequire: boolean =
         resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
 
-      const environmentName = this.environment?.name ?? (ssr ? 'ssr' : 'client')
+      const environmentName = this.environment.name ?? (ssr ? 'ssr' : 'client')
       const currentEnvironmentOptions =
         this.environment?.options || environmentsOptions?.[environmentName]
       const environmentResolveOptions = currentEnvironmentOptions?.resolve
@@ -247,7 +247,7 @@ export function resolvePlugin(
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
 
-      const depsOptimizerOptions = this.environment?.options.dev.optimizeDeps
+      const depsOptimizerOptions = this.environment.options.dev.optimizeDeps
 
       const resolvedImports = resolveSubpathImports(id, importer, options)
       if (resolvedImports) {
@@ -409,7 +409,7 @@ export function resolvePlugin(
       if (bareImportRE.test(id)) {
         const external =
           options.externalize &&
-          shouldExternalize(this.environment!, id, importer) // TODO
+          shouldExternalize(this.environment, id, importer)
         if (
           !external &&
           asSrc &&

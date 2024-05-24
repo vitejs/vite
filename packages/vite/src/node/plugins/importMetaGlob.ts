@@ -67,24 +67,23 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         config.logger,
       )
       if (result) {
-        if (this.environment) {
-          const allGlobs = result.matches.map((i) => i.globsResolved)
-          if (!importGlobMaps.has(this.environment)) {
-            importGlobMaps.set(this.environment, new Map())
-          }
-          importGlobMaps.get(this.environment)!.set(
-            id,
-            allGlobs.map((globs) => {
-              const affirmed: string[] = []
-              const negated: string[] = []
-
-              for (const glob of globs) {
-                ;(glob[0] === '!' ? negated : affirmed).push(glob)
-              }
-              return { affirmed, negated }
-            }),
-          )
+        const allGlobs = result.matches.map((i) => i.globsResolved)
+        if (!importGlobMaps.has(this.environment)) {
+          importGlobMaps.set(this.environment, new Map())
         }
+        importGlobMaps.get(this.environment)!.set(
+          id,
+          allGlobs.map((globs) => {
+            const affirmed: string[] = []
+            const negated: string[] = []
+
+            for (const glob of globs) {
+              ;(glob[0] === '!' ? negated : affirmed).push(glob)
+            }
+            return { affirmed, negated }
+          }),
+        )
+
         return transformStableResult(result.s, id, config)
       }
     },

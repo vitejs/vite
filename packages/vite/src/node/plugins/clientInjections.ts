@@ -90,7 +90,6 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       }
     },
     async transform(code, id, options) {
-      if (!this.environment) return
       // TODO: !environment.options.nodeCompatible ?
       // TODO: Remove options?.ssr, Vitest currently hijacks this plugin
       const ssr = options?.ssr ?? this.environment.name !== 'client'
