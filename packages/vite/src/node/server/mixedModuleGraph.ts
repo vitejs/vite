@@ -129,15 +129,24 @@ export class ModuleNode {
     return this._ssrModule?.ssrError ?? null
   }
   get lastHMRTimestamp(): number {
-    return this._clientModule?.lastHMRTimestamp ?? 0
+    return Math.max(
+      this._clientModule?.lastHMRTimestamp ?? 0,
+      this._ssrModule?.lastHMRTimestamp ?? 0,
+    )
   }
   set lastHMRTimestamp(value: number) {
     if (this._clientModule) {
       this._clientModule.lastHMRTimestamp = value
     }
+    if (this._ssrModule) {
+      this._ssrModule.lastHMRTimestamp = value
+    }
   }
   get lastInvalidationTimestamp(): number {
-    return this._clientModule?.lastInvalidationTimestamp ?? 0
+    return Math.max(
+      this._clientModule?.lastInvalidationTimestamp ?? 0,
+      this._ssrModule?.lastInvalidationTimestamp ?? 0,
+    )
   }
   get invalidationState(): TransformResult | 'HARD_INVALIDATED' | undefined {
     return this._clientModule?.invalidationState
