@@ -334,16 +334,14 @@ export function resolveEnvironmentPlugins(environment: Environment): Plugin[] {
  * Internal type to make sure `this.environment` is always defined
  *
  * Should be used via `defineVitePlugin`
- *
- * @internal
  */
-type PluginWithEnvironment = {
+export type PluginWithEnvironment = {
   [K in keyof Plugin]: Plugin[K] extends ObjectHook<infer H>
     ? ObjectHook<HandlerWithEnvironment<H>>
     : HandlerWithEnvironment<Plugin[K]>
 }
 
-type HandlerWithEnvironment<H> = H extends (
+export type HandlerWithEnvironment<H> = H extends (
   this: infer This,
   ...args: infer Args
 ) => infer Returns
