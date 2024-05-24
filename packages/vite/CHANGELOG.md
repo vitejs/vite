@@ -1,3 +1,18 @@
+## 6.0.0-alpha.17 (2024-05-24)
+
+* refactor!: rename to HMRPayload to HotPayload and remove HMRBroadcaster (#16875) ([87bbb04](https://github.com/vitejs/vite/commit/87bbb04)), closes [#16875](https://github.com/vitejs/vite/issues/16875)
+* fix: dep optimization options ([624e751](https://github.com/vitejs/vite/commit/624e751))
+* fix: DepOptimizationConfig ([5c655e6](https://github.com/vitejs/vite/commit/5c655e6))
+* fix: handleHotUpdate compat (#17295) ([11bddb0](https://github.com/vitejs/vite/commit/11bddb0)), closes [#17295](https://github.com/vitejs/vite/issues/17295)
+* fix: optimizeDeps back compat ([478a9aa](https://github.com/vitejs/vite/commit/478a9aa))
+* fix(types): avoid referencing `WeakKey` type ([e339959](https://github.com/vitejs/vite/commit/e339959))
+* feat: per-environment optimizeDeps entries and force ([006cfb7](https://github.com/vitejs/vite/commit/006cfb7))
+* feat: reporter as shared plugin using createWeakData (#17293) ([2b69389](https://github.com/vitejs/vite/commit/2b69389)), closes [#17293](https://github.com/vitejs/vite/issues/17293)
+* chore: refactor isDepsOptimizerEnabled ([5f36aa6](https://github.com/vitejs/vite/commit/5f36aa6))
+* docs: deprecate server.hot (#16741) ([e7d38ab](https://github.com/vitejs/vite/commit/e7d38ab)), closes [#16741](https://github.com/vitejs/vite/issues/16741)
+
+
+
 ## 6.0.0-alpha.16 (2024-05-23)
 
 * feat: createWeakData ([bcb1959](https://github.com/vitejs/vite/commit/bcb1959))
