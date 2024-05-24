@@ -10,7 +10,6 @@ import { CLIENT_ENTRY } from '../constants'
 import { createIdResolver } from '../idResolver'
 import {
   createFilter,
-  createWeakData,
   normalizePath,
   rawRE,
   requestQueryMaybeEscapedSplitRE,
@@ -19,6 +18,7 @@ import {
   urlRE,
 } from '../utils'
 import type { Environment } from '../environment'
+import { usePerEnvironmentState } from '../environment'
 import { toAbsoluteGlob } from './importMetaGlob'
 import { hasViteIgnoreRE } from './importAnalysis'
 import { workerOrSharedWorkerRE } from './worker'
@@ -175,7 +175,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     extensions: [],
   })
 
-  const getFilter = createWeakData((environment: Environment) => {
+  const getFilter = usePerEnvironmentState((environment: Environment) => {
     const { include, exclude } =
       environment.options.build.dynamicImportVarsOptions
     return createFilter(include, exclude)
@@ -200,7 +200,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
       const { environment } = this
       if (
         !environment ||
-        !getFilter(environment)(importer) ||
+        !getFilter(this)(importer) ||
         importer === CLIENT_ENTRY ||
         !hasDynamicImportRE.test(source)
       ) {
