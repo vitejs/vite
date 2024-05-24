@@ -15,6 +15,10 @@ import { getEnvFilesForMode } from '../env'
 import type { Environment } from '../environment'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { Plugin } from '../plugin'
+import {
+  ignoreDeprecationWarnings,
+  warnFutureDeprecation,
+} from '../deprecations'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import type { DevEnvironment } from './environment'
@@ -163,6 +167,8 @@ export async function handleHMRUpdate(
   server: ViteDevServer,
 ): Promise<void> {
   const { config } = server
+  const mixedModuleGraph = ignoreDeprecationWarnings(() => server.moduleGraph)
+
   const environments = Object.values(server.environments)
   const shortFile = getShortName(file, config.root)
 
@@ -234,7 +240,7 @@ export async function handleHMRUpdate(
     hotMap.set(environment, { context })
   }
 
-  const mixedMods = new Set(server.moduleGraph.getModulesByFile(file))
+  const mixedMods = new Set(mixedModuleGraph.getModulesByFile(file))
 
   const mixedHmrContext: HmrContext = {
     ...contextMeta,
@@ -270,11 +276,17 @@ export async function handleHMRUpdate(
                   ),
               )
               .map((mod) =>
-                server.moduleGraph.getBackwardCompatibleModuleNode(mod),
+                mixedModuleGraph.getBackwardCompatibleModuleNode(mod),
               ),
           )
         }
       } else if (type === 'update') {
+        warnFutureDeprecation(
+          config,
+          'pluginHookHandleHotUpdate',
+          `Used in plugin "${plugin.name}".`,
+          false,
+        )
         // later on, we'll need: if (runtime === 'client')
         // Backward compatibility with mixed client and ssr moduleGraph
         const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(

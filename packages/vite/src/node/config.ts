@@ -88,6 +88,7 @@ import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
 import { FutureCompatEnvironment } from './baseEnvironment'
+import type { FutureDeprecationWarningsOptions } from './deprecations'
 
 const debug = createDebugger('vite:config')
 const promisifiedRealpath = promisify(fs.realpath)
@@ -358,6 +359,10 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    */
   experimental?: ExperimentalOptions
   /**
+   * Options to opt-in to future behavior
+   */
+  future?: FutureOptions
+  /**
    * Legacy options
    *
    * Features under this field only follow semver for patches, they could be removed in a
@@ -441,6 +446,15 @@ export interface HTMLOptions {
    * Make sure that this placeholder will be replaced with a unique value for each request by the server.
    */
   cspNonce?: string
+}
+
+export interface FutureOptions {
+  /**
+   * Emit warning messages for deprecated/will-deprecated features at runtime.
+   *
+   * Setting to `true` to enable all warnings
+   */
+  deprecationWarnings?: boolean | FutureDeprecationWarningsOptions
 }
 
 export interface ExperimentalOptions {
@@ -1186,6 +1200,7 @@ export async function resolveConfig(
       hmrPartialAccept: false,
       ...config.experimental,
     },
+    future: config.future,
 
     // Backward compatibility, users should use environment.config.dev.optimizeDeps
     optimizeDeps: backwardCompatibleOptimizeDeps,

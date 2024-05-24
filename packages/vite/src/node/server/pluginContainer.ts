@@ -79,6 +79,7 @@ import { FS_PREFIX } from '../constants'
 import { createPluginHookUtils, getHookHandler } from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import type { Environment } from '../environment'
+import { warnFutureDeprecation } from '../deprecations'
 import type { DevEnvironment } from './environment'
 import { buildErrorMessage } from './middlewares/error'
 import type { EnvironmentModuleNode } from './moduleGraph'
@@ -736,7 +737,13 @@ export async function createEnvironmentPluginContainer(
     },
 
     async load(id, options) {
-      options = options ? { ...options, ssr } : { ssr }
+      options = {
+        ...options,
+        get ssr() {
+          warnFutureDeprecation(config, 'pluginHookSsrArgument')
+          return ssr
+        },
+      }
       const ctx = new Context()
       for (const plugin of getSortedPlugins('load')) {
         if (closed && environment?.options.dev.recoverable)
@@ -760,7 +767,13 @@ export async function createEnvironmentPluginContainer(
     },
 
     async transform(code, id, options) {
-      options = options ? { ...options, ssr } : { ssr }
+      options = {
+        ...options,
+        get ssr() {
+          warnFutureDeprecation(config, 'pluginHookSsrArgument')
+          return ssr
+        },
+      }
       const inMap = options?.inMap
       const ctx = new TransformContext(id, code, inMap as SourceMap)
       for (const plugin of getSortedPlugins('transform')) {

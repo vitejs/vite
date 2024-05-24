@@ -45,6 +45,7 @@ import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
+import { warnFutureDeprecation } from '../deprecations'
 import {
   createNoopWatcher,
   getResolvedOutDirs,
@@ -526,7 +527,10 @@ export async function _createServer(
 
     environments,
     pluginContainer,
-    moduleGraph,
+    get moduleGraph() {
+      warnFutureDeprecation(config, 'serverModuleGraph')
+      return moduleGraph
+    },
 
     resolvedUrls: null, // will be set on listen
     ssrTransform(
@@ -543,6 +547,11 @@ export async function _createServer(
     // that is part of the internal control flow for the vite dev server to be able to bail
     // out and do the html fallback
     transformRequest(url, options) {
+      warnFutureDeprecation(
+        config,
+        'serverTransformRequest',
+        'server.transformRequest() is deprecated. Use environment.transformRequest() instead.',
+      )
       const environment = server.environments[options?.ssr ? 'ssr' : 'client']
       return transformRequest(environment, url, options)
     },
@@ -569,6 +578,8 @@ export async function _createServer(
       return devHtmlTransformFn(server, url, html, originalUrl)
     },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
+      warnFutureDeprecation(config, 'ssrLoadModule')
+
       return ssrLoadModule(
         url,
         server,

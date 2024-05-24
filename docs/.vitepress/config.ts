@@ -264,6 +264,10 @@ export default defineConfig({
               text: 'Migration from v4',
               link: '/guide/migration',
             },
+            {
+              text: 'Deprecations Guide',
+              link: '/deprecations/',
+            },
           ],
         },
         {
@@ -327,6 +331,33 @@ export default defineConfig({
             {
               text: 'Worker Options',
               link: '/config/worker-options',
+            },
+          ],
+        },
+      ],
+      '/deprecations/': [
+        {
+          text: 'Deprecations Guide',
+          link: '/deprecations/',
+        },
+        {
+          text: 'Deprecations List',
+          items: [
+            {
+              text: 'VD001 - handleHotUpdate()',
+              link: '/deprecations/vd001',
+            },
+            {
+              text: 'VD002 - options.ssr',
+              link: '/deprecations/vd002',
+            },
+            {
+              text: 'VD003 - Dev Server APIs',
+              link: '/deprecations/vd003',
+            },
+            {
+              text: 'VD004 - ssrLoadModule',
+              link: '/deprecations/vd004',
             },
           ],
         },
