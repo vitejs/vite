@@ -15,7 +15,6 @@ export {
   mergeConfig,
   mergeAlias,
   createFilter,
-  createWeakData,
   rollupVersion,
 } from './utils'
 export { send } from './server/send'

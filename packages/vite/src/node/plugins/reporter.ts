@@ -6,12 +6,8 @@ import type { OutputBundle } from 'rollup'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
-import {
-  createWeakData,
-  isDefined,
-  isInNodeModules,
-  normalizePath,
-} from '../utils'
+import { usePerEnvironmentState } from '../environment'
+import { isDefined, isInNodeModules, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 import { withTrailingSlash } from '../../shared/utils'
 
@@ -44,11 +40,52 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
 
-  const reporter = createWeakData((environment: Environment) => {
+  const modulesReporter = usePerEnvironmentState((environment: Environment) => {
     let hasTransformed = false
+    let transformedCount = 0
+
+    const logTransform = throttle((id: string) => {
+      writeLine(
+        `transforming (${transformedCount}) ${colors.dim(
+          path.relative(config.root, id),
+        )}`,
+      )
+    })
+
+    return {
+      reset() {
+        transformedCount = 0
+      },
+      register(id: string) {
+        transformedCount++
+        if (shouldLogInfo) {
+          if (!tty) {
+            if (!hasTransformed) {
+              config.logger.info(`transforming...`)
+            }
+          } else {
+            if (id.includes(`?`)) return
+            logTransform(id)
+          }
+          hasTransformed = true
+        }
+      },
+      log() {
+        if (shouldLogInfo) {
+          if (tty) {
+            clearLine()
+          }
+          environment.logger.info(
+            `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
+          )
+        }
+      },
+    }
+  })
+
+  const chunksReporter = usePerEnvironmentState((environment: Environment) => {
     let hasRenderedChunk = false
     let hasCompressChunk = false
-    let transformedCount = 0
     let chunkCount = 0
     let compressedCount = 0
 
@@ -79,48 +116,12 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       return compressed.length
     }
 
-    const logTransform = throttle((id: string) => {
-      writeLine(
-        `transforming (${transformedCount}) ${colors.dim(
-          path.relative(config.root, id),
-        )}`,
-      )
-    })
-
     return {
-      resetTransformedModulesInfo() {
-        transformedCount = 0
-      },
-      onTransform(id: string) {
-        transformedCount++
-        if (shouldLogInfo) {
-          if (!tty) {
-            if (!hasTransformed) {
-              config.logger.info(`transforming...`)
-            }
-          } else {
-            if (id.includes(`?`)) return
-            logTransform(id)
-          }
-          hasTransformed = true
-        }
-      },
-      logTransformedModulesInfo() {
-        if (shouldLogInfo) {
-          if (tty) {
-            clearLine()
-          }
-          environment.logger.info(
-            `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
-          )
-        }
-      },
-
-      resetChunksInfo() {
+      reset() {
         chunkCount = 0
         compressedCount = 0
       },
-      onRenderChunk() {
+      register() {
         chunkCount++
         if (shouldLogInfo) {
           if (!tty) {
@@ -133,7 +134,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           hasRenderedChunk = true
         }
       },
-      async logChunksInfo(output: OutputBundle, outDir?: string) {
+      async log(output: OutputBundle, outDir?: string) {
         const chunkLimit = environment.options.build.chunkSizeWarningLimit
 
         let hasLargeChunks = false
@@ -274,19 +275,19 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     sharedDuringBuild: true,
 
     transform(_, id) {
-      reporter(this.environment!).onTransform(id)
+      modulesReporter(this).register(id)
     },
 
     buildStart() {
-      reporter(this.environment!).resetTransformedModulesInfo()
+      modulesReporter(this).reset()
     },
 
     buildEnd() {
-      reporter(this.environment!).logTransformedModulesInfo()
+      modulesReporter(this).log()
     },
 
     renderStart() {
-      reporter(this.environment!).resetChunksInfo()
+      chunksReporter(this).reset()
     },
 
     renderChunk(_, chunk, options) {
@@ -320,7 +321,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      reporter(this.environment!).onRenderChunk()
+      chunksReporter(this).register()
     },
 
     generateBundle() {
@@ -328,7 +329,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     async writeBundle({ dir }, output) {
-      await reporter(this.environment!).logChunksInfo(output, dir)
+      await chunksReporter(this).log(output, dir)
     },
   }
 }
