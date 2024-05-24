@@ -71,7 +71,10 @@ export function warnFutureDeprecation(
   msg = colors.yellow(msg)
 
   const docs = `${docsURL}/deprecations/${_futureDeprecationCode[type].toLowerCase()}`
-  msg += `\n       ${colors.underline(docs)}`
+  msg +=
+    colors.gray(`\n  ${stacktrace ? '├' : '└'}─── `) +
+    colors.underline(docs) +
+    '\n'
 
   if (stacktrace) {
     const stack = new Error().stack
@@ -80,19 +83,16 @@ export function warnFutureDeprecation(
         .split('\n')
         .slice(3)
         .filter((i) => !i.includes('/node_modules/vite/dist/'))
-      if (stacks.length) {
-        msg +=
-          '\n' +
-          colors.dim(
-            stacks
-              .map(
-                (i, idx) =>
-                  `  ${idx === stacks.length - 1 ? '└' : '│'} ${i.trim()}`,
-              )
-              .join('\n'),
-          ) +
-          '\n'
-      }
+      if (stacks.length === 0) stacks.push('No stack trace found.')
+      msg +=
+        colors.dim(
+          stacks
+            .map(
+              (i, idx) =>
+                `  ${idx === stacks.length - 1 ? '└' : '│'} ${i.trim()}`,
+            )
+            .join('\n'),
+        ) + '\n'
     }
   }
   config.logger.warnOnce(msg)
