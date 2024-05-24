@@ -8,6 +8,7 @@ export {
   resolveConfig,
   sortUserPlugins,
 } from './config'
+export { defineVitePlugin } from './plugin'
 export { createServer } from './server'
 export { preview } from './preview'
 export { build, createBuilder } from './build'
@@ -51,7 +52,12 @@ export type {
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
 } from './config'
-export type { Plugin, PluginOption, HookHandler } from './plugin'
+export type {
+  Plugin,
+  PluginOption,
+  PluginWithEnvironment,
+  HookHandler,
+} from './plugin'
 export type { Environment } from './environment'
 export type { FilterPattern } from './utils'
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
