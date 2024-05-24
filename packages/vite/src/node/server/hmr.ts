@@ -360,10 +360,7 @@ export async function handleHMRUpdate(
     try {
       const { context, error } = hotMap.get(environment)!
       if (error) {
-        environment.hot.send({
-          type: 'error',
-          err: prepareError(error),
-        })
+        throw error
       }
       if (!context.modules.length) {
         // html file cannot be hot updated
