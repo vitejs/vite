@@ -8,6 +8,7 @@ export {
   resolveConfig,
   sortUserPlugins,
 } from './config'
+export { defineVitePlugin } from './plugin'
 export { createServer } from './server'
 export { preview } from './preview'
 export { build, createBuilder } from './build'

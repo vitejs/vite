@@ -53,6 +53,13 @@ import type { Environment } from './environment'
  */
 
 export interface PluginContextExtension {
+  /**
+   * Vite-specific environment instance
+   *
+   * Will always be defined in Vite 6+. Keep the type optional for backward compatible.
+   *
+   * @see TODO:link-to-docs
+   */
   environment?: Environment
 }
 
@@ -321,4 +328,37 @@ export function resolveEnvironmentPlugins(environment: Environment): Plugin[] {
     (plugin) =>
       !plugin.applyToEnvironment || plugin.applyToEnvironment(environment),
   )
+}
+
+/**
+ * Internal type to make sure `this.environment` is always defined
+ *
+ * Should be used via `defineVitePlugin`
+ *
+ * @internal
+ */
+type PluginWithEnvironment = {
+  [K in keyof Plugin]: Plugin[K] extends ObjectHook<infer H>
+    ? ObjectHook<HandlerWithEnvironment<H>>
+    : HandlerWithEnvironment<Plugin[K]>
+}
+
+type HandlerWithEnvironment<H> = H extends (
+  this: infer This,
+  ...args: infer Args
+) => infer Returns
+  ? This extends { environment?: Environment }
+    ? (this: This & { environment: Environment }, ...args: Args) => Returns
+    : H
+  : H
+
+/**
+ * Type utility to define a Vite-specific plugin where `this.environment` is always defined.
+ *
+ * Should only be used when you expect the plugin **only** runs on Vite 6+.
+ *
+ * It does an internal cast to returns a Rollup-compatible plugin type so you can pass into the array as before.
+ */
+export function defineVitePlugin(plugin: PluginWithEnvironment): Plugin {
+  return plugin as Plugin
 }

@@ -3,6 +3,7 @@ import { gzip } from 'node:zlib'
 import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from '../plugin'
+import { defineVitePlugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
 import {
@@ -90,12 +91,12 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     return compressed.length
   }
 
-  return {
+  return defineVitePlugin({
     name: 'vite:reporter',
     sharedDuringBuild: true,
 
     transform(_, id) {
-      const data = getData(this.environment!)
+      const data = getData(this.environment)
 
       data.transformedCount++
       if (shouldLogInfo) {
@@ -113,7 +114,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     buildStart() {
-      getData(this.environment!).transformedCount = 0
+      getData(this.environment).transformedCount = 0
     },
 
     buildEnd() {
@@ -128,7 +129,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderStart() {
-      const data = getData(this.environment!)
+      const data = getData(this.environment)
       data.chunkCount = 0
       data.compressedCount = 0
     },
@@ -317,7 +318,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         )
       }
     },
-  }
+  })
 }
 
 function writeLine(output: string) {
