@@ -116,7 +116,10 @@ export async function fetchModule(
   return {
     code: result.code,
     file: mod.file,
-    cached: !!mod.transformResult,
+    invalidationTimestamp: Math.max(
+      mod.lastHMRTimestamp,
+      mod.lastInvalidationTimestamp,
+    ),
   }
 }
 
