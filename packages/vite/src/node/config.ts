@@ -1063,6 +1063,12 @@ export async function loadConfigFromFile(
   }
 }
 
+function getCurrentNodeTarget(): string {
+  // `process.versions.node` is usually in the form of `22.2.0`, but nightly builds are in the form of `23.0.0-nightly202405252079a7aec4`.
+  const version = process.versions?.node?.match(/^\d+\.\d+\.\d+/)?.[0] ?? '18'
+  return `node${version}`
+}
+
 async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
@@ -1074,7 +1080,7 @@ async function bundleConfigFile(
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
     write: false,
-    target: [`node${process.versions.node}`],
+    target: [getCurrentNodeTarget()],
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',
