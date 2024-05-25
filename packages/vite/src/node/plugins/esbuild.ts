@@ -80,7 +80,7 @@ export async function transformWithEsbuild(
   filename: string,
   options?: TransformOptions,
   inMap?: object,
-  root?: string,
+  config?: ResolvedConfig,
   watcher?: any, // TODO: module-runner bundling issue with FSWatcher,
 ): Promise<ESBuildTransformResult> {
   let loader = options?.loader
@@ -122,18 +122,29 @@ export async function transformWithEsbuild(
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
-      const loadedTsconfig = await loadTsconfigJsonForFile(
-        filename,
-        root,
-        watcher,
-      )
-      const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
-
-      for (const field of meaningfulFields) {
-        if (field in loadedCompilerOptions) {
-          // @ts-expect-error TypeScript can't tell they are of the same type
-          compilerOptionsForFile[field] = loadedCompilerOptions[field]
+      try {
+        const { tsconfig: loadedTsconfig, tsconfigFile } =
+          await loadTsconfigJsonForFile(filename, config)
+        // tsconfig could be out of root, make sure it is watched on dev
+        if (watcher && tsconfigFile && config) {
+          ensureWatchedFile(watcher, tsconfigFile, config.root)
         }
+        const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
+
+        for (const field of meaningfulFields) {
+          if (field in loadedCompilerOptions) {
+            // @ts-expect-error TypeScript can't tell they are of the same type
+            compilerOptionsForFile[field] = loadedCompilerOptions[field]
+          }
+        }
+      } catch (e) {
+        if (e instanceof TSConfckParseError) {
+          // tsconfig could be out of root, make sure it is watched on dev
+          if (watcher && e.tsconfigFile && config) {
+            ensureWatchedFile(watcher, e.tsconfigFile, config.root)
+          }
+        }
+        throw e
       }
     }
 
@@ -254,11 +265,23 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     },
   }
 
+  let server: ViteDevServer
+
   return {
     name: 'vite:esbuild',
+    configureServer(_server) {
+      server = _server
+    },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
-        const result = await transformWithEsbuild(code, id, transformOptions)
+        const result = await transformWithEsbuild(
+          code,
+          id,
+          transformOptions,
+          undefined,
+          config,
+          server?.watcher,
+        )
         if (result.warnings.length) {
           result.warnings.forEach((m) => {
             this.warn(prettifyMessage(m, code))
@@ -309,7 +332,13 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         return null
       }
 
-      const res = await transformWithEsbuild(code, chunk.fileName, options)
+      const res = await transformWithEsbuild(
+        code,
+        chunk.fileName,
+        options,
+        undefined,
+        config,
+      )
 
       if (config.build.lib) {
         // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
@@ -440,35 +469,33 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-let tsconfckCache: TSConfckCache<TSConfckParseResult> | undefined
+let globalTSConfckCache: TSConfckCache<TSConfckParseResult> | undefined
+const tsconfckCacheMap = new WeakMap<
+  ResolvedConfig,
+  TSConfckCache<TSConfckParseResult>
+>()
+
+function getTSConfckCache(config?: ResolvedConfig) {
+  if (!config) {
+    return (globalTSConfckCache ??= new TSConfckCache<TSConfckParseResult>())
+  }
+  let cache = tsconfckCacheMap.get(config)
+  if (!cache) {
+    cache = new TSConfckCache<TSConfckParseResult>()
+    tsconfckCacheMap.set(config, cache)
+  }
+  return cache
+}
 
 export async function loadTsconfigJsonForFile(
   filename: string,
-  root?: string,
-  watcher?: any, // TODO: module-runner issue with FSWatcher,
-): Promise<TSConfigJSON> {
-  try {
-    if (!tsconfckCache) {
-      tsconfckCache = new TSConfckCache<TSConfckParseResult>()
-    }
-    const result = await parse(filename, {
-      cache: tsconfckCache,
-      ignoreNodeModules: true,
-    })
-    // tsconfig could be out of root, make sure it is watched on dev
-    if (root && watcher && result.tsconfigFile) {
-      ensureWatchedFile(watcher, result.tsconfigFile, root)
-    }
-    return result.tsconfig
-  } catch (e) {
-    if (e instanceof TSConfckParseError) {
-      // tsconfig could be out of root, make sure it is watched on dev
-      if (root && watcher && e.tsconfigFile) {
-        ensureWatchedFile(watcher, e.tsconfigFile, root)
-      }
-    }
-    throw e
-  }
+  config?: ResolvedConfig,
+): Promise<{ tsconfigFile: string; tsconfig: TSConfigJSON }> {
+  const { tsconfig, tsconfigFile } = await parse(filename, {
+    cache: getTSConfckCache(config),
+    ignoreNodeModules: true,
+  })
+  return { tsconfigFile, tsconfig }
 }
 
 export async function reloadOnTsconfigChange(
@@ -477,32 +504,34 @@ export async function reloadOnTsconfigChange(
 ): Promise<void> {
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
   // any json file in the tsconfig cache could have been used to compile ts
-  if (
-    path.basename(changedFile) === 'tsconfig.json' ||
-    changedFile.endsWith('.json') /*
-      TODO: the tsconfckCache?.clear() line will make this fail if there are several servers
-            we may need a cache per server if we don't want all servers to share the reset
-            leaving it commented for now because it should still work
-      && tsconfckCache?.hasParseResult(changedFile)
-      */
-  ) {
-    server.config.logger.info(
-      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
-      { clear: server.config.clearScreen, timestamp: true },
-    )
+  if (changedFile.endsWith('.json')) {
+    const cache = getTSConfckCache(server.config)
+    if (
+      changedFile.endsWith('/tsconfig.json') ||
+      cache.hasParseResult(changedFile)
+    ) {
+      server.config.logger.info(
+        `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
+        { clear: server.config.clearScreen, timestamp: true },
+      )
 
-    // clear module graph to remove code compiled with outdated config
-    for (const environment of Object.values(server.environments)) {
-      environment.moduleGraph.invalidateAll()
+      // TODO: more finegrained invalidation than the nuclear option below
+
+      // clear module graph to remove code compiled with outdated config
+      for (const environment of Object.values(server.environments)) {
+        environment.moduleGraph.invalidateAll()
+      }
+
+      // reset tsconfck cache so that recompile works with up2date configs
+      cache.clear()
+
+      // reload environments
+      for (const environment of Object.values(server.environments)) {
+        environment.hot.send({
+          type: 'full-reload',
+          path: '*',
+        })
+      }
     }
-
-    // reset tsconfck so that recompile works with up2date configs
-    tsconfckCache?.clear()
-
-    // force full reload
-    server.ws.send({
-      type: 'full-reload',
-      path: '*',
-    })
   }
 }
