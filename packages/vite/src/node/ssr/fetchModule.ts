@@ -116,7 +116,7 @@ export async function fetchModule(
   return {
     code: result.code,
     file: mod.file,
-    lastHMRTimestamp: mod.lastHMRTimestamp,
+    cached: !!mod.transformResult,
   }
 }
 

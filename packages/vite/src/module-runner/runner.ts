@@ -255,22 +255,27 @@ export class ModuleRunner {
         : await this.transport.fetchModule(url, importer)
     ) as ResolvedResult
 
-    const lastHMRTimestamp =
-      'lastHMRTimestamp' in fetchedModule
-        ? fetchedModule.lastHMRTimestamp || 0
-        : 0
+    const cached = 'cached' in fetchedModule ? fetchedModule.cached : null
     // base moduleId on "file" and not on id
     // if `import(variable)` is called it's possible that it doesn't have an extension for example
     // if we used id for that, then a module will be duplicated
-    const { query, timestamp = lastHMRTimestamp } = parseUrl(url)
+    const { query, timestamp } = parseUrl(url)
     const file = 'file' in fetchedModule ? fetchedModule.file : undefined
     const fileId = file ? `${file}${query}` : url
     const moduleId = this.moduleCache.normalize(fileId)
     const mod = this.moduleCache.getByModuleId(moduleId)
 
+    if (cached !== null && !cached) {
+      this.moduleCache.invalidateModule(mod)
+    }
     // if URL has a ?t= query, it might've been invalidated due to HMR
     // checking if we should also invalidate the module
-    if (mod.timestamp != null && timestamp > 0 && mod.timestamp < timestamp) {
+    else if (
+      timestamp != null &&
+      mod.timestamp != null &&
+      timestamp > 0 &&
+      mod.timestamp < timestamp
+    ) {
       this.moduleCache.invalidateModule(mod)
     }
 

@@ -107,10 +107,9 @@ export interface ViteFetchResult {
    */
   file: string | null
   /**
-   * Timestamp when HMR was triggered for this module
-   * Usually automatically comes with ?t=timestamp query
+   * Is module cached on the server
    */
-  lastHMRTimestamp?: number
+  cached: boolean
 }
 
 export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {
