@@ -591,6 +591,7 @@ export function resolveDevEnvironmentOptions(
     optimizeDeps: resolveDepOptimizationOptions(
       dev?.optimizeDeps,
       preserverSymlinks,
+      environmentName,
     ),
     createEnvironment: dev?.createEnvironment,
     recoverable: dev?.recoverable ?? environmentName === 'client',
@@ -750,6 +751,7 @@ function resolveEnvironmentResolveOptions(
 function resolveDepOptimizationOptions(
   optimizeDeps: DepOptimizationOptions | undefined,
   preserveSymlinks: boolean,
+  environmentName: string | undefined,
 ): DepOptimizationOptions {
   optimizeDeps ??= {}
   return {
@@ -757,7 +759,7 @@ function resolveDepOptimizationOptions(
     exclude: optimizeDeps.exclude ?? [],
     needsInterop: optimizeDeps.needsInterop ?? [],
     extensions: optimizeDeps.extensions ?? [],
-    noDiscovery: optimizeDeps.noDiscovery ?? false,
+    noDiscovery: optimizeDeps.noDiscovery ?? environmentName !== 'client',
     holdUntilCrawlEnd: optimizeDeps.holdUntilCrawlEnd ?? true,
     esbuildOptions: {
       preserveSymlinks, // TODO: ?

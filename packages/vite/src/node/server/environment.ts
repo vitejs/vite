@@ -13,7 +13,7 @@ import { mergeConfig, promiseWithResolvers } from '../utils'
 import type { FetchModuleOptions } from '../ssr/fetchModule'
 import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
-import { isDepOptimizationEnabled } from '../optimizer'
+import { isDepOptimizationDisabled } from '../optimizer'
 import {
   createDepsOptimizer,
   createExplicitDepsOptimizer,
@@ -139,7 +139,7 @@ export class DevEnvironment extends BaseEnvironment {
     const { optimizeDeps } = this.options.dev
     if (setup.depsOptimizer) {
       this.depsOptimizer = setup.depsOptimizer
-    } else if (!isDepOptimizationEnabled(optimizeDeps)) {
+    } else if (isDepOptimizationDisabled(optimizeDeps)) {
       this.depsOptimizer = undefined
     } else {
       // We only support auto-discovery for the client environment, for all other

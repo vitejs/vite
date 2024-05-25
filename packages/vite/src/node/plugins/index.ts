@@ -1,7 +1,7 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rollup'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
-import { isDepOptimizationEnabled } from '../optimizer'
+import { isDepOptimizationDisabled } from '../optimizer'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
 import { getFsUtils } from '../fsUtils'
@@ -40,8 +40,8 @@ export async function resolvePlugins(
   const { modulePreload } = config.build
   const depOptimizationEnabled =
     !isBuild &&
-    Object.values(config.environments).some((environment) =>
-      isDepOptimizationEnabled(environment.dev.optimizeDeps),
+    Object.values(config.environments).some(
+      (environment) => !isDepOptimizationDisabled(environment.dev.optimizeDeps),
     )
 
   return [

@@ -52,7 +52,7 @@ export function esbuildDepPlugin(
   qualified: Record<string, string>,
   external: string[],
 ): Plugin {
-  const { config } = environment
+  const config = environment.config
   const { extensions } = environment.options.dev.optimizeDeps
 
   // remove optimizable extensions from `externalTypes` list

@@ -163,12 +163,13 @@ export type DepOptimizationOptions = DepOptimizationConfig & {
   force?: boolean
 }
 
-export function isDepOptimizationEnabled(
+export function isDepOptimizationDisabled(
   optimizeDeps: DepOptimizationOptions,
 ): boolean {
   return (
-    !(optimizeDeps.disabled === true || optimizeDeps.disabled === 'dev') &&
-    !(optimizeDeps.noDiscovery && !optimizeDeps.include?.length)
+    optimizeDeps.disabled === true ||
+    optimizeDeps.disabled === 'dev' ||
+    (!!optimizeDeps.noDiscovery && !optimizeDeps.include?.length)
   )
 }
 
@@ -290,7 +291,7 @@ export async function optimizeExplicitEnvironmentDeps(
 ): Promise<DepOptimizationMetadata> {
   const cachedMetadata = await loadCachedDepOptimizationMetadata(
     environment,
-    environment.config.optimizeDeps?.force ?? false, // TODO: should force be per-environment?
+    environment.options.dev.optimizeDeps.force ?? false, // TODO: should force be per-environment?
     false,
   )
   if (cachedMetadata) {
@@ -468,11 +469,6 @@ export function runOptimizeDeps(
 } {
   const optimizerContext = { cancelled: false }
 
-  const config: ResolvedConfig = {
-    ...environment.config,
-    command: 'build',
-  }
-
   const depsCacheDir = getDepsCacheDir(environment)
   const processingCacheDir = getProcessingDepsCacheDir(environment)
 
@@ -610,7 +606,9 @@ export function runOptimizeDeps(
   const runResult = preparedRun.then(({ context, idToExports }) => {
     function disposeContext() {
       return context?.dispose().catch((e) => {
-        config.logger.error('Failed to dispose esbuild context', { error: e })
+        environment.logger.error('Failed to dispose esbuild context', {
+          error: e,
+        })
       })
     }
     if (!context || optimizerContext.cancelled) {
@@ -724,11 +722,6 @@ async function prepareEsbuildOptimizerRun(
   context?: BuildContext
   idToExports: Record<string, ExportsData>
 }> {
-  const config: ResolvedConfig = {
-    ...environment.config,
-    command: 'build',
-  }
-
   // esbuild generates nested directory output with lowest common ancestor base
   // this is unpredictable and makes it difficult to analyze entry / output
   // mapping. So what we do here is:
@@ -765,7 +758,9 @@ async function prepareEsbuildOptimizerRun(
   if (optimizerContext.cancelled) return { context: undefined, idToExports }
 
   const define = {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
+    'process.env.NODE_ENV': JSON.stringify(
+      process.env.NODE_ENV || environment.config.mode,
+    ),
   }
 
   const platform = environment.options.webCompatible ? 'browser' : 'node'
