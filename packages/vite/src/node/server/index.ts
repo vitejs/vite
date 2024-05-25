@@ -506,7 +506,7 @@ export async function _createServer(
 
   // Backward compatibility
 
-  const moduleGraph = new ModuleGraph({
+  let moduleGraph = new ModuleGraph({
     client: () => environments.client.moduleGraph,
     ssr: () => environments.ssr.moduleGraph,
   })
@@ -530,6 +530,9 @@ export async function _createServer(
     get moduleGraph() {
       warnFutureDeprecation(config, 'serverModuleGraph')
       return moduleGraph
+    },
+    set moduleGraph(graph) {
+      moduleGraph = graph
     },
 
     resolvedUrls: null, // will be set on listen
