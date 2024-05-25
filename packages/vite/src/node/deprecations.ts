@@ -15,7 +15,7 @@ export interface FutureDeprecationWarningsOptions {
   ssrLoadModule?: boolean
 }
 
-const _futureDeprecationCode = {
+const deprecationCode = {
   pluginHookHandleHotUpdate: 'VD001',
   pluginHookSsrArgument: 'VD002',
 
@@ -26,7 +26,7 @@ const _futureDeprecationCode = {
   ssrLoadModule: 'VD004',
 } satisfies Record<keyof FutureDeprecationWarningsOptions, string>
 
-const _futureDeprecationMessages = {
+const deprecationMessages = {
   pluginHookHandleHotUpdate:
     'Plugin hook `handleHotUpdate()` is replaced with `hotUpdate()`.',
   pluginHookSsrArgument:
@@ -44,6 +44,7 @@ const _futureDeprecationMessages = {
 
 let _ignoreDeprecationWarnings = false
 
+// Later we could have a `warnDeprecation` utils when the deprecation is landed
 /**
  * Warn about future deprecations.
  */
@@ -63,13 +64,13 @@ export function warnFutureDeprecation(
   )
     return
 
-  let msg = `[vite future] [${_futureDeprecationCode[type]}] ${_futureDeprecationMessages[type]}`
+  let msg = `[vite future] [${deprecationCode[type]}] ${deprecationMessages[type]}`
   if (extraMessage) {
     msg += ` ${extraMessage}`
   }
   msg = colors.yellow(msg)
 
-  const docs = `${docsURL}/deprecations/${_futureDeprecationCode[type].toLowerCase()}`
+  const docs = `${docsURL}/deprecations/${deprecationCode[type].toLowerCase()}`
   msg +=
     colors.gray(`\n  ${stacktrace ? '├' : '└'}─── `) +
     colors.underline(docs) +
@@ -78,20 +79,17 @@ export function warnFutureDeprecation(
   if (stacktrace) {
     const stack = new Error().stack
     if (stack) {
-      const stacks = stack
+      let stacks = stack
         .split('\n')
         .slice(3)
         .filter((i) => !i.includes('/node_modules/vite/dist/'))
-      if (stacks.length === 0) stacks.push('No stack trace found.')
-      msg +=
-        colors.dim(
-          stacks
-            .map(
-              (i, idx) =>
-                `  ${idx === stacks.length - 1 ? '└' : '│'} ${i.trim()}`,
-            )
-            .join('\n'),
-        ) + '\n'
+      if (stacks.length === 0) {
+        stacks.push('No stack trace found.')
+      }
+      stacks = stacks.map(
+        (i, idx) => `  ${idx === stacks.length - 1 ? '└' : '│'} ${i.trim()}`,
+      )
+      msg += colors.dim(stacks.join('\n')) + '\n'
     }
   }
   config.logger.warnOnce(msg)
