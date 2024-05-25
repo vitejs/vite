@@ -1,0 +1,27 @@
+name: Publish Any Commit
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        run: pnpm build
+
+      - run: pnpx pkg-pr-new publish . ./types ./src/types
+        working-directory: ./packages/vite
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
