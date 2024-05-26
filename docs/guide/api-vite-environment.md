@@ -33,7 +33,7 @@ environment.transformRequest(url)
 console.log(server.environments.ssr.moduleGraph)
 ```
 
-Most of the time, the current `environment` instance will be available as part of the context of the code being run so the need to access them through `server.environments` should be rare. For example, inside plugin hooks the enviornment is exposed as part of the `PluginContext`, so it can be accessed using `this.environment`.
+Most of the time, the current `environment` instance will be available as part of the context of the code being run so the need to access them through `server.environments` should be rare. For example, inside plugin hooks the environment is exposed as part of the `PluginContext`, so it can be accessed using `this.environment`.
 
 A dev environment is an instance of the `DevEnvironment` class:
 
@@ -841,11 +841,13 @@ When `builder.entireApp` is `true` (or when calling `vite build --app`), `vite b
 ```js
 export default {
   builder: {
-    buildApp: asnyc (builder) => {
+    buildApp: async (builder) => {
       const environments = Object.values(builder.environments)
-      return Promise.all(environments.map(environment => builder.build(environment)))
-    }
-  }
+      return Promise.all(
+        environments.map((environment) => builder.build(environment)),
+      )
+    },
+  },
 }
 ```
 
