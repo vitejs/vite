@@ -67,6 +67,30 @@ $ bun create vite
 
 :::
 
+The commands above create a new folder and install Vite in it. During the installation, you will be prompted to give the new folder a name of your choice. 
+
+Add a dot to the end of the commands as shown below to install Vite in an existing folder. 
+
+::: code-group
+
+```bash [NPM]
+$ npm create vite@latest .
+```
+
+```bash [Yarn]
+$ yarn create vite .
+```
+
+```bash [PNPM]
+$ pnpm create vite .
+```
+
+```bash [Bun]
+$ bun create vite .
+```
+
+:::
+
 Then follow the prompts!
 
 You can also directly specify the project name and the template you want to use via additional command line options. For example, to scaffold a Vite + Vue project, run:
