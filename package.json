@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@babel/types": "^7.24.6",
-    "@eslint-types/typescript-eslint": "^7.5.0",
+    "@eslint/js": "^9.3.0",
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.9.6",
@@ -70,6 +70,7 @@
     "execa": "^9.1.0",
     "feed": "^4.2.2",
     "fs-extra": "^11.2.0",
+    "globals": "^15.3.0",
     "lint-staged": "^15.2.5",
     "npm-run-all2": "^6.2.0",
     "picocolors": "^1.0.1",
@@ -82,6 +83,7 @@
     "tslib": "^2.6.2",
     "tsx": "^4.11.0",
     "typescript": "^5.2.2",
+    "typescript-eslint": "^7.10.0",
     "unbuild": "^2.0.0",
     "vite": "workspace:*",
     "vitest": "^1.6.0"
