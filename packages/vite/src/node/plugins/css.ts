@@ -2695,6 +2695,7 @@ function isPreProcessor(lang: any): lang is PreprocessLang {
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
 
+const decoder = new TextDecoder()
 async function compileLightningCSS(
   id: string,
   src: string,
@@ -2760,7 +2761,10 @@ async function compileLightningCSS(
           : undefined,
       })
 
-  let css = res.code.toString()
+  // NodeJS res.code = Buffer
+  // Deno res.code = Uint8Array
+  // For correct decode compiled css need to use TextDecoder
+  let css = decoder.decode(res.code)
   for (const dep of res.dependencies!) {
     switch (dep.type) {
       case 'url':
