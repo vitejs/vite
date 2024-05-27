@@ -1,3 +1,6 @@
 dist
 playground-temp
 temp
+
+# the following files may cause syntax errors
+json-via-import-*.js
