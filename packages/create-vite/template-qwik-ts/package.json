@@ -14,6 +14,6 @@
     "vite": "^5.2.11"
   },
   "dependencies": {
-    "@builder.io/qwik": "^1.5.4"
+    "@builder.io/qwik": "^1.5.5"
   }
 }
