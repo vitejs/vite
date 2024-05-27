@@ -2695,6 +2695,7 @@ function isPreProcessor(lang: any): lang is PreprocessLang {
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
 
+const decoder = new TextDecoder()
 async function compileLightningCSS(
   id: string,
   src: string,
@@ -2759,11 +2760,11 @@ async function compileLightningCSS(
           ? config.css?.lightningcss?.cssModules ?? true
           : undefined,
       })
-  // https://github.com/vitejs/vite/pull/17301
+
   // NodeJS res.code = Buffer
-  // Deno res.code =  Uint8Array
-  // For correct handle compiled css need to use TextDecoder
-  let css = new TextDecoder().decode(res.code)
+  // Deno res.code = Uint8Array
+  // For correct decode compiled css need to use TextDecoder
+  let css = decoder.decode(res.code)
   for (const dep of res.dependencies!) {
     switch (dep.type) {
       case 'url':
