@@ -138,7 +138,9 @@ export async function handleHMRUpdate(
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(
       colors.green(
-        `${path.relative(process.cwd(), file)} changed, restarting server...`,
+        `${normalizePath(
+          path.relative(process.cwd(), file),
+        )} changed, restarting server...`,
       ),
       { clear: true, timestamp: true },
     )
