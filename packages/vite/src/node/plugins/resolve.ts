@@ -1089,24 +1089,31 @@ function resolveExportsOrImports(
   targetWeb: boolean,
   type: 'imports' | 'exports',
 ) {
+  const defaultlConditions = new Set([
+    'production',
+    'development',
+    'module',
+    ...options.conditions,
+  ])
+
   const additionalConditions = new Set(
-    options.overrideConditions || [
-      'production',
-      'development',
-      'module',
-      ...options.conditions,
-    ],
+    options.overrideConditions || defaultlConditions,
   )
 
-  const conditions = [...additionalConditions].filter((condition) => {
-    switch (condition) {
-      case 'production':
-        return options.isProduction
-      case 'development':
-        return !options.isProduction
-    }
-    return true
-  })
+  if (options.overrideConditions && additionalConditions.has('...')) {
+    additionalConditions.delete('...')
+    defaultlConditions.forEach((condition) => {
+      additionalConditions.add(condition)
+    })
+  }
+
+  if (options.isProduction) {
+    additionalConditions.delete('development')
+  } else {
+    additionalConditions.delete('production')
+  }
+
+  const conditions = [...additionalConditions]
 
   const fn = type === 'imports' ? imports : exports
   const result = fn(pkg, key, {
