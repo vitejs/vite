@@ -1,3 +1,28 @@
+## <small>5.2.12 (2024-05-28)</small>
+
+* chore: move to eslint flat config (#16743) ([8f16765](https://github.com/vitejs/vite/commit/8f16765)), closes [#16743](https://github.com/vitejs/vite/issues/16743)
+* chore(deps): remove unused deps (#17329) ([5a45745](https://github.com/vitejs/vite/commit/5a45745)), closes [#17329](https://github.com/vitejs/vite/issues/17329)
+* chore(deps): update all non-major dependencies (#16722) ([b45922a](https://github.com/vitejs/vite/commit/b45922a)), closes [#16722](https://github.com/vitejs/vite/issues/16722)
+* fix: mention `build.rollupOptions.output.manualChunks` instead of  `build.rollupOutput.manualChunks` ([89378c0](https://github.com/vitejs/vite/commit/89378c0)), closes [#16721](https://github.com/vitejs/vite/issues/16721)
+* fix(build): make SystemJSWrapRE match lazy (#16633) ([6583ad2](https://github.com/vitejs/vite/commit/6583ad2)), closes [#16633](https://github.com/vitejs/vite/issues/16633)
+* fix(css): avoid generating empty JS files when JS files becomes empty but has CSS files imported (#1 ([95fe5a7](https://github.com/vitejs/vite/commit/95fe5a7)), closes [#16078](https://github.com/vitejs/vite/issues/16078)
+* fix(css): handle lightningcss compiled css in Deno (#17301) ([8e4e932](https://github.com/vitejs/vite/commit/8e4e932)), closes [#17301](https://github.com/vitejs/vite/issues/17301)
+* fix(css): only use files the current bundle contains (#16684) ([15a6ebb](https://github.com/vitejs/vite/commit/15a6ebb)), closes [#16684](https://github.com/vitejs/vite/issues/16684)
+* fix(css): page reload was not happening with .css?raw (#16455) ([8041846](https://github.com/vitejs/vite/commit/8041846)), closes [#16455](https://github.com/vitejs/vite/issues/16455)
+* fix(deps): update all non-major dependencies (#16603) ([6711553](https://github.com/vitejs/vite/commit/6711553)), closes [#16603](https://github.com/vitejs/vite/issues/16603)
+* fix(deps): update all non-major dependencies (#16660) ([bf2f014](https://github.com/vitejs/vite/commit/bf2f014)), closes [#16660](https://github.com/vitejs/vite/issues/16660)
+* fix(deps): update all non-major dependencies (#17321) ([4a89766](https://github.com/vitejs/vite/commit/4a89766)), closes [#17321](https://github.com/vitejs/vite/issues/17321)
+* fix(error-logging): rollup errors weren't displaying id and codeframe (#16540) ([22dc196](https://github.com/vitejs/vite/commit/22dc196)), closes [#16540](https://github.com/vitejs/vite/issues/16540)
+* fix(hmr): normalize the path info (#14255) ([6a085d0](https://github.com/vitejs/vite/commit/6a085d0)), closes [#14255](https://github.com/vitejs/vite/issues/14255)
+* fix(hmr): trigger page reload when calling invalidate on root module (#16636) ([2b61cc3](https://github.com/vitejs/vite/commit/2b61cc3)), closes [#16636](https://github.com/vitejs/vite/issues/16636)
+* fix(logger): truncate log over 5000 characters long (#16581) ([b0b839a](https://github.com/vitejs/vite/commit/b0b839a)), closes [#16581](https://github.com/vitejs/vite/issues/16581)
+* fix(optimizer): log dependencies added by plugins (#16729) ([f0fb987](https://github.com/vitejs/vite/commit/f0fb987)), closes [#16729](https://github.com/vitejs/vite/issues/16729)
+* fix(sourcemap): improve sourcemap compatibility for vue2 (#16594) ([913c040](https://github.com/vitejs/vite/commit/913c040)), closes [#16594](https://github.com/vitejs/vite/issues/16594)
+* docs: correct proxy shorthand example (#15938) ([abf766e](https://github.com/vitejs/vite/commit/abf766e)), closes [#15938](https://github.com/vitejs/vite/issues/15938)
+* docs: deprecate server.hot (#16741) ([e7d38ab](https://github.com/vitejs/vite/commit/e7d38ab)), closes [#16741](https://github.com/vitejs/vite/issues/16741)
+
+
+
 ## <small>5.2.11 (2024-05-02)</small>
 
 * feat: improve dynamic import variable failure error message (#16519) ([f8feeea](https://github.com/vitejs/vite/commit/f8feeea)), closes [#16519](https://github.com/vitejs/vite/issues/16519)
