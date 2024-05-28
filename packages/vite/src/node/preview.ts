@@ -137,11 +137,21 @@ export async function preview(
   const options = config.preview
   const logger = config.logger
 
+  const closeHttpServer = createServerCloseFn(httpServer)
+
+  const close = () => {
+    process.off('SIGTERM', exitProcess)
+    if (process.env.CI !== 'true') {
+      process.stdin.off('end', exitProcess)
+    }
+    return closeHttpServer()
+  }
+
   const server: PreviewServer = {
     config,
     middlewares: app,
     httpServer,
-    close: createServerCloseFn(httpServer),
+    close,
     resolvedUrls: null,
     printUrls() {
       if (server.resolvedUrls) {
@@ -153,6 +163,19 @@ export async function preview(
     bindCLIShortcuts(options) {
       bindCLIShortcuts(server as PreviewServer, options)
     },
+  }
+
+  const exitProcess = async () => {
+    try {
+      await server.close()
+    } finally {
+      process.exit()
+    }
+  }
+
+  process.once('SIGTERM', exitProcess)
+  if (process.env.CI !== 'true') {
+    process.stdin.on('end', exitProcess)
   }
 
   // apply server hooks from plugins
