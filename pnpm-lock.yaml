@@ -24,9 +24,6 @@ importers:
 
   .:
     devDependencies:
-      '@babel/types':
-        specifier: ^7.24.6
-        version: 7.24.6
       '@eslint/js':
         specifier: ^9.3.0
         version: 9.3.0
@@ -93,9 +90,6 @@ importers:
       eslint:
         specifier: ^8.57.0
         version: 8.57.0
-      eslint-define-config:
-        specifier: ^2.1.0
-        version: 2.1.0
       eslint-plugin-i:
         specifier: ^2.29.1
         version: 2.29.1(@typescript-eslint/parser@7.10.0)(eslint@8.57.0)
@@ -108,9 +102,6 @@ importers:
       execa:
         specifier: ^9.1.0
         version: 9.1.0
-      feed:
-        specifier: ^4.2.2
-        version: 4.2.2
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
@@ -156,9 +147,6 @@ importers:
       typescript-eslint:
         specifier: ^7.10.0
         version: 7.10.0(eslint@8.57.0)(typescript@5.2.2)
-      unbuild:
-        specifier: ^2.0.0
-        version: 2.0.0(typescript@5.2.2)
       vite:
         specifier: workspace:*
         version: link:packages/vite
@@ -174,6 +162,9 @@ importers:
       '@types/express':
         specifier: ^4.17.21
         version: 4.17.21
+      feed:
+        specifier: ^4.2.2
+        version: 4.2.2
       vitepress:
         specifier: 1.2.2
         version: 1.2.2(typescript@5.2.2)
@@ -238,6 +229,9 @@ importers:
       picocolors:
         specifier: ^1.0.1
         version: 1.0.1
+      unbuild:
+        specifier: ^2.0.0
+        version: 2.0.0(typescript@5.2.2)
       vite:
         specifier: workspace:*
         version: link:../vite
@@ -6353,11 +6347,6 @@ packages:
       eslint: '>=6.0.0'
     dependencies:
       eslint: 8.57.0
-    dev: true
-
-  /eslint-define-config@2.1.0:
-    resolution: {integrity: sha512-QUp6pM9pjKEVannNAbSJNeRuYwW3LshejfyBBpjeMGaJjaDUpVps4C6KVR8R7dWZnD3i0synmrE36znjTkJvdQ==}
-    engines: {node: '>=18.0.0', npm: '>=9.0.0', pnpm: '>=8.6.0'}
     dev: true
 
   /eslint-import-resolver-node@0.3.9:
