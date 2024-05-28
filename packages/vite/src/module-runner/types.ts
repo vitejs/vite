@@ -116,6 +116,10 @@ export interface ViteFetchResult {
    * Will be equal to `null` for virtual modules
    */
   file: string | null
+  /**
+   * Invalidate module on the client side.
+   */
+  invalidate: boolean
 }
 
 export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {
