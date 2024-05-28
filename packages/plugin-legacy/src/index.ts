@@ -158,14 +158,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set<string>()
   const legacyPolyfills = new Set<string>()
-  const polyfillsDiscovered = {
-    modern: new Map<string, string[]>(),
-    legacy: new Map<string, string[]>(),
-  }
-  const orderedChunks = {
-    modern: [] as string[],
-    legacy: [] as string[],
-  }
+  // When discovering polyfills in `renderChunk`, the hook may be non-deterministic, so we group the
+  // modern and legacy polyfills in a sorted map before merging them.
+  let chunkFileNameToPolyfills:
+    | Map<string, { modern: Set<string>; legacy: Set<string> }>
+    | undefined
 
   if (Array.isArray(options.modernPolyfills) && genModern) {
     options.modernPolyfills.forEach((i) => {
@@ -261,28 +258,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     },
   }
 
-  function sortPolyfills(
-    polyfillInfo: Map<string, string[]>,
-    chunkOrder: string[],
-  ): Set<string> {
-    const resultSet = new Set<string>()
-    chunkOrder.forEach((chunkName) => {
-      const polyfills = polyfillInfo.get(chunkName)
-      if (polyfills) {
-        polyfills.forEach((p) => {
-          resultSet.add(p)
-        })
-      }
-      polyfillInfo.delete(chunkName)
-    })
-    if (polyfillInfo.size) {
-      throw new Error(
-        'Unexpected chunk: ' + Array.from(polyfillInfo.keys()).join(', '),
-      )
-    }
-    return resultSet
-  }
-
   const legacyGenerateBundlePlugin: Plugin = {
     name: 'vite:legacy-generate-polyfill-chunk',
     apply: 'build',
@@ -293,11 +268,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       if (!isLegacyBundle(bundle, opts)) {
-        sortPolyfills(polyfillsDiscovered.modern, orderedChunks.modern).forEach(
-          (polyfill) => {
-            modernPolyfills.add(polyfill)
-          },
-        )
+        // Merge discovered modern polyfills to `modernPolyfills`
+        if (chunkFileNameToPolyfills) {
+          for (const { modern } of chunkFileNameToPolyfills.values()) {
+            modern.forEach((p) => modernPolyfills.add(p))
+          }
+        }
         if (!modernPolyfills.size) {
           return
         }
@@ -326,11 +302,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return
       }
 
-      sortPolyfills(polyfillsDiscovered.legacy, orderedChunks.legacy).forEach(
-        (polyfill) => {
-          legacyPolyfills.add(polyfill)
-        },
-      )
+      // Merge discovered legacy polyfills to `modernPolyfills`
+      if (chunkFileNameToPolyfills) {
+        for (const { legacy } of chunkFileNameToPolyfills.values()) {
+          legacy.forEach((p) => legacyPolyfills.add(p))
+        }
+      }
 
       // legacy bundle
       if (options.polyfills !== false) {
@@ -370,6 +347,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     name: 'vite:legacy-post-process',
     enforce: 'post',
     apply: 'build',
+
+    renderStart() {
+      chunkFileNameToPolyfills = undefined
+    },
 
     configResolved(_config) {
       if (_config.build.lib) {
@@ -456,19 +437,26 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return null
       }
 
+      // On first run, intialize the map with sorted chunk file names
+      if (chunkFileNameToPolyfills == null) {
+        chunkFileNameToPolyfills = new Map()
+        for (const fileName in chunks) {
+          chunkFileNameToPolyfills.set(fileName, {
+            modern: new Set(),
+            legacy: new Set(),
+          })
+        }
+      }
+      const polyfillsDiscovered = chunkFileNameToPolyfills.get(chunk.fileName)!
+
       if (!isLegacyChunk(chunk, opts)) {
         if (
           options.modernPolyfills &&
           !Array.isArray(options.modernPolyfills) &&
           genModern
         ) {
-          if (!orderedChunks.modern.length) {
-            orderedChunks.modern.push(...Object.keys(chunks))
-          }
           // analyze and record modern polyfills
-          const polyfills = new Set<string>()
-          await detectPolyfills(raw, modernTargets, polyfills)
-          polyfillsDiscovered.modern.set(chunk.fileName, [...polyfills])
+          await detectPolyfills(raw, modernTargets, polyfillsDiscovered.modern)
         }
 
         const ms = new MagicString(raw)
@@ -505,10 +493,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return null
       }
 
-      if (!orderedChunks.legacy.length) {
-        orderedChunks.legacy.push(...Object.keys(chunks))
-      }
-
       // @ts-expect-error avoid esbuild transform on legacy chunks since it produces
       // legacy-unsafe code - e.g. rewriting object properties into shorthands
       opts.__vite_skip_esbuild__ = true
@@ -531,7 +515,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       // transform the legacy chunk with @babel/preset-env
       const sourceMaps = !!config.build.sourcemap
       const babel = await loadBabel()
-      const polyfills = new Set<string>()
       const result = babel.transform(raw, {
         babelrc: false,
         configFile: false,
@@ -544,7 +527,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           [
             () => ({
               plugins: [
-                recordAndRemovePolyfillBabelPlugin(polyfills),
+                recordAndRemovePolyfillBabelPlugin(polyfillsDiscovered.legacy),
                 replaceLegacyEnvBabelPlugin(),
                 wrapIIFEBabelPlugin(),
               ],
@@ -556,7 +539,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ],
         ],
       })
-      polyfillsDiscovered.legacy.set(chunk.fileName, [...polyfills])
 
       if (result) return { code: result.code!, map: result.map }
       return null
