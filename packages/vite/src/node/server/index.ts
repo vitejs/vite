@@ -26,6 +26,7 @@ import {
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
+  createCloseServerAndExitFn,
   diffDnsOrderChange,
   isInNodeModules,
   isObject,
@@ -35,6 +36,8 @@ import {
   promiseWithResolvers,
   resolveHostname,
   resolveServerUrls,
+  setupSIGTERMListener,
+  teardownSIGTERMListener,
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
@@ -497,8 +500,6 @@ export async function _createServer(
   const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
-  let exitProcess: () => void
-
   const devHtmlTransformFn = createDevHtmlTransformFn(config)
 
   const onCrawlEndCallbacks: (() => void)[] = []
@@ -639,10 +640,7 @@ export async function _createServer(
     },
     async close() {
       if (!middlewareMode) {
-        process.off('SIGTERM', exitProcess)
-        if (process.env.CI !== 'true') {
-          process.stdin.off('end', exitProcess)
-        }
+        teardownSIGTERMListener(closeServerAndExitFn)
       }
       await Promise.allSettled([
         watcher.close(),
@@ -737,18 +735,10 @@ export async function _createServer(
     },
   })
 
+  const closeServerAndExitFn = createCloseServerAndExitFn(server)
+
   if (!middlewareMode) {
-    exitProcess = async () => {
-      try {
-        await server.close()
-      } finally {
-        process.exit()
-      }
-    }
-    process.once('SIGTERM', exitProcess)
-    if (process.env.CI !== 'true') {
-      process.stdin.on('end', exitProcess)
-    }
+    setupSIGTERMListener(closeServerAndExitFn)
   }
 
   const onHMRUpdate = async (

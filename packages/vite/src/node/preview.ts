@@ -25,7 +25,14 @@ import { htmlFallbackMiddleware } from './server/middlewares/htmlFallback'
 import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
 import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
+import {
+  createCloseServerAndExitFn,
+  resolveHostname,
+  resolveServerUrls,
+  setupSIGTERMListener,
+  shouldServeFile,
+  teardownSIGTERMListener,
+} from './utils'
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
@@ -140,10 +147,7 @@ export async function preview(
   const closeHttpServer = createServerCloseFn(httpServer)
 
   const close = () => {
-    process.off('SIGTERM', exitProcess)
-    if (process.env.CI !== 'true') {
-      process.stdin.off('end', exitProcess)
-    }
+    teardownSIGTERMListener(closeServerAndExitFn)
     return closeHttpServer()
   }
 
@@ -165,18 +169,9 @@ export async function preview(
     },
   }
 
-  const exitProcess = async () => {
-    try {
-      await server.close()
-    } finally {
-      process.exit()
-    }
-  }
+  const closeServerAndExitFn = createCloseServerAndExitFn(server)
 
-  process.once('SIGTERM', exitProcess)
-  if (process.env.CI !== 'true') {
-    process.stdin.on('end', exitProcess)
-  }
+  setupSIGTERMListener(closeServerAndExitFn)
 
   // apply server hooks from plugins
   const postHooks: ((() => void) | void)[] = []
