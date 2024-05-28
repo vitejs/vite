@@ -125,9 +125,11 @@ async function startBrowserProcess(
       : {}
 
     new Promise((_, reject) => {
-      open(url, options).then((subprocess) => {
-        subprocess.on('error', reject)
-      })
+      open(url, options)
+        .then((subprocess) => {
+          subprocess.on('error', reject)
+        })
+        .catch(reject)
     }).catch((err) => {
       logger.error(err.stack || err.message)
     })
