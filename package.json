@@ -40,7 +40,6 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@babel/types": "^7.24.6",
     "@eslint/js": "^9.3.0",
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/babel__core": "^7.20.5",
@@ -63,12 +62,10 @@
     "@vitejs/release-scripts": "^1.3.1",
     "conventional-changelog-cli": "^5.0.0",
     "eslint": "^8.57.0",
-    "eslint-define-config": "^2.1.0",
     "eslint-plugin-i": "^2.29.1",
     "eslint-plugin-n": "^17.7.0",
     "eslint-plugin-regexp": "^2.6.0",
     "execa": "^9.1.0",
-    "feed": "^4.2.2",
     "fs-extra": "^11.2.0",
     "globals": "^15.3.0",
     "lint-staged": "^15.2.5",
@@ -84,7 +81,6 @@
     "tsx": "^4.11.0",
     "typescript": "^5.2.2",
     "typescript-eslint": "^7.10.0",
-    "unbuild": "^2.0.0",
     "vite": "workspace:*",
     "vitest": "^1.6.0"
   },

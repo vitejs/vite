@@ -57,6 +57,7 @@
   "devDependencies": {
     "acorn": "^8.11.3",
     "picocolors": "^1.0.1",
+    "unbuild": "^2.0.0",
     "vite": "workspace:*"
   }
 }
