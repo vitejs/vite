@@ -302,7 +302,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return
       }
 
-      // Merge discovered legacy polyfills to `modernPolyfills`
+      // Merge discovered legacy polyfills to `legacyPolyfills`
       if (chunkFileNameToPolyfills) {
         for (const { legacy } of chunkFileNameToPolyfills.values()) {
           legacy.forEach((p) => legacyPolyfills.add(p))
