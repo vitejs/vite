@@ -66,9 +66,6 @@ importers:
       '@types/picomatch':
         specifier: ^2.3.3
         version: 2.3.3
-      '@types/semver':
-        specifier: ^7.5.8
-        version: 7.5.8
       '@types/stylus':
         specifier: ^0.48.42
         version: 0.48.42
@@ -129,9 +126,6 @@ importers:
       rollup:
         specifier: ^4.13.0
         version: 4.13.0
-      semver:
-        specifier: ^7.6.2
-        version: 7.6.2
       simple-git-hooks:
         specifier: ^2.11.1
         version: 2.11.1
