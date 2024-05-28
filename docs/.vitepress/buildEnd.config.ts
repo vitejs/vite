@@ -1,12 +1,13 @@
-import path from 'path'
-import { writeFileSync } from 'fs'
+import path from 'node:path'
+import { writeFileSync } from 'node:fs'
 import { Feed } from 'feed'
-import { createContentLoader, type SiteConfig } from 'vitepress'
+import type { SiteConfig } from 'vitepress'
+import { createContentLoader } from 'vitepress'
 
 const siteUrl = 'https://vitejs.dev'
 const blogUrl = `${siteUrl}/blog`
 
-export const buildEnd = async (config: SiteConfig) => {
+export const buildEnd = async (config: SiteConfig): Promise<void> => {
   const feed = new Feed({
     title: 'Vite',
     description: 'Next Generation Frontend Tooling',

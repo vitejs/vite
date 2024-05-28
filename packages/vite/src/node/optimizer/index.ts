@@ -272,10 +272,10 @@ export async function optimizeDeps(
 
   const deps = await discoverProjectDependencies(environment).result
 
+  await addManuallyIncludedOptimizeDeps(environment, deps)
+
   const depsString = depsLogString(Object.keys(deps))
   log?.(colors.green(`Optimizing dependencies:\n  ${depsString}`))
-
-  await addManuallyIncludedOptimizeDeps(environment, deps)
 
   const depsInfo = toDiscoveredDependencies(environment, deps)
 

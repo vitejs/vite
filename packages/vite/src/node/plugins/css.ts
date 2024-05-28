@@ -888,9 +888,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .map((chunk) => [chunk.preliminaryFileName, chunk.fileName]),
         )
 
-        const pureCssChunkNames = [...pureCssChunks].map(
-          (pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName],
-        )
+        // When running in watch mode the generateBundle is called once per output format
+        // in this case the `bundle` is not populated with the other output files
+        // but they are still in `pureCssChunks`.
+        // So we need to filter the names and only use those who are defined
+        const pureCssChunkNames = [...pureCssChunks]
+          .map((pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName])
+          .filter(Boolean)
 
         const replaceEmptyChunk = getEmptyChunkReplacer(
           pureCssChunkNames,
@@ -2710,6 +2714,7 @@ function isPreProcessor(lang: any): lang is PreprocessLang {
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
 
+const decoder = new TextDecoder()
 async function compileLightningCSS(
   id: string,
   src: string,
@@ -2777,7 +2782,10 @@ async function compileLightningCSS(
           : undefined,
       })
 
-  let css = res.code.toString()
+  // NodeJS res.code = Buffer
+  // Deno res.code = Uint8Array
+  // For correct decode compiled css need to use TextDecoder
+  let css = decoder.decode(res.code)
   for (const dep of res.dependencies!) {
     switch (dep.type) {
       case 'url':
