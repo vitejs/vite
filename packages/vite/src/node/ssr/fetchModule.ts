@@ -85,12 +85,12 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
-  let mod: EnvironmentModuleNode | undefined
+  let mod = await environment.moduleGraph.getModuleByUrl(url)
+  const cached = !!mod?.transformResult
 
   // if url is already cached, we can just confirm it's also cached on the server
-  if (options.cached) {
-    mod = await environment.moduleGraph.getModuleByUrl(url)
-    if (mod?.transformResult) return { cache: true }
+  if (options.cached && cached) {
+    return { cache: true }
   }
 
   let result = await environment.transformRequest(url)
@@ -125,6 +125,7 @@ export async function fetchModule(
   return {
     code: result.code,
     file: mod.file,
+    invalidate: !cached,
   }
 }
 

@@ -297,27 +297,28 @@ describe('hmr works correctly', () => {
   //   expect((await page.$$('link')).length).toBe(1)
   // })
 
-  // #2255
-  test('importing reloaded', async () => {
-    const outputEle = () => hmr('.importing-reloaded')
+  // #2255 - not applicable to SSR becaue invlaidateModule expects the module
+  // to always be reloaded again
+  // test('importing reloaded', async () => {
+  //   const outputEle = () => hmr('.importing-reloaded')
 
-    await untilUpdated(outputEle, ['a.js: a0', 'b.js: b0,a0'].join('<br>'))
+  //   await untilUpdated(outputEle, ['a.js: a0', 'b.js: b0,a0'].join('<br>'))
 
-    editFile('importing-updated/a.js', (code) => code.replace("'a0'", "'a1'"))
-    await untilUpdated(
-      outputEle,
-      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1'].join('<br>'),
-    )
+  //   editFile('importing-updated/a.js', (code) => code.replace("'a0'", "'a1'"))
+  //   await untilUpdated(
+  //     outputEle,
+  //     ['a.js: a0', 'b.js: b0,a0', 'a.js: a1'].join('<br>'),
+  //   )
 
-    editFile('importing-updated/b.js', (code) =>
-      code.replace('`b0,${a}`', '`b1,${a}`'),
-    )
-    // note that "a.js: a1" should not happen twice after "b.js: b0,a0'"
-    await untilUpdated(
-      outputEle,
-      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1', 'b.js: b1,a1'].join('<br>'),
-    )
-  })
+  //   editFile('importing-updated/b.js', (code) =>
+  //     code.replace('`b0,${a}`', '`b1,${a}`'),
+  //   )
+  //   // note that "a.js: a1" should not happen twice after "b.js: b0,a0'"
+  //   await untilUpdated(
+  //     outputEle,
+  //     ['a.js: a0', 'b.js: b0,a0', 'a.js: a1', 'b.js: b1,a1'].join('<br>'),
+  //   )
+  // })
 })
 
 describe('acceptExports', () => {
