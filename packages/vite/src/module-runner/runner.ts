@@ -242,13 +242,13 @@ export class ModuleRunner {
     const isCached = !!(typeof cachedModule === 'object' && cachedModule.meta)
 
     const fetchedModule = // fast return for established externalized pattern
-    (
-      url.startsWith('data:')
-        ? { externalize: url, type: 'builtin' }
-        : await this.transport.fetchModule(url, importer, {
-            cached: isCached,
-          })
-    ) as ResolvedResult
+      (
+        url.startsWith('data:')
+          ? { externalize: url, type: 'builtin' }
+          : await this.transport.fetchModule(url, importer, {
+              cached: isCached,
+            })
+      ) as ResolvedResult
 
     if ('cache' in fetchedModule) {
       if (!cachedModule || !cachedModule.meta) {
