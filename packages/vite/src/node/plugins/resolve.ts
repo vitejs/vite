@@ -1003,6 +1003,11 @@ export function resolvePackageEntry(
       )
     }
 
+    // if the operation is a require give precedence to the main field
+    if (!entryPoint && options.isRequire) {
+      entryPoint ||= data.main
+    }
+
     // fallback to mainFields if still not resolved
     if (!entryPoint) {
       for (const field of options.mainFields) {

@@ -79,6 +79,12 @@ test('import and require resolve using module condition', async () => {
   ).toMatch('[success]')
 })
 
+test('require resolve using main condition', async () => {
+  expect(
+    await page.textContent('.exports-with-main-condition-required'),
+  ).toMatch('[success]')
+})
+
 test('implicit dir/index.js', async () => {
   expect(await page.textContent('.index')).toMatch('[success]')
 })

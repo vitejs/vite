@@ -1188,6 +1188,12 @@ importers:
       '@vitejs/test-resolve-exports-path':
         specifier: link:./exports-path
         version: link:exports-path
+      '@vitejs/test-resolve-exports-with-main-condition':
+        specifier: link:./exports-with-main-condition
+        version: link:exports-with-main-condition
+      '@vitejs/test-resolve-exports-with-main-condition-required':
+        specifier: link:./exports-with-main-condition-required
+        version: link:exports-with-main-condition-required
       '@vitejs/test-resolve-exports-with-module':
         specifier: link:./exports-with-module
         version: link:exports-with-module
@@ -1257,6 +1263,14 @@ importers:
   playground/resolve/exports-legacy-fallback/dir: {}
 
   playground/resolve/exports-path: {}
+
+  playground/resolve/exports-with-main-condition: {}
+
+  playground/resolve/exports-with-main-condition-required:
+    dependencies:
+      '@vitejs/test-resolve-exports-with-main-condition':
+        specifier: link:../exports-with-main-condition
+        version: link:../exports-with-main-condition
 
   playground/resolve/exports-with-module: {}
 

@@ -1,0 +1,7 @@
+{
+  "name": "@vitejs/test-resolve-exports-with-main-condition",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.cjs",
+  "custom": "index.custom.mjs"
+}

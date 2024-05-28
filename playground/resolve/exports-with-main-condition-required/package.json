@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-resolve-exports-with-main-condition-required",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.cjs",
+  "dependencies": {
+    "@vitejs/test-resolve-exports-with-main-condition": "link:../exports-with-main-condition"
+  }
+}

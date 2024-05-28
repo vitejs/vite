@@ -43,6 +43,9 @@
 <p class="exports-with-module-condition">fail</p>
 <p class="exports-with-module-condition-required">fail</p>
 
+<h2>Prioritize `main` field over `mainFields` for `require` call</h2>
+<p class="exports-with-main-condition-required">fail</p>
+
 <h2>Resolving top level with imports field</h2>
 <p class="imports-top-level">fail</p>
 
@@ -236,6 +239,12 @@
   text(
     '.exports-with-module-condition-required',
     exportsWithModuleConditionRequired,
+  )
+
+  import { msg as exportsWithMainConditionRequired } from '@vitejs/test-resolve-exports-with-main-condition-required'
+  text(
+    '.exports-with-main-condition-required',
+    exportsWithMainConditionRequired,
   )
 
   // imports field
