@@ -1,4 +1,4 @@
-import type { FetchResult } from 'vite/module-runner'
+import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
 import { BaseEnvironment } from '../baseEnvironment'
@@ -175,8 +175,15 @@ export class DevEnvironment extends BaseEnvironment {
     // TODO: move warmup here
   }
 
-  fetchModule(id: string, importer?: string): Promise<FetchResult> {
-    return fetchModule(this, id, importer, this._ssrRunnerOptions)
+  fetchModule(
+    id: string,
+    importer?: string,
+    options?: FetchFunctionOptions,
+  ): Promise<FetchResult> {
+    return fetchModule(this, id, importer, {
+      ...this._ssrRunnerOptions,
+      ...options,
+    })
   }
 
   transformRequest(url: string): Promise<TransformResult | null> {

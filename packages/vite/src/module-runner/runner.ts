@@ -23,7 +23,6 @@ import type {
   SSRImportMetadata,
 } from './types'
 import {
-  parseUrl,
   posixDirname,
   posixPathToFileHref,
   posixResolve,
@@ -80,14 +79,8 @@ export class ModuleRunner {
           ? silentConsole
           : options.hmr.logger || hmrLogger,
         options.hmr.connection,
-        ({ acceptedPath, explicitImportRequired, timestamp }) => {
-          const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
-          const url =
-            acceptedPathWithoutQuery +
-            `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
-              query ? `&${query}` : ''
-            }`
-          return this.import(url)
+        ({ acceptedPath }) => {
+          return this.import(acceptedPath)
         },
       )
       options.hmr.connection.onUpdate(createHMRHandler(this))
@@ -102,7 +95,7 @@ export class ModuleRunner {
    */
   public async import<T = any>(url: string): Promise<T> {
     url = this.normalizeEntryUrl(url)
-    const fetchedModule = await this.cachedModule(url, undefined, false)
+    const fetchedModule = await this.cachedModule(url)
     return await this.cachedRequest(url, fetchedModule)
   }
 
@@ -233,50 +226,51 @@ export class ModuleRunner {
   private async cachedModule(
     url: string,
     importer?: string,
-    // the entry point should check if time is different
-    cache = true,
   ): Promise<ModuleCache> {
     if (this.destroyed) {
       throw new Error(`Vite module runner has been destroyed.`)
     }
-    const normalized = this.urlToIdMap.get(url)
-    if (cache && normalized) {
-      const mod = this.moduleCache.getByModuleId(normalized)
-      if (mod.meta) {
-        return mod
-      }
-    }
 
     this.debug?.('[module runner] fetching', url)
-    // fast return for established externalized patterns
-    const fetchedModule = (
+
+    const normalized = this.urlToIdMap.get(url)
+    let cachedModule = normalized && this.moduleCache.getByModuleId(normalized)
+    if (!cachedModule) {
+      cachedModule = this.moduleCache.getByModuleId(url)
+    }
+
+    const fetchedModule = // fast return for established externalized pattern
+    (
       url.startsWith('data:')
         ? { externalize: url, type: 'builtin' }
-        : await this.transport.fetchModule(url, importer)
+        : await this.transport.fetchModule(url, importer, {
+            cached: !!(typeof cachedModule === 'object' && cachedModule.meta),
+          })
     ) as ResolvedResult
 
-    const invalidationTimestamp =
-      'invalidationTimestamp' in fetchedModule
-        ? fetchedModule.invalidationTimestamp
-        : 0
+    if ('cache' in fetchedModule) {
+      if (!cachedModule || !cachedModule.meta) {
+        throw new Error(
+          `Module "${url}" was mistakenly invalidated during fetch phase.`,
+        )
+      }
+      return cachedModule
+    }
+
     // base moduleId on "file" and not on id
     // if `import(variable)` is called it's possible that it doesn't have an extension for example
     // if we used id for that, then a module will be duplicated
-    const { query, timestamp = invalidationTimestamp } = parseUrl(url)
+    const idQuery = url.split('?')[1]
+    const query = idQuery ? `?${idQuery}` : ''
     const file = 'file' in fetchedModule ? fetchedModule.file : undefined
     const fileId = file ? `${file}${query}` : url
     const moduleId = this.moduleCache.normalize(fileId)
     const mod = this.moduleCache.getByModuleId(moduleId)
 
-    // if URL has a ?t= query, it might've been invalidated due to HMR
-    // checking if we should also invalidate the module
-    if (mod.timestamp != null && timestamp > 0 && mod.timestamp < timestamp) {
-      this.moduleCache.invalidateModule(mod)
-    }
+    this.moduleCache.invalidateModule(mod)
 
     fetchedModule.id = moduleId
     mod.meta = fetchedModule
-    mod.timestamp = timestamp
 
     if (file) {
       const fileModules = this.fileToIdMap.get(file) || []

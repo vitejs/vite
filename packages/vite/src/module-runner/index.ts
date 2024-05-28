@@ -13,6 +13,7 @@ export type {
   ModuleCache,
   FetchResult,
   FetchFunction,
+  FetchFunctionOptions,
   ResolvedResult,
   SSRImportMetadata,
   ModuleRunnerHMRConnection,

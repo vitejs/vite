@@ -16,33 +16,6 @@ const carriageReturnRegEx = /\r/g
 const tabRegEx = /\t/g
 const questionRegex = /\?/g
 const hashRegex = /#/g
-const timestampRegex = /[?&]t=(\d{13})(&?)/
-
-interface ParsedPath {
-  query: string
-  timestamp: number | undefined
-}
-
-export function parseUrl(url: string): ParsedPath {
-  const idQuery = url.split('?')[1]
-  let timestamp = undefined
-  // for performance, we avoid using URL constructor and parsing twice
-  // it's not really needed, but it's a micro-optimization that we can do for free
-  const query = idQuery
-    ? ('?' + idQuery).replace(
-        timestampRegex,
-        (substring, tsString, nextItem) => {
-          timestamp = Number(tsString)
-          // remove the "?t=" query since it's only used for invalidation
-          return substring[0] === '?' && nextItem === '&' ? '?' : ''
-        },
-      )
-    : ''
-  return {
-    query,
-    timestamp,
-  }
-}
 
 function encodePathChars(filepath: string) {
   if (filepath.indexOf('%') !== -1)

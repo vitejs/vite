@@ -12,6 +12,7 @@ import { genSourceMapUrl } from '../server/sourcemap'
 import type { DevEnvironment } from '../server/environment'
 
 export interface FetchModuleOptions {
+  cached?: boolean
   inlineSourceMap?: boolean
   processSourceMap?<T extends NonNullable<TransformResult['map']>>(map: T): T
 }
@@ -84,6 +85,14 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
+  let mod: EnvironmentModuleNode | undefined
+
+  // if url is already cached, we can just confirm it's also cached on the server
+  if (options.cached) {
+    mod = await environment.moduleGraph.getModuleByUrl(url)
+    if (mod?.transformResult) return { cache: true }
+  }
+
   let result = await environment.transformRequest(url)
 
   if (!result) {
@@ -95,7 +104,7 @@ export async function fetchModule(
   }
 
   // module entry should be created by transformRequest
-  const mod = await environment.moduleGraph.getModuleByUrl(url)
+  mod ??= await environment.moduleGraph.getModuleByUrl(url)
 
   if (!mod) {
     throw new Error(
@@ -116,10 +125,6 @@ export async function fetchModule(
   return {
     code: result.code,
     file: mod.file,
-    invalidationTimestamp: Math.max(
-      mod.lastHMRTimestamp,
-      mod.lastInvalidationTimestamp,
-    ),
   }
 }
 

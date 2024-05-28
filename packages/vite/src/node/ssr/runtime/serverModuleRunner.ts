@@ -92,7 +92,8 @@ export function createServerModuleRunner(
       ...options,
       root: environment.config.root,
       transport: {
-        fetchModule: (id, importer) => environment.fetchModule(id, importer),
+        fetchModule: (id, importer, options) =>
+          environment.fetchModule(id, importer, options),
       },
       hmr,
       sourcemapInterceptor: resolveSourceMapOptions(options),

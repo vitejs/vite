@@ -616,7 +616,8 @@ function resolveEnvironmentOptions(
     resolve,
     nodeCompatible: options.nodeCompatible ?? environmentName !== 'client',
     webCompatible: options.webCompatible ?? environmentName === 'client',
-    injectInvalidationTimestamp: options.injectInvalidationTimestamp ?? true,
+    injectInvalidationTimestamp:
+      options.injectInvalidationTimestamp ?? environmentName === 'client',
     dev: resolveDevEnvironmentOptions(
       options.dev,
       resolve.preserveSymlinks,
@@ -649,7 +650,7 @@ export function getDefaultResolvedEnvironmentOptions(
     resolve: config.resolve,
     nodeCompatible: true,
     webCompatible: false,
-    injectInvalidationTimestamp: true,
+    injectInvalidationTimestamp: false,
     dev: config.dev,
     build: config.build,
   }

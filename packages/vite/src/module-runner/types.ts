@@ -70,7 +70,6 @@ export interface ModuleCache {
   evaluated?: boolean
   map?: DecodedMap
   meta?: ResolvedResult
-  timestamp?: number
   /**
    * Module ids that imports this module
    */
@@ -78,7 +77,18 @@ export interface ModuleCache {
   imports?: Set<string>
 }
 
-export type FetchResult = ExternalFetchResult | ViteFetchResult
+export type FetchResult =
+  | CachedFetchResult
+  | ExternalFetchResult
+  | ViteFetchResult
+
+export interface CachedFetchResult {
+  /**
+   * If module cached in the runner, we can just confirm
+   * it wasn't invalidated on the server side.
+   */
+  cache: true
+}
 
 export interface ExternalFetchResult {
   /**
@@ -106,24 +116,21 @@ export interface ViteFetchResult {
    * Will be equal to `null` for virtual modules
    */
   file: string | null
-  /**
-   * Timestamp when HMR was triggered for this module
-   * Usually automatically comes with ?t=timestamp query
-   */
-  invalidationTimestamp: number
 }
 
 export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {
   id: string
 }
 
-/**
- * @experimental
- */
 export type FetchFunction = (
   id: string,
   importer?: string,
+  options?: FetchFunctionOptions,
 ) => Promise<FetchResult>
+
+export interface FetchFunctionOptions {
+  cached?: boolean
+}
 
 export interface ModuleRunnerHmr {
   /**
