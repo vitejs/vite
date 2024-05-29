@@ -2,7 +2,7 @@ import { posix } from 'node:path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
-import { parse as parseJS } from 'acorn'
+import { parseAst } from 'rollup/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
@@ -68,12 +68,7 @@ function parseDynamicImportPattern(
   strings: string,
 ): DynamicImportPattern | null {
   const filename = strings.slice(1, -1)
-  const ast = (
-    parseJS(strings, {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-    }) as any
-  ).body[0].expression
+  const ast = (parseAst(strings).body[0] as any).expression
 
   const userPatternQuery = dynamicImportToGlob(ast, filename)
   if (!userPatternQuery) {

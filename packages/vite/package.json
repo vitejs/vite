@@ -106,8 +106,6 @@
     "@rollup/pluginutils": "^5.1.0",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
-    "acorn": "^8.11.3",
-    "acorn-walk": "^8.3.2",
     "artichokie": "^0.2.1",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",
