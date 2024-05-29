@@ -237,7 +237,7 @@ describe('parse positives', async () => {
 describe('parse negatives', async () => {
   it('syntax error', async () => {
     expect(await runError('import.meta.glob(')).toMatchInlineSnapshot(
-      '[SyntaxError: Unexpected token (1:17)]',
+      '[Error: Invalid glob import syntax: Close parenthesis not found]',
     )
   })
 
