@@ -158,6 +158,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set<string>()
   const legacyPolyfills = new Set<string>()
+  // When discovering polyfills in `renderChunk`, the hook may be non-deterministic, so we group the
+  // modern and legacy polyfills in a sorted map before merging them.
+  let chunkFileNameToPolyfills:
+    | Map<string, { modern: Set<string>; legacy: Set<string> }>
+    | undefined
 
   if (Array.isArray(options.modernPolyfills) && genModern) {
     options.modernPolyfills.forEach((i) => {
@@ -263,6 +268,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       if (!isLegacyBundle(bundle, opts)) {
+        // Merge discovered modern polyfills to `modernPolyfills`
+        if (chunkFileNameToPolyfills) {
+          for (const { modern } of chunkFileNameToPolyfills.values()) {
+            modern.forEach((p) => modernPolyfills.add(p))
+          }
+        }
         if (!modernPolyfills.size) {
           return
         }
@@ -289,6 +300,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
       if (!genLegacy) {
         return
+      }
+
+      // Merge discovered legacy polyfills to `legacyPolyfills`
+      if (chunkFileNameToPolyfills) {
+        for (const { legacy } of chunkFileNameToPolyfills.values()) {
+          legacy.forEach((p) => legacyPolyfills.add(p))
+        }
       }
 
       // legacy bundle
@@ -329,6 +347,10 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     name: 'vite:legacy-post-process',
     enforce: 'post',
     apply: 'build',
+
+    renderStart() {
+      chunkFileNameToPolyfills = undefined
+    },
 
     configResolved(_config) {
       if (_config.build.lib) {
@@ -410,10 +432,22 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
     },
 
-    async renderChunk(raw, chunk, opts) {
+    async renderChunk(raw, chunk, opts, { chunks }) {
       if (config.build.ssr) {
         return null
       }
+
+      // On first run, intialize the map with sorted chunk file names
+      if (chunkFileNameToPolyfills == null) {
+        chunkFileNameToPolyfills = new Map()
+        for (const fileName in chunks) {
+          chunkFileNameToPolyfills.set(fileName, {
+            modern: new Set(),
+            legacy: new Set(),
+          })
+        }
+      }
+      const polyfillsDiscovered = chunkFileNameToPolyfills.get(chunk.fileName)!
 
       if (!isLegacyChunk(chunk, opts)) {
         if (
@@ -422,7 +456,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           genModern
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, modernTargets, modernPolyfills)
+          await detectPolyfills(raw, modernTargets, polyfillsDiscovered.modern)
         }
 
         const ms = new MagicString(raw)
@@ -493,7 +527,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           [
             () => ({
               plugins: [
-                recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
+                recordAndRemovePolyfillBabelPlugin(polyfillsDiscovered.legacy),
                 replaceLegacyEnvBabelPlugin(),
                 wrapIIFEBabelPlugin(),
               ],
