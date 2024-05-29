@@ -69,6 +69,7 @@ import {
 } from '../utils'
 import type { Logger } from '../logger'
 import { cleanUrl, slash } from '../../shared/utils'
+import type { TransformPluginContext } from '../server/pluginContainer'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -549,6 +550,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
+      // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
+      const isJsChunkEmpty = code === '' && !chunk.isEntry
       let isPureCssChunk = true
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
@@ -561,7 +564,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               isPureCssChunk = false
             }
           }
-        } else {
+        } else if (!isJsChunkEmpty) {
           // if the module does not have a style, then it's not a pure css chunk.
           // this is true because in the `transform` hook above, only modules
           // that are css gets added to the `styles` map.
@@ -723,13 +726,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       if (chunkCSS) {
+        if (isPureCssChunk && (opts.format === 'es' || opts.format === 'cjs')) {
+          // this is a shared CSS-only chunk that is empty.
+          pureCssChunks.add(chunk)
+        }
+
         if (config.build.cssCodeSplit) {
           if (opts.format === 'es' || opts.format === 'cjs') {
-            if (isPureCssChunk) {
-              // this is a shared CSS-only chunk that is empty.
-              pureCssChunks.add(chunk)
-            }
-
             const isEntry = chunk.isEntry && isPureCssChunk
             const cssFullAssetName = ensureFileExt(chunk.name, '.css')
             // if facadeModuleId doesn't exist or doesn't have a CSS extension,
@@ -837,6 +840,40 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
+      function extractCss() {
+        let css = ''
+        const collected = new Set<OutputChunk>()
+        const prelimaryNameToChunkMap = new Map(
+          Object.values(bundle)
+            .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
+            .map((chunk) => [chunk.preliminaryFileName, chunk]),
+        )
+
+        function collect(fileName: string) {
+          const chunk = bundle[fileName]
+          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
+          collected.add(chunk)
+
+          chunk.imports.forEach(collect)
+          css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+        }
+
+        for (const chunkName of chunkCSSMap.keys())
+          collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
+
+        return css
+      }
+      let extractedCss = !hasEmitted && extractCss()
+      if (extractedCss) {
+        hasEmitted = true
+        extractedCss = await finalizeCss(extractedCss, true, config)
+        this.emitFile({
+          name: cssBundleName,
+          type: 'asset',
+          source: extractedCss,
+        })
+      }
+
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
         // map each pure css chunk (rendered chunk) to it's corresponding bundle
@@ -848,9 +885,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .map((chunk) => [chunk.preliminaryFileName, chunk.fileName]),
         )
 
-        const pureCssChunkNames = [...pureCssChunks].map(
-          (pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName],
-        )
+        // When running in watch mode the generateBundle is called once per output format
+        // in this case the `bundle` is not populated with the other output files
+        // but they are still in `pureCssChunks`.
+        // So we need to filter the names and only use those who are defined
+        const pureCssChunkNames = [...pureCssChunks]
+          .map((pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName])
+          .filter(Boolean)
 
         const replaceEmptyChunk = getEmptyChunkReplacer(
           pureCssChunkNames,
@@ -893,40 +934,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           delete bundle[`${fileName}.map`]
         })
       }
-
-      function extractCss() {
-        let css = ''
-        const collected = new Set<OutputChunk>()
-        const prelimaryNameToChunkMap = new Map(
-          Object.values(bundle)
-            .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
-            .map((chunk) => [chunk.preliminaryFileName, chunk]),
-        )
-
-        function collect(fileName: string) {
-          const chunk = bundle[fileName]
-          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
-          collected.add(chunk)
-
-          chunk.imports.forEach(collect)
-          css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
-        }
-
-        for (const chunkName of chunkCSSMap.keys())
-          collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
-
-        return css
-      }
-      let extractedCss = !hasEmitted && extractCss()
-      if (extractedCss) {
-        hasEmitted = true
-        extractedCss = await finalizeCss(extractedCss, true, config)
-        this.emitFile({
-          name: cssBundleName,
-          type: 'asset',
-          source: extractedCss,
-        })
-      }
     },
   }
 }
@@ -963,9 +970,8 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           !inlineRE.test(id) &&
           !htmlProxyRE.test(id)
         // attached by pluginContainer.addWatchFile
-        const pluginImports = (this as any)._addedImports as
-          | Set<string>
-          | undefined
+        const pluginImports = (this as unknown as TransformPluginContext)
+          ._addedImports
         if (pluginImports) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
@@ -2693,6 +2699,7 @@ function isPreProcessor(lang: any): lang is PreprocessLang {
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
 
+const decoder = new TextDecoder()
 async function compileLightningCSS(
   id: string,
   src: string,
@@ -2758,7 +2765,10 @@ async function compileLightningCSS(
           : undefined,
       })
 
-  let css = res.code.toString()
+  // NodeJS res.code = Buffer
+  // Deno res.code = Uint8Array
+  // For correct decode compiled css need to use TextDecoder
+  let css = decoder.decode(res.code)
   for (const dep of res.dependencies!) {
     switch (dep.type) {
       case 'url':

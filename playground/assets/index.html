@@ -304,7 +304,7 @@
   <code class="dynamic-import-meta-url-2-ternary"></code>
 </p>
 
-<h2>new URL(`non-existent`, import.meta.url)</h2>
+<h2>new URL(/* @vite-ignore */ 'non-existent', import.meta.url)</h2>
 <p>
   <code class="non-existent-import-meta-url"></code>
 </p>
@@ -509,7 +509,10 @@
   import someString from './static/foo.txt?raw'
   document.querySelector('.raw-query').textContent = someString
 
-  const metaUrlNonExistent = new URL('non-existent', import.meta.url).pathname
+  const metaUrlNonExistent = new URL(
+    /* @vite-ignore */ 'non-existent',
+    import.meta.url,
+  ).pathname
   text('.non-existent-import-meta-url', metaUrlNonExistent)
 
   /**

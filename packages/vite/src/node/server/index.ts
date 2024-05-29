@@ -102,6 +102,11 @@ export interface ServerOptions extends CommonServerOptions {
    */
   hmr?: HmrOptions | boolean
   /**
+   * Do not start the websocket connection.
+   * @experimental
+   */
+  ws?: false
+  /**
    * Warm-up files to transform and cache the results in advance. This improves the
    * initial page load during server starts and prevents transform waterfalls.
    */
@@ -242,7 +247,6 @@ export interface ViteDevServer {
   watcher: FSWatcher
   /**
    * web socket server with `send(payload)` method
-   * @deprecated use `hot` instead
    */
   ws: WebSocketServer
   /**
@@ -250,6 +254,7 @@ export interface ViteDevServer {
    *
    * Always sends a message to at least a WebSocket client. Any third party can
    * add a channel to the broadcaster to process messages
+   * @deprecated will be replaced with the environment api in v6.
    */
   hot: HMRBroadcaster
   /**
