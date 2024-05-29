@@ -102,6 +102,11 @@ export interface ServerOptions extends CommonServerOptions {
    */
   hmr?: HmrOptions | boolean
   /**
+   * Do not start the websocket connection.
+   * @experimental
+   */
+  ws?: false
+  /**
    * Warm-up files to transform and cache the results in advance. This improves the
    * initial page load during server starts and prevents transform waterfalls.
    */

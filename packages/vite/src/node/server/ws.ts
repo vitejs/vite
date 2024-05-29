@@ -85,11 +85,31 @@ const wsServerEvents = [
   'message',
 ]
 
+function noop() {
+  // noop
+}
+
 export function createWebSocketServer(
   server: HttpServer | null,
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
+  if (config.server.ws === false) {
+    return {
+      name: 'ws',
+      get clients() {
+        return new Set<WebSocketClient>()
+      },
+      async close() {
+        // noop
+      },
+      on: noop as any as WebSocketServer['on'],
+      off: noop as any as WebSocketServer['off'],
+      listen: noop,
+      send: noop,
+    }
+  }
+
   let wss: WebSocketServerRaw_
   let wsHttpServer: Server | undefined = undefined
 
