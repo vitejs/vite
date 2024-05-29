@@ -272,7 +272,7 @@ export interface LibraryOptions {
   fileName?: string | ((format: ModuleFormat, entryName: string) => string)
 }
 
-export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
+export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' | 'system'
 
 export interface ModulePreloadOptions {
   /**
