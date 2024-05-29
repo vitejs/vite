@@ -16,7 +16,6 @@ import {
 import {
   type SSRImportBaseMetadata,
   analyzeImportedModDifference,
-  proxyGuardOnlyEsm,
 } from '../../shared/ssrTransform'
 import { SOURCEMAPPING_URL } from '../../shared/constants'
 import {
@@ -317,7 +316,7 @@ async function nodeImport(
         : undefined,
       metadata,
     )
-    return proxyGuardOnlyEsm(mod, id)
+    return mod
   } else {
     return mod
   }

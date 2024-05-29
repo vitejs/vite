@@ -8,10 +8,7 @@ import {
   unwrapId,
   wrapId,
 } from '../shared/utils'
-import {
-  analyzeImportedModDifference,
-  proxyGuardOnlyEsm,
-} from '../shared/ssrTransform'
+import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import { ModuleCacheMap } from './moduleCache'
 import type {
   FetchResult,
@@ -193,7 +190,7 @@ export class ViteRuntime {
     const { id, type } = fetchResult
     if (type !== 'module' && type !== 'commonjs') return exports
     analyzeImportedModDifference(exports, id, type, metadata)
-    return proxyGuardOnlyEsm(exports, id, metadata)
+    return exports
   }
 
   private async cachedRequest(
