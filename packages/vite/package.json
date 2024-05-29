@@ -85,7 +85,7 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.20.1",
+    "esbuild": "^0.21.3",
     "postcss": "^8.4.38",
     "rollup": "^4.13.0"
   },
@@ -106,8 +106,6 @@
     "@rollup/pluginutils": "^5.1.0",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
-    "acorn": "^8.11.3",
-    "acorn-walk": "^8.3.2",
     "artichokie": "^0.2.1",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",

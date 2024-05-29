@@ -71,6 +71,7 @@ import { cleanUrl, slash } from '../../shared/utils'
 import { createIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { PartialEnvironment } from '../baseEnvironment'
+import type { TransformPluginContext } from '../server/pluginContainer'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -968,9 +969,8 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           !inlineRE.test(id) &&
           !htmlProxyRE.test(id)
         // attached by pluginContainer.addWatchFile
-        const pluginImports = (this as any)._addedImports as
-          | Set<string>
-          | undefined
+        const pluginImports = (this as unknown as TransformPluginContext)
+          ._addedImports
         if (pluginImports) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update

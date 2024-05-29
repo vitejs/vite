@@ -595,7 +595,6 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
 
   addWatchFile(id: string): void {
     this._container.watchFiles.add(id)
-    // ;(this._addedImports || (this._addedImports = new Set())).add(id)
     if (this._container.watcher)
       ensureWatchedFile(
         this._container.watcher,
