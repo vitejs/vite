@@ -37,7 +37,7 @@ export const preloadMarker = `__VITE_PRELOAD__`
 export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
 
 export const preloadHelperId = '\0vite/preload-helper.js'
-const preloadMarkerWithQuote = new RegExp(`['"]${preloadMarker}['"]`, 'g')
+const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 
 const dynamicImportPrefixRE = /import\s*\(/
 
@@ -268,7 +268,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().prependLeft(expStart, `${preloadMethod}(() => `)
           str().appendRight(
             expEnd,
-            `,${isModernFlag}?"${preloadMarker}":void 0${
+            `,${isModernFlag}?${preloadMarker}:void 0${
               optimizeModulePreloadRelativePaths || customModulePreloadPaths
                 ? ',import.meta.url'
                 : ''
@@ -427,15 +427,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
               let markerStartPos = indexOfMatchInSlice(
                 code,
-                preloadMarkerWithQuote,
+                preloadMarkerRE,
                 end,
               )
               // fix issue #3051
               if (markerStartPos === -1 && imports.length === 1) {
-                markerStartPos = indexOfMatchInSlice(
-                  code,
-                  preloadMarkerWithQuote,
-                )
+                markerStartPos = indexOfMatchInSlice(code, preloadMarkerRE)
               }
 
               if (markerStartPos > 0) {
@@ -505,7 +502,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
                 s.update(
                   markerStartPos,
-                  markerStartPos + preloadMarker.length + 2,
+                  markerStartPos + preloadMarker.length,
                   renderedDeps.length > 0
                     ? `__vite__mapDeps([${renderedDeps.join(',')}])`
                     : `[]`,
@@ -534,19 +531,19 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           // there may still be markers due to inlined dynamic imports, remove
           // all the markers regardless
-          let markerStartPos = indexOfMatchInSlice(code, preloadMarkerWithQuote)
+          let markerStartPos = indexOfMatchInSlice(code, preloadMarkerRE)
           while (markerStartPos >= 0) {
             if (!rewroteMarkerStartPos.has(markerStartPos)) {
               s.update(
                 markerStartPos,
-                markerStartPos + preloadMarker.length + 2,
+                markerStartPos + preloadMarker.length,
                 'void 0',
               )
             }
             markerStartPos = indexOfMatchInSlice(
               code,
-              preloadMarkerWithQuote,
-              markerStartPos + preloadMarker.length + 2,
+              preloadMarkerRE,
+              markerStartPos + preloadMarker.length,
             )
           }
 
