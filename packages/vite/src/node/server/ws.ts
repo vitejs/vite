@@ -88,7 +88,6 @@ export function createWebSocketServer(
 ): WebSocketServer {
   if (config.server.ws === false) {
     return {
-      name: 'ws',
       get clients() {
         return new Set<WebSocketClient>()
       },
