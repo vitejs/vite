@@ -63,6 +63,7 @@ import {
   withTrailingSlash,
   wrapId,
 } from '../../shared/utils'
+import type { TransformPluginContext } from '../server/pluginContainer'
 import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
@@ -253,7 +254,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         throwOutdatedRequest(importer)
       }
 
-      if (!imports.length && !(this as any)._addedImports) {
+      if (
+        !imports.length &&
+        !(this as unknown as TransformPluginContext)._addedImports
+      ) {
         importerModule.isSelfAccepting = false
         debug?.(
           `${timeFrom(msAtStart)} ${colors.dim(
@@ -747,9 +751,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // note that we want to handle .css?raw and .css?url here
       if (!isCSSRequest(importer) || SPECIAL_QUERY_RE.test(importer)) {
         // attached by pluginContainer.addWatchFile
-        const pluginImports = (this as any)._addedImports as
-          | Set<string>
-          | undefined
+        const pluginImports = (this as unknown as TransformPluginContext)
+          ._addedImports
         if (pluginImports) {
           ;(
             await Promise.all(
