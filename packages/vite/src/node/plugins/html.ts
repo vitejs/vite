@@ -22,6 +22,7 @@ import {
   partialEncodeURIPath,
   processSrcSet,
   removeLeadingSlash,
+  unique,
   urlCanParse,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
@@ -1265,6 +1266,42 @@ export function resolveHtmlTransforms(
   return [preHooks, normalHooks, postHooks]
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/head#see_also
+const elementsAllowedInHead = new Set([
+  'title',
+  'base',
+  'link',
+  'style',
+  'meta',
+  'script',
+  'noscript',
+  'template',
+])
+
+function headTagInsertCheck(
+  tags: HtmlTagDescriptor[],
+  ctx: IndexHtmlTransformContext,
+) {
+  if (!tags.length) return
+  const { logger } = ctx.server?.config || {}
+  const disallowedTags = tags.filter(
+    (tagDescriptor) => !elementsAllowedInHead.has(tagDescriptor.tag),
+  )
+
+  if (disallowedTags.length) {
+    const dedupedTags = unique(
+      disallowedTags.map((tagDescriptor) => `<${tagDescriptor.tag}>`),
+    )
+    logger?.warn(
+      colors.yellow(
+        colors.bold(
+          `[${dedupedTags.join(',')}] can not be used inside the <head> Element, please check the 'injectTo' value`,
+        ),
+      ),
+    )
+  }
+}
+
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
@@ -1306,7 +1343,7 @@ export async function applyHtmlTransforms(
             ;(headPrependTags ??= []).push(tag)
         }
       }
-
+      headTagInsertCheck([...(headTags || []), ...(headPrependTags || [])], ctx)
       if (headPrependTags) html = injectToHead(html, headPrependTags, true)
       if (headTags) html = injectToHead(html, headTags)
       if (bodyPrependTags) html = injectToBody(html, bodyPrependTags, true)
