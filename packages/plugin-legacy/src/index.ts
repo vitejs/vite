@@ -160,7 +160,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const legacyPolyfills = new Set<string>()
   // When discovering polyfills in `renderChunk`, the hook may be non-deterministic, so we group the
   // modern and legacy polyfills in a sorted chunks map for each rendered outputs before merging them.
-  const outputToChunkFileNameToPolyfills = new Map<
+  const outputToChunkFileNameToPolyfills = new WeakMap<
     NormalizedOutputOptions,
     Map<string, { modern: Set<string>; legacy: Set<string> }> | null
   >()
