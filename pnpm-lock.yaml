@@ -28,9 +28,6 @@ importers:
       '@eslint/js':
         specifier: ^9.4.0
         version: 9.4.0
-      '@rollup/plugin-typescript':
-        specifier: ^11.1.6
-        version: 11.1.6(rollup@4.13.0)(tslib@2.6.2)(typescript@5.2.2)
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
@@ -127,6 +124,9 @@ importers:
       rollup:
         specifier: ^4.13.0
         version: 4.13.0
+      rollup-plugin-esbuild:
+        specifier: ^6.1.1
+        version: 6.1.1(esbuild@0.21.4)(rollup@4.13.0)
       simple-git-hooks:
         specifier: ^2.11.1
         version: 2.11.1
@@ -274,9 +274,6 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: 15.2.3
         version: 15.2.3(rollup@4.13.0)
-      '@rollup/plugin-typescript':
-        specifier: ^11.1.6
-        version: 11.1.6(rollup@4.13.0)(tslib@2.6.2)(typescript@5.2.2)
       '@rollup/pluginutils':
         specifier: ^5.1.0
         version: 5.1.0(rollup@4.13.0)
@@ -791,6 +788,9 @@ importers:
       terser:
         specifier: ^5.31.0
         version: 5.31.0
+      vite:
+        specifier: workspace:*
+        version: link:../../packages/vite
 
   playground/lib:
     devDependencies:
@@ -4169,26 +4169,6 @@ packages:
       '@rollup/pluginutils': 5.1.0(rollup@3.29.4)
       magic-string: 0.27.0
       rollup: 3.29.4
-    dev: true
-
-  /@rollup/plugin-typescript@11.1.6(rollup@4.13.0)(tslib@2.6.2)(typescript@5.2.2):
-    resolution: {integrity: sha512-R92yOmIACgYdJ7dJ97p4K69I8gg6IEHt8M7dUBxN3W6nrO8uUxX5ixl0yU/N3aZTi8WhPuICvOHXQvF6FaykAA==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      rollup: ^2.14.0||^3.0.0||^4.0.0
-      tslib: '*'
-      typescript: '>=3.7.0'
-    peerDependenciesMeta:
-      rollup:
-        optional: true
-      tslib:
-        optional: true
-    dependencies:
-      '@rollup/pluginutils': 5.1.0(rollup@4.13.0)
-      resolve: 1.22.4
-      rollup: 4.13.0
-      tslib: 2.6.2
-      typescript: 5.2.2
     dev: true
 
   /@rollup/pluginutils@5.0.4(rollup@3.29.4):
