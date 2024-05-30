@@ -1,3 +1,14 @@
+## <small>5.4.1 (2024-05-30)</small>
+
+* fix(deps): update all non-major dependencies (#17321) ([4a89766](https://github.com/vitejs/vite/commit/4a89766)), closes [#17321](https://github.com/vitejs/vite/issues/17321)
+* fix(plugin-legacy): group discovered polyfills by output (#17347) ([c735cc7](https://github.com/vitejs/vite/commit/c735cc7)), closes [#17347](https://github.com/vitejs/vite/issues/17347)
+* fix(plugin-legacy): improve deterministic polyfills discovery (#16566) ([48edfcd](https://github.com/vitejs/vite/commit/48edfcd)), closes [#16566](https://github.com/vitejs/vite/issues/16566)
+* docs(plugin-legacy): update outdated warning about `modernPolyfills` (#17335) ([e6a70b7](https://github.com/vitejs/vite/commit/e6a70b7)), closes [#17335](https://github.com/vitejs/vite/issues/17335)
+* chore(deps): remove unused deps (#17329) ([5a45745](https://github.com/vitejs/vite/commit/5a45745)), closes [#17329](https://github.com/vitejs/vite/issues/17329)
+* chore(deps): update all non-major dependencies (#16722) ([b45922a](https://github.com/vitejs/vite/commit/b45922a)), closes [#16722](https://github.com/vitejs/vite/issues/16722)
+
+
+
 ## 5.4.0 (2024-05-08)
 
 * fix(deps): update all non-major dependencies (#16258) ([7caef42](https://github.com/vitejs/vite/commit/7caef42)), closes [#16258](https://github.com/vitejs/vite/issues/16258)
