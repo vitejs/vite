@@ -34,7 +34,7 @@ export function openBrowser(
     const browserArgs = process.env.BROWSER_ARGS
       ? process.env.BROWSER_ARGS.split(' ')
       : []
-    startBrowserProcess(browser, browserArgs, url)
+    startBrowserProcess(browser, browserArgs, url, logger)
   }
 }
 
@@ -72,6 +72,7 @@ async function startBrowserProcess(
   browser: string | undefined,
   browserArgs: string[],
   url: string,
+  logger: Logger,
 ) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
@@ -122,7 +123,17 @@ async function startBrowserProcess(
     const options: open.Options = browser
       ? { app: { name: browser, arguments: browserArgs } }
       : {}
-    open(url, options).catch(() => {}) // Prevent `unhandledRejection` error.
+
+    new Promise((_, reject) => {
+      open(url, options)
+        .then((subprocess) => {
+          subprocess.on('error', reject)
+        })
+        .catch(reject)
+    }).catch((err) => {
+      logger.error(err.stack || err.message)
+    })
+
     return true
   } catch (err) {
     return false
