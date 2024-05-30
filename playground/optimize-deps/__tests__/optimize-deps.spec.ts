@@ -331,3 +331,18 @@ test.runIf(isServe)('warn on incompatible dependency', () => {
     ),
   )
 })
+
+test('import the CommonJS external package that omits the js suffix', async () => {
+  await expectWithRetry(() => page.textContent('.external-package-js')).toBe(
+    'okay',
+  )
+  await expectWithRetry(() =>
+    page.textContent('.external-package-scss-js'),
+  ).toBe('scss')
+  await expectWithRetry(() =>
+    page.textContent('.external-package-astro-js'),
+  ).toBe('astro')
+  await expectWithRetry(() =>
+    page.textContent('.external-package-tsx-js'),
+  ).toBe('tsx')
+})

@@ -897,6 +897,9 @@ importers:
       '@vitejs/test-dep-cjs-compiled-from-esm':
         specifier: file:./dep-cjs-compiled-from-esm
         version: file:playground/optimize-deps/dep-cjs-compiled-from-esm
+      '@vitejs/test-dep-cjs-external-package-omit-js-suffix':
+        specifier: file:./dep-cjs-external-package-omit-js-suffix
+        version: file:playground/optimize-deps/dep-cjs-external-package-omit-js-suffix
       '@vitejs/test-dep-cjs-with-assets':
         specifier: file:./dep-cjs-with-assets
         version: file:playground/optimize-deps/dep-cjs-with-assets
@@ -1018,6 +1021,8 @@ importers:
   playground/optimize-deps/dep-cjs-compiled-from-cjs: {}
 
   playground/optimize-deps/dep-cjs-compiled-from-esm: {}
+
+  playground/optimize-deps/dep-cjs-external-package-omit-js-suffix: {}
 
   playground/optimize-deps/dep-cjs-with-assets: {}
 
@@ -10865,6 +10870,11 @@ packages:
   file:playground/optimize-deps/dep-cjs-compiled-from-esm:
     resolution: {directory: playground/optimize-deps/dep-cjs-compiled-from-esm, type: directory}
     name: '@vitejs/test-dep-cjs-compiled-from-esm'
+    dev: false
+
+  file:playground/optimize-deps/dep-cjs-external-package-omit-js-suffix:
+    resolution: {directory: playground/optimize-deps/dep-cjs-external-package-omit-js-suffix, type: directory}
+    name: '@vitejs/test-dep-cjs-external-package-omit-js-suffix'
     dev: false
 
   file:playground/optimize-deps/dep-cjs-with-assets:
