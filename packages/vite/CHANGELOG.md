@@ -1,3 +1,20 @@
+## 5.3.0-beta.0 (2024-05-30)
+
+* fix: adjust import analysis behavior to match Node (#16738) ([f599ab4](https://github.com/vitejs/vite/commit/f599ab4)), closes [#16738](https://github.com/vitejs/vite/issues/16738)
+* fix: prevent unhandledRejection if `--open` fails (#16726) ([1f60647](https://github.com/vitejs/vite/commit/1f60647)), closes [#16726](https://github.com/vitejs/vite/issues/16726)
+* fix(optimize-deps): don't externalize JS files imported with asset extensions (#16242) ([4161843](https://github.com/vitejs/vite/commit/4161843)), closes [#16242](https://github.com/vitejs/vite/issues/16242)
+* fix(proxy): rewrite the origin header to match the target for ws proxy (#16558) ([7b0a65e](https://github.com/vitejs/vite/commit/7b0a65e)), closes [#16558](https://github.com/vitejs/vite/issues/16558)
+* refactor: plugin container (#17288) ([4aa4a80](https://github.com/vitejs/vite/commit/4aa4a80)), closes [#17288](https://github.com/vitejs/vite/issues/17288)
+* refactor: remove acorn (#16238) ([454e2d1](https://github.com/vitejs/vite/commit/454e2d1)), closes [#16238](https://github.com/vitejs/vite/issues/16238)
+* refactor(build): remove quotes from preload marker (#16562) ([9853190](https://github.com/vitejs/vite/commit/9853190)), closes [#16562](https://github.com/vitejs/vite/issues/16562)
+* feat: add 'system' library format (#11256) ([4102ca9](https://github.com/vitejs/vite/commit/4102ca9)), closes [#11256](https://github.com/vitejs/vite/issues/11256)
+* feat: add an option to not start a websocket server (#16219) ([14b5ced](https://github.com/vitejs/vite/commit/14b5ced)), closes [#16219](https://github.com/vitejs/vite/issues/16219)
+* feat: add headTagInsertCheck warning (#16555) ([9f02a9f](https://github.com/vitejs/vite/commit/9f02a9f)), closes [#16555](https://github.com/vitejs/vite/issues/16555)
+* feat(asset): support `/*@vite-ignore*/` for `new URL(, import.meta.url)` (#16590) ([8880bc5](https://github.com/vitejs/vite/commit/8880bc5)), closes [#16590](https://github.com/vitejs/vite/issues/16590)
+* chore(deps): update esbuild (#17290) ([5f13bf8](https://github.com/vitejs/vite/commit/5f13bf8)), closes [#17290](https://github.com/vitejs/vite/issues/17290)
+
+
+
 ## <small>5.2.12 (2024-05-28)</small>
 
 * chore: move to eslint flat config (#16743) ([8f16765](https://github.com/vitejs/vite/commit/8f16765)), closes [#16743](https://github.com/vitejs/vite/issues/16743)
