@@ -155,6 +155,14 @@ export function esbuildDepPlugin(
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
             if (kind === 'require-call') {
+              // #16116 fix: Import the module.scss path, which is actually module.scss.js
+              if (resolved.endsWith('.js')) {
+                return {
+                  path: resolved,
+                  external: false,
+                }
+              }
+
               // here it is not set to `external: true` to convert `require` to `import`
               return {
                 path: resolved,
