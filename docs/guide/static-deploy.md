@@ -36,7 +36,6 @@ By default, the build output will be placed at `dist`. You may deploy this `dist
 Once you've built the app, you may test it locally by running `npm run preview` command.
 
 ```bash
-$ npm run build
 $ npm run preview
 ```
 
