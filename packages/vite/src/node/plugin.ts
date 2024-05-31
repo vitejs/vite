@@ -39,7 +39,8 @@ import type { PreviewServerHook } from './preview'
  */
 export interface Plugin<A = any> extends RollupPlugin<A> {
   /**
-   * Enforce plugin invocation tier similar to webpack loaders.
+   * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
+   * is still subject to the `order` property in the hook object.
    *
    * Plugin invocation order:
    * - alias resolution
@@ -129,7 +130,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    *   the descriptors.
    *
    * - The hook can also return an empty array and then perform custom updates
-   *   by sending a custom hmr payload via server.hot.send().
+   *   by sending a custom hmr payload via server.ws.send().
    *
    * - If the hook doesn't return a value, the hmr update will be performed as
    *   normal.

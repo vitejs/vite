@@ -428,8 +428,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
     ```js
     handleHotUpdate({ server, modules, timestamp }) {
-      // Also use `server.ws.send` to support Vite <5.1 if needed
-      server.hot.send({ type: 'full-reload' })
+      server.ws.send({ type: 'full-reload' })
       // Invalidate modules manually
       const invalidatedModules = new Set()
       for (const mod of modules) {
@@ -448,8 +447,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
     ```js
     handleHotUpdate({ server }) {
-      // Also use `server.ws.send` to support Vite <5.1 if needed
-      server.hot.send({
+      server.ws.send({
         type: 'custom',
         event: 'special-update',
         data: {}
@@ -479,6 +477,8 @@ A Vite plugin can additionally specify an `enforce` property (similar to webpack
 - Vite build plugins
 - User plugins with `enforce: 'post'`
 - Vite post build plugins (minify, manifest, reporting)
+
+Note that this is separate from hooks ordering, those are still separately subject to their `order` attribute [as usual for Rollup hooks](https://rollupjs.org/plugin-development/#build-hooks).
 
 ## Conditional Application
 
@@ -554,7 +554,7 @@ Since Vite 2.9, we provide some utilities for plugins to help handle the communi
 
 ### Server to Client
 
-On the plugin side, we could use `server.hot.send` (since Vite 5.1) or `server.ws.send` to broadcast events to all the clients:
+On the plugin side, we could use `server.ws.send` to broadcast events to the client:
 
 ```js
 // vite.config.js
@@ -563,9 +563,8 @@ export default defineConfig({
     {
       // ...
       configureServer(server) {
-        // Example: wait for a client to connect before sending a message
-        server.hot.on('connection', () => {
-          server.hot.send('my:greetings', { msg: 'hello' })
+        server.ws.on('connection', () => {
+          server.ws.send('my:greetings', { msg: 'hello' })
         })
       },
     },
@@ -579,7 +578,9 @@ We recommend **always prefixing** your event names to avoid collisions with othe
 
 On the client side, use [`hot.on`](/guide/api-hmr.html#hot-on-event-cb) to listen to the events:
 
-```ts
+```ts twoslash
+import 'vite/client'
+// ---cut---
 // client side
 if (import.meta.hot) {
   import.meta.hot.on('my:greetings', (data) => {
@@ -599,7 +600,7 @@ if (import.meta.hot) {
 }
 ```
 
-Then use `server.hot.on` (since Vite 5.1) or `server.ws.on` and listen to the events on the server side:
+Then use `server.ws.on` and listen to the events on the server side:
 
 ```js
 // vite.config.js
@@ -608,7 +609,7 @@ export default defineConfig({
     {
       // ...
       configureServer(server) {
-        server.hot.on('my:from-client', (data, client) => {
+        server.ws.on('my:from-client', (data, client) => {
           console.log('Message from client:', data.msg) // Hey!
           // reply only to the client (if needed)
           client.send('my:ack', { msg: 'Hi! I got your message!' })
@@ -621,16 +622,40 @@ export default defineConfig({
 
 ### TypeScript for Custom Events
 
-It is possible to type custom events by extending the `CustomEventMap` interface:
+Internally, vite infers the type of a payload from the `CustomEventMap` interface, it is possible to type custom events by extending the interface:
+
+:::tip Note
+Make sure to include the `.d.ts` extension when specifying TypeScript declaration files. Otherwise, Typescript may not know which file the module is trying to extend.
+:::
 
 ```ts
 // events.d.ts
-import 'vite/types/customEvent'
+import 'vite/types/customEvent.d.ts'
 
-declare module 'vite/types/customEvent' {
+declare module 'vite/types/customEvent.d.ts' {
   interface CustomEventMap {
     'custom:foo': { msg: string }
     // 'event-key': payload
   }
 }
+```
+
+This interface extension is utilized by `InferCustomEventPayload<T>` to infer the payload type for event `T`. For more information on how this interface is utilized, refer to the [HMR API Documentation](./api-hmr#hmr-api).
+
+```ts twoslash
+import 'vite/client'
+import type { InferCustomEventPayload } from 'vite/types/customEvent.d.ts'
+declare module 'vite/types/customEvent.d.ts' {
+  interface CustomEventMap {
+    'custom:foo': { msg: string }
+  }
+}
+// ---cut---
+type CustomFooPayload = InferCustomEventPayload<'custom:foo'>
+import.meta.hot?.on('custom:foo', (payload) => {
+  // The type of payload will be { msg: string }
+})
+import.meta.hot?.on('unknown:event', (payload) => {
+  // The type of payload will be any
+})
 ```

@@ -5,6 +5,7 @@ import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
 import { mode } from '../modules/workerImport'
+import SelfReferenceWorker from '../self-reference-worker?worker'
 
 function text(el, text) {
   document.querySelector(el).textContent = text
@@ -157,4 +158,19 @@ const importMetaGlobEagerWorker = new workers[
 importMetaGlobEagerWorker.postMessage('1')
 importMetaGlobEagerWorker.addEventListener('message', (e) => {
   text('.importMetaGlobEager-worker', JSON.stringify(e.data))
+})
+
+const selfReferenceWorker = new SelfReferenceWorker()
+selfReferenceWorker.postMessage('main')
+selfReferenceWorker.addEventListener('message', (e) => {
+  document.querySelector('.self-reference-worker').textContent += `${e.data}\n`
+})
+
+const selfReferenceUrlWorker = new Worker(
+  new URL('../self-reference-url-worker.js', import.meta.url),
+)
+selfReferenceUrlWorker.postMessage('main')
+selfReferenceUrlWorker.addEventListener('message', (e) => {
+  document.querySelector('.self-reference-url-worker').textContent +=
+    `${e.data}\n`
 })

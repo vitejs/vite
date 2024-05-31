@@ -14,7 +14,7 @@ import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
-import type { ExecaChildProcess } from 'execa'
+import type { ResultPromise as ExecaResultPromise } from 'execa'
 import { isBuild, isWindows, page, testDir } from './vitestSetup'
 
 export * from './vitestSetup'
@@ -156,6 +156,7 @@ export function findAssetFile(
   match: string | RegExp,
   base = '',
   assets = 'assets',
+  matchAll = false,
 ): string {
   const assetsDir = path.join(testDir, 'dist', base, assets)
   let files: string[]
@@ -167,10 +168,21 @@ export function findAssetFile(
     }
     throw e
   }
-  const file = files.find((file) => {
-    return file.match(match)
-  })
-  return file ? fs.readFileSync(path.resolve(assetsDir, file), 'utf-8') : ''
+  if (matchAll) {
+    const matchedFiles = files.filter((file) => file.match(match))
+    return matchedFiles.length
+      ? matchedFiles
+          .map((file) =>
+            fs.readFileSync(path.resolve(assetsDir, file), 'utf-8'),
+          )
+          .join('')
+      : ''
+  } else {
+    const matchedFile = files.find((file) => file.match(match))
+    return matchedFile
+      ? fs.readFileSync(path.resolve(assetsDir, matchedFile), 'utf-8')
+      : ''
+  }
 }
 
 export function readManifest(base = ''): Manifest {
@@ -368,7 +380,7 @@ export const formatSourcemapForSnapshot = (map: any): any => {
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too
 export async function killProcess(
-  serverProcess: ExecaChildProcess,
+  serverProcess: ExecaResultPromise,
 ): Promise<void> {
   if (isWindows) {
     try {
@@ -378,7 +390,7 @@ export async function killProcess(
       console.error('failed to taskkill:', e)
     }
   } else {
-    serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
+    serverProcess.kill('SIGTERM')
   }
 }
 

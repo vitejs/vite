@@ -14,6 +14,7 @@ import {
   page,
   readFile,
   readManifest,
+  serverLogs,
   untilUpdated,
   viteTestUrl,
   watcher,
@@ -282,6 +283,26 @@ describe('css url() references', () => {
 })
 
 describe('image', () => {
+  test('src', async () => {
+    const img = await page.$('.img-src')
+    const src = await img.getAttribute('src')
+    expect(src).toMatch(
+      isBuild
+        ? /\/foo\/bar\/assets\/html-only-asset-[-\w]{8}\.jpg/
+        : /\/foo\/bar\/nested\/html-only-asset.jpg/,
+    )
+  })
+
+  test('src inline', async () => {
+    const img = await page.$('.img-src-inline')
+    const src = await img.getAttribute('src')
+    expect(src).toMatch(
+      isBuild
+        ? /^data:image\/svg\+xml,%3csvg/
+        : /\/foo\/bar\/nested\/inlined.svg/,
+    )
+  })
+
   test('srcset', async () => {
     const img = await page.$('.img-src-set')
     const srcset = await img.getAttribute('srcset')
@@ -373,7 +394,7 @@ describe('unicode url', () => {
     expect(await page.textContent('.unicode-url')).toMatch(
       isBuild
         ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
-        : `/foo/bar/テスト-測試-white space.js`,
+        : encodeURI(`/foo/bar/テスト-測試-white space.js`),
     )
   })
 })
@@ -444,7 +465,7 @@ test('new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)', async ()
   )
 })
 
-test('new URL(`non-existent`, import.meta.url)', async () => {
+test("new URL(/* @vite-ignore */ 'non-existent', import.meta.url)", async () => {
   // the inlined script tag is extracted in a separate file
   const importMetaUrl = new URL(
     isBuild ? '/foo/bar/assets/index.js' : '/foo/bar/index.html',
@@ -452,6 +473,9 @@ test('new URL(`non-existent`, import.meta.url)', async () => {
   )
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
     new URL('non-existent', importMetaUrl).pathname,
+  )
+  expect(serverLogs).not.toContainEqual(
+    expect.stringContaining("doesn't exist at build time"),
   )
 })
 

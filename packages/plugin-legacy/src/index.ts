@@ -139,7 +139,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   // es2020 = chrome 80+, safari 13.1+, firefox 72+, edge 80+
   // https://github.com/evanw/esbuild/issues/121#issuecomment-646956379
   const modernTargetsBabel =
-    'edge>=80, firefox>=72, chrome>=80, safari>=13.1, chromeAndroid>=80, iOS>=13.1'
+    'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'
 
   const genLegacy = options.renderLegacyChunks !== false
   const genModern = options.renderModernChunks !== false
@@ -158,12 +158,23 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set<string>()
   const legacyPolyfills = new Set<string>()
+  // When discovering polyfills in `renderChunk`, the hook may be non-deterministic, so we group the
+  // modern and legacy polyfills in a sorted chunks map for each rendered outputs before merging them.
+  const outputToChunkFileNameToPolyfills = new WeakMap<
+    NormalizedOutputOptions,
+    Map<string, { modern: Set<string>; legacy: Set<string> }> | null
+  >()
 
   if (Array.isArray(options.modernPolyfills) && genModern) {
     options.modernPolyfills.forEach((i) => {
       modernPolyfills.add(
         i.includes('/') ? `core-js/${i}` : `core-js/modules/${i}.js`,
       )
+    })
+  }
+  if (Array.isArray(options.additionalModernPolyfills)) {
+    options.additionalModernPolyfills.forEach((i) => {
+      modernPolyfills.add(i)
     })
   }
   if (Array.isArray(options.polyfills)) {
@@ -257,7 +268,19 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return
       }
 
+      const chunkFileNameToPolyfills =
+        outputToChunkFileNameToPolyfills.get(opts)
+      if (chunkFileNameToPolyfills == null) {
+        throw new Error(
+          'Internal @vitejs/plugin-legacy error: discovered polyfills should exist',
+        )
+      }
+
       if (!isLegacyBundle(bundle, opts)) {
+        // Merge discovered modern polyfills to `modernPolyfills`
+        for (const { modern } of chunkFileNameToPolyfills.values()) {
+          modern.forEach((p) => modernPolyfills.add(p))
+        }
         if (!modernPolyfills.size) {
           return
         }
@@ -284,6 +307,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 
       if (!genLegacy) {
         return
+      }
+
+      // Merge discovered legacy polyfills to `legacyPolyfills`
+      for (const { legacy } of chunkFileNameToPolyfills.values()) {
+        legacy.forEach((p) => legacyPolyfills.add(p))
       }
 
       // legacy bundle
@@ -325,11 +353,20 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     enforce: 'post',
     apply: 'build',
 
+    renderStart(opts) {
+      // Empty the nested map for this output
+      outputToChunkFileNameToPolyfills.set(opts, null)
+    },
+
     configResolved(_config) {
       if (_config.build.lib) {
         throw new Error('@vitejs/plugin-legacy does not support library mode.')
       }
       config = _config
+
+      modernTargets = options.modernTargets || modernTargetsBabel
+      isDebug &&
+        console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
 
       if (!genLegacy || config.build.ssr) {
         return
@@ -340,10 +377,6 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         browserslistLoadConfig({ path: config.root }) ||
         'last 2 versions and not dead, > 0.3%, Firefox ESR'
       isDebug && console.log(`[@vitejs/plugin-legacy] targets:`, targets)
-
-      modernTargets = options.modernTargets || modernTargetsBabel
-      isDebug &&
-        console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
 
       const getLegacyOutputFileName = (
         fileNames:
@@ -405,9 +438,28 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
     },
 
-    async renderChunk(raw, chunk, opts) {
+    async renderChunk(raw, chunk, opts, { chunks }) {
       if (config.build.ssr) {
         return null
+      }
+
+      // On first run, intialize the map with sorted chunk file names
+      let chunkFileNameToPolyfills = outputToChunkFileNameToPolyfills.get(opts)
+      if (chunkFileNameToPolyfills == null) {
+        chunkFileNameToPolyfills = new Map()
+        for (const fileName in chunks) {
+          chunkFileNameToPolyfills.set(fileName, {
+            modern: new Set(),
+            legacy: new Set(),
+          })
+        }
+        outputToChunkFileNameToPolyfills.set(opts, chunkFileNameToPolyfills)
+      }
+      const polyfillsDiscovered = chunkFileNameToPolyfills.get(chunk.fileName)
+      if (polyfillsDiscovered == null) {
+        throw new Error(
+          `Internal @vitejs/plugin-legacy error: discovered polyfills for ${chunk.fileName} should exist`,
+        )
       }
 
       if (!isLegacyChunk(chunk, opts)) {
@@ -417,7 +469,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           genModern
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, modernTargets, modernPolyfills)
+          await detectPolyfills(raw, modernTargets, polyfillsDiscovered.modern)
         }
 
         const ms = new MagicString(raw)
@@ -488,7 +540,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           [
             () => ({
               plugins: [
-                recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
+                recordAndRemovePolyfillBabelPlugin(polyfillsDiscovered.legacy),
                 replaceLegacyEnvBabelPlugin(),
                 wrapIIFEBabelPlugin(),
               ],

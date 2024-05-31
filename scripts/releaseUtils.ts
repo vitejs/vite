@@ -1,29 +1,22 @@
 import { readdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import semver from 'semver'
 import colors from 'picocolors'
-import type { Options as ExecaOptions, ExecaReturnValue } from 'execa'
+import type { Options as ExecaOptions, ResultPromise } from 'execa'
 import { execa } from 'execa'
 import fs from 'fs-extra'
 
-export async function run(
+export function run<EO extends ExecaOptions>(
   bin: string,
   args: string[],
-  opts: ExecaOptions = {},
-): Promise<ExecaReturnValue> {
-  return execa(bin, args, { stdio: 'inherit', ...opts })
+  opts?: EO,
+): ResultPromise<EO & (keyof EO extends 'stdio' ? {} : { stdio: 'inherit' })> {
+  return execa(bin, args, { stdio: 'inherit', ...opts }) as any
 }
 
 export async function getLatestTag(pkgName: string): Promise<string> {
-  const tags = (await run('git', ['tag'], { stdio: 'pipe' })).stdout
-    .split(/\n/)
-    .filter(Boolean)
-  const prefix = pkgName === 'vite' ? 'v' : `${pkgName}@`
-  return tags
-    .filter((tag) => tag.startsWith(prefix))
-    .sort((a, b) =>
-      semver.rcompare(a.slice(prefix.length), b.slice(prefix.length)),
-    )[0]
+  const pkgJson = await fs.readJson(`packages/${pkgName}/package.json`)
+  const version = pkgJson.version
+  return pkgName === 'vite' ? `v${version}` : `${pkgName}@${version}`
 }
 
 export async function logRecentCommits(pkgName: string): Promise<void> {

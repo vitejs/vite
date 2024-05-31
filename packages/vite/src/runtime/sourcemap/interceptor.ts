@@ -2,6 +2,7 @@ import type { OriginalMapping } from '@jridgewell/trace-mapping'
 import type { ViteRuntime } from '../runtime'
 import { posixDirname, posixResolve } from '../utils'
 import type { ModuleCacheMap } from '../moduleCache'
+import { slash } from '../../shared/utils'
 import { DecodedMap, getOriginalPosition } from './decoder'
 
 interface RetrieveFileHandler {
@@ -37,11 +38,11 @@ const createExecHandlers = <T extends (...args: any) => any>(
 }
 
 const retrieveFileFromHandlers = createExecHandlers(retrieveFileHandlers)
-const retrievSourceMapFromHandlers = createExecHandlers(
+const retrieveSourceMapFromHandlers = createExecHandlers(
   retrieveSourceMapHandlers,
 )
 
-let overriden = false
+let overridden = false
 const originalPrepare = Error.prepareStackTrace
 
 function resetInterceptor(runtime: ViteRuntime, options: InterceptorOptions) {
@@ -51,7 +52,7 @@ function resetInterceptor(runtime: ViteRuntime, options: InterceptorOptions) {
     retrieveSourceMapHandlers.delete(options.retrieveSourceMap)
   if (moduleGraphs.size === 0) {
     Error.prepareStackTrace = originalPrepare
-    overriden = false
+    overridden = false
   }
 }
 
@@ -59,9 +60,9 @@ export function interceptStackTrace(
   runtime: ViteRuntime,
   options: InterceptorOptions = {},
 ): () => void {
-  if (!overriden) {
+  if (!overridden) {
     Error.prepareStackTrace = prepareStackTrace
-    overriden = true
+    overridden = true
   }
   moduleGraphs.add(runtime.moduleCache)
   if (options.retrieveFile) retrieveFileHandlers.add(options.retrieveFile)
@@ -88,24 +89,21 @@ interface CachedMapEntry {
 // Support URLs relative to a directory, but be careful about a protocol prefix
 function supportRelativeURL(file: string, url: string) {
   if (!file) return url
-  const dir = posixDirname(file.replace(/\\/g, '/'))
+  const dir = posixDirname(slash(file))
   const match = /^\w+:\/\/[^/]*/.exec(dir)
   let protocol = match ? match[0] : ''
   const startPath = dir.slice(protocol.length)
   if (protocol && /^\/\w:/.test(startPath)) {
     // handle file:///C:/ paths
     protocol += '/'
-    return (
-      protocol +
-      posixResolve(dir.slice(protocol.length), url).replace(/\\/g, '/')
-    )
+    return protocol + slash(posixResolve(startPath, url))
   }
-  return protocol + posixResolve(dir.slice(protocol.length), url)
+  return protocol + posixResolve(startPath, url)
 }
 
 function getRuntimeSourceMap(position: OriginalMapping): CachedMapEntry | null {
   for (const moduleCache of moduleGraphs) {
-    const sourceMap = moduleCache.getSourceMap(position.source as string)
+    const sourceMap = moduleCache.getSourceMap(position.source!)
     if (sourceMap) {
       return {
         url: position.source,
@@ -145,7 +143,7 @@ function retrieveSourceMapURL(source: string) {
 const reSourceMap = /^data:application\/json[^,]+base64,/
 
 function retrieveSourceMap(source: string) {
-  const urlAndMap = retrievSourceMapFromHandlers(source)
+  const urlAndMap = retrieveSourceMapFromHandlers(source)
   if (urlAndMap) return urlAndMap
 
   let sourceMappingURL = retrieveSourceMapURL(source)

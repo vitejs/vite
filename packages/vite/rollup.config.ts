@@ -202,21 +202,6 @@ function createRuntimeConfig(isProduction: boolean) {
         isProduction ? false : './dist/node',
       ),
       esbuildMinifyPlugin({ minify: false, minifySyntax: true }),
-      {
-        name: 'replace bias',
-        transform(code, id) {
-          if (id.includes('@jridgewell+trace-mapping')) {
-            return {
-              code: code.replaceAll(
-                'bias === LEAST_UPPER_BOUND',
-                'true' +
-                  `/*${'bias === LEAST_UPPER_BOUND'.length - '/**/'.length - 'true'.length}*/`,
-              ),
-              map: null,
-            }
-          }
-        },
-      },
       bundleSizeLimit(45),
     ],
   })
@@ -260,7 +245,7 @@ export default (commandLineArgs: any): RollupOptions[] => {
   ])
 }
 
-// #region ======== Plugins ========
+// #region Plugins
 
 interface ShimOptions {
   src?: string

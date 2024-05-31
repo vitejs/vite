@@ -1,5 +1,12 @@
 import { expect, test } from 'vitest'
-import { getColor, isBuild, page, serverLogs, untilUpdated } from '~utils'
+import {
+  findAssetFile,
+  getColor,
+  isBuild,
+  page,
+  serverLogs,
+  untilUpdated,
+} from '~utils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')
@@ -170,3 +177,9 @@ test.runIf(isBuild)(
     )
   },
 )
+
+test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
+  const js = findAssetFile(/index-[-\w]{8}\.js$/)
+  // should match e.g. await import(e.jss);o(".view",p===i)
+  expect(js).to.match(/\.jss\);/)
+})

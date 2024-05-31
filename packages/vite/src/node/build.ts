@@ -40,6 +40,7 @@ import {
   emptyDir,
   joinUrlSegments,
   normalizePath,
+  partialEncodeURIPath,
   requireResolveFromRootWithFallback,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
@@ -50,7 +51,11 @@ import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
-import { resolveChokidarOptions } from './watch'
+import {
+  getResolvedOutDirs,
+  resolveChokidarOptions,
+  resolveEmptyOutDir,
+} from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
@@ -267,7 +272,7 @@ export interface LibraryOptions {
   fileName?: string | ((format: ModuleFormat, entryName: string) => string)
 }
 
-export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
+export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' | 'system'
 
 export interface ModulePreloadOptions {
   /**
@@ -540,7 +545,39 @@ export async function build(
     },
   }
 
-  const mergeRollupError = (e: RollupError) => {
+  /**
+   * The stack string usually contains a copy of the message at the start of the stack.
+   * If the stack starts with the message, we remove it and just return the stack trace
+   * portion. Otherwise the original stack trace is used.
+   */
+  function extractStack(e: RollupError) {
+    const { stack, name = 'Error', message } = e
+
+    // If we don't have a stack, not much we can do.
+    if (!stack) {
+      return stack
+    }
+
+    const expectedPrefix = `${name}: ${message}\n`
+    if (stack.startsWith(expectedPrefix)) {
+      return stack.slice(expectedPrefix.length)
+    }
+
+    return stack
+  }
+
+  /**
+   * Esbuild code frames have newlines at the start and end of the frame, rollup doesn't
+   * This function normalizes the frame to match the esbuild format which has more pleasing padding
+   */
+  const normalizeCodeFrame = (frame: string) => {
+    const trimmedPadding = frame.replace(/^\n|\n$/g, '')
+    return `\n${trimmedPadding}\n`
+  }
+
+  const enhanceRollupError = (e: RollupError) => {
+    const stackOnly = extractStack(e)
+
     let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.id) {
       msg += `\nfile: ${colors.cyan(
@@ -548,15 +585,24 @@ export async function build(
       )}`
     }
     if (e.frame) {
-      msg += `\n` + colors.yellow(e.frame)
+      msg += `\n` + colors.yellow(normalizeCodeFrame(e.frame))
     }
-    return msg
+
+    e.message = msg
+
+    // We are rebuilding the stack trace to include the more detailed message at the top.
+    // Previously this code was relying on mutating e.message changing the generated stack
+    // when it was accessed, but we don't have any guarantees that the error we are working
+    // with hasn't already had its stack accessed before we get here.
+    if (stackOnly !== undefined) {
+      e.stack = `${e.message}\n${stackOnly}`
+    }
   }
 
   const outputBuildError = (e: RollupError) => {
-    const msg = mergeRollupError(e)
+    enhanceRollupError(e)
     clearLine()
-    config.logger.error(msg, { error: e })
+    config.logger.error(e.message, { error: e })
   }
 
   let bundle: RollupBuild | undefined
@@ -654,7 +700,17 @@ export async function build(
       normalizedOutputs.push(buildOutputOptions(outputs))
     }
 
-    const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
+    const resolvedOutDirs = getResolvedOutDirs(
+      config.root,
+      options.outDir,
+      options.rollupOptions?.output,
+    )
+    const emptyOutDir = resolveEmptyOutDir(
+      options.emptyOutDir,
+      config.root,
+      resolvedOutDirs,
+      config.logger,
+    )
 
     // watch file changes with rollup
     if (config.build.watch) {
@@ -663,6 +719,8 @@ export async function build(
       const resolvedChokidarOptions = resolveChokidarOptions(
         config,
         config.build.watch.chokidar,
+        resolvedOutDirs,
+        emptyOutDir,
       )
 
       const { watch } = await import('rollup')
@@ -679,7 +737,7 @@ export async function build(
         if (event.code === 'BUNDLE_START') {
           config.logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
-            prepareOutDir(outDirs, options.emptyOutDir, config)
+            prepareOutDir(resolvedOutDirs, emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
@@ -698,7 +756,7 @@ export async function build(
     bundle = await rollup(rollupOptions)
 
     if (options.write) {
-      prepareOutDir(outDirs, options.emptyOutDir, config)
+      prepareOutDir(resolvedOutDirs, emptyOutDir, config)
     }
 
     const res: RollupOutput[] = []
@@ -710,7 +768,7 @@ export async function build(
     )
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
-    e.message = mergeRollupError(e)
+    enhanceRollupError(e)
     clearLine()
     if (startTime) {
       config.logger.error(
@@ -725,36 +783,15 @@ export async function build(
 }
 
 function prepareOutDir(
-  outDirs: string[],
+  outDirs: Set<string>,
   emptyOutDir: boolean | null,
   config: ResolvedConfig,
 ) {
-  const nonDuplicateDirs = new Set(outDirs)
-  let outside = false
-  if (emptyOutDir == null) {
-    for (const outDir of nonDuplicateDirs) {
-      if (
-        fs.existsSync(outDir) &&
-        !normalizePath(outDir).startsWith(withTrailingSlash(config.root))
-      ) {
-        // warn if outDir is outside of root
-        config.logger.warn(
-          colors.yellow(
-            `\n${colors.bold(`(!)`)} outDir ${colors.white(
-              colors.dim(outDir),
-            )} is not inside project root and will not be emptied.\n` +
-              `Use --emptyOutDir to override.\n`,
-          ),
-        )
-        outside = true
-        break
-      }
-    }
-  }
-  for (const outDir of nonDuplicateDirs) {
-    if (!outside && emptyOutDir !== false && fs.existsSync(outDir)) {
+  const outDirsArray = [...outDirs]
+  for (const outDir of outDirs) {
+    if (emptyOutDir !== false && fs.existsSync(outDir)) {
       // skip those other outDirs which are nested in current outDir
-      const skipDirs = outDirs
+      const skipDirs = outDirsArray
         .map((dir) => {
           const relative = path.relative(outDir, dir)
           if (
@@ -1070,7 +1107,7 @@ function injectSsrFlag<T extends Record<string, any>>(
 
 /*
   The following functions are copied from rollup
-  https://github.com/rollup/rollup/blob/0bcf0a672ac087ff2eb88fbba45ec62389a4f45f/src/ast/nodes/MetaProperty.ts#L145-L193
+  https://github.com/rollup/rollup/blob/ce6cb93098850a46fa242e37b74a919e99a5de28/src/ast/nodes/MetaProperty.ts#L155-L203
 
   https://github.com/rollup/rollup
   The MIT License (MIT)
@@ -1092,7 +1129,7 @@ const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
 
 const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
   getResolveUrl(
-    `'${escapeId(relativePath)}', ${
+    `'${escapeId(partialEncodeURIPath(relativePath))}', ${
       umd ? `typeof document === 'undefined' ? location.href : ` : ''
     }document.currentScript && document.currentScript.src || document.baseURI`,
   )
@@ -1101,7 +1138,7 @@ const getFileUrlFromFullPath = (path: string) =>
   `require('u' + 'rl').pathToFileURL(${path}).href`
 
 const getFileUrlFromRelativePath = (path: string) =>
-  getFileUrlFromFullPath(`__dirname + '/${path}'`)
+  getFileUrlFromFullPath(`__dirname + '/${escapeId(path)}'`)
 
 const relativeUrlMechanisms: Record<
   InternalModuleFormat,
@@ -1109,16 +1146,24 @@ const relativeUrlMechanisms: Record<
 > = {
   amd: (relativePath) => {
     if (relativePath[0] !== '.') relativePath = './' + relativePath
-    return getResolveUrl(`require.toUrl('${relativePath}'), document.baseURI`)
+    return getResolveUrl(
+      `require.toUrl('${escapeId(relativePath)}'), document.baseURI`,
+    )
   },
   cjs: (relativePath) =>
     `(typeof document === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
     )} : ${getRelativeUrlFromDocument(relativePath)})`,
-  es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
+  es: (relativePath) =>
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', import.meta.url`,
+    ),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
   // NOTE: make sure rollup generate `module` params
-  system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
+  system: (relativePath) =>
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', module.meta.url`,
+    ),
   umd: (relativePath) =>
     `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
@@ -1129,7 +1174,9 @@ const relativeUrlMechanisms: Record<
 const customRelativeUrlMechanisms = {
   ...relativeUrlMechanisms,
   'worker-iife': (relativePath) =>
-    getResolveUrl(`'${relativePath}', self.location.href`),
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', self.location.href`,
+    ),
 } as const satisfies Record<string, (relativePath: string) => string>
 
 export type RenderBuiltAssetUrl = (

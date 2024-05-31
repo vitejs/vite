@@ -138,6 +138,17 @@
   <img src="./nested/テスト-測試-white space.png" />
 </div>
 
+<h2>Filename including single quote</h2>
+<div>
+  <code class="filename-including-single-quote"></code>
+</div>
+
+<h2>Filename including percent</h2>
+<div>
+  <code class="percent-url"></code>
+  <img src="./asset/percent%25.png" />
+</div>
+
 <h2>encodeURI for the address</h2>
 <div>
   <img
@@ -170,7 +181,12 @@
 
 <h2>HTML only asset</h2>
 <div>
-  <img src="./nested/html-only-asset.jpg" alt="" />
+  <img class="img-src" src="./nested/html-only-asset.jpg" alt="" />
+</div>
+
+<h2>HTML inline asset</h2>
+<div>
+  <img class="img-src-inline" src="./nested/inlined.svg" alt="" />
 </div>
 
 <h2>SVG Fragments</h2>
@@ -288,7 +304,7 @@
   <code class="dynamic-import-meta-url-2-ternary"></code>
 </p>
 
-<h2>new URL(`non-existent`, import.meta.url)</h2>
+<h2>new URL(/* @vite-ignore */ 'non-existent', import.meta.url)</h2>
 <p>
   <code class="non-existent-import-meta-url"></code>
 </p>
@@ -440,6 +456,13 @@
   import unicodeUrl from './テスト-測試-white space.js?url'
   text('.unicode-url', unicodeUrl)
 
+  import filenameIncludingSingleQuoteUrl from "./nested/with-single'quote.png"
+  text('.filename-including-single-quote', filenameIncludingSingleQuoteUrl)
+
+  // TODO: is not supported yet (https://github.com/vitejs/vite/pull/16243)
+  // import percentUrl from './asset/percent%25.png?url'
+  // text('.percent-url', percentUrl)
+
   import cssUrl from './css/icons.css?url'
   text('.url-css', cssUrl)
 
@@ -486,7 +509,10 @@
   import someString from './static/foo.txt?raw'
   document.querySelector('.raw-query').textContent = someString
 
-  const metaUrlNonExistent = new URL('non-existent', import.meta.url).pathname
+  const metaUrlNonExistent = new URL(
+    /* @vite-ignore */ 'non-existent',
+    import.meta.url,
+  ).pathname
   text('.non-existent-import-meta-url', metaUrlNonExistent)
 
   /**

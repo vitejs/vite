@@ -22,7 +22,10 @@ import {
   tryStatSync,
   unique,
 } from '../utils'
-import { transformWithEsbuild } from '../plugins/esbuild'
+import {
+  defaultEsbuildSupported,
+  transformWithEsbuild,
+} from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
 import { isWindows } from '../../shared/utils'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
@@ -40,7 +43,7 @@ const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
 
 export type ExportsData = {
-  hasImports: boolean
+  hasModuleSyntax: boolean
   // exported names (for `export { a as b }`, `b` is exported name)
   exports: readonly string[]
   // hint if the dep requires loading as jsx
@@ -56,7 +59,6 @@ export interface DepsOptimizer {
   isOptimizedDepFile: (id: string) => boolean
   isOptimizedDepUrl: (url: string) => boolean
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
-  delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
 
   close: () => Promise<void>
 
@@ -258,10 +260,10 @@ export async function optimizeDeps(
 
   const deps = await discoverProjectDependencies(config).result
 
+  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
+
   const depsString = depsLogString(Object.keys(deps))
   log?.(colors.green(`Optimizing dependencies:\n  ${depsString}`))
-
-  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
 
   const depsInfo = toDiscoveredDependencies(config, deps, ssr)
 
@@ -502,9 +504,12 @@ export function runOptimizeDeps(
       // No need to wait, we can clean up in the background because temp folders
       // are unique per run
       debug?.(colors.green(`removing cache dir ${processingCacheDir}`))
-      fsp.rm(processingCacheDir, { recursive: true, force: true }).catch(() => {
+      try {
+        // When exiting the process, `fsp.rm` may not take effect, so we use `fs.rmSync`
+        fs.rmSync(processingCacheDir, { recursive: true, force: true })
+      } catch (error) {
         // Ignore errors
-      })
+      }
     }
   }
 
@@ -799,8 +804,7 @@ async function prepareEsbuildOptimizerRun(
     charset: 'utf8',
     ...esbuildOptions,
     supported: {
-      'dynamic-import': true,
-      'import-meta': true,
+      ...defaultEsbuildSupported,
       ...esbuildOptions.supported,
     },
   })
@@ -1075,9 +1079,9 @@ export async function extractExportsData(
       write: false,
       format: 'esm',
     })
-    const [imports, exports] = parse(result.outputFiles[0].text)
+    const [, exports, , hasModuleSyntax] = parse(result.outputFiles[0].text)
     return {
-      hasImports: imports.length > 0,
+      hasModuleSyntax,
       exports: exports.map((e) => e.n),
     }
   }
@@ -1100,9 +1104,9 @@ export async function extractExportsData(
     usedJsxLoader = true
   }
 
-  const [imports, exports] = parseResult
+  const [, exports, , hasModuleSyntax] = parseResult
   const exportsData: ExportsData = {
-    hasImports: imports.length > 0,
+    hasModuleSyntax,
     exports: exports.map((e) => e.n),
     jsxLoader: usedJsxLoader,
   }
@@ -1119,9 +1123,9 @@ function needsInterop(
   if (getDepOptimizationConfig(config, ssr)?.needsInterop?.includes(id)) {
     return true
   }
-  const { hasImports, exports } = exportsData
+  const { hasModuleSyntax, exports } = exportsData
   // entry has no ESM syntax - likely CJS or UMD
-  if (!exports.length && !hasImports) {
+  if (!hasModuleSyntax) {
     return true
   }
 

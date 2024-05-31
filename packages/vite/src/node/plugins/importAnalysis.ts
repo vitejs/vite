@@ -8,9 +8,9 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import { parse as parseJS } from 'acorn'
-import type { Node } from 'estree'
-import { findStaticImports, parseStaticImport } from 'mlly'
+import { parseAst } from 'rollup/parseAst'
+import type { StaticImport } from 'mlly'
+import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import type { ViteDevServer } from '..'
 import {
@@ -18,6 +18,7 @@ import {
   CLIENT_PUBLIC_PATH,
   DEP_VERSION_RE,
   FS_PREFIX,
+  SPECIAL_QUERY_RE,
 } from '../constants'
 import {
   debugHmr,
@@ -62,11 +63,13 @@ import {
   withTrailingSlash,
   wrapId,
 } from '../../shared/utils'
+import type { TransformPluginContext } from '../server/pluginContainer'
 import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
 import { serializeDefine } from './define'
 import { WORKER_FILE_ID } from './worker'
+import { getAliasPatternMatcher } from './preAlias'
 
 const debug = createDebugger('vite:import-analysis')
 
@@ -116,11 +119,21 @@ function extractImportedBindings(
   }
 
   const exp = source.slice(importSpec.ss, importSpec.se)
-  const [match0] = findStaticImports(exp)
-  if (!match0) {
+  ESM_STATIC_IMPORT_RE.lastIndex = 0
+  const match = ESM_STATIC_IMPORT_RE.exec(exp)
+  if (!match) {
     return
   }
-  const parsed = parseStaticImport(match0)
+
+  const staticImport: StaticImport = {
+    type: 'static',
+    code: match[0],
+    start: match.index,
+    end: match.index + match[0].length,
+    imports: match.groups!.imports,
+    specifier: match.groups!.specifier,
+  }
+  const parsed = parseStaticImport(staticImport)
   if (!parsed) {
     return
   }
@@ -171,6 +184,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const fsUtils = getFsUtils(config)
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
+  const matchAlias = getAliasPatternMatcher(config.resolve.alias)
   let server: ViteDevServer
 
   let _env: string | undefined
@@ -250,7 +264,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         throwOutdatedRequest(importer)
       }
 
-      if (!imports.length && !(this as any)._addedImports) {
+      if (
+        !imports.length &&
+        !(this as unknown as TransformPluginContext)._addedImports
+      ) {
         importerModule.isSelfAccepting = false
         debug?.(
           `${timeFrom(msAtStart)} ${colors.dim(
@@ -309,6 +326,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
+          moduleGraph._hasResolveFailedErrorModules.add(importerModule)
           return this.error(
             `Failed to resolve import "${url}" from "${normalizePath(
               path.relative(process.cwd(), importerFile),
@@ -486,7 +504,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               return
             }
             // skip ssr external
-            if (ssr) {
+            if (ssr && !matchAlias(specifier)) {
               if (shouldExternalizeForSSR(specifier, importer, config)) {
                 return
               }
@@ -740,11 +758,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // update the module graph for HMR analysis.
       // node CSS imports does its own graph update in the css-analysis plugin so we
       // only handle js graph updates here.
-      if (!isCSSRequest(importer)) {
+      // note that we want to handle .css?raw and .css?url here
+      if (!isCSSRequest(importer) || SPECIAL_QUERY_RE.test(importer)) {
         // attached by pluginContainer.addWatchFile
-        const pluginImports = (this as any)._addedImports as
-          | Set<string>
-          | undefined
+        const pluginImports = (this as unknown as TransformPluginContext)
+          ._addedImports
         if (pluginImports) {
           ;(
             await Promise.all(
@@ -842,7 +860,7 @@ export function createParseErrorInfo(
   }
 }
 // prettier-ignore
-const interopHelper = (m: any) => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) ? m : {}), default: m }
+const interopHelper = (m: any) => m?.__esModule ? m : { ...(typeof m === 'object' && !Array.isArray(m) || typeof m === 'function' ? m : {}), default: m }
 
 export function interopNamedImports(
   str: MagicString,
@@ -926,12 +944,7 @@ export function transformCjsImport(
   importer: string,
   config: ResolvedConfig,
 ): string | undefined {
-  const node = (
-    parseJS(importExp, {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-    }) as any
-  ).body[0] as Node
+  const node = parseAst(importExp).body[0]
 
   // `export * from '...'` may cause unexpected problem, so give it a warning
   if (
