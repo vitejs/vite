@@ -2046,7 +2046,7 @@ function fixScssBugImportValue(
   return data
 }
 
-// .scss/.sass processor
+// #region .scss/.sass processor
 const makeScssWorker = (
   resolvers: CSSAtImportResolvers,
   alias: Alias[],
@@ -2286,7 +2286,7 @@ async function rebaseUrls(
   }
 }
 
-// .less
+// #region .less
 const makeLessWorker = (
   resolvers: CSSAtImportResolvers,
   alias: Alias[],
@@ -2476,7 +2476,7 @@ const lessProcessor = (maxWorkers: number | undefined): StylePreprocessor => {
   }
 }
 
-// .styl
+// #region .styl
 const makeStylWorker = (maxWorkers: number | undefined) => {
   const worker = new WorkerWithFallback(
     () => {
