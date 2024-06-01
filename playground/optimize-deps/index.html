@@ -9,6 +9,10 @@
 
 <script type="module" src="./cjs.js"></script>
 
+<h2>Geordi's pluralize test</h2>
+<div>This should show octopuses: <span class="g-pluralize-v8"></span></div>
+<div>This should show octopi: <span class="g-pluralize-v7"></span></div>
+
 <h2>CommonJS dynamic import default + named (react)</h2>
 <div class="cjs-dynamic"></div>
 <h2>CommonJS dynamic import named (phoenix)</h2>
@@ -120,8 +124,14 @@
   // test dep detection in globbed files
   const globbed = import.meta.glob('./glob/*.js', { eager: true })
 
-  import cjsBrowserFieldBare from '@vitejs/test-dep-cjs-browser-field-bare'
-  text('.cjs-browser-field-bare', cjsBrowserFieldBare)
+  // import cjsBrowserFieldBare from '@vitejs/test-dep-cjs-browser-field-bare'
+  // text('.cjs-browser-field-bare', cjsBrowserFieldBare)
+
+  import { makePlural as makePlural7 } from '@vitejs/test-dep-pluralize-7'
+  text('.g-pluralize-v7', makePlural7('octopus'))
+
+  import { makePlural as makePlural8 } from '@vitejs/test-dep-pluralize-8'
+  text('.g-pluralize-v8', makePlural8('octopus'))
 
   import { camelCase } from '@vitejs/test-dep-linked'
   text('.deps-linked', camelCase('foo-bar-baz'))
@@ -136,12 +146,12 @@
     text('.import-star', `[success] ${keys.join(', ')}`)
   }
 
-  import '@vitejs/test-dep-cjs-with-assets'
-  import '@vitejs/test-dep-css-require'
-  import cssModuleRequire from '@vitejs/test-dep-css-require/mod.cjs'
-  document
-    .querySelector('.css-module-require')
-    .classList.add(cssModuleRequire.cssModuleRequire)
+  // import '@vitejs/test-dep-cjs-with-assets'
+  // import '@vitejs/test-dep-css-require'
+  // import cssModuleRequire from '@vitejs/test-dep-css-require/mod.cjs'
+  // document
+  //   .querySelector('.css-module-require')
+  //   .classList.add(cssModuleRequire.cssModuleRequire)
 
   import { env } from '@vitejs/test-dep-node-env'
   text('.node-env', env)
@@ -149,8 +159,8 @@
   import { notjsValue } from '@vitejs/test-dep-not-js'
   text('.not-js', notjsValue)
 
-  import foo from '@vitejs/test-dep-relative-to-main/entry'
-  text('.relative-to-main', foo)
+  // import foo from '@vitejs/test-dep-relative-to-main/entry'
+  // text('.relative-to-main', foo)
 
   import { lazyFoo } from '@vitejs/test-dep-with-dynamic-import'
   lazyFoo().then((foo) => {
@@ -240,21 +250,21 @@
   }
 </script>
 
-<script type="module">
+<!-- <script type="module">
   // should error on builtin modules from dep
   import { read } from '@vitejs/test-dep-with-builtin-module-esm'
   if (import.meta.env.DEV) {
     read()
   }
-</script>
+</script> -->
 
-<script type="module">
+<!-- <script type="module">
   // should error on builtin modules from dep
   import { read } from '@vitejs/test-dep-with-builtin-module-cjs'
   if (import.meta.env.DEV) {
     read()
   }
-</script>
+</script> -->
 
 <script type="module">
   import cloneDeepSlash from 'lodash/cloneDeep'

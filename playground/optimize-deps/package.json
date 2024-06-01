@@ -28,6 +28,8 @@
     "@vitejs/test-dep-optimize-exports-with-glob": "file:./dep-optimize-exports-with-glob",
     "@vitejs/test-dep-optimize-exports-with-root-glob": "file:./dep-optimize-exports-with-root-glob",
     "@vitejs/test-dep-optimize-with-glob": "file:./dep-optimize-with-glob",
+    "@vitejs/test-dep-pluralize-7": "file:./dep-pluralize-7",
+    "@vitejs/test-dep-pluralize-8": "file:./dep-pluralize-8",
     "@vitejs/test-dep-relative-to-main": "file:./dep-relative-to-main",
     "@vitejs/test-dep-with-builtin-module-cjs": "file:./dep-with-builtin-module-cjs",
     "@vitejs/test-dep-with-builtin-module-esm": "file:./dep-with-builtin-module-esm",

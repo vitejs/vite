@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-dep-pluralize-8",
+  "private": true,
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "pluralize": "8.0.0"
+  }
+}
