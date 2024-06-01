@@ -83,6 +83,7 @@ import {
 import type { ESBuildOptions } from './esbuild'
 import { getChunkOriginalFileName } from './manifest'
 
+const decoder = new TextDecoder()
 // const debug = createDebugger('vite:css')
 
 export interface CSSOptions {
@@ -1808,8 +1809,12 @@ async function minifyCSS(
         ),
       )
     }
+
+    // NodeJS res.code = Buffer
+    // Deno res.code = Uint8Array
+    // For correct decode compiled css need to use TextDecoder
     // LightningCSS output does not return a linebreak at the end
-    return code.toString() + (inlined ? '' : '\n')
+    return decoder.decode(code) + (inlined ? '' : '\n')
   }
   try {
     const { code, warnings } = await transform(css, {
@@ -2698,8 +2703,6 @@ function isPreProcessor(lang: any): lang is PreprocessLang {
 }
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
-
-const decoder = new TextDecoder()
 async function compileLightningCSS(
   id: string,
   src: string,
