@@ -2218,6 +2218,7 @@ const scssProcessor = (
     },
   }
 }
+// #endregion
 
 /**
  * relative url() inside \@imported sass and less files must be rebased to use
@@ -2477,6 +2478,7 @@ const lessProcessor = (maxWorkers: number | undefined): StylePreprocessor => {
     },
   }
 }
+// #endregion
 
 // #region Stylus
 // .styl
@@ -2607,6 +2609,7 @@ function formatStylusSourceMap(
 
   return map
 }
+// #endregion
 
 async function getSource(
   source: string,
