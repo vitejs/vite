@@ -438,7 +438,7 @@ function createWorkedEnvironment(userConfig) {
       },
       build: {
         createEnvironment(name, config) {
-          return createWorkerdBuildEnvironment(builder, name)
+          return createWorkerdBuildEnvironment(name, config)
         },
       },
     },
@@ -447,7 +447,7 @@ function createWorkedEnvironment(userConfig) {
 }
 ```
 
-Then the config file can be writen as
+Then the config file can be written as
 
 ```js
 import { workerdEnvironment } from 'vite-environment-workerd'
@@ -501,7 +501,7 @@ An empty object is enough to register the environment, default values from the r
 
 ### Configuring environment using hooks
 
-While the `config` hook is running, the complete list of environments isn't yet known and the environments can be affected by both the default values from the root level environment config or explicitely through the `config.environments` record.
+While the `config` hook is running, the complete list of environments isn't yet known and the environments can be affected by both the default values from the root level environment config or explicitly through the `config.environments` record.
 Plugins should set default values using the `config` hook. To configure each environment, they can use the new `configEnvironment` hook. This hook is called for each environment with its partially resolved config including resolution of final defaults.
 
 ```ts
