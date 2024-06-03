@@ -352,7 +352,7 @@ export default {
 }
 ```
 
-Vite's user config also extends from a environment config, letting users add defaults for all environments at the root level. This is quite useful for the common use case of configuring a Vite client only app, that can be done without going through `environments.client`.
+All environment configs extend from user's root config, allowing users add defaults for all environments at the root level. This is quite useful for the common use case of configuring a Vite client only app, that can be done without going through `environments.client`.
 
 ```js
 export default {
