@@ -119,7 +119,7 @@ We are using `transformRequest(url)` and `warmupRequest(url)` in the current ver
 The initial proposal had a `run` method that would allow consumers to invoke an import on the runner side by using the `transport` option. During our testing we found out that the API was not unversal enough to start recommending it. We are open to implement a built-in layer for remote SSR implementation based on the frameworks feedback. In the meantime, Vite still exposes a [`RunnerTransport` API](#runnertransport) to hide the complexity of the runner RPC.
 :::
 
-For the default Node environment, Vite creates a module runner that implements evaluation using `new AsyncFunction` running in the same runtime as the server. This runner is an instance of `ModuleRunner` that exposes:
+For the `ssr` environment running in Node by default, Vite creates a module runner that implements evaluation using `new AsyncFunction` running in the same JS runtime as the dev server. This runner is an instance of `ModuleRunner` that exposes:
 
 ```ts
 class ModuleRunner {
