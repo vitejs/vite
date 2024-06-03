@@ -7,7 +7,7 @@ import type {
 } from './moduleGraph'
 
 /**
- * Backward compatible ModuleNode and ModuleGraph with mixed nodes from both the client and ssr enviornments
+ * Backward compatible ModuleNode and ModuleGraph with mixed nodes from both the client and ssr environments
  * It would be good to take the types names for the new EnvironmentModuleNode and EnvironmentModuleGraph but we can't
  * do that at this point without breaking to much code in the ecosystem.
  * We are going to deprecate these types and we can try to use them back in the future.

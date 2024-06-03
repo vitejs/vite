@@ -69,9 +69,9 @@ class DevEnvironment {
    * global scope are taken as defaults for all environments, and can
    * be overridden (resolve conditions, external, optimizedDeps)
    */
-  config: ResolvedDevEnvironmentConfig
+  options: ResolvedDevEnvironmentOptions
 
-  constructor(name, config, { hot, options }: DevEnvironmentOptions)
+  constructor(name, config, { hot, options }: DevEnvironmentSetup)
 
   /**
    * Resolve the URL to an id, load it, and process the code using the
@@ -371,7 +371,7 @@ interface EnvironmentOptions extends SharedEnvironmentOptions {
 }
 ```
 
-As we explained, the `UserConfig` interface extends from `EnvironmentConfig`. Environment specific options defined at the root level of user config are used for the default client environment. And environments can be configured explicitely using the `environments` array. The Client and SSR environments, are always present, even if an empty object is set to `environments`.
+As we explained, Environment specific options defined at the root level of user config are used for the default client environment (the `UserConfig` interface extends from the `EnvironmentOptions` interface). And environments can be configured explicitly using the `environments` record. The `client` and `ssr` environments are always present during dev, even if an empty object is set to `environments`. This allows backward compatibility with `server.ssrLoadModule(url)` and `server.moduleGraph`. During build, the `client` environment is always present, and the `ssr` environment is only present if it is explicitly configured (using `environments.ssr` or for backward compatibility `build.ssr`).
 
 ```ts
 interface UserConfig extends EnvironmentOptions {
