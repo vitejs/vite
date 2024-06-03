@@ -11,6 +11,14 @@ Resources:
 Feel free to send us PRs against the `v6/environment-api` branch to fix the issues you discover. Please share with us your feedback as you test the proposal.
 :::
 
+Vite 6 formalizes the concept of Environments, introducing new APIs to create and configure them as well as accessing options and context utilities with a consistent API. Since Vite 2, there were two implicit Environments (`client` and `ssr`). Plugin Hooks received a `ssr` boolean in the last options parameter to identify the target environment for each processed module. Several APIs expected an optional last `ssr` parameter to properly associate modules to the correct environment (for example `server.moduleGraph.getModuleByUrl(url, { ssr })`). The `ssr` environment was configured using `config.ssr` that had a partial set of the options present in the client environment. During dev, both `client` and `ssr` environment were running concurrently with a single shared plugin pipeline. During build, each build got a new resolved config instance with a new set of plugins.
+
+The new Environment API not only makes these two default environment explicit, but allows users to create as many named environments as needed. There is a uniform way to configure environments (using `config.environments`) and the environment options and context utilities associated to a module being processed is accessible in plugin hooks using `this.environment`. APIs that previously expected a `ssr` boolean are now scoped to the proper environment (for example `environment.moduleGraph.getModuleByUrl(url)`). During dev, all environments are run concurrently as before. During build, for backward compatibility each build gets its own resolved config instance. But plugins or users can opt-in into a shared build pipeline.
+
+Even if there are big changes internally, and new opt-in APIs, there are no breaking changes from Vite 5. The initial goal of Vite 6 will be to move the ecosystem to the new major as smoothly as possible, delaying promoting the adoption of new APIs in plugins until there is enough users ready to consume the new versions of these plugins.
+
+## Using environments in the Vite server
+
 A single Vite dev server can be used to interact with different module execution environments concurrently. We'll use the word environment to refer to a configured Vite processing pipeline that can resolve ids, load, and process source code and is connected to a runtime where the code is executed. The transformed source code is called a module, and the relationships between the modules processed in each environment are kept in a module graph. The code for these modules is sent to the runtimes associated with each environment to be executed. When a module is evaluated, the runtime will request its imported modules triggering the processing of a section of the module graph. In a typical Vite app, an environments will be used for the ES modules served to the client and for the server program that does SSR. An app can do SSR in a Node server, but also other JS runtimes like [Cloudflare's workerd](https://github.com/cloudflare/workerd). So we can have different types of environments on the same Vite server: browser environments, node environments, and workerd environments, to name a few.
 
 A Vite Module Runner allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runner implementation is decoupled from the server. This allows library and framework authors to implement their layer of communication between the Vite server and the runner. The browser communicates with its corresponding environment using the server Web Socket and through HTTP requests. The Node Module runner can directly do function calls to process modules as it is running in the same process. Other environments could run modules connecting to a JS runtime like workerd, or a Worker Thread as Vitest does.
@@ -18,8 +26,6 @@ A Vite Module Runner allows running any code by processing it with Vite plugins 
 All these environments share Vite's HTTP server, middlewares, and Web Socket. The resolved config and plugins pipeline are also shared, but plugins can use `apply` so its hooks are only called for certain environments. The environment can also be accessed inside hooks for fine-grained control.
 
 ![Vite Environments](../images/vite-environments.svg)
-
-## Using environments in the Vite server
 
 A Vite dev server exposes two environments by default: a `client` environment and an `ssr` environment. The client environment is a browser environment by default, and the module runner is implemented by importing the virtual module `/@vite/client` to client apps. The SSR environment runs in the same Node runtime as the Vite server by default and allows application servers to be used to render requests during dev with full HMR support. We'll discuss later how frameworks and users can change the environment types for the default client and SSR environments, or register new environments (for example to have a separate module graph for [RSC](https://react.dev/blog/2023/03/22/react-labs-what-we-have-been-working-on-march-2023#react-server-components)).
 
@@ -362,7 +368,7 @@ export default {
 }
 ```
 
-The `EnvironmentOptions` interface exposes all the per-environment options. There are `SharedEnvironmentOptions` that apply to both `build` and `dev` environments, like `resolve`. And there are `DevOptions` and `BuildOptions`
+The `EnvironmentOptions` interface exposes all the per-environment options. There are `SharedEnvironmentOptions` that apply to both `build` and `dev`, like `resolve`. And there are `DevEnvironmentOptions` and `BuildEnvironmentOptions` for dev and build specific options (like `dev.optimizeDeps` or `build.outDir`).
 
 ```ts
 interface EnvironmentOptions extends SharedEnvironmentOptions {
