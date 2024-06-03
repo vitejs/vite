@@ -2051,6 +2051,7 @@ function fixScssBugImportValue(
   return data
 }
 
+// #region Sass
 // .scss/.sass processor
 const makeScssWorker = (
   resolvers: CSSAtImportResolvers,
@@ -2222,6 +2223,7 @@ const scssProcessor = (
     },
   }
 }
+// #endregion
 
 /**
  * relative url() inside \@imported sass and less files must be rebased to use
@@ -2291,6 +2293,7 @@ async function rebaseUrls(
   }
 }
 
+// #region Less
 // .less
 const makeLessWorker = (
   resolvers: CSSAtImportResolvers,
@@ -2480,7 +2483,9 @@ const lessProcessor = (maxWorkers: number | undefined): StylePreprocessor => {
     },
   }
 }
+// #endregion
 
+// #region Stylus
 // .styl
 const makeStylWorker = (maxWorkers: number | undefined) => {
   const worker = new WorkerWithFallback(
@@ -2609,6 +2614,7 @@ function formatStylusSourceMap(
 
   return map
 }
+// #endregion
 
 async function getSource(
   source: string,
