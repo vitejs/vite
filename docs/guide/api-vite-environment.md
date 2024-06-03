@@ -394,7 +394,7 @@ The `ssr` top level property has many options in common with `EnvironmentOptions
 
 ## Custom environment instances
 
-To register a new dev or build environment, you can use a `create` function:
+To create custom dev or build environment instances, you can use the `dev.createEnvironment` or `build.createEnvironment` functions.
 
 ```js
 export default {
@@ -402,11 +402,13 @@ export default {
     rsc: {
       dev: {
         createEnvironment(name, config) {
+          // Called with 'rsc' and the resolved config during dev
           return createNodeDevEnvironment(name, config)
         }
       },
       build: {
         createEnvironment(name, config) {
+          // Called with 'rsc' and the resolved config during build
           return createNodeBuildEnvironment(name, config)
         }
         outDir: '/dist/rsc',
@@ -418,7 +420,7 @@ export default {
 
 The environment will be accessible in middlewares or plugin hooks through `server.environments`. In plugin hooks, the environment instance is passed in the options so they can do conditions depending on the way they are configured.
 
-Environment providers like Workerd, can expose an environment configurator for the most common case of using the same runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
+Environment providers like Workerd, can expose an environment provider for the most common case of using the same runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
 
 ```js
 function createWorkedEnvironment(userConfig) {
