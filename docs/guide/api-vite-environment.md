@@ -460,7 +460,7 @@ export default {
 }
 ```
 
-In this case we see how a Workerd environment can be set for both the default SSR environment and for a new custom RSC environment.
+In this case we see how the `ssr` environment can be configured to use workerd as it's runtime. Additionally a new custom RSC environment is also defined, backed by a separate instance of the workerd runtime.
 
 ## Plugins and environments
 
