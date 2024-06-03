@@ -2780,6 +2780,8 @@ async function compileLightningCSS(
         if (urlReplacer) {
           const replaceUrl = await urlReplacer(dep.url, id)
           css = css.replace(dep.placeholder, () => replaceUrl)
+        } else {
+          css = css.replace(dep.placeholder, () => dep.url)
         }
         break
       default:
