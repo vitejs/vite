@@ -40,7 +40,7 @@ interface NodeImportResolveOptions
 
 const pendingModules = new Map<string, Promise<SSRModule>>()
 const pendingImports = new Map<string, string[]>()
-const importErrors = new WeakMap<Error, { importee: string }>()
+const errorStacks = new WeakMap<string[], { importee: string; error: Error }>()
 
 export async function ssrLoadModule(
   url: string,
@@ -184,7 +184,7 @@ async function instantiateModule(
       return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
     } catch (err) {
       // tell external error handler which mod was imported with error
-      importErrors.set(err, { importee: dep })
+      errorStacks.set(urlStack, { importee: dep, error: err })
 
       throw err
     }
@@ -245,26 +245,38 @@ async function instantiateModule(
     )
   } catch (e) {
     mod.ssrError = e
-    const errorData = importErrors.get(e)
 
     if (e.stack && fixStacktrace) {
       ssrFixStacktrace(e, moduleGraph)
     }
 
-    server.config.logger.error(
-      colors.red(
-        `Error when evaluating SSR module ${url}:` +
-          (errorData?.importee
-            ? ` failed to import "${errorData.importee}"`
-            : '') +
-          `\n|- ${e.stack}\n`,
-      ),
-      {
-        timestamp: true,
-        clear: server.config.clearScreen,
-        error: e,
-      },
-    )
+    const originError = errorStacks.get(urlStack)
+
+    const errorDepsStack = originError
+      ? urlStack.concat(originError.importee)
+      : urlStack
+
+    // only log the root url's error
+    if (
+      errorDepsStack.filter((dep) => !dep.startsWith('virtual:'))[0] === url
+    ) {
+      server.config.logger.error(
+        colors.red(
+          `Error when evaluating SSR module ${url}:` +
+            (originError?.error === e
+              ? `\n|- Failed to import ${errorDepsStack
+                  .reverse()
+                  .join('\n    at ')}`
+              : '') +
+            `\n|- ${e.stack}\n`,
+        ),
+        {
+          timestamp: true,
+          clear: server.config.clearScreen,
+          error: e,
+        },
+      )
+    }
 
     throw e
   }
