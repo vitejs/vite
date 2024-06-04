@@ -203,7 +203,7 @@ export async function handleHMRUpdate(
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
-    environments.forEach(({ hot }) =>
+    environments.forEach(({ config, hot }) =>
       hot.send({
         type: 'full-reload',
         path: '*',
@@ -370,9 +370,10 @@ export async function handleHMRUpdate(
           )
           environment.hot.send({
             type: 'full-reload',
-            path: config.server.middlewareMode
+            path: environment.config.server.middlewareMode
               ? '*'
-              : '/' + normalizePath(path.relative(config.root, file)),
+              : '/' +
+                normalizePath(path.relative(environment.config.root, file)),
           })
         } else {
           // loaded but not in the module graph, probably not js
@@ -383,7 +384,7 @@ export async function handleHMRUpdate(
         return
       }
 
-      updateModules(environment, shortFile, context.modules, timestamp)
+      updateModules(environment, file, context.modules, timestamp)
     } catch (err) {
       environment.hot.send({
         type: 'error',
