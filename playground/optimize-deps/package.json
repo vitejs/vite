@@ -36,6 +36,7 @@
     "@vitejs/test-dep-with-optional-peer-dep-submodule": "file:./dep-with-optional-peer-dep-submodule",
     "@vitejs/test-dep-non-optimized": "file:./dep-non-optimized",
     "@vitejs/test-added-in-entries": "file:./added-in-entries",
+    "@vitejs/test-dep-cjs-external-package-omit-js-suffix": "file:./dep-cjs-external-package-omit-js-suffix",
     "lodash-es": "^4.17.21",
     "@vitejs/test-nested-exclude": "file:./nested-exclude",
     "phoenix": "^1.7.12",

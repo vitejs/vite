@@ -110,6 +110,25 @@
 
 <script type="module" src="./long-file-name.js"></script>
 
+<h2>Import the CommonJS external package that omits the js suffix</h2>
+<div class="external-package-js"></div>
+<div class="external-package-scss-js"></div>
+<div class="external-package-astro-js"></div>
+<div class="external-package-tsx-js"></div>
+<script type="module">
+  import {
+    astro,
+    okay,
+    scss,
+    tsx,
+  } from '@vitejs/test-dep-cjs-external-package-omit-js-suffix'
+
+  text('.external-package-js', okay())
+  text('.external-package-scss-js', scss())
+  text('.external-package-astro-js', astro())
+  text('.external-package-tsx-js', tsx())
+</script>
+
 <script>
   function text(el, text) {
     document.querySelector(el).textContent = text

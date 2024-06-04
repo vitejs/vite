@@ -85,6 +85,7 @@ import {
 import type { ESBuildOptions } from './esbuild'
 import { getChunkOriginalFileName } from './manifest'
 
+const decoder = new TextDecoder()
 // const debug = createDebugger('vite:css')
 
 export interface CSSOptions {
@@ -1808,8 +1809,12 @@ async function minifyCSS(
         ),
       )
     }
+
+    // NodeJS res.code = Buffer
+    // Deno res.code = Uint8Array
+    // For correct decode compiled css need to use TextDecoder
     // LightningCSS output does not return a linebreak at the end
-    return code.toString() + (inlined ? '' : '\n')
+    return decoder.decode(code) + (inlined ? '' : '\n')
   }
   try {
     const { code, warnings } = await transform(css, {
@@ -2049,6 +2054,7 @@ function fixScssBugImportValue(
   return data
 }
 
+// #region Sass
 // .scss/.sass processor
 const makeScssWorker = (
   environment: PartialEnvironment,
@@ -2222,6 +2228,7 @@ const scssProcessor = (
     },
   }
 }
+// #endregion
 
 /**
  * relative url() inside \@imported sass and less files must be rebased to use
@@ -2293,6 +2300,7 @@ async function rebaseUrls(
   }
 }
 
+// #region Less
 // .less
 const makeLessWorker = (
   environment: PartialEnvironment,
@@ -2488,7 +2496,9 @@ const lessProcessor = (maxWorkers: number | undefined): StylePreprocessor => {
     },
   }
 }
+// #endregion
 
+// #region Stylus
 // .styl
 const makeStylWorker = (maxWorkers: number | undefined) => {
   const worker = new WorkerWithFallback(
@@ -2617,6 +2627,7 @@ function formatStylusSourceMap(
 
   return map
 }
+// #endregion
 
 async function getSource(
   source: string,
@@ -2713,8 +2724,6 @@ function isPreProcessor(lang: any): lang is PreprocessLang {
 }
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
-
-const decoder = new TextDecoder()
 async function compileLightningCSS(
   id: string,
   src: string,
@@ -2797,6 +2806,8 @@ async function compileLightningCSS(
         if (urlReplacer) {
           const replaceUrl = await urlReplacer(dep.url, id)
           css = css.replace(dep.placeholder, () => replaceUrl)
+        } else {
+          css = css.replace(dep.placeholder, () => dep.url)
         }
         break
       default:
