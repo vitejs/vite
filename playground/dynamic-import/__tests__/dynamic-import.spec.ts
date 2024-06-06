@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest'
 import {
+  browserLogs,
   findAssetFile,
   getColor,
   isBuild,
@@ -177,6 +178,24 @@ test.runIf(isBuild)(
     )
   },
 )
+
+test('dynamic import treeshaken log', async () => {
+  const log = browserLogs.join('\n')
+  expect(log).toContain('treeshaken foo')
+  expect(log).toContain('treeshaken bar')
+  expect(log).toContain('treeshaken baz1')
+  expect(log).toContain('treeshaken baz2')
+  expect(log).toContain('treeshaken baz3')
+  expect(log).toContain('treeshaken baz4')
+  expect(log).toContain('treeshaken baz5')
+  expect(log).toContain('treeshaken default')
+
+  expect(log).not.toContain('treeshaken removed')
+})
+
+test.runIf(isBuild)('dynamic import treeshaken file', async () => {
+  expect(findAssetFile(/treeshaken.+\.js$/)).not.toContain('treeshaken removed')
+})
 
 test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
   const js = findAssetFile(/index-[-\w]{8}\.js$/)
