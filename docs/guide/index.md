@@ -122,6 +122,10 @@ Note that Vite will also resolve [its config file (i.e. `vite.config.js`)](/conf
 
 ## Command Line Interface
 
+You can install the CLI command `vite` globally with `npm install -g vite` or `yarn global add vite`.
+
+Or install it for a specific project with `npm install vite` or `yarn add vite`.
+
 In a project where Vite is installed, you can use the `vite` binary in your npm scripts, or run it directly with `npx vite`. Here are the default npm scripts in a scaffolded Vite project:
 
 <!-- prettier-ignore -->
