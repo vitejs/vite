@@ -22,6 +22,7 @@ import {
   partialEncodeURIPath,
   processSrcSet,
   removeLeadingSlash,
+  unique,
   urlCanParse,
 } from '../utils'
 import type { ResolvedConfig } from '../config'
@@ -774,11 +775,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         return tags
       }
 
-      for (const [id, html] of processedHtml) {
-        const relativeUrlPath = path.posix.relative(
-          config.root,
-          normalizePath(id),
-        )
+      for (const [normalizedId, html] of processedHtml) {
+        const relativeUrlPath = path.posix.relative(config.root, normalizedId)
         const assetsBase = getBaseInHTML(relativeUrlPath, config)
         const toOutputFilePath = (
           filename: string,
@@ -804,7 +802,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const toOutputPublicAssetFilePath = (filename: string) =>
           toOutputFilePath(filename, 'public')
 
-        const isAsync = isAsyncScriptMap.get(config)!.get(id)!
+        const isAsync = isAsyncScriptMap.get(config)!.get(normalizedId)!
 
         let result = html
 
@@ -813,7 +811,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           (chunk) =>
             chunk.type === 'chunk' &&
             chunk.isEntry &&
-            chunk.facadeModuleId === id,
+            chunk.facadeModuleId &&
+            normalizePath(chunk.facadeModuleId) === normalizedId,
         ) as OutputChunk | undefined
 
         let canInlineEntry = false
@@ -898,7 +897,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           [...normalHooks, ...postHooks],
           {
             path: '/' + relativeUrlPath,
-            filename: id,
+            filename: normalizedId,
             bundle,
             chunk,
           },
@@ -928,7 +927,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           inlineEntryChunk.add(chunk.fileName)
         }
 
-        const shortEmitName = normalizePath(path.relative(config.root, id))
+        const shortEmitName = normalizePath(
+          path.relative(config.root, normalizedId),
+        )
         this.emitFile({
           type: 'asset',
           fileName: shortEmitName,
@@ -1180,19 +1181,30 @@ export function injectNonceAttributeTagHook(
         return
       }
 
+      const { nodeName, attrs, sourceCodeLocation } = node
+
       if (
-        node.nodeName === 'script' ||
-        (node.nodeName === 'link' &&
-          node.attrs.some(
+        nodeName === 'script' ||
+        nodeName === 'style' ||
+        (nodeName === 'link' &&
+          attrs.some(
             (attr) =>
               attr.name === 'rel' &&
               parseRelAttr(attr.value).some((a) => processRelType.has(a)),
           ))
       ) {
-        s.appendRight(
-          node.sourceCodeLocation!.startTag!.endOffset - 1,
-          ` nonce="${nonce}"`,
-        )
+        // If we already have a nonce attribute, we don't need to add another one
+        if (attrs.some(({ name }) => name === 'nonce')) {
+          return
+        }
+
+        const startTagEndOffset = sourceCodeLocation!.startTag!.endOffset
+
+        // if the closing of the start tag includes a `/`, the offset should be 2 so the nonce
+        // is appended prior to the `/`
+        const appendOffset = html[startTagEndOffset - 2] === '/' ? 2 : 1
+
+        s.appendRight(startTagEndOffset - appendOffset, ` nonce="${nonce}"`)
       }
     })
 
@@ -1254,6 +1266,42 @@ export function resolveHtmlTransforms(
   return [preHooks, normalHooks, postHooks]
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/head#see_also
+const elementsAllowedInHead = new Set([
+  'title',
+  'base',
+  'link',
+  'style',
+  'meta',
+  'script',
+  'noscript',
+  'template',
+])
+
+function headTagInsertCheck(
+  tags: HtmlTagDescriptor[],
+  ctx: IndexHtmlTransformContext,
+) {
+  if (!tags.length) return
+  const { logger } = ctx.server?.config || {}
+  const disallowedTags = tags.filter(
+    (tagDescriptor) => !elementsAllowedInHead.has(tagDescriptor.tag),
+  )
+
+  if (disallowedTags.length) {
+    const dedupedTags = unique(
+      disallowedTags.map((tagDescriptor) => `<${tagDescriptor.tag}>`),
+    )
+    logger?.warn(
+      colors.yellow(
+        colors.bold(
+          `[${dedupedTags.join(',')}] can not be used inside the <head> Element, please check the 'injectTo' value`,
+        ),
+      ),
+    )
+  }
+}
+
 export async function applyHtmlTransforms(
   html: string,
   hooks: IndexHtmlTransformHook[],
@@ -1295,7 +1343,7 @@ export async function applyHtmlTransforms(
             ;(headPrependTags ??= []).push(tag)
         }
       }
-
+      headTagInsertCheck([...(headTags || []), ...(headPrependTags || [])], ctx)
       if (headPrependTags) html = injectToHead(html, headPrependTags, true)
       if (headTags) html = injectToHead(html, headTags)
       if (bodyPrependTags) html = injectToBody(html, bodyPrependTags, true)

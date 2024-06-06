@@ -2,7 +2,7 @@
 
 ## Env Variables
 
-Vite exposes env variables on the special **`import.meta.env`** object. Some built-in variables are available in all cases:
+Vite exposes env variables on the special **`import.meta.env`** object, which are statically replaced at build time. Some built-in variables are available in all cases:
 
 - **`import.meta.env.MODE`**: {string} the [mode](#modes) the app is running in.
 

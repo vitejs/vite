@@ -4,7 +4,7 @@ import type { Plugin } from '../plugin'
  * make sure systemjs register wrap to had complete parameters in system format
  */
 export function completeSystemWrapPlugin(): Plugin {
-  const SystemJSWrapRE = /System.register\(.*(\(exports\)|\(\))/g
+  const SystemJSWrapRE = /System.register\(.*?(\(exports\)|\(\))/g
 
   return {
     name: 'vite:force-systemjs-wrap-complete',

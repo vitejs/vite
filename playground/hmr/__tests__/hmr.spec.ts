@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it, test } from 'vitest'
-import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
+import type { Page } from 'playwright-chromium'
 import {
   addFile,
+  browser,
   browserLogs,
   editFile,
   getBg,
@@ -153,7 +154,7 @@ if (!isBuild) {
   })
 
   test('invalidate', async () => {
-    const el = await page.$('.invalidation')
+    const el = await page.$('.invalidation-parent')
     await untilBrowserLogAfter(
       () =>
         editFile('invalidation/child.js', (code) =>
@@ -173,6 +174,47 @@ if (!isBuild) {
       true,
     )
     await untilUpdated(() => el.textContent(), 'child updated')
+  })
+
+  test('invalidate works with multiple tabs', async () => {
+    let page2: Page
+    try {
+      page2 = await browser.newPage()
+      await page2.goto(viteTestUrl)
+
+      const el = await page.$('.invalidation-parent')
+      await untilBrowserLogAfter(
+        () =>
+          editFile('invalidation/child.js', (code) =>
+            code.replace('child', 'child updated'),
+          ),
+        [
+          '>>> vite:beforeUpdate -- update',
+          '>>> vite:invalidate -- /invalidation/child.js',
+          '[vite] invalidate /invalidation/child.js',
+          '[vite] hot updated: /invalidation/child.js',
+          '>>> vite:afterUpdate -- update',
+          // if invalidate dedupe doesn't work correctly, this beforeUpdate will be called twice
+          '>>> vite:beforeUpdate -- update',
+          '(invalidation) parent is executing',
+          '[vite] hot updated: /invalidation/parent.js',
+          '>>> vite:afterUpdate -- update',
+        ],
+        true,
+      )
+      await untilUpdated(() => el.textContent(), 'child updated')
+    } finally {
+      await page2.close()
+    }
+  })
+
+  test('invalidate on root triggers page reload', async () => {
+    editFile('invalidation/root.js', (code) => code.replace('Init', 'Updated'))
+    await page.waitForEvent('load')
+    await untilUpdated(
+      async () => (await page.$('.invalidation-root')).textContent(),
+      'Updated',
+    )
   })
 
   test('soft invalidate', async () => {
@@ -219,24 +261,21 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '3')
   })
 
-  test.skipIf(hasWindowsUnicodeFsBug)(
-    'full-reload encodeURI path',
-    async () => {
-      await page.goto(
-        viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-      )
-      const el = await page.$('#app')
-      expect(await el.textContent()).toBe('title')
-      editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
-        code.replace('title', 'title2'),
-      )
-      await page.waitForEvent('load')
-      await untilUpdated(
-        async () => (await page.$('#app')).textContent(),
-        'title2',
-      )
-    },
-  )
+  test('full-reload encodeURI path', async () => {
+    await page.goto(
+      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+    )
+    const el = await page.$('#app')
+    expect(await el.textContent()).toBe('title')
+    editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
+      code.replace('title', 'title2'),
+    )
+    await page.waitForEvent('load')
+    await untilUpdated(
+      async () => (await page.$('#app')).textContent(),
+      'title2',
+    )
+  })
 
   test('CSS update preserves query params', async () => {
     await page.goto(viteTestUrl)
@@ -799,13 +838,17 @@ if (!isBuild) {
       'parent:not-child',
     )
 
-    addFile(childFile, originalChildFileCode)
-    editFile(parentFile, (code) =>
-      code.replace(
-        "export const childValue = 'not-child'",
-        "export { value as childValue } from './child'",
-      ),
-    )
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      addFile(childFile, originalChildFileCode)
+      editFile(parentFile, (code) =>
+        code.replace(
+          "export const childValue = 'not-child'",
+          "export { value as childValue } from './child'",
+        ),
+      )
+      await loadPromise
+    }, [/connected/])
     await untilUpdated(
       () => page.textContent('.file-delete-restore'),
       'parent:child',
@@ -961,5 +1004,24 @@ if (!isBuild) {
     expect(await getColor('.css-deps')).toMatch('red')
     editFile('css-deps/dep.js', (code) => code.replace(`red`, `green`))
     await untilUpdated(() => getColor('.css-deps'), 'green')
+  })
+
+  test('hmr should happen after missing file is created', async () => {
+    const file = 'missing-file/a.js'
+    const code = 'console.log("a.js")'
+
+    await untilBrowserLogAfter(
+      () =>
+        page.goto(viteTestUrl + '/missing-file/index.html', {
+          waitUntil: 'load',
+        }),
+      /connected/, // wait for HMR connection
+    )
+
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      addFile(file, code)
+      await loadPromise
+    }, [/connected/, 'a.js'])
   })
 }

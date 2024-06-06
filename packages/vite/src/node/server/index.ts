@@ -47,7 +47,12 @@ import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
-import { createNoopWatcher, resolveChokidarOptions } from '../watch'
+import {
+  createNoopWatcher,
+  getResolvedOutDirs,
+  resolveChokidarOptions,
+  resolveEmptyOutDir,
+} from '../watch'
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
 import type { FetchResult } from '../../runtime/types'
@@ -82,7 +87,6 @@ import {
   createHMRBroadcaster,
   createServerHMRChannel,
   getShortName,
-  handleFileAddUnlink,
   handleHMRUpdate,
   updateModules,
 } from './hmr'
@@ -97,6 +101,11 @@ export interface ServerOptions extends CommonServerOptions {
    * Configure HMR-specific options (port, host, path & protocol)
    */
   hmr?: HmrOptions | boolean
+  /**
+   * Do not start the websocket connection.
+   * @experimental
+   */
+  ws?: false
   /**
    * Warm-up files to transform and cache the results in advance. This improves the
    * initial page load during server starts and prevents transform waterfalls.
@@ -238,7 +247,6 @@ export interface ViteDevServer {
   watcher: FSWatcher
   /**
    * web socket server with `send(payload)` method
-   * @deprecated use `hot` instead
    */
   ws: WebSocketServer
   /**
@@ -246,6 +254,7 @@ export interface ViteDevServer {
    *
    * Always sends a message to at least a WebSocket client. Any third party can
    * add a channel to the broadcaster to process messages
+   * @deprecated will be replaced with the environment api in v6.
    */
   hot: HMRBroadcaster
   /**
@@ -429,10 +438,25 @@ export async function _createServer(
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
 
-  const resolvedWatchOptions = resolveChokidarOptions(config, {
-    disableGlobbing: true,
-    ...serverConfig.watch,
-  })
+  const resolvedOutDirs = getResolvedOutDirs(
+    config.root,
+    config.build.outDir,
+    config.build.rollupOptions?.output,
+  )
+  const emptyOutDir = resolveEmptyOutDir(
+    config.build.emptyOutDir,
+    config.root,
+    resolvedOutDirs,
+  )
+  const resolvedWatchOptions = resolveChokidarOptions(
+    config,
+    {
+      disableGlobbing: true,
+      ...serverConfig.watch,
+    },
+    resolvedOutDirs,
+    emptyOutDir,
+  )
 
   const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
@@ -447,6 +471,9 @@ export async function _createServer(
     config.server.hmr.channels.forEach((channel) => hot.addChannel(channel))
   }
 
+  const publicFiles = await initPublicFilesPromise
+  const { publicDir } = config
+
   if (httpServer) {
     setClientErrorHandler(httpServer, config.logger)
   }
@@ -460,6 +487,9 @@ export async function _createServer(
           root,
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
+          // Watch the public directory explicitly because it might be outside
+          // of the root directory.
+          ...(publicDir && publicFiles ? [publicDir] : []),
         ],
         resolvedWatchOptions,
       ) as FSWatcher)
@@ -720,12 +750,13 @@ export async function _createServer(
     }
   }
 
-  const publicFiles = await initPublicFilesPromise
-
-  const onHMRUpdate = async (file: string, configOnly: boolean) => {
+  const onHMRUpdate = async (
+    type: 'create' | 'delete' | 'update',
+    file: string,
+  ) => {
     if (serverConfig.hmr !== false) {
       try {
-        await handleHMRUpdate(file, server, configOnly)
+        await handleHMRUpdate(type, file, server)
       } catch (err) {
         hot.send({
           type: 'error',
@@ -734,8 +765,6 @@ export async function _createServer(
       }
     }
   }
-
-  const { publicDir } = config
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
@@ -756,8 +785,8 @@ export async function _createServer(
         }
       }
     }
-    await handleFileAddUnlink(file, server, isUnlink)
-    await onHMRUpdate(file, true)
+    if (isUnlink) moduleGraph.onFileDelete(file)
+    await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
   }
 
   watcher.on('change', async (file) => {
@@ -765,7 +794,7 @@ export async function _createServer(
     await container.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
     moduleGraph.onFileChange(file)
-    await onHMRUpdate(file, false)
+    await onHMRUpdate('update', file)
   })
 
   getFsUtils(config).initWatcher?.(watcher)
@@ -779,7 +808,13 @@ export async function _createServer(
 
   hot.on('vite:invalidate', async ({ path, message }) => {
     const mod = moduleGraph.urlToModuleMap.get(path)
-    if (mod && mod.isSelfAccepting && mod.lastHMRTimestamp > 0) {
+    if (
+      mod &&
+      mod.isSelfAccepting &&
+      mod.lastHMRTimestamp > 0 &&
+      !mod.lastHMRInvalidationReceived
+    ) {
+      mod.lastHMRInvalidationReceived = true
       config.logger.info(
         colors.yellow(`hmr invalidate `) +
           colors.dim(path) +
