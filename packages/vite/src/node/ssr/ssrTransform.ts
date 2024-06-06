@@ -439,8 +439,13 @@ function walk(
         if (node.type === 'FunctionDeclaration') {
           const parentScope = findParentScope(parentStack)
           if (parentScope) {
-            setScope(parentScope, node.id!.name)
+            setScope(parentScope, node.id.name)
           }
+        }
+        // If it is a function expression, its name (if exist) could also be
+        // shadowing an import. So add its own name to the scope
+        if (node.type === 'FunctionExpression' && node.id) {
+          setScope(node, node.id.name)
         }
         // walk function expressions and add its arguments to known identifiers
         // so that we don't prefix them
@@ -474,6 +479,15 @@ function walk(
             },
           })
         })
+      } else if (node.type === 'ClassDeclaration') {
+        // A class declaration name could shadow an import, so add its name to the parent scope
+        const parentScope = findParentScope(parentStack)
+        if (parentScope) {
+          setScope(parentScope, node.id.name)
+        }
+      } else if (node.type === 'ClassExpression' && node.id) {
+        // A class expression name could shadow an import, so add its name to the scope
+        setScope(node, node.id.name)
       } else if (node.type === 'Property' && parent!.type === 'ObjectPattern') {
         // mark property in destructuring pattern
         setIsNodeInPattern(node)

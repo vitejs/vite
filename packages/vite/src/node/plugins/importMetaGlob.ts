@@ -4,22 +4,18 @@ import { stripLiteral } from 'strip-literal'
 import colors from 'picocolors'
 import type {
   ArrayExpression,
-  CallExpression,
   Expression,
   Literal,
-  MemberExpression,
   Node,
-  SequenceExpression,
   SpreadElement,
   TemplateLiteral,
 } from 'estree'
-import { parseExpressionAt } from 'acorn'
-import type { CustomPluginOptions, RollupError } from 'rollup'
-import { findNodeAt } from 'acorn-walk'
+import type { CustomPluginOptions, RollupAstNode, RollupError } from 'rollup'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
 import type { GeneralImportGlobOptions } from 'types/importGlob'
+import { parseAstAsync } from 'rollup/parseAst'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
@@ -218,7 +214,7 @@ export async function parseImportGlob(
   resolveId: IdResolver,
   logger?: Logger,
 ): Promise<ParsedImportGlob[]> {
-  let cleanCode
+  let cleanCode: string
   try {
     cleanCode = stripLiteral(code)
   } catch (e) {
@@ -236,51 +232,30 @@ export async function parseImportGlob(
       return e
     }
 
-    let ast: CallExpression | SequenceExpression | MemberExpression
-    let lastTokenPos: number | undefined
-
-    try {
-      ast = parseExpressionAt(code, start, {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ranges: true,
-        onToken: (token) => {
-          lastTokenPos = token.end
-        },
-      }) as any
-    } catch (e) {
-      const _e = e as any
-      if (_e.message && _e.message.startsWith('Unterminated string constant'))
-        return undefined!
-      if (lastTokenPos == null || lastTokenPos <= start) throw _e
-
-      // tailing comma in object or array will make the parser think it's a comma operation
-      // we try to parse again removing the comma
-      try {
-        const statement = code.slice(start, lastTokenPos).replace(/[,\s]*$/, '')
-        ast = parseExpressionAt(
-          ' '.repeat(start) + statement, // to keep the ast position
-          start,
-          {
-            ecmaVersion: 'latest',
-            sourceType: 'module',
-            ranges: true,
-          },
-        ) as any
-      } catch {
-        throw _e
-      }
+    const end =
+      findCorrespondingCloseParenthesisPosition(
+        cleanCode,
+        start + match[0].length,
+      ) + 1
+    if (end <= 0) {
+      throw err('Close parenthesis not found')
     }
 
-    const found = findNodeAt(ast as any, start, undefined, 'CallExpression')
-    if (!found) throw err(`Expect CallExpression, got ${ast.type}`)
-    ast = found.node as unknown as CallExpression
+    const statementCode = code.slice(start, end)
 
+    const rootAst = (await parseAstAsync(statementCode)).body[0]
+    if (rootAst.type !== 'ExpressionStatement') {
+      throw err(`Expect CallExpression, got ${rootAst.type}`)
+    }
+    const ast = rootAst.expression
+    if (ast.type !== 'CallExpression') {
+      throw err(`Expect CallExpression, got ${ast.type}`)
+    }
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
 
     const arg1 = ast.arguments[0] as ArrayExpression | Literal | TemplateLiteral
-    const arg2 = ast.arguments[1] as Node | undefined
+    const arg2 = ast.arguments[1] as RollupAstNode<Node> | undefined
 
     const globs: string[] = []
 
@@ -321,13 +296,11 @@ export async function parseImportGlob(
         )
 
       options = parseGlobOptions(
-        code.slice(arg2.range![0], arg2.range![1]),
-        arg2.range![0],
+        code.slice(start + arg2.start, start + arg2.end),
+        start + arg2.start,
         logger,
       )
     }
-
-    const end = ast.range![1]
 
     const globsResolved = await Promise.all(
       globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
@@ -346,6 +319,34 @@ export async function parseImportGlob(
   })
 
   return (await Promise.all(tasks)).filter(Boolean)
+}
+
+function findCorrespondingCloseParenthesisPosition(
+  cleanCode: string,
+  openPos: number,
+) {
+  const closePos = cleanCode.indexOf(')', openPos)
+  if (closePos < 0) return -1
+
+  if (!cleanCode.slice(openPos, closePos).includes('(')) return closePos
+
+  let remainingParenthesisCount = 0
+  const cleanCodeLen = cleanCode.length
+  for (let pos = openPos; pos < cleanCodeLen; pos++) {
+    switch (cleanCode[pos]) {
+      case '(': {
+        remainingParenthesisCount++
+        break
+      }
+      case ')': {
+        remainingParenthesisCount--
+        if (remainingParenthesisCount <= 0) {
+          return pos
+        }
+      }
+    }
+  }
+  return -1
 }
 
 const importPrefix = '__vite_glob_'

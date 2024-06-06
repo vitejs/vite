@@ -138,7 +138,9 @@ export async function handleHMRUpdate(
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(
       colors.green(
-        `${path.relative(process.cwd(), file)} changed, restarting server...`,
+        `${normalizePath(
+          path.relative(process.cwd(), file),
+        )} changed, restarting server...`,
       ),
       { clear: true, timestamp: true },
     )
@@ -228,7 +230,8 @@ export function updateModules(
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   const traversedModules = new Set<ModuleNode>()
-  let needFullReload: HasDeadEnd = false
+  // Modules could be empty if a root module is invalidated via import.meta.hot.invalidate()
+  let needFullReload: HasDeadEnd = modules.length === 0
 
   for (const mod of modules) {
     const boundaries: PropagationBoundary[] = []

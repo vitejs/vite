@@ -238,9 +238,9 @@ A user may choose to deploy in three different paths:
 
 A single static [base](#public-base-path) isn't enough in these scenarios. Vite provides experimental support for advanced base options during build, using `experimental.renderBuiltUrl`.
 
-<!-- prettier-ignore-start -->
 ```ts twoslash
 import type { UserConfig } from 'vite'
+// prettier-ignore
 const config: UserConfig = {
 // ---cut-before---
 experimental: {
@@ -255,27 +255,27 @@ experimental: {
 // ---cut-after---
 }
 ```
-<!-- prettier-ignore-end -->
 
 If the hashed assets and public files aren't deployed together, options for each group can be defined independently using asset `type` included in the second `context` param given to the function.
 
 ```ts twoslash
 import type { UserConfig } from 'vite'
 import path from 'node:path'
+// prettier-ignore
 const config: UserConfig = {
-  // ---cut-before---
-  experimental: {
-    renderBuiltUrl(filename, { hostId, hostType, type }) {
-      if (type === 'public') {
-        return 'https://www.domain.com/' + filename
-      } else if (path.extname(hostId) === '.js') {
-        return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
-      } else {
-        return 'https://cdn.domain.com/assets/' + filename
-      }
-    },
+// ---cut-before---
+experimental: {
+  renderBuiltUrl(filename, { hostId, hostType, type }) {
+    if (type === 'public') {
+      return 'https://www.domain.com/' + filename
+    } else if (path.extname(hostId) === '.js') {
+      return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
+    } else {
+      return 'https://cdn.domain.com/assets/' + filename
+    }
   },
-  // ---cut-after---
+},
+// ---cut-after---
 }
 ```
 

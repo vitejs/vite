@@ -1,6 +1,5 @@
 import { beforeAll, describe, expect, it, test } from 'vitest'
 import type { Page } from 'playwright-chromium'
-import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   addFile,
   browser,
@@ -155,7 +154,7 @@ if (!isBuild) {
   })
 
   test('invalidate', async () => {
-    const el = await page.$('.invalidation')
+    const el = await page.$('.invalidation-parent')
     await untilBrowserLogAfter(
       () =>
         editFile('invalidation/child.js', (code) =>
@@ -183,7 +182,7 @@ if (!isBuild) {
       page2 = await browser.newPage()
       await page2.goto(viteTestUrl)
 
-      const el = await page.$('.invalidation')
+      const el = await page.$('.invalidation-parent')
       await untilBrowserLogAfter(
         () =>
           editFile('invalidation/child.js', (code) =>
@@ -207,6 +206,15 @@ if (!isBuild) {
     } finally {
       await page2.close()
     }
+  })
+
+  test('invalidate on root triggers page reload', async () => {
+    editFile('invalidation/root.js', (code) => code.replace('Init', 'Updated'))
+    await page.waitForEvent('load')
+    await untilUpdated(
+      async () => (await page.$('.invalidation-root')).textContent(),
+      'Updated',
+    )
   })
 
   test('soft invalidate', async () => {
@@ -253,24 +261,21 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), '3')
   })
 
-  test.skipIf(hasWindowsUnicodeFsBug)(
-    'full-reload encodeURI path',
-    async () => {
-      await page.goto(
-        viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-      )
-      const el = await page.$('#app')
-      expect(await el.textContent()).toBe('title')
-      editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
-        code.replace('title', 'title2'),
-      )
-      await page.waitForEvent('load')
-      await untilUpdated(
-        async () => (await page.$('#app')).textContent(),
-        'title2',
-      )
-    },
-  )
+  test('full-reload encodeURI path', async () => {
+    await page.goto(
+      viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+    )
+    const el = await page.$('#app')
+    expect(await el.textContent()).toBe('title')
+    editFile('unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html', (code) =>
+      code.replace('title', 'title2'),
+    )
+    await page.waitForEvent('load')
+    await untilUpdated(
+      async () => (await page.$('#app')).textContent(),
+      'title2',
+    )
+  })
 
   test('CSS update preserves query params', async () => {
     await page.goto(viteTestUrl)
@@ -833,13 +838,17 @@ if (!isBuild) {
       'parent:not-child',
     )
 
-    addFile(childFile, originalChildFileCode)
-    editFile(parentFile, (code) =>
-      code.replace(
-        "export const childValue = 'not-child'",
-        "export { value as childValue } from './child'",
-      ),
-    )
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      addFile(childFile, originalChildFileCode)
+      editFile(parentFile, (code) =>
+        code.replace(
+          "export const childValue = 'not-child'",
+          "export { value as childValue } from './child'",
+        ),
+      )
+      await loadPromise
+    }, [/connected/])
     await untilUpdated(
       () => page.textContent('.file-delete-restore'),
       'parent:child',
