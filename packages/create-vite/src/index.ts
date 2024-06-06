@@ -16,6 +16,7 @@ import {
   reset,
   yellow,
 } from 'kolorist'
+import { getUsageInfo } from './help'
 
 // Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
@@ -576,30 +577,19 @@ function editFile(file: string, callback: (content: string) => string) {
 }
 
 function showHelper() {
-  const formattedHelpText = getUsageInfo()
-  console.log(formattedHelpText)
-}
-
-function getUsageInfo() {
   const formattedFrameworkNames = getFormattedVariantNames()
-  return `Usage: create-vite [OPTION]... [DIRECTORY]
-Create a new JavaScript project based on Vite.
-
-With no arguments, start an interactive command line dialog.
-
-Options:
-  -t, --template NAME        use this template
-
-Available templates:
-${formattedFrameworkNames.join('\n')}`
+  const formattedHelpText = getUsageInfo(formattedFrameworkNames)
+  console.log(formattedHelpText)
 }
 
 function getFormattedVariantNames() {
   return FRAMEWORKS.filter(
     (framework) => framework.name !== 'others' && framework.variants.length > 0,
   ).map((framework) => {
-    const variantNames = framework.variants.map((variant) => variant.name)
-    return `${variantNames.join(' ')}`
+    const variantNames = framework.variants
+      .filter((variant) => !variant.customCommand)
+      .map((variant) => variant.name)
+    return variantNames.join('\n')
   })
 }
 
