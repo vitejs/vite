@@ -26,7 +26,6 @@ import {
 import type { InlineConfig, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled, resolveConfig } from '../config'
 import {
-  createCloseServerAndExitFn,
   diffDnsOrderChange,
   isInNodeModules,
   isObject,
@@ -640,7 +639,7 @@ export async function _createServer(
     },
     async close() {
       if (!middlewareMode) {
-        teardownSIGTERMListener(closeServerAndExitFn)
+        teardownSIGTERMListener(closeServerAndExit)
       }
       await Promise.allSettled([
         watcher.close(),
@@ -735,10 +734,16 @@ export async function _createServer(
     },
   })
 
-  const closeServerAndExitFn = createCloseServerAndExitFn(server)
+  const closeServerAndExit = async () => {
+    try {
+      await server.close()
+    } finally {
+      process.exit()
+    }
+  }
 
   if (!middlewareMode) {
-    setupSIGTERMListener(closeServerAndExitFn)
+    setupSIGTERMListener(closeServerAndExit)
   }
 
   const onHMRUpdate = async (

@@ -1439,21 +1439,6 @@ export function partialEncodeURIPath(uri: string): string {
   return filePath.replaceAll('%', '%25') + postfix
 }
 
-export const closeServerAndExit = async (
-  server: ViteDevServer | PreviewServer | PreviewServer['httpServer'],
-): Promise<void> => {
-  try {
-    await server.close()
-  } finally {
-    process.exit()
-  }
-}
-
-export const createCloseServerAndExitFn =
-  (server: ViteDevServer | PreviewServer): (() => Promise<void>) =>
-  () =>
-    closeServerAndExit(server)
-
 export const setupSIGTERMListener = (callback: () => Promise<void>): void => {
   process.once('SIGTERM', callback)
   if (process.env.CI !== 'true') {

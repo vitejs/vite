@@ -2,7 +2,7 @@ import readline from 'node:readline'
 import colors from 'picocolors'
 import { restartServerWithUrls } from './server'
 import type { ViteDevServer } from './server'
-import { closeServerAndExit, isDevServer } from './utils'
+import { isDevServer } from './utils'
 import type { PreviewServer } from './preview'
 import { openBrowser } from './server/openBrowser'
 
@@ -126,7 +126,11 @@ const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
     key: 'q',
     description: 'quit',
     async action(server) {
-      closeServerAndExit(server)
+      try {
+        await server.close()
+      } finally {
+        process.exit()
+      }
     },
   },
 ]
@@ -148,8 +152,12 @@ const BASE_PREVIEW_SHORTCUTS: CLIShortcut<PreviewServer>[] = [
   {
     key: 'q',
     description: 'quit',
-    action(server) {
-      closeServerAndExit(server.httpServer)
+    async action(server) {
+      try {
+        await server.close()
+      } finally {
+        process.exit()
+      }
     },
   },
 ]

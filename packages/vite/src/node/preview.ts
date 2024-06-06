@@ -26,7 +26,6 @@ import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
 import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import {
-  createCloseServerAndExitFn,
   resolveHostname,
   resolveServerUrls,
   setupSIGTERMListener,
@@ -147,7 +146,7 @@ export async function preview(
   const closeHttpServer = createServerCloseFn(httpServer)
 
   const close = () => {
-    teardownSIGTERMListener(closeServerAndExitFn)
+    teardownSIGTERMListener(closeServerAndExit)
     return closeHttpServer()
   }
 
@@ -169,9 +168,15 @@ export async function preview(
     },
   }
 
-  const closeServerAndExitFn = createCloseServerAndExitFn(server)
+  const closeServerAndExit = async () => {
+    try {
+      await server.close()
+    } finally {
+      process.exit()
+    }
+  }
 
-  setupSIGTERMListener(closeServerAndExitFn)
+  setupSIGTERMListener(closeServerAndExit)
 
   // apply server hooks from plugins
   const postHooks: ((() => void) | void)[] = []
