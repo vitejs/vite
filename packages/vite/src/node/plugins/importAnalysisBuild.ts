@@ -5,9 +5,16 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { SourceMap } from 'rollup'
+import type { RollupError, SourceMap } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
+import { walk } from 'estree-walker'
+import type {
+  AssignmentProperty,
+  Identifier,
+  ImportExpression,
+  Node as _Node,
+} from 'estree'
 import {
   combineSourcemaps,
   generateCodeFrame,
@@ -25,6 +32,13 @@ type FileDep = {
   url: string
   runtime: boolean
 }
+
+interface AstNodeLocation {
+  end: number
+  start: number
+}
+
+type Node = _Node & AstNodeLocation
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -237,52 +251,93 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
+      const insertPreloadFunc = (start: number, end: number) => {
+        needPreloadHelper = true
+        str().prependLeft(start, `${preloadMethod}(() => `)
+        str().appendRight(
+          end,
+          `,${isModernFlag}?${preloadMarker}:void 0${
+            optimizeModulePreloadRelativePaths || customModulePreloadPaths
+              ? ',import.meta.url'
+              : ''
+          })`,
+        )
+      }
       let needPreloadHelper = false
 
       for (let index = 0; index < imports.length; index++) {
         const {
-          s: start,
           e: end,
-          ss: expStart,
           se: expEnd,
           d: dynamicIndex,
           a: attributeIndex,
         } = imports[index]
 
-        const isDynamicImport = dynamicIndex > -1
-
         // strip import attributes as we can process them ourselves
-        if (!isDynamicImport && attributeIndex > -1) {
+        if (dynamicIndex > -1 && attributeIndex > -1) {
           str().remove(end + 1, expEnd)
-        }
-
-        if (
-          isDynamicImport &&
-          insertPreload &&
-          // Only preload static urls
-          (source[start] === '"' ||
-            source[start] === "'" ||
-            source[start] === '`')
-        ) {
-          needPreloadHelper = true
-          str().prependLeft(expStart, `${preloadMethod}(() => `)
-          str().appendRight(
-            expEnd,
-            `,${isModernFlag}?${preloadMarker}:void 0${
-              optimizeModulePreloadRelativePaths || customModulePreloadPaths
-                ? ',import.meta.url'
-                : ''
-            })`,
-          )
         }
       }
 
-      if (
-        needPreloadHelper &&
-        insertPreload &&
-        !source.includes(`const ${preloadMethod} =`)
-      ) {
-        str().prepend(`import { ${preloadMethod} } from "${preloadHelperId}";`)
+      if (insertPreload) {
+        let ast: ReturnType<typeof this.parse>
+        try {
+          ast = this.parse(source)
+        } catch (error) {
+          this.error(error as RollupError)
+        }
+        ;(walk as any)(ast! as any, {
+          enter(node: Node, parent: Node | null) {
+            if (
+              node.type === 'CallExpression' &&
+              node.callee.type === 'MemberExpression' &&
+              node.callee.object.type === 'ImportExpression' &&
+              // Only preload static urls
+              node.callee.object.source.type === 'Literal' &&
+              node.callee.property.type === 'Identifier' &&
+              node.callee.property.name === 'then'
+            ) {
+              // Handle the case: import('foo').then(({foo}) => {/* some code */})
+              insertPreloadFunc(node.start, node.end)
+              this.skip()
+            } else if (
+              node.type === 'VariableDeclarator' &&
+              node.id.type === 'ObjectPattern' &&
+              node.id.properties.every(
+                (p) => p.type === 'Property' && p.key.type === 'Identifier',
+              ) &&
+              node.init?.type === 'AwaitExpression' &&
+              node.init.argument.type === 'ImportExpression' &&
+              // Only preload static urls
+              node.init.argument.source.type === 'Literal'
+            ) {
+              // Handle the case: const { foo: _foo, bar } = await import('foo')
+              const importExpression = node.init.argument as ImportExpression &
+                AstNodeLocation
+              const propertyNames = node.id.properties
+                .map((p) => ((p as AssignmentProperty).key as Identifier).name)
+                .join(',')
+              str().appendRight(
+                importExpression.end,
+                `.then(({${propertyNames}})=>({${propertyNames}}))`,
+              )
+              insertPreloadFunc(importExpression.start, importExpression.end)
+              this.skip()
+            } else if (
+              node.type === 'ImportExpression' &&
+              // Only preload static urls
+              node.source.type === 'Literal'
+            ) {
+              insertPreloadFunc(node.start, node.end)
+            }
+          },
+        })
+
+        if (needPreloadHelper && !source.includes(`const ${preloadMethod} =`)) {
+          str().prepend(
+            `import { ${preloadMethod} } from "${preloadHelperId}";`,
+          )
+        }
       }
 
       if (s) {
