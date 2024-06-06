@@ -122,8 +122,9 @@ function preload(
           link.as = 'script'
           // @ts-expect-error crossOrigin is declared before preload.toString()
           if (crossOrigin)
-            // @ts-expect-error crossOrigin is declared before preload.toString()
-            link.crossOrigin = typeof crossOrigin === 'string' ? crossOrigin : ''
+            link.crossOrigin =
+              // @ts-expect-error crossOrigin is declared before preload.toString()
+              typeof crossOrigin === 'string' ? crossOrigin : ''
         }
         link.href = dep
         if (cspNonce) {
@@ -190,18 +191,21 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   // configurable.
   const assetsURL = customModulePreloadPaths
     ? // If `experimental.renderBuiltUrl` or `build.modulePreload.resolveDependencies` are used
-    // the dependencies are already resolved. To avoid the need for `new URL(dep, import.meta.url)`
-    // a helper `__vitePreloadRelativeDep` is used to resolve from relative paths which can be minimized.
-    `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
+      // the dependencies are already resolved. To avoid the need for `new URL(dep, import.meta.url)`
+      // a helper `__vitePreloadRelativeDep` is used to resolve from relative paths which can be minimized.
+      `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
     : optimizeModulePreloadRelativePaths
       ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
-      // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
-      // The importerUrl is passed as third parameter to __vitePreload in this case
-      `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
+        // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
+        // The importerUrl is passed as third parameter to __vitePreload in this case
+        `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
       : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
-      // is appended inside __vitePreload too.
-      `function(dep) { return ${JSON.stringify(config.base)}+dep }`
-  const crossOrigin = typeof modulePreloadCrossOrigin === 'string' ? `'${modulePreloadCrossOrigin}'` : modulePreloadCrossOrigin
+        // is appended inside __vitePreload too.
+        `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+  const crossOrigin =
+    typeof modulePreloadCrossOrigin === 'string'
+      ? `'${modulePreloadCrossOrigin}'`
+      : modulePreloadCrossOrigin
   const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const crossOrigin = ${crossOrigin};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
@@ -274,9 +278,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().prependLeft(expStart, `${preloadMethod}(() => `)
           str().appendRight(
             expEnd,
-            `,${isModernFlag}?${preloadMarker}:void 0${optimizeModulePreloadRelativePaths || customModulePreloadPaths
-              ? ',import.meta.url'
-              : ''
+            `,${isModernFlag}?${preloadMarker}:void 0${
+              optimizeModulePreloadRelativePaths || customModulePreloadPaths
+                ? ',import.meta.url'
+                : ''
             })`,
           )
         }
@@ -501,12 +506,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // the dep list includes the main chunk, so only need to reload when there are actual other deps.
                 const depsArray =
                   deps.size > 1 ||
-                    // main chunk is removed
-                    (hasRemovedPureCssChunk && deps.size > 0)
+                  // main chunk is removed
+                  (hasRemovedPureCssChunk && deps.size > 0)
                     ? modulePreload === false
                       ? // CSS deps use the same mechanism as module preloads, so even if disabled,
-                      // we still need to pass these deps to the preload helper in dynamic imports.
-                      [...deps].filter((d) => d.endsWith('.css'))
+                        // we still need to pass these deps to the preload helper in dynamic imports.
+                        [...deps].filter((d) => d.endsWith('.css'))
                       : [...deps]
                     : []
 
@@ -523,7 +528,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     const cssDeps: string[] = []
                     const otherDeps: string[] = []
                     for (const dep of depsArray) {
-                      ; (dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
+                      ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
                     }
                     resolvedDeps = [
                       ...resolveDependencies(normalizedFile, otherDeps, {
