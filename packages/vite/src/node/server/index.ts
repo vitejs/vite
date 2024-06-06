@@ -563,13 +563,7 @@ export async function _createServer(
       return devHtmlTransformFn(server, url, html, originalUrl)
     },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      return ssrLoadModule(
-        url,
-        server,
-        undefined,
-        undefined,
-        opts?.fixStacktrace,
-      )
+      return ssrLoadModule(url, server, undefined, opts?.fixStacktrace)
     },
     async ssrFetchModule(url: string, importer?: string) {
       return ssrFetchModule(server, url, importer)
