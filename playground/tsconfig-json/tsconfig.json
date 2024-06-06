@@ -14,7 +14,8 @@
     "noImplicitReturns": true,
 
     "useDefineForClassFields": true,
-    "importsNotUsedAsValues": "preserve"
+    "importsNotUsedAsValues": "preserve",
+    "experimentalDecorators": true
   },
   "include": ["./src"]
 }

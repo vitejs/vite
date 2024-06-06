@@ -5,6 +5,7 @@ import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
 import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
 import { mode } from '../modules/workerImport'
+import SelfReferenceWorker from '../self-reference-worker?worker'
 
 function text(el, text) {
   document.querySelector(el).textContent = text
@@ -43,6 +44,12 @@ const inlineWorkerUrl = new InlineWorker()
 inlineWorkerUrl.postMessage('ping')
 inlineWorkerUrl.addEventListener('message', (e) => {
   text('.pong-inline-url', e.data.metaUrl)
+})
+
+const unicodeInlineWorker = new InlineWorker()
+unicodeInlineWorker.postMessage('ping-unicode')
+unicodeInlineWorker.addEventListener('message', (e) => {
+  text('.pong-inline-unicode', e.data.msg)
 })
 
 const startSharedWorker = () => {
@@ -142,7 +149,7 @@ w2.port.addEventListener('message', (ev) => {
 w2.port.start()
 
 const workers = import.meta.glob('../importMetaGlobEager.*.js', {
-  as: 'worker',
+  query: '?worker',
   eager: true,
 })
 const importMetaGlobEagerWorker = new workers[
@@ -151,4 +158,19 @@ const importMetaGlobEagerWorker = new workers[
 importMetaGlobEagerWorker.postMessage('1')
 importMetaGlobEagerWorker.addEventListener('message', (e) => {
   text('.importMetaGlobEager-worker', JSON.stringify(e.data))
+})
+
+const selfReferenceWorker = new SelfReferenceWorker()
+selfReferenceWorker.postMessage('main')
+selfReferenceWorker.addEventListener('message', (e) => {
+  document.querySelector('.self-reference-worker').textContent += `${e.data}\n`
+})
+
+const selfReferenceUrlWorker = new Worker(
+  new URL('../self-reference-url-worker.js', import.meta.url),
+)
+selfReferenceUrlWorker.postMessage('main')
+selfReferenceUrlWorker.addEventListener('message', (e) => {
+  document.querySelector('.self-reference-url-worker').textContent +=
+    `${e.data}\n`
 })

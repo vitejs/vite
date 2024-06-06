@@ -6,14 +6,16 @@ import {
   getColor,
   isBuild,
   isServe,
+  listAssets,
   page,
   readManifest,
+  serverLogs,
   untilBrowserLogAfter,
   untilUpdated,
 } from '~utils'
 
 const outerAssetMatch = isBuild
-  ? /\/dev\/assets\/logo-\w{8}\.png/
+  ? /\/dev\/assets\/logo-[-\w]{8}\.png/
   : /\/dev\/@fs\/.+?\/images\/logo\.png/
 
 test('should have no 404s', () => {
@@ -35,22 +37,44 @@ describe.runIf(isBuild)('build', () => {
     const manifest = readManifest('dev')
     const htmlEntry = manifest['index.html']
     const cssAssetEntry = manifest['global.css']
+    const pcssAssetEntry = manifest['foo.pcss']
     const scssAssetEntry = manifest['nested/blue.scss']
     const imgAssetEntry = manifest['../images/logo.png']
-    const dirFooAssetEntry = manifest['../dynamic/foo.css'] // '\\' should not be used even on windows
+    const dirFooAssetEntry = manifest['../../dir/foo.css']
+    const iconEntrypointEntry = manifest['icon.png']
     expect(htmlEntry.css.length).toEqual(1)
     expect(htmlEntry.assets.length).toEqual(1)
     expect(cssAssetEntry?.file).not.toBeUndefined()
     expect(cssAssetEntry?.isEntry).toEqual(true)
+    expect(pcssAssetEntry?.file).not.toBeUndefined()
+    expect(pcssAssetEntry?.isEntry).toEqual(true)
     expect(scssAssetEntry?.file).not.toBeUndefined()
     expect(scssAssetEntry?.src).toEqual('nested/blue.scss')
     expect(scssAssetEntry?.isEntry).toEqual(true)
     expect(imgAssetEntry?.file).not.toBeUndefined()
     expect(imgAssetEntry?.isEntry).toBeUndefined()
-    expect(dirFooAssetEntry).not.toBeUndefined()
+    expect(dirFooAssetEntry).not.toBeUndefined() // '\\' should not be used even on windows
     // use the entry name
-    expect(manifest['bar.css']).not.toBeUndefined()
-    expect(manifest['foo.css']).toBeUndefined()
+    expect(dirFooAssetEntry.file).toMatch('assets/bar-')
+    expect(iconEntrypointEntry?.file).not.toBeUndefined()
+  })
+
+  test('CSS imported from JS entry should have a non-nested chunk name', () => {
+    const manifest = readManifest('dev')
+    const mainTsEntryCss = manifest['nested/sub.ts'].css
+    expect(mainTsEntryCss.length).toBe(1)
+    expect(mainTsEntryCss[0].replace('assets/', '')).not.toContain('/')
+  })
+
+  test('entrypoint assets should not generate empty JS file', () => {
+    expect(serverLogs).not.toContainEqual(
+      'Generated an empty chunk: "icon.png".',
+    )
+
+    const assets = listAssets('dev')
+    expect(assets).not.toContainEqual(
+      expect.stringMatching(/icon.png-[-\w]{8}\.js$/),
+    )
   })
 })
 

@@ -33,6 +33,9 @@
   </p>
   <p class="sass-partial">@import from SASS _partial: This should be orchid</p>
   <p class="sass-url-starts-with-variable">url starts with variable</p>
+  <p class="sass-url-starts-with-function-call">
+    url starts with function call
+  </p>
   <p>Imported SASS string:</p>
   <pre class="imported-sass"></pre>
   <p class="sass-dep">
@@ -102,6 +105,8 @@
   <p>Imported SASS module:</p>
   <pre class="modules-sass-code"></pre>
 
+  <p class="modules-treeshake">CSS modules should treeshake in build</p>
+
   <p>Imported compose/from CSS/SASS module:</p>
   <p class="path-resolved-modules-css">
     CSS modules composes path resolving: this should be turquoise
@@ -143,6 +148,10 @@
   <p class="css-proxy-dep">
     @import dependency that @import another dependency: this should be purple
   </p>
+  <p class="scss-proxy-dep">
+    @import dependency that has @import with a css extension pointing to another
+    dependency: this should be purple
+  </p>
 
   <p class="dir-dep">PostCSS dir-dependency: this should be grey</p>
   <p class="dir-dep-2">
@@ -178,6 +187,8 @@
 
   <pre class="inlined-code"></pre>
 
+  <p class="url-imported-css">URL Support</p>
+
   <p>Raw Support</p>
   <pre class="raw-imported-css"></pre>
 
@@ -191,6 +202,9 @@
   <p class="aliased">import '#alias': this should be blue</p>
   <pre class="aliased-content"></pre>
   <p class="aliased-module">import '#alias-module': this should be blue</p>
+
+  <p>Imports field</p>
+  <p class="imports-field">import '#imports': this should be red</p>
 </div>
 <style>
   @import url(./imported.scss);

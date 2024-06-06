@@ -10,6 +10,6 @@
     "serve": "vite preview"
   },
   "devDependencies": {
-    "url": "^0.11.1"
+    "url": "^0.11.3"
   }
 }

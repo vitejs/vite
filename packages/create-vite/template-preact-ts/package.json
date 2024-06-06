@@ -9,11 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "preact": "^10.16.0"
+    "preact": "^10.22.0"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.5.0",
-    "typescript": "^5.0.2",
-    "vite": "^4.4.9"
+    "@preact/preset-vite": "^2.8.2",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.12"
   }
 }

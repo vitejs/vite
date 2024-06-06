@@ -4,16 +4,9 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import {
-  cleanUrl,
-  evalValue,
-  injectQuery,
-  parseRequest,
-  slash,
-  transformStableResult,
-} from '../utils'
-import { getDepsOptimizer } from '../optimizer'
+import { evalValue, injectQuery, transformStableResult } from '../utils'
 import type { ResolveFn } from '..'
+import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
@@ -96,6 +89,17 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   return 'classic'
 }
 
+function isIncludeWorkerImportMetaUrl(code: string): boolean {
+  if (
+    (code.includes('new Worker') || code.includes('new SharedWorker')) &&
+    code.includes('new URL') &&
+    code.includes(`import.meta.url`)
+  ) {
+    return true
+  }
+  return false
+}
+
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let workerResolver: ResolveFn
@@ -113,43 +117,36 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:worker-import-meta-url',
 
+    shouldTransformCachedModule({ code }) {
+      if (isBuild && config.build.watch && isIncludeWorkerImportMetaUrl(code)) {
+        return true
+      }
+    },
+
     async transform(code, id, options) {
-      const ssr = options?.ssr === true
-      if (
-        !options?.ssr &&
-        (code.includes('new Worker') || code.includes('new SharedWorker')) &&
-        code.includes('new URL') &&
-        code.includes(`import.meta.url`)
-      ) {
-        const query = parseRequest(id)
+      if (!options?.ssr && isIncludeWorkerImportMetaUrl(code)) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
-          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/g
+          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
 
         let match: RegExpExecArray | null
         while ((match = workerImportMetaUrlRE.exec(cleanString))) {
-          const { 0: allExp, 1: exp, 2: emptyUrl, index } = match
-          const urlIndex = allExp.indexOf(exp) + index
+          const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
+            match.indices!
 
-          const urlStart = cleanString.indexOf(emptyUrl, index)
-          const urlEnd = urlStart + emptyUrl.length
           const rawUrl = code.slice(urlStart, urlEnd)
 
           // potential dynamic template string
           if (rawUrl[0] === '`' && rawUrl.includes('${')) {
             this.error(
               `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
-              urlIndex,
+              expStart,
             )
           }
 
           s ||= new MagicString(code)
-          const workerType = getWorkerType(
-            code,
-            cleanString,
-            index + allExp.length,
-          )
+          const workerType = getWorkerType(code, cleanString, endIndex)
           const url = rawUrl.slice(1, -1)
           let file: string | undefined
           if (url[0] === '.') {
@@ -168,21 +165,29 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 : slash(path.resolve(path.dirname(id), url))
           }
 
-          let builtUrl: string
-          if (isBuild) {
-            getDepsOptimizer(config, ssr)?.registerWorkersSource(id)
-            builtUrl = await workerFileToUrl(config, file, query)
+          if (
+            isBuild &&
+            config.isWorker &&
+            this.getModuleInfo(cleanUrl(file))?.isEntry
+          ) {
+            s.update(expStart, expEnd, 'self.location.href')
           } else {
-            builtUrl = await fileToUrl(cleanUrl(file), config, this)
-            builtUrl = injectQuery(builtUrl, WORKER_FILE_ID)
-            builtUrl = injectQuery(builtUrl, `type=${workerType}`)
+            let builtUrl: string
+            if (isBuild) {
+              builtUrl = await workerFileToUrl(config, file)
+            } else {
+              builtUrl = await fileToUrl(cleanUrl(file), config, this)
+              builtUrl = injectQuery(
+                builtUrl,
+                `${WORKER_FILE_ID}&type=${workerType}`,
+              )
+            }
+            s.update(
+              expStart,
+              expEnd,
+              `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, import.meta.url)`,
+            )
           }
-          s.update(
-            urlIndex,
-            urlIndex + exp.length,
-            // add `'' +` to skip vite:asset-import-meta-url plugin
-            `new URL('' + ${JSON.stringify(builtUrl)}, import.meta.url)`,
-          )
         }
 
         if (s) {

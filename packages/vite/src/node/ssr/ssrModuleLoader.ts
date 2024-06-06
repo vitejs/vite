@@ -2,16 +2,22 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import colors from 'picocolors'
 import type { ViteDevServer } from '../server'
-import {
-  dynamicImport,
-  isBuiltin,
-  unwrapId,
-  usingDynamicImport,
-} from '../utils'
+import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
 import { transformRequest } from '../server/transformRequest'
 import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
 import { tryNodeResolve } from '../plugins/resolve'
 import { genSourceMapUrl } from '../server/sourcemap'
+import {
+  AsyncFunction,
+  asyncFunctionDeclarationPaddingLineCount,
+  isWindows,
+  unwrapId,
+} from '../../shared/utils'
+import {
+  type SSRImportBaseMetadata,
+  analyzeImportedModDifference,
+} from '../../shared/ssrTransform'
+import { SOURCEMAPPING_URL } from '../../shared/constants'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -27,14 +33,9 @@ interface SSRContext {
 
 type SSRModule = Record<string, any>
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-const AsyncFunction = async function () {}.constructor as typeof Function
-let fnDeclarationLineCount = 0
-{
-  const body = '/*code*/'
-  const source = new AsyncFunction('a', 'b', body).toString()
-  fnDeclarationLineCount =
-    source.slice(0, source.indexOf(body)).split('\n').length - 1
+interface NodeImportResolveOptions
+  extends InternalResolveOptionsWithOverrideConditions {
+  legacyProxySsrExternalModules?: boolean
 }
 
 const pendingModules = new Map<string, Promise<SSRModule>>()
@@ -111,7 +112,12 @@ async function instantiateModule(
   // referenced before it's been instantiated.
   mod.ssrModule = ssrModule
 
+  // replace '/' with '\\' on Windows to match Node.js
+  const osNormalizedFilename = isWindows ? path.resolve(mod.file!) : mod.file!
+
   const ssrImportMeta = {
+    dirname: path.dirname(osNormalizedFilename),
+    filename: osNormalizedFilename,
     // The filesystem URL, matching native Node.js modules
     url: pathToFileURL(mod.file!).toString(),
   }
@@ -123,29 +129,35 @@ async function instantiateModule(
     isProduction,
     resolve: { dedupe, preserveSymlinks },
     root,
+    ssr,
   } = server.config
 
-  const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
+  const overrideConditions = ssr.resolve?.externalConditions || []
+
+  const resolveOptions: NodeImportResolveOptions = {
     mainFields: ['main'],
-    browserField: true,
     conditions: [],
-    overrideConditions: ['production', 'development'],
+    overrideConditions: [...overrideConditions, 'production', 'development'],
     extensions: ['.js', '.cjs', '.json'],
     dedupe,
     preserveSymlinks,
     isBuild: false,
     isProduction,
     root,
+    ssrConfig: ssr,
+    legacyProxySsrExternalModules:
+      server.config.legacy?.proxySsrExternalModules,
+    packageCache: server.config.packageCache,
   }
 
   // Since dynamic imports can happen in parallel, we need to
   // account for multiple pending deps and duplicate imports.
   const pendingDeps: string[] = []
 
-  const ssrImport = async (dep: string) => {
+  const ssrImport = async (dep: string, metadata?: SSRImportBaseMetadata) => {
     try {
       if (dep[0] !== '.' && dep[0] !== '/') {
-        return await nodeImport(dep, mod.file!, resolveOptions)
+        return await nodeImport(dep, mod.file!, resolveOptions, metadata)
       }
       // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
       dep = unwrapId(dep)
@@ -184,7 +196,7 @@ async function instantiateModule(
     if (dep[0] === '.') {
       dep = path.posix.resolve(path.dirname(url), dep)
     }
-    return ssrImport(dep)
+    return ssrImport(dep, { isDynamicImport: true })
   }
 
   function ssrExportAll(sourceModule: any) {
@@ -204,12 +216,11 @@ async function instantiateModule(
   let sourceMapSuffix = ''
   if (result.map && 'version' in result.map) {
     const moduleSourceMap = Object.assign({}, result.map, {
-      // currently we need to offset the line
-      // https://github.com/nodejs/node/issues/43047#issuecomment-1180632750
-      mappings: ';'.repeat(fnDeclarationLineCount) + result.map.mappings,
+      mappings:
+        ';'.repeat(asyncFunctionDeclarationPaddingLineCount) +
+        result.map.mappings,
     })
-    sourceMapSuffix =
-      '\n//# sourceMappingURL=' + genSourceMapUrl(moduleSourceMap)
+    sourceMapSuffix = `\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(moduleSourceMap)}`
   }
 
   try {
@@ -265,22 +276,21 @@ async function instantiateModule(
 async function nodeImport(
   id: string,
   importer: string,
-  resolveOptions: InternalResolveOptionsWithOverrideConditions,
+  resolveOptions: NodeImportResolveOptions,
+  metadata?: SSRImportBaseMetadata,
 ) {
   let url: string
-  if (id.startsWith('data:') || isBuiltin(id)) {
+  let filePath: string | undefined
+  if (id.startsWith('data:') || isExternalUrl(id) || isBuiltin(id)) {
     url = id
   } else {
     const resolved = tryNodeResolve(
       id,
       importer,
-      // Non-external modules can import ESM-only modules, but only outside
-      // of test runs, because we use Node `require` in Jest to avoid segfault.
-      // @ts-expect-error jest only exists when running Jest
-      typeof jest === 'undefined'
-        ? { ...resolveOptions, tryEsmOnly: true }
-        : resolveOptions,
+      { ...resolveOptions, tryEsmOnly: true },
       false,
+      undefined,
+      true,
     )
     if (!resolved) {
       const err: any = new Error(
@@ -289,14 +299,27 @@ async function nodeImport(
       err.code = 'ERR_MODULE_NOT_FOUND'
       throw err
     }
-    url = resolved.id
-    if (usingDynamicImport) {
-      url = pathToFileURL(url).toString()
-    }
+    filePath = resolved.id
+    url = pathToFileURL(resolved.id).toString()
   }
 
-  const mod = await dynamicImport(url)
-  return proxyESM(mod)
+  const mod = await import(url)
+
+  if (resolveOptions.legacyProxySsrExternalModules) {
+    return proxyESM(mod)
+  } else if (filePath) {
+    analyzeImportedModDifference(
+      mod,
+      id,
+      isFilePathESM(filePath, resolveOptions.packageCache)
+        ? 'module'
+        : undefined,
+      metadata,
+    )
+    return mod
+  } else {
+    return mod
+  }
 }
 
 // rollup-style default import interop for cjs

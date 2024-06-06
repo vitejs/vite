@@ -27,7 +27,7 @@ const generatedContentImports = [
 export default defineConfig({
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
-    mainFields: ['custom', 'module'],
+    mainFields: ['browser', 'custom', 'module'],
     conditions: ['custom'],
   },
   define: {
@@ -97,6 +97,13 @@ export default defineConfig({
             tests
           )
         }
+      },
+    },
+    {
+      name: 'resolve to non normalized absolute',
+      async resolveId(id) {
+        if (id !== '@non-normalized') return
+        return this.resolve(__dirname + '//non-normalized')
       },
     },
   ],

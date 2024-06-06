@@ -119,9 +119,27 @@ const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 
 const _require = createRequire(import.meta.url)
 
+const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
+const prefixedHashInFileNameRE = /\W?\[hash(:\d+)?\]/
+
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
+  let modernTargets: Options['modernTargets']
+
+  // browsers supporting ESM + dynamic import + import.meta + async generator
+  const modernTargetsEsbuild = [
+    'es2020',
+    'edge79',
+    'firefox67',
+    'chrome64',
+    'safari12',
+  ]
+  // same with above but by browserslist syntax
+  // es2020 = chrome 80+, safari 13.1+, firefox 72+, edge 80+
+  // https://github.com/evanw/esbuild/issues/121#issuecomment-646956379
+  const modernTargetsBabel =
+    'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'
 
   const genLegacy = options.renderLegacyChunks !== false
   const genModern = options.renderModernChunks !== false
@@ -140,12 +158,23 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const facadeToModernPolyfillMap = new Map()
   const modernPolyfills = new Set<string>()
   const legacyPolyfills = new Set<string>()
+  // When discovering polyfills in `renderChunk`, the hook may be non-deterministic, so we group the
+  // modern and legacy polyfills in a sorted chunks map for each rendered outputs before merging them.
+  const outputToChunkFileNameToPolyfills = new WeakMap<
+    NormalizedOutputOptions,
+    Map<string, { modern: Set<string>; legacy: Set<string> }> | null
+  >()
 
   if (Array.isArray(options.modernPolyfills) && genModern) {
     options.modernPolyfills.forEach((i) => {
       modernPolyfills.add(
         i.includes('/') ? `core-js/${i}` : `core-js/modules/${i}.js`,
       )
+    })
+  }
+  if (Array.isArray(options.additionalModernPolyfills)) {
+    options.additionalModernPolyfills.forEach((i) => {
+      modernPolyfills.add(i)
     })
   }
   if (Array.isArray(options.polyfills)) {
@@ -166,10 +195,11 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   }
 
   let overriddenBuildTarget = false
+  let overriddenDefaultModernTargets = false
   const legacyConfigPlugin: Plugin = {
     name: 'vite:legacy-config',
 
-    config(config, env) {
+    async config(config, env) {
       if (env.command === 'build' && !config.build?.ssr) {
         if (!config.build) {
           config.build = {}
@@ -188,14 +218,17 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           // Vite's default target browsers are **not** the same.
           // See https://github.com/vitejs/vite/pull/10052#issuecomment-1242076461
           overriddenBuildTarget = config.build.target !== undefined
-          // browsers supporting ESM + dynamic import + import.meta + async generator
-          config.build.target = [
-            'es2020',
-            'edge79',
-            'firefox67',
-            'chrome64',
-            'safari12',
-          ]
+          overriddenDefaultModernTargets = options.modernTargets !== undefined
+
+          if (options.modernTargets) {
+            // Package is ESM only
+            const { default: browserslistToEsbuild } = await import(
+              'browserslist-to-esbuild'
+            )
+            config.build.target = browserslistToEsbuild(options.modernTargets)
+          } else {
+            config.build.target = modernTargetsEsbuild
+          }
         }
       }
 
@@ -216,6 +249,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ),
         )
       }
+      if (overriddenDefaultModernTargets) {
+        config.logger.warn(
+          colors.yellow(
+            `plugin-legacy 'modernTargets' option overrode the builtin targets of modern chunks. Some versions of browsers between legacy and modern may not be supported.`,
+          ),
+        )
+      }
     },
   }
 
@@ -228,7 +268,19 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return
       }
 
+      const chunkFileNameToPolyfills =
+        outputToChunkFileNameToPolyfills.get(opts)
+      if (chunkFileNameToPolyfills == null) {
+        throw new Error(
+          'Internal @vitejs/plugin-legacy error: discovered polyfills should exist',
+        )
+      }
+
       if (!isLegacyBundle(bundle, opts)) {
+        // Merge discovered modern polyfills to `modernPolyfills`
+        for (const { modern } of chunkFileNameToPolyfills.values()) {
+          modern.forEach((p) => modernPolyfills.add(p))
+        }
         if (!modernPolyfills.size) {
           return
         }
@@ -237,7 +289,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             `[@vitejs/plugin-legacy] modern polyfills:`,
             modernPolyfills,
           )
-        await buildPolyfillChunk(
+        const polyfillChunk = await buildPolyfillChunk(
           config.mode,
           modernPolyfills,
           bundle,
@@ -247,6 +299,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           opts,
           true,
         )
+        if (genLegacy && polyfillChunk) {
+          polyfillChunk.code = modernChunkLegacyGuard + polyfillChunk.code
+        }
         return
       }
 
@@ -254,8 +309,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return
       }
 
+      // Merge discovered legacy polyfills to `legacyPolyfills`
+      for (const { legacy } of chunkFileNameToPolyfills.values()) {
+        legacy.forEach((p) => legacyPolyfills.add(p))
+      }
+
       // legacy bundle
-      if (legacyPolyfills.size) {
+      if (options.polyfills !== false) {
         // check if the target needs Promise polyfill because SystemJS relies on it
         // https://github.com/systemjs/systemjs#ie11-support
         await detectPolyfills(
@@ -263,7 +323,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           targets,
           legacyPolyfills,
         )
+      }
 
+      if (legacyPolyfills.size || !options.externalSystemJS) {
         isDebug &&
           console.log(
             `[@vitejs/plugin-legacy] legacy polyfills:`,
@@ -291,11 +353,20 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     enforce: 'post',
     apply: 'build',
 
+    renderStart(opts) {
+      // Empty the nested map for this output
+      outputToChunkFileNameToPolyfills.set(opts, null)
+    },
+
     configResolved(_config) {
       if (_config.build.lib) {
         throw new Error('@vitejs/plugin-legacy does not support library mode.')
       }
       config = _config
+
+      modernTargets = options.modernTargets || modernTargetsBabel
+      isDebug &&
+        console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
 
       if (!genLegacy || config.build.ssr) {
         return
@@ -325,9 +396,16 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           if (fileName.includes('[name]')) {
             // [name]-[hash].[format] -> [name]-legacy-[hash].[format]
             fileName = fileName.replace('[name]', '[name]-legacy')
+          } else if (nonLeadingHashInFileNameRE.test(fileName)) {
+            // custom[hash].[format] -> [name]-legacy[hash].[format]
+            // custom-[hash].[format] -> [name]-legacy-[hash].[format]
+            // custom.[hash].[format] -> [name]-legacy.[hash].[format]
+            // custom.[hash:10].[format] -> custom-legacy.[hash:10].[format]
+            fileName = fileName.replace(prefixedHashInFileNameRE, '-legacy$&')
           } else {
             // entry.js -> entry-legacy.js
-            fileName = fileName.replace(/(.+)\.(.+)/, '$1-legacy.$2')
+            // entry.min.js -> entry-legacy.min.js
+            fileName = fileName.replace(/(.+?)\.(.+)/, '$1-legacy.$2')
           }
 
           return fileName
@@ -360,9 +438,28 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
     },
 
-    async renderChunk(raw, chunk, opts) {
+    async renderChunk(raw, chunk, opts, { chunks }) {
       if (config.build.ssr) {
         return null
+      }
+
+      // On first run, intialize the map with sorted chunk file names
+      let chunkFileNameToPolyfills = outputToChunkFileNameToPolyfills.get(opts)
+      if (chunkFileNameToPolyfills == null) {
+        chunkFileNameToPolyfills = new Map()
+        for (const fileName in chunks) {
+          chunkFileNameToPolyfills.set(fileName, {
+            modern: new Set(),
+            legacy: new Set(),
+          })
+        }
+        outputToChunkFileNameToPolyfills.set(opts, chunkFileNameToPolyfills)
+      }
+      const polyfillsDiscovered = chunkFileNameToPolyfills.get(chunk.fileName)
+      if (polyfillsDiscovered == null) {
+        throw new Error(
+          `Internal @vitejs/plugin-legacy error: discovered polyfills for ${chunk.fileName} should exist`,
+        )
       }
 
       if (!isLegacyChunk(chunk, opts)) {
@@ -372,7 +469,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           genModern
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, { esmodules: true }, modernPolyfills)
+          await detectPolyfills(raw, modernTargets, polyfillsDiscovered.modern)
         }
 
         const ms = new MagicString(raw)
@@ -443,7 +540,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           [
             () => ({
               plugins: [
-                recordAndRemovePolyfillBabelPlugin(legacyPolyfills),
+                recordAndRemovePolyfillBabelPlugin(polyfillsDiscovered.legacy),
                 replaceLegacyEnvBabelPlugin(),
                 wrapIIFEBabelPlugin(),
               ],
@@ -451,10 +548,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ],
           [
             (await import('@babel/preset-env')).default,
-            createBabelPresetEnvOptions(targets, {
-              needPolyfills,
-              ignoreBrowserslistConfig: options.ignoreBrowserslistConfig,
-            }),
+            createBabelPresetEnvOptions(targets, { needPolyfills }),
           ],
         ],
       })
@@ -627,12 +721,11 @@ export async function detectPolyfills(
     ast: true,
     babelrc: false,
     configFile: false,
+    compact: false,
     presets: [
       [
         (await import('@babel/preset-env')).default,
-        createBabelPresetEnvOptions(targets, {
-          ignoreBrowserslistConfig: true,
-        }),
+        createBabelPresetEnvOptions(targets, {}),
       ],
     ],
   })
@@ -651,10 +744,7 @@ export async function detectPolyfills(
 
 function createBabelPresetEnvOptions(
   targets: any,
-  {
-    needPolyfills = true,
-    ignoreBrowserslistConfig,
-  }: { needPolyfills?: boolean; ignoreBrowserslistConfig?: boolean },
+  { needPolyfills = true }: { needPolyfills?: boolean },
 ) {
   return {
     targets,
@@ -669,7 +759,7 @@ function createBabelPresetEnvOptions(
         }
       : undefined,
     shippedProposals: true,
-    ignoreBrowserslistConfig,
+    ignoreBrowserslistConfig: true,
   }
 }
 
@@ -734,6 +824,8 @@ async function buildPolyfillChunk(
 
   // add the chunk to the bundle
   bundle[polyfillChunk.fileName] = polyfillChunk
+
+  return polyfillChunk
 }
 
 const polyfillId = '\0vite/legacy-polyfills'
@@ -830,5 +922,7 @@ export const cspHashes = [
   detectModernBrowserCode,
   dynamicFallbackInlineCode,
 ].map((i) => createHash('sha256').update(i).digest('base64'))
+
+export type { Options }
 
 export default viteLegacyPlugin

@@ -19,6 +19,11 @@ jobs:
       - name: Get pkgName for tag
         id: tag
         run: |
+          # skip if alpha
+          if [[ $GITHUB_REF_NAME =~ alpha ]]; then
+            exit 0
+          fi
+
           # matching v2.0.0 / v2.0.0-beta.8 etc
           if [[ $GITHUB_REF_NAME =~ ^v.+ ]]; then
             pkgName="vite"
@@ -31,6 +36,8 @@ jobs:
           echo "pkgName=$pkgName" >> $GITHUB_OUTPUT
 
       - name: Create Release for Tag
+        # only run if tag is not alpha
+        if: steps.tag.outputs.pkgName
         id: release_tag
         uses: yyx990803/release-tag@master
         env:

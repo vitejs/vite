@@ -14,44 +14,52 @@ import type {
   RollupLog,
   RollupOptions,
   RollupOutput,
-  RollupWarning,
   RollupWatcher,
   WatcherOptions,
 } from 'rollup'
-import type { Terser } from 'dep-types/terser'
 import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
+import { withTrailingSlash } from '../shared/utils'
+import {
+  DEFAULT_ASSETS_INLINE_LIMIT,
+  ESBUILD_MODULES_TARGET,
+  VERSION,
+} from './constants'
 import type { InlineConfig, ResolvedConfig } from './config'
-import { isDepsOptimizerEnabled, resolveConfig } from './config'
+import { resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
-import { terserPlugin } from './plugins/terser'
+import { type TerserOptions, terserPlugin } from './plugins/terser'
 import {
+  arraify,
   asyncFlatten,
   copyDir,
+  displayTime,
   emptyDir,
   joinUrlSegments,
   normalizePath,
+  partialEncodeURIPath,
   requireResolveFromRootWithFallback,
-  withTrailingSlash,
 } from './utils'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { initDepsOptimizer } from './optimizer'
 import { loadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
-import { ensureWatchPlugin } from './plugins/ensureWatch'
-import { ESBUILD_MODULES_TARGET, VERSION } from './constants'
-import { resolveChokidarOptions } from './watch'
+import {
+  getResolvedOutDirs,
+  resolveChokidarOptions,
+  resolveEmptyOutDir,
+} from './watch'
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
+import { getHookHandler } from './plugins'
 
 export interface BuildOptions {
   /**
@@ -102,7 +110,9 @@ export interface BuildOptions {
    * base64 strings. Default limit is `4096` (4 KiB). Set to `0` to disable.
    * @default 4096
    */
-  assetsInlineLimit?: number
+  assetsInlineLimit?:
+    | number
+    | ((filePath: string, content: Buffer) => boolean | undefined)
   /**
    * Whether to code-split CSS. When enabled, CSS in async chunks will be
    * inlined as strings in the chunk and inserted via dynamically created
@@ -143,8 +153,11 @@ export interface BuildOptions {
   /**
    * Options for terser
    * https://terser.org/docs/api-reference#minify-options
+   *
+   * In addition, you can also pass a `maxWorkers: number` option to specify the
+   * max number of workers to spawn. Defaults to the number of CPUs minus 1.
    */
-  terserOptions?: Terser.MinifyOptions
+  terserOptions?: TerserOptions
   /**
    * Will be merged with internal rollup options.
    * https://rollupjs.org/configuration-options/
@@ -259,7 +272,7 @@ export interface LibraryOptions {
   fileName?: string | ((format: ModuleFormat, entryName: string) => string)
 }
 
-export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife'
+export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' | 'system'
 
 export interface ModulePreloadOptions {
   /**
@@ -323,7 +336,7 @@ export function resolveBuildOptions(
   const defaultBuildOptions: BuildOptions = {
     outDir: 'dist',
     assetsDir: 'assets',
-    assetsInlineLimit: 4096,
+    assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
     cssCodeSplit: !raw?.lib,
     sourcemap: false,
     rollupOptions: {},
@@ -366,11 +379,11 @@ export function resolveBuildOptions(
       modulePreload === false
         ? false
         : typeof modulePreload === 'object'
-        ? {
-            ...defaultModulePreload,
-            ...modulePreload,
-          }
-        : defaultModulePreload,
+          ? {
+              ...defaultModulePreload,
+              ...modulePreload,
+            }
+          : defaultModulePreload,
   }
 
   // handle special build targets
@@ -424,16 +437,11 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   return {
     pre: [
       completeSystemWrapPlugin(),
-      ...(options.watch ? [ensureWatchPlugin()] : []),
       ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
       dataURIPlugin(),
-      ...((
-        await asyncFlatten(
-          Array.isArray(rollupOptionsPlugins)
-            ? rollupOptionsPlugins
-            : [rollupOptionsPlugins],
-        )
-      ).filter(Boolean) as Plugin[]),
+      ...((await asyncFlatten(arraify(rollupOptionsPlugins))).filter(
+        Boolean,
+      ) as Plugin[]),
       ...(config.isWorker ? [webWorkerPostPlugin()] : []),
     ],
     post: [
@@ -483,22 +491,35 @@ export async function build(
       (typeof libOptions.entry === 'string'
         ? resolve(libOptions.entry)
         : Array.isArray(libOptions.entry)
-        ? libOptions.entry.map(resolve)
-        : Object.fromEntries(
-            Object.entries(libOptions.entry).map(([alias, file]) => [
-              alias,
-              resolve(file),
-            ]),
-          ))
+          ? libOptions.entry.map(resolve)
+          : Object.fromEntries(
+              Object.entries(libOptions.entry).map(([alias, file]) => [
+                alias,
+                resolve(file),
+              ]),
+            ))
     : typeof options.ssr === 'string'
-    ? resolve(options.ssr)
-    : options.rollupOptions?.input || resolve('index.html')
+      ? resolve(options.ssr)
+      : options.rollupOptions?.input || resolve('index.html')
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
       `rollupOptions.input should not be an html file when building for SSR. ` +
         `Please specify a dedicated SSR entry.`,
     )
+  }
+  if (config.build.cssCodeSplit === false) {
+    const inputs =
+      typeof input === 'string'
+        ? [input]
+        : Array.isArray(input)
+          ? input
+          : Object.values(input)
+    if (inputs.some((input) => input.endsWith('.css'))) {
+      throw new Error(
+        `When "build.cssCodeSplit: false" is set, "rollupOptions.input" should not include CSS files.`,
+      )
+    }
   }
 
   const outDir = resolve(options.outDir)
@@ -508,16 +529,12 @@ export async function build(
     ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
   ) as Plugin[]
 
-  if (isDepsOptimizerEnabled(config, ssr)) {
-    await initDepsOptimizer(config)
-  }
-
   const rollupOptions: RollupOptions = {
     preserveEntrySignatures: ssr
       ? 'allow-extension'
       : libOptions
-      ? 'strict'
-      : false,
+        ? 'strict'
+        : false,
     cache: config.build.watch ? undefined : false,
     ...options.rollupOptions,
     input,
@@ -528,7 +545,39 @@ export async function build(
     },
   }
 
-  const outputBuildError = (e: RollupError) => {
+  /**
+   * The stack string usually contains a copy of the message at the start of the stack.
+   * If the stack starts with the message, we remove it and just return the stack trace
+   * portion. Otherwise the original stack trace is used.
+   */
+  function extractStack(e: RollupError) {
+    const { stack, name = 'Error', message } = e
+
+    // If we don't have a stack, not much we can do.
+    if (!stack) {
+      return stack
+    }
+
+    const expectedPrefix = `${name}: ${message}\n`
+    if (stack.startsWith(expectedPrefix)) {
+      return stack.slice(expectedPrefix.length)
+    }
+
+    return stack
+  }
+
+  /**
+   * Esbuild code frames have newlines at the start and end of the frame, rollup doesn't
+   * This function normalizes the frame to match the esbuild format which has more pleasing padding
+   */
+  const normalizeCodeFrame = (frame: string) => {
+    const trimmedPadding = frame.replace(/^\n|\n$/g, '')
+    return `\n${trimmedPadding}\n`
+  }
+
+  const enhanceRollupError = (e: RollupError) => {
+    const stackOnly = extractStack(e)
+
     let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
     if (e.id) {
       msg += `\nfile: ${colors.cyan(
@@ -536,12 +585,28 @@ export async function build(
       )}`
     }
     if (e.frame) {
-      msg += `\n` + colors.yellow(e.frame)
+      msg += `\n` + colors.yellow(normalizeCodeFrame(e.frame))
     }
-    config.logger.error(msg, { error: e })
+
+    e.message = msg
+
+    // We are rebuilding the stack trace to include the more detailed message at the top.
+    // Previously this code was relying on mutating e.message changing the generated stack
+    // when it was accessed, but we don't have any guarantees that the error we are working
+    // with hasn't already had its stack accessed before we get here.
+    if (stackOnly !== undefined) {
+      e.stack = `${e.message}\n${stackOnly}`
+    }
+  }
+
+  const outputBuildError = (e: RollupError) => {
+    enhanceRollupError(e)
+    clearLine()
+    config.logger.error(e.message, { error: e })
   }
 
   let bundle: RollupBuild | undefined
+  let startTime: number | undefined
   try {
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
@@ -550,6 +615,20 @@ export async function build(
           `You've set "rollupOptions.output.output" in your config. ` +
             `This is deprecated and will override all Vite.js default output options. ` +
             `Please use "rollupOptions.output" instead.`,
+        )
+      }
+      if (output.file) {
+        throw new Error(
+          `Vite does not support "rollupOptions.output.file". ` +
+            `Please use "rollupOptions.output.dir" and "rollupOptions.output.entryFileNames" instead.`,
+        )
+      }
+      if (output.sourcemap) {
+        config.logger.warnOnce(
+          colors.yellow(
+            `Vite does not support "rollupOptions.output.sourcemap". ` +
+              `Please use "build.sourcemap" instead.`,
+          ),
         )
       }
 
@@ -572,6 +651,7 @@ export async function build(
         exports: 'auto',
         sourcemap: options.sourcemap,
         name: libOptions ? libOptions.name : undefined,
+        hoistTransitiveImports: libOptions ? false : undefined,
         // es2015 enables `generatedCode.symbols`
         // - #764 add `Symbol.toStringTag` when build es module into cjs chunk
         // - #1048 add `Symbol.toStringTag` for module default export
@@ -579,16 +659,16 @@ export async function build(
         entryFileNames: ssr
           ? `[name].${jsExt}`
           : libOptions
-          ? ({ name }) =>
-              resolveLibFilename(
-                libOptions,
-                format,
-                name,
-                config.root,
-                jsExt,
-                config.packageCache,
-              )
-          : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
+            ? ({ name }) =>
+                resolveLibFilename(
+                  libOptions,
+                  format,
+                  name,
+                  config.root,
+                  jsExt,
+                  config.packageCache,
+                )
+            : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
         chunkFileNames: libOptions
           ? `[name]-[hash].${jsExt}`
           : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
@@ -620,7 +700,17 @@ export async function build(
       normalizedOutputs.push(buildOutputOptions(outputs))
     }
 
-    const outDirs = normalizedOutputs.map(({ dir }) => resolve(dir!))
+    const resolvedOutDirs = getResolvedOutDirs(
+      config.root,
+      options.outDir,
+      options.rollupOptions?.output,
+    )
+    const emptyOutDir = resolveEmptyOutDir(
+      options.emptyOutDir,
+      config.root,
+      resolvedOutDirs,
+      config.logger,
+    )
 
     // watch file changes with rollup
     if (config.build.watch) {
@@ -629,6 +719,8 @@ export async function build(
       const resolvedChokidarOptions = resolveChokidarOptions(
         config,
         config.build.watch.chokidar,
+        resolvedOutDirs,
+        emptyOutDir,
       )
 
       const { watch } = await import('rollup')
@@ -645,7 +737,7 @@ export async function build(
         if (event.code === 'BUNDLE_START') {
           config.logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
-            prepareOutDir(outDirs, options.emptyOutDir, config)
+            prepareOutDir(resolvedOutDirs, emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
@@ -660,19 +752,30 @@ export async function build(
 
     // write or generate files with rollup
     const { rollup } = await import('rollup')
+    startTime = Date.now()
     bundle = await rollup(rollupOptions)
 
     if (options.write) {
-      prepareOutDir(outDirs, options.emptyOutDir, config)
+      prepareOutDir(resolvedOutDirs, emptyOutDir, config)
     }
 
     const res: RollupOutput[] = []
     for (const output of normalizedOutputs) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
+    config.logger.info(
+      `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
+    )
     return Array.isArray(outputs) ? res : res[0]
   } catch (e) {
-    outputBuildError(e)
+    enhanceRollupError(e)
+    clearLine()
+    if (startTime) {
+      config.logger.error(
+        `${colors.red('x')} Build failed in ${displayTime(Date.now() - startTime)}`,
+      )
+      startTime = undefined
+    }
     throw e
   } finally {
     if (bundle) await bundle.close()
@@ -680,36 +783,15 @@ export async function build(
 }
 
 function prepareOutDir(
-  outDirs: string[],
+  outDirs: Set<string>,
   emptyOutDir: boolean | null,
   config: ResolvedConfig,
 ) {
-  const nonDuplicateDirs = new Set(outDirs)
-  let outside = false
-  if (emptyOutDir == null) {
-    for (const outDir of nonDuplicateDirs) {
-      if (
-        fs.existsSync(outDir) &&
-        !normalizePath(outDir).startsWith(withTrailingSlash(config.root))
-      ) {
-        // warn if outDir is outside of root
-        config.logger.warn(
-          colors.yellow(
-            `\n${colors.bold(`(!)`)} outDir ${colors.white(
-              colors.dim(outDir),
-            )} is not inside project root and will not be emptied.\n` +
-              `Use --emptyOutDir to override.\n`,
-          ),
-        )
-        outside = true
-        break
-      }
-    }
-  }
-  for (const outDir of nonDuplicateDirs) {
-    if (!outside && emptyOutDir !== false && fs.existsSync(outDir)) {
+  const outDirsArray = [...outDirs]
+  for (const outDir of outDirs) {
+    if (emptyOutDir !== false && fs.existsSync(outDir)) {
       // skip those other outDirs which are nested in current outDir
-      const skipDirs = outDirs
+      const skipDirs = outDirsArray
         .map((dir) => {
           const relative = path.relative(outDir, dir)
           if (
@@ -855,8 +937,16 @@ const dynamicImportWarningIgnoreList = [
   `statically analyzed`,
 ]
 
+function clearLine() {
+  const tty = process.stdout.isTTY && !process.env.CI
+  if (tty) {
+    process.stdout.clearLine(0)
+    process.stdout.cursorTo(0)
+  }
+}
+
 export function onRollupWarning(
-  warning: RollupWarning,
+  warning: RollupLog,
   warn: LoggingFunction,
   config: ResolvedConfig,
 ): void {
@@ -874,7 +964,7 @@ export function onRollupWarning(
         const id = warning.id
         const exporter = warning.exporter
         // throw unless it's commonjs external...
-        if (!id || !/\?commonjs-external$/.test(id)) {
+        if (!id || !id.endsWith('?commonjs-external')) {
           throw new Error(
             `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
               `This is most likely unintended because it can break your application at runtime.\n` +
@@ -911,11 +1001,7 @@ export function onRollupWarning(
     warn(warnLog)
   }
 
-  const tty = process.stdout.isTTY && !process.env.CI
-  if (tty) {
-    process.stdout.clearLine(0)
-    process.stdout.cursorTo(0)
-  }
+  clearLine()
   const userOnWarn = config.build.rollupOptions?.onwarn
   if (userOnWarn) {
     userOnWarn(warning, viteWarn)
@@ -960,7 +1046,7 @@ function injectSsrFlagToHooks(plugin: Plugin): Plugin {
 function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
   if (!hook) return
 
-  const fn = 'handler' in hook ? hook.handler : hook
+  const fn = getHookHandler(hook)
   const handler: Plugin['resolveId'] = function (id, importer, options) {
     return fn.call(this, id, importer, injectSsrFlag(options))
   }
@@ -978,7 +1064,7 @@ function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
 function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
   if (!hook) return
 
-  const fn = 'handler' in hook ? hook.handler : hook
+  const fn = getHookHandler(hook)
   const handler: Plugin['load'] = function (id, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, id, injectSsrFlag(args[0]))
@@ -997,7 +1083,7 @@ function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
 function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
   if (!hook) return
 
-  const fn = 'handler' in hook ? hook.handler : hook
+  const fn = getHookHandler(hook)
   const handler: Plugin['transform'] = function (code, importer, ...args) {
     // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
     return fn.call(this, code, importer, injectSsrFlag(args[0]))
@@ -1021,7 +1107,7 @@ function injectSsrFlag<T extends Record<string, any>>(
 
 /*
   The following functions are copied from rollup
-  https://github.com/rollup/rollup/blob/0bcf0a672ac087ff2eb88fbba45ec62389a4f45f/src/ast/nodes/MetaProperty.ts#L145-L193
+  https://github.com/rollup/rollup/blob/ce6cb93098850a46fa242e37b74a919e99a5de28/src/ast/nodes/MetaProperty.ts#L155-L203
 
   https://github.com/rollup/rollup
   The MIT License (MIT)
@@ -1043,7 +1129,7 @@ const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`
 
 const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
   getResolveUrl(
-    `'${escapeId(relativePath)}', ${
+    `'${escapeId(partialEncodeURIPath(relativePath))}', ${
       umd ? `typeof document === 'undefined' ? location.href : ` : ''
     }document.currentScript && document.currentScript.src || document.baseURI`,
   )
@@ -1052,7 +1138,7 @@ const getFileUrlFromFullPath = (path: string) =>
   `require('u' + 'rl').pathToFileURL(${path}).href`
 
 const getFileUrlFromRelativePath = (path: string) =>
-  getFileUrlFromFullPath(`__dirname + '/${path}'`)
+  getFileUrlFromFullPath(`__dirname + '/${escapeId(path)}'`)
 
 const relativeUrlMechanisms: Record<
   InternalModuleFormat,
@@ -1060,16 +1146,24 @@ const relativeUrlMechanisms: Record<
 > = {
   amd: (relativePath) => {
     if (relativePath[0] !== '.') relativePath = './' + relativePath
-    return getResolveUrl(`require.toUrl('${relativePath}'), document.baseURI`)
+    return getResolveUrl(
+      `require.toUrl('${escapeId(relativePath)}'), document.baseURI`,
+    )
   },
   cjs: (relativePath) =>
     `(typeof document === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
     )} : ${getRelativeUrlFromDocument(relativePath)})`,
-  es: (relativePath) => getResolveUrl(`'${relativePath}', import.meta.url`),
+  es: (relativePath) =>
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', import.meta.url`,
+    ),
   iife: (relativePath) => getRelativeUrlFromDocument(relativePath),
   // NOTE: make sure rollup generate `module` params
-  system: (relativePath) => getResolveUrl(`'${relativePath}', module.meta.url`),
+  system: (relativePath) =>
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', module.meta.url`,
+    ),
   umd: (relativePath) =>
     `(typeof document === 'undefined' && typeof location === 'undefined' ? ${getFileUrlFromRelativePath(
       relativePath,
@@ -1080,7 +1174,9 @@ const relativeUrlMechanisms: Record<
 const customRelativeUrlMechanisms = {
   ...relativeUrlMechanisms,
   'worker-iife': (relativePath) =>
-    getResolveUrl(`'${relativePath}', self.location.href`),
+    getResolveUrl(
+      `'${escapeId(partialEncodeURIPath(relativePath))}', self.location.href`,
+    ),
 } as const satisfies Record<string, (relativePath: string) => string>
 
 export type RenderBuiltAssetUrl = (

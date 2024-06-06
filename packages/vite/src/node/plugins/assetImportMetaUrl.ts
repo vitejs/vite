@@ -4,18 +4,14 @@ import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { ResolveFn } from '../'
-import {
-  injectQuery,
-  isParentDirectory,
-  normalizePath,
-  slash,
-  transformStableResult,
-} from '../utils'
+import { injectQuery, isParentDirectory, transformStableResult } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
+import { slash } from '../../shared/utils'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
+import { hasViteIgnoreRE } from './importAnalysis'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -28,7 +24,7 @@ import { tryFsResolve } from './resolve'
  * ```
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
-  const normalizedPublicDir = normalizePath(config.publicDir)
+  const { publicDir } = config
   let assetResolver: ResolveFn
 
   const fsResolveOptions: InternalResolveOptions = {
@@ -53,15 +49,14 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       ) {
         let s: MagicString | undefined
         const assetImportMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/g
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
         const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null
         while ((match = assetImportMetaUrlRE.exec(cleanString))) {
-          const { 0: exp, 1: emptyUrl, index } = match
+          const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
+          if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
 
-          const urlStart = cleanString.indexOf(emptyUrl, index)
-          const urlEnd = urlStart + emptyUrl.length
           const rawUrl = code.slice(urlStart, urlEnd)
 
           if (!s) s = new MagicString(code)
@@ -93,8 +88,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 query: injectQuery(queryString, 'url'),
               }
               s.update(
-                index,
-                index + exp.length,
+                startIndex,
+                endIndex,
                 `new URL((import.meta.glob(${JSON.stringify(
                   pattern,
                 )}, ${JSON.stringify(
@@ -120,7 +115,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             file = await assetResolver(url, id)
             file ??=
               url[0] === '/'
-                ? slash(path.join(config.publicDir, url))
+                ? slash(path.join(publicDir, url))
                 : slash(path.resolve(path.dirname(id), url))
           }
 
@@ -129,9 +124,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let builtUrl: string | undefined
           if (file) {
             try {
-              if (isParentDirectory(normalizedPublicDir, file)) {
-                const publicPath =
-                  '/' + path.posix.relative(normalizedPublicDir, file)
+              if (publicDir && isParentDirectory(publicDir, file)) {
+                const publicPath = '/' + path.posix.relative(publicDir, file)
                 builtUrl = await fileToUrl(publicPath, config, this)
               } else {
                 builtUrl = await fileToUrl(file, config, this)
@@ -141,15 +135,16 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             }
           }
           if (!builtUrl) {
-            const rawExp = code.slice(index, index + exp.length)
+            const rawExp = code.slice(startIndex, endIndex)
             config.logger.warnOnce(
-              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`,
+              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime. ` +
+                `If this is intended, you can use the /* @vite-ignore */ comment to suppress this warning.`,
             )
             builtUrl = url
           }
           s.update(
-            index,
-            index + exp.length,
+            startIndex,
+            endIndex,
             `new URL(${JSON.stringify(builtUrl)}, import.meta.url)`,
           )
         }

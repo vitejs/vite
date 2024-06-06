@@ -4,6 +4,7 @@ import readline from 'node:readline'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
 import type { ResolvedServerUrls } from './server'
+import { splitRE } from './utils'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -51,6 +52,20 @@ export interface LoggerOptions {
   customLogger?: Logger
 }
 
+// Only initialize the timeFormatter when the timestamp option is used, and
+// reuse it across all loggers
+let timeFormatter: Intl.DateTimeFormat
+function getTimeFormatter() {
+  timeFormatter ??= new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+  })
+  return timeFormatter
+}
+
+const MAX_LOG_CHAR = 5000
+
 export function createLogger(
   level: LogLevel = 'info',
   options: LoggerOptions = {},
@@ -59,11 +74,6 @@ export function createLogger(
     return options.customLogger
   }
 
-  const timeFormatter = new Intl.DateTimeFormat(undefined, {
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-  })
   const loggedErrors = new WeakSet<Error | RollupError>()
   const { prefix = '[vite]', allowClearScreen = true } = options
   const thresh = LogLevels[level]
@@ -71,22 +81,41 @@ export function createLogger(
     allowClearScreen && process.stdout.isTTY && !process.env.CI
   const clear = canClearScreen ? clearScreen : () => {}
 
+  function preventOverflow(msg: string) {
+    if (msg.length > MAX_LOG_CHAR) {
+      const shorten = msg.slice(0, MAX_LOG_CHAR)
+      const lines = msg.slice(MAX_LOG_CHAR).match(splitRE)?.length || 0
+
+      return `${shorten}\n... and ${lines} lines more`
+    }
+    return msg
+  }
+
+  function format(
+    type: LogType,
+    rawMsg: string,
+    options: LogErrorOptions = {},
+  ) {
+    const msg = preventOverflow(rawMsg)
+    if (options.timestamp) {
+      const tag =
+        type === 'info'
+          ? colors.cyan(colors.bold(prefix))
+          : type === 'warn'
+            ? colors.yellow(colors.bold(prefix))
+            : colors.red(colors.bold(prefix))
+      return `${colors.dim(
+        getTimeFormatter().format(new Date()),
+      )} ${tag} ${msg}`
+    } else {
+      return msg
+    }
+  }
+
   function output(type: LogType, msg: string, options: LogErrorOptions = {}) {
     if (thresh >= LogLevels[type]) {
       const method = type === 'info' ? 'log' : type
-      const format = () => {
-        if (options.timestamp) {
-          const tag =
-            type === 'info'
-              ? colors.cyan(colors.bold(prefix))
-              : type === 'warn'
-              ? colors.yellow(colors.bold(prefix))
-              : colors.red(colors.bold(prefix))
-          return `${colors.dim(timeFormatter.format(new Date()))} ${tag} ${msg}`
-        } else {
-          return msg
-        }
-      }
+
       if (options.error) {
         loggedErrors.add(options.error)
       }
@@ -94,7 +123,10 @@ export function createLogger(
         if (type === lastType && msg === lastMsg) {
           sameCount++
           clear()
-          console[method](format(), colors.yellow(`(x${sameCount + 1})`))
+          console[method](
+            format(type, msg, options),
+            colors.yellow(`(x${sameCount + 1})`),
+          )
         } else {
           sameCount = 0
           lastMsg = msg
@@ -102,10 +134,10 @@ export function createLogger(
           if (options.clear) {
             clear()
           }
-          console[method](format())
+          console[method](format(type, msg, options))
         }
       } else {
-        console[method](format())
+        console[method](format(type, msg, options))
       }
     }
   }

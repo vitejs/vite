@@ -3,12 +3,13 @@ import fs from 'node:fs'
 import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
+import { VERSION } from './constants'
 import type { BuildOptions } from './build'
 import type { ServerOptions } from './server'
+import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
-import { VERSION } from './constants'
-import { resolveConfig } from '.'
+import { resolveConfig } from './config'
 
 const cli = cac('vite')
 
@@ -94,8 +95,8 @@ function cleanOptions<Options extends GlobalCLIOptions>(
       sourcemap === 'true'
         ? true
         : sourcemap === 'false'
-        ? false
-        : ret.sourcemap
+          ? false
+          : ret.sourcemap
   }
 
   return ret
@@ -139,7 +140,6 @@ cli
   .alias('dev') // alias to align with the script name
   .option('--host [host]', `[string] specify hostname`, { type: [convertHost] })
   .option('--port <port>', `[number] specify port`)
-  .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--cors', `[boolean] enable CORS`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
@@ -180,43 +180,46 @@ cli
             )} ms`,
           )
         : ''
+      const hasExistingLogs =
+        process.stdout.bytesWritten > 0 || process.stderr.bytesWritten > 0
 
       info(
         `\n  ${colors.green(
           `${colors.bold('VITE')} v${VERSION}`,
         )}  ${startupDurationString}\n`,
-        { clear: !server.config.logger.hasWarned },
+        {
+          clear: !hasExistingLogs,
+        },
       )
 
       server.printUrls()
-      server.bindCLIShortcuts({
-        print: true,
-        customShortcuts: [
-          profileSession && {
-            key: 'p',
-            description: 'start/stop the profiler',
-            async action(server) {
-              if (profileSession) {
-                await stopProfiler(server.config.logger.info)
-              } else {
-                const inspector = await import('node:inspector').then(
-                  (r) => r.default,
-                )
-                await new Promise<void>((res) => {
-                  profileSession = new inspector.Session()
-                  profileSession.connect()
-                  profileSession.post('Profiler.enable', () => {
-                    profileSession!.post('Profiler.start', () => {
-                      server.config.logger.info('Profiler started')
-                      res()
-                    })
+      const customShortcuts: CLIShortcut<typeof server>[] = []
+      if (profileSession) {
+        customShortcuts.push({
+          key: 'p',
+          description: 'start/stop the profiler',
+          async action(server) {
+            if (profileSession) {
+              await stopProfiler(server.config.logger.info)
+            } else {
+              const inspector = await import('node:inspector').then(
+                (r) => r.default,
+              )
+              await new Promise<void>((res) => {
+                profileSession = new inspector.Session()
+                profileSession.connect()
+                profileSession.post('Profiler.enable', () => {
+                  profileSession!.post('Profiler.start', () => {
+                    server.config.logger.info('Profiler started')
+                    res()
                   })
                 })
-              }
-            },
+              })
+            }
           },
-        ],
-      })
+        })
+      }
+      server.bindCLIShortcuts({ print: true, customShortcuts })
     } catch (e) {
       const logger = createLogger(options.logLevel)
       logger.error(colors.red(`error when starting dev server:\n${e.stack}`), {
@@ -256,10 +259,6 @@ cli
   .option('--manifest [name]', `[boolean | string] emit build manifest json`)
   .option('--ssrManifest [name]', `[boolean | string] emit ssr manifest json`)
   .option(
-    '--force',
-    `[boolean] force the optimizer to ignore the cache and re-bundle (experimental)`,
-  )
-  .option(
     '--emptyOutDir',
     `[boolean] force empty outDir when it's outside of root`,
   )
@@ -277,7 +276,6 @@ cli
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
-        optimizeDeps: { force: options.force },
         build: buildOptions,
       })
     } catch (e) {
@@ -330,7 +328,6 @@ cli
   .option('--host [host]', `[string] specify hostname`, { type: [convertHost] })
   .option('--port <port>', `[number] specify port`)
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
-  .option('--https', `[boolean] use TLS + HTTP/2`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
   .action(
@@ -339,7 +336,6 @@ cli
       options: {
         host?: string | boolean
         port?: number
-        https?: boolean
         open?: boolean | string
         strictPort?: boolean
         outDir?: string
@@ -361,7 +357,6 @@ cli
             port: options.port,
             strictPort: options.strictPort,
             host: options.host,
-            https: options.https,
             open: options.open,
           },
         })

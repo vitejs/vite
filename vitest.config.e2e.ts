@@ -21,11 +21,16 @@ export default defineConfig({
       moduleDirectories: ['node_modules', 'packages'],
     },
     onConsoleLog(log) {
-      if (log.match(/experimental|jit engine|emitted file|tailwind/i))
+      if (
+        log.match(
+          /experimental|jit engine|emitted file|tailwind|The CJS build of Vite/i,
+        )
+      )
         return false
     },
   },
   esbuild: {
     target: 'node18',
   },
+  publicDir: false,
 })

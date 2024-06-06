@@ -91,6 +91,14 @@ test('should load dynamic import with vars ignored', async () => {
   ).toBe(false)
 })
 
+test('should load dynamic import with double slash ignored', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-double-slash-ignored'),
+    'hello',
+    true,
+  )
+})
+
 test('should load dynamic import with vars multiline', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-multiline'),
@@ -118,7 +126,7 @@ test('should load dynamic import with vars raw', async () => {
 test('should load dynamic import with vars url', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-url'),
-    isBuild ? 'data:application/javascript' : '/alias/url.js',
+    isBuild ? 'data:text/javascript' : '/alias/url.js',
     true,
   )
 })
@@ -187,4 +195,10 @@ test('dynamic import treeshaken log', async () => {
 
 test.runIf(isBuild)('dynamic import treeshaken file', async () => {
   expect(findAssetFile(/treeshaken.+\.js$/)).not.toContain('treeshaken removed')
+})
+
+test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
+  const js = findAssetFile(/index-[-\w]{8}\.js$/)
+  // should match e.g. await import(e.jss);o(".view",p===i)
+  expect(js).to.match(/\.jss\);/)
 })

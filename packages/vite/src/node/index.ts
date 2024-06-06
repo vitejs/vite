@@ -1,19 +1,43 @@
 import type * as Rollup from 'rollup'
 
 export type { Rollup }
-export * from './config'
+export { parseAst, parseAstAsync } from 'rollup/parseAst'
+export {
+  defineConfig,
+  loadConfigFromFile,
+  resolveConfig,
+  sortUserPlugins,
+} from './config'
 export { createServer } from './server'
 export { preview } from './preview'
 export { build } from './build'
 export { optimizeDeps } from './optimizer'
 export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
-export { resolvePackageEntry } from './plugins/resolve'
-export { resolvePackageData } from './packages'
 export { buildErrorMessage } from './server/middlewares/error'
+export { fetchModule } from './ssr/fetchModule'
+export type { FetchModuleOptions } from './ssr/fetchModule'
 export * from './publicUtils'
 
 // additional types
+export type {
+  AppType,
+  ConfigEnv,
+  ExperimentalOptions,
+  HTMLOptions,
+  InlineConfig,
+  LegacyOptions,
+  PluginHookUtils,
+  PluginOption,
+  ResolveFn,
+  ResolvedWorkerOptions,
+  ResolvedConfig,
+  UserConfig,
+  UserConfigExport,
+  UserConfigFn,
+  UserConfigFnObject,
+  UserConfigFnPromise,
+} from './config'
 export type { FilterPattern } from './utils'
 export type { CorsOptions, CorsOrigin, CommonServerOptions } from './http'
 export type {
@@ -30,6 +54,9 @@ export type {
   LibraryFormats,
   RenderBuiltAssetUrl,
   ResolvedBuildOptions,
+  ModulePreloadOptions,
+  ResolvedModulePreloadOptions,
+  ResolveModulePreloadDependenciesFn,
 } from './build'
 export type {
   PreviewOptions,
@@ -41,10 +68,7 @@ export type {
   DepOptimizationMetadata,
   DepOptimizationOptions,
   DepOptimizationConfig,
-  DepOptimizationResult,
-  DepOptimizationProcessing,
   OptimizedDepInfo,
-  DepsOptimizer,
   ExportsData,
 } from './optimizer'
 export type {
@@ -54,7 +78,6 @@ export type {
   SSRTarget,
 } from './ssr'
 export type { Plugin, HookHandler } from './plugin'
-export type { PackageCache, PackageData } from './packages'
 export type {
   Logger,
   LogOptions,
@@ -82,6 +105,7 @@ export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'
 export type { SplitVendorChunkCache } from './plugins/splitVendorChunk'
+export type { TerserOptions } from './plugins/terser'
 
 export type {
   WebSocketServer,
@@ -97,6 +121,18 @@ export type {
   TransformResult,
 } from './server/transformRequest'
 export type { HmrOptions, HmrContext } from './server/hmr'
+
+export type {
+  HMRBroadcaster,
+  HMRChannel,
+  ServerHMRChannel,
+  HMRBroadcasterClient,
+} from './server/hmr'
+
+export type { FetchFunction } from '../runtime/index'
+export { createViteRuntime } from './ssr/runtime/mainThreadRuntime'
+export type { MainThreadRuntimeOptions } from './ssr/runtime/mainThreadRuntime'
+export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
 
 export type { BindCLIShortcutsOptions, CLIShortcut } from './shortcuts'
 

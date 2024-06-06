@@ -4,7 +4,7 @@
 
 ### `vite`
 
-Start Vite dev server in the current directory.
+Start Vite dev server in the current directory. `vite dev` and `vite serve` are aliases for `vite`.
 
 #### Usage
 
@@ -18,7 +18,6 @@ vite [root]
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
 | `--host [host]`          | Specify hostname (`string`)                                                                                        |
 | `--port <port>`          | Specify port (`number`)                                                                                            |
-| `--https`                | Use TLS + HTTP/2 (`boolean`)                                                                                       |
 | `--open [path]`          | Open browser on startup (`boolean \| string`)                                                                      |
 | `--cors`                 | Enable CORS (`boolean`)                                                                                            |
 | `--strictPort`           | Exit if specified port is already in use (`boolean`)                                                               |
@@ -59,7 +58,6 @@ vite build [root]
 | `--minify [minifier]`          | Enable/disable minification, or specify minifier to use (default: `"esbuild"`) (`boolean \| "terser" \| "esbuild"`) |
 | `--manifest [name]`            | Emit build manifest json (`boolean \| string`)                                                                      |
 | `--ssrManifest [name]`         | Emit ssr manifest json (`boolean \| string`)                                                                        |
-| `--force`                      | Force the optimizer to ignore the cache and re-bundle (experimental)(`boolean`)                                     |
 | `--emptyOutDir`                | Force empty outDir when it's outside of root (`boolean`)                                                            |
 | `-w, --watch`                  | Rebuilds when modules have changed on disk (`boolean`)                                                              |
 | `-c, --config <file>`          | Use specified config file (`string`)                                                                                |
@@ -115,7 +113,6 @@ vite preview [root]
 | `--host [host]`          | Specify hostname (`string`)                          |
 | `--port <port>`          | Specify port (`number`)                              |
 | `--strictPort`           | Exit if specified port is already in use (`boolean`) |
-| `--https`                | Use TLS + HTTP/2 (`boolean`)                         |
 | `--open [path]`          | Open browser on startup (`boolean \| string`)        |
 | `--outDir <dir>`         | Output directory (default: `dist`)(`string`)         |
 | `-c, --config <file>`    | Use specified config file (`string`)                 |

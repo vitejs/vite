@@ -89,6 +89,11 @@ import(/*@vite-ignore*/ `https://localhost`).catch((mod) => {
   text('.dynamic-import-with-vars-ignored', 'hello')
 })
 
+import(/*@vite-ignore*/ `https://localhost//${'test'}`).catch((mod) => {
+  console.log(mod)
+  text('.dynamic-import-with-double-slash-ignored', 'hello')
+})
+
 // prettier-ignore
 import(
   /* this messes with */
@@ -153,5 +158,9 @@ import(`../nested/nested/${base}.js`).then((mod) => {
   baz4()
   baz5()
 })()
+
+import(`../nested/static.js`).then((mod) => {
+  text('.dynamic-import-static', mod.self)
+})
 
 console.log('index.js')

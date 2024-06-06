@@ -2,22 +2,23 @@ import { posix } from 'node:path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
-import { parse as parseJS } from 'acorn'
+import { parseAst } from 'rollup/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
-import type { KnownAsTypeMap } from 'types/importGlob'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
 import {
   createFilter,
   normalizePath,
-  parseRequest,
-  removeComments,
+  rawRE,
+  requestQueryMaybeEscapedSplitRE,
   requestQuerySplitRE,
   transformStableResult,
+  urlRE,
 } from '../utils'
 import { toAbsoluteGlob } from './importMetaGlob'
 import { hasViteIgnoreRE } from './importAnalysis'
+import { workerOrSharedWorkerRE } from './worker'
 
 export const dynamicImportHelperId = '\0vite/dynamic-import-helper.js'
 
@@ -28,7 +29,8 @@ const relativePathRE = /^\.{1,2}\//
 const hasDynamicImportRE = /\bimport\s*[(/]/
 
 interface DynamicImportRequest {
-  as?: keyof KnownAsTypeMap
+  query?: string | Record<string, string>
+  import?: string
 }
 
 interface DynamicImportPattern {
@@ -37,14 +39,27 @@ interface DynamicImportPattern {
   rawPattern: string
 }
 
-const dynamicImportHelper = (glob: Record<string, any>, path: string) => {
+const dynamicImportHelper = (
+  glob: Record<string, any>,
+  path: string,
+  segs: number,
+) => {
   const v = glob[path]
   if (v) {
     return typeof v === 'function' ? v() : Promise.resolve(v)
   }
   return new Promise((_, reject) => {
     ;(typeof queueMicrotask === 'function' ? queueMicrotask : setTimeout)(
-      reject.bind(null, new Error('Unknown variable dynamic import: ' + path)),
+      reject.bind(
+        null,
+        new Error(
+          'Unknown variable dynamic import: ' +
+            path +
+            (path.split('/').length !== segs
+              ? '. Note that variables only represent file names one level deep.'
+              : ''),
+        ),
+      ),
     )
   })
 }
@@ -53,33 +68,36 @@ function parseDynamicImportPattern(
   strings: string,
 ): DynamicImportPattern | null {
   const filename = strings.slice(1, -1)
-  const rawQuery = parseRequest(filename)
-  let globParams: DynamicImportRequest | null = null
-  const ast = (
-    parseJS(strings, {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-    }) as any
-  ).body[0].expression
+  const ast = (parseAst(strings).body[0] as any).expression
 
   const userPatternQuery = dynamicImportToGlob(ast, filename)
   if (!userPatternQuery) {
     return null
   }
 
-  const [userPattern] = userPatternQuery.split(requestQuerySplitRE, 2)
-  const [rawPattern] = filename.split(requestQuerySplitRE, 2)
-
-  if (rawQuery?.raw !== undefined) {
-    globParams = { as: 'raw' }
-  }
-
-  if (rawQuery?.url !== undefined) {
-    globParams = { as: 'url' }
-  }
-
-  if (rawQuery?.worker !== undefined) {
-    globParams = { as: 'worker' }
+  const [userPattern] = userPatternQuery.split(
+    // ? is escaped on posix OS
+    requestQueryMaybeEscapedSplitRE,
+    2,
+  )
+  let [rawPattern, search] = filename.split(requestQuerySplitRE, 2)
+  let globParams: DynamicImportRequest | null = null
+  if (search) {
+    search = '?' + search
+    if (
+      workerOrSharedWorkerRE.test(search) ||
+      urlRE.test(search) ||
+      rawRE.test(search)
+    ) {
+      globParams = {
+        query: search,
+        import: '*',
+      }
+    } else {
+      globParams = {
+        query: search,
+      }
+    }
   }
 
   return {
@@ -107,13 +125,14 @@ export async function transformDynamicImport(
     if (!resolvedFileName) {
       return null
     }
-    const relativeFileName = posix.relative(
-      posix.dirname(normalizePath(importer)),
-      normalizePath(resolvedFileName),
+    const relativeFileName = normalizePath(
+      posix.relative(
+        posix.dirname(normalizePath(importer)),
+        normalizePath(resolvedFileName),
+      ),
     )
-    importSource = normalizePath(
-      '`' + (relativeFileName[0] === '.' ? '' : './') + relativeFileName + '`',
-    )
+    importSource =
+      '`' + (relativeFileName[0] === '.' ? '' : './') + relativeFileName + '`'
   }
 
   const dynamicImportPattern = parseDynamicImportPattern(importSource)
@@ -121,9 +140,7 @@ export async function transformDynamicImport(
     return null
   }
   const { globParams, rawPattern, userPattern } = dynamicImportPattern
-  const params = globParams
-    ? `, ${JSON.stringify({ ...globParams, import: '*' })}`
-    : ''
+  const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
 
   let newRawPattern = posix.relative(
     posix.dirname(importer),
@@ -214,14 +231,8 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         s ||= new MagicString(source)
         let result
         try {
-          // When import string is using backticks, es-module-lexer `end` captures
-          // until the closing parenthesis, instead of the closing backtick.
-          // There may be inline comments between the backtick and the closing
-          // parenthesis, so we manually remove them for now.
-          // See https://github.com/guybedford/es-module-lexer/issues/118
-          const importSource = removeComments(source.slice(start, end)).trim()
           result = await transformDynamicImport(
-            importSource,
+            source.slice(start, end),
             importer,
             resolve,
             config.root,
@@ -244,7 +255,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         s.overwrite(
           expStart,
           expEnd,
-          `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`,
+          `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`, ${rawPattern.split('/').length})`,
         )
       }
 

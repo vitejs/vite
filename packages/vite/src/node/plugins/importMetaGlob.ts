@@ -1,34 +1,28 @@
 import { isAbsolute, posix } from 'node:path'
 import micromatch from 'micromatch'
 import { stripLiteral } from 'strip-literal'
+import colors from 'picocolors'
 import type {
   ArrayExpression,
-  CallExpression,
   Expression,
   Literal,
-  MemberExpression,
   Node,
-  SequenceExpression,
   SpreadElement,
   TemplateLiteral,
 } from 'estree'
-import { parseExpressionAt } from 'acorn'
-import type { CustomPluginOptions, RollupError } from 'rollup'
-import { findNodeAt } from 'acorn-walk'
+import type { CustomPluginOptions, RollupAstNode, RollupError } from 'rollup'
 import MagicString from 'magic-string'
 import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
 import type { GeneralImportGlobOptions } from 'types/importGlob'
+import { parseAstAsync } from 'rollup/parseAst'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
-import {
-  evalValue,
-  normalizePath,
-  slash,
-  transformStableResult,
-} from '../utils'
+import { evalValue, normalizePath, transformStableResult } from '../utils'
+import type { Logger } from '../logger'
+import { slash } from '../../shared/utils'
 
 const { isMatch, scan } = micromatch
 
@@ -37,9 +31,13 @@ export interface ParsedImportGlob {
   globs: string[]
   globsResolved: string[]
   isRelative: boolean
-  options: GeneralImportGlobOptions
+  options: ParsedGeneralImportGlobOptions
   start: number
   end: number
+}
+
+interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
+  query?: string
 }
 
 export function getAffectedGlobModules(
@@ -84,6 +82,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         (im, _, options) =>
           this.resolve(im, id, options).then((i) => i?.id || im),
         config.experimental.importGlobRestoreExtension,
+        config.logger,
       )
       if (result) {
         if (server) {
@@ -128,7 +127,8 @@ function err(e: string, pos: number) {
 function parseGlobOptions(
   rawOpts: string,
   optsStartIndex: number,
-): GeneralImportGlobOptions {
+  logger?: Logger,
+): ParsedGeneralImportGlobOptions {
   let opts: GeneralImportGlobOptions = {}
   try {
     opts = evalValue(rawOpts)
@@ -169,8 +169,22 @@ function parseGlobOptions(
         )
       }
     }
+    // normalize query as string so it's easier to handle later
+    opts.query = stringifyQuery(opts.query)
   }
 
+  if (opts.as && logger) {
+    const importSuggestion = forceDefaultAs.includes(opts.as)
+      ? `, import: 'default'`
+      : ''
+    logger.warn(
+      colors.yellow(
+        `The glob option "as" has been deprecated in favour of "query". Please update \`as: '${opts.as}'\` to \`query: '?${opts.as}'${importSuggestion}\`.`,
+      ),
+    )
+  }
+
+  // validate `import` option based on `as` option
   if (opts.as && forceDefaultAs.includes(opts.as)) {
     if (opts.import && opts.import !== 'default' && opts.import !== '*')
       throw err(
@@ -188,7 +202,9 @@ function parseGlobOptions(
 
   if (opts.as) opts.query = opts.as
 
-  return opts
+  if (opts.query && opts.query[0] !== '?') opts.query = `?${opts.query}`
+
+  return opts as ParsedGeneralImportGlobOptions
 }
 
 export async function parseImportGlob(
@@ -196,8 +212,9 @@ export async function parseImportGlob(
   importer: string | undefined,
   root: string,
   resolveId: IdResolver,
+  logger?: Logger,
 ): Promise<ParsedImportGlob[]> {
-  let cleanCode
+  let cleanCode: string
   try {
     cleanCode = stripLiteral(code)
   } catch (e) {
@@ -215,51 +232,30 @@ export async function parseImportGlob(
       return e
     }
 
-    let ast: CallExpression | SequenceExpression | MemberExpression
-    let lastTokenPos: number | undefined
-
-    try {
-      ast = parseExpressionAt(code, start, {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ranges: true,
-        onToken: (token) => {
-          lastTokenPos = token.end
-        },
-      }) as any
-    } catch (e) {
-      const _e = e as any
-      if (_e.message && _e.message.startsWith('Unterminated string constant'))
-        return undefined!
-      if (lastTokenPos == null || lastTokenPos <= start) throw _e
-
-      // tailing comma in object or array will make the parser think it's a comma operation
-      // we try to parse again removing the comma
-      try {
-        const statement = code.slice(start, lastTokenPos).replace(/[,\s]*$/, '')
-        ast = parseExpressionAt(
-          ' '.repeat(start) + statement, // to keep the ast position
-          start,
-          {
-            ecmaVersion: 'latest',
-            sourceType: 'module',
-            ranges: true,
-          },
-        ) as any
-      } catch {
-        throw _e
-      }
+    const end =
+      findCorrespondingCloseParenthesisPosition(
+        cleanCode,
+        start + match[0].length,
+      ) + 1
+    if (end <= 0) {
+      throw err('Close parenthesis not found')
     }
 
-    const found = findNodeAt(ast as any, start, undefined, 'CallExpression')
-    if (!found) throw err(`Expect CallExpression, got ${ast.type}`)
-    ast = found.node as unknown as CallExpression
+    const statementCode = code.slice(start, end)
 
+    const rootAst = (await parseAstAsync(statementCode)).body[0]
+    if (rootAst.type !== 'ExpressionStatement') {
+      throw err(`Expect CallExpression, got ${rootAst.type}`)
+    }
+    const ast = rootAst.expression
+    if (ast.type !== 'CallExpression') {
+      throw err(`Expect CallExpression, got ${ast.type}`)
+    }
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
 
     const arg1 = ast.arguments[0] as ArrayExpression | Literal | TemplateLiteral
-    const arg2 = ast.arguments[1] as Node | undefined
+    const arg2 = ast.arguments[1] as RollupAstNode<Node> | undefined
 
     const globs: string[] = []
 
@@ -292,7 +288,7 @@ export async function parseImportGlob(
     }
 
     // arg2
-    let options: GeneralImportGlobOptions = {}
+    let options: ParsedGeneralImportGlobOptions = {}
     if (arg2) {
       if (arg2.type !== 'ObjectExpression')
         throw err(
@@ -300,12 +296,11 @@ export async function parseImportGlob(
         )
 
       options = parseGlobOptions(
-        code.slice(arg2.range![0], arg2.range![1]),
-        arg2.range![0],
+        code.slice(start + arg2.start, start + arg2.end),
+        start + arg2.start,
+        logger,
       )
     }
-
-    const end = ast.range![1]
 
     const globsResolved = await Promise.all(
       globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
@@ -324,6 +319,34 @@ export async function parseImportGlob(
   })
 
   return (await Promise.all(tasks)).filter(Boolean)
+}
+
+function findCorrespondingCloseParenthesisPosition(
+  cleanCode: string,
+  openPos: number,
+) {
+  const closePos = cleanCode.indexOf(')', openPos)
+  if (closePos < 0) return -1
+
+  if (!cleanCode.slice(openPos, closePos).includes('(')) return closePos
+
+  let remainingParenthesisCount = 0
+  const cleanCodeLen = cleanCode.length
+  for (let pos = openPos; pos < cleanCodeLen; pos++) {
+    switch (cleanCode[pos]) {
+      case '(': {
+        remainingParenthesisCount++
+        break
+      }
+      case ')': {
+        remainingParenthesisCount--
+        if (remainingParenthesisCount <= 0) {
+          return pos
+        }
+      }
+    }
+  }
+  return -1
 }
 
 const importPrefix = '__vite_glob_'
@@ -345,6 +368,7 @@ export async function transformGlobImport(
   root: string,
   resolveId: IdResolver,
   restoreQueryExtension = false,
+  logger?: Logger,
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
   root = slash(root)
@@ -355,6 +379,7 @@ export async function transformGlobImport(
     isVirtual ? undefined : id,
     root,
     resolveId,
+    logger,
   )
   const matchedFiles = new Set<string>()
 
@@ -382,14 +407,6 @@ export async function transformGlobImport(
 
           const objectProps: string[] = []
           const staticImports: string[] = []
-
-          let query = !options.query
-            ? ''
-            : typeof options.query === 'string'
-            ? options.query
-            : stringifyQuery(options.query as any)
-
-          if (query && query[0] !== '?') query = `?${query}`
 
           const resolvePaths = (file: string) => {
             if (!dir) {
@@ -419,7 +436,7 @@ export async function transformGlobImport(
             const paths = resolvePaths(file)
             const filePath = paths.filePath
             let importPath = paths.importPath
-            let importQuery = query
+            let importQuery = options.query ?? ''
 
             if (importQuery && importQuery !== '?raw') {
               const fileExtension = basename(file).split('.').slice(-1)[0]
@@ -486,7 +503,7 @@ type IdResolver = (
   id: string,
   importer?: string,
   options?: {
-    assertions?: Record<string, string>
+    attributes?: Record<string, string>
     custom?: CustomPluginOptions
     isEntry?: boolean
     skipSelf?: boolean

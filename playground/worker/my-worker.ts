@@ -8,6 +8,16 @@ self.onmessage = (e) => {
   if (e.data === 'ping') {
     self.postMessage({ msg, mode, bundleWithPlugin, viteSvg, metaUrl, name })
   }
+  if (e.data === 'ping-unicode') {
+    self.postMessage({
+      msg: '•pong•',
+      mode,
+      bundleWithPlugin,
+      viteSvg,
+      metaUrl,
+      name,
+    })
+  }
 }
 self.postMessage({
   msg,

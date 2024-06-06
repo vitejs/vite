@@ -8,7 +8,9 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
 1. In your Vite config, configure the entry and enable build manifest:
 
-   ```js
+   ```js twoslash
+   import { defineConfig } from 'vite'
+   // ---cut---
    // vite.config.js
    export default defineConfig({
      build: {
@@ -60,22 +62,36 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    ```json
    {
-     "main.js": {
-       "file": "assets/main.4889e940.js",
-       "src": "main.js",
+     "_shared-!~{003}~.js": {
+       "file": "assets/shared-ChJ_j-JJ.css",
+       "src": "_shared-!~{003}~.js"
+     },
+     "_shared-B7PI925R.js": {
+       "file": "assets/shared-B7PI925R.js",
+       "name": "shared",
+       "css": ["assets/shared-ChJ_j-JJ.css"]
+     },
+     "baz.js": {
+       "file": "assets/baz-B2H3sXNv.js",
+       "name": "baz",
+       "src": "baz.js",
+       "isDynamicEntry": true
+     },
+     "views/bar.js": {
+       "file": "assets/bar-gkvgaI9m.js",
+       "name": "bar",
+       "src": "views/bar.js",
        "isEntry": true,
-       "dynamicImports": ["views/foo.js"],
-       "css": ["assets/main.b82dbe22.css"],
-       "assets": ["assets/asset.0ab0f9cd.png"]
+       "imports": ["_shared-B7PI925R.js"],
+       "dynamicImports": ["baz.js"]
      },
      "views/foo.js": {
-       "file": "assets/foo.869aea0d.js",
+       "file": "assets/foo-BRBmoGS9.js",
+       "name": "foo",
        "src": "views/foo.js",
-       "isDynamicEntry": true,
-       "imports": ["_shared.83069a53.js"]
-     },
-     "_shared.83069a53.js": {
-       "file": "assets/shared.83069a53.js"
+       "isEntry": true,
+       "imports": ["_shared-B7PI925R.js"],
+       "css": ["assets/foo-5UjPuW-k.css"]
      }
    }
    ```
@@ -85,10 +101,54 @@ If you need a custom integration, you can follow the steps in this guide to conf
    - For non entry chunks, the key is the base name of the generated file prefixed with `_`.
    - Chunks will contain information on its static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also its corresponding CSS and asset files (if any).
 
-   You can use this file to render links or preload directives with hashed filenames (note: the syntax here is for explanation only, substitute with your server templating language):
+4. You can use this file to render links or preload directives with hashed filenames.
+
+   Here is an example HTML template to render the proper links. The syntax here is for
+   explanation only, substitute with your server templating language. The `importedChunks`
+   function is for illustration and isn't provided by Vite.
 
    ```html
    <!-- if production -->
-   <link rel="stylesheet" href="/assets/{{ manifest['main.js'].css }}" />
-   <script type="module" src="/assets/{{ manifest['main.js'].file }}"></script>
+
+   <!-- for cssFile of manifest[name].css -->
+   <link rel="stylesheet" href="/{{ cssFile }}" />
+
+   <!-- for chunk of importedChunks(manifest, name) -->
+   <!-- for cssFile of chunk.css -->
+   <link rel="stylesheet" href="/{{ cssFile }}" />
+
+   <script type="module" src="/{{ manifest[name].file }}"></script>
+
+   <!-- for chunk of importedChunks(manifest, name) -->
+   <link rel="modulepreload" href="/{{ chunk.file }}" />
+   ```
+
+   Specifically, a backend generating HTML should include the following tags given a manifest
+   file and an entry point:
+
+   - A `<link rel="stylesheet">` tag for each file in the entry point chunk's `css` list
+   - Recursively follow all chunks in the entry point's `imports` list and include a
+     `<link rel="stylesheet">` tag for each CSS file of each imported chunk.
+   - A tag for the `file` key of the entry point chunk (`<script type="module">` for JavaScript,
+     or `<link rel="stylesheet">` for CSS)
+   - Optionally, `<link rel="modulepreload">` tag for the `file` of each imported JavaScript
+     chunk, again recursively following the imports starting from the entry point chunk.
+
+   Following the above example manifest, for the entry point `views/foo.js` the following tags should be included in production:
+
+   ```html
+   <link rel="stylesheet" href="assets/foo-5UjPuW-k.css" />
+   <link rel="stylesheet" href="assets/shared-ChJ_j-JJ.css" />
+   <script type="module" src="assets/foo-BRBmoGS9.js"></script>
+   <!-- optional -->
+   <link rel="modulepreload" href="assets/shared-B7PI925R.js" />
+   ```
+
+   While the following should be included for the entry point `views/bar.js`:
+
+   ```html
+   <link rel="stylesheet" href="assets/shared-ChJ_j-JJ.css" />
+   <script type="module" src="assets/bar-gkvgaI9m.js"></script>
+   <!-- optional -->
+   <link rel="modulepreload" href="assets/shared-B7PI925R.js" />
    ```

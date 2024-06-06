@@ -39,7 +39,8 @@ import type { PreviewServerHook } from './preview'
  */
 export interface Plugin<A = any> extends RollupPlugin<A> {
   /**
-   * Enforce plugin invocation tier similar to webpack loaders.
+   * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
+   * is still subject to the `order` property in the hook object.
    *
    * Plugin invocation order:
    * - alias resolution
@@ -150,7 +151,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       source: string,
       importer: string | undefined,
       options: {
-        assertions: Record<string, string>
+        attributes: Record<string, string>
         custom?: CustomPluginOptions
         ssr?: boolean
         /**
@@ -179,3 +180,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
 }
 
 export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T
+
+export type PluginWithRequiredHook<K extends keyof Plugin> = Plugin & {
+  [P in K]: NonNullable<Plugin[P]>
+}

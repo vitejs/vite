@@ -8,6 +8,8 @@ The following guide also assumes prior experience working with SSR in your frame
 
 :::warning Low-level API
 This is a low-level API meant for library and framework authors. If your goal is to create an application, make sure to check out the higher-level SSR plugins and tools at [Awesome Vite SSR section](https://github.com/vitejs/awesome-vite#ssr) first. That said, many applications are successfully built directly on top of Vite's native low-level API.
+
+Currently, Vite is working on an improved SSR API with the [Environment API](https://github.com/vitejs/vite/discussions/16358). Check out the link for more details.
 :::
 
 :::tip Help
@@ -16,10 +18,16 @@ If you have questions, the community is usually helpful at [Vite Discord's #ssr 
 
 ## Example Projects
 
-Vite provides built-in support for server-side rendering (SSR). The Vite playground contains example SSR setups for Vue 3 and React, which can be used as references for this guide:
+Vite provides built-in support for server-side rendering (SSR). [`create-vite-extra`](https://github.com/bluwy/create-vite-extra) contains example SSR setups you can use as references for this guide:
 
-- [Vue 3](https://github.com/vitejs/vite-plugin-vue/tree/main/playground/ssr-vue)
-- [React](https://github.com/vitejs/vite-plugin-react/tree/main/playground/ssr-react)
+- [Vanilla](https://github.com/bluwy/create-vite-extra/tree/master/template-ssr-vanilla)
+- [Vue](https://github.com/bluwy/create-vite-extra/tree/master/template-ssr-vue)
+- [React](https://github.com/bluwy/create-vite-extra/tree/master/template-ssr-react)
+- [Preact](https://github.com/bluwy/create-vite-extra/tree/master/template-ssr-preact)
+- [Svelte](https://github.com/bluwy/create-vite-extra/tree/master/template-ssr-svelte)
+- [Solid](https://github.com/bluwy/create-vite-extra/tree/master/template-ssr-solid)
+
+You can also scaffold these projects locally by [running `create-vite`](./index.md#scaffolding-your-first-vite-project) and choose `Others > create-vite-extra` under the framework option.
 
 ## Source Structure
 
@@ -47,7 +55,9 @@ You can use any placeholder you prefer instead of `<!--ssr-outlet-->`, as long a
 
 If you need to perform conditional logic based on SSR vs. client, you can use
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 if (import.meta.env.SSR) {
   // ... server only logic
 }
@@ -61,10 +71,10 @@ When building an SSR app, you likely want to have full control over your main se
 
 **server.js**
 
-```js{15-18}
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+```js{15-18} twoslash
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 import { createServer as createViteServer } from 'vite'
 
@@ -83,6 +93,10 @@ async function createServer() {
 
   // Use vite's connect instance as middleware. If you use your own
   // express router (express.Router()), you should use router.use
+  // When the server restarts (for example after the user modifies
+  // vite.config.js), `vite.middlewares` is still going to be the same
+  // reference (with a new internal stack of Vite and plugin-injected
+  // middlewares). The following is valid even after restarts.
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
@@ -99,7 +113,18 @@ Here `vite` is an instance of [ViteDevServer](./api-javascript#vitedevserver). `
 
 The next step is implementing the `*` handler to serve server-rendered HTML:
 
-```js
+```js twoslash
+// @noErrors
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+/** @type {import('express').Express} */
+var app
+/** @type {import('vite').ViteDevServer}  */
+var vite
+
+// ---cut---
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
@@ -171,13 +196,13 @@ Note the `--ssr` flag which indicates this is an SSR build. It should also speci
 
 Then, in `server.js` we need to add some production specific logic by checking `process.env.NODE_ENV`:
 
-- Instead of reading the root `index.html`, use the `dist/client/index.html` as the template instead, since it contains the correct asset links to the client build.
+- Instead of reading the root `index.html`, use the `dist/client/index.html` as the template, since it contains the correct asset links to the client build.
 
-- Instead of `await vite.ssrLoadModule('/src/entry-server.js')`, use `import('./dist/server/entry-server.js')` instead (this file is the result of the SSR build).
+- Instead of `await vite.ssrLoadModule('/src/entry-server.js')`, use `import('./dist/server/entry-server.js')` (this file is the result of the SSR build).
 
 - Move the creation and all usage of the `vite` dev server behind dev-only conditional branches, then add static file serving middlewares to serve files from `dist/client`.
 
-Refer to the [Vue](https://github.com/vitejs/vite-plugin-vue/tree/main/playground/ssr-vue) and [React](https://github.com/vitejs/vite-plugin-react/tree/main/playground/ssr-react) demos for a working setup.
+Refer to the [example projects](#example-projects) for a working setup.
 
 ## Generating Preload Directives
 
@@ -229,7 +254,9 @@ Some frameworks such as Vue or Svelte compile components into different formats 
 
 **Example:**
 
-```js
+```js twoslash
+/** @type {() => import('vite').Plugin} */
+// ---cut---
 export function mySSRPlugin() {
   return {
     name: 'my-ssr',
@@ -258,6 +285,10 @@ In some cases like `webworker` runtimes, you might want to bundle your SSR build
 
 - Treat all dependencies as `noExternal`
 - Throw an error if any Node.js built-ins are imported
+
+## SSR Resolve Conditions
+
+By default package entry resolution will use the conditions set in [`resolve.conditions`](../config/shared-options.md#resolve-conditions) for the SSR build. You can use [`ssr.resolve.conditions`](../config/ssr-options.md#ssr-resolve-conditions) and [`ssr.resolve.externalConditions`](../config/ssr-options.md#ssr-resolve-externalconditions) to customize this behavior.
 
 ## Vite CLI
 

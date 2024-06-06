@@ -4,13 +4,9 @@ import { promisify } from 'node:util'
 import colors from 'picocolors'
 import type { Plugin } from 'rollup'
 import type { ResolvedConfig } from '../config'
-import {
-  isDefined,
-  isInNodeModules,
-  normalizePath,
-  withTrailingSlash,
-} from '../utils'
+import { isDefined, isInNodeModules, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
+import { withTrailingSlash } from '../../shared/utils'
 
 const groups = [
   { name: 'Assets', color: colors.green },
@@ -47,7 +43,6 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   let transformedCount = 0
   let chunkCount = 0
   let compressedCount = 0
-  let startTime = Date.now()
 
   async function getCompressedSize(
     code: string | Uint8Array,
@@ -98,10 +93,6 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         hasTransformed = true
       }
       return null
-    },
-
-    options() {
-      startTime = Date.now()
     },
 
     buildStart() {
@@ -299,16 +290,6 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         )
       }
     },
-
-    closeBundle() {
-      if (shouldLogInfo && !config.build.watch) {
-        config.logger.info(
-          `${colors.green(
-            `✓ built in ${displayTime(Date.now() - startTime)}`,
-          )}`,
-        )
-      }
-    },
   }
 }
 
@@ -335,24 +316,4 @@ function throttle(fn: Function) {
       timerHandle = null
     }, 100)
   }
-}
-
-function displayTime(time: number) {
-  // display: {X}ms
-  if (time < 1000) {
-    return `${time}ms`
-  }
-
-  time = time / 1000
-
-  // display: {X}s
-  if (time < 60) {
-    return `${time.toFixed(2)}s`
-  }
-
-  const mins = parseInt((time / 60).toString())
-  const seconds = time % 60
-
-  // display: {X}m {Y}s
-  return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
 }

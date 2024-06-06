@@ -8,26 +8,28 @@ import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import esbuild, { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
 import glob from 'fast-glob'
-import { createFilter } from '@rollup/pluginutils'
 import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import {
-  arraify,
   createDebugger,
   flattenId,
   getHash,
   isOptimizable,
-  isWindows,
   lookupFile,
   normalizeId,
   normalizePath,
   removeLeadingSlash,
   tryStatSync,
+  unique,
 } from '../utils'
-import { transformWithEsbuild } from '../plugins/esbuild'
-import { ESBUILD_MODULES_TARGET } from '../constants'
+import {
+  defaultEsbuildSupported,
+  transformWithEsbuild,
+} from '../plugins/esbuild'
+import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
+import { isWindows } from '../../shared/utils'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
-import { resolveTsconfigRaw, scanImports } from './scan'
+import { scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
 export {
   initDepsOptimizer,
@@ -41,7 +43,7 @@ const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
 
 export type ExportsData = {
-  hasImports: boolean
+  hasModuleSyntax: boolean
   // exported names (for `export { a as b }`, `b` is exported name)
   exports: readonly string[]
   // hint if the dep requires loading as jsx
@@ -57,10 +59,6 @@ export interface DepsOptimizer {
   isOptimizedDepFile: (id: string) => boolean
   isOptimizedDepUrl: (url: string) => boolean
   getOptimizedDepId: (depInfo: OptimizedDepInfo) => string
-  delayDepsOptimizerUntil: (id: string, done: () => Promise<any>) => void
-  registerWorkersSource: (id: string) => void
-  resetRegisteredIds: () => void
-  ensureFirstRun: () => void
 
   close: () => Promise<void>
 
@@ -119,10 +117,12 @@ export interface DepOptimizationConfig {
    */
   extensions?: string[]
   /**
-   * Disables dependencies optimizations, true disables the optimizer during
-   * build and dev. Pass 'build' or 'dev' to only disable the optimizer in
-   * one of the modes. Deps optimization is enabled by default in dev only.
+   * Deps optimization during build was removed in Vite 5.1. This option is
+   * now redundant and will be removed in a future version. Switch to using
+   * `optimizeDeps.noDiscovery` and an empty or undefined `optimizeDeps.include`.
+   * true or 'dev' disables the optimizer, false or 'build' leaves it enabled.
    * @default 'build'
+   * @deprecated
    * @experimental
    */
   disabled?: boolean | 'build' | 'dev'
@@ -134,6 +134,17 @@ export interface DepOptimizationConfig {
    * @experimental
    */
   noDiscovery?: boolean
+  /**
+   * When enabled, it will hold the first optimized deps results until all static
+   * imports are crawled on cold start. This avoids the need for full-page reloads
+   * when new dependencies are discovered and they trigger the generation of new
+   * common chunks. If all dependencies are found by the scanner plus the explicitely
+   * defined ones in `include`, it is better to disable this option to let the
+   * browser process more requests in parallel.
+   * @default true
+   * @experimental
+   */
+  holdUntilCrawlEnd?: boolean
 }
 
 export type DepOptimizationOptions = DepOptimizationConfig & {
@@ -166,11 +177,6 @@ export interface DepOptimizationResult {
   cancel: () => void
 }
 
-export interface DepOptimizationProcessing {
-  promise: Promise<void>
-  resolve: () => void
-}
-
 export interface OptimizedDepInfo {
   id: string
   file: string
@@ -196,6 +202,16 @@ export interface DepOptimizationMetadata {
    * This is checked on server startup to avoid unnecessary re-bundles.
    */
   hash: string
+  /**
+   * This hash is determined by dependency lockfiles.
+   * This is checked on server startup to avoid unnecessary re-bundles.
+   */
+  lockfileHash: string
+  /**
+   * This hash is determined by user config.
+   * This is checked on server startup to avoid unnecessary re-bundles.
+   */
+  configHash: string
   /**
    * The browser hash is determined by the main hash plus additional dependencies
    * discovered at runtime. This is used to invalidate browser requests to
@@ -230,8 +246,7 @@ export async function optimizeDeps(
   asCommand = false,
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
-
-  const ssr = config.command === 'build' && !!config.build.ssr
+  const ssr = false
 
   const cachedMetadata = await loadCachedDepOptimizationMetadata(
     config,
@@ -245,14 +260,14 @@ export async function optimizeDeps(
 
   const deps = await discoverProjectDependencies(config).result
 
+  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
+
   const depsString = depsLogString(Object.keys(deps))
   log?.(colors.green(`Optimizing dependencies:\n  ${depsString}`))
 
-  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
-
   const depsInfo = toDiscoveredDependencies(config, deps, ssr)
 
-  const result = await runOptimizeDeps(config, depsInfo).result
+  const result = await runOptimizeDeps(config, depsInfo, ssr).result
 
   await result.commit()
 
@@ -273,37 +288,13 @@ export async function optimizeServerSsrDeps(
     return cachedMetadata
   }
 
-  let alsoInclude: string[] | undefined
-  let noExternalFilter: ((id: unknown) => boolean) | undefined
-
-  const { exclude } = getDepOptimizationConfig(config, ssr)
-
-  const noExternal = config.ssr?.noExternal
-  if (noExternal) {
-    alsoInclude = arraify(noExternal).filter(
-      (ne) => typeof ne === 'string',
-    ) as string[]
-    noExternalFilter =
-      noExternal === true
-        ? (dep: unknown) => true
-        : createFilter(undefined, exclude, {
-            resolve: false,
-          })
-  }
-
   const deps: Record<string, string> = {}
 
-  await addManuallyIncludedOptimizeDeps(
-    deps,
-    config,
-    ssr,
-    alsoInclude,
-    noExternalFilter,
-  )
+  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
 
-  const depsInfo = toDiscoveredDependencies(config, deps, true)
+  const depsInfo = toDiscoveredDependencies(config, deps, ssr)
 
-  const result = await runOptimizeDeps(config, depsInfo, true).result
+  const result = await runOptimizeDeps(config, depsInfo, ssr).result
 
   await result.commit()
 
@@ -315,9 +306,11 @@ export function initDepsOptimizerMetadata(
   ssr: boolean,
   timestamp?: string,
 ): DepOptimizationMetadata {
-  const hash = getDepHash(config, ssr)
+  const { lockfileHash, configHash, hash } = getDepHash(config, ssr)
   return {
     hash,
+    lockfileHash,
+    configHash,
     browserHash: getOptimizedBrowserHash(hash, {}, timestamp),
     optimized: {},
     chunks: {},
@@ -361,24 +354,35 @@ export async function loadCachedDepOptimizationMetadata(
   if (!force) {
     let cachedMetadata: DepOptimizationMetadata | undefined
     try {
-      const cachedMetadataPath = path.join(depsCacheDir, '_metadata.json')
+      const cachedMetadataPath = path.join(depsCacheDir, METADATA_FILENAME)
       cachedMetadata = parseDepsOptimizerMetadata(
         await fsp.readFile(cachedMetadataPath, 'utf-8'),
         depsCacheDir,
       )
     } catch (e) {}
     // hash is consistent, no need to re-bundle
-    if (cachedMetadata && cachedMetadata.hash === getDepHash(config, ssr)) {
-      log?.('Hash is consistent. Skipping. Use --force to override.')
-      // Nothing to commit or cancel as we are using the cache, we only
-      // need to resolve the processing promise so requests can move on
-      return cachedMetadata
+    if (cachedMetadata) {
+      if (cachedMetadata.lockfileHash !== getLockfileHash(config, ssr)) {
+        config.logger.info(
+          'Re-optimizing dependencies because lockfile has changed',
+        )
+      } else if (cachedMetadata.configHash !== getConfigHash(config, ssr)) {
+        config.logger.info(
+          'Re-optimizing dependencies because vite config has changed',
+        )
+      } else {
+        log?.('Hash is consistent. Skipping. Use --force to override.')
+        // Nothing to commit or cancel as we are using the cache, we only
+        // need to resolve the processing promise so requests can move on
+        return cachedMetadata
+      }
     }
   } else {
     config.logger.info('Forced re-optimization of dependencies')
   }
 
   // Start with a fresh cache
+  debug?.(colors.green(`removing old cache dir ${depsCacheDir}`))
   await fsp.rm(depsCacheDir, { recursive: true, force: true })
 }
 
@@ -421,7 +425,7 @@ export function toDiscoveredDependencies(
   timestamp?: string,
 ): Record<string, OptimizedDepInfo> {
   const browserHash = getOptimizedBrowserHash(
-    getDepHash(config, ssr),
+    getDepHash(config, ssr).hash,
     deps,
     timestamp,
   )
@@ -450,8 +454,7 @@ export function depsLogString(qualifiedIds: string[]): string {
 export function runOptimizeDeps(
   resolvedConfig: ResolvedConfig,
   depsInfo: Record<string, OptimizedDepInfo>,
-  ssr: boolean = resolvedConfig.command === 'build' &&
-    !!resolvedConfig.build.ssr,
+  ssr: boolean,
 ): {
   cancel: () => Promise<void>
   result: Promise<DepOptimizationResult>
@@ -466,13 +469,14 @@ export function runOptimizeDeps(
   const depsCacheDir = getDepsCacheDir(resolvedConfig, ssr)
   const processingCacheDir = getProcessingDepsCacheDir(resolvedConfig, ssr)
 
-  // Create a temporal directory so we don't need to delete optimized deps
+  // Create a temporary directory so we don't need to delete optimized deps
   // until they have been processed. This also avoids leaving the deps cache
   // directory in a corrupted state if there is an error
   fs.mkdirSync(processingCacheDir, { recursive: true })
 
   // a hint for Node.js
   // all files in the cache directory should be recognized as ES modules
+  debug?.(colors.green(`creating package.json in ${processingCacheDir}`))
   fs.writeFileSync(
     path.resolve(processingCacheDir, 'package.json'),
     `{\n  "type": "module"\n}\n`,
@@ -499,9 +503,13 @@ export function runOptimizeDeps(
       cleaned = true
       // No need to wait, we can clean up in the background because temp folders
       // are unique per run
-      fsp.rm(processingCacheDir, { recursive: true, force: true }).catch(() => {
+      debug?.(colors.green(`removing cache dir ${processingCacheDir}`))
+      try {
+        // When exiting the process, `fsp.rm` may not take effect, so we use `fs.rmSync`
+        fs.rmSync(processingCacheDir, { recursive: true, force: true })
+      } catch (error) {
         // Ignore errors
-      })
+      }
     }
   }
 
@@ -519,34 +527,51 @@ export function runOptimizeDeps(
       committed = true
 
       // Write metadata file, then commit the processing folder to the global deps cache
-      // Rewire the file paths from the temporal processing dir to the final deps cache dir
-      const dataPath = path.join(processingCacheDir, '_metadata.json')
+      // Rewire the file paths from the temporary processing dir to the final deps cache dir
+      const dataPath = path.join(processingCacheDir, METADATA_FILENAME)
+      debug?.(
+        colors.green(`creating ${METADATA_FILENAME} in ${processingCacheDir}`),
+      )
       fs.writeFileSync(
         dataPath,
         stringifyDepsOptimizerMetadata(metadata, depsCacheDir),
       )
 
       // In order to minimize the time where the deps folder isn't in a consistent state,
-      // we first rename the old depsCacheDir to a temporal path, then we rename the
+      // we first rename the old depsCacheDir to a temporary path, then we rename the
       // new processing cache dir to the depsCacheDir. In systems where doing so in sync
       // is safe, we do an atomic operation (at least for this thread). For Windows, we
       // found there are cases where the rename operation may finish before it's done
       // so we do a graceful rename checking that the folder has been properly renamed.
       // We found that the rename-rename (then delete the old folder in the background)
       // is safer than a delete-rename operation.
-      const temporalPath = depsCacheDir + getTempSuffix()
+      const temporaryPath = depsCacheDir + getTempSuffix()
       const depsCacheDirPresent = fs.existsSync(depsCacheDir)
       if (isWindows) {
-        if (depsCacheDirPresent) await safeRename(depsCacheDir, temporalPath)
+        if (depsCacheDirPresent) {
+          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporaryPath}`))
+          await safeRename(depsCacheDir, temporaryPath)
+        }
+        debug?.(
+          colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
+        )
         await safeRename(processingCacheDir, depsCacheDir)
       } else {
-        if (depsCacheDirPresent) fs.renameSync(depsCacheDir, temporalPath)
+        if (depsCacheDirPresent) {
+          debug?.(colors.green(`renaming ${depsCacheDir} to ${temporaryPath}`))
+          fs.renameSync(depsCacheDir, temporaryPath)
+        }
+        debug?.(
+          colors.green(`renaming ${processingCacheDir} to ${depsCacheDir}`),
+        )
         fs.renameSync(processingCacheDir, depsCacheDir)
       }
 
-      // Delete temporal path in the background
-      if (depsCacheDirPresent)
-        fsp.rm(temporalPath, { recursive: true, force: true })
+      // Delete temporary path in the background
+      if (depsCacheDirPresent) {
+        debug?.(colors.green(`removing cache temp dir ${temporaryPath}`))
+        fsp.rm(temporaryPath, { recursive: true, force: true })
+      }
     },
   }
 
@@ -629,7 +654,7 @@ export function runOptimizeDeps(
         }
 
         for (const o of Object.keys(meta.outputs)) {
-          if (!o.match(jsMapExtensionRE)) {
+          if (!jsMapExtensionRE.test(o)) {
             const id = path
               .relative(processingCacheDirOutputPath, o)
               .replace(jsExtensionRE, '')
@@ -695,7 +720,6 @@ async function prepareEsbuildOptimizerRun(
   context?: BuildContext
   idToExports: Record<string, ExportsData>
 }> {
-  const isBuild = resolvedConfig.command === 'build'
   const config: ResolvedConfig = {
     ...resolvedConfig,
     command: 'build',
@@ -709,16 +733,11 @@ async function prepareEsbuildOptimizerRun(
   //    path.
   const flatIdDeps: Record<string, string> = {}
   const idToExports: Record<string, ExportsData> = {}
-  const flatIdToExports: Record<string, ExportsData> = {}
 
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
 
-  const {
-    plugins: pluginsFromConfig = [],
-    tsconfig,
-    tsconfigRaw,
-    ...esbuildOptions
-  } = optimizeDeps?.esbuildOptions ?? {}
+  const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
+    optimizeDeps?.esbuildOptions ?? {}
 
   await Promise.all(
     Object.keys(depsInfo).map(async (id) => {
@@ -736,46 +755,19 @@ async function prepareEsbuildOptimizerRun(
       const flatId = flattenId(id)
       flatIdDeps[flatId] = src
       idToExports[id] = exportsData
-      flatIdToExports[flatId] = exportsData
     }),
   )
 
   if (optimizerContext.cancelled) return { context: undefined, idToExports }
 
-  // esbuild automatically replaces process.env.NODE_ENV for platform 'browser'
-  // In lib mode, we need to keep process.env.NODE_ENV untouched, so to at build
-  // time we replace it by __vite_process_env_NODE_ENV. This placeholder will be
-  // later replaced by the define plugin
   const define = {
-    'process.env.NODE_ENV': isBuild
-      ? '__vite_process_env_NODE_ENV'
-      : JSON.stringify(process.env.NODE_ENV || config.mode),
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || config.mode),
   }
 
   const platform =
     ssr && config.ssr?.target !== 'webworker' ? 'node' : 'browser'
 
   const external = [...(optimizeDeps?.exclude ?? [])]
-
-  if (isBuild) {
-    let rollupOptionsExternal = config?.build?.rollupOptions?.external
-    if (rollupOptionsExternal) {
-      if (typeof rollupOptionsExternal === 'string') {
-        rollupOptionsExternal = [rollupOptionsExternal]
-      }
-      // TODO: decide whether to support RegExp and function options
-      // They're not supported yet because `optimizeDeps.exclude` currently only accepts strings
-      if (
-        !Array.isArray(rollupOptionsExternal) ||
-        rollupOptionsExternal.some((ext) => typeof ext !== 'string')
-      ) {
-        throw new Error(
-          `[vite] 'build.rollupOptions.external' can only be an array of strings or a string when using esbuild optimization at build time.`,
-        )
-      }
-      external.push(...(rollupOptionsExternal as string[]))
-    }
-  }
 
   const plugins = [...pluginsFromConfig]
   if (external.length) {
@@ -800,22 +792,19 @@ async function prepareEsbuildOptimizerRun(
             js: `import { createRequire } from 'module';const require = createRequire(import.meta.url);`,
           }
         : undefined,
-    target: isBuild ? config.build.target || undefined : ESBUILD_MODULES_TARGET,
+    target: ESBUILD_MODULES_TARGET,
     external,
     logLevel: 'error',
     splitting: true,
     sourcemap: true,
     outdir: processingCacheDir,
-    ignoreAnnotations: !isBuild,
+    ignoreAnnotations: true,
     metafile: true,
     plugins,
     charset: 'utf8',
-    tsconfig,
-    tsconfigRaw: resolveTsconfigRaw(tsconfig, tsconfigRaw),
     ...esbuildOptions,
     supported: {
-      'dynamic-import': true,
-      'import-meta': true,
+      ...defaultEsbuildSupported,
       ...esbuildOptions.supported,
     },
   })
@@ -826,13 +815,11 @@ export async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
   config: ResolvedConfig,
   ssr: boolean,
-  extra: string[] = [],
-  filter?: (id: string) => boolean,
 ): Promise<void> {
   const { logger } = config
   const optimizeDeps = getDepOptimizationConfig(config, ssr)
   const optimizeDepsInclude = optimizeDeps?.include ?? []
-  if (optimizeDepsInclude.length || extra.length) {
+  if (optimizeDepsInclude.length) {
     const unableToOptimize = (id: string, msg: string) => {
       if (optimizeDepsInclude.includes(id)) {
         logger.warn(
@@ -843,7 +830,7 @@ export async function addManuallyIncludedOptimizeDeps(
       }
     }
 
-    const includes = [...optimizeDepsInclude, ...extra]
+    const includes = [...optimizeDepsInclude]
     for (let i = 0; i < includes.length; i++) {
       const id = includes[i]
       if (glob.isDynamicPattern(id)) {
@@ -858,7 +845,7 @@ export async function addManuallyIncludedOptimizeDeps(
       // normalize 'foo   >bar` as 'foo > bar' to prevent same id being added
       // and for pretty printing
       const normalizedId = normalizeId(id)
-      if (!deps[normalizedId] && filter?.(normalizedId) !== false) {
+      if (!deps[normalizedId]) {
         const entry = await resolve(id)
         if (entry) {
           if (isOptimizable(entry, optimizeDeps)) {
@@ -874,14 +861,6 @@ export async function addManuallyIncludedOptimizeDeps(
       }
     }
   }
-}
-
-export function newDepOptimizationProcessing(): DepOptimizationProcessing {
-  let resolve: () => void
-  const promise = new Promise((_resolve) => {
-    resolve = _resolve
-  }) as Promise<void>
-  return { promise, resolve: resolve! }
 }
 
 // Convert to { id: src }
@@ -905,30 +884,17 @@ export function getOptimizedDepPath(
   )
 }
 
-function getDepsCacheSuffix(config: ResolvedConfig, ssr: boolean): string {
-  let suffix = ''
-  if (config.command === 'build') {
-    // Differentiate build caches depending on outDir to allow parallel builds
-    const { outDir } = config.build
-    const buildId =
-      outDir.length > 8 || outDir.includes('/') ? getHash(outDir) : outDir
-    suffix += `_build-${buildId}`
-  }
-  if (ssr) {
-    suffix += '_ssr'
-  }
-  return suffix
+function getDepsCacheSuffix(ssr: boolean): string {
+  return ssr ? '_ssr' : ''
 }
 
 export function getDepsCacheDir(config: ResolvedConfig, ssr: boolean): string {
-  return getDepsCacheDirPrefix(config) + getDepsCacheSuffix(config, ssr)
+  return getDepsCacheDirPrefix(config) + getDepsCacheSuffix(ssr)
 }
 
 function getProcessingDepsCacheDir(config: ResolvedConfig, ssr: boolean) {
   return (
-    getDepsCacheDirPrefix(config) +
-    getDepsCacheSuffix(config, ssr) +
-    getTempSuffix()
+    getDepsCacheDirPrefix(config) + getDepsCacheSuffix(ssr) + getTempSuffix()
   )
 }
 
@@ -979,17 +945,15 @@ function parseDepsOptimizerMetadata(
   jsonMetadata: string,
   depsCacheDir: string,
 ): DepOptimizationMetadata | undefined {
-  const { hash, browserHash, optimized, chunks } = JSON.parse(
-    jsonMetadata,
-    (key: string, value: string) => {
+  const { hash, lockfileHash, configHash, browserHash, optimized, chunks } =
+    JSON.parse(jsonMetadata, (key: string, value: string) => {
       // Paths can be absolute or relative to the deps cache dir where
       // the _metadata.json is located
       if (key === 'file' || key === 'src') {
         return normalizePath(path.resolve(depsCacheDir, value))
       }
       return value
-    },
-  )
+    })
   if (
     !chunks ||
     Object.values(optimized).some((depInfo: any) => !depInfo.fileHash)
@@ -999,6 +963,8 @@ function parseDepsOptimizerMetadata(
   }
   const metadata = {
     hash,
+    lockfileHash,
+    configHash,
     browserHash,
     optimized: {},
     discovered: {},
@@ -1033,10 +999,13 @@ function stringifyDepsOptimizerMetadata(
   metadata: DepOptimizationMetadata,
   depsCacheDir: string,
 ) {
-  const { hash, browserHash, optimized, chunks } = metadata
+  const { hash, configHash, lockfileHash, browserHash, optimized, chunks } =
+    metadata
   return JSON.stringify(
     {
       hash,
+      configHash,
+      lockfileHash,
       browserHash,
       optimized: Object.fromEntries(
         Object.values(optimized).map(
@@ -1110,9 +1079,9 @@ export async function extractExportsData(
       write: false,
       format: 'esm',
     })
-    const [imports, exports] = parse(result.outputFiles[0].text)
+    const [, exports, , hasModuleSyntax] = parse(result.outputFiles[0].text)
     return {
-      hasImports: imports.length > 0,
+      hasModuleSyntax,
       exports: exports.map((e) => e.n),
     }
   }
@@ -1135,9 +1104,9 @@ export async function extractExportsData(
     usedJsxLoader = true
   }
 
-  const [imports, exports] = parseResult
+  const [, exports, , hasModuleSyntax] = parseResult
   const exportsData: ExportsData = {
-    hasImports: imports.length > 0,
+    hasModuleSyntax,
     exports: exports.map((e) => e.n),
     jsxLoader: usedJsxLoader,
   }
@@ -1154,9 +1123,9 @@ function needsInterop(
   if (getDepOptimizationConfig(config, ssr)?.needsInterop?.includes(id)) {
     return true
   }
-  const { hasImports, exports } = exportsData
+  const { hasModuleSyntax, exports } = exportsData
   // entry has no ESM syntax - likely CJS or UMD
-  if (!exports.length && !hasImports) {
+  if (!hasModuleSyntax) {
     return true
   }
 
@@ -1191,7 +1160,41 @@ const lockfileFormats = [
 })
 const lockfileNames = lockfileFormats.map((l) => l.name)
 
-export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
+function getConfigHash(config: ResolvedConfig, ssr: boolean): string {
+  // Take config into account
+  // only a subset of config options that can affect dep optimization
+  const optimizeDeps = getDepOptimizationConfig(config, ssr)
+  const content = JSON.stringify(
+    {
+      mode: process.env.NODE_ENV || config.mode,
+      root: config.root,
+      resolve: config.resolve,
+      assetsInclude: config.assetsInclude,
+      plugins: config.plugins.map((p) => p.name),
+      optimizeDeps: {
+        include: optimizeDeps?.include
+          ? unique(optimizeDeps.include).sort()
+          : undefined,
+        exclude: optimizeDeps?.exclude
+          ? unique(optimizeDeps.exclude).sort()
+          : undefined,
+        esbuildOptions: {
+          ...optimizeDeps?.esbuildOptions,
+          plugins: optimizeDeps?.esbuildOptions?.plugins?.map((p) => p.name),
+        },
+      },
+    },
+    (_, value) => {
+      if (typeof value === 'function' || value instanceof RegExp) {
+        return value.toString()
+      }
+      return value
+    },
+  )
+  return getHash(content)
+}
+
+function getLockfileHash(config: ResolvedConfig, ssr: boolean): string {
   const lockfilePath = lookupFile(config.root, lockfileNames)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
@@ -1208,34 +1211,21 @@ export function getDepHash(config: ResolvedConfig, ssr: boolean): string {
       }
     }
   }
-  // also take config into account
-  // only a subset of config options that can affect dep optimization
-  const optimizeDeps = getDepOptimizationConfig(config, ssr)
-  content += JSON.stringify(
-    {
-      mode: process.env.NODE_ENV || config.mode,
-      root: config.root,
-      resolve: config.resolve,
-      buildTarget: config.build.target,
-      assetsInclude: config.assetsInclude,
-      plugins: config.plugins.map((p) => p.name),
-      optimizeDeps: {
-        include: optimizeDeps?.include,
-        exclude: optimizeDeps?.exclude,
-        esbuildOptions: {
-          ...optimizeDeps?.esbuildOptions,
-          plugins: optimizeDeps?.esbuildOptions?.plugins?.map((p) => p.name),
-        },
-      },
-    },
-    (_, value) => {
-      if (typeof value === 'function' || value instanceof RegExp) {
-        return value.toString()
-      }
-      return value
-    },
-  )
   return getHash(content)
+}
+
+function getDepHash(
+  config: ResolvedConfig,
+  ssr: boolean,
+): { lockfileHash: string; configHash: string; hash: string } {
+  const lockfileHash = getLockfileHash(config, ssr)
+  const configHash = getConfigHash(config, ssr)
+  const hash = getHash(lockfileHash + configHash)
+  return {
+    hash,
+    lockfileHash,
+    configHash,
+  }
 }
 
 function getOptimizedBrowserHash(
@@ -1309,6 +1299,7 @@ export async function cleanupDepsCacheStaleDirs(
             stats?.mtime &&
             Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
           ) {
+            debug?.(`removing stale cache temp dir ${tempDirPath}`)
             await fsp.rm(tempDirPath, { recursive: true, force: true })
           }
         }

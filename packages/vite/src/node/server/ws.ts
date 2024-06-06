@@ -13,6 +13,8 @@ import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
+import type { HMRChannel } from './hmr'
+import type { HttpServer } from '.'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
  * of `ws` will not work as Bun's req.socket does not allow reading/writing to the underlying socket.
@@ -29,7 +31,7 @@ export type WebSocketCustomListener<T> = (
   client: WebSocketClient,
 ) => void
 
-export interface WebSocketServer {
+export interface WebSocketServer extends HMRChannel {
   /**
    * Listen on port and host
    */
@@ -38,14 +40,6 @@ export interface WebSocketServer {
    * Get all connected clients.
    */
   clients: Set<WebSocketClient>
-  /**
-   * Broadcast events to all clients
-   */
-  send(payload: HMRPayload): void
-  /**
-   * Send custom event
-   */
-  send<T extends string>(event: T, payload?: InferCustomEventPayload<T>): void
   /**
    * Disconnect all clients and terminate the server.
    */
@@ -91,11 +85,31 @@ const wsServerEvents = [
   'message',
 ]
 
+function noop() {
+  // noop
+}
+
 export function createWebSocketServer(
-  server: Server | null,
+  server: HttpServer | null,
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
+  if (config.server.ws === false) {
+    return {
+      name: 'ws',
+      get clients() {
+        return new Set<WebSocketClient>()
+      },
+      async close() {
+        // noop
+      },
+      on: noop as any as WebSocketServer['on'],
+      off: noop as any as WebSocketServer['off'],
+      listen: noop,
+      send: noop,
+    }
+  }
+
   let wss: WebSocketServerRaw_
   let wsHttpServer: Server | undefined = undefined
 
@@ -229,6 +243,7 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
+    name: 'ws',
     listen: () => {
       wsHttpServer?.listen(port, host)
     },

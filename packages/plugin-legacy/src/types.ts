@@ -4,14 +4,15 @@ export interface Options {
    */
   targets?: string | string[] | { [key: string]: string }
   /**
-   * default: false
+   * default: 'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'
    */
-  ignoreBrowserslistConfig?: boolean
+  modernTargets?: string | string[]
   /**
    * default: true
    */
   polyfills?: boolean | string[]
   additionalLegacyPolyfills?: string[]
+  additionalModernPolyfills?: string[]
   /**
    * default: false
    */
