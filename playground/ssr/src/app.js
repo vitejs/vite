@@ -4,7 +4,8 @@ const pathRenderers = {
   '/': renderRoot,
   '/circular-dep': renderCircularDep,
   '/circular-import': renderCircularImport,
-  '/forked-deadlock': renderForkedDeadlock,
+  '/forked-deadlock-static-imports': renderForkedDeadlockStaticImports,
+  '/forked-deadlock-dynamic-imports': renderForkedDeadlockDynamicImports,
 }
 
 export async function render(url, rootDir) {
@@ -40,8 +41,16 @@ async function renderCircularImport(rootDir) {
   return `<div class="circ-import">${escapeHtml(logA())}</div>`
 }
 
-async function renderForkedDeadlock(rootDir) {
+async function renderForkedDeadlockStaticImports(rootDir) {
   const { commonModuleExport } = await import('./forked-deadlock/common-module')
   commonModuleExport()
-  return `<div class="forked-deadlock">rendered</div>`
+  return `<div class="forked-deadlock-static-imports">rendered</div>`
+}
+
+async function renderForkedDeadlockDynamicImports(rootDir) {
+  const { commonModuleExport } = await import(
+    './forked-deadlock/dynamic-imports/common-module'
+  )
+  await commonModuleExport()
+  return `<div class="forked-deadlock-dynamic-imports">rendered</div>`
 }

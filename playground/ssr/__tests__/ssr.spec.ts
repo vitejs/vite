@@ -20,10 +20,20 @@ test(`circular import doesn't throw`, async () => {
   )
 })
 
-test(`deadlock doesn't happen`, async () => {
-  await page.goto(`${url}/forked-deadlock`)
+test(`deadlock doesn't happen for static imports`, async () => {
+  await page.goto(`${url}/forked-deadlock-static-imports`)
 
-  expect(await page.textContent('.forked-deadlock')).toMatch('rendered')
+  expect(await page.textContent('.forked-deadlock-static-imports')).toMatch(
+    'rendered',
+  )
+})
+
+test(`deadlock doesn't happen for dynamic imports`, async () => {
+  await page.goto(`${url}/forked-deadlock-dynamic-imports`)
+
+  expect(await page.textContent('.forked-deadlock-dynamic-imports')).toMatch(
+    'rendered',
+  )
 })
 
 test('should restart ssr', async () => {

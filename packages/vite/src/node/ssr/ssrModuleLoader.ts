@@ -39,14 +39,13 @@ interface NodeImportResolveOptions
 }
 
 const pendingModules = new Map<string, Promise<SSRModule>>()
-const pendingImports = new Map<string, string[]>()
+const pendingModuleDependencyGraph = new Map<string, Set<string>>()
 const importErrors = new WeakMap<Error, { importee: string }>()
 
 export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
   context: SSRContext = { global },
-  urlStack: string[] = [],
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   url = unwrapId(url)
@@ -60,17 +59,11 @@ export async function ssrLoadModule(
     return pending
   }
 
-  const modulePromise = instantiateModule(
-    url,
-    server,
-    context,
-    urlStack,
-    fixStacktrace,
-  )
+  const modulePromise = instantiateModule(url, server, context, fixStacktrace)
   pendingModules.set(url, modulePromise)
   modulePromise
     .catch(() => {
-      pendingImports.delete(url)
+      /* prevent unhandled promise rejection error from bubbling up */
     })
     .finally(() => {
       pendingModules.delete(url)
@@ -82,7 +75,6 @@ async function instantiateModule(
   url: string,
   server: ViteDevServer,
   context: SSRContext = { global },
-  urlStack: string[] = [],
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   const { moduleGraph } = server
@@ -122,9 +114,6 @@ async function instantiateModule(
     url: pathToFileURL(mod.file!).toString(),
   }
 
-  urlStack = urlStack.concat(url)
-  const isCircular = (url: string) => urlStack.includes(url)
-
   const {
     isProduction,
     resolve: { dedupe, preserveSymlinks },
@@ -150,10 +139,6 @@ async function instantiateModule(
     packageCache: server.config.packageCache,
   }
 
-  // Since dynamic imports can happen in parallel, we need to
-  // account for multiple pending deps and duplicate imports.
-  const pendingDeps: string[] = []
-
   const ssrImport = async (dep: string, metadata?: SSRImportBaseMetadata) => {
     try {
       if (dep[0] !== '.' && dep[0] !== '/') {
@@ -161,27 +146,30 @@ async function instantiateModule(
       }
       // convert to rollup URL because `pendingImports`, `moduleGraph.urlToModuleMap` requires that
       dep = unwrapId(dep)
-      if (!isCircular(dep) && !pendingImports.get(dep)?.some(isCircular)) {
-        pendingDeps.push(dep)
-        if (pendingDeps.length === 1) {
-          pendingImports.set(url, pendingDeps)
+
+      // Handle any potential circular dependencies for static imports, preventing
+      // deadlock scenarios when two modules are indirectly waiting on one another
+      // to finish initializing. Dynamic imports are resolved at runtime, hence do
+      // not contribute to the static module dependency graph in the same way
+      if (!metadata?.isDynamicImport) {
+        addPendingModuleDependency(url, dep)
+
+        // If there's a circular dependency formed as a result of the dep import,
+        // return the current state of the dependent module being initialized, in
+        // order to avoid interlocking circular dependencies hanging indefinitely
+        if (checkModuleDependencyExists(dep, url)) {
+          const depSsrModule = moduleGraph.urlToModuleMap.get(dep)?.ssrModule
+          if (!depSsrModule) {
+            // Technically, this should never happen under normal circumstances
+            throw new Error(
+              '[vite] The dependency module is not yet fully initialized due to circular dependency. This is a bug in Vite SSR',
+            )
+          }
+          return depSsrModule
         }
-        const mod = await ssrLoadModule(
-          dep,
-          server,
-          context,
-          urlStack,
-          fixStacktrace,
-        )
-        if (pendingDeps.length === 1) {
-          pendingImports.delete(url)
-        } else {
-          pendingDeps.splice(pendingDeps.indexOf(dep), 1)
-        }
-        // return local module to avoid race condition #5470
-        return mod
       }
-      return moduleGraph.urlToModuleMap.get(dep)?.ssrModule
+
+      return ssrLoadModule(dep, server, context, fixStacktrace)
     } catch (err) {
       // tell external error handler which mod was imported with error
       importErrors.set(err, { importee: dep })
@@ -267,9 +255,50 @@ async function instantiateModule(
     )
 
     throw e
+  } finally {
+    pendingModuleDependencyGraph.delete(url)
   }
 
   return Object.freeze(ssrModule)
+}
+
+function addPendingModuleDependency(originUrl: string, depUrl: string): void {
+  if (pendingModuleDependencyGraph.has(originUrl)) {
+    pendingModuleDependencyGraph.get(originUrl)!.add(depUrl)
+  } else {
+    pendingModuleDependencyGraph.set(originUrl, new Set([depUrl]))
+  }
+}
+
+function checkModuleDependencyExists(
+  originUrl: string,
+  targetUrl: string,
+): boolean {
+  const visited = new Set()
+  const stack = [originUrl]
+
+  while (stack.length) {
+    const currentUrl = stack.pop()!
+
+    if (currentUrl === targetUrl) {
+      return true
+    }
+
+    if (!visited.has(currentUrl)) {
+      visited.add(currentUrl)
+
+      const dependencies = pendingModuleDependencyGraph.get(currentUrl)
+      if (dependencies) {
+        for (const depUrl of dependencies) {
+          if (!visited.has(depUrl)) {
+            stack.push(depUrl)
+          }
+        }
+      }
+    }
+  }
+
+  return false
 }
 
 // In node@12+ we can use dynamic import to load CJS and ESM
