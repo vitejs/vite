@@ -1,3 +1,16 @@
+## 5.3.0-beta.1 (2024-06-07)
+
+* fix(build): allow dynamic import treeshaking when injecting preload (#14221) ([f43f71f](https://github.com/vitejs/vite/commit/f43f71f)), closes [#14221](https://github.com/vitejs/vite/issues/14221)
+* fix(css): handle lightningcss minification in Deno (#17372) ([b3f5bd1](https://github.com/vitejs/vite/commit/b3f5bd1)), closes [#17372](https://github.com/vitejs/vite/issues/17372)
+* fix(css): handle url replacing when preprocessing with lightningcss (#17364) ([6fbb5e0](https://github.com/vitejs/vite/commit/6fbb5e0)), closes [#17364](https://github.com/vitejs/vite/issues/17364)
+* fix(ssr): remove pure CSS dynamic import (#17371) ([67ff94b](https://github.com/vitejs/vite/commit/67ff94b)), closes [#17371](https://github.com/vitejs/vite/issues/17371)
+* fix(ssr): resolve interlocking circular dependency issues (#15395) ([687c38b](https://github.com/vitejs/vite/commit/687c38b)), closes [#15395](https://github.com/vitejs/vite/issues/15395)
+* chore: add region comment (#17370) ([a8c7083](https://github.com/vitejs/vite/commit/a8c7083)), closes [#17370](https://github.com/vitejs/vite/issues/17370)
+* chore(deps): update all non-major dependencies (#17373) ([f2d52f1](https://github.com/vitejs/vite/commit/f2d52f1)), closes [#17373](https://github.com/vitejs/vite/issues/17373)
+* feat(typescript): update tsconfck to add support for `${configDir}` replacement in ts 5.5 (#17350) ([4835e2b](https://github.com/vitejs/vite/commit/4835e2b)), closes [#17350](https://github.com/vitejs/vite/issues/17350)
+
+
+
 ## 5.3.0-beta.0 (2024-05-30)
 
 * fix: adjust import analysis behavior to match Node (#16738) ([f599ab4](https://github.com/vitejs/vite/commit/f599ab4)), closes [#16738](https://github.com/vitejs/vite/issues/16738)
