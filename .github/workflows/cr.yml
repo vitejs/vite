@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    if: github.event_name == 'push' || github.event.review.state == 'APPROVED'
+    # if: github.event_name == 'push' || github.event.review.state == 'APPROVED'
     runs-on: ubuntu-latest
 
     steps:
