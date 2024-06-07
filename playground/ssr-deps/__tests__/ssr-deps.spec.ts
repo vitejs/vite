@@ -119,6 +119,13 @@ test('import css library', async () => {
   expect(await page.textContent('.module-condition')).toMatch('[success]')
 })
 
+test('optimize-deps-nested-include', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.optimize-deps-nested-include')).toMatch(
+    'nested-include',
+  )
+})
+
 describe.runIf(isServe)('hmr', () => {
   test('handle isomorphic module updates', async () => {
     await page.goto(url)
