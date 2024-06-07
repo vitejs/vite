@@ -1,3 +1,9 @@
+## <small>5.2.13 (2024-06-07)</small>
+
+* fix: backport to 5.2 (#17411) ([e6913d1](https://github.com/vitejs/vite/commit/e6913d1)), closes [#17411](https://github.com/vitejs/vite/issues/17411)
+
+
+
 ## <small>5.2.12 (2024-05-28)</small>
 
 * chore: move to eslint flat config (#16743) ([8f16765](https://github.com/vitejs/vite/commit/8f16765)), closes [#16743](https://github.com/vitejs/vite/issues/16743)
