@@ -30,5 +30,3 @@ jobs:
 
       - run: pnpx pkg-pr-new publish --compact --pnpm
         working-directory: ./packages/vite
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
