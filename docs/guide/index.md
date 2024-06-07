@@ -105,6 +105,34 @@ npm install
 npm run dev
 ```
 
+## Install `vite` Command
+
+You can install the CLI command `vite` for your project using:
+
+```bash
+npm install vite
+```
+
+Or with yarn:
+
+```bash
+yarn add vite
+```
+
+Now you can create an index.html file like this:
+
+```html
+<p>Hello Vite!</p>
+```
+
+Then simply run:
+
+```bash
+vite
+```
+
+And index.html will be served on http://localhost:5173
+
 ## `index.html` and Project Root
 
 One thing you may have noticed is that in a Vite project, `index.html` is front-and-central instead of being tucked away inside `public`. This is intentional: during development Vite is a server, and `index.html` is the entry point to your application.
@@ -121,10 +149,6 @@ Running `vite` starts the dev server using the current working directory as root
 Note that Vite will also resolve [its config file (i.e. `vite.config.js`)](/config/#configuring-vite) inside the project root, so you'll need to move it if the root is changed.
 
 ## Command Line Interface
-
-You can install the CLI command `vite` globally with `npm install -g vite` or `yarn global add vite`.
-
-Or install it for a specific project with `npm install vite` or `yarn add vite`.
 
 In a project where Vite is installed, you can use the `vite` binary in your npm scripts, or run it directly with `npx vite`. Here are the default npm scripts in a scaffolded Vite project:
 
