@@ -84,6 +84,8 @@ export function errorMiddleware(
             </script>
           </head>
           <body>
+            <h1>Internal Server Error</h1>
+            <pre>${err.stack?.replace(/</g, '&lt;')}</pre>
           </body>
         </html>
       `)

@@ -259,7 +259,7 @@ describe.runIf(isServe)('invalid', () => {
     const errorOverlay = await page.waitForSelector('vite-error-overlay')
     expect(errorOverlay).toBeTruthy()
 
-    await page.click('html')
+    await page.click('html', { position: { x: 50, y: 50 } })
     const isVisbleOverlay = await errorOverlay.isVisible()
     expect(isVisbleOverlay).toBeFalsy()
   })
