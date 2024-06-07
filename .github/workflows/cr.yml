@@ -21,4 +21,4 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - run: pnpx pkg-pr-new publish --compact --pnpm ./packages/vite
+      - run: pnpx pkg-pr-new publish --pnpm ./packages/vite
