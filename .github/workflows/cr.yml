@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - v6/environment-api
+      - feat/pkg.pr.new
   pull_request_review:
     types: [submitted]
 
