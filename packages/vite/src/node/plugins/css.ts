@@ -845,27 +845,33 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       function extractCss() {
         let css = ''
         const collected = new Set<OutputChunk>()
+        // will be populated in order they are used by entry points
+        const dynamicImports = new Set<string>()
 
         function collect(chunk: OutputChunk | OutputAsset) {
           if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
           collected.add(chunk)
 
+          // First collect all styles from the synchronous imports (lowest priority)
           chunk.imports.forEach((importName) => collect(bundle[importName]))
+          // Save dynamic imports in deterministic order to add the styles later (to have the highest priority)
           chunk.dynamicImports.forEach((importName) =>
-            collect(bundle[importName]),
+            dynamicImports.add(importName),
           )
+          // Then collect the styles of the current chunk (might overwrite some styles from previous imports)
           css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
         }
 
         // The bundle is guaranteed to be deterministic, if not then we have a bug in rollup.
         // So we use it to ensure a deterministic order of styles
         for (const chunk of Object.values(bundle)) {
-          if (
-            chunk.type === 'chunk' &&
-            (chunk.isEntry || chunk.isDynamicEntry)
-          ) {
+          if (chunk.type === 'chunk' && chunk.isEntry) {
             collect(chunk)
           }
+        }
+        // Now collect the dynamic chunks, this is done last to have the styles overwrite the previous ones
+        for (const chunkName of dynamicImports) {
+          collect(bundle[chunkName])
         }
 
         return css
