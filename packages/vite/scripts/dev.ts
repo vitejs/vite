@@ -1,4 +1,10 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { type BuildOptions, context } from 'esbuild'
 import packageJSON from '../package.json'
 
@@ -58,6 +64,8 @@ void watch({
   },
   outdir: 'dist/node',
   format: 'esm',
+  splitting: true,
+  chunkNames: '_[name]-[hash]',
   // The current usage of require() inside inlined workers confuse esbuild,
   // and generate top level __require which are then undefined in the worker
   // at runtime. To workaround, we move require call to ___require and then
@@ -70,12 +78,12 @@ void watch({
       setup(build) {
         let first = true
         build.onEnd(() => {
-          for (const file of ['index.js', 'cli.js']) {
+          for (const file of readdirSync('dist/node')) {
             const path = `dist/node/${file}`
-            writeFileSync(
-              path,
-              readFileSync(path, 'utf-8').replaceAll('___require', 'require'),
-            )
+            const content = readFileSync(path, 'utf-8')
+            if (content.includes('___require')) {
+              writeFileSync(path, content.replaceAll('___require', 'require'))
+            }
           }
           if (first) {
             first = false
