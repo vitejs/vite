@@ -1,15 +1,8 @@
 name: Publish Any Commit
-on:
-  push:
-    branches:
-      - main
-      - v6/environment-api
-  pull_request_review:
-    types: [submitted]
+on: [push, pull_request]
 
 jobs:
   build:
-    if: github.event_name == 'push' || github.event.review.state == 'APPROVED'
     runs-on: ubuntu-latest
 
     steps:
@@ -28,4 +21,4 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - run: pnpx pkg-pr-new publish --pnpm ./packages/vite
+      - run: pnpx pkg-pr-new publish --compact --pnpm ./packages/vite
