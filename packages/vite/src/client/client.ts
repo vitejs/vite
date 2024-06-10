@@ -103,7 +103,7 @@ function setupWebSocket(
     notifyListeners('vite:ws:disconnect', { webSocket: socket })
 
     if (hasDocument) {
-      console.log(`[vite] server connection lost. polling for restart...`)
+      console.log(`[vite] server connection lost. Polling for restart...`)
       await waitForSuccessfulPing(protocol, hostAndPath)
       location.reload()
     }
