@@ -45,7 +45,7 @@ jobs:
           - os: macos-latest
             node_version: 20
           - os: windows-latest
-            node_version: 20
+            node_version: 20.13.1 # 20.14.0 keeps causing a native `node::SetCppgcReference+18123` error in Vitest
       fail-fast: false
 
     name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
