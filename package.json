@@ -41,7 +41,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.4.0",
-    "@rollup/plugin-typescript": "^11.1.6",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.9.6",
     "@types/convert-source-map": "^2.0.3",
@@ -74,6 +73,7 @@
     "prettier": "3.3.1",
     "rimraf": "^5.0.7",
     "rollup": "^4.13.0",
+    "rollup-plugin-esbuild": "^6.1.1",
     "simple-git-hooks": "^2.11.1",
     "tslib": "^2.6.3",
     "tsx": "^4.15.1",

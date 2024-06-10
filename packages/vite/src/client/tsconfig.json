@@ -3,7 +3,7 @@
   "include": ["./", "../types"],
   "compilerOptions": {
     "types": [],
-    "target": "ES2019",
+    "target": "ES2020",
     "lib": ["ESNext", "DOM"],
     "declaration": false
   }

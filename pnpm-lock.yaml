@@ -28,9 +28,6 @@ importers:
       '@eslint/js':
         specifier: ^9.4.0
         version: 9.4.0
-      '@rollup/plugin-typescript':
-        specifier: ^11.1.6
-        version: 11.1.6(rollup@4.13.0)(tslib@2.6.3)(typescript@5.2.2)
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
@@ -127,6 +124,9 @@ importers:
       rollup:
         specifier: ^4.13.0
         version: 4.13.0
+      rollup-plugin-esbuild:
+        specifier: ^6.1.1
+        version: 6.1.1(esbuild@0.21.4)(rollup@4.13.0)
       simple-git-hooks:
         specifier: ^2.11.1
         version: 2.11.1
@@ -274,9 +274,6 @@ importers:
       '@rollup/plugin-node-resolve':
         specifier: 15.2.3
         version: 15.2.3(rollup@4.13.0)
-      '@rollup/plugin-typescript':
-        specifier: ^11.1.6
-        version: 11.1.6(rollup@4.13.0)(tslib@2.6.3)(typescript@5.2.2)
       '@rollup/pluginutils':
         specifier: ^5.1.0
         version: 5.1.0(rollup@4.13.0)
@@ -791,6 +788,9 @@ importers:
       terser:
         specifier: ^5.31.1
         version: 5.31.1
+      vite:
+        specifier: workspace:*
+        version: link:../../packages/vite
 
   playground/lib:
     devDependencies:
@@ -1730,14 +1730,6 @@ packages:
       '@jridgewell/gen-mapping': 0.3.5
       '@jridgewell/trace-mapping': 0.3.25
 
-  /@babel/code-frame@7.24.6:
-    resolution: {integrity: sha512-ZJhac6FkEd1yhG2AHOmfcXG4ceoLltoCVJjN5XsWN9BifBQr+cHJbWi0h68HZuSORq+3WtJ2z0hwF2NG1b5kcA==}
-    engines: {node: '>=6.9.0'}
-    dependencies:
-      '@babel/highlight': 7.24.6
-      picocolors: 1.0.1
-    dev: true
-
   /@babel/code-frame@7.24.7:
     resolution: {integrity: sha512-BcYH1CVJBO9tvyIZ2jVeXgSIMvGZ2FDRvDdOIVQyuklNKSsx+eppDEBq/g47Ayw+RqNFE+URvOShmf+f/qwAlA==}
     engines: {node: '>=6.9.0'}
@@ -2029,17 +2021,6 @@ packages:
     dependencies:
       '@babel/template': 7.24.7
       '@babel/types': 7.24.7
-
-  /@babel/highlight@7.24.6:
-    resolution: {integrity: sha512-2YnuOp4HAk2BsBrJJvYCbItHx0zWscI1C3zgWkz+wDyD9I7GIVrfnLyrR4Y1VR+7p+chAEcrgRQYZAGIKMV7vQ==}
-    engines: {node: '>=6.9.0'}
-    requiresBuild: true
-    dependencies:
-      '@babel/helper-validator-identifier': 7.24.6
-      chalk: 2.4.2
-      js-tokens: 4.0.0
-      picocolors: 1.0.1
-    dev: true
 
   /@babel/highlight@7.24.7:
     resolution: {integrity: sha512-EStJpq4OuY8xYfhGVXngigBJRWxftKX9ksiGDnmlY3o7B/V7KIAc9X4oiK87uPJSc/vs5L869bem5fhZa8caZw==}
@@ -4058,26 +4039,6 @@ packages:
       '@rollup/pluginutils': 5.1.0(rollup@3.29.4)
       magic-string: 0.27.0
       rollup: 3.29.4
-    dev: true
-
-  /@rollup/plugin-typescript@11.1.6(rollup@4.13.0)(tslib@2.6.3)(typescript@5.2.2):
-    resolution: {integrity: sha512-R92yOmIACgYdJ7dJ97p4K69I8gg6IEHt8M7dUBxN3W6nrO8uUxX5ixl0yU/N3aZTi8WhPuICvOHXQvF6FaykAA==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      rollup: ^2.14.0||^3.0.0||^4.0.0
-      tslib: '*'
-      typescript: '>=3.7.0'
-    peerDependenciesMeta:
-      rollup:
-        optional: true
-      tslib:
-        optional: true
-    dependencies:
-      '@rollup/pluginutils': 5.1.0(rollup@4.13.0)
-      resolve: 1.22.4
-      rollup: 4.13.0
-      tslib: 2.6.3
-      typescript: 5.2.2
     dev: true
 
   /@rollup/pluginutils@5.0.4(rollup@3.29.4):
@@ -8535,7 +8496,7 @@ packages:
     resolution: {integrity: sha512-rum1bPifK5SSar35Z6EKZuYPJx85pkNaFrxBK3mwdfSJ1/WKbYrjoW/zTPSjRRamfmVX1ACBIdFAO0VRErW/EA==}
     engines: {node: '>=18'}
     dependencies:
-      '@babel/code-frame': 7.24.6
+      '@babel/code-frame': 7.24.7
       index-to-position: 0.1.2
       type-fest: 4.18.1
     dev: true
@@ -9264,7 +9225,7 @@ packages:
       rollup: 3.29.4
       typescript: 5.2.2
     optionalDependencies:
-      '@babel/code-frame': 7.24.6
+      '@babel/code-frame': 7.24.7
     dev: true
 
   /rollup-plugin-dts@6.1.1(rollup@4.13.0)(typescript@5.2.2):
@@ -9278,7 +9239,7 @@ packages:
       rollup: 4.13.0
       typescript: 5.2.2
     optionalDependencies:
-      '@babel/code-frame': 7.24.6
+      '@babel/code-frame': 7.24.7
     dev: true
 
   /rollup-plugin-esbuild@6.1.1(esbuild@0.21.4)(rollup@4.13.0):
