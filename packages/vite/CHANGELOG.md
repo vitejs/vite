@@ -1,3 +1,14 @@
+## 5.3.0-beta.2 (2024-06-10)
+
+* fix: gracefully shutdown preview server on `SIGTERM` (fix #12990) (#17333) ([2207a68](https://github.com/vitejs/vite/commit/2207a68)), closes [#12990](https://github.com/vitejs/vite/issues/12990) [#17333](https://github.com/vitejs/vite/issues/17333)
+* fix(css): ensure order of extracted CSS (#16588) ([a52ed1d](https://github.com/vitejs/vite/commit/a52ed1d)), closes [#16588](https://github.com/vitejs/vite/issues/16588)
+* fix(deps): update all non-major dependencies (#17430) ([4453d35](https://github.com/vitejs/vite/commit/4453d35)), closes [#17430](https://github.com/vitejs/vite/issues/17430)
+* build: use esbuild to speedup building vite package (#17299) ([6db2515](https://github.com/vitejs/vite/commit/6db2515)), closes [#17299](https://github.com/vitejs/vite/issues/17299)
+* chore: add error recovery option to LightningCSSOptions (#17420) ([e04193f](https://github.com/vitejs/vite/commit/e04193f)), closes [#17420](https://github.com/vitejs/vite/issues/17420)
+* chore(deps): update dependency @rollup/plugin-commonjs to v26 (#17431) ([507b3de](https://github.com/vitejs/vite/commit/507b3de)), closes [#17431](https://github.com/vitejs/vite/issues/17431)
+
+
+
 ## 5.3.0-beta.1 (2024-06-07)
 
 * fix(build): allow dynamic import treeshaking when injecting preload (#14221) ([f43f71f](https://github.com/vitejs/vite/commit/f43f71f)), closes [#14221](https://github.com/vitejs/vite/issues/14221)
