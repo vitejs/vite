@@ -19,4 +19,5 @@ export type LightningCSSOptions = {
   pseudoClasses?: PseudoClasses
   unusedSymbols?: string[]
   cssModules?: CSSModulesConfig
+  errorRecovery?: boolean
 }
