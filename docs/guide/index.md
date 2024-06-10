@@ -105,33 +105,43 @@ npm install
 npm run dev
 ```
 
-## Install `vite` Command
+## Manual Installation
 
-You can install the CLI command `vite` for your project using:
+In your project, you can install the `vite` CLI using:
 
-```bash
-npm install vite
+::: code-group
+
+```bash [NPM]
+$ npm install -D vite
 ```
 
-Or with yarn:
-
-```bash
-yarn add vite
+```bash [Yarn]
+$ yarn add -D vite
 ```
 
-Now you can create an index.html file like this:
+```bash [PNPM]
+$ pnpm add -D vite
+```
+
+```bash [Bun]
+$ bun add -D vite
+```
+
+:::
+
+And create an `index.html` file like this:
 
 ```html
 <p>Hello Vite!</p>
 ```
 
-Then simply run:
+Then simply run the `vite` CLI in your terminal:
 
 ```bash
 vite
 ```
 
-And index.html will be served on http://localhost:5173
+The `index.html` will be served on http://localhost:5173.
 
 ## `index.html` and Project Root
 
