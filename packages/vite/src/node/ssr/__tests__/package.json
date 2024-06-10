@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "dependencies": {
+    "@vitejs/test-mix-dep": "file:./fixtures/mix-dep",
     "@vitejs/cjs-ssr-dep": "link:./fixtures/cjs-ssr-dep"
   }
 }

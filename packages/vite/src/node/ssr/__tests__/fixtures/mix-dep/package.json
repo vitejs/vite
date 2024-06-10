@@ -1,0 +1,13 @@
+{
+  "name": "@vitejs/test-mix-dep",
+  "private": true,
+  "exports": {
+    ".": {
+      "module": {
+        "default": "./index.esm.js"
+      },
+      "import": "./index.cjs.mjs",
+      "default": "./index.cjs.js"
+    }
+  }
+}

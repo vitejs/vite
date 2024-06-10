@@ -1093,7 +1093,7 @@ function resolveExportsOrImports(
     options.overrideConditions || [
       'production',
       'development',
-      'module',
+      ...(targetWeb ? ['module'] : []),
       ...options.conditions,
     ],
   )
