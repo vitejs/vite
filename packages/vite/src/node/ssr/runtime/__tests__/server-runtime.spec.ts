@@ -169,7 +169,7 @@ describe('module runner initialization', async () => {
     expect(modules.static).toBe(modules.dynamicRelative)
     expect(modules.static).toBe(modules.dynamicAbsolute)
     expect(modules.static).toBe(modules.dynamicAbsoluteExtension)
-    expect(modules.static).toBe(modules.dynamicAbsoluteFull)
+    expect(modules.static === modules.dynamicAbsoluteFull).toBe(true)
   })
 
   it('correctly imports a virtual module', async ({ runner }) => {
