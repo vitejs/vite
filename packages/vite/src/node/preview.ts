@@ -145,16 +145,14 @@ export async function preview(
 
   const closeHttpServer = createServerCloseFn(httpServer)
 
-  const close = () => {
-    teardownSIGTERMListener(closeServerAndExit)
-    return closeHttpServer()
-  }
-
   const server: PreviewServer = {
     config,
     middlewares: app,
     httpServer,
-    close,
+    async close() {
+      teardownSIGTERMListener(closeServerAndExit)
+      await closeHttpServer()
+    },
     resolvedUrls: null,
     printUrls() {
       if (server.resolvedUrls) {
