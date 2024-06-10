@@ -9,7 +9,7 @@ import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
-import type { FSWatcher } from 'chokidar'
+import type { FSWatcher } from 'dep-types/chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
@@ -434,7 +434,7 @@ export function isFilePathESM(
   }
 }
 
-const splitRE = /\r?\n/
+export const splitRE = /\r?\n/g
 
 const range: number = 2
 
@@ -1437,4 +1437,20 @@ export function partialEncodeURIPath(uri: string): string {
   const filePath = cleanUrl(uri)
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
   return filePath.replaceAll('%', '%25') + postfix
+}
+
+export const setupSIGTERMListener = (callback: () => Promise<void>): void => {
+  process.once('SIGTERM', callback)
+  if (process.env.CI !== 'true') {
+    process.stdin.on('end', callback)
+  }
+}
+
+export const teardownSIGTERMListener = (
+  callback: () => Promise<void>,
+): void => {
+  process.off('SIGTERM', callback)
+  if (process.env.CI !== 'true') {
+    process.stdin.off('end', callback)
+  }
 }

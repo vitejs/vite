@@ -135,6 +135,29 @@ import(`../nested/${base}.js`).then((mod) => {
 import(`../nested/nested/${base}.js`).then((mod) => {
   text('.dynamic-import-nested-self', mod.self)
 })
+;(async function () {
+  const { foo } = await import('./treeshaken/treeshaken.js')
+  const { bar, default: tree } = await import('./treeshaken/treeshaken.js')
+  const baz1 = (await import('./treeshaken/treeshaken.js')).baz1
+  const baz2 = (await import('./treeshaken/treeshaken.js')).baz2.log
+  const baz3 = (await import('./treeshaken/treeshaken.js')).baz3?.log
+  const baz4 = await import('./treeshaken/treeshaken.js').then(
+    ({ baz4 }) => baz4,
+  )
+  const baz5 = await import('./treeshaken/treeshaken.js').then(function ({
+    baz5,
+  }) {
+    return baz5
+  })
+  foo()
+  bar()
+  tree()
+  baz1()
+  baz2()
+  baz3()
+  baz4()
+  baz5()
+})()
 
 import(`../nested/static.js`).then((mod) => {
   text('.dynamic-import-static', mod.self)

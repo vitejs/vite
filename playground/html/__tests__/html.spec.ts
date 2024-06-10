@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from 'vitest'
-import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   browserLogs,
   editFile,
+  expectWithRetry,
   getColor,
   isBuild,
   isServe,
@@ -219,7 +219,7 @@ describe('noBody', () => {
   })
 })
 
-describe.skipIf(hasWindowsUnicodeFsBug)('Unicode path', () => {
+describe('Unicode path', () => {
   test('direct access', async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
@@ -372,6 +372,16 @@ describe('special character', () => {
 
   test('should fetch html proxy', async () => {
     expect(browserLogs).toContain('special character')
+  })
+})
+
+describe('relative input', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/relative-input.html')
+  })
+
+  test('passing relative path to rollupOptions.input works', async () => {
+    await expectWithRetry(() => page.textContent('.relative-input')).toBe('OK')
   })
 })
 

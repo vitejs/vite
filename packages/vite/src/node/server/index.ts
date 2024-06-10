@@ -35,6 +35,8 @@ import {
   promiseWithResolvers,
   resolveHostname,
   resolveServerUrls,
+  setupSIGTERMListener,
+  teardownSIGTERMListener,
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
@@ -101,6 +103,11 @@ export interface ServerOptions extends CommonServerOptions {
    * Configure HMR-specific options (port, host, path & protocol)
    */
   hmr?: HmrOptions | boolean
+  /**
+   * Do not start the websocket connection.
+   * @experimental
+   */
+  ws?: false
   /**
    * Warm-up files to transform and cache the results in advance. This improves the
    * initial page load during server starts and prevents transform waterfalls.
@@ -242,7 +249,6 @@ export interface ViteDevServer {
   watcher: FSWatcher
   /**
    * web socket server with `send(payload)` method
-   * @deprecated use `hot` instead
    */
   ws: WebSocketServer
   /**
@@ -250,6 +256,7 @@ export interface ViteDevServer {
    *
    * Always sends a message to at least a WebSocket client. Any third party can
    * add a channel to the broadcaster to process messages
+   * @deprecated will be replaced with the environment api in v6.
    */
   hot: HMRBroadcaster
   /**
@@ -466,6 +473,9 @@ export async function _createServer(
     config.server.hmr.channels.forEach((channel) => hot.addChannel(channel))
   }
 
+  const publicFiles = await initPublicFilesPromise
+  const { publicDir } = config
+
   if (httpServer) {
     setClientErrorHandler(httpServer, config.logger)
   }
@@ -479,6 +489,9 @@ export async function _createServer(
           root,
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
+          // Watch the public directory explicitly because it might be outside
+          // of the root directory.
+          ...(publicDir && publicFiles ? [publicDir] : []),
         ],
         resolvedWatchOptions,
       ) as FSWatcher)
@@ -490,8 +503,6 @@ export async function _createServer(
 
   const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
-
-  let exitProcess: () => void
 
   const devHtmlTransformFn = createDevHtmlTransformFn(config)
 
@@ -552,13 +563,7 @@ export async function _createServer(
       return devHtmlTransformFn(server, url, html, originalUrl)
     },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      return ssrLoadModule(
-        url,
-        server,
-        undefined,
-        undefined,
-        opts?.fixStacktrace,
-      )
+      return ssrLoadModule(url, server, undefined, opts?.fixStacktrace)
     },
     async ssrFetchModule(url: string, importer?: string) {
       return ssrFetchModule(server, url, importer)
@@ -633,10 +638,7 @@ export async function _createServer(
     },
     async close() {
       if (!middlewareMode) {
-        process.off('SIGTERM', exitProcess)
-        if (process.env.CI !== 'true') {
-          process.stdin.off('end', exitProcess)
-        }
+        teardownSIGTERMListener(closeServerAndExit)
       }
       await Promise.allSettled([
         watcher.close(),
@@ -731,21 +733,17 @@ export async function _createServer(
     },
   })
 
-  if (!middlewareMode) {
-    exitProcess = async () => {
-      try {
-        await server.close()
-      } finally {
-        process.exit()
-      }
-    }
-    process.once('SIGTERM', exitProcess)
-    if (process.env.CI !== 'true') {
-      process.stdin.on('end', exitProcess)
+  const closeServerAndExit = async () => {
+    try {
+      await server.close()
+    } finally {
+      process.exit()
     }
   }
 
-  const publicFiles = await initPublicFilesPromise
+  if (!middlewareMode) {
+    setupSIGTERMListener(closeServerAndExit)
+  }
 
   const onHMRUpdate = async (
     type: 'create' | 'delete' | 'update',
@@ -762,8 +760,6 @@ export async function _createServer(
       }
     }
   }
-
-  const { publicDir } = config
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
