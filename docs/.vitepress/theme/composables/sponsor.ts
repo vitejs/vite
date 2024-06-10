@@ -64,6 +64,11 @@ const viteSponsors: Pick<Sponsors, 'special' | 'gold'> = {
       img: '/transloadit.svg',
       hasDark: true,
     },
+    {
+      name: 'Huly',
+      url: 'https://huly.io/',
+      img: '/huly.svg',
+    },
   ],
 }
 
