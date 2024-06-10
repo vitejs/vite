@@ -141,7 +141,7 @@ Then simply run the `vite` CLI in your terminal:
 vite
 ```
 
-The `index.html` will be served on http://localhost:5173.
+The `index.html` will be served on `http://localhost:5173`.
 
 ## `index.html` and Project Root
 
