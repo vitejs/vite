@@ -1,4 +1,5 @@
 import * as staticModule from './basic'
+import path from "node:path";
 
 export const initialize = async () => {
   const nameRelative = './basic'
@@ -9,6 +10,7 @@ export const initialize = async () => {
     dynamicRelative: await import(nameRelative),
     dynamicAbsolute: await import(nameAbsolute),
     dynamicAbsoluteExtension: await import(nameAbsoluteExtension),
+    dynamicAbsoluteFull: await import(path.join(import.meta.dirname, "basic.js")),
     static: staticModule,
   }
 }
