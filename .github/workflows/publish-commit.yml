@@ -1,0 +1,34 @@
+name: Publish Any Commit
+
+env:
+  # install playwright binary manually (because pnpm only runs install script once)
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+on:
+  push:
+    branches:
+      - main
+      - v6/environment-api
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  build:
+    if: github.event_name == 'push' || github.event.review.state == 'APPROVED'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4.0.0
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        working-directory: ./packages/vite
+        run: pnpm build
+
+      - run: pnpm dlx pkg-pr-new@0.0 publish --compact --pnpm ./packages/vite
