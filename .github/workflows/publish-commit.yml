@@ -1,4 +1,9 @@
 name: Publish Any Commit
+
+env:
+  # install playwright binary manually (because pnpm only runs install script once)
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
 on:
   push:
     branches:
@@ -16,16 +21,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - run: corepack enable
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "pnpm"
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4.0.0
 
       - name: Install dependencies
         run: pnpm install
 
       - name: Build
+        working-directory: ./packages/vite
         run: pnpm build
 
-      - run: pnpx pkg-pr-new publish --compact --pnpm ./packages/vite
+      - run: pnpm dlx pkg-pr-new@0.0 publish --compact --pnpm ./packages/vite
