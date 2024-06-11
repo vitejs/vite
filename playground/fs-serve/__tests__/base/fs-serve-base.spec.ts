@@ -8,7 +8,11 @@ const stringified = JSON.stringify(testJSON)
 describe.runIf(isServe)('main', () => {
   beforeAll(async () => {
     const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
-    await page.goto(viteTestUrl + srcPrefix + 'src/')
+    await page.goto(viteTestUrl + srcPrefix + 'src/', {
+      // while networkidle is discouraged, we use here because we're not using playwright's retry-able assertions,
+      // and refactoring the code below to manually retry would be harder to read.
+      waitUntil: 'networkidle',
+    })
   })
 
   test('default import', async () => {
