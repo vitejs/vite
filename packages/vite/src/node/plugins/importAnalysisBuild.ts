@@ -41,6 +41,9 @@ const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 
 const dynamicImportPrefixRE = /import\s*\(/
 
+const dynamicImportTreeshakenRE =
+  /(\b(const|let|var)\s+(\{[^}.]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[^;[\s]+)+)|\bimport\([^)]+\)(\s*\.then\([^{]*?\(\s*\{([^}.]+)\})/g
+
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
   return relPath[0] === '.' ? relPath : `./${relPath}`
@@ -235,6 +238,66 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
+      // when wrapping dynamic imports with a preload helper, Rollup is unable to analyze the
+      // accessed variables for treeshaking. This below tries to match common accessed syntax
+      // to "copy" it over to the dynamic import wrapped by the preload helper.
+      const dynamicImports: Record<
+        number,
+        { declaration?: string; names?: string }
+      > = {}
+
+      if (insertPreload) {
+        let match
+        while ((match = dynamicImportTreeshakenRE.exec(source))) {
+          /* handle `const {foo} = await import('foo')`
+           *
+           * match[1]: `const {foo} = await import('foo')`
+           * match[2]: `const`
+           * match[3]: `{foo}`
+           * import end: `const {foo} = await import('foo')_`
+           *                                               ^
+           */
+          if (match[1]) {
+            dynamicImports[dynamicImportTreeshakenRE.lastIndex] = {
+              declaration: `${match[2]} ${match[3]}`,
+              names: match[3]?.trim(),
+            }
+            continue
+          }
+
+          /* handle `(await import('foo')).foo`
+           *
+           * match[4]: `(await import('foo')).foo`
+           * match[5]: `.foo`
+           * import end: `(await import('foo'))`
+           *                                  ^
+           */
+          if (match[4]) {
+            let names = match[5].match(/\.([^.?]+)/)?.[1] || ''
+            // avoid `default` keyword error
+            if (names === 'default') {
+              names = 'default: __vite_default__'
+            }
+            dynamicImports[
+              dynamicImportTreeshakenRE.lastIndex - match[5]?.length - 1
+            ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
+            continue
+          }
+
+          /* handle `import('foo').then(({foo})=>{})`
+           *
+           * match[6]: `.then(({foo}`
+           * match[7]: `foo`
+           * import end: `import('foo').`
+           *                           ^
+           */
+          const names = match[7]?.trim()
+          dynamicImports[
+            dynamicImportTreeshakenRE.lastIndex - match[6]?.length
+          ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
+        }
+      }
+
       let s: MagicString | undefined
       const str = () => s || (s = new MagicString(source))
       let needPreloadHelper = false
@@ -265,7 +328,26 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             source[start] === '`')
         ) {
           needPreloadHelper = true
-          str().prependLeft(expStart, `${preloadMethod}(() => `)
+          const { declaration, names } = dynamicImports[expEnd] || {}
+          if (names) {
+            /* transform `const {foo} = await import('foo')`
+             * to `const {foo} = await __vitePreload(async () => { const {foo} = await import('foo');return {foo}}, ...)`
+             *
+             * transform `import('foo').then(({foo})=>{})`
+             * to `__vitePreload(async () => { const {foo} = await import('foo');return { foo }},...).then(({foo})=>{})`
+             *
+             * transform `(await import('foo')).foo`
+             * to `__vitePreload(async () => { const {foo} = (await import('foo')).foo; return { foo }},...)).foo`
+             */
+            str().prependLeft(
+              expStart,
+              `${preloadMethod}(async () => { ${declaration} = await `,
+            )
+            str().appendRight(expEnd, `;return ${names}}`)
+          } else {
+            str().prependLeft(expStart, `${preloadMethod}(() => `)
+          }
+
           str().appendRight(
             expEnd,
             `,${isModernFlag}?${preloadMarker}:void 0${
@@ -318,7 +400,64 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      if (format !== 'es' || ssr || isWorker) {
+      if (format !== 'es') {
+        return
+      }
+
+      if (ssr || isWorker) {
+        const removedPureCssFiles = removedPureCssFilesCache.get(config)
+        if (removedPureCssFiles && removedPureCssFiles.size > 0) {
+          for (const file in bundle) {
+            const chunk = bundle[file]
+            if (chunk.type === 'chunk' && chunk.code.includes('import')) {
+              const code = chunk.code
+              let imports!: ImportSpecifier[]
+              try {
+                imports = parseImports(code)[0].filter((i) => i.d > -1)
+              } catch (e: any) {
+                const loc = numberToPos(code, e.idx)
+                this.error({
+                  name: e.name,
+                  message: e.message,
+                  stack: e.stack,
+                  cause: e.cause,
+                  pos: e.idx,
+                  loc: { ...loc, file: chunk.fileName },
+                  frame: generateCodeFrame(code, loc),
+                })
+              }
+
+              for (const imp of imports) {
+                const {
+                  n: name,
+                  s: start,
+                  e: end,
+                  ss: expStart,
+                  se: expEnd,
+                } = imp
+                let url = name
+                if (!url) {
+                  const rawUrl = code.slice(start, end)
+                  if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
+                    url = rawUrl.slice(1, -1)
+                }
+                if (!url) continue
+
+                const normalizedFile = path.posix.join(
+                  path.posix.dirname(chunk.fileName),
+                  url,
+                )
+                if (removedPureCssFiles.has(normalizedFile)) {
+                  // remove with Promise.resolve({}) while preserving source map location
+                  chunk.code =
+                    chunk.code.slice(0, expStart) +
+                    `Promise.resolve({${''.padEnd(expEnd - expStart - 19, ' ')}})` +
+                    chunk.code.slice(expEnd)
+                }
+              }
+            }
+          }
+        }
         return
       }
 

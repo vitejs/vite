@@ -54,6 +54,10 @@ declare module '*.apng' {
   const src: string
   export default src
 }
+declare module '*.bmp' {
+  const src: string
+  export default src
+}
 declare module '*.png' {
   const src: string
   export default src

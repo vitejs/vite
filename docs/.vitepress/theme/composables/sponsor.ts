@@ -64,6 +64,16 @@ const viteSponsors: Pick<Sponsors, 'special' | 'gold'> = {
       img: '/transloadit.svg',
       hasDark: true,
     },
+    {
+      name: 'Huly',
+      url: 'https://huly.io/',
+      img: '/huly.svg',
+    },
+    {
+      name: 'Handsontable',
+      url: 'https://handsontable.com/docs/react-data-grid/?utm_source=vite_docs&utm_medium=sponsorship&utm_campaign=library_sponsorship_2024',
+      img: '/handsontable.svg',
+    },
   ],
 }
 
