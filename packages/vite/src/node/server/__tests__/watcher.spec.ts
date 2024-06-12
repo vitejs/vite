@@ -38,14 +38,15 @@ describe('watcher configuration', () => {
       new URL('./fixtures/watcher/nested-root', import.meta.url),
     )
     server = await createServer({ root })
-    await new Promise((resolve) => server!.watcher.on('ready', resolve))
+    await new Promise((resolve) => server!.watcher.once('ready', resolve))
     const watchedDirs = Object.keys(server.watcher.getWatched())
     expect(watchedDirs).toEqual(
-      expect.arrayContaining(
-        ['.', '../config-deps', '../custom-env', '../custom-public'].map(
-          (dir) => resolve(root, dir).replace(/\\/g, '/'),
-        ),
-      ),
+      expect.arrayContaining([
+        root,
+        resolve(root, '../config-deps'),
+        resolve(root, '../custom-env'),
+        resolve(root, '../custom-public'),
+      ]),
     )
   })
 })
