@@ -120,6 +120,17 @@ test('export * as from', async () => {
     `)
 })
 
+test.only('export as arbitrary module namespace identifier', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `const something = "Something";export { something as "arbitrary string" };`,
+    ),
+  ).toMatchInlineSnapshot(`
+      "const something = "Something";
+      Object.defineProperty(__vite_ssr_exports__, "arbitrary string", { enumerable: true, configurable: true, get(){ return something }});"  
+  `)
+})
+
 test('export default', async () => {
   expect(
     await ssrTransformSimpleCode(`export default {}`),
