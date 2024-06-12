@@ -120,7 +120,7 @@ test('export * as from', async () => {
     `)
 })
 
-test.only('export as arbitrary module namespace identifier', async () => {
+test('export as arbitrary module namespace identifier', async () => {
   expect(
     await ssrTransformSimpleCode(
       `const something = "Something";export { something as "arbitrary string" };`,
