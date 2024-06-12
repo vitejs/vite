@@ -27,6 +27,17 @@ test('named import', async () => {
   `)
 })
 
+test('named import: arbitrary module namespace specifier', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { "some thing" as ref } from 'vue';function foo() { return ref(0) }`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["some thing"]});
+    function foo() { return __vite_ssr_import_0__["some thing"](0) }"
+  `)
+})
+
 test('namespace import', async () => {
   expect(
     await ssrTransformSimpleCode(
