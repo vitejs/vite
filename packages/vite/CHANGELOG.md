@@ -1,3 +1,27 @@
+## 5.3.0-beta.2 (2024-06-10)
+
+* fix: gracefully shutdown preview server on `SIGTERM` (fix #12990) (#17333) ([2207a68](https://github.com/vitejs/vite/commit/2207a68)), closes [#12990](https://github.com/vitejs/vite/issues/12990) [#17333](https://github.com/vitejs/vite/issues/17333)
+* fix(css): ensure order of extracted CSS (#16588) ([a52ed1d](https://github.com/vitejs/vite/commit/a52ed1d)), closes [#16588](https://github.com/vitejs/vite/issues/16588)
+* fix(deps): update all non-major dependencies (#17430) ([4453d35](https://github.com/vitejs/vite/commit/4453d35)), closes [#17430](https://github.com/vitejs/vite/issues/17430)
+* build: use esbuild to speedup building vite package (#17299) ([6db2515](https://github.com/vitejs/vite/commit/6db2515)), closes [#17299](https://github.com/vitejs/vite/issues/17299)
+* chore: add error recovery option to LightningCSSOptions (#17420) ([e04193f](https://github.com/vitejs/vite/commit/e04193f)), closes [#17420](https://github.com/vitejs/vite/issues/17420)
+* chore(deps): update dependency @rollup/plugin-commonjs to v26 (#17431) ([507b3de](https://github.com/vitejs/vite/commit/507b3de)), closes [#17431](https://github.com/vitejs/vite/issues/17431)
+
+
+
+## 5.3.0-beta.1 (2024-06-07)
+
+* fix(build): allow dynamic import treeshaking when injecting preload (#14221) ([f43f71f](https://github.com/vitejs/vite/commit/f43f71f)), closes [#14221](https://github.com/vitejs/vite/issues/14221)
+* fix(css): handle lightningcss minification in Deno (#17372) ([b3f5bd1](https://github.com/vitejs/vite/commit/b3f5bd1)), closes [#17372](https://github.com/vitejs/vite/issues/17372)
+* fix(css): handle url replacing when preprocessing with lightningcss (#17364) ([6fbb5e0](https://github.com/vitejs/vite/commit/6fbb5e0)), closes [#17364](https://github.com/vitejs/vite/issues/17364)
+* fix(ssr): remove pure CSS dynamic import (#17371) ([67ff94b](https://github.com/vitejs/vite/commit/67ff94b)), closes [#17371](https://github.com/vitejs/vite/issues/17371)
+* fix(ssr): resolve interlocking circular dependency issues (#15395) ([687c38b](https://github.com/vitejs/vite/commit/687c38b)), closes [#15395](https://github.com/vitejs/vite/issues/15395)
+* chore: add region comment (#17370) ([a8c7083](https://github.com/vitejs/vite/commit/a8c7083)), closes [#17370](https://github.com/vitejs/vite/issues/17370)
+* chore(deps): update all non-major dependencies (#17373) ([f2d52f1](https://github.com/vitejs/vite/commit/f2d52f1)), closes [#17373](https://github.com/vitejs/vite/issues/17373)
+* feat(typescript): update tsconfck to add support for `${configDir}` replacement in ts 5.5 (#17350) ([4835e2b](https://github.com/vitejs/vite/commit/4835e2b)), closes [#17350](https://github.com/vitejs/vite/issues/17350)
+
+
+
 ## 5.3.0-beta.0 (2024-05-30)
 
 * fix: adjust import analysis behavior to match Node (#16738) ([f599ab4](https://github.com/vitejs/vite/commit/f599ab4)), closes [#16738](https://github.com/vitejs/vite/issues/16738)

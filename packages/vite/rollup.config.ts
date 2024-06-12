@@ -2,13 +2,12 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import nodeResolve from '@rollup/plugin-node-resolve'
-import typescript from '@rollup/plugin-typescript'
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
 import MagicString from 'magic-string'
-import type { Plugin, RollupOptions } from 'rollup'
+import type { Plugin } from 'rollup'
 import { defineConfig } from 'rollup'
-import { minify as esbuildMinifyPlugin } from 'rollup-plugin-esbuild'
+import esbuild, { type Options as esbuildOptions } from 'rollup-plugin-esbuild'
 import licensePlugin from './rollupLicensePlugin'
 
 const pkg = JSON.parse(
@@ -20,39 +19,25 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
   plugins: [
-    typescript({
+    esbuild({
       tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
     }),
   ],
   output: {
     file: path.resolve(__dirname, 'dist/client', 'env.mjs'),
-    sourcemap: true,
-    sourcemapPathTransform(relativeSourcePath) {
-      return path.basename(relativeSourcePath)
-    },
-    sourcemapIgnoreList() {
-      return true
-    },
   },
 })
 
 const clientConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/client.ts'),
-  external: ['./env', '@vite/env'],
+  external: ['@vite/env'],
   plugins: [
-    typescript({
+    esbuild({
       tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
     }),
   ],
   output: {
     file: path.resolve(__dirname, 'dist/client', 'client.mjs'),
-    sourcemap: true,
-    sourcemapPathTransform(relativeSourcePath) {
-      return path.basename(relativeSourcePath)
-    },
-    sourcemapIgnoreList() {
-      return true
-    },
   },
 })
 
@@ -79,171 +64,132 @@ const sharedNodeOptions = defineConfig({
   },
 })
 
-function createNodePlugins(
-  isProduction: boolean,
-  sourceMap: boolean,
-  declarationDir: string | false,
-): (Plugin | false)[] {
+function createSharedNodePlugins({
+  esbuildOptions,
+}: {
+  esbuildOptions?: esbuildOptions
+}): Plugin[] {
   return [
     nodeResolve({ preferBuiltins: true }),
-    typescript({
+    esbuild({
       tsconfig: path.resolve(__dirname, 'src/node/tsconfig.json'),
-      sourceMap,
-      declaration: declarationDir !== false,
-      declarationDir: declarationDir !== false ? declarationDir : undefined,
+      target: 'node18',
+      ...esbuildOptions,
     }),
-
-    // Some deps have try...catch require of optional deps, but rollup will
-    // generate code that force require them upfront for side effects.
-    // Shim them with eval() so rollup can skip these calls.
-    isProduction &&
-      shimDepsPlugin({
-        // chokidar -> fsevents
-        'fsevents-handler.js': {
-          src: `require('fsevents')`,
-          replacement: `__require('fsevents')`,
-        },
-        // postcss-import -> sugarss
-        'process-content.js': {
-          src: 'require("sugarss")',
-          replacement: `__require('sugarss')`,
-        },
-        'lilconfig/dist/index.js': {
-          pattern: /: require,/g,
-          replacement: `: __require,`,
-        },
-        // postcss-load-config calls require after register ts-node
-        'postcss-load-config/src/index.js': {
-          pattern: /require(?=\((configFile|'ts-node')\))/g,
-          replacement: `__require`,
-        },
-        // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
-        // However, we always pass the `resolve` option. Remove this import to avoid
-        // bundling the `resolve` dep.
-        'postcss-import/index.js': {
-          src: 'const resolveId = require("./lib/resolve-id")',
-          replacement: 'const resolveId = (id) => id',
-        },
-        'postcss-import/lib/parse-styles.js': {
-          src: 'const resolveId = require("./resolve-id")',
-          replacement: 'const resolveId = (id) => id',
-        },
-      }),
-
     commonjs({
       extensions: ['.js'],
       // Optional peer deps of ws. Native deps that are mostly for performance.
       // Since ws is not that perf critical for us, just ignore these deps.
       ignore: ['bufferutil', 'utf-8-validate'],
+      sourceMap: false,
     }),
     json(),
-    isProduction &&
-      licensePlugin(
-        path.resolve(__dirname, 'LICENSE.md'),
-        'Vite core license',
-        'Vite',
-      ),
-    cjsPatchPlugin(),
   ]
 }
 
-function createNodeConfig(isProduction: boolean) {
-  return defineConfig({
-    ...sharedNodeOptions,
-    input: {
-      index: path.resolve(__dirname, 'src/node/index.ts'),
-      cli: path.resolve(__dirname, 'src/node/cli.ts'),
-      constants: path.resolve(__dirname, 'src/node/constants.ts'),
-    },
-    output: {
-      ...sharedNodeOptions.output,
-      sourcemap: !isProduction,
-    },
-    external: [
-      /^vite\//,
-      'fsevents',
-      'lightningcss',
-      'rollup/parseAst',
-      ...Object.keys(pkg.dependencies),
-      ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
-    ],
-    plugins: createNodePlugins(
-      isProduction,
-      !isProduction,
-      // in production we use rollup.dts.config.ts for dts generation
-      // in development we need to rely on the rollup ts plugin
-      isProduction ? false : './dist/node',
+const nodeConfig = defineConfig({
+  ...sharedNodeOptions,
+  input: {
+    index: path.resolve(__dirname, 'src/node/index.ts'),
+    cli: path.resolve(__dirname, 'src/node/cli.ts'),
+    constants: path.resolve(__dirname, 'src/node/constants.ts'),
+  },
+  external: [
+    /^vite\//,
+    'fsevents',
+    'lightningcss',
+    'rollup/parseAst',
+    ...Object.keys(pkg.dependencies),
+  ],
+  plugins: [
+    // Some deps have try...catch require of optional deps, but rollup will
+    // generate code that force require them upfront for side effects.
+    // Shim them with eval() so rollup can skip these calls.
+    shimDepsPlugin({
+      // chokidar -> fsevents
+      'fsevents-handler.js': {
+        src: `require('fsevents')`,
+        replacement: `__require('fsevents')`,
+      },
+      // postcss-import -> sugarss
+      'process-content.js': {
+        src: 'require("sugarss")',
+        replacement: `__require('sugarss')`,
+      },
+      'lilconfig/dist/index.js': {
+        pattern: /: require,/g,
+        replacement: `: __require,`,
+      },
+      // postcss-load-config calls require after register ts-node
+      'postcss-load-config/src/index.js': {
+        pattern: /require(?=\((configFile|'ts-node')\))/g,
+        replacement: `__require`,
+      },
+      // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
+      // However, we always pass the `resolve` option. Remove this import to avoid
+      // bundling the `resolve` dep.
+      'postcss-import/index.js': {
+        src: 'const resolveId = require("./lib/resolve-id")',
+        replacement: 'const resolveId = (id) => id',
+      },
+      'postcss-import/lib/parse-styles.js': {
+        src: 'const resolveId = require("./resolve-id")',
+        replacement: 'const resolveId = (id) => id',
+      },
+    }),
+    ...createSharedNodePlugins({}),
+    licensePlugin(
+      path.resolve(__dirname, 'LICENSE.md'),
+      'Vite core license',
+      'Vite',
     ),
-  })
-}
+    cjsPatchPlugin(),
+  ],
+})
 
-function createRuntimeConfig(isProduction: boolean) {
-  return defineConfig({
-    ...sharedNodeOptions,
-    input: {
-      runtime: path.resolve(__dirname, 'src/runtime/index.ts'),
-    },
-    output: {
-      ...sharedNodeOptions.output,
-      sourcemap: !isProduction,
-    },
-    external: [
-      'fsevents',
-      'lightningcss',
-      'rollup/parseAst',
-      ...Object.keys(pkg.dependencies),
-    ],
-    plugins: [
-      ...createNodePlugins(
-        false,
-        !isProduction,
-        // in production we use rollup.dts.config.ts for dts generation
-        // in development we need to rely on the rollup ts plugin
-        isProduction ? false : './dist/node',
-      ),
-      esbuildMinifyPlugin({ minify: false, minifySyntax: true }),
-      bundleSizeLimit(45),
-    ],
-  })
-}
+const runtimeConfig = defineConfig({
+  ...sharedNodeOptions,
+  input: {
+    runtime: path.resolve(__dirname, 'src/runtime/index.ts'),
+  },
+  external: [
+    'fsevents',
+    'lightningcss',
+    'rollup/parseAst',
+    ...Object.keys(pkg.dependencies),
+  ],
+  plugins: [
+    ...createSharedNodePlugins({ esbuildOptions: { minifySyntax: true } }),
+    bundleSizeLimit(50),
+  ],
+})
 
-function createCjsConfig(isProduction: boolean) {
-  return defineConfig({
-    ...sharedNodeOptions,
-    input: {
-      publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts'),
-    },
-    output: {
-      dir: './dist',
-      entryFileNames: `node-cjs/[name].cjs`,
-      chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
-      exports: 'named',
-      format: 'cjs',
-      externalLiveBindings: false,
-      freeze: false,
-      sourcemap: false,
-    },
-    external: [
-      'fsevents',
-      ...Object.keys(pkg.dependencies),
-      ...(isProduction ? [] : Object.keys(pkg.devDependencies)),
-    ],
-    plugins: [...createNodePlugins(false, false, false), bundleSizeLimit(175)],
-  })
-}
+const cjsConfig = defineConfig({
+  ...sharedNodeOptions,
+  input: {
+    publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts'),
+  },
+  output: {
+    dir: './dist',
+    entryFileNames: `node-cjs/[name].cjs`,
+    chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
+    exports: 'named',
+    format: 'cjs',
+    externalLiveBindings: false,
+    freeze: false,
+    sourcemap: false,
+  },
+  external: ['fsevents', ...Object.keys(pkg.dependencies)],
+  plugins: [...createSharedNodePlugins({}), bundleSizeLimit(175)],
+})
 
-export default (commandLineArgs: any): RollupOptions[] => {
-  const isDev = commandLineArgs.watch
-  const isProduction = !isDev
-
-  return defineConfig([
-    envConfig,
-    clientConfig,
-    createNodeConfig(isProduction),
-    createRuntimeConfig(isProduction),
-    createCjsConfig(isProduction),
-  ])
-}
+export default defineConfig([
+  envConfig,
+  clientConfig,
+  nodeConfig,
+  runtimeConfig,
+  cjsConfig,
+])
 
 // #region Plugins
 
@@ -292,10 +238,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
             console.log(`shimmed: ${file}`)
           }
 
-          return {
-            code: magicString.toString(),
-            map: magicString.generateMap({ hires: 'boundary' }),
-          }
+          return magicString.toString()
         }
       }
     },
@@ -332,23 +275,13 @@ const __require = require;
     name: 'cjs-chunk-patch',
     renderChunk(code, chunk) {
       if (!chunk.fileName.includes('chunks/dep-')) return
-      // don't patch runtime utils chunk because it should stay lightweight and we know it doesn't use require
-      if (
-        chunk.name === 'utils' &&
-        chunk.moduleIds.some((id) => id.endsWith('/ssr/runtime/utils.ts'))
-      )
-        return
       const match = code.match(/^(?:import[\s\S]*?;\s*)+/)
       const index = match ? match.index! + match[0].length : 0
       const s = new MagicString(code)
       // inject after the last `import`
       s.appendRight(index, cjsPatch)
       console.log('patched cjs context: ' + chunk.fileName)
-
-      return {
-        code: s.toString(),
-        map: s.generateMap({ hires: 'boundary' }),
-      }
+      return s.toString()
     },
   }
 }
