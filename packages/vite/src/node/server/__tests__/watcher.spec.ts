@@ -39,14 +39,30 @@ describe('watcher configuration', () => {
     )
     server = await createServer({ root })
     await new Promise((resolve) => server!.watcher.once('ready', resolve))
-    const watchedDirs = Object.keys(server.watcher.getWatched())
-    expect(watchedDirs).toEqual(
-      expect.arrayContaining([
-        root,
-        resolve(root, '../config-deps'),
-        resolve(root, '../custom-env'),
-        resolve(root, '../custom-public'),
-      ]),
-    )
+    // At this point, there's still a chance that chokidar has not watch all the necessary directories yet
+    // so we have to retry here for a bit
+    await withRetry(() => {
+      const watchedDirs = Object.keys(server!.watcher.getWatched())
+      expect(watchedDirs).toEqual(
+        expect.arrayContaining([
+          root,
+          resolve(root, '../config-deps'),
+          resolve(root, '../custom-env'),
+          resolve(root, '../custom-public'),
+        ]),
+      )
+    })
   })
 })
+
+async function withRetry(func: () => Promise<void> | void): Promise<void> {
+  const maxTries = process.env.CI ? 3 : 1
+  for (let tries = 0; tries < maxTries; tries++) {
+    try {
+      await func()
+      return
+    } catch {}
+    await new Promise((r) => setTimeout(r, 50))
+  }
+  await func()
+}
