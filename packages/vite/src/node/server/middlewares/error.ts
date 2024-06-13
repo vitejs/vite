@@ -77,15 +77,17 @@ export function errorMiddleware(
             <meta charset="UTF-8" />
             <title>Error</title>
             <script type="module">
-              import { ErrorOverlay } from '/@vite/client'
-              document.body.appendChild(new ErrorOverlay(${JSON.stringify(
-                prepareError(err),
-              ).replace(/</g, '\\u003c')}))
+              try {
+                const { ErrorOverlay } = await import('/@vite/client')
+                document.body.appendChild(new ErrorOverlay(${JSON.stringify(
+                  prepareError(err),
+                ).replace(/</g, '\\u003c')}))
+              } catch {
+                document.innerHTML = \`<h1>Internal Server Error</h1><h2>Error overlay failed to load</h2><pre>${err.stack?.replaceAll('<', '&lt;').replaceAll('$', '&dollar;')}</pre>\`
+              }
             </script>
           </head>
           <body>
-            <h1>Internal Server Error</h1>
-            <pre>${err.stack?.replace(/</g, '&lt;')}</pre>
           </body>
         </html>
       `)
