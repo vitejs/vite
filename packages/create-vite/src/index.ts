@@ -16,7 +16,6 @@ import {
   reset,
   yellow,
 } from 'kolorist'
-import { getUsageInfo } from './help'
 
 // Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
@@ -29,6 +28,27 @@ const argv = minimist<{
   string: ['_'],
 })
 const cwd = process.cwd()
+
+// prettier-ignore
+const helpMessage = `\
+Usage: create-vite [OPTION]... [DIRECTORY]
+
+Create a new Vite project in JavaScript or TypeScript.
+With no arguments, start the CLI in interactive mode.
+
+Options:
+  -t, --template NAME        use a specific template
+
+Available templates:
+${yellow   ('vanilla-ts     vanilla'  )}
+${green    ('vue-ts         vue'      )}
+${cyan     ('react-ts       react'    )}
+${cyan     ('react-swc-ts   react-swc')}
+${magenta  ('preact-ts      preact'   )}
+${lightRed ('lit-ts         lit'      )}
+${red      ('svelte-ts      svelte'   )}
+${blue     ('solid-ts       solid'    )}
+${lightBlue('qwik-ts        qwik'     )}`
 
 type ColorFunc = (str: string | number) => string
 type Framework = {
@@ -258,7 +278,7 @@ async function init() {
 
   const help = argv.help
   if (help) {
-    showHelper()
+    console.log(helpMessage)
     return
   }
 
@@ -574,23 +594,6 @@ function setupReactSwc(root: string, isTs: boolean) {
 function editFile(file: string, callback: (content: string) => string) {
   const content = fs.readFileSync(file, 'utf-8')
   fs.writeFileSync(file, callback(content), 'utf-8')
-}
-
-function showHelper() {
-  const formattedFrameworkNames = getFormattedVariantNames()
-  const formattedHelpText = getUsageInfo(formattedFrameworkNames)
-  console.log(formattedHelpText)
-}
-
-function getFormattedVariantNames() {
-  return FRAMEWORKS.filter(
-    (framework) => framework.name !== 'others' && framework.variants.length > 0,
-  ).map((framework) => {
-    const variantNames = framework.variants
-      .filter((variant) => !variant.customCommand)
-      .map((variant) => variant.name)
-    return variantNames.join('\n')
-  })
 }
 
 init().catch((e) => {
