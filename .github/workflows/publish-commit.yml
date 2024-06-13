@@ -9,12 +9,12 @@ on:
     branches:
       - main
       - v6/environment-api
-  pull_request_review:
-    types: [submitted]
+  issue_comment:
+    types: [created]
 
 jobs:
   build:
-    if: github.event_name == 'push' || github.event.review.state == 'APPROVED'
+    if: github.repository == 'vitejs/vite' && (github.event_name == 'push' || github.event.issue.pull_request && startsWith(github.event.comment.body, '/pkg-pr-new'))
     runs-on: ubuntu-latest
 
     steps:
