@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { type ViteDevServer, createServer } from '../index'
 
 const stubGetWatchedCode = /getWatched\(\) \{.+?return \{\};.+?\}/s
@@ -39,9 +39,9 @@ describe('watcher configuration', () => {
     )
     server = await createServer({ root })
     await new Promise((resolve) => server!.watcher.once('ready', resolve))
-    // At this point, there's still a chance that chokidar has not watch all the necessary directories yet
-    // so we have to retry here for a bit
-    await withRetry(() => {
+    // Perform retries here as chokidar may still not be completely watching all directories
+    // after the `ready` event
+    await vi.waitFor(() => {
       const watchedDirs = Object.keys(server!.watcher.getWatched())
       expect(watchedDirs).toEqual(
         expect.arrayContaining([
@@ -54,15 +54,3 @@ describe('watcher configuration', () => {
     })
   })
 })
-
-async function withRetry(func: () => Promise<void> | void): Promise<void> {
-  const maxTries = process.env.CI ? 3 : 1
-  for (let tries = 0; tries < maxTries; tries++) {
-    try {
-      await func()
-      return
-    } catch {}
-    await new Promise((r) => setTimeout(r, 50))
-  }
-  await func()
-}
