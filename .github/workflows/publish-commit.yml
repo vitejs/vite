@@ -18,8 +18,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - if: github.event.issue.pull_request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const user = context.payload.sender.login
+            console.log(`Validate user: ${user}`)
+
+            let hasTriagePermission = false
+            try {
+              const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: user,
+              });
+              hasTriagePermission = data.user.permissions.triage
+            } catch (e) {
+              console.warn(e)
+            }
+
+            if (hasTriagePermission) {
+              console.log('Allowed')
+              await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                content: '+1',
+              })
+            } else {
+              console.log('Not allowed')
+              await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                content: '-1',
+              })
+              throw new Error('not allowed')
+            }
+
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4.0.0
