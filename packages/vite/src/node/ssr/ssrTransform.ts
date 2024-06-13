@@ -139,7 +139,11 @@ async function ssrTransformScript(
       const importId = defineImport(hoistIndex, node.source.value as string, {
         importedNames: node.specifiers
           .map((s) => {
-            if (s.type === 'ImportSpecifier') return s.imported.name
+            if (s.type === 'ImportSpecifier')
+              return s.imported.type === 'Identifier'
+                ? s.imported.name
+                : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
+                  s.imported.value
             else if (s.type === 'ImportDefaultSpecifier') return 'default'
           })
           .filter(isDefined),
@@ -147,10 +151,20 @@ async function ssrTransformScript(
       s.remove(node.start, node.end)
       for (const spec of node.specifiers) {
         if (spec.type === 'ImportSpecifier') {
-          idToImportMap.set(
-            spec.local.name,
-            `${importId}.${spec.imported.name}`,
-          )
+          if (spec.imported.type === 'Identifier') {
+            idToImportMap.set(
+              spec.local.name,
+              `${importId}.${spec.imported.name}`,
+            )
+          } else {
+            idToImportMap.set(
+              spec.local.name,
+              `${importId}[${
+                // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
+                JSON.stringify(spec.imported.value)
+              }]`,
+            )
+          }
         } else if (spec.type === 'ImportDefaultSpecifier') {
           idToImportMap.set(spec.local.name, `${importId}.default`)
         } else {
@@ -194,9 +208,15 @@ async function ssrTransformScript(
             },
           )
           for (const spec of node.specifiers) {
+            const exportedAs =
+              spec.exported.type === 'Identifier'
+                ? spec.exported.name
+                : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
+                  spec.exported.value
+
             defineExport(
               node.start,
-              spec.exported.name,
+              exportedAs,
               `${importId}.${spec.local.name}`,
             )
           }
@@ -205,7 +225,14 @@ async function ssrTransformScript(
           for (const spec of node.specifiers) {
             const local = spec.local.name
             const binding = idToImportMap.get(local)
-            defineExport(node.end, spec.exported.name, binding || local)
+
+            const exportedAs =
+              spec.exported.type === 'Identifier'
+                ? spec.exported.name
+                : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
+                  spec.exported.value
+
+            defineExport(node.end, exportedAs, binding || local)
           }
         }
       }
