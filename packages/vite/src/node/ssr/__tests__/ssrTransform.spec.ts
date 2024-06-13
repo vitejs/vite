@@ -27,6 +27,17 @@ test('named import', async () => {
   `)
 })
 
+test('named import: arbitrary module namespace specifier', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { "some thing" as ref } from 'vue';function foo() { return ref(0) }`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["some thing"]});
+    function foo() { return __vite_ssr_import_0__["some thing"](0) }"
+  `)
+})
+
 test('namespace import', async () => {
   expect(
     await ssrTransformSimpleCode(
@@ -118,6 +129,17 @@ test('export * as from', async () => {
 
       Object.defineProperty(__vite_ssr_exports__, "foo", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_0__ }});"
     `)
+})
+
+test('export as arbitrary module namespace identifier', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `const something = "Something";export { something as "arbitrary string" };`,
+    ),
+  ).toMatchInlineSnapshot(`
+      "const something = "Something";
+      Object.defineProperty(__vite_ssr_exports__, "arbitrary string", { enumerable: true, configurable: true, get(){ return something }});"  
+  `)
 })
 
 test('export default', async () => {
