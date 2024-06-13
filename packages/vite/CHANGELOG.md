@@ -1,3 +1,12 @@
+## 5.3.0 (2024-06-13)
+
+* fix: typo in client log (#17363) ([68aa9f8](https://github.com/vitejs/vite/commit/68aa9f8)), closes [#17363](https://github.com/vitejs/vite/issues/17363)
+* fix(ssrTransform): handle arbitrary module namespace identifiers (#17446) ([0a76652](https://github.com/vitejs/vite/commit/0a76652)), closes [#17446](https://github.com/vitejs/vite/issues/17446)
+* test: disable isolate for unit test (#17448) ([f16fae5](https://github.com/vitejs/vite/commit/f16fae5)), closes [#17448](https://github.com/vitejs/vite/issues/17448)
+* feat: asset type add bmp (#17439) ([ec287f8](https://github.com/vitejs/vite/commit/ec287f8)), closes [#17439](https://github.com/vitejs/vite/issues/17439)
+
+
+
 ## 5.3.0-beta.2 (2024-06-10)
 
 * fix: gracefully shutdown preview server on `SIGTERM` (fix #12990) (#17333) ([2207a68](https://github.com/vitejs/vite/commit/2207a68)), closes [#12990](https://github.com/vitejs/vite/issues/12990) [#17333](https://github.com/vitejs/vite/issues/17333)
