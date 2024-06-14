@@ -193,6 +193,12 @@ test('dynamic import treeshaken log', async () => {
   expect(log).not.toContain('treeshaken removed')
 })
 
+test('dynamic import syntax parsing', async () => {
+  const log = browserLogs.join('\n')
+  expect(log).toContain('treeshaken syntax foo')
+  expect(log).toContain('treeshaken syntax default')
+})
+
 test.runIf(isBuild)('dynamic import treeshaken file', async () => {
   expect(findAssetFile(/treeshaken.+\.js$/)).not.toContain('treeshaken removed')
 })
