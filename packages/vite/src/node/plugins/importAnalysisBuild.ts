@@ -42,7 +42,7 @@ const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 const dynamicImportPrefixRE = /import\s*\(/
 
 const dynamicImportTreeshakenRE =
-  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^}.]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\([^{]*?\(\s*\{([^}.]+)\})/g
+  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^}.]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^}.]+)\}\))/g
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
@@ -285,7 +285,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           /* handle `import('foo').then(({foo})=>{})`
            *
-           * match[5]: `.then(({foo}`
+           * match[5]: `.then(({foo})`
            * match[6]: `foo`
            * import end: `import('foo').`
            *                           ^
