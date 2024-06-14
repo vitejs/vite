@@ -171,10 +171,15 @@ import(`../nested/nested/${base}.js`).then((mod) => {
   const default2 = (await import('./treeshaken/syntax.js')).default,
     other = () => {}
   const foo = await import('./treeshaken/syntax.js').then((mod) => mod.foo)
+  const foo2 = await import('./treeshaken/syntax.js').then(
+    ({ foo = {} }) => foo,
+  )
+  await import('./treeshaken/syntax.js').then((mod) => mod.foo({ foo }))
   default1()
   default2()
   other()
   foo()
+  foo2()
 })()
 
 import(`../nested/static.js`).then((mod) => {
