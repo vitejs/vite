@@ -1,3 +1,12 @@
+## <small>5.3.1 (2024-06-14)</small>
+
+* fix(build): handle preload treeshaking for braces (#17479) ([d355568](https://github.com/vitejs/vite/commit/d355568)), closes [#17479](https://github.com/vitejs/vite/issues/17479)
+* fix(build): handle preload treeshaking for commas (#17472) ([3e27071](https://github.com/vitejs/vite/commit/3e27071)), closes [#17472](https://github.com/vitejs/vite/issues/17472)
+* fix(build): preload treeshaking ignore equal (#17480) ([6ced135](https://github.com/vitejs/vite/commit/6ced135)), closes [#17480](https://github.com/vitejs/vite/issues/17480)
+* chore: consolidate changelog for 5.3 (#17476) ([1f09344](https://github.com/vitejs/vite/commit/1f09344)), closes [#17476](https://github.com/vitejs/vite/issues/17476)
+
+
+
 ## 5.3.0 (2024-06-13)
 
 ### Features
