@@ -138,6 +138,7 @@ import(`../nested/nested/${base}.js`).then((mod) => {
 ;(async function () {
   const { foo } = await import('./treeshaken/treeshaken.js')
   const { bar, default: tree } = await import('./treeshaken/treeshaken.js')
+  const default2 = (await import('./treeshaken/treeshaken.js')).default
   const baz1 = (await import('./treeshaken/treeshaken.js')).baz1
   const baz2 = (await import('./treeshaken/treeshaken.js')).baz2.log
   const baz3 = (await import('./treeshaken/treeshaken.js')).baz3?.log
@@ -145,18 +146,35 @@ import(`../nested/nested/${base}.js`).then((mod) => {
     ({ baz4 }) => baz4,
   )
   const baz5 = await import('./treeshaken/treeshaken.js').then(function ({
-    baz5,
-  }) {
-    return baz5
-  })
+      baz5,
+    }) {
+      return baz5
+    }),
+    { baz6 } = await import('./treeshaken/treeshaken.js')
   foo()
   bar()
   tree()
+  ;(await import('./treeshaken/treeshaken.js')).default()
+  default2()
   baz1()
   baz2()
   baz3()
   baz4()
   baz5()
+  baz6()
+})()
+// Test syntax parsing only
+;(async function () {
+  const default1 = await import('./treeshaken/syntax.js').then(
+    (mod) => mod.default,
+  )
+  const default2 = (await import('./treeshaken/syntax.js')).default,
+    other = () => {}
+  const foo = await import('./treeshaken/syntax.js').then((mod) => mod.foo)
+  default1()
+  default2()
+  other()
+  foo()
 })()
 
 import(`../nested/static.js`).then((mod) => {
