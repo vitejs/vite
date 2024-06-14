@@ -135,7 +135,7 @@ And create an `index.html` file like this:
 <p>Hello Vite!</p>
 ```
 
-Then simply run the `vite` CLI in your terminal:
+Then run the `vite` CLI in your terminal:
 
 ```bash
 vite
