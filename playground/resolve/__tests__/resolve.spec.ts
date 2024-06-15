@@ -209,6 +209,10 @@ test('Resolving from other package with imports field', async () => {
   expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
 })
 
+test('Resolving import attributes', async () => {
+  expect(await page.textContent('.import-attributes')).toMatch('[success]')
+})
+
 test('Resolving with query with imports field', async () => {
   // since it is imported with `?url` it should return a URL
   expect(await page.textContent('.imports-query')).toMatch(

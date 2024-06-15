@@ -173,6 +173,9 @@
 <h2>resolve non normalized absolute path</h2>
 <p class="non-normalized"></p>
 
+<h2>Resolving import attributes</h2>
+<p class="import-attributes">fail</p>
+
 <script type="module">
   import '@generated-content-virtual-file'
   function text(selector, text) {
@@ -396,6 +399,9 @@
 
   import nonNormalizedAbsolute from '@non-normalized'
   text('.non-normalized', nonNormalizedAbsolute)
+
+  import { msg as importAttributes } from './import-attributes'
+  text('.import-attributes', importAttributes)
 </script>
 
 <style>

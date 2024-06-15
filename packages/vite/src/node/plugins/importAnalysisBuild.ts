@@ -304,19 +304,12 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       for (let index = 0; index < imports.length; index++) {
         const {
           s: start,
-          e: end,
           ss: expStart,
           se: expEnd,
           d: dynamicIndex,
-          a: attributeIndex,
         } = imports[index]
 
         const isDynamicImport = dynamicIndex > -1
-
-        // strip import attributes as we can process them ourselves
-        if (!isDynamicImport && attributeIndex > -1) {
-          str().remove(end + 1, expEnd)
-        }
 
         if (
           isDynamicImport &&

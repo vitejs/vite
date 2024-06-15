@@ -29,6 +29,7 @@ import {
 } from '../server/hmr'
 import {
   createDebugger,
+  evalValue,
   fsPathFromUrl,
   generateCodeFrame,
   injectQuery,
@@ -294,6 +295,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number,
         forceSkipImportAnalysis: boolean = false,
+        attributes?: Record<string, string>,
       ): Promise<[string, string]> => {
         url = stripBase(url, base)
 
@@ -317,7 +319,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const resolved = await this.resolve(url, importerFile)
+        const resolved = await this.resolve(url, importerFile, { attributes })
 
         if (!resolved || resolved.meta?.['vite:alias']?.noResolved) {
           // in ssr, we should let node handle the missing modules
@@ -491,8 +493,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           const isDynamicImport = dynamicIndex > -1
 
-          // strip import attributes as we can process them ourselves
+          // Grab the import attributes
+          let importAttributes: Record<string, any> | undefined = undefined
           if (!isDynamicImport && attributeIndex > -1) {
+            const raw = source.substring(attributeIndex, expEnd)
+            importAttributes = evalValue<{}>(raw)
+
+            // strip import attributes as we can process them ourselves
             str().remove(end + 1, expEnd)
           }
 
@@ -538,7 +545,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
 
             // normalize
-            const [url, resolvedId] = await normalizeUrl(specifier, start)
+            const [url, resolvedId] = await normalizeUrl(
+              specifier,
+              start,
+              undefined,
+              importAttributes,
+            )
 
             // record as safe modules
             // safeModulesPath should not include the base prefix.
