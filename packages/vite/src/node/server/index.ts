@@ -1124,7 +1124,7 @@ async function restartServer(server: ViteDevServer) {
   }
 
   // Reinit the server by creating a new instance using the same inlineConfig
-  // This will triger a reload of the config file and re-create the plugins and
+  // This will trigger a reload of the config file and re-create the plugins and
   // middlewares. We then assign all properties of the new server to the existing
   // server instance and set the user instance to be used in the new server.
   // This allows us to keep the same server instance for the user.
