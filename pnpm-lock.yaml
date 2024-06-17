@@ -436,6 +436,8 @@ importers:
 
   packages/vite/src/node/server/__tests__/fixtures/pnpm/nested: {}
 
+  packages/vite/src/node/server/__tests__/fixtures/watcher: {}
+
   packages/vite/src/node/server/__tests__/fixtures/yarn: {}
 
   packages/vite/src/node/server/__tests__/fixtures/yarn/nested: {}
