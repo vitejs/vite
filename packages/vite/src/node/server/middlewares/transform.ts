@@ -205,8 +205,11 @@ export function transformMiddleware(
             DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
           return send(req, res, result.code, type, {
             etag: result.etag,
-            // allow browser to cache npm deps!
-            cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
+            // allow browser to cache npm deps unless user performs some environment replacement
+            cacheControl:
+              isDep && !result.code.includes('import.meta.env')
+                ? 'max-age=31536000,immutable'
+                : 'no-cache',
             headers: server.config.server.headers,
             map: result.map,
           })
