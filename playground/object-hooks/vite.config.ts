@@ -1,4 +1,4 @@
-/* eslint-disable i/no-nodejs-modules */
+/* eslint-disable import-x/no-nodejs-modules */
 import assert from 'assert'
 import { defineConfig } from 'vite'
 
