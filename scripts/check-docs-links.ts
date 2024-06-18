@@ -1,7 +1,7 @@
-import glob from 'fast-glob'
 import { readFileSync } from 'node:fs'
 import http from 'node:http'
 import https from 'node:https'
+import glob from 'fast-glob'
 import colors from 'picocolors'
 
 interface Link {
@@ -48,7 +48,7 @@ async function readDocs() {
   for (const file of files) {
     const markdownText = readFileSync(file, 'utf-8')
     let match: RegExpExecArray | null
-    while ((match = linkRegex.exec(markdownText)) !== null) {
+    while ((match = linkRegex.exec(markdownText)) != null) {
       const shouldIgnore = ignorePatterns.some((pattern) =>
         pattern.test(match![2]),
       )
