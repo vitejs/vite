@@ -103,7 +103,7 @@ function setupWebSocket(
     notifyListeners('vite:ws:disconnect', { webSocket: socket })
 
     if (hasDocument) {
-      console.log(`[vite] server connection lost. polling for restart...`)
+      console.log(`[vite] server connection lost. Polling for restart...`)
       await waitForSuccessfulPing(protocol, hostAndPath)
       location.reload()
     }
@@ -356,7 +356,6 @@ async function waitForSuccessfulPing(
   }
   await wait(ms)
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     if (document.visibilityState === 'visible') {
       if (await ping()) {

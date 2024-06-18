@@ -547,20 +547,72 @@
 
 
 
-## 5.3.0-beta.0 (2024-05-30)
+## <small>5.3.1 (2024-06-14)</small>
 
-* fix: adjust import analysis behavior to match Node (#16738) ([f599ab4](https://github.com/vitejs/vite/commit/f599ab4)), closes [#16738](https://github.com/vitejs/vite/issues/16738)
-* fix: prevent unhandledRejection if `--open` fails (#16726) ([1f60647](https://github.com/vitejs/vite/commit/1f60647)), closes [#16726](https://github.com/vitejs/vite/issues/16726)
-* fix(optimize-deps): don't externalize JS files imported with asset extensions (#16242) ([4161843](https://github.com/vitejs/vite/commit/4161843)), closes [#16242](https://github.com/vitejs/vite/issues/16242)
-* fix(proxy): rewrite the origin header to match the target for ws proxy (#16558) ([7b0a65e](https://github.com/vitejs/vite/commit/7b0a65e)), closes [#16558](https://github.com/vitejs/vite/issues/16558)
-* refactor: plugin container (#17288) ([4aa4a80](https://github.com/vitejs/vite/commit/4aa4a80)), closes [#17288](https://github.com/vitejs/vite/issues/17288)
-* refactor: remove acorn (#16238) ([454e2d1](https://github.com/vitejs/vite/commit/454e2d1)), closes [#16238](https://github.com/vitejs/vite/issues/16238)
+* fix(build): handle preload treeshaking for braces (#17479) ([d355568](https://github.com/vitejs/vite/commit/d355568)), closes [#17479](https://github.com/vitejs/vite/issues/17479)
+* fix(build): handle preload treeshaking for commas (#17472) ([3e27071](https://github.com/vitejs/vite/commit/3e27071)), closes [#17472](https://github.com/vitejs/vite/issues/17472)
+* fix(build): preload treeshaking ignore equal (#17480) ([6ced135](https://github.com/vitejs/vite/commit/6ced135)), closes [#17480](https://github.com/vitejs/vite/issues/17480)
+* chore: consolidate changelog for 5.3 (#17476) ([1f09344](https://github.com/vitejs/vite/commit/1f09344)), closes [#17476](https://github.com/vitejs/vite/issues/17476)
+
+
+
+## 5.3.0 (2024-06-13)
+
+### Features
+
+* feat: asset type add bmp (#17439) ([ec287f8](https://github.com/vitejs/vite/commit/ec287f8)), closes [#17439](https://github.com/vitejs/vite/issues/17439)
+* feat(typescript): update tsconfck to add support for `${configDir}` replacement in ts 5.5 (#17350) ([4835e2b](https://github.com/vitejs/vite/commit/4835e2b)), closes [#17350](https://github.com/vitejs/vite/issues/17350)
 * refactor(build): remove quotes from preload marker (#16562) ([9853190](https://github.com/vitejs/vite/commit/9853190)), closes [#16562](https://github.com/vitejs/vite/issues/16562)
 * feat: add 'system' library format (#11256) ([4102ca9](https://github.com/vitejs/vite/commit/4102ca9)), closes [#11256](https://github.com/vitejs/vite/issues/11256)
 * feat: add an option to not start a websocket server (#16219) ([14b5ced](https://github.com/vitejs/vite/commit/14b5ced)), closes [#16219](https://github.com/vitejs/vite/issues/16219)
 * feat: add headTagInsertCheck warning (#16555) ([9f02a9f](https://github.com/vitejs/vite/commit/9f02a9f)), closes [#16555](https://github.com/vitejs/vite/issues/16555)
 * feat(asset): support `/*@vite-ignore*/` for `new URL(, import.meta.url)` (#16590) ([8880bc5](https://github.com/vitejs/vite/commit/8880bc5)), closes [#16590](https://github.com/vitejs/vite/issues/16590)
 * chore(deps): update esbuild (#17290) ([5f13bf8](https://github.com/vitejs/vite/commit/5f13bf8)), closes [#17290](https://github.com/vitejs/vite/issues/17290)
+
+### Performance
+
+* refactor: plugin container (#17288) ([4aa4a80](https://github.com/vitejs/vite/commit/4aa4a80)), closes [#17288](https://github.com/vitejs/vite/issues/17288)
+* refactor: remove acorn (#16238) ([454e2d1](https://github.com/vitejs/vite/commit/454e2d1)), closes [#16238](https://github.com/vitejs/vite/issues/16238)
+
+### Fixes
+
+* fix: typo in client log (#17363) ([68aa9f8](https://github.com/vitejs/vite/commit/68aa9f8)), closes [#17363](https://github.com/vitejs/vite/issues/17363)
+* fix(ssrTransform): handle arbitrary module namespace identifiers (#17446) ([0a76652](https://github.com/vitejs/vite/commit/0a76652)), closes [#17446](https://github.com/vitejs/vite/issues/17446)
+* fix: gracefully shutdown preview server on `SIGTERM` (fix #12990) (#17333) ([2207a68](https://github.com/vitejs/vite/commit/2207a68)), closes [#12990](https://github.com/vitejs/vite/issues/12990) [#17333](https://github.com/vitejs/vite/issues/17333)
+* fix(css): ensure order of extracted CSS (#16588) ([a52ed1d](https://github.com/vitejs/vite/commit/a52ed1d)), closes [#16588](https://github.com/vitejs/vite/issues/16588)
+* fix(deps): update all non-major dependencies (#17430) ([4453d35](https://github.com/vitejs/vite/commit/4453d35)), closes [#17430](https://github.com/vitejs/vite/issues/17430)
+* fix(build): allow dynamic import treeshaking when injecting preload (#14221) ([f43f71f](https://github.com/vitejs/vite/commit/f43f71f)), closes [#14221](https://github.com/vitejs/vite/issues/14221)
+* fix(css): handle lightningcss minification in Deno (#17372) ([b3f5bd1](https://github.com/vitejs/vite/commit/b3f5bd1)), closes [#17372](https://github.com/vitejs/vite/issues/17372)
+* fix(css): handle url replacing when preprocessing with lightningcss (#17364) ([6fbb5e0](https://github.com/vitejs/vite/commit/6fbb5e0)), closes [#17364](https://github.com/vitejs/vite/issues/17364)
+* fix(ssr): remove pure CSS dynamic import (#17371) ([67ff94b](https://github.com/vitejs/vite/commit/67ff94b)), closes [#17371](https://github.com/vitejs/vite/issues/17371)
+* fix(ssr): resolve interlocking circular dependency issues (#15395) ([687c38b](https://github.com/vitejs/vite/commit/687c38b)), closes [#15395](https://github.com/vitejs/vite/issues/15395)
+* fix: adjust import analysis behavior to match Node (#16738) ([f599ab4](https://github.com/vitejs/vite/commit/f599ab4)), closes [#16738](https://github.com/vitejs/vite/issues/16738)
+* fix: prevent unhandledRejection if `--open` fails (#16726) ([1f60647](https://github.com/vitejs/vite/commit/1f60647)), closes [#16726](https://github.com/vitejs/vite/issues/16726)
+* fix(optimize-deps): don't externalize JS files imported with asset extensions (#16242) ([4161843](https://github.com/vitejs/vite/commit/4161843)), closes [#16242](https://github.com/vitejs/vite/issues/16242)
+* fix(proxy): rewrite the origin header to match the target for ws proxy (#16558) ([7b0a65e](https://github.com/vitejs/vite/commit/7b0a65e)), closes [#16558](https://github.com/vitejs/vite/issues/16558)
+
+### Chore
+
+* test: disable isolate for unit test (#17448) ([f16fae5](https://github.com/vitejs/vite/commit/f16fae5)), closes [#17448](https://github.com/vitejs/vite/issues/17448)
+* build: use esbuild to speedup building vite package (#17299) ([6db2515](https://github.com/vitejs/vite/commit/6db2515)), closes [#17299](https://github.com/vitejs/vite/issues/17299)
+* chore: add error recovery option to LightningCSSOptions (#17420) ([e04193f](https://github.com/vitejs/vite/commit/e04193f)), closes [#17420](https://github.com/vitejs/vite/issues/17420)
+* chore(deps): update dependency @rollup/plugin-commonjs to v26 (#17431) ([507b3de](https://github.com/vitejs/vite/commit/507b3de)), closes [#17431](https://github.com/vitejs/vite/issues/17431)
+* chore: add region comment (#17370) ([a8c7083](https://github.com/vitejs/vite/commit/a8c7083)), closes [#17370](https://github.com/vitejs/vite/issues/17370)
+* chore(deps): update all non-major dependencies (#17373) ([f2d52f1](https://github.com/vitejs/vite/commit/f2d52f1)), closes [#17373](https://github.com/vitejs/vite/issues/17373)
+
+
+
+### Previous Changelogs
+
+#### [5.3.0-beta.2](https://github.com/vitejs/vite/compare/v5.3.0-beta.1...v5.3.0-beta.2) (2024-06-10)
+See [5.3.0-beta.2 changelog](https://github.com/vitejs/vite/blob/v5.3.0-beta.2/packages/vite/CHANGELOG.md)
+
+#### [5.3.0-beta.1](https://github.com/vitejs/vite/compare/v5.3.0-beta.0...v5.3.0-beta.1) (2024-06-07)
+See [5.3.0-beta.1 changelog](https://github.com/vitejs/vite/blob/v5.3.0-beta.1/packages/vite/CHANGELOG.md)
+
+#### [5.3.0-beta.0](https://github.com/vitejs/vite/compare/v5.2.12....v5.3.0-beta.0) (2024-05-30)
+See [5.3.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v5.3.0-beta.0/packages/vite/CHANGELOG.md)
+
 
 
 

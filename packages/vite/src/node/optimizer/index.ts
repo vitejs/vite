@@ -526,7 +526,7 @@ export function runOptimizeDeps(
         )
       }
       // Ignore clean up requests after this point so the temp folder isn't deleted before
-      // we finish commiting the new deps cache files to the deps folder
+      // we finish committing the new deps cache files to the deps folder
       committed = true
 
       // Write metadata file, then commit the processing folder to the global deps cache

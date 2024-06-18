@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -14,6 +14,6 @@
   "devDependencies": {
     "@preact/preset-vite": "^2.8.2",
     "typescript": "^5.2.2",
-    "vite": "^5.2.12"
+    "vite": "^5.3.1"
   }
 }

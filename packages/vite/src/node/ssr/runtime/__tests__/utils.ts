@@ -40,9 +40,7 @@ export async function createModuleRunnerTester(
       server: {
         middlewareMode: true,
         watch: null,
-        hmr: {
-          port: 9609,
-        },
+        ws: false,
       },
       ssr: {
         external: ['@vitejs/cjs-external', '@vitejs/esm-external'],

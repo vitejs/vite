@@ -14,8 +14,7 @@ type SSRModule = Record<string, any>
 export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
-  _context: SSRContext = { global },
-  _urlStack: string[] = [],
+  context: SSRContext = { global },
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   const runner =
