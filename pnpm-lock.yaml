@@ -91,6 +91,9 @@ importers:
       execa:
         specifier: ^9.2.0
         version: 9.2.0
+      fast-glob:
+        specifier: ^3.3.2
+        version: 3.3.2
       fs-extra:
         specifier: ^11.2.0
         version: 11.2.0
