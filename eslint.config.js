@@ -2,9 +2,8 @@
 import { builtinModules, createRequire } from 'node:module'
 import eslint from '@eslint/js'
 import pluginN from 'eslint-plugin-n'
-import * as pluginI from 'eslint-plugin-i'
+import pluginImportX from 'eslint-plugin-import-x'
 import pluginRegExp from 'eslint-plugin-regexp'
-import tsParser from '@typescript-eslint/parser'
 import tseslint from 'typescript-eslint'
 import globals from 'globals'
 
@@ -27,11 +26,11 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   ...tseslint.configs.stylistic,
-  /** @type {any} */ (pluginRegExp.configs['flat/recommended']),
+  pluginRegExp.configs['flat/recommended'],
   {
     name: 'main',
     languageOptions: {
-      parser: tsParser,
+      parser: tseslint.parser,
       parserOptions: {
         sourceType: 'module',
         ecmaVersion: 2022,
@@ -43,7 +42,7 @@ export default tseslint.config(
     },
     plugins: {
       n: pluginN,
-      i: pluginI,
+      'import-x': pluginImportX,
     },
     rules: {
       'n/no-exports-assign': 'error',
@@ -117,12 +116,12 @@ export default tseslint.config(
       '@typescript-eslint/prefer-for-of': 'off',
       '@typescript-eslint/prefer-function-type': 'off',
 
-      'i/no-nodejs-modules': [
+      'import-x/no-nodejs-modules': [
         'error',
         { allow: builtinModules.map((mod) => `node:${mod}`) },
       ],
-      'i/no-duplicates': 'error',
-      'i/order': 'error',
+      'import-x/no-duplicates': 'error',
+      'import-x/order': 'error',
       'sort-imports': [
         'error',
         {
@@ -177,7 +176,7 @@ export default tseslint.config(
       'playground/tailwind/**', // blocked by https://github.com/postcss/postcss-load-config/issues/239
     ],
     rules: {
-      'i/no-commonjs': 'error',
+      'import-x/no-commonjs': 'error',
     },
   },
   {
