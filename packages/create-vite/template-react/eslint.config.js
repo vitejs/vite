@@ -8,18 +8,17 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 export default [
   {
     files: ['**/*.{js,jsx}'],
-    ignores: ['dist', 'eslint.config.js'],
+    ignores: ['dist'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
       parserOptions: {
         ecmaVersion: 'latest',
-        ecmaFeatures: {
-          jsx: true,
-        },
+        ecmaFeatures: { jsx: true },
         sourceType: 'module',
       },
     },
+    settings: { react: { version: '18.3' } },
     plugins: {
       react: fixupPluginRules(react),
       'react-hooks': fixupPluginRules(reactHooks),
@@ -36,6 +35,5 @@ export default [
         { allowConstantExport: true },
       ],
     },
-    settings: { react: { version: '18.3' } },
   },
 ]

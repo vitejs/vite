@@ -9,7 +9,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin'
 export default [
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: ['dist', 'eslint.config.js'],
+    ignores: ['dist'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
