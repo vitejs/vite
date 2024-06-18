@@ -66,7 +66,7 @@ export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
         return
       }
 
-      const url = await fileToUrl(id, config, this)
+      const url = await fileToUrl(this, id)
 
       return `
 import initWasm from "${wasmHelperId}"

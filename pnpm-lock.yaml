@@ -28,6 +28,12 @@ importers:
       '@eslint/js':
         specifier: ^9.5.0
         version: 9.5.0
+      '@rollup/plugin-typescript':
+        specifier: ^11.1.6
+        version: 11.1.6(rollup@4.13.0)(tslib@2.6.3)(typescript@5.2.2)
+      '@type-challenges/utils':
+        specifier: ^0.1.1
+        version: 0.1.1
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
@@ -156,7 +162,7 @@ importers:
         version: 4.2.2
       vitepress:
         specifier: 1.2.3
-        version: 1.2.3(@algolia/client-search@4.20.0)(axios@1.7.2)(postcss@8.4.38)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.2.2)
+        version: 1.2.3(@algolia/client-search@4.20.0)(@types/react@18.3.3)(axios@1.7.2)(postcss@8.4.38)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.2.2)
       vue:
         specifier: ^3.4.29
         version: 3.4.29(typescript@5.2.2)
@@ -416,6 +422,14 @@ importers:
         specifier: ^8.17.1
         version: 8.17.1
 
+  packages/vite/src/node/__tests__:
+    dependencies:
+      '@vitejs/cjs-ssr-dep':
+        specifier: link:./fixtures/cjs-ssr-dep
+        version: link:fixtures/cjs-ssr-dep
+
+  packages/vite/src/node/__tests__/fixtures/cjs-ssr-dep: {}
+
   packages/vite/src/node/__tests__/packages/module: {}
 
   packages/vite/src/node/__tests__/packages/name: {}
@@ -435,14 +449,6 @@ importers:
   packages/vite/src/node/server/__tests__/fixtures/yarn: {}
 
   packages/vite/src/node/server/__tests__/fixtures/yarn/nested: {}
-
-  packages/vite/src/node/ssr/__tests__:
-    dependencies:
-      '@vitejs/cjs-ssr-dep':
-        specifier: link:./fixtures/cjs-ssr-dep
-        version: link:fixtures/cjs-ssr-dep
-
-  packages/vite/src/node/ssr/__tests__/fixtures/cjs-ssr-dep: {}
 
   packages/vite/src/node/ssr/runtime/__tests__:
     dependencies:
@@ -666,6 +672,21 @@ importers:
   playground/env: {}
 
   playground/env-nested: {}
+
+  playground/environment-react-ssr:
+    devDependencies:
+      '@types/react':
+        specifier: ^18.2.73
+        version: 18.3.3
+      '@types/react-dom':
+        specifier: ^18.2.23
+        version: 18.3.0
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
 
   playground/extensions:
     dependencies:
@@ -2934,6 +2955,19 @@ packages:
       rollup:
         optional: true
 
+  '@rollup/plugin-typescript@11.1.6':
+    resolution: {integrity: sha512-R92yOmIACgYdJ7dJ97p4K69I8gg6IEHt8M7dUBxN3W6nrO8uUxX5ixl0yU/N3aZTi8WhPuICvOHXQvF6FaykAA==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^2.14.0||^3.0.0||^4.0.0
+      tslib: '*'
+      typescript: '>=3.7.0'
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+      tslib:
+        optional: true
+
   '@rollup/pluginutils@5.0.4':
     resolution: {integrity: sha512-0KJnIoRI8A+a1dqOYLxH8vBf8bphDmty5QvIm2hqm7oFCFYKCAZWWd2hXgMibaPsNDhI0AtpYfQZJG47pt/k4g==}
     engines: {node: '>=14.0.0'}
@@ -3054,6 +3088,9 @@ packages:
   '@tsconfig/node16@1.0.2':
     resolution: {integrity: sha512-eZxlbI8GZscaGS7kkc/trHTT5xgrjH3/1n2JDwusC9iahPKWMRvRjJSAN5mCXviuTGQ/lHnhvv8Q1YTpnfz9gA==}
 
+  '@type-challenges/utils@0.1.1':
+    resolution: {integrity: sha512-A7ljYfBM+FLw+NDyuYvGBJiCEV9c0lPWEAdzfOAkb3JFqfLl0Iv/WhWMMARHiRKlmmiD1g8gz/507yVvHdQUYA==}
+
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
 
@@ -3171,11 +3208,20 @@ packages:
   '@types/prompts@2.4.9':
     resolution: {integrity: sha512-qTxFi6Buiu8+50/+3DGIWLHM6QuWsEKugJnnP6iv2Mc4ncxE4A/OJkjuVOA+5X0X1S/nq5VJRa8Lu+nwcvbrKA==}
 
+  '@types/prop-types@15.7.12':
+    resolution: {integrity: sha512-5zvhXYtRNRluoE/jAp4GVsSduVUzNWKkOZrCDBWYtE7biZywwdC2AcEzg+cSMLFRfVgeAFqpfNabiPjxFddV1Q==}
+
   '@types/qs@6.9.12':
     resolution: {integrity: sha512-bZcOkJ6uWrL0Qb2NAWKa7TBU+mJHPzhx9jjLL1KHF+XpzEcR7EXHvjbHlGtR/IsP1vyPrehuS6XqkmaePy//mg==}
 
   '@types/range-parser@1.2.7':
     resolution: {integrity: sha512-hKormJbkJqzQGhziax5PItDUTMAM9uE2XXQmM37dyd4hVM+5aVl7oVxMVUiVQn2oCQFN/LKCZdvSM0pFRqbSmQ==}
+
+  '@types/react-dom@18.3.0':
+    resolution: {integrity: sha512-EhwApuTmMBmXuFOikhQLIBUn6uFg81SwLMOAUgodJF14SOBOCMdU04gDoYi0WOJJHD144TL32z4yDqCW3dnkQg==}
+
+  '@types/react@18.3.3':
+    resolution: {integrity: sha512-hti/R0pS0q1/xx+TsI73XIqk26eBsISZ2R0wUijXIngRK9R/e7Xw/cXVxQK7R5JjW+SV4zGcn5hXjudkN/pLIw==}
 
   '@types/resolve@1.20.2':
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}
@@ -7718,9 +7764,9 @@ snapshots:
 
   '@docsearch/css@3.6.0': {}
 
-  '@docsearch/js@3.6.0(@algolia/client-search@4.20.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@docsearch/js@3.6.0(@algolia/client-search@4.20.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@docsearch/react': 3.6.0(@algolia/client-search@4.20.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@docsearch/react': 3.6.0(@algolia/client-search@4.20.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       preact: 10.7.3
     transitivePeerDependencies:
       - '@algolia/client-search'
@@ -7729,13 +7775,14 @@ snapshots:
       - react-dom
       - search-insights
 
-  '@docsearch/react@3.6.0(@algolia/client-search@4.20.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@docsearch/react@3.6.0(@algolia/client-search@4.20.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@algolia/autocomplete-core': 1.9.3(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)
       '@algolia/autocomplete-preset-algolia': 1.9.3(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)
       '@docsearch/css': 3.6.0
       algoliasearch: 4.20.0
     optionalDependencies:
+      '@types/react': 18.3.3
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     transitivePeerDependencies:
@@ -8157,6 +8204,15 @@ snapshots:
     optionalDependencies:
       rollup: 3.29.4
 
+  '@rollup/plugin-typescript@11.1.6(rollup@4.13.0)(tslib@2.6.3)(typescript@5.2.2)':
+    dependencies:
+      '@rollup/pluginutils': 5.1.0(rollup@4.13.0)
+      resolve: 1.22.4
+      typescript: 5.2.2
+    optionalDependencies:
+      rollup: 4.13.0
+      tslib: 2.6.3
+
   '@rollup/pluginutils@5.0.4(rollup@3.29.4)':
     dependencies:
       '@types/estree': 1.0.5
@@ -8265,6 +8321,8 @@ snapshots:
   '@tsconfig/node14@1.0.1': {}
 
   '@tsconfig/node16@1.0.2': {}
+
+  '@type-challenges/utils@0.1.1': {}
 
   '@types/babel__core@7.20.5':
     dependencies:
@@ -8399,9 +8457,20 @@ snapshots:
       '@types/node': 20.10.0
       kleur: 3.0.3
 
+  '@types/prop-types@15.7.12': {}
+
   '@types/qs@6.9.12': {}
 
   '@types/range-parser@1.2.7': {}
+
+  '@types/react-dom@18.3.0':
+    dependencies:
+      '@types/react': 18.3.3
+
+  '@types/react@18.3.3':
+    dependencies:
+      '@types/prop-types': 15.7.12
+      csstype: 3.1.3
 
   '@types/resolve@1.20.2': {}
 
@@ -12170,10 +12239,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  vitepress@1.2.3(@algolia/client-search@4.20.0)(axios@1.7.2)(postcss@8.4.38)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.2.2):
+  vitepress@1.2.3(@algolia/client-search@4.20.0)(@types/react@18.3.3)(axios@1.7.2)(postcss@8.4.38)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.2.2):
     dependencies:
       '@docsearch/css': 3.6.0
-      '@docsearch/js': 3.6.0(@algolia/client-search@4.20.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@docsearch/js': 3.6.0(@algolia/client-search@4.20.0)(@types/react@18.3.3)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@shikijs/core': 1.6.3
       '@shikijs/transformers': 1.6.3
       '@types/markdown-it': 14.1.1

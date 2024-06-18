@@ -4,7 +4,7 @@ import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import { VERSION } from './constants'
-import type { BuildOptions } from './build'
+import type { BuildEnvironmentOptions } from './build'
 import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
@@ -29,6 +29,10 @@ interface GlobalCLIOptions {
   m?: string
   mode?: string
   force?: boolean
+}
+
+interface BuilderCLIOptions {
+  app?: boolean
 }
 
 let profileSession = global.__vite_profile_session
@@ -70,7 +74,7 @@ const filterDuplicateOptions = <T extends object>(options: T) => {
 /**
  * removing global flags before passing as command specific sub-configs
  */
-function cleanOptions<Options extends GlobalCLIOptions>(
+function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   options: Options,
 ): Omit<Options, keyof GlobalCLIOptions> {
   const ret = { ...options }
@@ -99,6 +103,17 @@ function cleanOptions<Options extends GlobalCLIOptions>(
           : ret.sourcemap
   }
 
+  return ret
+}
+
+/**
+ * removing builder flags before passing as command specific sub-configs
+ */
+function cleanBuilderCLIOptions<Options extends BuilderCLIOptions>(
+  options: Options,
+): Omit<Options, keyof BuilderCLIOptions> {
+  const ret = { ...options }
+  delete ret.app
   return ret
 }
 
@@ -161,7 +176,7 @@ cli
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         optimizeDeps: { force: options.force },
-        server: cleanOptions(options),
+        server: cleanGlobalCLIOptions(options),
       })
 
       if (!server.httpServer) {
@@ -263,13 +278,21 @@ cli
     `[boolean] force empty outDir when it's outside of root`,
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
-  .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
-    filterDuplicateOptions(options)
-    const { build } = await import('./build')
-    const buildOptions: BuildOptions = cleanOptions(options)
+  .option('--environment [name]', `[string] build a single environment`)
+  .option('--app', `[boolean] same as builder.entireApp`)
+  .action(
+    async (
+      root: string,
+      options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
+    ) => {
+      filterDuplicateOptions(options)
+      const { createBuilder, buildEnvironment } = await import('./build')
 
-    try {
-      await build({
+      const buildOptions: BuildEnvironmentOptions = cleanGlobalCLIOptions(
+        cleanBuilderCLIOptions(options),
+      )
+
+      const config = {
         root,
         base: options.base,
         mode: options.mode,
@@ -277,17 +300,36 @@ cli
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         build: buildOptions,
-      })
-    } catch (e) {
-      createLogger(options.logLevel).error(
-        colors.red(`error during build:\n${e.stack}`),
-        { error: e },
-      )
-      process.exit(1)
-    } finally {
-      stopProfiler((message) => createLogger(options.logLevel).info(message))
-    }
-  })
+      }
+
+      try {
+        const builder = await createBuilder(config)
+        // TODO: Backward compatibility with lib and single environment build
+        // Ideally we would move to only building the entire app with this command
+        if (builder.config.build.lib) {
+          await buildEnvironment(
+            builder.config,
+            builder.environments.client,
+            builder.config.build.lib,
+          )
+        } else if (builder.config.builder.entireApp || options.app) {
+          await builder.buildApp()
+        } else {
+          const ssr = !!builder.config.build.ssr
+          const environment = builder.environments[ssr ? 'ssr' : 'client']
+          await builder.build(environment)
+        }
+      } catch (e) {
+        createLogger(options.logLevel).error(
+          colors.red(`error during build:\n${e.stack}`),
+          { error: e },
+        )
+        process.exit(1)
+      } finally {
+        stopProfiler((message) => createLogger(options.logLevel).info(message))
+      }
+    },
+  )
 
 // optimize
 cli

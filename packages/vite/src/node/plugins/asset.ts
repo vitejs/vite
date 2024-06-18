@@ -3,18 +3,14 @@ import { parse as parseUrl } from 'node:url'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
-import type {
-  NormalizedOutputOptions,
-  PluginContext,
-  RenderedChunk,
-} from 'rollup'
+import type { NormalizedOutputOptions, RenderedChunk } from 'rollup'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,
 } from '../build'
-import type { Plugin } from '../plugin'
+import type { Plugin, PluginContext } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { checkPublicFile } from '../publicDir'
 import {
@@ -29,15 +25,15 @@ import {
   urlRE,
 } from '../utils'
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
-import type { ModuleGraph } from '../server/moduleGraph'
 import { cleanUrl, withTrailingSlash } from '../../shared/utils'
+import type { Environment } from '../environment'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
 
 const jsSourceMapRE = /\.[cm]?js\.map$/
 
-const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
+const assetCache = new WeakMap<Environment, Map<string, string>>()
 
 // chunk.name is the basename for the asset ignoring the directory structure
 // For the manifest, we need to preserve the original file path and isEntry
@@ -46,8 +42,8 @@ export interface GeneratedAssetMeta {
   originalName: string
   isEntry?: boolean
 }
-export const generatedAssets = new WeakMap<
-  ResolvedConfig,
+export const generatedAssetsMap = new WeakMap<
+  Environment,
   Map<string, GeneratedAssetMeta>
 >()
 
@@ -63,11 +59,13 @@ export function registerCustomMime(): void {
 
 export function renderAssetUrlInJS(
   ctx: PluginContext,
-  config: ResolvedConfig,
   chunk: RenderedChunk,
   opts: NormalizedOutputOptions,
   code: string,
 ): MagicString | undefined {
+  const environment = ctx.environment!
+  const { config } = environment
+
   const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
     opts.format,
     config.isWorker,
@@ -142,18 +140,13 @@ const viteBuildPublicIdPrefix = '\0vite:asset:public'
 export function assetPlugin(config: ResolvedConfig): Plugin {
   registerCustomMime()
 
-  let moduleGraph: ModuleGraph | undefined
-
   return {
     name: 'vite:asset',
 
     buildStart() {
-      assetCache.set(config, new Map())
-      generatedAssets.set(config, new Map())
-    },
-
-    configureServer(server) {
-      moduleGraph = server.moduleGraph
+      if (!this.environment) return
+      assetCache.set(this.environment, new Map())
+      generatedAssetsMap.set(this.environment, new Map())
     },
 
     resolveId(id) {
@@ -170,7 +163,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async load(id) {
+    async load(id, options) {
       if (id.startsWith(viteBuildPublicIdPrefix)) {
         id = id.slice(viteBuildPublicIdPrefix.length)
       }
@@ -196,14 +189,15 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
 
       id = removeUrlQuery(id)
-      let url = await fileToUrl(id, config, this)
+      let url = await fileToUrl(this, id)
 
       // Inherit HMR timestamp if this asset was invalidated
-      if (moduleGraph) {
-        const mod = moduleGraph.getModuleById(id)
-        if (mod && mod.lastHMRTimestamp > 0) {
-          url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
-        }
+      const environment = this.environment
+      const mod =
+        environment?.mode === 'dev' &&
+        environment?.moduleGraph.getModuleById(id)
+      if (mod && mod.lastHMRTimestamp > 0) {
+        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
 
       return {
@@ -218,12 +212,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk, opts) {
-      const s = renderAssetUrlInJS(this, config, chunk, opts, code)
+      const s = renderAssetUrlInJS(this, chunk, opts, code)
 
       if (s) {
         return {
           code: s.toString(),
-          map: config.build.sourcemap
+          map: this.environment?.options.build.sourcemap
             ? s.generateMap({ hires: 'boundary' })
             : null,
         }
@@ -249,8 +243,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       // do not emit assets for SSR build
       if (
         config.command === 'build' &&
-        config.build.ssr &&
-        !config.build.ssrEmitAssets
+        !this.environment.options.build.emitAssets
       ) {
         for (const file in bundle) {
           if (
@@ -267,14 +260,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 }
 
 export async function fileToUrl(
-  id: string,
-  config: ResolvedConfig,
   ctx: PluginContext,
+  id: string,
 ): Promise<string> {
-  if (config.command === 'serve') {
-    return fileToDevUrl(id, config)
+  const environment = ctx.environment!
+  if (environment.config.command === 'serve') {
+    return fileToDevUrl(id, environment.config)
   } else {
-    return fileToBuiltUrl(id, config, ctx)
+    return fileToBuiltUrl(ctx, id)
   }
 }
 
@@ -342,17 +335,18 @@ function isGitLfsPlaceholder(content: Buffer): boolean {
  * and returns the resolved public URL
  */
 async function fileToBuiltUrl(
-  id: string,
-  config: ResolvedConfig,
   pluginContext: PluginContext,
+  id: string,
   skipPublicCheck = false,
   forceInline?: boolean,
 ): Promise<string> {
+  const environment = pluginContext.environment!
+  const { config } = environment
   if (!skipPublicCheck && checkPublicFile(id, config)) {
     return publicFileToBuiltUrl(id, config)
   }
 
-  const cache = assetCache.get(config)!
+  const cache = assetCache.get(environment)!
   const cached = cache.get(id)
   if (cached) {
     return cached
@@ -362,7 +356,7 @@ async function fileToBuiltUrl(
   const content = await fsp.readFile(file)
 
   let url: string
-  if (shouldInline(config, file, id, content, pluginContext, forceInline)) {
+  if (shouldInline(pluginContext, file, id, content, forceInline)) {
     if (config.build.lib && isGitLfsPlaceholder(content)) {
       config.logger.warn(
         colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`),
@@ -389,7 +383,7 @@ async function fileToBuiltUrl(
     })
 
     const originalName = normalizePath(path.relative(config.root, file))
-    generatedAssets.get(config)!.set(referenceId, { originalName })
+    generatedAssetsMap.get(environment)!.set(referenceId, { originalName })
 
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
   }
@@ -399,12 +393,13 @@ async function fileToBuiltUrl(
 }
 
 export async function urlToBuiltUrl(
+  pluginContext: PluginContext,
   url: string,
   importer: string,
-  config: ResolvedConfig,
-  pluginContext: PluginContext,
   forceInline?: boolean,
 ): Promise<string> {
+  const environment = pluginContext.environment!
+  const { config } = environment
   if (checkPublicFile(url, config)) {
     return publicFileToBuiltUrl(url, config)
   }
@@ -413,9 +408,8 @@ export async function urlToBuiltUrl(
       ? path.join(config.root, url)
       : path.join(path.dirname(importer), url)
   return fileToBuiltUrl(
-    file,
-    config,
     pluginContext,
+    file,
     // skip public check since we just did it above
     true,
     forceInline,
@@ -423,23 +417,25 @@ export async function urlToBuiltUrl(
 }
 
 const shouldInline = (
-  config: ResolvedConfig,
+  pluginContext: PluginContext,
   file: string,
   id: string,
   content: Buffer,
-  pluginContext: PluginContext,
   forceInline: boolean | undefined,
 ): boolean => {
+  const environment = pluginContext.environment!
+  const { config } = environment
+  const { assetsInlineLimit } = environment.options.build
   if (config.build.lib) return true
   if (pluginContext.getModuleInfo(id)?.isEntry) return false
   if (forceInline !== undefined) return forceInline
   let limit: number
-  if (typeof config.build.assetsInlineLimit === 'function') {
-    const userShouldInline = config.build.assetsInlineLimit(file, content)
+  if (typeof assetsInlineLimit === 'function') {
+    const userShouldInline = assetsInlineLimit(file, content)
     if (userShouldInline != null) return userShouldInline
     limit = DEFAULT_ASSETS_INLINE_LIMIT
   } else {
-    limit = Number(config.build.assetsInlineLimit)
+    limit = Number(assetsInlineLimit)
   }
   if (file.endsWith('.html')) return false
   // Don't inline SVG with fragments, as they are meant to be reused

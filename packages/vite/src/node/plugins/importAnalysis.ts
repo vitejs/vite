@@ -12,7 +12,6 @@ import { parseAst } from 'rollup/parseAst'
 import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import type { ViteDevServer } from '..'
 import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
@@ -52,11 +51,12 @@ import {
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { checkPublicFile } from '../publicDir'
-import { getDepOptimizationConfig } from '../config'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
-import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
+import type { DevEnvironment } from '../server/environment'
+import { addSafeModulePath } from '../server/middlewares/static'
+import { shouldExternalize } from '../external'
+import { optimizedDepNeedsInterop } from '../optimizer'
 import {
   cleanUrl,
   unwrapId,
@@ -151,7 +151,7 @@ function extractImportedBindings(
 }
 
 /**
- * Server-only plugin that lexes, resolves, rewrites and analyzes url imports.
+ * Dev-only plugin that lexes, resolves, rewrites and analyzes url imports.
  *
  * - Imports are resolved to ensure they exist on disk
  *
@@ -185,7 +185,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
   const matchAlias = getAliasPatternMatcher(config.resolve.alias)
-  let server: ViteDevServer
 
   let _env: string | undefined
   let _ssrEnv: string | undefined
@@ -216,18 +215,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:import-analysis',
 
-    configureServer(_server) {
-      server = _server
-    },
-
-    async transform(source, importer, options) {
-      // In a real app `server` is always defined, but it is undefined when
-      // running src/node/server/__tests__/pluginContainer.spec.ts
-      if (!server) {
-        return null
-      }
-
-      const ssr = options?.ssr === true
+    async transform(source, importer) {
+      const environment = this.environment as DevEnvironment
+      const ssr = environment.name !== 'client' // TODO
+      const moduleGraph = environment.moduleGraph
 
       if (canSkipImportAnalysis(importer)) {
         debug?.(colors.dim(`[skipped] ${prettifyUrl(importer, root)}`))
@@ -250,12 +241,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         this.error(message, showCodeFrame ? e.idx : undefined)
       }
 
-      const depsOptimizer = getDepsOptimizer(config, ssr)
+      const depsOptimizer = environment.depsOptimizer
 
-      const { moduleGraph } = server
       // since we are already in the transform phase of the importer, it must
       // have been loaded so its entry is guaranteed in the module graph.
-      const importerModule = moduleGraph.getModuleById(importer)!
+      const importerModule = moduleGraph.getModuleById(importer)
       if (!importerModule) {
         // This request is no longer valid. It could happen for optimized deps
         // requests. A full reload is going to request this id again.
@@ -299,20 +289,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         let importerFile = importer
 
-        const optimizeDeps = getDepOptimizationConfig(config, ssr)
-        if (moduleListContains(optimizeDeps?.exclude, url)) {
-          if (depsOptimizer) {
-            await depsOptimizer.scanProcessing
+        if (
+          depsOptimizer &&
+          moduleListContains(depsOptimizer.options.exclude, url)
+        ) {
+          await depsOptimizer.scanProcessing
 
-            // if the dependency encountered in the optimized file was excluded from the optimization
-            // the dependency needs to be resolved starting from the original source location of the optimized file
-            // because starting from node_modules/.vite will not find the dependency if it was not hoisted
-            // (that is, if it is under node_modules directory in the package source of the optimized file)
-            for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
-              if (!optimizedModule.src) continue // Ignore chunks
-              if (optimizedModule.file === importerModule.file) {
-                importerFile = optimizedModule.src
-              }
+          // if the dependency encountered in the optimized file was excluded from the optimization
+          // the dependency needs to be resolved starting from the original source location of the optimized file
+          // because starting from node_modules/.vite will not find the dependency if it was not hoisted
+          // (that is, if it is under node_modules directory in the package source of the optimized file)
+          for (const optimizedModule of depsOptimizer.metadata.depInfoList) {
+            if (!optimizedModule.src) continue // Ignore chunks
+            if (optimizedModule.file === importerModule.file) {
+              importerFile = optimizedModule.src
             }
           }
         }
@@ -370,8 +360,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           url = wrapId(resolved.id)
         }
 
-        // make the URL browser-valid if not SSR
-        if (!ssr) {
+        // make the URL browser-valid
+        if (environment.options.injectInvalidationTimestamp) {
           // mark non-js/css imports with `?import`
           if (isExplicitImportRequired(url)) {
             url = injectQuery(url, 'import')
@@ -398,7 +388,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // We use an internal function to avoid resolving the url again
             const depModule = await moduleGraph._ensureEntryFromUrl(
               unwrapId(url),
-              ssr,
               canSkipImportAnalysis(url) || forceSkipImportAnalysis,
               resolved,
             )
@@ -413,7 +402,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
 
           // prepend base
-          url = joinUrlSegments(base, url)
+          if (!ssr) url = joinUrlSegments(base, url)
         }
 
         return [url, resolved.id]
@@ -505,7 +494,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
             // skip ssr external
             if (ssr && !matchAlias(specifier)) {
-              if (shouldExternalizeForSSR(specifier, importer, config)) {
+              if (shouldExternalize(environment, specifier, importer)) {
                 return
               }
               if (isBuiltin(specifier)) {
@@ -543,9 +532,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // record as safe modules
             // safeModulesPath should not include the base prefix.
             // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
-            server?.moduleGraph.safeModulesPath.add(
-              fsPathFromUrl(stripBase(url, base)),
-            )
+            addSafeModulePath(config, fsPathFromUrl(stripBase(url, base)))
 
             if (url !== specifier) {
               let rewriteDone = false
@@ -561,10 +548,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                 const file = cleanUrl(resolvedId) // Remove ?v={hash}
 
                 const needsInterop = await optimizedDepNeedsInterop(
+                  environment,
                   depsOptimizer.metadata,
                   file,
-                  config,
-                  ssr,
                 )
 
                 if (needsInterop === undefined) {
@@ -638,13 +624,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (
               !isDynamicImport &&
               isLocalImport &&
-              config.server.preTransformRequests
+              environment.options.dev.preTransformRequests
             ) {
               // pre-transform known direct imports
               // These requests will also be registered in transformRequest to be awaited
               // by the deps optimizer
               const url = removeImportQuery(hmrUrl)
-              server.warmupRequest(url, { ssr })
+              environment.warmupRequest(url)
             }
           } else if (!importer.startsWith(withTrailingSlash(clientDir))) {
             if (!isInNodeModules(importer)) {
@@ -745,10 +731,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
-        const [normalized] = await moduleGraph.resolveUrl(
-          toAbsoluteUrl(url),
-          ssr,
-        )
+        const [normalized] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
         normalizedAcceptedUrls.add(normalized)
         str().overwrite(start, end, JSON.stringify(normalized), {
           contentOnly: true,
@@ -793,11 +776,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           normalizedAcceptedUrls,
           isPartiallySelfAccepting ? acceptedExports : null,
           isSelfAccepting,
-          ssr,
           staticImportedUrls,
         )
         if (hasHMR && prunedImports) {
-          handlePrunedModules(prunedImports, server)
+          handlePrunedModules(prunedImports, environment)
         }
       }
 

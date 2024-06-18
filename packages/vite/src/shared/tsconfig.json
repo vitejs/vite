@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": ["./", "../dep-types", "../types"],
-  "exclude": ["**/__tests__"],
+  "exclude": ["**/__tests__", "**/__tests_dts__"],
   "compilerOptions": {
     "lib": ["ESNext", "DOM"],
     "stripInternal": true

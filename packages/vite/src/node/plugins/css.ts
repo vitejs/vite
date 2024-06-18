@@ -27,8 +27,7 @@ import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
-import type { ModuleNode } from '../server/moduleGraph'
-import type { ResolveFn, ViteDevServer } from '../'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   resolveUserExternal,
@@ -70,12 +69,15 @@ import {
 } from '../utils'
 import type { Logger } from '../logger'
 import { cleanUrl, slash } from '../../shared/utils'
+import { createIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
+import { PartialEnvironment } from '../baseEnvironment'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
   fileToUrl,
-  generatedAssets,
+  generatedAssetsMap,
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
@@ -125,6 +127,7 @@ export interface CSSOptions {
    * Enables css sourcemaps during dev
    * @default false
    * @experimental
+   * @deprecated use dev.sourcemap instead
    */
   devSourcemap?: boolean
 
@@ -257,7 +260,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let moduleCache: Map<string, Record<string, string>>
 
-  const resolveUrl = config.createResolver({
+  const idResolver = createIdResolver(config, {
     preferRelative: true,
     tryIndex: false,
     extensions: [],
@@ -320,13 +323,18 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id) {
+      const { environment } = this
       if (
+        !environment ||
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
         SPECIAL_QUERY_RE.test(id)
       ) {
         return
       }
+      const resolveUrl = (url: string, importer?: string) =>
+        idResolver(environment, url, importer)
+
       const urlReplacer: CssUrlReplacer = async (url, importer) => {
         const decodedUrl = decodeURI(url)
         if (checkPublicFile(decodedUrl, config)) {
@@ -338,7 +346,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         }
         const resolved = await resolveUrl(decodedUrl, importer)
         if (resolved) {
-          return fileToUrl(resolved, config, this)
+          return fileToUrl(this, resolved)
         }
         if (config.command === 'build') {
           const isExternal = config.build.rollupOptions.external
@@ -366,9 +374,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         deps,
         map,
       } = await compileCSS(
+        environment,
         id,
         raw,
-        config,
         preprocessorWorkerController!,
         urlReplacer,
       )
@@ -497,7 +505,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (isDirectCSSRequest(id)) {
           return null
         }
-        // server only
+        // server only, TODO: environment
         if (options?.ssr) {
           return modulesCode || `export default ${JSON.stringify(css)}`
         }
@@ -551,6 +559,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts) {
+      const generatedAssets = generatedAssetsMap.get(this.environment)!
+
       let chunkCSS = ''
       // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
       const isJsChunkEmpty = code === '' && !chunk.isEntry
@@ -707,9 +717,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             type: 'asset',
             source: content,
           })
-          generatedAssets
-            .get(config)!
-            .set(referenceId, { originalName: originalFilename })
+          generatedAssets.set(referenceId, { originalName: originalFilename })
 
           const replacement = toOutputFilePathInJS(
             this.getFileName(referenceId),
@@ -764,9 +772,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               type: 'asset',
               source: chunkCSS,
             })
-            generatedAssets
-              .get(config)!
-              .set(referenceId, { originalName: originalFilename, isEntry })
+            generatedAssets.set(referenceId, {
+              originalName: originalFilename,
+              isEntry,
+            })
             chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
           } else if (!config.build.ssr) {
             // legacy build and inline css
@@ -780,13 +789,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             chunkCSS = await finalizeCss(chunkCSS, true, config)
             let cssString = JSON.stringify(chunkCSS)
             cssString =
-              renderAssetUrlInJS(
-                this,
-                config,
-                chunk,
-                opts,
-                cssString,
-              )?.toString() || cssString
+              renderAssetUrlInJS(this, chunk, opts, cssString)?.toString() ||
+              cssString
             const style = `__vite_style__`
             const injectCode =
               `var ${style} = document.createElement('style');` +
@@ -952,14 +956,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 }
 
 export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
-  let server: ViteDevServer
-
   return {
     name: 'vite:css-analysis',
-
-    configureServer(_server) {
-      server = _server
-    },
 
     async transform(_, id, options) {
       if (
@@ -970,9 +968,10 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const ssr = options?.ssr === true
-      const { moduleGraph } = server
-      const thisModule = moduleGraph.getModuleById(id)
+      const environment = this.environment
+      const moduleGraph =
+        environment?.mode === 'dev' ? environment.moduleGraph : undefined
+      const thisModule = moduleGraph?.getModuleById(id)
 
       // Handle CSS @import dependency HMR and other added modules via this.addWatchFile.
       // JS-related HMR is handled in the import-analysis plugin.
@@ -988,22 +987,21 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (pluginImports) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
-          const depModules = new Set<string | ModuleNode>()
+          const depModules = new Set<string | EnvironmentModuleNode>()
           const devBase = config.base
           for (const file of pluginImports) {
             depModules.add(
               isCSSRequest(file)
-                ? moduleGraph.createFileOnlyEntry(file)
-                : await moduleGraph.ensureEntryFromUrl(
+                ? moduleGraph!.createFileOnlyEntry(file)
+                : await moduleGraph!.ensureEntryFromUrl(
                     stripBase(
-                      await fileToUrl(file, config, this),
+                      await fileToUrl(this, file),
                       (config.server?.origin ?? '') + devBase,
                     ),
-                    ssr,
                   ),
             )
           }
-          moduleGraph.updateModuleInfo(
+          moduleGraph!.updateModuleInfo(
             thisModule,
             depModules,
             null,
@@ -1012,7 +1010,6 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
             new Set(),
             null,
             isSelfAccepting,
-            ssr,
           )
         } else {
           thisModule.isSelfAccepting = isSelfAccepting
@@ -1058,54 +1055,45 @@ export function getEmptyChunkReplacer(
 }
 
 interface CSSAtImportResolvers {
-  css: ResolveFn
-  sass: ResolveFn
-  less: ResolveFn
+  css: ResolveIdFn
+  sass: ResolveIdFn
+  less: ResolveIdFn
 }
 
 function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
-  let cssResolve: ResolveFn | undefined
-  let sassResolve: ResolveFn | undefined
-  let lessResolve: ResolveFn | undefined
+  let cssResolve: ResolveIdFn | undefined
+  let sassResolve: ResolveIdFn | undefined
+  let lessResolve: ResolveIdFn | undefined
   return {
     get css() {
-      return (
-        cssResolve ||
-        (cssResolve = config.createResolver({
-          extensions: ['.css'],
-          mainFields: ['style'],
-          conditions: ['style'],
-          tryIndex: false,
-          preferRelative: true,
-        }))
-      )
+      return (cssResolve ??= createIdResolver(config, {
+        extensions: ['.css'],
+        mainFields: ['style'],
+        conditions: ['style'],
+        tryIndex: false,
+        preferRelative: true,
+      }))
     },
 
     get sass() {
-      return (
-        sassResolve ||
-        (sassResolve = config.createResolver({
-          extensions: ['.scss', '.sass', '.css'],
-          mainFields: ['sass', 'style'],
-          conditions: ['sass', 'style'],
-          tryIndex: true,
-          tryPrefix: '_',
-          preferRelative: true,
-        }))
-      )
+      return (sassResolve ??= createIdResolver(config, {
+        extensions: ['.scss', '.sass', '.css'],
+        mainFields: ['sass', 'style'],
+        conditions: ['sass', 'style'],
+        tryIndex: true,
+        tryPrefix: '_',
+        preferRelative: true,
+      }))
     },
 
     get less() {
-      return (
-        lessResolve ||
-        (lessResolve = config.createResolver({
-          extensions: ['.less', '.css'],
-          mainFields: ['less', 'style'],
-          conditions: ['less', 'style'],
-          tryIndex: false,
-          preferRelative: true,
-        }))
-      )
+      return (lessResolve ??= createIdResolver(config, {
+        extensions: ['.less', '.css'],
+        mainFields: ['less', 'style'],
+        conditions: ['less', 'style'],
+        tryIndex: false,
+        preferRelative: true,
+      }))
     },
   }
 }
@@ -1117,12 +1105,13 @@ function getCssResolversKeys(
 }
 
 async function compileCSSPreprocessors(
+  environment: PartialEnvironment,
   id: string,
   lang: PreprocessLang,
   code: string,
-  config: ResolvedConfig,
   workerController: PreprocessorWorkerController,
 ): Promise<{ code: string; map?: ExistingRawSourceMap; deps?: Set<string> }> {
+  const { config } = environment
   const { preprocessorOptions, devSourcemap } = config.css ?? {}
   const atImportResolvers = getAtImportResolvers(config)
 
@@ -1152,6 +1141,7 @@ async function compileCSSPreprocessors(
   opts.enableSourcemap = devSourcemap ?? false
 
   const preprocessResult = await preProcessor(
+    environment,
     code,
     config.root,
     opts,
@@ -1197,9 +1187,9 @@ function getAtImportResolvers(config: ResolvedConfig) {
 }
 
 async function compileCSS(
+  environment: PartialEnvironment,
   id: string,
   code: string,
-  config: ResolvedConfig,
   workerController: PreprocessorWorkerController,
   urlReplacer?: CssUrlReplacer,
 ): Promise<{
@@ -1209,8 +1199,9 @@ async function compileCSS(
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
+  const { config } = environment
   if (config.css?.transformer === 'lightningcss') {
-    return compileLightningCSS(id, code, config, urlReplacer)
+    return compileLightningCSS(id, code, environment, urlReplacer)
   }
 
   const { modules: modulesOptions, devSourcemap } = config.css || {}
@@ -1240,10 +1231,10 @@ async function compileCSS(
   let preprocessorMap: ExistingRawSourceMap | undefined
   if (isPreProcessor(lang)) {
     const preprocessorResult = await compileCSSPreprocessors(
+      environment,
       id,
       lang,
       code,
-      config,
       workerController,
     )
     code = preprocessorResult.code
@@ -1268,6 +1259,7 @@ async function compileCSS(
           }
 
           const resolved = await atImportResolvers.css(
+            environment,
             id,
             path.join(basedir, '*'),
           )
@@ -1294,10 +1286,10 @@ async function compileCSS(
           const lang = id.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
           if (isPreProcessor(lang)) {
             const result = await compileCSSPreprocessors(
+              environment,
               id,
               lang,
               code,
-              config,
               workerController,
             )
             result.deps?.forEach((dep) => deps.add(dep))
@@ -1339,7 +1331,11 @@ async function compileCSS(
         },
         async resolve(id: string, importer: string) {
           for (const key of getCssResolversKeys(atImportResolvers)) {
-            const resolved = await atImportResolvers[key](id, importer)
+            const resolved = await atImportResolvers[key](
+              environment,
+              id,
+              importer,
+            )
             if (resolved) {
               return path.resolve(resolved)
             }
@@ -1497,6 +1493,10 @@ export async function preprocessCSS(
   code: string,
   filename: string,
   config: ResolvedConfig,
+  // Backward compatibility, only the name is needed for the alias and resolve plugins used in the resolvers
+  // TODO: Should we use environmentName instead of environment for these APIs?
+  // Should the signature be preprocessCSS(code, filename, environment) or preprocessCSS(code, filename, config, environmentName)?
+  environment: PartialEnvironment = new PartialEnvironment('client', config),
 ): Promise<PreprocessCSSResult> {
   let workerController = preprocessorWorkerControllerCache.get(config)
 
@@ -1508,7 +1508,7 @@ export async function preprocessCSS(
     workerController = alwaysFakeWorkerWorkerControllerCache
   }
 
-  return await compileCSS(filename, code, config, workerController)
+  return await compileCSS(environment, filename, code, workerController)
 }
 
 export async function formatPostcssSourceMap(
@@ -1949,6 +1949,7 @@ type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
 
 type StylePreprocessor = {
   process: (
+    environment: PartialEnvironment,
     source: string,
     root: string,
     options: StylePreprocessorOptions,
@@ -1959,6 +1960,7 @@ type StylePreprocessor = {
 
 type SassStylePreprocessor = {
   process: (
+    environment: PartialEnvironment,
     source: string,
     root: string,
     options: SassStylePreprocessorOptions,
@@ -1969,6 +1971,7 @@ type SassStylePreprocessor = {
 
 type StylusStylePreprocessor = {
   process: (
+    environment: PartialEnvironment,
     source: string,
     root: string,
     options: StylusStylePreprocessorOptions,
@@ -2066,6 +2069,7 @@ function fixScssBugImportValue(
 // #region Sass
 // .scss/.sass processor
 const makeScssWorker = (
+  environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
   alias: Alias[],
   maxWorkers: number | undefined,
@@ -2076,10 +2080,11 @@ const makeScssWorker = (
     filename: string,
   ) => {
     importer = cleanScssBugUrl(importer)
-    const resolved = await resolvers.sass(url, importer)
+    const resolved = await resolvers.sass(environment, url, importer)
     if (resolved) {
       try {
         const data = await rebaseUrls(
+          environment,
           resolved,
           filename,
           alias,
@@ -2186,13 +2191,13 @@ const scssProcessor = (
         worker.stop()
       }
     },
-    async process(source, root, options, resolvers) {
+    async process(environment, source, root, options, resolvers) {
       const sassPath = loadPreprocessorPath(PreprocessLang.sass, root)
 
       if (!workerMap.has(options.alias)) {
         workerMap.set(
           options.alias,
-          makeScssWorker(resolvers, options.alias, maxWorkers),
+          makeScssWorker(environment, resolvers, options.alias, maxWorkers),
         )
       }
       const worker = workerMap.get(options.alias)!
@@ -2242,11 +2247,12 @@ const scssProcessor = (
  * root file as base.
  */
 async function rebaseUrls(
+  environment: PartialEnvironment,
   file: string,
   rootFile: string,
   alias: Alias[],
   variablePrefix: string,
-  resolver: ResolveFn,
+  resolver: ResolveIdFn,
 ): Promise<Sass.LegacyImporterResult> {
   file = path.resolve(file) // ensure os-specific flashes
   // in the same dir, no need to rebase
@@ -2281,7 +2287,8 @@ async function rebaseUrls(
         return url
       }
     }
-    const absolute = (await resolver(url, file)) || path.resolve(fileDir, url)
+    const absolute =
+      (await resolver(environment, url, file)) || path.resolve(fileDir, url)
     const relative = path.relative(rootDir, absolute)
     return normalizePath(relative)
   }
@@ -2308,6 +2315,7 @@ async function rebaseUrls(
 // #region Less
 // .less
 const makeLessWorker = (
+  environment: PartialEnvironment,
   resolvers: CSSAtImportResolvers,
   alias: Alias[],
   maxWorkers: number | undefined,
@@ -2317,10 +2325,15 @@ const makeLessWorker = (
     dir: string,
     rootFile: string,
   ) => {
-    const resolved = await resolvers.less(filename, path.join(dir, '*'))
+    const resolved = await resolvers.less(
+      environment,
+      filename,
+      path.join(dir, '*'),
+    )
     if (!resolved) return undefined
 
     const result = await rebaseUrls(
+      environment,
       resolved,
       rootFile,
       alias,
@@ -2438,13 +2451,13 @@ const lessProcessor = (maxWorkers: number | undefined): StylePreprocessor => {
         worker.stop()
       }
     },
-    async process(source, root, options, resolvers) {
+    async process(environment, source, root, options, resolvers) {
       const lessPath = loadPreprocessorPath(PreprocessLang.less, root)
 
       if (!workerMap.has(options.alias)) {
         workerMap.set(
           options.alias,
-          makeLessWorker(resolvers, options.alias, maxWorkers),
+          makeLessWorker(environment, resolvers, options.alias, maxWorkers),
         )
       }
       const worker = workerMap.get(options.alias)!
@@ -2560,7 +2573,7 @@ const stylProcessor = (
         worker.stop()
       }
     },
-    async process(source, root, options, resolvers) {
+    async process(environment, source, root, options, resolvers) {
       const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
 
       if (!workerMap.has(options.alias)) {
@@ -2669,12 +2682,14 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
   const styl = stylProcessor(maxWorkers)
 
   const sassProcess: StylePreprocessor['process'] = (
+    environment,
     source,
     root,
     options,
     resolvers,
   ) => {
     return scss.process(
+      environment,
       source,
       root,
       { ...options, indentedSyntax: true },
@@ -2724,9 +2739,10 @@ const importLightningCSS = createCachedImport(() => import('lightningcss'))
 async function compileLightningCSS(
   id: string,
   src: string,
-  config: ResolvedConfig,
+  environment: PartialEnvironment,
   urlReplacer?: CssUrlReplacer,
 ): ReturnType<typeof compileCSS> {
+  const { config } = environment
   const deps = new Set<string>()
   // Relative path is needed to get stable hash when using CSS modules
   const filename = cleanUrl(path.relative(config.root, id))
@@ -2764,6 +2780,7 @@ async function compileLightningCSS(
             }
 
             const resolved = await getAtImportResolvers(config).css(
+              environment,
               id,
               toAbsolute(from),
             )

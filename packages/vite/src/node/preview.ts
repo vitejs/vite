@@ -117,7 +117,9 @@ export async function preview(
     true,
   )
 
-  const distDir = path.resolve(config.root, config.build.outDir)
+  const clientOutDir =
+    config.environments.client.build.outDir ?? config.build.outDir
+  const distDir = path.resolve(config.root, clientOutDir)
   if (
     !fs.existsSync(distDir) &&
     // error if no plugins implement `configurePreviewServer`
@@ -128,7 +130,7 @@ export async function preview(
     process.argv[2] === 'preview'
   ) {
     throw new Error(
-      `The directory "${config.build.outDir}" does not exist. Did you build your project?`,
+      `The directory "${clientOutDir}" does not exist. Did you build your project?`,
     )
   }
 

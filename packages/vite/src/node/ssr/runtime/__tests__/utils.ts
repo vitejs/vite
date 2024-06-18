@@ -3,21 +3,23 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { TestAPI } from 'vitest'
 import { afterEach, beforeEach, test } from 'vitest'
-import type { ViteRuntime } from 'vite/runtime'
-import type { MainThreadRuntimeOptions } from '../mainThreadRuntime'
+import type { ModuleRunner } from 'vite/module-runner'
+import type { ServerModuleRunnerOptions } from '../serverModuleRunner'
 import type { ViteDevServer } from '../../../server'
 import type { InlineConfig } from '../../../config'
 import { createServer } from '../../../server'
-import { createViteRuntime } from '../mainThreadRuntime'
+import { createServerModuleRunner } from '../serverModuleRunner'
+import type { DevEnvironment } from '../../../server/environment'
 
 interface TestClient {
   server: ViteDevServer
-  runtime: ViteRuntime
+  runner: ModuleRunner
+  environment: DevEnvironment
 }
 
-export async function createViteRuntimeTester(
+export async function createModuleRunnerTester(
   config: InlineConfig = {},
-  runtimeConfig: MainThreadRuntimeOptions = {},
+  runnerConfig: ServerModuleRunnerOptions = {},
 ): Promise<TestAPI<TestClient>> {
   function waitForWatcher(server: ViteDevServer) {
     return new Promise<void>((resolve) => {
@@ -71,13 +73,14 @@ export async function createViteRuntimeTester(
       ],
       ...config,
     })
-    t.runtime = await createViteRuntime(t.server, {
+    t.environment = t.server.environments.ssr
+    t.runner = createServerModuleRunner(t.environment, {
       hmr: {
         logger: false,
       },
       // don't override by default so Vitest source maps are correct
       sourcemapInterceptor: false,
-      ...runtimeConfig,
+      ...runnerConfig,
     })
     if (config.server?.watch) {
       await waitForWatcher(t.server)
@@ -85,7 +88,7 @@ export async function createViteRuntimeTester(
   })
 
   afterEach<TestClient>(async (t) => {
-    await t.runtime.destroy()
+    await t.runner.destroy()
     await t.server.close()
   })
 

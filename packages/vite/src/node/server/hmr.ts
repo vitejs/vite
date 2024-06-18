@@ -3,17 +3,26 @@ import path from 'node:path'
 import type { Server } from 'node:http'
 import { EventEmitter } from 'node:events'
 import colors from 'picocolors'
-import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
+import type { CustomPayload, HotPayload, Update } from 'types/hotPayload'
 import type { RollupError } from 'rollup'
 import { CLIENT_DIR } from '../constants'
 import { createDebugger, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
+import { getHookHandler } from '../plugins'
 import { isCSSRequest } from '../plugins/css'
-import { getAffectedGlobModules } from '../plugins/importMetaGlob'
 import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
+import type { Environment } from '../environment'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
-import type { ModuleNode } from './moduleGraph'
+import type { Plugin } from '../plugin'
+import {
+  ignoreDeprecationWarnings,
+  warnFutureDeprecation,
+} from '../deprecations'
+import type { EnvironmentModuleNode } from './moduleGraph'
+import type { ModuleNode } from './mixedModuleGraph'
+import type { DevEnvironment } from './environment'
+import { prepareError } from './middlewares/error'
 import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -31,10 +40,22 @@ export interface HmrOptions {
   timeout?: number
   overlay?: boolean
   server?: Server
-  /** @internal */
-  channels?: HMRChannel[]
 }
 
+export interface HotUpdateContext {
+  type: 'create' | 'update' | 'delete'
+  file: string
+  timestamp: number
+  modules: Array<EnvironmentModuleNode>
+  read: () => string | Promise<string>
+  server: ViteDevServer
+  environment: DevEnvironment
+}
+
+/**
+ * @deprecated
+ * Used by handleHotUpdate for backward compatibility with mixed client and ssr moduleGraph
+ **/
 export interface HmrContext {
   file: string
   timestamp: number
@@ -44,31 +65,27 @@ export interface HmrContext {
 }
 
 interface PropagationBoundary {
-  boundary: ModuleNode
-  acceptedVia: ModuleNode
+  boundary: EnvironmentModuleNode
+  acceptedVia: EnvironmentModuleNode
   isWithinCircularImport: boolean
 }
 
-export interface HMRBroadcasterClient {
+export interface HotChannelClient {
   /**
    * Send event to the client
    */
-  send(payload: HMRPayload): void
+  send(payload: HotPayload): void
   /**
    * Send custom event
    */
   send(event: string, payload?: CustomPayload['data']): void
 }
 
-export interface HMRChannel {
-  /**
-   * Unique channel name
-   */
-  name: string
+export interface HotChannel {
   /**
    * Broadcast events to all clients
    */
-  send(payload: HMRPayload): void
+  send(payload: HotPayload): void
   /**
    * Send custom event
    */
@@ -80,7 +97,7 @@ export interface HMRChannel {
     event: T,
     listener: (
       data: InferCustomEventPayload<T>,
-      client: HMRBroadcasterClient,
+      client: HotChannelClient,
       ...args: any[]
     ) => void,
   ): void
@@ -99,22 +116,49 @@ export interface HMRChannel {
   close(): void
 }
 
-export interface HMRBroadcaster extends Omit<HMRChannel, 'close' | 'name'> {
-  /**
-   * All registered channels. Always has websocket channel.
-   */
-  readonly channels: HMRChannel[]
-  /**
-   * Add a new third-party channel.
-   */
-  addChannel(connection: HMRChannel): HMRBroadcaster
-  close(): Promise<unknown[]>
-}
-
 export function getShortName(file: string, root: string): string {
   return file.startsWith(withTrailingSlash(root))
     ? path.posix.relative(root, file)
     : file
+}
+
+export function getSortedPluginsByHotUpdateHook(
+  plugins: readonly Plugin[],
+): Plugin[] {
+  const sortedPlugins: Plugin[] = []
+  // Use indexes to track and insert the ordered plugins directly in the
+  // resulting array to avoid creating 3 extra temporary arrays per hook
+  let pre = 0,
+    normal = 0,
+    post = 0
+  for (const plugin of plugins) {
+    const hook = plugin['hotUpdate'] ?? plugin['handleHotUpdate']
+    if (hook) {
+      if (typeof hook === 'object') {
+        if (hook.order === 'pre') {
+          sortedPlugins.splice(pre++, 0, plugin)
+          continue
+        }
+        if (hook.order === 'post') {
+          sortedPlugins.splice(pre + normal + post++, 0, plugin)
+          continue
+        }
+      }
+      sortedPlugins.splice(pre + normal++, 0, plugin)
+    }
+  }
+
+  return sortedPlugins
+}
+
+const sortedHotUpdatePluginsCache = new WeakMap<Environment, Plugin[]>()
+function getSortedHotUpdatePlugins(environment: Environment): Plugin[] {
+  let sortedPlugins = sortedHotUpdatePluginsCache.get(environment) as Plugin[]
+  if (!sortedPlugins) {
+    sortedPlugins = getSortedPluginsByHotUpdateHook(environment.plugins)
+    sortedHotUpdatePluginsCache.set(environment, sortedPlugins)
+  }
+  return sortedPlugins
 }
 
 export async function handleHMRUpdate(
@@ -122,7 +166,10 @@ export async function handleHMRUpdate(
   file: string,
   server: ViteDevServer,
 ): Promise<void> {
-  const { hot, config, moduleGraph } = server
+  const { config } = server
+  const mixedModuleGraph = ignoreDeprecationWarnings(() => server.moduleGraph)
+
+  const environments = Object.values(server.environments)
   const shortFile = getShortName(file, config.root)
 
   const isConfig = file === config.configFile
@@ -156,80 +203,222 @@ export async function handleHMRUpdate(
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
-    hot.send({
-      type: 'full-reload',
-      path: '*',
-      triggeredBy: path.resolve(config.root, file),
-    })
+    environments.forEach(({ hot }) =>
+      hot.send({
+        type: 'full-reload',
+        path: '*',
+        triggeredBy: path.resolve(config.root, file),
+      }),
+    )
     return
   }
 
-  const mods = new Set(moduleGraph.getModulesByFile(file))
-  if (type === 'create') {
-    for (const mod of moduleGraph._hasResolveFailedErrorModules) {
-      mods.add(mod)
-    }
-  }
-  if (type === 'create' || type === 'delete') {
-    for (const mod of getAffectedGlobModules(file, server)) {
-      mods.add(mod)
-    }
-  }
-
-  // check if any plugin wants to perform custom HMR handling
   const timestamp = Date.now()
-  const hmrContext: HmrContext = {
+  const contextMeta = {
+    type,
     file,
     timestamp,
-    modules: [...mods],
     read: () => readModifiedFile(file),
     server,
   }
+  const hotMap = new Map<
+    Environment,
+    { context: HotUpdateContext; error?: Error }
+  >()
 
-  if (type === 'update') {
-    for (const hook of config.getSortedPluginHooks('handleHotUpdate')) {
-      const filteredModules = await hook(hmrContext)
-      if (filteredModules) {
-        hmrContext.modules = filteredModules
+  for (const environment of Object.values(server.environments)) {
+    const mods = new Set(environment.moduleGraph.getModulesByFile(file))
+    if (type === 'create') {
+      for (const mod of environment.moduleGraph._hasResolveFailedErrorModules) {
+        mods.add(mod)
       }
     }
-  }
-
-  if (!hmrContext.modules.length) {
-    // html file cannot be hot updated
-    if (file.endsWith('.html')) {
-      config.logger.info(colors.green(`page reload `) + colors.dim(shortFile), {
-        clear: true,
-        timestamp: true,
-      })
-      hot.send({
-        type: 'full-reload',
-        path: config.server.middlewareMode
-          ? '*'
-          : '/' + normalizePath(path.relative(config.root, file)),
-      })
-    } else {
-      // loaded but not in the module graph, probably not js
-      debugHmr?.(`[no modules matched] ${colors.dim(shortFile)}`)
+    const context = {
+      ...contextMeta,
+      modules: [...mods],
+      // later on hotUpdate will be called for each runtime with a new hotContext
+      environment,
     }
-    return
+    hotMap.set(environment, { context })
   }
 
-  updateModules(shortFile, hmrContext.modules, timestamp, server)
+  const mixedMods = new Set(mixedModuleGraph.getModulesByFile(file))
+
+  const mixedHmrContext: HmrContext = {
+    ...contextMeta,
+    modules: [...mixedMods],
+  }
+
+  const clientHotContext = hotMap.get(server.environments.client)!.context
+  const ssrHotContext = hotMap.get(server.environments.ssr)?.context
+  try {
+    for (const plugin of getSortedHotUpdatePlugins(
+      server.environments.client,
+    )) {
+      if (plugin.hotUpdate) {
+        const filteredModules = await getHookHandler(plugin.hotUpdate)(
+          clientHotContext,
+        )
+        if (filteredModules) {
+          clientHotContext.modules = filteredModules
+          // Invalidate the hmrContext to force compat modules to be updated
+          mixedHmrContext.modules = mixedHmrContext.modules.filter(
+            (mixedMod) =>
+              filteredModules.find((mod) => mixedMod.id === mod.id) ||
+              ssrHotContext?.modules.find(
+                (ssrMod) => ssrMod.id === mixedMod.id,
+              ),
+          )
+          mixedHmrContext.modules.push(
+            ...filteredModules
+              .filter(
+                (mod) =>
+                  !mixedHmrContext.modules.find(
+                    (mixedMod) => mixedMod.id === mod.id,
+                  ),
+              )
+              .map((mod) =>
+                mixedModuleGraph.getBackwardCompatibleModuleNode(mod),
+              ),
+          )
+        }
+      } else if (type === 'update') {
+        warnFutureDeprecation(
+          config,
+          'pluginHookHandleHotUpdate',
+          `Used in plugin "${plugin.name}".`,
+          false,
+        )
+        // later on, we'll need: if (runtime === 'client')
+        // Backward compatibility with mixed client and ssr moduleGraph
+        const filteredModules = await getHookHandler(plugin.handleHotUpdate!)(
+          mixedHmrContext,
+        )
+        if (filteredModules) {
+          mixedHmrContext.modules = filteredModules
+          clientHotContext.modules = clientHotContext.modules.filter((mod) =>
+            filteredModules.find((mixedMod) => mod.id === mixedMod.id),
+          )
+          clientHotContext.modules.push(
+            ...(filteredModules
+              .filter(
+                (mixedMod) =>
+                  !clientHotContext.modules.find(
+                    (mod) => mod.id === mixedMod.id,
+                  ),
+              )
+              .map((mixedMod) => mixedMod._clientModule)
+              .filter(Boolean) as EnvironmentModuleNode[]),
+          )
+          if (ssrHotContext) {
+            ssrHotContext.modules = ssrHotContext.modules.filter((mod) =>
+              filteredModules.find((mixedMod) => mod.id === mixedMod.id),
+            )
+            ssrHotContext.modules.push(
+              ...(filteredModules
+                .filter(
+                  (mixedMod) =>
+                    !ssrHotContext.modules.find(
+                      (mod) => mod.id === mixedMod.id,
+                    ),
+                )
+                .map((mixedMod) => mixedMod._ssrModule)
+                .filter(Boolean) as EnvironmentModuleNode[]),
+            )
+          }
+        }
+      }
+    }
+  } catch (error) {
+    hotMap.get(server.environments.client)!.error = error
+  }
+
+  for (const environment of Object.values(server.environments)) {
+    if (environment.name === 'client') continue
+    const hot = hotMap.get(environment)!
+    try {
+      for (const plugin of getSortedHotUpdatePlugins(environment)) {
+        if (plugin.hotUpdate) {
+          const filteredModules = await getHookHandler(plugin.hotUpdate)(
+            hot.context,
+          )
+          if (filteredModules) {
+            hot.context.modules = filteredModules
+          }
+        }
+      }
+    } catch (error) {
+      hot.error = error
+    }
+  }
+
+  async function hmr(environment: DevEnvironment) {
+    try {
+      const { context, error } = hotMap.get(environment)!
+      if (error) {
+        throw error
+      }
+      if (!context.modules.length) {
+        // html file cannot be hot updated
+        if (file.endsWith('.html')) {
+          environment.logger.info(
+            colors.green(`page reload `) + colors.dim(shortFile),
+            {
+              clear: true,
+              timestamp: true,
+            },
+          )
+          environment.hot.send({
+            type: 'full-reload',
+            path: config.server.middlewareMode
+              ? '*'
+              : '/' + normalizePath(path.relative(config.root, file)),
+          })
+        } else {
+          // loaded but not in the module graph, probably not js
+          debugHmr?.(
+            `(${environment.name}) [no modules matched] ${colors.dim(shortFile)}`,
+          )
+        }
+        return
+      }
+
+      updateModules(environment, shortFile, context.modules, timestamp)
+    } catch (err) {
+      environment.hot.send({
+        type: 'error',
+        err: prepareError(err),
+      })
+    }
+  }
+
+  const hotUpdateEnvironments =
+    server.config.server.hotUpdateEnvironments ??
+    ((server, hmr) => {
+      // Run HMR in parallel for all environments by default
+      return Promise.all(
+        Object.values(server.environments).map((environment) =>
+          hmr(environment),
+        ),
+      )
+    })
+
+  await hotUpdateEnvironments(server, hmr)
 }
 
 type HasDeadEnd = boolean
 
 export function updateModules(
+  environment: DevEnvironment,
   file: string,
-  modules: ModuleNode[],
+  modules: EnvironmentModuleNode[],
   timestamp: number,
-  { config, hot, moduleGraph }: ViteDevServer,
   afterInvalidation?: boolean,
 ): void {
+  const { hot, config } = environment
   const updates: Update[] = []
-  const invalidatedModules = new Set<ModuleNode>()
-  const traversedModules = new Set<ModuleNode>()
+  const invalidatedModules = new Set<EnvironmentModuleNode>()
+  const traversedModules = new Set<EnvironmentModuleNode>()
   // Modules could be empty if a root module is invalidated via import.meta.hot.invalidate()
   let needFullReload: HasDeadEnd = modules.length === 0
 
@@ -237,7 +426,12 @@ export function updateModules(
     const boundaries: PropagationBoundary[] = []
     const hasDeadEnd = propagateUpdate(mod, traversedModules, boundaries)
 
-    moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true)
+    environment.moduleGraph.invalidateModule(
+      mod,
+      invalidatedModules,
+      timestamp,
+      true,
+    )
 
     if (needFullReload) {
       continue
@@ -260,9 +454,6 @@ export function updateModules(
               ? isExplicitImportRequired(acceptedVia.url)
               : false,
           isWithinCircularImport,
-          // browser modules are invalidated by changing ?t= query,
-          // but in ssr we control the module system, so we can directly remove them form cache
-          ssrInvalidates: getSSRInvalidatedImporters(acceptedVia),
         }),
       ),
     )
@@ -273,7 +464,7 @@ export function updateModules(
       typeof needFullReload === 'string'
         ? colors.dim(` (${needFullReload})`)
         : ''
-    config.logger.info(
+    environment.logger.info(
       colors.green(`page reload `) + colors.dim(file) + reason,
       { clear: !afterInvalidation, timestamp: true },
     )
@@ -289,7 +480,7 @@ export function updateModules(
     return
   }
 
-  config.logger.info(
+  environment.logger.info(
     colors.green(`hmr update `) +
       colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
     { clear: !afterInvalidation, timestamp: true },
@@ -298,32 +489,6 @@ export function updateModules(
     type: 'update',
     updates,
   })
-}
-
-function populateSSRImporters(
-  module: ModuleNode,
-  timestamp: number,
-  seen: Set<ModuleNode> = new Set(),
-) {
-  module.ssrImportedModules.forEach((importer) => {
-    if (seen.has(importer)) {
-      return
-    }
-    if (
-      importer.lastHMRTimestamp === timestamp ||
-      importer.lastInvalidationTimestamp === timestamp
-    ) {
-      seen.add(importer)
-      populateSSRImporters(importer, timestamp, seen)
-    }
-  })
-  return seen
-}
-
-function getSSRInvalidatedImporters(module: ModuleNode) {
-  return [...populateSSRImporters(module, module.lastHMRTimestamp)].map(
-    (m) => m.file!,
-  )
 }
 
 function areAllImportsAccepted(
@@ -339,10 +504,10 @@ function areAllImportsAccepted(
 }
 
 function propagateUpdate(
-  node: ModuleNode,
-  traversedModules: Set<ModuleNode>,
+  node: EnvironmentModuleNode,
+  traversedModules: Set<EnvironmentModuleNode>,
   boundaries: PropagationBoundary[],
-  currentChain: ModuleNode[] = [node],
+  currentChain: EnvironmentModuleNode[] = [node],
 ): HasDeadEnd {
   if (traversedModules.has(node)) {
     return false
@@ -454,10 +619,10 @@ function propagateUpdate(
  * @param traversedModules The set of modules that have traversed
  */
 function isNodeWithinCircularImports(
-  node: ModuleNode,
-  nodeChain: ModuleNode[],
-  currentChain: ModuleNode[] = [node],
-  traversedModules = new Set<ModuleNode>(),
+  node: EnvironmentModuleNode,
+  nodeChain: EnvironmentModuleNode[],
+  currentChain: EnvironmentModuleNode[] = [node],
+  traversedModules = new Set<EnvironmentModuleNode>(),
 ): boolean {
   // To help visualize how each parameters work, imagine this import graph:
   //
@@ -527,8 +692,8 @@ function isNodeWithinCircularImports(
 }
 
 export function handlePrunedModules(
-  mods: Set<ModuleNode>,
-  { hot }: ViteDevServer,
+  mods: Set<EnvironmentModuleNode>,
+  { hot }: DevEnvironment,
 ): void {
   // update the disposed modules' hmr timestamp
   // since if it's re-imported, it should re-apply side effects
@@ -715,70 +880,20 @@ async function readModifiedFile(file: string): Promise<string> {
   }
 }
 
-export function createHMRBroadcaster(): HMRBroadcaster {
-  const channels: HMRChannel[] = []
-  const readyChannels = new WeakSet<HMRChannel>()
-  const broadcaster: HMRBroadcaster = {
-    get channels() {
-      return [...channels]
-    },
-    addChannel(channel) {
-      if (channels.some((c) => c.name === channel.name)) {
-        throw new Error(`HMR channel "${channel.name}" is already defined.`)
-      }
-      channels.push(channel)
-      return broadcaster
-    },
-    on(event: string, listener: (...args: any[]) => any) {
-      // emit connection event only when all channels are ready
-      if (event === 'connection') {
-        // make a copy so we don't wait for channels that might be added after this is triggered
-        const channels = this.channels
-        channels.forEach((channel) =>
-          channel.on('connection', () => {
-            readyChannels.add(channel)
-            if (channels.every((c) => readyChannels.has(c))) {
-              listener()
-            }
-          }),
-        )
-        return
-      }
-      channels.forEach((channel) => channel.on(event, listener))
-      return
-    },
-    off(event, listener) {
-      channels.forEach((channel) => channel.off(event, listener))
-      return
-    },
-    send(...args: any[]) {
-      channels.forEach((channel) => channel.send(...(args as [any])))
-    },
-    listen() {
-      channels.forEach((channel) => channel.listen())
-    },
-    close() {
-      return Promise.all(channels.map((channel) => channel.close()))
-    },
-  }
-  return broadcaster
-}
-
-export interface ServerHMRChannel extends HMRChannel {
+export interface ServerHotChannel extends HotChannel {
   api: {
     innerEmitter: EventEmitter
     outsideEmitter: EventEmitter
   }
 }
 
-export function createServerHMRChannel(): ServerHMRChannel {
+export function createServerHotChannel(): ServerHotChannel {
   const innerEmitter = new EventEmitter()
   const outsideEmitter = new EventEmitter()
 
   return {
-    name: 'ssr',
     send(...args: any[]) {
-      let payload: HMRPayload
+      let payload: HotPayload
       if (typeof args[0] === 'string') {
         payload = {
           type: 'custom',
@@ -795,7 +910,7 @@ export function createServerHMRChannel(): ServerHMRChannel {
     },
     on: ((event: string, listener: () => unknown) => {
       innerEmitter.on(event, listener)
-    }) as ServerHMRChannel['on'],
+    }) as ServerHotChannel['on'],
     close() {
       innerEmitter.removeAllListeners()
       outsideEmitter.removeAllListeners()
@@ -807,5 +922,19 @@ export function createServerHMRChannel(): ServerHMRChannel {
       innerEmitter,
       outsideEmitter,
     },
+  }
+}
+
+export function createNoopHotChannel(): HotChannel {
+  function noop() {
+    // noop
+  }
+
+  return {
+    send: noop,
+    on: noop,
+    off: noop,
+    listen: noop,
+    close: noop,
   }
 }

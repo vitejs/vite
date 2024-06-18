@@ -11,6 +11,7 @@ import {
   hoistAtRules,
   preprocessCSS,
 } from '../../plugins/css'
+import { PartialEnvironment } from '../../baseEnvironment'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -216,6 +217,8 @@ async function createCssPluginTransform(
   inlineConfig: InlineConfig = {},
 ) {
   const config = await resolveConfig(inlineConfig, 'serve')
+  const environment = new PartialEnvironment('client', config)
+
   const { transform, buildStart } = cssPlugin(config)
 
   // @ts-expect-error buildStart is function
@@ -236,6 +239,7 @@ async function createCssPluginTransform(
           addWatchFile() {
             return
           },
+          environment,
         },
         code,
         id,

@@ -62,3 +62,45 @@ test('import.meta.filename/dirname returns same value with Node', async () => {
   expect(viteValue.dirname).toBe(path.dirname(filename))
   expect(viteValue.filename).toBe(filename)
 })
+
+test('virtual module invalidation', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    optimizeDeps: {
+      noDiscovery: true,
+    },
+    plugins: [
+      {
+        name: 'virtual-test',
+        resolveId(id) {
+          if (id === 'virtual:test') {
+            return '\0virtual:test'
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test') {
+            return `
+              globalThis.__virtual_test_state ??= 0;
+              globalThis.__virtual_test_state++;
+              export default globalThis.__virtual_test_state;
+            `
+          }
+        },
+      },
+    ],
+  })
+  await server.pluginContainer.buildStart({})
+
+  const mod1 = await server.ssrLoadModule('virtual:test')
+  expect(mod1.default).toEqual(1)
+  const mod2 = await server.ssrLoadModule('virtual:test')
+  expect(mod2.default).toEqual(1)
+
+  const modNode = server.moduleGraph.getModuleById('\0virtual:test')
+  server.moduleGraph.invalidateModule(modNode!)
+
+  const mod3 = await server.ssrLoadModule('virtual:test')
+  expect(mod3.default).toEqual(2)
+})

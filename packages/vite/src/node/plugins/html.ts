@@ -329,6 +329,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
+        const { modulePreload } = this.environment.options.build
+
         id = normalizePath(id)
         const relativeUrlPath = path.posix.relative(config.root, id)
         const publicPath = `/${relativeUrlPath}`
@@ -412,7 +414,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             !namedOutput.includes(removeLeadingSlash(url)) // Allow for absolute references as named output can't be an absolute path
           ) {
             try {
-              return await urlToBuiltUrl(url, id, config, this, shouldInline)
+              return await urlToBuiltUrl(this, url, id, shouldInline)
             } catch (e) {
               if (e.code !== 'ENOENT') {
                 throw e
@@ -647,7 +649,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.update(
               start,
               end,
-              partialEncodeURIPath(await urlToBuiltUrl(url, id, config, this)),
+              partialEncodeURIPath(await urlToBuiltUrl(this, url, id)),
             )
           }
         }
@@ -674,7 +676,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         processedHtml.set(id, s.toString())
 
         // inject module preload polyfill only when configured and needed
-        const { modulePreload } = config.build
         if (
           modulePreload !== false &&
           modulePreload.polyfill &&
@@ -690,6 +691,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
+      const { modulePreload } = this.environment.options.build
+
       const analyzedChunk: Map<OutputChunk, number> = new Map()
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
@@ -836,7 +839,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             )
           } else {
             assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
-            const { modulePreload } = config.build
             if (modulePreload !== false) {
               const resolveDependencies =
                 typeof modulePreload === 'object' &&
@@ -861,7 +863,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         // inject css link when cssCodeSplit is false
-        if (!config.build.cssCodeSplit) {
+        if (this.environment?.options.build.cssCodeSplit === false) {
           const cssChunk = Object.values(bundle).find(
             (chunk) => chunk.type === 'asset' && chunk.name === 'style.css',
           ) as OutputAsset | undefined

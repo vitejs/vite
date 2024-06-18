@@ -8,7 +8,6 @@ import type {
   LoggingFunction,
   ModuleFormat,
   OutputOptions,
-  Plugin,
   RollupBuild,
   RollupError,
   RollupLog,
@@ -25,10 +24,16 @@ import { withTrailingSlash } from '../shared/utils'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   ESBUILD_MODULES_TARGET,
+  ROLLUP_HOOKS,
   VERSION,
 } from './constants'
-import type { InlineConfig, ResolvedConfig } from './config'
-import { resolveConfig } from './config'
+import type {
+  EnvironmentOptions,
+  InlineConfig,
+  ResolvedConfig,
+  ResolvedEnvironmentOptions,
+} from './config'
+import { getDefaultResolvedEnvironmentOptions, resolveConfig } from './config'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
@@ -43,12 +48,13 @@ import {
   partialEncodeURIPath,
   requireResolveFromRootWithFallback,
 } from './utils'
+import { resolveEnvironmentPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
-import { loadFallbackPlugin } from './plugins/loadFallback'
+import { buildLoadFallbackPlugin } from './plugins/loadFallback'
 import { findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import {
@@ -60,8 +66,11 @@ import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
+import { BaseEnvironment } from './baseEnvironment'
+import type { Plugin, PluginContext } from './plugin'
+import type { RollupPluginHooks } from './typeUtils'
 
-export interface BuildOptions {
+export interface BuildEnvironmentOptions {
   /**
    * Compatibility transform target. The transform is performed with esbuild
    * and the lowest supported target is es2015/es6. Note this only handles
@@ -207,13 +216,6 @@ export interface BuildOptions {
    */
   manifest?: boolean | string
   /**
-   * Build in library mode. The value should be the global name of the lib in
-   * UMD mode. This will produce esm + cjs + umd bundle formats with default
-   * configurations that are suitable for distributing libraries.
-   * @default false
-   */
-  lib?: LibraryOptions | false
-  /**
    * Produce SSR oriented build. Note this requires specifying SSR entry via
    * `rollupOptions.input`.
    * @default false
@@ -228,8 +230,16 @@ export interface BuildOptions {
   /**
    * Emit assets during SSR.
    * @default false
+   * @deprecated use emitAssets
    */
   ssrEmitAssets?: boolean
+  /**
+   * Emit assets during build. Frameworks can set environments.ssr.build.emitAssets
+   * By default, it is true for the client and false for other environments.
+   * TODO: Should this be true for all environments by default? Or should this be
+   * controlled by the builder so so we can avoid emitting duplicated assets.
+   */
+  emitAssets?: boolean
   /**
    * Set to false to disable reporting compressed chunk sizes.
    * Can slightly improve build speed.
@@ -247,6 +257,23 @@ export interface BuildOptions {
    * @default null
    */
   watch?: WatcherOptions | null
+  /**
+   * create the Build Environment instance
+   */
+  createEnvironment?: (
+    name: string,
+    config: ResolvedConfig,
+  ) => Promise<BuildEnvironment> | BuildEnvironment
+}
+
+export interface BuildOptions extends BuildEnvironmentOptions {
+  /**
+   * Build in library mode. The value should be the global name of the lib in
+   * UMD mode. This will produce esm + cjs + umd bundle formats with default
+   * configurations that are suitable for distributing libraries.
+   * @default false
+   */
+  lib?: LibraryOptions | false
 }
 
 export interface LibraryOptions {
@@ -301,78 +328,99 @@ export type ResolveModulePreloadDependenciesFn = (
   },
 ) => string[]
 
+export interface ResolvedBuildEnvironmentOptions
+  extends Required<Omit<BuildEnvironmentOptions, 'polyfillModulePreload'>> {
+  modulePreload: false | ResolvedModulePreloadOptions
+}
+
 export interface ResolvedBuildOptions
   extends Required<Omit<BuildOptions, 'polyfillModulePreload'>> {
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
 export function resolveBuildOptions(
-  raw: BuildOptions | undefined,
+  raw: BuildOptions,
   logger: Logger,
   root: string,
 ): ResolvedBuildOptions {
+  const libMode = raw.lib ?? false
+  const buildOptions = resolveBuildEnvironmentOptions(
+    raw,
+    logger,
+    root,
+    undefined,
+    libMode,
+  )
+  return { ...buildOptions, lib: libMode }
+}
+
+export function resolveBuildEnvironmentOptions(
+  raw: BuildEnvironmentOptions,
+  logger: Logger,
+  root: string,
+  environmentName: string | undefined,
+  libMode: false | LibraryOptions = false,
+): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
-  if (raw) {
-    const { polyfillModulePreload, ...rest } = raw
-    raw = rest
-    if (deprecatedPolyfillModulePreload !== undefined) {
-      logger.warn(
-        'polyfillModulePreload is deprecated. Use modulePreload.polyfill instead.',
-      )
-    }
-    if (
-      deprecatedPolyfillModulePreload === false &&
-      raw.modulePreload === undefined
-    ) {
-      raw.modulePreload = { polyfill: false }
-    }
+  const { polyfillModulePreload, ...rest } = raw
+  raw = rest
+  if (deprecatedPolyfillModulePreload !== undefined) {
+    logger.warn(
+      'polyfillModulePreload is deprecated. Use modulePreload.polyfill instead.',
+    )
+  }
+  if (
+    deprecatedPolyfillModulePreload === false &&
+    raw.modulePreload === undefined
+  ) {
+    raw.modulePreload = { polyfill: false }
   }
 
-  const modulePreload = raw?.modulePreload
+  const modulePreload = raw.modulePreload
   const defaultModulePreload = {
     polyfill: true,
   }
 
-  const defaultBuildOptions: BuildOptions = {
+  const defaultBuildEnvironmentOptions: BuildEnvironmentOptions = {
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
-    cssCodeSplit: !raw?.lib,
+    cssCodeSplit: !libMode,
     sourcemap: false,
     rollupOptions: {},
-    minify: raw?.ssr ? false : 'esbuild',
+    minify: raw.ssr ? false : 'esbuild',
     terserOptions: {},
     write: true,
     emptyOutDir: null,
     copyPublicDir: true,
     manifest: false,
-    lib: false,
     ssr: false,
     ssrManifest: false,
     ssrEmitAssets: false,
+    emitAssets: environmentName === 'client',
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
   }
 
-  const userBuildOptions = raw
-    ? mergeConfig(defaultBuildOptions, raw)
-    : defaultBuildOptions
+  const userBuildEnvironmentOptions = raw
+    ? mergeConfig(defaultBuildEnvironmentOptions, raw)
+    : defaultBuildEnvironmentOptions
 
   // @ts-expect-error Fallback options instead of merging
-  const resolved: ResolvedBuildOptions = {
+  const resolved: ResolvedBuildEnvironmentOptions = {
     target: 'modules',
     cssTarget: false,
-    ...userBuildOptions,
+    ...userBuildEnvironmentOptions,
     commonjsOptions: {
       include: [/node_modules/],
       extensions: ['.js', '.cjs'],
-      ...userBuildOptions.commonjsOptions,
+      ...userBuildEnvironmentOptions.commonjsOptions,
     },
     dynamicImportVarsOptions: {
       warnOnError: true,
       exclude: [/node_modules/],
-      ...userBuildOptions.dynamicImportVarsOptions,
+      ...userBuildEnvironmentOptions.dynamicImportVarsOptions,
     },
     // Resolve to false | object
     modulePreload:
@@ -450,12 +498,12 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ...(options.minify ? [terserPlugin(config)] : []),
       ...(!config.isWorker
         ? [
-            ...(options.manifest ? [manifestPlugin(config)] : []),
+            ...(options.manifest ? [manifestPlugin()] : []),
             ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
             buildReporterPlugin(config),
           ]
         : []),
-      loadFallbackPlugin(),
+      buildLoadFallbackPlugin(),
     ],
   }
 }
@@ -467,17 +515,53 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const config = await resolveConfig(
+  const builder = await createBuilder(inlineConfig)
+
+  if (builder.config.build.lib) {
+    // TODO: temporal workaround. Should we support `libraries: Record<string, LibraryOptions & EnvironmentOptions>`
+    // to build multiple libraries and be able to target different environments (for example for a Svelte components
+    // library generating both client and SSR builds)?
+    return buildEnvironment(
+      builder.config,
+      builder.environments.client,
+      builder.config.build.lib,
+    )
+  } else {
+    const ssr = !!builder.config.build.ssr
+    const environment = builder.environments[ssr ? 'ssr' : 'client']
+    return builder.build(environment)
+  }
+}
+
+function resolveConfigToBuild(
+  inlineConfig: InlineConfig = {},
+  patchConfig?: (config: ResolvedConfig) => void,
+  patchPlugins?: (resolvedPlugins: Plugin[]) => void,
+) {
+  return resolveConfig(
     inlineConfig,
     'build',
     'production',
     'production',
+    false,
+    patchConfig,
+    patchPlugins,
   )
-  const options = config.build
-  const ssr = !!options.ssr
-  const libOptions = options.lib
+}
 
-  config.logger.info(
+/**
+ * Build an App environment, or a App library (if libraryOptions is provided)
+ **/
+export async function buildEnvironment(
+  config: ResolvedConfig,
+  environment: BuildEnvironment,
+  libOptions: LibraryOptions | false = false,
+): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+  const options = config.build
+  const { logger } = environment
+  const ssr = environment.name !== 'client'
+
+  logger.info(
     colors.cyan(
       `vite v${VERSION} ${colors.green(
         `building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`,
@@ -524,10 +608,11 @@ export async function build(
 
   const outDir = resolve(options.outDir)
 
-  // inject ssr arg to plugin load/transform hooks
-  const plugins = (
-    ssr ? config.plugins.map((p) => injectSsrFlagToHooks(p)) : config.plugins
-  ) as Plugin[]
+  // inject environment and ssr arg to plugin load/transform hooks
+  // TODO: rework lib mode
+  const plugins = (libOptions ? config : environment).plugins.map((p) =>
+    injectEnvironmentToHooks(environment, p),
+  )
 
   const rollupOptions: RollupOptions = {
     preserveEntrySignatures: ssr
@@ -602,7 +687,7 @@ export async function build(
   const outputBuildError = (e: RollupError) => {
     enhanceRollupError(e)
     clearLine()
-    config.logger.error(e.message, { error: e })
+    logger.error(e.message, { error: e })
   }
 
   let bundle: RollupBuild | undefined
@@ -611,7 +696,7 @@ export async function build(
     const buildOutputOptions = (output: OutputOptions = {}): OutputOptions => {
       // @ts-expect-error See https://github.com/vitejs/vite/issues/5812#issuecomment-984345618
       if (output.output) {
-        config.logger.warn(
+        logger.warn(
           `You've set "rollupOptions.output.output" in your config. ` +
             `This is deprecated and will override all Vite.js default output options. ` +
             `Please use "rollupOptions.output" instead.`,
@@ -624,7 +709,7 @@ export async function build(
         )
       }
       if (output.sourcemap) {
-        config.logger.warnOnce(
+        logger.warnOnce(
           colors.yellow(
             `Vite does not support "rollupOptions.output.sourcemap". ` +
               `Please use "build.sourcemap" instead.`,
@@ -632,12 +717,9 @@ export async function build(
         )
       }
 
-      const ssrNodeBuild = ssr && config.ssr.target === 'node'
-      const ssrWorkerBuild = ssr && config.ssr.target === 'webworker'
-
       const format = output.format || 'es'
       const jsExt =
-        ssrNodeBuild || libOptions
+        !environment.options.webCompatible || libOptions
           ? resolveOutputJsExtension(
               format,
               findNearestPackageData(config.root, config.packageCache)?.data
@@ -678,7 +760,11 @@ export async function build(
         inlineDynamicImports:
           output.format === 'umd' ||
           output.format === 'iife' ||
-          (ssrWorkerBuild &&
+          // TODO: We need an abstraction for non-client environments?
+          // We should remove the explicit 'client' hcek here.
+          // Or maybe `inlineDynamicImports` should be an environment option?
+          (environment.name !== 'client' &&
+            environment.options.webCompatible &&
             (typeof input === 'string' || Object.keys(input).length === 1)),
         ...output,
       }
@@ -688,7 +774,7 @@ export async function build(
     const outputs = resolveBuildOutputs(
       options.rollupOptions?.output,
       libOptions,
-      config.logger,
+      logger,
     )
     const normalizedOutputs: OutputOptions[] = []
 
@@ -709,12 +795,12 @@ export async function build(
       options.emptyOutDir,
       config.root,
       resolvedOutDirs,
-      config.logger,
+      logger,
     )
 
     // watch file changes with rollup
     if (config.build.watch) {
-      config.logger.info(colors.cyan(`\nwatching for file changes...`))
+      logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
         config,
@@ -735,13 +821,13 @@ export async function build(
 
       watcher.on('event', (event) => {
         if (event.code === 'BUNDLE_START') {
-          config.logger.info(colors.cyan(`\nbuild started...`))
+          logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
             prepareOutDir(resolvedOutDirs, emptyOutDir, config)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
-          config.logger.info(colors.cyan(`built in ${event.duration}ms.`))
+          logger.info(colors.cyan(`built in ${event.duration}ms.`))
         } else if (event.code === 'ERROR') {
           outputBuildError(event.error)
         }
@@ -763,7 +849,7 @@ export async function build(
     for (const output of normalizedOutputs) {
       res.push(await bundle[options.write ? 'write' : 'generate'](output))
     }
-    config.logger.info(
+    logger.info(
       `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
     )
     return Array.isArray(outputs) ? res : res[0]
@@ -771,7 +857,7 @@ export async function build(
     enhanceRollupError(e)
     clearLine()
     if (startTime) {
-      config.logger.error(
+      logger.error(
         `${colors.red('x')} Build failed in ${displayTime(Date.now() - startTime)}`,
       )
       startTime = undefined
@@ -1033,22 +1119,51 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-function injectSsrFlagToHooks(plugin: Plugin): Plugin {
+// TODO: Could we get Rollup to let us extends PluginContext in a more performant way?
+export function injectEnvironmentToHooks(
+  environment: BuildEnvironment,
+  plugin: Plugin,
+): Plugin {
   const { resolveId, load, transform } = plugin
-  return {
-    ...plugin,
-    resolveId: wrapSsrResolveId(resolveId),
-    load: wrapSsrLoad(load),
-    transform: wrapSsrTransform(transform),
+
+  const clone = { ...plugin }
+
+  for (const hook of Object.keys(clone) as RollupPluginHooks[]) {
+    switch (hook) {
+      case 'resolveId':
+        clone[hook] = wrapEnvironmentResolveId(environment, resolveId)
+        break
+      case 'load':
+        clone[hook] = wrapEnvironmentLoad(environment, load)
+        break
+      case 'transform':
+        clone[hook] = wrapEnvironmentTransform(environment, transform)
+        break
+      default:
+        if (ROLLUP_HOOKS.includes(hook)) {
+          ;(clone as any)[hook] = wrapEnvironmentHook(environment, clone[hook])
+        }
+        break
+    }
   }
+
+  return clone
 }
 
-function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
+function wrapEnvironmentResolveId(
+  environment: BuildEnvironment,
+  hook?: Plugin['resolveId'],
+): Plugin['resolveId'] {
   if (!hook) return
 
   const fn = getHookHandler(hook)
   const handler: Plugin['resolveId'] = function (id, importer, options) {
-    return fn.call(this, id, importer, injectSsrFlag(options))
+    return fn.call(
+      injectEnvironmentInContext(this, environment),
+      id,
+      importer,
+      injectSsrFlag(options, environment),
+    )
   }
 
   if ('handler' in hook) {
@@ -1061,13 +1176,19 @@ function wrapSsrResolveId(hook?: Plugin['resolveId']): Plugin['resolveId'] {
   }
 }
 
-function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
+function wrapEnvironmentLoad(
+  environment: BuildEnvironment,
+  hook?: Plugin['load'],
+): Plugin['load'] {
   if (!hook) return
 
   const fn = getHookHandler(hook)
   const handler: Plugin['load'] = function (id, ...args) {
-    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
-    return fn.call(this, id, injectSsrFlag(args[0]))
+    return fn.call(
+      injectEnvironmentInContext(this, environment),
+      id,
+      injectSsrFlag(args[0], environment),
+    )
   }
 
   if ('handler' in hook) {
@@ -1080,13 +1201,20 @@ function wrapSsrLoad(hook?: Plugin['load']): Plugin['load'] {
   }
 }
 
-function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
+function wrapEnvironmentTransform(
+  environment: BuildEnvironment,
+  hook?: Plugin['transform'],
+): Plugin['transform'] {
   if (!hook) return
 
   const fn = getHookHandler(hook)
   const handler: Plugin['transform'] = function (code, importer, ...args) {
-    // @ts-expect-error: Receiving options param to be future-proof if Rollup adds it
-    return fn.call(this, code, importer, injectSsrFlag(args[0]))
+    return fn.call(
+      injectEnvironmentInContext(this, environment),
+      code,
+      importer,
+      injectSsrFlag(args[0], environment),
+    )
   }
 
   if ('handler' in hook) {
@@ -1099,10 +1227,48 @@ function wrapSsrTransform(hook?: Plugin['transform']): Plugin['transform'] {
   }
 }
 
+function wrapEnvironmentHook<HookName extends keyof Plugin>(
+  environment: BuildEnvironment,
+  hook?: Plugin[HookName],
+): Plugin[HookName] {
+  if (!hook) return
+
+  const fn = getHookHandler(hook)
+  if (typeof fn !== 'function') return hook
+
+  const handler: Plugin[HookName] = function (
+    this: PluginContext,
+    ...args: any[]
+  ) {
+    return fn.call(injectEnvironmentInContext(this, environment), ...args)
+  }
+
+  if ('handler' in hook) {
+    return {
+      ...hook,
+      handler,
+    } as Plugin[HookName]
+  } else {
+    return handler
+  }
+}
+
+function injectEnvironmentInContext<Context extends PluginContext>(
+  context: Context,
+  environment: BuildEnvironment,
+) {
+  context.environment ??= environment
+  return context
+}
+
 function injectSsrFlag<T extends Record<string, any>>(
   options?: T,
-): T & { ssr: boolean } {
-  return { ...(options ?? {}), ssr: true } as T & { ssr: boolean }
+  environment?: BuildEnvironment,
+): T & { ssr?: boolean } {
+  const ssr = environment ? environment.name !== 'client' : true
+  return { ...(options ?? {}), ssr } as T & {
+    ssr?: boolean
+  }
 }
 
 /*
@@ -1189,6 +1355,7 @@ export type RenderBuiltAssetUrl = (
   },
 ) => string | { relative?: boolean; runtime?: string } | undefined
 
+// TODO: experimental.renderBuiltUrl => environment.build.renderBuiltUrl?
 export function toOutputFilePathInJS(
   filename: string,
   type: 'asset' | 'public',
@@ -1287,4 +1454,159 @@ function areSeparateFolders(a: string, b: string) {
     !na.startsWith(withTrailingSlash(nb)) &&
     !nb.startsWith(withTrailingSlash(na))
   )
+}
+
+export class BuildEnvironment extends BaseEnvironment {
+  mode = 'build' as const
+
+  constructor(
+    name: string,
+    config: ResolvedConfig,
+    setup?: {
+      options?: EnvironmentOptions
+    },
+  ) {
+    // TODO: move this to the base Environment class?
+    let options =
+      config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
+    if (setup?.options) {
+      options = mergeConfig(
+        options,
+        setup?.options,
+      ) as ResolvedEnvironmentOptions
+    }
+    super(name, config, options)
+  }
+
+  // TODO: This could be sync, discuss if applyToEnvironment should support async
+  async init(): Promise<void> {
+    if (this._initiated) {
+      return
+    }
+    this._initiated = true
+    this._plugins = resolveEnvironmentPlugins(this)
+  }
+}
+
+export interface ViteBuilder {
+  environments: Record<string, BuildEnvironment>
+  config: ResolvedConfig
+  buildApp(): Promise<void>
+  build(
+    environment: BuildEnvironment,
+  ): Promise<RollupOutput | RollupOutput[] | RollupWatcher>
+}
+
+export interface BuilderOptions {
+  sharedConfigBuild?: boolean
+  sharedPlugins?: boolean
+  entireApp?: boolean
+  buildApp?: (builder: ViteBuilder) => Promise<void>
+}
+
+async function defaultBuildApp(builder: ViteBuilder): Promise<void> {
+  for (const environment of Object.values(builder.environments)) {
+    await builder.build(environment)
+  }
+}
+
+export function resolveBuilderOptions(
+  options: BuilderOptions = {},
+): ResolvedBuilderOptions {
+  return {
+    sharedConfigBuild: options.sharedConfigBuild ?? false,
+    sharedPlugins: options.sharedPlugins ?? false,
+    entireApp: options.entireApp ?? false,
+    buildApp: options.buildApp ?? defaultBuildApp,
+  }
+}
+
+export type ResolvedBuilderOptions = Required<BuilderOptions>
+
+export async function createBuilder(
+  inlineConfig: InlineConfig = {},
+): Promise<ViteBuilder> {
+  const config = await resolveConfigToBuild(inlineConfig)
+
+  const environments: Record<string, BuildEnvironment> = {}
+
+  const builder: ViteBuilder = {
+    environments,
+    config,
+    async buildApp() {
+      if (config.build.watch) {
+        throw new Error(
+          'Watch mode is not yet supported in viteBuilder.buildApp()',
+        )
+      }
+      return config.builder.buildApp(builder)
+    },
+    async build(environment: BuildEnvironment) {
+      return buildEnvironment(environment.config, environment)
+    },
+  }
+
+  for (const name of Object.keys(config.environments)) {
+    const environmentOptions = config.environments[name]
+    const createEnvironment =
+      environmentOptions.build?.createEnvironment ??
+      ((name: string, config: ResolvedConfig) =>
+        new BuildEnvironment(name, config))
+
+    // We need to resolve the config again so we can properly merge options
+    // and get a new set of plugins for each build environment. The ecosystem
+    // expects plugins to be run for the same environment once they are created
+    // and to process a single bundle at a time (contrary to dev mode where
+    // plugins are built to handle multiple environments concurrently).
+    let environmentConfig = config
+    if (!config.builder.sharedConfigBuild) {
+      const patchConfig = (resolved: ResolvedConfig) => {
+        // Until the ecosystem updates to use `environment.options.build` instead of `config.build`,
+        // we need to make override `config.build` for the current environment.
+        // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
+        // remove the default values that shouldn't be used at all once the config is resolved
+        ;(resolved.build as ResolvedBuildOptions) = {
+          ...resolved.environments[name].build,
+          lib: false,
+        }
+      }
+      const patchPlugins = (resolvedPlugins: Plugin[]) => {
+        // Force opt-in shared plugins
+        const environmentPlugins = [...resolvedPlugins]
+        let validMixedPlugins = true
+        for (let i = 0; i < environmentPlugins.length; i++) {
+          const environmentPlugin = environmentPlugins[i]
+          const sharedPlugin = config.plugins[i]
+          if (
+            config.builder.sharedPlugins ||
+            environmentPlugin.sharedDuringBuild
+          ) {
+            if (environmentPlugin.name !== sharedPlugin.name) {
+              validMixedPlugins = false
+              break
+            }
+            environmentPlugins[i] = sharedPlugin
+          }
+        }
+        if (validMixedPlugins) {
+          for (let i = 0; i < environmentPlugins.length; i++) {
+            resolvedPlugins[i] = environmentPlugins[i]
+          }
+        }
+      }
+      environmentConfig = await resolveConfigToBuild(
+        inlineConfig,
+        patchConfig,
+        patchPlugins,
+      )
+    }
+
+    const environment = await createEnvironment(name, environmentConfig)
+
+    await environment.init()
+
+    environments[name] = environment
+  }
+
+  return builder
 }

@@ -1,27 +1,28 @@
 import { pathToFileURL } from 'node:url'
-import type { ModuleNode, TransformResult, ViteDevServer } from '..'
-import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
+import type { FetchResult } from 'vite/module-runner'
+import type { EnvironmentModuleNode, TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import type { FetchResult } from '../../runtime/types'
 import { unwrapId } from '../../shared/utils'
 import {
+  MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
-  VITE_RUNTIME_SOURCEMAPPING_SOURCE,
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
+import type { DevEnvironment } from '../server/environment'
 
 export interface FetchModuleOptions {
+  cached?: boolean
   inlineSourceMap?: boolean
   processSourceMap?<T extends NonNullable<TransformResult['map']>>(map: T): T
 }
 
 /**
- * Fetch module information for Vite runtime.
+ * Fetch module information for Vite runner.
  * @experimental
  */
 export async function fetchModule(
-  server: ViteDevServer,
+  environment: DevEnvironment,
   url: string,
   importer?: string,
   options: FetchModuleOptions = {},
@@ -36,33 +37,35 @@ export async function fetchModule(
   }
 
   if (url[0] !== '.' && url[0] !== '/') {
-    const {
-      isProduction,
-      resolve: { dedupe, preserveSymlinks },
-      root,
-      ssr,
-    } = server.config
-    const overrideConditions = ssr.resolve?.externalConditions || []
-
-    const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
-      mainFields: ['main'],
-      conditions: [],
-      overrideConditions: [...overrideConditions, 'production', 'development'],
-      extensions: ['.js', '.cjs', '.json'],
-      dedupe,
-      preserveSymlinks,
-      isBuild: false,
-      isProduction,
-      root,
-      ssrConfig: ssr,
-      packageCache: server.config.packageCache,
-    }
+    const { isProduction, root } = environment.config
+    const { externalConditions, dedupe, preserveSymlinks } =
+      environment.options.resolve
 
     const resolved = tryNodeResolve(
       url,
       importer,
-      { ...resolveOptions, tryEsmOnly: true },
-      false,
+      {
+        mainFields: ['main'],
+        conditions: [],
+        externalConditions,
+        external: [],
+        noExternal: [],
+        overrideConditions: [
+          ...externalConditions,
+          'production',
+          'development',
+        ],
+        extensions: ['.js', '.cjs', '.json'],
+        dedupe,
+        preserveSymlinks,
+        isBuild: false,
+        isProduction,
+        root,
+        packageCache: environment.config.packageCache,
+        tryEsmOnly: true,
+        webCompatible: environment.options.webCompatible,
+        nodeCompatible: environment.options.nodeCompatible,
+      },
       undefined,
       true,
     )
@@ -74,7 +77,7 @@ export async function fetchModule(
       throw err
     }
     const file = pathToFileURL(resolved.id).toString()
-    const type = isFilePathESM(resolved.id, server.config.packageCache)
+    const type = isFilePathESM(resolved.id, environment.config.packageCache)
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }
@@ -82,7 +85,15 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
-  let result = await server.transformRequest(url, { ssr: true })
+  let mod = await environment.moduleGraph.getModuleByUrl(url)
+  const cached = !!mod?.transformResult
+
+  // if url is already cached, we can just confirm it's also cached on the server
+  if (options.cached && cached) {
+    return { cache: true }
+  }
+
+  let result = await environment.transformRequest(url)
 
   if (!result) {
     throw new Error(
@@ -93,7 +104,7 @@ export async function fetchModule(
   }
 
   // module entry should be created by transformRequest
-  const mod = await server.moduleGraph.getModuleByUrl(url, true)
+  mod ??= await environment.moduleGraph.getModuleByUrl(url)
 
   if (!mod) {
     throw new Error(
@@ -111,7 +122,11 @@ export async function fetchModule(
   if (result.code[0] === '#')
     result.code = result.code.replace(/^#!.*/, (s) => ' '.repeat(s.length))
 
-  return { code: result.code, file: mod.file }
+  return {
+    code: result.code,
+    file: mod.file,
+    invalidate: !cached,
+  }
 }
 
 const OTHER_SOURCE_MAP_REGEXP = new RegExp(
@@ -120,7 +135,7 @@ const OTHER_SOURCE_MAP_REGEXP = new RegExp(
 )
 
 function inlineSourceMap(
-  mod: ModuleNode,
+  mod: EnvironmentModuleNode,
   result: TransformResult,
   processSourceMap?: FetchModuleOptions['processSourceMap'],
 ) {
@@ -130,7 +145,7 @@ function inlineSourceMap(
   if (
     !map ||
     !('version' in map) ||
-    code.includes(VITE_RUNTIME_SOURCEMAPPING_SOURCE)
+    code.includes(MODULE_RUNNER_SOURCEMAPPING_SOURCE)
   )
     return result
 
@@ -142,7 +157,7 @@ function inlineSourceMap(
   const sourceMap = processSourceMap?.(map) || map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
     mod.id
-  }\n${VITE_RUNTIME_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
+  }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
 }

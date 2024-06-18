@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { definePlugin } from '../../plugins/define'
 import { resolveConfig } from '../../config'
+import { PartialEnvironment } from '../../baseEnvironment'
 
 async function createDefinePluginTransform(
   define: Record<string, any> = {},
@@ -12,9 +13,15 @@ async function createDefinePluginTransform(
     build ? 'build' : 'serve',
   )
   const instance = definePlugin(config)
+  const environment = new PartialEnvironment(ssr ? 'ssr' : 'client', config)
+
   return async (code: string) => {
     // @ts-expect-error transform should exist
-    const result = await instance.transform.call({}, code, 'foo.ts', { ssr })
+    const result = await instance.transform.call(
+      { environment },
+      code,
+      'foo.ts',
+    )
     return result?.code || result
   }
 }
