@@ -1,3 +1,4 @@
+import { fixupPluginRules } from "@eslint/compat";
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -15,7 +16,7 @@ export default [
       parser: tsParser,
     },
     plugins: {
-      'react-hooks': reactHooks,
+      'react-hooks': fixupPluginRules(reactHooks),
       'react-refresh': reactRefresh,
       '@typescript-eslint': tsPlugin,
     },
