@@ -10,7 +10,7 @@ interface Link {
   file: string
   statusCode?: number
 }
-const ignorePatterns: RegExp[] = [/viteconf\.org/]
+const ignorePatterns: RegExp[] = [/viteconf\.org/, /twitter\.com/]
 const linkRegex = /\[(.*?)\]\((https?:\/\/.*?)\)/g
 const links: Link[] = []
 
