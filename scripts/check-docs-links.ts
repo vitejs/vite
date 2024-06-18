@@ -85,6 +85,7 @@ async function readDocs() {
         ),
       )
     })
+    process.exit(1)
   }
   console.timeEnd('readDocs')
 }
