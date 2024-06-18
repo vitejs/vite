@@ -1,4 +1,4 @@
-import { fixupPluginRules } from "@eslint/compat";
+import { fixupPluginRules } from '@eslint/compat'
 import js from '@eslint/js'
 import globals from 'globals'
 import react from 'eslint-plugin-react'
@@ -36,6 +36,6 @@ export default [
         { allowConstantExport: true },
       ],
     },
-    settings: { react: { version: '18.2' } },
+    settings: { react: { version: '18.3' } },
   },
 ]
