@@ -22,6 +22,8 @@ export default tseslint.config(
       '**/temp/**',
       '**/.vitepress/cache/**',
       '**/*.snap',
+      // eslint doesn't support import attributes
+      'playground/resolve/import-attributes.js',
     ],
   },
   eslint.configs.recommended,
