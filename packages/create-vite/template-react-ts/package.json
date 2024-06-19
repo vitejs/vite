@@ -27,5 +27,8 @@
     "globals": "^15.6.0",
     "typescript": "^5.4.5",
     "vite": "^5.3.1"
+  },
+  "overrides": {
+    "eslint": "$eslint"
   }
 }
