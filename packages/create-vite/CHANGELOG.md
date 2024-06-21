@@ -1,3 +1,28 @@
+## 5.3.0 (2024-06-21)
+
+* fix(create-vite): revert eslint 9 upgrade in templates (#17511) ([86cf1b4](https://github.com/vitejs/vite/commit/86cf1b4)), closes [#17511](https://github.com/vitejs/vite/issues/17511)
+* fix(create-vite): update tsconfig with moduleDetection true (#17468) ([7b240e4](https://github.com/vitejs/vite/commit/7b240e4)), closes [#17468](https://github.com/vitejs/vite/issues/17468)
+* fix(deps): update all non-major dependencies (#16258) ([7caef42](https://github.com/vitejs/vite/commit/7caef42)), closes [#16258](https://github.com/vitejs/vite/issues/16258)
+* fix(deps): update all non-major dependencies (#16376) ([58a2938](https://github.com/vitejs/vite/commit/58a2938)), closes [#16376](https://github.com/vitejs/vite/issues/16376)
+* fix(deps): update all non-major dependencies (#16488) ([2d50be2](https://github.com/vitejs/vite/commit/2d50be2)), closes [#16488](https://github.com/vitejs/vite/issues/16488)
+* fix(deps): update all non-major dependencies (#16549) ([2d6a13b](https://github.com/vitejs/vite/commit/2d6a13b)), closes [#16549](https://github.com/vitejs/vite/issues/16549)
+* fix(deps): update all non-major dependencies (#16603) ([6711553](https://github.com/vitejs/vite/commit/6711553)), closes [#16603](https://github.com/vitejs/vite/issues/16603)
+* fix(deps): update all non-major dependencies (#16660) ([bf2f014](https://github.com/vitejs/vite/commit/bf2f014)), closes [#16660](https://github.com/vitejs/vite/issues/16660)
+* fix(deps): update all non-major dependencies (#17321) ([4a89766](https://github.com/vitejs/vite/commit/4a89766)), closes [#17321](https://github.com/vitejs/vite/issues/17321)
+* fix(deps): update all non-major dependencies (#17430) ([4453d35](https://github.com/vitejs/vite/commit/4453d35)), closes [#17430](https://github.com/vitejs/vite/issues/17430)
+* fix(deps): update all non-major dependencies (#17494) ([bf123f2](https://github.com/vitejs/vite/commit/bf123f2)), closes [#17494](https://github.com/vitejs/vite/issues/17494)
+* chore(create-vite): update IDE support instructions in helloworld components (#16605) ([a265282](https://github.com/vitejs/vite/commit/a265282)), closes [#16605](https://github.com/vitejs/vite/issues/16605)
+* chore(deps): update all non-major dependencies (#16325) ([a78e265](https://github.com/vitejs/vite/commit/a78e265)), closes [#16325](https://github.com/vitejs/vite/issues/16325)
+* chore(deps): update all non-major dependencies (#16722) ([b45922a](https://github.com/vitejs/vite/commit/b45922a)), closes [#16722](https://github.com/vitejs/vite/issues/16722)
+* chore(deps): update all non-major dependencies (#17373) ([f2d52f1](https://github.com/vitejs/vite/commit/f2d52f1)), closes [#17373](https://github.com/vitejs/vite/issues/17373)
+* chore(deps): update dependency eslint to v9 (#16661) ([6c10662](https://github.com/vitejs/vite/commit/6c10662)), closes [#16661](https://github.com/vitejs/vite/issues/16661)
+* chore(deps): update dependency execa to v9 (#16662) ([76d1642](https://github.com/vitejs/vite/commit/76d1642)), closes [#16662](https://github.com/vitejs/vite/issues/16662)
+* feat(create-vite): add help usage (#16390) ([1d9bfc0](https://github.com/vitejs/vite/commit/1d9bfc0)), closes [#16390](https://github.com/vitejs/vite/issues/16390)
+* feat(create-vite): use "solution" tsconfig so that vite.config.ts is type checked (#15913) ([cf3f40c](https://github.com/vitejs/vite/commit/cf3f40c)), closes [#15913](https://github.com/vitejs/vite/issues/15913)
+* docs(create-vite): link to Vue docs for IDE support info (#16225) ([520bb89](https://github.com/vitejs/vite/commit/520bb89)), closes [#16225](https://github.com/vitejs/vite/issues/16225)
+
+
+
 ## <small>5.2.3 (2024-03-20)</small>
 
 * docs: update volar name and remove takeover mode related docs (#16171) ([0a56177](https://github.com/vitejs/vite/commit/0a56177)), closes [#16171](https://github.com/vitejs/vite/issues/16171)
