@@ -363,10 +363,6 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   }
   ```
 
-  ::: warning Note
-  This plugin will not run when [`appType`](https://vitejs.dev/config/shared-options.html#apptype) is `"custom"`. HTML middlewares should be handled at the framework level.
-  :::
-
   **Full Hook Signature:**
 
   ```ts
@@ -402,6 +398,10 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
     injectTo?: 'head' | 'body' | 'head-prepend' | 'body-prepend'
   }
   ```
+
+  ::: warning Note
+  This plugin will not run when [`appType`](https://vitejs.dev/config/shared-options.html#apptype) is `"custom"`. HTML middlewares should be handled at the framework level.
+  :::
 
 ### `handleHotUpdate`
 
