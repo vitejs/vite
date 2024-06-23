@@ -121,13 +121,16 @@ export function addToHTMLProxyCache(
   index: number,
   result: { code: string; map?: SourceMapInput },
 ): void {
-  if (!htmlProxyMap.get(config)) {
-    htmlProxyMap.set(config, new Map())
+  let htmlProxy = htmlProxyMap.get(config)
+  if (!htmlProxy) {
+    htmlProxy = new Map()
+    htmlProxy.set(filePath, [])
+    htmlProxyMap.set(config, htmlProxy)
+  } else if (!htmlProxy.get(filePath)) {
+    htmlProxy.set(filePath, [])
   }
-  if (!htmlProxyMap.get(config)!.get(filePath)) {
-    htmlProxyMap.get(config)!.set(filePath, [])
-  }
-  htmlProxyMap.get(config)!.get(filePath)![index] = result
+
+  htmlProxy!.get(filePath)![index] = result
 }
 
 export function addToHTMLProxyTransformResult(
