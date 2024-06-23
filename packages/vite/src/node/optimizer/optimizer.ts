@@ -790,17 +790,16 @@ function findInteropMismatches(
   const needsInteropMismatch = []
   for (const dep in discovered) {
     const discoveredDepInfo = discovered[dep]
+    if (discoveredDepInfo.needsInterop === undefined) continue
+
     const depInfo = optimized[dep]
-    if (depInfo) {
-      if (
-        discoveredDepInfo.needsInterop !== undefined &&
-        depInfo.needsInterop !== discoveredDepInfo.needsInterop
-      ) {
-        // This only happens when a discovered dependency has mixed ESM and CJS syntax
-        // and it hasn't been manually added to optimizeDeps.needsInterop
-        needsInteropMismatch.push(dep)
-        debug?.(colors.cyan(`✨ needsInterop mismatch detected for ${dep}`))
-      }
+    if (!depInfo) continue
+
+    if (depInfo.needsInterop !== discoveredDepInfo.needsInterop) {
+      // This only happens when a discovered dependency has mixed ESM and CJS syntax
+      // and it hasn't been manually added to optimizeDeps.needsInterop
+      needsInteropMismatch.push(dep)
+      debug?.(colors.cyan(`✨ needsInterop mismatch detected for ${dep}`))
     }
   }
   return needsInteropMismatch
