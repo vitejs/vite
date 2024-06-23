@@ -1763,10 +1763,9 @@ async function doUrlReplace(
   // The new url might need wrapping even if the original did not have it, e.g. if a space was added during replacement
   if (wrap === '' && newUrl !== encodeURI(newUrl)) {
     wrap = '"'
-  }
-  // If wrapping in single quotes and newUrl also contains single quotes, switch to double quotes.
-  // Give preference to double quotes since SVG inlining converts double quotes to single quotes.
-  if (wrap === "'" && newUrl.includes("'")) {
+  } else if (wrap === "'" && newUrl.includes("'")) {
+    // If wrapping in single quotes and newUrl also contains single quotes, switch to double quotes.
+    // Give preference to double quotes since SVG inlining converts double quotes to single quotes.
     wrap = '"'
   }
   // Escape double quotes if they exist (they also tend to be rarer than single quotes)
