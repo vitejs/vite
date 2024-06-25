@@ -400,7 +400,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   ```
 
   ::: warning Note
-  This plugin may not always be run if you are using a framework. It is up to the framework to call this hook.
+  This hook may not always be run if you are using a framework: it is up to the framework to call `server.transformIndexHtml`.
   :::
 
 ### `handleHotUpdate`
