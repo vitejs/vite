@@ -32,6 +32,7 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
 const rewriteOriginHeader = (
   proxyReq: http.ClientRequest,
   options: HttpProxy.ServerOptions,
+  config: ResolvedConfig,
 ) => {
   // Browsers may send Origin headers even with same-origin
   // requests. It is common for WebSocket servers to check the Origin
@@ -39,6 +40,15 @@ const rewriteOriginHeader = (
   // the target URL.
   if (options.rewriteWsOrigin) {
     const { target } = options
+
+    if (proxyReq.headersSent) {
+      config.logger.warn(
+        colors.yellow(
+          `Unable to rewrite Origin header as headers are already sent.`,
+        ),
+      )
+      return
+    }
 
     if (proxyReq.getHeader('origin') && target) {
       const changedOrigin =
@@ -112,7 +122,7 @@ export function proxyMiddleware(
     })
 
     proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
-      rewriteOriginHeader(proxyReq, options)
+      rewriteOriginHeader(proxyReq, options, config)
 
       socket.on('error', (err) => {
         config.logger.error(
