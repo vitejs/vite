@@ -13,7 +13,7 @@ The production bundle assumes support for modern JavaScript. By default, Vite ta
 
 You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`.
 
-Note that by default, Vite only handles syntax transforms and **does not cover polyfills**. You can check out [Polyfill.io](https://polyfill.io/) which is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
+Note that by default, Vite only handles syntax transforms and **does not cover polyfills**. You can check out [Polyfill JS](https://cdnjs.cloudflare.com/polyfill/) which is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
 
 Legacy browsers can be supported via [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), which will automatically generate legacy chunks and corresponding ES language feature polyfills. The legacy chunks are conditionally loaded only in browsers that do not have native ESM support.
 
