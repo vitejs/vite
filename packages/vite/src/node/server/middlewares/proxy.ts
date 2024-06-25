@@ -29,16 +29,15 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
   ) => void | null | undefined | false | string
 }
 
-const setOriginHeader = (
+const rewriteOriginHeader = (
   proxyReq: http.ClientRequest,
   options: HttpProxy.ServerOptions,
 ) => {
   // Browsers may send Origin headers even with same-origin
   // requests. It is common for WebSocket servers to check the Origin
-  // header, so if changeOrigin is true we change the Origin to match
+  // header, so if rewriteWsOrigin is true we change the Origin to match
   // the target URL.
-  // https://github.com/http-party/node-http-proxy/issues/1669
-  if (options.changeOrigin) {
+  if (options.rewriteWsOrigin) {
     const { target } = options
 
     if (proxyReq.getHeader('origin') && target) {
@@ -112,12 +111,8 @@ export function proxyMiddleware(
       }
     })
 
-    proxy.on('proxyReq', (proxyReq, req, res, options) => {
-      setOriginHeader(proxyReq, options)
-    })
-
     proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
-      setOriginHeader(proxyReq, options)
+      rewriteOriginHeader(proxyReq, options)
 
       socket.on('error', (err) => {
         config.logger.error(
