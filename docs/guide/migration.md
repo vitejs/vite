@@ -187,7 +187,7 @@ The `resolvePackageEntry` and `resolvePackageData` APIs are removed as they expo
 - `resolvePackageData`: Same as above, and crawl up the package directory to get the root `package.json`. Or use the community [`vitefu`](https://github.com/svitejs/vitefu) package.
 
 ```js
-import { resolve } from 'import-meta-env'
+import { resolve } from 'import-meta-resolve'
 import { findDepPkgJsonPath } from 'vitefu'
 import fs from 'node:fs'
 
