@@ -1,6 +1,6 @@
-declare module 'connect' {
-  const connect: () => any
-  export = connect
+declare module 'polka' {
+  const polka: (opts: unknown) => any
+  export = polka
 }
 
 declare module 'cors' {

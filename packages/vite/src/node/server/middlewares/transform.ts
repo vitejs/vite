@@ -1,6 +1,6 @@
 import path from 'node:path'
 import fsp from 'node:fs/promises'
-import type { Connect } from 'dep-types/connect'
+import type { Polka } from 'dep-types/polka'
 import colors from 'picocolors'
 import type { ExistingRawSourceMap } from 'rollup'
 import type { ViteDevServer } from '..'
@@ -45,7 +45,7 @@ const knownIgnoreList = new Set(['/', '/favicon.ico'])
  */
 export function cachedTransformMiddleware(
   server: ViteDevServer,
-): Connect.NextHandleFunction {
+): Polka.RequestHandler {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteCachedTransformMiddleware(req, res, next) {
     // check if we can return 304 early
@@ -71,7 +71,7 @@ export function cachedTransformMiddleware(
 
 export function transformMiddleware(
   server: ViteDevServer,
-): Connect.NextHandleFunction {
+): Polka.RequestHandler {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
 
   // check if public dir is inside root dir

@@ -1,7 +1,7 @@
 import type * as http from 'node:http'
 import type * as net from 'node:net'
 import httpProxy from 'http-proxy'
-import type { Connect } from 'dep-types/connect'
+import type { Polka } from 'dep-types/polka'
 import type { HttpProxy } from 'dep-types/http-proxy'
 import colors from 'picocolors'
 import { createDebugger } from '../../utils'
@@ -71,7 +71,7 @@ export function proxyMiddleware(
   httpServer: HttpServer | null,
   options: NonNullable<CommonServerOptions['proxy']>,
   config: ResolvedConfig,
-): Connect.NextHandleFunction {
+): Polka.RequestHandler {
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 

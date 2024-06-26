@@ -1,7 +1,7 @@
 import path from 'node:path'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
-import type { Connect } from 'dep-types/connect'
+import type { Polka } from 'dep-types/polka'
 import strip from 'strip-ansi'
 import type { ErrorPayload } from 'types/hmrPayload'
 import { pad } from '../../utils'
@@ -62,7 +62,7 @@ export function logError(server: ViteDevServer, err: RollupError): void {
 export function errorMiddleware(
   server: ViteDevServer,
   allowNext = false,
-): Connect.ErrorHandleFunction {
+): Polka.ErrorHandler {
   // note the 4 args must be kept for connect to treat this as error middleware
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteErrorMiddleware(err: RollupError, _req, res, next) {
@@ -104,5 +104,5 @@ export function errorMiddleware(
         </html>
       `)
     }
-  }
+  } as Polka.ErrorHandler
 }
