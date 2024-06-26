@@ -599,15 +599,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         chunkCSS = chunkCSS.replace(assetUrlRE, (_, fileHash, postfix = '') => {
           const filename = this.getFileName(fileHash) + postfix
           chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
-          return encodeURIPath(
-            toOutputFilePathInCss(
-              filename,
-              'asset',
-              cssAssetName,
-              'css',
-              config,
-              toRelative,
-            ),
+          return toOutputFilePathInCss(
+            encodeURIPath(filename),
+            'asset',
+            cssAssetName,
+            'css',
+            config,
+            toRelative,
           )
         })
         // resolve public URL from CSS paths
@@ -618,15 +616,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
           chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
             const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
-            return encodeURIPath(
-              toOutputFilePathInCss(
-                publicUrl,
-                'public',
-                cssAssetName,
-                'css',
-                config,
-                () => `${relativePathToPublicFromCSS}/${publicUrl}`,
-              ),
+            return toOutputFilePathInCss(
+              encodeURIPath(publicUrl),
+              'public',
+              cssAssetName,
+              'css',
+              config,
+              () => `${relativePathToPublicFromCSS}/${publicUrl}`,
             )
           })
         }
@@ -712,7 +708,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .set(referenceId, { originalName: originalFilename })
 
           const replacement = toOutputFilePathInJS(
-            this.getFileName(referenceId),
+            encodeURIPath(this.getFileName(referenceId)),
             'asset',
             chunk.fileName,
             'js',
@@ -721,7 +717,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           )
           const replacementString =
             typeof replacement === 'string'
-              ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
+              ? JSON.stringify(replacement).slice(1, -1)
               : `"+${replacement.runtime}+"`
           s.update(start, end, replacementString)
         }

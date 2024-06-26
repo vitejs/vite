@@ -408,7 +408,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
           const replacement = toOutputFilePathInJS(
-            filename,
+            encodeURIPath(filename),
             'asset',
             chunk.fileName,
             'js',
@@ -417,7 +417,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           )
           const replacementString =
             typeof replacement === 'string'
-              ? JSON.stringify(encodeURIPath(replacement)).slice(1, -1)
+              ? JSON.stringify(replacement).slice(1, -1)
               : `"+${replacement.runtime}+"`
           s.update(match.index, match.index + full.length, replacementString)
         }
