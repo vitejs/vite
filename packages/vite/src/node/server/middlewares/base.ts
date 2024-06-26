@@ -1,4 +1,4 @@
-import type { Connect } from 'dep-types/connect'
+import type { Polka } from 'dep-types/polka'
 import { joinUrlSegments, stripBase } from '../../utils'
 import { cleanUrl, withTrailingSlash } from '../../../shared/utils'
 
@@ -7,7 +7,7 @@ import { cleanUrl, withTrailingSlash } from '../../../shared/utils'
 export function baseMiddleware(
   rawBase: string,
   middlewareMode: boolean,
-): Connect.NextHandleFunction {
+): Polka.RequestHandler {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteBaseMiddleware(req, res, next) {
     const url = req.url!

@@ -1,10 +1,10 @@
 import { performance } from 'node:perf_hooks'
-import type { Connect } from 'dep-types/connect'
+import type { Polka } from 'dep-types/polka'
 import { createDebugger, prettifyUrl, timeFrom } from '../../utils'
 
 const logTime = createDebugger('vite:time')
 
-export function timeMiddleware(root: string): Connect.NextHandleFunction {
+export function timeMiddleware(root: string): Polka.RequestHandler {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteTimeMiddleware(req, res, next) {
     const start = performance.now()
