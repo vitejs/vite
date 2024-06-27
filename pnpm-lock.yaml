@@ -401,8 +401,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       tsconfck:
-        specifier: ^3.1.0
-        version: 3.1.0(typescript@5.2.2)
+        specifier: ^3.1.1
+        version: 3.1.1(typescript@5.2.2)
       tslib:
         specifier: ^2.6.3
         version: 2.6.3
@@ -6417,8 +6417,8 @@ packages:
       '@swc/wasm':
         optional: true
 
-  tsconfck@3.1.0:
-    resolution: {integrity: sha512-CMjc5zMnyAjcS9sPLytrbFmj89st2g+JYtY/c02ug4Q+CZaAtCgbyviI0n1YvjZE/pzoc6FbNsINS13DOL1B9w==}
+  tsconfck@3.1.1:
+    resolution: {integrity: sha512-00eoI6WY57SvZEVjm13stEVE90VkEdJAFGgpFLTsZbJyW/LwFQ7uQxJHWpZ2hzSWgCPKc9AnBnNP+0X7o3hAmQ==}
     engines: {node: ^18 || >=20}
     hasBin: true
     peerDependencies:
@@ -11973,7 +11973,7 @@ snapshots:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
-  tsconfck@3.1.0(typescript@5.2.2):
+  tsconfck@3.1.1(typescript@5.2.2):
     optionalDependencies:
       typescript: 5.2.2
 
