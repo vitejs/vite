@@ -27,11 +27,15 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
     res: http.ServerResponse,
     options: ProxyOptions,
   ) => void | null | undefined | false | string
+  /**
+   * rewrite the Origin header of a WebSocket request to match the the target
+   */
+  rewriteWsOrigin?: boolean | undefined
 }
 
 const rewriteOriginHeader = (
   proxyReq: http.ClientRequest,
-  options: HttpProxy.ServerOptions,
+  options: ProxyOptions,
   config: ResolvedConfig,
 ) => {
   // Browsers may send Origin headers even with same-origin

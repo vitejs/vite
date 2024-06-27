@@ -212,8 +212,6 @@ export namespace HttpProxy {
     localAddress?: string | undefined
     /** Changes the origin of the host header to the target URL. */
     changeOrigin?: boolean | undefined
-    /** Rewrites the Origin header of a WebSocket request to match the the target */
-    rewriteWsOrigin?: boolean | undefined
     /** specify whether you want to keep letter case of response header key */
     preserveHeaderKeyCase?: boolean | undefined
     /** Basic authentication i.e. 'user:password' to compute an Authorization header. */
