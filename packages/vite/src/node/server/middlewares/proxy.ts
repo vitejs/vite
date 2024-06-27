@@ -29,6 +29,8 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
   ) => void | null | undefined | false | string
   /**
    * rewrite the Origin header of a WebSocket request to match the the target
+   *
+   * **Exercise caution as rewriting the Origin can leave the proxying open to [CSRF attacks](https://owasp.org/www-community/attacks/csrf).**
    */
   rewriteWsOrigin?: boolean | undefined
 }
