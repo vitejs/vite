@@ -2,18 +2,19 @@ import { defineConfig } from 'vite'
 import baseConfig from './vite.config.js'
 
 /** see `ports` variable in test-utils.ts */
-const port = 9525
+const port = 9524
 
 export default defineConfig({
   ...baseConfig,
-  base: `http://localhost:${port}/`,
+  // Vite should auto-encode  this as `/foo%20bar/` internally
+  base: '/foo bar/',
   server: {
     port,
     strictPort: true,
   },
   build: {
     ...baseConfig.build,
-    outDir: 'dist/url-base',
+    outDir: 'dist/encoded-base',
     watch: null,
     minify: false,
     assetsInlineLimit: 0,
@@ -29,5 +30,5 @@ export default defineConfig({
     port,
     strictPort: true,
   },
-  cacheDir: 'node_modules/.vite-url-base',
+  cacheDir: 'node_modules/.vite-encoded-base',
 })
