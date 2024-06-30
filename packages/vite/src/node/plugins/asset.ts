@@ -132,10 +132,6 @@ export function renderAssetUrlInJS(
   return s
 }
 
-// During build, if we don't use a virtual file for public assets, rollup will
-// watch for these ids resulting in watching the root of the file system in Windows,
-const viteBuildPublicIdPrefix = '\0vite:asset:public'
-
 /**
  * Also supports loading plain strings with import text from './foo.txt?raw'
  */
@@ -164,17 +160,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       // will fail to resolve in the main resolver. handle them here.
       const publicFile = checkPublicFile(id, config)
       if (publicFile) {
-        return config.command === 'build'
-          ? `${viteBuildPublicIdPrefix}${id}`
-          : id
+        return id
       }
     },
 
     async load(id) {
-      if (id.startsWith(viteBuildPublicIdPrefix)) {
-        id = id.slice(viteBuildPublicIdPrefix.length)
-      }
-
       if (id[0] === '\0') {
         // Rollup convention, this id should be handled by the
         // plugin that marked it with \0
