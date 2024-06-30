@@ -58,7 +58,7 @@ jobs:
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@d6babd6899969df1a11d14c368283ea4436bca78 # v44.5.2
+        uses: tj-actions/changed-files@cc3bbb0c526f8ee1d282f8c5f9f4e50745a5b457 # v44.5.4
         with:
           files: |
             docs/**
