@@ -33,6 +33,12 @@ const loadTerserPath = (root: string) => {
   return terserPath
 }
 
+const toString = (obj: Record<string, any>, name: string) => {
+  if (name in obj && typeof obj[name] === 'function') {
+    obj[name] = obj[name].toString()
+  }
+}
+
 export function terserPlugin(config: ResolvedConfig): Plugin {
   const { maxWorkers, ...terserOptions } = config.build.terserOptions
 
@@ -47,6 +53,27 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
           // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
           const terser = require(terserPath)
+          const nth:
+            | Terser.SimpleIdentifierMangler
+            | Terser.WeightedIdentifierMangler
+            | undefined = (options.mangle as any)?.nth_identifier
+          if (nth && typeof nth === 'object') {
+            const toFunction = (obj: Record<string, any>, name: string) => {
+              if (name in obj && typeof obj[name] === 'string') {
+                const fn = eval(obj[name])
+                if (typeof fn !== 'function') {
+                  throw new Error(
+                    `Failed to eval nth_identifier.${name}: not a function`,
+                  )
+                }
+                obj[name] = fn
+              }
+            }
+            toFunction(nth, 'get')
+            toFunction(nth, 'consider')
+            toFunction(nth, 'sort')
+          }
+
           return terser.minify(code, options) as Terser.MinifyOutput
         },
       {
@@ -87,12 +114,25 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       worker ||= makeWorker()
 
       const terserPath = loadTerserPath(config.root)
+      const nth =
+        typeof terserOptions.mangle === 'object'
+          ? { ...terserOptions.mangle.nth_identifier }
+          : undefined
+      if (nth) {
+        toString(nth, 'get')
+        toString(nth, 'consider')
+        toString(nth, 'sort')
+      }
       const res = await worker.run(terserPath, code, {
         safari10: true,
         ...terserOptions,
         sourceMap: !!outputOptions.sourcemap,
         module: outputOptions.format.startsWith('es'),
         toplevel: outputOptions.format === 'cjs',
+        mangle:
+          typeof terserOptions.mangle === 'object'
+            ? { ...terserOptions.mangle, nth_identifier: nth as any }
+            : terserOptions.mangle,
       })
       return {
         code: res.code!,

@@ -403,6 +403,9 @@ importers:
       strip-literal:
         specifier: ^2.1.0
         version: 2.1.0
+      terser:
+        specifier: ^5.31.6
+        version: 5.31.6
       tsconfck:
         specifier: ^3.1.3
         version: 3.1.3(typescript@5.5.3)
