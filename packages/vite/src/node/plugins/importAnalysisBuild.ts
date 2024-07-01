@@ -163,15 +163,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const isWorker = config.isWorker
   const insertPreload = !(ssr || !!config.build.lib || isWorker)
 
-  const resolveModulePreloadDependencies =
-    config.build.modulePreload && config.build.modulePreload.resolveDependencies
   const renderBuiltUrl = config.experimental.renderBuiltUrl
-  const customModulePreloadPaths = !!(
-    resolveModulePreloadDependencies || renderBuiltUrl
-  )
   const isRelativeBase = config.base === './' || config.base === ''
-  const optimizeModulePreloadRelativePaths =
-    isRelativeBase && !customModulePreloadPaths
+  const optimizeModulePreloadRelativePaths = isRelativeBase && !renderBuiltUrl
 
   const { modulePreload } = config.build
   const scriptRel =
@@ -179,21 +173,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       ? `'modulepreload'`
       : `(${detectScriptRel.toString()})()`
 
-  // There are three different cases for the preload list format in __vitePreload
+  // There are two different cases for the preload list format in __vitePreload
   //
   // __vitePreload(() => import(asyncChunk), [ ...deps... ])
   //
   // This is maintained to keep backwards compatibility as some users developed plugins
   // using regex over this list to workaround the fact that module preload wasn't
   // configurable.
-  const assetsURL = customModulePreloadPaths
-    ? // If `experimental.renderBuiltUrl` or `build.modulePreload.resolveDependencies` are used
-      // the dependencies are already resolved. To avoid the need for `new URL(dep, import.meta.url)`
-      // a helper `__vitePreloadRelativeDep` is used to resolve from relative paths which can be minimized.
-      `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
-    : optimizeModulePreloadRelativePaths
-      ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
-        // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
+  const assetsURL =
+    renderBuiltUrl || optimizeModulePreloadRelativePaths
+      ? // If `experimental.renderBuiltUrl` is used, the dependencies might be relative to the current chunk.
+        // If relative base is used, the dependencies are relative to the current chunk.
         // The importerUrl is passed as third parameter to __vitePreload in this case
         `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
       : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
@@ -350,7 +340,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().appendRight(
             expEnd,
             `,${isModernFlag}?${preloadMarker}:void 0${
-              optimizeModulePreloadRelativePaths || customModulePreloadPaths
+              optimizeModulePreloadRelativePaths || renderBuiltUrl
                 ? ',import.meta.url'
                 : ''
             })`,
@@ -575,7 +565,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
               if (markerStartPos > 0) {
                 // the dep list includes the main chunk, so only need to reload when there are actual other deps.
-                const depsArray =
+                let depsArray =
                   deps.size > 1 ||
                   // main chunk is removed
                   (hasRemovedPureCssChunk && deps.size > 0)
@@ -586,33 +576,29 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                       : [...deps]
                     : []
 
-                let renderedDeps: number[]
-                if (normalizedFile && customModulePreloadPaths) {
-                  const { modulePreload } = config.build
-                  const resolveDependencies = modulePreload
-                    ? modulePreload.resolveDependencies
-                    : undefined
-                  let resolvedDeps: string[]
-                  if (resolveDependencies) {
-                    // We can't let the user remove css deps as these aren't really preloads, they are just using
-                    // the same mechanism as module preloads for this chunk
-                    const cssDeps: string[] = []
-                    const otherDeps: string[] = []
-                    for (const dep of depsArray) {
-                      ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
-                    }
-                    resolvedDeps = [
-                      ...resolveDependencies(normalizedFile, otherDeps, {
-                        hostId: file,
-                        hostType: 'js',
-                      }),
-                      ...cssDeps,
-                    ]
-                  } else {
-                    resolvedDeps = depsArray
+                const resolveDependencies = modulePreload
+                  ? modulePreload.resolveDependencies
+                  : undefined
+                if (resolveDependencies && normalizedFile) {
+                  // We can't let the user remove css deps as these aren't really preloads, they are just using
+                  // the same mechanism as module preloads for this chunk
+                  const cssDeps: string[] = []
+                  const otherDeps: string[] = []
+                  for (const dep of depsArray) {
+                    ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
                   }
+                  depsArray = [
+                    ...resolveDependencies(normalizedFile, otherDeps, {
+                      hostId: file,
+                      hostType: 'js',
+                    }),
+                    ...cssDeps,
+                  ]
+                }
 
-                  renderedDeps = resolvedDeps.map((dep) => {
+                let renderedDeps: number[]
+                if (renderBuiltUrl) {
+                  renderedDeps = depsArray.map((dep) => {
                     const replacement = toOutputFilePathInJS(
                       dep,
                       'asset',
