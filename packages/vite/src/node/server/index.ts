@@ -436,7 +436,7 @@ export async function _createServer(
 
   const initPublicFilesPromise = initPublicFiles(config)
 
-  const { root, server: serverConfig } = config
+  const { root, entryRoot, server: serverConfig } = config
   const httpsOptions = await resolveHttpsConfig(config.server.https)
   const { middlewareMode } = serverConfig
 
@@ -899,7 +899,7 @@ export async function _createServer(
   if (config.appType === 'spa' || config.appType === 'mpa') {
     middlewares.use(
       htmlFallbackMiddleware(
-        root,
+        entryRoot,
         config.appType === 'spa',
         getFsUtils(config),
       ),
@@ -913,7 +913,7 @@ export async function _createServer(
 
   if (config.appType === 'spa' || config.appType === 'mpa') {
     // transform index.html
-    middlewares.use(indexHtmlMiddleware(root, server))
+    middlewares.use(indexHtmlMiddleware(entryRoot, server))
 
     // handle 404s
     middlewares.use(notFoundMiddleware())
