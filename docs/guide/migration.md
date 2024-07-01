@@ -1,5 +1,14 @@
 # Migration from v4
 
+## Miscellaneous Breaking Changes
+
+### Inlining asset URLs failing in some (or all) cases
+Per the documentation, "imported or referenced assets that are smaller than [the threshold specified by `build.assetsInlineLimit`] will be inlined as base64 URLs to avoid extra http requests."
+Previous behavior was that assets were never inlined with the default value of `build.assetsInlineLimit`. 
+Such inlined data URLs can cause images to fail to load in some (or perhaps all) situations.
+Turning off asset inlining by setting `build.assetsInlineLimit` to zero fixes the issue.
+(Note that data URLs have been associated with security risks, e.g., per this [Mozilla security blog post](https://blog.mozilla.org/security/2017/11/27/blocking-top-level-navigations-data-urls-firefox-59/), though that article is about risks of top-level data URLs specifically.)
+
 ## Node.js Support
 
 Vite no longer supports Node.js 14 / 16 / 17 / 19, which reached its EOL. Node.js 18 / 20+ is now required.
