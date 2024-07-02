@@ -207,6 +207,10 @@ async function handleMessage(payload: HMRPayload) {
 
           // css-update
           // this is only sent when a css file referenced with <link> is updated
+          // in web worker, the document is not available yet
+          if (!hasDocument) {
+            return Promise.resolve()
+          }
           const { path, timestamp } = update
           const searchUrl = cleanUrl(path)
           // can't use querySelector with `[href*=]` here since the link may be
