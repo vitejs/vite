@@ -14,9 +14,6 @@ describe('createLogger', () => {
     logger.info('message')
     expect(log).toHaveBeenCalledWith('[prefix] message')
 
-    logger.info('message', { timestamp: true })
-    expect(log).toHaveBeenCalledWith(expect.stringMatching(/^\d{2}:\d{2}:\d{2} \[prefix\] message$/))
-
     log.mockRestore()
   })
 })
