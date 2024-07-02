@@ -98,12 +98,11 @@ export function createLogger(
   ) {
     const msg = preventOverflow(rawMsg)
     const tag =
-    type === 'info'
-      ? colors.cyan(colors.bold(prefix))
-      : type === 'warn'
-        ? colors.yellow(colors.bold(prefix))
-        : colors.red(colors.bold(prefix))
-
+      type === 'info'
+        ? colors.cyan(colors.bold(prefix))
+        : type === 'warn'
+          ? colors.yellow(colors.bold(prefix))
+          : colors.red(colors.bold(prefix))
 
     if (options.timestamp) {
       return `${colors.dim(
