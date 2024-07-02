@@ -2,8 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import sirv from 'sirv'
 import compression from '@polka/compression'
-import connect from 'connect'
-import type { Connect } from 'dep-types/connect'
+import polka from 'polka'
+import type { Polka } from 'dep-types/polka'
 import corsMiddleware from 'cors'
 import { DEFAULT_PREVIEW_PORT } from './constants'
 import type {
@@ -78,7 +78,7 @@ export interface PreviewServer {
    *
    * https://github.com/senchalabs/connect#use-middleware
    */
-  middlewares: Connect.Server
+  middlewares: Polka.Polka
   /**
    * native Node http server instance
    */
@@ -132,12 +132,11 @@ export async function preview(
     )
   }
 
-  const app = connect() as Connect.Server
   const httpServer = await resolveHttpServer(
     config.preview,
-    app,
     await resolveHttpsConfig(config.preview?.https),
   )
+  const app = polka({ server: httpServer })
   setClientErrorHandler(httpServer, config.logger)
 
   const options = config.preview
@@ -242,7 +241,7 @@ export async function preview(
   const hostname = await resolveHostname(options.host)
   const port = options.port ?? DEFAULT_PREVIEW_PORT
 
-  await httpServerStart(httpServer, {
+  await httpServerStart(httpServer, app, {
     port,
     strictPort: options.strictPort,
     host: hostname.host,

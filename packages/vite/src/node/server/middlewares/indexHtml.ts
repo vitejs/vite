@@ -2,7 +2,7 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMapInput } from 'rollup'
-import type { Connect } from 'dep-types/connect'
+import type { Polka } from 'dep-types/polka'
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
 import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
@@ -407,7 +407,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 export function indexHtmlMiddleware(
   root: string,
   server: ViteDevServer | PreviewServer,
-): Connect.NextHandleFunction {
+): Polka.RequestHandler {
   const isDev = isDevServer(server)
   const fsUtils = getFsUtils(server.config)
 

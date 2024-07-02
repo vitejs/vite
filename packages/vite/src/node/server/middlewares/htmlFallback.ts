@@ -1,5 +1,5 @@
 import path from 'node:path'
-import type { Connect } from 'dep-types/connect'
+import type { Polka } from 'dep-types/polka'
 import { createDebugger } from '../../utils'
 import type { FsUtils } from '../../fsUtils'
 import { commonFsUtils } from '../../fsUtils'
@@ -11,7 +11,7 @@ export function htmlFallbackMiddleware(
   root: string,
   spaFallback: boolean,
   fsUtils: FsUtils = commonFsUtils,
-): Connect.NextHandleFunction {
+): Polka.RequestHandler {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteHtmlFallbackMiddleware(req, res, next) {
     if (
