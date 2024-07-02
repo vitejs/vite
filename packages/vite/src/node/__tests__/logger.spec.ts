@@ -10,8 +10,8 @@ describe('createLogger', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {})
 
     logger.info('message')
-    expect(log).toHaveBeenCalledWith('[prefix] message')
-
+    // cyan color and bold
+    expect(log).toHaveBeenCalledWith('\u001b[36m\u001b[1m[prefix]\u001b[22m\u001b[39m message')
     log.mockRestore()
   })
 })
