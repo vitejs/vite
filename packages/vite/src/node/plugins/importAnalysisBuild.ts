@@ -657,7 +657,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               )
               .join(',')}]`
 
-            const mapDepsCode = `const __vite__fileDeps=${fileDepsCode},__vite__mapDeps=i=>i.map(i=>__vite__fileDeps[i]);\n`
+            const mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
 
             // inject extra code at the top or next line of hashbang
             if (code.startsWith('#!')) {

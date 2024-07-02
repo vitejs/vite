@@ -164,7 +164,7 @@ describe.runIf(isBuild)('build tests', () => {
     const js = findAssetFile(/after-preload-dynamic-hashbang-[-\w]{8}\.js$/)
     expect(js.split('\n').slice(0, 2)).toEqual([
       '#!/usr/bin/env node',
-      expect.stringContaining('const __vite__fileDeps=['),
+      expect.stringContaining('const __vite__mapDeps=(i'),
     ])
   })
 
