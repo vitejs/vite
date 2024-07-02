@@ -122,6 +122,12 @@ export default defineConfig({
           // proxy will be an instance of 'http-proxy'
         },
       },
+      // Using secure when proxy https unable to verify the certificate
+      '/api': {
+        target: 'https://jsonplaceholder.typicode.com',
+        changeOrigin: true,
+        secure: false
+      },
       // Proxying websockets or socket.io: ws://localhost:5173/socket.io -> ws://localhost:5174/socket.io
       // Exercise caution using `rewriteWsOrigin` as it can leave the proxying open to CSRF attacks.
       '/socket.io': {
