@@ -10,6 +10,10 @@ const virtualId9036 = '\0' + virtualFile9036
 
 const customVirtualFile = '@custom-virtual-file'
 
+const virtualFileImportAttributes = '@virtual-file-import-attributes'
+const virtualIdImportAttributes = '\0' + virtualFileImportAttributes
+let importAttributes = {}
+
 const generatedContentVirtualFile = '@generated-content-virtual-file'
 const generatedContentImports = [
   {
@@ -104,6 +108,27 @@ export default defineConfig({
       async resolveId(id) {
         if (id !== '@non-normalized') return
         return this.resolve(__dirname + '//non-normalized')
+      },
+    },
+    {
+      name: 'import-attributes',
+      resolveId(id, _, options) {
+        if (id === virtualFileImportAttributes) {
+          importAttributes = options.attributes
+          return virtualIdImportAttributes
+        }
+      },
+      load(id) {
+        if (id === virtualIdImportAttributes) {
+          if (
+            importAttributes.foo === 'bar' &&
+            importAttributes.baz === 'qux'
+          ) {
+            return `export const msg = "[success] from virtual import attribute"`
+          } else {
+            return `export const msg = "fail"`
+          }
+        }
       },
     },
   ],
