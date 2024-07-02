@@ -159,6 +159,7 @@ export function transformMiddleware(
       }
 
       if (
+        req.headers['sec-fetch-dest'] === 'script' ||
         isJSRequest(url) ||
         isImportRequest(url) ||
         isCSSRequest(url) ||
