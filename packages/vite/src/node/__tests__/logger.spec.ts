@@ -11,7 +11,9 @@ describe('createLogger', () => {
 
     logger.info('message')
     // cyan color and bold
-    expect(log).toHaveBeenCalledWith('\u001b[36m\u001b[1m[prefix]\u001b[22m\u001b[39m message')
+    expect(log).toHaveBeenCalledWith(
+      '\u001b[36m\u001b[1m[prefix]\u001b[22m\u001b[39m message',
+    )
     log.mockRestore()
   })
 })
