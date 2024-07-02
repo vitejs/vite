@@ -90,8 +90,8 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(`new Worker(""+new URL("../worker-entries/`)
     expect(content).toMatch(`new SharedWorker(""+new URL("../worker-entries/`)
     // inlined
-    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
-    expect(content).toMatch(`window.Blob`)
+    expect(content).toMatch(`(self.URL||self.webkitURL).createObjectURL`)
+    expect(content).toMatch(`self.Blob`)
   })
 
   test('worker emitted and import.meta.url in nested worker (build)', async () => {
