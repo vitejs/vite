@@ -118,6 +118,7 @@
     "dotenv-expand": "^11.0.6",
     "es-module-lexer": "^1.5.4",
     "escape-html": "^1.0.3",
+    "escape-string-regexp": "^5.0.0",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
     "fast-glob": "^3.3.2",

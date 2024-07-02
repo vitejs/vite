@@ -18,6 +18,10 @@ export default defineConfig(({ isPreview }) => ({
         entryFileNames: 'worker-entries/worker_entry-[name]-[hash].js',
       },
     },
+    constructors: [
+      'defaults',
+      { constructor: 'Custom.Constructor', kind: 'worker' },
+    ],
   },
   build: {
     outDir: 'dist/relative-base-iife',

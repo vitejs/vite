@@ -19,6 +19,10 @@ export default defineConfig({
         entryFileNames: 'assets/worker_-[name].js',
       },
     },
+    constructors: [
+      'defaults',
+      { constructor: 'Custom.Constructor', kind: 'worker' },
+    ],
   },
   build: {
     outDir: 'dist/iife',
@@ -45,6 +49,10 @@ export default defineConfig({
                 entryFileNames: 'assets/worker_entry-[name].js',
               },
             },
+            constructors: [
+              'defaults',
+              { constructor: 'Custom.Constructor', kind: 'worker' },
+            ],
           },
         }
       },

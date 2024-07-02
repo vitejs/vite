@@ -52,7 +52,10 @@ export const CSS_LANGS_RE =
 
 export const OPTIMIZABLE_ENTRY_RE = /\.[cm]?[jt]s$/
 
-export const SPECIAL_QUERY_RE = /[?&](?:worker|sharedworker|raw|url)\b/
+export const WORKER_KINDS = ['worker', 'sharedworker'] as const
+export const SPECIAL_QUERY_RE = new RegExp(
+  `[?&](?:${WORKER_KINDS.join('|')}|raw|url)\\b`,
+)
 
 /**
  * Prefix for resolved fs paths, since windows paths may not be valid as URLs.
