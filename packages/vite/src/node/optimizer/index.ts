@@ -27,10 +27,12 @@ import {
   transformWithEsbuild,
 } from '../plugins/esbuild'
 import { ESBUILD_MODULES_TARGET, METADATA_FILENAME } from '../constants'
-import { isWindows } from '../../shared/utils'
+import { cleanUrl, isWindows } from '../../shared/utils'
+import { type InternalResolveOptions, tryFsResolve } from '../plugins/resolve'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
+import { getDepsOptimizer } from './optimizer'
 export {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
@@ -1350,3 +1352,25 @@ const safeRename = promisify(function gracefulRename(
     if (cb) cb(er)
   })
 })
+
+export function tryOptimizedDepResolve(
+  config: ResolvedConfig,
+  ssr: boolean,
+  url: string,
+  depId: string,
+  fsResolveOptions: InternalResolveOptions,
+): string | undefined {
+  const depsOptimizer = getDepsOptimizer(config, ssr)
+
+  if (depsOptimizer?.isOptimizedDepFile(depId)) {
+    const depFile = cleanUrl(depId)
+    const info = optimizedDepInfoFromFile(depsOptimizer.metadata, depFile)
+    const depSrc = info?.src
+    if (depSrc) {
+      const resolvedFile = path.resolve(path.dirname(depSrc), url)
+      return tryFsResolve(resolvedFile, fsResolveOptions)
+    }
+  }
+
+  return undefined
+}

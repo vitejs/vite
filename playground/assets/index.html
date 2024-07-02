@@ -578,3 +578,12 @@
     document.querySelector(el).textContent = text
   }
 </script>
+
+<h2>import.meta.url in dependency</h2>
+<img class="import-meta-url-img-dependency" />
+<code class="import-meta-url-dependency"></code>
+<script type="module">
+  import { imageUrl } from '@vitejs/test-dep-with-asset'
+  text('.import-meta-url-dependency', imageUrl)
+  document.querySelector('.import-meta-url-img-dependency').src = imageUrl
+</script>

@@ -7,6 +7,7 @@ import type { Plugin } from '../plugin'
 import { evalValue, injectQuery, transformStableResult } from '../utils'
 import type { ResolveFn } from '..'
 import { cleanUrl, slash } from '../../shared/utils'
+import { tryOptimizedDepResolve } from '../optimizer'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
@@ -148,10 +149,20 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           s ||= new MagicString(code)
           const workerType = getWorkerType(code, cleanString, endIndex)
           const url = rawUrl.slice(1, -1)
+
           let file: string | undefined
           if (url[0] === '.') {
             file = path.resolve(path.dirname(id), url)
-            file = tryFsResolve(file, fsResolveOptions) ?? file
+            file =
+              tryFsResolve(file, fsResolveOptions) ??
+              tryOptimizedDepResolve(
+                config,
+                options?.ssr === true,
+                url,
+                id,
+                fsResolveOptions,
+              ) ??
+              file
           } else {
             workerResolver ??= config.createResolver({
               extensions: [],

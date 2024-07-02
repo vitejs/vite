@@ -173,3 +173,9 @@ test('self reference url worker', async () => {
     'pong: main\npong: nested\n',
   )
 })
+
+test('dep with worker', async () => {
+  expectWithRetry(() => page.textContent('.dep-with-worker')).toBe(
+    'ping: main\npong: worker',
+  )
+})

@@ -570,3 +570,14 @@ test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
     /<img class="noscript" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
   )
 })
+
+test('import.meta.url in dependency', async () => {
+  const match = isBuild
+    ? /\/foo\/bar\/assets\/asset-[-\w]{8}\.png/
+    : /node_modules\/@vitejs\/test-dep-with-asset\/asset.png/
+
+  expect(await page.textContent('.import-meta-url-dependency')).toMatch(match)
+  expect(
+    await page.getAttribute('.import-meta-url-img-dependency', 'src'),
+  ).toMatch(match)
+})

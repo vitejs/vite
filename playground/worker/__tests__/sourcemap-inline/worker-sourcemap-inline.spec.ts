@@ -10,7 +10,7 @@ describe.runIf(isBuild)('build', () => {
 
     const files = fs.readdirSync(assetsDir)
     // should have 2 worker chunk
-    expect(files.length).toBe(22)
+    expect(files.length).toBe(23)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const indexSourcemap = getSourceMapUrl(content)
