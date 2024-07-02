@@ -97,18 +97,20 @@ export function createLogger(
     options: LogErrorOptions = {},
   ) {
     const msg = preventOverflow(rawMsg)
+    const tag =
+    type === 'info'
+      ? colors.cyan(colors.bold(prefix))
+      : type === 'warn'
+        ? colors.yellow(colors.bold(prefix))
+        : colors.red(colors.bold(prefix))
+
+
     if (options.timestamp) {
-      const tag =
-        type === 'info'
-          ? colors.cyan(colors.bold(prefix))
-          : type === 'warn'
-            ? colors.yellow(colors.bold(prefix))
-            : colors.red(colors.bold(prefix))
       return `${colors.dim(
         getTimeFormatter().format(new Date()),
       )} ${tag} ${msg}`
     } else {
-      return msg
+      return `${tag} ${msg}`
     }
   }
 
