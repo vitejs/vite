@@ -20,10 +20,35 @@ import {
 // Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
 const argv = minimist<{
-  t?: string
   template?: string
-}>(process.argv.slice(2), { string: ['_'] })
+  help?: boolean
+}>(process.argv.slice(2), {
+  default: { help: false },
+  alias: { h: 'help', t: 'template' },
+  string: ['_'],
+})
 const cwd = process.cwd()
+
+// prettier-ignore
+const helpMessage = `\
+Usage: create-vite [OPTION]... [DIRECTORY]
+
+Create a new Vite project in JavaScript or TypeScript.
+With no arguments, start the CLI in interactive mode.
+
+Options:
+  -t, --template NAME        use a specific template
+
+Available templates:
+${yellow   ('vanilla-ts     vanilla'  )}
+${green    ('vue-ts         vue'      )}
+${cyan     ('react-ts       react'    )}
+${cyan     ('react-swc-ts   react-swc')}
+${magenta  ('preact-ts      preact'   )}
+${lightRed ('lit-ts         lit'      )}
+${red      ('svelte-ts      svelte'   )}
+${blue     ('solid-ts       solid'    )}
+${lightBlue('qwik-ts        qwik'     )}`
 
 type ColorFunc = (str: string | number) => string
 type Framework = {
@@ -251,6 +276,12 @@ async function init() {
   const argTargetDir = formatTargetDir(argv._[0])
   const argTemplate = argv.template || argv.t
 
+  const help = argv.help
+  if (help) {
+    console.log(helpMessage)
+    return
+  }
+
   let targetDir = argTargetDir || defaultTargetDir
   const getProjectName = () =>
     targetDir === '.' ? path.basename(path.resolve()) : targetDir
@@ -418,7 +449,9 @@ async function init() {
 
     const [command, ...args] = fullCustomCommand.split(' ')
     // we replace TARGET_DIR here because targetDir may include a space
-    const replacedArgs = args.map((arg) => arg.replace('TARGET_DIR', targetDir))
+    const replacedArgs = args.map((arg) =>
+      arg.replace('TARGET_DIR', () => targetDir),
+    )
     const { status } = spawn.sync(command, replacedArgs, {
       stdio: 'inherit',
     })
