@@ -403,7 +403,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      if (ssr || isWorker) {
+      // If preload is not enabled, we parse through each imports and remove any imports to pure CSS chunks
+      // as they are removed from the bundle
+      if (!insertPreload) {
         const removedPureCssFiles = removedPureCssFilesCache.get(config)
         if (removedPureCssFiles && removedPureCssFiles.size > 0) {
           for (const file in bundle) {
@@ -657,7 +659,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               )
               .join(',')}]`
 
-            const mapDepsCode = `const __vite__fileDeps=${fileDepsCode},__vite__mapDeps=i=>i.map(i=>__vite__fileDeps[i]);\n`
+            const mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
 
             // inject extra code at the top or next line of hashbang
             if (code.startsWith('#!')) {
