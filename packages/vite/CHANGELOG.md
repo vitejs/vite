@@ -1,3 +1,12 @@
+## <small>5.3.3 (2024-07-03)</small>
+
+* fix: lazily evaluate __vite__mapDeps files (#17602) ([dafff4a](https://github.com/vitejs/vite/commit/dafff4a)), closes [#17602](https://github.com/vitejs/vite/issues/17602)
+* fix(deps): update all non-major dependencies (#17590) ([012490c](https://github.com/vitejs/vite/commit/012490c)), closes [#17590](https://github.com/vitejs/vite/issues/17590)
+* fix(lib): remove pure CSS dynamic import (#17601) ([055f1c1](https://github.com/vitejs/vite/commit/055f1c1)), closes [#17601](https://github.com/vitejs/vite/issues/17601)
+* fix(proxy): replace changeOrigin changes in 5.3.0 with new rewriteWsOrigin option (#17563) ([14c3d49](https://github.com/vitejs/vite/commit/14c3d49)), closes [#17563](https://github.com/vitejs/vite/issues/17563)
+
+
+
 ## <small>5.3.2 (2024-06-27)</small>
 
 * fix(client): uniform variable `location` (#17528) ([a8e2f6f](https://github.com/vitejs/vite/commit/a8e2f6f)), closes [#17528](https://github.com/vitejs/vite/issues/17528)
