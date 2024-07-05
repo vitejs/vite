@@ -246,3 +246,20 @@ declare module '*?inline' {
   const src: string
   export default src
 }
+
+declare interface VitePreloadErrorEvent extends Error {
+  payload: Error
+}
+
+declare interface Window {
+  addEventListener(
+    type: 'Vite:preloadError',
+    listener: (this: Window, ev: VitePreloadErrorEvent) => unknown,
+    options?: boolean | AddEventListenerOptions,
+  ): void
+  removeEventListener(
+    type: 'Vite:preloadError',
+    listener: (this: Window, ev: VitePreloadErrorEvent) => unknown,
+    options?: boolean | AddEventListenerOptions,
+  ): void
+}
