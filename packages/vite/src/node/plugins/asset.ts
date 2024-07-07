@@ -381,14 +381,15 @@ async function fileToBuiltUrl(
     const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
 
+    const originalName = normalizePath(path.relative(config.root, file))
+
     const referenceId = pluginContext.emitFile({
       // Ignore directory structure for asset file names
-      name: path.basename(file),
+      name: config.assetsFlatten ? path.basename(file) : originalName,
       type: 'asset',
       source: content,
     })
 
-    const originalName = normalizePath(path.relative(config.root, file))
     generatedAssets.get(config)!.set(referenceId, { originalName })
 
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE

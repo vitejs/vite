@@ -396,6 +396,14 @@ export default defineConfig({
 })
 ```
 
+## assetsFlatten
+
+- **Type:** `boolean`
+- **Default:** `true`
+- **Related:** [Static Asset Handling](/guide/assets)
+
+Whether to flatten assets into a single directory, or to preserve the assets directory structure.
+
 ## logLevel
 
 - **Type:** `'info' | 'warn' | 'error' | 'silent'`

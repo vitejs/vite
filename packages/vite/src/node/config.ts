@@ -199,6 +199,11 @@ export interface UserConfig {
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
   /**
+   * Whether to flatten assets into a single directory, or to preserve the assets directory structure.
+   * @default true
+   */
+  assetsFlatten?: boolean
+  /**
    * Server specific options, e.g. host, port, https...
    */
   server?: ServerOptions
@@ -390,6 +395,7 @@ export type ResolvedConfig = Readonly<
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
     assetsInclude: (file: string) => boolean
+    assetsFlatten: boolean
     logger: Logger
     createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
     optimizeDeps: DepOptimizationOptions
@@ -805,6 +811,8 @@ export async function resolveConfig(
     assetsInclude(file: string) {
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
+    assetsFlatten:
+      typeof config.assetsFlatten !== 'undefined' ? config.assetsFlatten : true,
     logger,
     packageCache,
     createResolver,
