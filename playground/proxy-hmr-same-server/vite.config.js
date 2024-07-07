@@ -1,4 +1,4 @@
-import { defineConfig, createServer } from 'vite'
+import { createServer, defineConfig } from 'vite'
 import createOtherAppViteConfig from './other-app/create-vite-config'
 
 const port = 9616
