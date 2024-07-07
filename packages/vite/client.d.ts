@@ -253,12 +253,12 @@ declare interface VitePreloadErrorEvent extends Error {
 
 declare interface Window {
   addEventListener(
-    type: 'Vite:preloadError',
+    type: 'vite:preloadError',
     listener: (this: Window, ev: VitePreloadErrorEvent) => unknown,
     options?: boolean | AddEventListenerOptions,
   ): void
   removeEventListener(
-    type: 'Vite:preloadError',
+    type: 'vite:preloadError',
     listener: (this: Window, ev: VitePreloadErrorEvent) => unknown,
     options?: boolean | AddEventListenerOptions,
   ): void
