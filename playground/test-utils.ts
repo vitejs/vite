@@ -149,7 +149,10 @@ export function removeFile(filename: string): void {
 
 export function listAssets(base = ''): string[] {
   const assetsDir = path.join(testDir, 'dist', base, 'assets')
-  return fs.readdirSync(assetsDir)
+  return fs
+    .readdirSync(assetsDir, { recursive: true, withFileTypes: true })
+    .filter((ent) => !ent.isDirectory())
+    .map((ent) => path.relative(assetsDir, path.join(ent.parentPath, ent.name)))
 }
 
 export function findAssetFile(
