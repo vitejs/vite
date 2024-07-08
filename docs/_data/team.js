@@ -186,6 +186,5 @@ export const emeriti = [
       { icon: 'github', link: 'https://github.com/Shinigami92' },
       { icon: 'mastodon', link: 'https://elk.zone/mas.to/@Shini92' },
     ],
-    sponsor: 'https://github.com/sponsors/Shinigami92',
   },
 ]
