@@ -3,3 +3,9 @@ packages:
   - 'playground/**'
   - 'packages/**/__tests__/**'
   - docs
+
+catalog:
+  'cross-spawn': ^7.0.3
+  'unbuild': ^2.0.0
+  'picocolors': ^1.0.1
+  'magic-string': ^0.30.10
