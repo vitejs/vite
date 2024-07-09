@@ -58,6 +58,7 @@ export namespace HttpProxy {
      * @param req - Client request.
      * @param res - Client response.
      * @param options - Additional options.
+     * @param callback - Callback when error happens.
      */
     web(
       req: http.IncomingMessage,
@@ -72,6 +73,7 @@ export namespace HttpProxy {
      * @param socket - Client socket.
      * @param head - Client head.
      * @param options - Additional options.
+     * @param callback - Callback when error happens
      */
     ws(
       req: http.IncomingMessage,
