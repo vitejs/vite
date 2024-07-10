@@ -205,7 +205,7 @@ async function handleMessage(payload: HMRPayload) {
             return hmrClient.queueUpdate(update)
           }
           if (!hasDocument) {
-            return;
+            return
           }
 
           // css-update
