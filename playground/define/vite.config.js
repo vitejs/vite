@@ -29,5 +29,6 @@ export default defineConfig({
     ÖUNICODE_LETTERɵ: 789,
     __VAR_NAME__: false,
     __STRINGIFIED_OBJ__: JSON.stringify({ foo: true }),
+    'import.meta.env.LEGACY': '__VITE_IS_LEGACY__',
   },
 })

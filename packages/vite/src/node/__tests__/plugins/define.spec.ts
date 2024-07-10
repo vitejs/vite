@@ -72,4 +72,18 @@ describe('definePlugin', () => {
       'const foo = import.meta.env.UNKNOWN;\n',
     )
   })
+
+  test('replace import.meta.env when it is a invalid json', async () => {
+    const transform = await createDefinePluginTransform({
+      'import.meta.env.LEGACY': '__VITE_IS_LEGACY__',
+    })
+
+    expect(
+      await transform(
+        'const isLegacy = import.meta.env.LEGACY;\nimport.meta.env.UNDEFINED && console.log(import.meta.env.UNDEFINED);',
+      ),
+    ).toBe(
+      'var define_import_meta_env_default = {"BASE_URL": "/", "MODE": "development", "DEV": true, "PROD": false, "SSR": false, "LEGACY": __VITE_IS_LEGACY__};\nconst isLegacy = __VITE_IS_LEGACY__;\ndefine_import_meta_env_default.UNDEFINED && console.log(define_import_meta_env_default.UNDEFINED);\n',
+    )
+  })
 })
