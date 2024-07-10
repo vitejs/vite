@@ -27,8 +27,11 @@ export function App() {
       </div>
       <p>
         Check out{' '}
-        <a href="https://preactjs.com/guide/v10/getting-started#create-a-vite-powered-preact-app" target="_blank">
-            create-preact
+        <a
+          href="https://preactjs.com/guide/v10/getting-started#create-a-vite-powered-preact-app"
+          target="_blank"
+        >
+          create-preact
         </a>
         , the official Preact + Vite starter
       </p>
