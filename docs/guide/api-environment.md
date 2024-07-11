@@ -748,7 +748,7 @@ interface RunnerTransport {
 }
 ```
 
-Transport object that communicates with the environment via an RPC or by directly calling the function. By default, you need to pass an object with `fetchModule` method - it can use any type of RPC inside of it, but Vite also exposes `RemoteRunnerTransport` to make the configuration easier. You need to couple it with the `RemoteEnvironmentTransport` instance on the server like in this example where module runner is created in the worker thread:
+Transport object that communicates with the environment via an RPC or by directly calling the function. By default, you need to pass an object with `fetchModule` method - it can use any type of RPC inside of it, but Vite also exposes bidirectional transport interface via a `RemoteRunnerTransport` class to make the configuration easier. You need to couple it with the `RemoteEnvironmentTransport` instance on the server like in this example where module runner is created in the worker thread:
 
 ::: code-group
 
@@ -804,7 +804,74 @@ await createServer({
 
 :::
 
-`RemoteRunnerTransport` and `RemoteEnvironmentTransport` are meant to be used together. If you don't use either of them, then you can define your own function to communicate between the runner and the server.
+`RemoteRunnerTransport` and `RemoteEnvironmentTransport` are meant to be used together, but you don't have to use them at all. You can define your own function to communicate between the runner and the server. For example, if you connect to the environment via an HTTP request, you can call `fetch().json()` in `fetchModule` function:
+
+```ts
+import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+
+const runner = new ModuleRunner(
+  {
+    root: fileURLToPath(new URL('./', import.meta.url)),
+    transport: {
+      async fetchModule(id, importer) {
+        const response = await fetch(
+          `http://my-vite-server/fetch?id=${id}&importer=${importer}`,
+        )
+        return response.json()
+      },
+    },
+  },
+  new ESModulesEvaluator(),
+)
+
+await runner.import('/entry.js')
+```
+
+::: warning Acessing Module on the Server
+We do not want to encourage communication between the server and the runner. One of the problems that were exposed with `vite.ssrLoadModule` is over-reliance on the server state inside the processed modules. This makes it harder to implement runtime-agnostic SSR since there might be no direct access to the server APIs that are available in Node.js.
+
+Instead, we recommend using virtual modules to import the state and process it inside the loaded environment module:
+
+```ts
+import { runner } from './ssr-module-runner.js'
+import { processRoutes } from './routes.js'
+
+const { routes } = await runner.import('ssr:routes')
+processRoutes(routes)
+```
+
+You can also use virtual modules to load HTML:
+
+```ts {13-21}
+function vitePluginVirtualIndexHtml(): Plugin {
+  let server: ViteDevServer | undefined
+  return {
+    name: vitePluginVirtualIndexHtml.name,
+    configureServer(server_) {
+      server = server_
+    },
+    resolveId(source, _importer, _options) {
+      return source === 'virtual:index-html' ? '\0' + source : undefined
+    },
+    async load(id, _options) {
+      if (id === '\0' + 'virtual:index-html') {
+        let html: string
+        if (server) {
+          this.addWatchFile('index.html')
+          html = await fs.promises.readFile('index.html', 'utf-8')
+          html = await server.transformIndexHtml('/', html)
+        } else {
+          html = await fs.promises.readFile('dist/client/index.html', 'utf-8')
+        }
+        return `export default ${JSON.stringify(html)}`
+      }
+      return
+    },
+  }
+}
+```
+
+:::
 
 ## ModuleRunnerHMRConnection
 
