@@ -22,8 +22,9 @@ export default tseslint.config(
       '**/temp/**',
       '**/.vitepress/cache/**',
       '**/*.snap',
-      // eslint doesn't support import attributes
+      // eslint doesn't support import attributes until typescript 5.3
       'playground/resolve/import-attributes.js',
+      'playground/import-attributes/import-assertion-dep/index.js',
     ],
   },
   eslint.configs.recommended,
