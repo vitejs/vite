@@ -436,6 +436,8 @@ importers:
 
   packages/vite/src/node/server/__tests__/fixtures/pnpm/nested: {}
 
+  packages/vite/src/node/server/__tests__/fixtures/watcher: {}
+
   packages/vite/src/node/server/__tests__/fixtures/yarn: {}
 
   packages/vite/src/node/server/__tests__/fixtures/yarn/nested: {}
@@ -751,6 +753,18 @@ importers:
         version: file:playground/import-assertion/import-assertion-dep
 
   playground/import-assertion/import-assertion-dep: {}
+
+  playground/import-attributes:
+    dependencies:
+      '@vitejs/test-import-assertion-dep':
+        specifier: file:./import-assertion-dep
+        version: file:playground/import-attributes/import-assertion-dep
+    devDependencies:
+      '@rollup/pluginutils':
+        specifier: ^5.1.0
+        version: 5.1.0(rollup@4.13.0)
+
+  playground/import-attributes/import-assertion-dep: {}
 
   playground/js-sourcemap:
     dependencies:
@@ -2937,15 +2951,6 @@ packages:
       rollup:
         optional: true
 
-  '@rollup/pluginutils@5.0.4':
-    resolution: {integrity: sha512-0KJnIoRI8A+a1dqOYLxH8vBf8bphDmty5QvIm2hqm7oFCFYKCAZWWd2hXgMibaPsNDhI0AtpYfQZJG47pt/k4g==}
-    engines: {node: '>=14.0.0'}
-    peerDependencies:
-      rollup: ^1.20.0||^2.0.0||^3.0.0
-    peerDependenciesMeta:
-      rollup:
-        optional: true
-
   '@rollup/pluginutils@5.1.0':
     resolution: {integrity: sha512-XTIWOPPcpvyKI6L1NHo0lFlCyznUEyPmPY1mc3KpPVDYulHSTvyeLNVW00QTLIAFNhR3kYnJTQHeGqU4M3n09g==}
     engines: {node: '>=14.0.0'}
@@ -3422,6 +3427,9 @@ packages:
 
   '@vitejs/test-import-assertion-dep@file:playground/import-assertion/import-assertion-dep':
     resolution: {directory: playground/import-assertion/import-assertion-dep, type: directory}
+
+  '@vitejs/test-import-assertion-dep@file:playground/import-attributes/import-assertion-dep':
+    resolution: {directory: playground/import-attributes/import-assertion-dep, type: directory}
 
   '@vitejs/test-import-builtin@file:playground/ssr-deps/import-builtin-cjs':
     resolution: {directory: playground/ssr-deps/import-builtin-cjs, type: directory}
@@ -8163,14 +8171,6 @@ snapshots:
     optionalDependencies:
       rollup: 3.29.4
 
-  '@rollup/pluginutils@5.0.4(rollup@3.29.4)':
-    dependencies:
-      '@types/estree': 1.0.5
-      estree-walker: 2.0.2
-      picomatch: 2.3.1
-    optionalDependencies:
-      rollup: 3.29.4
-
   '@rollup/pluginutils@5.1.0(rollup@3.29.4)':
     dependencies:
       '@types/estree': 1.0.5
@@ -8650,6 +8650,8 @@ snapshots:
       object-assigned-exports: '@vitejs/test-object-assigned-exports@file:playground/ssr-deps/object-assigned-exports'
 
   '@vitejs/test-import-assertion-dep@file:playground/import-assertion/import-assertion-dep': {}
+
+  '@vitejs/test-import-assertion-dep@file:playground/import-attributes/import-assertion-dep': {}
 
   '@vitejs/test-import-builtin@file:playground/ssr-deps/import-builtin-cjs': {}
 
@@ -12050,7 +12052,7 @@ snapshots:
       '@rollup/plugin-json': 6.0.0(rollup@3.29.4)
       '@rollup/plugin-node-resolve': 15.2.1(rollup@3.29.4)
       '@rollup/plugin-replace': 5.0.2(rollup@3.29.4)
-      '@rollup/pluginutils': 5.0.4(rollup@3.29.4)
+      '@rollup/pluginutils': 5.1.0(rollup@3.29.4)
       chalk: 5.3.0
       citty: 0.1.4
       consola: 3.2.3

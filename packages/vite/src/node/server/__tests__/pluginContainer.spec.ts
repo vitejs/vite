@@ -146,6 +146,87 @@ describe('plugin container', () => {
 
       expect.assertions(2)
     })
+
+    it('can pass attributes between hooks', async () => {
+      const entryUrl = '/x.js'
+
+      const attributesArray: any[] = []
+      const plugin: Plugin = {
+        name: 'p1',
+        resolveId(id) {
+          if (id === entryUrl) {
+            return { id, attributes: { x: '1' } }
+          }
+        },
+        load(id) {
+          if (id === entryUrl) {
+            const { attributes } = this.getModuleInfo(id) ?? {}
+            attributesArray.push(attributes)
+            return { code: 'export {}', attributes: { x: '2' } }
+          }
+        },
+        transform(code, id) {
+          if (id === entryUrl) {
+            const { attributes } = this.getModuleInfo(entryUrl) ?? {}
+            attributesArray.push(attributes)
+
+            return { attributes: { x: '3' } }
+          }
+        },
+        buildEnd() {
+          const { attributes } = this.getModuleInfo(entryUrl) ?? {}
+          attributesArray.push(attributes)
+        },
+      }
+
+      const container = await getPluginContainer({
+        plugins: [plugin],
+      })
+
+      const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      expect(entryModule.attributes).toEqual({ x: '1' })
+
+      const loadResult: any = await container.load(entryUrl)
+      expect(loadResult?.attributes).toEqual({ x: '2' })
+
+      await container.transform(loadResult.code, entryUrl)
+      await container.close()
+
+      expect(attributesArray).toEqual([{ x: '1' }, { x: '2' }, { x: '3' }])
+    })
+
+    it('can pass attributes between plugins', async () => {
+      const entryUrl = '/x.js'
+
+      const plugin1: Plugin = {
+        name: 'p1',
+        resolveId(id) {
+          if (id === entryUrl) {
+            return { id, attributes: { x: '1' } }
+          }
+        },
+      }
+
+      const plugin2: Plugin = {
+        name: 'p2',
+        load(id) {
+          if (id === entryUrl) {
+            const { attributes } = this.getModuleInfo(entryUrl) ?? {}
+            expect(attributes).toEqual({ x: '1' })
+            return null
+          }
+        },
+      }
+
+      const container = await getPluginContainer({
+        plugins: [plugin1, plugin2],
+      })
+
+      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      await container.load(entryUrl)
+
+      expect.assertions(1)
+    })
   })
 
   describe('load', () => {
