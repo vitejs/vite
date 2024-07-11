@@ -68,7 +68,7 @@ export * from './slash.js'
 
 When you only import an individual API, e.g. `import { slash } from './utils'`, all the files in that barrel file need to be fetched and transformed as they may contain the `slash` API and may also contain side-effects that run on initialization. This means you're loading more files than required on the initial page load, resulting in a slower page load.
 
-If possible, you should avoid writing barrel files in your application and import the individual APIs directly, e.g. `import { slash } from './utils/slash.js'`. This is less of an issue for libraries since they are pre-bundled during dependency optimization. You can read [issue #8237](https://github.com/vitejs/vite/issues/8237) for more information.
+If possible, you should avoid writing barrel files in your application and import the individual APIs directly, e.g. `import { slash } from './utils/slash.js'`. This is less of an issue for JS/TS libraries since they are efficiently pre-bundled during dependency optimization. One caveat is that prebundling component libraries (Vue, Svelte, etc.) may be more time consuming since they cannot be natively handled by esbuild. You can read [issue #8237](https://github.com/vitejs/vite/issues/8237) for more information.
 
 ## Warm Up Frequently Used Files
 
