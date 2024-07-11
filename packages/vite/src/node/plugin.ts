@@ -166,7 +166,10 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
     (
       this: PluginContext,
       id: string,
-      options?: { ssr?: boolean },
+      options?: {
+        attributes?: Record<string, string> | null
+        ssr?: boolean
+      },
     ) => Promise<LoadResult> | LoadResult
   >
   transform?: ObjectHook<

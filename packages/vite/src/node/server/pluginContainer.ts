@@ -321,7 +321,7 @@ class PluginContainer {
 
     const resolveStart = debugResolve ? performance.now() : 0
     let id: string | null = null
-    const partial: Partial<PartialResolvedId> = {}
+    const partial: Partial<PartialResolvedId> = { attributes }
 
     for (const plugin of this.getSortedPlugins('resolveId')) {
       if (this._closed && !ssr) throwClosedServerError()
@@ -347,10 +347,7 @@ class PluginContainer {
         id = result
       } else {
         id = result.id
-        Object.assign(partial, {
-          ...attributes,
-          ...result,
-        })
+        Object.assign(partial, result)
       }
 
       debugPluginResolve?.(
@@ -388,7 +385,7 @@ class PluginContainer {
     id: string,
     options?: {
       ssr?: boolean
-      attributes?: Record<string, any> | null
+      attributes?: Record<string, string> | null
     },
   ): Promise<LoadResult | null> {
     const ssr = options?.ssr
@@ -597,7 +594,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       attributes,
     }: { meta?: object | null; attributes?: Record<string, any> | null },
   ): void {
-    if (meta) {
+    if (meta || attributes) {
       const moduleInfo = this.getModuleInfo(id)
       if (moduleInfo) {
         moduleInfo.meta = { ...moduleInfo.meta, ...meta }

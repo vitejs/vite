@@ -23,7 +23,7 @@ export class ModuleNode {
   type: 'js' | 'css'
   info?: ModuleInfo
   meta?: Record<string, any>
-  attributes?: Record<string, any>
+  attributes?: Record<string, string>
   importers = new Set<ModuleNode>()
   clientImportedModules = new Set<ModuleNode>()
   ssrImportedModules = new Set<ModuleNode>()
@@ -91,6 +91,7 @@ export type ResolvedUrl = [
   url: string,
   resolvedId: string,
   meta: object | null | undefined,
+  attributes: Record<string, string> | null | undefined,
 ]
 
 export class ModuleGraph {
@@ -375,7 +376,7 @@ export class ModuleGraph {
       return mod
     }
     const modPromise = (async () => {
-      const [url, resolvedId, meta] = await this._resolveUrl(
+      const [url, resolvedId, meta, attributes] = await this._resolveUrl(
         rawUrl,
         ssr,
         resolved,
@@ -384,7 +385,7 @@ export class ModuleGraph {
       if (!mod) {
         mod = new ModuleNode(url, setIsSelfAccepting)
         if (meta) mod.meta = meta
-        if (resolved?.attributes) mod.attributes = resolved.attributes
+        if (attributes) mod.attributes = attributes
         this.urlToModuleMap.set(url, mod)
         mod.id = resolvedId
         this.idToModuleMap.set(resolvedId, mod)
@@ -444,7 +445,7 @@ export class ModuleGraph {
     url = removeImportQuery(removeTimestampQuery(url))
     const mod = await this._getUnresolvedUrlToModule(url, ssr)
     if (mod?.id) {
-      return [mod.url, mod.id, mod.meta]
+      return [mod.url, mod.id, mod.meta, mod.attributes]
     }
     return this._resolveUrl(url, ssr)
   }
@@ -518,6 +519,6 @@ export class ModuleGraph {
         }
       }
     }
-    return [url, resolvedId, resolved?.meta]
+    return [url, resolvedId, resolved?.meta, resolved?.attributes]
   }
 }
