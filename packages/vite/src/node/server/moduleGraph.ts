@@ -23,6 +23,7 @@ export class ModuleNode {
   type: 'js' | 'css'
   info?: ModuleInfo
   meta?: Record<string, any>
+  attributes?: Record<string, any>
   importers = new Set<ModuleNode>()
   clientImportedModules = new Set<ModuleNode>()
   ssrImportedModules = new Set<ModuleNode>()
@@ -383,6 +384,7 @@ export class ModuleGraph {
       if (!mod) {
         mod = new ModuleNode(url, setIsSelfAccepting)
         if (meta) mod.meta = meta
+        if (resolved?.attributes) mod.attributes = resolved.attributes
         this.urlToModuleMap.set(url, mod)
         mod.id = resolvedId
         this.idToModuleMap.set(resolvedId, mod)

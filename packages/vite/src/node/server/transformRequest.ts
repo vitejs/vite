@@ -246,7 +246,10 @@ async function loadAndTransform(
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id, { ssr })
+  const loadResult = await pluginContainer.load(id, {
+    ssr,
+    attributes: resolved?.attributes,
+  })
   if (loadResult == null) {
     // if this is an html request and there is no load result, skip ahead to
     // SPA fallback.

@@ -198,7 +198,11 @@ class PluginContainer {
     }
     if (!module.info) {
       module.info = new Proxy(
-        { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
+        {
+          id,
+          meta: module.meta || EMPTY_OBJECT,
+          attributes: module.attributes || EMPTY_OBJECT,
+        } as ModuleInfo,
         // throw when an unsupported ModuleInfo property is accessed,
         // so that incompatible plugins fail in a non-cryptic way.
         {
@@ -312,6 +316,7 @@ class PluginContainer {
     const skip = options?.skip
     const ssr = options?.ssr
     const scan = !!options?.scan
+    const attributes = options?.attributes
     const ctx = new ResolveIdContext(this, !!ssr, skip, scan)
 
     const resolveStart = debugResolve ? performance.now() : 0
@@ -329,7 +334,7 @@ class PluginContainer {
       const handler = getHookHandler(plugin.resolveId)
       const result = await this.handleHookPromise(
         handler.call(ctx as any, rawId, importer, {
-          attributes: options?.attributes ?? {},
+          attributes: attributes ?? {},
           custom: options?.custom,
           isEntry: !!options?.isEntry,
           ssr,
@@ -342,7 +347,10 @@ class PluginContainer {
         id = result
       } else {
         id = result.id
-        Object.assign(partial, result)
+        Object.assign(partial, {
+          ...attributes,
+          ...result,
+        })
       }
 
       debugPluginResolve?.(
@@ -380,9 +388,11 @@ class PluginContainer {
     id: string,
     options?: {
       ssr?: boolean
+      attributes?: Record<string, any> | null
     },
   ): Promise<LoadResult | null> {
     const ssr = options?.ssr
+    const attributes = options?.attributes
     const ctx = new LoadPluginContext(this, !!ssr)
 
     for (const plugin of this.getSortedPlugins('load')) {
@@ -391,7 +401,7 @@ class PluginContainer {
       ctx._plugin = plugin
       const handler = getHookHandler(plugin.load)
       const result = await this.handleHookPromise(
-        handler.call(ctx as any, id, { ssr }),
+        handler.call(ctx as any, id, { ssr, attributes }),
       )
       if (result != null) {
         if (isObject(result)) {
@@ -565,6 +575,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
 
     const loadResult = await this._container.load(options.id, {
       ssr: this.ssr,
+      attributes: options.attributes,
     })
     const code = typeof loadResult === 'object' ? loadResult?.code : loadResult
     if (code != null) {
@@ -579,11 +590,18 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     return moduleInfo
   }
 
-  _updateModuleInfo(id: string, { meta }: { meta?: object | null }): void {
+  _updateModuleInfo(
+    id: string,
+    {
+      meta,
+      attributes,
+    }: { meta?: object | null; attributes?: Record<string, any> | null },
+  ): void {
     if (meta) {
       const moduleInfo = this.getModuleInfo(id)
       if (moduleInfo) {
         moduleInfo.meta = { ...moduleInfo.meta, ...meta }
+        moduleInfo.attributes = { ...moduleInfo.attributes, ...attributes }
       }
     }
   }
