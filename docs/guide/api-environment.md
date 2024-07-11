@@ -836,7 +836,7 @@ Instead, we recommend using virtual modules to import the state and process it i
 import { runner } from './ssr-module-runner.js'
 import { processRoutes } from './routes.js'
 
-const { routes } = await runner.import('ssr:routes')
+const { routes } = await runner.import('virtual:ssr-routes')
 processRoutes(routes)
 ```
 
