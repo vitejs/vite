@@ -828,13 +828,21 @@ await runner.import('/entry.js')
 ```
 
 ::: warning Acessing Module on the Server
-We do not want to encourage communication between the server and the runner. One of the problems that were exposed with `vite.ssrLoadModule` is over-reliance on the server state inside the processed modules. This makes it harder to implement runtime-agnostic SSR since there might be no direct access to the server APIs that are available in Node.js.
+We do not want to encourage communication between the server and the runner. One of the problems that was exposed with `vite.ssrLoadModule` is over-reliance on the server state inside the processed modules. This makes it harder to implement runtime-agnostic SSR since user environment might have no access to server APIs. For example, this code assumes that Vite server and user code can run in the same context:
 
-Instead, we recommend using virtual modules to import the state and process it inside the loaded environment module:
+```ts
+const vite = createServer()
+const routes = collectRoutes()
+
+const { processRoutes } = await vite.ssrLoadModule('./routes-processor.js')
+processRoutes(routes)
+```
+
+This makes it impossible to run user code in the same way it might run in production (for example, on the edge) because the server state and user state are coupled. So instead, we recommend using virtual modules to import the state and process it inside the user module:
 
 ```ts
 import { runner } from './ssr-module-runner.js'
-import { processRoutes } from './routes.js'
+import { processRoutes } from './routes-processor.js'
 
 const { routes } = await runner.import('virtual:ssr-routes')
 processRoutes(routes)
