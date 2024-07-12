@@ -809,7 +809,7 @@ await createServer({
 ```ts
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 
-const runner = new ModuleRunner(
+export const runner = new ModuleRunner(
   {
     root: fileURLToPath(new URL('./', import.meta.url)),
     transport: {
@@ -841,6 +841,8 @@ processRoutes(routes)
 This makes it impossible to run user code in the same way it might run in production (for example, on the edge) because the server state and user state are coupled. So instead, we recommend using virtual modules to import the state and process it inside the user module:
 
 ```ts
+// this code runs on another machine or in another thread
+
 import { runner } from './ssr-module-runner.js'
 import { processRoutes } from './routes-processor.js'
 
