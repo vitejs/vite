@@ -127,10 +127,10 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(`new Worker("/es/assets`)
     expect(content).toMatch(`new SharedWorker("/es/assets`)
     // inlined worker
-    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
-    expect(content).toMatch(`window.Blob`)
+    expect(content).toMatch(`(self.URL||self.webkitURL).createObjectURL`)
+    expect(content).toMatch(`self.Blob`)
     expect(content).toMatch(
-      /try\{if\(\w+=\w+&&\(window\.URL\|\|window\.webkitURL\)\.createObjectURL\(\w+\),!\w+\)throw""/,
+      /try\{if\(\w+=\w+&&\(self\.URL\|\|self\.webkitURL\)\.createObjectURL\(\w+\),!\w+\)throw""/,
     )
     // inlined shared worker
     expect(content).toMatch(

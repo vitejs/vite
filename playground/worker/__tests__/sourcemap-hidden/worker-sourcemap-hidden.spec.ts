@@ -106,8 +106,8 @@ describe.runIf(isBuild)('build', () => {
     )
 
     // inlined
-    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
-    expect(content).toMatch(`window.Blob`)
+    expect(content).toMatch(`(self.URL||self.webkitURL).createObjectURL`)
+    expect(content).toMatch(`self.Blob`)
 
     expect(workerNestedWorkerContent).toMatch(
       `new Worker("/iife-sourcemap-hidden/assets/sub-worker`,
