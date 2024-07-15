@@ -37,6 +37,9 @@ SUCH DAMAGE.
 export namespace Terser {
   export type ECMA = 5 | 2015 | 2016 | 2017 | 2018 | 2019 | 2020
 
+  export type ConsoleProperty = keyof typeof console
+  type DropConsoleOption = boolean | ConsoleProperty[]
+
   export interface ParseOptions {
     bare_returns?: boolean
     /** @deprecated legacy option. Currently, all supported EcmaScript is valid to parse. */
@@ -57,7 +60,7 @@ export namespace Terser {
     dead_code?: boolean
     defaults?: boolean
     directives?: boolean
-    drop_console?: boolean
+    drop_console?: DropConsoleOption
     drop_debugger?: boolean
     ecma?: ECMA
     evaluate?: boolean
@@ -80,6 +83,7 @@ export namespace Terser {
     passes?: number
     properties?: boolean
     pure_funcs?: string[]
+    pure_new?: boolean
     pure_getters?: boolean | 'strict'
     reduce_funcs?: boolean
     reduce_vars?: boolean
@@ -129,7 +133,7 @@ export namespace Terser {
      * Obtains the nth most favored (usually shortest) identifier to rename a variable to.
      * The mangler will increment n and retry until the return value is not in use in scope, and is not a reserved word.
      * This function is expected to be stable; Evaluating get(n) === get(n) should always return true.
-     * @param n - The ordinal of the identifier.
+     * @param n The ordinal of the identifier.
      */
     get(n: number): string
   }
@@ -141,8 +145,8 @@ export namespace Terser {
     /**
      * Modifies the internal weighting of the input characters by the specified delta.
      * Will be invoked on the entire printed AST, and then deduct mangleable identifiers.
-     * @param chars - The characters to modify the weighting of.
-     * @param delta - The numeric weight to add to the characters.
+     * @param chars The characters to modify the weighting of.
+     * @param delta The numeric weight to add to the characters.
      */
     consider(chars: string, delta: number): number
     /**
@@ -225,7 +229,7 @@ export namespace Terser {
     module?: boolean
     nameCache?: object
     format?: FormatOptions
-    /** @deprecated deprecated */
+    /** @deprecated */
     output?: FormatOptions
     parse?: ParseOptions
     safari10?: boolean
@@ -245,6 +249,7 @@ export namespace Terser {
     includeSources?: boolean
     filename?: string
     root?: string
+    asObject?: boolean
     url?: string | 'inline'
   }
 }
