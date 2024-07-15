@@ -52,7 +52,7 @@
     "@types/less": "^3.0.6",
     "@types/micromatch": "^4.0.9",
     "@types/node": "^20.14.9",
-    "@types/picomatch": "^2.3.4",
+    "@types/picomatch": "^3.0.0",
     "@types/stylus": "^0.48.42",
     "@types/ws": "^8.5.10",
     "@vitejs/release-scripts": "^1.3.1",
