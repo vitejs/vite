@@ -36,6 +36,7 @@ describe.runIf(isBuild)('build', () => {
   test('manifest', async () => {
     const manifest = readManifest('dev')
     const htmlEntry = manifest['index.html']
+    const mainTsEntry = manifest['main.ts']
     const cssAssetEntry = manifest['global.css']
     const pcssAssetEntry = manifest['foo.pcss']
     const scssAssetEntry = manifest['nested/blue.scss']
@@ -44,6 +45,10 @@ describe.runIf(isBuild)('build', () => {
     const iconEntrypointEntry = manifest['icon.png']
     expect(htmlEntry.css.length).toEqual(1)
     expect(htmlEntry.assets.length).toEqual(1)
+    expect(mainTsEntry.assets?.length ?? 0).toBeGreaterThanOrEqual(1)
+    expect(mainTsEntry.assets).toContainEqual(
+      expect.stringMatching(/assets\/url-[-\w]{8}\.css/),
+    )
     expect(cssAssetEntry?.file).not.toBeUndefined()
     expect(cssAssetEntry?.isEntry).toEqual(true)
     expect(pcssAssetEntry?.file).not.toBeUndefined()
