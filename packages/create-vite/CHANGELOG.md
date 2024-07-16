@@ -1,3 +1,14 @@
+## 5.4.0 (2024-07-16)
+
+* docs(create-vite): add missing tsconfig.app.json file at the project array for react-ts (#17645) ([6d31a1d](https://github.com/vitejs/vite/commit/6d31a1d)), closes [#17645](https://github.com/vitejs/vite/issues/17645)
+* chore: add `create-preact` recommendation to Preact templates (#17649) ([564c8f4](https://github.com/vitejs/vite/commit/564c8f4)), closes [#17649](https://github.com/vitejs/vite/issues/17649)
+* chore(deps): update all non-major dependencies (#17553) ([a33a97f](https://github.com/vitejs/vite/commit/a33a97f)), closes [#17553](https://github.com/vitejs/vite/issues/17553)
+* feat: add `create-preact` to list of options in `create-vite` (#17674) ([d4d98dc](https://github.com/vitejs/vite/commit/d4d98dc)), closes [#17674](https://github.com/vitejs/vite/issues/17674)
+* fix(create-vite): target dir contains special characters (#17549) ([f946c86](https://github.com/vitejs/vite/commit/f946c86)), closes [#17549](https://github.com/vitejs/vite/issues/17549)
+* fix(deps): update all non-major dependencies (#17590) ([012490c](https://github.com/vitejs/vite/commit/012490c)), closes [#17590](https://github.com/vitejs/vite/issues/17590)
+
+
+
 ## 5.3.0 (2024-06-21)
 
 * fix(create-vite): revert eslint 9 upgrade in templates (#17511) ([86cf1b4](https://github.com/vitejs/vite/commit/86cf1b4)), closes [#17511](https://github.com/vitejs/vite/issues/17511)
