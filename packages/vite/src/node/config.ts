@@ -253,10 +253,11 @@ export interface UserConfig {
    */
   envDir?: string
   /**
-   * Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
+   * Environment variables starting with `envPrefix` will be exposed to your client source code via `import.meta.env`.
+   * If set to `false`, opt-out of security to allow all environment variables to be exposed.
    * @default 'VITE_'
    */
-  envPrefix?: string | string[]
+  envPrefix?: string | string[] | false
   /**
    * Worker bundle options
    */

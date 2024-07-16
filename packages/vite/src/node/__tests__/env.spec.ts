@@ -29,6 +29,23 @@ describe('loadEnv', () => {
       `)
   })
 
+  test('no prefix', () => {
+    process.env = {} // clean up the actual testing environment variables so they don't show up
+    expect(loadEnv('development', join(__dirname, './env'), false))
+      .toMatchInlineSnapshot(`
+        {
+          "APP_ENV": "local",
+          "VITE_APP_BASE_ROUTE": "/",
+          "VITE_APP_BASE_URL": "/",
+          "VITE_ENV1": "ENV1",
+          "VITE_ENV2": "ENV2",
+          "VITE_ENV3": "ENV3",
+          "VVITE_A": "A",
+          "VVITE_B": "B",
+        }
+      `)
+  })
+
   test('override', () => {
     expect(loadEnv('production', join(__dirname, './env')))
       .toMatchInlineSnapshot(`

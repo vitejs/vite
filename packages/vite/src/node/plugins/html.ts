@@ -1145,7 +1145,10 @@ export function htmlEnvHook(config: ResolvedConfig): IndexHtmlTransformHook {
       if (key in env) {
         return env[key]
       } else {
-        if (envPrefix.some((prefix) => key.startsWith(prefix))) {
+        if (
+          envPrefix === false ||
+          envPrefix.some((prefix) => key.startsWith(prefix))
+        ) {
           const relativeHtml = normalizePath(
             path.relative(config.root, ctx.filename),
           )

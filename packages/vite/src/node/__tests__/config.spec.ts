@@ -224,6 +224,11 @@ describe('resolveEnvPrefix', () => {
     const config: UserConfig = { envPrefix: [' ', 'CUSTOM_'] }
     expect(resolveEnvPrefix(config)).toMatchObject([' ', 'CUSTOM_'])
   })
+
+  test('should accepts opting out of prefix security with `false`', () => {
+    const config: UserConfig = { envPrefix: false }
+    expect(resolveEnvPrefix(config)).toBe(false)
+  })
 })
 
 describe('preview config', () => {

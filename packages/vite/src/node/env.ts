@@ -17,7 +17,7 @@ export function getEnvFilesForMode(mode: string, envDir: string): string[] {
 export function loadEnv(
   mode: string,
   envDir: string,
-  prefixes: string | string[] = 'VITE_',
+  prefixes: string | string[] | false = 'VITE_',
 ): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
@@ -25,7 +25,6 @@ export function loadEnv(
         `the .local postfix for .env files.`,
     )
   }
-  prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
   const envFiles = getEnvFilesForMode(mode, envDir)
 
@@ -55,8 +54,12 @@ export function loadEnv(
   expand({ parsed, processEnv })
 
   // only keys that start with prefix are exposed to client
+  prefixes = prefixes === false ? false : arraify(prefixes)
   for (const [key, value] of Object.entries(parsed)) {
-    if (prefixes.some((prefix) => key.startsWith(prefix))) {
+    if (
+      prefixes === false ||
+      prefixes.some((prefix) => key.startsWith(prefix))
+    ) {
       env[key] = value
     }
   }
@@ -64,7 +67,10 @@ export function loadEnv(
   // check if there are actual env variables starting with VITE_*
   // these are typically provided inline and should be prioritized
   for (const key in process.env) {
-    if (prefixes.some((prefix) => key.startsWith(prefix))) {
+    if (
+      prefixes === false ||
+      prefixes.some((prefix) => key.startsWith(prefix))
+    ) {
       env[key] = process.env[key] as string
     }
   }
@@ -74,7 +80,10 @@ export function loadEnv(
 
 export function resolveEnvPrefix({
   envPrefix = 'VITE_',
-}: UserConfig): string[] {
+}: UserConfig): string[] | false {
+  if (envPrefix === false) {
+    return false
+  }
   envPrefix = arraify(envPrefix)
   if (envPrefix.includes('')) {
     throw new Error(

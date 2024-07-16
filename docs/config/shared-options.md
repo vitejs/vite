@@ -454,15 +454,17 @@ See [here](/guide/env-and-mode#env-files) for more about environment files.
 
 ## envPrefix
 
-- **Type:** `string | string[]`
+- **Type:** `string | string[] | false`
 - **Default:** `VITE_`
 
-Env variables starting with `envPrefix` will be exposed to your client source code via import.meta.env.
+Environment variables starting with `envPrefix` will be exposed to your client source code via `import.meta.env`.
 
 :::warning SECURITY NOTES
-`envPrefix` should not be set as `''`, which will expose all your env variables and cause unexpected leaking of sensitive information. Vite will throw an error when detecting `''`.
+`envPrefix` should not be set as `''`, because you may expose all your environment variables and cause unexpected leaking of sensitive information. Vite will throw an error when detecting `''`.
 
-If you would like to expose an unprefixed variable, you can use [define](#define) to expose it:
+If you want to explicitly opt-out of this security measure and allow exposing all of your environment variables, you may set `envPrefix` to `false`.
+
+Alternatively, if you would like to expose a specific, unprefixed variable, you can use [define](#define) to expose it:
 
 ```js
 define: {
