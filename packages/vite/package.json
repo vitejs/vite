@@ -94,7 +94,7 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.3.0",
-    "@babel/parser": "^7.24.7",
+    "@babel/parser": "^7.24.8",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.0",
@@ -140,8 +140,8 @@
     "resolve.exports": "^2.0.2",
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-esbuild": "^6.1.1",
-    "rollup-plugin-license": "^3.5.1",
-    "sass": "^1.77.6",
+    "rollup-plugin-license": "^3.5.2",
+    "sass": "^1.77.8",
     "sirv": "^2.0.4",
     "source-map-support": "^0.5.21",
     "strip-ansi": "^7.1.0",
@@ -150,7 +150,7 @@
     "tslib": "^2.6.3",
     "types": "link:./types",
     "ufo": "^1.5.3",
-    "ws": "^8.17.1"
+    "ws": "^8.18.0"
   },
   "peerDependencies": {
     "@types/node": "^18.0.0 || >=20.0.0",

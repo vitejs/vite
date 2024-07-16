@@ -41,9 +41,9 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/plugin-legacy#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "dependencies": {
-    "@babel/core": "^7.24.7",
-    "@babel/preset-env": "^7.24.7",
-    "browserslist": "^4.23.1",
+    "@babel/core": "^7.24.9",
+    "@babel/preset-env": "^7.24.8",
+    "browserslist": "^4.23.2",
     "browserslist-to-esbuild": "^2.1.1",
     "core-js": "^3.37.1",
     "magic-string": "^0.30.10",
@@ -55,7 +55,7 @@
     "vite": "^5.0.0"
   },
   "devDependencies": {
-    "acorn": "^8.12.0",
+    "acorn": "^8.12.1",
     "picocolors": "^1.0.1",
     "unbuild": "^2.0.0",
     "vite": "workspace:*"
