@@ -1126,10 +1126,6 @@ importers:
 
   playground/proxy-hmr: {}
 
-  playground/proxy-hmr-same-server: {}
-
-  playground/proxy-hmr-same-server/other-app: {}
-
   playground/proxy-hmr/other-app: {}
 
   playground/resolve:
