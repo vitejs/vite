@@ -1,3 +1,14 @@
+## <small>5.3.4 (2024-07-16)</small>
+
+* fix: update Terser type definitions (fix #17668) (#17669) ([b723a75](https://github.com/vitejs/vite/commit/b723a75)), closes [#17668](https://github.com/vitejs/vite/issues/17668) [#17669](https://github.com/vitejs/vite/issues/17669)
+* fix(build): skip preload treeshaking for nested braces (#17687) ([4be96b4](https://github.com/vitejs/vite/commit/4be96b4)), closes [#17687](https://github.com/vitejs/vite/issues/17687)
+* fix(css): include `.css?url` in assets field of manifest (#17623) ([1465b20](https://github.com/vitejs/vite/commit/1465b20)), closes [#17623](https://github.com/vitejs/vite/issues/17623)
+* fix(worker): nested inlined worker always fallbacked to data URI worker instead of using blob worker ([07bc489](https://github.com/vitejs/vite/commit/07bc489)), closes [#17509](https://github.com/vitejs/vite/issues/17509)
+* refactor: replace includes with logical operations (#17620) ([c4a2227](https://github.com/vitejs/vite/commit/c4a2227)), closes [#17620](https://github.com/vitejs/vite/issues/17620)
+* chore: add callback to http-proxy.d.ts jsdoc (#17646) ([d8a5d70](https://github.com/vitejs/vite/commit/d8a5d70)), closes [#17646](https://github.com/vitejs/vite/issues/17646)
+
+
+
 ## <small>5.3.3 (2024-07-03)</small>
 
 * fix: lazily evaluate __vite__mapDeps files (#17602) ([dafff4a](https://github.com/vitejs/vite/commit/dafff4a)), closes [#17602](https://github.com/vitejs/vite/issues/17602)
