@@ -2784,7 +2784,7 @@ async function compileLightningCSS(
             : config.css?.devSourcemap,
         analyzeDependencies: true,
         cssModules: cssModuleRE.test(id)
-          ? config.css?.lightningcss?.cssModules ?? true
+          ? (config.css?.lightningcss?.cssModules ?? true)
           : undefined,
       })
 

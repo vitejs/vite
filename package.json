@@ -40,7 +40,7 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@eslint/js": "^9.6.0",
+    "@eslint/js": "^9.7.0",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.9.7",
     "@types/convert-source-map": "^2.0.3",
@@ -51,34 +51,34 @@
     "@types/fs-extra": "^11.0.4",
     "@types/less": "^3.0.6",
     "@types/micromatch": "^4.0.9",
-    "@types/node": "^20.14.9",
+    "@types/node": "^20.14.10",
     "@types/picomatch": "^3.0.0",
     "@types/stylus": "^0.48.42",
-    "@types/ws": "^8.5.10",
+    "@types/ws": "^8.5.11",
     "@vitejs/release-scripts": "^1.3.1",
     "conventional-changelog-cli": "^5.0.0",
-    "eslint": "^9.6.0",
+    "eslint": "^9.7.0",
     "eslint-plugin-import-x": "^3.0.1",
     "eslint-plugin-n": "^17.9.0",
     "eslint-plugin-regexp": "^2.6.0",
     "execa": "^9.3.0",
     "fs-extra": "^11.2.0",
-    "globals": "^15.7.0",
+    "globals": "^15.8.0",
     "lint-staged": "^15.2.7",
-    "npm-run-all2": "^6.2.0",
+    "npm-run-all2": "^6.2.2",
     "picocolors": "^1.0.1",
-    "playwright-chromium": "^1.45.0",
-    "prettier": "3.3.2",
-    "rimraf": "^5.0.7",
+    "playwright-chromium": "^1.45.1",
+    "prettier": "3.3.3",
+    "rimraf": "^5.0.9",
     "rollup": "^4.13.0",
     "rollup-plugin-esbuild": "^6.1.1",
     "simple-git-hooks": "^2.11.1",
     "tslib": "^2.6.3",
-    "tsx": "^4.16.0",
+    "tsx": "^4.16.2",
     "typescript": "^5.2.2",
-    "typescript-eslint": "^7.15.0",
+    "typescript-eslint": "^7.16.1",
     "vite": "workspace:*",
-    "vitest": "^2.0.2"
+    "vitest": "^2.0.3"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -97,13 +97,13 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@9.4.0",
+  "packageManager": "pnpm@9.5.0",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
     },
     "patchedDependencies": {
-      "acorn@8.12.0": "patches/acorn@8.12.0.patch",
+      "acorn@8.12.1": "patches/acorn@8.12.1.patch",
       "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
       "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch",
       "sirv@2.0.4": "patches/sirv@2.0.4.patch"
