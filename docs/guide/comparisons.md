@@ -2,9 +2,7 @@
 
 ## WMR
 
-[WMR](https://github.com/preactjs/wmr) by the Preact team provides a similar feature set, and Vite 2.0's support for Rollup's plugin interface is inspired by it.
-
-WMR is mainly designed for [Preact](https://preactjs.com/) projects, and offers more integrated features such as pre-rendering. In terms of scope, it's closer to a Preact meta framework, with the same emphasis on compact size as Preact itself. If you are using Preact, WMR is likely going to offer a more fine-tuned experience.
+[WMR](https://github.com/preactjs/wmr) is unfortunately no longer maintained and the Preact team recommends to use Vite with [@preactjs/preset-vite](https://github.com/preactjs/preset-vite).
 
 ## @web/dev-server
 
