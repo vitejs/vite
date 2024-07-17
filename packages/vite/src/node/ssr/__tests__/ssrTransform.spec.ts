@@ -1,4 +1,7 @@
-import { expect, test } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { assert, expect, test } from 'vitest'
+import type { SourceMap } from 'rollup'
 import { transformWithEsbuild } from '../../plugins/esbuild'
 import { ssrTransform } from '../ssrTransform'
 
@@ -411,9 +414,31 @@ test('sourcemap source', async () => {
       'input.js',
       'export const a = 1 /* */',
     )
-  )?.map
+  )?.map as SourceMap
+
   expect(map?.sources).toStrictEqual(['input.js'])
   expect(map?.sourcesContent).toStrictEqual(['export const a = 1 /* */'])
+})
+
+test('sourcemap with multiple sources', async () => {
+  const code = readFixture('bundle.js')
+  const map = readFixture('bundle.js.map')
+
+  const result = await ssrTransform(code, JSON.parse(map), '', code)
+  assert(result?.map)
+
+  const { sources } = result.map as SourceMap
+  expect(sources).toContain('./first.ts')
+  expect(sources).toContain('./second.ts')
+
+  function readFixture(filename: string) {
+    const url = new URL(
+      `./fixtures/bundled-with-sourcemaps/${filename}`,
+      import.meta.url,
+    )
+
+    return readFileSync(fileURLToPath(url), 'utf8')
+  }
 })
 
 test('overwrite bindings', async () => {
