@@ -1048,7 +1048,7 @@ export async function resolveConfig(
     ? !isBuild || config.build?.ssr
       ? '/'
       : './'
-    : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
+    : (resolveBaseUrl(config.base, isBuild, logger) ?? '/')
 
   // resolve cache directory
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir

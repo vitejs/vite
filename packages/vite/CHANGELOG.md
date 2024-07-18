@@ -547,6 +547,39 @@
 
 
 
+## <small>5.3.4 (2024-07-16)</small>
+
+* fix: update Terser type definitions (fix #17668) (#17669) ([b723a75](https://github.com/vitejs/vite/commit/b723a75)), closes [#17668](https://github.com/vitejs/vite/issues/17668) [#17669](https://github.com/vitejs/vite/issues/17669)
+* fix(build): skip preload treeshaking for nested braces (#17687) ([4be96b4](https://github.com/vitejs/vite/commit/4be96b4)), closes [#17687](https://github.com/vitejs/vite/issues/17687)
+* fix(css): include `.css?url` in assets field of manifest (#17623) ([1465b20](https://github.com/vitejs/vite/commit/1465b20)), closes [#17623](https://github.com/vitejs/vite/issues/17623)
+* fix(worker): nested inlined worker always fallbacked to data URI worker instead of using blob worker ([07bc489](https://github.com/vitejs/vite/commit/07bc489)), closes [#17509](https://github.com/vitejs/vite/issues/17509)
+* refactor: replace includes with logical operations (#17620) ([c4a2227](https://github.com/vitejs/vite/commit/c4a2227)), closes [#17620](https://github.com/vitejs/vite/issues/17620)
+* chore: add callback to http-proxy.d.ts jsdoc (#17646) ([d8a5d70](https://github.com/vitejs/vite/commit/d8a5d70)), closes [#17646](https://github.com/vitejs/vite/issues/17646)
+
+
+
+## <small>5.3.3 (2024-07-03)</small>
+
+* fix: lazily evaluate __vite__mapDeps files (#17602) ([dafff4a](https://github.com/vitejs/vite/commit/dafff4a)), closes [#17602](https://github.com/vitejs/vite/issues/17602)
+* fix(deps): update all non-major dependencies (#17590) ([012490c](https://github.com/vitejs/vite/commit/012490c)), closes [#17590](https://github.com/vitejs/vite/issues/17590)
+* fix(lib): remove pure CSS dynamic import (#17601) ([055f1c1](https://github.com/vitejs/vite/commit/055f1c1)), closes [#17601](https://github.com/vitejs/vite/issues/17601)
+* fix(proxy): replace changeOrigin changes in 5.3.0 with new rewriteWsOrigin option (#17563) ([14c3d49](https://github.com/vitejs/vite/commit/14c3d49)), closes [#17563](https://github.com/vitejs/vite/issues/17563)
+
+
+
+## <small>5.3.2 (2024-06-27)</small>
+
+* fix(client): uniform variable `location` (#17528) ([a8e2f6f](https://github.com/vitejs/vite/commit/a8e2f6f)), closes [#17528](https://github.com/vitejs/vite/issues/17528)
+* fix(deps): update all non-major dependencies (#17494) ([bf123f2](https://github.com/vitejs/vite/commit/bf123f2)), closes [#17494](https://github.com/vitejs/vite/issues/17494)
+* fix(typescript): correctly expand ${configDir} in tsconfig.json (#17576) ([24c799b](https://github.com/vitejs/vite/commit/24c799b)), closes [#17576](https://github.com/vitejs/vite/issues/17576)
+* chore: fix some comments (#17495) ([ec16a5e](https://github.com/vitejs/vite/commit/ec16a5e)), closes [#17495](https://github.com/vitejs/vite/issues/17495)
+* chore(deps): update all non-major dependencies (#17553) ([a33a97f](https://github.com/vitejs/vite/commit/a33a97f)), closes [#17553](https://github.com/vitejs/vite/issues/17553)
+* chore(deps): update dependency eslint to v9 (#16661) ([6c10662](https://github.com/vitejs/vite/commit/6c10662)), closes [#16661](https://github.com/vitejs/vite/issues/16661)
+* chore(deps): update es-module-lexer to 1.5.4 (#17555) ([2d6672f](https://github.com/vitejs/vite/commit/2d6672f)), closes [#17555](https://github.com/vitejs/vite/issues/17555)
+* refactor(optimizer): use early continues (#17551) ([7c06ef0](https://github.com/vitejs/vite/commit/7c06ef0)), closes [#17551](https://github.com/vitejs/vite/issues/17551)
+
+
+
 ## <small>5.3.1 (2024-06-14)</small>
 
 * fix(build): handle preload treeshaking for braces (#17479) ([d355568](https://github.com/vitejs/vite/commit/d355568)), closes [#17479](https://github.com/vitejs/vite/issues/17479)

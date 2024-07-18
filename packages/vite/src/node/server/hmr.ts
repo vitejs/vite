@@ -1,6 +1,5 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import type { Server } from 'node:http'
 import { EventEmitter } from 'node:events'
 import colors from 'picocolors'
 import type { CustomPayload, HotPayload, Update } from 'types/hotPayload'
@@ -23,6 +22,7 @@ import type { EnvironmentModuleNode } from './moduleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import type { DevEnvironment } from './environment'
 import { prepareError } from './middlewares/error'
+import type { HttpServer } from '.'
 import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -39,7 +39,7 @@ export interface HmrOptions {
   path?: string
   timeout?: number
   overlay?: boolean
-  server?: Server
+  server?: HttpServer
 }
 
 export interface HotUpdateContext {

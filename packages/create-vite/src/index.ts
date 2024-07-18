@@ -159,6 +159,12 @@ const FRAMEWORKS: Framework[] = [
         display: 'JavaScript',
         color: yellow,
       },
+      {
+        name: 'custom-create-preact',
+        display: 'Customize with create-preact ↗',
+        color: magenta,
+        customCommand: 'npm create preact@latest TARGET_DIR',
+      },
     ],
   },
   {
@@ -449,7 +455,9 @@ async function init() {
 
     const [command, ...args] = fullCustomCommand.split(' ')
     // we replace TARGET_DIR here because targetDir may include a space
-    const replacedArgs = args.map((arg) => arg.replace('TARGET_DIR', targetDir))
+    const replacedArgs = args.map((arg) =>
+      arg.replace('TARGET_DIR', () => targetDir),
+    )
     const { status } = spawn.sync(command, replacedArgs, {
       stdio: 'inherit',
     })

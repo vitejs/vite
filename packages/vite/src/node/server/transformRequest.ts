@@ -172,7 +172,7 @@ async function doTransform(
   // TODO: Simplify
   const resolved = module
     ? undefined
-    : (await pluginContainer.resolveId(url, undefined)) ?? undefined
+    : ((await pluginContainer.resolveId(url, undefined)) ?? undefined)
 
   // resolve
   const id = module?.id ?? resolved?.id ?? url

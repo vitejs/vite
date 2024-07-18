@@ -63,6 +63,7 @@ export type {
   ServerHook,
   ResolvedServerOptions,
   ResolvedServerUrls,
+  HttpServer,
 } from './server'
 export type {
   ViteBuilder,
