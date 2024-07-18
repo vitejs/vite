@@ -40,3 +40,5 @@ declare interface HTMLLinkElement {}
 declare var __vite_profile_session: import('node:inspector').Session | undefined
 // eslint-disable-next-line no-var
 declare var __vite_start_time: number | undefined
+// eslint-disable-next-line no-var
+declare var __vite_cached_env_on_startup: NodeJS.ProcessEnv | null
