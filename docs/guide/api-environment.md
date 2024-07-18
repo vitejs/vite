@@ -834,7 +834,7 @@ We do not want to encourage communication between the server and the runner. One
 const vite = createServer()
 const routes = collectRoutes()
 
-const { processRoutes } = await vite.ssrLoadModule('./routes-processor.js')
+const { processRoutes } = await vite.ssrLoadModule('internal:routes-processor')
 processRoutes(routes)
 ```
 
@@ -850,7 +850,7 @@ const { routes } = await runner.import('virtual:ssr-routes')
 processRoutes(routes)
 ```
 
-You can also use virtual modules to load HTML:
+Simple setups like in [SSR Guide](/guide/ssr) can still use `server.transformIndexHtml` directly if it's not expected that the server will run in a different process in production. However, if the server will run in an edge environment or a separate process, we recommend creating a virtual module to load HTML:
 
 ```ts {13-21}
 function vitePluginVirtualIndexHtml(): Plugin {
@@ -860,10 +860,10 @@ function vitePluginVirtualIndexHtml(): Plugin {
     configureServer(server_) {
       server = server_
     },
-    resolveId(source, _importer, _options) {
+    resolveId(source) {
       return source === 'virtual:index-html' ? '\0' + source : undefined
     },
-    async load(id, _options) {
+    async load(id) {
       if (id === '\0' + 'virtual:index-html') {
         let html: string
         if (server) {
@@ -880,6 +880,26 @@ function vitePluginVirtualIndexHtml(): Plugin {
   }
 }
 ```
+
+Then in SSR entry point you can call `import('virtual:index-html')` to retrieve the processed HTML:
+
+```ts
+import { render } from 'framework'
+
+// this example uses cloudflare syntax
+export default {
+  async fetch() {
+    // during dev, it will return transformed HTML
+    // during build, it will bundle the basic index.html into a string
+    const { default: html } = await import('virtual:index-html')
+    return new Response(render(html), {
+      headers: { 'content-type': 'text/html' },
+    })
+  },
+}
+```
+
+This keeps the HTML processing server agnostic.
 
 :::
 
