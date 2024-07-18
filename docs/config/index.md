@@ -44,7 +44,15 @@ export default defineConfig({
 })
 ```
 
-Vite also directly supports TS config files. You can use `vite.config.ts` with the `defineConfig` helper as well.
+Vite also supports TypeScript config files. You can use `vite.config.ts` with the `defineConfig` helper function above, or with the `satisfies` operator:
+
+```ts
+import type { UserConfig } from 'vite'
+
+export default {
+  // ...
+} satisfies UserConfig
+```
 
 ## Conditional Config
 

@@ -23,6 +23,9 @@ export const baz4 = () => {
 export const baz5 = () => {
   console.log('treeshaken baz5')
 }
+export const baz6 = () => {
+  console.log('treeshaken baz6')
+}
 export const removed = () => {
   console.log('treeshaken removed')
 }

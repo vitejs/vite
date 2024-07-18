@@ -42,7 +42,7 @@ const preloadMarkerRE = new RegExp(preloadMarker, 'g')
 const dynamicImportPrefixRE = /import\s*\(/
 
 const dynamicImportTreeshakenRE =
-  /(\b(const|let|var)\s+(\{[^}.]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[^;[\s]+)+)|\bimport\([^)]+\)(\s*\.then\([^{]*?\(\s*\{([^}.]+)\})/g
+  /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
@@ -252,48 +252,47 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           /* handle `const {foo} = await import('foo')`
            *
            * match[1]: `const {foo} = await import('foo')`
-           * match[2]: `const`
-           * match[3]: `{foo}`
+           * match[2]: `{foo}`
            * import end: `const {foo} = await import('foo')_`
            *                                               ^
            */
           if (match[1]) {
             dynamicImports[dynamicImportTreeshakenRE.lastIndex] = {
-              declaration: `${match[2]} ${match[3]}`,
-              names: match[3]?.trim(),
+              declaration: `const ${match[2]}`,
+              names: match[2]?.trim(),
             }
             continue
           }
 
           /* handle `(await import('foo')).foo`
            *
-           * match[4]: `(await import('foo')).foo`
-           * match[5]: `.foo`
+           * match[3]: `(await import('foo')).foo`
+           * match[4]: `.foo`
            * import end: `(await import('foo'))`
            *                                  ^
            */
-          if (match[4]) {
-            let names = match[5].match(/\.([^.?]+)/)?.[1] || ''
+          if (match[3]) {
+            let names = match[4].match(/\.([^.?]+)/)?.[1] || ''
             // avoid `default` keyword error
             if (names === 'default') {
               names = 'default: __vite_default__'
             }
             dynamicImports[
-              dynamicImportTreeshakenRE.lastIndex - match[5]?.length - 1
+              dynamicImportTreeshakenRE.lastIndex - match[4]?.length - 1
             ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
             continue
           }
 
           /* handle `import('foo').then(({foo})=>{})`
            *
-           * match[6]: `.then(({foo}`
-           * match[7]: `foo`
+           * match[5]: `.then(({foo})`
+           * match[6]: `foo`
            * import end: `import('foo').`
            *                           ^
            */
-          const names = match[7]?.trim()
+          const names = match[6]?.trim()
           dynamicImports[
-            dynamicImportTreeshakenRE.lastIndex - match[6]?.length
+            dynamicImportTreeshakenRE.lastIndex - match[5]?.length
           ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
         }
       }
@@ -404,7 +403,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      if (ssr || isWorker) {
+      // If preload is not enabled, we parse through each imports and remove any imports to pure CSS chunks
+      // as they are removed from the bundle
+      if (!insertPreload) {
         const removedPureCssFiles = removedPureCssFilesCache.get(config)
         if (removedPureCssFiles && removedPureCssFiles.size > 0) {
           for (const file in bundle) {
@@ -658,7 +659,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               )
               .join(',')}]`
 
-            const mapDepsCode = `const __vite__fileDeps=${fileDepsCode},__vite__mapDeps=i=>i.map(i=>__vite__fileDeps[i]);\n`
+            const mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
 
             // inject extra code at the top or next line of hashbang
             if (code.startsWith('#!')) {

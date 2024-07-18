@@ -105,6 +105,44 @@ npm install
 npm run dev
 ```
 
+## Manual Installation
+
+In your project, you can install the `vite` CLI using:
+
+::: code-group
+
+```bash [NPM]
+$ npm install -D vite
+```
+
+```bash [Yarn]
+$ yarn add -D vite
+```
+
+```bash [PNPM]
+$ pnpm add -D vite
+```
+
+```bash [Bun]
+$ bun add -D vite
+```
+
+:::
+
+And create an `index.html` file like this:
+
+```html
+<p>Hello Vite!</p>
+```
+
+Then run the `vite` CLI in your terminal:
+
+```bash
+vite
+```
+
+The `index.html` will be served on `http://localhost:5173`.
+
 ## `index.html` and Project Root
 
 One thing you may have noticed is that in a Vite project, `index.html` is front-and-central instead of being tucked away inside `public`. This is intentional: during development Vite is a server, and `index.html` is the entry point to your application.

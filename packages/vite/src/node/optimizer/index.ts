@@ -138,7 +138,7 @@ export interface DepOptimizationConfig {
    * When enabled, it will hold the first optimized deps results until all static
    * imports are crawled on cold start. This avoids the need for full-page reloads
    * when new dependencies are discovered and they trigger the generation of new
-   * common chunks. If all dependencies are found by the scanner plus the explicitely
+   * common chunks. If all dependencies are found by the scanner plus the explicitly
    * defined ones in `include`, it is better to disable this option to let the
    * browser process more requests in parallel.
    * @default true
@@ -523,7 +523,7 @@ export function runOptimizeDeps(
         )
       }
       // Ignore clean up requests after this point so the temp folder isn't deleted before
-      // we finish commiting the new deps cache files to the deps folder
+      // we finish committing the new deps cache files to the deps folder
       committed = true
 
       // Write metadata file, then commit the processing folder to the global deps cache

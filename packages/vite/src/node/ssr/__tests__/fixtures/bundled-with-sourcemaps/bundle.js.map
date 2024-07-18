@@ -1,0 +1,17 @@
+{
+  "version": 3,
+  "file": "bundle.js",
+  "sources": [
+    "./first.ts",
+    "./second.ts"
+  ],
+  "sourcesContent": [
+    "export function covered() {\n  return \"First\";\n}\n\nexport function uncovered() {\n  return \"Uncovered\";\n}\n",
+    "export function covered() {\n  return \"Second\";\n}\n\nexport function uncovered() {\n  return \"Uncovered\";\n}\n"
+  ],
+  "names": [
+    "covered",
+    "uncovered"
+  ],
+  "mappings": "AAAO,SAASA,SAAO,GAAG;AAC1B,EAAE,OAAO,OAAO,CAAC;AACjB,CAAC;AACD;AACO,SAASC,WAAS,GAAG;AAC5B,EAAE,OAAO,WAAW,CAAC;AACrB;;;;;;;;ACNO,SAAS,OAAO,GAAG;AAC1B,EAAE,OAAO,QAAQ,CAAC;AAClB,CAAC;AACD;AACO,SAAS,SAAS,GAAG;AAC5B,EAAE,OAAO,WAAW,CAAC;AACrB;;;;;;;;;;"
+}

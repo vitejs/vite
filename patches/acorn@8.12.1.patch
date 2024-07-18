@@ -1,11 +1,11 @@
 diff --git a/package.json b/package.json
-index 1b8dc76afc3cf5890cc3693c2975577fd3117dd6..9ac3a4d813fda1be476bd896a8f6168b3a459e41 100644
+index 355692a301ea5ddaf8541825b22046a31505d139..35acec04252f1063cff56a334565c946e992327c 100644
 --- a/package.json
 +++ b/package.json
 @@ -46,5 +46,6 @@
    },
    "bin": {
-     "acorn": "./bin/acorn"
+     "acorn": "bin/acorn"
 -  }
 +  },
 +  "sideEffects": false
