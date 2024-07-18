@@ -2,7 +2,9 @@
 
 ## WMR
 
-[WMR](https://github.com/preactjs/wmr) is unfortunately no longer maintained and the Preact team recommends to use Vite with [@preactjs/preset-vite](https://github.com/preactjs/preset-vite).
+[WMR](https://github.com/preactjs/wmr) by the Preact team looked to provide a similar feature set. Vite's universal Rollup plugin API for dev and build was inspired by it.
+
+WMR is no longer maintained. The Preact team now recommends Vite with [@preactjs/preset-vite](https://github.com/preactjs/preset-vite).
 
 ## @web/dev-server
 
