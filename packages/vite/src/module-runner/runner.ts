@@ -4,7 +4,6 @@ import {
   cleanUrl,
   isPrimitive,
   isWindows,
-  slash,
   unwrapId,
   wrapId,
 } from '../shared/utils'
@@ -20,6 +19,7 @@ import type {
   SSRImportMetadata,
 } from './types'
 import {
+  normalizeAbsoluteUrl,
   posixDirname,
   posixPathToFileHref,
   posixResolve,
@@ -60,6 +60,7 @@ export class ModuleRunner {
   })
   private readonly transport: RunnerTransport
   private readonly resetSourceMapSupport?: () => void
+  private readonly root: string
 
   private destroyed = false
 
@@ -68,6 +69,8 @@ export class ModuleRunner {
     public evaluator: ModuleEvaluator,
     private debug?: ModuleRunnerDebugger,
   ) {
+    const root = this.options.root
+    this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.moduleCache = options.moduleCache ?? new ModuleCacheMap(options.root)
     this.transport = options.transport
     if (typeof options.hmr === 'object') {
@@ -76,9 +79,7 @@ export class ModuleRunner {
           ? silentConsole
           : options.hmr.logger || hmrLogger,
         options.hmr.connection,
-        ({ acceptedPath }) => {
-          return this.import(acceptedPath)
-        },
+        ({ acceptedPath }) => this.import(acceptedPath),
       )
       options.hmr.connection.onUpdate(createHMRHandler(this))
     }
@@ -131,22 +132,7 @@ export class ModuleRunner {
     if (url[0] === '.') {
       return url
     }
-    // file:///C:/root/id.js -> C:/root/id.js
-    if (url.startsWith('file://')) {
-      // 8 is the length of "file:///"
-      url = url.slice(isWindows ? 8 : 7)
-    }
-    url = slash(url)
-    const _root = this.options.root
-    const root = _root[_root.length - 1] === '/' ? _root : `${_root}/`
-    // strip root from the URL because fetchModule prefers a public served url path
-    // packages/vite/src/node/server/moduleGraph.ts:17
-    if (url.startsWith(root)) {
-      // /root/id.js -> /id.js
-      // C:/root/id.js -> /id.js
-      // 1 is to keep the leading slash
-      return url.slice(root.length - 1)
-    }
+    url = normalizeAbsoluteUrl(url, this.root)
     // if it's a server url (starts with a slash), keep it, otherwise assume a virtual module
     // /id.js -> /id.js
     // virtual:custom -> /@id/virtual:custom
@@ -258,6 +244,8 @@ export class ModuleRunner {
     }
 
     this.debug?.('[module runner] fetching', url)
+
+    url = normalizeAbsoluteUrl(url, this.root)
 
     const normalized = this.urlToIdMap.get(url)
     let cachedModule = normalized && this.moduleCache.getByModuleId(normalized)
