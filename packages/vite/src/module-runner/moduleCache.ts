@@ -135,7 +135,7 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
 }
 
 // unique id that is not available as "$bare_import" like "test"
-const prefixedBuiltins = new Set(['node:test'])
+const prefixedBuiltins = new Set(['node:test', 'node:sqlite'])
 
 // transform file url to id
 // virtual:custom -> virtual:custom
