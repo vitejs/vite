@@ -84,6 +84,8 @@ export interface HotChannelClient {
    */
   send(event: string, payload?: CustomPayload['data']): void
 }
+/** @deprecated use `HotChannelClient` instead */
+export type HMRBroadcasterClient = HotChannelClient
 
 export interface HotChannel {
   /**
@@ -119,6 +121,8 @@ export interface HotChannel {
    */
   close(): void
 }
+/** @deprecated use `HotChannel` instead */
+export type HMRChannel = HotChannel
 
 export function getShortName(file: string, root: string): string {
   return file.startsWith(withTrailingSlash(root))
@@ -898,6 +902,8 @@ export interface ServerHotChannel extends HotChannel {
     outsideEmitter: EventEmitter
   }
 }
+/** @deprecated use `ServerHotChannel` instead */
+export type ServerHMRChannel = ServerHotChannel
 
 export function createServerHotChannel(): ServerHotChannel {
   const innerEmitter = new EventEmitter()
@@ -961,6 +967,8 @@ export interface HotBroadcaster extends HotChannel {
   addChannel(channel: HotChannel): HotBroadcaster
   close(): Promise<unknown[]>
 }
+/** @deprecated use `environment.hot` instead */
+export type HMRBroadcaster = HotBroadcaster
 
 export function createDeprecatedHotBroadcaster(ws: HotChannel): HotBroadcaster {
   const broadcaster: HotBroadcaster = {

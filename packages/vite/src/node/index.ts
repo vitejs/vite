@@ -147,16 +147,11 @@ export type {
 export type {
   HmrOptions,
   HmrContext,
-  HotUpdateContext,
   HotUpdateOptions,
-} from './server/hmr'
-
-export type {
-  // deprecated, remove in Vite 7
-  HotBroadcaster as HMRBroadcaster,
-  HotChannelClient as HMRBroadcasterClient,
-  ServerHotChannel as ServerHMRChannel,
-  HotChannel as HMRChannel,
+  HMRBroadcaster,
+  HMRBroadcasterClient,
+  ServerHMRChannel,
+  HMRChannel,
   HotChannel,
   ServerHotChannel,
   HotChannelClient,
