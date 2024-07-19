@@ -167,16 +167,44 @@ export class ModuleRunner {
     return exports
   }
 
+  private isCurcularModule(mod: Required<ModuleCache>) {
+    for (const importedFile of mod.imports) {
+      if (mod.importers.has(importedFile)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  private isCurcularImport(importers: Set<string>, moduleId: string) {
+    for (const importer of importers) {
+      if (importer === moduleId) {
+        return true
+      }
+      const mod = this.moduleCache.getByModuleId(
+        importer,
+      ) as Required<ModuleCache>
+      if (
+        mod.importers.size &&
+        this.isCurcularImport(mod.importers, moduleId)
+      ) {
+        return true
+      }
+    }
+    return false
+  }
+
   private async cachedRequest(
     id: string,
-    mod: ModuleCache,
+    mod_: ModuleCache,
     callstack: string[] = [],
     metadata?: SSRImportMetadata,
   ): Promise<any> {
+    const mod = mod_ as Required<ModuleCache>
     const meta = mod.meta!
     const moduleId = meta.id
 
-    const { imports, importers } = mod as Required<ModuleCache>
+    const { importers } = mod
 
     const importee = callstack[callstack.length - 1]
 
@@ -185,7 +213,8 @@ export class ModuleRunner {
     // check circular dependency
     if (
       callstack.includes(moduleId) ||
-      Array.from(imports.values()).some((i) => importers.has(i))
+      this.isCurcularModule(mod) ||
+      this.isCurcularImport(importers, moduleId)
     ) {
       if (mod.exports) return this.processImport(mod.exports, meta, metadata)
     }
