@@ -83,10 +83,10 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         return transformStableResult(result.s, id, config)
       }
     },
-    hotUpdate({ type, file, modules: oldModules, environment }) {
+    hotUpdate({ type, file, modules: oldModules }) {
       if (type === 'update') return
 
-      const importGlobMap = importGlobMaps.get(environment)
+      const importGlobMap = importGlobMaps.get(this.environment)
       if (!importGlobMap) return
 
       const modules: EnvironmentModuleNode[] = []
@@ -100,7 +100,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
               (!negated.length || negated.every((glob) => isMatch(file, glob))),
           )
         ) {
-          const mod = environment.moduleGraph.getModuleById(id)
+          const mod = this.environment.moduleGraph.getModuleById(id)
           if (mod) modules.push(mod)
         }
       }

@@ -18,9 +18,10 @@ import type { ServerHook, ViteDevServer } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { EnvironmentModuleNode } from './server/moduleGraph'
 import type { ModuleNode } from './server/mixedModuleGraph'
-import type { HmrContext, HotUpdateContext } from './server/hmr'
-import type { PreviewServerHook } from './preview'
+import type { HmrContext, HotUpdateOptions } from './server/hmr'
+import type { DevEnvironment } from './server/environment'
 import type { Environment } from './environment'
+import type { PreviewServerHook } from './preview'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -59,6 +60,10 @@ export interface PluginContextExtension {
   environment: Environment
 }
 
+export interface HotUpdatePluginContext {
+  environment: DevEnvironment
+}
+
 export interface PluginContext
   extends RollupPluginContext,
     PluginContextExtension {}
@@ -89,7 +94,7 @@ declare module 'rollup' {
 export interface Plugin<A = any> extends RollupPlugin<A> {
   /**
    * Perform custom handling of HMR updates.
-   * The handler receives a context containing changed filename, timestamp, a
+   * The handler receives an options containing changed filename, timestamp, a
    * list of modules affected by the file change, and the dev server instance.
    *
    * - The hook can return a filtered list of modules to narrow down the update.
@@ -97,15 +102,15 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    *   the descriptors.
    *
    * - The hook can also return an empty array and then perform custom updates
-   *   by sending a custom hmr payload via server.hot.send().
+   *   by sending a custom hmr payload via environment.hot.send().
    *
    * - If the hook doesn't return a value, the hmr update will be performed as
    *   normal.
    */
   hotUpdate?: ObjectHook<
     (
-      this: void,
-      ctx: HotUpdateContext,
+      this: HotUpdatePluginContext,
+      options: HotUpdateOptions,
     ) =>
       | Array<EnvironmentModuleNode>
       | void

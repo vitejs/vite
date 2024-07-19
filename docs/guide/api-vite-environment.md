@@ -223,15 +223,15 @@ class EnvironmentModuleNode {
 
   type: 'js' | 'css'
 
-  importers = new Set<ModuleNode>()
-  importedModules = new Set<ModuleNode>()
+  importers = new Set<EnvironmentModuleNode>()
+  importedModules = new Set<EnvironmentModuleNode>()
   importedBindings: Map<string, Set<string>> | null = null
 
   info?: ModuleInfo
   meta?: Record<string, any>
   transformResult: TransformResult | null = null
 
-  acceptedHmrDeps = new Set<ModuleNode>()
+  acceptedHmrDeps = new Set<EnvironmentModuleNode>()
   acceptedHmrExports: Set<string> | null = null
   isSelfAccepting?: boolean
   lastHMRTimestamp = 0
@@ -245,25 +245,27 @@ class EnvironmentModuleNode {
 export class EnvironmentModuleGraph {
   environment: string
 
-  urlToModuleMap = new Map<string, ModuleNode>()
-  idToModuleMap = new Map<string, ModuleNode>()
-  etagToModuleMap = new Map<string, ModuleNode>()
-  fileToModulesMap = new Map<string, Set<ModuleNode>>()
+  urlToModuleMap = new Map<string, EnvironmentModuleNode>()
+  idToModuleMap = new Map<string, EnvironmentModuleNode>()
+  etagToModuleMap = new Map<string, EnvironmentModuleNode>()
+  fileToModulesMap = new Map<string, Set<EnvironmentModuleNode>>()
 
   constructor(
     environment: string,
     resolveId: (url: string) => Promise<PartialResolvedId | null>,
   )
 
-  async getModuleByUrl(rawUrl: string): Promise<ModuleNode | undefined>
+  async getModuleByUrl(
+    rawUrl: string,
+  ): Promise<EnvironmentModuleNode | undefined>
 
-  getModulesByFile(file: string): Set<ModuleNode> | undefined
+  getModulesByFile(file: string): Set<EnvironmentModuleNode> | undefined
 
   onFileChange(file: string): void
 
   invalidateModule(
-    mod: ModuleNode,
-    seen: Set<ModuleNode> = new Set(),
+    mod: EnvironmentModuleNode,
+    seen: Set<EnvironmentModuleNode> = new Set(),
     timestamp: number = Date.now(),
     isHmr: boolean = false,
   ): void
@@ -271,29 +273,29 @@ export class EnvironmentModuleGraph {
   invalidateAll(): void
 
   async updateModuleInfo(
-    mod: ModuleNode,
-    importedModules: Set<string | ModuleNode>,
+    mod: EnvironmentModuleNode,
+    importedModules: Set<string | EnvironmentModuleNode>,
     importedBindings: Map<string, Set<string>> | null,
-    acceptedModules: Set<string | ModuleNode>,
+    acceptedModules: Set<string | EnvironmentModuleNode>,
     acceptedExports: Set<string> | null,
     isSelfAccepting: boolean,
-  ): Promise<Set<ModuleNode> | undefined>
+  ): Promise<Set<EnvironmentModuleNode> | undefined>
 
   async ensureEntryFromUrl(
     rawUrl: string,
     setIsSelfAccepting = true,
-  ): Promise<ModuleNode>
+  ): Promise<EnvironmentModuleNode>
 
-  createFileOnlyEntry(file: string): ModuleNode
+  createFileOnlyEntry(file: string): EnvironmentModuleNode
 
   async resolveUrl(url: string): Promise<ResolvedUrl>
 
   updateModuleTransformResult(
-    mod: ModuleNode,
+    mod: EnvironmentModuleNode,
     result: TransformResult | null,
   ): void
 
-  getModuleByEtag(etag: string): ModuleNode | undefined
+  getModuleByEtag(etag: string): EnvironmentModuleNode | undefined
 }
 ```
 
@@ -512,16 +514,17 @@ Plugins should set default values using the `config` hook. To configure each env
 
 ### The `hotUpdate` hook
 
-- **Type:** `(ctx: HotContext) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
+- **Type:** `(this: { environment: DevEnvironment }, options: HotUpdateOptions) => Array<EnvironmentModuleNode> | void | Promise<Array<EnvironmentModuleNode> | void>`
 - **See also:** [HMR API](./api-hmr)
 
 The `hotUpdate` hook allows plugins to perform custom HMR update handling for a given environment. When a file changes, the HMR algorithm is run for each environment in series according to the order in `server.environments`, so the `hotUpdate` hook will be called multiple times. The hook receives a context object with the following signature:
 
 ```ts
-interface HotContext {
+interface HotUpdateContext {
+  type: 'create' | 'update' | 'delete'
   file: string
   timestamp: number
-  modules: Array<ModuleNode>
+  modules: Array<EnvironmentModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
 }

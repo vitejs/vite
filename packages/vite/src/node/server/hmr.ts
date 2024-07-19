@@ -42,13 +42,17 @@ export interface HmrOptions {
   server?: HttpServer
 }
 
-export interface HotUpdateContext {
+export interface HotUpdateOptions {
   type: 'create' | 'update' | 'delete'
   file: string
   timestamp: number
   modules: Array<EnvironmentModuleNode>
   read: () => string | Promise<string>
   server: ViteDevServer
+
+  /**
+   * @deprecated use this.environment in the hotUpdate hook instead
+   **/
   environment: DevEnvironment
 }
 
@@ -223,7 +227,7 @@ export async function handleHMRUpdate(
   }
   const hotMap = new Map<
     Environment,
-    { context: HotUpdateContext; error?: Error }
+    { options: HotUpdateOptions; error?: Error }
   >()
 
   for (const environment of Object.values(server.environments)) {
@@ -233,13 +237,13 @@ export async function handleHMRUpdate(
         mods.add(mod)
       }
     }
-    const context = {
+    const options = {
       ...contextMeta,
       modules: [...mods],
-      // later on hotUpdate will be called for each runtime with a new hotContext
+      // later on hotUpdate will be called for each runtime with a new HotUpdateContext
       environment,
     }
-    hotMap.set(environment, { context })
+    hotMap.set(environment, { options })
   }
 
   const mixedMods = new Set(mixedModuleGraph.getModulesByFile(file))
@@ -249,23 +253,27 @@ export async function handleHMRUpdate(
     modules: [...mixedMods],
   }
 
-  const clientHotContext = hotMap.get(server.environments.client)!.context
-  const ssrHotContext = hotMap.get(server.environments.ssr)?.context
+  const clientEnvironment = server.environments.client
+  const ssrEnvironment = server.environments.ssr
+  const clientContext = { environment: clientEnvironment }
+  const clientHotUpdateOptions = hotMap.get(clientEnvironment)!.options
+  const ssrHotUpdateOptions = hotMap.get(ssrEnvironment)?.options
   try {
     for (const plugin of getSortedHotUpdatePlugins(
       server.environments.client,
     )) {
       if (plugin.hotUpdate) {
-        const filteredModules = await getHookHandler(plugin.hotUpdate)(
-          clientHotContext,
+        const filteredModules = await getHookHandler(plugin.hotUpdate).call(
+          clientContext,
+          clientHotUpdateOptions,
         )
         if (filteredModules) {
-          clientHotContext.modules = filteredModules
+          clientHotUpdateOptions.modules = filteredModules
           // Invalidate the hmrContext to force compat modules to be updated
           mixedHmrContext.modules = mixedHmrContext.modules.filter(
             (mixedMod) =>
               filteredModules.find((mod) => mixedMod.id === mod.id) ||
-              ssrHotContext?.modules.find(
+              ssrHotUpdateOptions?.modules.find(
                 (ssrMod) => ssrMod.id === mixedMod.id,
               ),
           )
@@ -296,29 +304,31 @@ export async function handleHMRUpdate(
         )
         if (filteredModules) {
           mixedHmrContext.modules = filteredModules
-          clientHotContext.modules = clientHotContext.modules.filter((mod) =>
-            filteredModules.find((mixedMod) => mod.id === mixedMod.id),
-          )
-          clientHotContext.modules.push(
+          clientHotUpdateOptions.modules =
+            clientHotUpdateOptions.modules.filter((mod) =>
+              filteredModules.find((mixedMod) => mod.id === mixedMod.id),
+            )
+          clientHotUpdateOptions.modules.push(
             ...(filteredModules
               .filter(
                 (mixedMod) =>
-                  !clientHotContext.modules.find(
+                  !clientHotUpdateOptions.modules.find(
                     (mod) => mod.id === mixedMod.id,
                   ),
               )
               .map((mixedMod) => mixedMod._clientModule)
               .filter(Boolean) as EnvironmentModuleNode[]),
           )
-          if (ssrHotContext) {
-            ssrHotContext.modules = ssrHotContext.modules.filter((mod) =>
-              filteredModules.find((mixedMod) => mod.id === mixedMod.id),
+          if (ssrHotUpdateOptions) {
+            ssrHotUpdateOptions.modules = ssrHotUpdateOptions.modules.filter(
+              (mod) =>
+                filteredModules.find((mixedMod) => mod.id === mixedMod.id),
             )
-            ssrHotContext.modules.push(
+            ssrHotUpdateOptions.modules.push(
               ...(filteredModules
                 .filter(
                   (mixedMod) =>
-                    !ssrHotContext.modules.find(
+                    !ssrHotUpdateOptions.modules.find(
                       (mod) => mod.id === mixedMod.id,
                     ),
                 )
@@ -336,14 +346,16 @@ export async function handleHMRUpdate(
   for (const environment of Object.values(server.environments)) {
     if (environment.name === 'client') continue
     const hot = hotMap.get(environment)!
+    const environmentThis = { environment }
     try {
       for (const plugin of getSortedHotUpdatePlugins(environment)) {
         if (plugin.hotUpdate) {
-          const filteredModules = await getHookHandler(plugin.hotUpdate)(
-            hot.context,
+          const filteredModules = await getHookHandler(plugin.hotUpdate).call(
+            environmentThis,
+            hot.options,
           )
           if (filteredModules) {
-            hot.context.modules = filteredModules
+            hot.options.modules = filteredModules
           }
         }
       }
@@ -354,11 +366,11 @@ export async function handleHMRUpdate(
 
   async function hmr(environment: DevEnvironment) {
     try {
-      const { context, error } = hotMap.get(environment)!
+      const { options, error } = hotMap.get(environment)!
       if (error) {
         throw error
       }
-      if (!context.modules.length) {
+      if (!options.modules.length) {
         // html file cannot be hot updated
         if (file.endsWith('.html')) {
           environment.logger.info(
@@ -383,7 +395,7 @@ export async function handleHMRUpdate(
         return
       }
 
-      updateModules(environment, shortFile, context.modules, timestamp)
+      updateModules(environment, shortFile, options.modules, timestamp)
     } catch (err) {
       environment.hot.send({
         type: 'error',

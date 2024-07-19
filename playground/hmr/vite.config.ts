@@ -10,12 +10,12 @@ export default defineConfig({
   plugins: [
     {
       name: 'mock-custom',
-      async hotUpdate({ environment, file, read }) {
+      async hotUpdate({ file, read }) {
         if (file.endsWith('customFile.js')) {
           const content = await read()
           const msg = content.match(/export const msg = '(\w+)'/)[1]
-          environment.hot.send('custom:foo', { msg })
-          environment.hot.send('custom:remove', { msg })
+          this.environment.hot.send('custom:foo', { msg })
+          this.environment.hot.send('custom:remove', { msg })
         }
       },
       configureServer(server) {
