@@ -99,6 +99,17 @@ export const core = [
     ],
     sponsor: 'https://github.com/sponsors/sheremet-va',
   },
+  {
+    avatar: 'https://github.com/hi-ogawa.png',
+    name: 'Hiroshi Ogawa',
+    title: 'Team Member of Vitest & Vite',
+    desc: 'Open source enthusiast',
+    links: [
+      { icon: 'github', link: 'https://github.com/hi-ogawa' },
+      { icon: 'twitter', link: 'https://twitter.com/hiroshi_18181' },
+    ],
+    sponsor: 'https://github.com/sponsors/hi-ogawa',
+  },
 ]
 
 export const emeriti = [
