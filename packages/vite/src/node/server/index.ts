@@ -82,8 +82,13 @@ import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
 import { errorMiddleware } from './middlewares/error'
-import type { HmrOptions } from './hmr'
-import { createServerHotChannel, handleHMRUpdate, updateModules } from './hmr'
+import type { HmrOptions, HotBroadcaster } from './hmr'
+import {
+  createDeprecatedHotBroadcaster,
+  createServerHotChannel,
+  handleHMRUpdate,
+  updateModules,
+} from './hmr'
 import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
@@ -257,6 +262,14 @@ export interface ViteDevServer {
    * @deprecated use `environment.hot` instead
    */
   ws: WebSocketServer
+  /**
+   * HMR broadcaster that can be used to send custom HMR messages to the client
+   *
+   * Always sends a message to at least a WebSocket client. Any third party can
+   * add a channel to the broadcaster to process messages
+   * @deprecated use `environment.hot` instead
+   */
+  hot: HotBroadcaster
   /**
    * Rollup plugin container that can run plugin hooks on a given file
    * @deprecated use `environment.pluginContainer` instead
@@ -529,6 +542,7 @@ export async function _createServer(
     httpServer,
     watcher,
     ws,
+    hot: createDeprecatedHotBroadcaster(ws),
 
     environments,
     pluginContainer,

@@ -938,3 +938,33 @@ export function createNoopHotChannel(): HotChannel {
     close: noop,
   }
 }
+
+/** @deprecated use `environment.hot` instead */
+export interface HotBroadcaster extends HotChannel {
+  readonly channels: HotChannel[]
+  /**
+   * A noop.
+   * @deprecated
+   */
+  addChannel(channel: HotChannel): HotBroadcaster
+  close(): Promise<unknown[]>
+}
+
+export function createDeprecatedHotBroadcaster(ws: HotChannel): HotBroadcaster {
+  const broadcaster: HotBroadcaster = {
+    on: ws.on,
+    off: ws.off,
+    listen: ws.listen,
+    send: ws.send,
+    get channels() {
+      return [ws]
+    },
+    addChannel() {
+      return broadcaster
+    },
+    close() {
+      return Promise.all(broadcaster.channels.map((channel) => channel.close()))
+    },
+  }
+  return broadcaster
+}
