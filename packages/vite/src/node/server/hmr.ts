@@ -56,9 +56,6 @@ export interface HotUpdateOptions {
   environment: DevEnvironment
 }
 
-/** @deprecated use `HotUpdateOptions` instead */
-export type HotUpdateContext = HotUpdateOptions
-
 /**
  * @deprecated
  * Used by handleHotUpdate for backward compatibility with mixed client and ssr moduleGraph
