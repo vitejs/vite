@@ -1,3 +1,5 @@
 import './test.scss'
 import './test.sass'
 import './import.scss'
+import './import-relative.scss'
+import './custom-importer.scss'
