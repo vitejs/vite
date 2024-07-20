@@ -2099,6 +2099,12 @@ const makeScssWorker = (
     }
   }
 
+  type ScssWorkerResult = {
+    css: string
+    map?: string | undefined
+    stats: Pick<Sass.LegacyResult['stats'], 'includedFiles'>
+  }
+
   const worker = new WorkerWithFallback(
     () =>
       async (
@@ -2111,6 +2117,59 @@ const makeScssWorker = (
         const sass: typeof Sass = require(sassPath)
         // eslint-disable-next-line no-restricted-globals
         const path = require('node:path')
+
+        // https://github.com/vitejs/vite/pull/7170
+        // https://github.com/vitejs/vite/issues/14689#issuecomment-2095118836
+        // TODO: modern-compiler?
+        //   https://github.com/vitejs/vite/issues/14689
+        //   https://github.com/webpack-contrib/sass-loader?tab=readme-ov-file#api
+        if (options.api === 'modern') {
+          const { fileURLToPath, pathToFileURL } =
+            // eslint-disable-next-line no-restricted-globals
+            require('node:url') as typeof import('node:url')
+
+          const sassOptions = { ...options } as Sass.StringOptions<'async'>
+          sassOptions.url = pathToFileURL(options.filename)
+          sassOptions.sourceMap = options.enableSourcemap
+
+          if (typeof sassOptions.syntax === 'undefined') {
+            const ext = path.extname(options.filename)
+            if (ext && ext.toLowerCase() === '.scss') {
+              sassOptions.syntax = 'scss'
+            } else if (ext && ext.toLowerCase() === '.sass') {
+              sassOptions.syntax = 'indented'
+            } else if (ext && ext.toLowerCase() === '.css') {
+              sassOptions.syntax = 'css'
+            }
+          }
+
+          // https://github.com/sass/sass/issues/3247
+          const _internalImporter: Sass.Importer<'async'> = {
+            canonicalize(url, context) {
+              if (context.containingUrl) {
+                const importer = fileURLToPath(context.containingUrl)
+                return internalImporter(url, importer, options.filename)
+              }
+              return null
+            },
+            load(_canonicalUrl) {
+              return null
+            },
+          }
+          sassOptions.importers ??= []
+          sassOptions.importers.push(_internalImporter)
+
+          const result = await sass.compileStringAsync(data, sassOptions)
+          return {
+            css: result.css,
+            map: result.sourceMap
+              ? JSON.stringify(result.sourceMap)
+              : undefined,
+            stats: {
+              includedFiles: result.loadedUrls.map((url) => fileURLToPath(url)),
+            },
+          } satisfies ScssWorkerResult
+        }
 
         // NOTE: `sass` always runs it's own importer first, and only falls back to
         // the `importer` option when it can't resolve a path
@@ -2144,11 +2203,7 @@ const makeScssWorker = (
               }
             : {}),
         }
-        return new Promise<{
-          css: string
-          map?: string | undefined
-          stats: Sass.LegacyResult['stats']
-        }>((resolve, reject) => {
+        return new Promise<ScssWorkerResult>((resolve, reject) => {
           sass.render(finalOptions, (err, res) => {
             if (err) {
               reject(err)
