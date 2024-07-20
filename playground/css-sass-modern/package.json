@@ -1,0 +1,15 @@
+{
+  "name": "@vitejs/test-css-sass-modern",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "debug": "node --inspect-brk ../../packages/vite/bin/vite",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/test-css-dep": "link:./css-dep"
+  }
+}

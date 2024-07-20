@@ -2132,17 +2132,6 @@ const makeScssWorker = (
           sassOptions.url = pathToFileURL(options.filename)
           sassOptions.sourceMap = options.enableSourcemap
 
-          if (typeof sassOptions.syntax === 'undefined') {
-            const ext = path.extname(options.filename)
-            if (ext && ext.toLowerCase() === '.scss') {
-              sassOptions.syntax = 'scss'
-            } else if (ext && ext.toLowerCase() === '.sass') {
-              sassOptions.syntax = 'indented'
-            } else if (ext && ext.toLowerCase() === '.css') {
-              sassOptions.syntax = 'css'
-            }
-          }
-
           // https://github.com/sass/sass/issues/3247
           const _internalImporter: Sass.Importer<'async'> = {
             canonicalize(url, context) {
@@ -2736,7 +2725,7 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
     return scss.process(
       source,
       root,
-      { ...options, indentedSyntax: true },
+      { ...options, indentedSyntax: true, syntax: 'indented' },
       resolvers,
     )
   }

@@ -597,6 +597,14 @@ importers:
 
   playground/css-no-codesplit: {}
 
+  playground/css-sass-modern:
+    devDependencies:
+      '@vitejs/test-css-dep':
+        specifier: link:./css-dep
+        version: link:css-dep
+
+  playground/css-sass-modern/css-dep: {}
+
   playground/css-sourcemap:
     devDependencies:
       less:
