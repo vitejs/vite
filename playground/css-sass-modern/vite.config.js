@@ -3,7 +3,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   resolve: {
     alias: {
-      'alias-from': 'alias-to',
+      'alias-nested': 'nested',
     },
   },
   css: {
