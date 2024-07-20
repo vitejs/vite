@@ -2099,6 +2099,15 @@ const makeScssWorker = (
     }
   }
 
+  const modernInternalImporter = async (
+    url: string,
+    importer: string,
+  ): Promise<string | null> => {
+    importer = cleanScssBugUrl(importer)
+    const resolved = await resolvers.sass(url, importer)
+    return resolved ?? null
+  }
+
   type ScssWorkerResult = {
     css: string
     map?: string | undefined
@@ -2116,7 +2125,7 @@ const makeScssWorker = (
         // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const sass: typeof Sass = require(sassPath)
         // eslint-disable-next-line no-restricted-globals
-        const path = require('node:path')
+        const path: typeof import('node:path') = require('node:path')
 
         // https://github.com/vitejs/vite/pull/7170
         // https://github.com/vitejs/vite/issues/14689#issuecomment-2095118836
@@ -2124,29 +2133,41 @@ const makeScssWorker = (
         //   https://github.com/vitejs/vite/issues/14689
         //   https://github.com/webpack-contrib/sass-loader?tab=readme-ov-file#api
         if (options.api === 'modern') {
-          const { fileURLToPath, pathToFileURL } =
+          const { fileURLToPath, pathToFileURL }: typeof import('node:url') =
             // eslint-disable-next-line no-restricted-globals
-            require('node:url') as typeof import('node:url')
+            require('node:url')
+          // eslint-disable-next-line no-restricted-globals
+          const fs: typeof import('node:fs') = require('node:fs')
 
           const sassOptions = { ...options } as Sass.StringOptions<'async'>
           sassOptions.url = pathToFileURL(options.filename)
           sassOptions.sourceMap = options.enableSourcemap
 
           // https://github.com/sass/sass/issues/3247
-          const _internalImporter: Sass.Importer<'async'> = {
-            canonicalize(url, context) {
-              if (context.containingUrl) {
-                const importer = fileURLToPath(context.containingUrl)
-                return internalImporter(url, importer, options.filename)
-              }
-              return null
+          const sassInternalImporter: Sass.Importer<'async'> = {
+            async canonicalize(url, context) {
+              const importer = context.containingUrl
+                ? fileURLToPath(context.containingUrl)
+                : options.filename
+              const resolved = await modernInternalImporter(url, importer)
+              return resolved ? pathToFileURL(resolved) : null
             },
-            load(_canonicalUrl) {
-              return null
+            async load(canonicalUrl) {
+              const ext = path.extname(canonicalUrl.pathname)
+              let syntax: Sass.Syntax = 'scss'
+              if (ext && ext.toLowerCase() === '.scss') {
+                syntax = 'scss'
+              } else if (ext && ext.toLowerCase() === '.sass') {
+                syntax = 'indented'
+              } else if (ext && ext.toLowerCase() === '.css') {
+                syntax = 'css'
+              }
+              const contents = await fs.promises.readFile(canonicalUrl, 'utf-8')
+              return { contents, syntax }
             },
           }
           sassOptions.importers ??= []
-          sassOptions.importers.push(_internalImporter)
+          sassOptions.importers.push(sassInternalImporter)
 
           const result = await sass.compileStringAsync(data, sassOptions)
           return {
@@ -2207,7 +2228,7 @@ const makeScssWorker = (
         })
       },
     {
-      parentFunctions: { internalImporter },
+      parentFunctions: { internalImporter, modernInternalImporter },
       shouldUseFake(_sassPath, _data, options) {
         // functions and importer is a function and is not serializable
         // in that case, fallback to running in main thread
