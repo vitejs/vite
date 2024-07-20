@@ -112,8 +112,8 @@ export function esbuildDepPlugin(
         namespace: 'optional-peer-dep',
       }
     }
-    const ssr = environment.name !== 'client' // TODO:depsOptimizer how to avoid depending on environment name?
-    if (ssr && isBuiltin(resolved)) {
+    // TODO: Should this be environment.options.nodeCompatible or a more fine-grained option?
+    if (environment.options.ssr && isBuiltin(resolved)) {
       return
     }
     if (isExternalUrl(resolved)) {

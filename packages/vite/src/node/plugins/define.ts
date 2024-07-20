@@ -71,10 +71,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     // Additional define fixes based on `ssr` value
-    // Backward compatibility. Any non client environment will get import.meta.env.SSR = true
-    // TODO: Check if we should only do this for the SSR environment and how to abstract
-    // maybe we need import.meta.env.environmentName ?
-    const ssr = environment.name !== 'client'
+    const ssr = environment.options.ssr
 
     if ('import.meta.env.SSR' in define) {
       define['import.meta.env.SSR'] = ssr + ''
@@ -119,7 +116,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     name: 'vite:define',
 
     async transform(code, id) {
-      if (this.environment.name === 'client' && !isBuild) {
+      if (!this.environment.options.ssr && !isBuild) {
         // for dev we inject actual global defines in the vite client to
         // avoid the transform cost. see the `clientInjection` and
         // `importAnalysis` plugin.

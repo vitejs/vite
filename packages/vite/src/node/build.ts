@@ -559,7 +559,7 @@ export async function buildEnvironment(
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const options = config.build
   const { logger } = environment
-  const ssr = environment.name !== 'client'
+  const ssr = environment.options.ssr
 
   logger.info(
     colors.cyan(
@@ -760,10 +760,7 @@ export async function buildEnvironment(
         inlineDynamicImports:
           output.format === 'umd' ||
           output.format === 'iife' ||
-          // TODO: We need an abstraction for non-client environments?
-          // We should remove the explicit 'client' hcek here.
-          // Or maybe `inlineDynamicImports` should be an environment option?
-          (environment.name !== 'client' &&
+          (environment.options.ssr &&
             environment.options.webCompatible &&
             (typeof input === 'string' || Object.keys(input).length === 1)),
         ...output,
@@ -1268,7 +1265,7 @@ function injectSsrFlag<T extends Record<string, any>>(
   options?: T,
   environment?: BuildEnvironment,
 ): T & { ssr?: boolean } {
-  const ssr = environment ? environment.name !== 'client' : true
+  const ssr = environment?.options.ssr ?? true
   return { ...(options ?? {}), ssr } as T & {
     ssr?: boolean
   }

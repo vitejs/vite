@@ -227,6 +227,11 @@ export interface SharedEnvironmentOptions {
    */
   resolve?: EnvironmentResolveOptions
   /**
+   * Define if this environment is used for Server Side Rendering
+   * @default true if it isn't the client environment
+   */
+  ssr?: boolean
+  /**
    * Runtime Compatibility
    * Temporal options, we should remove these in favor of fine-grained control
    */
@@ -257,6 +262,7 @@ export type ResolvedEnvironmentResolveOptions =
 
 export type ResolvedEnvironmentOptions = {
   resolve: ResolvedEnvironmentResolveOptions
+  ssr: boolean
   nodeCompatible: boolean
   webCompatible: boolean
   injectInvalidationTimestamp: boolean
@@ -266,7 +272,11 @@ export type ResolvedEnvironmentOptions = {
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  'build' | 'nodeCompatible' | 'webCompatible'
+  | 'build'
+  | 'ssr'
+  | 'nodeCompatible'
+  | 'webCompatible'
+  | 'injectInvalidationTimestamp'
 > & {
   // Includes lib mode support
   build?: BuildOptions
@@ -612,12 +622,15 @@ function resolveEnvironmentOptions(
   skipSsrTransform?: boolean,
 ): ResolvedEnvironmentOptions {
   const resolve = resolveEnvironmentResolveOptions(options.resolve, logger)
+  const isClientEnvironment = environmentName === 'client'
+  const ssr = options.ssr ?? !isClientEnvironment
   return {
     resolve,
-    nodeCompatible: options.nodeCompatible ?? environmentName !== 'client',
-    webCompatible: options.webCompatible ?? environmentName === 'client',
+    ssr,
+    nodeCompatible: options.nodeCompatible ?? !isClientEnvironment,
+    webCompatible: options.webCompatible ?? isClientEnvironment,
     injectInvalidationTimestamp:
-      options.injectInvalidationTimestamp ?? environmentName === 'client',
+      options.injectInvalidationTimestamp ?? isClientEnvironment,
     dev: resolveDevEnvironmentOptions(
       options.dev,
       resolve.preserveSymlinks,
@@ -648,6 +661,7 @@ export function getDefaultResolvedEnvironmentOptions(
 ): ResolvedEnvironmentOptions {
   return {
     resolve: config.resolve,
+    ssr: true,
     nodeCompatible: true,
     webCompatible: false,
     injectInvalidationTimestamp: false,

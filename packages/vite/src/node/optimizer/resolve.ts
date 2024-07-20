@@ -15,7 +15,7 @@ export function createOptimizeDepsIncludeResolver(
   const resolve = createIdResolver(config, {
     asSrc: false,
     scan: true,
-    ssrOptimizeCheck: environment.name !== 'client', // TODO:depsOptimizer
+    ssrOptimizeCheck: environment.options.ssr,
     packageCache: new Map(),
   })
   return async (id: string) => {

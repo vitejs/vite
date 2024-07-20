@@ -127,13 +127,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(code, id) {
-      const { environment } = this
-      // TODO: environment, same as with assetImportMetaUrlPlugin
-      if (
-        environment &&
-        environment.name === 'client' &&
-        isIncludeWorkerImportMetaUrl(code)
-      ) {
+      if (!this.environment.options.ssr && isIncludeWorkerImportMetaUrl(code)) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
@@ -167,7 +161,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               tryIndex: false,
               preferRelative: true,
             })
-            file = await workerResolver(environment, url, id)
+            file = await workerResolver(this.environment, url, id)
             file ??=
               url[0] === '/'
                 ? slash(path.join(config.publicDir, url))

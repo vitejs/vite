@@ -299,7 +299,7 @@ class EnvironmentPluginContainer {
   ): Promise<PartialResolvedId | null> {
     const skip = options?.skip
     const scan = !!options?.scan
-    const ssr = this.environment.name !== 'client'
+    const ssr = this.environment.options.ssr
     const ctx = new ResolveIdContext(this, skip, scan)
 
     const resolveStart = debugResolve ? performance.now() : 0
@@ -365,7 +365,7 @@ class EnvironmentPluginContainer {
   }
 
   async load(id: string, options?: {}): Promise<LoadResult | null> {
-    const ssr = this.environment.name !== 'client'
+    const ssr = this.environment.options.ssr
     options = options ? { ...options, ssr } : { ssr }
     const ctx = new LoadPluginContext(this)
     for (const plugin of this.getSortedPlugins('load')) {
@@ -396,7 +396,7 @@ class EnvironmentPluginContainer {
       inMap?: SourceDescription['map']
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }> {
-    const ssr = this.environment.name !== 'client'
+    const ssr = this.environment.options.ssr
     const optionsWithSSR = options ? { ...options, ssr } : { ssr }
     const inMap = options?.inMap
 

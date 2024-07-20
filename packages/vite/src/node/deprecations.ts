@@ -28,7 +28,7 @@ const deprecationCode = {
 
 const deprecationMessages = {
   pluginHookSsrArgument:
-    'Plugin hook `options.ssr` is replaced with `this.environment.name !== "client"`.',
+    'Plugin hook `options.ssr` is replaced with `this.environment.options.ssr`.',
   pluginHookHandleHotUpdate:
     'Plugin hook `handleHotUpdate()` is replaced with `hotUpdate()`.',
 

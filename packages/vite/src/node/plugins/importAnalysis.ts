@@ -217,7 +217,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     async transform(source, importer) {
       const environment = this.environment as DevEnvironment
-      const ssr = environment.name !== 'client' // TODO
+      const ssr = environment.options.ssr
       const moduleGraph = environment.moduleGraph
 
       if (canSkipImportAnalysis(importer)) {

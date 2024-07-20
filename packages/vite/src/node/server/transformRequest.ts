@@ -73,7 +73,7 @@ export function transformRequest(
   // Backward compatibility when only `ssr` is passed
   if (!options?.ssr) {
     // Backward compatibility
-    options = { ...options, ssr: environment.name !== 'client' }
+    options = { ...options, ssr: environment.options.ssr }
   }
 
   if (environment._closing && environment?.options.dev.recoverable)
