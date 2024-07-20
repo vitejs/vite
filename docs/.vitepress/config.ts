@@ -266,8 +266,8 @@ export default defineConfig({
               link: '/guide/migration',
             },
             {
-              text: 'Deprecations Guide',
-              link: '/deprecations/',
+              text: 'Major Changes',
+              link: '/changes/',
             },
           ],
         },
@@ -336,31 +336,39 @@ export default defineConfig({
           ],
         },
       ],
-      '/deprecations/': [
+      '/changes/': [
         {
-          text: 'Deprecations Guide',
-          link: '/deprecations/',
+          text: 'Major Changes',
+          link: '/changes/',
         },
         {
-          text: 'Deprecations List',
+          text: 'Ongoing',
+          items: [],
+        },
+        {
+          text: 'Future',
           items: [
             {
-              text: 'VT001 - handleHotUpdate()',
-              link: '/deprecations/vt001',
+              text: 'VT001 - this.environment',
+              link: '/changes/vt001',
             },
             {
-              text: 'VT002 - options.ssr',
-              link: '/deprecations/vt002',
+              text: 'VT002 - hotUpdate hook',
+              link: '/changes/vt002',
             },
             {
               text: 'VT003 - Dev Server APIs',
-              link: '/deprecations/vt003',
+              link: '/changes/vt003',
             },
             {
               text: 'VT004 - ssrLoadModule',
-              link: '/deprecations/vt004',
+              link: '/changes/vt004',
             },
           ],
+        },
+        {
+          text: 'Past',
+          items: [],
         },
       ],
     },

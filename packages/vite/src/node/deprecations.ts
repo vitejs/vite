@@ -16,21 +16,21 @@ export interface FutureDeprecationWarningsOptions {
 }
 
 const deprecationCode = {
-  pluginHookHandleHotUpdate: 'VD001',
-  pluginHookSsrArgument: 'VD002',
+  pluginHookSsrArgument: 'VT001',
+  pluginHookHandleHotUpdate: 'VT002',
 
-  serverModuleGraph: 'VD003',
-  serverHot: 'VD003',
-  serverTransformRequest: 'VD003',
+  serverModuleGraph: 'VT003',
+  serverHot: 'VT003',
+  serverTransformRequest: 'VT003',
 
-  ssrLoadModule: 'VD004',
+  ssrLoadModule: 'VT004',
 } satisfies Record<keyof FutureDeprecationWarningsOptions, string>
 
 const deprecationMessages = {
-  pluginHookHandleHotUpdate:
-    'Plugin hook `handleHotUpdate()` is replaced with `hotUpdate()`.',
   pluginHookSsrArgument:
     'Plugin hook `options.ssr` is replaced with `this.environment.name !== "client"`.',
+  pluginHookHandleHotUpdate:
+    'Plugin hook `handleHotUpdate()` is replaced with `hotUpdate()`.',
 
   serverModuleGraph:
     'The `server.moduleGraph` is replaced with `this.environment.moduleGraph`.',
