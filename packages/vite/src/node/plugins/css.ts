@@ -2132,9 +2132,6 @@ const makeScssWorker = (
         // eslint-disable-next-line no-restricted-globals
         const path: typeof import('node:path') = require('node:path')
 
-        // thanks to
-        // https://github.com/vitejs/vite/pull/7170
-        // https://github.com/vitejs/vite/issues/14689#issuecomment-2095118836
         if (options.api === 'modern') {
           const { fileURLToPath, pathToFileURL }: typeof import('node:url') =
             // eslint-disable-next-line no-restricted-globals
@@ -2144,7 +2141,6 @@ const makeScssWorker = (
           sassOptions.url = pathToFileURL(options.filename)
           sassOptions.sourceMap = options.enableSourcemap
 
-          // https://github.com/sass/sass/issues/3247
           const sassInternalImporter: Sass.Importer<'async'> = {
             async canonicalize(url, context) {
               const importer = context.containingUrl
