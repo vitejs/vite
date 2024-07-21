@@ -62,6 +62,16 @@ export default defineConfig({
       scss: {
         api: 'modern',
         additionalData: `$injectedColor: orange;`,
+        // for api: "legacy"
+        // importer: [
+        //   function (url) {
+        //     return url === 'virtual-dep' ? { contents: '' } : null
+        //   },
+        //   function (url) {
+        //     return url.endsWith('.wxss') ? { contents: '' } : null
+        //   }
+        // ],
+        // for api: "modern"
         importers: [
           {
             canonicalize(url) {
