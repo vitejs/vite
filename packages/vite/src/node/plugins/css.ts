@@ -2110,10 +2110,7 @@ const makeScssWorker = (
 
   const modernInternalLoad = async (file: string, rootFile: string) => {
     const result = await rebaseUrls(file, rootFile, alias, '$', resolvers.sass)
-    if (result.contents) {
-      return result.contents
-    }
-    return await fs.promises.readFile(result.file, 'utf-8')
+    return result.contents ?? (await fs.promises.readFile(result.file, 'utf-8'))
   }
 
   type ScssWorkerResult = {
@@ -2150,7 +2147,6 @@ const makeScssWorker = (
           // https://github.com/sass/sass/issues/3247
           const sassInternalImporter: Sass.Importer<'async'> = {
             async canonicalize(url, context) {
-              // console.log("[canonicalize]", url, context.containingUrl?.href);
               const importer = context.containingUrl
                 ? fileURLToPath(context.containingUrl)
                 : options.filename
@@ -2226,7 +2222,6 @@ const makeScssWorker = (
             if (err) {
               reject(err)
             } else {
-              console.log("[includedFiles]", options.filename, [...res!.stats.includedFiles]);
               resolve({
                 css: res!.css.toString(),
                 map: res!.map?.toString(),
