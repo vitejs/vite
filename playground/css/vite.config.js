@@ -60,13 +60,21 @@ export default defineConfig({
     },
     preprocessorOptions: {
       scss: {
+        api: 'modern',
         additionalData: `$injectedColor: orange;`,
-        importer: [
-          function (url) {
-            return url === 'virtual-dep' ? { contents: '' } : null
-          },
-          function (url) {
-            return url.endsWith('.wxss') ? { contents: '' } : null
+        importers: [
+          {
+            canonicalize(url) {
+              return url === 'virtual-dep'
+                ? new URL('custom-importer:virtual-dep')
+                : null
+            },
+            load() {
+              return {
+                contents: ``,
+                syntax: 'scss',
+              }
+            },
           },
         ],
       },
