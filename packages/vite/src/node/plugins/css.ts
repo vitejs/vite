@@ -2135,17 +2135,13 @@ const makeScssWorker = (
         // eslint-disable-next-line no-restricted-globals
         const path: typeof import('node:path') = require('node:path')
 
+        // thanks to
         // https://github.com/vitejs/vite/pull/7170
         // https://github.com/vitejs/vite/issues/14689#issuecomment-2095118836
-        // TODO: modern-compiler?
-        //   https://github.com/vitejs/vite/issues/14689
-        //   https://github.com/webpack-contrib/sass-loader?tab=readme-ov-file#api
         if (options.api === 'modern') {
           const { fileURLToPath, pathToFileURL }: typeof import('node:url') =
             // eslint-disable-next-line no-restricted-globals
             require('node:url')
-
-          // const fs: typeof import('node:fs') = require('node:fs')
 
           const sassOptions = { ...options } as Sass.StringOptions<'async'>
           sassOptions.url = pathToFileURL(options.filename)
@@ -2164,9 +2160,7 @@ const makeScssWorker = (
             async load(canonicalUrl) {
               const ext = path.extname(canonicalUrl.pathname)
               let syntax: Sass.Syntax = 'scss'
-              if (ext && ext.toLowerCase() === '.scss') {
-                syntax = 'scss'
-              } else if (ext && ext.toLowerCase() === '.sass') {
+              if (ext && ext.toLowerCase() === '.sass') {
                 syntax = 'indented'
               } else if (ext && ext.toLowerCase() === '.css') {
                 syntax = 'css'
@@ -2182,6 +2176,7 @@ const makeScssWorker = (
           sassOptions.importers.push(sassInternalImporter)
 
           const result = await sass.compileStringAsync(data, sassOptions)
+          console.log("[compileStringAsync]", options.filename, result.loadedUrls.map(url => url.href));
           return {
             css: result.css,
             map: result.sourceMap
