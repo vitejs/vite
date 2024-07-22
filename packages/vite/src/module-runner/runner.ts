@@ -162,8 +162,16 @@ export class ModuleRunner {
     return false
   }
 
-  private isCurcularImport(importers: Set<string>, moduleId: string) {
+  private isCurcularImport(
+    importers: Set<string>,
+    moduleId: string,
+    visited = new Set<string>(),
+  ) {
     for (const importer of importers) {
+      if (visited.has(importer)) {
+        continue
+      }
+      visited.add(importer)
       if (importer === moduleId) {
         return true
       }
@@ -172,7 +180,7 @@ export class ModuleRunner {
       ) as Required<ModuleCache>
       if (
         mod.importers.size &&
-        this.isCurcularImport(mod.importers, moduleId)
+        this.isCurcularImport(mod.importers, moduleId, visited)
       ) {
         return true
       }
