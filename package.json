@@ -51,7 +51,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/less": "^3.0.6",
     "@types/micromatch": "^4.0.9",
-    "@types/node": "^20.14.10",
+    "@types/node": "^20.14.11",
     "@types/picomatch": "^3.0.0",
     "@types/stylus": "^0.48.42",
     "@types/ws": "^8.5.11",
@@ -67,7 +67,7 @@
     "lint-staged": "^15.2.7",
     "npm-run-all2": "^6.2.2",
     "picocolors": "^1.0.1",
-    "playwright-chromium": "^1.45.2",
+    "playwright-chromium": "^1.45.3",
     "prettier": "3.3.3",
     "rimraf": "^5.0.9",
     "rollup": "^4.13.0",
@@ -76,9 +76,9 @@
     "tslib": "^2.6.3",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^7.16.1",
+    "typescript-eslint": "^7.17.0",
     "vite": "workspace:*",
-    "vitest": "^2.0.3"
+    "vitest": "^2.0.4"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -97,7 +97,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@9.5.0",
+  "packageManager": "pnpm@9.6.0",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
