@@ -980,7 +980,6 @@ export function onRollupWarning(
       if (
         warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
         dynamicImportWarningIgnoreList.some((msg) =>
-          // @ts-expect-error warning is RollupLog
           warning.message.includes(msg),
         )
       ) {

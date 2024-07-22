@@ -249,7 +249,6 @@ export async function withRetry(
 }
 
 export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
-  type A = Assertion<T>
   return new Proxy(
     {},
     {
@@ -262,9 +261,9 @@ export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
         }
       },
     },
-  ) as {
-    [K in keyof A]: (...params: Parameters<A[K]>) => Promise<ReturnType<A[K]>>
-  }
+  ) as Assertion<T>['resolves']
+  // NOTE: `Assertion<T>['resolves']` has the special "promisify all assertion property functions"
+  // behaviour that we're lending here, which is the same as `PromisifyAssertion<T>` if Vitest exposes it
 }
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void

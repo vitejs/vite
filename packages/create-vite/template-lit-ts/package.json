@@ -12,7 +12,7 @@
     "lit": "^3.1.4"
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
+    "typescript": "^5.5.3",
     "vite": "^5.3.4"
   }
 }

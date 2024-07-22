@@ -116,9 +116,9 @@ const nodeConfig = defineConfig({
         src: 'require("sugarss")',
         replacement: `__require('sugarss')`,
       },
-      'lilconfig/dist/index.js': {
-        pattern: /: require,/g,
-        replacement: `: __require,`,
+      'lilconfig/src/index.js': {
+        pattern: /: require;/g,
+        replacement: `: __require;`,
       },
       // postcss-load-config calls require after register ts-node
       'postcss-load-config/src/index.js': {
