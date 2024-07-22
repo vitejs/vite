@@ -1,6 +1,6 @@
 # Major Changes
 
-These is a a list of major changes in Vite and planned future deprecations/removals.
+This is a list of major changes in Vite and planned future deprecations/removals.
 
 ## Current
 
