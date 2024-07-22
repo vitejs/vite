@@ -878,7 +878,7 @@ This forced frameworks to share state between the `client` build and the `ssr` b
 
 In a future major (Vite 7 or 8), we aim to have complete alignment:
 
-- **During both dev and build:** plugins are shared, opt-in to [per-environment isolation with functional plugins](#per-environment-plugins)
+- **During both dev and build:** plugins are shared, with [per-environment filtering](#per-environment-plugins)
 
 There will also be a single `ResolvedConfig` instance shared during build, allowing for caching at entire app build process level in the same way as we have been doing with `WeakMap<ResolvedConfig, CachedData>` during dev.
 

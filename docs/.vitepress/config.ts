@@ -364,6 +364,10 @@ export default defineConfig({
               text: 'VT004 - ssrLoadModule',
               link: '/changes/vt004',
             },
+            {
+              text: 'VT005 - shared build plugins',
+              link: '/changes/vt004',
+            },
           ],
         },
         {

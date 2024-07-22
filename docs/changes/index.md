@@ -20,6 +20,7 @@ We don't recommend switching to these APIs yet. They are included in Vite to hel
 - [VT002 - `hotUpdate` hook](/changes/vt002)
 - [VT003 - `Environment APIs`](/changes/vt003)
 - [VT004 - `ssrLoadModule`](/changes/vt004)
+- [VT005 - shared build plugins](/changes/vt005)
 
 ## Past
 
