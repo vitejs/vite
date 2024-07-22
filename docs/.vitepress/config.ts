@@ -342,7 +342,7 @@ export default defineConfig({
           link: '/changes/',
         },
         {
-          text: 'Ongoing',
+          text: 'Current',
           items: [],
         },
         {
