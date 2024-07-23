@@ -2277,6 +2277,78 @@ const makeModernScssWorker = (
   return worker
 }
 
+const makeModernCompilerScssWorker = (
+  resolvers: CSSAtImportResolvers,
+  alias: Alias[],
+  _maxWorkers: number | undefined,
+) => {
+  let compiler: Sass.AsyncCompiler | undefined
+
+  const worker: Awaited<ReturnType<typeof makeModernScssWorker>> = {
+    async run(sassPath, data, options) {
+      const { default: sass }: { default: typeof Sass } = await import(sassPath)
+      const path = await import('node:path')
+      const { fileURLToPath, pathToFileURL } = await import('node:url')
+      compiler ??= await sass.initAsyncCompiler()
+
+      const sassOptions = { ...options } as Sass.StringOptions<'async'>
+      sassOptions.url = pathToFileURL(options.filename)
+      sassOptions.sourceMap = options.enableSourcemap
+
+      const internalImporter: Sass.Importer<'async'> = {
+        async canonicalize(url, context) {
+          const importer = context.containingUrl
+            ? fileURLToPath(context.containingUrl)
+            : options.filename
+          const resolved = await resolvers.sass(url, cleanScssBugUrl(importer))
+          return resolved ? pathToFileURL(resolved) : null
+        },
+        async load(canonicalUrl) {
+          const ext = path.extname(canonicalUrl.pathname)
+          let syntax: Sass.Syntax = 'scss'
+          if (ext && ext.toLowerCase() === '.sass') {
+            syntax = 'indented'
+          } else if (ext && ext.toLowerCase() === '.css') {
+            syntax = 'css'
+          }
+          const result = await rebaseUrls(
+            fileURLToPath(canonicalUrl),
+            options.filename,
+            alias,
+            '$',
+            resolvers.sass,
+          )
+          const contents =
+            result.contents ??
+            (await fs.promises.readFile(result.file, 'utf-8'))
+          return { contents, syntax }
+        },
+      }
+      sassOptions.importers = [
+        ...(sassOptions.importers ?? []),
+        internalImporter,
+      ]
+
+      const result = await compiler.compileStringAsync(data, sassOptions)
+      return {
+        css: result.css,
+        map: result.sourceMap ? JSON.stringify(result.sourceMap) : undefined,
+        stats: {
+          includedFiles: result.loadedUrls
+            .filter((url) => url.protocol === 'file:')
+            .map((url) => fileURLToPath(url)),
+        },
+      } satisfies ScssWorkerResult
+    },
+    async stop() {
+      compiler?.dispose()
+      compiler = undefined
+    },
+  }
+
+  return worker
+}
+
 type ScssWorkerResult = {
   css: string
   map?: string | undefined
@@ -2300,9 +2372,11 @@ const scssProcessor = (
       if (!workerMap.has(options.alias)) {
         workerMap.set(
           options.alias,
-          options.api === 'modern'
-            ? makeModernScssWorker(resolvers, options.alias, maxWorkers)
-            : makeScssWorker(resolvers, options.alias, maxWorkers),
+          options.api === 'modern-compiler'
+            ? makeModernCompilerScssWorker(resolvers, options.alias, maxWorkers)
+            : options.api === 'modern'
+              ? makeModernScssWorker(resolvers, options.alias, maxWorkers)
+              : makeScssWorker(resolvers, options.alias, maxWorkers),
         )
       }
       const worker = workerMap.get(options.alias)!
