@@ -153,7 +153,7 @@ export class ModuleRunner {
     return exports
   }
 
-  private isCurcularModule(mod: Required<ModuleCache>) {
+  private isCircularModule(mod: Required<ModuleCache>) {
     for (const importedFile of mod.imports) {
       if (mod.importers.has(importedFile)) {
         return true
@@ -162,8 +162,16 @@ export class ModuleRunner {
     return false
   }
 
-  private isCurcularImport(importers: Set<string>, moduleId: string) {
+  private isCircularImport(
+    importers: Set<string>,
+    moduleId: string,
+    visited = new Set<string>(),
+  ) {
     for (const importer of importers) {
+      if (visited.has(importer)) {
+        continue
+      }
+      visited.add(importer)
       if (importer === moduleId) {
         return true
       }
@@ -172,7 +180,7 @@ export class ModuleRunner {
       ) as Required<ModuleCache>
       if (
         mod.importers.size &&
-        this.isCurcularImport(mod.importers, moduleId)
+        this.isCircularImport(mod.importers, moduleId, visited)
       ) {
         return true
       }
@@ -199,8 +207,8 @@ export class ModuleRunner {
     // check circular dependency
     if (
       callstack.includes(moduleId) ||
-      this.isCurcularModule(mod) ||
-      this.isCurcularImport(importers, moduleId)
+      this.isCircularModule(mod) ||
+      this.isCircularImport(importers, moduleId)
     ) {
       if (mod.exports) return this.processImport(mod.exports, meta, metadata)
     }
