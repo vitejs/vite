@@ -59,7 +59,7 @@ export default defineConfig({
       // },
     },
     preprocessorOptions: {
-      scss: process.env['USE_LEGACY_SCSS']
+      scss: process.env['TEST_SASS_LEGACY']
         ? {
             additionalData: `$injectedColor: orange;`,
             importer: [

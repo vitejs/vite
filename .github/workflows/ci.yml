@@ -126,6 +126,18 @@ jobs:
         if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run test-build
 
+      - name: Test serve (sass legacy)
+        if: steps.changed-files.outputs.only_changed != 'true'
+        run: pnpm run test-serve playground/css
+        env:
+          TEST_SASS_LEGACY: 1
+
+      - name: Test build (sass legacy)
+        if: steps.changed-files.outputs.only_changed != 'true'
+        run: pnpm run test-build playground/css
+        env:
+          TEST_SASS_LEGACY: 1
+
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
