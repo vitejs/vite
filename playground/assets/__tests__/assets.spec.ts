@@ -358,6 +358,12 @@ describe('svg fragments', () => {
         : /svg#icon-heart-view$/,
     )
   })
+
+  test('url with an alias', async () => {
+    expect(await getBg('.icon-clock-alias')).toMatch(
+      /\.svg#icon-clock-view"\)$/,
+    )
+  })
 })
 
 test('Unknown extension assets import', async () => {
