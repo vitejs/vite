@@ -218,4 +218,15 @@ describe('module runner initialization', async () => {
       expect(posix.join(root, './fixtures')).toBe(dirname)
     }
   })
+
+  it(`no maximum call stack error ModuleRunner.isCurcularImport`, async ({
+    runner,
+  }) => {
+    // entry.js ⇔ entry-cyclic.js
+    //   ⇓
+    // action.js
+    const mod = await runner.import('/fixtures/cyclic/entry')
+    await mod.setupCyclic()
+    await mod.importAction('/fixtures/cyclic/action')
+  })
 })
