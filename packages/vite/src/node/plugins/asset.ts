@@ -64,11 +64,11 @@ export function renderAssetUrlInJS(
   code: string,
 ): MagicString | undefined {
   const environment = ctx.environment!
-  const { config } = environment
+  const topLevelConfig = environment.getTopLevelConfig()
 
   const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
     opts.format,
-    config.isWorker,
+    topLevelConfig.isWorker,
   )
 
   let match: RegExpExecArray | null
@@ -94,7 +94,7 @@ export function renderAssetUrlInJS(
       'asset',
       chunk.fileName,
       'js',
-      config,
+      topLevelConfig,
       toRelativeRuntime,
     )
     const replacementString =
@@ -106,7 +106,7 @@ export function renderAssetUrlInJS(
 
   // Replace __VITE_PUBLIC_ASSET__5aA0Ddc0__ with absolute paths
 
-  const publicAssetUrlMap = publicAssetUrlCache.get(config)!
+  const publicAssetUrlMap = publicAssetUrlCache.get(topLevelConfig)!
   publicAssetUrlRE.lastIndex = 0
   while ((match = publicAssetUrlRE.exec(code))) {
     s ||= new MagicString(code)
@@ -117,7 +117,7 @@ export function renderAssetUrlInJS(
       'public',
       chunk.fileName,
       'js',
-      config,
+      topLevelConfig,
       toRelativeRuntime,
     )
     const replacementString =
@@ -263,9 +263,9 @@ export async function fileToUrl(
   ctx: PluginContext,
   id: string,
 ): Promise<string> {
-  const environment = ctx.environment!
-  if (environment.config.command === 'serve') {
-    return fileToDevUrl(id, environment.config)
+  const topLevelConfig = ctx.environment.getTopLevelConfig()
+  if (topLevelConfig.command === 'serve') {
+    return fileToDevUrl(id, topLevelConfig)
   } else {
     return fileToBuiltUrl(ctx, id)
   }
@@ -340,10 +340,10 @@ async function fileToBuiltUrl(
   skipPublicCheck = false,
   forceInline?: boolean,
 ): Promise<string> {
-  const environment = pluginContext.environment!
-  const { config } = environment
-  if (!skipPublicCheck && checkPublicFile(id, config)) {
-    return publicFileToBuiltUrl(id, config)
+  const environment = pluginContext.environment
+  const topLevelConfig = environment.getTopLevelConfig()
+  if (!skipPublicCheck && checkPublicFile(id, topLevelConfig)) {
+    return publicFileToBuiltUrl(id, topLevelConfig)
   }
 
   const cache = assetCache.get(environment)!
@@ -357,8 +357,8 @@ async function fileToBuiltUrl(
 
   let url: string
   if (shouldInline(pluginContext, file, id, content, forceInline)) {
-    if (config.build.lib && isGitLfsPlaceholder(content)) {
-      config.logger.warn(
+    if (topLevelConfig.build.lib && isGitLfsPlaceholder(content)) {
+      environment.logger.warn(
         colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`),
       )
     }
@@ -382,7 +382,7 @@ async function fileToBuiltUrl(
       source: content,
     })
 
-    const originalName = normalizePath(path.relative(config.root, file))
+    const originalName = normalizePath(path.relative(topLevelConfig.root, file))
     generatedAssetsMap.get(environment)!.set(referenceId, { originalName })
 
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
@@ -399,13 +399,13 @@ export async function urlToBuiltUrl(
   forceInline?: boolean,
 ): Promise<string> {
   const environment = pluginContext.environment!
-  const { config } = environment
-  if (checkPublicFile(url, config)) {
-    return publicFileToBuiltUrl(url, config)
+  const topLevelConfig = environment.getTopLevelConfig()
+  if (checkPublicFile(url, topLevelConfig)) {
+    return publicFileToBuiltUrl(url, topLevelConfig)
   }
   const file =
     url[0] === '/'
-      ? path.join(config.root, url)
+      ? path.join(topLevelConfig.root, url)
       : path.join(path.dirname(importer), url)
   return fileToBuiltUrl(
     pluginContext,
@@ -423,10 +423,10 @@ const shouldInline = (
   content: Buffer,
   forceInline: boolean | undefined,
 ): boolean => {
-  const environment = pluginContext.environment!
-  const { config } = environment
+  const environment = pluginContext.environment
+  const topLevelConfig = environment.getTopLevelConfig()
   const { assetsInlineLimit } = environment.options.build
-  if (config.build.lib) return true
+  if (topLevelConfig.build.lib) return true
   if (pluginContext.getModuleInfo(id)?.isEntry) return false
   if (forceInline !== undefined) return forceInline
   let limit: number

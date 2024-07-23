@@ -82,8 +82,8 @@ export function devToScanEnvironment(
     get name() {
       return environment.name
     },
-    get config() {
-      return environment.config
+    getTopLevelConfig() {
+      return environment.getTopLevelConfig()
     },
     get options() {
       return environment.options
@@ -135,15 +135,15 @@ export function scanImports(environment: ScanEnvironment): {
   let entries: string[]
 
   const scanContext = { cancelled: false }
-
+  const topLevelConfig = environment.getTopLevelConfig()
   const esbuildContext: Promise<BuildContext | undefined> = computeEntries(
-    environment.config,
+    topLevelConfig,
   ).then((computedEntries) => {
     entries = computedEntries
 
     if (!entries.length) {
       if (
-        !environment.config.optimizeDeps.entries &&
+        !topLevelConfig.optimizeDeps.entries &&
         !environment.options.dev.optimizeDeps.include
       ) {
         environment.logger.warn(
@@ -299,7 +299,7 @@ async function prepareEsbuildScanner(
   let tsconfigRaw = esbuildOptions.tsconfigRaw
   if (!tsconfigRaw && !esbuildOptions.tsconfig) {
     const tsconfigResult = await loadTsconfigJsonForFile(
-      path.join(environment.config.root, '_dummy.js'),
+      path.join(environment.getTopLevelConfig().root, '_dummy.js'),
     )
     if (tsconfigResult.compilerOptions?.experimentalDecorators) {
       tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
@@ -426,7 +426,7 @@ function esbuildScanPlugin(
     const result = await transformGlobImport(
       transpiledContents,
       id,
-      environment.config.root,
+      environment.getTopLevelConfig().root,
       resolve,
     )
 
@@ -717,7 +717,7 @@ function esbuildScanPlugin(
         if (ext === 'mjs') ext = 'js'
 
         // TODO: Why are we using config.esbuild instead of config.optimizeDeps.esbuildOptions here?
-        const esbuildConfig = environment.config.esbuild
+        const esbuildConfig = environment.getTopLevelConfig().esbuild
         let contents = await fsp.readFile(id, 'utf-8')
         if (ext.endsWith('x') && esbuildConfig && esbuildConfig.jsxInject) {
           contents = esbuildConfig.jsxInject + `\n` + contents

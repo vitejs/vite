@@ -274,7 +274,7 @@ function invalidateModule(
         (m.message ? ` ${m.message}` : ''),
       { timestamp: true },
     )
-    const file = getShortName(mod.file!, environment.config.root)
+    const file = getShortName(mod.file!, environment.getTopLevelConfig().root)
     updateModules(
       environment,
       file,

@@ -431,7 +431,7 @@ export function updateModules(
   timestamp: number,
   afterInvalidation?: boolean,
 ): void {
-  const { hot, config } = environment
+  const { hot } = environment
   const updates: Update[] = []
   const invalidatedModules = new Set<EnvironmentModuleNode>()
   const traversedModules = new Set<EnvironmentModuleNode>()
@@ -486,7 +486,7 @@ export function updateModules(
     )
     hot.send({
       type: 'full-reload',
-      triggeredBy: path.resolve(config.root, file),
+      triggeredBy: path.resolve(environment.getTopLevelConfig().root, file),
     })
     return
   }

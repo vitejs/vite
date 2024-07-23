@@ -283,7 +283,7 @@ class EnvironmentPluginContainer {
   async resolveId(
     rawId: string,
     importer: string | undefined = join(
-      this.environment.config.root,
+      this.environment.getTopLevelConfig().root,
       'index.html',
     ),
     options?: {
@@ -336,7 +336,7 @@ class EnvironmentPluginContainer {
       debugPluginResolve?.(
         timeFrom(pluginResolveStart),
         plugin.name,
-        prettifyUrl(id, this.environment.config.root),
+        prettifyUrl(id, this.environment.getTopLevelConfig().root),
       )
 
       // resolveId() is hookFirst - first non-null result is returned.
@@ -423,7 +423,7 @@ class EnvironmentPluginContainer {
       debugPluginTransform?.(
         timeFrom(start),
         plugin.name,
-        prettifyUrl(id, this.environment.config.root),
+        prettifyUrl(id, this.environment.getTopLevelConfig().root),
       )
       if (isObject(result)) {
         if (result.code !== undefined) {
@@ -599,7 +599,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       ensureWatchedFile(
         this._container.watcher,
         id,
-        this.environment.config.root,
+        this.environment.getTopLevelConfig().root,
       )
   }
 

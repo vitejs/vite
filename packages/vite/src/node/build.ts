@@ -1541,7 +1541,7 @@ export async function createBuilder(
       return config.builder.buildApp(builder)
     },
     async build(environment: BuildEnvironment) {
-      return buildEnvironment(environment.config, environment)
+      return buildEnvironment(environment.getTopLevelConfig(), environment)
     },
   }
 

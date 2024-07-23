@@ -5,9 +5,18 @@ import type { Plugin } from './plugin'
 
 export class PartialEnvironment {
   name: string
-  config: ResolvedConfig
+  getTopLevelConfig(): ResolvedConfig {
+    return this._topLevelConfig
+  }
+  // config: ResolvedConfig
+
   options: ResolvedEnvironmentOptions
   logger: Logger
+
+  /**
+   * @internal
+   */
+  _topLevelConfig: ResolvedConfig
 
   constructor(
     name: string,
@@ -15,7 +24,7 @@ export class PartialEnvironment {
     options: ResolvedEnvironmentOptions = config.environments[name],
   ) {
     this.name = name
-    this.config = config
+    this._topLevelConfig = config
     this.options = options
     const environment = colors.dim(`(${this.name})`)
     const colorIndex =

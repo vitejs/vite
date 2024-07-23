@@ -325,8 +325,10 @@ type FalsyPlugin = false | null | undefined
 export type PluginOption = Thenable<Plugin | FalsyPlugin | PluginOption[]>
 
 export function resolveEnvironmentPlugins(environment: Environment): Plugin[] {
-  return environment.config.plugins.filter(
-    (plugin) =>
-      !plugin.applyToEnvironment || plugin.applyToEnvironment(environment),
-  )
+  return environment
+    .getTopLevelConfig()
+    .plugins.filter(
+      (plugin) =>
+        !plugin.applyToEnvironment || plugin.applyToEnvironment(environment),
+    )
 }

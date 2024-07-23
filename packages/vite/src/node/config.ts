@@ -1219,7 +1219,7 @@ export async function resolveConfig(
     },
     future: config.future,
 
-    // Backward compatibility, users should use environment.config.dev.optimizeDeps
+    // Backward compatibility, users should use environment.options.dev.optimizeDeps
     optimizeDeps: backwardCompatibleOptimizeDeps,
     ssr,
 

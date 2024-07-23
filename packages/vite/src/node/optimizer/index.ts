@@ -346,7 +346,7 @@ let firstLoadCachedDepOptimizationMetadata = true
  */
 export async function loadCachedDepOptimizationMetadata(
   environment: Environment,
-  force = environment.config.optimizeDeps?.force ?? false,
+  force = environment.getTopLevelConfig().optimizeDeps?.force ?? false,
   asCommand = false,
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? environment.logger.info : debug
@@ -354,7 +354,10 @@ export async function loadCachedDepOptimizationMetadata(
   if (firstLoadCachedDepOptimizationMetadata) {
     firstLoadCachedDepOptimizationMetadata = false
     // Fire up a clean up of stale processing deps dirs if older process exited early
-    setTimeout(() => cleanupDepsCacheStaleDirs(environment.config), 0)
+    setTimeout(
+      () => cleanupDepsCacheStaleDirs(environment.getTopLevelConfig()),
+      0,
+    )
   }
 
   const depsCacheDir = getDepsCacheDir(environment)
@@ -759,7 +762,7 @@ async function prepareEsbuildOptimizerRun(
 
   const define = {
     'process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || environment.config.mode,
+      process.env.NODE_ENV || environment.getTopLevelConfig().mode,
     ),
   }
 
@@ -829,7 +832,7 @@ export async function addManuallyIncludedOptimizeDeps(
     for (let i = 0; i < includes.length; i++) {
       const id = includes[i]
       if (glob.isDynamicPattern(id)) {
-        const globIds = expandGlobIds(id, environment.config)
+        const globIds = expandGlobIds(id, environment.getTopLevelConfig())
         includes.splice(i, 1, ...globIds)
         i += globIds.length - 1
       }
@@ -906,7 +909,9 @@ function getTempSuffix() {
 }
 
 function getDepsCacheDirPrefix(environment: Environment): string {
-  return normalizePath(path.resolve(environment.config.cacheDir, 'deps'))
+  return normalizePath(
+    path.resolve(environment.getTopLevelConfig().cacheDir, 'deps'),
+  )
 }
 
 export function createIsOptimizedDepFile(
@@ -919,7 +924,7 @@ export function createIsOptimizedDepFile(
 export function createIsOptimizedDepUrl(
   environment: Environment,
 ): (url: string) => boolean {
-  const { root } = environment.config
+  const { root } = environment.getTopLevelConfig()
   const depsCacheDir = getDepsCacheDirPrefix(environment)
 
   // determine the url prefix of files inside cache directory
@@ -1158,14 +1163,14 @@ function getConfigHash(environment: Environment): string {
   // Take config into account
   // only a subset of config options that can affect dep optimization
   const { optimizeDeps } = environment.options.dev
-  const { config } = environment
+  const topLevelConfig = environment.getTopLevelConfig()
   const content = JSON.stringify(
     {
-      mode: process.env.NODE_ENV || config.mode,
-      root: config.root,
-      resolve: config.resolve,
-      assetsInclude: config.assetsInclude,
-      plugins: config.plugins.map((p) => p.name),
+      mode: process.env.NODE_ENV || topLevelConfig.mode,
+      root: topLevelConfig.root,
+      resolve: topLevelConfig.resolve,
+      assetsInclude: topLevelConfig.assetsInclude,
+      plugins: topLevelConfig.plugins.map((p) => p.name),
       optimizeDeps: {
         include: optimizeDeps?.include
           ? unique(optimizeDeps.include).sort()
@@ -1190,7 +1195,10 @@ function getConfigHash(environment: Environment): string {
 }
 
 function getLockfileHash(environment: Environment): string {
-  const lockfilePath = lookupFile(environment.config.root, lockfileNames)
+  const lockfilePath = lookupFile(
+    environment.getTopLevelConfig().root,
+    lockfileNames,
+  )
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const lockfileName = path.basename(lockfilePath)

@@ -52,7 +52,7 @@ export function esbuildDepPlugin(
   qualified: Record<string, string>,
   external: string[],
 ): Plugin {
-  const config = environment.config
+  const topLevelConfig = environment.getTopLevelConfig()
   const { extensions } = environment.options.dev.optimizeDeps
 
   // remove optimizable extensions from `externalTypes` list
@@ -66,14 +66,14 @@ export function esbuildDepPlugin(
   const cjsPackageCache: PackageCache = new Map()
 
   // default resolver which prefers ESM
-  const _resolve = createIdResolver(config, {
+  const _resolve = createIdResolver(topLevelConfig, {
     asSrc: false,
     scan: true,
     packageCache: esmPackageCache,
   })
 
   // cjs resolver that prefers Node
-  const _resolveRequire = createIdResolver(config, {
+  const _resolveRequire = createIdResolver(topLevelConfig, {
     asSrc: false,
     isRequire: true,
     scan: true,
@@ -235,7 +235,7 @@ export function esbuildDepPlugin(
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
         ({ path }) => {
-          if (config.isProduction) {
+          if (topLevelConfig.isProduction) {
             return {
               contents: 'module.exports = {}',
             }
@@ -278,7 +278,7 @@ module.exports = Object.create(new Proxy({}, {
       build.onLoad(
         { filter: /.*/, namespace: 'optional-peer-dep' },
         ({ path }) => {
-          if (config.isProduction) {
+          if (topLevelConfig.isProduction) {
             return {
               contents: 'module.exports = {}',
             }

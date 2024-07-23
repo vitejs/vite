@@ -215,7 +215,9 @@ async function getCachedTransformResult(
   module: EnvironmentModuleNode,
   timestamp: number,
 ) {
-  const prettyUrl = debugCache ? prettifyUrl(url, environment.config.root) : ''
+  const prettyUrl = debugCache
+    ? prettifyUrl(url, environment.getTopLevelConfig().root)
+    : ''
 
   // tries to handle soft invalidation of the module if available,
   // returns a boolean true is successful, or false if no handling is needed
@@ -244,10 +246,10 @@ async function loadAndTransform(
   mod?: EnvironmentModuleNode,
   resolved?: PartialResolvedId,
 ) {
-  const { config, pluginContainer } = environment
-  const { logger } = config
+  const topLevelConfig = environment.getTopLevelConfig()
+  const { pluginContainer, logger } = environment
   const prettyUrl =
-    debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
+    debugLoad || debugTransform ? prettifyUrl(url, topLevelConfig.root) : ''
 
   const moduleGraph = environment.moduleGraph
 
@@ -274,7 +276,7 @@ async function loadAndTransform(
     // like /service-worker.js or /api/users
     if (
       environment.options.nodeCompatible ||
-      isFileLoadingAllowed(config, file)
+      isFileLoadingAllowed(topLevelConfig, file)
     ) {
       try {
         code = await fsp.readFile(file, 'utf-8')
@@ -288,7 +290,7 @@ async function loadAndTransform(
         }
       }
       if (code != null && environment.watcher) {
-        ensureWatchedFile(environment.watcher, file, config.root)
+        ensureWatchedFile(environment.watcher, file, topLevelConfig.root)
       }
     }
     if (code) {
@@ -314,8 +316,11 @@ async function loadAndTransform(
     }
   }
   if (code == null) {
-    const isPublicFile = checkPublicFile(url, config)
-    let publicDirName = path.relative(config.root, config.publicDir)
+    const isPublicFile = checkPublicFile(url, topLevelConfig)
+    let publicDirName = path.relative(
+      topLevelConfig.root,
+      topLevelConfig.publicDir,
+    )
     if (publicDirName[0] !== '.') publicDirName = '/' + publicDirName
     const msg = isPublicFile
       ? `This file is in ${publicDirName} and will be copied as-is during ` +
@@ -379,7 +384,7 @@ async function loadAndTransform(
     applySourcemapIgnoreList(
       normalizedMap,
       sourcemapPath,
-      config.server.sourcemapIgnoreList,
+      topLevelConfig.server.sourcemapIgnoreList,
       logger,
     )
 
@@ -416,7 +421,7 @@ async function loadAndTransform(
         normalizedMap,
         url,
         originalCode,
-        environment.config,
+        environment.getTopLevelConfig(),
       )
     : ({
         code,
@@ -489,7 +494,7 @@ async function handleModuleSoftInvalidation(
       const hmrUrl = unwrapId(
         stripBase(
           removeImportQuery(urlWithoutTimestamp),
-          environment.config.base,
+          environment.getTopLevelConfig().base,
         ),
       )
       for (const importedMod of mod.importedModules) {

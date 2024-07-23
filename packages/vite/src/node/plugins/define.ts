@@ -164,7 +164,8 @@ export async function replaceDefine(
     define = { ...define, 'import.meta.env': marker }
   }
 
-  const esbuildOptions = environment.config.esbuild || {}
+  const topLevelConfig = environment.getTopLevelConfig()
+  const esbuildOptions = topLevelConfig.esbuild || {}
 
   const result = await transform(code, {
     loader: 'js',
@@ -173,7 +174,7 @@ export async function replaceDefine(
     define,
     sourcefile: id,
     sourcemap:
-      environment.config.command === 'build'
+      topLevelConfig.command === 'build'
         ? !!environment.options.build.sourcemap
         : true,
   })
