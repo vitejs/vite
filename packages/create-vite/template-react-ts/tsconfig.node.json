@@ -1,5 +1,11 @@
 {
   "compilerOptions": {
+    /* Composite required for references */
+    "composite": true,
+    "emitDeclarationOnly": true,
+    "tsBuildInfoFile": "node_modules/.cache/tsconfig.node.tsbuildinfo",
+
+    /* Target node 18 */
     "target": "ES2022",
     "lib": ["ES2023"],
     "module": "ESNext",
@@ -10,7 +16,6 @@
     "allowImportingTsExtensions": true,
     "moduleDetection": "force",
     "isolatedModules": true,
-    "noEmit": true,
 
     /* Linting */
     "strict": true,
