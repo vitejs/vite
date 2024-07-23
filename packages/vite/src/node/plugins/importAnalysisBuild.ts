@@ -26,7 +26,7 @@ type FileDep = {
   runtime: boolean
 }
 
-type VitePreloadErrorEvent = Event & { payload?: Error }
+type VitePreloadErrorEvent = Event & { payload: Error }
 
 /**
  * A flag for injected helpers. This flag will be set to `false` if the output
@@ -147,9 +147,9 @@ function preload(
   return promise
     .then(() => baseModule())
     .catch((err) => {
-      const e: VitePreloadErrorEvent = new Event('vite:preloadError', {
+      const e = new Event('vite:preloadError', {
         cancelable: true,
-      })
+      }) as VitePreloadErrorEvent
       e.payload = err
       window.dispatchEvent(e)
       if (!e.defaultPrevented) {
