@@ -136,6 +136,15 @@ beforeAll(async (s) => {
       const testCustomRoot = resolve(testDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : testDir
 
+      // separate rootDir for variant
+      const variantName = path.basename(dirname(testPath))
+      if (variantName !== '__tests__') {
+        const variantTestDir = testDir + '__' + variantName
+        if (fs.existsSync(variantTestDir)) {
+          rootDir = testDir = variantTestDir
+        }
+      }
+
       const testCustomServe = [
         resolve(dirname(testPath), 'serve.ts'),
         resolve(dirname(testPath), 'serve.js'),

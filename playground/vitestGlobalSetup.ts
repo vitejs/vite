@@ -40,6 +40,18 @@ export async function setup({ provide }: GlobalSetupContext): Promise<void> {
         throw error
       }
     })
+  // also setup dedicated copy for "variant" tests
+  await fs.copy(
+    path.resolve(__dirname, '../playground/css'),
+    path.resolve(tempDir, 'css__sass-modern'),
+    {
+      dereference: false,
+      filter(file) {
+        file = file.replace(/\\/g, '/')
+        return !file.includes('__tests__') && !/dist(?:\/|$)/.test(file)
+      },
+    },
+  )
 }
 
 export async function teardown(): Promise<void> {
