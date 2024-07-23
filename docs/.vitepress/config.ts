@@ -349,24 +349,24 @@ export default defineConfig({
           text: 'Future',
           items: [
             {
-              text: 'VT001 - this.environment',
-              link: '/changes/vt001',
+              text: 'this.environment in Hooks',
+              link: '/changes/this-environment-in-hooks',
             },
             {
-              text: 'VT002 - hotUpdate hook',
-              link: '/changes/vt002',
+              text: 'HMR hotUpdate Plugin Hook',
+              link: '/changes/hotupdate-hook',
             },
             {
-              text: 'VT003 - Dev Server APIs',
-              link: '/changes/vt003',
+              text: 'Move to per-environment APIs',
+              link: '/changes/per-environment-apis',
             },
             {
-              text: 'VT004 - ssrLoadModule',
-              link: '/changes/vt004',
+              text: 'SSR using ModuleRunner API',
+              link: '/changes/ssr-using-modulerunner',
             },
             {
-              text: 'VT005 - shared build plugins',
-              link: '/changes/vt004',
+              text: 'Shared plugins during build',
+              link: '/changes/shared-plugins-during-build',
             },
           ],
         },

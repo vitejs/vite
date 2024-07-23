@@ -16,14 +16,14 @@ export interface FutureDeprecationWarningsOptions {
 }
 
 const deprecationCode = {
-  pluginHookSsrArgument: 'VT001',
-  pluginHookHandleHotUpdate: 'VT002',
+  pluginHookSsrArgument: 'changes/this-environment-in-hooks',
+  pluginHookHandleHotUpdate: 'changes/hotupdate-hook',
 
-  serverModuleGraph: 'VT003',
-  serverHot: 'VT003',
-  serverTransformRequest: 'VT003',
+  serverModuleGraph: 'changes/per-environment-apis',
+  serverHot: 'changes/per-environment-apis',
+  serverTransformRequest: 'changes/per-environment-apis',
 
-  ssrLoadModule: 'VT004',
+  ssrLoadModule: 'changes/ssr-using-modulerunner',
 } satisfies Record<keyof FutureDeprecationWarningsOptions, string>
 
 const deprecationMessages = {
@@ -64,13 +64,13 @@ export function warnFutureDeprecation(
   )
     return
 
-  let msg = `[vite future] [${deprecationCode[type]}] ${deprecationMessages[type]}`
+  let msg = `[vite future] ${deprecationMessages[type]}`
   if (extraMessage) {
     msg += ` ${extraMessage}`
   }
   msg = colors.yellow(msg)
 
-  const docs = `${docsURL}/deprecations/${deprecationCode[type].toLowerCase()}`
+  const docs = `${docsURL}/changes/${deprecationCode[type].toLowerCase()}`
   msg +=
     colors.gray(`\n  ${stacktrace ? '├' : '└'}─── `) +
     colors.underline(docs) +
