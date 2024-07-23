@@ -563,12 +563,7 @@ export async function toAbsoluteGlob(
       custom: { 'vite:import-glob': { isSubImportsPattern } },
     })) || glob,
   )
-  // If matching a subpath import, the returned path is relative and doesn't look absolute.
-  // If it matches an alias that starts with `#`, the path will be absolute.
-  if (isSubImportsPattern && !isAbsolute(resolved)) {
-    return join(root, resolved)
-  }
-  if (isSubImportsPattern || isAbsolute(resolved)) {
+  if (isAbsolute(resolved)) {
     return pre + globSafeResolvedPath(resolved, glob)
   }
 
