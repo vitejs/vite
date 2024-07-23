@@ -45,6 +45,10 @@ export async function setup({ provide }: GlobalSetupContext): Promise<void> {
     path.resolve(tempDir, 'css'),
     path.resolve(tempDir, 'css__sass-modern'),
   )
+  await fs.copy(
+    path.resolve(tempDir, 'css'),
+    path.resolve(tempDir, 'css__sass-modern-compiler'),
+  )
 }
 
 export async function teardown(): Promise<void> {
