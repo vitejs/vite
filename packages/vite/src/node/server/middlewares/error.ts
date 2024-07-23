@@ -84,7 +84,7 @@ export function errorMiddleware(
                 '\\u003c',
               )}
               try {
-                const { ErrorOverlay } = await import(${path.posix.join(server.config.base, CLIENT_PUBLIC_PATH)})
+                const { ErrorOverlay } = await import(${JSON.stringify(path.posix.join(server.config.base, CLIENT_PUBLIC_PATH))})
                 document.body.appendChild(new ErrorOverlay(error))
               } catch {
                 const h = (tag, text) => {
