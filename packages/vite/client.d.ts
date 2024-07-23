@@ -260,6 +260,6 @@ declare interface Window {
   removeEventListener(
     type: 'vite:preloadError',
     listener: (this: Window, ev: VitePreloadErrorEvent) => unknown,
-    options?: boolean | AddEventListenerOptions,
+    options?: boolean | EventListenerOptions,
   ): void
 }
