@@ -247,7 +247,7 @@ declare module '*?inline' {
   export default src
 }
 
-declare interface VitePreloadErrorEvent extends Error {
+declare interface VitePreloadErrorEvent extends Event {
   payload: Error
 }
 
