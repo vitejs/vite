@@ -59,37 +59,18 @@ export default defineConfig({
       // },
     },
     preprocessorOptions: {
-      scss: process.env['TEST_SASS_LEGACY']
-        ? {
-            additionalData: `$injectedColor: orange;`,
-            importer: [
-              function (url) {
-                return url === 'virtual-dep' ? { contents: '' } : null
-              },
-              function (url) {
-                return url.endsWith('.wxss') ? { contents: '' } : null
-              },
-            ],
-          }
-        : {
-            api: 'modern',
-            additionalData: `$injectedColor: orange;`,
-            importers: [
-              {
-                canonicalize(url) {
-                  return url === 'virtual-dep'
-                    ? new URL('custom-importer:virtual-dep')
-                    : null
-                },
-                load() {
-                  return {
-                    contents: ``,
-                    syntax: 'scss',
-                  }
-                },
-              },
-            ],
+      scss: {
+        additionalData: `$injectedColor: orange;`,
+        importer: [
+          function (url) {
+            console.log('[importer]', { url })
+            return url === 'virtual-dep' ? { contents: '' } : null
           },
+          function (url) {
+            return url.endsWith('.wxss') ? { contents: '' } : null
+          },
+        ],
+      },
       styl: {
         additionalData: `$injectedColor ?= orange`,
         imports: [
