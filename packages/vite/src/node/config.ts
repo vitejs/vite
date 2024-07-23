@@ -605,7 +605,7 @@ export async function resolveConfig(
     ? !isBuild || config.build?.ssr
       ? '/'
       : './'
-    : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
+    : (resolveBaseUrl(config.base, isBuild, logger) ?? '/')
 
   const resolvedBuildOptions = resolveBuildOptions(
     config.build,
