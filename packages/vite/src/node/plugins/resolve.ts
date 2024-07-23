@@ -203,7 +203,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         id = resolvedImports
 
         if (resolveOpts.custom?.['vite:import-glob']?.isSubImportsPattern) {
-          return id
+          return normalizePath(path.join(root, id))
         }
       }
 

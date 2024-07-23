@@ -21,20 +21,16 @@
 <pre class="escape-relative"></pre>
 <h2>Escape alias glob</h2>
 <pre class="escape-alias"></pre>
-<h2>Sub imports</h2>
-<pre class="sub-imports"></pre>
+<h2>Subpath imports</h2>
+<pre class="subpath-imports"></pre>
+<h2>#alias imports</h2>
+<pre class="hash-alias-imports"></pre>
 <h2>In package</h2>
 <pre class="in-package"></pre>
 
 <script type="module" src="./dir/index.js"></script>
 <script type="module">
   function useImports(modules, selector) {
-    for (const path in modules) {
-      modules[path]().then((mod) => {
-        console.log(path, mod)
-      })
-    }
-
     const keys = Object.keys(modules)
     Promise.all(keys.map((key) => modules[key]())).then((mods) => {
       const res = {}
@@ -137,7 +133,6 @@
   const globs = import.meta.glob('/escape/**/glob.js', {
     eager: true,
   })
-  console.log(globs)
   globalThis.globs = globs
   const relative = Object.entries(globs)
     .filter(([_, mod]) => Object.keys(mod?.relative ?? {}).length === 1)
@@ -152,9 +147,19 @@
 </script>
 
 <script type="module">
-  const subImports = import.meta.glob('#imports/*', { eager: true })
+  const subpathImports = import.meta.glob('#imports/*', { eager: true })
+  document.querySelector('.subpath-imports').textContent = Object.values(
+    subpathImports,
+  )
+    .map((mod) => mod.default)
+    .join(' ')
+</script>
 
-  document.querySelector('.sub-imports').textContent = Object.values(subImports)
+<script type="module">
+  const hashAliasImports = import.meta.glob('#alias/*', { eager: true })
+  document.querySelector('.hash-alias-imports').textContent = Object.values(
+    hashAliasImports,
+  )
     .map((mod) => mod.default)
     .join(' ')
 </script>
