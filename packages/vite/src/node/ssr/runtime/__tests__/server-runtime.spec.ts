@@ -227,6 +227,7 @@ describe('module runner initialization', async () => {
     // action.js
     const mod = await runner.import('/fixtures/cyclic/entry')
     await mod.setupCyclic()
-    await mod.importAction('/fixtures/cyclic/action')
+    const action = await mod.importAction('/fixtures/cyclic/action')
+    expect(action).toBeDefined()
   })
 })

@@ -4,6 +4,5 @@ export async function setupCyclic() {
 }
 
 export async function importAction(id) {
-	const action = await import(/* @vite-ignore */ id);
-	console.log(action);
+	return await import(/* @vite-ignore */ id);
 }
