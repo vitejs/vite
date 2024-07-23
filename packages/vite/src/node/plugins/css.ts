@@ -2099,26 +2099,6 @@ const makeScssWorker = (
     }
   }
 
-  const modernInternalImporter = async (
-    url: string,
-    importer: string,
-  ): Promise<string | null> => {
-    importer = cleanScssBugUrl(importer)
-    const resolved = await resolvers.sass(url, importer)
-    return resolved ?? null
-  }
-
-  const modernInternalLoad = async (file: string, rootFile: string) => {
-    const result = await rebaseUrls(file, rootFile, alias, '$', resolvers.sass)
-    return result.contents ?? (await fs.promises.readFile(result.file, 'utf-8'))
-  }
-
-  type ScssWorkerResult = {
-    css: string
-    map?: string | undefined
-    stats: Pick<Sass.LegacyResult['stats'], 'includedFiles'>
-  }
-
   const worker = new WorkerWithFallback(
     () =>
       async (
@@ -2131,57 +2111,6 @@ const makeScssWorker = (
         const sass: typeof Sass = require(sassPath)
         // eslint-disable-next-line no-restricted-globals
         const path: typeof import('node:path') = require('node:path')
-
-        if (options.api === 'modern') {
-          const { fileURLToPath, pathToFileURL }: typeof import('node:url') =
-            // eslint-disable-next-line no-restricted-globals
-            require('node:url')
-
-          const sassOptions = { ...options } as Sass.StringOptions<'async'>
-          sassOptions.url = pathToFileURL(options.filename)
-          sassOptions.sourceMap = options.enableSourcemap
-
-          const sassInternalImporter: Sass.Importer<'async'> = {
-            async canonicalize(url, context) {
-              const importer = context.containingUrl
-                ? fileURLToPath(context.containingUrl)
-                : options.filename
-              const resolved = await modernInternalImporter(url, importer)
-              return resolved ? pathToFileURL(resolved) : null
-            },
-            async load(canonicalUrl) {
-              const ext = path.extname(canonicalUrl.pathname)
-              let syntax: Sass.Syntax = 'scss'
-              if (ext && ext.toLowerCase() === '.sass') {
-                syntax = 'indented'
-              } else if (ext && ext.toLowerCase() === '.css') {
-                syntax = 'css'
-              }
-              const contents = await modernInternalLoad(
-                fileURLToPath(canonicalUrl),
-                options.filename,
-              )
-              return { contents, syntax }
-            },
-          }
-          sassOptions.importers = [
-            ...(sassOptions.importers ?? []),
-            sassInternalImporter,
-          ]
-
-          const result = await sass.compileStringAsync(data, sassOptions)
-          return {
-            css: result.css,
-            map: result.sourceMap
-              ? JSON.stringify(result.sourceMap)
-              : undefined,
-            stats: {
-              includedFiles: result.loadedUrls
-                .filter((url) => url.protocol === 'file:')
-                .map((url) => fileURLToPath(url)),
-            },
-          } satisfies ScssWorkerResult
-        }
 
         // NOTE: `sass` always runs it's own importer first, and only falls back to
         // the `importer` option when it can't resolve a path
@@ -2230,19 +2159,12 @@ const makeScssWorker = (
         })
       },
     {
-      parentFunctions: {
-        internalImporter,
-        modernInternalImporter,
-        modernInternalLoad,
-      },
+      parentFunctions: { internalImporter },
       shouldUseFake(_sassPath, _data, options) {
         // functions and importer is a function and is not serializable
         // in that case, fallback to running in main thread
         return !!(
           (options.functions && Object.keys(options.functions).length > 0) ||
-          (options.importers &&
-            (!Array.isArray(options.importers) ||
-              options.importers.length > 0)) ||
           (options.importer &&
             (!Array.isArray(options.importer) || options.importer.length > 0))
         )
