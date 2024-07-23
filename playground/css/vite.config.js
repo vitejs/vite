@@ -63,7 +63,6 @@ export default defineConfig({
         additionalData: `$injectedColor: orange;`,
         importer: [
           function (url) {
-            console.log('[importer]', { url })
             return url === 'virtual-dep' ? { contents: '' } : null
           },
           function (url) {
