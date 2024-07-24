@@ -1064,9 +1064,8 @@ export async function loadConfigFromFile(
 }
 
 function getCurrentNodeTarget(): string {
-  // `process.versions.node` is usually in the form of `22.2.0`, but nightly builds are in the form of `23.0.0-nightly202405252079a7aec4`.
-  const version = process.versions?.node?.match(/^\d+\.\d+\.\d+/)?.[0] ?? '18'
-  return `node${version}`
+  // esbuild accepts node targets in the form of `nodeX.Y.Z` and `nodeX.Y.Z-nightly1234`
+  return `node${process.versions.node}`
 }
 
 async function bundleConfigFile(
