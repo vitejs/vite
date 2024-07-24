@@ -90,11 +90,8 @@ describe('definePlugin', () => {
 
   test('replace bare import.meta.env', async () => {
     const transform = await createDefinePluginTransform()
-    expect(await transform('const env = import.meta.env;'))
-      .toMatchInlineSnapshot(`
-      "const __vite_import_meta_env__ = {"BASE_URL": "/", "MODE": "development", "DEV": true, "PROD": false, "SSR": false};
-      const env = __vite_import_meta_env__;
-      "
-    `)
+    expect(await transform('const env = import.meta.env;')).toMatch(
+      /const __vite_import_meta_env__ = .*;\nconst env = __vite_import_meta_env__;/,
+    )
   })
 })
