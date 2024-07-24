@@ -329,7 +329,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
-        const { modulePreload } = this.environment.options.build
+        const { modulePreload } = this.environment.config.build
 
         id = normalizePath(id)
         const relativeUrlPath = path.posix.relative(config.root, id)
@@ -691,7 +691,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
-      const { modulePreload } = this.environment.options.build
+      const { modulePreload } = this.environment.config.build
 
       const analyzedChunk: Map<OutputChunk, number> = new Map()
       const inlineEntryChunk = new Set<string>()
@@ -863,7 +863,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         // inject css link when cssCodeSplit is false
-        if (this.environment?.options.build.cssCodeSplit === false) {
+        if (this.environment.config.build.cssCodeSplit === false) {
           const cssChunk = Object.values(bundle).find(
             (chunk) => chunk.type === 'asset' && chunk.name === 'style.css',
           ) as OutputAsset | undefined

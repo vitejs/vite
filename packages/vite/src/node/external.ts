@@ -53,23 +53,23 @@ export function createIsConfiguredAsExternal(
   environment: PartialEnvironment,
 ): (id: string, importer?: string) => boolean {
   const topLevelConfig = environment.getTopLevelConfig()
-  const { options } = environment
-  const { external, noExternal } = options.resolve
+  const { resolve, webCompatible, nodeCompatible } = environment.config
+  const { external, noExternal } = resolve
   const noExternalFilter =
     typeof noExternal !== 'boolean' &&
     !(Array.isArray(noExternal) && noExternal.length === 0) &&
     createFilter(undefined, noExternal, { resolve: false })
 
-  const targetConditions = options.resolve?.externalConditions || []
+  const targetConditions = resolve.externalConditions || []
 
   const resolveOptions: InternalResolveOptions = {
-    ...options.resolve,
+    ...resolve,
     root: topLevelConfig.root,
     isProduction: false,
     isBuild: true,
     conditions: targetConditions,
-    webCompatible: options.webCompatible,
-    nodeCompatible: options.nodeCompatible,
+    webCompatible,
+    nodeCompatible,
   }
 
   const isExternalizable = (

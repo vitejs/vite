@@ -73,10 +73,10 @@ export function transformRequest(
   // Backward compatibility when only `ssr` is passed
   if (!options?.ssr) {
     // Backward compatibility
-    options = { ...options, ssr: environment.options.ssr }
+    options = { ...options, ssr: environment.config.consumer === 'server' }
   }
 
-  if (environment._closing && environment?.options.dev.recoverable)
+  if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
 
   const cacheKey = `${options.html ? 'html:' : ''}${url}`
@@ -275,7 +275,7 @@ async function loadAndTransform(
     // only try the fallback if access is allowed, skip for out of root url
     // like /service-worker.js or /api/users
     if (
-      environment.options.nodeCompatible ||
+      environment.config.nodeCompatible ||
       isFileLoadingAllowed(topLevelConfig, file)
     ) {
       try {
@@ -340,7 +340,7 @@ async function loadAndTransform(
     throw err
   }
 
-  if (environment._closing && environment.options.dev.recoverable)
+  if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
 
   // ensure module in graph after successful load
@@ -412,10 +412,10 @@ async function loadAndTransform(
     }
   }
 
-  if (environment._closing && environment.options.dev.recoverable)
+  if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
 
-  const result = environment.options.dev.moduleRunnerTransform
+  const result = environment.config.dev.moduleRunnerTransform
     ? await ssrTransform(
         code,
         normalizedMap,
@@ -466,7 +466,7 @@ async function handleModuleSoftInvalidation(
   let result: TransformResult
   // No transformation is needed if it's disabled manually
   // This is primarily for backwards compatible SSR
-  if (!environment.options.injectInvalidationTimestamp) {
+  if (!environment.config.injectInvalidationTimestamp) {
     result = transformResult
   }
   // We need to transform each imports with new timestamps if available
@@ -509,7 +509,7 @@ async function handleModuleSoftInvalidation(
           s.overwrite(start, end, replacedUrl)
         }
 
-        if (imp.d === -1 && environment.options.dev.preTransformRequests) {
+        if (imp.d === -1 && environment.config.dev.preTransformRequests) {
           // pre-transform known direct imports
           environment.warmupRequest(hmrUrl)
         }

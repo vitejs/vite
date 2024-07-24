@@ -217,7 +217,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     async transform(source, importer) {
       const environment = this.environment as DevEnvironment
-      const ssr = environment.options.ssr
+      const ssr = environment.config.consumer === 'server'
       const moduleGraph = environment.moduleGraph
 
       if (canSkipImportAnalysis(importer)) {
@@ -361,7 +361,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         // make the URL browser-valid
-        if (environment.options.injectInvalidationTimestamp) {
+        if (environment.config.injectInvalidationTimestamp) {
           // mark non-js/css imports with `?import`
           if (isExplicitImportRequired(url)) {
             url = injectQuery(url, 'import')
@@ -624,7 +624,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (
               !isDynamicImport &&
               isLocalImport &&
-              environment.options.dev.preTransformRequests
+              environment.config.dev.preTransformRequests
             ) {
               // pre-transform known direct imports
               // These requests will also be registered in transformRequest to be awaited

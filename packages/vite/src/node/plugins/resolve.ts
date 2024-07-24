@@ -163,7 +163,7 @@ interface ResolvePluginOptions {
   idOnly?: boolean
 
   /**
-   * @deprecated environment.options are used instead
+   * @deprecated environment.config are used instead
    */
   ssrConfig?: SSROptions
 }
@@ -231,7 +231,7 @@ export function resolvePlugin(
 
       const environmentName = this.environment.name ?? (ssr ? 'ssr' : 'client')
       const currentEnvironmentOptions =
-        this.environment?.options || environmentsOptions?.[environmentName]
+        this.environment?.config || environmentsOptions?.[environmentName]
       const environmentResolveOptions = currentEnvironmentOptions?.resolve
       if (!environmentResolveOptions) {
         throw new Error(
@@ -247,7 +247,7 @@ export function resolvePlugin(
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
 
-      const depsOptimizerOptions = this.environment.options.dev.optimizeDeps
+      const depsOptimizerOptions = this.environment.config.dev.optimizeDeps
 
       const resolvedImports = resolveSubpathImports(id, importer, options)
       if (resolvedImports) {

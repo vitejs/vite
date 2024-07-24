@@ -172,7 +172,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
 
   const getFilter = usePerEnvironmentState((environment: Environment) => {
     const { include, exclude } =
-      environment.options.build.dynamicImportVarsOptions
+      environment.config.build.dynamicImportVarsOptions
     return createFilter(include, exclude)
   })
 
@@ -246,7 +246,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
             config.root,
           )
         } catch (error) {
-          if (environment.options.build.dynamicImportVarsOptions.warnOnError) {
+          if (environment.config.build.dynamicImportVarsOptions.warnOnError) {
             this.warn(error)
           } else {
             this.error(error)

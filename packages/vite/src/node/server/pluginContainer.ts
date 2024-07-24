@@ -224,7 +224,7 @@ class EnvironmentPluginContainer {
 
   async resolveRollupOptions(): Promise<InputOptions> {
     if (!this._resolvedRollupOptions) {
-      let options = this.environment.options.build.rollupOptions
+      let options = this.environment.config.build.rollupOptions
       for (const optionsHook of this.getSortedPluginHooks('options')) {
         if (this._closed) {
           throwClosedServerError()
@@ -299,14 +299,14 @@ class EnvironmentPluginContainer {
   ): Promise<PartialResolvedId | null> {
     const skip = options?.skip
     const scan = !!options?.scan
-    const ssr = this.environment.options.ssr
+    const ssr = this.environment.config.consumer === 'server'
     const ctx = new ResolveIdContext(this, skip, scan)
 
     const resolveStart = debugResolve ? performance.now() : 0
     let id: string | null = null
     const partial: Partial<PartialResolvedId> = {}
     for (const plugin of this.getSortedPlugins('resolveId')) {
-      if (this._closed && this.environment?.options.dev.recoverable)
+      if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
       if (!plugin.resolveId) continue
       if (skip?.has(plugin)) continue
@@ -365,11 +365,11 @@ class EnvironmentPluginContainer {
   }
 
   async load(id: string, options?: {}): Promise<LoadResult | null> {
-    const ssr = this.environment.options.ssr
+    const ssr = this.environment.config.consumer === 'server'
     options = options ? { ...options, ssr } : { ssr }
     const ctx = new LoadPluginContext(this)
     for (const plugin of this.getSortedPlugins('load')) {
-      if (this._closed && this.environment?.options.dev.recoverable)
+      if (this._closed && this.environment?.config.dev.recoverable)
         throwClosedServerError()
       if (!plugin.load) continue
       ctx._plugin = plugin
@@ -396,7 +396,7 @@ class EnvironmentPluginContainer {
       inMap?: SourceDescription['map']
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }> {
-    const ssr = this.environment.options.ssr
+    const ssr = this.environment.config.consumer === 'server'
     const optionsWithSSR = options ? { ...options, ssr } : { ssr }
     const inMap = options?.inMap
 
@@ -404,7 +404,7 @@ class EnvironmentPluginContainer {
     ctx._addedImports = this._getAddedImports(id)
 
     for (const plugin of this.getSortedPlugins('transform')) {
-      if (this._closed && this.environment?.options.dev.recoverable)
+      if (this._closed && this.environment?.config.dev.recoverable)
         throwClosedServerError()
       if (!plugin.transform) continue
 

@@ -10,7 +10,7 @@ import type { DevEnvironment } from './environment'
 export function warmupFiles(server: ViteDevServer): void {
   const { root } = server.config
   for (const environment of Object.values(server.environments)) {
-    mapFiles(environment.options.dev.warmup, root).then((files) => {
+    mapFiles(environment.config.dev.warmup, root).then((files) => {
       for (const file of files) {
         warmupFile(server, server.environments.client, file)
       }

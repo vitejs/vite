@@ -53,7 +53,8 @@ export function esbuildDepPlugin(
   external: string[],
 ): Plugin {
   const topLevelConfig = environment.getTopLevelConfig()
-  const { extensions } = environment.options.dev.optimizeDeps
+  const { isProduction } = topLevelConfig
+  const { extensions } = environment.config.dev.optimizeDeps
 
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = extensions
@@ -112,8 +113,8 @@ export function esbuildDepPlugin(
         namespace: 'optional-peer-dep',
       }
     }
-    // TODO: Should this be environment.options.nodeCompatible or a more fine-grained option?
-    if (environment.options.ssr && isBuiltin(resolved)) {
+    // TODO: Should this be environment.config.nodeCompatible or a more fine-grained option?
+    if (environment.config.consumer === 'server' && isBuiltin(resolved)) {
       return
     }
     if (isExternalUrl(resolved)) {
@@ -235,7 +236,7 @@ export function esbuildDepPlugin(
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
         ({ path }) => {
-          if (topLevelConfig.isProduction) {
+          if (isProduction) {
             return {
               contents: 'module.exports = {}',
             }
@@ -278,7 +279,7 @@ module.exports = Object.create(new Proxy({}, {
       build.onLoad(
         { filter: /.*/, namespace: 'optional-peer-dep' },
         ({ path }) => {
-          if (topLevelConfig.isProduction) {
+          if (isProduction) {
             return {
               contents: 'module.exports = {}',
             }

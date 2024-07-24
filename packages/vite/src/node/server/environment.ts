@@ -136,7 +136,7 @@ export class DevEnvironment extends BaseEnvironment {
       })
     })
 
-    const { optimizeDeps } = this.options.dev
+    const { optimizeDeps } = this.config.dev
     if (setup.depsOptimizer) {
       this.depsOptimizer = setup.depsOptimizer
     } else if (isDepOptimizationDisabled(optimizeDeps)) {

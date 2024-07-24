@@ -228,9 +228,9 @@ export interface SharedEnvironmentOptions {
   resolve?: EnvironmentResolveOptions
   /**
    * Define if this environment is used for Server Side Rendering
-   * @default true if it isn't the client environment
+   * @default 'server' if it isn't the client environment
    */
-  ssr?: boolean
+  consumer?: 'client' | 'server'
   /**
    * Runtime Compatibility
    * Temporal options, we should remove these in favor of fine-grained control
@@ -262,7 +262,7 @@ export type ResolvedEnvironmentResolveOptions =
 
 export type ResolvedEnvironmentOptions = {
   resolve: ResolvedEnvironmentResolveOptions
-  ssr: boolean
+  consumer: 'client' | 'server'
   nodeCompatible: boolean
   webCompatible: boolean
   injectInvalidationTimestamp: boolean
@@ -273,7 +273,7 @@ export type ResolvedEnvironmentOptions = {
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
   | 'build'
-  | 'ssr'
+  | 'consumer'
   | 'nodeCompatible'
   | 'webCompatible'
   | 'injectInvalidationTimestamp'
@@ -623,10 +623,11 @@ function resolveEnvironmentOptions(
 ): ResolvedEnvironmentOptions {
   const resolve = resolveEnvironmentResolveOptions(options.resolve, logger)
   const isClientEnvironment = environmentName === 'client'
-  const ssr = options.ssr ?? !isClientEnvironment
+  const consumer =
+    (options.consumer ?? isClientEnvironment) ? 'client' : 'server'
   return {
     resolve,
-    ssr,
+    consumer,
     nodeCompatible: options.nodeCompatible ?? !isClientEnvironment,
     webCompatible: options.webCompatible ?? isClientEnvironment,
     injectInvalidationTimestamp:
@@ -661,7 +662,7 @@ export function getDefaultResolvedEnvironmentOptions(
 ): ResolvedEnvironmentOptions {
   return {
     resolve: config.resolve,
-    ssr: true,
+    consumer: 'server',
     nodeCompatible: true,
     webCompatible: false,
     injectInvalidationTimestamp: false,
@@ -1219,7 +1220,7 @@ export async function resolveConfig(
     },
     future: config.future,
 
-    // Backward compatibility, users should use environment.options.dev.optimizeDeps
+    // Backward compatibility, users should use environment.config.dev.optimizeDeps
     optimizeDeps: backwardCompatibleOptimizeDeps,
     ssr,
 
@@ -1320,7 +1321,7 @@ export async function resolveConfig(
 
   // Backward compatibility hook, modify the resolved config before it is used
   // to create internal plugins. For example, `config.build.ssr`. Once we rework
-  // internal plugins to use environment.options, we can remove the dual
+  // internal plugins to use environment.config, we can remove the dual
   // patchConfig/patchPlugins and have a single patchConfig before configResolved
   // gets called
   patchConfig?.(resolved)

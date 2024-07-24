@@ -93,8 +93,8 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       code: string | Uint8Array,
     ): Promise<number | null> {
       if (
-        environment.options.build.ssr ||
-        !environment.options.build.reportCompressedSize
+        environment.config.build.ssr ||
+        !environment.config.build.reportCompressedSize
       ) {
         return null
       }
@@ -135,7 +135,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         }
       },
       async log(output: OutputBundle, outDir?: string) {
-        const chunkLimit = environment.options.build.chunkSizeWarningLimit
+        const chunkLimit = environment.config.build.chunkSizeWarningLimit
 
         let hasLargeChunks = false
 
@@ -200,11 +200,11 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
               config.root,
               path.resolve(
                 config.root,
-                outDir ?? environment.options.build.outDir,
+                outDir ?? environment.config.build.outDir,
               ),
             ),
           )
-          const assetsDir = path.join(environment.options.build.assetsDir, '/')
+          const assetsDir = path.join(environment.config.build.assetsDir, '/')
 
           for (const group of groups) {
             const filtered = entries.filter((e) => e.group === group.name)
@@ -253,9 +253,9 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
         if (
           hasLargeChunks &&
-          environment.options.build.minify &&
+          environment.config.build.minify &&
           !config.build.lib &&
-          !environment.options.build.ssr
+          !environment.config.build.ssr
         ) {
           environment.logger.warn(
             colors.yellow(

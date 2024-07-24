@@ -217,7 +217,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       if (s) {
         return {
           code: s.toString(),
-          map: this.environment?.options.build.sourcemap
+          map: this.environment.config.build.sourcemap
             ? s.generateMap({ hires: 'boundary' })
             : null,
         }
@@ -243,7 +243,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       // do not emit assets for SSR build
       if (
         config.command === 'build' &&
-        !this.environment.options.build.emitAssets
+        !this.environment.config.build.emitAssets
       ) {
         for (const file in bundle) {
           if (
@@ -425,7 +425,7 @@ const shouldInline = (
 ): boolean => {
   const environment = pluginContext.environment
   const topLevelConfig = environment.getTopLevelConfig()
-  const { assetsInlineLimit } = environment.options.build
+  const { assetsInlineLimit } = environment.config.build
   if (topLevelConfig.build.lib) return true
   if (pluginContext.getModuleInfo(id)?.isEntry) return false
   if (forceInline !== undefined) return forceInline

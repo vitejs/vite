@@ -481,11 +481,11 @@ The Vite server has a shared plugin pipeline, but when a module is processed it 
 A plugin could use the `environment` instance to:
 
 - Only apply logic for certain environments.
-- Change the way they work depending on the configuration for the environment, which can be accessed using `environment.options`. The vite core resolve plugin modifies the way it resolves ids based on `environment.options.resolve.conditions` for example.
+- Change the way they work depending on the configuration for the environment, which can be accessed using `environment.config`. The vite core resolve plugin modifies the way it resolves ids based on `environment.config.resolve.conditions` for example.
 
 ```ts
   transform(code, id) {
-    console.log(this.enviroment.options.resolve.conditions)
+    console.log(this.environment.config.resolve.conditions)
   }
 ```
 

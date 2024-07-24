@@ -44,7 +44,7 @@ export function createDepsOptimizer(
 
   let closed = false
 
-  const options = environment.options.dev.optimizeDeps
+  const options = environment.config.dev.optimizeDeps
 
   const { noDiscovery, holdUntilCrawlEnd } = options
 
@@ -748,7 +748,7 @@ export function createExplicitDepsOptimizer(
     run: () => {},
 
     close: async () => {},
-    options: environment.options.dev.optimizeDeps,
+    options: environment.config.dev.optimizeDeps,
   }
 
   let inited = false

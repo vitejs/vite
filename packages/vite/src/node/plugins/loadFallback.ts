@@ -40,7 +40,7 @@ export function loadFallbackPlugin(config: ResolvedConfig): Plugin {
       // like /service-worker.js or /api/users
       const file = cleanUrl(id)
       if (
-        this.environment.options.nodeCompatible ||
+        this.environment.config.nodeCompatible ||
         isFileLoadingAllowed(config, file) // Do we need fsPathFromId here?
       ) {
         try {

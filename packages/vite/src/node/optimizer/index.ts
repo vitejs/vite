@@ -291,7 +291,7 @@ export async function optimizeExplicitEnvironmentDeps(
 ): Promise<DepOptimizationMetadata> {
   const cachedMetadata = await loadCachedDepOptimizationMetadata(
     environment,
-    environment.options.dev.optimizeDeps.force ?? false, // TODO: should force be per-environment?
+    environment.config.dev.optimizeDeps.force ?? false, // TODO: should force be per-environment?
     false,
   )
   if (cachedMetadata) {
@@ -734,7 +734,7 @@ async function prepareEsbuildOptimizerRun(
   const flatIdDeps: Record<string, string> = {}
   const idToExports: Record<string, ExportsData> = {}
 
-  const { optimizeDeps } = environment.options.dev
+  const { optimizeDeps } = environment.config.dev
 
   const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
     optimizeDeps?.esbuildOptions ?? {}
@@ -766,7 +766,7 @@ async function prepareEsbuildOptimizerRun(
     ),
   }
 
-  const platform = environment.options.webCompatible ? 'browser' : 'node'
+  const platform = environment.config.webCompatible ? 'browser' : 'node'
 
   const external = [...(optimizeDeps?.exclude ?? [])]
 
@@ -817,7 +817,7 @@ export async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
 ): Promise<void> {
   const { logger } = environment
-  const { optimizeDeps } = environment.options.dev
+  const { optimizeDeps } = environment.config.dev
   const optimizeDepsInclude = optimizeDeps?.include ?? []
   if (optimizeDepsInclude.length) {
     const unableToOptimize = (id: string, msg: string) => {
@@ -1066,7 +1066,7 @@ export async function extractExportsData(
 ): Promise<ExportsData> {
   await init
 
-  const { optimizeDeps } = environment.options.dev
+  const { optimizeDeps } = environment.config.dev
 
   const esbuildOptions = optimizeDeps?.esbuildOptions ?? {}
   if (optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
@@ -1119,7 +1119,7 @@ function needsInterop(
   exportsData: ExportsData,
   output?: { exports: string[] },
 ): boolean {
-  if (environmet.options.dev.optimizeDeps?.needsInterop?.includes(id)) {
+  if (environmet.config.dev.optimizeDeps?.needsInterop?.includes(id)) {
     return true
   }
   const { hasModuleSyntax, exports } = exportsData
@@ -1162,7 +1162,7 @@ const lockfileNames = lockfileFormats.map((l) => l.name)
 function getConfigHash(environment: Environment): string {
   // Take config into account
   // only a subset of config options that can affect dep optimization
-  const { optimizeDeps } = environment.options.dev
+  const { optimizeDeps } = environment.config.dev
   const topLevelConfig = environment.getTopLevelConfig()
   const content = JSON.stringify(
     {

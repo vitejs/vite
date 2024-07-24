@@ -157,7 +157,7 @@ function preload(
 }
 
 function getModulePreloadData(environment: Environment) {
-  const { modulePreload } = environment.options.build
+  const { modulePreload } = environment.config.build
   const topLevelConfig = environment.getTopLevelConfig()
   const resolveModulePreloadDependencies =
     modulePreload && modulePreload.resolveDependencies
@@ -194,7 +194,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     load(id) {
       const { environment } = this
       if (environment && id === preloadHelperId) {
-        const { modulePreload } = environment.options.build
+        const { modulePreload } = environment.config.build
 
         const { customModulePreloadPaths, optimizeModulePreloadRelativePaths } =
           getModulePreloadData(environment)
@@ -390,7 +390,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (s) {
         return {
           code: s.toString(),
-          map: environment.options.build.sourcemap
+          map: environment.config.build.sourcemap
             ? s.generateMap({ hires: 'boundary' })
             : null,
         }
@@ -403,7 +403,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (environment && code.indexOf(isModernFlag) > -1) {
         const re = new RegExp(isModernFlag, 'g')
         const isModern = String(format === 'es')
-        if (environment.options.build.sourcemap) {
+        if (environment.config.build.sourcemap) {
           const s = new MagicString(code)
           let match: RegExpExecArray | null
           while ((match = re.exec(code))) {
@@ -483,8 +483,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
         return
       }
-      const buildSourcemap = this.environment.options.build.sourcemap
-      const { modulePreload } = this.environment.options.build
+      const buildSourcemap = this.environment.config.build.sourcemap
+      const { modulePreload } = this.environment.config.build
       const { customModulePreloadPaths, optimizeModulePreloadRelativePaths } =
         getModulePreloadData(this.environment)
 

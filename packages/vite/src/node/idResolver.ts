@@ -40,7 +40,7 @@ export function createIdResolver(
       pluginContainer = await createEnvironmentPluginContainer(
         environment as Environment,
         [
-          aliasPlugin({ entries: environment.options.resolve.alias }),
+          aliasPlugin({ entries: environment.config.resolve.alias }),
           resolvePlugin({
             root: config.root,
             isProduction: config.isProduction,
@@ -73,7 +73,7 @@ export function createIdResolver(
     if (!pluginContainer) {
       pluginContainer = await createEnvironmentPluginContainer(
         environment as Environment,
-        [aliasPlugin({ entries: environment.options.resolve.alias })],
+        [aliasPlugin({ entries: environment.config.resolve.alias })],
       )
       aliasOnlyPluginContainerMap.set(environment, pluginContainer)
     }

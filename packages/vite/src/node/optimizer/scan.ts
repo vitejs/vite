@@ -85,8 +85,13 @@ export function devToScanEnvironment(
     getTopLevelConfig() {
       return environment.getTopLevelConfig()
     },
+    /* deprecate for backcompat
     get options() {
       return environment.options
+    },
+    */
+    get config() {
+      return environment.config
     },
     get logger() {
       return environment.logger
@@ -144,7 +149,7 @@ export function scanImports(environment: ScanEnvironment): {
     if (!entries.length) {
       if (
         !topLevelConfig.optimizeDeps.entries &&
-        !environment.options.dev.optimizeDeps.include
+        !environment.config.dev.optimizeDeps.include
       ) {
         environment.logger.warn(
           colors.yellow(
@@ -289,7 +294,7 @@ async function prepareEsbuildScanner(
   const plugin = esbuildScanPlugin(environment, deps, missing, entries)
 
   const { plugins = [], ...esbuildOptions } =
-    environment.options.dev.optimizeDeps.esbuildOptions ?? {}
+    environment.config.dev.optimizeDeps.esbuildOptions ?? {}
 
   // The plugin pipeline automatically loads the closest tsconfig.json.
   // But esbuild doesn't support reading tsconfig.json if the plugin has resolved the path (https://github.com/evanw/esbuild/issues/2265).
@@ -395,7 +400,7 @@ function esbuildScanPlugin(
     return res
   }
 
-  const optimizeDepsOptions = environment.options.dev.optimizeDeps
+  const optimizeDepsOptions = environment.config.dev.optimizeDeps
   const include = optimizeDepsOptions.include
   const exclude = [
     ...(optimizeDepsOptions.exclude ?? []),
