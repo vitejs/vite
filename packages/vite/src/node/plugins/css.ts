@@ -1945,7 +1945,9 @@ type StylePreprocessorOptions = {
 }
 
 type SassStylePreprocessorOptions = StylePreprocessorOptions &
-  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'>
+  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'> & {
+    api?: 'legacy' | 'modern' | 'modern-compiler'
+  }
 
 type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
   define?: Record<string, any>
@@ -2016,6 +2018,24 @@ function loadPreprocessorPath(
       )
       message.stack = e.stack + '\n' + message.stack
       throw message
+    }
+  }
+}
+
+function loadSassPackage(root: string): {
+  name: 'sass' | 'sass-embedded'
+  path: string
+} {
+  // try sass-embedded before sass
+  try {
+    const path = loadPreprocessorPath('sass-embedded' as any, root)
+    return { name: 'sass-embedded', path }
+  } catch (e1) {
+    try {
+      const path = loadPreprocessorPath('sass' as any, root)
+      return { name: 'sass', path }
+    } catch (e2) {
+      throw e1
     }
   }
 }
@@ -2367,14 +2387,20 @@ const scssProcessor = (
       }
     },
     async process(source, root, options, resolvers) {
-      const sassPath = loadPreprocessorPath(PreprocessLang.sass, root)
+      const sassPackage = loadSassPackage(root)
+      let api = options.api
+      if (!api) {
+        api = 'legacy'
+        // TODO: change default in v6
+        // api = sassPackage.name === "sass-embedded" ? "modern-compiler" : "modern";
+      }
 
       if (!workerMap.has(options.alias)) {
         workerMap.set(
           options.alias,
-          options.api === 'modern-compiler'
+          api === 'modern-compiler'
             ? makeModernCompilerScssWorker(resolvers, options.alias, maxWorkers)
-            : options.api === 'modern'
+            : api === 'modern'
               ? makeModernScssWorker(resolvers, options.alias, maxWorkers)
               : makeScssWorker(resolvers, options.alias, maxWorkers),
         )
@@ -2394,7 +2420,7 @@ const scssProcessor = (
       }
       try {
         const result = await worker.run(
-          sassPath,
+          sassPackage.path,
           data,
           optionsWithoutAdditionalData,
         )
