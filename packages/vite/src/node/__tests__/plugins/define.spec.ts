@@ -82,8 +82,19 @@ describe('definePlugin', () => {
       await transform(
         'const isLegacy = import.meta.env.LEGACY;\nimport.meta.env.UNDEFINED && console.log(import.meta.env.UNDEFINED);',
       ),
-    ).toBe(
-      'var define_import_meta_env_default = {"BASE_URL": "/", "MODE": "development", "DEV": true, "PROD": false, "SSR": false, "LEGACY": __VITE_IS_LEGACY__};\nconst isLegacy = __VITE_IS_LEGACY__;\ndefine_import_meta_env_default.UNDEFINED && console.log(define_import_meta_env_default.UNDEFINED);\n',
-    )
+    ).toMatchInlineSnapshot(`
+      "const isLegacy = __VITE_IS_LEGACY__;
+      "
+    `)
+  })
+
+  test('replace bare import.meta.env', async () => {
+    const transform = await createDefinePluginTransform()
+    expect(await transform('const env = import.meta.env;'))
+      .toMatchInlineSnapshot(`
+      "const __vite_import_meta_env__ = {"BASE_URL": "/", "MODE": "development", "DEV": true, "PROD": false, "SSR": false};
+      const env = __vite_import_meta_env__;
+      "
+    `)
   })
 })
