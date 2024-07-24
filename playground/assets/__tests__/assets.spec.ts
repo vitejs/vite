@@ -14,6 +14,7 @@ import {
   page,
   readFile,
   readManifest,
+  serverLogs,
   untilUpdated,
   viteTestUrl,
   watcher,
@@ -357,6 +358,12 @@ describe('svg fragments', () => {
         : /svg#icon-heart-view$/,
     )
   })
+
+  test('url with an alias', async () => {
+    expect(await getBg('.icon-clock-alias')).toMatch(
+      /\.svg#icon-clock-view"\)$/,
+    )
+  })
 })
 
 test('Unknown extension assets import', async () => {
@@ -464,7 +471,7 @@ test('new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)', async ()
   )
 })
 
-test('new URL(`non-existent`, import.meta.url)', async () => {
+test("new URL(/* @vite-ignore */ 'non-existent', import.meta.url)", async () => {
   // the inlined script tag is extracted in a separate file
   const importMetaUrl = new URL(
     isBuild ? '/foo/bar/assets/index.js' : '/foo/bar/index.html',
@@ -472,6 +479,9 @@ test('new URL(`non-existent`, import.meta.url)', async () => {
   )
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
     new URL('non-existent', importMetaUrl).pathname,
+  )
+  expect(serverLogs).not.toContainEqual(
+    expect.stringContaining("doesn't exist at build time"),
   )
 })
 

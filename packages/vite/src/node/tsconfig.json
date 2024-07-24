@@ -1,9 +1,12 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./", "../runtime", "../dep-types", "../types", "constants.ts"],
+  "include": ["./", "../runtime", "../types"],
   "exclude": ["../**/__tests__"],
   "compilerOptions": {
-    "lib": ["ESNext", "DOM"],
+    // https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping#node-18
+    "lib": ["ES2023", "DOM"], // DOM because we have client code that gets inlined via function.toString()
+    "target": "ES2022",
+    "skipLibCheck": true, // lib check is done on final types
     "stripInternal": true,
     "paths": {
       "vite/runtime": ["../runtime"]

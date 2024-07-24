@@ -80,6 +80,7 @@ export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 export const KNOWN_ASSET_TYPES = [
   // images
   'apng',
+  'bmp',
   'png',
   'jpe?g',
   'jfif',

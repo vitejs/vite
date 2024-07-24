@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import type { ExecaSyncReturnValue, SyncOptions } from 'execa'
+import type { SyncOptions, SyncResult } from 'execa'
 import { execaCommandSync } from 'execa'
 import fs from 'fs-extra'
 import { afterEach, beforeAll, expect, test } from 'vitest'
@@ -9,10 +9,10 @@ const CLI_PATH = join(__dirname, '..')
 const projectName = 'test-app'
 const genPath = join(__dirname, projectName)
 
-const run = (
+const run = <SO extends SyncOptions>(
   args: string[],
-  options: SyncOptions = {},
-): ExecaSyncReturnValue => {
+  options?: SO,
+): SyncResult<SO> => {
   return execaCommandSync(`node ${CLI_PATH} ${args.join(' ')}`, options)
 }
 
@@ -102,4 +102,16 @@ test('accepts command line override for --overwrite', () => {
   createNonEmptyDir()
   const { stdout } = run(['.', '--overwrite', 'ignore'], { cwd: genPath })
   expect(stdout).not.toContain(`Current directory is not empty.`)
+})
+
+test('return help usage how to use create-vite', () => {
+  const { stdout } = run(['--help'], { cwd: __dirname })
+  const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
+  expect(stdout).toContain(message)
+})
+
+test('return help usage how to use create-vite with -h alias', () => {
+  const { stdout } = run(['--h'], { cwd: __dirname })
+  const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
+  expect(stdout).toContain(message)
 })

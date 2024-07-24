@@ -25,7 +25,13 @@ import { htmlFallbackMiddleware } from './server/middlewares/htmlFallback'
 import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
 import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
-import { resolveHostname, resolveServerUrls, shouldServeFile } from './utils'
+import {
+  resolveHostname,
+  resolveServerUrls,
+  setupSIGTERMListener,
+  shouldServeFile,
+  teardownSIGTERMListener,
+} from './utils'
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
@@ -137,11 +143,16 @@ export async function preview(
   const options = config.preview
   const logger = config.logger
 
+  const closeHttpServer = createServerCloseFn(httpServer)
+
   const server: PreviewServer = {
     config,
     middlewares: app,
     httpServer,
-    close: createServerCloseFn(httpServer),
+    async close() {
+      teardownSIGTERMListener(closeServerAndExit)
+      await closeHttpServer()
+    },
     resolvedUrls: null,
     printUrls() {
       if (server.resolvedUrls) {
@@ -154,6 +165,16 @@ export async function preview(
       bindCLIShortcuts(server as PreviewServer, options)
     },
   }
+
+  const closeServerAndExit = async () => {
+    try {
+      await server.close()
+    } finally {
+      process.exit()
+    }
+  }
+
+  setupSIGTERMListener(closeServerAndExit)
 
   // apply server hooks from plugins
   const postHooks: ((() => void) | void)[] = []

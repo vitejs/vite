@@ -1,6 +1,5 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import type { Server } from 'node:http'
 import { EventEmitter } from 'node:events'
 import colors from 'picocolors'
 import type { CustomPayload, HMRPayload, Update } from 'types/hmrPayload'
@@ -14,6 +13,7 @@ import { isExplicitImportRequired } from '../plugins/importAnalysis'
 import { getEnvFilesForMode } from '../env'
 import { withTrailingSlash, wrapId } from '../../shared/utils'
 import type { ModuleNode } from './moduleGraph'
+import type { HttpServer } from '.'
 import { restartServerWithUrls } from '.'
 
 export const debugHmr = createDebugger('vite:hmr')
@@ -30,7 +30,7 @@ export interface HmrOptions {
   path?: string
   timeout?: number
   overlay?: boolean
-  server?: Server
+  server?: HttpServer
   /** @internal */
   channels?: HMRChannel[]
 }
@@ -138,7 +138,9 @@ export async function handleHMRUpdate(
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
     config.logger.info(
       colors.green(
-        `${path.relative(process.cwd(), file)} changed, restarting server...`,
+        `${normalizePath(
+          path.relative(process.cwd(), file),
+        )} changed, restarting server...`,
       ),
       { clear: true, timestamp: true },
     )
@@ -228,7 +230,8 @@ export function updateModules(
   const updates: Update[] = []
   const invalidatedModules = new Set<ModuleNode>()
   const traversedModules = new Set<ModuleNode>()
-  let needFullReload: HasDeadEnd = false
+  // Modules could be empty if a root module is invalidated via import.meta.hot.invalidate()
+  let needFullReload: HasDeadEnd = modules.length === 0
 
   for (const mod of modules) {
     const boundaries: PropagationBoundary[] = []
