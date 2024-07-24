@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 interface Sponsors {
   special: Sponsor[]
@@ -63,6 +63,16 @@ const viteSponsors: Pick<Sponsors, 'special' | 'gold'> = {
       url: 'https://transloadit.com/?utm_source=vite&utm_medium=referral&utm_campaign=sponsorship&utm_content=website',
       img: '/transloadit.svg',
       hasDark: true,
+    },
+    {
+      name: 'Huly',
+      url: 'https://huly.io/',
+      img: '/huly.svg',
+    },
+    {
+      name: 'Handsontable',
+      url: 'https://handsontable.com/docs/react-data-grid/?utm_source=vite_docs&utm_medium=sponsorship&utm_campaign=library_sponsorship_2024',
+      img: '/handsontable.svg',
     },
   ],
 }

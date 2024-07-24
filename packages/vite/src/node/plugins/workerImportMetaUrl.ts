@@ -82,7 +82,10 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   }
 
   const workerOpts = parseWorkerOptions(workerOptString, commaIndex + 1)
-  if (workerOpts.type && ['classic', 'module'].includes(workerOpts.type)) {
+  if (
+    workerOpts.type &&
+    (workerOpts.type === 'module' || workerOpts.type === 'classic')
+  ) {
     return workerOpts.type
   }
 
@@ -185,8 +188,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             s.update(
               expStart,
               expEnd,
-              // add `'' +` to skip vite:asset-import-meta-url plugin
-              `new URL('' + ${JSON.stringify(builtUrl)}, import.meta.url)`,
+              `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, import.meta.url)`,
             )
           }
         }

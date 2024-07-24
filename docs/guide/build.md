@@ -13,7 +13,7 @@ The production bundle assumes support for modern JavaScript. By default, Vite ta
 
 You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`.
 
-Note that by default, Vite only handles syntax transforms and **does not cover polyfills**. You can check out [Polyfill.io](https://polyfill.io/) which is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
+Note that by default, Vite only handles syntax transforms and **does not cover polyfills**. You can check out https://cdnjs.cloudflare.com/polyfill/ which automatically generates polyfill bundles based on the user's browser UserAgent string.
 
 Legacy browsers can be supported via [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), which will automatically generate legacy chunks and corresponding ES language feature polyfills. The legacy chunks are conditionally loaded only in browsers that do not have native ESM support.
 
@@ -47,21 +47,7 @@ For example, you can specify multiple Rollup outputs with plugins that are only 
 
 ## Chunking Strategy
 
-You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/configuration-options/#output-manualchunks)). Until Vite 2.8, the default chunking strategy divided the chunks into `index` and `vendor`. It is a good strategy for some SPAs, but it is hard to provide a general solution for every Vite target use case. From Vite 2.9, `manualChunks` is no longer modified by default. You can continue to use the Split Vendor Chunk strategy by adding the `splitVendorChunkPlugin` in your config file:
-
-```js
-// vite.config.js
-import { splitVendorChunkPlugin } from 'vite'
-export default defineConfig({
-  plugins: [splitVendorChunkPlugin()],
-})
-```
-
-This strategy is also provided as a `splitVendorChunk({ cache: SplitVendorChunkCache })` factory, in case composition with custom logic is needed. `cache.reset()` needs to be called at `buildStart` for build watch mode to work correctly in this case.
-
-::: warning
-You should use `build.rollupOptions.output.manualChunks` function form when using this plugin. If the object form is used, the plugin won't have any effect.
-:::
+You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/configuration-options/#output-manualchunks)). If you use a framework, refer to their documentation for configuring how chunks are splitted.
 
 ## Load Error Handling
 
@@ -252,9 +238,9 @@ A user may choose to deploy in three different paths:
 
 A single static [base](#public-base-path) isn't enough in these scenarios. Vite provides experimental support for advanced base options during build, using `experimental.renderBuiltUrl`.
 
-<!-- prettier-ignore-start -->
 ```ts twoslash
 import type { UserConfig } from 'vite'
+// prettier-ignore
 const config: UserConfig = {
 // ---cut-before---
 experimental: {
@@ -269,27 +255,27 @@ experimental: {
 // ---cut-after---
 }
 ```
-<!-- prettier-ignore-end -->
 
 If the hashed assets and public files aren't deployed together, options for each group can be defined independently using asset `type` included in the second `context` param given to the function.
 
 ```ts twoslash
 import type { UserConfig } from 'vite'
 import path from 'node:path'
+// prettier-ignore
 const config: UserConfig = {
-  // ---cut-before---
-  experimental: {
-    renderBuiltUrl(filename, { hostId, hostType, type }) {
-      if (type === 'public') {
-        return 'https://www.domain.com/' + filename
-      } else if (path.extname(hostId) === '.js') {
-        return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
-      } else {
-        return 'https://cdn.domain.com/assets/' + filename
-      }
-    },
+// ---cut-before---
+experimental: {
+  renderBuiltUrl(filename, { hostId, hostType, type }) {
+    if (type === 'public') {
+      return 'https://www.domain.com/' + filename
+    } else if (path.extname(hostId) === '.js') {
+      return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
+    } else {
+      return 'https://cdn.domain.com/assets/' + filename
+    }
   },
-  // ---cut-after---
+},
+// ---cut-after---
 }
 ```
 

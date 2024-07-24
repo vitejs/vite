@@ -43,7 +43,7 @@ const jsExtensionRE = /\.js$/i
 const jsMapExtensionRE = /\.js\.map$/i
 
 export type ExportsData = {
-  hasImports: boolean
+  hasModuleSyntax: boolean
   // exported names (for `export { a as b }`, `b` is exported name)
   exports: readonly string[]
   // hint if the dep requires loading as jsx
@@ -138,7 +138,7 @@ export interface DepOptimizationConfig {
    * When enabled, it will hold the first optimized deps results until all static
    * imports are crawled on cold start. This avoids the need for full-page reloads
    * when new dependencies are discovered and they trigger the generation of new
-   * common chunks. If all dependencies are found by the scanner plus the explicitely
+   * common chunks. If all dependencies are found by the scanner plus the explicitly
    * defined ones in `include`, it is better to disable this option to let the
    * browser process more requests in parallel.
    * @default true
@@ -260,10 +260,10 @@ export async function optimizeDeps(
 
   const deps = await discoverProjectDependencies(config).result
 
+  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
+
   const depsString = depsLogString(Object.keys(deps))
   log?.(colors.green(`Optimizing dependencies:\n  ${depsString}`))
-
-  await addManuallyIncludedOptimizeDeps(deps, config, ssr)
 
   const depsInfo = toDiscoveredDependencies(config, deps, ssr)
 
@@ -504,9 +504,12 @@ export function runOptimizeDeps(
       // No need to wait, we can clean up in the background because temp folders
       // are unique per run
       debug?.(colors.green(`removing cache dir ${processingCacheDir}`))
-      fsp.rm(processingCacheDir, { recursive: true, force: true }).catch(() => {
+      try {
+        // When exiting the process, `fsp.rm` may not take effect, so we use `fs.rmSync`
+        fs.rmSync(processingCacheDir, { recursive: true, force: true })
+      } catch (error) {
         // Ignore errors
-      })
+      }
     }
   }
 
@@ -520,7 +523,7 @@ export function runOptimizeDeps(
         )
       }
       // Ignore clean up requests after this point so the temp folder isn't deleted before
-      // we finish commiting the new deps cache files to the deps folder
+      // we finish committing the new deps cache files to the deps folder
       committed = true
 
       // Write metadata file, then commit the processing folder to the global deps cache
@@ -1076,9 +1079,9 @@ export async function extractExportsData(
       write: false,
       format: 'esm',
     })
-    const [imports, exports] = parse(result.outputFiles[0].text)
+    const [, exports, , hasModuleSyntax] = parse(result.outputFiles[0].text)
     return {
-      hasImports: imports.length > 0,
+      hasModuleSyntax,
       exports: exports.map((e) => e.n),
     }
   }
@@ -1101,9 +1104,9 @@ export async function extractExportsData(
     usedJsxLoader = true
   }
 
-  const [imports, exports] = parseResult
+  const [, exports, , hasModuleSyntax] = parseResult
   const exportsData: ExportsData = {
-    hasImports: imports.length > 0,
+    hasModuleSyntax,
     exports: exports.map((e) => e.n),
     jsxLoader: usedJsxLoader,
   }
@@ -1120,9 +1123,9 @@ function needsInterop(
   if (getDepOptimizationConfig(config, ssr)?.needsInterop?.includes(id)) {
     return true
   }
-  const { hasImports, exports } = exportsData
+  const { hasModuleSyntax, exports } = exportsData
   // entry has no ESM syntax - likely CJS or UMD
-  if (!exports.length && !hasImports) {
+  if (!hasModuleSyntax) {
     return true
   }
 

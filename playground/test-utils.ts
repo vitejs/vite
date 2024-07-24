@@ -14,7 +14,7 @@ import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
-import type { ExecaChildProcess } from 'execa'
+import type { ResultPromise as ExecaResultPromise } from 'execa'
 import { isBuild, isWindows, page, testDir } from './vitestSetup'
 
 export * from './vitestSetup'
@@ -249,7 +249,6 @@ export async function withRetry(
 }
 
 export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
-  type A = Assertion<T>
   return new Proxy(
     {},
     {
@@ -262,9 +261,9 @@ export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
         }
       },
     },
-  ) as {
-    [K in keyof A]: (...params: Parameters<A[K]>) => Promise<ReturnType<A[K]>>
-  }
+  ) as Assertion<T>['resolves']
+  // NOTE: `Assertion<T>['resolves']` has the special "promisify all assertion property functions"
+  // behaviour that we're lending here, which is the same as `PromisifyAssertion<T>` if Vitest exposes it
 }
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
@@ -380,7 +379,7 @@ export const formatSourcemapForSnapshot = (map: any): any => {
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too
 export async function killProcess(
-  serverProcess: ExecaChildProcess,
+  serverProcess: ExecaResultPromise,
 ): Promise<void> {
   if (isWindows) {
     try {
@@ -390,7 +389,7 @@ export async function killProcess(
       console.error('failed to taskkill:', e)
     }
   } else {
-    serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
+    serverProcess.kill('SIGTERM')
   }
 }
 

@@ -30,7 +30,7 @@ const createExecHandlers = <T extends (...args: any) => any>(
 ) => {
   return ((...args: Parameters<T>) => {
     for (const handler of handlers) {
-      const result = handler(...(args as []))
+      const result = handler(...args)
       if (result) return result
     }
     return null
