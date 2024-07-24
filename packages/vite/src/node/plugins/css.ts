@@ -2194,7 +2194,7 @@ const makeModernScssWorker = (
     if (result.contents) {
       return result.contents
     }
-    return await fs.promises.readFile(result.file, 'utf-8')
+    return await fsp.readFile(result.file, 'utf-8')
   }
 
   const worker = new WorkerWithFallback(
@@ -2229,9 +2229,9 @@ const makeModernScssWorker = (
           async load(canonicalUrl) {
             const ext = path.extname(canonicalUrl.pathname)
             let syntax: Sass.Syntax = 'scss'
-            if (ext && ext.toLowerCase() === '.sass') {
+            if (ext === '.sass') {
               syntax = 'indented'
-            } else if (ext && ext.toLowerCase() === '.css') {
+            } else if (ext === '.css') {
               syntax = 'css'
             }
             const contents = await internalLoad(
