@@ -653,12 +653,6 @@ importers:
 
   playground/define/commonjs-dep: {}
 
-  playground/dist/config/packages/entry:
-    dependencies:
-      '@vite/test-config-plugin-module-condition':
-        specifier: link:../plugin-module-condition
-        version: link:../plugin-module-condition
-
   playground/dynamic-import:
     dependencies:
       '@vitejs/test-pkg':
