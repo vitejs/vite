@@ -21,7 +21,6 @@ export default tseslint.config(
       '**/temp/**',
       '**/.vitepress/cache/**',
       '**/*.snap',
-      '**/json-via-import-*.js',
     ],
   },
   eslint.configs.recommended,
