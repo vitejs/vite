@@ -8,7 +8,7 @@ export default defineConfig({
     preprocessorOptions: {
       ...baseConfig.css.preprocessorOptions,
       scss: {
-        api: 'modern-compiler',
+        api: 'modern',
         additionalData: `$injectedColor: orange;`,
         importers: [
           {
