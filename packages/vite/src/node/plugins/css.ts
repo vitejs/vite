@@ -7,6 +7,7 @@ import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
   ModuleFormat,
+  OutputAsset,
   OutputChunk,
   RenderedChunk,
   RollupError,
@@ -69,6 +70,7 @@ import {
 } from '../utils'
 import type { Logger } from '../logger'
 import { cleanUrl, slash } from '../../shared/utils'
+import type { TransformPluginContext } from '../server/pluginContainer'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -82,6 +84,7 @@ import {
 import type { ESBuildOptions } from './esbuild'
 import { getChunkOriginalFileName } from './manifest'
 
+const decoder = new TextDecoder()
 // const debug = createDebugger('vite:css')
 
 export interface CSSOptions {
@@ -333,8 +336,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             return joinUrlSegments(config.base, decodedUrl)
           }
         }
-        const resolved = await resolveUrl(decodedUrl, importer)
+        const [id, fragment] = decodedUrl.split('#')
+        let resolved = await resolveUrl(id, importer)
         if (resolved) {
+          if (fragment) resolved += '#' + fragment
           return fileToUrl(resolved, config, this)
         }
         if (config.command === 'build') {
@@ -708,8 +713,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .get(config)!
             .set(referenceId, { originalName: originalFilename })
 
+          const filename = this.getFileName(referenceId)
+          chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
           const replacement = toOutputFilePathInJS(
-            this.getFileName(referenceId),
+            filename,
             'asset',
             chunk.fileName,
             'js',
@@ -842,23 +849,34 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       function extractCss() {
         let css = ''
         const collected = new Set<OutputChunk>()
-        const prelimaryNameToChunkMap = new Map(
-          Object.values(bundle)
-            .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
-            .map((chunk) => [chunk.preliminaryFileName, chunk]),
-        )
+        // will be populated in order they are used by entry points
+        const dynamicImports = new Set<string>()
 
-        function collect(fileName: string) {
-          const chunk = bundle[fileName]
+        function collect(chunk: OutputChunk | OutputAsset) {
           if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
           collected.add(chunk)
 
-          chunk.imports.forEach(collect)
+          // First collect all styles from the synchronous imports (lowest priority)
+          chunk.imports.forEach((importName) => collect(bundle[importName]))
+          // Save dynamic imports in deterministic order to add the styles later (to have the highest priority)
+          chunk.dynamicImports.forEach((importName) =>
+            dynamicImports.add(importName),
+          )
+          // Then collect the styles of the current chunk (might overwrite some styles from previous imports)
           css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
         }
 
-        for (const chunkName of chunkCSSMap.keys())
-          collect(prelimaryNameToChunkMap.get(chunkName)?.fileName ?? '')
+        // The bundle is guaranteed to be deterministic, if not then we have a bug in rollup.
+        // So we use it to ensure a deterministic order of styles
+        for (const chunk of Object.values(bundle)) {
+          if (chunk.type === 'chunk' && chunk.isEntry) {
+            collect(chunk)
+          }
+        }
+        // Now collect the dynamic chunks, this is done last to have the styles overwrite the previous ones
+        for (const chunkName of dynamicImports) {
+          collect(bundle[chunkName])
+        }
 
         return css
       }
@@ -884,9 +902,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             .map((chunk) => [chunk.preliminaryFileName, chunk.fileName]),
         )
 
-        const pureCssChunkNames = [...pureCssChunks].map(
-          (pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName],
-        )
+        // When running in watch mode the generateBundle is called once per output format
+        // in this case the `bundle` is not populated with the other output files
+        // but they are still in `pureCssChunks`.
+        // So we need to filter the names and only use those who are defined
+        const pureCssChunkNames = [...pureCssChunks]
+          .map((pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName])
+          .filter(Boolean)
 
         const replaceEmptyChunk = getEmptyChunkReplacer(
           pureCssChunkNames,
@@ -965,9 +987,8 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           !inlineRE.test(id) &&
           !htmlProxyRE.test(id)
         // attached by pluginContainer.addWatchFile
-        const pluginImports = (this as any)._addedImports as
-          | Set<string>
-          | undefined
+        const pluginImports = (this as unknown as TransformPluginContext)
+          ._addedImports
         if (pluginImports) {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
@@ -1804,8 +1825,12 @@ async function minifyCSS(
         ),
       )
     }
+
+    // NodeJS res.code = Buffer
+    // Deno res.code = Uint8Array
+    // For correct decode compiled css need to use TextDecoder
     // LightningCSS output does not return a linebreak at the end
-    return code.toString() + (inlined ? '' : '\n')
+    return decoder.decode(code) + (inlined ? '' : '\n')
   }
   try {
     const { code, warnings } = await transform(css, {
@@ -2042,6 +2067,7 @@ function fixScssBugImportValue(
   return data
 }
 
+// #region Sass
 // .scss/.sass processor
 const makeScssWorker = (
   resolvers: CSSAtImportResolvers,
@@ -2213,6 +2239,7 @@ const scssProcessor = (
     },
   }
 }
+// #endregion
 
 /**
  * relative url() inside \@imported sass and less files must be rebased to use
@@ -2282,6 +2309,7 @@ async function rebaseUrls(
   }
 }
 
+// #region Less
 // .less
 const makeLessWorker = (
   resolvers: CSSAtImportResolvers,
@@ -2471,7 +2499,9 @@ const lessProcessor = (maxWorkers: number | undefined): StylePreprocessor => {
     },
   }
 }
+// #endregion
 
+// #region Stylus
 // .styl
 const makeStylWorker = (maxWorkers: number | undefined) => {
   const worker = new WorkerWithFallback(
@@ -2600,6 +2630,7 @@ function formatStylusSourceMap(
 
   return map
 }
+// #endregion
 
 async function getSource(
   source: string,
@@ -2694,7 +2725,6 @@ function isPreProcessor(lang: any): lang is PreprocessLang {
 }
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
-
 async function compileLightningCSS(
   id: string,
   src: string,
@@ -2756,11 +2786,14 @@ async function compileLightningCSS(
             : config.css?.devSourcemap,
         analyzeDependencies: true,
         cssModules: cssModuleRE.test(id)
-          ? config.css?.lightningcss?.cssModules ?? true
+          ? (config.css?.lightningcss?.cssModules ?? true)
           : undefined,
       })
 
-  let css = res.code.toString()
+  // NodeJS res.code = Buffer
+  // Deno res.code = Uint8Array
+  // For correct decode compiled css need to use TextDecoder
+  let css = decoder.decode(res.code)
   for (const dep of res.dependencies!) {
     switch (dep.type) {
       case 'url':
@@ -2772,6 +2805,8 @@ async function compileLightningCSS(
         if (urlReplacer) {
           const replaceUrl = await urlReplacer(dep.url, id)
           css = css.replace(dep.placeholder, () => replaceUrl)
+        } else {
+          css = css.replace(dep.placeholder, () => dep.url)
         }
         break
       default:

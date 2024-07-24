@@ -9,7 +9,7 @@ import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
-import type { FSWatcher } from 'chokidar'
+import type { FSWatcher } from 'dep-types/chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
@@ -852,7 +852,6 @@ export function combineSourcemaps(
     }
     return newSourcemaps
   })
-  const escapedFilename = escapeToLinuxLikePath(filename)
 
   // We don't declare type here so we can convert/fake/map as RawSourceMap
   let map //: SourceMap
@@ -863,11 +862,15 @@ export function combineSourcemaps(
     map = remapping(sourcemapList, () => null)
   } else {
     map = remapping(sourcemapList[0], function loader(sourcefile) {
-      if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
-        return sourcemapList[mapIndex++]
-      } else {
-        return null
+      const mapForSources = sourcemapList
+        .slice(mapIndex)
+        .find((s) => s.sources.includes(sourcefile))
+
+      if (mapForSources) {
+        mapIndex++
+        return mapForSources
       }
+      return null
     })
   }
   if (!map.file) {
@@ -1437,4 +1440,20 @@ export function partialEncodeURIPath(uri: string): string {
   const filePath = cleanUrl(uri)
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
   return filePath.replaceAll('%', '%25') + postfix
+}
+
+export const setupSIGTERMListener = (callback: () => Promise<void>): void => {
+  process.once('SIGTERM', callback)
+  if (process.env.CI !== 'true') {
+    process.stdin.on('end', callback)
+  }
+}
+
+export const teardownSIGTERMListener = (
+  callback: () => Promise<void>,
+): void => {
+  process.off('SIGTERM', callback)
+  if (process.env.CI !== 'true') {
+    process.stdin.off('end', callback)
+  }
 }

@@ -103,3 +103,15 @@ test('accepts command line override for --overwrite', () => {
   const { stdout } = run(['.', '--overwrite', 'ignore'], { cwd: genPath })
   expect(stdout).not.toContain(`Current directory is not empty.`)
 })
+
+test('return help usage how to use create-vite', () => {
+  const { stdout } = run(['--help'], { cwd: __dirname })
+  const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
+  expect(stdout).toContain(message)
+})
+
+test('return help usage how to use create-vite with -h alias', () => {
+  const { stdout } = run(['--h'], { cwd: __dirname })
+  const message = 'Usage: create-vite [OPTION]... [DIRECTORY]'
+  expect(stdout).toContain(message)
+})

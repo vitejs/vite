@@ -8,9 +8,9 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import { parse as parseJS } from 'acorn'
-import type { Node } from 'estree'
-import { findStaticImports, parseStaticImport } from 'mlly'
+import { parseAst } from 'rollup/parseAst'
+import type { StaticImport } from 'mlly'
+import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import type { ViteDevServer } from '..'
 import {
@@ -63,6 +63,7 @@ import {
   withTrailingSlash,
   wrapId,
 } from '../../shared/utils'
+import type { TransformPluginContext } from '../server/pluginContainer'
 import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
@@ -118,11 +119,21 @@ function extractImportedBindings(
   }
 
   const exp = source.slice(importSpec.ss, importSpec.se)
-  const [match0] = findStaticImports(exp)
-  if (!match0) {
+  ESM_STATIC_IMPORT_RE.lastIndex = 0
+  const match = ESM_STATIC_IMPORT_RE.exec(exp)
+  if (!match) {
     return
   }
-  const parsed = parseStaticImport(match0)
+
+  const staticImport: StaticImport = {
+    type: 'static',
+    code: match[0],
+    start: match.index,
+    end: match.index + match[0].length,
+    imports: match.groups!.imports,
+    specifier: match.groups!.specifier,
+  }
+  const parsed = parseStaticImport(staticImport)
   if (!parsed) {
     return
   }
@@ -253,7 +264,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         throwOutdatedRequest(importer)
       }
 
-      if (!imports.length && !(this as any)._addedImports) {
+      if (
+        !imports.length &&
+        !(this as unknown as TransformPluginContext)._addedImports
+      ) {
         importerModule.isSelfAccepting = false
         debug?.(
           `${timeFrom(msAtStart)} ${colors.dim(
@@ -747,9 +761,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // note that we want to handle .css?raw and .css?url here
       if (!isCSSRequest(importer) || SPECIAL_QUERY_RE.test(importer)) {
         // attached by pluginContainer.addWatchFile
-        const pluginImports = (this as any)._addedImports as
-          | Set<string>
-          | undefined
+        const pluginImports = (this as unknown as TransformPluginContext)
+          ._addedImports
         if (pluginImports) {
           ;(
             await Promise.all(
@@ -931,12 +944,7 @@ export function transformCjsImport(
   importer: string,
   config: ResolvedConfig,
 ): string | undefined {
-  const node = (
-    parseJS(importExp, {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-    }) as any
-  ).body[0] as Node
+  const node = parseAst(importExp).body[0]
 
   // `export * from '...'` may cause unexpected problem, so give it a warning
   if (

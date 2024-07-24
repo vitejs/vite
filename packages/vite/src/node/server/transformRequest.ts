@@ -153,7 +153,7 @@ async function doTransform(
 
   const resolved = module
     ? undefined
-    : (await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined
+    : ((await pluginContainer.resolveId(url, undefined, { ssr })) ?? undefined)
 
   // resolve
   const id = module?.id ?? resolved?.id ?? url

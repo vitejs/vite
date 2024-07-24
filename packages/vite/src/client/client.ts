@@ -103,7 +103,7 @@ function setupWebSocket(
     notifyListeners('vite:ws:disconnect', { webSocket: socket })
 
     if (hasDocument) {
-      console.log(`[vite] server connection lost. polling for restart...`)
+      console.log(`[vite] server connection lost. Polling for restart...`)
       await waitForSuccessfulPing(protocol, hostAndPath)
       location.reload()
     }
@@ -190,7 +190,7 @@ async function handleMessage(payload: HMRPayload) {
         // module script failed to load (since one of the nested imports is 500).
         // in this case a normal update won't work and a full reload is needed.
         if (isFirstUpdate && hasErrorOverlay()) {
-          window.location.reload()
+          location.reload()
           return
         } else {
           if (enableOverlay) {
@@ -353,7 +353,6 @@ async function waitForSuccessfulPing(
   }
   await wait(ms)
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     if (document.visibilityState === 'visible') {
       if (await ping()) {

@@ -1,49 +1,22 @@
 import { resolve } from 'node:path'
-import {
-  type MockInstance,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest'
-import chokidar from 'chokidar'
-import { createServer } from '../index'
+import { fileURLToPath } from 'node:url'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { type ViteDevServer, createServer } from '../index'
 
 const stubGetWatchedCode = /getWatched\(\) \{.+?return \{\};.+?\}/s
 
-let watchSpy: MockInstance<
-  Parameters<typeof chokidar.watch>,
-  ReturnType<typeof chokidar.watch>
->
-
-vi.mock('../../config', async () => {
-  const config: typeof import('../../config') =
-    await vi.importActual('../../config')
-  const resolveConfig = config.resolveConfig
-  vi.spyOn(config, 'resolveConfig').mockImplementation(async (...args) => {
-    const resolved: Awaited<ReturnType<typeof resolveConfig>> =
-      await resolveConfig.call(config, ...args)
-    resolved.configFileDependencies.push(
-      resolve('fake/config/dependency.js').replace(/\\/g, '/'),
-    )
-    return resolved
-  })
-  return config
-})
-
 describe('watcher configuration', () => {
-  beforeEach(() => {
-    watchSpy = vi.spyOn(chokidar, 'watch')
-  })
+  let server: ViteDevServer | undefined
 
-  afterEach(() => {
-    watchSpy.mockRestore()
+  afterEach(async () => {
+    if (server) {
+      await server.close()
+      server = undefined
+    }
   })
 
   it('when watcher is disabled, return noop watcher', async () => {
-    const server = await createServer({
+    server = await createServer({
       server: {
         watch: null,
       },
@@ -52,7 +25,7 @@ describe('watcher configuration', () => {
   })
 
   it('when watcher is not disabled, return chokidar watcher', async () => {
-    const server = await createServer({
+    server = await createServer({
       server: {
         watch: {},
       },
@@ -61,25 +34,23 @@ describe('watcher configuration', () => {
   })
 
   it('should watch the root directory, config file dependencies, dotenv files, and the public directory', async () => {
-    await createServer({
-      server: {
-        watch: {},
-      },
-      publicDir: '__test_public__',
-    })
-    expect(watchSpy).toHaveBeenLastCalledWith(
-      expect.arrayContaining(
-        [
-          process.cwd(),
-          resolve('fake/config/dependency.js'),
-          resolve('.env'),
-          resolve('.env.local'),
-          resolve('.env.development'),
-          resolve('.env.development.local'),
-          resolve('__test_public__'),
-        ].map((file) => file.replace(/\\/g, '/')),
-      ),
-      expect.anything(),
+    const root = fileURLToPath(
+      new URL('./fixtures/watcher/nested-root', import.meta.url),
     )
+    server = await createServer({ root })
+    await new Promise((resolve) => server!.watcher.once('ready', resolve))
+    // Perform retries here as chokidar may still not be completely watching all directories
+    // after the `ready` event
+    await vi.waitFor(() => {
+      const watchedDirs = Object.keys(server!.watcher.getWatched())
+      expect(watchedDirs).toEqual(
+        expect.arrayContaining([
+          root,
+          resolve(root, '../config-deps'),
+          resolve(root, '../custom-env'),
+          resolve(root, '../custom-public'),
+        ]),
+      )
+    })
   })
 })

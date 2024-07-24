@@ -35,6 +35,8 @@ import {
   promiseWithResolvers,
   resolveHostname,
   resolveServerUrls,
+  setupSIGTERMListener,
+  teardownSIGTERMListener,
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
@@ -102,6 +104,11 @@ export interface ServerOptions extends CommonServerOptions {
    */
   hmr?: HmrOptions | boolean
   /**
+   * Do not start the websocket connection.
+   * @experimental
+   */
+  ws?: false
+  /**
    * Warm-up files to transform and cache the results in advance. This improves the
    * initial page load during server starts and prevents transform waterfalls.
    */
@@ -132,7 +139,7 @@ export interface ServerOptions extends CommonServerOptions {
          *
          * This is needed to proxy WebSocket connections to the parent server.
          */
-        server: http.Server
+        server: HttpServer
       }
   /**
    * Options for files served via '/\@fs/'.
@@ -497,8 +504,6 @@ export async function _createServer(
   const container = await createPluginContainer(config, moduleGraph, watcher)
   const closeHttpServer = createServerCloseFn(httpServer)
 
-  let exitProcess: () => void
-
   const devHtmlTransformFn = createDevHtmlTransformFn(config)
 
   const onCrawlEndCallbacks: (() => void)[] = []
@@ -558,13 +563,7 @@ export async function _createServer(
       return devHtmlTransformFn(server, url, html, originalUrl)
     },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      return ssrLoadModule(
-        url,
-        server,
-        undefined,
-        undefined,
-        opts?.fixStacktrace,
-      )
+      return ssrLoadModule(url, server, undefined, opts?.fixStacktrace)
     },
     async ssrFetchModule(url: string, importer?: string) {
       return ssrFetchModule(server, url, importer)
@@ -639,10 +638,7 @@ export async function _createServer(
     },
     async close() {
       if (!middlewareMode) {
-        process.off('SIGTERM', exitProcess)
-        if (process.env.CI !== 'true') {
-          process.stdin.off('end', exitProcess)
-        }
+        teardownSIGTERMListener(closeServerAndExit)
       }
       await Promise.allSettled([
         watcher.close(),
@@ -737,18 +733,16 @@ export async function _createServer(
     },
   })
 
+  const closeServerAndExit = async () => {
+    try {
+      await server.close()
+    } finally {
+      process.exit()
+    }
+  }
+
   if (!middlewareMode) {
-    exitProcess = async () => {
-      try {
-        await server.close()
-      } finally {
-        process.exit()
-      }
-    }
-    process.once('SIGTERM', exitProcess)
-    if (process.env.CI !== 'true') {
-      process.stdin.on('end', exitProcess)
-    }
+    setupSIGTERMListener(closeServerAndExit)
   }
 
   const onHMRUpdate = async (
@@ -1130,7 +1124,7 @@ async function restartServer(server: ViteDevServer) {
   }
 
   // Reinit the server by creating a new instance using the same inlineConfig
-  // This will triger a reload of the config file and re-create the plugins and
+  // This will trigger a reload of the config file and re-create the plugins and
   // middlewares. We then assign all properties of the new server to the existing
   // server instance and set the user instance to be used in the new server.
   // This allows us to keep the same server instance for the user.
