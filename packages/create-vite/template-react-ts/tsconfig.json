@@ -18,11 +18,7 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-
-    /* Improve perf when running tsc -b */
-    "incremental": true,
-    "tsBuildInfoFile": "node_modules/.cache/tsconfig.tsbuildinfo"
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
