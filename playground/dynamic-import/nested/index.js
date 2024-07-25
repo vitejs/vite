@@ -175,11 +175,21 @@ import(`../nested/nested/${base}.js`).then((mod) => {
     ({ foo = {} }) => foo,
   )
   await import('./treeshaken/syntax.js').then((mod) => mod.foo({ foo }))
+  const obj = [
+    '',
+    {
+      async lazy() {
+        const { foo } = await import('./treeshaken/treeshaken.js')
+        return { foo: aaa(foo) }
+      },
+    },
+  ]
   default1()
   default2()
   other()
   foo()
   foo2()
+  obj[1].lazy()
 })()
 
 import(`../nested/static.js`).then((mod) => {
