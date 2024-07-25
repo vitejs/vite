@@ -98,7 +98,7 @@ describe('definePlugin', () => {
       ),
     ).toMatchInlineSnapshot(`
       "const isLegacy = __VITE_IS_LEGACY__;
-      undefined && console.log(undefined);
+      undefined                          && console.log(undefined                         );
       "
     `)
   })
