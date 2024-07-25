@@ -559,7 +559,7 @@ export async function buildEnvironment(
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const options = config.build
   const { logger } = environment
-  const ssr = environment.options.ssr
+  const ssr = environment.config.consumer === 'server'
 
   logger.info(
     colors.cyan(
@@ -719,7 +719,7 @@ export async function buildEnvironment(
 
       const format = output.format || 'es'
       const jsExt =
-        !environment.options.webCompatible || libOptions
+        !environment.config.webCompatible || libOptions
           ? resolveOutputJsExtension(
               format,
               findNearestPackageData(config.root, config.packageCache)?.data
@@ -760,8 +760,8 @@ export async function buildEnvironment(
         inlineDynamicImports:
           output.format === 'umd' ||
           output.format === 'iife' ||
-          (environment.options.ssr &&
-            environment.options.webCompatible &&
+          (environment.config.consumer === 'server' &&
+            environment.config.webCompatible &&
             (typeof input === 'string' || Object.keys(input).length === 1)),
         ...output,
       }
@@ -1264,7 +1264,7 @@ function injectSsrFlag<T extends Record<string, any>>(
   options?: T,
   environment?: BuildEnvironment,
 ): T & { ssr?: boolean } {
-  const ssr = environment?.options.ssr ?? true
+  const ssr = environment ? environment.config.consumer === 'server' : true
   return { ...(options ?? {}), ssr } as T & {
     ssr?: boolean
   }
@@ -1541,7 +1541,7 @@ export async function createBuilder(
       return config.builder.buildApp(builder)
     },
     async build(environment: BuildEnvironment) {
-      return buildEnvironment(environment.config, environment)
+      return buildEnvironment(environment.getTopLevelConfig(), environment)
     },
   }
 
@@ -1560,7 +1560,7 @@ export async function createBuilder(
     let environmentConfig = config
     if (!config.builder.sharedConfigBuild) {
       const patchConfig = (resolved: ResolvedConfig) => {
-        // Until the ecosystem updates to use `environment.options.build` instead of `config.build`,
+        // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
         // we need to make override `config.build` for the current environment.
         // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
         // remove the default values that shouldn't be used at all once the config is resolved

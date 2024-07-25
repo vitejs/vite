@@ -127,7 +127,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(code, id) {
-      if (!this.environment.options.ssr && isIncludeWorkerImportMetaUrl(code)) {
+      if (
+        this.environment.config.consumer === 'client' &&
+        isIncludeWorkerImportMetaUrl(code)
+      ) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =

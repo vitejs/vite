@@ -52,8 +52,9 @@ export function esbuildDepPlugin(
   qualified: Record<string, string>,
   external: string[],
 ): Plugin {
-  const config = environment.config
-  const { extensions } = environment.options.dev.optimizeDeps
+  const topLevelConfig = environment.getTopLevelConfig()
+  const { isProduction } = topLevelConfig
+  const { extensions } = environment.config.dev.optimizeDeps
 
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = extensions
@@ -66,14 +67,14 @@ export function esbuildDepPlugin(
   const cjsPackageCache: PackageCache = new Map()
 
   // default resolver which prefers ESM
-  const _resolve = createIdResolver(config, {
+  const _resolve = createIdResolver(topLevelConfig, {
     asSrc: false,
     scan: true,
     packageCache: esmPackageCache,
   })
 
   // cjs resolver that prefers Node
-  const _resolveRequire = createIdResolver(config, {
+  const _resolveRequire = createIdResolver(topLevelConfig, {
     asSrc: false,
     isRequire: true,
     scan: true,
@@ -112,8 +113,8 @@ export function esbuildDepPlugin(
         namespace: 'optional-peer-dep',
       }
     }
-    // TODO: Should this be environment.options.nodeCompatible or a more fine-grained option?
-    if (environment.options.ssr && isBuiltin(resolved)) {
+    // TODO: Should this be environment.config.nodeCompatible or a more fine-grained option?
+    if (environment.config.consumer === 'server' && isBuiltin(resolved)) {
       return
     }
     if (isExternalUrl(resolved)) {
@@ -235,7 +236,7 @@ export function esbuildDepPlugin(
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
         ({ path }) => {
-          if (config.isProduction) {
+          if (isProduction) {
             return {
               contents: 'module.exports = {}',
             }
@@ -278,7 +279,7 @@ module.exports = Object.create(new Proxy({}, {
       build.onLoad(
         { filter: /.*/, namespace: 'optional-peer-dep' },
         ({ path }) => {
-          if (config.isProduction) {
+          if (isProduction) {
             return {
               contents: 'module.exports = {}',
             }

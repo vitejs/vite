@@ -39,11 +39,10 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:asset-import-meta-url',
-    async transform(code, id, options) {
+    async transform(code, id) {
       const { environment } = this
       if (
-        environment &&
-        !environment.options.ssr &&
+        environment.config.consumer === 'client' &&
         id !== preloadHelperId &&
         id !== CLIENT_ENTRY &&
         code.includes('new URL') &&

@@ -5,18 +5,50 @@ import type { Plugin } from './plugin'
 
 export class PartialEnvironment {
   name: string
-  config: ResolvedConfig
-  options: ResolvedEnvironmentOptions
+  getTopLevelConfig(): ResolvedConfig {
+    return this._topLevelConfig
+  }
+
+  config: ResolvedConfig & ResolvedEnvironmentOptions
+
+  /**
+   * @deprecated use environment.config instead
+   **/
+  get options(): ResolvedEnvironmentOptions {
+    return this._options
+  }
+
+  _options: ResolvedEnvironmentOptions
+
   logger: Logger
+
+  /**
+   * @internal
+   */
+  _topLevelConfig: ResolvedConfig
 
   constructor(
     name: string,
-    config: ResolvedConfig,
-    options: ResolvedEnvironmentOptions = config.environments[name],
+    topLevelConfig: ResolvedConfig,
+    options: ResolvedEnvironmentOptions = topLevelConfig.environments[name],
   ) {
     this.name = name
-    this.config = config
-    this.options = options
+    this._topLevelConfig = topLevelConfig
+    this._options = options
+    this.config = new Proxy(
+      options as ResolvedConfig & ResolvedEnvironmentOptions,
+      {
+        get: (target, prop: keyof ResolvedConfig) => {
+          if (prop === 'logger') {
+            return this.logger
+          }
+          if (prop in target) {
+            return this._options[prop as keyof ResolvedEnvironmentOptions]
+          }
+          return this._topLevelConfig[prop]
+        },
+      },
+    )
     const environment = colors.dim(`(${this.name})`)
     const colorIndex =
       [...environment].reduce((acc, c) => acc + c.charCodeAt(0), 0) %
@@ -24,37 +56,37 @@ export class PartialEnvironment {
     const infoColor = environmentColors[colorIndex || 0]
     this.logger = {
       get hasWarned() {
-        return config.logger.hasWarned
+        return topLevelConfig.logger.hasWarned
       },
       info(msg, opts) {
-        return config.logger.info(msg, {
+        return topLevelConfig.logger.info(msg, {
           ...opts,
           environment: infoColor(environment),
         })
       },
       warn(msg, opts) {
-        return config.logger.warn(msg, {
+        return topLevelConfig.logger.warn(msg, {
           ...opts,
           environment: colors.yellow(environment),
         })
       },
       warnOnce(msg, opts) {
-        return config.logger.warnOnce(msg, {
+        return topLevelConfig.logger.warnOnce(msg, {
           ...opts,
           environment: colors.yellow(environment),
         })
       },
       error(msg, opts) {
-        return config.logger.error(msg, {
+        return topLevelConfig.logger.error(msg, {
           ...opts,
           environment: colors.red(environment),
         })
       },
       clearScreen(type) {
-        return config.logger.clearScreen(type)
+        return topLevelConfig.logger.clearScreen(type)
       },
       hasErrorLogged(error) {
-        return config.logger.hasErrorLogged(error)
+        return topLevelConfig.logger.hasErrorLogged(error)
       },
     }
   }

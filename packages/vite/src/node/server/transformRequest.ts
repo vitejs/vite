@@ -73,10 +73,10 @@ export function transformRequest(
   // Backward compatibility when only `ssr` is passed
   if (!options?.ssr) {
     // Backward compatibility
-    options = { ...options, ssr: environment.options.ssr }
+    options = { ...options, ssr: environment.config.consumer === 'server' }
   }
 
-  if (environment._closing && environment?.options.dev.recoverable)
+  if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
 
   const cacheKey = `${options.html ? 'html:' : ''}${url}`
@@ -215,7 +215,9 @@ async function getCachedTransformResult(
   module: EnvironmentModuleNode,
   timestamp: number,
 ) {
-  const prettyUrl = debugCache ? prettifyUrl(url, environment.config.root) : ''
+  const prettyUrl = debugCache
+    ? prettifyUrl(url, environment.getTopLevelConfig().root)
+    : ''
 
   // tries to handle soft invalidation of the module if available,
   // returns a boolean true is successful, or false if no handling is needed
@@ -244,10 +246,10 @@ async function loadAndTransform(
   mod?: EnvironmentModuleNode,
   resolved?: PartialResolvedId,
 ) {
-  const { config, pluginContainer } = environment
-  const { logger } = config
+  const topLevelConfig = environment.getTopLevelConfig()
+  const { pluginContainer, logger } = environment
   const prettyUrl =
-    debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
+    debugLoad || debugTransform ? prettifyUrl(url, topLevelConfig.root) : ''
 
   const moduleGraph = environment.moduleGraph
 
@@ -273,8 +275,8 @@ async function loadAndTransform(
     // only try the fallback if access is allowed, skip for out of root url
     // like /service-worker.js or /api/users
     if (
-      environment.options.nodeCompatible ||
-      isFileLoadingAllowed(config, file)
+      environment.config.nodeCompatible ||
+      isFileLoadingAllowed(topLevelConfig, file)
     ) {
       try {
         code = await fsp.readFile(file, 'utf-8')
@@ -288,7 +290,7 @@ async function loadAndTransform(
         }
       }
       if (code != null && environment.watcher) {
-        ensureWatchedFile(environment.watcher, file, config.root)
+        ensureWatchedFile(environment.watcher, file, topLevelConfig.root)
       }
     }
     if (code) {
@@ -314,8 +316,11 @@ async function loadAndTransform(
     }
   }
   if (code == null) {
-    const isPublicFile = checkPublicFile(url, config)
-    let publicDirName = path.relative(config.root, config.publicDir)
+    const isPublicFile = checkPublicFile(url, topLevelConfig)
+    let publicDirName = path.relative(
+      topLevelConfig.root,
+      topLevelConfig.publicDir,
+    )
     if (publicDirName[0] !== '.') publicDirName = '/' + publicDirName
     const msg = isPublicFile
       ? `This file is in ${publicDirName} and will be copied as-is during ` +
@@ -335,7 +340,7 @@ async function loadAndTransform(
     throw err
   }
 
-  if (environment._closing && environment.options.dev.recoverable)
+  if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
 
   // ensure module in graph after successful load
@@ -379,7 +384,7 @@ async function loadAndTransform(
     applySourcemapIgnoreList(
       normalizedMap,
       sourcemapPath,
-      config.server.sourcemapIgnoreList,
+      topLevelConfig.server.sourcemapIgnoreList,
       logger,
     )
 
@@ -407,16 +412,16 @@ async function loadAndTransform(
     }
   }
 
-  if (environment._closing && environment.options.dev.recoverable)
+  if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
 
-  const result = environment.options.dev.moduleRunnerTransform
+  const result = environment.config.dev.moduleRunnerTransform
     ? await ssrTransform(
         code,
         normalizedMap,
         url,
         originalCode,
-        environment.config,
+        environment.getTopLevelConfig(),
       )
     : ({
         code,
@@ -461,7 +466,7 @@ async function handleModuleSoftInvalidation(
   let result: TransformResult
   // No transformation is needed if it's disabled manually
   // This is primarily for backwards compatible SSR
-  if (!environment.options.injectInvalidationTimestamp) {
+  if (!environment.config.injectInvalidationTimestamp) {
     result = transformResult
   }
   // We need to transform each imports with new timestamps if available
@@ -489,7 +494,7 @@ async function handleModuleSoftInvalidation(
       const hmrUrl = unwrapId(
         stripBase(
           removeImportQuery(urlWithoutTimestamp),
-          environment.config.base,
+          environment.getTopLevelConfig().base,
         ),
       )
       for (const importedMod of mod.importedModules) {
@@ -504,7 +509,7 @@ async function handleModuleSoftInvalidation(
           s.overwrite(start, end, replacedUrl)
         }
 
-        if (imp.d === -1 && environment.options.dev.preTransformRequests) {
+        if (imp.d === -1 && environment.config.dev.preTransformRequests) {
           // pre-transform known direct imports
           environment.warmupRequest(hmrUrl)
         }

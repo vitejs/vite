@@ -11,11 +11,11 @@ import { createIdResolver } from '../idResolver'
 export function createOptimizeDepsIncludeResolver(
   environment: Environment,
 ): (id: string) => Promise<string | undefined> {
-  const { config } = environment
-  const resolve = createIdResolver(config, {
+  const topLevelConfig = environment.getTopLevelConfig()
+  const resolve = createIdResolver(topLevelConfig, {
     asSrc: false,
     scan: true,
-    ssrOptimizeCheck: environment.options.ssr,
+    ssrOptimizeCheck: environment.config.consumer === 'server',
     packageCache: new Map(),
   })
   return async (id: string) => {
@@ -29,8 +29,8 @@ export function createOptimizeDepsIncludeResolver(
     const nestedPath = id.substring(lastArrowIndex + 1).trim()
     const basedir = nestedResolveBasedir(
       nestedRoot,
-      config.root,
-      config.resolve.preserveSymlinks,
+      topLevelConfig.root,
+      topLevelConfig.resolve.preserveSymlinks,
     )
     return await resolve(
       environment,

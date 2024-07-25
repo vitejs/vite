@@ -61,7 +61,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     // This is a place where using `!options.nodeCompatible` fails and it is confusing why
     // Do we need a per-environment replaceProcessEnv option?
     // Is it useful to have define be configured per-environment?
-    const replaceProcessEnv = environment.options.webCompatible
+    const replaceProcessEnv = environment.config.webCompatible
 
     const define: Record<string, string> = {
       ...(replaceProcessEnv ? processEnv : {}),
@@ -71,7 +71,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     // Additional define fixes based on `ssr` value
-    const ssr = environment.options.ssr
+    const ssr = environment.config.consumer === 'server'
 
     if ('import.meta.env.SSR' in define) {
       define['import.meta.env.SSR'] = ssr + ''
@@ -116,7 +116,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     name: 'vite:define',
 
     async transform(code, id) {
-      if (!this.environment.options.ssr && !isBuild) {
+      if (this.environment.config.consumer === 'client' && !isBuild) {
         // for dev we inject actual global defines in the vite client to
         // avoid the transform cost. see the `clientInjection` and
         // `importAnalysis` plugin.
@@ -164,7 +164,8 @@ export async function replaceDefine(
     define = { ...define, 'import.meta.env': marker }
   }
 
-  const esbuildOptions = environment.config.esbuild || {}
+  const topLevelConfig = environment.getTopLevelConfig()
+  const esbuildOptions = topLevelConfig.esbuild || {}
 
   const result = await transform(code, {
     loader: 'js',
@@ -173,8 +174,8 @@ export async function replaceDefine(
     define,
     sourcefile: id,
     sourcemap:
-      environment.config.command === 'build'
-        ? !!environment.options.build.sourcemap
+      topLevelConfig.command === 'build'
+        ? !!environment.config.build.sourcemap
         : true,
   })
 

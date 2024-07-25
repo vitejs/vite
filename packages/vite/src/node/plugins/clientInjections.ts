@@ -91,7 +91,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
     },
     async transform(code, id, options) {
       // TODO: Remove options?.ssr, Vitest currently hijacks this plugin
-      const ssr = options?.ssr ?? this.environment.options.ssr
+      const ssr = options?.ssr ?? this.environment.config.consumer === 'server'
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
         return injectConfigValues(code)
       } else if (!ssr && code.includes('process.env.NODE_ENV')) {
