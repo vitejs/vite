@@ -65,12 +65,15 @@
   <p>
     import.meta.env.UNDEFINED <code class="import-meta-env-UNDEFINED"></code>
   </p>
-  <p>import.meta.env.LEGACY <code class="import-meta-env-LEGACY"></code></p>
+  <p>
+    import.meta.env.SOME_IDENTIFIER
+    <code class="import-meta-env-SOME_IDENTIFIER"></code>
+  </p>
 </section>
 
 <script>
-  // simulate legacy mode
-  window.__VITE_IS_LEGACY__ = true
+  // inject __VITE_SOME_IDENTIFIER__ to test if it's replaced
+  window.__VITE_SOME_IDENTIFIER__ = true
 </script>
 <script type="module">
   const __VAR_NAME__ = true // ensure define doesn't replace var name
@@ -145,8 +148,8 @@
     `${import.meta.env.UNDEFINED}`,
   )
   text(
-    '.replace-undefined-constants-on-import-meta-env .import-meta-env-LEGACY',
-    `${import.meta.env.LEGACY}`,
+    '.replace-undefined-constants-on-import-meta-env .import-meta-env-SOME_IDENTIFIER',
+    `${import.meta.env.SOME_IDENTIFIER}`,
   )
 </script>
 

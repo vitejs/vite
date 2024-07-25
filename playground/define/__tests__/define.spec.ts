@@ -101,7 +101,7 @@ test('replace constants on import.meta.env when it is a invalid json', async () 
   ).toBe('undefined')
   expect(
     await page.textContent(
-      '.replace-undefined-constants-on-import-meta-env .import-meta-env-LEGACY',
+      '.replace-undefined-constants-on-import-meta-env .import-meta-env-SOME_IDENTIFIER',
     ),
   ).toBe('true')
 })

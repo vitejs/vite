@@ -1,15 +1,18 @@
 import { transform } from 'esbuild'
 import { TraceMap, decodedMap, encodedMap } from '@jridgewell/trace-mapping'
+import MagicString from 'magic-string'
+import type { SourceMap } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { escapeRegex } from '../utils'
+import { combineSourcemaps, escapeRegex } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 const importMetaEnvMarker = '__vite_import_meta_env__'
-const bareImportMetaEnvRe = /import\.meta\.env(?!\.)\b/
+const bareImportMetaEnvRe = new RegExp(`${importMetaEnvMarker}(?!\\.)\\b`)
+const importMetaEnvKeyRe = new RegExp(`${importMetaEnvMarker}\\..+?\\b`, 'g')
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -74,20 +77,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       define['import.meta.env'] = importMetaEnvMarker
     }
 
-    const importMetaEnv = {
+    const importMetaEnvVal = serializeDefine({
       ...importMetaEnvKeys,
       SSR: ssr + '',
       ...userDefineEnv,
-    }
-    const importMetaEnvVal = serializeDefine(importMetaEnv)
-    // replace bare `import.meta.env` manually
-    const banner = `const ${importMetaEnvMarker} = ${importMetaEnvVal};`
-    // create regex pattern to match undefined `import.meta.env` properties
-    // to replace it to `undefined` directly
-    const undefinedPattern = new RegExp(
-      `import\\.meta\\.env\\.(?!${Object.keys(importMetaEnv).map(escapeRegex).join('|')}).+?\\b`,
-      'g',
-    )
+    })
+    const banner = `const ${importMetaEnvMarker} = ${importMetaEnvVal};\n`
 
     // Create regex pattern as a fast check before running esbuild
     const patternKeys = Object.keys(userDefine)
@@ -101,7 +96,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ? new RegExp(patternKeys.map(escapeRegex).join('|'))
       : null
 
-    return [define, pattern, undefinedPattern, banner] as const
+    return [define, pattern, banner] as const
   }
 
   const defaultPattern = generatePattern(false)
@@ -129,30 +124,44 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const [define, pattern, undefinedPattern, banner] = ssr
-        ? ssrPattern
-        : defaultPattern
+      const [define, pattern, banner] = ssr ? ssrPattern : defaultPattern
       if (!pattern) return
 
       // Check if our code needs any replacements before running esbuild
       pattern.lastIndex = 0
       if (!pattern.test(code)) return
 
-      // process undefined imports.meta.env properties
-      const defineWithUndefined = { ...define }
-      undefinedPattern.lastIndex = 0
-      for (const undefinedEnvKey of [...code.matchAll(undefinedPattern)]) {
-        defineWithUndefined[undefinedEnvKey[0]] = 'undefined'
-      }
+      const esbuildResult = await replaceDefine(code, id, define, config)
 
-      return await replaceDefine(
-        code,
-        id,
-        defineWithUndefined,
-        config,
-        // if there is bare `import.meta.env`, then add the manual `import.meta.env`
-        bareImportMetaEnvRe.test(code) ? banner : undefined,
-      )
+      // replace undefined `import.meta.env` keys
+      // and bare `import.meta.env` references
+      bareImportMetaEnvRe.lastIndex = 0
+      importMetaEnvKeyRe.lastIndex = 0
+      if (esbuildResult.map) {
+        const ms = new MagicString(esbuildResult.code)
+        ms.replaceAll(importMetaEnvKeyRe, 'undefined')
+        let finalCode = ms.toString()
+        if (bareImportMetaEnvRe.test(finalCode)) {
+          ms.prepend(banner)
+          finalCode = ms.toString()
+        }
+        return {
+          code: finalCode,
+          map: combineSourcemaps(id, [
+            JSON.parse(esbuildResult.map),
+            ms.generateMap({ hires: 'boundary' }),
+          ]) as SourceMap,
+        }
+      } else {
+        esbuildResult.code = esbuildResult.code.replaceAll(
+          importMetaEnvKeyRe,
+          'undefined',
+        )
+        if (bareImportMetaEnvRe.test(esbuildResult.code)) {
+          esbuildResult.code = banner + esbuildResult.code
+        }
+        return esbuildResult
+      }
     },
   }
 }
@@ -162,7 +171,6 @@ export async function replaceDefine(
   id: string,
   define: Record<string, string>,
   config: ResolvedConfig,
-  banner?: string,
 ): Promise<{ code: string; map: string | null }> {
   const esbuildOptions = config.esbuild || {}
 
@@ -173,7 +181,6 @@ export async function replaceDefine(
     define,
     sourcefile: id,
     sourcemap: config.command === 'build' ? !!config.build.sourcemap : true,
-    banner,
   })
 
   // remove esbuild's <define:...> source entries
