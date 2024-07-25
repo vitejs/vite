@@ -73,7 +73,7 @@ export class ScanEnvironment extends BaseEnvironment {
   }
 }
 
-// Restric access to the module graph and the server while scanning
+// Restrict access to the module graph and the server while scanning
 export function devToScanEnvironment(
   environment: DevEnvironment,
 ): ScanEnvironment {
@@ -85,11 +85,12 @@ export function devToScanEnvironment(
     getTopLevelConfig() {
       return environment.getTopLevelConfig()
     },
-    /* deprecate for backcompat
+    /**
+     * @deprecated use environment.config instead
+     **/
     get options() {
       return environment.options
     },
-    */
     get config() {
       return environment.config
     },

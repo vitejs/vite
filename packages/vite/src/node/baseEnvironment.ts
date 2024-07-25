@@ -11,9 +11,12 @@ export class PartialEnvironment {
 
   config: ResolvedConfig & ResolvedEnvironmentOptions
 
-  // TODO: keep for back-compat with earlier v6 alpha versions
-
-  // options: ResolvedEnvironmentOptions
+  /**
+   * @deprecated use environment.config instead
+   **/
+  get options(): ResolvedEnvironmentOptions {
+    return this._options
+  }
 
   _options: ResolvedEnvironmentOptions
 
