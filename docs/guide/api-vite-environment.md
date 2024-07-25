@@ -75,7 +75,7 @@ class DevEnvironment {
    * global scope are taken as defaults for all environments, and can
    * be overridden (resolve conditions, external, optimizedDeps)
    */
-  options: ResolvedDevEnvironmentOptions
+  config: ResolvedConfig & ResolvedDevEnvironmentOptions
 
   constructor(name, config, { hot, options }: DevEnvironmentSetup)
 
@@ -882,7 +882,7 @@ In a future major (Vite 7 or 8), we aim to have complete alignment:
 
 There will also be a single `ResolvedConfig` instance shared during build, allowing for caching at entire app build process level in the same way as we have been doing with `WeakMap<ResolvedConfig, CachedData>` during dev.
 
-For Vite 6, we need to do a smaller step to keep backward compatibility. Ecosystem plugins are currently using `config.build` instead of `environment.options.build` to access configuration, so we need to create a new `ResolvedConfig` per environment by default. A project can opt-in into sharing the full config and plugins pipeline setting `builder.sharedConfigBuild` to `true`.
+For Vite 6, we need to do a smaller step to keep backward compatibility. Ecosystem plugins are currently using `config.build` instead of `environment.config.build` to access configuration, so we need to create a new `ResolvedConfig` per environment by default. A project can opt-in into sharing the full config and plugins pipeline setting `builder.sharedConfigBuild` to `true`.
 
 This option would only work of a small subset of projects at first, so plugin authors can opt-in for a particular plugin to be shared by setting the `sharedDuringBuild` flag to `true`. This allows for easily sharing state both for regular plugins:
 
