@@ -83,7 +83,7 @@ function toOutputFilePathInHtml(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
-    return joinUrlSegments(decodeURI(config.base), filename)
+    return joinUrlSegments(config.decodedBase, filename)
   }
 }
 function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {

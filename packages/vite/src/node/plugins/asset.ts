@@ -281,10 +281,7 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX, id)
   }
-  const base = joinUrlSegments(
-    config.server?.origin ?? '',
-    decodeURI(config.base),
-  )
+  const base = joinUrlSegments(config.server?.origin ?? '', config.decodedBase)
   return joinUrlSegments(base, removeLeadingSlash(rtn))
 }
 
@@ -309,7 +306,7 @@ export function publicFileToBuiltUrl(
 ): string {
   if (config.command !== 'build') {
     // We don't need relative base or renderBuiltUrl support during dev
-    return joinUrlSegments(decodeURI(config.base), url)
+    return joinUrlSegments(config.decodedBase, url)
   }
   const hash = getHash(url)
   let cache = publicAssetUrlCache.get(config)
