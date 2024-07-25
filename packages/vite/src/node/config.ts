@@ -1063,11 +1063,6 @@ export async function loadConfigFromFile(
   }
 }
 
-function getCurrentNodeTarget(): string {
-  // esbuild accepts node targets in the form of `nodeX.Y.Z` and `nodeX.Y.Z-nightly1234`
-  return `node${process.versions.node}`
-}
-
 async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
@@ -1079,7 +1074,7 @@ async function bundleConfigFile(
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
     write: false,
-    target: [getCurrentNodeTarget()],
+    target: [`node${process.versions.node}`],
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',
