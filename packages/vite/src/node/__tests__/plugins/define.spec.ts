@@ -64,6 +64,20 @@ describe('definePlugin', () => {
     )
   })
 
+  test('replace import.meta.env.UNKNOWN with undefined', async () => {
+    const transform = await createDefinePluginTransform()
+    expect(await transform('const foo = import.meta.env.UNKNOWN;')).toBe(
+      'const foo = undefined                       ;\n',
+    )
+  })
+
+  test('leave import.meta.env["UNKNOWN"] to runtime', async () => {
+    const transform = await createDefinePluginTransform()
+    expect(await transform('const foo = import.meta.env["UNKNOWN"];')).toMatch(
+      /const __vite_import_meta_env__ = .*;\nconst foo = __vite_import_meta_env__\["UNKNOWN"\];/,
+    )
+  })
+
   test('preserve import.meta.env.UNKNOWN with override', async () => {
     const transform = await createDefinePluginTransform({
       'import.meta.env.UNKNOWN': 'import.meta.env.UNKNOWN',

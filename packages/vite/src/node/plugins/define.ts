@@ -1,10 +1,8 @@
 import { transform } from 'esbuild'
 import { TraceMap, decodedMap, encodedMap } from '@jridgewell/trace-mapping'
-import MagicString from 'magic-string'
-import type { SourceMap } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { combineSourcemaps, escapeRegex } from '../utils'
+import { escapeRegex } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -131,37 +129,25 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       pattern.lastIndex = 0
       if (!pattern.test(code)) return
 
-      const esbuildResult = await replaceDefine(code, id, define, config)
+      const result = await replaceDefine(code, id, define, config)
 
-      // replace undefined `import.meta.env` keys
-      // and bare `import.meta.env` references
-      bareImportMetaEnvRe.lastIndex = 0
-      importMetaEnvKeyRe.lastIndex = 0
-      if (esbuildResult.map) {
-        const ms = new MagicString(esbuildResult.code)
-        ms.replaceAll(importMetaEnvKeyRe, 'undefined')
-        let finalCode = ms.toString()
-        if (bareImportMetaEnvRe.test(finalCode)) {
-          ms.prepend(banner)
-          finalCode = ms.toString()
+      // Replace `import.meta.env.*` with undefined
+      result.code = result.code.replaceAll(importMetaEnvKeyRe, (m) =>
+        'undefined'.padEnd(m.length),
+      )
+
+      // If there's bare `import.meta.env` references, prepend the banner
+      if (bareImportMetaEnvRe.test(result.code)) {
+        result.code = banner + result.code
+
+        if (result.map) {
+          const map = JSON.parse(result.map)
+          map.mappings = ';' + map.mappings
+          result.map = map
         }
-        return {
-          code: finalCode,
-          map: combineSourcemaps(id, [
-            JSON.parse(esbuildResult.map),
-            ms.generateMap({ hires: 'boundary' }),
-          ]) as SourceMap,
-        }
-      } else {
-        esbuildResult.code = esbuildResult.code.replaceAll(
-          importMetaEnvKeyRe,
-          'undefined',
-        )
-        if (bareImportMetaEnvRe.test(esbuildResult.code)) {
-          esbuildResult.code = banner + esbuildResult.code
-        }
-        return esbuildResult
       }
+
+      return result
     },
   }
 }
