@@ -218,7 +218,7 @@ export function resolvePlugin(
       // disabled in that case, so deps optimization is opt-in when creating the plugin.
       const depsOptimizer =
         resolveOptions.optimizeDeps && this.environment.mode === 'dev'
-          ? this.environment?.depsOptimizer
+          ? this.environment.depsOptimizer
           : undefined
 
       if (id.startsWith(browserExternalId)) {
@@ -231,7 +231,7 @@ export function resolvePlugin(
 
       const environmentName = this.environment.name ?? (ssr ? 'ssr' : 'client')
       const currentEnvironmentOptions =
-        this.environment?.config || environmentsOptions?.[environmentName]
+        this.environment.config || environmentsOptions?.[environmentName]
       const environmentResolveOptions = currentEnvironmentOptions?.resolve
       if (!environmentResolveOptions) {
         throw new Error(

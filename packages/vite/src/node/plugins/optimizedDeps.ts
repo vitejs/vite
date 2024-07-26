@@ -21,7 +21,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 
     resolveId(id) {
       const environment = this.environment as DevEnvironment
-      if (environment?.depsOptimizer?.isOptimizedDepFile(id)) {
+      if (environment.depsOptimizer?.isOptimizedDepFile(id)) {
         return id
       }
     },
@@ -32,7 +32,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
 
     async load(id) {
       const environment = this.environment as DevEnvironment
-      const depsOptimizer = environment?.depsOptimizer
+      const depsOptimizer = environment.depsOptimizer
       if (depsOptimizer?.isOptimizedDepFile(id)) {
         const metadata = depsOptimizer.metadata
         const file = cleanUrl(id)

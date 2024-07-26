@@ -30,7 +30,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
       const { environment } = this
       const ssr = options?.ssr === true
       const depsOptimizer =
-        environment?.mode === 'dev' ? environment.depsOptimizer : undefined
+        environment.mode === 'dev' ? environment.depsOptimizer : undefined
       if (
         environment &&
         importer &&

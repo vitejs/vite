@@ -58,13 +58,12 @@ export function registerCustomMime(): void {
 }
 
 export function renderAssetUrlInJS(
-  ctx: PluginContext,
+  pluginContext: PluginContext,
   chunk: RenderedChunk,
   opts: NormalizedOutputOptions,
   code: string,
 ): MagicString | undefined {
-  const environment = ctx.environment!
-  const topLevelConfig = environment.getTopLevelConfig()
+  const topLevelConfig = pluginContext.environment.getTopLevelConfig()
 
   const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
     opts.format,
@@ -86,7 +85,7 @@ export function renderAssetUrlInJS(
   while ((match = assetUrlRE.exec(code))) {
     s ||= new MagicString(code)
     const [full, referenceId, postfix = ''] = match
-    const file = ctx.getFileName(referenceId)
+    const file = pluginContext.getFileName(referenceId)
     chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
     const replacement = toOutputFilePathInJS(
@@ -184,8 +183,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       // Inherit HMR timestamp if this asset was invalidated
       const environment = this.environment
       const mod =
-        environment?.mode === 'dev' &&
-        environment?.moduleGraph.getModuleById(id)
+        environment.mode === 'dev' && environment.moduleGraph.getModuleById(id)
       if (mod && mod.lastHMRTimestamp > 0) {
         url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
@@ -250,14 +248,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 }
 
 export async function fileToUrl(
-  ctx: PluginContext,
+  pluginContext: PluginContext,
   id: string,
 ): Promise<string> {
-  const topLevelConfig = ctx.environment.getTopLevelConfig()
+  const topLevelConfig = pluginContext.environment.getTopLevelConfig()
   if (topLevelConfig.command === 'serve') {
     return fileToDevUrl(id, topLevelConfig)
   } else {
-    return fileToBuiltUrl(ctx, id)
+    return fileToBuiltUrl(pluginContext, id)
   }
 }
 
@@ -388,8 +386,7 @@ export async function urlToBuiltUrl(
   importer: string,
   forceInline?: boolean,
 ): Promise<string> {
-  const environment = pluginContext.environment!
-  const topLevelConfig = environment.getTopLevelConfig()
+  const topLevelConfig = pluginContext.environment.getTopLevelConfig()
   if (checkPublicFile(url, topLevelConfig)) {
     return publicFileToBuiltUrl(url, topLevelConfig)
   }

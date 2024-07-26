@@ -369,7 +369,7 @@ class EnvironmentPluginContainer {
     options = options ? { ...options, ssr } : { ssr }
     const ctx = new LoadPluginContext(this)
     for (const plugin of this.getSortedPlugins('load')) {
-      if (this._closed && this.environment?.config.dev.recoverable)
+      if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
       if (!plugin.load) continue
       ctx._plugin = plugin
@@ -404,7 +404,7 @@ class EnvironmentPluginContainer {
     ctx._addedImports = this._getAddedImports(id)
 
     for (const plugin of this.getSortedPlugins('transform')) {
-      if (this._closed && this.environment?.config.dev.recoverable)
+      if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
       if (!plugin.transform) continue
 
