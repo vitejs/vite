@@ -335,7 +335,7 @@ async function waitForSuccessfulPing(
     // but will reject a networking error.
     // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
     try {
-      await fetch(`${pingHostProtocol}://${hostAndPath}`, {
+      const res = await fetch(`${pingHostProtocol}://${hostAndPath}`, {
         mode: 'no-cors',
         headers: {
           // Custom headers won't be included in a request with no-cors so (ab)use one of the
@@ -343,7 +343,8 @@ async function waitForSuccessfulPing(
           Accept: 'text/x-vite-ping',
         },
       })
-      return true
+      if (res.status !== 502)
+        return true
     } catch {}
     return false
   }
