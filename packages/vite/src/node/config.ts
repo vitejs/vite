@@ -838,7 +838,7 @@ export async function resolveConfig(
   const filterPlugin = (p: Plugin) => {
     if (!p) {
       return false
-    } else if (typeof p === 'function' || !p.apply) {
+    } else if (!p.apply) {
       return true
     } else if (typeof p.apply === 'function') {
       return p.apply({ ...config, mode }, configEnv)
