@@ -52,8 +52,8 @@ export function isConfiguredAsExternal(
 export function createIsConfiguredAsExternal(
   environment: PartialEnvironment,
 ): (id: string, importer?: string) => boolean {
-  const topLevelConfig = environment.getTopLevelConfig()
-  const { resolve, webCompatible, nodeCompatible } = environment.config
+  const { config } = environment
+  const { root, resolve, webCompatible, nodeCompatible } = config
   const { external, noExternal } = resolve
   const noExternalFilter =
     typeof noExternal !== 'boolean' &&
@@ -64,7 +64,7 @@ export function createIsConfiguredAsExternal(
 
   const resolveOptions: InternalResolveOptions = {
     ...resolve,
-    root: topLevelConfig.root,
+    root,
     isProduction: false,
     isBuild: true,
     conditions: targetConditions,
@@ -85,7 +85,7 @@ export function createIsConfiguredAsExternal(
         id,
         // Skip passing importer in build to avoid externalizing non-hoisted dependencies
         // unresolvable from root (which would be unresolvable from output bundles also)
-        topLevelConfig.command === 'build' ? undefined : importer,
+        config.command === 'build' ? undefined : importer,
         resolveOptions,
         undefined,
         true,

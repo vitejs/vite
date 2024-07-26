@@ -52,8 +52,7 @@ export function esbuildDepPlugin(
   qualified: Record<string, string>,
   external: string[],
 ): Plugin {
-  const topLevelConfig = environment.getTopLevelConfig()
-  const { isProduction } = topLevelConfig
+  const { isProduction } = environment.config
   const { extensions } = environment.config.dev.optimizeDeps
 
   // remove optimizable extensions from `externalTypes` list
@@ -67,14 +66,14 @@ export function esbuildDepPlugin(
   const cjsPackageCache: PackageCache = new Map()
 
   // default resolver which prefers ESM
-  const _resolve = createIdResolver(topLevelConfig, {
+  const _resolve = createIdResolver(environment.getTopLevelConfig(), {
     asSrc: false,
     scan: true,
     packageCache: esmPackageCache,
   })
 
   // cjs resolver that prefers Node
-  const _resolveRequire = createIdResolver(topLevelConfig, {
+  const _resolveRequire = createIdResolver(environment.getTopLevelConfig(), {
     asSrc: false,
     isRequire: true,
     scan: true,

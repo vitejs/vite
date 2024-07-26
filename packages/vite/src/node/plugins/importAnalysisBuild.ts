@@ -157,16 +157,15 @@ function preload(
 }
 
 function getModulePreloadData(environment: Environment) {
-  const { modulePreload } = environment.config.build
-  const topLevelConfig = environment.getTopLevelConfig()
+  const { config } = environment
+  const { modulePreload } = config.build
   const resolveModulePreloadDependencies =
     modulePreload && modulePreload.resolveDependencies
-  const renderBuiltUrl = topLevelConfig.experimental.renderBuiltUrl
+  const renderBuiltUrl = config.experimental.renderBuiltUrl
   const customModulePreloadPaths = !!(
     resolveModulePreloadDependencies || renderBuiltUrl
   )
-  const isRelativeBase =
-    topLevelConfig.base === './' || topLevelConfig.base === ''
+  const isRelativeBase = config.base === './' || config.base === ''
   const optimizeModulePreloadRelativePaths =
     isRelativeBase && !customModulePreloadPaths
   return {

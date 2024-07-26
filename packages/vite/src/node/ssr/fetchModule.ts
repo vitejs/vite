@@ -37,7 +37,7 @@ export async function fetchModule(
   }
 
   if (url[0] !== '.' && url[0] !== '/') {
-    const { isProduction, root } = environment.getTopLevelConfig()
+    const { isProduction, root } = environment.config
     const { externalConditions, dedupe, preserveSymlinks } =
       environment.config.resolve
 
@@ -61,7 +61,7 @@ export async function fetchModule(
         isBuild: false,
         isProduction,
         root,
-        packageCache: environment.getTopLevelConfig().packageCache,
+        packageCache: environment.config.packageCache,
         tryEsmOnly: true,
         webCompatible: environment.config.webCompatible,
         nodeCompatible: environment.config.nodeCompatible,
@@ -77,10 +77,7 @@ export async function fetchModule(
       throw err
     }
     const file = pathToFileURL(resolved.id).toString()
-    const type = isFilePathESM(
-      resolved.id,
-      environment.getTopLevelConfig().packageCache,
-    )
+    const type = isFilePathESM(resolved.id, environment.config.packageCache)
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }

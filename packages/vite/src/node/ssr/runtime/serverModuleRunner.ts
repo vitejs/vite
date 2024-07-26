@@ -37,10 +37,7 @@ function createHMROptions(
   environment: DevEnvironment,
   options: ServerModuleRunnerOptions,
 ) {
-  if (
-    environment.getTopLevelConfig().server.hmr === false ||
-    options.hmr === false
-  ) {
+  if (environment.config.server.hmr === false || options.hmr === false) {
     return false
   }
   if (options.hmr?.connection) {
@@ -93,7 +90,7 @@ export function createServerModuleRunner(
   return new ModuleRunner(
     {
       ...options,
-      root: environment.getTopLevelConfig().root,
+      root: environment.config.root,
       transport: {
         fetchModule: (id, importer, options) =>
           environment.fetchModule(id, importer, options),

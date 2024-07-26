@@ -251,9 +251,9 @@ export async function fileToUrl(
   pluginContext: PluginContext,
   id: string,
 ): Promise<string> {
-  const topLevelConfig = pluginContext.environment.getTopLevelConfig()
-  if (topLevelConfig.command === 'serve') {
-    return fileToDevUrl(id, topLevelConfig)
+  const { environment } = pluginContext
+  if (environment.config.command === 'serve') {
+    return fileToDevUrl(id, environment.getTopLevelConfig())
   } else {
     return fileToBuiltUrl(pluginContext, id)
   }
@@ -345,7 +345,7 @@ async function fileToBuiltUrl(
 
   let url: string
   if (shouldInline(pluginContext, file, id, content, forceInline)) {
-    if (topLevelConfig.build.lib && isGitLfsPlaceholder(content)) {
+    if (environment.config.build.lib && isGitLfsPlaceholder(content)) {
       environment.logger.warn(
         colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`),
       )
@@ -370,7 +370,9 @@ async function fileToBuiltUrl(
       source: content,
     })
 
-    const originalName = normalizePath(path.relative(topLevelConfig.root, file))
+    const originalName = normalizePath(
+      path.relative(environment.config.root, file),
+    )
     generatedAssetsMap.get(environment)!.set(referenceId, { originalName })
 
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
@@ -411,9 +413,8 @@ const shouldInline = (
   forceInline: boolean | undefined,
 ): boolean => {
   const environment = pluginContext.environment
-  const topLevelConfig = environment.getTopLevelConfig()
   const { assetsInlineLimit } = environment.config.build
-  if (topLevelConfig.build.lib) return true
+  if (environment.config.build.lib) return true
   if (pluginContext.getModuleInfo(id)?.isEntry) return false
   if (forceInline !== undefined) return forceInline
   let limit: number

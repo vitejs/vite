@@ -39,7 +39,7 @@ export function manifestPlugin(): Plugin {
     },
 
     generateBundle({ format }, bundle) {
-      const { root } = this.environment.getTopLevelConfig()
+      const { root } = this.environment.config
       const buildOptions = this.environment.config.build
 
       function getChunkName(chunk: OutputChunk) {

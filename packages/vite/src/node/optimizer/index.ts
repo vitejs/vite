@@ -346,7 +346,7 @@ let firstLoadCachedDepOptimizationMetadata = true
  */
 export async function loadCachedDepOptimizationMetadata(
   environment: Environment,
-  force = environment.getTopLevelConfig().optimizeDeps?.force ?? false,
+  force = environment.config.optimizeDeps?.force ?? false,
   asCommand = false,
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? environment.logger.info : debug
@@ -762,7 +762,7 @@ async function prepareEsbuildOptimizerRun(
 
   const define = {
     'process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || environment.getTopLevelConfig().mode,
+      process.env.NODE_ENV || environment.config.mode,
     ),
   }
 
@@ -909,9 +909,7 @@ function getTempSuffix() {
 }
 
 function getDepsCacheDirPrefix(environment: Environment): string {
-  return normalizePath(
-    path.resolve(environment.getTopLevelConfig().cacheDir, 'deps'),
-  )
+  return normalizePath(path.resolve(environment.config.cacheDir, 'deps'))
 }
 
 export function createIsOptimizedDepFile(
@@ -924,7 +922,7 @@ export function createIsOptimizedDepFile(
 export function createIsOptimizedDepUrl(
   environment: Environment,
 ): (url: string) => boolean {
-  const { root } = environment.getTopLevelConfig()
+  const { root } = environment.config
   const depsCacheDir = getDepsCacheDirPrefix(environment)
 
   // determine the url prefix of files inside cache directory
@@ -1162,15 +1160,15 @@ const lockfileNames = lockfileFormats.map((l) => l.name)
 function getConfigHash(environment: Environment): string {
   // Take config into account
   // only a subset of config options that can affect dep optimization
-  const { optimizeDeps } = environment.config.dev
-  const topLevelConfig = environment.getTopLevelConfig()
+  const { config } = environment
+  const { optimizeDeps } = config.dev
   const content = JSON.stringify(
     {
-      mode: process.env.NODE_ENV || topLevelConfig.mode,
-      root: topLevelConfig.root,
-      resolve: topLevelConfig.resolve,
-      assetsInclude: topLevelConfig.assetsInclude,
-      plugins: topLevelConfig.plugins.map((p) => p.name),
+      mode: process.env.NODE_ENV || config.mode,
+      root: config.root,
+      resolve: config.resolve,
+      assetsInclude: config.assetsInclude,
+      plugins: config.plugins.map((p) => p.name),
       optimizeDeps: {
         include: optimizeDeps?.include
           ? unique(optimizeDeps.include).sort()
@@ -1195,10 +1193,7 @@ function getConfigHash(environment: Environment): string {
 }
 
 function getLockfileHash(environment: Environment): string {
-  const lockfilePath = lookupFile(
-    environment.getTopLevelConfig().root,
-    lockfileNames,
-  )
+  const lockfilePath = lookupFile(environment.config.root, lockfileNames)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const lockfileName = path.basename(lockfilePath)

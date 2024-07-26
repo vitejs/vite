@@ -140,18 +140,15 @@ export function scanImports(environment: ScanEnvironment): {
   const missing: Record<string, string> = {}
   let entries: string[]
 
+  const { config } = environment
   const scanContext = { cancelled: false }
-  const topLevelConfig = environment.getTopLevelConfig()
   const esbuildContext: Promise<BuildContext | undefined> = computeEntries(
-    topLevelConfig,
+    environment.getTopLevelConfig(),
   ).then((computedEntries) => {
     entries = computedEntries
 
     if (!entries.length) {
-      if (
-        !topLevelConfig.optimizeDeps.entries &&
-        !environment.config.dev.optimizeDeps.include
-      ) {
+      if (!config.optimizeDeps.entries && !config.dev.optimizeDeps.include) {
         environment.logger.warn(
           colors.yellow(
             '(!) Could not auto-determine entry point from rollupOptions or html files ' +
@@ -305,7 +302,7 @@ async function prepareEsbuildScanner(
   let tsconfigRaw = esbuildOptions.tsconfigRaw
   if (!tsconfigRaw && !esbuildOptions.tsconfig) {
     const tsconfigResult = await loadTsconfigJsonForFile(
-      path.join(environment.getTopLevelConfig().root, '_dummy.js'),
+      path.join(environment.config.root, '_dummy.js'),
     )
     if (tsconfigResult.compilerOptions?.experimentalDecorators) {
       tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
@@ -432,7 +429,7 @@ function esbuildScanPlugin(
     const result = await transformGlobImport(
       transpiledContents,
       id,
-      environment.getTopLevelConfig().root,
+      environment.config.root,
       resolve,
     )
 
@@ -723,7 +720,7 @@ function esbuildScanPlugin(
         if (ext === 'mjs') ext = 'js'
 
         // TODO: Why are we using config.esbuild instead of config.optimizeDeps.esbuildOptions here?
-        const esbuildConfig = environment.getTopLevelConfig().esbuild
+        const esbuildConfig = environment.config.esbuild
         let contents = await fsp.readFile(id, 'utf-8')
         if (ext.endsWith('x') && esbuildConfig && esbuildConfig.jsxInject) {
           contents = esbuildConfig.jsxInject + `\n` + contents

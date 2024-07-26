@@ -1114,9 +1114,11 @@ async function compileCSSPreprocessors(
   code: string,
   workerController: PreprocessorWorkerController,
 ): Promise<{ code: string; map?: ExistingRawSourceMap; deps?: Set<string> }> {
-  const topLevelConfig = environment.getTopLevelConfig()
-  const { preprocessorOptions, devSourcemap } = topLevelConfig.css ?? {}
-  const atImportResolvers = getAtImportResolvers(topLevelConfig)
+  const { config } = environment
+  const { preprocessorOptions, devSourcemap } = config.css ?? {}
+  const atImportResolvers = getAtImportResolvers(
+    environment.getTopLevelConfig(),
+  )
 
   const preProcessor = workerController[lang]
   let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
@@ -1126,7 +1128,7 @@ async function compileCSSPreprocessors(
     case PreprocessLang.sass:
       opts = {
         includePaths: ['node_modules'],
-        alias: topLevelConfig.resolve.alias,
+        alias: config.resolve.alias,
         ...opts,
       }
       break
@@ -1135,7 +1137,7 @@ async function compileCSSPreprocessors(
     case PreprocessLang.stylus:
       opts = {
         paths: ['node_modules'],
-        alias: topLevelConfig.resolve.alias,
+        alias: config.resolve.alias,
         ...opts,
       }
   }
@@ -1146,7 +1148,7 @@ async function compileCSSPreprocessors(
   const preprocessResult = await preProcessor(
     environment,
     code,
-    topLevelConfig.root,
+    config.root,
     opts,
     atImportResolvers,
   )
@@ -1202,19 +1204,21 @@ async function compileCSS(
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
-  const topLevelConfig = environment.getTopLevelConfig()
-  if (topLevelConfig.css?.transformer === 'lightningcss') {
+  const { config } = environment
+  if (config.css?.transformer === 'lightningcss') {
     return compileLightningCSS(id, code, environment, urlReplacer)
   }
 
-  const { modules: modulesOptions, devSourcemap } = topLevelConfig.css || {}
+  const { modules: modulesOptions, devSourcemap } = config.css || {}
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
   const lang = id.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
-  const postcssConfig = await resolvePostcssConfig(topLevelConfig)
+  const postcssConfig = await resolvePostcssConfig(
+    environment.getTopLevelConfig(),
+  )
 
   // 1. plain css that needs no processing
   if (
@@ -1246,7 +1250,9 @@ async function compileCSS(
   }
 
   // 3. postcss
-  const atImportResolvers = getAtImportResolvers(topLevelConfig)
+  const atImportResolvers = getAtImportResolvers(
+    environment.getTopLevelConfig(),
+  )
   const postcssOptions = (postcssConfig && postcssConfig.options) || {}
 
   const postcssPlugins =
@@ -1256,7 +1262,10 @@ async function compileCSS(
     postcssPlugins.unshift(
       (await importPostcssImport()).default({
         async resolve(id, basedir) {
-          const publicFile = checkPublicFile(id, topLevelConfig)
+          const publicFile = checkPublicFile(
+            id,
+            environment.getTopLevelConfig(),
+          )
           if (publicFile) {
             return publicFile
           }
@@ -1365,8 +1374,7 @@ async function compileCSS(
     // postcss is an unbundled dep and should be lazy imported
     postcssResult = await postcss.default(postcssPlugins).process(code, {
       ...postcssOptions,
-      parser:
-        lang === 'sss' ? loadSss(topLevelConfig.root) : postcssOptions.parser,
+      parser: lang === 'sss' ? loadSss(config.root) : postcssOptions.parser,
       to: source,
       from: source,
       ...(devSourcemap
@@ -2746,27 +2754,25 @@ async function compileLightningCSS(
   environment: PartialEnvironment,
   urlReplacer?: CssUrlReplacer,
 ): ReturnType<typeof compileCSS> {
-  const topLevelConfig = environment.getTopLevelConfig()
+  const { config } = environment
   const deps = new Set<string>()
   // Relative path is needed to get stable hash when using CSS modules
-  const filename = cleanUrl(path.relative(topLevelConfig.root, id))
+  const filename = cleanUrl(path.relative(config.root, id))
   const toAbsolute = (filePath: string) =>
-    path.isAbsolute(filePath)
-      ? filePath
-      : path.join(topLevelConfig.root, filePath)
+    path.isAbsolute(filePath) ? filePath : path.join(config.root, filePath)
 
   const res = styleAttrRE.test(id)
     ? (await importLightningCSS()).transformStyleAttribute({
         filename,
         code: Buffer.from(src),
-        targets: topLevelConfig.css?.lightningcss?.targets,
-        minify: topLevelConfig.isProduction && !!topLevelConfig.build.cssMinify,
+        targets: config.css?.lightningcss?.targets,
+        minify: config.isProduction && !!config.build.cssMinify,
         analyzeDependencies: true,
       })
     : await (
         await importLightningCSS()
       ).bundleAsync({
-        ...topLevelConfig.css?.lightningcss,
+        ...config.css?.lightningcss,
         filename,
         resolver: {
           read(filePath) {
@@ -2780,16 +2786,17 @@ async function compileLightningCSS(
             return fs.readFileSync(toAbsolute(filePath), 'utf-8')
           },
           async resolve(id, from) {
-            const publicFile = checkPublicFile(id, topLevelConfig)
+            const publicFile = checkPublicFile(
+              id,
+              environment.getTopLevelConfig(),
+            )
             if (publicFile) {
               return publicFile
             }
 
-            const resolved = await getAtImportResolvers(topLevelConfig).css(
-              environment,
-              id,
-              toAbsolute(from),
-            )
+            const resolved = await getAtImportResolvers(
+              environment.getTopLevelConfig(),
+            ).css(environment, id, toAbsolute(from))
 
             if (resolved) {
               deps.add(resolved)
@@ -2798,14 +2805,14 @@ async function compileLightningCSS(
             return id
           },
         },
-        minify: topLevelConfig.isProduction && !!topLevelConfig.build.cssMinify,
+        minify: config.isProduction && !!config.build.cssMinify,
         sourceMap:
-          topLevelConfig.command === 'build'
-            ? !!topLevelConfig.build.sourcemap
-            : topLevelConfig.css?.devSourcemap,
+          config.command === 'build'
+            ? !!config.build.sourcemap
+            : config.css?.devSourcemap,
         analyzeDependencies: true,
         cssModules: cssModuleRE.test(id)
-          ? (topLevelConfig.css?.lightningcss?.cssModules ?? true)
+          ? (config.css?.lightningcss?.cssModules ?? true)
           : undefined,
       })
 

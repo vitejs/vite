@@ -482,7 +482,7 @@ export function updateModules(
     )
     hot.send({
       type: 'full-reload',
-      triggeredBy: path.resolve(environment.getTopLevelConfig().root, file),
+      triggeredBy: path.resolve(environment.config.root, file),
     })
     return
   }
