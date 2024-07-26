@@ -343,6 +343,7 @@ async function waitForSuccessfulPing(
           Accept: 'text/x-vite-ping',
         },
       })
+      // Reverse-proxies usually respond with 502 when the host is unreachable
       if (res.status !== 502)
         return true
     } catch {}
