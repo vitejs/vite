@@ -230,10 +230,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     async transform(source, importer) {
       const { environment } = this
-      if (
-        !environment ||
-        (isInNodeModules(importer) && !dynamicImportPrefixRE.test(source))
-      ) {
+      if (isInNodeModules(importer) && !dynamicImportPrefixRE.test(source)) {
         return
       }
 

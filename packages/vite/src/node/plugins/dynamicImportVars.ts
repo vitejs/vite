@@ -194,7 +194,6 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     async transform(source, importer) {
       const { environment } = this
       if (
-        !environment ||
         !getFilter(this)(importer) ||
         importer === CLIENT_ENTRY ||
         !hasDynamicImportRE.test(source)

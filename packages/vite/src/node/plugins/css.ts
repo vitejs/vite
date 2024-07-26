@@ -324,7 +324,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     async transform(raw, id) {
       const { environment } = this
       if (
-        !environment ||
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
         SPECIAL_QUERY_RE.test(id)
