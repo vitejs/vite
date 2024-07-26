@@ -202,9 +202,8 @@ During non-client builds, static assets aren't emitted as it is assumed they wou
 
 - **Type:** `boolean`
 - **Default:** `false`
-- **Deprecated:** use `build.emitAssets`
 
-During the SSR build, static assets aren't emitted as it is assumed they would be emitted as part of the client build. This option allows frameworks to force emitting them in both the client and SSR build. It is responsibility of the framework to merge the assets with a post build step.
+During the SSR build, static assets aren't emitted as it is assumed they would be emitted as part of the client build. This option allows frameworks to force emitting them in both the client and SSR build. It is responsibility of the framework to merge the assets with a post build step. This option will be replaced by `build.emitAssets` once Environment API is stable.
 
 ## build.minify
 

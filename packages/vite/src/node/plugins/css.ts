@@ -127,7 +127,6 @@ export interface CSSOptions {
    * Enables css sourcemaps during dev
    * @default false
    * @experimental
-   * @deprecated use dev.sourcemap instead
    */
   devSourcemap?: boolean
 

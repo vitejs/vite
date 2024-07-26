@@ -239,7 +239,6 @@ export class ModuleGraph {
     this.fileToModulesMap = createBackwardCompatibleFileToModulesMap(this)
   }
 
-  /** @deprecated */
   getModuleById(id: string): ModuleNode | undefined {
     const clientModule = this._client.getModuleById(id)
     const ssrModule = this._ssr.getModuleById(id)
@@ -249,7 +248,6 @@ export class ModuleGraph {
     return this.getBackwardCompatibleModuleNodeDual(clientModule, ssrModule)
   }
 
-  /** @deprecated */
   async getModuleByUrl(
     url: string,
     ssr?: boolean,
@@ -265,7 +263,6 @@ export class ModuleGraph {
     return this.getBackwardCompatibleModuleNodeDual(clientModule, ssrModule)
   }
 
-  /** @deprecated */
   getModulesByFile(file: string): Set<ModuleNode> | undefined {
     // Until Vite 5.1.x, the moduleGraph contained modules from both the browser and server
     // We maintain backwards compatibility by returning a Set of module proxies assuming
@@ -289,13 +286,11 @@ export class ModuleGraph {
     return undefined
   }
 
-  /** @deprecated */
   onFileChange(file: string): void {
     this._client.onFileChange(file)
     this._ssr.onFileChange(file)
   }
 
-  /** @deprecated */
   onFileDelete(file: string): void {
     this._client.onFileDelete(file)
     this._ssr.onFileDelete(file)
@@ -313,7 +308,6 @@ export class ModuleGraph {
     }
   }
 
-  /** @deprecated */
   invalidateModule(
     mod: ModuleNode,
     seen: Set<ModuleNode> = new Set(),
@@ -347,7 +341,6 @@ export class ModuleGraph {
     }
   }
 
-  /** @deprecated */
   invalidateAll(): void {
     this._client.invalidateAll()
     this._ssr.invalidateAll()
@@ -383,7 +376,6 @@ export class ModuleGraph {
   }
   */
 
-  /** @deprecated */
   async ensureEntryFromUrl(
     rawUrl: string,
     ssr?: boolean,
@@ -396,19 +388,16 @@ export class ModuleGraph {
     return this.getBackwardCompatibleModuleNode(module)!
   }
 
-  /** @deprecated */
   createFileOnlyEntry(file: string): ModuleNode {
     const clientModule = this._client.createFileOnlyEntry(file)
     const ssrModule = this._ssr.createFileOnlyEntry(file)
     return this.getBackwardCompatibleModuleNodeDual(clientModule, ssrModule)!
   }
 
-  /** @deprecated */
   async resolveUrl(url: string, ssr?: boolean): Promise<ResolvedUrl> {
     return ssr ? this._ssr.resolveUrl(url) : this._client.resolveUrl(url)
   }
 
-  /** @deprecated */
   updateModuleTransformResult(
     mod: ModuleNode,
     result: TransformResult | null,
@@ -421,7 +410,6 @@ export class ModuleGraph {
     )
   }
 
-  /** @deprecated */
   getModuleByEtag(etag: string): ModuleNode | undefined {
     const mod = this._client.etagToModuleMap.get(etag)
     return mod && this.getBackwardCompatibleBrowserModuleNode(mod)

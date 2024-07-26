@@ -128,9 +128,6 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       options: {
         attributes: Record<string, string>
         custom?: CustomPluginOptions
-        /**
-         * @deprecated use this.environment
-         */
         ssr?: boolean
         /**
          * @internal
@@ -145,9 +142,6 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: PluginContext,
       id: string,
       options?: {
-        /**
-         * @deprecated use this.environment
-         */
         ssr?: boolean
         /**
          * @internal
@@ -162,9 +156,6 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       code: string,
       id: string,
       options?: {
-        /**
-         * @deprecated use this.environment
-         */
         ssr?: boolean
       },
     ) => Promise<TransformResult> | TransformResult
@@ -289,7 +280,6 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
   transformIndexHtml?: IndexHtmlTransform
 
   /**
-   * @deprecated
    * Perform custom handling of HMR updates.
    * The handler receives a context containing changed filename, timestamp, a
    * list of modules affected by the file change, and the dev server instance.

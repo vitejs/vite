@@ -1240,7 +1240,6 @@ export async function resolveConfig(
      * Plugins should move to createIdResolver(environment) instead.
      * create an internal resolver to be used in special scenarios, e.g.
      * optimizer & handling css @imports
-     * @deprecated
      */
     createResolver(options) {
       const alias: {

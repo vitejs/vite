@@ -230,7 +230,6 @@ export interface BuildEnvironmentOptions {
   /**
    * Emit assets during SSR.
    * @default false
-   * @deprecated use emitAssets
    */
   ssrEmitAssets?: boolean
   /**

@@ -56,10 +56,6 @@ export interface HotUpdateOptions {
   environment: DevEnvironment
 }
 
-/**
- * @deprecated
- * Used by handleHotUpdate for backward compatibility with mixed client and ssr moduleGraph
- **/
 export interface HmrContext {
   file: string
   timestamp: number

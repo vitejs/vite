@@ -49,7 +49,7 @@ export interface TransformResult {
 // TODO: Rename to LoadOptions and move to /plugin.ts ?
 export interface TransformOptions {
   /**
-   * @deprecated infered from environment
+   * @deprecated inferred from environment
    */
   ssr?: boolean
   /**

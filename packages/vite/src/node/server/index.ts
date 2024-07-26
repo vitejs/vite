@@ -110,7 +110,6 @@ export interface ServerOptions extends CommonServerOptions {
   /**
    * Warm-up files to transform and cache the results in advance. This improves the
    * initial page load during server starts and prevents transform waterfalls.
-   * @deprecated use dev.warmup / environment.ssr.dev.warmup
    */
   warmup?: {
     /**
@@ -154,7 +153,6 @@ export interface ServerOptions extends CommonServerOptions {
   /**
    * Pre-transform known direct imports
    * @default true
-   * @deprecated use dev.preTransformRequests
    */
   preTransformRequests?: boolean
   /**
@@ -164,7 +162,6 @@ export interface ServerOptions extends CommonServerOptions {
    * By default, it excludes all paths containing `node_modules`. You can pass `false` to
    * disable this behavior, or, for full control, a function that takes the source path and
    * sourcemap path and returns whether to ignore the source path.
-   * @deprecated use dev.sourcemapIgnoreList
    */
   sourcemapIgnoreList?:
     | false
@@ -259,7 +256,6 @@ export interface ViteDevServer {
   watcher: FSWatcher
   /**
    * web socket server with `send(payload)` method
-   * @deprecated use `environment.hot` instead
    */
   ws: WebSocketServer
   /**
@@ -267,12 +263,10 @@ export interface ViteDevServer {
    *
    * Always sends a message to at least a WebSocket client. Any third party can
    * add a channel to the broadcaster to process messages
-   * @deprecated use `environment.hot` instead
    */
   hot: HotBroadcaster
   /**
    * Rollup plugin container that can run plugin hooks on a given file
-   * @deprecated use `environment.pluginContainer` instead
    */
   pluginContainer: PluginContainer
   /**
@@ -282,7 +276,6 @@ export interface ViteDevServer {
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
-   * @deprecated use `environment.moduleGraph` instead
    */
   moduleGraph: ModuleGraph
   /**
@@ -293,7 +286,6 @@ export interface ViteDevServer {
   /**
    * Programmatically resolve, load and transform a URL and get the result
    * without going through the http request pipeline.
-   * @deprecated use environment.transformRequest
    */
   transformRequest(
     url: string,
@@ -303,7 +295,6 @@ export interface ViteDevServer {
    * Same as `transformRequest` but only warm up the URLs so the next request
    * will already be cached. The function will never throw as it handles and
    * reports errors internally.
-   * @deprecated use environment.warmupRequest
    */
   warmupRequest(url: string, options?: TransformOptions): Promise<void>
   /**
@@ -380,8 +371,6 @@ export interface ViteDevServer {
    * are processed. If called from a load or transform plugin hook, the id needs to be
    * passed as a parameter to avoid deadlocks. Calling this function after the first
    * static imports section of the module graph has been processed will resolve immediately.
-   * @experimental
-   * @deprecated use environment.waitForRequestsIdle()
    */
   waitForRequestsIdle: (ignoredId?: string) => Promise<void>
   /**
