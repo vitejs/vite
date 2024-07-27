@@ -117,7 +117,7 @@ async function createDepsOptimizer(
   let newDepsToLogHandle: NodeJS.Timeout | undefined
   const logNewlyDiscoveredDeps = () => {
     if (newDepsToLog.length) {
-      config.logger.info(
+      logger.info(
         colors.green(
           `✨ new dependencies optimized: ${depsLogString(newDepsToLog)}`,
         ),
@@ -132,7 +132,7 @@ async function createDepsOptimizer(
   let discoveredDepsWhileScanning: string[] = []
   const logDiscoveredDepsWhileScanning = () => {
     if (discoveredDepsWhileScanning.length) {
-      config.logger.info(
+      logger.info(
         colors.green(
           `✨ discovered while scanning: ${depsLogString(
             discoveredDepsWhileScanning,
@@ -443,7 +443,7 @@ async function createDepsOptimizer(
             logNewlyDiscoveredDeps()
             if (warnAboutMissedDependencies) {
               logDiscoveredDepsWhileScanning()
-              config.logger.info(
+              logger.info(
                 colors.magenta(
                   `❗ add these dependencies to optimizeDeps.include to speed up cold start`,
                 ),
@@ -485,7 +485,7 @@ async function createDepsOptimizer(
             logNewlyDiscoveredDeps()
             if (warnAboutMissedDependencies) {
               logDiscoveredDepsWhileScanning()
-              config.logger.info(
+              logger.info(
                 colors.magenta(
                   `❗ add these dependencies to optimizeDeps.include to avoid a full page reload during cold start`,
                 ),
@@ -502,7 +502,7 @@ async function createDepsOptimizer(
             },
           )
           if (needsInteropMismatch.length > 0) {
-            config.logger.warn(
+            logger.warn(
               `Mixed ESM and CJS detected in ${colors.yellow(
                 needsInteropMismatch.join(', '),
               )}, add ${
