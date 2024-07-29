@@ -137,7 +137,7 @@ beforeAll(async (s) => {
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : testDir
 
       // separate rootDir for variant
-      const variantName = path.basename(dirname(testPath))
+      const variantName = path.basename(path.dirname(testPath))
       if (variantName !== '__tests__') {
         const variantTestDir = testDir + '__' + variantName
         if (fs.existsSync(variantTestDir)) {
