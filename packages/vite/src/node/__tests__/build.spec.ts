@@ -679,6 +679,30 @@ describe('resolveBuildOutputs', () => {
   })
 })
 
+test('default sharedConfigBuild true on build api', async () => {
+  let counter = 0
+  await build({
+    root: resolve(__dirname, 'fixtures/emit-assets'),
+    build: {
+      ssr: true,
+      rollupOptions: {
+        input: {
+          index: '/entry',
+        },
+      },
+    },
+    plugins: [
+      {
+        name: 'test-plugin',
+        config() {
+          counter++
+        },
+      },
+    ],
+  })
+  expect(counter).toBe(1)
+})
+
 /**
  * for each chunks in output1, if there's a chunk in output2 with the same fileName,
  * ensure that the chunk code is the same. if not, the chunk hash should have changed.
