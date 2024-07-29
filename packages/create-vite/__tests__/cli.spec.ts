@@ -1,13 +1,13 @@
-import { join } from 'node:path'
+import fs from 'node:fs'
+import path from 'node:path'
 import type { SyncOptions, SyncResult } from 'execa'
 import { execaCommandSync } from 'execa'
-import fs from 'fs-extra'
 import { afterEach, beforeAll, expect, test } from 'vitest'
 
-const CLI_PATH = join(__dirname, '..')
+const CLI_PATH = path.join(__dirname, '..')
 
 const projectName = 'test-app'
-const genPath = join(__dirname, projectName)
+const genPath = path.join(__dirname, projectName)
 
 const run = <SO extends SyncOptions>(
   args: string[],
@@ -19,22 +19,22 @@ const run = <SO extends SyncOptions>(
 // Helper to create a non-empty directory
 const createNonEmptyDir = () => {
   // Create the temporary directory
-  fs.mkdirpSync(genPath)
+  fs.mkdirSync(genPath, { recursive: true })
 
   // Create a package.json file
-  const pkgJson = join(genPath, 'package.json')
+  const pkgJson = path.join(genPath, 'package.json')
   fs.writeFileSync(pkgJson, '{ "foo": "bar" }')
 }
 
 // Vue 3 starter template
 const templateFiles = fs
-  .readdirSync(join(CLI_PATH, 'template-vue'))
+  .readdirSync(path.join(CLI_PATH, 'template-vue'))
   // _gitignore is renamed to .gitignore
   .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
   .sort()
 
-beforeAll(() => fs.remove(genPath))
-afterEach(() => fs.remove(genPath))
+beforeAll(() => fs.rmSync(genPath, { recursive: true, force: true }))
+afterEach(() => fs.rmSync(genPath, { recursive: true, force: true }))
 
 test('prompts for the project name if none supplied', () => {
   const { stdout } = run([])
@@ -42,7 +42,7 @@ test('prompts for the project name if none supplied', () => {
 })
 
 test('prompts for the framework if none supplied when target dir is current directory', () => {
-  fs.mkdirpSync(genPath)
+  fs.mkdirSync(genPath, { recursive: true })
   const { stdout } = run(['.'], { cwd: genPath })
   expect(stdout).toContain('Select a framework:')
 })
