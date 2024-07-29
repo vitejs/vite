@@ -272,7 +272,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
            *                                  ^
            */
           if (match[3]) {
-            let names = match[4].match(/\.([^.?]+)/)?.[1] || ''
+            let names = /\.([^.?]+)/.exec(match[4])?.[1] || ''
             // avoid `default` keyword error
             if (names === 'default') {
               names = 'default: __vite_default__'
