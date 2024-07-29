@@ -133,7 +133,8 @@ export default tseslint.config(
         },
       ],
 
-      'regexp/no-contradiction-with-assertion': 'error',
+      'regexp/prefer-regexp-exec': 'error',
+      'regexp/prefer-regexp-test': 'error',
       // in some cases using explicit letter-casing is more performant than the `i` flag
       'regexp/use-ignore-case': 'off',
     },
@@ -219,6 +220,14 @@ export default tseslint.config(
     ],
     rules: {
       'n/no-extraneous-import': 'off',
+    },
+  },
+  {
+    name: 'disables/vite/cjs',
+    files: ['packages/vite/index.cjs'],
+    rules: {
+      'no-restricted-globals': 'off',
+      'n/no-missing-require': 'off',
     },
   },
   {
