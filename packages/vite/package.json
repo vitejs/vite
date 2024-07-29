@@ -108,7 +108,7 @@
     "artichokie": "^0.2.1",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",
-    "polka": "^0.5.2",
+    "polka": "^1.0.0-next.25",
     "convert-source-map": "^2.0.0",
     "cors": "^2.8.5",
     "cross-spawn": "^7.0.3",

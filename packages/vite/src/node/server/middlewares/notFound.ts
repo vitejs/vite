@@ -1,6 +1,6 @@
 import type { Polka } from 'dep-types/polka'
 
-export function notFoundMiddleware(): Polka.RequestHandler {
+export function notFoundMiddleware(): Polka.Middleware {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function vite404Middleware(_, res) {
     res.statusCode = 404

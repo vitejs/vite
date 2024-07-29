@@ -9,7 +9,5 @@
   "dependencies": {
     "@vitejs/test-missing-dep": "file:./missing-dep"
   },
-  "devDependencies": {
-    "express": "^4.19.2"
-  }
+  "devDependencies": {}
 }

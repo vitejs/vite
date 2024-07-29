@@ -23,7 +23,7 @@ const setNonceHeader = (res, nonce) => {
 /**
  * @param {string} file
  * @param {(input: string, originalUrl: string) => Promise<string>} transform
- * @returns {import('vite').Connect.NextHandleFunction}
+ * @returns {import('vite').Polka.Middleware}
  */
 const createMiddleware = (file, transform) => async (req, res) => {
   const nonce = createNonce()

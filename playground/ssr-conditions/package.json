@@ -12,7 +12,5 @@
     "@vitejs/test-ssr-conditions-external": "file:./external",
     "@vitejs/test-ssr-conditions-no-external": "file:./no-external"
   },
-  "devDependencies": {
-    "express": "^4.19.2"
-  }
+  "devDependencies": {}
 }

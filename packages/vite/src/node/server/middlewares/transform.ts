@@ -45,7 +45,7 @@ const knownIgnoreList = new Set(['/', '/favicon.ico'])
  */
 export function cachedTransformMiddleware(
   server: ViteDevServer,
-): Polka.RequestHandler {
+): Polka.Middleware {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteCachedTransformMiddleware(req, res, next) {
     // check if we can return 304 early
@@ -60,7 +60,8 @@ export function cachedTransformMiddleware(
         if (!maybeMixedEtag) {
           debugCache?.(`[304] ${prettifyUrl(req.url!, server.config.root)}`)
           res.statusCode = 304
-          return res.end()
+          res.end()
+          return
         }
       }
     }
@@ -69,9 +70,7 @@ export function cachedTransformMiddleware(
   }
 }
 
-export function transformMiddleware(
-  server: ViteDevServer,
-): Polka.RequestHandler {
+export function transformMiddleware(server: ViteDevServer): Polka.Middleware {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
 
   // check if public dir is inside root dir
@@ -119,9 +118,10 @@ export function transformMiddleware(
               server.config.logger,
             )
 
-            return send(req, res, JSON.stringify(map), 'json', {
+            send(req, res, JSON.stringify(map), 'json', {
               headers: server.config.server.headers,
             })
+            return
           } catch (e) {
             // Outdated source map request for optimized deps, this isn't an error
             // but part of the normal flow when re-optimizing after missing deps
@@ -134,10 +134,11 @@ export function transformMiddleware(
               names: [],
               mappings: ';;;;;;;;;',
             }
-            return send(req, res, JSON.stringify(dummySourceMap), 'json', {
+            send(req, res, JSON.stringify(dummySourceMap), 'json', {
               cacheControl: 'no-cache',
               headers: server.config.server.headers,
             })
+            return
           }
         } else {
           const originalUrl = url.replace(/\.map($|\?)/, '$1')
@@ -145,9 +146,10 @@ export function transformMiddleware(
             await server.moduleGraph.getModuleByUrl(originalUrl, false)
           )?.transformResult?.map
           if (map) {
-            return send(req, res, JSON.stringify(map), 'json', {
+            send(req, res, JSON.stringify(map), 'json', {
               headers: server.config.server.headers,
             })
+            return
           } else {
             return next()
           }
@@ -190,7 +192,8 @@ export function transformMiddleware(
           ) {
             debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
             res.statusCode = 304
-            return res.end()
+            res.end()
+            return
           }
         }
 
@@ -203,13 +206,14 @@ export function transformMiddleware(
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
-          return send(req, res, result.code, type, {
+          send(req, res, result.code, type, {
             etag: result.etag,
             // allow browser to cache npm deps!
             cacheControl: isDep ? 'max-age=31536000,immutable' : 'no-cache',
             headers: server.config.server.headers,
             map: result.map,
           })
+          return
         }
       }
     } catch (e) {

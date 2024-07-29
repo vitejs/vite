@@ -11,7 +11,5 @@
     "test-stacktrace:on": "node test-stacktrace true"
   },
   "dependencies": {},
-  "devDependencies": {
-    "express": "^4.19.2"
-  }
+  "devDependencies": {}
 }

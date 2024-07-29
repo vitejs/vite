@@ -407,7 +407,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 export function indexHtmlMiddleware(
   root: string,
   server: ViteDevServer | PreviewServer,
-): Polka.RequestHandler {
+): Polka.Middleware {
   const isDev = isDevServer(server)
   const fsUtils = getFsUtils(server.config)
 

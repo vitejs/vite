@@ -71,7 +71,7 @@ export function proxyMiddleware(
   httpServer: HttpServer | null,
   options: NonNullable<CommonServerOptions['proxy']>,
   config: ResolvedConfig,
-): Polka.RequestHandler {
+): Polka.Middleware {
   // lazy require only when proxy is used
   const proxies: Record<string, [HttpProxy.Server, ProxyOptions]> = {}
 
@@ -196,7 +196,8 @@ export function proxyMiddleware(
           } else if (bypassResult === false) {
             debug?.(`bypass: ${req.url} -> 404`)
             res.statusCode = 404
-            return res.end()
+            res.end()
+            return
           }
         }
 

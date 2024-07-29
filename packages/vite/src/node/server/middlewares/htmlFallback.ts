@@ -11,7 +11,7 @@ export function htmlFallbackMiddleware(
   root: string,
   spaFallback: boolean,
   fsUtils: FsUtils = commonFsUtils,
-): Polka.RequestHandler {
+): Polka.Middleware {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteHtmlFallbackMiddleware(req, res, next) {
     if (

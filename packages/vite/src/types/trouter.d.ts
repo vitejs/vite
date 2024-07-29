@@ -1,9 +1,4 @@
-export interface FindResult<T> {
-  params: { [k: string]: string }
-  handlers: T[]
-}
-
-export type HTTPMethod =
+type Methods =
   | 'ACL'
   | 'BIND'
   | 'CHECKOUT'
@@ -24,6 +19,7 @@ export type HTTPMethod =
   | 'OPTIONS'
   | 'PATCH'
   | 'POST'
+  | 'PRI'
   | 'PROPFIND'
   | 'PROPPATCH'
   | 'PURGE'
@@ -39,30 +35,26 @@ export type HTTPMethod =
   | 'UNLOCK'
   | 'UNSUBSCRIBE'
 
-export class Trouter<T = any> {
-  use(pattern: string | RegExp, ...handlers: T[]): this
+type Pattern = RegExp | string
 
-  find(method: HTTPMethod, url: string): FindResult<T>
-
-  add(method: HTTPMethod, pattern: string | RegExp, ...handlers: T[]): this
-
-  all(pattern: string | RegExp, ...handlers: T[]): this
-
-  get(pattern: string | RegExp, ...handlers: T[]): this
-
-  head(pattern: string | RegExp, ...handlers: T[]): this
-
-  patch(pattern: string | RegExp, ...handlers: T[]): this
-
-  options(pattern: string | RegExp, ...handlers: T[]): this
-
-  connect(pattern: string | RegExp, ...handlers: T[]): this
-
-  delete(pattern: string | RegExp, ...handlers: T[]): this
-
-  trace(pattern: string | RegExp, ...handlers: T[]): this
-
-  post(pattern: string | RegExp, ...handlers: T[]): this
-
-  put(pattern: string | RegExp, ...handlers: T[]): this
+export class Trouter<T = Function> {
+  find(
+    method: Methods,
+    url: string,
+  ): {
+    params: Record<string, string>
+    handlers: T[]
+  }
+  add(method: Methods, pattern: Pattern, ...handlers: T[]): this
+  use(pattern: Pattern, ...handlers: T[]): this
+  all(pattern: Pattern, ...handlers: T[]): this
+  get(pattern: Pattern, ...handlers: T[]): this
+  head(pattern: Pattern, ...handlers: T[]): this
+  patch(pattern: Pattern, ...handlers: T[]): this
+  options(pattern: Pattern, ...handlers: T[]): this
+  connect(pattern: Pattern, ...handlers: T[]): this
+  delete(pattern: Pattern, ...handlers: T[]): this
+  trace(pattern: Pattern, ...handlers: T[]): this
+  post(pattern: Pattern, ...handlers: T[]): this
+  put(pattern: Pattern, ...handlers: T[]): this
 }

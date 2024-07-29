@@ -7,7 +7,7 @@ import { cleanUrl, withTrailingSlash } from '../../../shared/utils'
 export function baseMiddleware(
   rawBase: string,
   middlewareMode: boolean,
-): Polka.RequestHandler {
+): Polka.Middleware {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteBaseMiddleware(req, res, next) {
     const url = req.url!
