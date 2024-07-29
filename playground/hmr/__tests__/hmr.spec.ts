@@ -1024,4 +1024,35 @@ if (!isBuild) {
       await loadPromise
     }, [/connected/, 'a.js'])
   })
+
+  test('hmr works for transforming custom files', async () => {
+    await page.goto(viteTestUrl + '/transform-file/index.html')
+    await page.$('body')
+
+    await untilBrowserLogAfter(
+      async () => {
+        editFile('transform-file/dep.my-file-ext', () => 'b')
+      },
+      [
+        '>>> vite:beforeUpdate -- update',
+        'my-file-ext init',
+        'my-file-ext accept value is: b',
+        '[vite] hot updated: /transform-file/dep.my-file-ext',
+        '>>> vite:afterUpdate -- update',
+      ],
+      true,
+    )
+
+    await untilBrowserLogAfter(
+      async () => {
+        editFile('transform-file/index.js', (code) => code)
+      },
+      [
+        '>>> vite:beforeUpdate -- update',
+        '[vite] hot updated: /transform-file/index.js',
+        '>>> vite:afterUpdate -- update',
+      ],
+      true,
+    )
+  })
 }
