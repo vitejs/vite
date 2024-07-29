@@ -514,22 +514,13 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const builder = await createBuilder(inlineConfig)
-
-  if (builder.config.build.lib) {
-    // TODO: temporal workaround. Should we support `libraries: Record<string, LibraryOptions & EnvironmentOptions>`
-    // to build multiple libraries and be able to target different environments (for example for a Svelte components
-    // library generating both client and SSR builds)?
-    return buildEnvironment(
-      builder.config,
-      builder.environments.client,
-      builder.config.build.lib,
-    )
-  } else {
-    const ssr = !!builder.config.build.ssr
-    const environment = builder.environments[ssr ? 'ssr' : 'client']
-    return builder.build(environment)
-  }
+  const config = await resolveConfigToBuild(inlineConfig)
+  const environmentName =
+    config.build.lib || !config.build.ssr ? 'client' : 'ssr'
+  const createEnvironment = getBuildCreateEnvironment(config, environmentName)
+  const environment = await createEnvironment(environmentName, config)
+  await environment.init()
+  return buildEnvironment(config, environment, config.build.lib)
 }
 
 function resolveConfigToBuild(
@@ -1519,6 +1510,18 @@ export function resolveBuilderOptions(
   }
 }
 
+// TODO: Move createEnvironment resolving during build and dev to config stage
+function getBuildCreateEnvironment(
+  config: ResolvedConfig,
+  environmentName: string,
+) {
+  return (
+    config.environments[environmentName].build?.createEnvironment ??
+    ((name: string, config: ResolvedConfig) =>
+      new BuildEnvironment(name, config))
+  )
+}
+
 export type ResolvedBuilderOptions = Required<BuilderOptions>
 
 export async function createBuilder(
@@ -1545,11 +1548,7 @@ export async function createBuilder(
   }
 
   for (const name of Object.keys(config.environments)) {
-    const environmentOptions = config.environments[name]
-    const createEnvironment =
-      environmentOptions.build?.createEnvironment ??
-      ((name: string, config: ResolvedConfig) =>
-        new BuildEnvironment(name, config))
+    const createEnvironment = getBuildCreateEnvironment(config, name)
 
     // We need to resolve the config again so we can properly merge options
     // and get a new set of plugins for each build environment. The ecosystem
