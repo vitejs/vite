@@ -244,7 +244,7 @@ export default defineConfig({
         },
       },
       scss: {
-        api: 'modern', // or "legacy"
+        api: 'modern-compiler', // or "modern", "legacy"
         importers: [
           // ...
         ],
