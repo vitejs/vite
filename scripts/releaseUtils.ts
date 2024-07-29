@@ -1,9 +1,8 @@
-import { readdirSync, writeFileSync } from 'node:fs'
+import fs from 'node:fs/promises'
 import path from 'node:path'
 import colors from 'picocolors'
 import type { Options as ExecaOptions, ResultPromise } from 'execa'
 import { execa } from 'execa'
-import fs from 'fs-extra'
 
 export function run<EO extends ExecaOptions>(
   bin: string,
@@ -14,7 +13,9 @@ export function run<EO extends ExecaOptions>(
 }
 
 export async function getLatestTag(pkgName: string): Promise<string> {
-  const pkgJson = await fs.readJson(`packages/${pkgName}/package.json`)
+  const pkgJson = JSON.parse(
+    await fs.readFile(`packages/${pkgName}/package.json`, 'utf-8'),
+  )
   const version = pkgJson.version
   return pkgName === 'vite' ? `v${version}` : `${pkgName}@${version}`
 }
@@ -48,17 +49,20 @@ export async function logRecentCommits(pkgName: string): Promise<void> {
 }
 
 export async function updateTemplateVersions(): Promise<void> {
-  const viteVersion = fs.readJSONSync('packages/vite/package.json').version
+  const vitePkgJson = JSON.parse(
+    await fs.readFile('packages/vite/package.json', 'utf-8'),
+  )
+  const viteVersion = vitePkgJson.version
   if (/beta|alpha|rc/.test(viteVersion)) return
 
   const dir = 'packages/create-vite'
-  const templates = readdirSync(dir).filter((dir) =>
+  const templates = (await fs.readdir(dir)).filter((dir) =>
     dir.startsWith('template-'),
   )
   for (const template of templates) {
     const pkgPath = path.join(dir, template, `package.json`)
-    const pkg = fs.readJSONSync(pkgPath)
+    const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'))
     pkg.devDependencies.vite = `^` + viteVersion
-    writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+    await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
   }
 }
