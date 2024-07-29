@@ -57,7 +57,7 @@ export const createFilter = _createFilter as (
 
 const replaceSlashOrColonRE = /[/:]/g
 const replaceDotRE = /\./g
-const replaceNestedIdRE = /(\s*>\s*)/g
+const replaceNestedIdRE = /\s*>\s*/g
 const replaceHashRE = /#/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
@@ -558,7 +558,7 @@ export function emptyDir(dir: string, skip?: string[]): void {
   if (skip?.length) {
     for (const file of skip) {
       if (path.dirname(file) !== '.') {
-        const matched = file.match(splitFirstDirRE)
+        const matched = splitFirstDirRE.exec(file)
         if (matched) {
           nested ??= new Map()
           const [, nestedDir, skipPath] = matched
@@ -656,7 +656,7 @@ function windowsMappedRealpathSync(path: string) {
   }
   return realPath
 }
-const parseNetUseRE = /^(\w+)? +(\w:) +([^ ]+)\s/
+const parseNetUseRE = /^\w* +(\w:) +([^ ]+)\s/
 let firstSafeRealPathSyncRun = false
 
 function windowsSafeRealPathSync(path: string): string {
@@ -691,8 +691,8 @@ function optimizeSafeRealPathSync() {
     // OK           Y:        \\NETWORKA\Foo         Microsoft Windows Network
     // OK           Z:        \\NETWORKA\Bar         Microsoft Windows Network
     for (const line of lines) {
-      const m = line.match(parseNetUseRE)
-      if (m) windowsNetworkMap.set(m[3], m[2])
+      const m = parseNetUseRE.exec(line)
+      if (m) windowsNetworkMap.set(m[2], m[1])
     }
     if (windowsNetworkMap.size === 0) {
       safeRealpathSync = fs.realpathSync.native
@@ -724,7 +724,7 @@ interface ImageCandidate {
   url: string
   descriptor: string
 }
-const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
+const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
 function joinSrcset(ret: ImageCandidate[]) {
   return ret
