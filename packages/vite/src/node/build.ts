@@ -514,6 +514,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+  inlineConfig.builder ??= { sharedConfigBuild: true }
   const builder = await createBuilder(inlineConfig)
 
   if (builder.config.build.lib) {
