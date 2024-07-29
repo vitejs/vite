@@ -1,6 +1,6 @@
 import type * as http from 'node:http'
-import path, { dirname, resolve } from 'node:path'
-import fs from 'fs-extra'
+import fs from 'node:fs'
+import path from 'node:path'
 import { chromium } from 'playwright-chromium'
 import type {
   ConfigEnv,
@@ -25,7 +25,7 @@ import { beforeAll, inject } from 'vitest'
 
 // #region env
 
-export const workspaceRoot = resolve(__dirname, '../')
+export const workspaceRoot = path.resolve(__dirname, '../')
 
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
@@ -125,20 +125,20 @@ beforeAll(async (s) => {
 
     testPath = suite.filepath!
     testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
-    testDir = dirname(testPath)
+    testDir = path.dirname(testPath)
 
     // if this is a test placed under playground/xxx/__tests__
     // start a vite server in that directory.
     if (testName) {
-      testDir = resolve(workspaceRoot, 'playground-temp', testName)
+      testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
 
       // when `root` dir is present, use it as vite's root
-      const testCustomRoot = resolve(testDir, 'root')
+      const testCustomRoot = path.resolve(testDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : testDir
 
       const testCustomServe = [
-        resolve(dirname(testPath), 'serve.ts'),
-        resolve(dirname(testPath), 'serve.js'),
+        path.resolve(path.dirname(testPath), 'serve.ts'),
+        path.resolve(path.dirname(testPath), 'serve.js'),
       ].find((i) => fs.existsSync(i))
 
       if (testCustomServe) {
@@ -182,7 +182,7 @@ async function loadConfig(configEnv: ConfigEnv) {
   let config: UserConfig | null = null
 
   // config file named by convention as the *.spec.ts folder
-  const variantName = path.basename(dirname(testPath))
+  const variantName = path.basename(path.dirname(testPath))
   if (variantName !== '__tests__') {
     const configVariantPath = path.resolve(
       rootDir,
