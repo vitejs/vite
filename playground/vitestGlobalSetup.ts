@@ -42,13 +42,15 @@ export async function setup({ provide }: GlobalSetupContext): Promise<void> {
       }
     })
   // also setup dedicated copy for "variant" tests
-  await fs.copy(
+  await fs.cp(
     path.resolve(tempDir, 'css'),
     path.resolve(tempDir, 'css__sass-modern'),
+    { recursive: true },
   )
-  await fs.copy(
+  await fs.cp(
     path.resolve(tempDir, 'css'),
     path.resolve(tempDir, 'css__sass-modern-compiler'),
+    { recursive: true },
   )
 }
 
