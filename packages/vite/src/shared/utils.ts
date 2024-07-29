@@ -54,3 +54,56 @@ export const asyncFunctionDeclarationPaddingLineCount =
     const source = new AsyncFunction('a', 'b', body).toString()
     return source.slice(0, source.indexOf(body)).split('\n').length - 1
   })()
+
+const replacePercentageRE = /%/g
+
+/**
+ * Serialize a map into a query string while ensuring order of keys.
+ */
+function stringifyQueryMap(map: Map<string, string>) {
+  const keys = Array.from(map.keys()).sort()
+  return keys
+    .map((key) => {
+      const val = map.get(key)
+      return val ? `${key}=${encodeURIComponent(val)}` : key
+    })
+    .join('&')
+}
+
+/**
+ * Modify the url by adding or updating query parameters
+ * NOTE:
+ * - Duplicated keys will only retain the last one
+ * - Keys are sorted alphabetically
+ *
+ * @param url - a complete or incomplete url
+ * @param queryToInject query params object or query string (`{ foo: 1 }` or `foo=1`)
+ */
+export function injectQuery(
+  url: string,
+  queryToInject: Record<string, string | number> | string,
+): string {
+  const appendQueryMap = new Map(
+    typeof queryToInject === 'string'
+      ? new URLSearchParams(queryToInject)
+      : Object.entries(queryToInject),
+  )
+  // encode percents for consistent behavior with pathToFileURL
+  // see #2614 for details
+  const resolvedUrl = new URL(
+    url.replace(replacePercentageRE, '%25'),
+    'https://vitejs.dev',
+  )
+  // URLSearchParams to a `key=>value` object
+  // Notice that if you encounter duplicate keys in query parameters (a=3&a=4),
+  // only the last occurrence will retain
+  const queryMap = new Map(resolvedUrl.searchParams)
+  appendQueryMap.forEach((value, key) => {
+    queryMap.set(key, String(value ?? ''))
+  })
+
+  const { hash } = resolvedUrl
+  let pathname = cleanUrl(url)
+  pathname = isWindows ? slash(pathname) : pathname
+  return `${pathname}?${stringifyQueryMap(queryMap)}${hash ?? ''}`
+}

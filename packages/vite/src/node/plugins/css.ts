@@ -54,7 +54,6 @@ import {
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
-  injectQuery,
   isDataUrl,
   isExternalUrl,
   isObject,
@@ -69,7 +68,7 @@ import {
   urlRE,
 } from '../utils'
 import type { Logger } from '../logger'
-import { cleanUrl, slash } from '../../shared/utils'
+import { cleanUrl, injectQuery, slash } from '../../shared/utils'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { addToHTMLProxyTransformResult } from './html'
 import {
@@ -308,7 +307,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         // *.css?url
         // in dev, it's handled by assets plugin.
         if (isBuild) {
-          id = injectQuery(removeUrlQuery(id), 'transform-only')
+          id = injectQuery(removeUrlQuery(id), { 'transform-only': '' })
           return (
             `import ${JSON.stringify(id)};` +
             `export default "__VITE_CSS_URL__${Buffer.from(id).toString(

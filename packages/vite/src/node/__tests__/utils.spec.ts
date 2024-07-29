@@ -8,13 +8,12 @@ import {
   generateCodeFrame,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
-  injectQuery,
   isFileReadable,
   posToNumber,
   processSrcSetSync,
   resolveHostname,
 } from '../utils'
-import { isWindows } from '../../shared/utils'
+import { injectQuery, isWindows } from '../../shared/utils'
 
 describe('bareImportRE', () => {
   test('should work with normal package name', () => {
@@ -53,7 +52,7 @@ describe('injectQuery', () => {
     test('absolute file path with parameters', () => {
       expect(
         injectQuery('C:\\test-file.vue?vue&type=template&lang.js', 'direct'),
-      ).toEqual('C:/test-file.vue?direct&vue&type=template&lang.js')
+      ).toEqual('C:/test-file.vue?direct&lang.js&type=template&vue')
     })
   }
 
@@ -112,6 +111,22 @@ describe('injectQuery', () => {
     expect(injectQuery('/usr/vite/東京 %20 hello', 'direct')).toEqual(
       '/usr/vite/東京 %20 hello?direct',
     )
+  })
+
+  test('duplicated key', () => {
+    expect(injectQuery('/usr/vite?t=1&t=2', 't=3')).toEqual('/usr/vite?t=3')
+  })
+
+  test('order keys', () => {
+    expect(injectQuery('/usr/vite?foo=1&bar=3', 'foo=2')).toEqual(
+      '/usr/vite?bar=3&foo=2',
+    )
+  })
+
+  test('object query', () => {
+    expect(
+      injectQuery('/usr/vite?type=', { direct: '', type: 'template' }),
+    ).toEqual('/usr/vite?direct&type=template')
   })
 })
 

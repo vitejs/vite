@@ -7,7 +7,6 @@ import type { ViteDevServer } from '..'
 import {
   createDebugger,
   fsPathFromId,
-  injectQuery,
   isImportRequest,
   isJSRequest,
   normalizePath,
@@ -33,7 +32,12 @@ import {
 } from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
-import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
+import {
+  cleanUrl,
+  injectQuery,
+  unwrapId,
+  withTrailingSlash,
+} from '../../../shared/utils'
 import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
 
 const debugCache = createDebugger('vite:cache')
@@ -176,7 +180,7 @@ export function transformMiddleware(
             req.headers.accept?.includes('text/css') &&
             !isDirectRequest(url)
           ) {
-            url = injectQuery(url, 'direct')
+            url = injectQuery(url, { direct: '' })
           }
 
           // check if we can return 304 early for CSS requests. These aren't handled
@@ -291,7 +295,7 @@ export function transformMiddleware(
             rawUrl.replace(publicPath, '/src/'),
           )} instead of ${colors.cyan(rawUrl)}.\n` +
           `If you intend to use the URL of that asset, use ${colors.cyan(
-            injectQuery(rawUrl.replace(publicPath, '/'), 'url'),
+            injectQuery(rawUrl.replace(publicPath, '/'), { url: '' }),
           )}.`
       }
     } else {

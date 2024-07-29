@@ -4,9 +4,9 @@ import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { evalValue, injectQuery, transformStableResult } from '../utils'
+import { evalValue, transformStableResult } from '../utils'
 import type { ResolveFn } from '..'
-import { cleanUrl, slash } from '../../shared/utils'
+import { cleanUrl, injectQuery, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
@@ -180,10 +180,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               builtUrl = await workerFileToUrl(config, file)
             } else {
               builtUrl = await fileToUrl(cleanUrl(file), config, this)
-              builtUrl = injectQuery(
-                builtUrl,
-                `${WORKER_FILE_ID}&type=${workerType}`,
-              )
+              builtUrl = injectQuery(builtUrl, {
+                [WORKER_FILE_ID]: '',
+                type: workerType,
+              })
             }
             s.update(
               expStart,

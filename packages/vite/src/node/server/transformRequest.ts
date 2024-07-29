@@ -10,7 +10,6 @@ import type { ModuleNode, ViteDevServer } from '..'
 import {
   createDebugger,
   ensureWatchedFile,
-  injectQuery,
   isObject,
   prettifyUrl,
   removeImportQuery,
@@ -21,7 +20,7 @@ import {
 import { checkPublicFile } from '../publicDir'
 import { isDepsOptimizerEnabled } from '../config'
 import { getDepsOptimizer, initDevSsrDepsOptimizer } from '../optimizer'
-import { cleanUrl, unwrapId } from '../../shared/utils'
+import { cleanUrl, injectQuery, unwrapId } from '../../shared/utils'
 import {
   applySourcemapIgnoreList,
   extractSourcemapFromFile,
@@ -468,10 +467,9 @@ async function handleModuleSoftInvalidation(
       for (const importedMod of mod.clientImportedModules) {
         if (importedMod.url !== hmrUrl) continue
         if (importedMod.lastHMRTimestamp > 0) {
-          const replacedUrl = injectQuery(
-            urlWithoutTimestamp,
-            `t=${importedMod.lastHMRTimestamp}`,
-          )
+          const replacedUrl = injectQuery(urlWithoutTimestamp, {
+            t: importedMod.lastHMRTimestamp,
+          })
           const start = hasQuotes ? imp.s + 1 : imp.s
           const end = hasQuotes ? imp.e - 1 : imp.e
           s.overwrite(start, end, replacedUrl)

@@ -31,7 +31,6 @@ import {
   createDebugger,
   fsPathFromUrl,
   generateCodeFrame,
-  injectQuery,
   isBuiltin,
   isDataUrl,
   isDefined,
@@ -59,6 +58,7 @@ import { shouldExternalizeForSSR } from '../ssr/ssrExternal'
 import { getDepsOptimizer, optimizedDepNeedsInterop } from '../optimizer'
 import {
   cleanUrl,
+  injectQuery,
   unwrapId,
   withTrailingSlash,
   wrapId,
@@ -374,7 +374,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (!ssr) {
           // mark non-js/css imports with `?import`
           if (isExplicitImportRequired(url)) {
-            url = injectQuery(url, 'import')
+            url = injectQuery(url, { import: '' })
           } else if (
             (isRelative || isSelfImport) &&
             !DEP_VERSION_RE.test(url)
@@ -403,7 +403,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               resolved,
             )
             if (depModule.lastHMRTimestamp > 0) {
-              url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
+              url = injectQuery(url, { t: depModule.lastHMRTimestamp })
             }
           } catch (e: any) {
             // it's possible that the dep fails to resolve (non-existent import)
@@ -532,7 +532,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   `can only be referenced via <script src> or <link href> in html. ` +
                   `If you want to get the URL of that file, use ${injectQuery(
                     specifier,
-                    'url',
+                    { url: '' },
                   )} instead.`,
               )
             }

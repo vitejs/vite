@@ -5,19 +5,13 @@ import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
-import {
-  encodeURIPath,
-  getHash,
-  injectQuery,
-  prettifyUrl,
-  urlRE,
-} from '../utils'
+import { encodeURIPath, getHash, prettifyUrl, urlRE } from '../utils'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   onRollupWarning,
   toOutputFilePathInJS,
 } from '../build'
-import { cleanUrl } from '../../shared/utils'
+import { cleanUrl, injectQuery } from '../../shared/utils'
 import { fileToUrl } from './asset'
 
 type WorkerBundleAsset = { fileName: string; source: string | Uint8Array }
@@ -38,7 +32,7 @@ interface WorkerCache {
 export type WorkerType = 'classic' | 'module' | 'ignore'
 
 export const workerOrSharedWorkerRE = /(?:\?|&)(worker|sharedworker)(?:&|$)/
-const workerFileRE = /(?:\?|&)worker_file&type=(\w+)(?:&|$)/
+const workerFileRE = /(?:\?|&)type=(\w+)&worker_file(?:&|$)/
 const inlineRE = /[?&]inline\b/
 
 export const WORKER_FILE_ID = 'worker_file'
@@ -355,7 +349,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }
       } else {
         let url = await fileToUrl(cleanUrl(id), config, this)
-        url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
+        url = injectQuery(url, { [WORKER_FILE_ID]: '', type: workerType })
         urlCode = JSON.stringify(url)
       }
 

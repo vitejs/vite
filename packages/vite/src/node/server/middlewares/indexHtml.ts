@@ -31,7 +31,6 @@ import {
   ensureWatchedFile,
   fsPathFromId,
   getHash,
-  injectQuery,
   isDevServer,
   isJSRequest,
   joinUrlSegments,
@@ -43,7 +42,7 @@ import { getFsUtils } from '../../fsUtils'
 import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
-import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { cleanUrl, injectQuery, unwrapId, wrapId } from '../../../shared/utils'
 
 interface AssetNode {
   start: number
@@ -133,7 +132,7 @@ const processNodeUrl = (
     if (server?.moduleGraph) {
       const mod = server.moduleGraph.urlToModuleMap.get(url)
       if (mod && mod.lastHMRTimestamp > 0) {
-        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+        url = injectQuery(url, { t: mod.lastHMRTimestamp })
       }
     }
 
