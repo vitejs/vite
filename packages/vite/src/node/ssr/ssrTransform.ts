@@ -92,7 +92,7 @@ async function ssrTransformScript(
   const declaredConst = new Set<string>()
 
   // hoist at the start of the file, after the hashbang
-  const hoistIndex = code.match(hashbangRE)?.[0].length ?? 0
+  const hoistIndex = hashbangRE.exec(code)?.[0].length ?? 0
 
   function defineImport(
     index: number,

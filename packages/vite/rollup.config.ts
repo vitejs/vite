@@ -275,7 +275,7 @@ const __require = require;
     name: 'cjs-chunk-patch',
     renderChunk(code, chunk) {
       if (!chunk.fileName.includes('chunks/dep-')) return
-      const match = code.match(/^(?:import[\s\S]*?;\s*)+/)
+      const match = /^(?:import[\s\S]*?;\s*)+/.exec(code)
       const index = match ? match.index! + match[0].length : 0
       const s = new MagicString(code)
       // inject after the last `import`

@@ -1,5 +1,5 @@
 {
-  "include": ["src"],
+  "include": ["build.config.ts", "src"],
   "exclude": ["**/*.spec.ts"],
   "compilerOptions": {
     "outDir": "dist",

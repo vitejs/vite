@@ -68,7 +68,7 @@ export default function licensePlugin(
                 '\n' +
                 licenseText
                   .trim()
-                  .replace(/(\r\n|\r)/g, '\n')
+                  .replace(/\r\n|\r/g, '\n')
                   .split('\n')
                   .map((line) => `> ${line}`)
                   .join('\n') +

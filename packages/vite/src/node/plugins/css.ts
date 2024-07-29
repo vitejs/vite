@@ -195,7 +195,7 @@ const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
 const functionCallRE = /^[A-Z_][\w-]*\(/i
 const transformOnlyRE = /[?&]transform-only\b/
-const nonEscapedDoubleQuoteRe = /(?<!\\)(")/g
+const nonEscapedDoubleQuoteRe = /(?<!\\)"/g
 
 const cssBundleName = 'style.css'
 
@@ -1223,7 +1223,7 @@ async function compileCSS(
   // crawl them in order to register watch dependencies.
   const needInlineImport = code.includes('@import')
   const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
-  const lang = id.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
+  const lang = CSS_LANGS_RE.exec(id)?.[1] as CssLang | undefined
   const postcssConfig = await resolvePostcssConfig(config)
 
   // 1. plain css that needs no processing
@@ -1295,7 +1295,7 @@ async function compileCSS(
         },
         async load(id) {
           const code = await fs.promises.readFile(id, 'utf-8')
-          const lang = id.match(CSS_LANGS_RE)?.[1] as CssLang | undefined
+          const lang = CSS_LANGS_RE.exec(id)?.[1] as CssLang | undefined
           if (isPreProcessor(lang)) {
             const result = await compileCSSPreprocessors(
               id,
@@ -2892,7 +2892,7 @@ export const convertTargets = (
   const targets: LightningCSSOptions['targets'] = {}
 
   const entriesWithoutES = arraify(esbuildTarget).flatMap((e) => {
-    const match = e.match(esRE)
+    const match = esRE.exec(e)
     if (!match) return e
     const year = Number(match[1])
     if (!esMap[year]) throw new Error(`Unsupported target "${e}"`)

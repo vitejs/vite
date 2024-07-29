@@ -28,7 +28,7 @@ const debug = createDebugger('vite:esbuild')
 // IIFE content looks like `var MyLib = function() {`.
 // Spaces are removed and parameters are mangled when minified
 const IIFE_BEGIN_RE =
-  /(const|var)\s+\S+\s*=\s*function\([^()]*\)\s*\{\s*"use strict";/
+  /(?:const|var)\s+\S+\s*=\s*function\([^()]*\)\s*\{\s*"use strict";/
 
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
