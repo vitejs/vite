@@ -120,7 +120,7 @@ const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 const _require = createRequire(import.meta.url)
 
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
-const prefixedHashInFileNameRE = /\W?\[hash(:\d+)?\]/
+const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
 
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
