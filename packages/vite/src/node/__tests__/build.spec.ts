@@ -677,6 +677,30 @@ describe('resolveBuildOutputs', () => {
     const result = await builder.build(builder.environments.custom)
     expect((result as RollupOutput).output[0].code).not.toContain('preload')
   })
+
+  test('default sharedConfigBuild true on build api', async () => {
+    let counter = 0
+    await build({
+      root: resolve(__dirname, 'fixtures/emit-assets'),
+      build: {
+        ssr: true,
+        rollupOptions: {
+          input: {
+            index: '/entry',
+          },
+        },
+      },
+      plugins: [
+        {
+          name: 'test-plugin',
+          config() {
+            counter++
+          },
+        },
+      ],
+    })
+    expect(counter).toBe(1)
+  })
 })
 
 /**
