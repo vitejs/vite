@@ -2028,8 +2028,8 @@ function loadSassPackage(root: string): {
 } {
   // try sass-embedded before sass
   try {
-    const path = loadPreprocessorPath('sass' as any, root)
-    return { name: 'sass', path }
+    const path = loadPreprocessorPath('sass-embedded' as any, root)
+    return { name: 'sass-embedded', path }
   } catch (e1) {
     try {
       const path = loadPreprocessorPath('sass' as any, root)
