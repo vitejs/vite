@@ -403,9 +403,9 @@ export default {
   environments: {
     rsc: {
       dev: {
-        createEnvironment(name, config) {
+        createEnvironment(name, config, setup) {
           // Called with 'rsc' and the resolved config during dev
-          return createNodeDevEnvironment(name, config)
+          return createNodeDevEnvironment(name, config, setup)
         }
       },
       build: {
@@ -434,8 +434,8 @@ function createWorkedEnvironment(userConfig) {
         ],
       },
       dev: {
-        createEnvironment(name, config) {
-          return createWorkerdDevEnvironment(name, config)
+        createEnvironment(name, config, setup) {
+          return createWorkerdDevEnvironment(name, config, setup)
         },
       },
       build: {

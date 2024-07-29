@@ -42,7 +42,9 @@ import {
 } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
-import type { DevEnvironment } from './server/environment'
+import { DevEnvironment } from './server/environment'
+import type { DevEnvironmentSetup } from './server/environment'
+import { createNodeSsrDevEnvironment } from './server/environments/nodeEnvironment'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
 import {
@@ -176,6 +178,7 @@ export interface DevEnvironmentOptions {
   createEnvironment?: (
     name: string,
     config: ResolvedConfig,
+    setup?: DevEnvironmentSetup,
   ) => Promise<DevEnvironment> | DevEnvironment
 
   /**
@@ -205,17 +208,15 @@ export interface DevEnvironmentOptions {
   // fs: { strict?: boolean, allow, deny }
 }
 
-export type ResolvedDevEnvironmentOptions = Required<
-  Omit<DevEnvironmentOptions, 'createEnvironment'>
-> & {
-  // TODO: Should we set the default at config time? For now, it is defined on server init
-  createEnvironment:
-    | ((
-        name: string,
-        config: ResolvedConfig,
-      ) => Promise<DevEnvironment> | DevEnvironment)
-    | undefined
+function createDevEnvironment(
+  name: string,
+  config: ResolvedConfig,
+  setup?: DevEnvironmentSetup,
+) {
+  return new DevEnvironment(name, config, setup)
 }
+
+export type ResolvedDevEnvironmentOptions = Required<DevEnvironmentOptions>
 
 type EnvironmentResolveOptions = ResolveOptions & {
   alias?: AliasOptions
@@ -603,7 +604,11 @@ export function resolveDevEnvironmentOptions(
       preserverSymlinks,
       environmentName,
     ),
-    createEnvironment: dev?.createEnvironment,
+    createEnvironment:
+      dev?.createEnvironment ??
+      (environmentName === 'ssr'
+        ? createNodeSsrDevEnvironment
+        : createDevEnvironment),
     recoverable: dev?.recoverable ?? environmentName === 'client',
     moduleRunnerTransform:
       dev?.moduleRunnerTransform ??
