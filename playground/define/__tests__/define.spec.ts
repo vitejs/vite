@@ -92,3 +92,16 @@ test('replaces constants in template literal expressions', async () => {
     ),
   ).toBe('dev')
 })
+
+test('replace constants on import.meta.env when it is a invalid json', async () => {
+  expect(
+    await page.textContent(
+      '.replace-undefined-constants-on-import-meta-env .import-meta-env-UNDEFINED',
+    ),
+  ).toBe('undefined')
+  expect(
+    await page.textContent(
+      '.replace-undefined-constants-on-import-meta-env .import-meta-env-SOME_IDENTIFIER',
+    ),
+  ).toBe('true')
+})
