@@ -159,6 +159,12 @@ const FRAMEWORKS: Framework[] = [
         display: 'JavaScript',
         color: yellow,
       },
+      {
+        name: 'custom-create-preact',
+        display: 'Customize with create-preact ↗',
+        color: magenta,
+        customCommand: 'npm create preact@latest TARGET_DIR',
+      },
     ],
   },
   {

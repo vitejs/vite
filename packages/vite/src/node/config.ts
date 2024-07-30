@@ -605,7 +605,7 @@ export async function resolveConfig(
     ? !isBuild || config.build?.ssr
       ? '/'
       : './'
-    : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
+    : (resolveBaseUrl(config.base, isBuild, logger) ?? '/')
 
   const resolvedBuildOptions = resolveBuildOptions(
     config.build,
@@ -1074,7 +1074,7 @@ async function bundleConfigFile(
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
     write: false,
-    target: ['node18'],
+    target: [`node${process.versions.node}`],
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',

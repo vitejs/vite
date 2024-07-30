@@ -203,7 +203,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
         id = resolvedImports
 
         if (resolveOpts.custom?.['vite:import-glob']?.isSubImportsPattern) {
-          return id
+          return normalizePath(path.join(root, id))
         }
       }
 
@@ -717,7 +717,7 @@ export function tryNodeResolve(
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
   // check for deep import, e.g. "my-lib/foo"
-  const deepMatch = id.match(deepImportRE)
+  const deepMatch = deepImportRE.exec(id)
   // package name doesn't include postfixes
   // trim them to support importing package with queries (e.g. `import css from 'normalize.css?inline'`)
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : cleanUrl(id)
