@@ -2439,6 +2439,7 @@ const scssProcessor = (
         }
       } catch (e) {
         // normalize SASS error
+        console.error(e);
         e.message = `[sass] ${e.message}`
         e.id = e.file
         e.frame = e.formatted
