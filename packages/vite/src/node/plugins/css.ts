@@ -2310,7 +2310,17 @@ const makeModernCompilerScssWorker = (
 
   const worker: Awaited<ReturnType<typeof makeModernScssWorker>> = {
     async run(sassPath, data, options) {
-      const { default: sass }: { default: typeof Sass } = await import(sassPath)
+      console.log("@@@", { sassPath });
+      const { default: sass }: { default: typeof Sass } = await import(sassPath).then(
+        (v) => {
+          console.log('@@@@@@@@ OK');
+          return v
+        },
+        (e) => {
+          console.log('@@@@@@@@ ERROR');
+          console.error(e);
+        }
+      )
       compiler ??= await sass.initAsyncCompiler()
 
       const sassOptions = { ...options } as Sass.StringOptions<'async'>
