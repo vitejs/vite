@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@vitejs/test-external-cjs": "file:./external-cjs",
-    "@vitejs/test-require-external-cjs": "file:./require-external-cjs",
-    "express": "^4.19.2"
+    "@vitejs/test-require-external-cjs": "file:./require-external-cjs"
   }
 }

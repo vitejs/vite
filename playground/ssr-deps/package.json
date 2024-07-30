@@ -32,7 +32,5 @@
     "@vitejs/test-pkg-exports": "file:./pkg-exports",
     "@vitejs/test-module-condition": "file:./module-condition"
   },
-  "devDependencies": {
-    "express": "^4.19.2"
-  }
+  "devDependencies": {}
 }

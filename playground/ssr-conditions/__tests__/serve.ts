@@ -15,12 +15,12 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
 
   return new Promise((resolve, reject) => {
     try {
-      const server = app.listen(port, () => {
+      app.listen(port, () => {
         resolve({
           // for test teardown
           async close() {
             await new Promise((resolve) => {
-              server.close(resolve)
+              app.server.close(resolve)
             })
             if (vite) {
               await vite.close()

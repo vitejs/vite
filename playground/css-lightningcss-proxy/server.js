@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import express from 'express'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isTest = process.env.VITEST
@@ -16,8 +15,6 @@ const DYNAMIC_STYLES = `
 
 export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
-
-  const app = express()
 
   /**
    * @type {import('vite').ViteDevServer}
@@ -44,8 +41,8 @@ export async function createServer(root = process.cwd(), hmrPort) {
     },
     appType: 'custom',
   })
-  // use vite's connect instance as middleware
-  app.use(vite.middlewares)
+
+  const app = vite.middlewares
 
   app.use('*', async (req, res, next) => {
     try {
@@ -53,7 +50,8 @@ export async function createServer(root = process.cwd(), hmrPort) {
       if (url.endsWith('/')) url += 'index.html'
 
       if (url.startsWith('/favicon.ico')) {
-        return res.status(404).end('404')
+        res.status = 404
+        return res.end('404')
       }
 
       const htmlLoc = resolve(`.${url}`)
@@ -66,11 +64,14 @@ export async function createServer(root = process.cwd(), hmrPort) {
       // as `const url = req.originalUrl`
       const html = await vite.transformIndexHtml('/', template)
 
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'text/html')
+      res.end(html)
     } catch (e) {
       vite && vite.ssrFixStacktrace(e)
       console.log(e.stack)
-      res.status(500).end(e.stack)
+      res.statusCode = 500
+      res.end(e.stack)
     }
   })
 

@@ -168,7 +168,7 @@ export type {
   ResolverObject,
   Alias,
 } from 'dep-types/alias'
-export type { Connect } from 'dep-types/connect'
+export type { Polka } from 'dep-types/polka'
 export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
 export type { HttpProxy } from 'dep-types/http-proxy'
 export type {

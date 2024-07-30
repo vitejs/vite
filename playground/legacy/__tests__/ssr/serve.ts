@@ -17,25 +17,27 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     },
   })
 
-  const { default: express } = await import('express')
-  const app = express()
+  const { default: polka } = await import('polka')
+  const app = polka()
 
   app.use('/', async (_req, res) => {
     const { render } = await import(
       path.resolve(rootDir, './dist/server/entry-server.js')
     )
     const html = await render()
-    res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
+    res.statusCode = 200
+    res.setHeader('Content-Type', 'text/html')
+    res.end(html)
   })
 
   return new Promise((resolve, reject) => {
     try {
-      const server = app.listen(port, () => {
+      app.listen(port, () => {
         resolve({
           // for test teardown
           async close() {
             await new Promise((resolve) => {
-              server.close(resolve)
+              app.server.close(resolve)
             })
           },
         })

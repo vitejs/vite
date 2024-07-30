@@ -2,7 +2,6 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import pug from 'pug'
-import express from 'express'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -19,8 +18,6 @@ const DYNAMIC_SCRIPTS = `
 
 export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
-
-  const app = express()
 
   /**
    * @type {import('vite').ViteDevServer}
@@ -44,8 +41,8 @@ export async function createServer(root = process.cwd(), hmrPort) {
     },
     appType: 'custom',
   })
-  // use vite's connect instance as middleware
-  app.use(vite.middlewares)
+
+  const app = vite.middlewares
 
   app.use('*', async (req, res) => {
     try {
@@ -58,11 +55,14 @@ export async function createServer(root = process.cwd(), hmrPort) {
       html = html.replace('</body>', `${DYNAMIC_SCRIPTS}</body>`)
       html = await vite.transformIndexHtml(url, html)
 
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'text/html')
+      res.end(html)
     } catch (e) {
       vite && vite.ssrFixStacktrace(e)
       console.log(e.stack)
-      res.status(500).end(e.stack)
+      res.statusCode = 500
+      res.end(e.stack)
     }
   })
 

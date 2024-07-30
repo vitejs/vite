@@ -5,7 +5,7 @@ const npmDirectServeConfig = {
   '/vue@3.2.0.js': 'vue32/dist/vue.runtime.esm-browser.js',
   '/slash@5.js': 'slash5/index.js',
 }
-/** @type {import('vite').Connect.NextHandleFunction} */
+/** @type {import('vite').Polka.Middleware} */
 const serveNpmCodeDirectlyMiddleware = async (req, res, next) => {
   for (const [url, file] of Object.entries(npmDirectServeConfig)) {
     if (req.originalUrl === url) {

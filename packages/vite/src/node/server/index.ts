@@ -6,12 +6,12 @@ import { get as httpsGet } from 'node:https'
 import type * as http from 'node:http'
 import { performance } from 'node:perf_hooks'
 import type { Http2SecureServer } from 'node:http2'
-import connect from 'connect'
+import polka from 'polka'
 import corsMiddleware from 'cors'
 import colors from 'picocolors'
 import chokidar from 'chokidar'
 import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
-import type { Connect } from 'dep-types/connect'
+import type { Polka } from 'dep-types/polka'
 import launchEditorMiddleware from 'launch-editor-middleware'
 import type { SourceMap } from 'rollup'
 import picomatch from 'picomatch'
@@ -236,7 +236,7 @@ export interface ViteDevServer {
    *
    * https://github.com/senchalabs/connect#use-middleware
    */
-  middlewares: Connect.Server
+  middlewares: Polka.Polka
   /**
    * native Node http server instance
    * will be null in middleware mode
@@ -460,10 +460,10 @@ export async function _createServer(
     emptyOutDir,
   )
 
-  const middlewares = connect() as Connect.Server
   const httpServer = middlewareMode
     ? null
-    : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
+    : await resolveHttpServer(serverConfig, httpsOptions)
+  const middlewares = polka({ server: httpServer }) as Polka.Polka
 
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
   const hot = createHMRBroadcaster()
@@ -920,7 +920,7 @@ export async function _createServer(
   }
 
   // error handler
-  middlewares.use(errorMiddleware(server, !!middlewareMode))
+  middlewares.onError = errorMiddleware(server, !!middlewareMode)
 
   // httpServer.listen can be called multiple times
   // when port when using next port number
@@ -978,6 +978,7 @@ async function startServer(
   }
 
   const options = server.config.server
+  const middlewares = server.middlewares
   const hostname = await resolveHostname(options.host)
   const configPort = inlinePort ?? options.port
   // When using non strict port for the dev server, the running port can be different from the config one.
@@ -989,7 +990,7 @@ async function startServer(
       : configPort) ?? DEFAULT_DEV_PORT
   server._configServerPort = configPort
 
-  const serverPort = await httpServerStart(httpServer, {
+  const serverPort = await httpServerStart(httpServer, middlewares, {
     port,
     strictPort: options.strictPort,
     host: hostname.host,
@@ -1151,7 +1152,7 @@ async function restartServer(server: ViteDevServer) {
 
     // Keep the same connect instance so app.use(vite.middlewares) works
     // after a restart in middlewareMode (.route is always '/')
-    middlewares.stack = newServer.middlewares.stack
+    middlewares.wares = newServer.middlewares.wares
     server.middlewares = middlewares
 
     // Rebind internal server variable so functions reference the user server

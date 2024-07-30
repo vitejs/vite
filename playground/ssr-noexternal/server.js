@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import express from 'express'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -18,34 +17,31 @@ export async function createServer(
     ? fs.readFileSync(resolve('index.html'), 'utf-8')
     : ''
 
-  const app = express()
-
   /**
    * @type {import('vite').ViteDevServer}
    */
-  let vite
-  if (!isProd) {
-    vite = await (
-      await import('vite')
-    ).createServer({
-      root,
-      logLevel: isTest ? 'error' : 'info',
-      server: {
-        middlewareMode: true,
-        watch: {
-          // During tests we edit the files too fast and sometimes chokidar
-          // misses change events, so enforce polling for consistency
-          usePolling: true,
-          interval: 100,
-        },
-        hmr: {
-          port: hmrPort,
-        },
+  const vite = await (
+    await import('vite')
+  ).createServer({
+    root,
+    logLevel: isTest ? 'error' : 'info',
+    server: {
+      middlewareMode: true,
+      watch: isProd
+        ? false
+        : {
+            // During tests we edit the files too fast and sometimes chokidar
+            // misses change events, so enforce polling for consistency
+            usePolling: true,
+            interval: 100,
+          },
+      hmr: {
+        port: hmrPort,
       },
-      appType: 'custom',
-    })
-    app.use(vite.middlewares)
-  }
+    },
+    appType: 'custom',
+  })
+  const app = vite.middlewares
 
   app.use('*', async (req, res) => {
     try {
@@ -66,11 +62,14 @@ export async function createServer(
 
       const html = template.replace(`<!--app-html-->`, appHtml)
 
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'text/html')
+      res.end(html)
     } catch (e) {
       !isProd && vite.ssrFixStacktrace(e)
       console.log(e.stack)
-      res.status(500).end(e.stack)
+      res.statusCode = 500
+      res.end(e.stack)
     }
   })
 

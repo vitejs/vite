@@ -2,14 +2,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import express from 'express'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isTest = process.env.VITEST
 
 export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
-  const app = express()
 
   /**
    * @type {import('vite').ViteDevServer}
@@ -36,8 +34,8 @@ export async function createServer(root = process.cwd(), hmrPort) {
       stringify: true,
     },
   })
-  // use vite's connect instance as middleware
-  app.use(vite.middlewares)
+
+  const app = vite.middlewares
 
   app.use('*', async (req, res) => {
     try {
@@ -48,7 +46,8 @@ export async function createServer(root = process.cwd(), hmrPort) {
         console.time('load module')
         const json = JSON.stringify(await vite.ssrLoadModule('/test.json'))
         console.timeEnd('load module')
-        res.status(200).end('' + json.length)
+        res.statusCode = 200
+        res.end('' + json.length)
         return
       }
 
@@ -64,7 +63,8 @@ export async function createServer(root = process.cwd(), hmrPort) {
         )
         // console.timeEnd('transform module')
         // @ts-expect-error ignore in test
-        res.status(200).end(String(json.code.length))
+        res.statusCode = 200
+        res.end(String(json.code.length))
         return
       }
 
@@ -72,11 +72,14 @@ export async function createServer(root = process.cwd(), hmrPort) {
       let html = fs.readFileSync(htmlLoc, 'utf-8')
       html = await vite.transformIndexHtml(url, html)
 
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
+      res.statusCode = 200
+      res.setHeader('Content-Type', 'text/html')
+      res.end(html)
     } catch (e) {
       vite && vite.ssrFixStacktrace(e)
       console.log(e.stack)
-      res.status(500).end(e.stack)
+      res.statusCode = 500
+      res.end(e.stack)
     }
   })
 

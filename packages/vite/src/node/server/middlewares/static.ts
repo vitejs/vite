@@ -2,7 +2,7 @@ import path from 'node:path'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
-import type { Connect } from 'dep-types/connect'
+import type { Polka } from 'dep-types/polka'
 import escapeHtml from 'escape-html'
 import type { ViteDevServer } from '../..'
 import { FS_PREFIX } from '../../constants'
@@ -57,7 +57,7 @@ const sirvOptions = ({
 export function servePublicMiddleware(
   server: ViteDevServer,
   publicFiles?: Set<string>,
-): Connect.NextHandleFunction {
+): Polka.Middleware {
   const dir = server.config.publicDir
   const serve = sirv(
     dir,
@@ -94,9 +94,7 @@ export function servePublicMiddleware(
   }
 }
 
-export function serveStaticMiddleware(
-  server: ViteDevServer,
-): Connect.NextHandleFunction {
+export function serveStaticMiddleware(server: ViteDevServer): Polka.Middleware {
   const dir = server.config.root
   const serve = sirv(
     dir,
@@ -163,9 +161,7 @@ export function serveStaticMiddleware(
   }
 }
 
-export function serveRawFsMiddleware(
-  server: ViteDevServer,
-): Connect.NextHandleFunction {
+export function serveRawFsMiddleware(server: ViteDevServer): Polka.Middleware {
   const serveFromRoot = sirv(
     '/',
     sirvOptions({ getHeaders: () => server.config.server.headers }),
@@ -233,7 +229,7 @@ function ensureServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,
-  next: Connect.NextFunction,
+  next: Polka.NextHandler,
 ): boolean {
   if (isFileServingAllowed(url, server)) {
     return true
