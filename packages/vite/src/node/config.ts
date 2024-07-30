@@ -213,7 +213,7 @@ export interface DevEnvironmentOptions {
   // fs: { strict?: boolean, allow, deny }
 }
 
-function createDefaultClientDevEnvironment(
+function defaultCreateClientDevEnvironment(
   name: string,
   config: ResolvedConfig,
   context: CreateDevEnvironmentContext,
@@ -223,7 +223,7 @@ function createDefaultClientDevEnvironment(
   })
 }
 
-function createDefaultSsrDevEnvironment(
+function defaultCreateSsrDevEnvironment(
   name: string,
   config: ResolvedConfig,
 ): DevEnvironment {
@@ -232,14 +232,10 @@ function createDefaultSsrDevEnvironment(
   })
 }
 
-function createDefaultDevEnvironment(
-  name: string,
-  config: ResolvedConfig,
-  context: CreateDevEnvironmentContext,
-): DevEnvironment {
-  return config.environments[name].consumer === 'client'
-    ? createDefaultClientDevEnvironment(name, config, context)
-    : createDefaultSsrDevEnvironment(name, config)
+function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
+  return new DevEnvironment(name, config, {
+    hot: false,
+  })
 }
 
 export type ResolvedDevEnvironmentOptions = Required<DevEnvironmentOptions>
@@ -630,7 +626,13 @@ export function resolveDevEnvironmentOptions(
       preserverSymlinks,
       environmentName,
     ),
-    createEnvironment: dev?.createEnvironment ?? createDefaultDevEnvironment,
+    createEnvironment:
+      dev?.createEnvironment ??
+      (environmentName === 'client'
+        ? defaultCreateClientDevEnvironment
+        : environmentName === 'ssr'
+          ? defaultCreateSsrDevEnvironment
+          : defaultCreateDevEnvironment),
     recoverable: dev?.recoverable ?? environmentName === 'client',
     moduleRunnerTransform:
       dev?.moduleRunnerTransform ??
