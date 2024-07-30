@@ -2331,9 +2331,9 @@ const makeModernCompilerScssWorker = (
         async load(canonicalUrl) {
           const ext = path.extname(canonicalUrl.pathname)
           let syntax: Sass.Syntax = 'scss'
-          if (ext && ext.toLowerCase() === '.sass') {
+          if (ext === '.sass') {
             syntax = 'indented'
-          } else if (ext && ext.toLowerCase() === '.css') {
+          } else if (ext === '.css') {
             syntax = 'css'
           }
           const result = await rebaseUrls(
@@ -2344,8 +2344,7 @@ const makeModernCompilerScssWorker = (
             resolvers.sass,
           )
           const contents =
-            result.contents ??
-            (await fs.promises.readFile(result.file, 'utf-8'))
+            result.contents ?? (await fsp.readFile(result.file, 'utf-8'))
           return { contents, syntax }
         },
       }
