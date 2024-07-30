@@ -49,9 +49,6 @@ importers:
       '@types/etag':
         specifier: ^1.8.3
         version: 1.8.3
-      '@types/fs-extra':
-        specifier: ^11.0.4
-        version: 11.0.4
       '@types/less':
         specifier: ^3.0.6
         version: 3.0.6
@@ -91,9 +88,6 @@ importers:
       execa:
         specifier: ^9.3.0
         version: 9.3.0
-      fs-extra:
-        specifier: ^11.2.0
-        version: 11.2.0
       globals:
         specifier: ^15.8.0
         version: 15.8.0
@@ -3039,17 +3033,11 @@ packages:
   '@types/express@4.17.21':
     resolution: {integrity: sha512-ejlPM315qwLpaQlQDTjPdsUFSc6ZsP4AN6AlWnogPjQ7CVi7PYF3YVz+CY3jE2pwYf7E/7HlDAN0rV2GxTG0HQ==}
 
-  '@types/fs-extra@11.0.4':
-    resolution: {integrity: sha512-yTbItCNreRooED33qjunPthRcSjERP1r4MqCZc7wv0u2sUkzTFp45tgUfS5+r7FrZPdmCCNflLhVSP/o+SemsQ==}
-
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
 
   '@types/http-errors@2.0.4':
     resolution: {integrity: sha512-D0CFMMtydbJAegzOyHjtiKPLlvnm3iTZyZRSZoLq2mRhDdmLfIWOCYPfQJ4cu2erKghU++QvjcUjp/5h7hESpA==}
-
-  '@types/jsonfile@6.1.4':
-    resolution: {integrity: sha512-D5qGUYwjvnNNextdU59/+fI+spnwtTFmyQP0h+PfIOSkNfpU6AOICUOkm4i0OnSk+NyjdPJrxCDro0sJsWlRpQ==}
 
   '@types/less@3.0.6':
     resolution: {integrity: sha512-PecSzorDGdabF57OBeQO/xFbAkYWo88g4Xvnsx7LRwqLC17I7OoKtA3bQB9uXkY6UkMWCOsA8HSVpaoitscdXw==}
@@ -8171,20 +8159,11 @@ snapshots:
       '@types/qs': 6.9.12
       '@types/serve-static': 1.15.5
 
-  '@types/fs-extra@11.0.4':
-    dependencies:
-      '@types/jsonfile': 6.1.4
-      '@types/node': 20.14.11
-
   '@types/hast@3.0.4':
     dependencies:
       '@types/unist': 3.0.2
 
   '@types/http-errors@2.0.4': {}
-
-  '@types/jsonfile@6.1.4':
-    dependencies:
-      '@types/node': 20.14.11
 
   '@types/less@3.0.6': {}
 

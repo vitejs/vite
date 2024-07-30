@@ -11,6 +11,11 @@ const require = createRequire(import.meta.url)
 const pkg = require('./package.json')
 const pkgVite = require('./packages/vite/package.json')
 
+// Some rules work better with typechecking enabled, but as enabling it is slow,
+// we only do so when linting in IDEs for now. If you want to lint with typechecking
+// explicitly, set this to `true` manually.
+const shouldTypeCheck = typeof process.env.VSCODE_PID === 'string'
+
 export default tseslint.config(
   {
     ignores: [
@@ -34,6 +39,12 @@ export default tseslint.config(
       parserOptions: {
         sourceType: 'module',
         ecmaVersion: 2022,
+        project: shouldTypeCheck
+          ? [
+              './packages/*/tsconfig.json',
+              './packages/vite/src/*/tsconfig.json',
+            ]
+          : undefined,
       },
       globals: {
         ...globals.es2021,
@@ -133,7 +144,8 @@ export default tseslint.config(
         },
       ],
 
-      'regexp/no-contradiction-with-assertion': 'error',
+      'regexp/prefer-regexp-exec': 'error',
+      'regexp/prefer-regexp-test': 'error',
       // in some cases using explicit letter-casing is more performant than the `i` flag
       'regexp/use-ignore-case': 'off',
     },
@@ -222,6 +234,14 @@ export default tseslint.config(
     },
   },
   {
+    name: 'disables/vite/cjs',
+    files: ['packages/vite/index.cjs'],
+    rules: {
+      'no-restricted-globals': 'off',
+      'n/no-missing-require': 'off',
+    },
+  },
+  {
     name: 'disables/create-vite/templates',
     files: [
       'packages/create-vite/template-*/**/*.?([cm])[jt]s?(x)',
@@ -283,6 +303,27 @@ export default tseslint.config(
     rules: {
       'no-console': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
+    },
+  },
+  {
+    name: 'disables/typechecking',
+    files: [
+      '**/*.js',
+      '**/*.mjs',
+      '**/*.cjs',
+      '**/*.d.ts',
+      '**/*.d.cts',
+      '**/__tests__/**',
+      'docs/**',
+      'playground/**',
+      'scripts/**',
+      'vitest.config.ts',
+      'vitest.config.e2e.ts',
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: false,
+      },
     },
   },
 )
