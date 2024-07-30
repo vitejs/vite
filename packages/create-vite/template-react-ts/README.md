@@ -25,8 +25,8 @@ export default {
 }
 ```
 
-- Replace `tsPlugin.configs.recommended.rules` to `tsPlugin.configs['recommended-type-checked'].rules` or `tsPlugin.configs['strict-type-checked'].rules`
-- Optionally add `tsPlugin.configs['stylistic-type-checked'].rules`
+- Replace `tseslint.configs.recommended.rules` to `tseslint.configs['recommended-type-checked'].rules` or `tseslint.configs['strict-type-checked'].rules`
+- Optionally add `tseslint.configs['stylistic-type-checked'].rules`
 - Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
 
 ```js
