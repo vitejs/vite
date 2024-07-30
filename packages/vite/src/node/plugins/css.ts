@@ -2390,12 +2390,9 @@ const scssProcessor = (
     },
     async process(source, root, options, resolvers) {
       const sassPackage = loadSassPackage(root)
-      let api = options.api
-      if (!api) {
-        api = 'legacy'
-        // TODO: change default in v6
-        // api = sassPackage.name === "sass-embedded" ? "modern-compiler" : "modern";
-      }
+      // TODO: change default in v6
+      // options.api ?? sassPackage.name === "sass-embedded" ? "modern-compiler" : "modern";
+      let api = options.api ?? 'legacy'
 
       if (!workerMap.has(options.alias)) {
         workerMap.set(
