@@ -10,7 +10,6 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { PartialResolvedId, RollupOptions } from 'rollup'
-import type { FSWatcher } from 'dep-types/chokidar'
 import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
@@ -143,7 +142,6 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
 
 export interface CreateDevEnvironmentContext {
   ws: WebSocketServer
-  watcher: FSWatcher
 }
 
 export interface DevEnvironmentOptions {
@@ -222,18 +220,15 @@ function createDefaultClientDevEnvironment(
 ) {
   return new DevEnvironment(name, config, {
     hot: context.ws,
-    watcher: context.watcher,
   })
 }
 
 function createDefaultSsrDevEnvironment(
   name: string,
   config: ResolvedConfig,
-  context: CreateDevEnvironmentContext,
 ): DevEnvironment {
   return createNodeDevEnvironment(name, config, {
     hot: createServerHotChannel(),
-    watcher: context.watcher,
   })
 }
 
@@ -244,7 +239,7 @@ function createDefaultDevEnvironment(
 ): DevEnvironment {
   return config.environments[name].consumer === 'client'
     ? createDefaultClientDevEnvironment(name, config, context)
-    : createDefaultSsrDevEnvironment(name, config, context)
+    : createDefaultSsrDevEnvironment(name, config)
 }
 
 export type ResolvedDevEnvironmentOptions = Required<DevEnvironmentOptions>

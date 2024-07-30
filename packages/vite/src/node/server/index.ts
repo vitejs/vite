@@ -485,13 +485,12 @@ export async function _createServer(
       config,
       {
         ws,
-        watcher,
       },
     )
   }
 
   for (const environment of Object.values(environments)) {
-    await environment.init()
+    await environment.init({ watcher })
   }
 
   // Backward compatibility
@@ -571,7 +570,6 @@ export async function _createServer(
     },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
       warnFutureDeprecation(config, 'ssrLoadModule')
-
       return ssrLoadModule(url, server, undefined, opts?.fixStacktrace)
     },
     ssrFixStacktrace(e) {

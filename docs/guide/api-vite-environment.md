@@ -323,7 +323,6 @@ function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, conte
     runner: {
       transport,
     },
-    watcher: context.watcher
   })
   return workerdDevEnvironment
 }
@@ -799,7 +798,6 @@ function createWorkerEnvironment(name, config, context) {
         onMessage: (listener) => worker.on('message', listener),
       }),
     },
-    watcher: context.watcher
   })
 }
 

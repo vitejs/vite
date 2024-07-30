@@ -33,7 +33,6 @@ import type { RemoteEnvironmentTransport } from './environmentTransport'
 
 export interface DevEnvironmentContext {
   hot: false | HotChannel
-  watcher: false | FSWatcher
   options?: EnvironmentOptions
   runner?: FetchModuleOptions & {
     transport?: RemoteEnvironmentTransport
@@ -45,7 +44,6 @@ export class DevEnvironment extends BaseEnvironment {
   mode = 'dev' as const // TODO: should this be 'serve'?
   moduleGraph: EnvironmentModuleGraph
 
-  watcher?: FSWatcher
   depsOptimizer?: DepsOptimizer
   /**
    * @internal
@@ -119,7 +117,6 @@ export class DevEnvironment extends BaseEnvironment {
     )
 
     this.hot = context.hot || createNoopHotChannel()
-    this.watcher = context.watcher || undefined
 
     this._onCrawlEndCallbacks = []
     this._crawlEndFinder = setupOnCrawlEnd(() => {
@@ -156,7 +153,7 @@ export class DevEnvironment extends BaseEnvironment {
     }
   }
 
-  async init(): Promise<void> {
+  async init(options?: { watcher?: FSWatcher }): Promise<void> {
     if (this._initiated) {
       return
     }
@@ -165,6 +162,7 @@ export class DevEnvironment extends BaseEnvironment {
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this._plugins,
+      options?.watcher,
     )
 
     // TODO: Should buildStart be called here? It break backward compatibility if we do,
