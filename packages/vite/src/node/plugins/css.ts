@@ -2311,7 +2311,7 @@ const makeModernCompilerScssWorker = (
   const worker: Awaited<ReturnType<typeof makeModernScssWorker>> = {
     async run(sassPath, data, options) {
       // workaround for windows since import("D:...") fails
-      const sass: typeof Sass = createRequire(import.meta.url)(sassPath);
+      const sass: typeof Sass = createRequire(import.meta.url)(sassPath)
       compiler ??= await sass.initAsyncCompiler()
 
       const sassOptions = { ...options } as Sass.StringOptions<'async'>
@@ -2393,7 +2393,7 @@ const scssProcessor = (
       const sassPackage = loadSassPackage(root)
       // TODO: change default in v6
       // options.api ?? sassPackage.name === "sass-embedded" ? "modern-compiler" : "modern";
-      let api = options.api ?? 'legacy'
+      const api = options.api ?? 'legacy'
 
       if (!workerMap.has(options.alias)) {
         workerMap.set(
@@ -2437,7 +2437,6 @@ const scssProcessor = (
         }
       } catch (e) {
         // normalize SASS error
-        console.error(e);
         e.message = `[sass] ${e.message}`
         e.id = e.file
         e.frame = e.formatted
