@@ -123,8 +123,8 @@ export class DevEnvironment extends BaseEnvironment {
       this._onCrawlEndCallbacks.forEach((cb) => cb())
     })
 
-    this._ssrRunnerOptions = context?.runner ?? {}
-    context?.runner?.transport?.register(this)
+    this._ssrRunnerOptions = context.runner ?? {}
+    context.runner?.transport?.register(this)
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {
@@ -134,7 +134,7 @@ export class DevEnvironment extends BaseEnvironment {
     })
 
     const { optimizeDeps } = this.config.dev
-    if (context?.depsOptimizer) {
+    if (context.depsOptimizer) {
       this.depsOptimizer = context.depsOptimizer
     } else if (isDepOptimizationDisabled(optimizeDeps)) {
       this.depsOptimizer = undefined
