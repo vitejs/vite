@@ -25,6 +25,24 @@ export default {
 }
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+- Replace `tsPlugin.configs.recommended.rules` to `tsPlugin.configs['recommended-type-checked'].rules` or `tsPlugin.configs['strict-type-checked'].rules`
+- Optionally add `tsPlugin.configs['stylistic-type-checked'].rules`
+- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+
+```js
+// eslint.config.js
+import react from 'eslint-plugin-react'
+
+export default {
+  // other rules...
+  plugins: {
+    // Add the react plugin
+    react,
+  },
+  rules: {
+    // Enable its recommended rules
+    ...react.configs.recommended.rules,
+    ...react.configs['jsx-runtime'].rules,
+  },
+}
+```
