@@ -86,7 +86,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.21.3",
-    "postcss": "^8.4.39",
+    "postcss": "^8.4.40",
     "rollup": "^4.13.0"
   },
   "optionalDependencies": {
@@ -94,7 +94,7 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.3.0",
-    "@babel/parser": "^7.24.8",
+    "@babel/parser": "^7.25.0",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.0",
@@ -112,7 +112,7 @@
     "convert-source-map": "^2.0.0",
     "cors": "^2.8.5",
     "cross-spawn": "^7.0.3",
-    "debug": "^4.3.5",
+    "debug": "^4.3.6",
     "dep-types": "link:./src/types",
     "dotenv": "^16.4.5",
     "dotenv-expand": "^11.0.6",
@@ -124,7 +124,7 @@
     "http-proxy": "^1.18.1",
     "launch-editor-middleware": "^2.8.0",
     "lightningcss": "^1.25.1",
-    "magic-string": "^0.30.10",
+    "magic-string": "^0.30.11",
     "micromatch": "^4.0.7",
     "mlly": "^1.7.1",
     "mrmime": "^2.0.0",
