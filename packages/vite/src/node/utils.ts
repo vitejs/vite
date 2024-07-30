@@ -1110,6 +1110,9 @@ function mergeConfigRecursively(
         ...backwardCompatibleWorkerPlugins(value),
       ]
       continue
+    } else if (key === 'server' && rootPath === 'server.hmr') {
+      merged[key] = value
+      continue
     }
 
     if (Array.isArray(existing) || Array.isArray(value)) {
