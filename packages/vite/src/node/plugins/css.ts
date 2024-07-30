@@ -2310,17 +2310,8 @@ const makeModernCompilerScssWorker = (
 
   const worker: Awaited<ReturnType<typeof makeModernScssWorker>> = {
     async run(sassPath, data, options) {
-      console.log("@@@", { sassPath });
-      const { default: sass }: { default: typeof Sass } = await import(sassPath).then(
-        (v) => {
-          console.log('@@@@@@@@ OK');
-          return v
-        },
-        (e) => {
-          console.log('@@@@@@@@ ERROR');
-          console.error(e);
-        }
-      )
+      // workaround for windows since import("D:...") fails
+      const sass: typeof Sass = createRequire(import.meta.url)(sassPath);
       compiler ??= await sass.initAsyncCompiler()
 
       const sassOptions = { ...options } as Sass.StringOptions<'async'>
