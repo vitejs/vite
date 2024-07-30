@@ -38,6 +38,7 @@ describe('running module runner inside a worker', () => {
                     onMessage: (handler) => worker.on('message', handler),
                   }),
                 },
+                hot: false,
               })
             },
           },

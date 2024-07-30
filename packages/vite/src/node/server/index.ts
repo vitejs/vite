@@ -85,7 +85,6 @@ import { errorMiddleware } from './middlewares/error'
 import type { HmrOptions, HotBroadcaster } from './hmr'
 import {
   createDeprecatedHotBroadcaster,
-  createServerHotChannel,
   handleHMRUpdate,
   updateModules,
 } from './hmr'
@@ -94,8 +93,7 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { warmupFiles } from './warmup'
-import { DevEnvironment } from './environment'
-import { createNodeDevEnvironment } from './environments/nodeEnvironment'
+import type { DevEnvironment } from './environment'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -452,7 +450,6 @@ export async function _createServer(
     : await resolveHttpServer(serverConfig, middlewares, httpsOptions)
 
   const ws = createWebSocketServer(httpServer, config, httpsOptions)
-  const ssrHotChannel = createServerHotChannel()
 
   const publicFiles = await initPublicFilesPromise
   const { publicDir } = config
@@ -480,37 +477,20 @@ export async function _createServer(
 
   const environments: Record<string, DevEnvironment> = {}
 
-  const client_createEnvironment =
-    config.environments.client?.dev?.createEnvironment ??
-    ((name: string, config: ResolvedConfig) =>
-      new DevEnvironment(name, config, { hot: ws, watcher }))
-
-  environments.client = await client_createEnvironment('client', config)
-
-  const ssr_createEnvironment =
-    config.environments.ssr?.dev?.createEnvironment ??
-    ((name: string, config: ResolvedConfig) =>
-      createNodeDevEnvironment(name, config, { hot: ssrHotChannel, watcher }))
-
-  environments.ssr = await ssr_createEnvironment('ssr', config)
-
-  for (const [name, EnvironmentOptions] of Object.entries(
+  for (const [name, environmentOptions] of Object.entries(
     config.environments,
   )) {
-    // TODO: move client and ssr inside the loop?
-    if (name !== 'client' && name !== 'ssr') {
-      const createEnvironment =
-        EnvironmentOptions.dev?.createEnvironment ??
-        ((name: string, config: ResolvedConfig) =>
-          new DevEnvironment(name, config, {
-            hot: ws, // TODO: what should we use here?
-          }))
-      environments[name] = await createEnvironment(name, config)
-    }
+    environments[name] = await environmentOptions.dev.createEnvironment(
+      name,
+      config,
+      {
+        ws,
+      },
+    )
   }
 
   for (const environment of Object.values(environments)) {
-    await environment.init()
+    await environment.init({ watcher })
   }
 
   // Backward compatibility
@@ -590,7 +570,6 @@ export async function _createServer(
     },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
       warnFutureDeprecation(config, 'ssrLoadModule')
-
       return ssrLoadModule(url, server, undefined, opts?.fixStacktrace)
     },
     ssrFixStacktrace(e) {

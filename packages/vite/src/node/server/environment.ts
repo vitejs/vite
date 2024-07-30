@@ -31,9 +31,8 @@ import {
 } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
 
-export interface DevEnvironmentSetup {
+export interface DevEnvironmentContext {
   hot: false | HotChannel
-  watcher?: FSWatcher
   options?: EnvironmentOptions
   runner?: FetchModuleOptions & {
     transport?: RemoteEnvironmentTransport
@@ -45,7 +44,6 @@ export class DevEnvironment extends BaseEnvironment {
   mode = 'dev' as const // TODO: should this be 'serve'?
   moduleGraph: EnvironmentModuleGraph
 
-  watcher?: FSWatcher
   depsOptimizer?: DepsOptimizer
   /**
    * @internal
@@ -100,14 +98,14 @@ export class DevEnvironment extends BaseEnvironment {
   constructor(
     name: string,
     config: ResolvedConfig,
-    setup: DevEnvironmentSetup,
+    context: DevEnvironmentContext,
   ) {
     let options =
       config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
-    if (setup.options) {
+    if (context.options) {
       options = mergeConfig(
         options,
-        setup.options,
+        context.options,
       ) as ResolvedEnvironmentOptions
     }
     super(name, config, options)
@@ -118,16 +116,15 @@ export class DevEnvironment extends BaseEnvironment {
       this.pluginContainer!.resolveId(url, undefined),
     )
 
-    this.hot = setup.hot || createNoopHotChannel()
-    this.watcher = setup.watcher
+    this.hot = context.hot || createNoopHotChannel()
 
     this._onCrawlEndCallbacks = []
     this._crawlEndFinder = setupOnCrawlEnd(() => {
       this._onCrawlEndCallbacks.forEach((cb) => cb())
     })
 
-    this._ssrRunnerOptions = setup.runner || {}
-    setup.runner?.transport?.register(this)
+    this._ssrRunnerOptions = context.runner ?? {}
+    context.runner?.transport?.register(this)
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {
@@ -137,8 +134,8 @@ export class DevEnvironment extends BaseEnvironment {
     })
 
     const { optimizeDeps } = this.config.dev
-    if (setup.depsOptimizer) {
-      this.depsOptimizer = setup.depsOptimizer
+    if (context.depsOptimizer) {
+      this.depsOptimizer = context.depsOptimizer
     } else if (isDepOptimizationDisabled(optimizeDeps)) {
       this.depsOptimizer = undefined
     } else {
@@ -146,7 +143,7 @@ export class DevEnvironment extends BaseEnvironment {
       // environments `noDiscovery` has no effect and a simpler explicit deps
       // optimizer is used that only optimizes explicitly included dependencies
       // so it doesn't need to reload the environment. Now that we have proper HMR
-      // and full reload for general environments, we can enable autodiscovery for
+      // and full reload for general environments, we can enable auto-discovery for
       // them in the future
       this.depsOptimizer = (
         optimizeDeps.noDiscovery || name !== 'client'
@@ -156,7 +153,7 @@ export class DevEnvironment extends BaseEnvironment {
     }
   }
 
-  async init(): Promise<void> {
+  async init(options?: { watcher?: FSWatcher }): Promise<void> {
     if (this._initiated) {
       return
     }
@@ -165,6 +162,7 @@ export class DevEnvironment extends BaseEnvironment {
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this._plugins,
+      options?.watcher,
     )
 
     // TODO: Should buildStart be called here? It break backward compatibility if we do,

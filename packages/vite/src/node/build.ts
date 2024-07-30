@@ -400,6 +400,7 @@ export function resolveBuildEnvironmentOptions(
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
+    createEnvironment: (name, config) => new BuildEnvironment(name, config),
   }
 
   const userBuildEnvironmentOptions = raw
@@ -517,8 +518,10 @@ export async function build(
   const config = await resolveConfigToBuild(inlineConfig)
   const environmentName =
     config.build.lib || !config.build.ssr ? 'client' : 'ssr'
-  const createEnvironment = getBuildCreateEnvironment(config, environmentName)
-  const environment = await createEnvironment(environmentName, config)
+  const environment = await config.build.createEnvironment(
+    environmentName,
+    config,
+  )
   await environment.init()
   return buildEnvironment(config, environment, config.build.lib)
 }
@@ -1510,18 +1513,6 @@ export function resolveBuilderOptions(
   }
 }
 
-// TODO: Move createEnvironment resolving during build and dev to config stage
-function getBuildCreateEnvironment(
-  config: ResolvedConfig,
-  environmentName: string,
-) {
-  return (
-    config.environments[environmentName].build?.createEnvironment ??
-    ((name: string, config: ResolvedConfig) =>
-      new BuildEnvironment(name, config))
-  )
-}
-
 export type ResolvedBuilderOptions = Required<BuilderOptions>
 
 export async function createBuilder(
@@ -1548,8 +1539,6 @@ export async function createBuilder(
   }
 
   for (const name of Object.keys(config.environments)) {
-    const createEnvironment = getBuildCreateEnvironment(config, name)
-
     // We need to resolve the config again so we can properly merge options
     // and get a new set of plugins for each build environment. The ecosystem
     // expects plugins to be run for the same environment once they are created
@@ -1598,7 +1587,10 @@ export async function createBuilder(
       )
     }
 
-    const environment = await createEnvironment(name, environmentConfig)
+    const environment = await environmentConfig.build.createEnvironment(
+      name,
+      environmentConfig,
+    )
 
     await environment.init()
 

@@ -306,7 +306,7 @@ One of the goals of this feature is to provide a customizable API to process and
 ```ts
 import { DevEnvironment, RemoteEnvironmentTransport } from 'vite'
 
-function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, options?: DevEnvironmentOptions) {
+function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, context: DevEnvironmentContext) {
   const hot = /* ... */
   const connection = /* ... */
   const transport = new RemoteEnvironmentTransport({
@@ -317,7 +317,7 @@ function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, optio
   const workerdDevEnvironment = new DevEnvironment(name, config, {
     options: {
       resolve: { conditions: ['custom'] },
-      ...options,
+      ...context.options,
     },
     hot,
     runner: {
@@ -336,7 +336,7 @@ const ssrEnvironment = createWorkerdEnvironment('ssr', config)
 
 ## Environment Configuration
 
-Environments are explicitely configured with the `environments` config option.
+Environments are explicitly configured with the `environments` config option.
 
 ```js
 export default {
@@ -403,9 +403,12 @@ export default {
   environments: {
     rsc: {
       dev: {
-        createEnvironment(name, config) {
+        createEnvironment(name, config, { watcher }) {
           // Called with 'rsc' and the resolved config during dev
-          return createNodeDevEnvironment(name, config)
+          return createNodeDevEnvironment(name, config, {
+            hot: customHotChannel(),
+            watcher
+          })
         }
       },
       build: {
@@ -434,8 +437,11 @@ function createWorkedEnvironment(userConfig) {
         ],
       },
       dev: {
-        createEnvironment(name, config) {
-          return createWorkerdDevEnvironment(name, config)
+        createEnvironment(name, config, { watcher }) {
+          return createWorkerdDevEnvironment(name, config, {
+            hot: customHotChannel(),
+            watcher,
+          })
         },
       },
       build: {
@@ -782,9 +788,10 @@ const runner = new ModuleRunner(
 import { BroadcastChannel } from 'node:worker_threads'
 import { createServer, RemoteEnvironmentTransport, DevEnvironment } from 'vite'
 
-function createWorkerEnvironment(name, config) {
+function createWorkerEnvironment(name, config, context) {
   const worker = new Worker('./worker.js')
   return new DevEnvironment(name, config, {
+    hot: /* custom hot channel */,
     runner: {
       transport: new RemoteEnvironmentTransport({
         send: (data) => worker.postMessage(data),

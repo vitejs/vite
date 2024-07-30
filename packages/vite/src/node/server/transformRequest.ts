@@ -153,8 +153,6 @@ async function doTransform(
 ) {
   url = removeTimestampQuery(url)
 
-  await environment.init()
-
   const { pluginContainer } = environment
 
   let module = await environment.moduleGraph.getModuleByUrl(url)
@@ -286,8 +284,12 @@ async function loadAndTransform(
           throw e
         }
       }
-      if (code != null && environment.watcher) {
-        ensureWatchedFile(environment.watcher, file, config.root)
+      if (code != null && environment.pluginContainer.watcher) {
+        ensureWatchedFile(
+          environment.pluginContainer.watcher,
+          file,
+          config.root,
+        )
       }
     }
     if (code) {

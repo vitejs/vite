@@ -42,7 +42,10 @@ import {
 } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
-import type { DevEnvironment } from './server/environment'
+import { DevEnvironment } from './server/environment'
+import { createNodeDevEnvironment } from './server/environments/nodeEnvironment'
+import { createServerHotChannel } from './server/hmr'
+import type { WebSocketServer } from './server/ws'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
 import {
@@ -137,6 +140,10 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
+export interface CreateDevEnvironmentContext {
+  ws: WebSocketServer
+}
+
 export interface DevEnvironmentOptions {
   /**
    * Files to be pre-transformed. Supports glob patterns.
@@ -176,6 +183,7 @@ export interface DevEnvironmentOptions {
   createEnvironment?: (
     name: string,
     config: ResolvedConfig,
+    context: CreateDevEnvironmentContext,
   ) => Promise<DevEnvironment> | DevEnvironment
 
   /**
@@ -205,17 +213,32 @@ export interface DevEnvironmentOptions {
   // fs: { strict?: boolean, allow, deny }
 }
 
-export type ResolvedDevEnvironmentOptions = Required<
-  Omit<DevEnvironmentOptions, 'createEnvironment'>
-> & {
-  // TODO: Should we set the default at config time? For now, it is defined on server init
-  createEnvironment:
-    | ((
-        name: string,
-        config: ResolvedConfig,
-      ) => Promise<DevEnvironment> | DevEnvironment)
-    | undefined
+function defaultCreateClientDevEnvironment(
+  name: string,
+  config: ResolvedConfig,
+  context: CreateDevEnvironmentContext,
+) {
+  return new DevEnvironment(name, config, {
+    hot: context.ws,
+  })
 }
+
+function defaultCreateSsrDevEnvironment(
+  name: string,
+  config: ResolvedConfig,
+): DevEnvironment {
+  return createNodeDevEnvironment(name, config, {
+    hot: createServerHotChannel(),
+  })
+}
+
+function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
+  return new DevEnvironment(name, config, {
+    hot: false,
+  })
+}
+
+export type ResolvedDevEnvironmentOptions = Required<DevEnvironmentOptions>
 
 type EnvironmentResolveOptions = ResolveOptions & {
   alias?: AliasOptions
@@ -603,7 +626,13 @@ export function resolveDevEnvironmentOptions(
       preserverSymlinks,
       environmentName,
     ),
-    createEnvironment: dev?.createEnvironment,
+    createEnvironment:
+      dev?.createEnvironment ??
+      (environmentName === 'client'
+        ? defaultCreateClientDevEnvironment
+        : environmentName === 'ssr'
+          ? defaultCreateSsrDevEnvironment
+          : defaultCreateDevEnvironment),
     recoverable: dev?.recoverable ?? environmentName === 'client',
     moduleRunnerTransform:
       dev?.moduleRunnerTransform ??

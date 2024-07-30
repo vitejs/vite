@@ -53,8 +53,12 @@ export function loadFallbackPlugin(config: ResolvedConfig): Plugin {
             throw e
           }
         }
-        if (code != null && environment.watcher) {
-          ensureWatchedFile(environment.watcher, file, config.root)
+        if (code != null && environment.pluginContainer.watcher) {
+          ensureWatchedFile(
+            environment.pluginContainer.watcher,
+            file,
+            config.root,
+          )
         }
       }
       if (code) {
