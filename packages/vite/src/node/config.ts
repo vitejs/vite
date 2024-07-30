@@ -10,6 +10,7 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { PartialResolvedId, RollupOptions } from 'rollup'
+import type { FSWatcher } from 'dep-types/chokidar'
 import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
@@ -43,8 +44,9 @@ import {
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import { DevEnvironment } from './server/environment'
-import type { DevEnvironmentSetup } from './server/environment'
-import { createNodeSsrDevEnvironment } from './server/environments/nodeEnvironment'
+import { createNodeDevEnvironment } from './server/environments/nodeEnvironment'
+import { createServerHotChannel } from './server/hmr'
+import type { WebSocketServer } from './server/ws'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
 import {
@@ -139,6 +141,11 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
 }
 
+export interface CreateDevEnvironmentContext {
+  ws: WebSocketServer
+  watcher: FSWatcher
+}
+
 export interface DevEnvironmentOptions {
   /**
    * Files to be pre-transformed. Supports glob patterns.
@@ -178,7 +185,7 @@ export interface DevEnvironmentOptions {
   createEnvironment?: (
     name: string,
     config: ResolvedConfig,
-    setup?: DevEnvironmentSetup,
+    context: CreateDevEnvironmentContext,
   ) => Promise<DevEnvironment> | DevEnvironment
 
   /**
@@ -208,12 +215,36 @@ export interface DevEnvironmentOptions {
   // fs: { strict?: boolean, allow, deny }
 }
 
-function createDevEnvironment(
+function createDefaultClientDevEnvironment(
   name: string,
   config: ResolvedConfig,
-  setup?: DevEnvironmentSetup,
+  context: CreateDevEnvironmentContext,
 ) {
-  return new DevEnvironment(name, config, setup)
+  return new DevEnvironment(name, config, {
+    hot: context.ws,
+    watcher: context.watcher,
+  })
+}
+
+function createDefaultSsrDevEnvironment(
+  name: string,
+  config: ResolvedConfig,
+  context: CreateDevEnvironmentContext,
+): DevEnvironment {
+  return createNodeDevEnvironment(name, config, {
+    hot: createServerHotChannel(),
+    watcher: context.watcher,
+  })
+}
+
+function createDefaultDevEnvironment(
+  name: string,
+  config: ResolvedConfig,
+  context: CreateDevEnvironmentContext,
+): DevEnvironment {
+  return config.environments[name].consumer === 'client'
+    ? createDefaultClientDevEnvironment(name, config, context)
+    : createDefaultSsrDevEnvironment(name, config, context)
 }
 
 export type ResolvedDevEnvironmentOptions = Required<DevEnvironmentOptions>
@@ -604,11 +635,7 @@ export function resolveDevEnvironmentOptions(
       preserverSymlinks,
       environmentName,
     ),
-    createEnvironment:
-      dev?.createEnvironment ??
-      (environmentName === 'ssr'
-        ? createNodeSsrDevEnvironment
-        : createDevEnvironment),
+    createEnvironment: dev?.createEnvironment ?? createDefaultDevEnvironment,
     recoverable: dev?.recoverable ?? environmentName === 'client',
     moduleRunnerTransform:
       dev?.moduleRunnerTransform ??

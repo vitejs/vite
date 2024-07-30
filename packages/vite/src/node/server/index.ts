@@ -484,7 +484,7 @@ export async function _createServer(
       name,
       config,
       {
-        hot: ws,
+        ws,
         watcher,
       },
     )

@@ -31,9 +31,9 @@ import {
 } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
 
-export interface DevEnvironmentSetup {
-  hot?: HotChannel
-  watcher?: FSWatcher
+export interface DevEnvironmentContext {
+  hot: false | HotChannel
+  watcher: false | FSWatcher
   options?: EnvironmentOptions
   runner?: FetchModuleOptions & {
     transport?: RemoteEnvironmentTransport
@@ -100,14 +100,14 @@ export class DevEnvironment extends BaseEnvironment {
   constructor(
     name: string,
     config: ResolvedConfig,
-    setup?: DevEnvironmentSetup,
+    context: DevEnvironmentContext,
   ) {
     let options =
       config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
-    if (setup?.options) {
+    if (context.options) {
       options = mergeConfig(
         options,
-        setup?.options,
+        context.options,
       ) as ResolvedEnvironmentOptions
     }
     super(name, config, options)
@@ -118,16 +118,16 @@ export class DevEnvironment extends BaseEnvironment {
       this.pluginContainer!.resolveId(url, undefined),
     )
 
-    this.hot = setup?.hot ?? createNoopHotChannel()
-    this.watcher = setup?.watcher
+    this.hot = context.hot || createNoopHotChannel()
+    this.watcher = context.watcher || undefined
 
     this._onCrawlEndCallbacks = []
     this._crawlEndFinder = setupOnCrawlEnd(() => {
       this._onCrawlEndCallbacks.forEach((cb) => cb())
     })
 
-    this._ssrRunnerOptions = setup?.runner ?? {}
-    setup?.runner?.transport?.register(this)
+    this._ssrRunnerOptions = context?.runner ?? {}
+    context?.runner?.transport?.register(this)
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {
@@ -137,8 +137,8 @@ export class DevEnvironment extends BaseEnvironment {
     })
 
     const { optimizeDeps } = this.config.dev
-    if (setup?.depsOptimizer) {
-      this.depsOptimizer = setup.depsOptimizer
+    if (context?.depsOptimizer) {
+      this.depsOptimizer = context.depsOptimizer
     } else if (isDepOptimizationDisabled(optimizeDeps)) {
       this.depsOptimizer = undefined
     } else {

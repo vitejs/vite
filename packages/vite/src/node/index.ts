@@ -21,7 +21,10 @@ export { buildErrorMessage } from './server/middlewares/error'
 
 export { RemoteEnvironmentTransport } from './server/environmentTransport'
 export { createNodeDevEnvironment } from './server/environments/nodeEnvironment'
-export { DevEnvironment, type DevEnvironmentSetup } from './server/environment'
+export {
+  DevEnvironment,
+  type DevEnvironmentContext,
+} from './server/environment'
 export { BuildEnvironment } from './build'
 
 export { fetchModule, type FetchModuleOptions } from './ssr/fetchModule'

@@ -30,7 +30,7 @@ describe('running module runner inside a worker', () => {
       environments: {
         worker: {
           dev: {
-            createEnvironment: (name, config) => {
+            createEnvironment: (name, config, context) => {
               return new DevEnvironment(name, config, {
                 runner: {
                   transport: new RemoteEnvironmentTransport({
@@ -38,6 +38,8 @@ describe('running module runner inside a worker', () => {
                     onMessage: (handler) => worker.on('message', handler),
                   }),
                 },
+                watcher: context.watcher,
+                hot: false,
               })
             },
           },
