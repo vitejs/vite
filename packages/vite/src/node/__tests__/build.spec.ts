@@ -615,6 +615,22 @@ test('sass-test', async () => {
       preprocessorOptions: {
         scss: {
           api: 'modern-compiler',
+          additionalData: `$injectedColor: orange;`,
+          importers: [
+            {
+              canonicalize(url: string) {
+                return url === 'virtual-dep'
+                  ? new URL('custom-importer:virtual-dep')
+                  : null
+              },
+              load() {
+                return {
+                  contents: ``,
+                  syntax: 'scss',
+                }
+              },
+            },
+          ],
         },
       },
     },
