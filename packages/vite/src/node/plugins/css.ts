@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -2297,6 +2298,9 @@ const makeModernScssWorker = (
   return worker
 }
 
+// this is mostly a copy&paste of makeModernScssWorker
+// however sharing code between two is hard because
+// makeModernScssWorker above needs function inlined for worker.
 const makeModernCompilerScssWorker = (
   resolvers: CSSAtImportResolvers,
   alias: Alias[],
@@ -2307,8 +2311,6 @@ const makeModernCompilerScssWorker = (
   const worker: Awaited<ReturnType<typeof makeModernScssWorker>> = {
     async run(sassPath, data, options) {
       const { default: sass }: { default: typeof Sass } = await import(sassPath)
-      const path = await import('node:path')
-      const { fileURLToPath, pathToFileURL } = await import('node:url')
       compiler ??= await sass.initAsyncCompiler()
 
       const sassOptions = { ...options } as Sass.StringOptions<'async'>
