@@ -1,4 +1,3 @@
-import { fixupPluginRules } from '@eslint/compat'
 import js from '@eslint/js'
 import globals from 'globals'
 import react from 'eslint-plugin-react'
@@ -20,8 +19,8 @@ export default [
     },
     settings: { react: { version: '18.3' } },
     plugins: {
-      react: fixupPluginRules(react),
-      'react-hooks': fixupPluginRules(reactHooks),
+      react,
+      'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
     },
     rules: {
