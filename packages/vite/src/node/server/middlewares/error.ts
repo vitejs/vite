@@ -37,7 +37,7 @@ export function buildErrorMessage(
 
 function cleanStack(stack: string) {
   return stack
-    .split(/\n/g)
+    .split(/\n/)
     .filter((l) => /^\s*at/.test(l))
     .join('\n')
 }

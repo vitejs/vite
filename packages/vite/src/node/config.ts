@@ -1590,7 +1590,7 @@ async function bundleConfigFile(
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
     write: false,
-    target: ['node18'],
+    target: [`node${process.versions.node}`],
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',

@@ -1,5 +1,3 @@
-/* eslint-disable no-restricted-globals */
-
 warnCjsUsage()
 
 // type utils

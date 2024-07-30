@@ -124,8 +124,8 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     const mod = this.get(moduleId)
     if (mod.map) return mod.map
     if (!mod.meta || !('code' in mod.meta)) return null
-    const mapString = mod.meta.code.match(
-      MODULE_RUNNER_SOURCEMAPPING_REGEXP,
+    const mapString = MODULE_RUNNER_SOURCEMAPPING_REGEXP.exec(
+      mod.meta.code,
     )?.[1]
     if (!mapString) return null
     const baseFile = mod.meta.file || moduleId.split('?')[0]
