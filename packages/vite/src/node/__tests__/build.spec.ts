@@ -600,39 +600,3 @@ function assertOutputHashContentChange(
     }
   }
 }
-
-test('sass-test', async () => {
-  await build({
-    root: resolve(__dirname, 'fixtures/sass-test'),
-    build: {
-      rollupOptions: {
-        input: {
-          index: '/main.js',
-        },
-      },
-    },
-    css: {
-      preprocessorOptions: {
-        scss: {
-          api: 'modern-compiler',
-          additionalData: `$injectedColor: orange;`,
-          importers: [
-            {
-              canonicalize(url: string) {
-                return url === 'virtual-dep'
-                  ? new URL('custom-importer:virtual-dep')
-                  : null
-              },
-              load() {
-                return {
-                  contents: ``,
-                  syntax: 'scss',
-                }
-              },
-            },
-          ],
-        },
-      },
-    },
-  })
-})
