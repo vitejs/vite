@@ -1,3 +1,17 @@
+## 5.4.0-beta.0 (2024-07-30)
+
+* fix: specify own Node version as target when bundling config files (#17307) ([bbf001f](https://github.com/vitejs/vite/commit/bbf001f0ecb4e9b826bbeb75b91d39f20aab3142)), closes [#17307](https://github.com/vitejs/vite/issues/17307)
+* fix(build): handle invalid JSON in import.meta.env (#17648) ([659b720](https://github.com/vitejs/vite/commit/659b7206930d660779ad504beef89744fb97d339)), closes [#17648](https://github.com/vitejs/vite/issues/17648)
+* fix(deps): update all non-major dependencies (#17780) ([e408542](https://github.com/vitejs/vite/commit/e408542748edebd93dba07f21e3fd107725cadca)), closes [#17780](https://github.com/vitejs/vite/issues/17780)
+* fix(mergeConfig): don't recreate server.hmr.server instance (#17763) ([5c55b29](https://github.com/vitejs/vite/commit/5c55b291cf1d41664b0e949acf41d70c956659da)), closes [#17763](https://github.com/vitejs/vite/issues/17763)
+* feat(css): support sass modern api (#17728) ([73a3de0](https://github.com/vitejs/vite/commit/73a3de01d2baaeefeabfa46c28fb49550643b23a)), closes [#17728](https://github.com/vitejs/vite/issues/17728)
+* feat(types): support custom VitePreloadErrorEvent (#17615) ([116e37a](https://github.com/vitejs/vite/commit/116e37acf1a9ce808bc7a7f3a1439ab749c168e3)), closes [#17615](https://github.com/vitejs/vite/issues/17615)
+* perf: improve regex performance (#17789) ([952bae3](https://github.com/vitejs/vite/commit/952bae3efcbd871fc3df5b1947060de7ebdafa36)), closes [#17789](https://github.com/vitejs/vite/issues/17789)
+* chore: minor config.logger refactor (#17770) ([b947fdc](https://github.com/vitejs/vite/commit/b947fdcc9d0db51ee6ac64d9712e8f04077280a7)), closes [#17770](https://github.com/vitejs/vite/issues/17770)
+* chore: update eslint config (#17788) ([796eef3](https://github.com/vitejs/vite/commit/796eef3af1291facc47b5273f83b0ef16d6d76b7)), closes [#17788](https://github.com/vitejs/vite/issues/17788)
+
+
+
 ## <small>5.3.5 (2024-07-25)</small>
 
 * refactor(asset): remove rollup 3 public file watch workaround (#16331) ([66bdb1d](https://github.com/vitejs/vite/commit/66bdb1d7b41e46b5361606ff3811bdad6f625bcc)), closes [#16331](https://github.com/vitejs/vite/issues/16331)
