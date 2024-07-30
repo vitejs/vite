@@ -2,12 +2,15 @@ import { transform } from 'esbuild'
 import { TraceMap, decodedMap, encodedMap } from '@jridgewell/trace-mapping'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import { escapeRegex, getHash } from '../utils'
+import { escapeRegex } from '../utils'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
+const importMetaEnvMarker = '__vite_import_meta_env__'
+const bareImportMetaEnvRe = new RegExp(`${importMetaEnvMarker}(?!\\.)\\b`)
+const importMetaEnvKeyRe = new RegExp(`${importMetaEnvMarker}\\..+?\\b`, 'g')
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -69,12 +72,15 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       define['import.meta.env.SSR'] = ssr + ''
     }
     if ('import.meta.env' in define) {
-      define['import.meta.env'] = serializeDefine({
-        ...importMetaEnvKeys,
-        SSR: ssr + '',
-        ...userDefineEnv,
-      })
+      define['import.meta.env'] = importMetaEnvMarker
     }
+
+    const importMetaEnvVal = serializeDefine({
+      ...importMetaEnvKeys,
+      SSR: ssr + '',
+      ...userDefineEnv,
+    })
+    const banner = `const ${importMetaEnvMarker} = ${importMetaEnvVal};\n`
 
     // Create regex pattern as a fast check before running esbuild
     const patternKeys = Object.keys(userDefine)
@@ -88,7 +94,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ? new RegExp(patternKeys.map(escapeRegex).join('|'))
       : null
 
-    return [define, pattern] as const
+    return [define, pattern, banner] as const
   }
 
   const defaultPattern = generatePattern(false)
@@ -116,14 +122,32 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const [define, pattern] = ssr ? ssrPattern : defaultPattern
+      const [define, pattern, banner] = ssr ? ssrPattern : defaultPattern
       if (!pattern) return
 
       // Check if our code needs any replacements before running esbuild
       pattern.lastIndex = 0
       if (!pattern.test(code)) return
 
-      return await replaceDefine(code, id, define, config)
+      const result = await replaceDefine(code, id, define, config)
+
+      // Replace `import.meta.env.*` with undefined
+      result.code = result.code.replaceAll(importMetaEnvKeyRe, (m) =>
+        'undefined'.padEnd(m.length),
+      )
+
+      // If there's bare `import.meta.env` references, prepend the banner
+      if (bareImportMetaEnvRe.test(result.code)) {
+        result.code = banner + result.code
+
+        if (result.map) {
+          const map = JSON.parse(result.map)
+          map.mappings = ';' + map.mappings
+          result.map = map
+        }
+      }
+
+      return result
     },
   }
 }
@@ -134,19 +158,6 @@ export async function replaceDefine(
   define: Record<string, string>,
   config: ResolvedConfig,
 ): Promise<{ code: string; map: string | null }> {
-  // Because esbuild only allows JSON-serializable values, and `import.meta.env`
-  // may contain values with raw identifiers, making it non-JSON-serializable,
-  // we replace it with a temporary marker and then replace it back after to
-  // workaround it. This means that esbuild is unable to optimize the `import.meta.env`
-  // access, but that's a tradeoff for now.
-  const replacementMarkers: Record<string, string> = {}
-  const env = define['import.meta.env']
-  if (env && !canJsonParse(env)) {
-    const marker = `_${getHash(env, env.length - 2)}_`
-    replacementMarkers[marker] = env
-    define = { ...define, 'import.meta.env': marker }
-  }
-
   const esbuildOptions = config.esbuild || {}
 
   const result = await transform(code, {
@@ -178,10 +189,6 @@ export async function replaceDefine(
     }
   }
 
-  for (const marker in replacementMarkers) {
-    result.code = result.code.replaceAll(marker, replacementMarkers[marker])
-  }
-
   return {
     code: result.code,
     map: result.map || null,
@@ -211,13 +218,4 @@ function handleDefineValue(value: any): string {
   if (typeof value === 'undefined') return 'undefined'
   if (typeof value === 'string') return value
   return JSON.stringify(value)
-}
-
-function canJsonParse(value: any): boolean {
-  try {
-    JSON.parse(value)
-    return true
-  } catch {
-    return false
-  }
 }
