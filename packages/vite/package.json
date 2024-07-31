@@ -142,6 +142,7 @@
     "rollup-plugin-esbuild": "^6.1.1",
     "rollup-plugin-license": "^3.5.2",
     "sass": "^1.77.8",
+    "sass-embedded": "^1.77.8",
     "sirv": "^2.0.4",
     "source-map-support": "^0.5.21",
     "strip-ansi": "^7.1.0",
@@ -157,6 +158,7 @@
     "less": "*",
     "lightningcss": "^1.21.0",
     "sass": "*",
+    "sass-embedded": "*",
     "stylus": "*",
     "sugarss": "*",
     "terser": "^5.4.0"
@@ -166,6 +168,9 @@
       "optional": true
     },
     "sass": {
+      "optional": true
+    },
+    "sass-embedded": {
       "optional": true
     },
     "stylus": {
