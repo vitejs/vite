@@ -47,6 +47,11 @@ export async function setup({ provide }: GlobalSetupContext): Promise<void> {
     path.resolve(tempDir, 'css__sass-modern'),
     { recursive: true },
   )
+  await fs.cp(
+    path.resolve(tempDir, 'css'),
+    path.resolve(tempDir, 'css__sass-modern-compiler'),
+    { recursive: true },
+  )
 }
 
 export async function teardown(): Promise<void> {

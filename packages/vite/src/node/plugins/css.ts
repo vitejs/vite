@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -1945,7 +1946,9 @@ type StylePreprocessorOptions = {
 }
 
 type SassStylePreprocessorOptions = StylePreprocessorOptions &
-  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'>
+  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'> & {
+    api?: 'legacy' | 'modern' | 'modern-compiler'
+  }
 
 type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
   define?: Record<string, any>
@@ -1990,11 +1993,11 @@ export interface StylePreprocessorResults {
 }
 
 const loadedPreprocessorPath: Partial<
-  Record<PreprocessLang | PostCssDialectLang, string>
+  Record<PreprocessLang | PostCssDialectLang | 'sass-embedded', string>
 > = {}
 
 function loadPreprocessorPath(
-  lang: PreprocessLang | PostCssDialectLang,
+  lang: PreprocessLang | PostCssDialectLang | 'sass-embedded',
   root: string,
 ): string {
   const cached = loadedPreprocessorPath[lang]
@@ -2016,6 +2019,24 @@ function loadPreprocessorPath(
       )
       message.stack = e.stack + '\n' + message.stack
       throw message
+    }
+  }
+}
+
+function loadSassPackage(root: string): {
+  name: 'sass' | 'sass-embedded'
+  path: string
+} {
+  // try sass-embedded before sass
+  try {
+    const path = loadPreprocessorPath('sass-embedded', root)
+    return { name: 'sass-embedded', path }
+  } catch (e1) {
+    try {
+      const path = loadPreprocessorPath(PreprocessLang.sass, root)
+      return { name: 'sass', path }
+    } catch (e2) {
+      throw e1
     }
   }
 }
@@ -2277,6 +2298,81 @@ const makeModernScssWorker = (
   return worker
 }
 
+// this is mostly a copy&paste of makeModernScssWorker
+// however sharing code between two is hard because
+// makeModernScssWorker above needs function inlined for worker.
+const makeModernCompilerScssWorker = (
+  resolvers: CSSAtImportResolvers,
+  alias: Alias[],
+  _maxWorkers: number | undefined,
+) => {
+  let compiler: Sass.AsyncCompiler | undefined
+
+  const worker: Awaited<ReturnType<typeof makeModernScssWorker>> = {
+    async run(sassPath, data, options) {
+      // need pathToFileURL for windows since import("D:...") fails
+      // https://github.com/nodejs/node/issues/31710
+      const sass: typeof Sass = (await import(pathToFileURL(sassPath).href))
+        .default
+      compiler ??= await sass.initAsyncCompiler()
+
+      const sassOptions = { ...options } as Sass.StringOptions<'async'>
+      sassOptions.url = pathToFileURL(options.filename)
+      sassOptions.sourceMap = options.enableSourcemap
+
+      const internalImporter: Sass.Importer<'async'> = {
+        async canonicalize(url, context) {
+          const importer = context.containingUrl
+            ? fileURLToPath(context.containingUrl)
+            : options.filename
+          const resolved = await resolvers.sass(url, cleanScssBugUrl(importer))
+          return resolved ? pathToFileURL(resolved) : null
+        },
+        async load(canonicalUrl) {
+          const ext = path.extname(canonicalUrl.pathname)
+          let syntax: Sass.Syntax = 'scss'
+          if (ext === '.sass') {
+            syntax = 'indented'
+          } else if (ext === '.css') {
+            syntax = 'css'
+          }
+          const result = await rebaseUrls(
+            fileURLToPath(canonicalUrl),
+            options.filename,
+            alias,
+            '$',
+            resolvers.sass,
+          )
+          const contents =
+            result.contents ?? (await fsp.readFile(result.file, 'utf-8'))
+          return { contents, syntax }
+        },
+      }
+      sassOptions.importers = [
+        ...(sassOptions.importers ?? []),
+        internalImporter,
+      ]
+
+      const result = await compiler.compileStringAsync(data, sassOptions)
+      return {
+        css: result.css,
+        map: result.sourceMap ? JSON.stringify(result.sourceMap) : undefined,
+        stats: {
+          includedFiles: result.loadedUrls
+            .filter((url) => url.protocol === 'file:')
+            .map((url) => fileURLToPath(url)),
+        },
+      } satisfies ScssWorkerResult
+    },
+    async stop() {
+      compiler?.dispose()
+      compiler = undefined
+    },
+  }
+
+  return worker
+}
+
 type ScssWorkerResult = {
   css: string
   map?: string | undefined
@@ -2295,14 +2391,19 @@ const scssProcessor = (
       }
     },
     async process(source, root, options, resolvers) {
-      const sassPath = loadPreprocessorPath(PreprocessLang.sass, root)
+      const sassPackage = loadSassPackage(root)
+      // TODO: change default in v6
+      // options.api ?? sassPackage.name === "sass-embedded" ? "modern-compiler" : "modern";
+      const api = options.api ?? 'legacy'
 
       if (!workerMap.has(options.alias)) {
         workerMap.set(
           options.alias,
-          options.api === 'modern'
-            ? makeModernScssWorker(resolvers, options.alias, maxWorkers)
-            : makeScssWorker(resolvers, options.alias, maxWorkers),
+          api === 'modern-compiler'
+            ? makeModernCompilerScssWorker(resolvers, options.alias, maxWorkers)
+            : api === 'modern'
+              ? makeModernScssWorker(resolvers, options.alias, maxWorkers)
+              : makeScssWorker(resolvers, options.alias, maxWorkers),
         )
       }
       const worker = workerMap.get(options.alias)!
@@ -2320,7 +2421,7 @@ const scssProcessor = (
       }
       try {
         const result = await worker.run(
-          sassPath,
+          sassPackage.path,
           data,
           optionsWithoutAdditionalData,
         )
