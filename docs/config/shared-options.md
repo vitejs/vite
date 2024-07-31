@@ -225,7 +225,7 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 
 Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessors can be found in their respective documentation:
 
-- `sass`/`scss` - top level option `api: "legacy" | "modern"` (default `"legacy"`) allows switching which sass API to use. [Options (legacy)](https://sass-lang.com/documentation/js-api/interfaces/LegacyStringOptions), [Options (modern)](https://sass-lang.com/documentation/js-api/interfaces/stringoptions/).
+- `sass`/`scss` - top level option `api: "legacy" | "modern" | "modern-compiler"` (default `"legacy"`) allows switching which sass API to use. For the best performance, it's recommended to use `api: "modern-compiler"` with `sass-embedded` package. [Options (legacy)](https://sass-lang.com/documentation/js-api/interfaces/LegacyStringOptions), [Options (modern)](https://sass-lang.com/documentation/js-api/interfaces/stringoptions/).
 - `less` - [Options](https://lesscss.org/usage/#less-options).
 - `styl`/`stylus` - Only [`define`](https://stylus-lang.com/docs/js.html#define-name-node) is supported, which can be passed as an object.
 
@@ -244,7 +244,7 @@ export default defineConfig({
         },
       },
       scss: {
-        api: 'modern', // or "legacy"
+        api: 'modern-compiler', // or "modern", "legacy"
         importers: [
           // ...
         ],

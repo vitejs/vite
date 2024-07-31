@@ -1,3 +1,4 @@
+import http from 'node:http'
 import { describe, expect, test } from 'vitest'
 import type { InlineConfig } from '..'
 import type { PluginOption, UserConfig, UserConfigExport } from '../config'
@@ -183,6 +184,18 @@ describe('mergeConfig', () => {
     // merging either ways, `ssr.noExternal: true` should take highest priority
     expect(mergeConfig(baseConfig, newConfig)).toEqual(mergedConfig)
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
+  })
+
+  test('handles server.hmr.server', () => {
+    const httpServer = http.createServer()
+
+    const baseConfig = { server: { hmr: { server: httpServer } } }
+    const newConfig = { server: { hmr: { server: httpServer } } }
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    // Server instance should not be recreated
+    expect(mergedConfig.server.hmr.server).toBe(httpServer)
   })
 
   test('throws error with functions', () => {
