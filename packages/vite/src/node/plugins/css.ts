@@ -1993,11 +1993,11 @@ export interface StylePreprocessorResults {
 }
 
 const loadedPreprocessorPath: Partial<
-  Record<PreprocessLang | PostCssDialectLang, string>
+  Record<PreprocessLang | PostCssDialectLang | 'sass-embedded', string>
 > = {}
 
 function loadPreprocessorPath(
-  lang: PreprocessLang | PostCssDialectLang,
+  lang: PreprocessLang | PostCssDialectLang | 'sass-embedded',
   root: string,
 ): string {
   const cached = loadedPreprocessorPath[lang]
@@ -2029,11 +2029,11 @@ function loadSassPackage(root: string): {
 } {
   // try sass-embedded before sass
   try {
-    const path = loadPreprocessorPath('sass-embedded' as any, root)
+    const path = loadPreprocessorPath('sass-embedded', root)
     return { name: 'sass-embedded', path }
   } catch (e1) {
     try {
-      const path = loadPreprocessorPath('sass' as any, root)
+      const path = loadPreprocessorPath(PreprocessLang.sass, root)
       return { name: 'sass', path }
     } catch (e2) {
       throw e1
