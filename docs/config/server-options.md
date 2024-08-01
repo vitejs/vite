@@ -334,7 +334,7 @@ Blocklist for sensitive files being restricted to be served by Vite dev server. 
 - **Default:** `false`
 - **Experimental**
 
-The `fs.cachedChecks` optimization caches filenames of accessed directories to avoid repeated filesystem operations. In Windows in particular, this could result in a performance boost. It is disabled by default because there are edge cases when writing a file in a cached folder and immediately importing it.
+Caches filenames of accessed directories to avoid repeated filesystem operations. Particularly in Windows, this could result in a performance boost. It is disabled by default due to edge cases when writing a file in a cached folder and immediately importing it.
 
 ## server.origin
 
