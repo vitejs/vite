@@ -46,12 +46,14 @@ export function getFsUtils(config: ResolvedConfig): FsUtils {
   if (!fsUtils) {
     if (
       config.command !== 'serve' ||
-      config.server.fs.cachedChecks === false ||
+      config.server.fs.cachedChecks !== true ||
       config.server.watch?.ignored ||
       process.versions.pnp
     ) {
       // cached fsUtils is only used in the dev server for now
-      // it is enabled by default only when there aren't custom watcher ignored patterns configured
+      // it is disabled by default due to potential edge cases when writing a file
+      // and reading it immediately
+      // It is also disabled when there aren't custom watcher ignored patterns configured
       // and if yarn pnp isn't used
       fsUtils = commonFsUtils
     } else if (
