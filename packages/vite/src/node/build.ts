@@ -1226,7 +1226,7 @@ export function toOutputFilePathInJS(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   }
-  return joinUrlSegments(config.base, filename)
+  return joinUrlSegments(config.decodedBase, filename)
 }
 
 export function createToImportMetaURLBasedRelativeRuntime(
@@ -1275,7 +1275,7 @@ export function toOutputFilePathWithoutRuntime(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
-    return joinUrlSegments(config.base, filename)
+    return joinUrlSegments(config.decodedBase, filename)
   }
 }
 
