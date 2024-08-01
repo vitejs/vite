@@ -1,3 +1,11 @@
+## 5.4.0-beta.1 (2024-08-01)
+
+* fix: handle encoded base paths (#17577) ([720447e](https://github.com/vitejs/vite/commit/720447ee725046323387f661341d44e2ad390f41)), closes [#17577](https://github.com/vitejs/vite/issues/17577)
+* fix: opt-in server.fs.cachedChecks (#17807) ([4de659c](https://github.com/vitejs/vite/commit/4de659c351589b83a83a7a42f3da5b071a625662)), closes [#17807](https://github.com/vitejs/vite/issues/17807)
+* feat(css): support sass compiler api and sass-embedded package (#17754) ([1025bb6](https://github.com/vitejs/vite/commit/1025bb6d8f21c0cb9fe72405d42e0f91bb3f1d8e)), closes [#17754](https://github.com/vitejs/vite/issues/17754)
+
+
+
 ## 5.4.0-beta.0 (2024-07-30)
 
 * fix: specify own Node version as target when bundling config files (#17307) ([bbf001f](https://github.com/vitejs/vite/commit/bbf001f0ecb4e9b826bbeb75b91d39f20aab3142)), closes [#17307](https://github.com/vitejs/vite/issues/17307)
