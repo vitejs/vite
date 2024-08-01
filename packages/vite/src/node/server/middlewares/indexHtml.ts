@@ -167,7 +167,13 @@ const processNodeUrl = (
         )
       }
       if (preTransformUrl) {
-        preTransformRequest(server, preTransformUrl, config.base)
+        try {
+          preTransformUrl = decodeURI(preTransformUrl)
+        } catch (err) {
+          // Malformed uri. Skip pre-transform.
+          return url
+        }
+        preTransformRequest(server, preTransformUrl, config.decodedBase)
       }
     }
     return url
@@ -184,6 +190,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 ) => {
   const { config, moduleGraph, watcher } = server!
   const base = config.base || '/'
+  const decodedBase = config.decodedBase || '/'
 
   let proxyModulePath: string
   let proxyModuleUrl: string
@@ -202,7 +209,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     proxyModulePath = `\0${validPath}`
     proxyModuleUrl = wrapId(proxyModulePath)
   }
-  proxyModuleUrl = joinUrlSegments(base, proxyModuleUrl)
+  proxyModuleUrl = joinUrlSegments(decodedBase, proxyModuleUrl)
 
   const s = new MagicString(html)
   let inlineModuleIndex = -1
@@ -252,7 +259,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       node.sourceCodeLocation!.endOffset,
       `<script type="module" src="${modulePath}"></script>`,
     )
-    preTransformRequest(server!, modulePath, base)
+    preTransformRequest(server!, modulePath, decodedBase)
   }
 
   await traverseHtml(html, filename, (node) => {
@@ -447,15 +454,16 @@ export function indexHtmlMiddleware(
   }
 }
 
-function preTransformRequest(server: ViteDevServer, url: string, base: string) {
+// NOTE: We usually don't prefix `url` and `base` with `decoded`, but in this file particularly
+// we're dealing with mixed encoded/decoded paths often, so we make this explicit for now.
+function preTransformRequest(
+  server: ViteDevServer,
+  decodedUrl: string,
+  decodedBase: string,
+) {
   if (!server.config.server.preTransformRequests) return
 
   // transform all url as non-ssr as html includes client-side assets only
-  try {
-    url = unwrapId(stripBase(decodeURI(url), base))
-  } catch {
-    // ignore
-    return
-  }
-  server.warmupRequest(url)
+  decodedUrl = unwrapId(stripBase(decodedUrl, decodedBase))
+  server.warmupRequest(decodedUrl)
 }
