@@ -213,7 +213,6 @@ async function instantiateModule(
 
   try {
     const initModule = new AsyncFunction(
-      `global`,
       ssrModuleExportsKey,
       ssrImportMetaKey,
       ssrImportKey,
@@ -224,7 +223,6 @@ async function instantiateModule(
         `\n//# sourceURL=${mod.id}${sourceMapSuffix}`,
     )
     await initModule(
-      context.global,
       ssrModule,
       ssrImportMeta,
       ssrImport,
