@@ -62,3 +62,15 @@ test('import.meta.filename/dirname returns same value with Node', async () => {
   expect(viteValue.dirname).toBe(path.dirname(filename))
   expect(viteValue.filename).toBe(filename)
 })
+
+test('can export global', async () => {
+  const server = await createDevServer()
+  const mod = await server.ssrLoadModule('/fixtures/global/export.js')
+  expect(mod.global).toBe('ok')
+})
+
+test('can access nodejs global', async () => {
+  const server = await createDevServer()
+  const mod = await server.ssrLoadModule('/fixtures/global/test.js')
+  expect(mod.default).toBe(globalThis)
+})
