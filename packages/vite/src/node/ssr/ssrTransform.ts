@@ -2,6 +2,9 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rollup'
 import type {
+  ExportAllDeclaration,
+  ExportDefaultDeclaration,
+  ExportNamedDeclaration,
   Function as FunctionNode,
   Identifier,
   ImportDeclaration,
@@ -132,12 +135,20 @@ async function ssrTransformScript(
   }
 
   const imports: (ImportDeclaration & { start: number; end: number })[] = []
-  const exports: Node[] = []
+  const exports: ((
+    | ExportNamedDeclaration
+    | ExportDefaultDeclaration
+    | ExportAllDeclaration
+  ) & { start: number; end: number })[] = []
 
   for (const node of ast.body as Node[]) {
     if (node.type === 'ImportDeclaration') {
       imports.push(node)
-    } else if (node.type.startsWith('Export')) {
+    } else if (
+      node.type === 'ExportNamedDeclaration' ||
+      node.type === 'ExportDefaultDeclaration' ||
+      node.type === 'ExportAllDeclaration'
+    ) {
       exports.push(node)
     }
   }
