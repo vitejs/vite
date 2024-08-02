@@ -4,6 +4,7 @@ import type { SourceMap } from 'rollup'
 import type {
   Function as FunctionNode,
   Identifier,
+  ImportDeclaration,
   Pattern,
   Property,
   VariableDeclaration,
@@ -130,9 +131,8 @@ async function ssrTransformScript(
     )
   }
 
-  // Temporary reference allocations
-  const imports = []
-  const exports = []
+  const imports: (ImportDeclaration & { start: number; end: number })[] = []
+  const exports: Node[] = []
 
   for (const node of ast.body as Node[]) {
     if (node.type === 'ImportDeclaration') {
@@ -143,9 +143,7 @@ async function ssrTransformScript(
   }
 
   // 1. check all import statements and record id -> importName map
-  // and deallocate the imports array
-  while (imports.length > 0) {
-    const node = imports.shift()!
+  for (const node of imports) {
     // import foo from 'foo' --> foo -> __import_foo__.default
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
@@ -188,9 +186,7 @@ async function ssrTransformScript(
   }
 
   // 2. check all export statements and define exports
-  // and deallocate the exports array
-  while (exports.length > 0) {
-    const node = exports.shift()!
+  for (const node of exports) {
     // named exports
     if (node.type === 'ExportNamedDeclaration') {
       if (node.declaration) {
