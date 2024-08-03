@@ -47,7 +47,7 @@ interface ScriptAssetsUrl {
 }
 
 const htmlProxyRE =
-  /\?html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)\.(?:js|css)$/
+  /\?html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)\.(?:js|css|less|sass|scss|styl|stylus|pcss|postcss)$/
 const isHtmlProxyRE = /\?html-proxy\b/
 
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
@@ -598,6 +598,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // <style>...</style>
           if (node.nodeName === 'style' && node.childNodes.length) {
+            const lang =
+              node.attrs.find((prop) => prop.name === 'lang')?.value || 'css'
             const styleNode =
               node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
             const filePath = id.replace(normalizePath(config.root), '')
@@ -605,7 +607,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
               code: styleNode.value,
             })
-            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.css"`
+            js += `\nimport "${id}?html-proxy&inline-css&index=${inlineModuleIndex}.${lang}"`
             const hash = getHash(cleanUrl(id))
             // will transform in `applyHtmlTransforms`
             s.update(

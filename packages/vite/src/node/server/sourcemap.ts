@@ -91,7 +91,16 @@ export function genSourceMapUrl(map: SourceMap | string): string {
 }
 
 export function getCodeWithSourcemap(
-  type: 'js' | 'css',
+  type:
+    | 'js'
+    | 'css'
+    | 'less'
+    | 'sass'
+    | 'scss'
+    | 'styl'
+    | 'stylus'
+    | 'pcss'
+    | 'postcss',
   code: string,
   map: SourceMap,
 ): string {

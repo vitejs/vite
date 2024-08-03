@@ -537,6 +537,10 @@ test('@import scss', async () => {
   expect(await getColor('.at-import-scss')).toBe('red')
 })
 
+test('internal css with preprocessor', async () => {
+  expect(await getColor('.internal-style-preprocessor')).toBe('orange')
+})
+
 test.runIf(isBuild)('manual chunk path', async () => {
   // assert that the manual-chunk css is output in the directory specified in manualChunk (#12072)
   expect(

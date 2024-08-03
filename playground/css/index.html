@@ -205,6 +205,15 @@
 
   <p>Imports field</p>
   <p class="imports-field">import '#imports': this should be red</p>
+  <style lang="scss">
+    $color: orange;
+    .internal-style-preprocessor {
+      color: $color;
+    }
+  </style>
+  <p class="internal-style-preprocessor">
+    test internal style with preprocessor, this will be orange
+  </p>
 </div>
 <style>
   @import url(./imported.scss);

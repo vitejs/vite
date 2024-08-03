@@ -49,6 +49,7 @@ interface AssetNode {
   start: number
   end: number
   code: string
+  lang: string
 }
 
 interface InlineStyleAttribute {
@@ -321,10 +322,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
     if (node.nodeName === 'style' && node.childNodes.length) {
       const children = node.childNodes[0] as DefaultTreeAdapterMap['textNode']
+      const lang =
+        node.attrs.find((prop) => prop.name === 'lang')?.value || 'css'
       styleUrl.push({
         start: children.sourceCodeLocation!.startOffset,
         end: children.sourceCodeLocation!.endOffset,
         code: children.value,
+        lang,
       })
     }
 
@@ -354,8 +358,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   })
 
   await Promise.all([
-    ...styleUrl.map(async ({ start, end, code }, index) => {
-      const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
+    ...styleUrl.map(async ({ start, end, code, lang }, index) => {
+      const url = `${proxyModulePath}?html-proxy&direct&index=${index}.${lang}`
 
       // ensure module in graph after successful load
       const mod = await moduleGraph.ensureEntryFromUrl(url, false)
@@ -372,7 +376,20 @@ const devHtmlHook: IndexHtmlTransformHook = async (
               config.logger,
             )
           }
-          content = getCodeWithSourcemap('css', result.code, result.map)
+          content = getCodeWithSourcemap(
+            lang as
+              | 'js'
+              | 'css'
+              | 'less'
+              | 'sass'
+              | 'scss'
+              | 'styl'
+              | 'stylus'
+              | 'pcss'
+              | 'postcss',
+            result.code,
+            result.map,
+          )
         } else {
           content = result.code
         }
