@@ -2,8 +2,12 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rollup'
 import type {
+  ExportAllDeclaration,
+  ExportDefaultDeclaration,
+  ExportNamedDeclaration,
   Function as FunctionNode,
   Identifier,
+  ImportDeclaration,
   Pattern,
   Property,
   VariableDeclaration,
@@ -130,53 +134,70 @@ async function ssrTransformScript(
     )
   }
 
-  // 1. check all import statements and record id -> importName map
+  const imports: (ImportDeclaration & { start: number; end: number })[] = []
+  const exports: ((
+    | ExportNamedDeclaration
+    | ExportDefaultDeclaration
+    | ExportAllDeclaration
+  ) & { start: number; end: number })[] = []
+
   for (const node of ast.body as Node[]) {
+    if (node.type === 'ImportDeclaration') {
+      imports.push(node)
+    } else if (
+      node.type === 'ExportNamedDeclaration' ||
+      node.type === 'ExportDefaultDeclaration' ||
+      node.type === 'ExportAllDeclaration'
+    ) {
+      exports.push(node)
+    }
+  }
+
+  // 1. check all import statements and record id -> importName map
+  for (const node of imports) {
     // import foo from 'foo' --> foo -> __import_foo__.default
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
-    if (node.type === 'ImportDeclaration') {
-      const importId = defineImport(hoistIndex, node.source.value as string, {
-        importedNames: node.specifiers
-          .map((s) => {
-            if (s.type === 'ImportSpecifier')
-              return s.imported.type === 'Identifier'
-                ? s.imported.name
-                : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-                  s.imported.value
-            else if (s.type === 'ImportDefaultSpecifier') return 'default'
-          })
-          .filter(isDefined),
-      })
-      s.remove(node.start, node.end)
-      for (const spec of node.specifiers) {
-        if (spec.type === 'ImportSpecifier') {
-          if (spec.imported.type === 'Identifier') {
-            idToImportMap.set(
-              spec.local.name,
-              `${importId}.${spec.imported.name}`,
-            )
-          } else {
-            idToImportMap.set(
-              spec.local.name,
-              `${importId}[${
-                // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-                JSON.stringify(spec.imported.value)
-              }]`,
-            )
-          }
-        } else if (spec.type === 'ImportDefaultSpecifier') {
-          idToImportMap.set(spec.local.name, `${importId}.default`)
+    const importId = defineImport(hoistIndex, node.source.value as string, {
+      importedNames: node.specifiers
+        .map((s) => {
+          if (s.type === 'ImportSpecifier')
+            return s.imported.type === 'Identifier'
+              ? s.imported.name
+              : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
+                s.imported.value
+          else if (s.type === 'ImportDefaultSpecifier') return 'default'
+        })
+        .filter(isDefined),
+    })
+    s.remove(node.start, node.end)
+    for (const spec of node.specifiers) {
+      if (spec.type === 'ImportSpecifier') {
+        if (spec.imported.type === 'Identifier') {
+          idToImportMap.set(
+            spec.local.name,
+            `${importId}.${spec.imported.name}`,
+          )
         } else {
-          // namespace specifier
-          idToImportMap.set(spec.local.name, importId)
+          idToImportMap.set(
+            spec.local.name,
+            `${importId}[${
+              // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
+              JSON.stringify(spec.imported.value)
+            }]`,
+          )
         }
+      } else if (spec.type === 'ImportDefaultSpecifier') {
+        idToImportMap.set(spec.local.name, `${importId}.default`)
+      } else {
+        // namespace specifier
+        idToImportMap.set(spec.local.name, importId)
       }
     }
   }
 
   // 2. check all export statements and define exports
-  for (const node of ast.body as Node[]) {
+  for (const node of exports) {
     // named exports
     if (node.type === 'ExportNamedDeclaration') {
       if (node.declaration) {
