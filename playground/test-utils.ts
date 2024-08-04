@@ -28,7 +28,8 @@ export const ports = {
   lib: 9521,
   'optimize-missing-deps': 9522,
   'legacy/client-and-ssr': 9523,
-  'assets/url-base': 9524, // not imported but used in `assets/vite.config-url-base.js`
+  'assets/encoded-base': 9554, // not imported but used in `assets/vite.config-encoded-base.js`
+  'assets/url-base': 9525, // not imported but used in `assets/vite.config-url-base.js`
   ssr: 9600,
   'ssr-deps': 9601,
   'ssr-html': 9602,
@@ -249,7 +250,6 @@ export async function withRetry(
 }
 
 export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
-  type A = Assertion<T>
   return new Proxy(
     {},
     {
@@ -262,9 +262,9 @@ export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
         }
       },
     },
-  ) as {
-    [K in keyof A]: (...params: Parameters<A[K]>) => Promise<ReturnType<A[K]>>
-  }
+  ) as Assertion<T>['resolves']
+  // NOTE: `Assertion<T>['resolves']` has the special "promisify all assertion property functions"
+  // behaviour that we're lending here, which is the same as `PromisifyAssertion<T>` if Vitest exposes it
 }
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void

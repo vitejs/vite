@@ -1,5 +1,5 @@
+import fs from 'node:fs/promises'
 import path from 'node:path'
-import fs from 'fs-extra'
 import type { GlobalSetupContext } from 'vitest/node'
 import type { BrowserServer } from 'playwright-chromium'
 import { chromium } from 'playwright-chromium'
@@ -21,10 +21,11 @@ export async function setup({ provide }: GlobalSetupContext): Promise<void> {
   provide('wsEndpoint', browserServer.wsEndpoint())
 
   const tempDir = path.resolve(__dirname, '../playground-temp')
-  await fs.ensureDir(tempDir)
-  await fs.emptyDir(tempDir)
+  await fs.rm(tempDir, { recursive: true, force: true })
+  await fs.mkdir(tempDir, { recursive: true })
   await fs
-    .copy(path.resolve(__dirname, '../playground'), tempDir, {
+    .cp(path.resolve(__dirname, '../playground'), tempDir, {
+      recursive: true,
       dereference: false,
       filter(file) {
         file = file.replace(/\\/g, '/')
@@ -40,11 +41,24 @@ export async function setup({ provide }: GlobalSetupContext): Promise<void> {
         throw error
       }
     })
+  // also setup dedicated copy for "variant" tests
+  await fs.cp(
+    path.resolve(tempDir, 'css'),
+    path.resolve(tempDir, 'css__sass-modern'),
+    { recursive: true },
+  )
+  await fs.cp(
+    path.resolve(tempDir, 'css'),
+    path.resolve(tempDir, 'css__sass-modern-compiler'),
+    { recursive: true },
+  )
 }
 
 export async function teardown(): Promise<void> {
   await browserServer?.close()
   if (!process.env.VITE_PRESERVE_BUILD_ARTIFACTS) {
-    fs.removeSync(path.resolve(__dirname, '../playground-temp'))
+    await fs.rm(path.resolve(__dirname, '../playground-temp'), {
+      recursive: true,
+    })
   }
 }

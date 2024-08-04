@@ -365,6 +365,8 @@ export type ResolvedConfig = Readonly<
     root: string
     base: string
     /** @internal */
+    decodedBase: string
+    /** @internal */
     rawBase: string
     publicDir: string
     cacheDir: string
@@ -605,7 +607,7 @@ export async function resolveConfig(
     ? !isBuild || config.build?.ssr
       ? '/'
       : './'
-    : resolveBaseUrl(config.base, isBuild, logger) ?? '/'
+    : (resolveBaseUrl(config.base, isBuild, logger) ?? '/')
 
   const resolvedBuildOptions = resolveBuildOptions(
     config.build,
@@ -763,6 +765,8 @@ export async function resolveConfig(
     rollupOptions: config.worker?.rollupOptions || {},
   }
 
+  const base = withTrailingSlash(resolvedBase)
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -770,7 +774,8 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: withTrailingSlash(resolvedBase),
+    base,
+    decodedBase: decodeURI(base),
     rawBase: resolvedBase,
     resolve: resolveOptions,
     publicDir: resolvedPublicDir,
@@ -1074,7 +1079,7 @@ async function bundleConfigFile(
     absWorkingDir: process.cwd(),
     entryPoints: [fileName],
     write: false,
-    target: ['node18'],
+    target: [`node${process.versions.node}`],
     platform: 'node',
     bundle: true,
     format: isESM ? 'esm' : 'cjs',

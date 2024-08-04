@@ -139,7 +139,7 @@ export interface ServerOptions extends CommonServerOptions {
          *
          * This is needed to proxy WebSocket connections to the parent server.
          */
-        server: http.Server
+        server: HttpServer
       }
   /**
    * Options for files served via '/\@fs/'.
@@ -563,7 +563,7 @@ export async function _createServer(
       return devHtmlTransformFn(server, url, html, originalUrl)
     },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      return ssrLoadModule(url, server, undefined, opts?.fixStacktrace)
+      return ssrLoadModule(url, server, opts?.fixStacktrace)
     },
     async ssrFetchModule(url: string, importer?: string) {
       return ssrFetchModule(server, url, importer)

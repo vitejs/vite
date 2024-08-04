@@ -35,7 +35,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
       if (depsOptimizer?.isOptimizedDepFile(id)) {
         const metadata = depsOptimizer.metadata
         const file = cleanUrl(id)
-        const versionMatch = id.match(DEP_VERSION_RE)
+        const versionMatch = DEP_VERSION_RE.exec(file)
         const browserHash = versionMatch
           ? versionMatch[1].split('=')[1]
           : undefined
