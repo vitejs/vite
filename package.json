@@ -74,7 +74,7 @@
     "tslib": "^2.6.3",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^7.18.0",
+    "typescript-eslint": "^8.0.0",
     "vite": "workspace:*",
     "vitest": "^2.0.4"
   },

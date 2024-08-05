@@ -77,7 +77,7 @@ function detectScriptRel() {
 declare const scriptRel: string
 declare const seen: Record<string, boolean>
 function preload(
-  baseModule: () => Promise<{}>,
+  baseModule: () => Promise<unknown>,
   deps?: string[],
   importerUrl?: string,
 ) {

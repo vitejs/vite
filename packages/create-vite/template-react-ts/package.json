@@ -23,7 +23,7 @@
     "eslint-plugin-react-refresh": "^0.4.7",
     "globals": "^15.6.0",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^7.18.0",
+    "typescript-eslint": "^8.0.0",
     "vite": "^5.3.5"
   },
   "overrides": {
