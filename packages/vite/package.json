@@ -94,7 +94,7 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.3.0",
-    "@babel/parser": "^7.25.0",
+    "@babel/parser": "^7.25.3",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.0",
