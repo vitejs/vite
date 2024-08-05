@@ -34,6 +34,7 @@ declare module 'postcss-import' {
 
 // LESS' types somewhat references this which doesn't make sense in Node,
 // so we have to shim it
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 declare interface HTMLLinkElement {}
 
 // eslint-disable-next-line no-var

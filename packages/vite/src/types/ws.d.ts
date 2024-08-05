@@ -300,7 +300,7 @@ declare class WebSocket extends EventEmitter {
 }
 
 declare const WebSocketAlias: typeof WebSocket
-interface WebSocketAlias extends WebSocket {} // tslint:disable-line no-empty-interface
+interface WebSocketAlias extends WebSocket {}
 
 declare namespace WebSocket {
   /**
@@ -550,9 +550,9 @@ declare namespace WebSocket {
   }
 
   const WebSocketServer: typeof Server
-  interface WebSocketServer extends Server {} // tslint:disable-line no-empty-interface
+  interface WebSocketServer extends Server {}
   const WebSocket: typeof WebSocketAlias
-  interface WebSocket extends WebSocketAlias {} // tslint:disable-line no-empty-interface
+  interface WebSocket extends WebSocketAlias {}
 
   // WebSocket stream
   function createWebSocketStream(

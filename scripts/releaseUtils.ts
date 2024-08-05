@@ -8,7 +8,9 @@ export function run<EO extends ExecaOptions>(
   bin: string,
   args: string[],
   opts?: EO,
-): ResultPromise<EO & (keyof EO extends 'stdio' ? {} : { stdio: 'inherit' })> {
+): ResultPromise<
+  EO & (keyof EO extends 'stdio' ? object : { stdio: 'inherit' })
+> {
   return execa(bin, args, { stdio: 'inherit', ...opts }) as any
 }
 
