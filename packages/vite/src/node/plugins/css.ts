@@ -594,9 +594,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const toRelative = (filename: string) => {
           // relative base + extracted CSS
-          const relativePath = normalizePath(
-            path.relative(cssAssetDirname!, filename),
-          )
+          const relativePath = path.relative(cssAssetDirname!, filename)
           return relativePath[0] === '.' ? relativePath : './' + relativePath
         }
 
@@ -617,8 +615,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         })
         // resolve public URL from CSS paths
         if (encodedPublicUrls) {
-          const relativePathToPublicFromCSS = normalizePath(
-            path.relative(cssAssetDirname!, ''),
+          const relativePathToPublicFromCSS = path.relative(
+            cssAssetDirname!,
+            '',
           )
           chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
             const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
