@@ -16,6 +16,7 @@
     "rollup",
     "node",
     "typescript",
+    "eslint-plugin-react-hooks", // prevent bumping to messy -rc-<hash>-<date>
 
     // pinned
     "slash3",
