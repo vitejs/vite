@@ -330,7 +330,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     async transform(html, id) {
       if (id.endsWith('.html')) {
         id = normalizePath(id)
-        const relativeUrlPath = path.posix.relative(config.root, id)
+        const relativeUrlPath = normalizePath(path.relative(config.root, id))
         const publicPath = `/${relativeUrlPath}`
         const publicBase = getBaseInHTML(relativeUrlPath, config)
 
@@ -776,7 +776,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
 
       for (const [normalizedId, html] of processedHtml) {
-        const relativeUrlPath = path.posix.relative(config.root, normalizedId)
+        const relativeUrlPath = normalizePath(
+          path.relative(config.root, normalizedId),
+        )
         const assetsBase = getBaseInHTML(relativeUrlPath, config)
         const toOutputFilePath = (
           filename: string,
