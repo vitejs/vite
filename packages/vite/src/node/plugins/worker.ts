@@ -265,7 +265,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         }
         if (injectEnv) {
           const s = new MagicString(raw)
-          s.prepend(injectEnv)
+          s.prepend(injectEnv + ';\n')
           return {
             code: s.toString(),
             map: s.generateMap({ hires: 'boundary' }),
