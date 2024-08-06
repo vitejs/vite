@@ -1,5 +1,3 @@
-(() => {})() // this is to test `importScripts` injection doesn't break the code
-
 let base = `/${self.location.pathname.split('/')[1]}`
 if (base.endsWith('.js') || base === `/worker-entries`) base = '' // for dev
 

@@ -38,3 +38,9 @@ classicSharedWorker.port.addEventListener('message', (ev) => {
   text('.classic-shared-worker', JSON.stringify(ev.data))
 })
 classicSharedWorker.port.start()
+
+const classicIife = new Worker(new URL('../classic-iife.js', import.meta.url))
+classicIife.addEventListener('message', (e) => {
+  text('.classic-iife', e.data)
+})
+classicIife.postMessage('ping')

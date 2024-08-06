@@ -190,6 +190,11 @@ test('classic worker', async () => {
     'A classic',
     true,
   )
+  await untilUpdated(
+    () => page.textContent('.classic-iife'),
+    'classic-iife',
+    true,
+  )
 })
 
 test('emit chunk', async () => {
