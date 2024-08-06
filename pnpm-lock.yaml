@@ -323,8 +323,8 @@ importers:
         specifier: ^1.18.1
         version: 1.18.1(patch_hash=qqiqxx62zlcu62nljjmhlvexni)(debug@4.3.6)
       launch-editor-middleware:
-        specifier: ^2.8.0
-        version: 2.8.0
+        specifier: ^2.8.1
+        version: 2.8.1
       lightningcss:
         specifier: ^1.25.1
         version: 1.25.1
@@ -4949,11 +4949,11 @@ packages:
   kolorist@1.8.0:
     resolution: {integrity: sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==}
 
-  launch-editor-middleware@2.8.0:
-    resolution: {integrity: sha512-0Az27jnPR2RgkUoZoLHluM5gg9zHeg7hPsUZESJxcTV8Rs6Fed+Nof7Lb2HmpsE8lN/3YzpU+mvK5exYWSftWw==}
+  launch-editor-middleware@2.8.1:
+    resolution: {integrity: sha512-GWhcsTuzgRQguiiei0BrbLX7rS5Pcj+6VyynZlS7zlnmUvVAUUBnJjILIhuIgWJXn1WSMtkfHAkXFSoQeJvwdQ==}
 
-  launch-editor@2.8.0:
-    resolution: {integrity: sha512-vJranOAJrI/llyWGRQqiDM+adrw+k83fvmmx3+nV47g3+36xM15jE+zyZ6Ffel02+xSvuM0b2GDRosXZkbb6wA==}
+  launch-editor@2.8.1:
+    resolution: {integrity: sha512-elBx2l/tp9z99X5H/qev8uyDywVh0VXAwEbjk8kJhnc5grOFkGh7aW6q55me9xnYbss261XtnUrysZ+XvGbhQA==}
 
   less@4.2.0:
     resolution: {integrity: sha512-P3b3HJDBtSzsXUl0im2L7gTO5Ubg8mEN6G8qoTS77iXxXX4Hvu4Qj540PZDvQ8V6DmX6iXo98k7Md0Cm1PrLaA==}
@@ -10375,11 +10375,11 @@ snapshots:
 
   kolorist@1.8.0: {}
 
-  launch-editor-middleware@2.8.0:
+  launch-editor-middleware@2.8.1:
     dependencies:
-      launch-editor: 2.8.0
+      launch-editor: 2.8.1
 
-  launch-editor@2.8.0:
+  launch-editor@2.8.1:
     dependencies:
       picocolors: 1.0.1
       shell-quote: 1.8.1
