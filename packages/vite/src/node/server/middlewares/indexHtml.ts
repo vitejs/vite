@@ -377,7 +377,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
             )
           }
           content = getCodeWithSourcemap(
-            lang as 'js' | 'css',
+            lang === 'js' ? 'js' : 'css',
             result.code,
             result.map,
           )
