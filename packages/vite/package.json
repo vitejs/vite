@@ -122,7 +122,7 @@
     "etag": "^1.8.1",
     "fast-glob": "^3.3.2",
     "http-proxy": "^1.18.1",
-    "launch-editor-middleware": "^2.8.0",
+    "launch-editor-middleware": "^2.8.1",
     "lightningcss": "^1.25.1",
     "magic-string": "^0.30.11",
     "micromatch": "^4.0.7",
