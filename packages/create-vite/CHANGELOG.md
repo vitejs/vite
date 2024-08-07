@@ -1,3 +1,9 @@
+## <small>5.5.1 (2024-08-07)</small>
+
+* fix(create-vite): remove eslint overrides (#17833) ([8bc122f](https://github.com/vitejs/vite/commit/8bc122feea8b840575796e1846871a2090525fc9)), closes [#17833](https://github.com/vitejs/vite/issues/17833)
+
+
+
 ## 5.5.0 (2024-08-07)
 
 * chore: bump typescript-eslint to v8 (#17624) ([d1891fd](https://github.com/vitejs/vite/commit/d1891fda026d27f53409dec97e156a59da609196)), closes [#17624](https://github.com/vitejs/vite/issues/17624)
