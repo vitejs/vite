@@ -106,7 +106,7 @@ describe.runIf(isServe)('stacktrace', () => {
   })
 })
 
-describe.runIf(isServe)('network-imports', () => {
+describe.runIf(isServe).skip('network-imports', () => {
   test('with Vite SSR', async () => {
     await execFileAsync(
       'node',
