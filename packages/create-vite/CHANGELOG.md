@@ -1,3 +1,19 @@
+## 5.5.0 (2024-08-07)
+
+* chore: bump typescript-eslint to v8 (#17624) ([d1891fd](https://github.com/vitejs/vite/commit/d1891fda026d27f53409dec97e156a59da609196)), closes [#17624](https://github.com/vitejs/vite/issues/17624)
+* chore: extend commit hash (#17709) ([4fc9b64](https://github.com/vitejs/vite/commit/4fc9b6424c27aca8004c368b69991a56264e4fdb)), closes [#17709](https://github.com/vitejs/vite/issues/17709)
+* chore: remove fs-extra dev dependency (#17782) ([461d37b](https://github.com/vitejs/vite/commit/461d37b9472ab0f12f9da5bf9aa6f98ece1f1962)), closes [#17782](https://github.com/vitejs/vite/issues/17782)
+* chore(deps): update all non-major dependencies (#17734) ([9983731](https://github.com/vitejs/vite/commit/998373120c8306326469d4f342690c17774acdf9)), closes [#17734](https://github.com/vitejs/vite/issues/17734)
+* chore(deps): update all non-major dependencies (#17820) ([bb2f8bb](https://github.com/vitejs/vite/commit/bb2f8bb55fdd64e4f16831ff98921c221a5e734a)), closes [#17820](https://github.com/vitejs/vite/issues/17820)
+* chore(deps): update typescript (#17699) ([df5ceb3](https://github.com/vitejs/vite/commit/df5ceb35b7f744cfcdfe3a28834f890f35f2b18f)), closes [#17699](https://github.com/vitejs/vite/issues/17699)
+* fix(create-vite): avoid usage of composite in TS configs (#17774) ([efcd830](https://github.com/vitejs/vite/commit/efcd830e479092a0d3b95e0caf4a253d7835892c)), closes [#17774](https://github.com/vitejs/vite/issues/17774)
+* fix(deps): update all non-major dependencies (#17629) ([93281b0](https://github.com/vitejs/vite/commit/93281b0e09ff8b00e21c24b80ed796db89cbc1ef)), closes [#17629](https://github.com/vitejs/vite/issues/17629)
+* fix(deps): update all non-major dependencies (#17780) ([e408542](https://github.com/vitejs/vite/commit/e408542748edebd93dba07f21e3fd107725cadca)), closes [#17780](https://github.com/vitejs/vite/issues/17780)
+* refactor(create-vite): use named imports for react (#17773) ([6eab91e](https://github.com/vitejs/vite/commit/6eab91e5011ec443179af5e58aa7c6123b2d445e)), closes [#17773](https://github.com/vitejs/vite/issues/17773)
+* feat(create-vite): add eslint.config.js to React templates (#12860) ([dcfa75c](https://github.com/vitejs/vite/commit/dcfa75c6f5422d47cbe670798080d3f6d9dcdb6b)), closes [#12860](https://github.com/vitejs/vite/issues/12860)
+
+
+
 ## 5.4.0 (2024-07-16)
 
 * docs(create-vite): add missing tsconfig.app.json file at the project array for react-ts (#17645) ([6d31a1d](https://github.com/vitejs/vite/commit/6d31a1de593520ca0f6a323d4f2fde4e59770f4a)), closes [#17645](https://github.com/vitejs/vite/issues/17645)
