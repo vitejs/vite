@@ -1,3 +1,15 @@
+## 5.4.0 (2024-08-07)
+
+* fix(build): windows platform build output path error (#17818) ([6ae0615](https://github.com/vitejs/vite/commit/6ae0615416762dd1b89393316308cf8edf115c34)), closes [#17818](https://github.com/vitejs/vite/issues/17818)
+* fix(deps): update launch-editor to consume fix for windows paths (#17828) ([cf2f90d](https://github.com/vitejs/vite/commit/cf2f90d4b9f9b16b8009b0f9d0d9f7e71e98c54d)), closes [#17828](https://github.com/vitejs/vite/issues/17828)
+* fix(ssr): fix `global` variable name conflict (#17809) ([6aa2206](https://github.com/vitejs/vite/commit/6aa220607b4f5457c1ef9ff68d75885a9abbdaf6)), closes [#17809](https://github.com/vitejs/vite/issues/17809)
+* fix(worker): fix `importScripts` injection breaking iife code (#17827) ([bb4ba9f](https://github.com/vitejs/vite/commit/bb4ba9f448da01782f585369f80c4517da087000)), closes [#17827](https://github.com/vitejs/vite/issues/17827)
+* chore: bump typescript-eslint to v8 (#17624) ([d1891fd](https://github.com/vitejs/vite/commit/d1891fda026d27f53409dec97e156a59da609196)), closes [#17624](https://github.com/vitejs/vite/issues/17624)
+* chore(deps): update all non-major dependencies (#17820) ([bb2f8bb](https://github.com/vitejs/vite/commit/bb2f8bb55fdd64e4f16831ff98921c221a5e734a)), closes [#17820](https://github.com/vitejs/vite/issues/17820)
+* perf(ssr): do a single-pass over AST with node cache arrays (#17812) ([81327eb](https://github.com/vitejs/vite/commit/81327eb980c308474a586a9cb9c0c5fff10eba34)), closes [#17812](https://github.com/vitejs/vite/issues/17812)
+
+
+
 ## 5.4.0-beta.1 (2024-08-01)
 
 * fix: handle encoded base paths (#17577) ([720447e](https://github.com/vitejs/vite/commit/720447ee725046323387f661341d44e2ad390f41)), closes [#17577](https://github.com/vitejs/vite/issues/17577)
