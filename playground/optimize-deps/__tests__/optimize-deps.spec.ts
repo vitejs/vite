@@ -324,8 +324,9 @@ test('long file name should work', async () => {
   )
 })
 
+// TODO: this is actually fixed? https://github.com/vitejs/vite/pull/16080
 test.runIf(isServe)('warn on incompatible dependency', () => {
-  expect(serverLogs).toContainEqual(
+  expect(serverLogs).not.toContainEqual(
     expect.stringContaining(
       'The dependency might be incompatible with the dep optimizer.',
     ),

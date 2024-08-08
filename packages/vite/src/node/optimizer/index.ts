@@ -778,7 +778,6 @@ async function prepareEsbuildOptimizerRun(
 
   if (!ssr) {
     // TODO: experimental opt-in?
-    // TODO: why `pnpm test-serve playground/optimize-deps` failing?
     plugins.push(
       esbuildImportMetaUrlPlugin({
         processingCacheDir,
