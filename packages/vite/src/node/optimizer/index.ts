@@ -787,7 +787,7 @@ async function prepareEsbuildOptimizerRun(
         debug: true,
         // TODO: can we use processingCacheDir?
         // TODO: how to cleanup on optimizeDeps.force?
-        getWorkerOutDir: () => path.join(resolvedConfig.cacheDir, '__worker'),
+        getWorkerOutDir: () => path.join(processingCacheDir, '__worker'),
         visited: new Set(),
       }),
     )

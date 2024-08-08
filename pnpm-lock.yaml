@@ -242,8 +242,8 @@ importers:
         specifier: ^7.25.3
         version: 7.25.3
       '@hiogawa/vite-plugin-pre-bundle-new-url':
-        specifier: 0.0.0-pre.6
-        version: 0.0.0-pre.6(vite@packages+vite)
+        specifier: link:/home/hiroshi/code/personal/vite-plugins/packages/pre-bundle-new-url
+        version: link:../../../../personal/vite-plugins/packages/pre-bundle-new-url
       '@jridgewell/trace-mapping':
         specifier: ^0.3.25
         version: 0.3.25
@@ -2750,11 +2750,6 @@ packages:
 
   '@floating-ui/utils@0.2.1':
     resolution: {integrity: sha512-9TANp6GPoMtYzQdt54kfAyMmz1+osLlXdg2ENroU7zzrtflTLrrC/lgrIfaSe+Wu0b89GKccT7vxXA0MoAIO+Q==}
-
-  '@hiogawa/vite-plugin-pre-bundle-new-url@0.0.0-pre.6':
-    resolution: {integrity: sha512-lt+QZidfB4DG2Wwn2KslQw5TFlt37cHYaRm0sfqZCPUqyljYX3PIlTsLVY8hO7QB2RhkbLBbU65MFBUkRncnOA==}
-    peerDependencies:
-      vite: workspace:*
 
   '@humanwhocodes/module-importer@1.0.1':
     resolution: {integrity: sha512-bxveV4V8v5Yb4ncFTT3rPSgZBOpCkjfK0y4oVVVJwIuDVBRMDXrPyXRL988i5ap9m9bnyEEjWfm5WkBmtffLfA==}
@@ -7994,12 +7989,6 @@ snapshots:
       '@floating-ui/core': 1.6.0
 
   '@floating-ui/utils@0.2.1': {}
-
-  '@hiogawa/vite-plugin-pre-bundle-new-url@0.0.0-pre.6(vite@packages+vite)':
-    dependencies:
-      esbuild: 0.21.5
-      magic-string: 0.30.11
-      vite: link:packages/vite
 
   '@humanwhocodes/module-importer@1.0.1': {}
 
