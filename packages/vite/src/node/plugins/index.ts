@@ -1,5 +1,6 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rollup'
+import { vitePluginPreBundleNewUrl } from '@hiogawa/vite-plugin-pre-bundle-new-url'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
@@ -76,6 +77,7 @@ export async function resolvePlugins(
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config) : null,
+    !isBuild ? vitePluginPreBundleNewUrl() : null,
     jsonPlugin(
       {
         namedExports: true,
