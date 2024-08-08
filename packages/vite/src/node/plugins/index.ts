@@ -1,6 +1,5 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rollup'
-import { vitePluginPreBundleNewUrl } from '@hiogawa/vite-plugin-pre-bundle-new-url'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepsOptimizerEnabled } from '../config'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
@@ -44,6 +43,15 @@ export async function resolvePlugins(
     !isBuild &&
     (isDepsOptimizerEnabled(config, false) ||
       isDepsOptimizerEnabled(config, true))
+
+  // const { esbuildPluginPreBundleNewUrl } = await import('@hiogawa/vite-plugin-pre-bundle-new-url')
+  // const path = await import("node:path");
+  // esbuildPluginPreBundleNewUrl({
+  //   filter: /\.m?js$/,
+  //   getWorkerOutDir: () => path.join(config.cacheDir, ".vite/__worker"),
+  //   visited: new Set(),
+  // })
+
   return [
     depsOptimizerEnabled ? optimizedDepsPlugin(config) : null,
     isBuild ? metadataPlugin() : null,
@@ -77,7 +85,6 @@ export async function resolvePlugins(
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config) : null,
-    !isBuild ? vitePluginPreBundleNewUrl() : null,
     jsonPlugin(
       {
         namedExports: true,

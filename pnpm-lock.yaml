@@ -242,8 +242,8 @@ importers:
         specifier: ^7.25.3
         version: 7.25.3
       '@hiogawa/vite-plugin-pre-bundle-new-url':
-        specifier: 0.0.0-pre.2
-        version: 0.0.0-pre.2(vite@packages+vite)
+        specifier: link:/home/hiroshi/code/personal/vite-plugins/packages/pre-bundle-new-url
+        version: link:../../../../personal/vite-plugins/packages/pre-bundle-new-url
       '@jridgewell/trace-mapping':
         specifier: ^0.3.25
         version: 0.3.25
@@ -875,6 +875,9 @@ importers:
 
   playground/optimize-deps:
     dependencies:
+      '@hiogawa/vite-plugin-pre-bundle-new-url':
+        specifier: https://pkg.pr.new/hi-ogawa/vite-plugins/@hiogawa/vite-plugin-pre-bundle-new-url@e831be6
+        version: https://pkg.pr.new/hi-ogawa/vite-plugins/@hiogawa/vite-plugin-pre-bundle-new-url@e831be6(vite@packages+vite)
       '@vitejs/longfilename-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa':
         specifier: file:./longfilename
         version: file:playground/optimize-deps/longfilename
@@ -902,6 +905,9 @@ importers:
       '@vitejs/test-dep-css-require':
         specifier: file:./dep-css-require
         version: file:playground/optimize-deps/dep-css-require
+      '@vitejs/test-dep-emscripten':
+        specifier: file:./dep-emscripten
+        version: file:playground/optimize-deps/dep-emscripten
       '@vitejs/test-dep-esbuild-plugin-transform':
         specifier: file:./dep-esbuild-plugin-transform
         version: file:playground/optimize-deps/dep-esbuild-plugin-transform
@@ -1023,6 +1029,8 @@ importers:
   playground/optimize-deps/dep-cjs-with-assets: {}
 
   playground/optimize-deps/dep-css-require: {}
+
+  playground/optimize-deps/dep-emscripten: {}
 
   playground/optimize-deps/dep-esbuild-plugin-transform: {}
 
@@ -2746,8 +2754,9 @@ packages:
   '@floating-ui/utils@0.2.1':
     resolution: {integrity: sha512-9TANp6GPoMtYzQdt54kfAyMmz1+osLlXdg2ENroU7zzrtflTLrrC/lgrIfaSe+Wu0b89GKccT7vxXA0MoAIO+Q==}
 
-  '@hiogawa/vite-plugin-pre-bundle-new-url@0.0.0-pre.2':
-    resolution: {integrity: sha512-8Km7CHv5oG0jJcY52J6unO6kKRyBv5Cgzvst1j3wzg2hQQsjbYsiEE8PH5K2L4LdB9d0JgDKpAmxtQgGiCq9VQ==}
+  '@hiogawa/vite-plugin-pre-bundle-new-url@https://pkg.pr.new/hi-ogawa/vite-plugins/@hiogawa/vite-plugin-pre-bundle-new-url@e831be6':
+    resolution: {tarball: https://pkg.pr.new/hi-ogawa/vite-plugins/@hiogawa/vite-plugin-pre-bundle-new-url@e831be6}
+    version: 0.0.0-pre.5
     peerDependencies:
       vite: workspace:*
 
@@ -3298,6 +3307,9 @@ packages:
 
   '@vitejs/test-dep-css-require@file:playground/optimize-deps/dep-css-require':
     resolution: {directory: playground/optimize-deps/dep-css-require, type: directory}
+
+  '@vitejs/test-dep-emscripten@file:playground/optimize-deps/dep-emscripten':
+    resolution: {directory: playground/optimize-deps/dep-emscripten, type: directory}
 
   '@vitejs/test-dep-esbuild-plugin-transform@file:playground/optimize-deps/dep-esbuild-plugin-transform':
     resolution: {directory: playground/optimize-deps/dep-esbuild-plugin-transform, type: directory}
@@ -7987,7 +7999,7 @@ snapshots:
 
   '@floating-ui/utils@0.2.1': {}
 
-  '@hiogawa/vite-plugin-pre-bundle-new-url@0.0.0-pre.2(vite@packages+vite)':
+  '@hiogawa/vite-plugin-pre-bundle-new-url@https://pkg.pr.new/hi-ogawa/vite-plugins/@hiogawa/vite-plugin-pre-bundle-new-url@e831be6(vite@packages+vite)':
     dependencies:
       esbuild: 0.21.5
       magic-string: 0.30.11
@@ -8599,6 +8611,8 @@ snapshots:
   '@vitejs/test-dep-cjs-with-assets@file:playground/optimize-deps/dep-cjs-with-assets': {}
 
   '@vitejs/test-dep-css-require@file:playground/optimize-deps/dep-css-require': {}
+
+  '@vitejs/test-dep-emscripten@file:playground/optimize-deps/dep-emscripten': {}
 
   '@vitejs/test-dep-esbuild-plugin-transform@file:playground/optimize-deps/dep-esbuild-plugin-transform': {}
 

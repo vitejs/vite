@@ -287,3 +287,13 @@
   import loadSub from '@vitejs/test-dep-incompatible'
   loadSub() // should show an error that tells there's an incompatible dep
 </script>
+
+<h2>new Worker and new URL with import.meta.url</h2>
+<div class="new-url"></div>
+
+<script type="module">
+  import { startWorker } from '@vitejs/test-dep-emscripten'
+  startWorker((e) => {
+    text('.new-url', e.data)
+  })
+</script>

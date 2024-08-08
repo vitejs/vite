@@ -775,6 +775,13 @@ async function prepareEsbuildOptimizerRun(
   }
   plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
 
+  // const { esbuildPluginPreBundleNewUrl } = await import('@hiogawa/vite-plugin-pre-bundle-new-url')
+  // esbuildPluginPreBundleNewUrl({
+  //   filter: /\.m?js$/,
+  //   getWorkerOutDir: () => "",
+  //   visited: new Set(),
+  // })
+
   const context = await esbuild.context({
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
