@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import module from 'node:module'
 import { defineConfig } from 'vite'
-import { vitePluginPreBundleNewUrl } from '@hiogawa/vite-plugin-pre-bundle-new-url'
 const require = module.createRequire(import.meta.url)
 
 export default defineConfig({
@@ -58,7 +57,6 @@ export default defineConfig({
   },
 
   plugins: [
-    vitePluginPreBundleNewUrl(),
     testVue(),
     notjs(),
     // for axios request test

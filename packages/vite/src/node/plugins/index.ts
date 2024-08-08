@@ -43,15 +43,6 @@ export async function resolvePlugins(
     !isBuild &&
     (isDepsOptimizerEnabled(config, false) ||
       isDepsOptimizerEnabled(config, true))
-
-  // const { esbuildPluginPreBundleNewUrl } = await import('@hiogawa/vite-plugin-pre-bundle-new-url')
-  // const path = await import("node:path");
-  // esbuildPluginPreBundleNewUrl({
-  //   filter: /\.m?js$/,
-  //   getWorkerOutDir: () => path.join(config.cacheDir, ".vite/__worker"),
-  //   visited: new Set(),
-  // })
-
   return [
     depsOptimizerEnabled ? optimizedDepsPlugin(config) : null,
     isBuild ? metadataPlugin() : null,

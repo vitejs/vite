@@ -242,8 +242,8 @@ importers:
         specifier: ^7.25.3
         version: 7.25.3
       '@hiogawa/vite-plugin-pre-bundle-new-url':
-        specifier: link:/home/hiroshi/code/personal/vite-plugins/packages/pre-bundle-new-url
-        version: link:../../../../personal/vite-plugins/packages/pre-bundle-new-url
+        specifier: 0.0.0-pre.5
+        version: 0.0.0-pre.5(vite@packages+vite)
       '@jridgewell/trace-mapping':
         specifier: ^0.3.25
         version: 0.3.25
@@ -875,9 +875,6 @@ importers:
 
   playground/optimize-deps:
     dependencies:
-      '@hiogawa/vite-plugin-pre-bundle-new-url':
-        specifier: https://pkg.pr.new/hi-ogawa/vite-plugins/@hiogawa/vite-plugin-pre-bundle-new-url@e831be6
-        version: https://pkg.pr.new/hi-ogawa/vite-plugins/@hiogawa/vite-plugin-pre-bundle-new-url@e831be6(vite@packages+vite)
       '@vitejs/longfilename-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa':
         specifier: file:./longfilename
         version: file:playground/optimize-deps/longfilename
@@ -2754,9 +2751,8 @@ packages:
   '@floating-ui/utils@0.2.1':
     resolution: {integrity: sha512-9TANp6GPoMtYzQdt54kfAyMmz1+osLlXdg2ENroU7zzrtflTLrrC/lgrIfaSe+Wu0b89GKccT7vxXA0MoAIO+Q==}
 
-  '@hiogawa/vite-plugin-pre-bundle-new-url@https://pkg.pr.new/hi-ogawa/vite-plugins/@hiogawa/vite-plugin-pre-bundle-new-url@e831be6':
-    resolution: {tarball: https://pkg.pr.new/hi-ogawa/vite-plugins/@hiogawa/vite-plugin-pre-bundle-new-url@e831be6}
-    version: 0.0.0-pre.5
+  '@hiogawa/vite-plugin-pre-bundle-new-url@0.0.0-pre.5':
+    resolution: {integrity: sha512-vbXKkpQHPUcGHg8OM3b5v155ATl0oRn8L7S42JFlkHMhVUrTjdTwQ5CISEcBAuet3A9cEsF/0dZWB5FcpyVWwQ==}
     peerDependencies:
       vite: workspace:*
 
@@ -7999,7 +7995,7 @@ snapshots:
 
   '@floating-ui/utils@0.2.1': {}
 
-  '@hiogawa/vite-plugin-pre-bundle-new-url@https://pkg.pr.new/hi-ogawa/vite-plugins/@hiogawa/vite-plugin-pre-bundle-new-url@e831be6(vite@packages+vite)':
+  '@hiogawa/vite-plugin-pre-bundle-new-url@0.0.0-pre.5(vite@packages+vite)':
     dependencies:
       esbuild: 0.21.5
       magic-string: 0.30.11

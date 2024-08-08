@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@hiogawa/vite-plugin-pre-bundle-new-url": "https://pkg.pr.new/hi-ogawa/vite-plugins/@hiogawa/vite-plugin-pre-bundle-new-url@e831be6",
     "axios": "^1.7.3",
     "clipboard": "^2.0.11",
     "@vitejs/longfilename-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": "file:./longfilename",
