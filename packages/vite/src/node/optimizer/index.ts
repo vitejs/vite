@@ -777,7 +777,7 @@ async function prepareEsbuildOptimizerRun(
   plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
 
   if (!ssr) {
-    // TODO: experimantal flag?
+    // TODO: experimental opt-in?
     // TODO: why `pnpm test-serve playground/optimize-deps` failing?
     plugins.push(
       esbuildImportMetaUrlPlugin({
