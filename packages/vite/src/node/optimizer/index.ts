@@ -781,7 +781,6 @@ async function prepareEsbuildOptimizerRun(
     // TODO: why `pnpm test-serve playground/optimize-deps` failing?
     plugins.push(
       esbuildImportMetaUrlPlugin({
-        debug: true,
         processingCacheDir,
         visited: new Set(),
         logger: config.logger,
