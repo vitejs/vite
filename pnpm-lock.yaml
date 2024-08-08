@@ -241,9 +241,6 @@ importers:
       '@babel/parser':
         specifier: ^7.25.3
         version: 7.25.3
-      '@hiogawa/vite-plugin-pre-bundle-new-url':
-        specifier: link:/home/hiroshi/code/personal/vite-plugins/packages/pre-bundle-new-url
-        version: link:../../../../personal/vite-plugins/packages/pre-bundle-new-url
       '@jridgewell/trace-mapping':
         specifier: ^0.3.25
         version: 0.3.25

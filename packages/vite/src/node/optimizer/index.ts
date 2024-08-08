@@ -31,6 +31,7 @@ import { isWindows } from '../../shared/utils'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
+import { esbuildImportMetaUrlPlugin } from './importMetaUrlPlugin'
 export {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
@@ -778,16 +779,13 @@ async function prepareEsbuildOptimizerRun(
   if (!ssr) {
     // TODO: experimantal flag?
     // TODO: why `pnpm test-serve playground/optimize-deps` failing?
-    // TODO: copy code from the package
-    const { esbuildPluginPreBundleNewUrl } = await import(
-      '@hiogawa/vite-plugin-pre-bundle-new-url'
-    )
     plugins.push(
-      esbuildPluginPreBundleNewUrl({
+      esbuildImportMetaUrlPlugin({
         filter: /\.m?js$/,
         debug: true,
-        getWorkerOutDir: () => path.join(processingCacheDir, '__worker'),
+        processingCacheDir,
         visited: new Set(),
+        logger: config.logger,
       }),
     )
   }

@@ -237,12 +237,6 @@ Repository: git+https://github.com/ampproject/remapping.git
 
 ---------------------------------------
 
-## @hiogawa/vite-plugin-pre-bundle-new-url
-License: MIT
-Repository: https://github.com/hi-ogawa/vite-plugins
-
----------------------------------------
-
 ## @jridgewell/gen-mapping
 License: MIT
 By: Justin Ridgewell
