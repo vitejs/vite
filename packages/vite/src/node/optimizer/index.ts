@@ -775,21 +775,23 @@ async function prepareEsbuildOptimizerRun(
   }
   plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
 
-  // TODO: experimantal flag?
-  // TODO: why `pnpm test-serve playground/optimize-deps` failing?
-  const { esbuildPluginPreBundleNewUrl } = await import(
-    '@hiogawa/vite-plugin-pre-bundle-new-url'
-  )
-  plugins.push(
-    esbuildPluginPreBundleNewUrl({
-      filter: /\.m?js$/,
-      // debug: true,
-      // TODO: can we use processingCacheDir?
-      // TODO: how to cleanup on optimizeDeps.force?
-      getWorkerOutDir: () => path.join(resolvedConfig.cacheDir, '__worker'),
-      visited: new Set(),
-    }),
-  )
+  if (!ssr) {
+    // TODO: experimantal flag?
+    // TODO: why `pnpm test-serve playground/optimize-deps` failing?
+    const { esbuildPluginPreBundleNewUrl } = await import(
+      '@hiogawa/vite-plugin-pre-bundle-new-url'
+    )
+    plugins.push(
+      esbuildPluginPreBundleNewUrl({
+        filter: /\.m?js$/,
+        debug: true,
+        // TODO: can we use processingCacheDir?
+        // TODO: how to cleanup on optimizeDeps.force?
+        getWorkerOutDir: () => path.join(resolvedConfig.cacheDir, '__worker'),
+        visited: new Set(),
+      }),
+    )
+  }
 
   const context = await esbuild.context({
     absWorkingDir: process.cwd(),
