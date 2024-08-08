@@ -6,7 +6,6 @@ import * as esbuild from 'esbuild'
 import type { Logger } from '../logger'
 
 export function esbuildImportMetaUrlPlugin(options: {
-  filter?: RegExp
   processingCacheDir: string
   // track worker build to prevent infinite loop on recursive worker such as
   // https://github.com/gkjohnson/three-mesh-bvh/blob/9718501eee2619f1015fa332d7bddafaf6cf562a/src/workers/parallelMeshBVH.worker.js#L12
@@ -18,7 +17,7 @@ export function esbuildImportMetaUrlPlugin(options: {
   return {
     name: esbuildImportMetaUrlPlugin.name,
     setup(build) {
-      const filter = options.filter ?? /\.m?js$/
+      const filter = /\.m?js$/
 
       build.onLoad({ filter, namespace: 'file' }, async (args) => {
         const data = await fs.promises.readFile(args.path, 'utf-8')
