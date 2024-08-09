@@ -292,7 +292,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let urlCode: string
       if (isBuild) {
-        if (isWorker && this.getModuleInfo(cleanUrl(id))?.isEntry) {
+        if (isWorker && config.bundleChain.at(-1) === cleanUrl(id)) {
           urlCode = 'self.location.href'
         } else if (inlineRE.test(id)) {
           const chunk = await bundleWorkerEntry(config, id)
