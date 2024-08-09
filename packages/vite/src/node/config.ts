@@ -19,6 +19,7 @@ import {
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
+  type WORKER_KINDS,
 } from './constants'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from './plugin'
 import type {
@@ -95,6 +96,12 @@ export interface ConfigEnv {
  * custom: don't include HTML middlewares
  */
 export type AppType = 'spa' | 'mpa' | 'custom'
+
+/**
+ * worker: a normal web worker (e.g. via `new Worker()`)
+ * sharedWorker: a shared worker (e.g. via `new SharedWorker()`)
+ */
+export type WorkerKind = (typeof WORKER_KINDS)[number] // = 'worker' | 'sharedworker'
 
 export type UserConfigFnObject = (env: ConfigEnv) => UserConfig
 export type UserConfigFnPromise = (env: ConfigEnv) => Promise<UserConfig>
@@ -279,6 +286,12 @@ export interface UserConfig {
       RollupOptions,
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
+    /**
+     * The list of constructors to detect as Web Workers and their worker type.
+     * Use `defaults` as item to include the built-in default values in your custom configuration.
+     * @default [{constructor:'Worker',kind:'worker'},{constructor:'SharedWorker',kind:'sharedWorker'}]
+     */
+    constructors?: ('defaults' | { constructor: string; kind: WorkerKind })[]
   }
   /**
    * Whether your application is a Single Page Application (SPA),
@@ -347,6 +360,7 @@ export interface ResolvedWorkerOptions {
   format: 'es' | 'iife'
   plugins: (bundleChain: string[]) => Promise<Plugin[]>
   rollupOptions: RollupOptions
+  constructors: { constructor: string; kind: WorkerKind }[]
 }
 
 export interface InlineConfig extends UserConfig {
@@ -759,10 +773,27 @@ export async function resolveConfig(
     return resolvedWorkerPlugins
   }
 
+  const defaultWorkerConstructors: ResolvedWorkerOptions['constructors'] = [
+    { constructor: 'Worker', kind: 'worker' },
+    { constructor: 'SharedWorker', kind: 'sharedworker' },
+  ]
+
   const resolvedWorkerOptions: ResolvedWorkerOptions = {
     format: config.worker?.format || 'iife',
     plugins: createWorkerPlugins,
     rollupOptions: config.worker?.rollupOptions || {},
+    constructors:
+      config.worker?.constructors?.reduce(
+        (prev, c) => {
+          if (c === 'defaults') {
+            prev.push(...defaultWorkerConstructors)
+          } else {
+            prev.push(c)
+          }
+          return prev
+        },
+        [] as ResolvedWorkerOptions['constructors'],
+      ) || defaultWorkerConstructors,
   }
 
   const base = withTrailingSlash(resolvedBase)

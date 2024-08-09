@@ -2,6 +2,7 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { RollupError } from 'rollup'
 import { stripLiteral } from 'strip-literal'
+import escapeStringRegexp from 'escape-string-regexp'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { evalValue, injectQuery, transformStableResult } from '../utils'
@@ -92,12 +93,8 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   return 'classic'
 }
 
-function isIncludeWorkerImportMetaUrl(code: string): boolean {
-  if (
-    (code.includes('new Worker') || code.includes('new SharedWorker')) &&
-    code.includes('new URL') &&
-    code.includes(`import.meta.url`)
-  ) {
+function includesWorkerImportMetaUrl(code: string): boolean {
+  if (code.includes('new URL') && code.includes(`import.meta.url`)) {
     return true
   }
   return false
@@ -117,21 +114,46 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     asSrc: true,
   }
 
+  function includesWorkerConstructor(code: string): boolean {
+    for (const c of config.worker.constructors) {
+      if (code.includes(`new ${c.constructor}`)) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const workerConstructorRE = config.worker.constructors
+    .map((c) => escapeStringRegexp(c.constructor))
+    .join('|')
+
   return {
     name: 'vite:worker-import-meta-url',
 
     shouldTransformCachedModule({ code }) {
-      if (isBuild && config.build.watch && isIncludeWorkerImportMetaUrl(code)) {
+      if (
+        isBuild &&
+        config.build.watch &&
+        includesWorkerConstructor(code) &&
+        includesWorkerImportMetaUrl(code)
+      ) {
         return true
       }
     },
 
     async transform(code, id, options) {
-      if (!options?.ssr && isIncludeWorkerImportMetaUrl(code)) {
+      if (
+        !options?.ssr &&
+        includesWorkerConstructor(code) &&
+        includesWorkerImportMetaUrl(code)
+      ) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
-        const workerImportMetaUrlRE =
-          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
+
+        const workerImportMetaUrlRE = new RegExp(
+          `\\bnew\\s+(?:${workerConstructorRE})\\s*\\(\\s*(new\\s+URL\\s*\\(\\s*('[^']+'|"[^"]+"|\`[^\`]+\`)\\s*,\\s*import\\.meta\\.url\\s*\\))`,
+          'dg',
+        )
 
         let match: RegExpExecArray | null
         while ((match = workerImportMetaUrlRE.exec(cleanString))) {

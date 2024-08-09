@@ -1,10 +1,10 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { OutputChunk } from 'rollup'
-import type { ResolvedConfig } from '../config'
+import type { ResolvedConfig, WorkerKind } from '../config'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
-import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
+import { ENV_ENTRY, ENV_PUBLIC_PATH, WORKER_KINDS } from '../constants'
 import {
   encodeURIPath,
   getHash,
@@ -37,7 +37,9 @@ interface WorkerCache {
 
 export type WorkerType = 'classic' | 'module' | 'ignore'
 
-export const workerOrSharedWorkerRE = /(?:\?|&)(worker|sharedworker)(?:&|$)/
+export const workerOrSharedWorkerRE = new RegExp(
+  `(?:\\?|&)(${WORKER_KINDS.join('|')})(?:&|$)`,
+)
 const workerFileRE = /(?:\?|&)worker_file&type=(\w+)(?:&|$)/
 const inlineRE = /[?&]inline\b/
 
@@ -278,8 +280,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (!workerMatch) return
 
       const { format } = config.worker
+      const workerKind = workerMatch[1] as WorkerKind
       const workerConstructor =
-        workerMatch[1] === 'sharedworker' ? 'SharedWorker' : 'Worker'
+        workerKind === 'sharedworker' ? 'SharedWorker' : 'Worker'
+
       const workerType = isBuild
         ? format === 'es'
           ? 'module'
