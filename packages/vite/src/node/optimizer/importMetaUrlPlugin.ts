@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import * as esbuild from 'esbuild'
+import { flattenId, normalizePath } from '../utils'
 
 export function esbuildImportMetaUrlPlugin({
   processingCacheDir,
@@ -49,9 +50,14 @@ export function esbuildImportMetaUrlPlugin({
                   }
                   let bundlePromise = bundleMap.get(absUrl)
                   if (!bundlePromise) {
+                    const entryName = flattenId(
+                      normalizePath(absUrl).split('/node_modules/').at(-1)!,
+                    )
                     bundlePromise = esbuild.build({
                       outdir: path.join(processingCacheDir, '__worker'),
-                      entryPoints: [absUrl],
+                      entryPoints: {
+                        [entryName]: absUrl,
+                      },
                       entryNames: '[name]-[hash]',
                       bundle: true,
                       metafile: true,
