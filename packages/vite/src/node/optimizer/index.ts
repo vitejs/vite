@@ -781,7 +781,6 @@ async function prepareEsbuildOptimizerRun(
     plugins.push(
       esbuildImportMetaUrlPlugin({
         processingCacheDir,
-        visited: new Set(),
       }),
     )
   }

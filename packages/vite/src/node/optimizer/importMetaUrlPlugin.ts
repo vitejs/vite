@@ -4,11 +4,15 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import * as esbuild from 'esbuild'
 
-export function esbuildImportMetaUrlPlugin(options: {
+export function esbuildImportMetaUrlPlugin({
+  processingCacheDir,
+  visited = new Set(),
+  recursed,
+}: {
   processingCacheDir: string
   // track worker build to prevent infinite loop on recursive worker such as
   // https://github.com/gkjohnson/three-mesh-bvh/blob/9718501eee2619f1015fa332d7bddafaf6cf562a/src/workers/parallelMeshBVH.worker.js#L12
-  visited: Set<string>
+  visited?: Set<string>
   recursed?: boolean
 }): esbuild.Plugin {
   return {
@@ -38,16 +42,13 @@ export function esbuildImportMetaUrlPlugin(options: {
                 if (fs.existsSync(absUrl)) {
                   const workerFilename = getWorkerFileName(absUrl)
                   const outfile = path.resolve(
-                    options.processingCacheDir,
+                    processingCacheDir,
                     '__worker',
                     workerFilename,
                   )
                   // recursively bundle worker
-                  if (
-                    !fs.existsSync(outfile) &&
-                    !options.visited.has(outfile)
-                  ) {
-                    options.visited.add(outfile)
+                  if (!fs.existsSync(outfile) && !visited.has(outfile)) {
+                    visited.add(outfile)
                     await esbuild.build({
                       outfile,
                       entryPoints: [absUrl],
@@ -57,7 +58,8 @@ export function esbuildImportMetaUrlPlugin(options: {
                       platform: 'browser',
                       plugins: [
                         esbuildImportMetaUrlPlugin({
-                          ...options,
+                          processingCacheDir,
+                          visited,
                           recursed: true,
                         }),
                       ],
@@ -65,7 +67,7 @@ export function esbuildImportMetaUrlPlugin(options: {
                   }
                   // To allow relocating from `deps_temp_xxx/__worker` to `deps/__worker`,
                   // worker reference needs to be relative.
-                  const targetPath = options.recursed
+                  const targetPath = recursed
                     ? `./${workerFilename}`
                     : `./__worker/${workerFilename}`
                   output.update(urlStart, urlEnd, JSON.stringify(targetPath))
