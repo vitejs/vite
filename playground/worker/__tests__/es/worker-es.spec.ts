@@ -230,13 +230,13 @@ test('import.meta.glob with eager in worker', async () => {
 })
 
 test('self reference worker', async () => {
-  expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
+  await expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
     'pong: main\npong: nested\n',
   )
 })
 
 test('self reference url worker', async () => {
-  expectWithRetry(() => page.textContent('.self-reference-url-worker')).toBe(
-    'pong: main\npong: nested\n',
-  )
+  await expectWithRetry(() =>
+    page.textContent('.self-reference-url-worker'),
+  ).toBe('pong: main\npong: nested\n')
 })
