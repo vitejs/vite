@@ -6,9 +6,11 @@ import * as esbuild from 'esbuild'
 export function esbuildImportMetaUrlPlugin({
   processingCacheDir,
   bundleChain = [],
+  bundleMap = new Map(),
 }: {
   processingCacheDir: string
   bundleChain?: string[] // track recursive worker build
+  bundleMap?: Map<string, ReturnType<typeof esbuild.build>>
 }): esbuild.Plugin {
   return {
     name: esbuildImportMetaUrlPlugin.name,
@@ -45,24 +47,30 @@ export function esbuildImportMetaUrlPlugin({
                         [...bundleChain].join(' -> '),
                     )
                   }
-                  const result = await esbuild.build({
-                    outdir: path.join(processingCacheDir, '__worker'),
-                    entryPoints: [absUrl],
-                    entryNames: '[name]-[hash]',
-                    bundle: true,
-                    metafile: true,
-                    // TODO: should we detect WorkerType and use esm only when `{ type: "module" }`?
-                    format: 'esm',
-                    platform: 'browser',
-                    plugins: [
-                      esbuildImportMetaUrlPlugin({
-                        processingCacheDir,
-                        bundleChain: [...bundleChain, absUrl],
-                      }),
-                    ],
-                  })
+                  let bundlePromise = bundleMap.get(absUrl)
+                  if (!bundlePromise) {
+                    bundlePromise = esbuild.build({
+                      outdir: path.join(processingCacheDir, '__worker'),
+                      entryPoints: [absUrl],
+                      entryNames: '[name]-[hash]',
+                      bundle: true,
+                      metafile: true,
+                      // TODO: should we detect WorkerType and use esm only when `{ type: "module" }`?
+                      format: 'esm',
+                      platform: 'browser',
+                      plugins: [
+                        esbuildImportMetaUrlPlugin({
+                          processingCacheDir,
+                          bundleChain: [...bundleChain, absUrl],
+                          bundleMap,
+                        }),
+                      ],
+                    })
+                    bundleMap.set(absUrl, bundlePromise)
+                  }
+                  const result = await bundlePromise
                   const filename = path.basename(
-                    Object.keys(result.metafile.outputs)[0],
+                    Object.keys(result.metafile!.outputs)[0],
                   )
                   output.update(
                     urlStart,
