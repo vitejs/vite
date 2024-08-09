@@ -6,6 +6,8 @@ env:
   NODE_OPTIONS: --max-old-space-size=6144
   # install playwright binary manually (because pnpm only runs install script once)
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+  # Vitest auto retry on flaky segfault
+  VITEST_SEGFAULT_RETRY: 3
 
 # Remove default permissions of GITHUB_TOKEN for security
 # https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
@@ -38,7 +40,11 @@ jobs:
       should_skip: ${{ steps.changed-files.outputs.only_changed == 'true' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Assume PRs are less than 50 commits
+          fetch-depth: 50
 
       - name: Get changed files
         id: changed-files
@@ -72,9 +78,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          # Assume PRs are less than 50 commits
-          fetch-depth: 50
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4.0.0
