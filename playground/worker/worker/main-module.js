@@ -1,3 +1,4 @@
+import * as depSelfReferenceUrlWorker from '@vitejs/test-dep-self-reference-url-worker'
 import myWorker from '../my-worker.ts?worker'
 import InlineWorker from '../my-worker.ts?worker&inline'
 import InlineSharedWorker from '../my-inline-shared-worker?sharedworker&inline'
@@ -6,7 +7,6 @@ import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
 import { mode } from '../modules/workerImport'
 import SelfReferenceWorker from '../self-reference-worker?worker'
-import * as depSelfReferenceUrlWorker from '@vitejs/test-dep-self-reference-url-worker'
 
 function text(el, text) {
   document.querySelector(el).textContent = text
