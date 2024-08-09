@@ -6,6 +6,7 @@ import TSOutputWorker from '../possible-ts-output-worker?worker'
 import NestedWorker from '../worker-nested-worker?worker'
 import { mode } from '../modules/workerImport'
 import SelfReferenceWorker from '../self-reference-worker?worker'
+import * as depSelfReferenceUrlWorker from '@vitejs/test-dep-self-reference-url-worker'
 
 function text(el, text) {
   document.querySelector(el).textContent = text
@@ -172,5 +173,10 @@ const selfReferenceUrlWorker = new Worker(
 selfReferenceUrlWorker.postMessage('main')
 selfReferenceUrlWorker.addEventListener('message', (e) => {
   document.querySelector('.self-reference-url-worker').textContent +=
+    `${e.data}\n`
+})
+
+depSelfReferenceUrlWorker.startWorker((e) => {
+  document.querySelector('.self-reference-url-worker-dep').textContent +=
     `${e.data}\n`
 })

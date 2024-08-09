@@ -171,7 +171,9 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           if (
             isBuild &&
             config.isWorker &&
-            this.getModuleInfo(cleanUrl(file))?.isEntry
+            // TODO: why isEntry is false when worker is from node_modules?
+            // this.getModuleInfo(cleanUrl(file))?.isEntry
+            config.bundleChain.at(-1) === cleanUrl(file)
           ) {
             s.update(expStart, expEnd, 'self.location.href')
           } else {
