@@ -1,8 +1,8 @@
-import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import * as esbuild from 'esbuild'
+import { flattenId, getHash } from '../utils'
 
 export function esbuildImportMetaUrlPlugin({
   processingCacheDir,
@@ -83,15 +83,15 @@ export function esbuildImportMetaUrlPlugin({
           {
             const matches = data.matchAll(assetImportMetaUrlRE)
             for (const match of matches) {
-              const [argStart, argEnd] = match.indices![1]!
-              if (workerMatched.has(argStart)) {
+              const [urlStart, urlEnd] = match.indices![1]!
+              if (workerMatched.has(urlStart)) {
                 continue
               }
               const url = match[1]!.slice(1, -1)
               if (url[0] !== '/') {
                 const absUrl = path.resolve(path.dirname(args.path), url)
                 if (fs.existsSync(absUrl)) {
-                  output.update(argStart, argEnd, JSON.stringify(absUrl))
+                  output.update(urlStart, urlEnd, JSON.stringify(absUrl))
                 }
               }
             }
@@ -110,26 +110,17 @@ export function esbuildImportMetaUrlPlugin({
   }
 }
 
+// make recognizable filename
 function getWorkerFileName(file: string) {
-  const hash = hashString(file)
-  file = file.split('/node_modules/').at(-1)!
-  file = file.slice(0, 100).replace(/[^0-9a-zA-Z]/g, '_')
-  return `${file}-${hash}.js`
+  const id = flattenId(file.split('/node_modules/').at(-1)!)
+  const hash = getHash(file)
+  return `${id}-${hash}.js`
 }
 
-function hashString(s: string) {
-  return crypto
-    .createHash('sha256')
-    .update(s)
-    .digest()
-    .toString('hex')
-    .slice(0, 10)
-}
-
-// https://github.com/vitejs/vite/blob/0f56e1724162df76fffd5508148db118767ebe32/packages/vite/src/node/plugins/assetImportMetaUrl.ts#L51-L52
+// packages/vite/src/node/plugins/assetImportMetaUrl.ts
 const assetImportMetaUrlRE =
   /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
 
-// https://github.com/vitejs/vite/blob/0f56e1724162df76fffd5508148db118767ebe32/packages/vite/src/node/plugins/workerImportMetaUrl.ts#L133-L134
+// packages/vite/src/node/plugins/workerImportMetaUrl.ts
 const workerImportMetaUrlRE =
   /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
