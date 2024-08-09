@@ -914,6 +914,9 @@ importers:
       '@vitejs/test-dep-linked-include':
         specifier: link:./dep-linked-include
         version: link:dep-linked-include
+      '@vitejs/test-dep-new-url-asset':
+        specifier: file:./dep-new-url-asset
+        version: file:playground/optimize-deps/dep-new-url-asset
       '@vitejs/test-dep-node-env':
         specifier: file:./dep-node-env
         version: file:playground/optimize-deps/dep-node-env
@@ -1041,6 +1044,8 @@ importers:
       react:
         specifier: 18.3.1
         version: 18.3.1
+
+  playground/optimize-deps/dep-new-url-asset: {}
 
   playground/optimize-deps/dep-node-env: {}
 
@@ -3307,6 +3312,9 @@ packages:
 
   '@vitejs/test-dep-incompatible@file:playground/optimize-deps/dep-incompatible':
     resolution: {directory: playground/optimize-deps/dep-incompatible, type: directory}
+
+  '@vitejs/test-dep-new-url-asset@file:playground/optimize-deps/dep-new-url-asset':
+    resolution: {directory: playground/optimize-deps/dep-new-url-asset, type: directory}
 
   '@vitejs/test-dep-no-discovery@file:playground/optimize-deps-no-discovery/dep-no-discovery':
     resolution: {directory: playground/optimize-deps-no-discovery/dep-no-discovery, type: directory}
@@ -8603,6 +8611,8 @@ snapshots:
       '@vitejs/test-dep-a': file:playground/preload/dep-a
 
   '@vitejs/test-dep-incompatible@file:playground/optimize-deps/dep-incompatible': {}
+
+  '@vitejs/test-dep-new-url-asset@file:playground/optimize-deps/dep-new-url-asset': {}
 
   '@vitejs/test-dep-no-discovery@file:playground/optimize-deps-no-discovery/dep-no-discovery': {}
 

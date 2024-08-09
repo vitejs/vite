@@ -288,12 +288,26 @@
   loadSub() // should show an error that tells there's an incompatible dep
 </script>
 
-<h2>new Worker and new URL with import.meta.url</h2>
-<div class="new-url"></div>
+<h2>new URL(..., import.meta.url)</h2>
+<div>
+  image1: <img width="20" class="new-url-asset-image1" alt="..." /> image2:
+  <img width="20" class="new-url-asset-image2" alt="..." /> image3:
+  <img width="20" class="new-url-asset-image3" alt="..." />
+</div>
+
+<script type="module">
+  import * as lib from '@vitejs/test-dep-new-url-asset'
+  document.querySelector('.new-url-asset-image1').src = lib.image1
+  document.querySelector('.new-url-asset-image2').src = lib.image2
+  document.querySelector('.new-url-asset-image3').src = lib.image3
+</script>
+
+<h2>new Worker(new URL(..., import.meta.url))</h2>
+<div class="new-url-worker"></div>
 
 <script type="module">
   import { startWorker } from '@vitejs/test-dep-emscripten'
   startWorker((e) => {
-    text('.new-url', e.data)
+    text('.new-url-worker', e.data)
   })
 </script>
