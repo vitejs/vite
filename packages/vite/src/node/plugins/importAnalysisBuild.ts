@@ -125,7 +125,11 @@ function preload(
         link.rel = isCss ? 'stylesheet' : scriptRel
         if (!isCss) {
           link.as = 'script'
-          link.crossOrigin = ''
+          // @ts-expect-error crossOrigin is declared before preload.toString()
+          if (crossOrigin)
+            link.crossOrigin =
+              // @ts-expect-error crossOrigin is declared before preload.toString()
+              typeof crossOrigin === 'string' ? crossOrigin : ''
         }
         link.href = dep
         if (cspNonce) {
@@ -168,6 +172,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
   const resolveModulePreloadDependencies =
     config.build.modulePreload && config.build.modulePreload.resolveDependencies
+  const modulePreloadCrossOrigin =
+    config.build.modulePreload && config.build.modulePreload.crossOrigin
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const customModulePreloadPaths = !!(
     resolveModulePreloadDependencies || renderBuiltUrl
@@ -202,7 +208,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
         // is appended inside __vitePreload too.
         `function(dep) { return ${JSON.stringify(config.base)}+dep }`
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+  const crossOrigin =
+    typeof modulePreloadCrossOrigin === 'string'
+      ? `'${modulePreloadCrossOrigin}'`
+      : modulePreloadCrossOrigin
+  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const crossOrigin = ${crossOrigin};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
     name: 'vite:build-import-analysis',
