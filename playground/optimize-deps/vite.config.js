@@ -98,6 +98,10 @@ export default defineConfig({
       },
     },
   ],
+
+  worker: {
+    format: 'es',
+  },
 })
 
 // Handles Test.vue in dep-linked-include package

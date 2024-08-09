@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-dep-new-url-worker",
+  "private": true,
+  "type": "module",
+  "exports": "./index.js"
+}

@@ -25,6 +25,7 @@
     "@vitejs/test-dep-linked": "link:./dep-linked",
     "@vitejs/test-dep-linked-include": "link:./dep-linked-include",
     "@vitejs/test-dep-new-url-asset": "file:./dep-new-url-asset",
+    "@vitejs/test-dep-new-url-worker": "file:./dep-new-url-worker",
     "@vitejs/test-dep-node-env": "file:./dep-node-env",
     "@vitejs/test-dep-not-js": "file:./dep-not-js",
     "@vitejs/test-dep-optimize-exports-with-glob": "file:./dep-optimize-exports-with-glob",

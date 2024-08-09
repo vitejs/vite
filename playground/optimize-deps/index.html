@@ -290,9 +290,9 @@
 
 <h2>new URL(..., import.meta.url)</h2>
 <div>
-  image1: <img width="20" class="new-url-asset-image1" alt="..." /> image2:
-  <img width="20" class="new-url-asset-image2" alt="..." /> image3:
-  <img width="20" class="new-url-asset-image3" alt="..." />
+  <div>image1: <img width="20" class="new-url-asset-image1" alt="..." /></div>
+  <div>image2: <img width="20" class="new-url-asset-image2" alt="..." /></div>
+  <div>image3: <img width="20" class="new-url-asset-image3" alt="..." /></div>
 </div>
 
 <script type="module">
@@ -303,11 +303,21 @@
 </script>
 
 <h2>new Worker(new URL(..., import.meta.url))</h2>
-<div class="new-url-worker"></div>
+<div>
+  <div>esm <span class="new-url-worker-esm"></span></div>
+  <div>classic: <span class="new-url-worker-classic"></span></div>
+  <div>
+    asset in worker: <img width="20" class="new-url-worker-asset" alt="..." />
+  </div>
+</div>
 
 <script type="module">
-  import { startWorker } from '@vitejs/test-dep-emscripten'
-  startWorker((e) => {
-    text('.new-url-worker', e.data)
+  import * as lib from '@vitejs/test-dep-new-url-worker'
+  lib.startWorkerEsm((e) => {
+    text('.new-url-worker-esm', e.data.ok)
+    document.querySelector('.new-url-worker-asset').src = e.data.image
+  })
+  lib.startWorkerClassic((e) => {
+    text('.new-url-worker-classic', e.data.ok)
   })
 </script>
