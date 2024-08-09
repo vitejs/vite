@@ -899,9 +899,6 @@ importers:
       '@vitejs/test-dep-css-require':
         specifier: file:./dep-css-require
         version: file:playground/optimize-deps/dep-css-require
-      '@vitejs/test-dep-emscripten':
-        specifier: file:./dep-emscripten
-        version: file:playground/optimize-deps/dep-emscripten
       '@vitejs/test-dep-esbuild-plugin-transform':
         specifier: file:./dep-esbuild-plugin-transform
         version: file:playground/optimize-deps/dep-esbuild-plugin-transform
@@ -1029,8 +1026,6 @@ importers:
   playground/optimize-deps/dep-cjs-with-assets: {}
 
   playground/optimize-deps/dep-css-require: {}
-
-  playground/optimize-deps/dep-emscripten: {}
 
   playground/optimize-deps/dep-esbuild-plugin-transform: {}
 
@@ -3305,9 +3300,6 @@ packages:
 
   '@vitejs/test-dep-css-require@file:playground/optimize-deps/dep-css-require':
     resolution: {directory: playground/optimize-deps/dep-css-require, type: directory}
-
-  '@vitejs/test-dep-emscripten@file:playground/optimize-deps/dep-emscripten':
-    resolution: {directory: playground/optimize-deps/dep-emscripten, type: directory}
 
   '@vitejs/test-dep-esbuild-plugin-transform@file:playground/optimize-deps/dep-esbuild-plugin-transform':
     resolution: {directory: playground/optimize-deps/dep-esbuild-plugin-transform, type: directory}
@@ -8609,8 +8601,6 @@ snapshots:
   '@vitejs/test-dep-cjs-with-assets@file:playground/optimize-deps/dep-cjs-with-assets': {}
 
   '@vitejs/test-dep-css-require@file:playground/optimize-deps/dep-css-require': {}
-
-  '@vitejs/test-dep-emscripten@file:playground/optimize-deps/dep-emscripten': {}
 
   '@vitejs/test-dep-esbuild-plugin-transform@file:playground/optimize-deps/dep-esbuild-plugin-transform': {}
 
