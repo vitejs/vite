@@ -370,4 +370,7 @@ test('new URL worker', async () => {
     'true',
   )
   await waitImageLoaded('.new-url-worker-asset')
+  await expectWithRetry(() =>
+    page.textContent('.new-url-worker-recursive'),
+  ).toBe(isBuild ? 'false' : 'true')
 })
