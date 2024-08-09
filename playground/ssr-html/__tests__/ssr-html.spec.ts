@@ -106,7 +106,11 @@ describe.runIf(isServe)('stacktrace', () => {
   })
 })
 
-describe.runIf(isServe)('network-imports', () => {
+// --experimental-network-imports is going to be dropped
+// https://github.com/nodejs/node/pull/53822
+const noNetworkImports = Number(process.version.match(/^v(\d+)\./)[1]) >= 22
+
+describe.runIf(isServe && !noNetworkImports)('network-imports', () => {
   test('with Vite SSR', async () => {
     await execFileAsync(
       'node',
