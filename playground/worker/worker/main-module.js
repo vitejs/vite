@@ -168,6 +168,9 @@ selfReferenceWorker.addEventListener('message', (e) => {
 
 const selfReferenceUrlWorker = new Worker(
   new URL('../self-reference-url-worker.js', import.meta.url),
+  {
+    type: 'module',
+  },
 )
 selfReferenceUrlWorker.postMessage('main')
 selfReferenceUrlWorker.addEventListener('message', (e) => {
