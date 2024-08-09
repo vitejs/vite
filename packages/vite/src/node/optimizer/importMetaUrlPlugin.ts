@@ -3,7 +3,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import MagicString from 'magic-string'
 import * as esbuild from 'esbuild'
-import type { Logger } from '../logger'
 
 export function esbuildImportMetaUrlPlugin(options: {
   processingCacheDir: string
@@ -11,8 +10,6 @@ export function esbuildImportMetaUrlPlugin(options: {
   // https://github.com/gkjohnson/three-mesh-bvh/blob/9718501eee2619f1015fa332d7bddafaf6cf562a/src/workers/parallelMeshBVH.worker.js#L12
   visited: Set<string>
   recursed?: boolean
-  debug?: boolean
-  logger: Logger
 }): esbuild.Plugin {
   return {
     name: esbuildImportMetaUrlPlugin.name,
@@ -51,20 +48,6 @@ export function esbuildImportMetaUrlPlugin(options: {
                     !options.visited.has(outfile)
                   ) {
                     options.visited.add(outfile)
-                    if (options.debug) {
-                      options.logger.info(
-                        '[pre-bunde-new-url:worker] ' +
-                          JSON.stringify(
-                            {
-                              path: args.path,
-                              worker: absUrl,
-                              outfile,
-                            },
-                            null,
-                            2,
-                          ),
-                      )
-                    }
                     await esbuild.build({
                       outfile,
                       entryPoints: [absUrl],
@@ -78,7 +61,6 @@ export function esbuildImportMetaUrlPlugin(options: {
                           recursed: true,
                         }),
                       ],
-                      logLevel: options.debug ? 'debug' : undefined,
                     })
                   }
                   // To allow relocating from `deps_temp_xxx/__worker` to `deps/__worker`,
@@ -95,7 +77,7 @@ export function esbuildImportMetaUrlPlugin(options: {
           // replace
           //   new URL("./asset.svg", import.meta.url)
           // with
-          //   new URL("/absolute-path-to/asset.svg", import.meta.url)
+          //   new URL("/abs-path-to-node-module-package/asset.svg", import.meta.url)
           {
             const matches = data.matchAll(assetImportMetaUrlRE)
             for (const match of matches) {
