@@ -75,5 +75,5 @@ test('css with external url', async () => {
 
 test('nested css with relative asset', async () => {
   const css = await page.$('.nested-css-relative-asset')
-  expect(await getBg(css)).toMatch(isBuild ? /base64/ : `${viteTestUrl}/ok.png`)
+  expect(await getBg(css)).toMatch(isBuild ? /base64/ : `${viteTestUrl}/test.avif`)
 })
