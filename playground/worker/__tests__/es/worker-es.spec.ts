@@ -240,3 +240,16 @@ test('self reference url worker', async () => {
     'pong: main\npong: nested\n',
   )
 })
+
+test('dynamic import assets or libs in inline worker', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-assets-inline-worker'),
+    'The vite.svg was loaded successfully.',
+    true,
+  )
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-libs-inline-worker'),
+    'The @vitejs/test-dep-to-optimize was loaded successfully.',
+    true,
+  )
+})

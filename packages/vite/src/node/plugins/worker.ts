@@ -135,16 +135,14 @@ function replaceDynamicImportsPlugin(config: ResolvedConfig): Plugin {
     generateBundle(options, bundle) {
       for (const [_, output] of Object.entries(bundle)) {
         if (output.type === 'chunk' && output.isEntry === true) {
-          output.dynamicImports.forEach((importUrl) => {
-            output.code = output.code.replace(
-              importRE,
-              (match, extractedUrl) => {
-                if (areFilesEqual(extractedUrl, importUrl)) {
-                  return `import(self.location.origin + "${config.rawBase + importUrl}")`
-                }
-                return match
-              },
+          output.code = output.code.replace(importRE, (match, extractedUrl) => {
+            const importUrl = output.dynamicImports.find((url) =>
+              areFilesEqual(extractedUrl, url),
             )
+            if (importUrl) {
+              return `import(self.location.origin + "${config.rawBase + importUrl}")`
+            }
+            return match
           })
         }
       }
