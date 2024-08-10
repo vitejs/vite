@@ -71,7 +71,10 @@ async function bundleWorkerEntry(
   const bundle = await rollup({
     ...rollupOptions,
     input,
-    plugins: await plugins(newBundleChain),
+    plugins: [
+      await plugins(newBundleChain),
+      replaceDynamicImportsPlugin(config),
+    ],
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },
@@ -119,6 +122,35 @@ async function bundleWorkerEntry(
     await bundle.close()
   }
   return emitSourcemapForWorkerEntry(config, chunk)
+}
+
+const importRE = /import\(["'](.+?)["']\)/g
+function areFilesEqual(path1: string, path2: string) {
+  return path.basename(path1) === path.basename(path2)
+}
+
+function replaceDynamicImportsPlugin(config: ResolvedConfig): Plugin {
+  return {
+    name: 'rollup-plugin-replace-dynamic-imports-in-worker',
+    generateBundle(options, bundle) {
+      for (const [_, output] of Object.entries(bundle)) {
+        if (output.type === 'chunk' && output.isEntry === true) {
+          output.dynamicImports.forEach((importUrl) => {
+            output.code = output.code.replace(
+              importRE,
+              (match, extractedUrl) => {
+                if (areFilesEqual(extractedUrl, importUrl)) {
+                  return `import(self.location.origin + "${config.rawBase + importUrl}")`
+                }
+                return match
+              },
+            )
+          })
+        }
+      }
+      return undefined
+    },
+  }
 }
 
 function emitSourcemapForWorkerEntry(

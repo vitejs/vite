@@ -1,6 +1,7 @@
 // run when format es
 import NestedWorker from '../emit-chunk-nested-worker?worker'
 import ImportMetaGlobWorker from '../importMetaGlob.worker?worker'
+import DynamicImportInlineWorker from '../dynamic-import-assets-inline-worker.js?worker&inline'
 
 function text(el, text) {
   document.querySelector(el).textContent = text
@@ -47,4 +48,13 @@ importMetaGlobWorker.postMessage('1')
 
 importMetaGlobWorker.addEventListener('message', (e) => {
   text('.importMetaGlob-worker', JSON.stringify(e.data))
+})
+
+const dynamicImportInlineWorker = new DynamicImportInlineWorker()
+dynamicImportInlineWorker.postMessage('1')
+dynamicImportInlineWorker.addEventListener('message', (e) => {
+  text(
+    `.dynamic-import-${e.data.type}-inline-worker`,
+    JSON.stringify(e.data.msg),
+  )
 })
