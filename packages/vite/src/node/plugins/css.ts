@@ -2529,7 +2529,7 @@ const makeLessWorker = (
     dir: string,
     rootFile: string,
   ) => {
-    const resolved = await resolvers.less(filename, path.join(dir, '*'))
+    const resolved = await resolvers.less(filename, rootFile)
     if (!resolved) return undefined
 
     const result = await rebaseUrls(
