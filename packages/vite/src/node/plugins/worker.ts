@@ -55,6 +55,7 @@ function saveEmitWorkerAsset(
 async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
+  isInline?: boolean,
 ): Promise<OutputChunk> {
   const input = cleanUrl(id)
   const newBundleChain = [...config.bundleChain, input]
@@ -73,7 +74,7 @@ async function bundleWorkerEntry(
     input,
     plugins: [
       await plugins(newBundleChain),
-      replaceDynamicImportsPlugin(config),
+      isInline && replaceDynamicImportsPlugin(config),
     ],
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
@@ -325,7 +326,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         if (isWorker && this.getModuleInfo(cleanUrl(id))?.isEntry) {
           urlCode = 'self.location.href'
         } else if (inlineRE.test(id)) {
-          const chunk = await bundleWorkerEntry(config, id)
+          const chunk = await bundleWorkerEntry(config, id, true)
           const encodedJs = `const encodedJs = "${Buffer.from(
             chunk.code,
           ).toString('base64')}";`

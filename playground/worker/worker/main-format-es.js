@@ -51,7 +51,9 @@ importMetaGlobWorker.addEventListener('message', (e) => {
 })
 
 const dynamicImportInlineWorker = new DynamicImportInlineWorker()
+
 dynamicImportInlineWorker.postMessage('1')
+
 dynamicImportInlineWorker.addEventListener('message', (e) => {
   text(
     `.dynamic-import-${e.data.type}-inline-worker`,
