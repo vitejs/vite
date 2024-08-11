@@ -12,19 +12,21 @@ export async function ssrLoadModule(
   server: ViteDevServer,
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
-  const runner =
-    server._ssrCompatModuleRunner ||
-    (server._ssrCompatModuleRunner = createServerModuleRunner(
-      server.environments.ssr,
-      {
-        sourcemapInterceptor: false,
-        hmr: false,
-      },
-    ))
-
+  server._ssrCompatModuleRunner ||= createServerModuleRunner(
+    server.environments.ssr,
+    {
+      sourcemapInterceptor: false,
+      hmr: false,
+    },
+  )
   url = unwrapId(url)
 
-  return instantiateModule(url, runner, server, fixStacktrace)
+  return instantiateModule(
+    url,
+    server._ssrCompatModuleRunner,
+    server,
+    fixStacktrace,
+  )
 }
 
 async function instantiateModule(
