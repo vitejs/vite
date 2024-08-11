@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid/non-secure'
 import type { FetchFunction, FetchResult } from './types'
 
 export interface RunnerTransport {
@@ -69,15 +70,4 @@ export class RemoteRunnerTransport implements RunnerTransport {
   fetchModule(id: string, importer?: string): Promise<FetchResult> {
     return this.resolve<FetchResult>('fetchModule', id, importer)
   }
-}
-
-// port from nanoid
-// https://github.com/ai/nanoid
-const urlAlphabet =
-  'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict'
-function nanoid(size = 21) {
-  let id = ''
-  let i = size
-  while (i--) id += urlAlphabet[(Math.random() * 64) | 0]
-  return id
 }
