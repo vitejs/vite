@@ -43,7 +43,7 @@ const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 // For the manifest, we need to preserve the original file path and isEntry
 // for CSS assets. We keep a map from referenceId to this information.
 export interface GeneratedAssetMeta {
-  originalName: string
+  originalFileName: string
   isEntry?: boolean
 }
 export const generatedAssets = new WeakMap<
@@ -371,15 +371,15 @@ async function fileToBuiltUrl(
     const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
 
+    const originalFileName = normalizePath(path.relative(config.root, file))
     const referenceId = pluginContext.emitFile({
+      type: 'asset',
       // Ignore directory structure for asset file names
       name: path.basename(file),
-      type: 'asset',
+      originalFileName,
       source: content,
     })
-
-    const originalName = normalizePath(path.relative(config.root, file))
-    generatedAssets.get(config)!.set(referenceId, { originalName })
+    generatedAssets.get(config)!.set(referenceId, { originalFileName })
 
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
   }

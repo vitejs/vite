@@ -20,7 +20,11 @@ import {
 import { cleanUrl } from '../../shared/utils'
 import { fileToUrl } from './asset'
 
-type WorkerBundleAsset = { fileName: string; source: string | Uint8Array }
+type WorkerBundleAsset = {
+  fileName: string
+  originalFileName: string | null
+  source: string | Uint8Array
+}
 
 interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
@@ -111,6 +115,7 @@ async function bundleWorkerEntry(
       } else if (outputChunk.type === 'chunk') {
         saveEmitWorkerAsset(config, {
           fileName: outputChunk.fileName,
+          originalFileName: null,
           source: outputChunk.code,
         })
       }
@@ -136,6 +141,7 @@ function emitSourcemapForWorkerEntry(
       const mapFileName = chunk.fileName + '.map'
       saveEmitWorkerAsset(config, {
         fileName: mapFileName,
+        originalFileName: null,
         source: data,
       })
     }
@@ -169,6 +175,7 @@ export async function workerFileToUrl(
     fileName = outputChunk.fileName
     saveEmitWorkerAsset(config, {
       fileName,
+      originalFileName: null,
       source: outputChunk.code,
     })
     workerMap.bundle.set(id, fileName)
@@ -447,6 +454,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         this.emitFile({
           type: 'asset',
           fileName: asset.fileName,
+          originalFileName: asset.originalFileName,
           source: asset.source,
         })
       })
