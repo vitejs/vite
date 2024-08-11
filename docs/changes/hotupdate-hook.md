@@ -6,7 +6,7 @@ Give us feedback at [Environment API feedback discussion](https://github.com/vit
 
 We're planing to deprecate the `handleHotUpdate` plugin hook in favor of [`hotUpdate` hook](/guide/api-vite-environment#the-hotupdate-hook) to be [Environment API](/guide/api-vite-environment.md) aware, and handle additional watch events with `create` and `delete`.
 
-Affected: `Vite Plugin Authors`
+Affected scope: `Vite Plugin Authors`
 
 ::: warning Future Deprecation
 `hotUpdate` was first introduced in `v6.0`. The deprecation of `handleHotUpdate` is planned for `v7.0`. We don't yet recommend moving away from `handleHotUpdate` yet. If you want to experiment and give us feedback, you can use the `future.deprecationWarnings.pluginHookHandleHotUpdate` to `true` in your vite config.
