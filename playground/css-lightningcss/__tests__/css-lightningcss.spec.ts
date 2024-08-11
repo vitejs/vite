@@ -7,6 +7,7 @@ import {
   isBuild,
   page,
   untilUpdated,
+  viteTestUrl,
 } from '~utils'
 
 // note: tests should retrieve the element at the beginning of test and reuse it
@@ -70,4 +71,11 @@ test.runIf(isBuild)('minify css', async () => {
 test('css with external url', async () => {
   const css = await page.$('.external')
   expect(await getBg(css)).toMatch('url("https://vitejs.dev/logo.svg")')
+})
+
+test('nested css with relative asset', async () => {
+  const css = await page.$('.nested-css-relative-asset')
+  expect(await getBg(css)).toMatch(
+    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
+  )
 })
