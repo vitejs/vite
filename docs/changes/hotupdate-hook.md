@@ -65,7 +65,6 @@ Return an empty array and perform a full reload:
 
 ```js
 handleHotUpdate({ server, modules, timestamp }) {
-  server.ws.send({ type: 'full-reload' })
   // Invalidate modules manually
   const invalidatedModules = new Set()
   for (const mod of modules) {
@@ -76,13 +75,13 @@ handleHotUpdate({ server, modules, timestamp }) {
       true
     )
   }
+  server.ws.send({ type: 'full-reload' })
   return []
 }
 
 // Migrate to:
 
 hotUpdate({ modules, timestamp }) {
-  this.environment.hot.send({ type: 'full-reload' })
   // Invalidate modules manually
   const invalidatedModules = new Set()
   for (const mod of modules) {
@@ -93,6 +92,7 @@ hotUpdate({ modules, timestamp }) {
       true
     )
   }
+  this.environment.hot.send({ type: 'full-reload' })
   return []
 }
 ```
