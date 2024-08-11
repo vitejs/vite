@@ -92,12 +92,6 @@ class DevEnvironment {
    * modules are already processed when they are requested.
    */
   async warmupRequest(url: string): void
-
-  /**
-   * Fetch information about a module from the module runner without running it.
-   * Note: This method may not be needed
-   */
-  async fetchModuleInfo(url: string)
 }
 ```
 
