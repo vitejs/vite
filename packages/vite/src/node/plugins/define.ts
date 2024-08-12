@@ -9,7 +9,6 @@ import { isHTMLRequest } from './html'
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 const importMetaEnvMarker = '__vite_import_meta_env__'
-const bareImportMetaEnvRe = new RegExp(`${importMetaEnvMarker}(?!\\.)\\b`)
 const importMetaEnvKeyRe = new RegExp(`${importMetaEnvMarker}\\..+?\\b`, 'g')
 
 export function definePlugin(config: ResolvedConfig): Plugin {
@@ -80,7 +79,6 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       SSR: ssr + '',
       ...userDefineEnv,
     })
-    const banner = `const ${importMetaEnvMarker} = ${importMetaEnvVal};\n`
 
     // Create regex pattern as a fast check before running esbuild
     const patternKeys = Object.keys(userDefine)
@@ -94,7 +92,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       ? new RegExp(patternKeys.map(escapeRegex).join('|'))
       : null
 
-    return [define, pattern, banner] as const
+    return [define, pattern, importMetaEnvVal] as const
   }
 
   const defaultPattern = generatePattern(false)
@@ -122,12 +120,22 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const [define, pattern, banner] = ssr ? ssrPattern : defaultPattern
+      const [define, pattern, importMetaEnvVal] = ssr
+        ? ssrPattern
+        : defaultPattern
       if (!pattern) return
 
       // Check if our code needs any replacements before running esbuild
       pattern.lastIndex = 0
       if (!pattern.test(code)) return
+
+      let marker = importMetaEnvMarker
+      while (new RegExp(escapeRegex(marker)).test(code)) {
+        marker += '$'
+      }
+      if (marker !== importMetaEnvMarker && 'import.meta.env' in define) {
+        define['import.meta.env'] = marker
+      }
 
       const result = await replaceDefine(code, id, define, config)
 
@@ -137,8 +145,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       )
 
       // If there's bare `import.meta.env` references, prepend the banner
-      if (bareImportMetaEnvRe.test(result.code)) {
-        result.code = banner + result.code
+      if (new RegExp(escapeRegex(marker)).test(result.code)) {
+        result.code = `const ${marker} = ${importMetaEnvVal};\n` + result.code
 
         if (result.map) {
           const map = JSON.parse(result.map)

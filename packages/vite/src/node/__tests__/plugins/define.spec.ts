@@ -109,4 +109,23 @@ describe('definePlugin', () => {
       /const __vite_import_meta_env__ = .*;\nconst env = __vite_import_meta_env__;/,
     )
   })
+
+  test('already has marker', async () => {
+    const transform = await createDefinePluginTransform()
+    expect(
+      await transform(
+        'console.log(__vite_import_meta_env__);\nconst env = import.meta.env;',
+      ),
+    ).toMatch(
+      /const __vite_import_meta_env__\$ = .*;\nconsole.log\(__vite_import_meta_env__\);\nconst env = __vite_import_meta_env__\$;/,
+    )
+
+    expect(
+      await transform(
+        'console.log(__vite_import_meta_env__, __vite_import_meta_env__$);\n const env = import.meta.env;',
+      ),
+    ).toMatch(
+      /const __vite_import_meta_env__\$\$ = .*;\nconsole.log\(__vite_import_meta_env__, __vite_import_meta_env__\$\);\nconst env = __vite_import_meta_env__\$\$;/,
+    )
+  })
 })
