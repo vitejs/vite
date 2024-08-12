@@ -35,7 +35,7 @@ concurrency:
 jobs:
   changed:
     name: Get changed files
-    runs-on: macos-14
+    runs-on: ubuntu-latest
     outputs:
       should_skip: ${{ steps.changed-files.outputs.only_changed == 'true' }}
 
