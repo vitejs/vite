@@ -74,7 +74,7 @@ async function bundleWorkerEntry(
     input,
     plugins: [
       await plugins(newBundleChain),
-      isInline && replaceDynamicImportsPlugin(config),
+      isInline && replaceUrlForDynamicImportsPlugin(config),
     ],
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
@@ -130,9 +130,26 @@ function areFilesEqual(path1: string, path2: string) {
   return path.basename(path1) === path.basename(path2)
 }
 
-function replaceDynamicImportsPlugin(config: ResolvedConfig): Plugin {
+function replaceUrlForDynamicImportsPlugin(config: ResolvedConfig): Plugin {
+  let absolutePath = config.build.outDir
+  if (absolutePath.startsWith('./')) {
+    absolutePath = absolutePath.slice(2) // Removes the './'
+  }
+  // Filter out the first folder
+  absolutePath = absolutePath
+    .split('/')
+    .filter((path) => path)
+    .slice(1)
+    .join('/')
+
+  if (absolutePath === '') {
+    absolutePath = '/'
+  } else {
+    absolutePath = `/${absolutePath}/`
+  }
+
   return {
-    name: 'rollup-plugin-replace-dynamic-imports-in-worker',
+    name: 'rollup-plugin-replace-url-dynamic-imports-inline-worker',
     generateBundle(options, bundle) {
       for (const [_, output] of Object.entries(bundle)) {
         if (output.type === 'chunk' && output.isEntry === true) {
@@ -141,7 +158,7 @@ function replaceDynamicImportsPlugin(config: ResolvedConfig): Plugin {
               areFilesEqual(extractedUrl, url),
             )
             if (importUrl) {
-              return `import(self.location.origin + "${config.rawBase + importUrl}")`
+              return `import(self.location.origin + "${absolutePath + importUrl}")`
             }
             return match
           })
