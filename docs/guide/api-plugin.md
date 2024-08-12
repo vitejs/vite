@@ -432,7 +432,6 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
     ```js
     handleHotUpdate({ server, modules, timestamp }) {
-      server.ws.send({ type: 'full-reload' })
       // Invalidate modules manually
       const invalidatedModules = new Set()
       for (const mod of modules) {
@@ -443,6 +442,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
           true
         )
       }
+      server.ws.send({ type: 'full-reload' })
       return []
     }
     ```
