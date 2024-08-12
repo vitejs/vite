@@ -131,21 +131,21 @@ function areFilesEqual(path1: string, path2: string) {
 }
 
 function replaceUrlForDynamicImportsPlugin(config: ResolvedConfig): Plugin {
-  let absolutePath = config.build.outDir
-  if (absolutePath.startsWith('./')) {
-    absolutePath = absolutePath.slice(2) // Removes the './'
+  let outDir = config.build.outDir
+  if (outDir.startsWith('./')) {
+    outDir = outDir.slice(2) // Removes the './'
   }
   // Filter out the first folder
-  absolutePath = absolutePath
+  let basePath = outDir
     .split('/')
     .filter((path) => path)
     .slice(1)
     .join('/')
 
-  if (absolutePath === '') {
-    absolutePath = '/'
+  if (basePath === '') {
+    basePath = '/'
   } else {
-    absolutePath = `/${absolutePath}/`
+    basePath = `/${basePath}/`
   }
 
   return {
@@ -158,7 +158,7 @@ function replaceUrlForDynamicImportsPlugin(config: ResolvedConfig): Plugin {
               areFilesEqual(extractedUrl, url),
             )
             if (importUrl) {
-              return `import(self.location.origin + "${absolutePath + importUrl}")`
+              return `import(self.location.origin + "${basePath + importUrl}")`
             }
             return match
           })
