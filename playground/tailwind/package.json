@@ -10,9 +10,9 @@
   },
   "dependencies": {
     "autoprefixer": "^10.4.20",
-    "tailwindcss": "^3.4.7",
-    "vue": "^3.4.35",
-    "vue-router": "^4.4.2"
+    "tailwindcss": "^3.4.9",
+    "vue": "^3.4.37",
+    "vue-router": "^4.4.3"
   },
   "devDependencies": {
     "ts-node": "^10.9.2"
