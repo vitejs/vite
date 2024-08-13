@@ -9,7 +9,6 @@ import { isHTMLRequest } from './html'
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 const importMetaEnvMarker = '__vite_import_meta_env__'
-const importMetaEnvKeyRe = new RegExp(`${importMetaEnvMarker}\\..+?\\b`, 'g')
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -140,8 +139,9 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       const result = await replaceDefine(code, id, define, config)
 
       // Replace `import.meta.env.*` with undefined
-      result.code = result.code.replaceAll(importMetaEnvKeyRe, (m) =>
-        'undefined'.padEnd(m.length),
+      result.code = result.code.replaceAll(
+        new RegExp(`${escapeRegex(marker)}\\..+?\\b`, 'g'),
+        (m) => 'undefined'.padEnd(m.length),
       )
 
       // If there's bare `import.meta.env` references, prepend the banner

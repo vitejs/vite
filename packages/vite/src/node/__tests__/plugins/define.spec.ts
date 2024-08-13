@@ -127,5 +127,13 @@ describe('definePlugin', () => {
     ).toMatch(
       /const __vite_import_meta_env__\$\$ = .*;\nconsole.log\(__vite_import_meta_env__, __vite_import_meta_env__\$\);\nconst env = __vite_import_meta_env__\$\$;/,
     )
+
+    expect(
+      await transform(
+        'console.log(__vite_import_meta_env__);\nconst env = import.meta.env;\nconsole.log(import.meta.env.UNDEFINED);',
+      ),
+    ).toMatch(
+      /const __vite_import_meta_env__\$ = .*;\nconsole.log\(__vite_import_meta_env__\);\nconst env = __vite_import_meta_env__\$;\nconsole.log\(undefined {26}\);/,
+    )
   })
 })
