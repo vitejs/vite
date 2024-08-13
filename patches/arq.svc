@@ -1,0 +1,126 @@
+  set access backup /home/* * *
+  set access backup /home/*/* * *
+
+ Git - u origin/home/j*asler/file1.c
+ 
+  set access backup d:\$ git-- u --origin\* * *
+  set access backup d:\$ git-- u --origin\* * * 
+
+Pesquisar em IBM Spectrum Protect
+
+A newer version of this product documentation is available.
+
+You are viewing an older version.
+View latest
+
+Sintaxe da Especificação de Arquivo
+Atualizado pela última vez: 2021-03-03
+
+Existem algumas regras de sintaxe que você precisa conhecer ao inserir parâmetros de especificação de arquivo, como filespec, sourcefilespec e destinationfilespec.
+
+A seguir, as regras de sintaxe:
+
+Não utilize caracteres curinga como parte do nome da área de arquivos ou em qualquer parte do destinationfilespec. A única exceção a essa regra é o comando set access, no qual caracteres curinga são permitidos nos dois níveis mais baixos da especificação de arquivo.
+
+Sistemas Operacionais AIXSistemas Operacionais LinuxSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS X
+Exemplo: Permitir acesso a todos os arquivos em todos os diretórios do diretório /home e subordinados a ele:
+
+  set access backup /home/* * *
+  set access backup /home/*/* * *
+
+Sistemas Operacionais AIXSistemas Operacionais LinuxSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS XCom clientes UNIX, não use curingas no nome do caminho do diretório, por exemplo:
+   /home/j*asler/file1.c
+
+Sistemas Operacionais Windows
+Exemplo: Permitir acesso a todos os arquivos em todos os diretórios do diretório d:\test e subordinados a ele:
+
+  set access backup d:\test\* * *
+  set access backup d:\test\*\* * *
+
+Há um número máximo de especificações de arquivo por comando:
+Os comandos Query podem aceitar apenas uma especificação de arquivo.
+Os comandos de restore e retrieve podem aceitar uma especificação de arquivo de origem e uma especificação de arquivo de destino.
+Sistemas Operacionais AIXSistemas Operacionais LinuxSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS XHá um limite de 20 operandos em alguns comandos. Esse limite destina-se a evitar sessões excessivas causadas quando os curingas são expandidos pelo processador de comandos shell do UNIX.
+É possível evitar que a expansão de shell faça você ultrapassar o limite de 20 operandos colocando aspas em torno dos caracteres de expansão da especificação de arquivo de origem para os comandos de restauração.
+Nota: O efeito colateral das aspas é causar uma restauração sem consulta.
+É possível usar a opção removeoperandlimit para especificar que o cliente de backup-archive remove o limite de 20 operandos. Se você especificar a opção removeoperandlimit com o comando incremental, selective, archive ou backup image, o limite de 20 operandos não será aplicado e será restringido apenas por recursos disponíveis ou outros limites do sistema operacional.
+
+O comprimento de uma especificação de arquivo é limitado.
+Sistemas Operacionais AIXSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS XEm AIX, Solaris e Mac: o número máximo de caracteres para um nome de arquivo é 255. O comprimento máximo combinado do nome do arquivo e nome do caminho é de 1024 caracteres. Como a representação Unicode de um caractere pode ocupar vários bytes, o número máximo de caracteres que um nome de arquivo pode conter pode variar.
+Sistemas Operacionais LinuxNo Linux: O comprimento máximo de um nome de arquivo é 255 bytes. O comprimento máximo combinado de nome de arquivo e nome de caminho é de 4096 bytes. Esse comprimento corresponde ao PATH_MAX que é suportado pelo sistema operacional. A representação Unicode de um caractere pode ocupar vários bytes, de modo que o número máximo de caracteres que englobam um caminho e nome de arquivo possa variar. A limitação real é o número de bytes nos componentes de caminho e arquivo, que pode corresponder a um número igual de caracteres.
+Sistemas Operacionais LinuxNo Linux: Para operações de recuperação e arquivamento, o comprimento máximo que pode ser especificado para um caminho e nome de arquivo (combinado) permanecerá em 1024 bytes.
+
+Sistemas Operacionais WindowsO número máximo de bytes para um nome de arquivo e caminho de arquivo quando combinados é de 6255. No entanto, o próprio nome do arquivo não pode exceder 255 bytes. Além disso, os nomes de diretórios (incluindo o delimitador de diretório) de um caminho estão limitados a 255 bytes. Como a representação Unicode de um caractere pode ocupar vários bytes, o número máximo de caracteres que um nome de arquivo pode conter pode variar.
+Ao usar o recurso de suporte de arquivo aberto com o VSS (Serviço de Cópia de Sombra de Volume), o cliente de backup-archive inclui o nome do volume da captura instantânea no caminho dos objetos que estão sendo processados. O caminho resultante (nome do volume de captura instantânea mais caminho do objeto) deve seguir os limites mostrados. O nome do volume da captura instantânea pode ter até 1024 bytes.
+
+Sistemas Operacionais AIXSistemas Operacionais LinuxSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS XQuando você insere a sourcefilespec, se o nome de diretório terminar com /, então, /* será implícito.
+
+Sistemas Operacionais WindowsQuando você insere a sourcefilespec, se o nome de diretório terminar com \, então, \* será implícito.
+
+Sistemas Operacionais AIXSistemas Operacionais LinuxSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS XQuando você insere uma destinationfilespec, se o nome terminar com /, então, ele será considerado um diretório; caso contrário, ele é considerado um arquivo.
+
+Sistemas Operacionais WindowsQuando você insere uma destinationfilespec, se o nome terminar com \, então, ele será considerado um diretório; caso contrário, ele é considerado um arquivo.
+
+Sistemas Operacionais AIXSistemas Operacionais LinuxSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS XO exemplo a seguir ilustra essas duas regras. Embora mydir e yourdir sejam diretórios, o comando irá falhar porque /* é implicado após mydir e yourdir serem considerados um arquivo.
+
+restore /home/mydir/ /away/yourdir
+
+Sistemas Operacionais WindowsO exemplo a seguir ilustra essas duas regras. Embora mydir e yourdir sejam diretórios, o comando irá falhar porque \* é implicado após mydir e yourdir serem considerados um arquivo.
+
+restore c:\home\mydir\ c:\away\yourdir
+
+Sistemas Operacionais AIXSistemas Operacionais LinuxSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS XSistemas Operacionais Windows
+Se uma especificação de arquivo não iniciar com um delimitador de diretório, a especificação de arquivo é assumida como sendo um subdiretório do diretório que está funcionando no momento. O cliente anexa a especificação de arquivo ao diretório ativo para construir o caminho completo.
+
+Sistemas Operacionais AIXSistemas Operacionais LinuxSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS XPor exemplo, se o diretório ativo atual for /home/me e o comando for dsmc res "/fs/dir1/*" mydir/, o caminho de restauração completo será este: /home/me/mydir
+
+Sistemas Operacionais WindowsPor exemplo, se o diretório de trabalho atual for c:\home\me e o comando for dsmc res c:\fs\dir1\ mydir\, o caminho de restauração completo será: c:\home\me\mydir
+
+Sistemas Operacionais AIXSistemas Operacionais LinuxSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS XO único comando que aceita um nome de área de arquivos simples é o comando incremental. O exemplo a seguir é válido:
+Sistemas Operacionais AIXSistemas Operacionais LinuxSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS X
+   dsmc i /Users 
+
+O seguinte exemplo não é válido, porque é o comando selective:
+Sistemas Operacionais AIXSistemas Operacionais LinuxSistemas operacionais Oracle SolarisSistemas Operacionais Mac OS X
+   dsmc sel /Users
+
+Sistemas Operacionais WindowsQuando uma especificação de arquivo contiver espaços, ela deve ser colocada entre aspas. Por exemplo:
+dsmc sel "x:\dir one\file1"
+
+Quando uma especificação de arquivo terminar com uma barra invertida e estiver entre aspas, uma barra invertida adicional (\) deverá ser incluída no final da especificação de arquivo. Se uma barra invertida extra não for incluída, a especificação de arquivo não será processada corretamente e a operação poderá causar resultados inesperados.
+
+O exemplo a seguir está incorreto:
+
+dsmc sel "x:\dir one\"
+
+O exemplo a seguir está correto:
+
+dsmc sel "x:\dir one\\"
+
+Aqui está um exemplo da restauração do conteúdo de um diretório para outro, quando ambos os nomes de diretórios contiverem espaços:
+
+dsmc rest "x:\dir one\\" "x:\dir two\\"
+
+Sistemas Operacionais WindowsOs volumes Microsoft Dfs são acessados utilizando-se nomes UNC padrão. A seguir, temos exemplos de sintaxe válida para acessar os volumes MS Dfs:
+
+   \\Server_Name\Dfs_Root_Name\path
+   \\Fault_Tolerant_Name\Dfs_Root_Name\path
+
+Enquanto a IBM valoriza o uso de linguagem inclusiva, os termos que estão fora da influência direta da IBM, para manter o entendimento do usuário, às vezes são necessários. À medida que outros líderes de mercado se juntam à IBM para adotar o uso de linguagem inclusiva, a IBM continuará a atualizar a documentação para refletir essas mudanças.
+© Copyright IBM Corporation 1993, 2019
+Contato
+Privacidade
+Termos de uso
+Acessibilidade
+Preferências de Cookies
+
+Português/Brasil
+
+IBM Documentation Help
+
+Sobre as Cookies neste site
+Nossos sites requererem alguns cookies para funcionarem corretamente (obrigatório). Além disso, outros cookies podem ser usados com seu consentimento para analisar o uso do site, melhorar a experiência do usuário e para publicidade.
+Para obter mais informações, revise as opções de preferências de cookie options. By visiting our website, you agree to our processing of information as described in IBM’s declaração de privacidade da IBM.
+Para proporcionar uma navegação tranquila, suas preferências de cookie serão compartilhadas nos domínios da web da IBM listados aqui.
+Aceitar todos
+Apenas o necessário
