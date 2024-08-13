@@ -3012,7 +3012,7 @@ async function compileLightningCSS(
         }
         deps.add(dep.url)
         if (urlReplacer) {
-          const replaceUrl = await urlReplacer(dep.url, id)
+          const replaceUrl = await urlReplacer(dep.url, dep.loc.filePath)
           css = css.replace(dep.placeholder, () => replaceUrl)
         } else {
           css = css.replace(dep.placeholder, () => dep.url)
