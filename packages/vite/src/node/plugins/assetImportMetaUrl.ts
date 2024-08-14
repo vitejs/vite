@@ -13,6 +13,10 @@ import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
 import { hasViteIgnoreRE } from './importAnalysis'
 
+export function getAssetImportMetaUrlRE(): RegExp {
+  return /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
+}
+
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
  *
@@ -48,8 +52,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         code.includes(`import.meta.url`)
       ) {
         let s: MagicString | undefined
-        const assetImportMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
+        const assetImportMetaUrlRE = getAssetImportMetaUrlRE()
         const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null

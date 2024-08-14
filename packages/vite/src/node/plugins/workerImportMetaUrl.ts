@@ -103,6 +103,10 @@ function isIncludeWorkerImportMetaUrl(code: string): boolean {
   return false
 }
 
+export function getWorkerImportMetaUrlRE(): RegExp {
+  return /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
+}
+
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let workerResolver: ResolveFn
@@ -130,9 +134,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       if (!options?.ssr && isIncludeWorkerImportMetaUrl(code)) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
-        const workerImportMetaUrlRE =
-          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
-
+        const workerImportMetaUrlRE = getWorkerImportMetaUrlRE()
         let match: RegExpExecArray | null
         while ((match = workerImportMetaUrlRE.exec(cleanString))) {
           const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =

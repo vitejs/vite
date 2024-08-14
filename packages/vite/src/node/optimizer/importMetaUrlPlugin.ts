@@ -4,6 +4,8 @@ import crypto from 'node:crypto'
 import MagicString from 'magic-string'
 import * as esbuild from 'esbuild'
 import { flattenId, normalizePath } from '../utils'
+import { getAssetImportMetaUrlRE } from '../plugins/assetImportMetaUrl'
+import { getWorkerImportMetaUrlRE } from '../plugins/workerImportMetaUrl'
 
 export function esbuildImportMetaUrlPlugin({
   filter = /\.m?js$/,
@@ -15,6 +17,9 @@ export function esbuildImportMetaUrlPlugin({
   buildChain?: string[]
   buildPromiseMap?: Map<string, ReturnType<typeof esbuild.build>>
 }): esbuild.Plugin {
+  const assetImportMetaUrlRE = getAssetImportMetaUrlRE()
+  const workerImportMetaUrlRE = getWorkerImportMetaUrlRE()
+
   return {
     name: 'vite:import-meta-url',
     setup(build) {
@@ -159,11 +164,3 @@ export function esbuildImportMetaUrlPlugin({
 function makeOutputFilename(id: string) {
   return flattenId(normalizePath(id).split('/node_modules/').at(-1)!)
 }
-
-// packages/vite/src/node/plugins/assetImportMetaUrl.ts
-const assetImportMetaUrlRE =
-  /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
-
-// packages/vite/src/node/plugins/workerImportMetaUrl.ts
-const workerImportMetaUrlRE =
-  /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
