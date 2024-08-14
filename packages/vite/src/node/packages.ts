@@ -260,11 +260,6 @@ export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
         invalidatePackageData(packageCache, path.normalize(id))
       }
     },
-    handleHotUpdate({ file }) {
-      if (file.endsWith('/package.json')) {
-        invalidatePackageData(packageCache, path.normalize(file))
-      }
-    },
   }
 }
 
