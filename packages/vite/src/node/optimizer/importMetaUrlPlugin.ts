@@ -31,6 +31,9 @@ export function esbuildImportMetaUrlPlugin({
         outdir = build.initialOptions.outdir!
       })
 
+      // TODO: issues with `onLoad` approach
+      // - degrade performance due to intercepting all js files loading with js side readFile
+      // - it can conflict with other plugins intercepting js file `onLoad` and this plugin's `onLoad` won't kick in.
       build.onLoad({ filter, namespace: 'file' }, async (args) => {
         const data = await fs.promises.readFile(args.path, 'utf-8')
         if (data.includes('import.meta.url')) {
