@@ -140,7 +140,7 @@ test('dep with optional peer dep', async () => {
 })
 
 test('dep with optional peer dep submodule', async () => {
-  expectWithRetry(() =>
+  await expectWithRetry(() =>
     page.textContent('.dep-with-optional-peer-dep-submodule'),
   ).toMatch(`[success]`)
   if (isServe) {
