@@ -9,6 +9,7 @@ import { isHTMLRequest } from './html'
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 const importMetaEnvMarker = '__vite_import_meta_env__'
+const markerReCache = new Map<string, RegExp>()
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -128,24 +129,29 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       pattern.lastIndex = 0
       if (!pattern.test(code)) return
 
+      // append `$` to the marker until it's unique,
+      // to avoid there is a marker already in the code
       let marker = importMetaEnvMarker
-      while (new RegExp(escapeRegex(marker)).test(code)) {
+      while (code.includes(marker)) {
         marker += '$'
       }
+
+      // copy define to finalDefine and replace `import.meta.env` with marker,
+      // avoiding affecting the original define object
+      const finalDefine = { ...define }
       if (marker !== importMetaEnvMarker && 'import.meta.env' in define) {
-        define['import.meta.env'] = marker
+        finalDefine['import.meta.env'] = marker
       }
 
-      const result = await replaceDefine(code, id, define, config)
+      const result = await replaceDefine(code, id, finalDefine, config)
 
       // Replace `import.meta.env.*` with undefined
-      result.code = result.code.replaceAll(
-        new RegExp(`${escapeRegex(marker)}\\..+?\\b`, 'g'),
-        (m) => 'undefined'.padEnd(m.length),
+      result.code = result.code.replaceAll(createMarkerRe(marker), (m) =>
+        'undefined'.padEnd(m.length),
       )
 
       // If there's bare `import.meta.env` references, prepend the banner
-      if (new RegExp(escapeRegex(marker)).test(result.code)) {
+      if (result.code.includes(marker)) {
         result.code = `const ${marker} = ${importMetaEnvVal};\n` + result.code
 
         if (result.map) {
@@ -226,4 +232,16 @@ function handleDefineValue(value: any): string {
   if (typeof value === 'undefined') return 'undefined'
   if (typeof value === 'string') return value
   return JSON.stringify(value)
+}
+
+/** get marker regexp using cache */
+function createMarkerRe(marker: string): RegExp {
+  return (
+    markerReCache.get(marker) ||
+    (markerReCache.set(
+      marker,
+      new RegExp(`${escapeRegex(marker)}\\..+?\\b`, 'g'),
+    ),
+    markerReCache.get(marker)!)
+  )
 }
