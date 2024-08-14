@@ -7,6 +7,9 @@ import { flattenId, normalizePath } from '../utils'
 import { getAssetImportMetaUrlRE } from '../plugins/assetImportMetaUrl'
 import { getWorkerImportMetaUrlRE } from '../plugins/workerImportMetaUrl'
 
+// This is mostly a standalone esbuild plugiin, which is usable outside of Vite.
+// Only assumption is that output js files are required to be in the same directory
+// so that `new URL("./__worker-...", import.meta.url)` works uniformly.
 export function esbuildImportMetaUrlPlugin({
   filter = /\.m?js$/,
   buildChain = [],
@@ -37,7 +40,7 @@ export function esbuildImportMetaUrlPlugin({
           // replace
           //   new Worker(new URL("./worker.js", import.meta.url))
           // with
-          //   new Worker(new URL("/__worker-(name)-(hash).js", import.meta.url))
+          //   new Worker(new URL("./__worker-(name)-(hash).js", import.meta.url))
           {
             const matches = data.matchAll(workerImportMetaUrlRE)
             for (const match of matches) {
