@@ -9,7 +9,7 @@ import { isHTMLRequest } from './html'
 const nonJsRe = /\.json(?:$|\?)/
 const isNonJsRequest = (request: string): boolean => nonJsRe.test(request)
 const importMetaEnvMarker = '__vite_import_meta_env__'
-const markerReCache = new Map<string, RegExp>()
+const importMetaEnvKeyReCache = new Map<string, RegExp>()
 
 export function definePlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
@@ -120,7 +120,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const [define, pattern, importMetaEnvVal] = ssr
+      let [define, pattern, importMetaEnvVal] = ssr
         ? ssrPattern
         : defaultPattern
       if (!pattern) return
@@ -129,35 +129,40 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       pattern.lastIndex = 0
       if (!pattern.test(code)) return
 
-      // append `$` to the marker until it's unique,
-      // to avoid there is a marker already in the code
+      const hasDefineImportMetaEnv = 'import.meta.env' in define
       let marker = importMetaEnvMarker
-      while (code.includes(marker)) {
-        marker += '$'
+
+      if (hasDefineImportMetaEnv && code.includes(marker)) {
+        // append a number to the marker until it's unique, to avoid if there is a
+        // marker already in the code
+        let i = 1
+        do {
+          marker = importMetaEnvMarker + i++
+        } while (code.includes(marker))
+
+        if (marker !== importMetaEnvMarker) {
+          define = { ...define, 'import.meta.env': marker }
+        }
       }
 
-      // copy define to finalDefine and replace `import.meta.env` with marker,
-      // avoiding affecting the original define object
-      const finalDefine = { ...define }
-      if (marker !== importMetaEnvMarker && 'import.meta.env' in define) {
-        finalDefine['import.meta.env'] = marker
-      }
+      const result = await replaceDefine(code, id, define, config)
 
-      const result = await replaceDefine(code, id, finalDefine, config)
+      if (hasDefineImportMetaEnv) {
+        // Replace `import.meta.env.*` with undefined
+        result.code = result.code.replaceAll(
+          getImportMetaEnvKeyRe(marker),
+          (m) => 'undefined'.padEnd(m.length),
+        )
 
-      // Replace `import.meta.env.*` with undefined
-      result.code = result.code.replaceAll(createMarkerRe(marker), (m) =>
-        'undefined'.padEnd(m.length),
-      )
+        // If there's bare `import.meta.env` references, prepend the banner
+        if (result.code.includes(marker)) {
+          result.code = `const ${marker} = ${importMetaEnvVal};\n` + result.code
 
-      // If there's bare `import.meta.env` references, prepend the banner
-      if (result.code.includes(marker)) {
-        result.code = `const ${marker} = ${importMetaEnvVal};\n` + result.code
-
-        if (result.map) {
-          const map = JSON.parse(result.map)
-          map.mappings = ';' + map.mappings
-          result.map = map
+          if (result.map) {
+            const map = JSON.parse(result.map)
+            map.mappings = ';' + map.mappings
+            result.map = map
+          }
         }
       }
 
@@ -234,14 +239,11 @@ function handleDefineValue(value: any): string {
   return JSON.stringify(value)
 }
 
-/** get marker regexp using cache */
-function createMarkerRe(marker: string): RegExp {
-  return (
-    markerReCache.get(marker) ||
-    (markerReCache.set(
-      marker,
-      new RegExp(`${escapeRegex(marker)}\\..+?\\b`, 'g'),
-    ),
-    markerReCache.get(marker)!)
-  )
+function getImportMetaEnvKeyRe(marker: string): RegExp {
+  let re = importMetaEnvKeyReCache.get(marker)
+  if (!re) {
+    re = new RegExp(`${marker}\\..+?\\b`, 'g')
+    importMetaEnvKeyReCache.set(marker, re)
+  }
+  return re
 }
