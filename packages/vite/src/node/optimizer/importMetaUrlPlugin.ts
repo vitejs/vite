@@ -1,22 +1,27 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import crypto from 'node:crypto'
 import MagicString from 'magic-string'
 import * as esbuild from 'esbuild'
 import { flattenId, normalizePath } from '../utils'
 
 export function esbuildImportMetaUrlPlugin({
-  processingCacheDir,
-  bundleChain = [],
-  bundleMap = new Map(),
+  filter = /\.m?js$/,
+  buildChain = [],
+  buildPromiseMap = new Map(),
 }: {
-  processingCacheDir: string
-  bundleChain?: string[] // track recursive worker build
-  bundleMap?: Map<string, ReturnType<typeof esbuild.build>>
+  filter?: RegExp
+  // track recursive worker build
+  buildChain?: string[]
+  buildPromiseMap?: Map<string, ReturnType<typeof esbuild.build>>
 }): esbuild.Plugin {
   return {
-    name: esbuildImportMetaUrlPlugin.name,
+    name: 'vite:import-meta-url',
     setup(build) {
-      const filter = /\.m?js$/
+      let outdir: string
+      build.onStart(() => {
+        outdir = build.initialOptions.outdir!
+      })
 
       build.onLoad({ filter, namespace: 'file' }, async (args) => {
         const data = await fs.promises.readFile(args.path, 'utf-8')
@@ -27,7 +32,7 @@ export function esbuildImportMetaUrlPlugin({
           // replace
           //   new Worker(new URL("./worker.js", import.meta.url))
           // with
-          //   new Worker(new URL("./__worker/worker-file-name-with-hash.js", import.meta.url))
+          //   new Worker(new URL("/__worker-(name)-(hash).js", import.meta.url))
           {
             const matches = data.matchAll(workerImportMetaUrlRE)
             for (const match of matches) {
@@ -36,52 +41,63 @@ export function esbuildImportMetaUrlPlugin({
 
               const url = match[2]!.slice(1, -1)
               if (url[0] !== '/') {
+                // TODO: use build.resolve? https://esbuild.github.io/plugins/#resolve
+                // however esbuild requires explicit "./", so need to resolve twice for
+                // - build.resolve("relative-or-package")
+                // - build.resolve("./relative-or-package")
                 const absUrl = path.resolve(path.dirname(args.path), url)
+
                 if (fs.existsSync(absUrl)) {
                   // handle circular worker import similar to vite build
-                  if (bundleChain.at(-1) === absUrl) {
+                  if (buildChain.at(-1) === absUrl) {
                     output.update(urlStart, urlEnd, 'self.location.href')
                     continue
-                  } else if (bundleChain.includes(absUrl)) {
+                  }
+                  if (buildChain.includes(absUrl)) {
                     throw new Error(
                       'Unsupported circular worker imports: ' +
-                        [...bundleChain].join(' -> '),
+                        [...buildChain, '...'].join(' -> '),
                     )
                   }
-                  let bundlePromise = bundleMap.get(absUrl)
+                  let bundlePromise = buildPromiseMap.get(absUrl)
                   if (!bundlePromise) {
-                    const entryName = flattenId(
-                      normalizePath(absUrl).split('/node_modules/').at(-1)!,
-                    )
+                    const entryName = makeOutputFilename(absUrl)
                     bundlePromise = esbuild.build({
-                      outdir: path.join(processingCacheDir, '__worker'),
+                      // inherit config
+                      absWorkingDir: build.initialOptions.absWorkingDir,
+                      outdir: build.initialOptions.outdir,
+                      platform: build.initialOptions.platform,
+                      define: build.initialOptions.define,
+                      target: build.initialOptions.target,
+                      // own config
                       entryPoints: {
                         [entryName]: absUrl,
                       },
-                      entryNames: '[name]-[hash]',
+                      entryNames: './__worker-[name]-[hash]',
                       bundle: true,
                       metafile: true,
                       // TODO: should we detect WorkerType and use esm only when `{ type: "module" }`?
                       format: 'esm',
-                      platform: 'browser',
+                      // TODO: worker condition? https://github.com/vitejs/vite/issues/7439
+                      // conditions: ["worker"],
                       plugins: [
                         esbuildImportMetaUrlPlugin({
-                          processingCacheDir,
-                          bundleChain: [...bundleChain, absUrl],
-                          bundleMap,
+                          filter,
+                          buildChain: [...buildChain, absUrl],
+                          buildPromiseMap: buildPromiseMap,
                         }),
                       ],
                     })
-                    bundleMap.set(absUrl, bundlePromise)
+                    buildPromiseMap.set(absUrl, bundlePromise)
                   }
                   const result = await bundlePromise
                   const filename = path.basename(
-                    Object.keys(result.metafile!.outputs)[0],
+                    Object.keys(result.metafile!.outputs)[0]!,
                   )
                   output.update(
                     urlStart,
                     urlEnd,
-                    JSON.stringify(`./__worker/${filename}`),
+                    JSON.stringify(`./${filename}`),
                   )
                 }
               }
@@ -91,7 +107,7 @@ export function esbuildImportMetaUrlPlugin({
           // replace
           //   new URL("./asset.svg", import.meta.url)
           // with
-          //   new URL("/abs-path-to-node-module-package/asset.svg", import.meta.url)
+          //   new URL("./__asset-(name)-(hash).svg", import.meta.url)
           {
             const matches = data.matchAll(assetImportMetaUrlRE)
             for (const match of matches) {
@@ -103,7 +119,25 @@ export function esbuildImportMetaUrlPlugin({
               if (url[0] !== '/') {
                 const absUrl = path.resolve(path.dirname(args.path), url)
                 if (fs.existsSync(absUrl)) {
-                  output.update(urlStart, urlEnd, JSON.stringify(absUrl))
+                  const assetName = makeOutputFilename(absUrl)
+                  const assetData = await fs.promises.readFile(absUrl)
+                  const hash = crypto
+                    .createHash('sha1')
+                    .update(assetData)
+                    .digest()
+                    .toString('hex')
+                    .slice(0, 8)
+                  const filename =
+                    `__asset-${assetName}-${hash}` + path.extname(absUrl)
+                  await fs.promises.writeFile(
+                    path.join(outdir, filename),
+                    assetData,
+                  )
+                  output.update(
+                    urlStart,
+                    urlEnd,
+                    JSON.stringify(`./${filename}`),
+                  )
                 }
               }
             }
@@ -120,6 +154,10 @@ export function esbuildImportMetaUrlPlugin({
       })
     },
   }
+}
+
+function makeOutputFilename(id: string) {
+  return flattenId(normalizePath(id).split('/node_modules/').at(-1)!)
 }
 
 // packages/vite/src/node/plugins/assetImportMetaUrl.ts

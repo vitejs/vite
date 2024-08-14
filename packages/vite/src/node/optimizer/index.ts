@@ -777,12 +777,7 @@ async function prepareEsbuildOptimizerRun(
   plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
 
   if (!ssr) {
-    // TODO: experimental opt-in?
-    plugins.push(
-      esbuildImportMetaUrlPlugin({
-        processingCacheDir,
-      }),
-    )
+    plugins.push(esbuildImportMetaUrlPlugin({}))
   }
 
   const context = await esbuild.context({
