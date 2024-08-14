@@ -117,15 +117,15 @@ describe('definePlugin', () => {
         'console.log(__vite_import_meta_env__);\nconst env = import.meta.env;',
       ),
     ).toMatch(
-      /const __vite_import_meta_env__\$ = .*;\nconsole.log\(__vite_import_meta_env__\);\nconst env = __vite_import_meta_env__\$;/,
+      /const __vite_import_meta_env__1 = .*;\nconsole.log\(__vite_import_meta_env__\);\nconst env = __vite_import_meta_env__1;/,
     )
 
     expect(
       await transform(
-        'console.log(__vite_import_meta_env__, __vite_import_meta_env__$);\n const env = import.meta.env;',
+        'console.log(__vite_import_meta_env__, __vite_import_meta_env__1);\n const env = import.meta.env;',
       ),
     ).toMatch(
-      /const __vite_import_meta_env__\$\$ = .*;\nconsole.log\(__vite_import_meta_env__, __vite_import_meta_env__\$\);\nconst env = __vite_import_meta_env__\$\$;/,
+      /const __vite_import_meta_env__2 = .*;\nconsole.log\(__vite_import_meta_env__, __vite_import_meta_env__1\);\nconst env = __vite_import_meta_env__2;/,
     )
 
     expect(
@@ -133,7 +133,7 @@ describe('definePlugin', () => {
         'console.log(__vite_import_meta_env__);\nconst env = import.meta.env;\nconsole.log(import.meta.env.UNDEFINED);',
       ),
     ).toMatch(
-      /const __vite_import_meta_env__\$ = .*;\nconsole.log\(__vite_import_meta_env__\);\nconst env = __vite_import_meta_env__\$;\nconsole.log\(undefined {26}\);/,
+      /const __vite_import_meta_env__1 = .*;\nconsole.log\(__vite_import_meta_env__\);\nconst env = __vite_import_meta_env__1;\nconsole.log\(undefined {26}\);/,
     )
   })
 })
