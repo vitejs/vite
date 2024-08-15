@@ -268,7 +268,10 @@ export async function fileToUrl(
   }
 }
 
-function fileToDevUrl(id: string, config: ResolvedConfig) {
+export function fileToDevUrlWithoutBase(
+  id: string,
+  config: ResolvedConfig,
+): string {
   let rtn: string
   if (checkPublicFile(id, config)) {
     // in public dir during dev, keep the url as-is
@@ -281,8 +284,15 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX, id)
   }
+  return rtn
+}
+
+function fileToDevUrl(id: string, config: ResolvedConfig) {
   const base = joinUrlSegments(config.server?.origin ?? '', config.decodedBase)
-  return joinUrlSegments(base, removeLeadingSlash(rtn))
+  return joinUrlSegments(
+    base,
+    removeLeadingSlash(fileToDevUrlWithoutBase(id, config)),
+  )
 }
 
 export function getPublicAssetFilename(
