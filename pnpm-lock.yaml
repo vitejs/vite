@@ -1555,9 +1555,14 @@ importers:
 
   playground/worker:
     dependencies:
+      '@vitejs/test-dep-self-reference-url-worker':
+        specifier: file:./dep-self-reference-url-worker
+        version: file:playground/worker/dep-self-reference-url-worker
       '@vitejs/test-dep-to-optimize':
         specifier: file:./dep-to-optimize
         version: file:playground/worker/dep-to-optimize
+
+  playground/worker/dep-self-reference-url-worker: {}
 
   playground/worker/dep-to-optimize: {}
 
@@ -3470,6 +3475,9 @@ packages:
 
   '@vitejs/test-dep-relative-to-main@file:playground/optimize-deps/dep-relative-to-main':
     resolution: {directory: playground/optimize-deps/dep-relative-to-main, type: directory}
+
+  '@vitejs/test-dep-self-reference-url-worker@file:playground/worker/dep-self-reference-url-worker':
+    resolution: {directory: playground/worker/dep-self-reference-url-worker, type: directory}
 
   '@vitejs/test-dep-that-imports@file:playground/external/dep-that-imports':
     resolution: {directory: playground/external/dep-that-imports, type: directory}
@@ -8861,6 +8869,8 @@ snapshots:
   '@vitejs/test-dep-optimize-with-glob@file:playground/optimize-deps/dep-optimize-with-glob': {}
 
   '@vitejs/test-dep-relative-to-main@file:playground/optimize-deps/dep-relative-to-main': {}
+
+  '@vitejs/test-dep-self-reference-url-worker@file:playground/worker/dep-self-reference-url-worker': {}
 
   '@vitejs/test-dep-that-imports@file:playground/external/dep-that-imports(typescript@5.5.3)':
     dependencies:

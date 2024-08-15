@@ -1,3 +1,4 @@
+import * as depSelfReferenceUrlWorker from '@vitejs/test-dep-self-reference-url-worker'
 import myWorker from '../my-worker.ts?worker'
 import InlineWorker from '../my-worker.ts?worker&inline'
 import InlineSharedWorker from '../my-inline-shared-worker?sharedworker&inline'
@@ -175,5 +176,10 @@ const selfReferenceUrlWorker = new Worker(
 selfReferenceUrlWorker.postMessage('main')
 selfReferenceUrlWorker.addEventListener('message', (e) => {
   document.querySelector('.self-reference-url-worker').textContent +=
+    `${e.data}\n`
+})
+
+depSelfReferenceUrlWorker.startWorker((e) => {
+  document.querySelector('.self-reference-url-worker-dep').textContent +=
     `${e.data}\n`
 })

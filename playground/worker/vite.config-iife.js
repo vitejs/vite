@@ -51,4 +51,7 @@ export default defineConfig({
     },
   ],
   cacheDir: 'node_modules/.vite-iife',
+  optimizeDeps: {
+    exclude: ['@vitejs/test-dep-self-reference-url-worker'],
+  },
 })
