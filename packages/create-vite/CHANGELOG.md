@@ -1,3 +1,10 @@
+## <small>5.5.2 (2024-08-15)</small>
+
+* fix(create-vite): move ESLint "ignores" config to a separate object in React templates (#17885) ([1b3b702](https://github.com/vitejs/vite/commit/1b3b702a7ec04fecb81f2642ffdde0b13e38a921)), closes [#17885](https://github.com/vitejs/vite/issues/17885)
+* fix(deps): update all non-major dependencies (#17869) ([d11711c](https://github.com/vitejs/vite/commit/d11711c7e4c082fd0400245bfdc766006fd38ac8)), closes [#17869](https://github.com/vitejs/vite/issues/17869)
+
+
+
 ## <small>5.5.1 (2024-08-07)</small>
 
 * fix(create-vite): remove eslint overrides (#17833) ([8bc122f](https://github.com/vitejs/vite/commit/8bc122feea8b840575796e1846871a2090525fc9)), closes [#17833](https://github.com/vitejs/vite/issues/17833)
