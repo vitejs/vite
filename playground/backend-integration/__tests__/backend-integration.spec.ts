@@ -30,11 +30,18 @@ describe('asset imports from js', () => {
       if (isBuild) {
         expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
       } else {
+        // asset url is prefixed with server.origin
         expect(text).toMatch(
-          `http://localhost:${ports['backend-integration']}/dev/@fs`,
+          `http://localhost:${ports['backend-integration']}/dev/@fs/`,
         )
         expect(text).toMatch(/\/dev\/@fs\/.+?\/images\/logo\.png/)
       }
+
+      expect(
+        await page
+          .locator('.asset-reference.outside-root .asset-preview')
+          .evaluate((el: HTMLImageElement) => el.naturalWidth > 0),
+      ).toBe(true)
     })
   })
 })
