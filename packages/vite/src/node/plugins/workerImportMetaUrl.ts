@@ -171,7 +171,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           if (
             isBuild &&
             config.isWorker &&
-            this.getModuleInfo(cleanUrl(file))?.isEntry
+            config.bundleChain.at(-1) === cleanUrl(file)
           ) {
             s.update(expStart, expEnd, 'self.location.href')
           } else {

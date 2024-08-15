@@ -75,7 +75,7 @@ describe.runIf(isBuild)('build', () => {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/iife/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(22)
+    expect(files.length).toBe(23)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('worker_entry-my-worker'))
@@ -170,6 +170,12 @@ test('self reference worker', async () => {
 test('self reference url worker', async () => {
   await expectWithRetry(() =>
     page.textContent('.self-reference-url-worker'),
+  ).toBe('pong: main\npong: nested\n')
+})
+
+test('self reference url worker in dependency', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.self-reference-url-worker-dep'),
   ).toBe('pong: main\npong: nested\n')
 })
 
