@@ -27,7 +27,6 @@ describe('asset imports from js', () => {
       const text = await page.textContent(
         '.asset-reference.outside-root .asset-url',
       )
-      console.log({ text })
       if (isBuild) {
         expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
       } else {
