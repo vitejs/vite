@@ -1,3 +1,17 @@
+## <small>5.4.2 (2024-08-15)</small>
+
+* chore: extend commit hash (#17709) ([4fc9b64](https://github.com/vitejs/vite/commit/4fc9b6424c27aca8004c368b69991a56264e4fdb)), closes [#17709](https://github.com/vitejs/vite/issues/17709)
+* chore(deps): update all non-major dependencies (#17820) ([bb2f8bb](https://github.com/vitejs/vite/commit/bb2f8bb55fdd64e4f16831ff98921c221a5e734a)), closes [#17820](https://github.com/vitejs/vite/issues/17820)
+* fix: handle encoded base paths (#17577) ([720447e](https://github.com/vitejs/vite/commit/720447ee725046323387f661341d44e2ad390f41)), closes [#17577](https://github.com/vitejs/vite/issues/17577)
+* fix(deps): update all non-major dependencies (#17430) ([4453d35](https://github.com/vitejs/vite/commit/4453d3578b343d16a8a5298bf154f280088968d9)), closes [#17430](https://github.com/vitejs/vite/issues/17430)
+* fix(deps): update all non-major dependencies (#17494) ([bf123f2](https://github.com/vitejs/vite/commit/bf123f2c6242424a3648cf9234281fd9ff44e3d5)), closes [#17494](https://github.com/vitejs/vite/issues/17494)
+* fix(deps): update all non-major dependencies (#17629) ([93281b0](https://github.com/vitejs/vite/commit/93281b0e09ff8b00e21c24b80ed796db89cbc1ef)), closes [#17629](https://github.com/vitejs/vite/issues/17629)
+* fix(deps): update all non-major dependencies (#17780) ([e408542](https://github.com/vitejs/vite/commit/e408542748edebd93dba07f21e3fd107725cadca)), closes [#17780](https://github.com/vitejs/vite/issues/17780)
+* perf: improve regex performance (#17789) ([952bae3](https://github.com/vitejs/vite/commit/952bae3efcbd871fc3df5b1947060de7ebdafa36)), closes [#17789](https://github.com/vitejs/vite/issues/17789)
+* docs: rename cdnjs link (#17565) ([61357f6](https://github.com/vitejs/vite/commit/61357f67cdb8eca2c551150a1f0329e272f4da62)), closes [#17565](https://github.com/vitejs/vite/issues/17565)
+
+
+
 ## <small>5.4.1 (2024-05-30)</small>
 
 * fix(deps): update all non-major dependencies (#17321) ([4a89766](https://github.com/vitejs/vite/commit/4a89766d838527c144f14e842211100b16792018)), closes [#17321](https://github.com/vitejs/vite/issues/17321)
