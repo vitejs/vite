@@ -87,7 +87,7 @@
   "dependencies": {
     "esbuild": "^0.21.3",
     "postcss": "^8.4.41",
-    "rollup": "^4.13.0"
+    "rollup": "^4.20.0"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"

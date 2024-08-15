@@ -424,8 +424,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     } else {
       return path.dirname(
         assetFileNames({
-          name: cssAssetName,
           type: 'asset',
+          name: cssAssetName,
+          originalFileName: null,
           source: '/* vite internal call, ignore */',
         }),
       )
@@ -646,7 +647,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const urlEmitTasks: Array<{
         cssAssetName: string
-        originalFilename: string
+        originalFileName: string
         content: string
         start: number
         end: number
@@ -658,9 +659,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         while ((match = cssUrlAssetRE.exec(code))) {
           const [full, idHex] = match
           const id = Buffer.from(idHex, 'hex').toString()
-          const originalFilename = cleanUrl(id)
+          const originalFileName = cleanUrl(id)
           const cssAssetName = ensureFileExt(
-            path.basename(originalFilename),
+            path.basename(originalFileName),
             '.css',
           )
           if (!styles.has(id)) {
@@ -675,7 +676,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           urlEmitTasks.push({
             cssAssetName,
-            originalFilename,
+            originalFileName,
             content: cssContent,
             start: match.index,
             end: match.index + full.length,
@@ -701,19 +702,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         for (const {
           cssAssetName,
-          originalFilename,
+          originalFileName,
           content,
           start,
           end,
         } of urlEmitTasks) {
           const referenceId = this.emitFile({
-            name: cssAssetName,
             type: 'asset',
+            name: cssAssetName,
+            originalFileName,
             source: content,
           })
-          generatedAssets
-            .get(config)!
-            .set(referenceId, { originalName: originalFilename })
+          generatedAssets.get(config)!.set(referenceId, { originalFileName })
 
           const filename = this.getFileName(referenceId)
           chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
@@ -751,7 +751,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
                 ? path.basename(cssFullAssetName)
                 : cssFullAssetName
-            const originalFilename = getChunkOriginalFileName(
+            const originalFileName = getChunkOriginalFileName(
               chunk,
               config.root,
               opts.format,
@@ -766,13 +766,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
             // emit corresponding css file
             const referenceId = this.emitFile({
-              name: cssAssetName,
               type: 'asset',
+              name: cssAssetName,
+              originalFileName,
               source: chunkCSS,
             })
             generatedAssets
               .get(config)!
-              .set(referenceId, { originalName: originalFilename, isEntry })
+              .set(referenceId, { originalFileName, isEntry })
             chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
           } else if (!config.build.ssr) {
             // legacy build and inline css
