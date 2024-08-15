@@ -8,14 +8,14 @@
     "build": "vite build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview",
-    "dev:resolve-deps": "vite --config vite.config-resolve-deps.ts",
-    "build:resolve-deps": "vite build --config vite.config-resolve-deps.ts",
-    "debug:resolve-deps": "node --inspect-brk ../../packages/vite/bin/vite --config vite.config-resolve-deps.ts",
-    "preview:resolve-deps": "vite preview --config vite.config-resolve-deps.ts",
-    "dev:preload-disabled": "vite --config vite.config-preload-disabled.ts",
-    "build:preload-disabled": "vite build --config vite.config-preload-disabled.ts",
-    "debug:preload-disabled": "node --inspect-brk ../../packages/vite/bin/vite --config vite.config-preload-disabled.ts",
-    "preview:preload-disabled": "vite preview --config vite.config-preload-disabled.ts"
+    "dev:resolve-deps": "vite --config vite.config-resolve-deps.js",
+    "build:resolve-deps": "vite build --config vite.config-resolve-deps.js",
+    "debug:resolve-deps": "node --inspect-brk ../../packages/vite/bin/vite --config vite.config-resolve-deps.js",
+    "preview:resolve-deps": "vite preview --config vite.config-resolve-deps.js",
+    "dev:preload-disabled": "vite --config vite.config-preload-disabled.js",
+    "build:preload-disabled": "vite build --config vite.config-preload-disabled.js",
+    "debug:preload-disabled": "node --inspect-brk ../../packages/vite/bin/vite --config vite.config-preload-disabled.js",
+    "preview:preload-disabled": "vite preview --config vite.config-preload-disabled.js"
   },
   "devDependencies": {
     "terser": "^5.31.5",
