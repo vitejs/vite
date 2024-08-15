@@ -1,3 +1,17 @@
+## <small>5.4.1 (2024-08-15)</small>
+
+* fix: `build.modulePreload.resolveDependencies` is optimizable (#16083) ([e961b31](https://github.com/vitejs/vite/commit/e961b31493f8493277b46773156cc6e546b9c86b)), closes [#16083](https://github.com/vitejs/vite/issues/16083)
+* fix: align CorsOptions.origin type with @types/cors (#17836) ([1bda847](https://github.com/vitejs/vite/commit/1bda847329022d5279cfa2b51719dd19a161fd64)), closes [#17836](https://github.com/vitejs/vite/issues/17836)
+* fix: typings for vite:preloadError (#17868) ([6700594](https://github.com/vitejs/vite/commit/67005949999054ab3cd079890ed220bc359bcf62)), closes [#17868](https://github.com/vitejs/vite/issues/17868)
+* fix(build): avoid re-define `__vite_import_meta_env__` (#17876) ([e686d74](https://github.com/vitejs/vite/commit/e686d749d673c02ff4395971ac74340082da14e5)), closes [#17876](https://github.com/vitejs/vite/issues/17876)
+* fix(deps): update all non-major dependencies (#17869) ([d11711c](https://github.com/vitejs/vite/commit/d11711c7e4c082fd0400245bfdc766006fd38ac8)), closes [#17869](https://github.com/vitejs/vite/issues/17869)
+* fix(lightningcss): search for assets with correct base path (#17856) ([4e5ce3c](https://github.com/vitejs/vite/commit/4e5ce3c7a90966b1f942df35b8b3e8a550a4f031)), closes [#17856](https://github.com/vitejs/vite/issues/17856)
+* fix(worker): handle self reference url worker in dependency for build (#17846) ([391bb49](https://github.com/vitejs/vite/commit/391bb4917b55baf3fdb01c6fc3d782d6c51be6c8)), closes [#17846](https://github.com/vitejs/vite/issues/17846)
+* chore: fix picocolors import for local dev (#17884) ([9018255](https://github.com/vitejs/vite/commit/9018255c697a8c0888dce57aaa755d25bf66beba)), closes [#17884](https://github.com/vitejs/vite/issues/17884)
+* refactor: remove `handleHotUpdate` from watch-package-data plugin (#17865) ([e16bf1f](https://github.com/vitejs/vite/commit/e16bf1fb14b7a3a950de4d74fce31416746829b3)), closes [#17865](https://github.com/vitejs/vite/issues/17865)
+
+
+
 ## 5.4.0 (2024-08-07)
 
 * fix(build): windows platform build output path error (#17818) ([6ae0615](https://github.com/vitejs/vite/commit/6ae0615416762dd1b89393316308cf8edf115c34)), closes [#17818](https://github.com/vitejs/vite/issues/17818)
