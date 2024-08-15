@@ -22,6 +22,14 @@ function BackendIntegrationExample() {
       entrypoints.push(['bar.css', path.resolve(__dirname, './dir/foo.css')])
 
       return {
+        server: {
+          // same port in playground/test-utils.ts
+          port: 5009,
+          strictPort: true,
+          // TODO: shouldn't this be automatically inferred from dev server address?
+          // (see "boolean or string" discussions in https://github.com/vitejs/vite/pull/4337)
+          origin: 'http://localhost:5009',
+        },
         build: {
           manifest: true,
           outDir,
