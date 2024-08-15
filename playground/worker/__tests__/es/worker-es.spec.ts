@@ -111,7 +111,7 @@ describe.runIf(isBuild)('build', () => {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/es/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(34)
+    expect(files.length).toBe(36)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -239,4 +239,17 @@ test('self reference url worker', async () => {
   await expectWithRetry(() =>
     page.textContent('.self-reference-url-worker'),
   ).toBe('pong: main\npong: nested\n')
+})
+
+test('dynamic import assets or libs in inline worker', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-assets-inline-worker'),
+    'The vite.svg was loaded successfully.',
+    true,
+  )
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-libs-inline-worker'),
+    'The @vitejs/test-dep-to-optimize was loaded successfully.',
+    true,
+  )
 })

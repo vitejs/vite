@@ -55,6 +55,7 @@ function saveEmitWorkerAsset(
 async function bundleWorkerEntry(
   config: ResolvedConfig,
   id: string,
+  isInline?: boolean,
 ): Promise<OutputChunk> {
   const input = cleanUrl(id)
   const newBundleChain = [...config.bundleChain, input]
@@ -71,7 +72,10 @@ async function bundleWorkerEntry(
   const bundle = await rollup({
     ...rollupOptions,
     input,
-    plugins: await plugins(newBundleChain),
+    plugins: [
+      await plugins(newBundleChain),
+      isInline && replaceUrlForDynamicImportsPlugin(config),
+    ],
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, config)
     },
@@ -119,6 +123,50 @@ async function bundleWorkerEntry(
     await bundle.close()
   }
   return emitSourcemapForWorkerEntry(config, chunk)
+}
+
+const importRE = /import\(["'](.+?)["']\)/g
+function areFilesEqual(path1: string, path2: string) {
+  return path.basename(path1) === path.basename(path2)
+}
+
+function replaceUrlForDynamicImportsPlugin(config: ResolvedConfig): Plugin {
+  let outDir = config.build.outDir
+  if (outDir.startsWith('./')) {
+    outDir = outDir.slice(2) // Removes the './'
+  }
+  // Filter out the first folder
+  let basePath = outDir
+    .split('/')
+    .filter((path) => path)
+    .slice(1)
+    .join('/')
+
+  if (basePath === '') {
+    basePath = '/'
+  } else {
+    basePath = `/${basePath}/`
+  }
+
+  return {
+    name: 'rollup-plugin-replace-url-dynamic-imports-inline-worker',
+    generateBundle(options, bundle) {
+      for (const [_, output] of Object.entries(bundle)) {
+        if (output.type === 'chunk' && output.isEntry === true) {
+          output.code = output.code.replace(importRE, (match, extractedUrl) => {
+            const importUrl = output.dynamicImports.find((url) =>
+              areFilesEqual(extractedUrl, url),
+            )
+            if (importUrl) {
+              return `import(self.location.origin + "${basePath + importUrl}")`
+            }
+            return match
+          })
+        }
+      }
+      return undefined
+    },
+  }
 }
 
 function emitSourcemapForWorkerEntry(
@@ -295,7 +343,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         if (isWorker && this.getModuleInfo(cleanUrl(id))?.isEntry) {
           urlCode = 'self.location.href'
         } else if (inlineRE.test(id)) {
-          const chunk = await bundleWorkerEntry(config, id)
+          const chunk = await bundleWorkerEntry(config, id, true)
           const encodedJs = `const encodedJs = "${Buffer.from(
             chunk.code,
           ).toString('base64')}";`
