@@ -33,22 +33,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    timeout-minutes: 20
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node_version: [18, 20, 22]
-        include:
-          # Active LTS + other OS
-          - os: macos-latest
-            node_version: 20
-          - os: windows-latest
-            node_version: 20
-      fail-fast: false
+  changed:
+    name: Get changed files
+    runs-on: ubuntu-latest
+    outputs:
+      should_skip: ${{ steps.changed-files.outputs.only_changed == 'true' }}
 
-    name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,37 +57,55 @@ jobs:
             packages/create-vite/template**
             **.md
 
+  test:
+    needs: changed
+    if: needs.changed.outputs.should_skip != 'true'
+    timeout-minutes: 20
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node_version: [18, 20, 22]
+        include:
+          # Active LTS + other OS
+          - os: macos-latest
+            node_version: 20
+          - os: windows-latest
+            node_version: 20
+      fail-fast: false
+
+    name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Install pnpm
-        if: steps.changed-files.outputs.only_changed != 'true'
         uses: pnpm/action-setup@v4.0.0
 
       - name: Set node version to ${{ matrix.node_version }}
-        if: steps.changed-files.outputs.only_changed != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
           cache: "pnpm"
 
       - name: Install deps
-        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm install
 
       # Install playwright's binary under custom directory to cache
       - name: (non-windows) Set Playwright path and Get playwright version
-        if: runner.os != 'Windows' && steps.changed-files.outputs.only_changed != 'true'
+        if: runner.os != 'Windows'
         run: |
           echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $GITHUB_ENV
           PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies["playwright-chromium"].version')"
           echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
       - name: (windows) Set Playwright path and Get playwright version
-        if: runner.os == 'Windows' && steps.changed-files.outputs.only_changed != 'true'
+        if: runner.os == 'Windows'
         run: |
           echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
           $env:PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies["playwright-chromium"].version')"
           echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
 
       - name: Cache Playwright's binary
-        if: steps.changed-files.outputs.only_changed != 'true'
         uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
@@ -106,24 +114,19 @@ jobs:
             ${{ runner.os }}-playwright-bin-v1-
 
       - name: Install Playwright
-        if: steps.changed-files.outputs.only_changed != 'true'
         # does not need to explicitly set chromium after https://github.com/microsoft/playwright/issues/14862 is solved
         run: pnpm playwright install chromium
 
       - name: Build
-        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run build
 
       - name: Test unit
-        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run test-unit
 
       - name: Test serve
-        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run test-serve
 
       - name: Test build
-        if: steps.changed-files.outputs.only_changed != 'true'
         run: pnpm run test-build
 
   lint:
