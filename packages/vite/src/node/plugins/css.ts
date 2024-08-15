@@ -74,7 +74,7 @@ import type { TransformPluginContext } from '../server/pluginContainer'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
-  fileToDevUrlWithoutBase,
+  fileToDevUrl,
   fileToUrl,
   generatedAssets,
   publicAssetUrlCache,
@@ -1000,7 +1000,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
               isCSSRequest(file)
                 ? moduleGraph.createFileOnlyEntry(file)
                 : await moduleGraph.ensureEntryFromUrl(
-                    fileToDevUrlWithoutBase(file, config),
+                    fileToDevUrl(file, config, /* skipBase */ true),
                     ssr,
                   ),
             )
