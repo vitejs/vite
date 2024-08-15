@@ -168,7 +168,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const isRelativeBase = config.base === './' || config.base === ''
-  const optimizeModulePreloadRelativePaths = isRelativeBase && !renderBuiltUrl
 
   const { modulePreload } = config.build
   const scriptRel =
@@ -176,21 +175,17 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       ? `'modulepreload'`
       : `(${detectScriptRel.toString()})()`
 
-  // There are three different cases for the preload list format in __vitePreload
+  // There are two different cases for the preload list format in __vitePreload
   //
   // __vitePreload(() => import(asyncChunk), [ ...deps... ])
   //
   // This is maintained to keep backwards compatibility as some users developed plugins
   // using regex over this list to workaround the fact that module preload wasn't
   // configurable.
-  const assetsURL = renderBuiltUrl
-    ? // If `experimental.renderBuiltUrl` is used, the dependencies are already resolved.
-      // To avoid the need for `new URL(dep, import.meta.url)`, a helper `__vitePreloadRelativeDep` is
-      // used to resolve from relative paths which can be minimized.
-      `function(dep, importerUrl) { return dep[0] === '.' ? new URL(dep, importerUrl).href : dep }`
-    : optimizeModulePreloadRelativePaths
-      ? // If there isn't custom resolvers affecting the deps list, deps in the list are relative
-        // to the current chunk and are resolved to absolute URL by the __vitePreload helper itself.
+  const assetsURL =
+    renderBuiltUrl || isRelativeBase
+      ? // If `experimental.renderBuiltUrl` is used, the dependencies might be relative to the current chunk.
+        // If relative base is used, the dependencies are relative to the current chunk.
         // The importerUrl is passed as third parameter to __vitePreload in this case
         `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
       : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
@@ -347,9 +342,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           str().appendRight(
             expEnd,
             `,${isModernFlag}?${preloadMarker}:void 0${
-              optimizeModulePreloadRelativePaths || renderBuiltUrl
-                ? ',import.meta.url'
-                : ''
+              renderBuiltUrl || isRelativeBase ? ',import.meta.url' : ''
             })`,
           )
         }
@@ -627,7 +620,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   renderedDeps = depsArray.map((d) =>
                     // Don't include the assets dir if the default asset file names
                     // are used, the path will be reconstructed by the import preload helper
-                    optimizeModulePreloadRelativePaths
+                    isRelativeBase
                       ? addFileDep(toRelativePath(d, file))
                       : addFileDep(d),
                   )
