@@ -268,7 +268,11 @@ export async function fileToUrl(
   }
 }
 
-function fileToDevUrl(id: string, config: ResolvedConfig) {
+export function fileToDevUrl(
+  id: string,
+  config: ResolvedConfig,
+  skipBase = false,
+): string {
   let rtn: string
   if (checkPublicFile(id, config)) {
     // in public dir during dev, keep the url as-is
@@ -280,6 +284,9 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     // outside of project root, use absolute fs path
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX, id)
+  }
+  if (skipBase) {
+    return rtn
   }
   const base = joinUrlSegments(config.server?.origin ?? '', config.decodedBase)
   return joinUrlSegments(base, removeLeadingSlash(rtn))

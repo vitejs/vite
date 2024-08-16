@@ -65,7 +65,6 @@ import {
   removeDirectQuery,
   removeUrlQuery,
   requireResolveFromRootWithFallback,
-  stripBase,
   stripBomTag,
   urlRE,
 } from '../utils'
@@ -75,6 +74,7 @@ import type { TransformPluginContext } from '../server/pluginContainer'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
+  fileToDevUrl,
   fileToUrl,
   generatedAssets,
   publicAssetUrlCache,
@@ -996,16 +996,12 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
           const depModules = new Set<string | ModuleNode>()
-          const devBase = config.base
           for (const file of pluginImports) {
             depModules.add(
               isCSSRequest(file)
                 ? moduleGraph.createFileOnlyEntry(file)
                 : await moduleGraph.ensureEntryFromUrl(
-                    stripBase(
-                      await fileToUrl(file, config, this),
-                      (config.server?.origin ?? '') + devBase,
-                    ),
+                    fileToDevUrl(file, config, /* skipBase */ true),
                     ssr,
                   ),
             )
