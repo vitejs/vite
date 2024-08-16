@@ -24,7 +24,7 @@ test('should have no 404s', () => {
 describe('asset imports from js', () => {
   test('file outside root', async () => {
     // assert valid image src https://github.com/microsoft/playwright/issues/6046#issuecomment-1799585719
-    await vi.waitFor(() =>
+    await vi.waitUntil(() =>
       page
         .locator('.asset-reference.outside-root .asset-preview')
         .evaluate((el: HTMLImageElement) => el.naturalWidth > 0),
