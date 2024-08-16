@@ -23,26 +23,25 @@ test('should have no 404s', () => {
 
 describe('asset imports from js', () => {
   test('file outside root', async () => {
-    await vi.waitFor(async () => {
-      const text = await page.textContent(
-        '.asset-reference.outside-root .asset-url',
-      )
-      if (isBuild) {
-        expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
-      } else {
-        // asset url is prefixed with server.origin
-        expect(text).toMatch(
-          `http://localhost:${ports['backend-integration']}/dev/@fs/`,
-        )
-        expect(text).toMatch(/\/dev\/@fs\/.+?\/images\/logo\.png/)
-      }
+    // assert valid image src https://github.com/microsoft/playwright/issues/6046#issuecomment-1799585719
+    await vi.waitFor(() =>
+      page
+        .locator('.asset-reference.outside-root .asset-preview')
+        .evaluate((el: HTMLImageElement) => el.naturalWidth > 0),
+    )
 
-      expect(
-        await page
-          .locator('.asset-reference.outside-root .asset-preview')
-          .evaluate((el: HTMLImageElement) => el.naturalWidth > 0),
-      ).toBe(true)
-    })
+    const text = await page.textContent(
+      '.asset-reference.outside-root .asset-url',
+    )
+    if (isBuild) {
+      expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
+    } else {
+      // asset url is prefixed with server.origin
+      expect(text).toMatch(
+        `http://localhost:${ports['backend-integration']}/dev/@fs/`,
+      )
+      expect(text).toMatch(/\/dev\/@fs\/.+?\/images\/logo\.png/)
+    }
   })
 })
 
