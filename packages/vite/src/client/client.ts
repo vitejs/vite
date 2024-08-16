@@ -328,24 +328,19 @@ async function waitForSuccessfulPing(
   hostAndPath: string,
   ms = 1000,
 ) {
-  const pingHostProtocol = socketProtocol === 'wss' ? 'https' : 'http'
-
-  const ping = async () => {
-    // A fetch on a websocket URL will return a successful promise with status 400,
-    // but will reject a networking error.
-    // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
-    try {
-      await fetch(`${pingHostProtocol}://${hostAndPath}`, {
-        mode: 'no-cors',
-        headers: {
-          // Custom headers won't be included in a request with no-cors so (ab)use one of the
-          // safelisted headers to identify the ping request
-          Accept: 'text/x-vite-ping',
-        },
+  async function ping() {
+    const socket = new WebSocket(
+      `${socketProtocol}://${hostAndPath}`,
+      'vite-ping',
+    )
+    return new Promise<boolean>((resolve) => {
+      socket.addEventListener('open', () => {
+        resolve(true)
       })
-      return true
-    } catch {}
-    return false
+      socket.addEventListener('error', () => {
+        resolve(false)
+      })
+    })
   }
 
   if (await ping()) {

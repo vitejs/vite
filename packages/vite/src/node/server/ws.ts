@@ -138,7 +138,9 @@ export function createWebSocketServer(
     wss = new WebSocketServerRaw({ noServer: true })
     hmrServerWsListener = (req, socket, head) => {
       if (
-        req.headers['sec-websocket-protocol'] === HMR_HEADER &&
+        [HMR_HEADER, 'vite-ping'].includes(
+          req.headers['sec-websocket-protocol']!,
+        ) &&
         req.url === hmrBase
       ) {
         wss.handleUpgrade(req, socket as Socket, head, (ws) => {
@@ -173,6 +175,9 @@ export function createWebSocketServer(
   }
 
   wss.on('connection', (socket) => {
+    if (socket.protocol === 'vite-ping') {
+      return
+    }
     socket.on('message', (raw) => {
       if (!customListeners.size) return
       let parsed: any
