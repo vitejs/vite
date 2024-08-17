@@ -28,9 +28,9 @@ async function testClientReload(serverOptions: ServerOptions) {
   const reloadPromise = page.waitForEvent('load')
   await server.restart()
 
-  // wait for reload and check state is cleared
+  // wait for reload and also check the state is reset
   await reloadPromise
-  await expect.poll(() => page.locator('input').textContent()).toBe('')
+  expect(await page.textContent('input')).toBe('')
 }
 
 describe.runIf(isServe)('client-reload', () => {
