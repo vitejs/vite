@@ -46,6 +46,7 @@ export const ports = {
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
   'css/lightningcss-proxy': 5008,
+  'client-reload': 5009,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
@@ -57,6 +58,7 @@ export const hmrPorts = {
   'css/lightningcss-proxy': 24686,
   json: 24687,
   'ssr-conditions': 24688,
+  'client-reload': 24689,
 }
 
 const hexToNameMap: Record<string, string> = {}
