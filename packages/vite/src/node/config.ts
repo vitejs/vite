@@ -10,6 +10,8 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
+import { init, parse } from 'es-module-lexer'
+import MagicString from 'magic-string'
 import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
@@ -1220,6 +1222,80 @@ async function bundleConfigFile(
   }
 }
 
+async function transformViteConfigDynamicImport(
+  text: string,
+  importer: string,
+): Promise<string> {
+  if (!/import\s*\(/.test(text)) {
+    return text
+  }
+  await init
+  const [imports] = parse(text)
+  const output = new MagicString(text)
+  for (const imp of imports) {
+    if (imp.d >= 0 && typeof imp.n === 'undefined') {
+      // dynamic import should be resolved relative to the original file but
+      // that was never the case so here we're doing the same to resolve it from current config file.
+      output.update(
+        imp.ss,
+        imp.d,
+        `__vite_config_import_helper__.bind(null, ${JSON.stringify(importer)})`,
+      )
+    }
+  }
+  if (output.hasChanged()) {
+    const vitePath = pathToFileURL(
+      path.resolve(
+        _require.resolve('vite/package.json'),
+        '../dist/node/index.js',
+      ),
+    ).href
+    output.prepend(
+      `import { __vite_config_import_helper__ } from ${JSON.stringify(vitePath)};`,
+    )
+    text = output.toString()
+  }
+  return text
+}
+
+export async function __vite_config_import_helper__(
+  importer: string,
+  id: string,
+): Promise<unknown> {
+  let resolved: string
+  if (isBuiltin(id) || id[0] === '/') {
+    resolved = id
+  } else if (id[0] === '.') {
+    resolved = path.resolve(path.dirname(importer), id)
+  } else {
+    const result = tryNodeResolve(
+      id,
+      importer,
+      {
+        root: path.dirname(importer),
+        isBuild: true,
+        isProduction: true,
+        preferRelative: false,
+        tryIndex: true,
+        mainFields: [],
+        conditions: [],
+        overrideConditions: ['node'],
+        dedupe: [],
+        extensions: DEFAULT_EXTENSIONS,
+        preserveSymlinks: false,
+        packageCache: new Map(),
+        isRequire: false,
+      },
+      false,
+    )
+    if (!result) {
+      throw new Error(`Failed to resolve dynamic import '${id}'`)
+    }
+    resolved = result.id
+  }
+  return import(resolved)
+}
+
 interface NodeModuleWithCompile extends NodeModule {
   _compile(code: string, filename: string): any
 }
@@ -1234,6 +1310,7 @@ async function loadConfigFromBundledFile(
   // with --experimental-loader themselves, we have to do a hack here:
   // write it to disk, load it with native Node ESM, then delete the file.
   if (isESM) {
+    bundledCode = await transformViteConfigDynamicImport(bundledCode, fileName)
     const fileBase = `${fileName}.timestamp-${Date.now()}-${Math.random()
       .toString(16)
       .slice(2)}`

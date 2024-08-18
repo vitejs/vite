@@ -7,6 +7,7 @@ export {
   loadConfigFromFile,
   resolveConfig,
   sortUserPlugins,
+  __vite_config_import_helper__,
 } from './config'
 export { createServer } from './server'
 export { preview } from './preview'
