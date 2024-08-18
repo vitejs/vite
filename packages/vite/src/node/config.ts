@@ -1070,6 +1070,34 @@ export async function loadConfigFromFile(
   }
 }
 
+function createNodeResolveForConfigFile(
+  fileName: string,
+  packageCache: PackageCache,
+) {
+  return (id: string, importer: string, isRequire: boolean) => {
+    return tryNodeResolve(
+      id,
+      importer,
+      {
+        root: path.dirname(fileName),
+        isBuild: true,
+        isProduction: true,
+        preferRelative: false,
+        tryIndex: true,
+        mainFields: [],
+        conditions: [],
+        overrideConditions: ['node'],
+        dedupe: [],
+        extensions: DEFAULT_EXTENSIONS,
+        preserveSymlinks: false,
+        packageCache,
+        isRequire,
+      },
+      false,
+    )?.id
+  }
+}
+
 async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
@@ -1100,32 +1128,10 @@ async function bundleConfigFile(
         name: 'externalize-deps',
         setup(build) {
           const packageCache = new Map()
-          const resolveByViteResolver = (
-            id: string,
-            importer: string,
-            isRequire: boolean,
-          ) => {
-            return tryNodeResolve(
-              id,
-              importer,
-              {
-                root: path.dirname(fileName),
-                isBuild: true,
-                isProduction: true,
-                preferRelative: false,
-                tryIndex: true,
-                mainFields: [],
-                conditions: [],
-                overrideConditions: ['node'],
-                dedupe: [],
-                extensions: DEFAULT_EXTENSIONS,
-                preserveSymlinks: false,
-                packageCache,
-                isRequire,
-              },
-              false,
-            )?.id
-          }
+          const resolveByViteResolver = createNodeResolveForConfigFile(
+            fileName,
+            packageCache,
+          )
 
           // externalize bare imports
           build.onResolve(
@@ -1235,8 +1241,6 @@ async function transformViteConfigDynamicImport(
   const output = new MagicString(text)
   for (const imp of imports) {
     if (imp.d >= 0 && typeof imp.n === 'undefined') {
-      // dynamic import should be resolved relative to the original file but
-      // that was never the case so here we're doing the same to resolve it from current config file.
       output.update(imp.ss, imp.d, `__vite_config_import__`)
     }
   }
@@ -1248,6 +1252,8 @@ async function transformViteConfigDynamicImport(
         '../dist/node/index.js',
       ),
     ).href
+    // dynamic import should be resolved relative to the original file but
+    // that was never the case so here we're doing the same to resolve it from current config file.
     output.prepend(
       `import { __vite_config_import_helper__ } from ${JSON.stringify(vitePath)};` +
         `const __vite_config_import__ = (id) => __vite_config_import_helper__(${JSON.stringify(importer)}, id);`,
@@ -1267,30 +1273,12 @@ export async function __vite_config_import_helper__(
   } else if (id[0] === '.') {
     resolved = pathToFileURL(path.resolve(path.dirname(importer), id)).href
   } else {
-    const result = tryNodeResolve(
-      id,
-      importer,
-      {
-        root: path.dirname(importer),
-        isBuild: true,
-        isProduction: true,
-        preferRelative: false,
-        tryIndex: true,
-        mainFields: [],
-        conditions: [],
-        overrideConditions: ['node'],
-        dedupe: [],
-        extensions: DEFAULT_EXTENSIONS,
-        preserveSymlinks: false,
-        packageCache: new Map(),
-        isRequire: false,
-      },
-      false,
-    )
+    const resolver = createNodeResolveForConfigFile(importer, new Map())
+    const result = resolver(id, importer, false)
     if (!result) {
       throw new Error(`Failed to resolve dynamic import '${id}'`)
     }
-    resolved = pathToFileURL(result.id).href
+    resolved = pathToFileURL(result).href
   }
   return import(resolved)
 }
@@ -1310,12 +1298,11 @@ async function loadConfigFromBundledFile(
   // write it to disk, load it with native Node ESM, then delete the file.
   // convert to base64, load it with native Node ESM.
   if (isESM) {
-    bundledCode = await transformViteConfigDynamicImport(bundledCode, fileName)
+    const code = await transformViteConfigDynamicImport(bundledCode, fileName)
     try {
       return (
         await import(
-          'data:text/javascript;base64,' +
-            Buffer.from(bundledCode).toString('base64')
+          'data:text/javascript;base64,' + Buffer.from(code).toString('base64')
         )
       ).default
     } catch (e) {
