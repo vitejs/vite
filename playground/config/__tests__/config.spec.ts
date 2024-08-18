@@ -64,6 +64,8 @@ it('dynamic import with non-static arguments', async () => {
       "default": "import condition",
     }
   `)
+  // importing "./ok.js" inside "siblings/dynamic.js" should resolve to "siblings/ok.js"
+  // but this case has never been supported.
   await expect(() => config.siblingsDynamic('./ok.js')).rejects.toThrow(
     'Cannot find module',
   )
