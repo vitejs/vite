@@ -1226,6 +1226,7 @@ async function transformViteConfigDynamicImport(
   text: string,
   importer: string,
 ): Promise<string> {
+  // replace `import(anything)` with `__vite_config_import_helper__.bind(null, importer)(anything)`
   if (!/import\s*\(/.test(text)) {
     return text
   }
