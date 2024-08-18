@@ -1265,7 +1265,7 @@ export async function __vite_config_import_helper__(
   if (isBuiltin(id) || id[0] === '/') {
     resolved = id
   } else if (id[0] === '.') {
-    resolved = path.resolve(path.dirname(importer), id)
+    resolved = pathToFileURL(path.resolve(path.dirname(importer), id)).href
   } else {
     const result = tryNodeResolve(
       id,
@@ -1290,7 +1290,7 @@ export async function __vite_config_import_helper__(
     if (!result) {
       throw new Error(`Failed to resolve dynamic import '${id}'`)
     }
-    resolved = result.id
+    resolved = pathToFileURL(result.id).href
   }
   return import(resolved)
 }

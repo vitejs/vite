@@ -82,7 +82,7 @@ it('dynamic import', async () => {
   )
 
   await expect(() =>
-    config.siblingsDynamic('no-such-module'),
+    config.rawImport('no-such-module'),
   ).rejects.toMatchInlineSnapshot(
     `[Error: Failed to resolve dynamic import 'no-such-module']`,
   )
