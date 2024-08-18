@@ -47,3 +47,24 @@ it.runIf(isImportAttributesSupported)(
     `)
   },
 )
+
+it('dynamic import with non-static arguments', async () => {
+  const { config } = (await loadConfigFromFile(
+    { command: 'serve', mode: 'development' },
+    resolve(__dirname, '../packages/entry/vite.config.dynamic.ts'),
+  )) as any
+  expect(await config.rawImport('../siblings/ok.js')).toMatchInlineSnapshot(`
+    {
+      "default": "ok",
+    }
+  `)
+  expect(await config.rawImport('@vite/test-config-plugin-module-condition'))
+    .toMatchInlineSnapshot(`
+    {
+      "default": "import condition",
+    }
+  `)
+  await expect(() => config.siblingsDynamic('./ok.js')).rejects.toThrow(
+    'Cannot find module',
+  )
+})
