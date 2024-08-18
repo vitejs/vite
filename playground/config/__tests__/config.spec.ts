@@ -48,25 +48,42 @@ it.runIf(isImportAttributesSupported)(
   },
 )
 
-it('dynamic import with non-static arguments', async () => {
+it('dynamic import', async () => {
   const { config } = (await loadConfigFromFile(
     { command: 'serve', mode: 'development' },
     resolve(__dirname, '../packages/entry/vite.config.dynamic.ts'),
   )) as any
+  expect(await config.knownImport()).toMatchInlineSnapshot(`
+    {
+      "default": "ok",
+    }
+  `)
   expect(await config.rawImport('../siblings/ok.js')).toMatchInlineSnapshot(`
     {
       "default": "ok",
     }
   `)
+  // two are different since one is bundled but the other is from node
+  expect(await config.knownImport()).not.toBe(
+    await config.rawImport('../siblings/ok.js'),
+  )
+
   expect(await config.rawImport('@vite/test-config-plugin-module-condition'))
     .toMatchInlineSnapshot(`
     {
       "default": "import condition",
     }
   `)
+
   // importing "./ok.js" inside "siblings/dynamic.js" should resolve to "siblings/ok.js"
   // but this case has never been supported.
   await expect(() => config.siblingsDynamic('./ok.js')).rejects.toThrow(
     'Cannot find module',
+  )
+
+  await expect(() =>
+    config.siblingsDynamic('no-such-module'),
+  ).rejects.toMatchInlineSnapshot(
+    `[Error: Failed to resolve dynamic import 'no-such-module']`,
   )
 })

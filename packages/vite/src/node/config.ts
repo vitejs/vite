@@ -1245,6 +1245,7 @@ async function transformViteConfigDynamicImport(
     }
   }
   if (output.hasChanged()) {
+    // TODO: we could also simply inject via globalThis?
     const vitePath = pathToFileURL(
       path.resolve(
         _require.resolve('vite/package.json'),
