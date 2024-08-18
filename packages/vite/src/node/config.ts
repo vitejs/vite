@@ -1221,7 +1221,10 @@ async function bundleConfigFile(
       },
     ],
   })
-  const { text } = result.outputFiles[0]
+  let { text } = result.outputFiles[0]
+  if (isESM) {
+    text = await transformViteConfigDynamicImport(text, fileName)
+  }
   return {
     code: text,
     dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
@@ -1232,7 +1235,6 @@ async function transformViteConfigDynamicImport(
   text: string,
   importer: string,
 ): Promise<string> {
-  // replace `import(anything)` with `__vite_config_import__(anything)`
   if (!/import\s*\(/.test(text)) {
     return text
   }
@@ -1240,6 +1242,7 @@ async function transformViteConfigDynamicImport(
   const [imports] = parse(text)
   const output = new MagicString(text)
   for (const imp of imports) {
+    // replace `import(anything)` with `__vite_config_import__(anything)`
     if (imp.d >= 0 && typeof imp.n === 'undefined') {
       output.update(imp.ss, imp.d, `__vite_config_import__`)
     }
@@ -1298,11 +1301,11 @@ async function loadConfigFromBundledFile(
   // write it to disk, load it with native Node ESM, then delete the file.
   // convert to base64, load it with native Node ESM.
   if (isESM) {
-    const code = await transformViteConfigDynamicImport(bundledCode, fileName)
     try {
       return (
         await import(
-          'data:text/javascript;base64,' + Buffer.from(code).toString('base64')
+          'data:text/javascript;base64,' +
+            Buffer.from(bundledCode).toString('base64')
         )
       ).default
     } catch (e) {
