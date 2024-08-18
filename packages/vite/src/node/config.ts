@@ -1226,7 +1226,7 @@ async function transformViteConfigDynamicImport(
   text: string,
   importer: string,
 ): Promise<string> {
-  // replace `import(anything)` with `__vite_config_import_helper__.bind(null, importer)(anything)`
+  // replace `import(anything)` with `__vite_config_import__(anything)`
   if (!/import\s*\(/.test(text)) {
     return text
   }
@@ -1237,15 +1237,11 @@ async function transformViteConfigDynamicImport(
     if (imp.d >= 0 && typeof imp.n === 'undefined') {
       // dynamic import should be resolved relative to the original file but
       // that was never the case so here we're doing the same to resolve it from current config file.
-      output.update(
-        imp.ss,
-        imp.d,
-        `__vite_config_import_helper__.bind(null, ${JSON.stringify(importer)})`,
-      )
+      output.update(imp.ss, imp.d, `__vite_config_import__`)
     }
   }
   if (output.hasChanged()) {
-    // TODO: we could also simply inject via globalThis?
+    // TODO: could we simply inject it via globalThis?
     const vitePath = pathToFileURL(
       path.resolve(
         _require.resolve('vite/package.json'),
@@ -1253,7 +1249,8 @@ async function transformViteConfigDynamicImport(
       ),
     ).href
     output.prepend(
-      `import { __vite_config_import_helper__ } from ${JSON.stringify(vitePath)};`,
+      `import { __vite_config_import_helper__ } from ${JSON.stringify(vitePath)};` +
+        `const __vite_config_import__ = (id) => __vite_config_import_helper__(${JSON.stringify(importer)}, id);`,
     )
     text = output.toString()
   }
