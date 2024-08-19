@@ -19,11 +19,6 @@ export { fetchModule } from './ssr/fetchModule'
 export type { FetchModuleOptions } from './ssr/fetchModule'
 export * from './publicUtils'
 
-// hide it from dts
-/** @internal */
-export const __vite_config_import_helper__ = __tmp_vite_config_import_helper__
-import { __vite_config_import_helper__ as __tmp_vite_config_import_helper__ } from './config'
-
 // additional types
 export type {
   AppType,
