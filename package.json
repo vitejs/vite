@@ -50,7 +50,7 @@
     "@types/etag": "^1.8.3",
     "@types/less": "^3.0.6",
     "@types/micromatch": "^4.0.9",
-    "@types/node": "^20.14.15",
+    "@types/node": "^20.16.1",
     "@types/picomatch": "^3.0.1",
     "@types/stylus": "^0.48.42",
     "@types/ws": "^8.5.12",
@@ -60,12 +60,12 @@
     "eslint-plugin-import-x": "^3.1.0",
     "eslint-plugin-n": "^17.10.2",
     "eslint-plugin-regexp": "^2.6.0",
-    "execa": "^9.3.0",
+    "execa": "^9.3.1",
     "globals": "^15.9.0",
-    "lint-staged": "^15.2.8",
+    "lint-staged": "^15.2.9",
     "npm-run-all2": "^6.2.2",
     "picocolors": "^1.0.1",
-    "playwright-chromium": "^1.46.0",
+    "playwright-chromium": "^1.46.1",
     "prettier": "3.3.3",
     "rimraf": "^5.0.10",
     "rollup": "^4.20.0",
@@ -74,7 +74,7 @@
     "tslib": "^2.6.3",
     "tsx": "^4.17.0",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^8.0.1",
+    "typescript-eslint": "^8.1.0",
     "vite": "workspace:*",
     "vitest": "^2.0.5"
   },
@@ -95,7 +95,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@9.7.0",
+  "packageManager": "pnpm@9.7.1",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
