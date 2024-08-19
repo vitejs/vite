@@ -388,7 +388,7 @@ async function fileToBuiltUrl(
     })
     generatedAssets.get(config)!.set(referenceId, { originalFileName })
 
-    url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
+    url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
   }
 
   cache.set(id, url)
