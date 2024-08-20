@@ -16,6 +16,7 @@ import {
   encodeURIPath,
   generateCodeFrame,
   getHash,
+  getIdMatcher,
   isDataUrl,
   isExternalUrl,
   normalizePath,
@@ -517,7 +518,12 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   )
                 } else {
                   const url = decodeURI(p.value)
-                  if (checkPublicFile(url, config)) {
+                  const isUserExternal = getIdMatcher(
+                    config.build?.rollupOptions?.external,
+                  )
+                  if (isUserExternal(url, undefined, false)) {
+                    return
+                  } else if (checkPublicFile(url, config)) {
                     overwriteAttrValue(
                       s,
                       getAttrSourceCodeLocation(node, attrKey),
