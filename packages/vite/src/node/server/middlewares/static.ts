@@ -232,7 +232,7 @@ const fsDenyGlobCache = new WeakMap<ResolvedConfig, Matcher>()
 function fsDenyGlob(config: ResolvedConfig, filePath: string): boolean {
   let matcher = fsDenyGlobCache.get(config)
   if (!matcher) {
-    ;(matcher = picomatch(
+    matcher = picomatch(
       // matchBase: true does not work as it's documented
       // https://github.com/micromatch/picomatch/issues/89
       // convert patterns without `/` on our side for now
@@ -244,8 +244,8 @@ function fsDenyGlob(config: ResolvedConfig, filePath: string): boolean {
         nocase: true,
         dot: true,
       },
-    )),
-      fsDenyGlobCache.set(config, matcher)
+    )
+    fsDenyGlobCache.set(config, matcher)
   }
   return matcher(filePath)
 }

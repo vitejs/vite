@@ -163,8 +163,8 @@ describe('module runner initialization', async () => {
   it("dynamic import doesn't produce duplicates", async ({ runner }) => {
     const mod = await runner.import('/fixtures/dynamic-import.js')
     const modules = await mod.initialize()
-    // toBe checks that objects are actually the same, not just structually
-    // using toEqual here would be a mistake because it chesk the structural difference
+    // toBe checks that objects are actually the same, not just structurally
+    // using toEqual here would be a mistake because it check the structural difference
     expect(modules.static === modules.dynamicRelative).toBe(true)
     expect(modules.static === modules.dynamicRelative).toBe(true)
     expect(modules.static === modules.dynamicAbsolute).toBe(true)
@@ -219,7 +219,7 @@ describe('module runner initialization', async () => {
     }
   })
 
-  it(`no maximum call stack error ModuleRunner.isCurcularImport`, async ({
+  it(`no maximum call stack error ModuleRunner.isCircularImport`, async ({
     runner,
   }) => {
     // entry.js ⇔ entry-cyclic.js
