@@ -252,7 +252,7 @@ async function loadAndTransform(
 
   // load
   const loadStart = debugLoad ? performance.now() : 0
-  const loadResult = await pluginContainer.load(id, options)
+  const loadResult = await pluginContainer.load(id)
 
   // TODO: Replace this with pluginLoadFallback
   if (loadResult == null) {

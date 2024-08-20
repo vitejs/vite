@@ -364,9 +364,9 @@ class EnvironmentPluginContainer {
     }
   }
 
-  async load(id: string, options?: {}): Promise<LoadResult | null> {
+  async load(id: string): Promise<LoadResult | null> {
     const ssr = this.environment.config.consumer === 'server'
-    options = options ? { ...options, ssr } : { ssr }
+    const options = { ssr }
     const ctx = new LoadPluginContext(this)
     for (const plugin of this.getSortedPlugins('load')) {
       if (this._closed && this.environment.config.dev.recoverable)
@@ -966,7 +966,7 @@ class PluginContainer {
       ssr?: boolean
     },
   ): Promise<LoadResult | null> {
-    return this._getPluginContainer(options).load(id, options)
+    return this._getPluginContainer(options).load(id)
   }
 
   async transform(
