@@ -41,7 +41,7 @@ export interface DevEnvironmentContext {
 }
 
 export class DevEnvironment extends BaseEnvironment {
-  mode = 'dev' as const // TODO: should this be 'serve'?
+  mode = 'dev' as const
   moduleGraph: EnvironmentModuleGraph
 
   depsOptimizer?: DepsOptimizer
