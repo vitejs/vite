@@ -7,8 +7,7 @@
     "dev": "node server",
     "build": "vite build --ssr src/entry-server.js",
     "serve": "NODE_ENV=production node server",
-    "debug": "node --inspect-brk server",
-    "build-all": "vite build --all"
+    "debug": "node --inspect-brk server"
   },
   "dependencies": {
     "@vitejs/test-external-cjs": "file:./external-cjs",
