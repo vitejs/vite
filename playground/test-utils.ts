@@ -46,6 +46,7 @@ export const ports = {
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
   'css/lightningcss-proxy': 5008,
+  'backend-integration': 5009,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
