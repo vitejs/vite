@@ -165,11 +165,11 @@ describe('module runner initialization', async () => {
     const modules = await mod.initialize()
     // toBe checks that objects are actually the same, not just structurally
     // using toEqual here would be a mistake because it check the structural difference
-    expect(modules.static === modules.dynamicRelative).toBe(true)
-    expect(modules.static === modules.dynamicRelative).toBe(true)
-    expect(modules.static === modules.dynamicAbsolute).toBe(true)
-    expect(modules.static === modules.dynamicAbsoluteExtension).toBe(true)
-    expect(modules.static === modules.dynamicAbsoluteFull).toBe(true)
+    expect(modules.static).toBe(modules.dynamicProcessed)
+    expect(modules.static).toBe(modules.dynamicRelative)
+    expect(modules.static).toBe(modules.dynamicAbsolute)
+    expect(modules.static).toBe(modules.dynamicAbsoluteExtension)
+    expect(modules.static).toBe(modules.dynamicAbsoluteFull)
   })
 
   it('correctly imports a virtual module', async ({ runner }) => {
