@@ -1502,10 +1502,6 @@ export async function preprocessCSS(
   code: string,
   filename: string,
   config: ResolvedConfig,
-  // Backward compatibility, only the name is needed for the alias and resolve plugins used in the resolvers
-  // TODO: Should we use environmentName instead of environment for these APIs?
-  // Should the signature be preprocessCSS(code, filename, environment) or preprocessCSS(code, filename, config, environmentName)?
-  environment: PartialEnvironment = new PartialEnvironment('client', config),
 ): Promise<PreprocessCSSResult> {
   let workerController = preprocessorWorkerControllerCache.get(config)
 
@@ -1516,6 +1512,13 @@ export async function preprocessCSS(
       createPreprocessorWorkerController(0)
     workerController = alwaysFakeWorkerWorkerControllerCache
   }
+
+  // preprocessCSS is hardcoded to use the client environment
+  // we may expose a new API in the future that takes an environment instance
+  const environment: PartialEnvironment = new PartialEnvironment(
+    'client',
+    config,
+  )
 
   return await compileCSS(environment, filename, code, workerController)
 }
