@@ -27,8 +27,8 @@ export function myPlugin(): Plugin {
   return {
     name: 'my-plugin',
     resolveId(id, importer, options) {
-      const isSSR = options.ssr // [!CODE --]
-      const isSSR = this.environment.name !== 'client' // [!CODE ++]
+      const isSSR = options.ssr // [!code --]
+      const isSSR = this.environment.name !== 'client' // [!code ++]
 
       if (isSSR) {
         // SSR specific logic
