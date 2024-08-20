@@ -719,7 +719,6 @@ function esbuildScanPlugin(
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
 
-        // TODO: Why are we using config.esbuild instead of config.optimizeDeps.esbuildOptions here?
         const esbuildConfig = environment.config.esbuild
         let contents = await fsp.readFile(id, 'utf-8')
         if (ext.endsWith('x') && esbuildConfig && esbuildConfig.jsxInject) {
