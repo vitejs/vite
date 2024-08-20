@@ -6,7 +6,7 @@ import { ModuleGraph } from '../mixedModuleGraph'
 describe('moduleGraph', () => {
   describe('invalidateModule', () => {
     it('removes an ssr error', async () => {
-      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => ({
+      const moduleGraph = new EnvironmentModuleGraph('ssr', async (url) => ({
         id: url,
       }))
       const entryUrl = '/x.js'
