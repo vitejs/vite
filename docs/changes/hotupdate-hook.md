@@ -1,4 +1,4 @@
-# `hotUpdate` hook
+# HMR `hotUpdate` Plugin Hook
 
 ::: tip Feedback
 Give us feedback at [Environment API feedback discussion](https://github.com/vitejs/vite/discussions/16358)

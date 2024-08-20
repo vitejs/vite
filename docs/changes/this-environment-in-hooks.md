@@ -1,4 +1,4 @@
-# `this.environment` in hooks context
+# `this.environment` in Hooks
 
 ::: tip Feedback
 Give us feedback at [Environment API feedback discussion](https://github.com/vitejs/vite/discussions/16358)
