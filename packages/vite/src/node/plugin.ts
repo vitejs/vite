@@ -44,13 +44,10 @@ import type { PreviewServerHook } from './preview'
  * If a plugin should be applied only for server or build, a function format
  * config file can be used to conditional determine the plugins to use.
  *
- * The current module environment can be accessed from the context for the
- * buildStart, resolveId, transform, load, and buildEnd, hooks
- *
- * The current environment can be accessed from the context for the
- * buildStart, resolveId, transform, load, and buildEnd, hooks. It can be a dev
- * or a build environment. Plugins can use this.environment.mode === 'dev' to
- * check if they have access to dev specific APIs.
+ * The current environment can be accessed from the context for the all non-global
+ * hooks (it is not available in config, configResolved, configureServer, etc).
+ * It can be a dev, build, or scan environment.
+ * Plugins can use this.environment.mode === 'dev' to guard for dev specific APIs.
  */
 
 export interface PluginContextExtension {
