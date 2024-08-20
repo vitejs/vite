@@ -46,14 +46,13 @@ export interface TransformResult {
   dynamicDeps?: string[]
 }
 
-// TODO: Rename to LoadOptions and move to /plugin.ts ?
 export interface TransformOptions {
   /**
    * @deprecated inferred from environment
    */
   ssr?: boolean
   /**
-   * TODO: should this be internal?
+   * @internal
    */
   html?: boolean
 }
