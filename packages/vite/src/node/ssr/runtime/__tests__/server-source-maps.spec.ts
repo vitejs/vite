@@ -53,7 +53,7 @@ describe('module runner initialization', async () => {
       (code) => '\n\n\n\n\n' + code + '\n',
     )
     runner.moduleCache.clear()
-    server.environments.ssr.moduleGraph.invalidateAll() // TODO: environment?
+    server.environments.ssr.moduleGraph.invalidateAll()
 
     const methodErrorNew = await getError(async () => {
       const mod = await runner.import('/fixtures/throws-error-method.ts')
