@@ -12,7 +12,7 @@ export function warmupFiles(server: ViteDevServer): void {
   for (const environment of Object.values(server.environments)) {
     mapFiles(environment.config.dev.warmup, root).then((files) => {
       for (const file of files) {
-        warmupFile(server, server.environments.client, file)
+        warmupFile(server, environment, file)
       }
     })
   }
