@@ -547,7 +547,6 @@ The hook can choose to:
     if (this.environment.name !== 'client')
       return
 
-    this.environment.hot.send({ type: 'full-reload' })
     // Invalidate modules manually
     const invalidatedModules = new Set()
     for (const mod of modules) {
@@ -558,6 +557,7 @@ The hook can choose to:
         true
       )
     }
+    this.environment.hot.send({ type: 'full-reload' })
     return []
   }
   ```
