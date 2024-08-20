@@ -566,6 +566,8 @@ export type ResolvedConfig = Readonly<
     root: string
     base: string
     /** @internal */
+    decodedBase: string
+    /** @internal */
     rawBase: string
     publicDir: string
     cacheDir: string
@@ -1198,6 +1200,8 @@ export async function resolveConfig(
     rollupOptions: config.worker?.rollupOptions || {},
   }
 
+  const base = withTrailingSlash(resolvedBase)
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1205,7 +1209,8 @@ export async function resolveConfig(
     ),
     inlineConfig,
     root: resolvedRoot,
-    base: withTrailingSlash(resolvedBase),
+    base,
+    decodedBase: decodeURI(base),
     rawBase: resolvedBase,
     publicDir: resolvedPublicDir,
     cacheDir,

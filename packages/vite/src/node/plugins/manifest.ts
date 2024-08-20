@@ -8,7 +8,6 @@ import type {
 import type { Plugin } from '../plugin'
 import { normalizePath, sortObjectKeys } from '../utils'
 import { generatedAssetsMap } from './asset'
-import type { GeneratedAssetMeta } from './asset'
 
 const endsWithJSRE = /\.[cm]?js$/
 
@@ -113,18 +112,20 @@ export function manifestPlugin(): Plugin {
         return manifestChunk
       }
 
-      const fileNameToAssetMeta = new Map<string, GeneratedAssetMeta>()
       const assets = generatedAssetsMap.get(this.environment)!
-      assets.forEach((asset, referenceId) => {
-        try {
-          const fileName = this.getFileName(referenceId)
-          fileNameToAssetMeta.set(fileName, asset)
-        } catch (error: unknown) {
-          // The asset was generated as part of a different output option.
-          // It was already handled during the previous run of this plugin.
-          assets.delete(referenceId)
+      const entryCssAssetFileNames = new Set()
+      for (const [id, asset] of assets.entries()) {
+        if (asset.isEntry) {
+          try {
+            const fileName = this.getFileName(id)
+            entryCssAssetFileNames.add(fileName)
+          } catch (error: unknown) {
+            // The asset was generated as part of a different output option.
+            // It was already handled during the previous run of this plugin.
+            assets.delete(id)
+          }
         }
-      })
+      }
 
       const fileNameToAsset = new Map<string, ManifestChunk>()
 
@@ -134,9 +135,9 @@ export function manifestPlugin(): Plugin {
           manifest[getChunkName(chunk)] = createChunk(chunk)
         } else if (chunk.type === 'asset' && typeof chunk.name === 'string') {
           // Add every unique asset to the manifest, keyed by its original name
-          const assetMeta = fileNameToAssetMeta.get(chunk.fileName)
-          const src = assetMeta?.originalName ?? chunk.name
-          const asset = createAsset(chunk, src, assetMeta?.isEntry)
+          const src = chunk.originalFileName ?? chunk.name
+          const isEntry = entryCssAssetFileNames.has(chunk.fileName)
+          const asset = createAsset(chunk, src, isEntry)
 
           // If JS chunk and asset chunk are both generated from the same source file,
           // prioritize JS chunk as it contains more information
@@ -149,15 +150,15 @@ export function manifestPlugin(): Plugin {
       }
 
       // Add deduplicated assets to the manifest
-      assets.forEach(({ originalName }, referenceId) => {
-        if (!manifest[originalName]) {
+      for (const [referenceId, { originalFileName }] of assets.entries()) {
+        if (!manifest[originalFileName]) {
           const fileName = this.getFileName(referenceId)
           const asset = fileNameToAsset.get(fileName)
           if (asset) {
-            manifest[originalName] = asset
+            manifest[originalFileName] = asset
           }
         }
-      })
+      }
 
       outputCount++
       const output = buildOptions.rollupOptions?.output

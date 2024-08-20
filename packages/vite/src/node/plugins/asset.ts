@@ -39,7 +39,7 @@ const assetCache = new WeakMap<Environment, Map<string, string>>()
 // For the manifest, we need to preserve the original file path and isEntry
 // for CSS assets. We keep a map from referenceId to this information.
 export interface GeneratedAssetMeta {
-  originalName: string
+  originalFileName: string
   isEntry?: boolean
 }
 export const generatedAssetsMap = new WeakMap<
@@ -258,7 +258,11 @@ export async function fileToUrl(
   }
 }
 
-function fileToDevUrl(id: string, config: ResolvedConfig) {
+export function fileToDevUrl(
+  id: string,
+  config: ResolvedConfig,
+  skipBase = false,
+): string {
   let rtn: string
   if (checkPublicFile(id, config)) {
     // in public dir during dev, keep the url as-is
@@ -271,7 +275,10 @@ function fileToDevUrl(id: string, config: ResolvedConfig) {
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX, id)
   }
-  const base = joinUrlSegments(config.server?.origin ?? '', config.base)
+  if (skipBase) {
+    return rtn
+  }
+  const base = joinUrlSegments(config.server?.origin ?? '', config.decodedBase)
   return joinUrlSegments(base, removeLeadingSlash(rtn))
 }
 
@@ -296,7 +303,7 @@ export function publicFileToBuiltUrl(
 ): string {
   if (config.command !== 'build') {
     // We don't need relative base or renderBuiltUrl support during dev
-    return joinUrlSegments(config.base, url)
+    return joinUrlSegments(config.decodedBase, url)
   }
   const hash = getHash(url)
   let cache = publicAssetUrlCache.get(config)
@@ -362,19 +369,19 @@ async function fileToBuiltUrl(
     const { search, hash } = parseUrl(id)
     const postfix = (search || '') + (hash || '')
 
-    const referenceId = pluginContext.emitFile({
-      // Ignore directory structure for asset file names
-      name: path.basename(file),
-      type: 'asset',
-      source: content,
-    })
-
-    const originalName = normalizePath(
+    const originalFileName = normalizePath(
       path.relative(environment.config.root, file),
     )
-    generatedAssetsMap.get(environment)!.set(referenceId, { originalName })
+    const referenceId = pluginContext.emitFile({
+      type: 'asset',
+      // Ignore directory structure for asset file names
+      name: path.basename(file),
+      originalFileName,
+      source: content,
+    })
+    generatedAssetsMap.get(environment)!.set(referenceId, { originalFileName })
 
-    url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}` // TODO_BASE
+    url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
   }
 
   cache.set(id, url)

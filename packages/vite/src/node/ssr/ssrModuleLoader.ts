@@ -5,16 +5,11 @@ import { unwrapId } from '../../shared/utils'
 import { ssrFixStacktrace } from './ssrStacktrace'
 import { createServerModuleRunner } from './runtime/serverModuleRunner'
 
-interface SSRContext {
-  global: typeof globalThis
-}
-
 type SSRModule = Record<string, any>
 
 export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
-  context: SSRContext = { global },
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   const runner =

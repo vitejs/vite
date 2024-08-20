@@ -204,444 +204,6 @@
 
 
 
-## 6.0.0-alpha.18 (2024-06-04)
-
-* feat: expose createIdResolver ([3635ed8](https://github.com/vitejs/vite/commit/3635ed8))
-* feat: non-nullable this.environment (#17302) ([bdd1b91](https://github.com/vitejs/vite/commit/bdd1b91)), closes [#17302](https://github.com/vitejs/vite/issues/17302)
-* feat(types): `defineVitePlugin` utils (#17298) ([398a49c](https://github.com/vitejs/vite/commit/398a49c)), closes [#17298](https://github.com/vitejs/vite/issues/17298)
-* feat(typescript): update tsconfck to add support for `${configDir}` replacement in ts 5.5 (#17350) ([4835e2b](https://github.com/vitejs/vite/commit/4835e2bf77b84d53a94aa4d94502df974b8b7fc4)), closes [#17350](https://github.com/vitejs/vite/issues/17350)
-* docs: assign code for each deprecation changes, provide option to opt-in (#17305) ([d8aa74c](https://github.com/vitejs/vite/commit/d8aa74c)), closes [#17305](https://github.com/vitejs/vite/issues/17305)
-* docs: update ([8649049](https://github.com/vitejs/vite/commit/8649049))
-* chore: add region comment (#17370) ([a8c7083](https://github.com/vitejs/vite/commit/a8c7083a3d7d7fe2e83e994ff008f39ee4f298f8)), closes [#17370](https://github.com/vitejs/vite/issues/17370)
-* chore: cleanup ([28e22c6](https://github.com/vitejs/vite/commit/28e22c6))
-* chore: fix build ([2b3329d](https://github.com/vitejs/vite/commit/2b3329d))
-* chore: ignore test-dts in tsconfig ([1af7081](https://github.com/vitejs/vite/commit/1af7081))
-* chore: prettier ([c373251](https://github.com/vitejs/vite/commit/c373251))
-* chore: refactor code style ([ca940e8](https://github.com/vitejs/vite/commit/ca940e8))
-* chore(deps): update all non-major dependencies (#17373) ([f2d52f1](https://github.com/vitejs/vite/commit/f2d52f1384e4048ebe7d6bb8c5410e81540c469a)), closes [#17373](https://github.com/vitejs/vite/issues/17373)
-* fix: check last invalidation time ([e91e269](https://github.com/vitejs/vite/commit/e91e269))
-* fix: check lastHMRTimestamp for entries in moduleRunner ([611ce5c](https://github.com/vitejs/vite/commit/611ce5c))
-* fix: correctly invalidate module in the module runner if it was invalidated on the server ([fd46a2a](https://github.com/vitejs/vite/commit/fd46a2a))
-* fix: default value of `depOptimization` ([da354ea](https://github.com/vitejs/vite/commit/da354ea))
-* fix: do not invalidate modules in the runner if not invalidated on the server ([a63263c](https://github.com/vitejs/vite/commit/a63263c))
-* fix: improve invalidation sync in the module runner ([03bc590](https://github.com/vitejs/vite/commit/03bc590))
-* fix: lastHMRTimestamp compat ([909fe28](https://github.com/vitejs/vite/commit/909fe28))
-* fix: missing HMRPayload export ([b7cbd3d](https://github.com/vitejs/vite/commit/b7cbd3d))
-* fix(css): handle lightningcss minification in Deno (#17372) ([b3f5bd1](https://github.com/vitejs/vite/commit/b3f5bd17e20aeb3a8072ca8a7ce2d5d40e1f80ff)), closes [#17372](https://github.com/vitejs/vite/issues/17372)
-* fix(css): handle url replacing when preprocessing with lightningcss (#17364) ([6fbb5e0](https://github.com/vitejs/vite/commit/6fbb5e0a036faa835f4154ae0489db4c9b47c44c)), closes [#17364](https://github.com/vitejs/vite/issues/17364)
-* refactor: plugin container (#17288) ([909782f](https://github.com/vitejs/vite/commit/909782f)), closes [#17288](https://github.com/vitejs/vite/issues/17288)
-* refactor: reporter using custom per env api (#17297) ([c43c987](https://github.com/vitejs/vite/commit/c43c987)), closes [#17297](https://github.com/vitejs/vite/issues/17297)
-* test(v6): test ssrLoadModule and virtual module invalidation (#17313) ([7d78761](https://github.com/vitejs/vite/commit/7d78761)), closes [#17313](https://github.com/vitejs/vite/issues/17313)
-
-
-
-## 6.0.0-alpha.17 (2024-05-24)
-
-* release: v6.0.0-alpha.17 ([e45881c](https://github.com/vitejs/vite/commit/e45881c))
-* refactor!: rename to HMRPayload to HotPayload and remove HMRBroadcaster (#16875) ([87bbb04](https://github.com/vitejs/vite/commit/87bbb04)), closes [#16875](https://github.com/vitejs/vite/issues/16875)
-* fix: dep optimization options ([624e751](https://github.com/vitejs/vite/commit/624e751))
-* fix: DepOptimizationConfig ([5c655e6](https://github.com/vitejs/vite/commit/5c655e6))
-* fix: handleHotUpdate compat (#17295) ([11bddb0](https://github.com/vitejs/vite/commit/11bddb0)), closes [#17295](https://github.com/vitejs/vite/issues/17295)
-* fix: optimizeDeps back compat ([478a9aa](https://github.com/vitejs/vite/commit/478a9aa))
-* fix(types): avoid referencing `WeakKey` type ([e339959](https://github.com/vitejs/vite/commit/e339959))
-* feat: per-environment optimizeDeps entries and force ([006cfb7](https://github.com/vitejs/vite/commit/006cfb7))
-* feat: reporter as shared plugin using createWeakData (#17293) ([2b69389](https://github.com/vitejs/vite/commit/2b69389)), closes [#17293](https://github.com/vitejs/vite/issues/17293)
-* chore: refactor isDepsOptimizerEnabled ([5f36aa6](https://github.com/vitejs/vite/commit/5f36aa6))
-
-
-
-## 6.0.0-alpha.16 (2024-05-23)
-
-* release: v6.0.0-alpha.16 ([c7d02ac](https://github.com/vitejs/vite/commit/c7d02ac))
-* feat: createWeakData ([bcb1959](https://github.com/vitejs/vite/commit/bcb1959))
-* feat: improve Plugin option types ([21225c9](https://github.com/vitejs/vite/commit/21225c9))
-* feat: only shared plugins (#17289) ([e36f2f3](https://github.com/vitejs/vite/commit/e36f2f3)), closes [#17289](https://github.com/vitejs/vite/issues/17289)
-* feat: provide `environment` in every hook context ([53734a8](https://github.com/vitejs/vite/commit/53734a8))
-* feat(types): expose PluginEnvironment type ([4d03124](https://github.com/vitejs/vite/commit/4d03124))
-* fix: argument rollup types for plugin context instead of wrapping ([89ec69c](https://github.com/vitejs/vite/commit/89ec69c))
-* fix: avoid duplicating values in shared optimizeDeps config (#16737) ([a3ee7f5](https://github.com/vitejs/vite/commit/a3ee7f5)), closes [#16737](https://github.com/vitejs/vite/issues/16737)
-* fix: back compat for server.pluginContainer.buildStart ([46f21b8](https://github.com/vitejs/vite/commit/46f21b8))
-* fix: backcompat with config.optimizeDeps ([778e39d](https://github.com/vitejs/vite/commit/778e39d))
-* fix: keep plugin with environmentPlugins hook ([63de43a](https://github.com/vitejs/vite/commit/63de43a))
-* chore: remove extra symbol ([431455f](https://github.com/vitejs/vite/commit/431455f))
-* chore: rename to BaseEnvironment (#16797) ([d86553a](https://github.com/vitejs/vite/commit/d86553a)), closes [#16797](https://github.com/vitejs/vite/issues/16797)
-
-
-
-## 6.0.0-alpha.15 (2024-05-20)
-
-* release: v6.0.0-alpha.15 ([d231966](https://github.com/vitejs/vite/commit/d231966))
-* fix: only join base url in none ssr env ([7e9dd25](https://github.com/vitejs/vite/commit/7e9dd25))
-* fix: svelte back compat ([0166bfe](https://github.com/vitejs/vite/commit/0166bfe))
-* fix hmr connected message on client ([acb208e](https://github.com/vitejs/vite/commit/acb208e))
-
-
-
-## 6.0.0-alpha.14 (2024-05-20)
-
-* release: v6.0.0-alpha.14 ([2b2d010](https://github.com/vitejs/vite/commit/2b2d010))
-* feat: back to environmentPlugins hook (#16732) ([54c219e](https://github.com/vitejs/vite/commit/54c219e)), closes [#16732](https://github.com/vitejs/vite/issues/16732)
-* fix: export isFileLoadingAllowed ([34d8518](https://github.com/vitejs/vite/commit/34d8518))
-* fix: rely on the current environment in resolveId, if known ([8ee7fcd](https://github.com/vitejs/vite/commit/8ee7fcd))
-* fix: revert resolveId importer require ([3546d1e](https://github.com/vitejs/vite/commit/3546d1e))
-
-
-
-## 6.0.0-alpha.13 (2024-05-20)
-
-* release: v6.0.0-alpha.13 ([2ae2fca](https://github.com/vitejs/vite/commit/2ae2fca))
-* fix: types ([82111bf](https://github.com/vitejs/vite/commit/82111bf))
-
-
-
-## 6.0.0-alpha.12 (2024-05-20)
-
-* release: v6.0.0-alpha.12 ([371f7a0](https://github.com/vitejs/vite/commit/371f7a0))
-* chore: export ssrTransform ([0b3cf69](https://github.com/vitejs/vite/commit/0b3cf69))
-* chore: respect ssr flag in clientInjectsions transform ([8c5674e](https://github.com/vitejs/vite/commit/8c5674e))
-* fix: remove enforce inside IsolatedPlugins ([a5efd56](https://github.com/vitejs/vite/commit/a5efd56))
-
-
-
-## 6.0.0-alpha.11 (2024-05-04)
-
-* release: v6.0.0-alpha.11 ([8851d9d](https://github.com/vitejs/vite/commit/8851d9d))
-* refactor: BoundedPlugin -> IsolatedPlugin ([1ec07a4](https://github.com/vitejs/vite/commit/1ec07a4))
-
-
-
-## 6.0.0-alpha.10 (2024-05-02)
-
-* release: v6.0.0-alpha.10 ([57871a4](https://github.com/vitejs/vite/commit/57871a4))
-* feat: sharedDuringBuild for bounded plugins ([d213865](https://github.com/vitejs/vite/commit/d213865))
-
-
-
-## 6.0.0-alpha.9 (2024-05-01)
-
-* release: v6.0.0-alpha.9 ([2e6abb3](https://github.com/vitejs/vite/commit/2e6abb3))
-* fix: lint ([848af54](https://github.com/vitejs/vite/commit/848af54))
-* fix: module-runner bundle issue with chokidar dep ([b8ef8ff](https://github.com/vitejs/vite/commit/b8ef8ff))
-* refactor: bounded plugins factory instead of create hook ([6b74221](https://github.com/vitejs/vite/commit/6b74221))
-* refactor: move reload on tsconfig change to the server ([1bcb67d](https://github.com/vitejs/vite/commit/1bcb67d))
-
-
-
-## 6.0.0-alpha.8 (2024-04-30)
-
-* release: v6.0.0-alpha.8 ([1d9caef](https://github.com/vitejs/vite/commit/1d9caef))
-* fix: keep plugins with create hook ([12d467f](https://github.com/vitejs/vite/commit/12d467f))
-* refactor: environment hooks guard ([527621e](https://github.com/vitejs/vite/commit/527621e))
-* feat: define and html plugins ([7566aae](https://github.com/vitejs/vite/commit/7566aae))
-
-
-
-## 6.0.0-alpha.7 (2024-04-29)
-
-* release: v6.0.0-alpha.7 ([05943cf](https://github.com/vitejs/vite/commit/05943cf))
-* feat: remove config.build from dynamicImportVars plugin ([8231283](https://github.com/vitejs/vite/commit/8231283))
-* feat: this.environment in buildStart, rework more internal plugins ([bda0dc5](https://github.com/vitejs/vite/commit/bda0dc5))
-* feat: this.environment in renderChunk and generateBundle ([a6fc1dd](https://github.com/vitejs/vite/commit/a6fc1dd))
-
-
-
-## 6.0.0-alpha.6 (2024-04-28)
-
-* release: v6.0.0-alpha.6 ([e8473a6](https://github.com/vitejs/vite/commit/e8473a6))
-* fix: custom environment preload injection (#16541) ([00079da](https://github.com/vitejs/vite/commit/00079da)), closes [#16541](https://github.com/vitejs/vite/issues/16541)
-
-
-
-## 6.0.0-alpha.5 (2024-04-26)
-
-* release: v6.0.0-alpha.5 ([a8adcac](https://github.com/vitejs/vite/commit/a8adcac))
-* fix: use environment.plugins during build, support create hook ([a44810a](https://github.com/vitejs/vite/commit/a44810a))
-
-
-
-## 6.0.0-alpha.4 (2024-04-26)
-
-* release: v6.0.0-alpha.4 ([e6fa9d9](https://github.com/vitejs/vite/commit/e6fa9d9))
-* fix: backcompat merging ([294a84e](https://github.com/vitejs/vite/commit/294a84e))
-* fix: disable hmr for ssrLoadModule ([33ef0fb](https://github.com/vitejs/vite/commit/33ef0fb))
-* fix: rework backcompat patching of environment config ([72150d6](https://github.com/vitejs/vite/commit/72150d6))
-* fix: sharedPlugins ([a63190c](https://github.com/vitejs/vite/commit/a63190c))
-* fix(cli):  -> ([4cf322d](https://github.com/vitejs/vite/commit/4cf322d))
-* fix(v6): fix `ssrEmitAssets` compat (#16480) ([5c5efe4](https://github.com/vitejs/vite/commit/5c5efe4)), closes [#16480](https://github.com/vitejs/vite/issues/16480)
-* feat: builder.entireApp, remove --environment ([1925eeb](https://github.com/vitejs/vite/commit/1925eeb))
-* feat: opt-in shared plugins during build ([2866d4f](https://github.com/vitejs/vite/commit/2866d4f))
-* feat: use environment.logger in buildEnvironment ([8843221](https://github.com/vitejs/vite/commit/8843221))
-* refactor: align createBuilder params with createServer ([62921e6](https://github.com/vitejs/vite/commit/62921e6))
-* refactor: build --app ([29dd26e](https://github.com/vitejs/vite/commit/29dd26e))
-* refactor: remove server from createServerModuleRunner ([9d6a152](https://github.com/vitejs/vite/commit/9d6a152))
-* refactor: rename createViteBuilder to createBuilder, align with createServer ([4dc2a75](https://github.com/vitejs/vite/commit/4dc2a75))
-* chore: remove the deprecation notice from ssrLoadModule for now ([bf65476](https://github.com/vitejs/vite/commit/bf65476))
-
-
-
-## 6.0.0-alpha.3 (2024-04-20)
-
-* release: v6.0.0-alpha.3 ([635aad5](https://github.com/vitejs/vite/commit/635aad5))
-* fix: export missing types ([431cd4b](https://github.com/vitejs/vite/commit/431cd4b))
-* chore: remove configureServer from more plugins ([ad2b0bf](https://github.com/vitejs/vite/commit/ad2b0bf))
-* chore: rename plugin.split to plugin.create ([5f6b62f](https://github.com/vitejs/vite/commit/5f6b62f))
-* feat: environment api (#16129) ([f684d4c](https://github.com/vitejs/vite/commit/f684d4c)), closes [#16129](https://github.com/vitejs/vite/issues/16129)
-
-
-
-## 6.0.0-alpha.17 (2024-05-24)
-
-* refactor!: rename to HMRPayload to HotPayload and remove HMRBroadcaster (#16875) ([87bbb04](https://github.com/vitejs/vite/commit/87bbb04)), closes [#16875](https://github.com/vitejs/vite/issues/16875)
-* fix: dep optimization options ([624e751](https://github.com/vitejs/vite/commit/624e751))
-* fix: DepOptimizationConfig ([5c655e6](https://github.com/vitejs/vite/commit/5c655e6))
-* fix: handleHotUpdate compat (#17295) ([11bddb0](https://github.com/vitejs/vite/commit/11bddb0)), closes [#17295](https://github.com/vitejs/vite/issues/17295)
-* fix: optimizeDeps back compat ([478a9aa](https://github.com/vitejs/vite/commit/478a9aa))
-* fix(types): avoid referencing `WeakKey` type ([e339959](https://github.com/vitejs/vite/commit/e339959))
-* feat: per-environment optimizeDeps entries and force ([006cfb7](https://github.com/vitejs/vite/commit/006cfb7))
-* feat: reporter as shared plugin using createWeakData (#17293) ([2b69389](https://github.com/vitejs/vite/commit/2b69389)), closes [#17293](https://github.com/vitejs/vite/issues/17293)
-* chore: refactor isDepsOptimizerEnabled ([5f36aa6](https://github.com/vitejs/vite/commit/5f36aa6))
-
-## 6.0.0-alpha.16 (2024-05-23)
-
-* feat: createWeakData ([bcb1959](https://github.com/vitejs/vite/commit/bcb1959))
-* feat: improve Plugin option types ([21225c9](https://github.com/vitejs/vite/commit/21225c9))
-* feat: only shared plugins (#17289) ([e36f2f3](https://github.com/vitejs/vite/commit/e36f2f3)), closes [#17289](https://github.com/vitejs/vite/issues/17289)
-* feat: provide `environment` in every hook context ([53734a8](https://github.com/vitejs/vite/commit/53734a8))
-* feat(types): expose PluginEnvironment type ([4d03124](https://github.com/vitejs/vite/commit/4d03124))
-* fix: argument rollup types for plugin context instead of wrapping ([89ec69c](https://github.com/vitejs/vite/commit/89ec69c))
-* fix: avoid duplicating values in shared optimizeDeps config (#16737) ([a3ee7f5](https://github.com/vitejs/vite/commit/a3ee7f5)), closes [#16737](https://github.com/vitejs/vite/issues/16737)
-* fix: back compat for server.pluginContainer.buildStart ([46f21b8](https://github.com/vitejs/vite/commit/46f21b8))
-* fix: backcompat with config.optimizeDeps ([778e39d](https://github.com/vitejs/vite/commit/778e39d))
-* fix: keep plugin with environmentPlugins hook ([63de43a](https://github.com/vitejs/vite/commit/63de43a))
-* chore: remove extra symbol ([431455f](https://github.com/vitejs/vite/commit/431455f))
-* chore: rename to BaseEnvironment (#16797) ([d86553a](https://github.com/vitejs/vite/commit/d86553a)), closes [#16797](https://github.com/vitejs/vite/issues/16797)
-
-
-
-## 6.0.0-alpha.15 (2024-05-20)
-
-* fix: only join base url in none ssr env ([7e9dd25](https://github.com/vitejs/vite/commit/7e9dd25))
-* fix: svelte back compat ([0166bfe](https://github.com/vitejs/vite/commit/0166bfe))
-* fix hmr connected message on client ([acb208e](https://github.com/vitejs/vite/commit/acb208e))
-
-
-
-## 6.0.0-alpha.14 (2024-05-20)
-
-* feat: back to environmentPlugins hook (#16732) ([54c219e](https://github.com/vitejs/vite/commit/54c219e)), closes [#16732](https://github.com/vitejs/vite/issues/16732)
-* fix: export isFileLoadingAllowed ([34d8518](https://github.com/vitejs/vite/commit/34d8518))
-* fix: mention `build.rollupOptions.output.manualChunks` instead of  `build.rollupOutput.manualChunks` ([89378c0](https://github.com/vitejs/vite/commit/89378c07b64cc977fae2f231d087f24ba0e5d348)), closes [#16721](https://github.com/vitejs/vite/issues/16721)
-* fix: rely on the current environment in resolveId, if known ([8ee7fcd](https://github.com/vitejs/vite/commit/8ee7fcd))
-* fix: revert resolveId importer require ([3546d1e](https://github.com/vitejs/vite/commit/3546d1e))
-* fix(build): make SystemJSWrapRE match lazy (#16633) ([6583ad2](https://github.com/vitejs/vite/commit/6583ad25a1333b80bfeb6829e6034266ab9bfc91)), closes [#16633](https://github.com/vitejs/vite/issues/16633)
-* fix(css): avoid generating empty JS files when JS files becomes empty but has CSS files imported (#1 ([95fe5a7](https://github.com/vitejs/vite/commit/95fe5a79c434c0078075fc25e244689410447bab)), closes [#16078](https://github.com/vitejs/vite/issues/16078)
-* fix(css): page reload was not happening with .css?raw (#16455) ([8041846](https://github.com/vitejs/vite/commit/804184654b6858d35cefe16dfe269613d56d308a)), closes [#16455](https://github.com/vitejs/vite/issues/16455)
-* fix(deps): update all non-major dependencies (#16603) ([6711553](https://github.com/vitejs/vite/commit/671155337af795156fe40a95935a8d2b27af1048)), closes [#16603](https://github.com/vitejs/vite/issues/16603)
-* fix(deps): update all non-major dependencies (#16660) ([bf2f014](https://github.com/vitejs/vite/commit/bf2f0145fecb67ca2342c3530716f4c5ddd35a68)), closes [#16660](https://github.com/vitejs/vite/issues/16660)
-* fix(error-logging): rollup errors weren't displaying id and codeframe (#16540) ([22dc196](https://github.com/vitejs/vite/commit/22dc19601e2d83e3db3ec86eb2a274934284ac05)), closes [#16540](https://github.com/vitejs/vite/issues/16540)
-* fix(hmr): trigger page reload when calling invalidate on root module (#16636) ([2b61cc3](https://github.com/vitejs/vite/commit/2b61cc39a986c44d733aba8c23036d9d83667fac)), closes [#16636](https://github.com/vitejs/vite/issues/16636)
-* fix(logger): truncate log over 5000 characters long (#16581) ([b0b839a](https://github.com/vitejs/vite/commit/b0b839accc88d8b3326733a94f76cb7c527fdb06)), closes [#16581](https://github.com/vitejs/vite/issues/16581)
-* fix(sourcemap): improve sourcemap compatibility for vue2 (#16594) ([913c040](https://github.com/vitejs/vite/commit/913c0403a5de13a09dd37dac71f59db3339012ce)), closes [#16594](https://github.com/vitejs/vite/issues/16594)
-* chore(deps): update all non-major dependencies (#16722) ([b45922a](https://github.com/vitejs/vite/commit/b45922a91d4a73c27f78f26e369b7b1fd8d800e3)), closes [#16722](https://github.com/vitejs/vite/issues/16722)
-* docs: correct proxy shorthand example (#15938) ([abf766e](https://github.com/vitejs/vite/commit/abf766e939a0f02e5c08959bd101a6c72a29558b)), closes [#15938](https://github.com/vitejs/vite/issues/15938)
-
-
-
-## 6.0.0-alpha.13 (2024-05-20)
-
-* fix: types ([82111bf](https://github.com/vitejs/vite/commit/82111bf))
-
-
-
-## 6.0.0-alpha.12 (2024-05-20)
-
-* chore: export ssrTransform ([0b3cf69](https://github.com/vitejs/vite/commit/0b3cf69))
-* chore: respect ssr flag in clientInjectsions transform ([8c5674e](https://github.com/vitejs/vite/commit/8c5674e))
-* fix: remove enforce inside IsolatedPlugins ([a5efd56](https://github.com/vitejs/vite/commit/a5efd56))
-
-
-
-## 6.0.0-alpha.11 (2024-05-04)
-
-* refactor: BoundedPlugin -> IsolatedPlugin ([1ec07a4](https://github.com/vitejs/vite/commit/1ec07a4))
-
-
-
-## 6.0.0-alpha.10 (2024-05-02)
-
-* release: v6.0.0-alpha.10 ([57871a4](https://github.com/vitejs/vite/commit/57871a4))
-* feat: sharedDuringBuild for bounded plugins ([d213865](https://github.com/vitejs/vite/commit/d213865))
-
-
-
-## 6.0.0-alpha.9 (2024-05-01)
-
-* release: v6.0.0-alpha.9 ([2e6abb3](https://github.com/vitejs/vite/commit/2e6abb3))
-* fix: lint ([848af54](https://github.com/vitejs/vite/commit/848af54))
-* fix: module-runner bundle issue with chokidar dep ([b8ef8ff](https://github.com/vitejs/vite/commit/b8ef8ff))
-* refactor: bounded plugins factory instead of create hook ([6b74221](https://github.com/vitejs/vite/commit/6b74221))
-* refactor: move reload on tsconfig change to the server ([1bcb67d](https://github.com/vitejs/vite/commit/1bcb67d))
-
-
-
-## 6.0.0-alpha.8 (2024-04-30)
-
-* release: v6.0.0-alpha.8 ([1d9caef](https://github.com/vitejs/vite/commit/1d9caef))
-* fix: keep plugins with create hook ([12d467f](https://github.com/vitejs/vite/commit/12d467f))
-* refactor: environment hooks guard ([527621e](https://github.com/vitejs/vite/commit/527621e))
-* feat: define and html plugins ([7566aae](https://github.com/vitejs/vite/commit/7566aae))
-
-
-
-## 6.0.0-alpha.7 (2024-04-29)
-
-* release: v6.0.0-alpha.7 ([05943cf](https://github.com/vitejs/vite/commit/05943cf))
-* feat: remove config.build from dynamicImportVars plugin ([8231283](https://github.com/vitejs/vite/commit/8231283))
-* feat: this.environment in buildStart, rework more internal plugins ([bda0dc5](https://github.com/vitejs/vite/commit/bda0dc5))
-* feat: this.environment in renderChunk and generateBundle ([a6fc1dd](https://github.com/vitejs/vite/commit/a6fc1dd))
-
-
-
-## 6.0.0-alpha.6 (2024-04-28)
-
-* release: v6.0.0-alpha.6 ([e8473a6](https://github.com/vitejs/vite/commit/e8473a6))
-* fix: custom environment preload injection (#16541) ([00079da](https://github.com/vitejs/vite/commit/00079da)), closes [#16541](https://github.com/vitejs/vite/issues/16541)
-
-
-
-## 6.0.0-alpha.5 (2024-04-26)
-
-* release: v6.0.0-alpha.5 ([a8adcac](https://github.com/vitejs/vite/commit/a8adcac))
-* fix: use environment.plugins during build, support create hook ([a44810a](https://github.com/vitejs/vite/commit/a44810a))
-
-
-
-## 6.0.0-alpha.4 (2024-04-26)
-
-* release: v6.0.0-alpha.4 ([e6fa9d9](https://github.com/vitejs/vite/commit/e6fa9d9))
-* fix: backcompat merging ([294a84e](https://github.com/vitejs/vite/commit/294a84e))
-* fix: disable hmr for ssrLoadModule ([33ef0fb](https://github.com/vitejs/vite/commit/33ef0fb))
-* fix: rework backcompat patching of environment config ([72150d6](https://github.com/vitejs/vite/commit/72150d6))
-* fix: sharedPlugins ([a63190c](https://github.com/vitejs/vite/commit/a63190c))
-* fix(cli):  -> ([4cf322d](https://github.com/vitejs/vite/commit/4cf322d))
-* fix(v6): fix `ssrEmitAssets` compat (#16480) ([5c5efe4](https://github.com/vitejs/vite/commit/5c5efe4)), closes [#16480](https://github.com/vitejs/vite/issues/16480)
-* feat: builder.entireApp, remove --environment ([1925eeb](https://github.com/vitejs/vite/commit/1925eeb))
-* feat: opt-in shared plugins during build ([2866d4f](https://github.com/vitejs/vite/commit/2866d4f))
-* feat: use environment.logger in buildEnvironment ([8843221](https://github.com/vitejs/vite/commit/8843221))
-* refactor: align createBuilder params with createServer ([62921e6](https://github.com/vitejs/vite/commit/62921e6))
-* refactor: build --app ([29dd26e](https://github.com/vitejs/vite/commit/29dd26e))
-* refactor: remove server from createServerModuleRunner ([9d6a152](https://github.com/vitejs/vite/commit/9d6a152))
-* refactor: rename createViteBuilder to createBuilder, align with createServer ([4dc2a75](https://github.com/vitejs/vite/commit/4dc2a75))
-* chore: remove the deprecation notice from ssrLoadModule for now ([bf65476](https://github.com/vitejs/vite/commit/bf65476))
-
-
-
-## 6.0.0-alpha.3 (2024-04-20)
-
-* release: v6.0.0-alpha.3 ([635aad5](https://github.com/vitejs/vite/commit/635aad5))
-* fix: export missing types ([431cd4b](https://github.com/vitejs/vite/commit/431cd4b))
-* chore: remove configureServer from more plugins ([ad2b0bf](https://github.com/vitejs/vite/commit/ad2b0bf))
-* chore: rename plugin.split to plugin.create ([5f6b62f](https://github.com/vitejs/vite/commit/5f6b62f))
-* feat: environment api (#16129) ([f684d4c](https://github.com/vitejs/vite/commit/f684d4c)), closes [#16129](https://github.com/vitejs/vite/issues/16129)
-
-
-
-## 6.0.0-alpha.10 (2024-05-02)
-
-* feat: sharedDuringBuild for bounded plugins ([d213865](https://github.com/vitejs/vite/commit/d213865))
-
-
-
-## 6.0.0-alpha.9 (2024-05-01)
-
-* fix: lint ([848af54](https://github.com/vitejs/vite/commit/848af54))
-* fix: module-runner bundle issue with chokidar dep ([b8ef8ff](https://github.com/vitejs/vite/commit/b8ef8ff))
-* fix: scripts and styles were missing from built HTML on Windows (#16421) ([0e93f58](https://github.com/vitejs/vite/commit/0e93f588b9056ca2535c23430ea0a176c53c8202)), closes [#16421](https://github.com/vitejs/vite/issues/16421)
-* fix(deps): update all non-major dependencies (#16549) ([2d6a13b](https://github.com/vitejs/vite/commit/2d6a13b0aa1f3860482dac2ce260cfbb0713033f)), closes [#16549](https://github.com/vitejs/vite/issues/16549)
-* fix(preload): skip preload for non-static urls (#16556) ([bb79c9b](https://github.com/vitejs/vite/commit/bb79c9b653eeab366dccc855713369aea9f90d8f)), closes [#16556](https://github.com/vitejs/vite/issues/16556)
-* fix(ssr): handle class declaration and expression name scoping (#16569) ([c071eb3](https://github.com/vitejs/vite/commit/c071eb38221bdd9981e061472a8b6f402ea21138)), closes [#16569](https://github.com/vitejs/vite/issues/16569)
-* fix(ssr): handle function expression name scoping (#16563) ([02db947](https://github.com/vitejs/vite/commit/02db9479acfa022503a6e668d347360d916cc298)), closes [#16563](https://github.com/vitejs/vite/issues/16563)
-* refactor: bounded plugins factory instead of create hook ([6b74221](https://github.com/vitejs/vite/commit/6b74221))
-* refactor: move reload on tsconfig change to the server ([1bcb67d](https://github.com/vitejs/vite/commit/1bcb67d))
-
-
-
-## 6.0.0-alpha.8 (2024-04-30)
-
-* fix: keep plugins with create hook ([12d467f](https://github.com/vitejs/vite/commit/12d467f))
-* refactor: environment hooks guard ([527621e](https://github.com/vitejs/vite/commit/527621e))
-* feat: define and html plugins ([7566aae](https://github.com/vitejs/vite/commit/7566aae))
-
-
-
-## 6.0.0-alpha.7 (2024-04-29)
-
-* feat: remove config.build from dynamicImportVars plugin ([8231283](https://github.com/vitejs/vite/commit/8231283))
-* feat: this.environment in buildStart, rework more internal plugins ([bda0dc5](https://github.com/vitejs/vite/commit/bda0dc5))
-* feat: this.environment in renderChunk and generateBundle ([a6fc1dd](https://github.com/vitejs/vite/commit/a6fc1dd))
-
-
-
-## 6.0.0-alpha.6 (2024-04-28)
-
-* fix: custom environment preload injection (#16541) ([00079da](https://github.com/vitejs/vite/commit/00079da)), closes [#16541](https://github.com/vitejs/vite/issues/16541)
-
-
-
-## 6.0.0-alpha.5 (2024-04-26)
-
-* fix: use environment.plugins during build, support create hook ([a44810a](https://github.com/vitejs/vite/commit/a44810a))
-
-
-
-## 6.0.0-alpha.4 (2024-04-26)
-
-* fix: backcompat merging ([294a84e](https://github.com/vitejs/vite/commit/294a84e))
-* fix: disable hmr for ssrLoadModule ([33ef0fb](https://github.com/vitejs/vite/commit/33ef0fb))
-* fix: dynamic-import-vars plugin normalize path issue (#16518) ([f71ba5b](https://github.com/vitejs/vite/commit/f71ba5b94a6e862460a96c7bf5e16d8ae66f9fe7)), closes [#16518](https://github.com/vitejs/vite/issues/16518)
-* fix: rework backcompat patching of environment config ([72150d6](https://github.com/vitejs/vite/commit/72150d6))
-* fix: sharedPlugins ([a63190c](https://github.com/vitejs/vite/commit/a63190c))
-* fix(cli):  -> ([4cf322d](https://github.com/vitejs/vite/commit/4cf322d))
-* fix(deps): update all non-major dependencies (#16488) ([2d50be2](https://github.com/vitejs/vite/commit/2d50be2a5424e4f4c22774652ed313d2a232f8af)), closes [#16488](https://github.com/vitejs/vite/issues/16488)
-* fix(dev): watch publicDir explicitly to include it outside the root (#16502) ([4d83eb5](https://github.com/vitejs/vite/commit/4d83eb58cdea0d2e4ec4f0da6e1dd6b72014e67e)), closes [#16502](https://github.com/vitejs/vite/issues/16502)
-* fix(v6): fix `ssrEmitAssets` compat (#16480) ([5c5efe4](https://github.com/vitejs/vite/commit/5c5efe4)), closes [#16480](https://github.com/vitejs/vite/issues/16480)
-* feat: builder.entireApp, remove --environment ([1925eeb](https://github.com/vitejs/vite/commit/1925eeb))
-* feat: opt-in shared plugins during build ([2866d4f](https://github.com/vitejs/vite/commit/2866d4f))
-* feat: use environment.logger in buildEnvironment ([8843221](https://github.com/vitejs/vite/commit/8843221))
-* refactor: align createBuilder params with createServer ([62921e6](https://github.com/vitejs/vite/commit/62921e6))
-* refactor: build --app ([29dd26e](https://github.com/vitejs/vite/commit/29dd26e))
-* refactor: remove server from createServerModuleRunner ([9d6a152](https://github.com/vitejs/vite/commit/9d6a152))
-* refactor: rename createViteBuilder to createBuilder, align with createServer ([4dc2a75](https://github.com/vitejs/vite/commit/4dc2a75))
-* chore: remove the deprecation notice from ssrLoadModule for now ([bf65476](https://github.com/vitejs/vite/commit/bf65476))
-
-
-
-## 6.0.0-alpha.3 (2024-04-20)
-
-* release: v6.0.0-alpha.3 ([635aad5](https://github.com/vitejs/vite/commit/635aad5))
-* fix: export missing types ([431cd4b](https://github.com/vitejs/vite/commit/431cd4b))
-* chore: remove configureServer from more plugins ([ad2b0bf](https://github.com/vitejs/vite/commit/ad2b0bf))
-* chore: rename plugin.split to plugin.create ([5f6b62f](https://github.com/vitejs/vite/commit/5f6b62f))
-* feat: environment api (#16129) ([f684d4c](https://github.com/vitejs/vite/commit/f684d4c)), closes [#16129](https://github.com/vitejs/vite/issues/16129)
-
-
-
-## 6.0.0-alpha.3 (2024-04-20)
-
-* fix: add base to virtual html (#16442) ([721f94d](https://github.com/vitejs/vite/commit/721f94ddacdc8cbc4342a9c791d7fecba5a0f7ca)), closes [#16442](https://github.com/vitejs/vite/issues/16442)
-* fix: adjust esm syntax judgment logic (#16436) ([af72eab](https://github.com/vitejs/vite/commit/af72eabab170c05a7b1e7fb99000e1344ff83a37)), closes [#16436](https://github.com/vitejs/vite/issues/16436)
-* fix: don't add outDirs to watch.ignored if emptyOutDir is false (#16453) ([6a127d6](https://github.com/vitejs/vite/commit/6a127d67ba953004ab10c21b50429050c7eadf11)), closes [#16453](https://github.com/vitejs/vite/issues/16453)
-* fix: export missing types ([431cd4b](https://github.com/vitejs/vite/commit/431cd4b))
-* fix(cspNonce): don't overwrite existing nonce values (#16415) ([b872635](https://github.com/vitejs/vite/commit/b8726357c90fb6b641e8c6654e25a5d7e8fa29d4)), closes [#16415](https://github.com/vitejs/vite/issues/16415)
-* chore: remove configureServer from more plugins ([ad2b0bf](https://github.com/vitejs/vite/commit/ad2b0bf))
-* chore: rename plugin.split to plugin.create ([5f6b62f](https://github.com/vitejs/vite/commit/5f6b62f))
-* chore(deps): update dependency eslint-plugin-n to v17 (#16381) ([6cccef7](https://github.com/vitejs/vite/commit/6cccef78a52492c24d9b28f3a1784824f34f5cc3)), closes [#16381](https://github.com/vitejs/vite/issues/16381)
-* feat: environment api (#16129) ([f684d4c](https://github.com/vitejs/vite/commit/f684d4c)), closes [#16129](https://github.com/vitejs/vite/issues/16129)
-* feat: show warning if root is in build.outDir (#16454) ([11444dc](https://github.com/vitejs/vite/commit/11444dcee0404bae738e61b903acf37163915d6e)), closes [#16454](https://github.com/vitejs/vite/issues/16454)
-* feat: write cspNonce to style tags (#16419) ([8e54bbd](https://github.com/vitejs/vite/commit/8e54bbd74d86537b449641a6623b1bc3800e82b2)), closes [#16419](https://github.com/vitejs/vite/issues/16419)
-
-
-
 ## 6.0.0-alpha.2 (2024-04-09)
 
 * chore: update ([46c8910](https://github.com/vitejs/vite/commit/46c8910138995fa860dfaba13b425c33afdcfd6b))
@@ -750,6 +312,49 @@
 * chore: update ([9a600fe](https://github.com/vitejs/vite/commit/9a600fec8ae86f3f0445e4c6d12f0f0effae10f5))
 * chore: update environment.server.config ([2ddf28e](https://github.com/vitejs/vite/commit/2ddf28e93b7a94835f114fcf63f22dfff92e9cca))
 * wip: environment config overrides ([81abf6e](https://github.com/vitejs/vite/commit/81abf6e7b28922da94b3cb1298faadbdb25631a4))
+
+
+
+## <small>5.4.2 (2024-08-20)</small>
+
+* chore: remove stale TODOs (#17866) ([e012f29](https://github.com/vitejs/vite/commit/e012f296df583bd133d26399397bd4ae49de1497)), closes [#17866](https://github.com/vitejs/vite/issues/17866)
+* refactor: remove redundant prepend/strip base (#17887) ([3b8f03d](https://github.com/vitejs/vite/commit/3b8f03d789ec3ef1a099c884759bd4e61b03ce7c)), closes [#17887](https://github.com/vitejs/vite/issues/17887)
+* fix: resolve relative URL generated by `renderBuiltUrl` passed to module preload (#16084) ([fac3a8e](https://github.com/vitejs/vite/commit/fac3a8ed6855c4ab3032957137b74f21ec501e72)), closes [#16084](https://github.com/vitejs/vite/issues/16084)
+* feat: support originalFilename (#17867) ([7d8c0e2](https://github.com/vitejs/vite/commit/7d8c0e2dcbdea3a3465a1d87e259988e82561035)), closes [#17867](https://github.com/vitejs/vite/issues/17867)
+
+
+
+## <small>5.4.1 (2024-08-15)</small>
+
+* fix: `build.modulePreload.resolveDependencies` is optimizable (#16083) ([e961b31](https://github.com/vitejs/vite/commit/e961b31493f8493277b46773156cc6e546b9c86b)), closes [#16083](https://github.com/vitejs/vite/issues/16083)
+* fix: align CorsOptions.origin type with @types/cors (#17836) ([1bda847](https://github.com/vitejs/vite/commit/1bda847329022d5279cfa2b51719dd19a161fd64)), closes [#17836](https://github.com/vitejs/vite/issues/17836)
+* fix: typings for vite:preloadError (#17868) ([6700594](https://github.com/vitejs/vite/commit/67005949999054ab3cd079890ed220bc359bcf62)), closes [#17868](https://github.com/vitejs/vite/issues/17868)
+* fix(build): avoid re-define `__vite_import_meta_env__` (#17876) ([e686d74](https://github.com/vitejs/vite/commit/e686d749d673c02ff4395971ac74340082da14e5)), closes [#17876](https://github.com/vitejs/vite/issues/17876)
+* fix(deps): update all non-major dependencies (#17869) ([d11711c](https://github.com/vitejs/vite/commit/d11711c7e4c082fd0400245bfdc766006fd38ac8)), closes [#17869](https://github.com/vitejs/vite/issues/17869)
+* fix(lightningcss): search for assets with correct base path (#17856) ([4e5ce3c](https://github.com/vitejs/vite/commit/4e5ce3c7a90966b1f942df35b8b3e8a550a4f031)), closes [#17856](https://github.com/vitejs/vite/issues/17856)
+* fix(worker): handle self reference url worker in dependency for build (#17846) ([391bb49](https://github.com/vitejs/vite/commit/391bb4917b55baf3fdb01c6fc3d782d6c51be6c8)), closes [#17846](https://github.com/vitejs/vite/issues/17846)
+* chore: fix picocolors import for local dev (#17884) ([9018255](https://github.com/vitejs/vite/commit/9018255c697a8c0888dce57aaa755d25bf66beba)), closes [#17884](https://github.com/vitejs/vite/issues/17884)
+* refactor: remove `handleHotUpdate` from watch-package-data plugin (#17865) ([e16bf1f](https://github.com/vitejs/vite/commit/e16bf1fb14b7a3a950de4d74fce31416746829b3)), closes [#17865](https://github.com/vitejs/vite/issues/17865)
+
+
+
+## 5.4.0 (2024-08-07)
+
+* fix(build): windows platform build output path error (#17818) ([6ae0615](https://github.com/vitejs/vite/commit/6ae0615416762dd1b89393316308cf8edf115c34)), closes [#17818](https://github.com/vitejs/vite/issues/17818)
+* fix(deps): update launch-editor to consume fix for windows paths (#17828) ([cf2f90d](https://github.com/vitejs/vite/commit/cf2f90d4b9f9b16b8009b0f9d0d9f7e71e98c54d)), closes [#17828](https://github.com/vitejs/vite/issues/17828)
+* fix(ssr): fix `global` variable name conflict (#17809) ([6aa2206](https://github.com/vitejs/vite/commit/6aa220607b4f5457c1ef9ff68d75885a9abbdaf6)), closes [#17809](https://github.com/vitejs/vite/issues/17809)
+* fix(worker): fix `importScripts` injection breaking iife code (#17827) ([bb4ba9f](https://github.com/vitejs/vite/commit/bb4ba9f448da01782f585369f80c4517da087000)), closes [#17827](https://github.com/vitejs/vite/issues/17827)
+* chore: bump typescript-eslint to v8 (#17624) ([d1891fd](https://github.com/vitejs/vite/commit/d1891fda026d27f53409dec97e156a59da609196)), closes [#17624](https://github.com/vitejs/vite/issues/17624)
+* chore(deps): update all non-major dependencies (#17820) ([bb2f8bb](https://github.com/vitejs/vite/commit/bb2f8bb55fdd64e4f16831ff98921c221a5e734a)), closes [#17820](https://github.com/vitejs/vite/issues/17820)
+* perf(ssr): do a single-pass over AST with node cache arrays (#17812) ([81327eb](https://github.com/vitejs/vite/commit/81327eb980c308474a586a9cb9c0c5fff10eba34)), closes [#17812](https://github.com/vitejs/vite/issues/17812)
+
+
+
+## 5.4.0-beta.1 (2024-08-01)
+
+* fix: handle encoded base paths (#17577) ([720447e](https://github.com/vitejs/vite/commit/720447ee725046323387f661341d44e2ad390f41)), closes [#17577](https://github.com/vitejs/vite/issues/17577)
+* fix: opt-in server.fs.cachedChecks (#17807) ([4de659c](https://github.com/vitejs/vite/commit/4de659c351589b83a83a7a42f3da5b071a625662)), closes [#17807](https://github.com/vitejs/vite/issues/17807)
+* feat(css): support sass compiler api and sass-embedded package (#17754) ([1025bb6](https://github.com/vitejs/vite/commit/1025bb6d8f21c0cb9fe72405d42e0f91bb3f1d8e)), closes [#17754](https://github.com/vitejs/vite/issues/17754)
 
 
 

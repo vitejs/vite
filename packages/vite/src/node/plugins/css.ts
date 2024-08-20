@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
@@ -63,7 +64,6 @@ import {
   removeDirectQuery,
   removeUrlQuery,
   requireResolveFromRootWithFallback,
-  stripBase,
   stripBomTag,
   urlRE,
 } from '../utils'
@@ -76,6 +76,7 @@ import type { TransformPluginContext } from '../server/pluginContainer'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
+  fileToDevUrl,
   fileToUrl,
   generatedAssetsMap,
   publicAssetUrlCache,
@@ -429,8 +430,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     } else {
       return path.dirname(
         assetFileNames({
-          name: cssAssetName,
           type: 'asset',
+          name: cssAssetName,
+          originalFileName: null,
           source: '/* vite internal call, ignore */',
         }),
       )
@@ -601,7 +603,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const toRelative = (filename: string) => {
           // relative base + extracted CSS
-          const relativePath = path.posix.relative(cssAssetDirname!, filename)
+          const relativePath = normalizePath(
+            path.relative(cssAssetDirname!, filename),
+          )
           return relativePath[0] === '.' ? relativePath : './' + relativePath
         }
 
@@ -622,9 +626,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         })
         // resolve public URL from CSS paths
         if (encodedPublicUrls) {
-          const relativePathToPublicFromCSS = path.posix.relative(
-            cssAssetDirname!,
-            '',
+          const relativePathToPublicFromCSS = normalizePath(
+            path.relative(cssAssetDirname!, ''),
           )
           chunkCSS = chunkCSS.replace(publicAssetUrlRE, (_, hash) => {
             const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
@@ -652,7 +655,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let s: MagicString | undefined
       const urlEmitTasks: Array<{
         cssAssetName: string
-        originalFilename: string
+        originalFileName: string
         content: string
         start: number
         end: number
@@ -664,9 +667,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         while ((match = cssUrlAssetRE.exec(code))) {
           const [full, idHex] = match
           const id = Buffer.from(idHex, 'hex').toString()
-          const originalFilename = cleanUrl(id)
+          const originalFileName = cleanUrl(id)
           const cssAssetName = ensureFileExt(
-            path.basename(originalFilename),
+            path.basename(originalFileName),
             '.css',
           )
           if (!styles.has(id)) {
@@ -681,7 +684,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           urlEmitTasks.push({
             cssAssetName,
-            originalFilename,
+            originalFileName,
             content: cssContent,
             start: match.index,
             end: match.index + full.length,
@@ -707,17 +710,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         for (const {
           cssAssetName,
-          originalFilename,
+          originalFileName,
           content,
           start,
           end,
         } of urlEmitTasks) {
           const referenceId = this.emitFile({
-            name: cssAssetName,
             type: 'asset',
+            name: cssAssetName,
+            originalFileName,
             source: content,
           })
-          generatedAssets.set(referenceId, { originalName: originalFilename })
+          generatedAssets.set(referenceId, { originalFileName })
 
           const filename = this.getFileName(referenceId)
           chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
@@ -755,7 +759,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               (!chunk.facadeModuleId || !isCSSRequest(chunk.facadeModuleId))
                 ? path.basename(cssFullAssetName)
                 : cssFullAssetName
-            const originalFilename = getChunkOriginalFileName(
+            const originalFileName = getChunkOriginalFileName(
               chunk,
               config.root,
               opts.format,
@@ -770,14 +774,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
             // emit corresponding css file
             const referenceId = this.emitFile({
-              name: cssAssetName,
               type: 'asset',
+              name: cssAssetName,
+              originalFileName,
               source: chunkCSS,
             })
-            generatedAssets.set(referenceId, {
-              originalName: originalFilename,
-              isEntry,
-            })
+            generatedAssets.set(referenceId, { originalFileName, isEntry })
             chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
           } else if (!config.build.ssr) {
             // legacy build and inline css
@@ -990,16 +992,12 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           // record deps in the module graph so edits to @import css can trigger
           // main import to hot update
           const depModules = new Set<string | EnvironmentModuleNode>()
-          const devBase = config.base
           for (const file of pluginImports) {
             depModules.add(
               isCSSRequest(file)
                 ? moduleGraph!.createFileOnlyEntry(file)
                 : await moduleGraph!.ensureEntryFromUrl(
-                    stripBase(
-                      await fileToUrl(this, file),
-                      (config.server?.origin ?? '') + devBase,
-                    ),
+                    fileToDevUrl(file, config, /* skipBase */ true),
                   ),
             )
           }
@@ -1952,7 +1950,9 @@ type StylePreprocessorOptions = {
 }
 
 type SassStylePreprocessorOptions = StylePreprocessorOptions &
-  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'>
+  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'> & {
+    api?: 'legacy' | 'modern' | 'modern-compiler'
+  }
 
 type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
   define?: Record<string, any>
@@ -2000,11 +2000,11 @@ export interface StylePreprocessorResults {
 }
 
 const loadedPreprocessorPath: Partial<
-  Record<PreprocessLang | PostCssDialectLang, string>
+  Record<PreprocessLang | PostCssDialectLang | 'sass-embedded', string>
 > = {}
 
 function loadPreprocessorPath(
-  lang: PreprocessLang | PostCssDialectLang,
+  lang: PreprocessLang | PostCssDialectLang | 'sass-embedded',
   root: string,
 ): string {
   const cached = loadedPreprocessorPath[lang]
@@ -2026,6 +2026,24 @@ function loadPreprocessorPath(
       )
       message.stack = e.stack + '\n' + message.stack
       throw message
+    }
+  }
+}
+
+function loadSassPackage(root: string): {
+  name: 'sass' | 'sass-embedded'
+  path: string
+} {
+  // try sass-embedded before sass
+  try {
+    const path = loadPreprocessorPath('sass-embedded', root)
+    return { name: 'sass-embedded', path }
+  } catch (e1) {
+    try {
+      const path = loadPreprocessorPath(PreprocessLang.sass, root)
+      return { name: 'sass', path }
+    } catch (e2) {
+      throw e1
     }
   }
 }
@@ -2297,6 +2315,87 @@ const makeModernScssWorker = (
   return worker
 }
 
+// this is mostly a copy&paste of makeModernScssWorker
+// however sharing code between two is hard because
+// makeModernScssWorker above needs function inlined for worker.
+const makeModernCompilerScssWorker = (
+  environment: PartialEnvironment,
+  resolvers: CSSAtImportResolvers,
+  alias: Alias[],
+  _maxWorkers: number | undefined,
+) => {
+  let compiler: Sass.AsyncCompiler | undefined
+
+  const worker: Awaited<ReturnType<typeof makeModernScssWorker>> = {
+    async run(sassPath, data, options) {
+      // need pathToFileURL for windows since import("D:...") fails
+      // https://github.com/nodejs/node/issues/31710
+      const sass: typeof Sass = (await import(pathToFileURL(sassPath).href))
+        .default
+      compiler ??= await sass.initAsyncCompiler()
+
+      const sassOptions = { ...options } as Sass.StringOptions<'async'>
+      sassOptions.url = pathToFileURL(options.filename)
+      sassOptions.sourceMap = options.enableSourcemap
+
+      const internalImporter: Sass.Importer<'async'> = {
+        async canonicalize(url, context) {
+          const importer = context.containingUrl
+            ? fileURLToPath(context.containingUrl)
+            : options.filename
+          const resolved = await resolvers.sass(
+            environment,
+            url,
+            cleanScssBugUrl(importer),
+          )
+          return resolved ? pathToFileURL(resolved) : null
+        },
+        async load(canonicalUrl) {
+          const ext = path.extname(canonicalUrl.pathname)
+          let syntax: Sass.Syntax = 'scss'
+          if (ext === '.sass') {
+            syntax = 'indented'
+          } else if (ext === '.css') {
+            syntax = 'css'
+          }
+          const result = await rebaseUrls(
+            environment,
+            fileURLToPath(canonicalUrl),
+            options.filename,
+            alias,
+            '$',
+            resolvers.sass,
+          )
+          const contents =
+            result.contents ?? (await fsp.readFile(result.file, 'utf-8'))
+          return { contents, syntax }
+        },
+      }
+      sassOptions.importers = [
+        ...(sassOptions.importers ?? []),
+        internalImporter,
+      ]
+
+      const result = await compiler.compileStringAsync(data, sassOptions)
+      return {
+        css: result.css,
+        map: result.sourceMap ? JSON.stringify(result.sourceMap) : undefined,
+        stats: {
+          includedFiles: result.loadedUrls
+            .filter((url) => url.protocol === 'file:')
+            .map((url) => fileURLToPath(url)),
+        },
+      } satisfies ScssWorkerResult
+    },
+    async stop() {
+      compiler?.dispose()
+      compiler = undefined
+    },
+  }
+
+  return worker
+}
+
 type ScssWorkerResult = {
   css: string
   map?: string | undefined
@@ -2315,19 +2414,34 @@ const scssProcessor = (
       }
     },
     async process(environment, source, root, options, resolvers) {
-      const sassPath = loadPreprocessorPath(PreprocessLang.sass, root)
+      const sassPackage = loadSassPackage(root)
+      // TODO: change default in v6
+      // options.api ?? sassPackage.name === "sass-embedded" ? "modern-compiler" : "modern";
+      const api = options.api ?? 'legacy'
 
       if (!workerMap.has(options.alias)) {
         workerMap.set(
           options.alias,
-          options.api === 'modern'
-            ? makeModernScssWorker(
+          api === 'modern-compiler'
+            ? makeModernCompilerScssWorker(
                 environment,
                 resolvers,
                 options.alias,
                 maxWorkers,
               )
-            : makeScssWorker(environment, resolvers, options.alias, maxWorkers),
+            : api === 'modern'
+              ? makeModernScssWorker(
+                  environment,
+                  resolvers,
+                  options.alias,
+                  maxWorkers,
+                )
+              : makeScssWorker(
+                  environment,
+                  resolvers,
+                  options.alias,
+                  maxWorkers,
+                ),
         )
       }
       const worker = workerMap.get(options.alias)!
@@ -2345,7 +2459,7 @@ const scssProcessor = (
       }
       try {
         const result = await worker.run(
-          sassPath,
+          sassPackage.path,
           data,
           optionsWithoutAdditionalData,
         )
@@ -2947,7 +3061,7 @@ async function compileLightningCSS(
         }
         deps.add(dep.url)
         if (urlReplacer) {
-          const replaceUrl = await urlReplacer(dep.url, id)
+          const replaceUrl = await urlReplacer(dep.url, dep.loc.filePath)
           css = css.replace(dep.placeholder, () => replaceUrl)
         } else {
           css = css.replace(dep.placeholder, () => dep.url)

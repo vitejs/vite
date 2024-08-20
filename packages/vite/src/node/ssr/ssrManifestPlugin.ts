@@ -19,7 +19,7 @@ import {
 export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
   // module id => preload assets mapping
   const ssrManifest: Record<string, string[]> = {}
-  const base = config.base // TODO:base
+  const base = config.base
 
   return {
     name: 'vite:ssr-manifest',
@@ -78,7 +78,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     chunk.viteMetadata!.importedCss.forEach((file) => {
-                      deps.push(joinUrlSegments(base, file)) // TODO:base
+                      deps.push(joinUrlSegments(base, file))
                     })
                     chunk.imports.forEach(addDeps)
                   }

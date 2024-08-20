@@ -166,3 +166,15 @@ test('virtual module invalidation nested', async () => {
   const mod3 = await server.ssrLoadModule('virtual:test')
   expect(mod3.default).toEqual(2)
 })
+
+test('can export global', async () => {
+  const server = await createDevServer()
+  const mod = await server.ssrLoadModule('/fixtures/global/export.js')
+  expect(mod.global).toBe('ok')
+})
+
+test('can access nodejs global', async () => {
+  const server = await createDevServer()
+  const mod = await server.ssrLoadModule('/fixtures/global/test.js')
+  expect(mod.default).toBe(globalThis)
+})

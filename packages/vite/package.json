@@ -86,15 +86,15 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.21.3",
-    "postcss": "^8.4.40",
-    "rollup": "^4.13.0"
+    "postcss": "^8.4.41",
+    "rollup": "^4.20.0"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.3.0",
-    "@babel/parser": "^7.25.0",
+    "@babel/parser": "^7.25.3",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.0",
@@ -122,8 +122,8 @@
     "etag": "^1.8.1",
     "fast-glob": "^3.3.2",
     "http-proxy": "^1.18.1",
-    "launch-editor-middleware": "^2.8.0",
-    "lightningcss": "^1.25.1",
+    "launch-editor-middleware": "^2.8.1",
+    "lightningcss": "^1.26.0",
     "magic-string": "^0.30.11",
     "micromatch": "^4.0.7",
     "mlly": "^1.7.1",
@@ -143,6 +143,7 @@
     "rollup-plugin-esbuild": "^6.1.1",
     "rollup-plugin-license": "^3.5.2",
     "sass": "^1.77.8",
+    "sass-embedded": "^1.77.8",
     "sirv": "^2.0.4",
     "source-map-support": "^0.5.21",
     "strip-ansi": "^7.1.0",
@@ -158,6 +159,7 @@
     "less": "*",
     "lightningcss": "^1.21.0",
     "sass": "*",
+    "sass-embedded": "*",
     "stylus": "*",
     "sugarss": "*",
     "terser": "^5.4.0"
@@ -167,6 +169,9 @@
       "optional": true
     },
     "sass": {
+      "optional": true
+    },
+    "sass-embedded": {
       "optional": true
     },
     "stylus": {

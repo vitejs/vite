@@ -111,7 +111,7 @@ describe.runIf(isBuild)('build', () => {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/es/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(34)
+    expect(files.length).toBe(35)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -230,13 +230,13 @@ test('import.meta.glob with eager in worker', async () => {
 })
 
 test('self reference worker', async () => {
-  expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
+  await expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
     'pong: main\npong: nested\n',
   )
 })
 
 test('self reference url worker', async () => {
-  expectWithRetry(() => page.textContent('.self-reference-url-worker')).toBe(
-    'pong: main\npong: nested\n',
-  )
+  await expectWithRetry(() =>
+    page.textContent('.self-reference-url-worker'),
+  ).toBe('pong: main\npong: nested\n')
 })

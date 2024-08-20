@@ -270,7 +270,10 @@ export interface ViteDevServer {
   /**
    * Module execution environments attached to the Vite server.
    */
-  environments: Record<'client' | 'ssr' | (string & {}), DevEnvironment>
+  environments: Record<
+    'client' | 'ssr' | (string & Record<string, never>),
+    DevEnvironment
+  >
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -570,7 +573,7 @@ export async function _createServer(
     },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
       warnFutureDeprecation(config, 'ssrLoadModule')
-      return ssrLoadModule(url, server, undefined, opts?.fixStacktrace)
+      return ssrLoadModule(url, server, opts?.fixStacktrace)
     },
     ssrFixStacktrace(e) {
       ssrFixStacktrace(e, server.environments.ssr.moduleGraph)
