@@ -909,17 +909,14 @@ function myPlugin() {
 
 ## Backward Compatibility
 
-The current Vite server API will be deprecated but keep working during the next major.
+The current Vite server API are not yet deprecated and are backward compatible with Vite 5. The new Environment API is experimental.
 
-|                    Before                     |                       After                        |
-| :-------------------------------------------: | :------------------------------------------------: |
-|        `server.transformRequest(url)`         | `server.environments.client.transformRequest(url)` |
-| `server.transformRequest(url, { ssr: true })` |   `server.environments.ssr.tranformRequest(url)`   |
-|          `server.warmupRequest(url)`          |  `server.environments.client.warmupRequest(url)`   |
-|          `server.ssrLoadModule(url)`          |                       `TBD`                        |
-|             `server.moduleGraph`              |             `environment.moduleGraph`              |
-|               `handleHotUpdate`               |                    `hotUpdate`                     |
+The `server.moduleGraph` returns a mixed view of the client and ssr module graphs. Backward compatible mixed module nodes will be returned from all its methods. The same scheme is used for the module nodes passed to `handleHotUpdate`.
 
-The last one is just an idea. We may want to keep `server.open(url)` around.
+We don't recommend switching to Environment API yet. We are aiming for a good portion of the user base to adopt Vite 6 before so plugins don't need to maintain two versions. Checkout the future major changes section for information on future deprecations and upgrade path:
 
-The `server.moduleGraph` will keep returning a mixed view of the client and ssr module graphs. Backward compatible mixed module nodes will be returned from all previous functions. The same scheme is used for the module nodes passed to `handleHotUpdate`. This is the most difficult change to get right regarding backward compatibility. We may need to accept small breaking changes when we release the API in Vite 6, making it opt-in until then when releasing the API as experimental in Vite 5.2.
+- [`this.environment` in Hooks](/changes/this-environment-in-hooks)
+- [HMR `hotUpdate` Plugin Hook](/changes/hotupdate-hook)
+- [Move to per-environment APIs](/changes/per-environment-apis)
+- [SSR using `ModuleRunner` API](/changes/ssr-using-modulerunner)
+- [Shared plugins during build](/changes/shared-plugins-during-build)

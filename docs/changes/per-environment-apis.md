@@ -8,6 +8,7 @@ Multiple APIs from ViteDevServer related to module graph has replaced with more 
 
 - `server.moduleGraph` -> [`environment.moduleGraph`](/guide/api-vite-environment#separate-module-graphs)
 - `server.transformRequest` -> `environment.transformRequest`
+- `server.warmupRequest` -> `environment.warmupRequest`
 
 Affect scope: `Vite Plugin Authors`
 
