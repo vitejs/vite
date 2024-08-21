@@ -11,7 +11,7 @@ import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { PartialResolvedId, RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
-import type { Matcher } from 'picomatch'
+import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
@@ -596,7 +596,7 @@ export type ResolvedConfig = Readonly<
     experimental: ExperimentalOptions
     environments: Record<string, ResolvedEnvironmentOptions>
     /** @internal */
-    fsDenyGlob: Matcher
+    fsDenyGlob: AnymatchFn
     /** @internal */
     safeModulePaths: Set<string>
   } & PluginHookUtils
