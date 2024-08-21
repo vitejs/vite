@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite'
 import baseConfig from './vite.config.js'
+import { pathToFileURL } from 'node:url'
+import path from 'node:path'
 
 export default defineConfig({
   ...baseConfig,
@@ -20,6 +22,19 @@ export default defineConfig({
             load() {
               return {
                 contents: ``,
+                syntax: 'scss',
+              }
+            },
+          },
+          {
+            canonicalize(url) {
+              return url === 'virtual-file-absolute'
+                ? new URL('custom-importer:virtual-file-absolute')
+                : null
+            },
+            load() {
+              return {
+                contents: `@import "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
                 syntax: 'scss',
               }
             },

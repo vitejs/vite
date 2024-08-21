@@ -2098,8 +2098,16 @@ const makeScssWorker = (
     importer: string,
     filename: string,
   ) => {
-    importer = cleanScssBugUrl(importer)
-    const resolved = await resolvers.sass(url, importer)
+    let resolved: string | undefined
+    if (url.startsWith('file:')) {
+      const fileUrl = new URL(url)
+      if (fs.existsSync(fileUrl)) {
+        resolved = fileURLToPath(fileUrl)
+      }
+    } else {
+      importer = cleanScssBugUrl(importer)
+      resolved = await resolvers.sass(url, importer)
+    }
     if (resolved) {
       try {
         const data = await rebaseUrls(
@@ -2203,6 +2211,12 @@ const makeModernScssWorker = (
     url: string,
     importer: string,
   ): Promise<string | null> => {
+    if (url.startsWith('file:')) {
+      const fileUrl = new URL(url)
+      if (fs.existsSync(fileUrl)) {
+        return fileURLToPath(fileUrl)
+      }
+    }
     importer = cleanScssBugUrl(importer)
     const resolved = await resolvers.sass(url, importer)
     return resolved ?? null
@@ -2320,6 +2334,12 @@ const makeModernCompilerScssWorker = (
 
       const internalImporter: Sass.Importer<'async'> = {
         async canonicalize(url, context) {
+          if (url.startsWith('file:')) {
+            const fileUrl = new URL(url)
+            if (fs.existsSync(fileUrl)) {
+              return fileUrl
+            }
+          }
           const importer = context.containingUrl
             ? fileURLToPath(context.containingUrl)
             : options.filename
