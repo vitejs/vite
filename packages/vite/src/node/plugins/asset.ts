@@ -230,7 +230,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           chunk.type === 'chunk' &&
           chunk.isEntry &&
           chunk.moduleIds.length === 1 &&
-          config.assetsInclude(chunk.moduleIds[0])
+          config.assetsInclude(chunk.moduleIds[0]) &&
+          chunk.code.trim() === ''
         ) {
           delete bundle[file]
         }
