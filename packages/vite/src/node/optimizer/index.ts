@@ -288,7 +288,7 @@ export async function optimizeExplicitEnvironmentDeps(
 ): Promise<DepOptimizationMetadata> {
   const cachedMetadata = await loadCachedDepOptimizationMetadata(
     environment,
-    environment.config.dev.optimizeDeps.force ?? false, // TODO: should force be per-environment?
+    environment.config.dev.optimizeDeps.force ?? false,
     false,
   )
   if (cachedMetadata) {
