@@ -235,8 +235,6 @@ export interface BuildEnvironmentOptions {
   /**
    * Emit assets during build. Frameworks can set environments.ssr.build.emitAssets
    * By default, it is true for the client and false for other environments.
-   * TODO: Should this be true for all environments by default? Or should this be
-   * controlled by the builder so so we can avoid emitting duplicated assets.
    */
   emitAssets?: boolean
   /**
