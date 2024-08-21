@@ -247,7 +247,6 @@ export interface DepOptimizationMetadata {
  * Scan and optimize dependencies within a project.
  * Used by Vite CLI when running `vite optimize`.
  */
-// TODO: do we need this? It is exposed for the CLI command `vite optimize`
 
 export async function optimizeDeps(
   config: ResolvedConfig,
@@ -256,8 +255,6 @@ export async function optimizeDeps(
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
 
-  // TODO: Could we avoid the creation of a DevEnvironment moving the plugin resolving to
-  // the Environment base class?
   const environment = new ScanEnvironment('client', config)
   await environment.init()
 
