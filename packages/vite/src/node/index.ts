@@ -175,7 +175,7 @@ export type {
   CustomPayload,
   PrunePayload,
   ErrorPayload,
-} from 'types/hotPayload'
+} from 'types/hmrPayload'
 export type {
   CustomEventMap,
   InferCustomEventPayload,
