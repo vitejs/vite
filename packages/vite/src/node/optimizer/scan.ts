@@ -13,7 +13,6 @@ import type {
 import esbuild, { formatMessages, transform } from 'esbuild'
 import type { PartialResolvedId } from 'rollup'
 import colors from 'picocolors'
-import type { ResolvedConfig } from '..'
 import {
   CSS_LANGS_RE,
   JS_TYPES_RE,
@@ -143,7 +142,7 @@ export function scanImports(environment: ScanEnvironment): {
   const { config } = environment
   const scanContext = { cancelled: false }
   const esbuildContext: Promise<BuildContext | undefined> = computeEntries(
-    environment.getTopLevelConfig(),
+    environment,
   ).then((computedEntries) => {
     entries = computedEntries
 
@@ -245,17 +244,16 @@ export function scanImports(environment: ScanEnvironment): {
   }
 }
 
-async function computeEntries(config: ResolvedConfig) {
+async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
-  // TODO: Should entries be per-environment?
-  const explicitEntryPatterns = config.optimizeDeps.entries
-  const buildInput = config.build.rollupOptions?.input
+  const explicitEntryPatterns = environment.config.dev.optimizeDeps.entries
+  const buildInput = environment.config.build.rollupOptions?.input
 
   if (explicitEntryPatterns) {
-    entries = await globEntries(explicitEntryPatterns, config)
+    entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
-    const resolvePath = (p: string) => path.resolve(config.root, p)
+    const resolvePath = (p: string) => path.resolve(environment.config.root, p)
     if (typeof buildInput === 'string') {
       entries = [resolvePath(buildInput)]
     } else if (Array.isArray(buildInput)) {
@@ -266,14 +264,14 @@ async function computeEntries(config: ResolvedConfig) {
       throw new Error('invalid rollupOptions.input value.')
     }
   } else {
-    entries = await globEntries('**/*.html', config)
+    entries = await globEntries('**/*.html', environment)
   }
 
   // Non-supported entry file types and virtual files should not be scanned for
   // dependencies.
   entries = entries.filter(
     (entry) =>
-      isScannable(entry, config.optimizeDeps.extensions) &&
+      isScannable(entry, environment.config.dev.optimizeDeps.extensions) &&
       fs.existsSync(entry),
   )
 
@@ -332,20 +330,20 @@ function orderedDependencies(deps: Record<string, string>) {
   return Object.fromEntries(depsList)
 }
 
-function globEntries(pattern: string | string[], config: ResolvedConfig) {
+function globEntries(pattern: string | string[], environment: ScanEnvironment) {
   const resolvedPatterns = arraify(pattern)
   if (resolvedPatterns.every((str) => !glob.isDynamicPattern(str))) {
     return resolvedPatterns.map((p) =>
-      normalizePath(path.resolve(config.root, p)),
+      normalizePath(path.resolve(environment.config.root, p)),
     )
   }
   return glob(pattern, {
-    cwd: config.root,
+    cwd: environment.config.root,
     ignore: [
       '**/node_modules/**',
-      `**/${config.build.outDir}/**`,
+      `**/${environment.config.build.outDir}/**`,
       // if there aren't explicit entries, also ignore other common folders
-      ...(config.optimizeDeps.entries
+      ...(environment.config.dev.optimizeDeps.entries
         ? []
         : [`**/__tests__/**`, `**/coverage/**`]),
     ],
