@@ -2,8 +2,6 @@ import path from 'node:path'
 import type { OutgoingHttpHeaders, ServerResponse } from 'node:http'
 import type { Options } from 'sirv'
 import sirv from 'sirv'
-import picomatch from 'picomatch'
-import type { Matcher } from 'picomatch'
 import type { Connect } from 'dep-types/connect'
 import escapeHtml from 'escape-html'
 import type { ViteDevServer } from '../../server'
@@ -207,49 +205,6 @@ export function serveRawFsMiddleware(
   }
 }
 
-const safeModulePathsCache = new WeakMap<ResolvedConfig, Set<string>>()
-function isSafeModulePath(config: ResolvedConfig, filePath: string) {
-  let safeModulePaths = safeModulePathsCache.get(config)
-  if (!safeModulePaths) {
-    safeModulePaths = new Set()
-    safeModulePathsCache.set(config, safeModulePaths)
-  }
-  return safeModulePaths.has(filePath)
-}
-export function addSafeModulePath(
-  config: ResolvedConfig,
-  filePath: string,
-): void {
-  let safeModulePaths = safeModulePathsCache.get(config)
-  if (!safeModulePaths) {
-    safeModulePaths = new Set()
-    safeModulePathsCache.set(config, safeModulePaths)
-  }
-  safeModulePaths.add(filePath)
-}
-
-const fsDenyGlobCache = new WeakMap<ResolvedConfig, Matcher>()
-function fsDenyGlob(config: ResolvedConfig, filePath: string): boolean {
-  let matcher = fsDenyGlobCache.get(config)
-  if (!matcher) {
-    matcher = picomatch(
-      // matchBase: true does not work as it's documented
-      // https://github.com/micromatch/picomatch/issues/89
-      // convert patterns without `/` on our side for now
-      config.server.fs.deny.map((pattern) =>
-        pattern.includes('/') ? pattern : `**/${pattern}`,
-      ),
-      {
-        matchBase: false,
-        nocase: true,
-        dot: true,
-      },
-    )
-    fsDenyGlobCache.set(config, matcher)
-  }
-  return matcher(filePath)
-}
-
 /**
  * Check if the url is allowed to be served, via the `server.fs` config.
  */
@@ -275,9 +230,9 @@ export function isFileLoadingAllowed(
 
   if (!fs.strict) return true
 
-  if (fsDenyGlob(config, filePath)) return false
+  if (config.fsDenyGlob(filePath)) return false
 
-  if (isSafeModulePath(config, filePath)) return true
+  if (config.safeModulePaths.has(filePath)) return true
 
   if (fs.allow.some((uri) => isUriInFilePath(uri, filePath))) return true
 

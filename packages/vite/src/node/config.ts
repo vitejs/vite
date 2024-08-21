@@ -10,6 +10,8 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { PartialResolvedId, RollupOptions } from 'rollup'
+import picomatch from 'picomatch'
+import type { Matcher } from 'picomatch'
 import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
@@ -593,6 +595,10 @@ export type ResolvedConfig = Readonly<
     appType: AppType
     experimental: ExperimentalOptions
     environments: Record<string, ResolvedEnvironmentOptions>
+    /** @internal */
+    fsDenyGlob: Matcher
+    /** @internal */
+    safeModulePaths: Set<string>
   } & PluginHookUtils
 >
 
@@ -1335,6 +1341,20 @@ export async function resolveConfig(
       return async (id, importer, aliasOnly, ssr) =>
         (await resolve(id, importer, aliasOnly, ssr))?.id
     },
+    fsDenyGlob: picomatch(
+      // matchBase: true does not work as it's documented
+      // https://github.com/micromatch/picomatch/issues/89
+      // convert patterns without `/` on our side for now
+      server.fs.deny.map((pattern) =>
+        pattern.includes('/') ? pattern : `**/${pattern}`,
+      ),
+      {
+        matchBase: false,
+        nocase: true,
+        dot: true,
+      },
+    ),
+    safeModulePaths: new Set<string>(),
   }
   resolved = {
     ...config,

@@ -54,7 +54,6 @@ import { checkPublicFile } from '../publicDir'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import type { DevEnvironment } from '../server/environment'
-import { addSafeModulePath } from '../server/middlewares/static'
 import { shouldExternalize } from '../external'
 import { optimizedDepNeedsInterop } from '../optimizer'
 import {
@@ -532,7 +531,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // record as safe modules
             // safeModulesPath should not include the base prefix.
             // See https://github.com/vitejs/vite/issues/9438#issuecomment-1465270409
-            addSafeModulePath(config, fsPathFromUrl(stripBase(url, base)))
+            config.safeModulePaths.add(fsPathFromUrl(stripBase(url, base)))
 
             if (url !== specifier) {
               let rewriteDone = false
