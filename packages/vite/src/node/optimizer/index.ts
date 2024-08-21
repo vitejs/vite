@@ -402,8 +402,6 @@ export function discoverProjectDependencies(environment: ScanEnvironment): {
   cancel: () => Promise<void>
   result: Promise<Record<string, string>>
 } {
-  // Should the scanner be per-environment?
-  // we only use it for the client right now
   const { cancel, result } = scanImports(environment)
 
   return {
