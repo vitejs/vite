@@ -28,6 +28,9 @@ function BackendIntegrationExample() {
           strictPort: true,
           origin: 'http://localhost:5009',
         },
+        preview: {
+          port: 5009,
+        },
         build: {
           manifest: true,
           outDir,
