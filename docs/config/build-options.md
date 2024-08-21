@@ -129,7 +129,7 @@ One example is Android WeChat WebView, which supports most modern JavaScript fea
 In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite from transform `rgba()` colors into `#RGBA` hexadecimal notations.
 
 ::: info
-Please note that currently `build.cssTarget` is intended to be recognized only by Esbuild. When the CSS minifier in your project is set to 'lightningcss' in `build.cssMinify`, then `build.cssTarget` is no longer effective anymore and you must write targets in `css.lightningcss.targets`. [Reference](https://github.com/vitejs/vite/issues/17900).
+Please note that currently `build.cssTarget` is intended to be recognized only by Esbuild. When the CSS minifier in your project is set to 'lightningcss' in `build.cssMinify`, then `build.cssTarget` is no longer effective and you must write targets in `css.lightningcss.targets`. [Reference](https://github.com/vitejs/vite/issues/17900).
 :::
 
 ## build.cssMinify
