@@ -1085,17 +1085,27 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
     },
 
     get sass() {
-      return (
-        sassResolve ||
-        (sassResolve = config.createResolver({
+      if (!sassResolve) {
+        const resolver = config.createResolver({
           extensions: ['.scss', '.sass', '.css'],
           mainFields: ['sass', 'style'],
           conditions: ['sass', 'style'],
           tryIndex: true,
           tryPrefix: '_',
           preferRelative: true,
-        }))
-      )
+        })
+        sassResolve = async (...args) => {
+          const id = args[0]
+          if (id.startsWith('file:')) {
+            const fileUrl = new URL(id)
+            if (fs.existsSync(fileUrl)) {
+              return fileURLToPath(fileUrl)
+            }
+          }
+          return resolver(...args)
+        }
+      }
+      return sassResolve
     },
 
     get less() {
@@ -2098,16 +2108,8 @@ const makeScssWorker = (
     importer: string,
     filename: string,
   ) => {
-    let resolved: string | undefined
-    if (url.startsWith('file:')) {
-      const fileUrl = new URL(url)
-      if (fs.existsSync(fileUrl)) {
-        resolved = fileURLToPath(fileUrl)
-      }
-    } else {
-      importer = cleanScssBugUrl(importer)
-      resolved = await resolvers.sass(url, importer)
-    }
+    importer = cleanScssBugUrl(importer)
+    const resolved = await resolvers.sass(url, importer)
     if (resolved) {
       try {
         const data = await rebaseUrls(
@@ -2211,12 +2213,6 @@ const makeModernScssWorker = (
     url: string,
     importer: string,
   ): Promise<string | null> => {
-    if (url.startsWith('file:')) {
-      const fileUrl = new URL(url)
-      if (fs.existsSync(fileUrl)) {
-        return fileURLToPath(fileUrl)
-      }
-    }
     importer = cleanScssBugUrl(importer)
     const resolved = await resolvers.sass(url, importer)
     return resolved ?? null
@@ -2334,12 +2330,6 @@ const makeModernCompilerScssWorker = (
 
       const internalImporter: Sass.Importer<'async'> = {
         async canonicalize(url, context) {
-          if (url.startsWith('file:')) {
-            const fileUrl = new URL(url)
-            if (fs.existsSync(fileUrl)) {
-              return fileUrl
-            }
-          }
           const importer = context.containingUrl
             ? fileURLToPath(context.containingUrl)
             : options.filename
