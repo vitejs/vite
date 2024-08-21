@@ -83,7 +83,7 @@ function toOutputFilePathInHtml(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
-    return config.base + filename
+    return joinUrlSegments(config.decodedBase, filename)
   }
 }
 function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
@@ -95,6 +95,18 @@ function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
         './',
       )
     : config.base
+}
+function joinUrlSegments(a: string, b: string): string {
+  if (!a || !b) {
+    return a || b || ''
+  }
+  if (a[a.length - 1] === '/') {
+    a = a.substring(0, a.length - 1)
+  }
+  if (b[0] !== '/') {
+    b = '/' + b
+  }
+  return a + b
 }
 
 function toAssetPathFromHtml(
@@ -120,7 +132,7 @@ const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 const _require = createRequire(import.meta.url)
 
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
-const prefixedHashInFileNameRE = /\W?\[hash(:\d+)?\]/
+const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
 
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
@@ -533,7 +545,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         configFile: false,
         compact: !!config.build.minify,
         sourceMaps,
-        inputSourceMap: undefined, // sourceMaps ? chunk.map : undefined, `.map` TODO: moved to OutputChunk?
+        inputSourceMap: undefined,
         presets: [
           // forcing our plugin to run before preset-env by wrapping it in a
           // preset so we can catch the injected import statements...

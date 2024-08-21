@@ -11,6 +11,11 @@ const require = createRequire(import.meta.url)
 const pkg = require('./package.json')
 const pkgVite = require('./packages/vite/package.json')
 
+// Some rules work better with typechecking enabled, but as enabling it is slow,
+// we only do so when linting in IDEs for now. If you want to lint with typechecking
+// explicitly, set this to `true` manually.
+const shouldTypeCheck = typeof process.env.VSCODE_PID === 'string'
+
 export default tseslint.config(
   {
     ignores: [
@@ -34,6 +39,12 @@ export default tseslint.config(
       parserOptions: {
         sourceType: 'module',
         ecmaVersion: 2022,
+        project: shouldTypeCheck
+          ? [
+              './packages/*/tsconfig.json',
+              './packages/vite/src/*/tsconfig.json',
+            ]
+          : undefined,
       },
       globals: {
         ...globals.es2021,
@@ -86,7 +97,7 @@ export default tseslint.config(
       ],
 
       '@typescript-eslint/ban-ts-comment': 'error',
-      '@typescript-eslint/ban-types': 'off', // TODO: we should turn this on in a new PR
+      '@typescript-eslint/no-unsafe-function-type': 'off', // TODO: we should turn this on in a new PR
       '@typescript-eslint/explicit-module-boundary-types': [
         'error',
         { allowArgumentsExplicitlyTypedAsAny: true },
@@ -95,18 +106,23 @@ export default tseslint.config(
         'error',
         { allow: ['arrowFunctions'] },
       ],
+      '@typescript-eslint/no-empty-object-type': [
+        'error',
+        { allowInterfaces: 'with-single-extends' }, // maybe we should turn this on in a new PR
+      ],
       '@typescript-eslint/no-empty-interface': 'off',
       '@typescript-eslint/no-explicit-any': 'off', // maybe we should turn this on in a new PR
       'no-extra-semi': 'off',
       '@typescript-eslint/no-extra-semi': 'off', // conflicts with prettier
       '@typescript-eslint/no-inferrable-types': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off', // maybe we should turn this on in a new PR
       '@typescript-eslint/no-unused-vars': 'off', // maybe we should turn this on in a new PR
-      '@typescript-eslint/no-var-requires': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/consistent-type-imports': [
         'error',
         { prefer: 'type-imports', disallowTypeAnnotations: false },
       ],
-      // disable rules set in @typescript-eslint/stylistic v6 that wasn't set in @typescript-eslint/recommended v5 and which conflict with current code
+      // disable rules set in @typescript-eslint/stylistic which conflict with current code
       // maybe we should turn them on in a new PR
       '@typescript-eslint/array-type': 'off',
       '@typescript-eslint/ban-tslint-comment': 'off',
@@ -133,7 +149,8 @@ export default tseslint.config(
         },
       ],
 
-      'regexp/no-contradiction-with-assertion': 'error',
+      'regexp/prefer-regexp-exec': 'error',
+      'regexp/prefer-regexp-test': 'error',
       // in some cases using explicit letter-casing is more performant than the `i` flag
       'regexp/use-ignore-case': 'off',
     },
@@ -222,6 +239,14 @@ export default tseslint.config(
     },
   },
   {
+    name: 'disables/vite/cjs',
+    files: ['packages/vite/index.cjs'],
+    rules: {
+      'no-restricted-globals': 'off',
+      'n/no-missing-require': 'off',
+    },
+  },
+  {
     name: 'disables/create-vite/templates',
     files: [
       'packages/create-vite/template-*/**/*.?([cm])[jt]s?(x)',
@@ -283,6 +308,27 @@ export default tseslint.config(
     rules: {
       'no-console': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
+    },
+  },
+  {
+    name: 'disables/typechecking',
+    files: [
+      '**/*.js',
+      '**/*.mjs',
+      '**/*.cjs',
+      '**/*.d.ts',
+      '**/*.d.cts',
+      '**/__tests__/**',
+      'docs/**',
+      'playground/**',
+      'scripts/**',
+      'vitest.config.ts',
+      'vitest.config.e2e.ts',
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: false,
+      },
     },
   },
 )

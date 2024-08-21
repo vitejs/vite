@@ -22,6 +22,12 @@ function BackendIntegrationExample() {
       entrypoints.push(['bar.css', path.resolve(__dirname, './dir/foo.css')])
 
       return {
+        server: {
+          // same port in playground/test-utils.ts
+          port: 5009,
+          strictPort: true,
+          origin: 'http://localhost:5009',
+        },
         build: {
           manifest: true,
           outDir,

@@ -27,10 +27,6 @@ import {
 } from './ssrTransform'
 import { ssrFixStacktrace } from './ssrStacktrace'
 
-interface SSRContext {
-  global: typeof globalThis
-}
-
 type SSRModule = Record<string, any>
 
 interface NodeImportResolveOptions
@@ -45,7 +41,6 @@ const importErrors = new WeakMap<Error, { importee: string }>()
 export async function ssrLoadModule(
   url: string,
   server: ViteDevServer,
-  context: SSRContext = { global },
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   url = unwrapId(url)
@@ -59,7 +54,7 @@ export async function ssrLoadModule(
     return pending
   }
 
-  const modulePromise = instantiateModule(url, server, context, fixStacktrace)
+  const modulePromise = instantiateModule(url, server, fixStacktrace)
   pendingModules.set(url, modulePromise)
   modulePromise
     .catch(() => {
@@ -74,7 +69,6 @@ export async function ssrLoadModule(
 async function instantiateModule(
   url: string,
   server: ViteDevServer,
-  context: SSRContext = { global },
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
   const { moduleGraph } = server
@@ -169,7 +163,7 @@ async function instantiateModule(
         }
       }
 
-      return ssrLoadModule(dep, server, context, fixStacktrace)
+      return ssrLoadModule(dep, server, fixStacktrace)
     } catch (err) {
       // tell external error handler which mod was imported with error
       importErrors.set(err, { importee: dep })
@@ -213,7 +207,6 @@ async function instantiateModule(
 
   try {
     const initModule = new AsyncFunction(
-      `global`,
       ssrModuleExportsKey,
       ssrImportMetaKey,
       ssrImportKey,
@@ -224,7 +217,6 @@ async function instantiateModule(
         `\n//# sourceURL=${mod.id}${sourceMapSuffix}`,
     )
     await initModule(
-      context.global,
       ssrModule,
       ssrImportMeta,
       ssrImport,

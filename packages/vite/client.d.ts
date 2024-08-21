@@ -246,3 +246,11 @@ declare module '*?inline' {
   const src: string
   export default src
 }
+
+declare interface VitePreloadErrorEvent extends Event {
+  payload: Error
+}
+
+declare interface WindowEventMap {
+  'vite:preloadError': VitePreloadErrorEvent
+}

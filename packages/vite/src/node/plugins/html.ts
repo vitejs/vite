@@ -47,7 +47,7 @@ interface ScriptAssetsUrl {
 }
 
 const htmlProxyRE =
-  /\?html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)\.(js|css)$/
+  /\?html-proxy=?(?:&inline-css)?(?:&style-attr)?&index=(\d+)\.(?:js|css)$/
 const isHtmlProxyRE = /\?html-proxy\b/
 
 const inlineCSSRE = /__VITE_INLINE_CSS__([a-z\d]{8}_\d+)__/g
@@ -99,7 +99,7 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
     },
 
     load(id) {
-      const proxyMatch = id.match(htmlProxyRE)
+      const proxyMatch = htmlProxyRE.exec(id)
       if (proxyMatch) {
         const index = Number(proxyMatch[1])
         const file = cleanUrl(id)
@@ -237,7 +237,7 @@ export function overwriteAttrValue(
     sourceCodeLocation.startOffset,
     sourceCodeLocation.endOffset,
   )
-  const valueStart = srcString.match(attrValueStartRE)
+  const valueStart = attrValueStartRE.exec(srcString)
   if (!valueStart) {
     // overwrite attr value can only be called for a well-defined value
     throw new Error(
@@ -330,7 +330,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     async transform(html, id) {
       if (id.endsWith('.html')) {
         id = normalizePath(id)
-        const relativeUrlPath = path.posix.relative(config.root, id)
+        const relativeUrlPath = normalizePath(path.relative(config.root, id))
         const publicPath = `/${relativeUrlPath}`
         const publicBase = getBaseInHTML(relativeUrlPath, config)
 
@@ -776,7 +776,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       }
 
       for (const [normalizedId, html] of processedHtml) {
-        const relativeUrlPath = path.posix.relative(config.root, normalizedId)
+        const relativeUrlPath = normalizePath(
+          path.relative(config.root, normalizedId),
+        )
         const assetsBase = getBaseInHTML(relativeUrlPath, config)
         const toOutputFilePath = (
           filename: string,
@@ -932,6 +934,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         )
         this.emitFile({
           type: 'asset',
+          originalFileName: normalizedId,
           fileName: shortEmitName,
           source: result,
         })
@@ -1354,7 +1357,7 @@ export async function applyHtmlTransforms(
   return html
 }
 
-const importRE = /\bimport\s*("[^"]*[^\\]"|'[^']*[^\\]');*/g
+const importRE = /\bimport\s*(?:"[^"]*[^\\]"|'[^']*[^\\]');*/g
 const commentRE = /\/\*[\s\S]*?\*\/|\/\/.*$/gm
 function isEntirelyImport(code: string) {
   // only consider "side-effect" imports, which match <script type=module> semantics exactly

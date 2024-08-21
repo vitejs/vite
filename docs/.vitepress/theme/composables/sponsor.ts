@@ -47,33 +47,7 @@ const viteSponsors: Pick<Sponsors, 'special' | 'gold'> = {
     },
   ],
   gold: [
-    // through GitHub -> OpenCollective
-    {
-      name: 'Remix',
-      url: 'https://remix.run/',
-      img: '/remix.svg',
-    },
-    {
-      name: 'Nx',
-      url: 'https://nx.dev/',
-      img: '/nx.svg',
-    },
-    {
-      name: 'Transloadit',
-      url: 'https://transloadit.com/?utm_source=vite&utm_medium=referral&utm_campaign=sponsorship&utm_content=website',
-      img: '/transloadit.svg',
-      hasDark: true,
-    },
-    {
-      name: 'Huly',
-      url: 'https://huly.io/',
-      img: '/huly.svg',
-    },
-    {
-      name: 'Handsontable',
-      url: 'https://handsontable.com/docs/react-data-grid/?utm_source=vite_docs&utm_medium=sponsorship&utm_campaign=library_sponsorship_2024',
-      img: '/handsontable.svg',
-    },
+    // now automated via sponsors.vuejs.org too
   ],
 }
 
