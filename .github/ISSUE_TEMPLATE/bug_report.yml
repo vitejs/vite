@@ -54,7 +54,7 @@ body:
     attributes:
       label: Logs
       description: |
-        Optional if provided reproduction. Please try not to insert an image but copy paste the log text.
+        Optional if provided reproduction. Please try not to insert an image but copy paste the log text. Please note that the log may contain potentially sensitive information, such as folder names that include your OS username.
 
         1. Run `vite` or `vite build` with the `--debug` flag.
         2. Provide the error log here in the format below.
