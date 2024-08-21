@@ -37,6 +37,10 @@ describe('plugin container', () => {
             return { meta: { x: 3 } }
           }
         },
+        buildEnd() {
+          const { meta } = this.getModuleInfo(entryUrl) ?? {}
+          metaArray.push(meta)
+        },
       }
 
       const environment = await getDevEnvironment({
@@ -55,7 +59,7 @@ describe('plugin container', () => {
       await environment.pluginContainer.transform(loadResult.code, entryUrl)
       await environment.pluginContainer.close()
 
-      expect(metaArray).toEqual([{ x: 1 }, { x: 2 }])
+      expect(metaArray).toEqual([{ x: 1 }, { x: 2 }, { x: 3 }])
     })
 
     it('can pass metadata between plugins', async () => {
