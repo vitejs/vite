@@ -200,17 +200,6 @@ export interface DevEnvironmentOptions {
    * This option can also be used instead of the removed config.experimental.skipSsrTransform.
    */
   moduleRunnerTransform?: boolean
-
-  /**
-   * Defaults to true for the client environment and false for others, following node permissive
-   * security model.
-   * TODO: We need to move at least server.fs.strict to dev options because we want to restrict
-   * fs access from the client, but keep it open for SSR running on node. For now, we moved
-   * the check to use environment.nodeCompatible
-   * Should we only have a boolean toggle per environment and a keep allow/deny configuration
-   * in server.fs, or move the whole configuration to the environment?
-   */
-  // fs: { strict?: boolean, allow, deny }
 }
 
 function defaultCreateClientDevEnvironment(

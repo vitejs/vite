@@ -269,7 +269,7 @@ async function loadAndTransform(
     // only try the fallback if access is allowed, skip for out of root url
     // like /service-worker.js or /api/users
     if (
-      environment.config.nodeCompatible ||
+      environment.config.consumer === 'server' ||
       isFileLoadingAllowed(environment.getTopLevelConfig(), file)
     ) {
       try {
