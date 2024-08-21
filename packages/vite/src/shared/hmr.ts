@@ -1,4 +1,4 @@
-import type { Update } from 'types/hotPayload'
+import type { Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 

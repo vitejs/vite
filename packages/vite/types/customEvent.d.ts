@@ -3,7 +3,7 @@ import type {
   FullReloadPayload,
   PrunePayload,
   UpdatePayload,
-} from './hotPayload'
+} from './hmrPayload'
 
 export interface CustomEventMap {
   'vite:beforeUpdate': UpdatePayload

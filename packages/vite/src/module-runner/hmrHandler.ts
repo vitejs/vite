@@ -1,4 +1,4 @@
-import type { HotPayload } from 'types/hotPayload'
+import type { HotPayload } from 'types/hmrPayload'
 import { slash, unwrapId } from '../shared/utils'
 import type { ModuleRunner } from './runner'
 

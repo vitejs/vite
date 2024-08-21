@@ -1,5 +1,5 @@
 import type { ViteHotContext } from 'types/hot'
-import type { HotPayload } from 'types/hotPayload'
+import type { HotPayload } from 'types/hmrPayload'
 import type { HMRConnection, HMRLogger } from '../shared/hmr'
 import type {
   DefineImportMetadata,

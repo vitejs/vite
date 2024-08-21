@@ -1,4 +1,4 @@
-import type { ErrorPayload, HotPayload } from 'types/hotPayload'
+import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { HMRClient, HMRContext } from '../shared/hmr'

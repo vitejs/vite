@@ -1,4 +1,4 @@
-import type { CustomPayload, HotPayload } from 'types/hotPayload'
+import type { CustomPayload, HotPayload } from 'types/hmrPayload'
 import type { ModuleRunnerHMRConnection } from 'vite/module-runner'
 import type { HotChannelClient, ServerHotChannel } from '../../server/hmr'
 
