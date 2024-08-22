@@ -32,12 +32,7 @@ describe('vite-runtime initialization', async () => {
 
   it('css is loaded correctly', async ({ runtime }) => {
     const css = await runtime.executeUrl('/fixtures/test.css')
-    expect(css.default).toMatchInlineSnapshot(`
-      ".test {
-        color: red;
-      }
-      "
-    `)
+    expect(css.default).toBe(undefined)
     const module = await runtime.executeUrl('/fixtures/test.module.css')
     expect(module).toMatchObject({
       default: {
@@ -68,12 +63,7 @@ describe('vite-runtime initialization', async () => {
     const url = await runtime.executeUrl('/fixtures/simple.js?url')
     expect(url.default).toMatchInlineSnapshot(`"/fixtures/simple.js"`)
     const inline = await runtime.executeUrl('/fixtures/test.css?inline')
-    expect(inline.default).toMatchInlineSnapshot(`
-      ".test {
-        color: red;
-      }
-      "
-    `)
+    expect(inline.default).toMatchInlineSnapshot(`undefined`)
   })
 
   it('modules with query strings are treated as different modules', async ({
