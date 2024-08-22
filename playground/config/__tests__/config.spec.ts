@@ -98,3 +98,27 @@ it('can reload even when same content', async () => {
   const result2 = await load()
   expect(result1.config).not.toBe(result2.config)
 })
+
+it('no export error', async () => {
+  await expect(() =>
+    loadConfigFromFile(
+      { command: 'serve', mode: 'development' },
+      resolve(__dirname, '../packages/entry/vite.config.no-export.ts'),
+      undefined,
+      'silent',
+    ),
+  ).rejects.toMatchInlineSnapshot(
+    `[Error: config must export or return an object.]`,
+  )
+})
+
+it('error', async () => {
+  await expect(() =>
+    loadConfigFromFile(
+      { command: 'serve', mode: 'development' },
+      resolve(__dirname, '../packages/entry/vite.config.error.ts'),
+      undefined,
+      'silent',
+    ),
+  ).rejects.toThrow(`error-dep at `)
+})
