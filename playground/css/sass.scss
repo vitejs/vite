@@ -6,6 +6,7 @@
 @import 'virtual-dep'; // virtual file added through importer
 @import '=/pkg-dep'; // package w/out sass field
 @import '=/weapp.wxss'; // wxss file
+@import 'virtual-file-absolute';
 
 .sass {
   /* injected via vite.config.js */

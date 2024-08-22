@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import baseConfig from './vite.config.js'
+import configSassModern from './vite.config-sass-modern.js'
 
 export default defineConfig({
   ...baseConfig,
@@ -8,23 +9,7 @@ export default defineConfig({
     preprocessorOptions: {
       ...baseConfig.css.preprocessorOptions,
       scss: {
-        api: 'modern-compiler',
-        additionalData: `$injectedColor: orange;`,
-        importers: [
-          {
-            canonicalize(url) {
-              return url === 'virtual-dep'
-                ? new URL('custom-importer:virtual-dep')
-                : null
-            },
-            load() {
-              return {
-                contents: ``,
-                syntax: 'scss',
-              }
-            },
-          },
-        ],
+        ...configSassModern.css.preprocessorOptions.scss,
       },
     },
   },
