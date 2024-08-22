@@ -87,3 +87,14 @@ it('dynamic import', async () => {
     `[Error: Failed to resolve dynamic import 'no-such-module']`,
   )
 })
+
+it('can reload even when same content', async () => {
+  const load = () =>
+    loadConfigFromFile(
+      { command: 'serve', mode: 'development' },
+      resolve(__dirname, '../packages/entry/vite.config.reload.ts'),
+    )
+  const result1 = await load()
+  const result2 = await load()
+  expect(result1.config).not.toBe(result2.config)
+})

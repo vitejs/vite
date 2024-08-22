@@ -1293,6 +1293,9 @@ async function loadConfigFromBundledFile(
   // convert to base64, load it with native Node ESM.
   if (isESM) {
     try {
+      // prepend timestamp for import cache busting
+      bundledCode =
+        `"${Date.now()}-${Math.random().toString(16).slice(2)}";` + bundledCode
       return (
         await import(
           'data:text/javascript;base64,' +
