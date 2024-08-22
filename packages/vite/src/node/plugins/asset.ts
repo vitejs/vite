@@ -204,10 +204,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           config.command === 'build' && this.getModuleInfo(id)?.isEntry
             ? 'no-treeshake'
             : false,
-        meta:
-          config.command === 'build' && this.getModuleInfo(id)?.isEntry
-            ? { 'vite:asset': true }
-            : undefined,
+        meta: config.command === 'build' ? { 'vite:asset': true } : undefined,
       }
     },
 
