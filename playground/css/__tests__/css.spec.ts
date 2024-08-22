@@ -93,6 +93,7 @@ test('sass', async () => {
     isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
   expect(await getColor(partialImport)).toBe('orchid')
+  expect(await getColor(await page.$('.sass-file-absolute'))).toBe('orange')
 
   editFile('sass.scss', (code) =>
     code.replace('color: $injectedColor', 'color: red'),
