@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import {
   browserErrors,
   browserLogs,
@@ -8,15 +8,12 @@ import {
   isServe,
   listAssets,
   page,
+  ports,
   readManifest,
   serverLogs,
   untilBrowserLogAfter,
   untilUpdated,
 } from '~utils'
-
-const outerAssetMatch = isBuild
-  ? /\/dev\/assets\/logo-[-\w]{8}\.png/
-  : /\/dev\/@fs\/.+?\/images\/logo\.png/
 
 test('should have no 404s', () => {
   browserLogs.forEach((msg) => {
@@ -26,9 +23,25 @@ test('should have no 404s', () => {
 
 describe('asset imports from js', () => {
   test('file outside root', async () => {
-    expect(
-      await page.textContent('.asset-reference.outside-root .asset-url'),
-    ).toMatch(outerAssetMatch)
+    // assert valid image src https://github.com/microsoft/playwright/issues/6046#issuecomment-1799585719
+    await vi.waitUntil(() =>
+      page
+        .locator('.asset-reference.outside-root .asset-preview')
+        .evaluate((el: HTMLImageElement) => el.naturalWidth > 0),
+    )
+
+    const text = await page.textContent(
+      '.asset-reference.outside-root .asset-url',
+    )
+    if (isBuild) {
+      expect(text).toMatch(/\/dev\/assets\/logo-[-\w]{8}\.png/)
+    } else {
+      // asset url is prefixed with server.origin
+      expect(text).toMatch(
+        `http://localhost:${ports['backend-integration']}/dev/@fs/`,
+      )
+      expect(text).toMatch(/\/dev\/@fs\/.+?\/images\/logo\.png/)
+    }
   })
 })
 
