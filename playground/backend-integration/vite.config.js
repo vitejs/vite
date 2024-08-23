@@ -29,9 +29,7 @@ function BackendIntegrationExample() {
           origin: 'http://localhost:5009',
         },
         preview: {
-          // avoid conflict with default 4173 port
           port: 5009,
-          strictPort: true,
         },
         build: {
           manifest: true,

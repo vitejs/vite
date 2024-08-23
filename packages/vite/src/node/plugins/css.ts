@@ -1076,14 +1076,27 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
     },
 
     get sass() {
-      return (sassResolve ??= createIdResolver(config, {
-        extensions: ['.scss', '.sass', '.css'],
-        mainFields: ['sass', 'style'],
-        conditions: ['sass', 'style'],
-        tryIndex: true,
-        tryPrefix: '_',
-        preferRelative: true,
-      }))
+      if (!sassResolve) {
+        const resolver = createIdResolver(config, {
+          extensions: ['.scss', '.sass', '.css'],
+          mainFields: ['sass', 'style'],
+          conditions: ['sass', 'style'],
+          tryIndex: true,
+          tryPrefix: '_',
+          preferRelative: true,
+        })
+        sassResolve = async (...args) => {
+          const id = args[1]
+          if (id.startsWith('file://')) {
+            const fileUrl = new URL(id)
+            if (fs.existsSync(fileUrl)) {
+              return fileURLToPath(fileUrl)
+            }
+          }
+          return resolver(...args)
+        }
+      }
+      return sassResolve
     },
 
     get less() {
