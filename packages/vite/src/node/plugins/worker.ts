@@ -83,7 +83,7 @@ async function bundleWorkerEntry(
       injectEnvironmentToHooks(workerEnvironment, p),
     ),
     onwarn(warning, warn) {
-      onRollupWarning(warning, warn, config)
+      onRollupWarning(warning, warn, workerEnvironment)
     },
     preserveEntrySignatures: false,
   })

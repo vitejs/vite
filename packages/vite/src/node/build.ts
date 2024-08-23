@@ -617,7 +617,7 @@ export async function buildEnvironment(
     plugins,
     external: options.rollupOptions?.external,
     onwarn(warning, warn) {
-      onRollupWarning(warning, warn, config)
+      onRollupWarning(warning, warn, environment)
     },
   }
 
@@ -1026,7 +1026,7 @@ function clearLine() {
 export function onRollupWarning(
   warning: RollupLog,
   warn: LoggingFunction,
-  config: ResolvedConfig,
+  environment: BuildEnvironment,
 ): void {
   const viteWarn: LoggingFunction = (warnLog) => {
     let warning: string | RollupLog
@@ -1066,7 +1066,7 @@ export function onRollupWarning(
       }
 
       if (warning.code === 'PLUGIN_WARNING') {
-        config.logger.warn(
+        environment.logger.warn(
           `${colors.bold(
             colors.yellow(`[plugin:${warning.plugin}]`),
           )} ${colors.yellow(warning.message)}`,
@@ -1079,7 +1079,7 @@ export function onRollupWarning(
   }
 
   clearLine()
-  const userOnWarn = config.build.rollupOptions?.onwarn
+  const userOnWarn = environment.config.build.rollupOptions?.onwarn
   if (userOnWarn) {
     userOnWarn(warning, viteWarn)
   } else {
