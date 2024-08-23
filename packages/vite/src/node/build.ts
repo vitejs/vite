@@ -495,11 +495,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
       ...(options.minify ? [terserPlugin(config)] : []),
       ...(!config.isWorker
-        ? [
-            ...(options.manifest ? [manifestPlugin()] : []),
-            ...(options.ssrManifest ? [ssrManifestPlugin(config)] : []),
-            buildReporterPlugin(config),
-          ]
+        ? [manifestPlugin(), ssrManifestPlugin(), buildReporterPlugin(config)]
         : []),
       buildLoadFallbackPlugin(),
     ],

@@ -7,6 +7,7 @@ import type {
 } from 'rollup'
 import type { Plugin } from '../plugin'
 import { normalizePath, sortObjectKeys } from '../utils'
+import { usePerEnvironmentState } from '../environment'
 import { generatedAssetsMap } from './asset'
 
 const endsWithJSRE = /\.[cm]?js$/
@@ -26,18 +27,30 @@ export interface ManifestChunk {
 }
 
 export function manifestPlugin(): Plugin {
-  const manifest: Manifest = {}
-
-  let outputCount: number
+  const getState = usePerEnvironmentState(() => {
+    return {
+      manifest: {} as Manifest,
+      outputCount: 0,
+      reset() {
+        this.outputCount = 0
+      },
+    }
+  })
 
   return {
     name: 'vite:manifest',
 
+    applyToEnvironment(environment) {
+      return !!environment.config.build.manifest
+    },
+
     buildStart() {
-      outputCount = 0
+      getState(this).reset()
     },
 
     generateBundle({ format }, bundle) {
+      const state = getState(this)
+      const { manifest } = state
       const { root } = this.environment.config
       const buildOptions = this.environment.config.build
 
@@ -160,10 +173,10 @@ export function manifestPlugin(): Plugin {
         }
       }
 
-      outputCount++
+      state.outputCount++
       const output = buildOptions.rollupOptions?.output
       const outputLength = Array.isArray(output) ? output.length : 1
-      if (outputCount >= outputLength) {
+      if (state.outputCount >= outputLength) {
         this.emitFile({
           fileName:
             typeof buildOptions.manifest === 'string'
