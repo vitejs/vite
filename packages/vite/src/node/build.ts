@@ -811,7 +811,7 @@ export async function buildEnvironment(
         if (event.code === 'BUNDLE_START') {
           logger.info(colors.cyan(`\nbuild started...`))
           if (options.write) {
-            prepareOutDir(resolvedOutDirs, emptyOutDir, config)
+            prepareOutDir(resolvedOutDirs, emptyOutDir, environment)
           }
         } else if (event.code === 'BUNDLE_END') {
           event.result.close()
@@ -830,7 +830,7 @@ export async function buildEnvironment(
     bundle = await rollup(rollupOptions)
 
     if (options.write) {
-      prepareOutDir(resolvedOutDirs, emptyOutDir, config)
+      prepareOutDir(resolvedOutDirs, emptyOutDir, environment)
     }
 
     const res: RollupOutput[] = []
@@ -859,8 +859,9 @@ export async function buildEnvironment(
 function prepareOutDir(
   outDirs: Set<string>,
   emptyOutDir: boolean | null,
-  config: ResolvedConfig,
+  environment: BuildEnvironment,
 ) {
+  const { publicDir } = environment.config
   const outDirsArray = [...outDirs]
   for (const outDir of outDirs) {
     if (emptyOutDir !== false && fs.existsSync(outDir)) {
@@ -881,24 +882,24 @@ function prepareOutDir(
       emptyDir(outDir, [...skipDirs, '.git'])
     }
     if (
-      config.build.copyPublicDir &&
-      config.publicDir &&
-      fs.existsSync(config.publicDir)
+      environment.config.build.copyPublicDir &&
+      publicDir &&
+      fs.existsSync(publicDir)
     ) {
-      if (!areSeparateFolders(outDir, config.publicDir)) {
-        config.logger.warn(
+      if (!areSeparateFolders(outDir, publicDir)) {
+        environment.logger.warn(
           colors.yellow(
             `\n${colors.bold(
               `(!)`,
             )} The public directory feature may not work correctly. outDir ${colors.white(
               colors.dim(outDir),
             )} and publicDir ${colors.white(
-              colors.dim(config.publicDir),
+              colors.dim(publicDir),
             )} are not separate folders.\n`,
           ),
         )
       }
-      copyDir(config.publicDir, outDir)
+      copyDir(publicDir, outDir)
     }
   }
 }
