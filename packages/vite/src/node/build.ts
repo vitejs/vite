@@ -493,7 +493,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
     post: [
       buildImportAnalysisPlugin(config),
       ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
-      ...(options.minify ? [terserPlugin(config)] : []),
+      terserPlugin(config),
       ...(!config.isWorker
         ? [manifestPlugin(), ssrManifestPlugin(), buildReporterPlugin(config)]
         : []),
