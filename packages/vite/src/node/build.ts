@@ -475,20 +475,34 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   pre: Plugin[]
   post: Plugin[]
 }> {
-  const options = config.build
-  const { commonjsOptions } = options
+  const { commonjsOptions } = config.build
   const usePluginCommonjs =
-    !Array.isArray(commonjsOptions?.include) ||
-    commonjsOptions?.include.length !== 0
-  const rollupOptionsPlugins = options.rollupOptions.plugins
+    !Array.isArray(commonjsOptions.include) ||
+    commonjsOptions.include.length !== 0
   return {
     pre: [
       completeSystemWrapPlugin(),
-      ...(usePluginCommonjs ? [commonjsPlugin(options.commonjsOptions)] : []),
+      /**
+       * environment.config.build.commonjsOptions isn't currently supported
+       * when builder.sharedConfigBuild or builder.sharedPlugins enabled.
+       * To do it, we could inject one commonjs plugin per environment with
+       * an applyToEnvironment hook.
+       */
+      ...(usePluginCommonjs ? [commonjsPlugin(commonjsOptions)] : []),
       dataURIPlugin(),
-      ...((await asyncFlatten(arraify(rollupOptionsPlugins))).filter(
-        Boolean,
-      ) as Plugin[]),
+      /**
+       * environment.config.build.rollupOptions.plugins isn't supported
+       * when builder.sharedConfigBuild or builder.sharedPlugins is enabled.
+       * To do it, we should add all these plugins to the global pipeline, each with
+       * an applyToEnvironment hook. It is similar to letting the user add per
+       * environment plugins giving them a environment.config.plugins option that
+       * we decided against.
+       * For backward compatibility, we are still injecting the rollup plugins
+       * defined in the default root build options.
+       */
+      ...((
+        await asyncFlatten(arraify(config.build.rollupOptions.plugins))
+      ).filter(Boolean) as Plugin[]),
       ...(config.isWorker ? [webWorkerPostPlugin()] : []),
     ],
     post: [
