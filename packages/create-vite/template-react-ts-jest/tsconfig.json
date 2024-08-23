@@ -23,7 +23,5 @@
     "types": ["node", "@testing-library/jest-dom"]
   },
   "include": ["src"],
-  "references": [
-    { "path": "./tsconfig.node.json" }
-  ]
+  "references": [{ "path": "./tsconfig.node.json" }]
 }
