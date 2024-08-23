@@ -278,7 +278,6 @@ cli
     `[boolean] force empty outDir when it's outside of root`,
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
-  .option('--environment [name]', `[string] build a single environment`)
   .option('--app', `[boolean] same as builder.entireApp`)
   .action(
     async (
@@ -286,38 +285,34 @@ cli
       options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
     ) => {
       filterDuplicateOptions(options)
-      const { createBuilder, buildEnvironment } = await import('./build')
+      const build = await import('./build')
 
       const buildOptions: BuildEnvironmentOptions = cleanGlobalCLIOptions(
         cleanBuilderCLIOptions(options),
       )
 
-      const config = {
-        root,
-        base: options.base,
-        mode: options.mode,
-        configFile: options.config,
-        logLevel: options.logLevel,
-        clearScreen: options.clearScreen,
-        build: buildOptions,
-      }
-
       try {
-        const builder = await createBuilder(config)
-        // TODO: Backward compatibility with lib and single environment build
-        // Ideally we would move to only building the entire app with this command
-        if (builder.config.build.lib) {
-          await buildEnvironment(
-            builder.config,
-            builder.environments.client,
-            builder.config.build.lib,
+        const inlineConfig = {
+          root,
+          base: options.base,
+          mode: options.mode,
+          configFile: options.config,
+          logLevel: options.logLevel,
+          clearScreen: options.clearScreen,
+          build: buildOptions,
+          ...(options.app ? { builder: { entireApp: true } } : {}),
+        }
+        const config = await build.resolveConfigToBuild(inlineConfig)
+
+        if (config.builder.entireApp) {
+          const builder = await build.createBuilderWithResolvedConfig(
+            inlineConfig,
+            config,
           )
-        } else if (builder.config.builder.entireApp || options.app) {
           await builder.buildApp()
         } else {
-          const ssr = !!builder.config.build.ssr
-          const environment = builder.environments[ssr ? 'ssr' : 'client']
-          await builder.build(environment)
+          // Single environment (client or ssr) build or library mode build
+          await build.buildWithResolvedConfig(config)
         }
       } catch (e) {
         createLogger(options.logLevel).error(

@@ -518,13 +518,22 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 }
 
 /**
- * Bundles the app for production.
+ * Bundles a single environment for production.
  * Returns a Promise containing the build result.
  */
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const config = await resolveConfigToBuild(inlineConfig)
+  return buildWithResolvedConfig(config)
+}
+
+/**
+ * @internal used to implement `vite build` for backward compatibility
+ */
+export async function buildWithResolvedConfig(
+  config: ResolvedConfig,
+): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const environmentName =
     config.build.lib || !config.build.ssr ? 'client' : 'ssr'
   const environment = await config.build.createEnvironment(
@@ -535,11 +544,11 @@ export async function build(
   return buildEnvironment(config, environment, config.build.lib)
 }
 
-function resolveConfigToBuild(
+export function resolveConfigToBuild(
   inlineConfig: InlineConfig = {},
   patchConfig?: (config: ResolvedConfig) => void,
   patchPlugins?: (resolvedPlugins: Plugin[]) => void,
-) {
+): Promise<ResolvedConfig> {
   return resolveConfig(
     inlineConfig,
     'build',
@@ -1526,11 +1535,24 @@ export function resolveBuilderOptions(
 
 export type ResolvedBuilderOptions = Required<BuilderOptions>
 
+/**
+ * Creates a ViteBuilder to orchestrate building multiple environments.
+ */
 export async function createBuilder(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteBuilder> {
   const config = await resolveConfigToBuild(inlineConfig)
+  return createBuilderWithResolvedConfig(inlineConfig, config)
+}
 
+/**
+ * Used to implement the `vite build` command without resolving the config twice
+ * @internal
+ */
+export async function createBuilderWithResolvedConfig(
+  inlineConfig: InlineConfig,
+  config: ResolvedConfig,
+): Promise<ViteBuilder> {
   const environments: Record<string, BuildEnvironment> = {}
 
   const builder: ViteBuilder = {
