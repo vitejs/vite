@@ -726,11 +726,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           const filename = this.getFileName(referenceId)
           chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
           const replacement = toOutputFilePathInJS(
+            this.environment,
             filename,
             'asset',
             chunk.fileName,
             'js',
-            config,
             toRelativeRuntime,
           )
           const replacementString =

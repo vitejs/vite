@@ -63,11 +63,10 @@ export function renderAssetUrlInJS(
   opts: NormalizedOutputOptions,
   code: string,
 ): MagicString | undefined {
-  const topLevelConfig = pluginContext.environment.getTopLevelConfig()
-
+  const { environment } = pluginContext
   const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
     opts.format,
-    topLevelConfig.isWorker,
+    environment.config.isWorker,
   )
 
   let match: RegExpExecArray | null
@@ -89,11 +88,11 @@ export function renderAssetUrlInJS(
     chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
     const replacement = toOutputFilePathInJS(
+      environment,
       filename,
       'asset',
       chunk.fileName,
       'js',
-      topLevelConfig,
       toRelativeRuntime,
     )
     const replacementString =
@@ -105,18 +104,20 @@ export function renderAssetUrlInJS(
 
   // Replace __VITE_PUBLIC_ASSET__5aA0Ddc0__ with absolute paths
 
-  const publicAssetUrlMap = publicAssetUrlCache.get(topLevelConfig)!
+  const publicAssetUrlMap = publicAssetUrlCache.get(
+    environment.getTopLevelConfig(),
+  )!
   publicAssetUrlRE.lastIndex = 0
   while ((match = publicAssetUrlRE.exec(code))) {
     s ||= new MagicString(code)
     const [full, hash] = match
     const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
     const replacement = toOutputFilePathInJS(
+      environment,
       publicUrl,
       'public',
       chunk.fileName,
       'js',
-      topLevelConfig,
       toRelativeRuntime,
     )
     const replacementString =

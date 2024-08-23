@@ -34,6 +34,7 @@ import type {
   ResolvedEnvironmentOptions,
 } from './config'
 import { getDefaultResolvedEnvironmentOptions, resolveConfig } from './config'
+import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
 import { type TerserOptions, terserPlugin } from './plugins/terser'
@@ -1343,24 +1344,26 @@ export type RenderBuiltAssetUrl = (
 
 // TODO: experimental.renderBuiltUrl => environment.build.renderBuiltUrl?
 export function toOutputFilePathInJS(
+  environment: PartialEnvironment,
   filename: string,
   type: 'asset' | 'public',
   hostId: string,
   hostType: 'js' | 'css' | 'html',
-  config: ResolvedConfig,
   toRelative: (
     filename: string,
     hostType: string,
   ) => string | { runtime: string },
 ): string | { runtime: string } {
-  const { renderBuiltUrl } = config.experimental
-  let relative = config.base === '' || config.base === './'
+  const { experimental, base, decodedBase } = environment.config
+  const ssr = environment.config.consumer === 'server' // was !!environment.config.build.ssr
+  const { renderBuiltUrl } = experimental
+  let relative = base === '' || base === './'
   if (renderBuiltUrl) {
     const result = renderBuiltUrl(filename, {
       hostId,
       hostType,
       type,
-      ssr: !!config.build.ssr,
+      ssr,
     })
     if (typeof result === 'object') {
       if (result.runtime) {
@@ -1373,10 +1376,10 @@ export function toOutputFilePathInJS(
       return result
     }
   }
-  if (relative && !config.build.ssr) {
+  if (relative && !ssr) {
     return toRelative(filename, hostId)
   }
-  return joinUrlSegments(config.decodedBase, filename)
+  return joinUrlSegments(decodedBase, filename)
 }
 
 export function createToImportMetaURLBasedRelativeRuntime(

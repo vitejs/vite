@@ -607,11 +607,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (renderBuiltUrl) {
                   renderedDeps = depsArray.map((dep) => {
                     const replacement = toOutputFilePathInJS(
+                      this.environment,
                       dep,
                       'asset',
                       chunk.fileName,
                       'js',
-                      config,
                       toRelativePath,
                     )
 

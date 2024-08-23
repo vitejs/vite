@@ -393,7 +393,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         return (
           s && {
             code: s.toString(),
-            map: config.build.sourcemap
+            map: this.environment.config.build.sourcemap
               ? s.generateMap({ hires: 'boundary' })
               : null,
           }
@@ -403,7 +403,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (workerAssetUrlRE.test(code)) {
         const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
           outputOptions.format,
-          config.isWorker,
+          this.environment.config.isWorker,
         )
 
         let match: RegExpExecArray | null
@@ -418,11 +418,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
           const replacement = toOutputFilePathInJS(
+            this.environment,
             filename,
             'asset',
             chunk.fileName,
             'js',
-            config,
             toRelativeRuntime,
           )
           const replacementString =
