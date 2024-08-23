@@ -507,7 +507,17 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const config = await resolveConfigToBuild(inlineConfig)
+  const patchConfig = (resolved: ResolvedConfig) => {
+    // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
+    // we need to make override `config.build` for the current environment.
+    // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
+    // remove the default values that shouldn't be used at all once the config is resolved
+    const environmentName = resolved.build.ssr ? 'ssr' : 'client'
+    ;(resolved.build as ResolvedBuildOptions) = {
+      ...resolved.environments[environmentName].build,
+    }
+  }
+  const config = await resolveConfigToBuild(inlineConfig, patchConfig)
   return buildWithResolvedConfig(config)
 }
 
@@ -517,7 +527,7 @@ export async function build(
 export async function buildWithResolvedConfig(
   config: ResolvedConfig,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const environmentName = !config.build.ssr ? 'client' : 'ssr'
+  const environmentName = config.build.ssr ? 'ssr' : 'client'
   const environment = await config.environments[
     environmentName
   ].build.createEnvironment(environmentName, config)
@@ -548,17 +558,7 @@ export async function buildEnvironment(
   environment: BuildEnvironment,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const { root, packageCache } = environment.config
-
-  // Backward compatibility. There are plugins (like @vitejs/plugin-legacy) that were modifying
-  // the top level config directly on resolved config. Adding an extra rollupOptions.output entry
-  // for example. We use the top level config to get the build options to avoid breaking changes,
-  // If sharedConfigBuild is false, the top level config is patched with the values from the
-  // environment config before calling resolvedConfig.
-  const topLevelConfig = environment.getTopLevelConfig()
-  const options = topLevelConfig.builder.sharedConfigBuild
-    ? environment.config.build
-    : topLevelConfig.build
-
+  const options = environment.config.build
   const libOptions = options.lib
   const { logger } = environment
   const ssr = environment.config.consumer === 'server'
@@ -1557,7 +1557,7 @@ export async function createBuilderWithResolvedConfig(
     },
   }
 
-  for (const name of Object.keys(config.environments)) {
+  for (const environmentName of Object.keys(config.environments)) {
     // We need to resolve the config again so we can properly merge options
     // and get a new set of plugins for each build environment. The ecosystem
     // expects plugins to be run for the same environment once they are created
@@ -1571,7 +1571,7 @@ export async function createBuilderWithResolvedConfig(
         // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
         // remove the default values that shouldn't be used at all once the config is resolved
         ;(resolved.build as ResolvedBuildOptions) = {
-          ...resolved.environments[name].build,
+          ...resolved.environments[environmentName].build,
         }
       }
       const patchPlugins = (resolvedPlugins: Plugin[]) => {
@@ -1606,13 +1606,13 @@ export async function createBuilderWithResolvedConfig(
     }
 
     const environment = await environmentConfig.build.createEnvironment(
-      name,
+      environmentName,
       environmentConfig,
     )
 
     await environment.init()
 
-    environments[name] = environment
+    environments[environmentName] = environment
   }
 
   return builder

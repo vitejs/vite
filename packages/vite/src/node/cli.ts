@@ -4,12 +4,13 @@ import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import { VERSION } from './constants'
-import type { BuildEnvironmentOptions } from './build'
+import type { BuildEnvironmentOptions, ResolvedBuildOptions } from './build'
 import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { resolveConfig } from './config'
+import type { ResolvedConfig } from './config'
 
 const cli = cac('vite')
 
@@ -302,7 +303,23 @@ cli
           build: buildOptions,
           ...(options.app ? { builder: { entireApp: true } } : {}),
         }
-        const config = await build.resolveConfigToBuild(inlineConfig)
+        const patchConfig = (resolved: ResolvedConfig) => {
+          if (resolved.builder.entireApp) {
+            return
+          }
+          // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
+          // we need to make override `config.build` for the current environment.
+          // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
+          // remove the default values that shouldn't be used at all once the config is resolved
+          const environmentName = resolved.build.ssr ? 'ssr' : 'client'
+          ;(resolved.build as ResolvedBuildOptions) = {
+            ...resolved.environments[environmentName].build,
+          }
+        }
+        const config = await build.resolveConfigToBuild(
+          inlineConfig,
+          patchConfig,
+        )
 
         if (config.builder.entireApp) {
           const builder = await build.createBuilderWithResolvedConfig(
