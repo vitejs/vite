@@ -601,8 +601,7 @@ export async function buildEnvironment(
   const outDir = resolve(options.outDir)
 
   // inject environment and ssr arg to plugin load/transform hooks
-  // TODO: rework lib mode
-  const plugins = (libOptions ? config : environment).plugins.map((p) =>
+  const plugins = environment.plugins.map((p) =>
     injectEnvironmentToHooks(environment, p),
   )
 
