@@ -37,11 +37,7 @@ import type {
   ResolvedBuildOptions,
   ResolvedBuilderOptions,
 } from './build'
-import {
-  resolveBuildEnvironmentOptions,
-  resolveBuildOptions,
-  resolveBuilderOptions,
-} from './build'
+import { resolveBuildEnvironmentOptions, resolveBuilderOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import { DevEnvironment } from './server/environment'
@@ -1028,10 +1024,11 @@ export async function resolveConfig(
     undefined, // default environment
   )
 
-  const resolvedBuildOptions = resolveBuildOptions(
+  const resolvedBuildOptions = resolveBuildEnvironmentOptions(
     config.build ?? {},
     logger,
     resolvedRoot,
+    undefined,
   )
 
   // Backward compatibility: merge config.environments.ssr back into config.ssr

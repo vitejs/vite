@@ -262,9 +262,7 @@ export interface BuildEnvironmentOptions {
     name: string,
     config: ResolvedConfig,
   ) => Promise<BuildEnvironment> | BuildEnvironment
-}
 
-export interface BuildOptions extends BuildEnvironmentOptions {
   /**
    * Build in library mode. The value should be the global name of the lib in
    * UMD mode. This will produce esm + cjs + umd bundle formats with default
@@ -273,6 +271,8 @@ export interface BuildOptions extends BuildEnvironmentOptions {
    */
   lib?: LibraryOptions | false
 }
+
+export type BuildOptions = BuildEnvironmentOptions
 
 export interface LibraryOptions {
   /**
@@ -336,28 +336,11 @@ export interface ResolvedBuildOptions
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
-export function resolveBuildOptions(
-  raw: BuildOptions,
-  logger: Logger,
-  root: string,
-): ResolvedBuildOptions {
-  const libMode = raw.lib ?? false
-  const buildOptions = resolveBuildEnvironmentOptions(
-    raw,
-    logger,
-    root,
-    undefined,
-    libMode,
-  )
-  return { ...buildOptions, lib: libMode }
-}
-
 export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
   logger: Logger,
   root: string,
   environmentName: string | undefined,
-  libMode: false | LibraryOptions = false,
 ): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
   const { polyfillModulePreload, ...rest } = raw
@@ -383,7 +366,7 @@ export function resolveBuildEnvironmentOptions(
     outDir: 'dist',
     assetsDir: 'assets',
     assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
-    cssCodeSplit: !libMode,
+    cssCodeSplit: !raw.lib,
     sourcemap: false,
     rollupOptions: {},
     minify: raw.ssr ? false : 'esbuild',
@@ -534,14 +517,13 @@ export async function build(
 export async function buildWithResolvedConfig(
   config: ResolvedConfig,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const environmentName =
-    config.build.lib || !config.build.ssr ? 'client' : 'ssr'
+  const environmentName = !config.build.ssr ? 'client' : 'ssr'
   const environment = await config.build.createEnvironment(
     environmentName,
     config,
   )
   await environment.init()
-  return buildEnvironment(config, environment, config.build.lib)
+  return buildEnvironment(environment)
 }
 
 export function resolveConfigToBuild(
@@ -564,11 +546,11 @@ export function resolveConfigToBuild(
  * Build an App environment, or a App library (if libraryOptions is provided)
  **/
 export async function buildEnvironment(
-  config: ResolvedConfig,
   environment: BuildEnvironment,
-  libOptions: LibraryOptions | false = false,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
+  const config = environment.getTopLevelConfig() // TODO: move to environment.config
   const options = config.build
+  const libOptions = environment.config.build.lib
   const { logger } = environment
   const ssr = environment.config.consumer === 'server'
 
@@ -1567,7 +1549,7 @@ export async function createBuilderWithResolvedConfig(
       return config.builder.buildApp(builder)
     },
     async build(environment: BuildEnvironment) {
-      return buildEnvironment(environment.getTopLevelConfig(), environment)
+      return buildEnvironment(environment)
     },
   }
 
