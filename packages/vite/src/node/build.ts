@@ -518,10 +518,9 @@ export async function buildWithResolvedConfig(
   config: ResolvedConfig,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const environmentName = !config.build.ssr ? 'client' : 'ssr'
-  const environment = await config.build.createEnvironment(
-    environmentName,
-    config,
-  )
+  const environment = await config.environments[
+    environmentName
+  ].build.createEnvironment(environmentName, config)
   await environment.init()
   return buildEnvironment(environment)
 }
