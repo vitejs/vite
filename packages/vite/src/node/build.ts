@@ -547,21 +547,31 @@ export function resolveConfigToBuild(
 export async function buildEnvironment(
   environment: BuildEnvironment,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const config = environment.getTopLevelConfig() // TODO: move to environment.config
-  const options = config.build
-  const libOptions = environment.config.build.lib
+  const { root, packageCache } = environment.config
+
+  // Backward compatibility. There are plugins (like @vitejs/plugin-legacy) that were modifying
+  // the top level config directly on resolved config. Adding an extra rollupOptions.output entry
+  // for example. We use the top level config to get the build options to avoid breaking changes,
+  // If sharedConfigBuild is false, the top level config is patched with the values from the
+  // environment config before calling resolvedConfig.
+  const topLevelConfig = environment.getTopLevelConfig()
+  const options = topLevelConfig.builder.sharedConfigBuild
+    ? environment.config.build
+    : topLevelConfig.build
+
+  const libOptions = options.lib
   const { logger } = environment
   const ssr = environment.config.consumer === 'server'
 
   logger.info(
     colors.cyan(
       `vite v${VERSION} ${colors.green(
-        `building ${ssr ? `SSR bundle ` : ``}for ${config.mode}...`,
+        `building ${ssr ? `SSR bundle ` : ``}for ${environment.config.mode}...`,
       )}`,
     ),
   )
 
-  const resolve = (p: string) => path.resolve(config.root, p)
+  const resolve = (p: string) => path.resolve(root, p)
   const input = libOptions
     ? options.rollupOptions?.input ||
       (typeof libOptions.entry === 'string'
@@ -584,7 +594,7 @@ export async function buildEnvironment(
         `Please specify a dedicated SSR entry.`,
     )
   }
-  if (config.build.cssCodeSplit === false) {
+  if (options.cssCodeSplit === false) {
     const inputs =
       typeof input === 'string'
         ? [input]
@@ -611,8 +621,9 @@ export async function buildEnvironment(
       : libOptions
         ? 'strict'
         : false,
-    cache: config.build.watch ? undefined : false,
+    cache: options.watch ? undefined : false,
     ...options.rollupOptions,
+    output: options.rollupOptions.output,
     input,
     plugins,
     external: options.rollupOptions?.external,
@@ -713,8 +724,7 @@ export async function buildEnvironment(
         !environment.config.webCompatible || libOptions
           ? resolveOutputJsExtension(
               format,
-              findNearestPackageData(config.root, config.packageCache)?.data
-                .type,
+              findNearestPackageData(root, packageCache)?.data.type,
             )
           : 'js'
       return {
@@ -737,9 +747,9 @@ export async function buildEnvironment(
                   libOptions,
                   format,
                   name,
-                  config.root,
+                  root,
                   jsExt,
-                  config.packageCache,
+                  packageCache,
                 )
             : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
         chunkFileNames: libOptions
@@ -775,26 +785,26 @@ export async function buildEnvironment(
     }
 
     const resolvedOutDirs = getResolvedOutDirs(
-      config.root,
+      root,
       options.outDir,
       options.rollupOptions?.output,
     )
     const emptyOutDir = resolveEmptyOutDir(
       options.emptyOutDir,
-      config.root,
+      root,
       resolvedOutDirs,
       logger,
     )
 
     // watch file changes with rollup
-    if (config.build.watch) {
+    if (options.watch) {
       logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
-        config.build.watch.chokidar,
+        options.watch.chokidar,
         resolvedOutDirs,
         emptyOutDir,
-        config.cacheDir,
+        environment.config.cacheDir,
       )
 
       const { watch } = await import('rollup')
@@ -802,7 +812,7 @@ export async function buildEnvironment(
         ...rollupOptions,
         output: normalizedOutputs,
         watch: {
-          ...config.build.watch,
+          ...options.watch,
           chokidar: resolvedChokidarOptions,
         },
       })
@@ -1540,11 +1550,6 @@ export async function createBuilderWithResolvedConfig(
     environments,
     config,
     async buildApp() {
-      if (config.build.watch) {
-        throw new Error(
-          'Watch mode is not yet supported in viteBuilder.buildApp()',
-        )
-      }
       return config.builder.buildApp(builder)
     },
     async build(environment: BuildEnvironment) {
@@ -1567,7 +1572,6 @@ export async function createBuilderWithResolvedConfig(
         // remove the default values that shouldn't be used at all once the config is resolved
         ;(resolved.build as ResolvedBuildOptions) = {
           ...resolved.environments[name].build,
-          lib: false,
         }
       }
       const patchPlugins = (resolvedPlugins: Plugin[]) => {
