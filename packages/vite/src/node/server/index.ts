@@ -916,10 +916,10 @@ export async function _createServer(
     if (initingServer) return initingServer
 
     initingServer = (async function () {
-      // TODO: Build start should be called for all environments
-      // The ecosystem and our tests expects a single call. We need to
-      // check how to do this change to be backward compatible
-      await server.environments.client.pluginContainer.buildStart({})
+      // For backward compatibility, we call buildStart for the client
+      // environment when initing the server. For other environments
+      // buildStart will be called when the first request is transformed
+      await environments.client.pluginContainer.buildStart({})
 
       await Promise.all(
         Object.values(server.environments).map((environment) =>

@@ -63,7 +63,6 @@ export class DevEnvironment extends BaseEnvironment {
   _pluginContainer: EnvironmentPluginContainer | undefined
 
   /**
-   * TODO: should this be public?
    * @internal
    */
   _closing: boolean = false
@@ -164,13 +163,6 @@ export class DevEnvironment extends BaseEnvironment {
       this._plugins,
       options?.watcher,
     )
-
-    // TODO: Should buildStart be called here? It break backward compatibility if we do,
-    // and it may be better to delay it for performance
-
-    // The deps optimizer init is delayed. TODO: add internal option?
-
-    // TODO: move warmup here
   }
 
   fetchModule(
