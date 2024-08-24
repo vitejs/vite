@@ -39,6 +39,10 @@ interface DynamicImportPattern {
   rawPattern: string
 }
 
+function normalizeGlobPattern(pattern: string) {
+  return pattern.replace(/\\([()])/g, '$1')
+}
+
 const dynamicImportHelper = (
   glob: Record<string, any>,
   path: string,
@@ -144,7 +148,9 @@ export async function transformDynamicImport(
 
   let newRawPattern = posix.relative(
     posix.dirname(importer),
-    await toAbsoluteGlob(rawPattern, root, importer, resolve),
+    normalizeGlobPattern(
+      await toAbsoluteGlob(rawPattern, root, importer, resolve),
+    ),
   )
 
   if (!relativePathRE.test(newRawPattern)) {
