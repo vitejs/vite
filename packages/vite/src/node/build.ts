@@ -374,6 +374,7 @@ export function resolveBuildEnvironmentOptions(
     emptyOutDir: null,
     copyPublicDir: true,
     manifest: false,
+    lib: false,
     ssr: consumer === 'server',
     ssrManifest: false,
     ssrEmitAssets: false,
