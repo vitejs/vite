@@ -664,7 +664,7 @@ function resolveEnvironmentOptions(
       options.build ?? {},
       logger,
       resolvedRoot,
-      environmentName,
+      consumer,
     ),
   }
 }

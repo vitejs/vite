@@ -340,7 +340,7 @@ export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
   logger: Logger,
   root: string,
-  environmentName: string | undefined,
+  consumer: string | undefined,
 ): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
   const { polyfillModulePreload, ...rest } = raw
@@ -375,10 +375,10 @@ export function resolveBuildEnvironmentOptions(
     emptyOutDir: null,
     copyPublicDir: true,
     manifest: false,
-    ssr: false,
+    ssr: consumer === 'server',
     ssrManifest: false,
     ssrEmitAssets: false,
-    emitAssets: environmentName === 'client',
+    emitAssets: consumer === 'client',
     reportCompressedSize: true,
     chunkSizeWarningLimit: 500,
     watch: null,
