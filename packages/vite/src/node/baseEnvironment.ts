@@ -18,10 +18,12 @@ export class PartialEnvironment {
     return this._options
   }
 
-  _options: ResolvedEnvironmentOptions
-
   logger: Logger
 
+  /**
+   * @internal
+   */
+  _options: ResolvedEnvironmentOptions
   /**
    * @internal
    */
