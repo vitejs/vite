@@ -31,9 +31,6 @@ export default defineConfig({
           }
         },
       },
-      sass: {
-        api: 'modern-compiler',
-      },
     },
   },
   build: {
