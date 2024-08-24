@@ -2276,6 +2276,11 @@ const makeModernScssWorker = (
         ]
 
         const result = await sass.compileStringAsync(data, sassOptions)
+        if (result.sourceMap) {
+          result.sourceMap.sources = result.sourceMap.sources.map((url) =>
+            url.startsWith('file://') ? fileURLToPath(url) : url,
+          )
+        }
         return {
           css: result.css,
           map: result.sourceMap ? JSON.stringify(result.sourceMap) : undefined,
@@ -2362,6 +2367,11 @@ const makeModernCompilerScssWorker = (
       ]
 
       const result = await compiler.compileStringAsync(data, sassOptions)
+      if (result.sourceMap) {
+        result.sourceMap.sources = result.sourceMap.sources.map((url) =>
+          url.startsWith('file://') ? fileURLToPath(url) : url,
+        )
+      }
       return {
         css: result.css,
         map: result.sourceMap ? JSON.stringify(result.sourceMap) : undefined,
