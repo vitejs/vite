@@ -146,7 +146,7 @@ export class DevEnvironment extends BaseEnvironment {
       // and full reload for general environments, we can enable auto-discovery for
       // them in the future
       this.depsOptimizer = (
-        optimizeDeps.noDiscovery || name !== 'client'
+        optimizeDeps.noDiscovery || options.consumer !== 'client'
           ? createExplicitDepsOptimizer
           : createDepsOptimizer
       )(this)

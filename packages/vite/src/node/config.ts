@@ -790,7 +790,7 @@ function resolveEnvironmentResolveOptions(
 function resolveDepOptimizationOptions(
   optimizeDeps: DepOptimizationOptions | undefined,
   preserveSymlinks: boolean,
-  environmentName: string | undefined,
+  consumer: 'client' | 'server' | undefined,
 ): DepOptimizationOptions {
   optimizeDeps ??= {}
   return {
@@ -798,7 +798,7 @@ function resolveDepOptimizationOptions(
     exclude: optimizeDeps.exclude ?? [],
     needsInterop: optimizeDeps.needsInterop ?? [],
     extensions: optimizeDeps.extensions ?? [],
-    noDiscovery: optimizeDeps.noDiscovery ?? environmentName !== 'client',
+    noDiscovery: optimizeDeps.noDiscovery ?? consumer !== 'client',
     holdUntilCrawlEnd: optimizeDeps.holdUntilCrawlEnd ?? true,
     esbuildOptions: {
       preserveSymlinks, // TODO: ?
