@@ -287,8 +287,8 @@ export default defineConfig({
               link: '/guide/api-javascript',
             },
             {
-              text: 'Vite Environment API',
-              link: '/guide/api-vite-environment',
+              text: 'Environment API',
+              link: '/guide/api-environment',
             },
             {
               text: 'Config Reference',

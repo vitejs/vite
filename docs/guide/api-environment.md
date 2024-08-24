@@ -1,7 +1,7 @@
-# Vite Environment API
+# Environment API
 
 :::warning Low-level API
-Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Vite Environment API. This API will be released in Vite 6. You can already test it in the latest `vite@6.0.0-alpha.x` version.
+Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Environment API. This API will be released in Vite 6. You can already test it in the latest `vite@6.0.0-alpha.x` version.
 
 Resources:
 

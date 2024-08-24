@@ -6,7 +6,7 @@ Give us feedback at [Environment API feedback discussion](https://github.com/vit
 
 Multiple APIs from ViteDevServer related to module graph has replaced with more isolated Environment APIs.
 
-- `server.moduleGraph` -> [`environment.moduleGraph`](/guide/api-vite-environment#separate-module-graphs)
+- `server.moduleGraph` -> [`environment.moduleGraph`](/guide/api-environment#separate-module-graphs)
 - `server.transformRequest` -> `environment.transformRequest`
 - `server.warmupRequest` -> `environment.warmupRequest`
 
