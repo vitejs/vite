@@ -53,7 +53,7 @@ export function createIsConfiguredAsExternal(
   environment: PartialEnvironment,
 ): (id: string, importer?: string) => boolean {
   const { config } = environment
-  const { root, resolve, webCompatible, nodeCompatible } = config
+  const { root, resolve, webCompatible } = config
   const { external, noExternal } = resolve
   const noExternalFilter =
     typeof noExternal !== 'boolean' &&
@@ -69,7 +69,6 @@ export function createIsConfiguredAsExternal(
     isBuild: true,
     conditions: targetConditions,
     webCompatible,
-    nodeCompatible,
   }
 
   const isExternalizable = (

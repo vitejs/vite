@@ -245,7 +245,6 @@ export interface SharedEnvironmentOptions {
    * Runtime Compatibility
    * Temporal options, we should remove these in favor of fine-grained control
    */
-  nodeCompatible?: boolean
   webCompatible?: boolean // was ssr.target === 'webworker'
   /**
    * Should Vite inject timestamp if module is invalidated
@@ -273,7 +272,6 @@ export type ResolvedEnvironmentResolveOptions =
 export type ResolvedEnvironmentOptions = {
   resolve: ResolvedEnvironmentResolveOptions
   consumer: 'client' | 'server'
-  nodeCompatible: boolean
   webCompatible: boolean
   injectInvalidationTimestamp: boolean
   dev: ResolvedDevEnvironmentOptions
@@ -282,11 +280,7 @@ export type ResolvedEnvironmentOptions = {
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  | 'build'
-  | 'consumer'
-  | 'nodeCompatible'
-  | 'webCompatible'
-  | 'injectInvalidationTimestamp'
+  'build' | 'consumer' | 'webCompatible' | 'injectInvalidationTimestamp'
 > & {
   // Includes lib mode support
   build?: BuildOptions
@@ -650,7 +644,6 @@ function resolveEnvironmentOptions(
   return {
     resolve,
     consumer,
-    nodeCompatible: options.nodeCompatible ?? consumer === 'server',
     webCompatible: options.webCompatible ?? consumer === 'client',
     injectInvalidationTimestamp:
       options.injectInvalidationTimestamp ?? consumer === 'client',
@@ -686,7 +679,6 @@ export function getDefaultResolvedEnvironmentOptions(
   return {
     resolve: config.resolve,
     consumer: 'server',
-    nodeCompatible: true,
     webCompatible: false,
     injectInvalidationTimestamp: false,
     dev: config.dev,
@@ -1646,7 +1638,6 @@ async function bundleConfigFile(
               packageCache,
               isRequire,
               webCompatible: false,
-              nodeCompatible: true,
             })?.id
           }
 

@@ -116,7 +116,6 @@ interface ResolvePluginOptions {
   tryPrefix?: string
   preferRelative?: boolean
   isRequire?: boolean
-  nodeCompatible?: boolean
   webCompatible?: boolean
   // #3040
   // when the importer is a ts module,
@@ -241,7 +240,6 @@ export function resolvePlugin(
       const options: InternalResolveOptions = {
         isRequire,
         ...environmentResolveOptions,
-        nodeCompatible: currentEnvironmentOptions.nodeCompatible,
         webCompatible: currentEnvironmentOptions.webCompatible,
         ...resolveOptions, // plugin options + resolve options overrides
         scan: resolveOpts?.scan ?? resolveOptions.scan,
@@ -459,7 +457,7 @@ export function resolvePlugin(
         // node built-ins.
         // externalize if building for a node compatible environment, otherwise redirect to empty module
         if (isBuiltin(id)) {
-          if (options.nodeCompatible) {
+          if (currentEnvironmentOptions.consumer === 'server') {
             if (
               options.webCompatible &&
               options.noExternal === true &&

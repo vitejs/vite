@@ -112,7 +112,6 @@ export function esbuildDepPlugin(
         namespace: 'optional-peer-dep',
       }
     }
-    // TODO: Should this be environment.config.nodeCompatible or a more fine-grained option?
     if (environment.config.consumer === 'server' && isBuiltin(resolved)) {
       return
     }

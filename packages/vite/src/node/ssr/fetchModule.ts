@@ -64,7 +64,6 @@ export async function fetchModule(
         packageCache: environment.config.packageCache,
         tryEsmOnly: true,
         webCompatible: environment.config.webCompatible,
-        nodeCompatible: environment.config.nodeCompatible,
       },
       undefined,
       true,
