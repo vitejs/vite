@@ -109,7 +109,6 @@ export async function resolvePlugins(
           clientInjectionsPlugin(config),
           cssAnalysisPlugin(config),
           importAnalysisPlugin(config),
-          // TODO: loadFallbackPlugin(config),
         ]),
   ].filter(Boolean) as Plugin[]
 }
