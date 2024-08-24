@@ -717,10 +717,10 @@ export async function build(
       logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
-        config,
         config.build.watch.chokidar,
         resolvedOutDirs,
         emptyOutDir,
+        config.cacheDir,
       )
 
       const { watch } = await import('rollup')
