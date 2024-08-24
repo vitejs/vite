@@ -92,7 +92,6 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
-// TODO: environment?
 function optimizeAliasReplacementForSSR(
   id: string,
   optimizeDeps: DepOptimizationOptions,
