@@ -58,10 +58,6 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   }
 
   function generatePattern(environment: Environment) {
-    // This is equivalent to the old `!ssr || config.ssr?.target === 'webworker'`
-    // TODO: We shouldn't keep options.webCompatible
-    // Do we need a per-environment replaceProcessEnv option?
-    // Is it useful to have define be configured per-environment?
     const replaceProcessEnv = environment.config.webCompatible
 
     const define: Record<string, string> = {

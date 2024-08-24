@@ -233,6 +233,11 @@ type EnvironmentResolveOptions = ResolveOptions & {
 
 export interface SharedEnvironmentOptions {
   /**
+   * Define global variable replacements.
+   * Entries will be defined on `window` during dev and replaced during build.
+   */
+  define?: Record<string, any>
+  /**
    * Configure resolver
    */
   resolve?: EnvironmentResolveOptions
@@ -270,6 +275,7 @@ export type ResolvedEnvironmentResolveOptions =
   Required<EnvironmentResolveOptions>
 
 export type ResolvedEnvironmentOptions = {
+  define?: Record<string, any>
   resolve: ResolvedEnvironmentResolveOptions
   consumer: 'client' | 'server'
   webCompatible: boolean
@@ -322,11 +328,6 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * each command, and can be overridden by the command line --mode option.
    */
   mode?: string
-  /**
-   * Define global variable replacements.
-   * Entries will be defined on `window` during dev and replaced during build.
-   */
-  define?: Record<string, any>
   /**
    * Array of vite plugins to use.
    */
@@ -667,6 +668,7 @@ export function getDefaultEnvironmentOptions(
   config: UserConfig,
 ): EnvironmentOptions {
   return {
+    define: config.define,
     resolve: config.resolve,
     dev: config.dev,
     build: config.build,
@@ -677,6 +679,7 @@ export function getDefaultResolvedEnvironmentOptions(
   config: ResolvedConfig,
 ): ResolvedEnvironmentOptions {
   return {
+    define: config.define,
     resolve: config.resolve,
     consumer: 'server',
     webCompatible: false,
