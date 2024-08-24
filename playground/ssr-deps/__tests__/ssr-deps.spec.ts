@@ -123,7 +123,7 @@ describe.runIf(isServe)('hmr', () => {
   // TODO: the server file is not imported on the client at all
   // so it's not present in the client moduleGraph anymore
   // we need to decide if we want to support a usecase when ssr change
-  // affcts the client in any way
+  // affects the client in any way
   test.skip('handle isomorphic module updates', async () => {
     await page.goto(url)
 

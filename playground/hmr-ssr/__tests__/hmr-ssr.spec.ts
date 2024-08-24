@@ -297,7 +297,7 @@ describe('hmr works correctly', () => {
   //   expect((await page.$$('link')).length).toBe(1)
   // })
 
-  // #2255 - not applicable to SSR becaue invlaidateModule expects the module
+  // #2255 - not applicable to SSR because invalidateModule expects the module
   // to always be reloaded again
   // test('importing reloaded', async () => {
   //   const outputEle = () => hmr('.importing-reloaded')

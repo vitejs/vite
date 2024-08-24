@@ -1098,8 +1098,8 @@ function mergeConfigRecursively(
       merged[key] = [].concat(existing, value)
       continue
     } else if (
-      key === 'noExternal' && // TODO: environments
-      rootPath === 'ssr' &&
+      key === 'noExternal' &&
+      (rootPath === 'ssr' || rootPath === 'resolve') &&
       (existing === true || value === true)
     ) {
       merged[key] = true
