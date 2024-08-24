@@ -474,7 +474,7 @@ export async function build(
     'production',
   )
   const options = config.build
-  const { logger } = config
+  const { root, logger, packageCache } = config
   const ssr = !!options.ssr
   const libOptions = options.lib
 
@@ -486,7 +486,7 @@ export async function build(
     ),
   )
 
-  const resolve = (p: string) => path.resolve(config.root, p)
+  const resolve = (p: string) => path.resolve(root, p)
   const input = libOptions
     ? options.rollupOptions?.input ||
       (typeof libOptions.entry === 'string'
@@ -641,8 +641,7 @@ export async function build(
         ssrNodeBuild || libOptions
           ? resolveOutputJsExtension(
               format,
-              findNearestPackageData(config.root, config.packageCache)?.data
-                .type,
+              findNearestPackageData(root, packageCache)?.data.type,
             )
           : 'js'
       return {
@@ -665,9 +664,9 @@ export async function build(
                   libOptions,
                   format,
                   name,
-                  config.root,
+                  root,
                   jsExt,
-                  config.packageCache,
+                  packageCache,
                 )
             : path.posix.join(options.assetsDir, `[name]-[hash].${jsExt}`),
         chunkFileNames: libOptions
@@ -702,13 +701,13 @@ export async function build(
     }
 
     const resolvedOutDirs = getResolvedOutDirs(
-      config.root,
+      root,
       options.outDir,
       options.rollupOptions?.output,
     )
     const emptyOutDir = resolveEmptyOutDir(
       options.emptyOutDir,
-      config.root,
+      root,
       resolvedOutDirs,
       logger,
     )
@@ -718,10 +717,10 @@ export async function build(
       logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
-        config,
         config.build.watch.chokidar,
         resolvedOutDirs,
         emptyOutDir,
+        config.cacheDir,
       )
 
       const { watch } = await import('rollup')

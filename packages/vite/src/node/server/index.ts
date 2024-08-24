@@ -451,13 +451,13 @@ export async function _createServer(
     resolvedOutDirs,
   )
   const resolvedWatchOptions = resolveChokidarOptions(
-    config,
     {
       disableGlobbing: true,
       ...serverConfig.watch,
     },
     resolvedOutDirs,
     emptyOutDir,
+    config.cacheDir,
   )
 
   const middlewares = connect() as Connect.Server
