@@ -217,6 +217,13 @@ export interface BuildEnvironmentOptions {
    */
   manifest?: boolean | string
   /**
+   * Build in library mode. The value should be the global name of the lib in
+   * UMD mode. This will produce esm + cjs + umd bundle formats with default
+   * configurations that are suitable for distributing libraries.
+   * @default false
+   */
+  lib?: LibraryOptions | false
+  /**
    * Produce SSR oriented build. Note this requires specifying SSR entry via
    * `rollupOptions.input`.
    * @default false
@@ -262,14 +269,6 @@ export interface BuildEnvironmentOptions {
     name: string,
     config: ResolvedConfig,
   ) => Promise<BuildEnvironment> | BuildEnvironment
-
-  /**
-   * Build in library mode. The value should be the global name of the lib in
-   * UMD mode. This will produce esm + cjs + umd bundle formats with default
-   * configurations that are suitable for distributing libraries.
-   * @default false
-   */
-  lib?: LibraryOptions | false
 }
 
 export type BuildOptions = BuildEnvironmentOptions
