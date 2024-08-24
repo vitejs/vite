@@ -602,6 +602,7 @@ export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
   preserverSymlinks: boolean,
   environmentName: string | undefined,
+  consumer: 'client' | 'server' | undefined,
   // Backward compatibility
   skipSsrTransform?: boolean,
 ): ResolvedDevEnvironmentOptions {
@@ -611,13 +612,12 @@ export function resolveDevEnvironmentOptions(
       dev?.sourcemapIgnoreList === false
         ? () => false
         : dev?.sourcemapIgnoreList || isInNodeModules,
-    preTransformRequests:
-      dev?.preTransformRequests ?? environmentName === 'client',
+    preTransformRequests: dev?.preTransformRequests ?? consumer === 'client',
     warmup: dev?.warmup ?? [],
     optimizeDeps: resolveDepOptimizationOptions(
       dev?.optimizeDeps,
       preserverSymlinks,
-      environmentName,
+      consumer,
     ),
     createEnvironment:
       dev?.createEnvironment ??
@@ -626,12 +626,12 @@ export function resolveDevEnvironmentOptions(
         : environmentName === 'ssr'
           ? defaultCreateSsrDevEnvironment
           : defaultCreateDevEnvironment),
-    recoverable: dev?.recoverable ?? environmentName === 'client',
+    recoverable: dev?.recoverable ?? consumer === 'client',
     moduleRunnerTransform:
       dev?.moduleRunnerTransform ??
-      (skipSsrTransform !== undefined && environmentName === 'ssr'
+      (skipSsrTransform !== undefined && consumer === 'server'
         ? skipSsrTransform
-        : environmentName !== 'client'),
+        : consumer === 'server'),
   }
 }
 
@@ -650,14 +650,15 @@ function resolveEnvironmentOptions(
   return {
     resolve,
     consumer,
-    nodeCompatible: options.nodeCompatible ?? !isClientEnvironment,
-    webCompatible: options.webCompatible ?? isClientEnvironment,
+    nodeCompatible: options.nodeCompatible ?? consumer === 'server',
+    webCompatible: options.webCompatible ?? consumer === 'client',
     injectInvalidationTimestamp:
-      options.injectInvalidationTimestamp ?? isClientEnvironment,
+      options.injectInvalidationTimestamp ?? consumer === 'client',
     dev: resolveDevEnvironmentOptions(
       options.dev,
       resolve.preserveSymlinks,
       environmentName,
+      consumer,
       skipSsrTransform,
     ),
     build: resolveBuildEnvironmentOptions(
@@ -988,12 +989,12 @@ export async function resolveConfig(
   await runConfigEnvironmentHook(config.environments, userPlugins, configEnv)
 
   const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
-  for (const name of Object.keys(config.environments)) {
-    resolvedEnvironments[name] = resolveEnvironmentOptions(
-      config.environments[name],
+  for (const environmentName of Object.keys(config.environments)) {
+    resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
+      config.environments[environmentName],
       resolvedRoot,
       logger,
-      name,
+      environmentName,
       config.experimental?.skipSsrTransform,
     )
   }
@@ -1021,7 +1022,9 @@ export async function resolveConfig(
   const resolvedDevEnvironmentOptions = resolveDevEnvironmentOptions(
     config.dev,
     resolvedDefaultEnvironmentResolve.preserveSymlinks,
-    undefined, // default environment
+    // default environment options
+    undefined,
+    undefined,
   )
 
   const resolvedBuildOptions = resolveBuildEnvironmentOptions(
