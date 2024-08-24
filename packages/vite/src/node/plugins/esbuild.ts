@@ -7,7 +7,6 @@ import type {
   TransformResult,
 } from 'esbuild'
 import { transform } from 'esbuild'
-// TODO: import type { FSWatcher } from 'chokidar'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rollup'
 import type { TSConfckParseResult } from 'tsconfck'
@@ -75,13 +74,15 @@ type TSConfigJSON = {
 }
 type TSCompilerOptions = NonNullable<TSConfigJSON['compilerOptions']>
 
+// TODO: rework to avoid caching the server for this module.
+// If two servers are created in the same process, they will interfere with each other.
+let server: ViteDevServer
+
 export async function transformWithEsbuild(
   code: string,
   filename: string,
   options?: TransformOptions,
   inMap?: object,
-  root?: string,
-  watcher?: any, // TODO: module-runner bundling issue with FSWatcher,
 ): Promise<ESBuildTransformResult> {
   let loader = options?.loader
 
@@ -122,11 +123,7 @@ export async function transformWithEsbuild(
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
-      const loadedTsconfig = await loadTsconfigJsonForFile(
-        filename,
-        root,
-        watcher,
-      )
+      const loadedTsconfig = await loadTsconfigJsonForFile(filename)
       const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
 
       for (const field of meaningfulFields) {
@@ -256,6 +253,17 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:esbuild',
+    configureServer(_server) {
+      server = _server
+      server.watcher
+        .on('add', reloadOnTsconfigChange)
+        .on('change', reloadOnTsconfigChange)
+        .on('unlink', reloadOnTsconfigChange)
+    },
+    buildEnd() {
+      // recycle serve to avoid preventing Node self-exit (#6815)
+      server = null as any
+    },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
         const result = await transformWithEsbuild(code, id, transformOptions)
@@ -444,8 +452,6 @@ let tsconfckCache: TSConfckCache<TSConfckParseResult> | undefined
 
 export async function loadTsconfigJsonForFile(
   filename: string,
-  root?: string,
-  watcher?: any, // TODO: module-runner issue with FSWatcher,
 ): Promise<TSConfigJSON> {
   try {
     if (!tsconfckCache) {
@@ -456,35 +462,30 @@ export async function loadTsconfigJsonForFile(
       ignoreNodeModules: true,
     })
     // tsconfig could be out of root, make sure it is watched on dev
-    if (root && watcher && result.tsconfigFile) {
-      ensureWatchedFile(watcher, result.tsconfigFile, root)
+    if (server && result.tsconfigFile) {
+      ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
     }
     return result.tsconfig
   } catch (e) {
     if (e instanceof TSConfckParseError) {
       // tsconfig could be out of root, make sure it is watched on dev
-      if (root && watcher && e.tsconfigFile) {
-        ensureWatchedFile(watcher, e.tsconfigFile, root)
+      if (server && e.tsconfigFile) {
+        ensureWatchedFile(server.watcher, e.tsconfigFile, server.config.root)
       }
     }
     throw e
   }
 }
 
-export async function reloadOnTsconfigChange(
-  server: ViteDevServer,
-  changedFile: string,
-): Promise<void> {
+async function reloadOnTsconfigChange(changedFile: string) {
+  // server could be closed externally after a file change is detected
+  if (!server) return
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
   // any json file in the tsconfig cache could have been used to compile ts
   if (
     path.basename(changedFile) === 'tsconfig.json' ||
-    changedFile.endsWith('.json') /*
-      TODO: the tsconfckCache?.clear() line will make this fail if there are several servers
-            we may need a cache per server if we don't want all servers to share the reset
-            leaving it commented for now because it should still work
-      && tsconfckCache?.hasParseResult(changedFile)
-      */
+    (changedFile.endsWith('.json') &&
+      tsconfckCache?.hasParseResult(changedFile))
   ) {
     server.config.logger.info(
       `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
@@ -492,17 +493,18 @@ export async function reloadOnTsconfigChange(
     )
 
     // clear module graph to remove code compiled with outdated config
-    for (const environment of Object.values(server.environments)) {
-      environment.moduleGraph.invalidateAll()
-    }
+    server.moduleGraph.invalidateAll()
 
     // reset tsconfck so that recompile works with up2date configs
     tsconfckCache?.clear()
 
-    // force full reload
-    server.ws.send({
-      type: 'full-reload',
-      path: '*',
-    })
+    // server may not be available if vite config is updated at the same time
+    if (server) {
+      // force full reload
+      server.hot.send({
+        type: 'full-reload',
+        path: '*',
+      })
+    }
   }
 }
