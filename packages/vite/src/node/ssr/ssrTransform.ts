@@ -44,14 +44,12 @@ export const ssrImportMetaKey = `__vite_ssr_import_meta__`
 
 const hashbangRE = /^#!.*\n/
 
-// TODO: Should we rename to moduleRunnerTransform?
-
 export async function ssrTransform(
   code: string,
   inMap: SourceMap | { mappings: '' } | null,
   url: string,
   originalCode: string,
-  options?: ModuleRunnerTransformOptions, // TODO: Should we export two functions instead of using options here?
+  options?: ModuleRunnerTransformOptions,
 ): Promise<TransformResult | null> {
   if (options?.json?.stringify && isJSONRequest(url)) {
     return ssrTransformJSON(code, inMap)

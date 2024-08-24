@@ -346,7 +346,8 @@ export class ModuleGraph {
     this._ssr.invalidateAll()
   }
 
-  /* TODO: I don't know if we need to implement this method (or how to do it yet)
+  /* TODO: It seems there isn't usage of this method in the ecosystem
+     Waiting to check if we really need this for backwards compatibility
   async updateModuleInfo(
     module: ModuleNode,
     importedModules: Set<string | ModuleNode>,
@@ -357,22 +358,7 @@ export class ModuleGraph {
     ssr?: boolean,
     staticImportedUrls?: Set<string>, // internal
   ): Promise<Set<ModuleNode> | undefined> {
-    const modules = await this._getModuleGraph(
-      module.environment,
-    ).updateModuleInfo(
-      module,
-      importedModules, // ?
-      importedBindings,
-      acceptedModules, // ?
-      acceptedExports,
-      isSelfAccepting,
-      staticImportedUrls,
-    )
-    return modules
-      ? new Set(
-          [...modules].map((mod) => this.getBackwardCompatibleModuleNode(mod)!),
-        )
-      : undefined
+    // Not implemented
   }
   */
 
@@ -491,9 +477,9 @@ function createBackwardCompatibleModuleSet(
         )
       })
     },
-    // TODO: should we implement all the set methods?
-    // missing: add, clear, delete, difference, intersection, isDisjointFrom,
-    // isSubsetOf, isSupersetOf, symmetricDifference, union
+    // There are several methods missing. We can implement them if downstream
+    // projects are relying on them: add, clear, delete, difference, intersection,
+    // sDisjointFrom, isSubsetOf, isSupersetOf, symmetricDifference, union
   } as Set<ModuleNode>
 }
 
@@ -532,8 +518,6 @@ function createBackwardCompatibleModuleMap(
       ])
     },
     get size() {
-      // TODO: Should we use Math.max(moduleGraph._client[prop].size, moduleGraph._ssr[prop].size)
-      // for performance? I don't think there are many use cases of this method
       return getModuleMap().size
     },
     forEach(callback, thisArg) {

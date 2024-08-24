@@ -19,7 +19,7 @@ export class EnvironmentModuleNode {
   /**
    * Resolved file system path + query
    */
-  id: string | null = null // TODO: remove null
+  id: string | null = null
   file: string | null = null
   type: 'js' | 'css'
   info?: ModuleInfo
@@ -171,7 +171,6 @@ export class EnvironmentModuleGraph {
     softInvalidate = false,
   ): void {
     const prevInvalidationState = mod.invalidationState
-    // const prevSsrInvalidationState = mod.ssrInvalidationState
 
     // Handle soft invalidation before the `seen` check, as consecutive soft/hard invalidations can
     // cause the final soft invalidation state to be different.
@@ -186,11 +185,7 @@ export class EnvironmentModuleGraph {
     }
 
     // Skip updating the module if it was already invalidated before and the invalidation state has not changed
-    if (
-      seen.has(mod) &&
-      prevInvalidationState === mod.invalidationState
-      // && prevSsrInvalidationState === mod.ssrInvalidationState
-    ) {
+    if (seen.has(mod) && prevInvalidationState === mod.invalidationState) {
       return
     }
     seen.add(mod)

@@ -266,15 +266,6 @@ export class EnvironmentModuleGraph {
 
   invalidateAll(): void
 
-  async updateModuleInfo(
-    mod: EnvironmentModuleNode,
-    importedModules: Set<string | EnvironmentModuleNode>,
-    importedBindings: Map<string, Set<string>> | null,
-    acceptedModules: Set<string | EnvironmentModuleNode>,
-    acceptedExports: Set<string> | null,
-    isSelfAccepting: boolean,
-  ): Promise<Set<EnvironmentModuleNode> | undefined>
-
   async ensureEntryFromUrl(
     rawUrl: string,
     setIsSelfAccepting = true,

@@ -11,13 +11,7 @@ export interface SSROptions {
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
-   *
-   * if (ssr.target === 'webworker') {
-   *   build.rollupOptions.entryFileNames = '[name].js'
-   *   build.rollupOptions.inlineDynamicImports = (typeof input === 'string' || Object.keys(input).length === 1))
-   *   webCompatible = true
-   * }
-   *
+   * This option may be replaced by the experimental `environmentOptions.webCompatible`
    * @default 'node'
    */
   target?: SSRTarget

@@ -307,7 +307,6 @@ export interface ViteDevServer {
   ): Promise<string>
   /**
    * Transform module code into SSR format.
-   * TODO: expose this to any environment?
    */
   ssrTransform(
     code: string,
@@ -600,7 +599,6 @@ export async function _createServer(
       }
     },
     async reloadEnvironmentModule(module) {
-      // TODO: Should this be reloadEnvironmentModule(environment, module) ?
       if (serverConfig.hmr !== false && module.file) {
         updateModules(
           environments[module.environment]!,
@@ -1038,7 +1036,6 @@ export function resolveServerOptions(
   raw: ServerOptions | undefined,
   logger: Logger,
 ): ResolvedServerOptions {
-  // TODO: deprecated server options moved to the dev config
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),

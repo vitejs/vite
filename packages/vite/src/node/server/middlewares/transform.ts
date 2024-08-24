@@ -81,7 +81,6 @@ export function transformMiddleware(
   const publicPath = `${publicDir.slice(root.length)}/`
 
   return async function viteTransformMiddleware(req, res, next) {
-    // TODO: We could do this for all browser like environments, and avoid the harcoded environments.client here
     const environment = server.environments.client
 
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
@@ -268,7 +267,6 @@ export function transformMiddleware(
         return
       }
       if (e?.code === ERR_LOAD_URL) {
-        // TODO: Why not also do this on ERR_LOAD_PUBLIC_URL?
         // Let other middleware handle if we can't load the url via transformRequest
         return next()
       }

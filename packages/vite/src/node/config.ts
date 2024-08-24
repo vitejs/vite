@@ -1134,7 +1134,6 @@ export async function resolveConfig(
     )
   }
 
-  // TODO: Workers as environments could allow us to remove a lot of complexity
   const createWorkerPlugins = async function (bundleChain: string[]) {
     // Some plugins that aren't intended to work in the bundling of workers (doing post-processing at build time for example).
     // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
