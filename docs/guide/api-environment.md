@@ -19,7 +19,7 @@ Even if there are big changes internally, and new opt-in APIs, there are no brea
 
 ## Using environments in the Vite server
 
-A single Vite dev server can be used to interact with different module execution environments concurrently. We'll use the word environment to refer to a configured Vite processing pipeline that can resolve ids, load, and process source code and is connected to a runtime where the code is executed. The transformed source code is called a module, and the relationships between the modules processed in each environment are kept in a module graph. The code for these modules is sent to the runtimes associated with each environment to be executed. When a module is evaluated, the runtime will request its imported modules triggering the processing of a section of the module graph. In a typical Vite app, an environments will be used for the ES modules served to the client and for the server program that does SSR. An app can do SSR in a Node server, but also other JS runtimes like [Cloudflare's workerd](https://github.com/cloudflare/workerd). So we can have different types of environments on the same Vite server: browser environments, node environments, and workerd environments, to name a few.
+A single Vite dev server can be used to interact with different module execution environments concurrently. We'll use the word environment to refer to a configured Vite processing pipeline that can resolve ids, load, and process source code and is connected to a runtime where the code is executed. The transformed source code is called a module, and the relationships between the modules processed in each environment are kept in a module graph. The code for these modules is sent to the runtimes associated with each environment to be executed. When a module is evaluated, the runtime will request its imported modules triggering the processing of a section of the module graph. In a typical Vite app, environments will be used for the ES modules served to the client and for the server program that does SSR. An app can do SSR in a Node server, but also other JS runtimes like [Cloudflare's workerd](https://github.com/cloudflare/workerd). So we can have different types of environments on the same Vite server: browser environments, node environments, and workerd environments, to name a few.
 
 A Vite Module Runner allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runner implementation is decoupled from the server. This allows library and framework authors to implement their layer of communication between the Vite server and the runner. The browser communicates with its corresponding environment using the server Web Socket and through HTTP requests. The Node Module runner can directly do function calls to process modules as it is running in the same process. Other environments could run modules connecting to a JS runtime like workerd, or a Worker Thread as Vitest does.
 
@@ -116,7 +116,7 @@ We are using `transformRequest(url)` and `warmupRequest(url)` in the current ver
 :::
 
 :::info Running a module
-The initial proposal had a `run` method that would allow consumers to invoke an import on the runner side by using the `transport` option. During our testing we found out that the API was not unversal enough to start recommending it. We are open to implement a built-in layer for remote SSR implementation based on the frameworks feedback. In the meantime, Vite still exposes a [`RunnerTransport` API](#runnertransport) to hide the complexity of the runner RPC.
+The initial proposal had a `run` method that would allow consumers to invoke an import on the runner side by using the `transport` option. During our testing we found out that the API was not universal enough to start recommending it. We are open to implement a built-in layer for remote SSR implementation based on the frameworks feedback. In the meantime, Vite still exposes a [`RunnerTransport` API](#runnertransport) to hide the complexity of the runner RPC.
 :::
 
 For the `ssr` environment running in Node by default, Vite creates a module runner that implements evaluation using `new AsyncFunction` running in the same JS runtime as the dev server. This runner is an instance of `ModuleRunner` that exposes:
@@ -443,7 +443,7 @@ function createWorkedEnvironment(userConfig) {
 Then the config file can be written as
 
 ```js
-import { workerdEnvironment } from 'vite-environment-workerd'
+import { createWorkerdEnvironment } from 'vite-environment-workerd'
 
 export default {
   environments: {
