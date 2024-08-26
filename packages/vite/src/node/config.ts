@@ -1000,17 +1000,11 @@ export async function resolveConfig(
   )
 
   // Backward compatibility: merge environments.client.dev.optimizeDeps back into optimizeDeps
-  const resolvedConfigEnvironmentsClient = resolvedEnvironments.client
-  const patchedOptimizeDeps = resolvedConfigEnvironmentsClient.dev?.optimizeDeps
-
-  const backwardCompatibleOptimizeDeps = {
-    holdUntilCrawlEnd: true,
-    ...patchedOptimizeDeps,
-    esbuildOptions: {
-      preserveSymlinks: resolvedDefaultEnvironmentResolve.preserveSymlinks,
-      ...patchedOptimizeDeps.esbuildOptions,
-    },
-  }
+  // The same object is assigned back for backward compatibility. The ecosystem is modifying
+  // optimizeDeps in the ResolvedConfig hook, so these changes will be reflected on the
+  // client environment.
+  const backwardCompatibleOptimizeDeps =
+    resolvedEnvironments.client.dev.optimizeDeps
 
   // TODO: Deprecate and remove resolve, dev and build options at the root level of the resolved config
 
@@ -1389,6 +1383,13 @@ export async function resolveConfig(
     resolved.ssr.optimizeDeps,
     'ssr.',
   )
+
+  // For backward compat, set ssr environment build.emitAssets with the same value as build.ssrEmitAssets that might be changed in configResolved hook
+  // https://github.com/vikejs/vike/blob/953614cea7b418fcc0309b5c918491889fdec90a/vike/node/plugin/plugins/buildConfig.ts#L67
+  if (resolved.environments.ssr) {
+    resolved.environments.ssr.build.emitAssets =
+      resolved.build.ssrEmitAssets || resolved.build.emitAssets
+  }
 
   debug?.(`using resolved config: %O`, {
     ...resolved,
