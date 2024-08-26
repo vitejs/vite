@@ -268,22 +268,24 @@ export class ModuleGraph {
     // We maintain backwards compatibility by returning a Set of module proxies assuming
     // that the modules for a certain file are the same in both the browser and server
     const clientModules = this._client.getModulesByFile(file)
-    if (clientModules) {
-      return new Set(
-        [...clientModules].map(
-          (mod) => this.getBackwardCompatibleBrowserModuleNode(mod)!,
-        ),
-      )
-    }
     const ssrModules = this._ssr.getModulesByFile(file)
-    if (ssrModules) {
-      return new Set(
-        [...ssrModules].map(
-          (mod) => this.getBackwardCompatibleServerModuleNode(mod)!,
-        ),
-      )
+    if (!clientModules && !ssrModules) {
+      return undefined
     }
-    return undefined
+    const result = new Set<ModuleNode>()
+    if (clientModules) {
+      for (const mod of clientModules) {
+        result.add(this.getBackwardCompatibleBrowserModuleNode(mod)!)
+      }
+    }
+    if (ssrModules) {
+      for (const mod of ssrModules) {
+        if (!this._client.getModuleById(mod.id!)) {
+          result.add(this.getBackwardCompatibleBrowserModuleNode(mod)!)
+        }
+      }
+    }
+    return result
   }
 
   onFileChange(file: string): void {
