@@ -274,6 +274,10 @@ class EnvironmentPluginContainer {
   }
 
   async buildStart(_options?: InputOptions): Promise<void> {
+    if (this._started) {
+      await this._started
+      return
+    }
     this._started = this.handleHookPromise(
       this.hookParallel(
         'buildStart',
@@ -281,7 +285,7 @@ class EnvironmentPluginContainer {
         () => [this.options as NormalizedInputOptions],
         (plugin) =>
           this.environment.name === 'client' ||
-          plugin.perEnvironmentStartEndDuringDev !== true,
+          plugin.perEnvironmentStartEndDuringDev === true,
       ),
     ) as Promise<void>
     await this._started
