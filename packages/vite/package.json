@@ -94,7 +94,7 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.3.0",
-    "@babel/parser": "^7.25.3",
+    "@babel/parser": "^7.25.4",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.0",
@@ -125,7 +125,7 @@
     "launch-editor-middleware": "^2.8.1",
     "lightningcss": "^1.26.0",
     "magic-string": "^0.30.11",
-    "micromatch": "^4.0.7",
+    "micromatch": "^4.0.8",
     "mlly": "^1.7.1",
     "mrmime": "^2.0.0",
     "open": "^8.4.2",
@@ -148,7 +148,7 @@
     "strip-ansi": "^7.1.0",
     "strip-literal": "^2.1.0",
     "tsconfck": "^3.1.1",
-    "tslib": "^2.6.3",
+    "tslib": "^2.7.0",
     "types": "link:./types",
     "ufo": "^1.5.4",
     "ws": "^8.18.0"
