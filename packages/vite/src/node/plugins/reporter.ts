@@ -273,6 +273,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:reporter',
     sharedDuringBuild: true,
+    perEnvironmentStartEndDuringDev: true,
 
     transform(_, id) {
       modulesReporter(this).register(id)

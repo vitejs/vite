@@ -40,6 +40,8 @@ export function manifestPlugin(): Plugin {
   return {
     name: 'vite:manifest',
 
+    perEnvironmentStartEndDuringDev: true,
+
     applyToEnvironment(environment) {
       return !!environment.config.build.manifest
     },

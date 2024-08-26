@@ -252,12 +252,14 @@ class EnvironmentPluginContainer {
     hookName: H,
     context: (plugin: Plugin) => ThisType<FunctionPluginHooks[H]>,
     args: (plugin: Plugin) => Parameters<FunctionPluginHooks[H]>,
+    condition?: (plugin: Plugin) => boolean,
   ): Promise<void> {
     const parallelPromises: Promise<unknown>[] = []
     for (const plugin of this.getSortedPlugins(hookName)) {
       // Don't throw here if closed, so buildEnd and closeBundle hooks can finish running
       const hook = plugin[hookName]
       if (!hook) continue
+      if (condition && !condition(plugin)) continue
 
       const handler: Function = getHookHandler(hook)
       if ((hook as { sequential?: boolean }).sequential) {
@@ -277,6 +279,9 @@ class EnvironmentPluginContainer {
         'buildStart',
         (plugin) => this._getPluginContext(plugin),
         () => [this.options as NormalizedInputOptions],
+        (plugin) =>
+          this.environment.name === 'client' ||
+          plugin.perEnvironmentStartEndDuringDev !== true,
       ),
     ) as Promise<void>
     await this._started
@@ -475,6 +480,9 @@ class EnvironmentPluginContainer {
       'buildEnd',
       (plugin) => this._getPluginContext(plugin),
       () => [],
+      (plugin) =>
+        this.environment.name === 'client' ||
+        plugin.perEnvironmentStartEndDuringDev !== true,
     )
     await this.hookParallel(
       'closeBundle',
@@ -945,9 +953,22 @@ class PluginContainer {
     return (this.environments.client as DevEnvironment).pluginContainer!.options
   }
 
+  // For backward compatibility, buildStart and watchChange are called only for the client environment
+  // buildStart is called per environment for a plugin with the perEnvironmentStartEndDuring dev flag
+
   async buildStart(_options?: InputOptions): Promise<void> {
-    ;(this.environments.client as DevEnvironment).pluginContainer!.buildStart(
+    ;(this.environments.client as DevEnvironment).pluginContainer.buildStart(
       _options,
+    )
+  }
+
+  async watchChange(
+    id: string,
+    change: { event: 'create' | 'update' | 'delete' },
+  ): Promise<void> {
+    ;(this.environments.client as DevEnvironment).pluginContainer.watchChange(
+      id,
+      change,
     )
   }
 
@@ -988,13 +1009,6 @@ class PluginContainer {
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }> {
     return this._getPluginContainer(options).transform(code, id, options)
-  }
-
-  async watchChange(
-    _id: string,
-    _change: { event: 'create' | 'update' | 'delete' },
-  ): Promise<void> {
-    // noop, watchChange is already called for each environment
   }
 
   async close(): Promise<void> {

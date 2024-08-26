@@ -167,6 +167,14 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    */
   sharedDuringBuild?: boolean
   /**
+   * Opt-in this plugin into per-environment buildStart and buildEnd during dev.
+   * For backward-compatibility, the buildStart hook is called only once during
+   * dev, for the client environment. Plugins can opt-in to be called
+   * per-environment, aligning with the build hook behavior.
+   * @experimental
+   */
+  perEnvironmentStartEndDuringDev?: boolean
+  /**
    * Enforce plugin invocation tier similar to webpack loaders. Hooks ordering
    * is still subject to the `order` property in the hook object.
    *
