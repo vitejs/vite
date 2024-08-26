@@ -31,6 +31,18 @@ export class ModuleNode {
   ): EnvironmentModuleNode[T] {
     return (this._clientModule?.[prop] ?? this._ssrModule?.[prop])!
   }
+  _set<T extends keyof EnvironmentModuleNode>(
+    prop: T,
+    value: EnvironmentModuleNode[T],
+  ): void {
+    if (this._clientModule) {
+      this._clientModule[prop] = value
+    }
+    if (this._ssrModule) {
+      this._ssrModule[prop] = value
+    }
+  }
+
   _wrapModuleSet(
     prop: ModuleSetNames,
     module: EnvironmentModuleNode | undefined,
@@ -67,11 +79,20 @@ export class ModuleNode {
   get url(): string {
     return this._get('url')
   }
+  set url(value: string) {
+    this._set('url', value)
+  }
   get id(): string | null {
     return this._get('id')
   }
+  set id(value: string | null) {
+    this._set('id', value)
+  }
   get file(): string | null {
     return this._get('file')
+  }
+  set file(value: string | null) {
+    this._set('file', value)
   }
   get type(): 'js' | 'css' {
     return this._get('type')
@@ -504,6 +525,16 @@ function createBackwardCompatibleModuleMap(
         clientModule,
         ssrModule,
       )
+    },
+    set(key, mod) {
+      const clientModule = mod._clientModule
+      if (clientModule) {
+        moduleGraph._client[prop].set(key, clientModule)
+      }
+      const ssrModule = mod._ssrModule
+      if (ssrModule) {
+        moduleGraph._ssr[prop].set(key, ssrModule)
+      }
     },
     keys() {
       return getModuleMap().keys()
