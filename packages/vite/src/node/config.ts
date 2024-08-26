@@ -1396,6 +1396,14 @@ export async function resolveConfig(
     resolved.environments.ssr.build.emitAssets =
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
+  // For backward compat, set client environment dev.optimizeDeps with the same value as root optimizeDeps that might be changed in configResolved hook
+  // https://github.com/vikejs/vike/blob/953614cea7b418fcc0309b5c918491889fdec90a/vike/node/plugin/plugins/devConfig/index.ts#L70
+  if (resolved.environments.client) {
+    resolved.environments.client.dev.optimizeDeps.include =
+      resolved.optimizeDeps.include
+    resolved.environments.client.dev.optimizeDeps.entries =
+      resolved.optimizeDeps.entries
+  }
 
   debug?.(`using resolved config: %O`, {
     ...resolved,
