@@ -1,3 +1,20 @@
+## 6.0.0-alpha.21 (2024-08-27)
+
+* chore: clean up, remove staled TODOs ([58d3874](https://github.com/vitejs/vite/commit/58d387447a5b7c35b1ae30cd46a3a7099f806082))
+* chore: reduce diffs with v6 branch (#17942) ([bf9065a](https://github.com/vitejs/vite/commit/bf9065aa13da6a519014c3bc1d34cfb1cb49ccca)), closes [#17942](https://github.com/vitejs/vite/issues/17942)
+* chore: remove TODO ([dbee92f](https://github.com/vitejs/vite/commit/dbee92f47224ad5a8a8f1a090d00098c35d930bb))
+* chore: remove unused load fallback plugin ([40544b4](https://github.com/vitejs/vite/commit/40544b4ef0f03356d2606892e620c667dfed65f2))
+* chore(deps): update all non-major dependencies (#17945) ([cfb621e](https://github.com/vitejs/vite/commit/cfb621e7a5a3e24d710a9af156e6855e73caf891)), closes [#17945](https://github.com/vitejs/vite/issues/17945)
+* fix: backward compat for setting values in resolvedConfig hook (#17947) ([34308fa](https://github.com/vitejs/vite/commit/34308fa9ee429a3efc095920cdbf9417cce36800)), closes [#17947](https://github.com/vitejs/vite/issues/17947)
+* fix: buildStart guard ([1f77e94](https://github.com/vitejs/vite/commit/1f77e941b7a8f712e1c43f60b31e2a656f21ad9b))
+* fix: call buildStart for ssr pluginContainer ([c088986](https://github.com/vitejs/vite/commit/c0889868d3383dae0926303ab02d081efaed129d))
+* fix: mergeConfig for resolve.noExternal ([9346df2](https://github.com/vitejs/vite/commit/9346df2cda8032ac9a76cbe6f9500826d28d64be))
+* fix: moduleGraph back compat ([030ed81](https://github.com/vitejs/vite/commit/030ed8146d52d7696280b3c2409db967f6dba87b))
+* fix: moduleGraph.getModulesByFile compat (#17952) ([c27b0d5](https://github.com/vitejs/vite/commit/c27b0d50737e7d2165acb3ddf34f4ba95a746b2c)), closes [#17952](https://github.com/vitejs/vite/issues/17952)
+* fix: perEnvironmentStartEndDuringDev plugin flag ([4ef767a](https://github.com/vitejs/vite/commit/4ef767a90b8e455f9cddeb58715e90469021d6a9))
+
+
+
 ## 6.0.0-alpha.20 (2024-08-24)
 
 * chore: add empty _importGlobMap to avoid hard error in VitePress ([897b244](https://github.com/vitejs/vite/commit/897b2445ef24d4bc8a2c36b12b03eefa18c75f11))
