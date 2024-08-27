@@ -429,6 +429,7 @@ const shouldInline = (
 ): boolean => {
   if (config.build.lib) return true
   if (pluginContext.getModuleInfo(id)?.isEntry) return false
+  if (id.endsWith('?url')) return false
   if (forceInline !== undefined) return forceInline
   let limit: number
   if (typeof config.build.assetsInlineLimit === 'function') {
