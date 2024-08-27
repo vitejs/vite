@@ -273,7 +273,6 @@ export class ModuleRunner {
     if (!cachedModule) {
       cachedModule = this.moduleCache.getByModuleId(url)
     }
-    console.log('cached module', url, cachedModule)
 
     const isCached = !!(typeof cachedModule === 'object' && cachedModule.meta)
 
