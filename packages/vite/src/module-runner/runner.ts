@@ -61,6 +61,7 @@ export class ModuleRunner {
   private readonly transport: RunnerTransport
   private readonly resetSourceMapSupport?: () => void
   private readonly root: string
+  private readonly moduleInfoCache = new Map<string, Promise<ModuleCache>>()
 
   private destroyed = false
 
@@ -243,7 +244,19 @@ export class ModuleRunner {
     }
   }
 
-  private async cachedModule(
+  private async cachedModule(url: string, importer?: string) {
+    const cacheKey = `${url}~~${importer}`
+    let cached = this.moduleInfoCache.get(cacheKey)
+    if (!cached) {
+      cached = this.getModuleInformation(url, importer).finally(() => {
+        this.moduleInfoCache.delete(cacheKey)
+      })
+      this.moduleInfoCache.set(cacheKey, cached)
+    }
+    return cached
+  }
+
+  private async getModuleInformation(
     url: string,
     importer?: string,
   ): Promise<ModuleCache> {
@@ -260,6 +273,7 @@ export class ModuleRunner {
     if (!cachedModule) {
       cachedModule = this.moduleCache.getByModuleId(url)
     }
+    console.log('cached module', url, cachedModule)
 
     const isCached = !!(typeof cachedModule === 'object' && cachedModule.meta)
 
