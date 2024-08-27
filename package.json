@@ -40,7 +40,7 @@
     "ci-docs": "run-s build docs-build"
   },
   "devDependencies": {
-    "@eslint/js": "^9.9.0",
+    "@eslint/js": "^9.9.1",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.9.7",
     "@types/convert-source-map": "^2.0.3",
@@ -56,7 +56,7 @@
     "@types/ws": "^8.5.12",
     "@vitejs/release-scripts": "^1.3.2",
     "conventional-changelog-cli": "^5.0.0",
-    "eslint": "^9.9.0",
+    "eslint": "^9.9.1",
     "eslint-plugin-import-x": "^3.1.0",
     "eslint-plugin-n": "^17.10.2",
     "eslint-plugin-regexp": "^2.6.0",
@@ -71,10 +71,10 @@
     "rollup": "^4.20.0",
     "rollup-plugin-esbuild": "^6.1.1",
     "simple-git-hooks": "^2.11.1",
-    "tslib": "^2.6.3",
-    "tsx": "^4.17.0",
+    "tslib": "^2.7.0",
+    "tsx": "^4.18.0",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^8.1.0",
+    "typescript-eslint": "^8.3.0",
     "vite": "workspace:*",
     "vitest": "^2.0.5"
   },
@@ -95,7 +95,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@9.7.1",
+  "packageManager": "pnpm@9.9.0",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"

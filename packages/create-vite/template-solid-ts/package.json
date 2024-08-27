@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "typescript": "^5.5.3",
-    "vite": "^5.4.1",
+    "vite": "^5.4.2",
     "vite-plugin-solid": "^2.10.2"
   }
 }
