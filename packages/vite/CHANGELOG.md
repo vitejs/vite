@@ -1,3 +1,10 @@
+## 6.0.0-alpha.22 (2024-08-28)
+
+* fix: cache parallel moduleInfo calls (#17957) ([66bfe7b](https://github.com/vitejs/vite/commit/66bfe7b8ddc22cf2950831d179250b2ebd9e352a)), closes [#17957](https://github.com/vitejs/vite/issues/17957)
+* fix: use `optimizeDeps.entries` (#17962) ([9a369aa](https://github.com/vitejs/vite/commit/9a369aa1442a122dd43bb655afb267dcb6e945a7)), closes [#17962](https://github.com/vitejs/vite/issues/17962)
+
+
+
 ## 6.0.0-alpha.21 (2024-08-27)
 
 * chore: clean up, remove staled TODOs ([58d3874](https://github.com/vitejs/vite/commit/58d387447a5b7c35b1ae30cd46a3a7099f806082))
