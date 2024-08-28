@@ -911,13 +911,10 @@ export async function resolveConfig(
   checkBadCharactersInPath(resolvedRoot, logger)
 
   // Backward compatibility: merge optimizeDeps into environments.client.dev.optimizeDeps as defaults
-  // TODO: should entries and force be in EnvironmentOptions?
-  const { entries, force, ...deprecatedClientOptimizeDepsConfig } =
-    config.optimizeDeps ?? {}
   const configEnvironmentsClient = config.environments!.client!
   configEnvironmentsClient.dev ??= {}
   configEnvironmentsClient.dev.optimizeDeps = mergeConfig(
-    deprecatedClientOptimizeDepsConfig,
+    config.optimizeDeps ?? {},
     configEnvironmentsClient.dev.optimizeDeps ?? {},
   )
 
