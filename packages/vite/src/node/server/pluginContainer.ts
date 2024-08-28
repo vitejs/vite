@@ -163,7 +163,8 @@ class EnvironmentPluginContainer {
   watchFiles = new Set<string>()
   minimalContext: MinimalPluginContext
 
-  private _started: Promise<void> | boolean = false
+  private _started = false
+  private _buildStartPromise: Promise<void> | undefined
   private _closed = false
 
   /**
@@ -275,10 +276,13 @@ class EnvironmentPluginContainer {
 
   async buildStart(_options?: InputOptions): Promise<void> {
     if (this._started) {
-      await this._started
+      if (this._buildStartPromise) {
+        await this._buildStartPromise
+      }
       return
     }
-    this._started = this.handleHookPromise(
+    this._started = true
+    this._buildStartPromise = this.handleHookPromise(
       this.hookParallel(
         'buildStart',
         (plugin) => this._getPluginContext(plugin),
@@ -288,8 +292,8 @@ class EnvironmentPluginContainer {
           plugin.perEnvironmentStartEndDuringDev === true,
       ),
     ) as Promise<void>
-    await this._started
-    this._started = true
+    await this._buildStartPromise
+    this._buildStartPromise = undefined
   }
 
   async resolveId(
@@ -311,9 +315,7 @@ class EnvironmentPluginContainer {
   ): Promise<PartialResolvedId | null> {
     if (!this._started) {
       this.buildStart()
-    }
-    if (this._started !== true) {
-      await this._started
+      await this._buildStartPromise
     }
     const skip = options?.skip
     const scan = !!options?.scan
