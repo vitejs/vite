@@ -2099,6 +2099,7 @@ const makeScssWorker = (
   resolvers: CSSAtImportResolvers,
   alias: Alias[],
   maxWorkers: number | undefined,
+  packageName: 'sass' | 'sass-embedded',
 ) => {
   const internalImporter = async (
     url: string,
@@ -2116,6 +2117,9 @@ const makeScssWorker = (
           '$',
           resolvers.sass,
         )
+        if (packageName === 'sass-embedded') {
+          return data
+        }
         return fixScssBugImportValue(data)
       } catch (data) {
         return data
@@ -2408,7 +2412,12 @@ const scssProcessor = (
             ? makeModernCompilerScssWorker(resolvers, options.alias, maxWorkers)
             : api === 'modern'
               ? makeModernScssWorker(resolvers, options.alias, maxWorkers)
-              : makeScssWorker(resolvers, options.alias, maxWorkers),
+              : makeScssWorker(
+                  resolvers,
+                  options.alias,
+                  maxWorkers,
+                  sassPackage.name,
+                ),
         )
       }
       const worker = workerMap.get(options.alias)!
