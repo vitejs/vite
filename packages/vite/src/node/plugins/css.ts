@@ -73,6 +73,7 @@ import { createIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { PartialEnvironment } from '../baseEnvironment'
 import type { TransformPluginContext } from '../server/pluginContainer'
+import type { DevEnvironment } from '..'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -972,10 +973,8 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      const environment = this.environment
-      const moduleGraph =
-        environment.mode === 'dev' ? environment.moduleGraph : undefined
-      const thisModule = moduleGraph?.getModuleById(id)
+      const { moduleGraph } = this.environment as DevEnvironment
+      const thisModule = moduleGraph.getModuleById(id)
 
       // Handle CSS @import dependency HMR and other added modules via this.addWatchFile.
       // JS-related HMR is handled in the import-analysis plugin.
@@ -995,13 +994,13 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           for (const file of pluginImports) {
             depModules.add(
               isCSSRequest(file)
-                ? moduleGraph!.createFileOnlyEntry(file)
-                : await moduleGraph!.ensureEntryFromUrl(
+                ? moduleGraph.createFileOnlyEntry(file)
+                : await moduleGraph.ensureEntryFromUrl(
                     fileToDevUrl(file, config, /* skipBase */ true),
                   ),
             )
           }
-          moduleGraph!.updateModuleInfo(
+          moduleGraph.updateModuleInfo(
             thisModule,
             depModules,
             null,
