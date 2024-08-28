@@ -7,6 +7,7 @@ import {
   isBuild,
   isServe,
   page,
+  untilBrowserLogAfter,
   viteServer,
   viteTestUrl,
   withRetry,
@@ -298,8 +299,11 @@ describe.runIf(isServe)('invalid', () => {
   })
 
   test('should reload when fixed', async () => {
-    await page.goto(viteTestUrl + '/invalid.html')
-    await editFile('invalid.html', (content) => {
+    await untilBrowserLogAfter(
+      () => page.goto(viteTestUrl + '/invalid.html'),
+      /connected/, // wait for HMR connection
+    )
+    editFile('invalid.html', (content) => {
       return content.replace('<div Bad', '<div> Good')
     })
     const content = await page.waitForSelector('text=Good HTML')
