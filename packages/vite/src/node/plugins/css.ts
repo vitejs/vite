@@ -1095,9 +1095,8 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           preferRelative: true,
         })
         sassResolve = async (...args) => {
-          const id = args[0]
-          if (id.startsWith('file://')) {
-            args[0] = fileURLToPath(id)
+          if (args[0].startsWith('file://')) {
+            args[0] = fileURLToPath(args[0])
           }
           return resolver(...args)
         }
