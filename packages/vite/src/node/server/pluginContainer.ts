@@ -210,6 +210,35 @@ class EnvironmentPluginContainer {
       : null
   }
 
+  getModuleInfo(id: string): ModuleInfo | null {
+    const module = this.moduleGraph?.getModuleById(id)
+    if (!module) {
+      return null
+    }
+    if (!module.info) {
+      module.info = new Proxy(
+        { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
+        // throw when an unsupported ModuleInfo property is accessed,
+        // so that incompatible plugins fail in a non-cryptic way.
+        {
+          get(info: any, key: string) {
+            if (key in info) {
+              return info[key]
+            }
+            // Don't throw an error when returning from an async function
+            if (key === 'then') {
+              return undefined
+            }
+            throw Error(
+              `[vite] The "${key}" property of ModuleInfo is not supported.`,
+            )
+          },
+        },
+      )
+    }
+    return module.info ?? null
+  }
+
   // keeps track of hook promises so that we can wait for them all to finish upon closing the server
   private handleHookPromise<T>(maybePromise: undefined | T | Promise<T>) {
     if (!(maybePromise as any)?.then) {
@@ -572,33 +601,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
   }
 
   getModuleInfo(id: string): ModuleInfo | null {
-    const module = this._container.moduleGraph?.getModuleById(id)
-    if (!module) {
-      return null
-    }
-    if (!module.info) {
-      module.info = new Proxy(
-        { id, meta: module.meta || EMPTY_OBJECT } as ModuleInfo,
-
-        // throw when an unsupported ModuleInfo property is accessed,
-        // so that incompatible plugins fail in a non-cryptic way.
-        {
-          get(info: any, key: string) {
-            if (key in info) {
-              return info[key]
-            }
-            // Don't throw an error when returning from an async function
-            if (key === 'then') {
-              return undefined
-            }
-            throw Error(
-              `[vite] The "${key}" property of ModuleInfo is not supported.`,
-            )
-          },
-        },
-      )
-    }
-    return module.info ?? null
+    return this._container.getModuleInfo(id)
   }
 
   _updateModuleInfo(id: string, { meta }: { meta?: object | null }) {
@@ -952,11 +955,22 @@ class PluginContainer {
     ssr?: boolean
     environment?: Environment
   }) {
-    return (this._getEnvironment(options) as DevEnvironment).pluginContainer!
+    return (this._getEnvironment(options) as DevEnvironment).pluginContainer
+  }
+
+  getModuleInfo(id: string): ModuleInfo | null {
+    return (
+      (
+        this.environments.client as DevEnvironment
+      ).pluginContainer.getModuleInfo(id) ||
+      (this.environments.ssr as DevEnvironment).pluginContainer.getModuleInfo(
+        id,
+      )
+    )
   }
 
   get options(): InputOptions {
-    return (this.environments.client as DevEnvironment).pluginContainer!.options
+    return (this.environments.client as DevEnvironment).pluginContainer.options
   }
 
   // For backward compatibility, buildStart and watchChange are called only for the client environment
