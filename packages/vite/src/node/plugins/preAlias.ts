@@ -32,7 +32,6 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
       const depsOptimizer =
         environment.mode === 'dev' ? environment.depsOptimizer : undefined
       if (
-        environment &&
         importer &&
         depsOptimizer &&
         bareImportRE.test(id) &&
