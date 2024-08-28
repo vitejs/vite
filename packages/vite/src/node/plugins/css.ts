@@ -1097,10 +1097,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
         sassResolve = async (...args) => {
           const id = args[0]
           if (id.startsWith('file://')) {
-            const fileUrl = new URL(id)
-            if (fs.existsSync(fileUrl)) {
-              return fileURLToPath(fileUrl)
-            }
+            args[0] = fileURLToPath(id)
           }
           return resolver(...args)
         }
