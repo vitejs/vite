@@ -272,8 +272,8 @@ export async function handleHMRUpdate(
           // Invalidate the hmrContext to force compat modules to be updated
           mixedHmrContext.modules = mixedHmrContext.modules.filter(
             (mixedMod) =>
-              filteredModules.find((mod) => mixedMod.id === mod.id) ||
-              ssrHotUpdateOptions?.modules.find(
+              filteredModules.some((mod) => mixedMod.id === mod.id) ||
+              ssrHotUpdateOptions?.modules.some(
                 (ssrMod) => ssrMod.id === mixedMod.id,
               ),
           )
@@ -281,7 +281,7 @@ export async function handleHMRUpdate(
             ...filteredModules
               .filter(
                 (mod) =>
-                  !mixedHmrContext.modules.find(
+                  !mixedHmrContext.modules.some(
                     (mixedMod) => mixedMod.id === mod.id,
                   ),
               )
@@ -306,13 +306,13 @@ export async function handleHMRUpdate(
           mixedHmrContext.modules = filteredModules
           clientHotUpdateOptions.modules =
             clientHotUpdateOptions.modules.filter((mod) =>
-              filteredModules.find((mixedMod) => mod.id === mixedMod.id),
+              filteredModules.some((mixedMod) => mod.id === mixedMod.id),
             )
           clientHotUpdateOptions.modules.push(
             ...(filteredModules
               .filter(
                 (mixedMod) =>
-                  !clientHotUpdateOptions.modules.find(
+                  !clientHotUpdateOptions.modules.some(
                     (mod) => mod.id === mixedMod.id,
                   ),
               )
@@ -322,13 +322,13 @@ export async function handleHMRUpdate(
           if (ssrHotUpdateOptions) {
             ssrHotUpdateOptions.modules = ssrHotUpdateOptions.modules.filter(
               (mod) =>
-                filteredModules.find((mixedMod) => mod.id === mixedMod.id),
+                filteredModules.some((mixedMod) => mod.id === mixedMod.id),
             )
             ssrHotUpdateOptions.modules.push(
               ...(filteredModules
                 .filter(
                   (mixedMod) =>
-                    !ssrHotUpdateOptions.modules.find(
+                    !ssrHotUpdateOptions.modules.some(
                       (mod) => mod.id === mixedMod.id,
                     ),
                 )

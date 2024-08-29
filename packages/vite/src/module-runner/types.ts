@@ -3,7 +3,7 @@ import type { HotPayload } from 'types/hmrPayload'
 import type { HMRConnection, HMRLogger } from '../shared/hmr'
 import type {
   DefineImportMetadata,
-  SSRImportBaseMetadata,
+  SSRImportMetadata,
 } from '../shared/ssrTransform'
 import type { ModuleCacheMap } from './moduleCache'
 import type {
@@ -17,7 +17,7 @@ import type { DecodedMap } from './sourcemap/decoder'
 import type { InterceptorOptions } from './sourcemap/interceptor'
 import type { RunnerTransport } from './runnerTransport'
 
-export type { DefineImportMetadata, SSRImportBaseMetadata as SSRImportMetadata }
+export type { DefineImportMetadata, SSRImportMetadata }
 
 export interface ModuleRunnerHMRConnection extends HMRConnection {
   /**

@@ -41,6 +41,10 @@ export const defaultEsbuildSupported = {
   'import-meta': true,
 }
 
+// TODO: rework to avoid caching the server for this module.
+// If two servers are created in the same process, they will interfere with each other.
+let server: ViteDevServer
+
 export interface ESBuildOptions extends TransformOptions {
   include?: string | RegExp | string[] | RegExp[]
   exclude?: string | RegExp | string[] | RegExp[]
@@ -73,10 +77,6 @@ type TSConfigJSON = {
   [key: string]: any
 }
 type TSCompilerOptions = NonNullable<TSConfigJSON['compilerOptions']>
-
-// TODO: rework to avoid caching the server for this module.
-// If two servers are created in the same process, they will interfere with each other.
-let server: ViteDevServer
 
 export async function transformWithEsbuild(
   code: string,

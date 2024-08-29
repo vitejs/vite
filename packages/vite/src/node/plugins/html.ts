@@ -329,8 +329,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
     async transform(html, id) {
       if (id.endsWith('.html')) {
-        const { modulePreload } = this.environment.config.build
-
         id = normalizePath(id)
         const relativeUrlPath = normalizePath(path.relative(config.root, id))
         const publicPath = `/${relativeUrlPath}`
@@ -676,6 +674,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         processedHtml.set(id, s.toString())
 
         // inject module preload polyfill only when configured and needed
+        const { modulePreload } = this.environment.config.build
         if (
           modulePreload !== false &&
           modulePreload.polyfill &&
@@ -691,8 +690,6 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
-      const { modulePreload } = this.environment.config.build
-
       const analyzedChunk: Map<OutputChunk, number> = new Map()
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
@@ -840,6 +837,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               toScriptTag(chunk, toOutputAssetFilePath, isAsync),
             )
           } else {
+            const { modulePreload } = this.environment.config.build
             assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
             if (modulePreload !== false) {
               const resolveDependencies =
@@ -865,7 +863,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         // inject css link when cssCodeSplit is false
-        if (this.environment.config.build.cssCodeSplit === false) {
+        if (!this.environment.config.build.cssCodeSplit) {
           const cssChunk = Object.values(bundle).find(
             (chunk) => chunk.type === 'asset' && chunk.name === 'style.css',
           ) as OutputAsset | undefined

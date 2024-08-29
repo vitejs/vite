@@ -178,9 +178,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     load(id) {
-      const { environment } = this
-      if (environment && id === preloadHelperId) {
-        const { modulePreload } = environment.config.build
+      if (id === preloadHelperId) {
+        const { modulePreload } = this.environment.config.build
 
         const scriptRel =
           modulePreload && modulePreload.polyfill
@@ -209,7 +208,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
-      const { environment } = this
       if (isInNodeModules(importer) && !dynamicImportPrefixRE.test(source)) {
         return
       }
@@ -361,7 +359,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (s) {
         return {
           code: s.toString(),
-          map: environment.config.build.sourcemap
+          map: this.environment.config.build.sourcemap
             ? s.generateMap({ hires: 'boundary' })
             : null,
         }
@@ -370,11 +368,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     renderChunk(code, _, { format }) {
       // make sure we only perform the preload logic in modern builds.
-      const { environment } = this
-      if (environment && code.indexOf(isModernFlag) > -1) {
+      if (code.indexOf(isModernFlag) > -1) {
         const re = new RegExp(isModernFlag, 'g')
         const isModern = String(format === 'es')
-        if (environment.config.build.sourcemap) {
+        if (this.environment.config.build.sourcemap) {
           const s = new MagicString(code)
           let match: RegExpExecArray | null
           while ((match = re.exec(code))) {

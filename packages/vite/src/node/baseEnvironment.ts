@@ -53,7 +53,7 @@ export class PartialEnvironment {
     )
     const environment = colors.dim(`(${this.name})`)
     const colorIndex =
-      [...environment].reduce((acc, c) => acc + c.charCodeAt(0), 0) %
+      [...this.name].reduce((acc, c) => acc + c.charCodeAt(0), 0) %
       environmentColors.length
     const infoColor = environmentColors[colorIndex || 0]
     this.logger = {

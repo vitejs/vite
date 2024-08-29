@@ -55,7 +55,6 @@ function encodePathChars(filepath: string) {
 
 export const posixDirname = pathe.dirname
 export const posixResolve = pathe.resolve
-export const normalizeString = pathe.normalizeString
 
 export function posixPathToFileHref(posixPath: string): string {
   let resolved = posixResolve(posixPath)
