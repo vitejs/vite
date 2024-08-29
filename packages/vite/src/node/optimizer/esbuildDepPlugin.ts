@@ -13,7 +13,7 @@ import {
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isCSSRequest, isModuleCSSRequest } from '../plugins/css'
 import type { Environment } from '../environment'
-import { createIdResolver } from '../idResolver'
+import { createBackCompatIdResolver } from '../idResolver'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -66,19 +66,22 @@ export function esbuildDepPlugin(
   const cjsPackageCache: PackageCache = new Map()
 
   // default resolver which prefers ESM
-  const _resolve = createIdResolver(environment.getTopLevelConfig(), {
+  const _resolve = createBackCompatIdResolver(environment.getTopLevelConfig(), {
     asSrc: false,
     scan: true,
     packageCache: esmPackageCache,
   })
 
   // cjs resolver that prefers Node
-  const _resolveRequire = createIdResolver(environment.getTopLevelConfig(), {
-    asSrc: false,
-    isRequire: true,
-    scan: true,
-    packageCache: cjsPackageCache,
-  })
+  const _resolveRequire = createBackCompatIdResolver(
+    environment.getTopLevelConfig(),
+    {
+      asSrc: false,
+      isRequire: true,
+      scan: true,
+      packageCache: cjsPackageCache,
+    },
+  )
 
   const resolve = (
     id: string,

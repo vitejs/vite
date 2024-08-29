@@ -4,7 +4,7 @@ import { expect, test } from 'vitest'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
 import type { ResolveIdFn } from '../idResolver'
-import { createIdResolver } from '../idResolver'
+import { createBackCompatIdResolver } from '../idResolver'
 import { normalizePath } from '../utils'
 
 const root = fileURLToPath(new URL('./', import.meta.url))
@@ -20,7 +20,7 @@ async function createDevServer() {
         return {
           name: 'environment-alias-test-plugin',
           configResolved(config) {
-            idResolver = createIdResolver(config, {})
+            idResolver = createBackCompatIdResolver(config)
           },
           async resolveId(id) {
             return await idResolver(this.environment, id)

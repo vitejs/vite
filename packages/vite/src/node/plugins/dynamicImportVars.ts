@@ -7,7 +7,7 @@ import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
-import { createIdResolver } from '../idResolver'
+import { createBackCompatIdResolver } from '../idResolver'
 import {
   createFilter,
   normalizePath,
@@ -164,7 +164,7 @@ export async function transformDynamicImport(
 }
 
 export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
-  const resolve = createIdResolver(config, {
+  const resolve = createBackCompatIdResolver(config, {
     preferRelative: true,
     tryIndex: false,
     extensions: [],

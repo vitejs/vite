@@ -5,7 +5,7 @@ import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { evalValue, injectQuery, transformStableResult } from '../utils'
-import { createIdResolver } from '../idResolver'
+import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
@@ -159,7 +159,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             file = path.resolve(path.dirname(id), url)
             file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
-            workerResolver ??= createIdResolver(config, {
+            workerResolver ??= createBackCompatIdResolver(config, {
               extensions: [],
               tryIndex: false,
               preferRelative: true,

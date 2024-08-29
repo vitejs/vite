@@ -6,13 +6,13 @@ import { escapeRegex, getNpmPackageName } from '../utils'
 import { resolvePackageData } from '../packages'
 import { slash } from '../../shared/utils'
 import type { Environment } from '../environment'
-import { createIdResolver } from '../idResolver'
+import { createBackCompatIdResolver } from '../idResolver'
 
 export function createOptimizeDepsIncludeResolver(
   environment: Environment,
 ): (id: string) => Promise<string | undefined> {
   const topLevelConfig = environment.getTopLevelConfig()
-  const resolve = createIdResolver(topLevelConfig, {
+  const resolve = createBackCompatIdResolver(topLevelConfig, {
     asSrc: false,
     scan: true,
     ssrOptimizeCheck: environment.config.consumer === 'server',
