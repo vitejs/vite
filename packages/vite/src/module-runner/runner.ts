@@ -245,27 +245,6 @@ export class ModuleRunner {
   }
 
   private async cachedModule(url: string, importer?: string) {
-    const cacheKey = `${url}~~${importer}`
-    let cached = this.moduleInfoCache.get(cacheKey)
-    if (!cached) {
-      cached = this.getModuleInformation(url, importer).finally(() => {
-        this.moduleInfoCache.delete(cacheKey)
-      })
-      this.moduleInfoCache.set(cacheKey, cached)
-    }
-    return cached
-  }
-
-  private async getModuleInformation(
-    url: string,
-    importer?: string,
-  ): Promise<ModuleCache> {
-    if (this.destroyed) {
-      throw new Error(`Vite module runner has been destroyed.`)
-    }
-
-    this.debug?.('[module runner] fetching', url)
-
     url = normalizeAbsoluteUrl(url, this.root)
 
     const normalized = this.urlToIdMap.get(url)
@@ -273,6 +252,32 @@ export class ModuleRunner {
     if (!cachedModule) {
       cachedModule = this.moduleCache.getByModuleId(url)
     }
+
+    let cached = this.moduleInfoCache.get(url)
+    if (!cached) {
+      cached = this.getModuleInformation(url, importer, cachedModule).finally(
+        () => {
+          this.moduleInfoCache.delete(url)
+        },
+      )
+      this.moduleInfoCache.set(url, cached)
+    } else {
+      this.debug?.('[module runner] using cached module info for', url)
+    }
+
+    return cached
+  }
+
+  private async getModuleInformation(
+    url: string,
+    importer: string | undefined,
+    cachedModule: ModuleCache | undefined,
+  ): Promise<ModuleCache> {
+    if (this.destroyed) {
+      throw new Error(`Vite module runner has been destroyed.`)
+    }
+
+    this.debug?.('[module runner] fetching', url)
 
     const isCached = !!(typeof cachedModule === 'object' && cachedModule.meta)
 
