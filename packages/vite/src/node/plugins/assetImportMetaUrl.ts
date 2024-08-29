@@ -6,7 +6,7 @@ import type { ResolvedConfig } from '../config'
 import { injectQuery, isParentDirectory, transformStableResult } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
-import { createIdResolver } from '../idResolver'
+import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
@@ -107,7 +107,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             file = slash(path.resolve(path.dirname(id), url))
             file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
-            assetResolver ??= createIdResolver(config, {
+            assetResolver ??= createBackCompatIdResolver(config, {
               extensions: [],
               mainFields: [],
               tryIndex: false,

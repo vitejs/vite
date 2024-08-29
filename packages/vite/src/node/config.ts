@@ -7,9 +7,8 @@ import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
-import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
-import type { PartialResolvedId, RollupOptions } from 'rollup'
+import type { RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
@@ -67,7 +66,6 @@ import {
   normalizeAlias,
   normalizePath,
 } from './utils'
-import { getFsUtils } from './fsUtils'
 import {
   createPluginHookUtils,
   getHookHandler,
@@ -76,19 +74,18 @@ import {
 } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
 import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
-import { resolvePlugin, tryNodeResolve } from './plugins/resolve'
+import { tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
-import type { EnvironmentPluginContainer } from './server/pluginContainer'
-import { createEnvironmentPluginContainer } from './server/pluginContainer'
 import type { PackageCache } from './packages'
 import { findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
-import { FutureCompatEnvironment } from './baseEnvironment'
+import { PartialEnvironment } from './baseEnvironment'
+import { createIdResolver } from './idResolver'
 import type { FutureDeprecationWarningsOptions } from './deprecations'
 
 const debug = createDebugger('vite:config')
@@ -1256,75 +1253,20 @@ export async function resolveConfig(
      * optimizer & handling css @imports
      */
     createResolver(options) {
-      const alias: {
-        client?: EnvironmentPluginContainer
-        ssr?: EnvironmentPluginContainer
-      } = {}
-      const resolver: {
-        client?: EnvironmentPluginContainer
-        ssr?: EnvironmentPluginContainer
-      } = {}
-      const environments = this.environments ?? resolvedEnvironments
-      const createPluginContainer = async (
-        environmentName: string,
-        plugins: Plugin[],
-      ) => {
-        // The used alias and resolve plugins only use configuration options from the
-        // environment so we can safely just use the FutureCompatEnvironment here
-        const environment = new FutureCompatEnvironment(environmentName, this)
-        const pluginContainer = await createEnvironmentPluginContainer(
-          environment,
-          plugins,
-        )
-        await pluginContainer.buildStart({})
-        return pluginContainer
-      }
-      async function resolve(
-        id: string,
-        importer?: string,
-        aliasOnly?: boolean,
-        ssr?: boolean,
-      ): Promise<PartialResolvedId | null> {
-        const environmentName = ssr ? 'ssr' : 'client'
-        let container: EnvironmentPluginContainer
-        if (aliasOnly) {
-          let aliasContainer = alias[environmentName]
-          if (!aliasContainer) {
-            aliasContainer = alias[environmentName] =
-              await createPluginContainer(environmentName, [
-                aliasPlugin({ entries: resolved.resolve.alias }),
-              ])
-          }
-          container = aliasContainer
-        } else {
-          let resolverContainer = resolver[environmentName]
-          if (!resolverContainer) {
-            resolverContainer = resolver[environmentName] =
-              await createPluginContainer(environmentName, [
-                aliasPlugin({ entries: resolved.resolve.alias }),
-                resolvePlugin(
-                  {
-                    ...resolved.resolve,
-                    root: resolvedRoot,
-                    isProduction,
-                    isBuild: command === 'build',
-                    asSrc: true,
-                    preferRelative: false,
-                    tryIndex: true,
-                    ...options,
-                    idOnly: true,
-                    fsUtils: getFsUtils(resolved),
-                  },
-                  environments,
-                ),
-              ])
-          }
-          container = resolverContainer
+      const resolve = createIdResolver(this, options)
+      const clientEnvironment = new PartialEnvironment('client', this)
+      let ssrEnvironment: PartialEnvironment | undefined
+      return async (id, importer, aliasOnly, ssr) => {
+        if (ssr) {
+          ssrEnvironment ??= new PartialEnvironment('ssr', this)
         }
-        return await container.resolveId(id, importer, { scan: options?.scan })
+        return await resolve(
+          ssr ? ssrEnvironment! : clientEnvironment,
+          id,
+          importer,
+          aliasOnly,
+        )
       }
-      return async (id, importer, aliasOnly, ssr) =>
-        (await resolve(id, importer, aliasOnly, ssr))?.id
     },
     fsDenyGlob: picomatch(
       // matchBase: true does not work as it's documented

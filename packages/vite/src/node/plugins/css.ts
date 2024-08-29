@@ -69,7 +69,7 @@ import {
 } from '../utils'
 import type { Logger } from '../logger'
 import { cleanUrl, slash } from '../../shared/utils'
-import { createIdResolver } from '../idResolver'
+import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { PartialEnvironment } from '../baseEnvironment'
 import type { TransformPluginContext } from '../server/pluginContainer'
@@ -261,7 +261,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let moduleCache: Map<string, Record<string, string>>
 
-  const idResolver = createIdResolver(config, {
+  const idResolver = createBackCompatIdResolver(config, {
     preferRelative: true,
     tryIndex: false,
     extensions: [],
@@ -1065,7 +1065,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
   let lessResolve: ResolveIdFn | undefined
   return {
     get css() {
-      return (cssResolve ??= createIdResolver(config, {
+      return (cssResolve ??= createBackCompatIdResolver(config, {
         extensions: ['.css'],
         mainFields: ['style'],
         conditions: ['style'],
@@ -1076,7 +1076,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
 
     get sass() {
       if (!sassResolve) {
-        const resolver = createIdResolver(config, {
+        const resolver = createBackCompatIdResolver(config, {
           extensions: ['.scss', '.sass', '.css'],
           mainFields: ['sass', 'style'],
           conditions: ['sass', 'style'],
@@ -1099,7 +1099,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
     },
 
     get less() {
-      return (lessResolve ??= createIdResolver(config, {
+      return (lessResolve ??= createBackCompatIdResolver(config, {
         extensions: ['.less', '.css'],
         mainFields: ['less', 'style'],
         conditions: ['less', 'style'],
