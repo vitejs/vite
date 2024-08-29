@@ -1053,7 +1053,7 @@ function esbuildOutputFromId(
   // If the root dir was symlinked, esbuild could return output keys as `../cwd/`
   // Normalize keys to support this case too
   for (const [key, value] of Object.entries(outputs)) {
-    if (normalizePath(path.relative(cwd, key)) === normalizedOutputPath) {
+    if (normalizePath(path.relative(cwd, key)) === normalizedOutputPath || key.split(path.sep).slice(1).join(path.sep) === normalizedOutputPath.split(path.sep).slice(1).join(path.sep)) {
       return value
     }
   }
