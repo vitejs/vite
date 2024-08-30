@@ -1,3 +1,14 @@
+## 6.0.0-alpha.23 (2024-08-30)
+
+* refactor: cache by url, not by import-url (#17974) ([219581c](https://github.com/vitejs/vite/commit/219581c1cab9d790f7bc7ab23379561ac6fd88e7)), closes [#17974](https://github.com/vitejs/vite/issues/17974)
+* refactor: simplify some code and reduce diff (#17969) ([1c3282f](https://github.com/vitejs/vite/commit/1c3282f4053b5fa99a9ce8f24bf24e66059e91e3)), closes [#17969](https://github.com/vitejs/vite/issues/17969)
+* fix: buildStart/resolveId loop ([b3061c1](https://github.com/vitejs/vite/commit/b3061c1c33ef691899f7a08bd0a0b0139a5a9918))
+* fix: createResolver compat (#17972) ([0c1cfab](https://github.com/vitejs/vite/commit/0c1cfab5b17033f8448bef69c0c5aac4f768d49d)), closes [#17972](https://github.com/vitejs/vite/issues/17972)
+* fix: pluginContainer.getModuleInfo() ([32dd372](https://github.com/vitejs/vite/commit/32dd3724e37b04654493a3df12621d76aeeb454a))
+* fix(v6): fix `ViteDevServer.environments` type (#17967) ([e700f48](https://github.com/vitejs/vite/commit/e700f48f78b4f07205f81ef5a97e0dc1323b92db)), closes [#17967](https://github.com/vitejs/vite/issues/17967)
+
+
+
 ## 6.0.0-alpha.22 (2024-08-28)
 
 * fix: cache parallel moduleInfo calls (#17957) ([66bfe7b](https://github.com/vitejs/vite/commit/66bfe7b8ddc22cf2950831d179250b2ebd9e352a)), closes [#17957](https://github.com/vitejs/vite/issues/17957)
