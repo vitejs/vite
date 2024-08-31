@@ -778,7 +778,6 @@ function resolveEnvironmentResolveOptions(
   return resolvedResolve
 }
 
-// TODO: Introduce ResolvedDepOptimizationOptions
 function resolveDepOptimizationOptions(
   optimizeDeps: DepOptimizationOptions | undefined,
   preserveSymlinks: boolean,
@@ -793,7 +792,7 @@ function resolveDepOptimizationOptions(
     noDiscovery: optimizeDeps.noDiscovery ?? consumer !== 'client',
     holdUntilCrawlEnd: optimizeDeps.holdUntilCrawlEnd ?? true,
     esbuildOptions: {
-      preserveSymlinks, // TODO: ?
+      preserveSymlinks,
       ...optimizeDeps.esbuildOptions,
     },
     disabled: optimizeDeps.disabled,
@@ -936,7 +935,7 @@ export async function resolveConfig(
       deprecatedSsrOptimizeDepsConfig,
       configEnvironmentsSsr.dev.optimizeDeps ?? {},
     )
-    // TODO: should we merge here?
+
     configEnvironmentsSsr.resolve ??= {}
     configEnvironmentsSsr.resolve.conditions ??= config.ssr?.resolve?.conditions
     configEnvironmentsSsr.resolve.externalConditions ??=
@@ -1159,7 +1158,7 @@ export async function resolveConfig(
       workerPrePlugins,
       workerNormalPlugins,
       workerPostPlugins,
-    )) as Plugin[] // TODO: worker plugins and isolated constructor
+    )) as Plugin[]
 
     // run configResolved hooks
     await Promise.all(

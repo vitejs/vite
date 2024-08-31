@@ -1120,7 +1120,6 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-// TODO: Could we get Rollup to let us extends PluginContext in a more performant way?
 export function injectEnvironmentToHooks(
   environment: BuildEnvironment,
   plugin: Plugin,
@@ -1356,7 +1355,6 @@ export type RenderBuiltAssetUrl = (
   },
 ) => string | { relative?: boolean; runtime?: string } | undefined
 
-// TODO: experimental.renderBuiltUrl => environment.build.renderBuiltUrl?
 export function toOutputFilePathInJS(
   environment: PartialEnvironment,
   filename: string,
@@ -1469,7 +1467,6 @@ export class BuildEnvironment extends BaseEnvironment {
       options?: EnvironmentOptions
     },
   ) {
-    // TODO: move this to the base Environment class?
     let options =
       config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
     if (setup?.options) {

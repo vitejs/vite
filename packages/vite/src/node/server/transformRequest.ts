@@ -166,7 +166,6 @@ async function doTransform(
     if (cached) return cached
   }
 
-  // TODO: Simplify
   const resolved = module
     ? undefined
     : ((await pluginContainer.resolveId(url, undefined)) ?? undefined)
@@ -254,7 +253,6 @@ async function loadAndTransform(
   const loadStart = debugLoad ? performance.now() : 0
   const loadResult = await pluginContainer.load(id)
 
-  // TODO: Replace this with pluginLoadFallback
   if (loadResult == null) {
     const file = cleanUrl(id)
 

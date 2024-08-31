@@ -24,7 +24,6 @@ import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
-// TODO: import { loadFallbackPlugin } from './loadFallback'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
