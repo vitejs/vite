@@ -576,3 +576,10 @@ test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
     /<img class="noscript" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
   )
 })
+
+test.runIf(isBuild)('assets inside <template> is rewrote', async () => {
+  const indexHtml = readFile('./dist/foo/index.html')
+  expect(indexHtml).toMatch(
+    /<img class="template" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
+  )
+})
