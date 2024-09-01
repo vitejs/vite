@@ -2438,6 +2438,12 @@ const scssProcessor = (
           ? JSON.parse(result.map.toString())
           : undefined
 
+        if (map) {
+          map.sources = map.sources.map((url) =>
+            url.startsWith('file://') ? normalizePath(fileURLToPath(url)) : url,
+          )
+        }
+
         return {
           code: result.css.toString(),
           map,
