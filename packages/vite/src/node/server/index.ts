@@ -1251,15 +1251,15 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
     if (ignoredId) {
       seenIds.add(ignoredId)
       markIdAsDone(ignoredId)
+    } else {
+      checkIfCrawlEndAfterTimeout()
     }
     return onCrawlEndPromiseWithResolvers.promise
   }
 
   function markIdAsDone(id: string): void {
-    if (registeredIds.has(id)) {
-      registeredIds.delete(id)
-      checkIfCrawlEndAfterTimeout()
-    }
+    registeredIds.delete(id)
+    checkIfCrawlEndAfterTimeout()
   }
 
   function checkIfCrawlEndAfterTimeout() {
