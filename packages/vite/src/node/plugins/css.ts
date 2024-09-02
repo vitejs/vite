@@ -3096,7 +3096,7 @@ const esMap: Record<number, string[]> = {
   // https://caniuse.com/?search=es2022
   2022: ['chrome94', 'edge94', 'safari16.4', 'firefox93', 'opera80'],
   // https://caniuse.com/?search=es2023
-  2023: ['chrome110', 'edge110', 'safari16.4', 'firefox115', 'opera96'],
+  2023: ['chrome110', 'edge110', 'safari16.4', 'opera96'],
 }
 
 const esRE = /es(\d{4})/
