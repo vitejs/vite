@@ -360,7 +360,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         // make the URL browser-valid
-        if (environment.config.injectInvalidationTimestamp) {
+        if (environment.config.consumer === 'client') {
           // mark non-js/css imports with `?import`
           if (isExplicitImportRequired(url)) {
             url = injectQuery(url, 'import')

@@ -248,13 +248,6 @@ export interface SharedEnvironmentOptions {
    * Temporal options, we should remove these in favor of fine-grained control
    */
   webCompatible?: boolean // was ssr.target === 'webworker'
-  /**
-   * Should Vite inject timestamp if module is invalidated
-   * Disabling this will break built-in HMR support
-   * @experimental
-   * @default true
-   */
-  injectInvalidationTimestamp?: boolean
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -276,14 +269,13 @@ export type ResolvedEnvironmentOptions = {
   resolve: ResolvedEnvironmentResolveOptions
   consumer: 'client' | 'server'
   webCompatible: boolean
-  injectInvalidationTimestamp: boolean
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
 }
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  'build' | 'consumer' | 'webCompatible' | 'injectInvalidationTimestamp'
+  'build' | 'consumer' | 'webCompatible'
 > & {
   // Includes lib mode support
   build?: BuildOptions
@@ -643,8 +635,6 @@ function resolveEnvironmentOptions(
     resolve,
     consumer,
     webCompatible: options.webCompatible ?? consumer === 'client',
-    injectInvalidationTimestamp:
-      options.injectInvalidationTimestamp ?? consumer === 'client',
     dev: resolveDevEnvironmentOptions(
       options.dev,
       resolve.preserveSymlinks,
@@ -680,7 +670,6 @@ export function getDefaultResolvedEnvironmentOptions(
     resolve: config.resolve,
     consumer: 'server',
     webCompatible: false,
-    injectInvalidationTimestamp: false,
     dev: config.dev,
     build: config.build,
   }

@@ -18,7 +18,7 @@ import {
   stripBase,
   timeFrom,
 } from '../utils'
-import { ssrParseImports, ssrTransform } from '../ssr/ssrTransform'
+import { ssrTransform } from '../ssr/ssrTransform'
 import { checkPublicFile } from '../publicDir'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import {
@@ -457,21 +457,16 @@ async function handleModuleSoftInvalidation(
   }
 
   let result: TransformResult
-  // No transformation is needed if it's disabled manually
-  // This is primarily for backwards compatible SSR
-  if (!environment.config.injectInvalidationTimestamp) {
+  // For SSR soft-invalidation, no transformation is needed
+  if (transformResult.ssr) {
     result = transformResult
   }
   // We need to transform each imports with new timestamps if available
   else {
+    await init
     const source = transformResult.code
     const s = new MagicString(source)
-    const imports = transformResult.ssr
-      ? await ssrParseImports(mod.url, source)
-      : await (async () => {
-          await init
-          return parseImports(source, mod.id || undefined)[0]
-        })()
+    const [imports] = parseImports(source, mod.id || undefined)
 
     for (const imp of imports) {
       let rawUrl = source.slice(imp.s, imp.e)
