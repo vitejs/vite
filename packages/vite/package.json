@@ -86,7 +86,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.21.3",
-    "postcss": "^8.4.41",
+    "postcss": "^8.4.43",
     "rollup": "^4.20.0"
   },
   "optionalDependencies": {
@@ -94,7 +94,7 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.3.0",
-    "@babel/parser": "^7.25.4",
+    "@babel/parser": "^7.25.6",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.0",
