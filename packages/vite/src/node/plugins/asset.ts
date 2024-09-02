@@ -198,6 +198,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           config.command === 'build' && this.getModuleInfo(id)?.isEntry
             ? 'no-treeshake'
             : false,
+        meta: config.command === 'build' ? { 'vite:asset': true } : undefined,
       }
     },
 
@@ -224,7 +225,8 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           chunk.type === 'chunk' &&
           chunk.isEntry &&
           chunk.moduleIds.length === 1 &&
-          config.assetsInclude(chunk.moduleIds[0])
+          config.assetsInclude(chunk.moduleIds[0]) &&
+          this.getModuleInfo(chunk.moduleIds[0])?.meta['vite:asset']
         ) {
           delete bundle[file]
         }
