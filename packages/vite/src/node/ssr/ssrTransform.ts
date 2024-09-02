@@ -2,14 +2,12 @@ import path from 'node:path'
 import MagicString from 'magic-string'
 import type { SourceMap } from 'rollup'
 import type {
-  CallExpression,
   ExportAllDeclaration,
   ExportDefaultDeclaration,
   ExportNamedDeclaration,
   Function as FunctionNode,
   Identifier,
   ImportDeclaration,
-  Literal,
   Pattern,
   Property,
   VariableDeclaration,
@@ -19,7 +17,6 @@ import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { parseAstAsync as rollupParseAstAsync } from 'rollup/parseAst'
-import type { ImportSpecifier } from 'es-module-lexer'
 import type { TransformResult } from '../server/transformRequest'
 import { combineSourcemaps, isDefined } from '../utils'
 import { isJSONRequest } from '../plugins/json'
@@ -378,52 +375,6 @@ async function ssrTransformScript(
     deps: [...deps],
     dynamicDeps: [...dynamicDeps],
   }
-}
-
-export async function ssrParseImports(
-  url: string,
-  code: string,
-): Promise<readonly ImportSpecifier[]> {
-  let ast: any
-  try {
-    ast = await rollupParseAstAsync(code)
-  } catch (err) {
-    if (!err.loc || !err.loc.line) throw err
-    const line = err.loc.line
-    throw new Error(
-      `Parse failure: ${
-        err.message
-      }\nAt file: ${url}\nContents of line ${line}: ${
-        code.split('\n')[line - 1]
-      }`,
-    )
-  }
-  const imports: ImportSpecifier[] = []
-  eswalk(ast, {
-    enter(_n, parent) {
-      if (_n.type !== 'Identifier') return
-      const node = _n as Node & Identifier
-      const isStaticImport = node.name === ssrImportKey
-      const isDynamicImport = node.name === ssrDynamicImportKey
-      if (isStaticImport || isDynamicImport) {
-        // this is a standardised output, so we can safely assume the parent and arguments
-        const importExpression = parent as Node & CallExpression
-        const importLiteral = importExpression.arguments[0] as Node & Literal
-
-        imports.push({
-          n: importLiteral.value as string | undefined,
-          s: importLiteral.start,
-          e: importLiteral.end,
-          se: importExpression.start,
-          ss: importExpression.end,
-          t: isStaticImport ? 2 : 1,
-          d: isDynamicImport ? importLiteral.start : -1,
-          a: -1, // not used
-        })
-      }
-    },
-  })
-  return imports
 }
 
 interface Visitors {
