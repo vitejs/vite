@@ -25,6 +25,18 @@ asyncFunctions.forEach((name) => {
 
 function warnCjsUsage() {
   if (process.env.VITE_CJS_IGNORE_WARNING) return
+  const logLevelIndex = process.argv.findIndex((arg) =>
+    /^(?:-l|--logLevel)/.test(arg),
+  )
+  if (logLevelIndex > 0) {
+    const logLevelValue = process.argv[logLevelIndex + 1]
+    if (logLevelValue === 'silent' || logLevelValue === 'error') {
+      return
+    }
+    if (/silent|error/.test(process.argv[logLevelIndex])) {
+      return
+    }
+  }
   const yellow = (str) => `\u001b[33m${str}\u001b[39m`
   const log = process.env.VITE_CJS_TRACE ? console.trace : console.warn
   log(
