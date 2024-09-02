@@ -173,6 +173,9 @@ function traverseNodes(
   node: DefaultTreeAdapterMap['node'],
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
 ) {
+  if (node.nodeName === 'template') {
+    node = (node as DefaultTreeAdapterMap['template']).content
+  }
   visitor(node)
   if (
     nodeIsElement(node) ||
