@@ -27,6 +27,7 @@ import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
+import type { SassPreprocessOptions } from 'types/cssPreprocessorOptions'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { ModuleNode } from '../server/moduleGraph'
 import type { ResolveFn, ViteDevServer } from '../'
@@ -108,7 +109,11 @@ export interface CSSOptions {
    * In addition to options specific to each processors, Vite supports `additionalData` option.
    * The `additionalData` option can be used to inject extra code for each style content.
    */
-  preprocessorOptions?: Record<string, any>
+  preprocessorOptions?: {
+    [key: string]: any
+    scss?: SassPreprocessOptions
+  }
+
   /**
    * If this option is set, preprocessors will run in workers when possible.
    * `true` means the number of CPUs minus 1.
@@ -1954,9 +1959,7 @@ type StylePreprocessorOptions = {
 }
 
 type SassStylePreprocessorOptions = StylePreprocessorOptions &
-  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'> & {
-    api?: 'legacy' | 'modern' | 'modern-compiler'
-  }
+  SassPreprocessOptions
 
 type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
   define?: Record<string, any>

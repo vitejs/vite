@@ -1,6 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./", "../runtime", "../types"],
+  "include": [
+    "./",
+    "../runtime",
+    "../types",
+    "../../types/cssPreprocessorOptions.d.ts"
+  ],
   "exclude": ["../**/__tests__"],
   "compilerOptions": {
     // https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping#node-18
