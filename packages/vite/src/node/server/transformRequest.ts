@@ -457,9 +457,8 @@ async function handleModuleSoftInvalidation(
   }
 
   let result: TransformResult
-  // No transformation is needed if it's disabled manually
-  // This is primarily for backwards compatible SSR
-  if (!environment.config.injectInvalidationTimestamp) {
+  // For SSR soft-invalidation, no transformation is needed
+  if (environment.config.consumer === 'server') {
     result = transformResult
   }
   // We need to transform each imports with new timestamps if available
