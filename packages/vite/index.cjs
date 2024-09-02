@@ -38,10 +38,23 @@ function warnCjsUsage() {
     }
   }
   const yellow = (str) => `\u001b[33m${str}\u001b[39m`
-  const log = process.env.VITE_CJS_TRACE ? console.trace : console.warn
-  log(
+  console.warn(
     yellow(
       `The CJS build of Vite's Node API is deprecated. See https://vitejs.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.`,
     ),
   )
+  if (process.env.VITE_CJS_TRACE) {
+    const e = {}
+    const stackTraceLimit = Error.stackTraceLimit
+    Error.stackTraceLimit = 100
+    Error.captureStackTrace(e)
+    Error.stackTraceLimit = stackTraceLimit
+    console.log(
+      e.stack
+        .split('\n')
+        .slice(1)
+        .filter((line) => !line.includes('(node:'))
+        .join('\n'),
+    )
+  }
 }
