@@ -142,10 +142,10 @@ And create an `index.html` file like this:
 <p>Hello Vite!</p>
 ```
 
-Then run the `vite` CLI in your terminal:
+Then run the `npx vite` CLI in your terminal:
 
 ```bash
-vite
+npx vite
 ```
 
 The `index.html` will be served on `http://localhost:5173`.
