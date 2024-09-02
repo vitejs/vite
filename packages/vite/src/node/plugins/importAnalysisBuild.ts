@@ -125,8 +125,8 @@ function preload(
         link.rel = isCss ? 'stylesheet' : scriptRel
         if (!isCss) {
           link.as = 'script'
-          link.crossOrigin = ''
         }
+        link.crossOrigin = ''
         link.href = dep
         if (cspNonce) {
           link.setAttribute('nonce', cspNonce)
