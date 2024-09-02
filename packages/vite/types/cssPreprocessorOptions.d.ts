@@ -5,4 +5,7 @@ import type Sass from 'sass'
 export type SassPreprocessOptions = Omit<
   Sass.LegacyOptions<'async'>,
   'data' | 'file' | 'outFile'
->
+> & {
+  api?: 'legacy' | 'modern' | 'modern-compiler'
+  additionalData?: string
+}
