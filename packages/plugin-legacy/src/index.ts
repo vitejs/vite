@@ -510,7 +510,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (!chunk) return
       if (!chunk.moduleIds.some((moduleId) => moduleId.endsWith('.js'))) {
         return {
-          html: html.replace(/<script .*? type="module".*?<\/script>/g, ''),
+          html,
           tags: [],
         }
       }
