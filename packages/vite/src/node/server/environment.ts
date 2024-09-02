@@ -181,7 +181,9 @@ export class DevEnvironment extends BaseEnvironment {
   }
 
   async warmupRequest(url: string): Promise<void> {
-    await transformRequest(this, url).catch((e) => {
+    try {
+      await this.transformRequest(url)
+    } catch (e) {
       if (
         e?.code === ERR_OUTDATED_OPTIMIZED_DEP ||
         e?.code === ERR_CLOSED_SERVER
@@ -194,7 +196,7 @@ export class DevEnvironment extends BaseEnvironment {
         error: e,
         timestamp: true,
       })
-    })
+    }
   }
 
   async close(): Promise<void> {

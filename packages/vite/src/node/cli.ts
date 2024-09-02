@@ -10,7 +10,7 @@ import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { resolveConfig } from './config'
-import type { ResolvedConfig } from './config'
+import type { InlineConfig, ResolvedConfig } from './config'
 
 const cli = cac('vite')
 
@@ -293,7 +293,7 @@ cli
       )
 
       try {
-        const inlineConfig = {
+        const inlineConfig: InlineConfig = {
           root,
           base: options.base,
           mode: options.mode,

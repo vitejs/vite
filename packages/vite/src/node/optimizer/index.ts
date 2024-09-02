@@ -1107,12 +1107,12 @@ export async function extractExportsData(
 }
 
 function needsInterop(
-  environmet: Environment,
+  environment: Environment,
   id: string,
   exportsData: ExportsData,
   output?: { exports: string[] },
 ): boolean {
-  if (environmet.config.dev.optimizeDeps?.needsInterop?.includes(id)) {
+  if (environment.config.dev.optimizeDeps?.needsInterop?.includes(id)) {
     return true
   }
   const { hasModuleSyntax, exports } = exportsData

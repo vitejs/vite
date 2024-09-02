@@ -7,7 +7,7 @@ import type { Plugin } from '../plugin'
  */
 export function buildLoadFallbackPlugin(): Plugin {
   return {
-    name: 'vite:build-load-fallback',
+    name: 'vite:load-fallback',
     async load(id) {
       try {
         const cleanedId = cleanUrl(id)
