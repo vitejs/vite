@@ -452,14 +452,14 @@ export interface HTMLOptions {
 }
 
 export interface FutureOptions {
-  removePluginHookHandleHotUpdate?: 'warn' | false
-  removePluginHookSsrArgument?: 'warn' | false
+  removePluginHookHandleHotUpdate?: 'warn'
+  removePluginHookSsrArgument?: 'warn'
 
-  removeServerModuleGraph?: 'warn' | false
-  removeServerHot?: 'warn' | false
-  removeServerTransformRequest?: 'warn' | false
+  removeServerModuleGraph?: 'warn'
+  removeServerHot?: 'warn'
+  removeServerTransformRequest?: 'warn'
 
-  removeSsrLoadModule?: 'warn' | false
+  removeSsrLoadModule?: 'warn'
 }
 
 export interface ExperimentalOptions {
