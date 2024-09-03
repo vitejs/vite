@@ -607,7 +607,7 @@ async function createDepsOptimizer(
 
     return addOptimizedDepInfo(metadata, 'discovered', {
       id,
-      file: getOptimizedDepPath(id, config, ssr),
+      file: getOptimizedDepPath(id, config, ssr, '.js'),
       src: resolved,
       // Adding a browserHash to this missing dependency that is unique to
       // the current state of known + missing deps. If its optimizeDeps run
