@@ -1110,7 +1110,9 @@ function resolveExportsOrImports(
 
   const fn = type === 'imports' ? imports : exports
   const result = fn(pkg, key, {
-    browser: targetWeb && !additionalConditions.has('node'),
+    browser:
+      additionalConditions.has('browser') ||
+      (targetWeb && !additionalConditions.has('node')),
     require: options.isRequire && !additionalConditions.has('import'),
     conditions,
   })
