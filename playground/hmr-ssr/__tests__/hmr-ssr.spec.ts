@@ -2,7 +2,15 @@ import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, posix, resolve } from 'node:path'
 import EventEmitter from 'node:events'
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest'
+import {
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest'
 import type { InlineConfig, Logger, ViteDevServer } from 'vite'
 import { createServer, createServerModuleRunner } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
@@ -319,6 +327,51 @@ describe('hmr works correctly', () => {
   //     ['a.js: a0', 'b.js: b0,a0', 'a.js: a1', 'b.js: b1,a1'].join('<br>'),
   //   )
   // })
+})
+
+describe('self accept with different entry point formats', () => {
+  test.each(['./unresolved.ts', './unresolved', '/unresolved'])(
+    'accepts if entry point is relative to root',
+    async (entrypoint) => {
+      await setupModuleRunner(entrypoint, {}, '/unresolved.ts')
+
+      onTestFinished(() => {
+        const filepath = resolvePath('..', 'unresolved.ts')
+        fs.writeFileSync(filepath, originalFiles.get(filepath)!, 'utf-8')
+      })
+
+      const el = () => hmr('.app')
+      await untilConsoleLogAfter(
+        () =>
+          editFile('unresolved.ts', (code) =>
+            code.replace('const foo = 1', 'const foo = 2'),
+          ),
+        [
+          'foo was: 1',
+          '(self-accepting 1) foo is now: 2',
+          '(self-accepting 2) foo is now: 2',
+          updated('/unresolved.ts'),
+        ],
+        true,
+      )
+      await untilUpdated(() => el(), '2')
+
+      await untilConsoleLogAfter(
+        () =>
+          editFile('unresolved.ts', (code) =>
+            code.replace('const foo = 2', 'const foo = 3'),
+          ),
+        [
+          'foo was: 2',
+          '(self-accepting 1) foo is now: 3',
+          '(self-accepting 2) foo is now: 3',
+          updated('/unresolved.ts'),
+        ],
+        true,
+      )
+      await untilUpdated(() => el(), '3')
+    },
+  )
 })
 
 describe('acceptExports', () => {
@@ -1101,6 +1154,7 @@ function createInMemoryLogger(logs: string[]) {
 async function setupModuleRunner(
   entrypoint: string,
   serverOptions: InlineConfig = {},
+  waitForFile: string = entrypoint,
 ) {
   if (server) {
     await server.close()
@@ -1147,7 +1201,7 @@ async function setupModuleRunner(
     },
   })
 
-  await waitForWatcher(server, entrypoint)
+  await waitForWatcher(server, waitForFile)
 
   await runner.import(entrypoint)
 

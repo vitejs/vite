@@ -12,6 +12,7 @@ import { parseAst } from 'rollup/parseAst'
 import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
+import type { PartialResolvedId } from 'rollup'
 import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
@@ -97,6 +98,46 @@ export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(url) && !isCSSRequest(url)
 }
 
+export function normalizeResolvedIdToUrl(
+  environment: DevEnvironment,
+  url: string,
+  resolved: PartialResolvedId,
+): string {
+  const root = environment.config.root
+  const depsOptimizer = environment.depsOptimizer
+  const fsUtils = getFsUtils(environment.getTopLevelConfig())
+
+  // normalize all imports into resolved URLs
+  // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
+  if (resolved.id.startsWith(withTrailingSlash(root))) {
+    // in root: infer short absolute path from root
+    url = resolved.id.slice(root.length)
+  } else if (
+    depsOptimizer?.isOptimizedDepFile(resolved.id) ||
+    // vite-plugin-react isn't following the leading \0 virtual module convention.
+    // This is a temporary hack to avoid expensive fs checks for React apps.
+    // We'll remove this as soon we're able to fix the react plugins.
+    (resolved.id !== '/@react-refresh' &&
+      path.isAbsolute(resolved.id) &&
+      fsUtils.existsSync(cleanUrl(resolved.id)))
+  ) {
+    // an optimized deps may not yet exists in the filesystem, or
+    // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
+    url = path.posix.join(FS_PREFIX, resolved.id)
+  } else {
+    url = resolved.id
+  }
+
+  // if the resolved id is not a valid browser import specifier,
+  // prefix it to make it valid. We will strip this before feeding it
+  // back into the transform pipeline
+  if (url[0] !== '.' && url[0] !== '/') {
+    url = wrapId(resolved.id)
+  }
+
+  return url
+}
+
 function extractImportedBindings(
   id: string,
   source: string,
@@ -180,7 +221,6 @@ function extractImportedBindings(
  */
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
-  const fsUtils = getFsUtils(config)
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental?.hmrPartialAccept
   const matchAlias = getAliasPatternMatcher(config.resolve.alias)
@@ -331,33 +371,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const isRelative = url[0] === '.'
         const isSelfImport = !isRelative && cleanUrl(url) === cleanUrl(importer)
 
-        // normalize all imports into resolved URLs
-        // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
-        if (resolved.id.startsWith(withTrailingSlash(root))) {
-          // in root: infer short absolute path from root
-          url = resolved.id.slice(root.length)
-        } else if (
-          depsOptimizer?.isOptimizedDepFile(resolved.id) ||
-          // vite-plugin-react isn't following the leading \0 virtual module convention.
-          // This is a temporary hack to avoid expensive fs checks for React apps.
-          // We'll remove this as soon we're able to fix the react plugins.
-          (resolved.id !== '/@react-refresh' &&
-            path.isAbsolute(resolved.id) &&
-            fsUtils.existsSync(cleanUrl(resolved.id)))
-        ) {
-          // an optimized deps may not yet exists in the filesystem, or
-          // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
-          url = path.posix.join(FS_PREFIX, resolved.id)
-        } else {
-          url = resolved.id
-        }
-
-        // if the resolved id is not a valid browser import specifier,
-        // prefix it to make it valid. We will strip this before feeding it
-        // back into the transform pipeline
-        if (url[0] !== '.' && url[0] !== '/') {
-          url = wrapId(resolved.id)
-        }
+        url = normalizeResolvedIdToUrl(environment, url, resolved)
 
         // make the URL browser-valid
         if (environment.config.consumer === 'client') {
