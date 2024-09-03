@@ -398,6 +398,14 @@ describe.runIf(isServe)('warmup', () => {
       expect(mod).toBeTruthy()
     })
   })
+  test('should warmup virtual:warmup', async () => {
+    // warmup transform files async during server startup, so the module check
+    // here might take a while to load
+    await withRetry(async () => {
+      const mod = await viteServer.moduleGraph.getModuleByUrl('virtual:warmup')
+      expect(mod).toBeTruthy()
+    })
+  })
 })
 
 test('html serve behavior', async () => {

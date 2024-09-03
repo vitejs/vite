@@ -118,9 +118,17 @@ export interface ServerOptions extends CommonServerOptions {
      */
     clientFiles?: string[]
     /**
+     * The IDs of modules to be transformed and used on the client-side.
+     */
+    clientIds?: string[]
+    /**
      * The files to be transformed and used in SSR. Supports glob patterns.
      */
     ssrFiles?: string[]
+    /**
+     * The IDs of modules to be transformed and used in SSR.
+     */
+    ssrIds?: string[]
   }
   /**
    * chokidar watch options or null to disable FS watching
