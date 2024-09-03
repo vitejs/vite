@@ -1,3 +1,22 @@
+## <small>5.4.3 (2024-09-03)</small>
+
+* fix: allow getting URL of JS files in publicDir (#17915) ([943ece1](https://github.com/vitejs/vite/commit/943ece177e7709b3ba574e810afce347c51d4442)), closes [#17915](https://github.com/vitejs/vite/issues/17915)
+* fix: cjs warning respect the logLevel flag (#17993) ([dc3c14f](https://github.com/vitejs/vite/commit/dc3c14f39fcd57867c8ae81b75ae768b53b4b880)), closes [#17993](https://github.com/vitejs/vite/issues/17993)
+* fix: improve CJS warning trace information (#17926) ([5c5f82c](https://github.com/vitejs/vite/commit/5c5f82c84bb64309875b42eee9d4dd525ab42e8c)), closes [#17926](https://github.com/vitejs/vite/issues/17926)
+* fix: only remove entry assets handled by Vite core (#17916) ([ebfaa7e](https://github.com/vitejs/vite/commit/ebfaa7e6019783f308db5e759a6a67abb7cc626c)), closes [#17916](https://github.com/vitejs/vite/issues/17916)
+* fix: waitForRequestIdle locked (#17982) ([ad13760](https://github.com/vitejs/vite/commit/ad1376018a94b42540a8488d897cc520849e1228)), closes [#17982](https://github.com/vitejs/vite/issues/17982)
+* fix(css): fix directory index import in sass modern api (#17960) ([9b001ba](https://github.com/vitejs/vite/commit/9b001baa70c8489ac5550107c110a5dca281cda4)), closes [#17960](https://github.com/vitejs/vite/issues/17960)
+* fix(css): fix sass `file://` reference (#17909) ([561b940](https://github.com/vitejs/vite/commit/561b940f6f963fbb78058a6e23b4adad53a2edb9)), closes [#17909](https://github.com/vitejs/vite/issues/17909)
+* fix(css): fix sass modern source map (#17938) ([d428e7e](https://github.com/vitejs/vite/commit/d428e7e3a05f8da5ea00bb1b6a0827a5cc225899)), closes [#17938](https://github.com/vitejs/vite/issues/17938)
+* fix(deps): bump tsconfck  (#17990) ([8c661b2](https://github.com/vitejs/vite/commit/8c661b20e92f33eb2e3ba3841b20dd6f6076f1ef)), closes [#17990](https://github.com/vitejs/vite/issues/17990)
+* fix(html): rewrite assets url in <template> (#17988) ([413c86a](https://github.com/vitejs/vite/commit/413c86aa971bc1ad8958578c929f45a368799f74)), closes [#17988](https://github.com/vitejs/vite/issues/17988)
+* fix(preload): add crossorigin attribute in CSS link tags (#17930) ([15871c7](https://github.com/vitejs/vite/commit/15871c75e0722adeda23f771fd6c45fecba4d118)), closes [#17930](https://github.com/vitejs/vite/issues/17930)
+* chore: reduce diffs with v6 branch (#17942) ([bf9065a](https://github.com/vitejs/vite/commit/bf9065aa13da6a519014c3bc1d34cfb1cb49ccca)), closes [#17942](https://github.com/vitejs/vite/issues/17942)
+* chore(deps): update all non-major dependencies (#17945) ([cfb621e](https://github.com/vitejs/vite/commit/cfb621e7a5a3e24d710a9af156e6855e73caf891)), closes [#17945](https://github.com/vitejs/vite/issues/17945)
+* chore(deps): update all non-major dependencies (#17991) ([0ca53cf](https://github.com/vitejs/vite/commit/0ca53cff9ff49108fcec75ff01d2445f9c2f2a4c)), closes [#17991](https://github.com/vitejs/vite/issues/17991)
+
+
+
 ## <small>5.4.2 (2024-08-20)</small>
 
 * chore: remove stale TODOs (#17866) ([e012f29](https://github.com/vitejs/vite/commit/e012f296df583bd133d26399397bd4ae49de1497)), closes [#17866](https://github.com/vitejs/vite/issues/17866)
