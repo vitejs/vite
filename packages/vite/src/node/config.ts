@@ -10,6 +10,8 @@ import type { Alias, AliasOptions } from 'dep-types/alias'
 import aliasPlugin from '@rollup/plugin-alias'
 import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
+import { init, parse } from 'es-module-lexer'
+import MagicString from 'magic-string'
 import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
@@ -1068,6 +1070,34 @@ export async function loadConfigFromFile(
   }
 }
 
+function createNodeResolveForConfigFile(
+  fileName: string,
+  packageCache: PackageCache,
+) {
+  return (id: string, importer: string, isRequire: boolean) => {
+    return tryNodeResolve(
+      id,
+      importer,
+      {
+        root: path.dirname(fileName),
+        isBuild: true,
+        isProduction: true,
+        preferRelative: false,
+        tryIndex: true,
+        mainFields: [],
+        conditions: [],
+        overrideConditions: ['node'],
+        dedupe: [],
+        extensions: DEFAULT_EXTENSIONS,
+        preserveSymlinks: false,
+        packageCache,
+        isRequire,
+      },
+      false,
+    )?.id
+  }
+}
+
 async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
@@ -1098,32 +1128,10 @@ async function bundleConfigFile(
         name: 'externalize-deps',
         setup(build) {
           const packageCache = new Map()
-          const resolveByViteResolver = (
-            id: string,
-            importer: string,
-            isRequire: boolean,
-          ) => {
-            return tryNodeResolve(
-              id,
-              importer,
-              {
-                root: path.dirname(fileName),
-                isBuild: true,
-                isProduction: true,
-                preferRelative: false,
-                tryIndex: true,
-                mainFields: [],
-                conditions: [],
-                overrideConditions: ['node'],
-                dedupe: [],
-                extensions: DEFAULT_EXTENSIONS,
-                preserveSymlinks: false,
-                packageCache,
-                isRequire,
-              },
-              false,
-            )?.id
-          }
+          const resolveByViteResolver = createNodeResolveForConfigFile(
+            fileName,
+            packageCache,
+          )
 
           // externalize bare imports
           build.onResolve(
@@ -1213,11 +1221,60 @@ async function bundleConfigFile(
       },
     ],
   })
-  const { text } = result.outputFiles[0]
+  let { text } = result.outputFiles[0]
+  if (isESM) {
+    text = await transformViteConfigDynamicImport(text, fileName)
+  }
   return {
     code: text,
     dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
   }
+}
+
+async function transformViteConfigDynamicImport(
+  text: string,
+  importer: string,
+): Promise<string> {
+  if (!/import\s*\(/.test(text)) {
+    return text
+  }
+  await init
+  const [imports] = parse(text)
+  const output = new MagicString(text)
+  for (const imp of imports) {
+    // replace `import(anything)` with `__vite_config_import__(anything)`
+    if (imp.d >= 0 && typeof imp.n === 'undefined') {
+      output.update(imp.ss, imp.d, `__vite_config_import__`)
+    }
+  }
+  if (output.hasChanged()) {
+    Object.assign(globalThis, { __vite_config_import_helper__ })
+    output.prepend(
+      `const __vite_config_import__ = (id) => globalThis.__vite_config_import_helper__(${JSON.stringify(importer)}, id);`,
+    )
+    text = output.toString()
+  }
+  return text
+}
+
+async function __vite_config_import_helper__(
+  importer: string,
+  id: string,
+): Promise<unknown> {
+  let resolved: string
+  if (isBuiltin(id) || id[0] === '/') {
+    resolved = id
+  } else if (id[0] === '.') {
+    resolved = pathToFileURL(path.resolve(path.dirname(importer), id)).href
+  } else {
+    const resolver = createNodeResolveForConfigFile(importer, new Map())
+    const result = resolver(id, importer, false)
+    if (!result) {
+      throw new Error(`Failed to resolve dynamic import '${id}'`)
+    }
+    resolved = pathToFileURL(result).href
+  }
+  return import(resolved)
 }
 
 interface NodeModuleWithCompile extends NodeModule {
@@ -1233,17 +1290,20 @@ async function loadConfigFromBundledFile(
   // for esm, before we can register loaders without requiring users to run node
   // with --experimental-loader themselves, we have to do a hack here:
   // write it to disk, load it with native Node ESM, then delete the file.
+  // convert to base64, load it with native Node ESM.
   if (isESM) {
-    const fileBase = `${fileName}.timestamp-${Date.now()}-${Math.random()
-      .toString(16)
-      .slice(2)}`
-    const fileNameTmp = `${fileBase}.mjs`
-    const fileUrl = `${pathToFileURL(fileBase)}.mjs`
-    await fsp.writeFile(fileNameTmp, bundledCode)
     try {
-      return (await import(fileUrl)).default
-    } finally {
-      fs.unlink(fileNameTmp, () => {}) // Ignore errors
+      // prepend timestamp for import cache busting
+      bundledCode =
+        `"${Date.now()}-${Math.random().toString(16).slice(2)}";` + bundledCode
+      return (
+        await import(
+          'data:text/javascript;base64,' +
+            Buffer.from(bundledCode).toString('base64')
+        )
+      ).default
+    } catch (e) {
+      throw new Error(`${e.message} at ${fileName}`)
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`
