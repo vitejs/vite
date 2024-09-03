@@ -3,6 +3,13 @@ import type { Logger } from './logger'
 import type { ResolvedConfig, ResolvedEnvironmentOptions } from './config'
 import type { Plugin } from './plugin'
 
+const environmentColors = [
+  colors.blue,
+  colors.magenta,
+  colors.green,
+  colors.gray,
+]
+
 export class PartialEnvironment {
   name: string
   getTopLevelConfig(): ResolvedConfig {
@@ -122,16 +129,17 @@ export class BaseEnvironment extends PartialEnvironment {
 }
 
 /**
- * This is used both to avoid users to hardcode conditions like
- * !scan && !build => dev
+ * This class discourages users from inversely checking the `mode`
+ * to determine the type of environment, e.g.
+ *
+ * ```js
+ * const isDev = environment.mode !== 'build' // bad
+ * const isDev = environment.mode === 'dev'   // good
+ * ```
+ *
+ * You should also not check against `"unknown"` specfically. It's
+ * a placeholder for more possible environment types.
  */
-export class FutureCompatEnvironment extends BaseEnvironment {
-  mode = 'futureCompat' as const
+export class UnknownEnvironment extends BaseEnvironment {
+  mode = 'unknown' as const
 }
-
-const environmentColors = [
-  colors.blue,
-  colors.magenta,
-  colors.green,
-  colors.gray,
-]

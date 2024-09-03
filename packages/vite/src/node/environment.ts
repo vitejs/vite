@@ -1,14 +1,14 @@
 import type { DevEnvironment } from './server/environment'
 import type { BuildEnvironment } from './build'
 import type { ScanEnvironment } from './optimizer/scan'
-import type { FutureCompatEnvironment } from './baseEnvironment'
+import type { UnknownEnvironment } from './baseEnvironment'
 import type { PluginContext } from './plugin'
 
 export type Environment =
   | DevEnvironment
   | BuildEnvironment
-  | ScanEnvironment
-  | FutureCompatEnvironment
+  | /** @internal */ ScanEnvironment
+  | UnknownEnvironment
 
 /**
  * Creates a function that hides the complexities of a WeakMap with an initial value
