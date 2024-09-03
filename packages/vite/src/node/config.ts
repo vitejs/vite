@@ -86,7 +86,6 @@ import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
-import type { FutureDeprecationWarningsOptions } from './deprecations'
 
 const debug = createDebugger('vite:config')
 const promisifiedRealpath = promisify(fs.realpath)
@@ -453,12 +452,14 @@ export interface HTMLOptions {
 }
 
 export interface FutureOptions {
-  /**
-   * Emit warning messages for deprecated/will-deprecated features at runtime.
-   *
-   * Setting to `true` to enable all warnings
-   */
-  deprecationWarnings?: boolean | FutureDeprecationWarningsOptions
+  removePluginHookHandleHotUpdate?: 'warn' | false
+  removePluginHookSsrArgument?: 'warn' | false
+
+  removeServerModuleGraph?: 'warn' | false
+  removeServerHot?: 'warn' | false
+  removeServerTransformRequest?: 'warn' | false
+
+  removeSsrLoadModule?: 'warn' | false
 }
 
 export interface ExperimentalOptions {
