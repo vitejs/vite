@@ -1525,8 +1525,11 @@ export async function preprocessCSS(
     workerController = alwaysFakeWorkerWorkerControllerCache
   }
 
-  // preprocessCSS is hardcoded to use the client environment
-  // we may expose a new API in the future that takes an environment instance
+  // `preprocessCSS` is hardcoded to use the client environment.
+  // Since CSS is usually only consumed by the client, and the server builds need to match
+  // the client asset chunk name to deduplicate the link reference, this may be fine in most
+  // cases. We should revisit in the future if there's a case to preprocess CSS based on a
+  // different environment instance.
   const environment: PartialEnvironment = new PartialEnvironment(
     'client',
     config,
