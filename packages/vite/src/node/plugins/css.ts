@@ -501,12 +501,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (isDirectCSSRequest(id)) {
           return null
         }
-        // server only
-        if (options?.ssr) {
-          return modulesCode || `export default ${JSON.stringify(css)}`
-        }
         if (inlined) {
           return `export default ${JSON.stringify(css)}`
+        }
+        // server only
+        if (options?.ssr) {
+          return modulesCode || 'export {}'
         }
 
         const cssContent = await getContentWithSourcemap(css)

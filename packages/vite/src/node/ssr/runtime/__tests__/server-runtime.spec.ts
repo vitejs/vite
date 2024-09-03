@@ -32,12 +32,7 @@ describe('vite-runtime initialization', async () => {
 
   it('css is loaded correctly', async ({ runtime }) => {
     const css = await runtime.executeUrl('/fixtures/test.css')
-    expect(css.default).toMatchInlineSnapshot(`
-      ".test {
-        color: red;
-      }
-      "
-    `)
+    expect(css.default).toBe(undefined)
     const module = await runtime.executeUrl('/fixtures/test.module.css')
     expect(module).toMatchObject({
       default: {
