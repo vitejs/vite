@@ -57,7 +57,7 @@ export const virtual = _virtual + '${num}';`
           )
         if (mod) {
           num++
-          server.reloadEnvironmentModule(mod)
+          server.environments.client.reloadModule(mod)
         }
       })
     },

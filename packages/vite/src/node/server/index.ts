@@ -76,7 +76,6 @@ import {
   serveStaticMiddleware,
 } from './middlewares/static'
 import { timeMiddleware } from './middlewares/time'
-import type { EnvironmentModuleNode } from './moduleGraph'
 import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
@@ -339,11 +338,6 @@ export interface ViteDevServer {
    */
   reloadModule(module: ModuleNode): Promise<void>
   /**
-   * Triggers HMR for an environment module in the module graph.
-   * If `hmr` is false, this is a no-op.
-   */
-  reloadEnvironmentModule(module: EnvironmentModuleNode): Promise<void>
-  /**
    * Start the server.
    */
   listen(port?: number, isRestart?: boolean): Promise<ViteDevServer>
@@ -598,16 +592,6 @@ export async function _createServer(
           environments[environmentModule.environment]!,
           module.file,
           [environmentModule],
-          Date.now(),
-        )
-      }
-    },
-    async reloadEnvironmentModule(module) {
-      if (serverConfig.hmr !== false && module.file) {
-        updateModules(
-          environments[module.environment]!,
-          module.file,
-          [module],
           Date.now(),
         )
       }

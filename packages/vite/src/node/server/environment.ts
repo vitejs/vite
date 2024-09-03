@@ -20,6 +20,7 @@ import {
 } from '../optimizer/optimizer'
 import { resolveEnvironmentPlugins } from '../plugin'
 import { EnvironmentModuleGraph } from './moduleGraph'
+import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel } from './hmr'
 import { createNoopHotChannel, getShortName, updateModules } from './hmr'
 import type { TransformResult } from './transformRequest'
@@ -174,6 +175,12 @@ export class DevEnvironment extends BaseEnvironment {
       ...this._ssrRunnerOptions,
       ...options,
     })
+  }
+
+  async reloadModule(module: EnvironmentModuleNode): Promise<void> {
+    if (this.config.server.hmr !== false && module.file) {
+      updateModules(this, module.file, [module], Date.now())
+    }
   }
 
   transformRequest(url: string): Promise<TransformResult | null> {
