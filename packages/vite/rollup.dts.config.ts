@@ -259,11 +259,15 @@ function removeInternal(s: MagicString, node: any): boolean {
     })
   ) {
     // Examples:
-    // function a(foo: string, /* @internal */ bar: number)
-    //                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    // strip trailing comma
-    const end = s.original[node.end] === ',' ? node.end + 1 : node.end
-    s.remove(node.leadingComments[0].start, end)
+    // function a(foo: string, /* @internal */ bar: number, baz: boolean)
+    //                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // type Enum = Foo | /* @internal */ Bar | Baz
+    //                   ^^^^^^^^^^^^^^^^^^^^^
+    // strip trailing comma or pipe
+    const trailingRe = /\s*[,|]/y
+    trailingRe.lastIndex = node.end
+    const trailingStr = trailingRe.exec(s.original)?.[0] ?? ''
+    s.remove(node.leadingComments[0].start, node.end + trailingStr.length)
     return true
   }
   return false
