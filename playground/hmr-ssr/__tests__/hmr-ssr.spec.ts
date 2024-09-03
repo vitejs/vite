@@ -939,25 +939,21 @@ test('hmr works for self-accepted module within circular imported files', async 
   })
 })
 
-test(
-  'hmr should not reload if no accepted within circular imported files',
-  { retry: 5 },
-  async () => {
-    await setupModuleRunner('/circular/index')
-    const el = () => hmr('.circular')
-    expect(el()).toBe(
-      // tests in the browser check that there is an error, but vite runtime just returns undefined in those cases
-      'mod-a -> mod-b -> mod-c -> undefined (expected no error)',
-    )
-    editFile('circular/mod-b.js', (code) =>
-      code.replace(`mod-b ->`, `mod-b (edited) ->`),
-    )
-    await untilUpdated(
-      () => el(),
-      'mod-a -> mod-b (edited) -> mod-c -> undefined (expected no error)',
-    )
-  },
-)
+test('hmr should not reload if no accepted within circular imported files', async () => {
+  await setupModuleRunner('/circular/index')
+  const el = () => hmr('.circular')
+  expect(el()).toBe(
+    // tests in the browser check that there is an error, but vite runtime just returns undefined in those cases
+    'mod-a -> mod-b -> mod-c -> undefined (expected no error)',
+  )
+  editFile('circular/mod-b.js', (code) =>
+    code.replace(`mod-b ->`, `mod-b (edited) ->`),
+  )
+  await untilUpdated(
+    () => el(),
+    'mod-a -> mod-b (edited) -> mod-c -> undefined (expected no error)',
+  )
+})
 
 test('assets HMR', async () => {
   await setupModuleRunner('/hmr.ts')
