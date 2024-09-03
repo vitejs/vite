@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import {
   browserErrors,
   browserLogs,
@@ -345,4 +345,32 @@ test('import the CommonJS external package that omits the js suffix', async () =
   await expectWithRetry(() =>
     page.textContent('.external-package-tsx-js'),
   ).toBe('tsx')
+})
+
+// https://github.com/microsoft/playwright/issues/6046#issuecomment-1799585719
+async function waitImageLoaded(selector: string) {
+  await vi.waitUntil(() =>
+    page
+      .locator(selector)
+      .evaluate((el: HTMLImageElement) => el.naturalWidth > 0),
+  )
+}
+
+test('new URL asset', async () => {
+  await waitImageLoaded('.new-url-asset-image1')
+  await waitImageLoaded('.new-url-asset-image2')
+  await waitImageLoaded('.new-url-asset-image3')
+})
+
+test('new URL worker', async () => {
+  await expectWithRetry(() => page.textContent('.new-url-worker-esm')).toBe(
+    'true',
+  )
+  await expectWithRetry(() => page.textContent('.new-url-worker-classic')).toBe(
+    'true',
+  )
+  await waitImageLoaded('.new-url-worker-asset')
+  await expectWithRetry(() =>
+    page.textContent('.new-url-worker-recursive'),
+  ).toBe(isBuild ? 'false' : 'true')
 })

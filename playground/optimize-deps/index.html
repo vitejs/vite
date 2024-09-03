@@ -287,3 +287,50 @@
   import loadSub from '@vitejs/test-dep-incompatible'
   loadSub() // should show an error that tells there's an incompatible dep
 </script>
+
+<h2>new URL(..., import.meta.url)</h2>
+<div>
+  <div>image1: <img width="20" class="new-url-asset-image1" alt="..." /></div>
+  <div>image2: <img width="20" class="new-url-asset-image2" alt="..." /></div>
+  <div>image3: <img width="20" class="new-url-asset-image3" alt="..." /></div>
+</div>
+
+<script type="module">
+  import * as lib from '@vitejs/test-dep-new-url-asset'
+  document.querySelector('.new-url-asset-image1').src = lib.image1
+  document.querySelector('.new-url-asset-image2').src = lib.image2
+  document.querySelector('.new-url-asset-image3').src = lib.image3
+</script>
+
+<h2>new Worker(new URL(..., import.meta.url))</h2>
+<div>
+  <div>esm <span class="new-url-worker-esm"></span></div>
+  <div>classic: <span class="new-url-worker-classic"></span></div>
+  <div>
+    asset in worker: <img width="20" class="new-url-worker-asset" alt="..." />
+  </div>
+  <div>
+    worker in worker: <span class="new-url-worker-recursive">false</span>
+  </div>
+</div>
+
+<script type="module">
+  import * as lib from '@vitejs/test-dep-new-url-worker'
+  lib.startWorkerEsm((e) => {
+    text('.new-url-worker-esm', e.data.ok)
+    document.querySelector('.new-url-worker-asset').src = e.data.image
+  })
+  lib.startWorkerClassic((e) => {
+    text('.new-url-worker-classic', e.data.ok)
+  })
+
+  // TODO: not working on build? cf. https://github.com/vitejs/vite/pull/16103
+  if (import.meta.env.DEV) {
+    const { startWorkerRecursvie } = await import(
+      '@vitejs/test-dep-new-url-worker/index-recursive.js'
+    )
+    startWorkerRecursvie((e) => {
+      text('.new-url-worker-recursive', e.data.ok)
+    })
+  }
+</script>

@@ -31,6 +31,7 @@ import { isWindows } from '../../shared/utils'
 import { esbuildCjsExternalPlugin, esbuildDepPlugin } from './esbuildDepPlugin'
 import { scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
+import { esbuildImportMetaUrlPlugin } from './importMetaUrlPlugin'
 export {
   initDepsOptimizer,
   initDevSsrDepsOptimizer,
@@ -774,6 +775,10 @@ async function prepareEsbuildOptimizerRun(
     plugins.push(esbuildCjsExternalPlugin(external, platform))
   }
   plugins.push(esbuildDepPlugin(flatIdDeps, external, config, ssr))
+
+  if (!ssr) {
+    plugins.push(esbuildImportMetaUrlPlugin({}))
+  }
 
   const context = await esbuild.context({
     absWorkingDir: process.cwd(),

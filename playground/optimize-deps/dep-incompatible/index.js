@@ -1,3 +1,1 @@
-const subUrl = new URL('./sub.js', import.meta.url)
-
-export default () => import(subUrl)
+export default () => import(/* @vite-ignore */ String('./sub.js'))
