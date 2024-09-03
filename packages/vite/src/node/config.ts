@@ -29,7 +29,6 @@ import type {
 } from './plugin'
 import type {
   BuildEnvironmentOptions,
-  BuildOptions,
   BuilderOptions,
   RenderBuiltAssetUrl,
   ResolvedBuildEnvironmentOptions,
@@ -280,10 +279,9 @@ export type ResolvedEnvironmentOptions = {
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  'build' | 'consumer' | 'webCompatible'
+  'consumer' | 'webCompatible' | 'resolve'
 > & {
-  // Includes lib mode support
-  build?: BuildOptions
+  resolve?: AllResolveOptions
 }
 
 export interface UserConfig extends DefaultEnvironmentOptions {
