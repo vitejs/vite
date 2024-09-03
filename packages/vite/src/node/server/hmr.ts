@@ -293,7 +293,7 @@ export async function handleHMRUpdate(
       } else if (type === 'update') {
         warnFutureDeprecation(
           config,
-          'pluginHookHandleHotUpdate',
+          'removePluginHookHandleHotUpdate',
           `Used in plugin "${plugin.name}".`,
           false,
         )

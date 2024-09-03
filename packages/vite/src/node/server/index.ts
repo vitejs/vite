@@ -528,7 +528,7 @@ export async function _createServer(
     environments,
     pluginContainer,
     get moduleGraph() {
-      warnFutureDeprecation(config, 'serverModuleGraph')
+      warnFutureDeprecation(config, 'removeServerModuleGraph')
       return moduleGraph
     },
     set moduleGraph(graph) {
@@ -552,7 +552,7 @@ export async function _createServer(
     transformRequest(url, options) {
       warnFutureDeprecation(
         config,
-        'serverTransformRequest',
+        'removeServerTransformRequest',
         'server.transformRequest() is deprecated. Use environment.transformRequest() instead.',
       )
       const environment = server.environments[options?.ssr ? 'ssr' : 'client']
@@ -581,7 +581,7 @@ export async function _createServer(
       return devHtmlTransformFn(server, url, html, originalUrl)
     },
     async ssrLoadModule(url, opts?: { fixStacktrace?: boolean }) {
-      warnFutureDeprecation(config, 'ssrLoadModule')
+      warnFutureDeprecation(config, 'removeSsrLoadModule')
       return ssrLoadModule(url, server, opts?.fixStacktrace)
     },
     ssrFixStacktrace(e) {

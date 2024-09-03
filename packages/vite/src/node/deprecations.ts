@@ -1,46 +1,35 @@
 import colors from 'picocolors'
-import type { ResolvedConfig } from './config'
+import type { FutureOptions, ResolvedConfig } from './config'
 
 // TODO: switch to production docs URL
 const docsURL = 'https://deploy-preview-16471--vite-docs-main.netlify.app'
 
-export interface FutureDeprecationWarningsOptions {
-  pluginHookHandleHotUpdate?: boolean
-  pluginHookSsrArgument?: boolean
-
-  serverModuleGraph?: boolean
-  serverHot?: boolean
-  serverTransformRequest?: boolean
-
-  ssrLoadModule?: boolean
-}
-
 const deprecationCode = {
-  pluginHookSsrArgument: 'changes/this-environment-in-hooks',
-  pluginHookHandleHotUpdate: 'changes/hotupdate-hook',
+  removePluginHookSsrArgument: 'changes/this-environment-in-hooks',
+  removePluginHookHandleHotUpdate: 'changes/hotupdate-hook',
 
-  serverModuleGraph: 'changes/per-environment-apis',
-  serverHot: 'changes/per-environment-apis',
-  serverTransformRequest: 'changes/per-environment-apis',
+  removeServerModuleGraph: 'changes/per-environment-apis',
+  removeServerHot: 'changes/per-environment-apis',
+  removeServerTransformRequest: 'changes/per-environment-apis',
 
-  ssrLoadModule: 'changes/ssr-using-modulerunner',
-} satisfies Record<keyof FutureDeprecationWarningsOptions, string>
+  removeSsrLoadModule: 'changes/ssr-using-modulerunner',
+} satisfies Record<keyof FutureOptions, string>
 
 const deprecationMessages = {
-  pluginHookSsrArgument:
+  removePluginHookSsrArgument:
     "Plugin hook `options.ssr` is replaced with `this.environment.config.consumer === 'server'`.",
-  pluginHookHandleHotUpdate:
+  removePluginHookHandleHotUpdate:
     'Plugin hook `handleHotUpdate()` is replaced with `hotUpdate()`.',
 
-  serverModuleGraph:
+  removeServerModuleGraph:
     'The `server.moduleGraph` is replaced with `this.environment.moduleGraph`.',
-  serverHot: 'The `server.hot` is replaced with `this.environment.hot`.',
-  serverTransformRequest:
+  removeServerHot: 'The `server.hot` is replaced with `this.environment.hot`.',
+  removeServerTransformRequest:
     'The `server.transformRequest` is replaced with `this.environment.transformRequest`.',
 
-  ssrLoadModule:
+  removeSsrLoadModule:
     'The `server.ssrLoadModule` is replaced with Environment Runner.',
-} satisfies Record<keyof FutureDeprecationWarningsOptions, string>
+} satisfies Record<keyof FutureOptions, string>
 
 let _ignoreDeprecationWarnings = false
 
@@ -50,17 +39,14 @@ let _ignoreDeprecationWarnings = false
  */
 export function warnFutureDeprecation(
   config: ResolvedConfig,
-  type: keyof FutureDeprecationWarningsOptions,
+  type: keyof FutureOptions,
   extraMessage?: string,
   stacktrace = true,
 ): void {
-  if (_ignoreDeprecationWarnings) return
-
-  if (!config.future?.deprecationWarnings) return
-
   if (
-    config.future.deprecationWarnings !== true &&
-    !config.future.deprecationWarnings[type]
+    _ignoreDeprecationWarnings ||
+    !config.future ||
+    config.future[type] !== 'warn'
   )
     return
 

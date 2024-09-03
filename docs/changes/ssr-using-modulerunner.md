@@ -9,7 +9,7 @@ Give us feedback at [Environment API feedback discussion](https://github.com/vit
 Affect scope: `Vite Plugin Authors`
 
 ::: warning Future Deprecation
-`ModuleRunner` was first introduce in `v6.0`. The deprecation of `server.ssrLoadModule` is planned for a future major. To identify your usage, set `future.deprecationWarnings.ssrLoadModule` to `true` in your vite config.
+`ModuleRunner` was first introduce in `v6.0`. The deprecation of `server.ssrLoadModule` is planned for a future major. To identify your usage, set `future.removeSrLoadModule` to `"warn"` in your vite config.
 :::
 
 ## Motivation
