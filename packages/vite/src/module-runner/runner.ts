@@ -1,12 +1,6 @@
 import type { ViteHotContext } from 'types/hot'
 import { HMRClient, HMRContext } from '../shared/hmr'
-import {
-  cleanUrl,
-  isPrimitive,
-  isWindows,
-  unwrapId,
-  wrapId,
-} from '../shared/utils'
+import { cleanUrl, isPrimitive, isWindows, unwrapId } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import { ModuleCacheMap } from './moduleCache'
 import type {
@@ -93,7 +87,6 @@ export class ModuleRunner {
    * URL to execute. Accepts file path, server path or id relative to the root.
    */
   public async import<T = any>(url: string): Promise<T> {
-    url = this.normalizeEntryUrl(url)
     const fetchedModule = await this.cachedModule(url)
     return await this.cachedRequest(url, fetchedModule)
   }
@@ -123,21 +116,6 @@ export class ModuleRunner {
    */
   public isDestroyed(): boolean {
     return this.destroyed
-  }
-
-  // we don't use moduleCache.normalize because this URL doesn't have to follow the same rules
-  // this URL is something that user passes down manually, and is later resolved by fetchModule
-  // moduleCache.normalize is used on resolved "file" property
-  private normalizeEntryUrl(url: string) {
-    // expect fetchModule to resolve relative module correctly
-    if (url[0] === '.') {
-      return url
-    }
-    url = normalizeAbsoluteUrl(url, this.root)
-    // if it's a server url (starts with a slash), keep it, otherwise assume a virtual module
-    // /id.js -> /id.js
-    // virtual:custom -> /@id/virtual:custom
-    return url[0] === '/' ? url : wrapId(url)
   }
 
   private processImport(
