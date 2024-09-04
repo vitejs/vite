@@ -29,7 +29,6 @@ import type {
 } from './plugin'
 import type {
   BuildEnvironmentOptions,
-  BuildOptions,
   BuilderOptions,
   RenderBuiltAssetUrl,
   ResolvedBuildEnvironmentOptions,
@@ -73,7 +72,11 @@ import {
   resolvePlugins,
 } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
-import type { InternalResolveOptions, ResolveOptions } from './plugins/resolve'
+import type {
+  EnvironmentResolveOptions,
+  InternalResolveOptions,
+  ResolveOptions,
+} from './plugins/resolve'
 import { tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
@@ -223,9 +226,11 @@ function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
 
 export type ResolvedDevEnvironmentOptions = Required<DevEnvironmentOptions>
 
-type EnvironmentResolveOptions = ResolveOptions & {
+type AllResolveOptions = ResolveOptions & {
   alias?: AliasOptions
 }
+
+type ResolvedAllResolveOptions = Required<ResolveOptions> & { alias: Alias[] }
 
 export interface SharedEnvironmentOptions {
   /**
@@ -260,12 +265,11 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
   build?: BuildEnvironmentOptions
 }
 
-export type ResolvedEnvironmentResolveOptions =
-  Required<EnvironmentResolveOptions>
+export type ResolvedResolveOptions = Required<ResolveOptions>
 
 export type ResolvedEnvironmentOptions = {
   define?: Record<string, any>
-  resolve: ResolvedEnvironmentResolveOptions
+  resolve: ResolvedResolveOptions
   consumer: 'client' | 'server'
   webCompatible: boolean
   dev: ResolvedDevEnvironmentOptions
@@ -274,10 +278,9 @@ export type ResolvedEnvironmentOptions = {
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  'build' | 'consumer' | 'webCompatible'
+  'consumer' | 'webCompatible' | 'resolve'
 > & {
-  // Includes lib mode support
-  build?: BuildOptions
+  resolve?: AllResolveOptions
 }
 
 export interface UserConfig extends DefaultEnvironmentOptions {
@@ -623,12 +626,19 @@ export function resolveDevEnvironmentOptions(
 function resolveEnvironmentOptions(
   options: EnvironmentOptions,
   resolvedRoot: string,
+  alias: Alias[],
+  preserveSymlinks: boolean,
   logger: Logger,
   environmentName: string,
   // Backward compatibility
   skipSsrTransform?: boolean,
 ): ResolvedEnvironmentOptions {
-  const resolve = resolveEnvironmentResolveOptions(options.resolve, logger)
+  const resolve = resolveEnvironmentResolveOptions(
+    options.resolve,
+    alias,
+    preserveSymlinks,
+    logger,
+  )
   const isClientEnvironment = environmentName === 'client'
   const consumer =
     (options.consumer ?? isClientEnvironment) ? 'client' : 'server'
@@ -731,16 +741,17 @@ const clientAlias = [
   },
 ]
 
+/**
+ * alias and preserveSymlinks are not per-environment options, but they are
+ * included in the resolved environment options for convenience.
+ */
 function resolveEnvironmentResolveOptions(
   resolve: EnvironmentResolveOptions | undefined,
+  alias: Alias[],
+  preserveSymlinks: boolean,
   logger: Logger,
-): ResolvedConfig['resolve'] {
-  // resolve alias with internal client alias
-  const resolvedAlias = normalizeAlias(
-    mergeAlias(clientAlias, resolve?.alias || []),
-  )
-
-  const resolvedResolve: ResolvedConfig['resolve'] = {
+): ResolvedAllResolveOptions {
+  const resolvedResolve: ResolvedAllResolveOptions = {
     mainFields: resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
     conditions: resolve?.conditions ?? [],
     externalConditions: resolve?.externalConditions ?? [],
@@ -748,8 +759,8 @@ function resolveEnvironmentResolveOptions(
     noExternal: resolve?.noExternal ?? [],
     extensions: resolve?.extensions ?? DEFAULT_EXTENSIONS,
     dedupe: resolve?.dedupe ?? [],
-    preserveSymlinks: resolve?.preserveSymlinks ?? false,
-    alias: resolvedAlias,
+    preserveSymlinks,
+    alias,
   }
 
   if (
@@ -768,6 +779,22 @@ function resolveEnvironmentResolveOptions(
   return resolvedResolve
 }
 
+function resolveResolveOptions(
+  resolve: AllResolveOptions | undefined,
+  logger: Logger,
+): ResolvedAllResolveOptions {
+  // resolve alias with internal client alias
+  const alias = normalizeAlias(mergeAlias(clientAlias, resolve?.alias || []))
+  const preserveSymlinks = resolve?.preserveSymlinks ?? false
+  return resolveEnvironmentResolveOptions(
+    resolve,
+    alias,
+    preserveSymlinks,
+    logger,
+  )
+}
+
+// TODO: Introduce ResolvedDepOptimizationOptions
 function resolveDepOptimizationOptions(
   optimizeDeps: DepOptimizationOptions | undefined,
   preserveSymlinks: boolean,
@@ -968,21 +995,20 @@ export async function resolveConfig(
 
   await runConfigEnvironmentHook(config.environments, userPlugins, configEnv)
 
+  const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
+
   const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
   for (const environmentName of Object.keys(config.environments)) {
     resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
       config.environments[environmentName],
       resolvedRoot,
+      resolvedDefaultResolve.alias,
+      resolvedDefaultResolve.preserveSymlinks,
       logger,
       environmentName,
       config.experimental?.skipSsrTransform,
     )
   }
-
-  const resolvedDefaultEnvironmentResolve = resolveEnvironmentResolveOptions(
-    config.resolve,
-    logger,
-  )
 
   // Backward compatibility: merge environments.client.dev.optimizeDeps back into optimizeDeps
   // The same object is assigned back for backward compatibility. The ecosystem is modifying
@@ -991,11 +1017,9 @@ export async function resolveConfig(
   const backwardCompatibleOptimizeDeps =
     resolvedEnvironments.client.dev.optimizeDeps
 
-  // TODO: Deprecate and remove resolve, dev and build options at the root level of the resolved config
-
   const resolvedDevEnvironmentOptions = resolveDevEnvironmentOptions(
     config.dev,
-    resolvedDefaultEnvironmentResolve.preserveSymlinks,
+    resolvedDefaultResolve.preserveSymlinks,
     // default environment options
     undefined,
     undefined,
@@ -1023,7 +1047,7 @@ export async function resolveConfig(
   }
   const ssr = resolveSSROptions(
     patchedConfigSsr,
-    resolvedDefaultEnvironmentResolve.preserveSymlinks,
+    resolvedDefaultResolve.preserveSymlinks,
   )
 
   // load .env files
@@ -1226,8 +1250,7 @@ export async function resolveConfig(
     optimizeDeps: backwardCompatibleOptimizeDeps,
     ssr,
 
-    // TODO: deprecate and later remove from ResolvedConfig?
-    resolve: resolvedDefaultEnvironmentResolve,
+    resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
     build: resolvedBuildOptions,
 

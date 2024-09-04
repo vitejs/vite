@@ -75,7 +75,7 @@ const debug = createDebugger('vite:resolve-details', {
   onlyWhenFocused: true,
 })
 
-export interface ResolveOptions {
+export interface EnvironmentResolveOptions {
   /**
    * @default ['browser', 'module', 'jsnext:main', 'jsnext']
    */
@@ -88,16 +88,19 @@ export interface ResolveOptions {
   extensions?: string[]
   dedupe?: string[]
   /**
-   * @default false
-   */
-  preserveSymlinks?: boolean
-  /**
    * external/noExternal logic, this only works for certain environments
    * Previously this was ssr.external/ssr.noExternal
    * TODO: better abstraction that works for the client environment too?
    */
   noExternal?: string | RegExp | (string | RegExp)[] | true
   external?: string[] | true
+}
+
+export interface ResolveOptions extends EnvironmentResolveOptions {
+  /**
+   * @default false
+   */
+  preserveSymlinks?: boolean
 }
 
 interface ResolvePluginOptions {
@@ -173,8 +176,6 @@ export interface InternalResolveOptions
 
 // Defined ResolveOptions are used to overwrite the values for all environments
 // It is used when creating custom resolvers (for CSS, scanning, etc)
-// TODO: It could be more clear to make the plugin constructor be:
-// resolvePlugin(pluginOptions: ResolvePluginOptions, overrideResolveOptions?: ResolveOptions)
 export interface ResolvePluginOptionsWithOverrides
   extends ResolveOptions,
     ResolvePluginOptions {}
@@ -183,9 +184,9 @@ export function resolvePlugin(
   resolveOptions: ResolvePluginOptionsWithOverrides,
   /**
    * @internal
-   * The deprecated config.createResolver creates a pluginContainer before
-   * environments are created. The resolve plugin is especial as it works without
-   * environments to enable this use case. It only needs access to the resolve options.
+   * config.createResolver creates a pluginContainer before environments are created.
+   * The resolve plugin is especial as it works without environments to enable this use case.
+   * It only needs access to the resolve options.
    */
   environmentsOptions?: Record<string, ResolvedEnvironmentOptions>,
 ): Plugin {
