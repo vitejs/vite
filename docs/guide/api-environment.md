@@ -137,7 +137,7 @@ class ModuleRunner {
 In the v5.1 Runtime API, there were `executeUrl` and `executeEntryPoint` methods - they are now merged into a single `import` method. If you want to opt-out of the HMR support, create a runner with `hmr: false` flag.
 :::
 
-The default SSR Node module runner is not exposed. You can use `createNodeEnvironment` API with `createServerModuleRunner` together to create a runner that runs code in the same thread, supports HMR and doesn't conflict with the SSR implementation (in case it's been overriden in the config). Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
+The default SSR Node module runner is not exposed. You can use `createNodeEnvironment` API with `createServerModuleRunner` together to create a runner that runs code in the same thread, supports HMR and doesn't conflict with the SSR implementation (in case it's been overridden in the config). Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
 
 ```js
 import {
@@ -152,7 +152,7 @@ const server = await createServer({
   environments: {
     node: {
       dev: {
-        // Default Vite SSR environment can be overriden in the config, so
+        // Default Vite SSR environment can be overridden in the config, so
         // make sure you have a Node environment before the request is received.
         createEnvironment: createNodeEnvironment,
       },
