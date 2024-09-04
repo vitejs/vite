@@ -1,9 +1,9 @@
 import colors from 'picocolors'
-import type { ModuleRunner } from 'vite/module-runner'
+import type { ModuleCache } from 'vite/module-runner'
+import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type { ViteDevServer } from '../server'
 import { unwrapId } from '../../shared/utils'
 import { ssrFixStacktrace } from './ssrStacktrace'
-import { createServerModuleRunner } from './runtime/serverModuleRunner'
 
 type SSRModule = Record<string, any>
 
@@ -12,13 +12,7 @@ export async function ssrLoadModule(
   server: ViteDevServer,
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
-  server._ssrCompatModuleRunner ||= createServerModuleRunner(
-    server.environments.ssr,
-    {
-      sourcemapInterceptor: false,
-      hmr: false,
-    },
-  )
+  server._ssrCompatModuleRunner ||= new SSRCompatModuleRunner(server)
   url = unwrapId(url)
 
   return instantiateModule(
@@ -43,11 +37,8 @@ async function instantiateModule(
   }
 
   try {
-    const exports = await runner.import(url)
-    mod.ssrModule = exports
-    return exports
+    return await runner.import(url)
   } catch (e: any) {
-    mod.ssrError = e
     if (e.stack && fixStacktrace) {
       ssrFixStacktrace(e, environment.moduleGraph)
     }
@@ -62,5 +53,46 @@ async function instantiateModule(
     )
 
     throw e
+  }
+}
+
+class SSRCompatModuleRunner extends ModuleRunner {
+  constructor(private server: ViteDevServer) {
+    super(
+      {
+        root: server.environments.ssr.config.root,
+        transport: {
+          fetchModule: (id, importer, options) =>
+            server.environments.ssr.fetchModule(id, importer, options),
+        },
+        sourcemapInterceptor: false,
+        hmr: false,
+      },
+      new ESModulesEvaluator(),
+    )
+  }
+
+  protected override async directRequest(
+    id: string,
+    mod: ModuleCache,
+    _callstack: string[],
+  ): Promise<any> {
+    const viteMod = this.server.environments.ssr.moduleGraph.getModuleById(
+      mod.meta!.id,
+    )
+    // TODO: should never happen
+    if (!viteMod) {
+      throw new Error(
+        `Module ${mod.meta!.id} not found in module graph. This is a bug in Vite.`,
+      )
+    }
+    try {
+      const exports = await super.directRequest(id, mod, _callstack)
+      viteMod.ssrModule = exports
+      return exports
+    } catch (err) {
+      viteMod.ssrError = err
+      throw err
+    }
   }
 }
