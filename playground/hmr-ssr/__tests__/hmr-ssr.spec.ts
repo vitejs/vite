@@ -2,10 +2,18 @@ import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, posix, resolve } from 'node:path'
 import EventEmitter from 'node:events'
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest'
+import {
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  onTestFinished,
+  test,
+  vi,
+} from 'vitest'
 import type { InlineConfig, Logger, ViteDevServer } from 'vite'
-import { createServer, createViteRuntime } from 'vite'
-import type { ViteRuntime } from 'vite/runtime'
+import { createServer, createServerModuleRunner } from 'vite'
+import type { ModuleRunner } from 'vite/module-runner'
 import type { RollupError } from 'rollup'
 import {
   addFile,
@@ -19,7 +27,7 @@ import {
 let server: ViteDevServer
 const clientLogs: string[] = []
 const serverLogs: string[] = []
-let runtime: ViteRuntime
+let runner: ModuleRunner
 
 const logsEmitter = new EventEmitter()
 
@@ -54,7 +62,7 @@ const updated = (file: string, via?: string) => {
 
 describe('hmr works correctly', () => {
   beforeAll(async () => {
-    await setupViteRuntime('/hmr.ts')
+    await setupModuleRunner('/hmr.ts')
   })
 
   test('should connect', async () => {
@@ -297,27 +305,73 @@ describe('hmr works correctly', () => {
   //   expect((await page.$$('link')).length).toBe(1)
   // })
 
-  // #2255
-  test('importing reloaded', async () => {
-    const outputEle = () => hmr('.importing-reloaded')
+  // #2255 - not applicable to SSR because invalidateModule expects the module
+  // to always be reloaded again
+  // test('importing reloaded', async () => {
+  //   const outputEle = () => hmr('.importing-reloaded')
 
-    await untilUpdated(outputEle, ['a.js: a0', 'b.js: b0,a0'].join('<br>'))
+  //   await untilUpdated(outputEle, ['a.js: a0', 'b.js: b0,a0'].join('<br>'))
 
-    editFile('importing-updated/a.js', (code) => code.replace("'a0'", "'a1'"))
-    await untilUpdated(
-      outputEle,
-      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1'].join('<br>'),
-    )
+  //   editFile('importing-updated/a.js', (code) => code.replace("'a0'", "'a1'"))
+  //   await untilUpdated(
+  //     outputEle,
+  //     ['a.js: a0', 'b.js: b0,a0', 'a.js: a1'].join('<br>'),
+  //   )
 
-    editFile('importing-updated/b.js', (code) =>
-      code.replace('`b0,${a}`', '`b1,${a}`'),
-    )
-    // note that "a.js: a1" should not happen twice after "b.js: b0,a0'"
-    await untilUpdated(
-      outputEle,
-      ['a.js: a0', 'b.js: b0,a0', 'a.js: a1', 'b.js: b1,a1'].join('<br>'),
-    )
-  })
+  //   editFile('importing-updated/b.js', (code) =>
+  //     code.replace('`b0,${a}`', '`b1,${a}`'),
+  //   )
+  //   // note that "a.js: a1" should not happen twice after "b.js: b0,a0'"
+  //   await untilUpdated(
+  //     outputEle,
+  //     ['a.js: a0', 'b.js: b0,a0', 'a.js: a1', 'b.js: b1,a1'].join('<br>'),
+  //   )
+  // })
+})
+
+describe('self accept with different entry point formats', () => {
+  test.each(['./unresolved.ts', './unresolved', '/unresolved'])(
+    'accepts if entry point is relative to root',
+    async (entrypoint) => {
+      await setupModuleRunner(entrypoint, {}, '/unresolved.ts')
+
+      onTestFinished(() => {
+        const filepath = resolvePath('..', 'unresolved.ts')
+        fs.writeFileSync(filepath, originalFiles.get(filepath)!, 'utf-8')
+      })
+
+      const el = () => hmr('.app')
+      await untilConsoleLogAfter(
+        () =>
+          editFile('unresolved.ts', (code) =>
+            code.replace('const foo = 1', 'const foo = 2'),
+          ),
+        [
+          'foo was: 1',
+          '(self-accepting 1) foo is now: 2',
+          '(self-accepting 2) foo is now: 2',
+          updated('/unresolved.ts'),
+        ],
+        true,
+      )
+      await untilUpdated(() => el(), '2')
+
+      await untilConsoleLogAfter(
+        () =>
+          editFile('unresolved.ts', (code) =>
+            code.replace('const foo = 2', 'const foo = 3'),
+          ),
+        [
+          'foo was: 2',
+          '(self-accepting 1) foo is now: 3',
+          '(self-accepting 2) foo is now: 3',
+          updated('/unresolved.ts'),
+        ],
+        true,
+      )
+      await untilUpdated(() => el(), '3')
+    },
+  )
 })
 
 describe('acceptExports', () => {
@@ -338,7 +392,7 @@ describe('acceptExports', () => {
 
     beforeAll(async () => {
       await untilConsoleLogAfter(
-        () => setupViteRuntime(`/${testDir}/index`),
+        () => setupModuleRunner(`/${testDir}/index`),
         [CONNECTED, />>>>>>/],
         (logs) => {
           expect(logs).toContain(`<<<<<< A0 B0 D0 ; ${dep}`)
@@ -466,7 +520,7 @@ describe('acceptExports', () => {
 
     beforeAll(async () => {
       await untilConsoleLogAfter(
-        () => setupViteRuntime(`/${testDir}/index`),
+        () => setupModuleRunner(`/${testDir}/index`),
         [CONNECTED, />>>>>>/],
         (logs) => {
           expect(logs).toContain(`<<< named: ${a} ; ${dep}`)
@@ -520,8 +574,9 @@ describe('acceptExports', () => {
       beforeAll(async () => {
         clientLogs.length = 0
         // so it's in the module graph
-        await server.transformRequest(testFile, { ssr: true })
-        await server.transformRequest('non-tested/dep.js', { ssr: true })
+        const ssrEnvironment = server.environments.ssr
+        await ssrEnvironment.transformRequest(testFile)
+        await ssrEnvironment.transformRequest('non-tested/dep.js')
       })
 
       test('does not full reload', async () => {
@@ -569,7 +624,7 @@ describe('acceptExports', () => {
     const file = 'side-effects.ts'
 
     await untilConsoleLogAfter(
-      () => setupViteRuntime(`/${testDir}/index`),
+      () => setupModuleRunner(`/${testDir}/index`),
       [CONNECTED, />>>/],
       (logs) => {
         expect(logs).toContain('>>> side FX')
@@ -598,7 +653,7 @@ describe('acceptExports', () => {
       const url = '/' + file
 
       await untilConsoleLogAfter(
-        () => setupViteRuntime(`/${testDir}/index`),
+        () => setupModuleRunner(`/${testDir}/index`),
         [CONNECTED, '-- unused --'],
         (logs) => {
           expect(logs).toContain('-- unused --')
@@ -621,7 +676,7 @@ describe('acceptExports', () => {
       const file = `${testDir}/${fileName}`
 
       await untilConsoleLogAfter(
-        () => setupViteRuntime(`/${testDir}/index`),
+        () => setupModuleRunner(`/${testDir}/index`),
         [CONNECTED, '-- used --', 'used:foo0'],
         (logs) => {
           expect(logs).toContain('-- used --')
@@ -654,7 +709,7 @@ describe('acceptExports', () => {
         const url = '/' + file
 
         await untilConsoleLogAfter(
-          () => setupViteRuntime(`/${testDir}/index`),
+          () => setupModuleRunner(`/${testDir}/index`),
           [CONNECTED, '>>> ready <<<'],
           (logs) => {
             expect(logs).toContain('loaded:all:a0b0c0default0')
@@ -688,7 +743,7 @@ describe('acceptExports', () => {
         const file = `${testDir}/${fileName}`
 
         await untilConsoleLogAfter(
-          () => setupViteRuntime(`/${testDir}/index`),
+          () => setupModuleRunner(`/${testDir}/index`),
           [CONNECTED, '>>> ready <<<'],
           (logs) => {
             expect(logs).toContain('loaded:some:a0b0c0default0')
@@ -716,7 +771,7 @@ describe('acceptExports', () => {
 })
 
 test('handle virtual module updates', async () => {
-  await setupViteRuntime('/hmr.ts')
+  await setupModuleRunner('/hmr.ts')
   const el = () => hmr('.virtual')
   expect(el()).toBe('[success]0')
   editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
@@ -724,7 +779,7 @@ test('handle virtual module updates', async () => {
 })
 
 test('invalidate virtual module', async () => {
-  await setupViteRuntime('/hmr.ts')
+  await setupModuleRunner('/hmr.ts')
   const el = () => hmr('.virtual')
   expect(el()).toBe('[wow]0')
   globalThis.__HMR__['virtual:increment']()
@@ -732,7 +787,7 @@ test('invalidate virtual module', async () => {
 })
 
 test.todo('should hmr when file is deleted and restored', async () => {
-  await setupViteRuntime('/hmr.ts')
+  await setupModuleRunner('/hmr.ts')
 
   const parentFile = 'file-delete-restore/parent.js'
   const childFile = 'file-delete-restore/child.js'
@@ -820,7 +875,7 @@ test.todo('delete file should not break hmr', async () => {
 test.todo(
   'deleted file should trigger dispose and prune callbacks',
   async () => {
-    await setupViteRuntime('/hmr.ts')
+    await setupModuleRunner('/hmr.ts')
 
     const parentFile = 'file-delete-restore/parent.js'
     const childFile = 'file-delete-restore/child.js'
@@ -857,7 +912,7 @@ test.todo(
 )
 
 test('import.meta.hot?.accept', async () => {
-  await setupViteRuntime('/hmr.ts')
+  await setupModuleRunner('/hmr.ts')
   await untilConsoleLogAfter(
     () =>
       editFile('optional-chaining/child.js', (code) =>
@@ -869,7 +924,7 @@ test('import.meta.hot?.accept', async () => {
 })
 
 test('hmr works for self-accepted module within circular imported files', async () => {
-  await setupViteRuntime('/self-accept-within-circular/index')
+  await setupModuleRunner('/self-accept-within-circular/index')
   const el = () => hmr('.self-accept-within-circular')
   expect(el()).toBe('c')
   editFile('self-accept-within-circular/c.js', (code) =>
@@ -885,7 +940,7 @@ test('hmr works for self-accepted module within circular imported files', async 
 })
 
 test('hmr should not reload if no accepted within circular imported files', async () => {
-  await setupViteRuntime('/circular/index')
+  await setupModuleRunner('/circular/index')
   const el = () => hmr('.circular')
   expect(el()).toBe(
     // tests in the browser check that there is an error, but vite runtime just returns undefined in those cases
@@ -901,7 +956,7 @@ test('hmr should not reload if no accepted within circular imported files', asyn
 })
 
 test('assets HMR', async () => {
-  await setupViteRuntime('/hmr.ts')
+  await setupModuleRunner('/hmr.ts')
   const el = () => hmr('#logo')
   await untilConsoleLogAfter(
     () =>
@@ -1096,15 +1151,16 @@ function createInMemoryLogger(logs: string[]) {
   return logger
 }
 
-async function setupViteRuntime(
+async function setupModuleRunner(
   entrypoint: string,
   serverOptions: InlineConfig = {},
+  waitForFile: string = entrypoint,
 ) {
   if (server) {
     await server.close()
     clientLogs.length = 0
     serverLogs.length = 0
-    runtime.clearCache()
+    runner.clearCache()
   }
 
   globalThis.__HMR__ = {} as any
@@ -1137,32 +1193,39 @@ async function setupViteRuntime(
 
   const logger = new HMRMockLogger()
   // @ts-expect-error not typed for HMR
-  globalThis.log = (...msg) => logger.debug(...msg)
+  globalThis.log = (...msg) => logger.log(...msg)
 
-  runtime = await createViteRuntime(server, {
+  runner = createServerModuleRunner(server.environments.ssr, {
     hmr: {
       logger,
     },
   })
 
-  await waitForWatcher(server, entrypoint)
+  await waitForWatcher(server, waitForFile)
 
-  await runtime.executeEntrypoint(entrypoint)
+  await runner.import(entrypoint)
 
   return {
-    runtime,
+    runtime: runner,
     server,
   }
 }
 
 class HMRMockLogger {
-  debug(...msg: unknown[]) {
+  log(...msg: unknown[]) {
     const log = msg.join(' ')
     clientLogs.push(log)
     logsEmitter.emit('log', log)
   }
+
+  debug(...msg: unknown[]) {
+    const log = ['[vite]', ...msg].join(' ')
+    clientLogs.push(log)
+    logsEmitter.emit('log', log)
+  }
   error(msg: string) {
-    clientLogs.push(msg)
-    logsEmitter.emit('log', msg)
+    const log = ['[vite]', msg].join(' ')
+    clientLogs.push(log)
+    logsEmitter.emit('log', log)
   }
 }

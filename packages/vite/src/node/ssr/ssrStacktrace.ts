@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
-import type { ModuleGraph } from '../server/moduleGraph'
+import type { EnvironmentModuleGraph } from '..'
 
 let offset: number
 
@@ -22,7 +22,7 @@ function calculateOffsetOnce() {
 
 export function ssrRewriteStacktrace(
   stack: string,
-  moduleGraph: ModuleGraph,
+  moduleGraph: EnvironmentModuleGraph,
 ): string {
   calculateOffsetOnce()
   return stack
@@ -33,8 +33,8 @@ export function ssrRewriteStacktrace(
         (input, varName, id, line, column) => {
           if (!id) return input
 
-          const mod = moduleGraph.idToModuleMap.get(id)
-          const rawSourceMap = mod?.ssrTransformResult?.map
+          const mod = moduleGraph.getModuleById(id)
+          const rawSourceMap = mod?.transformResult?.map
 
           if (!rawSourceMap) {
             return input
@@ -86,7 +86,10 @@ export function rebindErrorStacktrace(e: Error, stacktrace: string): void {
 
 const rewroteStacktraces = new WeakSet()
 
-export function ssrFixStacktrace(e: Error, moduleGraph: ModuleGraph): void {
+export function ssrFixStacktrace(
+  e: Error,
+  moduleGraph: EnvironmentModuleGraph,
+): void {
   if (!e.stack) return
   // stacktrace shouldn't be rewritten more than once
   if (rewroteStacktraces.has(e)) return

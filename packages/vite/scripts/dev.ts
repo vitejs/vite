@@ -12,8 +12,8 @@ rmSync('dist', { force: true, recursive: true })
 mkdirSync('dist/node', { recursive: true })
 writeFileSync('dist/node/index.d.ts', "export * from '../../src/node/index.ts'")
 writeFileSync(
-  'dist/node/runtime.d.ts',
-  "export * from '../../src/runtime/index.ts'",
+  'dist/node/module-runner.d.ts',
+  "export * from '../../src/module-runner/index.ts'",
 )
 
 const serverOptions: BuildOptions = {
@@ -96,11 +96,11 @@ void watch({
     },
   ],
 })
-// runtimeConfig
+// moduleRunnerConfig
 void watch({
   ...serverOptions,
-  entryPoints: ['./src/runtime/index.ts'],
-  outfile: 'dist/node/runtime.js',
+  entryPoints: ['./src/module-runner/index.ts'],
+  outfile: 'dist/node/module-runner.js',
   format: 'esm',
 })
 // cjsConfig

@@ -41,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@type-challenges/utils": "^0.1.1",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.9.7",
     "@types/convert-source-map": "^2.0.3",

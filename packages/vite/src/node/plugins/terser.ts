@@ -59,6 +59,12 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:terser',
 
+    applyToEnvironment(environment) {
+      // We also need the plugin even if minify isn't 'terser' as we force
+      // terser in plugin-legacy
+      return !!environment.config.build.minify
+    },
+
     async renderChunk(code, _chunk, outputOptions) {
       // This plugin is included for any non-false value of config.build.minify,
       // so that normal chunks can use the preferred minifier, and legacy chunks

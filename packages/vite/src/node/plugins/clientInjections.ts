@@ -90,25 +90,22 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       }
     },
     async transform(code, id, options) {
+      // TODO: Remove options?.ssr, Vitest currently hijacks this plugin
+      const ssr = options?.ssr ?? this.environment.config.consumer === 'server'
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
         return injectConfigValues(code)
-      } else if (!options?.ssr && code.includes('process.env.NODE_ENV')) {
+      } else if (!ssr && code.includes('process.env.NODE_ENV')) {
         // replace process.env.NODE_ENV instead of defining a global
         // for it to avoid shimming a `process` object during dev,
         // avoiding inconsistencies between dev and build
         const nodeEnv =
           config.define?.['process.env.NODE_ENV'] ||
           JSON.stringify(process.env.NODE_ENV || config.mode)
-        return await replaceDefine(
-          code,
-          id,
-          {
-            'process.env.NODE_ENV': nodeEnv,
-            'global.process.env.NODE_ENV': nodeEnv,
-            'globalThis.process.env.NODE_ENV': nodeEnv,
-          },
-          config,
-        )
+        return await replaceDefine(this.environment, code, id, {
+          'process.env.NODE_ENV': nodeEnv,
+          'global.process.env.NODE_ENV': nodeEnv,
+          'globalThis.process.env.NODE_ENV': nodeEnv,
+        })
       }
     },
   }

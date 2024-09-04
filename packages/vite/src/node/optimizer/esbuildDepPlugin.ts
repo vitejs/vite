@@ -2,8 +2,6 @@ import path from 'node:path'
 import type { ImportKind, Plugin } from 'esbuild'
 import { KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
-import { getDepOptimizationConfig } from '../config'
-import type { ResolvedConfig } from '../config'
 import {
   escapeRegex,
   flattenId,
@@ -14,6 +12,8 @@ import {
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isCSSRequest, isModuleCSSRequest } from '../plugins/css'
+import type { Environment } from '../environment'
+import { createBackCompatIdResolver } from '../idResolver'
 
 const externalWithConversionNamespace =
   'vite:dep-pre-bundle:external-conversion'
@@ -48,12 +48,12 @@ const externalTypes = [
 ]
 
 export function esbuildDepPlugin(
+  environment: Environment,
   qualified: Record<string, string>,
   external: string[],
-  config: ResolvedConfig,
-  ssr: boolean,
 ): Plugin {
-  const { extensions } = getDepOptimizationConfig(config, ssr)
+  const { isProduction } = environment.config
+  const { extensions } = environment.config.dev.optimizeDeps
 
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = extensions
@@ -66,19 +66,22 @@ export function esbuildDepPlugin(
   const cjsPackageCache: PackageCache = new Map()
 
   // default resolver which prefers ESM
-  const _resolve = config.createResolver({
+  const _resolve = createBackCompatIdResolver(environment.getTopLevelConfig(), {
     asSrc: false,
     scan: true,
     packageCache: esmPackageCache,
   })
 
   // cjs resolver that prefers Node
-  const _resolveRequire = config.createResolver({
-    asSrc: false,
-    isRequire: true,
-    scan: true,
-    packageCache: cjsPackageCache,
-  })
+  const _resolveRequire = createBackCompatIdResolver(
+    environment.getTopLevelConfig(),
+    {
+      asSrc: false,
+      isRequire: true,
+      scan: true,
+      packageCache: cjsPackageCache,
+    },
+  )
 
   const resolve = (
     id: string,
@@ -96,7 +99,7 @@ export function esbuildDepPlugin(
       _importer = importer in qualified ? qualified[importer] : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
-    return resolver(id, _importer, undefined, ssr)
+    return resolver(environment, id, _importer)
   }
 
   const resolveResult = (id: string, resolved: string) => {
@@ -112,7 +115,7 @@ export function esbuildDepPlugin(
         namespace: 'optional-peer-dep',
       }
     }
-    if (ssr && isBuiltin(resolved)) {
+    if (environment.config.consumer === 'server' && isBuiltin(resolved)) {
       return
     }
     if (isExternalUrl(resolved)) {
@@ -217,7 +220,7 @@ export function esbuildDepPlugin(
           if (!importer) {
             if ((entry = resolveEntry(id))) return entry
             // check if this is aliased to an entry - also return entry namespace
-            const aliased = await _resolve(id, undefined, true)
+            const aliased = await _resolve(environment, id, undefined, true)
             if (aliased && (entry = resolveEntry(aliased))) {
               return entry
             }
@@ -234,7 +237,7 @@ export function esbuildDepPlugin(
       build.onLoad(
         { filter: /.*/, namespace: 'browser-external' },
         ({ path }) => {
-          if (config.isProduction) {
+          if (isProduction) {
             return {
               contents: 'module.exports = {}',
             }
@@ -277,7 +280,7 @@ module.exports = Object.create(new Proxy({}, {
       build.onLoad(
         { filter: /.*/, namespace: 'optional-peer-dep' },
         ({ path }) => {
-          if (config.isProduction) {
+          if (isProduction) {
             return {
               contents: 'module.exports = {}',
             }

@@ -27,7 +27,7 @@ type Node = _Node & {
   end: number
 }
 
-interface TransformOptions {
+export interface ModuleRunnerTransformOptions {
   json?: {
     stringify?: boolean
   }
@@ -46,7 +46,7 @@ export async function ssrTransform(
   inMap: SourceMap | { mappings: '' } | null,
   url: string,
   originalCode: string,
-  options?: TransformOptions,
+  options?: ModuleRunnerTransformOptions,
 ): Promise<TransformResult | null> {
   if (options?.json?.stringify && isJSONRequest(url)) {
     return ssrTransformJSON(code, inMap)
@@ -63,6 +63,7 @@ async function ssrTransformJSON(
     map: inMap,
     deps: [],
     dynamicDeps: [],
+    ssr: true,
   }
 }
 
@@ -370,6 +371,7 @@ async function ssrTransformScript(
   return {
     code: s.toString(),
     map,
+    ssr: true,
     deps: [...deps],
     dynamicDeps: [...dynamicDeps],
   }

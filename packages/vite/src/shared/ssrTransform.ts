@@ -11,7 +11,7 @@ export interface DefineImportMetadata {
   importedNames?: string[]
 }
 
-export interface SSRImportBaseMetadata extends DefineImportMetadata {
+export interface SSRImportMetadata extends DefineImportMetadata {
   isDynamicImport?: boolean
 }
 
@@ -24,7 +24,7 @@ export function analyzeImportedModDifference(
   mod: any,
   rawId: string,
   moduleType: string | undefined,
-  metadata?: SSRImportBaseMetadata,
+  metadata?: SSRImportMetadata,
 ): void {
   // No normalization needed if the user already dynamic imports this module
   if (metadata?.isDynamicImport) return

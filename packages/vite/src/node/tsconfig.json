@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./", "../runtime", "../types"],
+  "include": ["./", "../module-runner", "../types"],
   "exclude": ["../**/__tests__"],
   "compilerOptions": {
     // https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping#node-18
@@ -9,7 +9,7 @@
     "skipLibCheck": true, // lib check is done on final types
     "stripInternal": true,
     "paths": {
-      "vite/runtime": ["../runtime"]
+      "vite/module-runner": ["../module-runner"]
     }
   }
 }

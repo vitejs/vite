@@ -147,10 +147,10 @@ const nodeConfig = defineConfig({
   ],
 })
 
-const runtimeConfig = defineConfig({
+const moduleRunnerConfig = defineConfig({
   ...sharedNodeOptions,
   input: {
-    runtime: path.resolve(__dirname, 'src/runtime/index.ts'),
+    'module-runner': path.resolve(__dirname, 'src/module-runner/index.ts'),
   },
   external: [
     'fsevents',
@@ -187,7 +187,7 @@ export default defineConfig([
   envConfig,
   clientConfig,
   nodeConfig,
-  runtimeConfig,
+  moduleRunnerConfig,
   cjsConfig,
 ])
 

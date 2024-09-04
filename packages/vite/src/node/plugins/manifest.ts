@@ -5,10 +5,10 @@ import type {
   OutputChunk,
   RenderedChunk,
 } from 'rollup'
-import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { normalizePath, sortObjectKeys } from '../utils'
-import { generatedAssets } from './asset'
+import { usePerEnvironmentState } from '../environment'
+import { generatedAssetsMap } from './asset'
 
 const endsWithJSRE = /\.[cm]?js$/
 
@@ -26,21 +26,38 @@ export interface ManifestChunk {
   dynamicImports?: string[]
 }
 
-export function manifestPlugin(config: ResolvedConfig): Plugin {
-  const manifest: Manifest = {}
-
-  let outputCount: number
+export function manifestPlugin(): Plugin {
+  const getState = usePerEnvironmentState(() => {
+    return {
+      manifest: {} as Manifest,
+      outputCount: 0,
+      reset() {
+        this.outputCount = 0
+      },
+    }
+  })
 
   return {
     name: 'vite:manifest',
 
+    perEnvironmentStartEndDuringDev: true,
+
+    applyToEnvironment(environment) {
+      return !!environment.config.build.manifest
+    },
+
     buildStart() {
-      outputCount = 0
+      getState(this).reset()
     },
 
     generateBundle({ format }, bundle) {
+      const state = getState(this)
+      const { manifest } = state
+      const { root } = this.environment.config
+      const buildOptions = this.environment.config.build
+
       function getChunkName(chunk: OutputChunk) {
-        return getChunkOriginalFileName(chunk, config.root, format)
+        return getChunkOriginalFileName(chunk, root, format)
       }
 
       function getInternalImports(imports: string[]): string[] {
@@ -110,7 +127,7 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         return manifestChunk
       }
 
-      const assets = generatedAssets.get(config)!
+      const assets = generatedAssetsMap.get(this.environment)!
       const entryCssAssetFileNames = new Set()
       for (const [id, asset] of assets.entries()) {
         if (asset.isEntry) {
@@ -158,14 +175,14 @@ export function manifestPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      outputCount++
-      const output = config.build.rollupOptions?.output
+      state.outputCount++
+      const output = buildOptions.rollupOptions?.output
       const outputLength = Array.isArray(output) ? output.length : 1
-      if (outputCount >= outputLength) {
+      if (state.outputCount >= outputLength) {
         this.emitFile({
           fileName:
-            typeof config.build.manifest === 'string'
-              ? config.build.manifest
+            typeof buildOptions.manifest === 'string'
+              ? buildOptions.manifest
               : '.vite/manifest.json',
           type: 'asset',
           source: JSON.stringify(sortObjectKeys(manifest), undefined, 2),

@@ -5,7 +5,6 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import type { OutputChunk } from 'rollup'
-import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
 import {
@@ -15,15 +14,25 @@ import {
   numberToPos,
   sortObjectKeys,
 } from '../utils'
+import { usePerEnvironmentState } from '../environment'
 
-export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
+export function ssrManifestPlugin(): Plugin {
   // module id => preload assets mapping
-  const ssrManifest: Record<string, string[]> = {}
-  const base = config.base
+  const getSsrManifest = usePerEnvironmentState(() => {
+    return {} as Record<string, string[]>
+  })
 
   return {
     name: 'vite:ssr-manifest',
+
+    applyToEnvironment(environment) {
+      return !!environment.config.build.ssrManifest
+    },
+
     generateBundle(_options, bundle) {
+      const config = this.environment.config
+      const ssrManifest = getSsrManifest(this)
+      const { base } = config
       for (const file in bundle) {
         const chunk = bundle[file]
         if (chunk.type === 'chunk') {

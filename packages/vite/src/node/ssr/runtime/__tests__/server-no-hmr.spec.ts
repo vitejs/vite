@@ -1,8 +1,8 @@
 import { describe, expect } from 'vitest'
-import { createViteRuntimeTester } from './utils'
+import { createModuleRunnerTester } from './utils'
 
-describe('vite-runtime hmr works as expected', async () => {
-  const it = await createViteRuntimeTester({
+describe('module runner hmr works as expected', async () => {
+  const it = await createModuleRunnerTester({
     server: {
       // override watch options because it's disabled by default
       watch: {},
@@ -10,10 +10,10 @@ describe('vite-runtime hmr works as expected', async () => {
     },
   })
 
-  it("hmr client is not defined if it's disabled", async ({ runtime }) => {
-    expect(runtime.hmrClient).toBeUndefined()
+  it("hmr client is not defined if it's disabled", async ({ runner }) => {
+    expect(runner.hmrClient).toBeUndefined()
 
-    const mod = await runtime.executeUrl('/fixtures/hmr.js')
+    const mod = await runner.import('/fixtures/hmr.js')
     expect(mod).toHaveProperty('hmr')
     expect(mod.hmr).toBeUndefined()
   })

@@ -4,7 +4,8 @@ import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'dep-types/connect'
 import escapeHtml from 'escape-html'
-import type { ViteDevServer } from '../..'
+import type { ViteDevServer } from '../../server'
+import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
 import {
   fsPathFromId,
@@ -211,23 +212,49 @@ export function serveRawFsMiddleware(
  * Check if the url is allowed to be served, via the `server.fs` config.
  */
 export function isFileServingAllowed(
+  config: ResolvedConfig,
+  url: string,
+): boolean
+/**
+ * @deprecated Use the `isFileServingAllowed(config, url)` signature instead.
+ */
+export function isFileServingAllowed(
   url: string,
   server: ViteDevServer,
+): boolean
+export function isFileServingAllowed(
+  configOrUrl: ResolvedConfig | string,
+  urlOrServer: string | ViteDevServer,
 ): boolean {
-  if (!server.config.server.fs.strict) return true
+  const config = (
+    typeof urlOrServer === 'string' ? configOrUrl : urlOrServer.config
+  ) as ResolvedConfig
+  const url = (
+    typeof urlOrServer === 'string' ? urlOrServer : configOrUrl
+  ) as string
 
-  const file = fsPathFromUrl(url)
+  if (!config.server.fs.strict) return true
+  const filePath = fsPathFromUrl(url)
+  return isFileLoadingAllowed(config, filePath)
+}
 
-  if (server._fsDenyGlob(file)) return false
+function isUriInFilePath(uri: string, filePath: string) {
+  return isSameFileUri(uri, filePath) || isParentDirectory(uri, filePath)
+}
 
-  if (server.moduleGraph.safeModulesPath.has(file)) return true
+export function isFileLoadingAllowed(
+  config: ResolvedConfig,
+  filePath: string,
+): boolean {
+  const { fs } = config.server
 
-  if (
-    server.config.server.fs.allow.some(
-      (uri) => isSameFileUri(uri, file) || isParentDirectory(uri, file),
-    )
-  )
-    return true
+  if (!fs.strict) return true
+
+  if (config.fsDenyGlob(filePath)) return false
+
+  if (config.safeModulePaths.has(filePath)) return true
+
+  if (fs.allow.some((uri) => isUriInFilePath(uri, filePath))) return true
 
   return false
 }
