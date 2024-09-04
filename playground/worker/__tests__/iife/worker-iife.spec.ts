@@ -180,7 +180,7 @@ test('self reference url worker in dependency', async () => {
 })
 
 test.runIf(isServe)('sourcemap boundary', async () => {
-  const response = page.waitForResponse(/my-worker.ts\?worker_file&type=module/)
+  const response = page.waitForResponse(/my-worker.ts\?type=module&worker_file/)
   await page.goto(viteTestUrl)
   const content = await (await response).text()
   const { mappings } = decodeSourceMapUrl(content)

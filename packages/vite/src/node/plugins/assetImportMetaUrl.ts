@@ -4,9 +4,9 @@ import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { ResolveFn } from '../'
-import { injectQuery, isParentDirectory, transformStableResult } from '../utils'
+import { isParentDirectory, transformStableResult } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
-import { slash } from '../../shared/utils'
+import { injectQuery, slash } from '../../shared/utils'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
@@ -85,7 +85,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
                 eager: true,
                 import: 'default',
                 // A hack to allow 'as' & 'query' exist at the same time
-                query: injectQuery(queryString, 'url'),
+                query: injectQuery(queryString, { url: '' }),
               }
               s.update(
                 startIndex,

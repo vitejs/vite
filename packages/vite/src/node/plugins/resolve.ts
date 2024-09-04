@@ -21,7 +21,6 @@ import {
   deepImportRE,
   fsPathFromId,
   getNpmPackageName,
-  injectQuery,
   isBuiltin,
   isDataUrl,
   isExternalUrl,
@@ -49,6 +48,7 @@ import {
 } from '../packages'
 import {
   cleanUrl,
+  injectQuery,
   isWindows,
   slash,
   withTrailingSlash,
@@ -279,7 +279,7 @@ export function resolvePlugin(resolveOptions: InternalResolveOptions): Plugin {
               normalizedFsPath,
             )?.browserHash
             if (browserHash) {
-              return injectQuery(normalizedFsPath, `v=${browserHash}`)
+              return injectQuery(normalizedFsPath, { v: browserHash })
             }
           }
           return normalizedFsPath
@@ -524,7 +524,7 @@ function ensureVersionQuery(
     if (isNodeModule && !DEP_VERSION_RE.test(resolved)) {
       const versionHash = depsOptimizer.metadata.browserHash
       if (versionHash && isOptimizable(resolved, depsOptimizer.options)) {
-        resolved = injectQuery(resolved, `v=${versionHash}`)
+        resolved = injectQuery(resolved, { v: versionHash })
       }
     }
   }
@@ -884,7 +884,7 @@ export function tryNodeResolve(
   if (options.ssrOptimizeCheck) {
     return {
       id: skipOptimization
-        ? injectQuery(resolved, `__vite_skip_optimization`)
+        ? injectQuery(resolved, { __vite_skip_optimization: '' })
         : resolved,
     }
   }
@@ -898,7 +898,7 @@ export function tryNodeResolve(
     if (!isBuild) {
       const versionHash = depsOptimizer!.metadata.browserHash
       if (versionHash && isJsType) {
-        resolved = injectQuery(resolved, `v=${versionHash}`)
+        resolved = injectQuery(resolved, { v: versionHash })
       }
     }
   } else {

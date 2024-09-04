@@ -24,6 +24,27 @@ export default defineConfig({
         })
       },
     },
+    {
+      name: 'transform-file',
+
+      transform(src, id) {
+        if (/\.my-file-ext$/.test(id)) {
+          return {
+            code: `
+            export default ${JSON.stringify(src)};
+            console.log('my-file-ext init');
+
+            if (import.meta.hot) {
+              import.meta.hot.accept(mod => {
+                console.log('my-file-ext accept value is: ' + mod.default)
+              })
+            }
+            `,
+            map: null,
+          }
+        }
+      },
+    },
     virtualPlugin(),
     transformCountPlugin(),
     watchCssDepsPlugin(),

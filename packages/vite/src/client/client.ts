@@ -2,6 +2,7 @@ import type { ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { HMRClient, HMRContext } from '../shared/hmr'
+import { injectQuery as baseInjectQuery } from '../shared/utils'
 import { ErrorOverlay, overlayId } from './overlay'
 import '@vite/env'
 
@@ -147,14 +148,12 @@ const hmrClient = new HMRClient(
     explicitImportRequired,
     isWithinCircularImport,
   }) {
-    const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
     const importPromise = import(
       /* @vite-ignore */
-      base +
-        acceptedPathWithoutQuery.slice(1) +
-        `?${explicitImportRequired ? 'import&' : ''}t=${timestamp}${
-          query ? `&${query}` : ''
-        }`
+      injectQuery(base + acceptedPath.slice(1), {
+        t: timestamp,
+        ...(explicitImportRequired ? { import: '' } : {}),
+      })
     )
     if (isWithinCircularImport) {
       importPromise.catch(() => {
@@ -223,9 +222,9 @@ async function handleMessage(payload: HMRPayload) {
             return
           }
 
-          const newPath = `${base}${searchUrl.slice(1)}${
-            searchUrl.includes('?') ? '&' : '?'
-          }t=${timestamp}`
+          const newPath = injectQuery(`${base}${searchUrl.slice(1)}`, {
+            t: timestamp,
+          })
 
           // rather than swapping the href on the existing tag, we will
           // create a new link tag. Once the new stylesheet has loaded we
@@ -446,19 +445,16 @@ export function createHotContext(ownerPath: string): ViteHotContext {
 /**
  * urls here are dynamic import() urls that couldn't be statically analyzed
  */
-export function injectQuery(url: string, queryToInject: string): string {
+export function injectQuery(
+  url: string,
+  queryToInject: Record<string, string | number> | string,
+): string {
   // skip urls that won't be handled by vite
   if (url[0] !== '.' && url[0] !== '/') {
     return url
   }
 
-  // can't use pathname from URL since it may be relative like ../
-  const pathname = url.replace(/[?#].*$/, '')
-  const { search, hash } = new URL(url, 'http://vitejs.dev')
-
-  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-    hash || ''
-  }`
+  return baseInjectQuery(url, queryToInject)
 }
 
 export { ErrorOverlay }
