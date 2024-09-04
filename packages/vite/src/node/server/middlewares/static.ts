@@ -212,10 +212,27 @@ export function serveRawFsMiddleware(
  * Check if the url is allowed to be served, via the `server.fs` config.
  */
 export function isFileServingAllowed(
+  config: ResolvedConfig,
+  url: string,
+): boolean
+/**
+ * @deprecated Use the `isFileServingAllowed(config, url)` signature instead.
+ */
+export function isFileServingAllowed(
   url: string,
   server: ViteDevServer,
+): boolean
+export function isFileServingAllowed(
+  configOrUrl: ResolvedConfig | string,
+  urlOrServer: string | ViteDevServer,
 ): boolean {
-  const { config } = server
+  const config = (
+    typeof urlOrServer === 'string' ? configOrUrl : urlOrServer.config
+  ) as ResolvedConfig
+  const url = (
+    typeof urlOrServer === 'string' ? urlOrServer : configOrUrl
+  ) as string
+
   if (!config.server.fs.strict) return true
   const filePath = fsPathFromUrl(url)
   return isFileLoadingAllowed(config, filePath)
