@@ -128,7 +128,6 @@ export interface ViteFetchResult {
 
 export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {
   url: string
-  serverId: string
 }
 
 export type FetchFunction = (

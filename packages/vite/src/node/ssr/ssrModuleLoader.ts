@@ -77,7 +77,7 @@ class SSRCompatModuleRunner extends ModuleRunner {
     mod: ModuleCache,
     _callstack: string[],
   ): Promise<any> {
-    const serverId = mod.meta?.serverId
+    const serverId = mod.meta && 'serverId' in mod.meta && mod.meta.serverId
     // serverId doesn't exist for external modules
     if (!serverId) {
       return super.directRequest(id, mod, _callstack)
