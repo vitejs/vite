@@ -748,7 +748,7 @@ interface RunnerTransport {
 }
 ```
 
-Transport object that communicates with the environment via an RPC or by directly calling the function. By default, you need to pass an object with `fetchModule` method - it can use any type of RPC inside of it, but Vite also exposes `RemoteRunnerTransport` to make the configuration easier. You need to couple it with the `RemoteEnvironmentTransport` instance on the server like in this example where module runner is created in the worker thread:
+Transport object that communicates with the environment via an RPC or by directly calling the function. By default, you need to pass an object with `fetchModule` method - it can use any type of RPC inside of it, but Vite also exposes bidirectional transport interface via a `RemoteRunnerTransport` class to make the configuration easier. You need to couple it with the `RemoteEnvironmentTransport` instance on the server like in this example where module runner is created in the worker thread:
 
 ::: code-group
 
@@ -804,7 +804,104 @@ await createServer({
 
 :::
 
-`RemoteRunnerTransport` and `RemoteEnvironmentTransport` are meant to be used together. If you don't use either of them, then you can define your own function to communicate between the runner and the server.
+`RemoteRunnerTransport` and `RemoteEnvironmentTransport` are meant to be used together, but you don't have to use them at all. You can define your own function to communicate between the runner and the server. For example, if you connect to the environment via an HTTP request, you can call `fetch().json()` in `fetchModule` function:
+
+```ts
+import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+
+export const runner = new ModuleRunner(
+  {
+    root: fileURLToPath(new URL('./', import.meta.url)),
+    transport: {
+      async fetchModule(id, importer) {
+        const response = await fetch(
+          `http://my-vite-server/fetch?id=${id}&importer=${importer}`,
+        )
+        return response.json()
+      },
+    },
+  },
+  new ESModulesEvaluator(),
+)
+
+await runner.import('/entry.js')
+```
+
+::: warning Acessing Module on the Server
+We do not want to encourage communication between the server and the runner. One of the problems that was exposed with `vite.ssrLoadModule` is over-reliance on the server state inside the processed modules. This makes it harder to implement runtime-agnostic SSR since user environment might have no access to server APIs. For example, this code assumes that Vite server and user code can run in the same context:
+
+```ts
+const vite = createServer()
+const routes = collectRoutes()
+
+const { processRoutes } = await vite.ssrLoadModule('internal:routes-processor')
+processRoutes(routes)
+```
+
+This makes it impossible to run user code in the same way it might run in production (for example, on the edge) because the server state and user state are coupled. So instead, we recommend using virtual modules to import the state and process it inside the user module:
+
+```ts
+// this code runs on another machine or in another thread
+
+import { runner } from './ssr-module-runner.js'
+import { processRoutes } from './routes-processor.js'
+
+const { routes } = await runner.import('virtual:ssr-routes')
+processRoutes(routes)
+```
+
+Simple setups like in [SSR Guide](/guide/ssr) can still use `server.transformIndexHtml` directly if it's not expected that the server will run in a different process in production. However, if the server will run in an edge environment or a separate process, we recommend creating a virtual module to load HTML:
+
+```ts {13-21}
+function vitePluginVirtualIndexHtml(): Plugin {
+  let server: ViteDevServer | undefined
+  return {
+    name: vitePluginVirtualIndexHtml.name,
+    configureServer(server_) {
+      server = server_
+    },
+    resolveId(source) {
+      return source === 'virtual:index-html' ? '\0' + source : undefined
+    },
+    async load(id) {
+      if (id === '\0' + 'virtual:index-html') {
+        let html: string
+        if (server) {
+          this.addWatchFile('index.html')
+          html = await fs.promises.readFile('index.html', 'utf-8')
+          html = await server.transformIndexHtml('/', html)
+        } else {
+          html = await fs.promises.readFile('dist/client/index.html', 'utf-8')
+        }
+        return `export default ${JSON.stringify(html)}`
+      }
+      return
+    },
+  }
+}
+```
+
+Then in SSR entry point you can call `import('virtual:index-html')` to retrieve the processed HTML:
+
+```ts
+import { render } from 'framework'
+
+// this example uses cloudflare syntax
+export default {
+  async fetch() {
+    // during dev, it will return transformed HTML
+    // during build, it will bundle the basic index.html into a string
+    const { default: html } = await import('virtual:index-html')
+    return new Response(render(html), {
+      headers: { 'content-type': 'text/html' },
+    })
+  },
+}
+```
+
+This keeps the HTML processing server agnostic.
+
+:::
 
 ## ModuleRunnerHMRConnection
 
