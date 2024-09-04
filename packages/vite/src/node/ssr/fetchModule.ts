@@ -137,6 +137,7 @@ export async function fetchModule(
   return {
     code: result.code,
     file: mod.file,
+    serverId: mod.id!,
     invalidate: !cached,
   }
 }
