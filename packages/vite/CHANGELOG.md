@@ -217,8 +217,6 @@ See [5.3.0-beta.0 changelog](https://github.com/vitejs/vite/blob/v5.3.0-beta.0/p
 * docs: correct proxy shorthand example (#15938) ([abf766e](https://github.com/vitejs/vite/commit/abf766e939a0f02e5c08959bd101a6c72a29558b)), closes [#15938](https://github.com/vitejs/vite/issues/15938)
 * docs: deprecate server.hot (#16741) ([e7d38ab](https://github.com/vitejs/vite/commit/e7d38ab1c45b9d17f182f89d0c129932e2f994eb)), closes [#16741](https://github.com/vitejs/vite/issues/16741)
 
-
-
 ## <small>5.2.11 (2024-05-02)</small>
 
 * feat: improve dynamic import variable failure error message (#16519) ([f8feeea](https://github.com/vitejs/vite/commit/f8feeea41c3f505d8491fa9b299c26deaad9106a)), closes [#16519](https://github.com/vitejs/vite/issues/16519)

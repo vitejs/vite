@@ -30,7 +30,7 @@ import {
   loopbackHosts,
   wildcardHosts,
 } from './constants'
-import type { DepOptimizationConfig } from './optimizer'
+import type { DepOptimizationOptions } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
 import type { PreviewServer } from './preview'
@@ -122,7 +122,7 @@ export function moduleListContains(
 
 export function isOptimizable(
   id: string,
-  optimizeDeps: DepOptimizationConfig,
+  optimizeDeps: DepOptimizationOptions,
 ): boolean {
   const { extensions } = optimizeDeps
   return (
@@ -1099,7 +1099,7 @@ function mergeConfigRecursively(
       continue
     } else if (
       key === 'noExternal' &&
-      rootPath === 'ssr' &&
+      (rootPath === 'ssr' || rootPath === 'resolve') &&
       (existing === true || value === true)
     ) {
       merged[key] = true

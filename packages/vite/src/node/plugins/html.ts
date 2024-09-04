@@ -415,7 +415,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             !namedOutput.includes(removeLeadingSlash(url)) // Allow for absolute references as named output can't be an absolute path
           ) {
             try {
-              return await urlToBuiltUrl(url, id, config, this, shouldInline)
+              return await urlToBuiltUrl(this, url, id, shouldInline)
             } catch (e) {
               if (e.code !== 'ENOENT') {
                 throw e
@@ -650,7 +650,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.update(
               start,
               end,
-              partialEncodeURIPath(await urlToBuiltUrl(url, id, config, this)),
+              partialEncodeURIPath(await urlToBuiltUrl(this, url, id)),
             )
           }
         }
@@ -677,7 +677,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         processedHtml.set(id, s.toString())
 
         // inject module preload polyfill only when configured and needed
-        const { modulePreload } = config.build
+        const { modulePreload } = this.environment.config.build
         if (
           modulePreload !== false &&
           modulePreload.polyfill &&
@@ -840,8 +840,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               toScriptTag(chunk, toOutputAssetFilePath, isAsync),
             )
           } else {
+            const { modulePreload } = this.environment.config.build
             assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
-            const { modulePreload } = config.build
             if (modulePreload !== false) {
               const resolveDependencies =
                 typeof modulePreload === 'object' &&
@@ -866,7 +866,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         // inject css link when cssCodeSplit is false
-        if (!config.build.cssCodeSplit) {
+        if (!this.environment.config.build.cssCodeSplit) {
           const cssChunk = Object.values(bundle).find(
             (chunk) => chunk.type === 'asset' && chunk.name === 'style.css',
           ) as OutputAsset | undefined

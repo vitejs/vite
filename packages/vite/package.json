@@ -32,9 +32,9 @@
     "./client": {
       "types": "./client.d.ts"
     },
-    "./runtime": {
-      "types": "./dist/node/runtime.d.ts",
-      "import": "./dist/node/runtime.js"
+    "./module-runner": {
+      "types": "./dist/node/module-runner.d.ts",
+      "import": "./dist/node/module-runner.js"
     },
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
@@ -44,8 +44,8 @@
   },
   "typesVersions": {
     "*": {
-      "runtime": [
-        "dist/node/runtime.d.ts"
+      "module-runner": [
+        "dist/node/module-runner.d.ts"
       ]
     }
   },
@@ -78,7 +78,7 @@
     "build-types-temp": "tsc --emitDeclarationOnly --outDir temp -p src/node",
     "build-types-roll": "rollup --config rollup.dts.config.ts --configPlugin esbuild && rimraf temp",
     "build-types-check": "tsc --project tsconfig.check.json",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/node",
     "lint": "eslint --cache --ext .ts src/**",
     "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
     "prepublishOnly": "npm run build"
@@ -128,6 +128,7 @@
     "micromatch": "^4.0.8",
     "mlly": "^1.7.1",
     "mrmime": "^2.0.0",
+    "nanoid": "^5.0.7",
     "open": "^8.4.2",
     "parse5": "^7.1.2",
     "pathe": "^1.1.2",

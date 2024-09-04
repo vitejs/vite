@@ -1,4 +1,6 @@
-export type HMRPayload =
+/** @deprecated use HotPayload */
+export type HMRPayload = HotPayload
+export type HotPayload =
   | ConnectedPayload
   | UpdatePayload
   | FullReloadPayload
@@ -25,7 +27,7 @@ export interface Update {
   /** @internal */
   isWithinCircularImport?: boolean
   /** @internal */
-  ssrInvalidates?: string[]
+  invalidates?: string[]
 }
 
 export interface PrunePayload {

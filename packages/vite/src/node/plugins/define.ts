@@ -3,6 +3,7 @@ import { TraceMap, decodedMap, encodedMap } from '@jridgewell/trace-mapping'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { escapeRegex } from '../utils'
+import type { Environment } from '../environment'
 import { isCSSRequest } from './css'
 import { isHTMLRequest } from './html'
 
@@ -56,8 +57,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
   }
 
-  function generatePattern(ssr: boolean) {
-    const replaceProcessEnv = !ssr || config.ssr?.target === 'webworker'
+  function generatePattern(environment: Environment) {
+    const replaceProcessEnv = environment.config.webCompatible
 
     const define: Record<string, string> = {
       ...(replaceProcessEnv ? processEnv : {}),
@@ -67,6 +68,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     }
 
     // Additional define fixes based on `ssr` value
+    const ssr = environment.config.consumer === 'server'
+
     if ('import.meta.env.SSR' in define) {
       define['import.meta.env.SSR'] = ssr + ''
     }
@@ -95,15 +98,24 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     return [define, pattern, importMetaEnvVal] as const
   }
 
-  const defaultPattern = generatePattern(false)
-  const ssrPattern = generatePattern(true)
+  const patternsCache = new WeakMap<
+    Environment,
+    readonly [Record<string, string>, RegExp | null, string]
+  >()
+  function getPattern(environment: Environment) {
+    let pattern = patternsCache.get(environment)
+    if (!pattern) {
+      pattern = generatePattern(environment)
+      patternsCache.set(environment, pattern)
+    }
+    return pattern
+  }
 
   return {
     name: 'vite:define',
 
-    async transform(code, id, options) {
-      const ssr = options?.ssr === true
-      if (!ssr && !isBuild) {
+    async transform(code, id) {
+      if (this.environment.config.consumer === 'client' && !isBuild) {
         // for dev we inject actual global defines in the vite client to
         // avoid the transform cost. see the `clientInjection` and
         // `importAnalysis` plugin.
@@ -120,9 +132,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      let [define, pattern, importMetaEnvVal] = ssr
-        ? ssrPattern
-        : defaultPattern
+      let [define, pattern, importMetaEnvVal] = getPattern(this.environment)
       if (!pattern) return
 
       // Check if our code needs any replacements before running esbuild
@@ -145,7 +155,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      const result = await replaceDefine(code, id, define, config)
+      const result = await replaceDefine(this.environment, code, id, define)
 
       if (hasDefineImportMetaEnv) {
         // Replace `import.meta.env.*` with undefined
@@ -172,12 +182,12 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 }
 
 export async function replaceDefine(
+  environment: Environment,
   code: string,
   id: string,
   define: Record<string, string>,
-  config: ResolvedConfig,
 ): Promise<{ code: string; map: string | null }> {
-  const esbuildOptions = config.esbuild || {}
+  const esbuildOptions = environment.config.esbuild || {}
 
   const result = await transform(code, {
     loader: 'js',
@@ -185,7 +195,10 @@ export async function replaceDefine(
     platform: 'neutral',
     define,
     sourcefile: id,
-    sourcemap: config.command === 'build' ? !!config.build.sourcemap : true,
+    sourcemap:
+      environment.config.command === 'build'
+        ? !!environment.config.build.sourcemap
+        : true,
   })
 
   // remove esbuild's <define:...> source entries

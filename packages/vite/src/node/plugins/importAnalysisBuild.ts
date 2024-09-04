@@ -169,30 +169,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const isRelativeBase = config.base === './' || config.base === ''
 
-  const { modulePreload } = config.build
-  const scriptRel =
-    modulePreload && modulePreload.polyfill
-      ? `'modulepreload'`
-      : `(${detectScriptRel.toString()})()`
-
-  // There are two different cases for the preload list format in __vitePreload
-  //
-  // __vitePreload(() => import(asyncChunk), [ ...deps... ])
-  //
-  // This is maintained to keep backwards compatibility as some users developed plugins
-  // using regex over this list to workaround the fact that module preload wasn't
-  // configurable.
-  const assetsURL =
-    renderBuiltUrl || isRelativeBase
-      ? // If `experimental.renderBuiltUrl` is used, the dependencies might be relative to the current chunk.
-        // If relative base is used, the dependencies are relative to the current chunk.
-        // The importerUrl is passed as third parameter to __vitePreload in this case
-        `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
-      : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
-        // is appended inside __vitePreload too.
-        `function(dep) { return ${JSON.stringify(config.base)}+dep }`
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
-
   return {
     name: 'vite:build-import-analysis',
     resolveId(id) {
@@ -203,6 +179,30 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === preloadHelperId) {
+        const { modulePreload } = this.environment.config.build
+
+        const scriptRel =
+          modulePreload && modulePreload.polyfill
+            ? `'modulepreload'`
+            : `(${detectScriptRel.toString()})()`
+
+        // There are two different cases for the preload list format in __vitePreload
+        //
+        // __vitePreload(() => import(asyncChunk), [ ...deps... ])
+        //
+        // This is maintained to keep backwards compatibility as some users developed plugins
+        // using regex over this list to workaround the fact that module preload wasn't
+        // configurable.
+        const assetsURL =
+          renderBuiltUrl || isRelativeBase
+            ? // If `experimental.renderBuiltUrl` is used, the dependencies might be relative to the current chunk.
+              // If relative base is used, the dependencies are relative to the current chunk.
+              // The importerUrl is passed as third parameter to __vitePreload in this case
+              `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
+            : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
+              // is appended inside __vitePreload too.
+              `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+        const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
         return preloadCode
       }
     },
@@ -359,7 +359,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (s) {
         return {
           code: s.toString(),
-          map: config.build.sourcemap
+          map: this.environment.config.build.sourcemap
             ? s.generateMap({ hires: 'boundary' })
             : null,
         }
@@ -371,7 +371,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (code.indexOf(isModernFlag) > -1) {
         const re = new RegExp(isModernFlag, 'g')
         const isModern = String(format === 'es')
-        if (config.build.sourcemap) {
+        if (this.environment.config.build.sourcemap) {
           const s = new MagicString(code)
           let match: RegExpExecArray | null
           while ((match = re.exec(code))) {
@@ -451,6 +451,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
         return
       }
+      const buildSourcemap = this.environment.config.build.sourcemap
+      const { modulePreload } = this.environment.config.build
 
       for (const file in bundle) {
         const chunk = bundle[file]
@@ -602,11 +604,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (renderBuiltUrl) {
                   renderedDeps = depsArray.map((dep) => {
                     const replacement = toOutputFilePathInJS(
+                      this.environment,
                       dep,
                       'asset',
                       chunk.fileName,
                       'js',
-                      config,
                       toRelativePath,
                     )
 
@@ -675,7 +677,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (s.hasChanged()) {
             chunk.code = s.toString()
-            if (config.build.sourcemap && chunk.map) {
+            if (buildSourcemap && chunk.map) {
               const nextMap = s.generateMap({
                 source: chunk.fileName,
                 hires: 'boundary',
@@ -687,13 +689,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               map.toUrl = () => genSourceMapUrl(map)
               chunk.map = map
 
-              if (config.build.sourcemap === 'inline') {
+              if (buildSourcemap === 'inline') {
                 chunk.code = chunk.code.replace(
                   convertSourceMap.mapFileCommentRegex,
                   '',
                 )
                 chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
-              } else if (config.build.sourcemap) {
+              } else if (buildSourcemap) {
                 const mapAsset = bundle[chunk.fileName + '.map']
                 if (mapAsset && mapAsset.type === 'asset') {
                   mapAsset.source = map.toString()
