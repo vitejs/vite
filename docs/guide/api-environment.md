@@ -142,8 +142,9 @@ The default SSR Node module runner is not exposed. You can use `createNodeEnviro
 ```js
 import {
   createServer,
+  createServerHotChannel,
   createServerModuleRunner,
-  createNodeEnvironment,
+  createNodeDevEnvironment,
 } from 'vite'
 
 const server = await createServer({
@@ -154,7 +155,11 @@ const server = await createServer({
       dev: {
         // Default Vite SSR environment can be overridden in the config, so
         // make sure you have a Node environment before the request is received.
-        createEnvironment: createNodeEnvironment,
+        createEnvironment(name, config) {
+          return createNodeDevEnvironment(name, config, {
+            hot: createServerHotChannel(),
+          })
+        },
       },
     },
   },
