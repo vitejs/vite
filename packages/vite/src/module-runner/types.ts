@@ -117,13 +117,18 @@ export interface ViteFetchResult {
    */
   file: string | null
   /**
+   * Module ID in the server module graph.
+   */
+  serverId: string
+  /**
    * Invalidate module on the client side.
    */
   invalidate: boolean
 }
 
 export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {
-  id: string
+  url: string
+  serverId: string
 }
 
 export type FetchFunction = (

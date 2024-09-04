@@ -126,7 +126,7 @@ export class ModuleRunner {
     if (!('externalize' in fetchResult)) {
       return exports
     }
-    const { id, type } = fetchResult
+    const { url: id, type } = fetchResult
     if (type !== 'module' && type !== 'commonjs') return exports
     analyzeImportedModDifference(exports, id, type, metadata)
     return exports
@@ -175,7 +175,7 @@ export class ModuleRunner {
   ): Promise<any> {
     const mod = mod_ as Required<ModuleCache>
     const meta = mod.meta!
-    const moduleId = meta.id
+    const moduleId = meta.url
 
     const { importers } = mod
 
@@ -291,7 +291,7 @@ export class ModuleRunner {
       this.moduleCache.invalidateModule(mod)
     }
 
-    fetchedModule.id = moduleId
+    fetchedModule.url = moduleId
     mod.meta = fetchedModule
 
     if (file) {
@@ -312,15 +312,15 @@ export class ModuleRunner {
     _callstack: string[],
   ): Promise<any> {
     const fetchResult = mod.meta!
-    const moduleId = fetchResult.id
-    const callstack = [..._callstack, moduleId]
+    const moduleUrl = fetchResult.url
+    const callstack = [..._callstack, moduleUrl]
 
     const request = async (dep: string, metadata?: SSRImportMetadata) => {
-      const importer = ('file' in fetchResult && fetchResult.file) || moduleId
+      const importer = ('file' in fetchResult && fetchResult.file) || moduleUrl
       const fetchedModule = await this.cachedModule(dep, importer)
-      const resolvedId = fetchedModule.meta!.id
+      const resolvedId = fetchedModule.meta!.url
       const depMod = this.moduleCache.getByModuleId(resolvedId)
-      depMod.importers!.add(moduleId)
+      depMod.importers!.add(moduleUrl)
       mod.imports!.add(resolvedId)
 
       return this.cachedRequest(dep, fetchedModule, callstack, metadata)
@@ -354,7 +354,7 @@ export class ModuleRunner {
       )
     }
 
-    const modulePath = cleanUrl(file || moduleId)
+    const modulePath = cleanUrl(file || moduleUrl)
     // disambiguate the `<UNIT>:/` on windows: see nodejs/node#31710
     const href = posixPathToFileHref(modulePath)
     const filename = modulePath
@@ -391,8 +391,8 @@ export class ModuleRunner {
           if (!this.hmrClient) {
             throw new Error(`[module runner] HMR client was destroyed.`)
           }
-          this.debug?.('[module runner] creating hmr context for', moduleId)
-          hotContext ||= new HMRContext(this.hmrClient, moduleId)
+          this.debug?.('[module runner] creating hmr context for', moduleUrl)
+          hotContext ||= new HMRContext(this.hmrClient, moduleUrl)
           return hotContext
         },
         set: (value) => {

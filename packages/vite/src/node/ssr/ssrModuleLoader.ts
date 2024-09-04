@@ -78,14 +78,13 @@ class SSRCompatModuleRunner extends ModuleRunner {
     _callstack: string[],
   ): Promise<any> {
     const viteMod = this.server.environments.ssr.moduleGraph.getModuleById(
-      mod.meta!.id,
+      mod.meta!.serverId,
     )
-    // TODO: should never happen
+
     if (!viteMod) {
-      throw new Error(
-        `Module ${mod.meta!.id} not found in module graph. This is a bug in Vite.`,
-      )
+      return await this.directRequest(id, mod, _callstack)
     }
+
     try {
       const exports = await super.directRequest(id, mod, _callstack)
       viteMod.ssrModule = exports
