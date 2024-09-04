@@ -3,6 +3,7 @@ import colors from 'picocolors'
 import { logRecentCommits, run, updateTemplateVersions } from './releaseUtils'
 import extendCommitHash from './extendCommitHash'
 
+//release
 release({
   repo: 'vite',
   packages: ['vite', 'create-vite', 'plugin-legacy'],
