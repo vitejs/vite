@@ -80,14 +80,14 @@ class SSRCompatModuleRunner extends ModuleRunner {
     const serverId = mod.meta?.serverId
     // serverId doesn't exist for external modules
     if (!serverId) {
-      return this.directRequest(id, mod, _callstack)
+      return super.directRequest(id, mod, _callstack)
     }
 
     const viteMod =
       this.server.environments.ssr.moduleGraph.getModuleById(serverId)
 
     if (!viteMod) {
-      return this.directRequest(id, mod, _callstack)
+      return super.directRequest(id, mod, _callstack)
     }
 
     try {
