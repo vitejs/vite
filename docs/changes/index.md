@@ -1,6 +1,6 @@
 # Breaking Changes
 
-List of breaking changes in Vite including API deprecations, removals, and changes. Most of the changes below can be opt-in using the `future` option in your Vite config.
+List of breaking changes in Vite including API deprecations, removals, and changes. Most of the changes below can be opt-in using the [`future` option](/config/shared-options.html#future) in your Vite config.
 
 ## Planned
 
