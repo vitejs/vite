@@ -494,8 +494,8 @@ Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlew
 ## future
 
 - **Type:** `Record<string, 'warn' | undefined>`
-- **Related:** [Breaking Changes](/changes)
+- **Related:** [Breaking Changes](/changes/)
 
 Enable future breaking changes to prepare for a smooth migration to the next major version of Vite. The list may be updated, added, or removed at any time as new features are developed.
 
-See the [Breaking Changes](/changes) page for details of the possible options.
+See the [Breaking Changes](/changes/) page for details of the possible options.
