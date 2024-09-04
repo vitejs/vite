@@ -1000,7 +1000,7 @@ The current Vite server API are not yet deprecated and are backward compatible w
 
 The `server.moduleGraph` returns a mixed view of the client and ssr module graphs. Backward compatible mixed module nodes will be returned from all its methods. The same scheme is used for the module nodes passed to `handleHotUpdate`.
 
-We don't recommend switching to Environment API yet. We are aiming for a good portion of the user base to adopt Vite 6 before so plugins don't need to maintain two versions. Checkout the future major changes section for information on future deprecations and upgrade path:
+We don't recommend switching to Environment API yet. We are aiming for a good portion of the user base to adopt Vite 6 before so plugins don't need to maintain two versions. Checkout the future breaking changes section for information on future deprecations and upgrade path:
 
 - [`this.environment` in Hooks](/changes/this-environment-in-hooks)
 - [HMR `hotUpdate` Plugin Hook](/changes/hotupdate-hook)

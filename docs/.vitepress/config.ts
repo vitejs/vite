@@ -266,7 +266,7 @@ export default defineConfig({
               link: '/guide/migration',
             },
             {
-              text: 'Major Changes',
+              text: 'Breaking Changes',
               link: '/changes/',
             },
           ],
@@ -338,7 +338,7 @@ export default defineConfig({
       ],
       '/changes/': [
         {
-          text: 'Major Changes',
+          text: 'Breaking Changes',
           link: '/changes/',
         },
         {

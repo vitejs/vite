@@ -1,16 +1,18 @@
-# Major Changes
+# Breaking Changes
 
-This is a list of major changes in Vite and planned future deprecations/removals.
+List of breaking changes in Vite including API deprecations, removals, and changes. Most of the changes below can be opt-in using the [`future` option](/config/shared-options.html#future) in your Vite config.
 
-## Current
+## Planned
 
-We're reaching out to framework, plugin authors, and users to apply these changes. Deprecation or usage warnings will guide you where possible.
+These changes are planned for the next major version of Vite. The deprecation or usage warnings will guide you where possible, and we're reaching out to framework, plugin authors, and users to apply these changes.
 
-## Future
+- _No planned changes yet_
 
-These are experimental APIs that intend to improve upon current usage patterns. There are more experimental APIs that the ones listed here. For a complete list of experimental features, please checkout the [Experimental Label in Vite GitHub Discussions](https://github.com/vitejs/vite/discussions/categories/feedback?discussions_q=label%3Aexperimental+category%3AFeedback).
+## Considering
 
-We don't recommend switching to these APIs yet. They are included in Vite to help us gather feedback. Please check these proposals and let us know how they work in your use case using the linked Discussions in each.
+These changes are being considered and are often experimental APIs that intend to improve upon current usage patterns. As not all changes are listed here, please check out the [Experimental Label in Vite GitHub Discussions](https://github.com/vitejs/vite/discussions/categories/feedback?discussions_q=label%3Aexperimental+category%3AFeedback) for the full list.
+
+We don't recommend switching to these APIs yet. They are included in Vite to help us gather feedback. Please check these proposals and let us know how they work in your use case in each's linked GitHub Discussions.
 
 - [`this.environment` in Hooks](/changes/this-environment-in-hooks)
 - [HMR `hotUpdate` Plugin Hook](/changes/hotupdate-hook)
@@ -20,4 +22,6 @@ We don't recommend switching to these APIs yet. They are included in Vite to hel
 
 ## Past
 
-The following are changes done in the past, where the usage that replaced are no longer used by a significant portion of users.
+The changes below has been done or reverted. They are no longer relevant in the current major version.
+
+- _No past changes yet_
