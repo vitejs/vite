@@ -94,6 +94,7 @@ test('sass', async () => {
   )
   expect(await getColor(partialImport)).toBe('orchid')
   expect(await getColor(await page.$('.sass-file-absolute'))).toBe('orange')
+  expect(await getColor(await page.$('.sass-dir-index'))).toBe('orange')
 
   editFile('sass.scss', (code) =>
     code.replace('color: $injectedColor', 'color: red'),

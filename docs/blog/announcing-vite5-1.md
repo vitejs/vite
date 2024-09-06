@@ -56,7 +56,9 @@ The new API brings many benefits:
 
 The initial idea [was proposed by Pooya Parsa](https://github.com/nuxt/vite/pull/201) and implemented by [Anthony Fu](https://github.com/antfu) as the [vite-node](https://github.com/vitest-dev/vitest/tree/main/packages/vite-node#readme) package to [power Nuxt 3 Dev SSR](https://antfu.me/posts/dev-ssr-on-nuxt) and later also used as the base for [Vitest](https://vitest.dev). So the general idea of vite-node has been battle-tested for quite some time now. This is a new iteration of the API by [Vladimir Sheremet](https://github.com/sheremet-va), who had already re-implemented vite-node in Vitest and took the learnings to make the API even more powerful and flexible when adding it to Vite Core. The PR was one year in the makings, you can see the evolution and discussions with ecosystem maintainers [here](https://github.com/vitejs/vite/issues/12165).
 
-Read more in the [Vite Runtime API guide](/guide/api-vite-runtime) and [give us feedback](https://github.com/vitejs/vite/discussions/15774).
+::: info
+The Vite Runtime API evolved into the Module Runner API, released in Vite 6 as part of the [Environment API](/guide/api-environment).
+:::
 
 ## Features
 

@@ -2,7 +2,7 @@ import type { DepOptimizationConfig } from '../optimizer'
 
 export type SSRTarget = 'node' | 'webworker'
 
-export type SsrDepOptimizationOptions = DepOptimizationConfig
+export type SsrDepOptimizationConfig = DepOptimizationConfig
 
 export interface SSROptions {
   noExternal?: string | RegExp | (string | RegExp)[] | true
@@ -11,6 +11,7 @@ export interface SSROptions {
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
+   * This option may be replaced by the experimental `environmentOptions.webCompatible`
    * @default 'node'
    */
   target?: SSRTarget
@@ -23,7 +24,7 @@ export interface SSROptions {
    *   explicit no external CJS dependencies are optimized by default
    * @experimental
    */
-  optimizeDeps?: SsrDepOptimizationOptions
+  optimizeDeps?: SsrDepOptimizationConfig
 
   resolve?: {
     /**
@@ -46,7 +47,7 @@ export interface SSROptions {
 
 export interface ResolvedSSROptions extends SSROptions {
   target: SSRTarget
-  optimizeDeps: SsrDepOptimizationOptions
+  optimizeDeps: SsrDepOptimizationConfig
 }
 
 export function resolveSSROptions(

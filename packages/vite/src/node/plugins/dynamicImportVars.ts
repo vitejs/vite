@@ -7,6 +7,7 @@ import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
+import { createBackCompatIdResolver } from '../idResolver'
 import {
   createFilter,
   normalizePath,
@@ -16,6 +17,8 @@ import {
   transformStableResult,
   urlRE,
 } from '../utils'
+import type { Environment } from '../environment'
+import { usePerEnvironmentState } from '../environment'
 import { toAbsoluteGlob } from './importMetaGlob'
 import { hasViteIgnoreRE } from './importAnalysis'
 import { workerOrSharedWorkerRE } from './worker'
@@ -161,14 +164,17 @@ export async function transformDynamicImport(
 }
 
 export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
-  const resolve = config.createResolver({
+  const resolve = createBackCompatIdResolver(config, {
     preferRelative: true,
     tryIndex: false,
     extensions: [],
   })
-  const { include, exclude, warnOnError } =
-    config.build.dynamicImportVarsOptions
-  const filter = createFilter(include, exclude)
+
+  const getFilter = usePerEnvironmentState((environment: Environment) => {
+    const { include, exclude } =
+      environment.config.build.dynamicImportVarsOptions
+    return createFilter(include, exclude)
+  })
 
   return {
     name: 'vite:dynamic-import-vars',
@@ -186,8 +192,9 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
+      const { environment } = this
       if (
-        !filter(importer) ||
+        !getFilter(this)(importer) ||
         importer === CLIENT_ENTRY ||
         !hasDynamicImportRE.test(source)
       ) {
@@ -234,11 +241,11 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           result = await transformDynamicImport(
             source.slice(start, end),
             importer,
-            resolve,
+            (id, importer) => resolve(environment, id, importer),
             config.root,
           )
         } catch (error) {
-          if (warnOnError) {
+          if (environment.config.build.dynamicImportVarsOptions.warnOnError) {
             this.warn(error)
           } else {
             this.error(error)

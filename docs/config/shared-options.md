@@ -490,3 +490,12 @@ Whether your application is a Single Page Application (SPA), a [Multi Page Appli
 - `'custom'`: don't include HTML middlewares
 
 Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#server-middlewaremode).
+
+## future
+
+- **Type:** `Record<string, 'warn' | undefined>`
+- **Related:** [Breaking Changes](/changes/)
+
+Enable future breaking changes to prepare for a smooth migration to the next major version of Vite. The list may be updated, added, or removed at any time as new features are developed.
+
+See the [Breaking Changes](/changes/) page for details of the possible options.

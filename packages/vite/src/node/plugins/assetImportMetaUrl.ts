@@ -3,10 +3,11 @@ import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import type { ResolveFn } from '../'
 import { injectQuery, isParentDirectory, transformStableResult } from '../utils'
 import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
+import { createBackCompatIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
@@ -25,7 +26,7 @@ import { hasViteIgnoreRE } from './importAnalysis'
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const { publicDir } = config
-  let assetResolver: ResolveFn
+  let assetResolver: ResolveIdFn
 
   const fsResolveOptions: InternalResolveOptions = {
     ...config.resolve,
@@ -33,15 +34,15 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     isProduction: config.isProduction,
     isBuild: config.command === 'build',
     packageCache: config.packageCache,
-    ssrConfig: config.ssr,
     asSrc: true,
   }
 
   return {
     name: 'vite:asset-import-meta-url',
-    async transform(code, id, options) {
+    async transform(code, id) {
+      const { environment } = this
       if (
-        !options?.ssr &&
+        environment.config.consumer === 'client' &&
         id !== preloadHelperId &&
         id !== CLIENT_ENTRY &&
         code.includes('new URL') &&
@@ -106,13 +107,13 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             file = slash(path.resolve(path.dirname(id), url))
             file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
-            assetResolver ??= config.createResolver({
+            assetResolver ??= createBackCompatIdResolver(config, {
               extensions: [],
               mainFields: [],
               tryIndex: false,
               preferRelative: true,
             })
-            file = await assetResolver(url, id)
+            file = await assetResolver(environment, url, id)
             file ??=
               url[0] === '/'
                 ? slash(path.join(publicDir, url))
@@ -126,9 +127,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             try {
               if (publicDir && isParentDirectory(publicDir, file)) {
                 const publicPath = '/' + path.posix.relative(publicDir, file)
-                builtUrl = await fileToUrl(publicPath, config, this)
+                builtUrl = await fileToUrl(this, publicPath)
               } else {
-                builtUrl = await fileToUrl(file, config, this)
+                builtUrl = await fileToUrl(this, file)
               }
             } catch {
               // do nothing, we'll log a warning after this
