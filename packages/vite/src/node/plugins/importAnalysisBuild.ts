@@ -81,7 +81,8 @@ function preload(
   deps?: string[],
   importerUrl?: string,
 ) {
-  let promise: Promise<PromiseSettledResult<unknown>[] | void> = Promise.resolve()
+  let promise: Promise<PromiseSettledResult<unknown>[] | void> =
+    Promise.resolve()
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
     const links = document.getElementsByTagName('link')
@@ -144,20 +145,21 @@ function preload(
     )
   }
 
-  return promise
-    .then((res) => {
-      for (const item of res || []) {
-        if (item.status !== 'rejected') continue
+  return promise.then((res) => {
+    for (const item of res || []) {
+      if (item.status !== 'rejected') continue
 
-        const e = new Event('vite:preloadError', { cancelable: true }) as VitePreloadErrorEvent
-        e.payload = item.reason
-        window.dispatchEvent(e)
-        if (!e.defaultPrevented) {
-          throw item.reason
-        }
+      const e = new Event('vite:preloadError', {
+        cancelable: true,
+      }) as VitePreloadErrorEvent
+      e.payload = item.reason
+      window.dispatchEvent(e)
+      if (!e.defaultPrevented) {
+        throw item.reason
       }
-      return baseModule()
-    })
+    }
+    return baseModule()
+  })
 }
 
 /**
