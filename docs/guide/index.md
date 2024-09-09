@@ -161,7 +161,6 @@ $ pnpm vite
 ```bash [Bun]
 $ bunx vite
 ```
-```
 
 :::
 
