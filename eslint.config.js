@@ -67,7 +67,6 @@ export default tseslint.config(
       'no-debugger': ['error'],
       'no-empty': ['warn', { allowEmptyCatch: true }],
       'no-process-exit': 'off',
-      'no-useless-escape': 'off',
       'prefer-const': [
         'warn',
         {
