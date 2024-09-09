@@ -16,7 +16,6 @@ import {
   transformStableResult,
   urlRE,
 } from '../utils'
-import { toAbsoluteGlob } from './importMetaGlob'
 import { hasViteIgnoreRE } from './importAnalysis'
 import { workerOrSharedWorkerRE } from './worker'
 
@@ -37,10 +36,6 @@ interface DynamicImportPattern {
   globParams: DynamicImportRequest | null
   userPattern: string
   rawPattern: string
-}
-
-function normalizeGlobPattern(pattern: string) {
-  return pattern.replace(/\\([()])/g, '$1')
 }
 
 const dynamicImportHelper = (
@@ -145,13 +140,13 @@ export async function transformDynamicImport(
   }
   const { globParams, rawPattern, userPattern } = dynamicImportPattern
   const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
+  const dir = importer ? posix.dirname(importer) : root
+  const normalized =
+    rawPattern[0] === '/'
+      ? posix.join(root, rawPattern.slice(1))
+      : posix.join(dir, rawPattern)
 
-  let newRawPattern = posix.relative(
-    posix.dirname(importer),
-    normalizeGlobPattern(
-      await toAbsoluteGlob(rawPattern, root, importer, resolve),
-    ),
-  )
+  let newRawPattern = posix.relative(posix.dirname(importer), normalized)
 
   if (!relativePathRE.test(newRawPattern)) {
     newRawPattern = `./${newRawPattern}`
