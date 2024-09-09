@@ -563,7 +563,7 @@ function esbuildScanPlugin(
 
             let addedImport = false
 
-            // Especially for Svelte files, exports in <script context="module"> means module exports,
+            // For Svelte files, exports in <script context="module"> or <script module> means module exports,
             // exports in <script> means component props. To avoid having two same export name from the
             // star exports, we need to ignore exports in <script>
             if (p.endsWith('.svelte')) {
