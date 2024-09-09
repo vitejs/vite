@@ -147,19 +147,20 @@ Then run the appropriate CLI command in your terminal:
 ::: code-group
 
 ```bash [NPM]
-npx vite
+$ npx vite
 ```
 
 ```bash [Yarn]
-yarn vite
+$ yarn vite
 ```
 
 ```bash [PNPM]
-pnpm vite
+$ pnpm vite
 ```
 
 ```bash [Bun]
-bunx vite
+$ bunx vite
+```
 ```
 
 :::
