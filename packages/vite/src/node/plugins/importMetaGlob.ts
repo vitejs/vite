@@ -17,12 +17,12 @@ import { stringifyQuery } from 'ufo'
 import type { GeneralImportGlobOptions } from 'types/importGlob'
 import { parseAstAsync } from 'rollup/parseAst'
 import type { Plugin } from '../plugin'
-import type { ViteDevServer } from '../server'
-import type { ModuleNode } from '../server/moduleGraph'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { evalValue, normalizePath, transformStableResult } from '../utils'
 import type { Logger } from '../logger'
 import { slash } from '../../shared/utils'
+import type { Environment } from '../environment'
 
 const { isMatch, scan } = micromatch
 
@@ -40,38 +40,16 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
   query?: string
 }
 
-export function getAffectedGlobModules(
-  file: string,
-  server: ViteDevServer,
-): ModuleNode[] {
-  const modules: ModuleNode[] = []
-  for (const [id, allGlobs] of server._importGlobMap!) {
-    // (glob1 || glob2) && !glob3 && !glob4...
-    if (
-      allGlobs.some(
-        ({ affirmed, negated }) =>
-          (!affirmed.length || affirmed.some((glob) => isMatch(file, glob))) &&
-          (!negated.length || negated.every((glob) => isMatch(file, glob))),
-      )
-    ) {
-      const mod = server.moduleGraph.getModuleById(id)
-      if (mod) modules.push(mod)
-    }
-  }
-  modules.forEach((i) => {
-    if (i?.file) server.moduleGraph.onFileChange(i.file)
-  })
-  return modules
-}
-
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
-  let server: ViteDevServer | undefined
+  const importGlobMaps = new Map<
+    Environment,
+    Map<string, { affirmed: string[]; negated: string[] }[]>
+  >()
 
   return {
     name: 'vite:import-glob',
-    configureServer(_server) {
-      server = _server
-      server._importGlobMap.clear()
+    buildStart() {
+      importGlobMaps.clear()
     },
     async transform(code, id) {
       if (!code.includes('import.meta.glob')) return
@@ -85,23 +63,48 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         config.logger,
       )
       if (result) {
-        if (server) {
-          const allGlobs = result.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(
-            id,
-            allGlobs.map((globs) => {
-              const affirmed: string[] = []
-              const negated: string[] = []
-
-              for (const glob of globs) {
-                ;(glob[0] === '!' ? negated : affirmed).push(glob)
-              }
-              return { affirmed, negated }
-            }),
-          )
+        const allGlobs = result.matches.map((i) => i.globsResolved)
+        if (!importGlobMaps.has(this.environment)) {
+          importGlobMaps.set(this.environment, new Map())
         }
+        importGlobMaps.get(this.environment)!.set(
+          id,
+          allGlobs.map((globs) => {
+            const affirmed: string[] = []
+            const negated: string[] = []
+
+            for (const glob of globs) {
+              ;(glob[0] === '!' ? negated : affirmed).push(glob)
+            }
+            return { affirmed, negated }
+          }),
+        )
+
         return transformStableResult(result.s, id, config)
       }
+    },
+    hotUpdate({ type, file, modules: oldModules }) {
+      if (type === 'update') return
+
+      const importGlobMap = importGlobMaps.get(this.environment)
+      if (!importGlobMap) return
+
+      const modules: EnvironmentModuleNode[] = []
+      for (const [id, allGlobs] of importGlobMap) {
+        // (glob1 || glob2) && !glob3 && !glob4...
+        if (
+          allGlobs.some(
+            ({ affirmed, negated }) =>
+              (!affirmed.length ||
+                affirmed.some((glob) => isMatch(file, glob))) &&
+              (!negated.length || negated.every((glob) => isMatch(file, glob))),
+          )
+        ) {
+          const mod = this.environment.moduleGraph.getModuleById(id)
+          if (mod) modules.push(mod)
+        }
+      }
+      return modules.length > 0 ? [...oldModules, ...modules] : undefined
     },
   }
 }
