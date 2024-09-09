@@ -561,20 +561,27 @@ function esbuildScanPlugin(
 
             const virtualModulePath = JSON.stringify(virtualModulePrefix + key)
 
-            const contextMatch = contextRE.exec(openTag)
-            const context =
-              contextMatch &&
-              (contextMatch[1] ||
-                contextMatch[2] ||
-                contextMatch[3] ||
-                contextMatch[4])
+            let addedImport = false
 
             // Especially for Svelte files, exports in <script context="module"> means module exports,
             // exports in <script> means component props. To avoid having two same export name from the
             // star exports, we need to ignore exports in <script>
-            if (p.endsWith('.svelte') && context !== 'module') {
-              js += `import ${virtualModulePath}\n`
-            } else {
+            if (p.endsWith('.svelte')) {
+              const contextMatch = contextRE.exec(openTag)
+              const context =
+                contextMatch &&
+                (contextMatch[1] ||
+                  contextMatch[2] ||
+                  contextMatch[3] ||
+                  contextMatch[4])
+
+              if (context !== 'module') {
+                addedImport = true
+                js += `import ${virtualModulePath}\n`
+              }
+            }
+
+            if (!addedImport) {
               js += `export * from ${virtualModulePath}\n`
             }
           }
