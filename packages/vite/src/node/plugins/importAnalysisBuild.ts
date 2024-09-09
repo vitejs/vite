@@ -173,7 +173,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:build-import-analysis',
     resolveId(id) {
       if (id === preloadHelperId) {
-        return id
+        return { id, moduleSideEffects: false }
       }
     },
 
@@ -184,7 +184,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         const scriptRel =
           modulePreload && modulePreload.polyfill
             ? `'modulepreload'`
-            : `(${detectScriptRel.toString()})()`
+            : `/* @__PURE__ */ (${detectScriptRel.toString()})()`
 
         // There are two different cases for the preload list format in __vitePreload
         //
