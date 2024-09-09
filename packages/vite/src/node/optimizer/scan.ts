@@ -358,7 +358,8 @@ export const commentRE = /<!--.*?-->/gs
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
-const contextRE = /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
+const contextRE =
+  /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))|\b(?<!=)(?<!['"])(module)\b(?!['"])(?![^>]+['"]\s*>)/i
 
 function esbuildScanPlugin(
   environment: ScanEnvironment,
@@ -563,7 +564,10 @@ function esbuildScanPlugin(
             const contextMatch = contextRE.exec(openTag)
             const context =
               contextMatch &&
-              (contextMatch[1] || contextMatch[2] || contextMatch[3])
+              (contextMatch[1] ||
+                contextMatch[2] ||
+                contextMatch[3] ||
+                contextMatch[4])
 
             // Especially for Svelte files, exports in <script context="module"> means module exports,
             // exports in <script> means component props. To avoid having two same export name from the
