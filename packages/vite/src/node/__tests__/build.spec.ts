@@ -611,6 +611,7 @@ describe('resolveBuildOutputs', () => {
   test('emitAssets', async () => {
     const builder = await createBuilder({
       root: resolve(__dirname, 'fixtures/emit-assets'),
+      logLevel: 'warn',
       environments: {
         ssr: {
           build: {
@@ -641,6 +642,7 @@ describe('resolveBuildOutputs', () => {
   test('ssr builtin', async () => {
     const builder = await createBuilder({
       root: resolve(__dirname, 'fixtures/dynamic-import'),
+      logLevel: 'warn',
       environments: {
         ssr: {
           build: {
@@ -661,6 +663,7 @@ describe('resolveBuildOutputs', () => {
   test('ssr custom', async () => {
     const builder = await createBuilder({
       root: resolve(__dirname, 'fixtures/dynamic-import'),
+      logLevel: 'warn',
       environments: {
         custom: {
           build: {
@@ -683,6 +686,7 @@ test('default sharedConfigBuild true on build api', async () => {
   let counter = 0
   await build({
     root: resolve(__dirname, 'fixtures/emit-assets'),
+    logLevel: 'warn',
     build: {
       ssr: true,
       rollupOptions: {
