@@ -1,15 +1,15 @@
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import { promises as fs } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { transformGlobImport } from '../../../plugins/importMetaGlob'
 import { transformWithEsbuild } from '../../../plugins/esbuild'
 
-const __dirname = resolve(fileURLToPath(import.meta.url), '..')
+const __dirname = resolve(dirname(fileURLToPath(import.meta.url)))
 
 describe('fixture', async () => {
   const resolveId = (id: string) => id
-  const root = resolve(__dirname, '..')
+  const root = __dirname
 
   it('transform', async () => {
     const id = resolve(__dirname, './fixture-a/index.ts')
