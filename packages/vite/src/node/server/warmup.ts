@@ -5,28 +5,24 @@ import colors from 'picocolors'
 import { FS_PREFIX } from '../constants'
 import { normalizePath } from '../utils'
 import type { ViteDevServer } from '../index'
+import type { DevEnvironment } from './environment'
 
 export function warmupFiles(server: ViteDevServer): void {
-  const options = server.config.server.warmup
-  const root = server.config.root
-
-  if (options?.clientFiles?.length) {
-    mapFiles(options.clientFiles, root).then((files) => {
+  const { root } = server.config
+  for (const environment of Object.values(server.environments)) {
+    mapFiles(environment.config.dev.warmup, root).then((files) => {
       for (const file of files) {
-        warmupFile(server, file, false)
-      }
-    })
-  }
-  if (options?.ssrFiles?.length) {
-    mapFiles(options.ssrFiles, root).then((files) => {
-      for (const file of files) {
-        warmupFile(server, file, true)
+        warmupFile(server, environment, file)
       }
     })
   }
 }
 
-async function warmupFile(server: ViteDevServer, file: string, ssr: boolean) {
+async function warmupFile(
+  server: ViteDevServer,
+  environment: DevEnvironment,
+  file: string,
+) {
   // transform html with the `transformIndexHtml` hook as Vite internals would
   // pre-transform the imported JS modules linked. this may cause `transformIndexHtml`
   // plugins to be executed twice, but that's probably fine.
@@ -38,7 +34,7 @@ async function warmupFile(server: ViteDevServer, file: string, ssr: boolean) {
         await server.transformIndexHtml(url, html)
       } catch (e) {
         // Unexpected error, log the issue but avoid an unhandled exception
-        server.config.logger.error(
+        environment.logger.error(
           `Pre-transform error (${colors.cyan(file)}): ${e.message}`,
           {
             error: e,
@@ -51,7 +47,7 @@ async function warmupFile(server: ViteDevServer, file: string, ssr: boolean) {
   // for other files, pass it through `transformRequest` with warmup
   else {
     const url = fileToUrl(file, server.config.root)
-    await server.warmupRequest(url, { ssr })
+    await environment.warmupRequest(url)
   }
 }
 

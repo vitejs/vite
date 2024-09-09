@@ -143,6 +143,18 @@ describe('asset imports from js', () => {
         "
       `)
   })
+
+  test('from /public (js)', async () => {
+    expect(await page.textContent('.public-js-import')).toMatch(
+      '/foo/bar/raw.js',
+    )
+    expect(await page.textContent('.public-js-import-content'))
+      .toMatchInlineSnapshot(`
+        "document.querySelector('.raw-js').textContent =
+          '[success] Raw js from /public loaded'
+        "
+      `)
+  })
 })
 
 describe('css url() references', () => {
@@ -574,5 +586,12 @@ test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
   const indexHtml = readFile('./dist/foo/index.html')
   expect(indexHtml).toMatch(
     /<img class="noscript" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
+  )
+})
+
+test.runIf(isBuild)('assets inside <template> is rewrote', async () => {
+  const indexHtml = readFile('./dist/foo/index.html')
+  expect(indexHtml).toMatch(
+    /<img class="template" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
   )
 })

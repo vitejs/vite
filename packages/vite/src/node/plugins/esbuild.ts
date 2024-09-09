@@ -41,6 +41,8 @@ export const defaultEsbuildSupported = {
   'import-meta': true,
 }
 
+// TODO: rework to avoid caching the server for this module.
+// If two servers are created in the same process, they will interfere with each other.
 let server: ViteDevServer
 
 export interface ESBuildOptions extends TransformOptions {

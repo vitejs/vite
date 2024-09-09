@@ -31,6 +31,10 @@
     From publicDir (json): <code class="public-json-import"></code> Content:
     <code class="public-json-import-content"></code>
   </li>
+  <li>
+    From publicDir (js): <code class="public-js-import"></code> Content:
+    <code class="public-js-import-content"></code>
+  </li>
 </ul>
 
 <h2>CSS url references</h2>
@@ -409,6 +413,11 @@
   <img class="noscript" src="./nested/asset.png" />
 </noscript>
 
+<h3>assets in template</h3>
+<template>
+  <img class="template" src="./nested/asset.png" />
+</template>
+
 <link rel="stylesheet" href="asset/style.css" />
 <div class="relative-css">link style</div>
 <div class="relative-js"></div>
@@ -439,6 +448,13 @@
   ;(async () => {
     const res = await fetch(publicJsonUrl)
     text('.public-json-import-content', await res.text())
+  })()
+
+  import publicJsUrl from '/raw.js?url'
+  text('.public-js-import', publicJsUrl)
+  ;(async () => {
+    const res = await fetch(publicJsUrl)
+    text('.public-js-import-content', await res.text())
   })()
 
   import svgFrag from './nested/fragment.svg'
