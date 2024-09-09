@@ -1,2 +1,7 @@
 # temporary, we'll flip this around some day
 https://vite.dev/* https://vitejs.dev/:splat 302!
+
+/guide/api-vite-runtime /guide/api-environment 302
+/guide/api-vite-runtime.html /guide/api-environment 302
+/guide/api-vite-environment /guide/api-environment 302
+/guide/api-vite-environment.html /guide/api-environment 302
