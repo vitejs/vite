@@ -1,4 +1,4 @@
-import type { ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { HMRClient, HMRContext } from '../shared/hmr'
@@ -136,7 +136,10 @@ const debounceReload = (time: number) => {
 const pageReload = debounceReload(50)
 
 const hmrClient = new HMRClient(
-  console,
+  {
+    error: (err) => console.error('[vite]', err),
+    debug: (...msg) => console.debug('[vite]', ...msg),
+  },
   {
     isReady: () => socket && socket.readyState === 1,
     send: (message) => socket.send(message),
@@ -169,7 +172,7 @@ const hmrClient = new HMRClient(
   },
 )
 
-async function handleMessage(payload: HMRPayload) {
+async function handleMessage(payload: HotPayload) {
   switch (payload.type) {
     case 'connected':
       console.debug(`[vite] connected.`)

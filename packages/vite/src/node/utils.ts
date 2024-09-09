@@ -30,7 +30,7 @@ import {
   loopbackHosts,
   wildcardHosts,
 } from './constants'
-import type { DepOptimizationConfig } from './optimizer'
+import type { DepOptimizationOptions } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
 import type { PreviewServer } from './preview'
@@ -122,7 +122,7 @@ export function moduleListContains(
 
 export function isOptimizable(
   id: string,
-  optimizeDeps: DepOptimizationConfig,
+  optimizeDeps: DepOptimizationOptions,
 ): boolean {
   const { extensions } = optimizeDeps
   return (
@@ -725,7 +725,7 @@ interface ImageCandidate {
   descriptor: string
 }
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
-const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
+const imageSetUrlRE = /^(?:[\w-]+\(.*?\)|'.*?'|".*?"|\S*)/
 function joinSrcset(ret: ImageCandidate[]) {
   return ret
     .map(({ url, descriptor }) => url + (descriptor ? ` ${descriptor}` : ''))
@@ -773,7 +773,7 @@ export function processSrcSetSync(
 }
 
 const cleanSrcSetRE =
-  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+\-]+;base64,[\w+/=]+|\?\S+,/g
+  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+-]+;base64,[\w+/=]+|\?\S+,/g
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
   /**
@@ -1099,7 +1099,7 @@ function mergeConfigRecursively(
       continue
     } else if (
       key === 'noExternal' &&
-      rootPath === 'ssr' &&
+      (rootPath === 'ssr' || rootPath === 'resolve') &&
       (existing === true || value === true)
     ) {
       merged[key] = true

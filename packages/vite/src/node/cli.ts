@@ -4,12 +4,13 @@ import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import { VERSION } from './constants'
-import type { BuildOptions } from './build'
+import type { BuildEnvironmentOptions, ResolvedBuildOptions } from './build'
 import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { resolveConfig } from './config'
+import type { InlineConfig, ResolvedConfig } from './config'
 
 const cli = cac('vite')
 
@@ -29,6 +30,10 @@ interface GlobalCLIOptions {
   m?: string
   mode?: string
   force?: boolean
+}
+
+interface BuilderCLIOptions {
+  app?: boolean
 }
 
 let profileSession = global.__vite_profile_session
@@ -70,7 +75,7 @@ const filterDuplicateOptions = <T extends object>(options: T) => {
 /**
  * removing global flags before passing as command specific sub-configs
  */
-function cleanOptions<Options extends GlobalCLIOptions>(
+function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   options: Options,
 ): Omit<Options, keyof GlobalCLIOptions> {
   const ret = { ...options }
@@ -99,6 +104,17 @@ function cleanOptions<Options extends GlobalCLIOptions>(
           : ret.sourcemap
   }
 
+  return ret
+}
+
+/**
+ * removing builder flags before passing as command specific sub-configs
+ */
+function cleanBuilderCLIOptions<Options extends BuilderCLIOptions>(
+  options: Options,
+): Omit<Options, keyof BuilderCLIOptions> {
+  const ret = { ...options }
+  delete ret.app
   return ret
 }
 
@@ -161,7 +177,7 @@ cli
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         optimizeDeps: { force: options.force },
-        server: cleanOptions(options),
+        server: cleanGlobalCLIOptions(options),
       })
 
       if (!server.httpServer) {
@@ -263,31 +279,69 @@ cli
     `[boolean] force empty outDir when it's outside of root`,
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
-  .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
-    filterDuplicateOptions(options)
-    const { build } = await import('./build')
-    const buildOptions: BuildOptions = cleanOptions(options)
+  .option('--app', `[boolean] same as builder.entireApp`)
+  .action(
+    async (
+      root: string,
+      options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
+    ) => {
+      filterDuplicateOptions(options)
+      const build = await import('./build')
 
-    try {
-      await build({
-        root,
-        base: options.base,
-        mode: options.mode,
-        configFile: options.config,
-        logLevel: options.logLevel,
-        clearScreen: options.clearScreen,
-        build: buildOptions,
-      })
-    } catch (e) {
-      createLogger(options.logLevel).error(
-        colors.red(`error during build:\n${e.stack}`),
-        { error: e },
+      const buildOptions: BuildEnvironmentOptions = cleanGlobalCLIOptions(
+        cleanBuilderCLIOptions(options),
       )
-      process.exit(1)
-    } finally {
-      stopProfiler((message) => createLogger(options.logLevel).info(message))
-    }
-  })
+
+      try {
+        const inlineConfig: InlineConfig = {
+          root,
+          base: options.base,
+          mode: options.mode,
+          configFile: options.config,
+          logLevel: options.logLevel,
+          clearScreen: options.clearScreen,
+          build: buildOptions,
+          ...(options.app ? { builder: { entireApp: true } } : {}),
+        }
+        const patchConfig = (resolved: ResolvedConfig) => {
+          if (resolved.builder.entireApp) {
+            return
+          }
+          // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
+          // we need to make override `config.build` for the current environment.
+          // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
+          // remove the default values that shouldn't be used at all once the config is resolved
+          const environmentName = resolved.build.ssr ? 'ssr' : 'client'
+          ;(resolved.build as ResolvedBuildOptions) = {
+            ...resolved.environments[environmentName].build,
+          }
+        }
+        const config = await build.resolveConfigToBuild(
+          inlineConfig,
+          patchConfig,
+        )
+
+        if (config.builder.entireApp) {
+          const builder = await build.createBuilderWithResolvedConfig(
+            inlineConfig,
+            config,
+          )
+          await builder.buildApp()
+        } else {
+          // Single environment (client or ssr) build or library mode build
+          await build.buildWithResolvedConfig(config)
+        }
+      } catch (e) {
+        createLogger(options.logLevel).error(
+          colors.red(`error during build:\n${e.stack}`),
+          { error: e },
+        )
+        process.exit(1)
+      } finally {
+        stopProfiler((message) => createLogger(options.logLevel).info(message))
+      }
+    },
+  )
 
 // optimize
 cli
