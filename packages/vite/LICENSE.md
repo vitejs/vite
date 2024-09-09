@@ -2156,7 +2156,7 @@ Repository: lukeed/mrmime
 
 ## ms
 License: MIT
-Repository: vercel/ms
+Repository: zeit/ms
 
 > The MIT License (MIT)
 > 
