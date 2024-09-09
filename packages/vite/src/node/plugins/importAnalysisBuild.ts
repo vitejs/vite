@@ -81,7 +81,8 @@ function preload(
   deps?: string[],
   importerUrl?: string,
 ) {
-  let promise: Promise<unknown> = Promise.resolve()
+  let promise: Promise<PromiseSettledResult<unknown>[] | void> =
+    Promise.resolve()
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
     const links = document.getElementsByTagName('link')
@@ -93,7 +94,7 @@ function preload(
     // in that case fallback to getAttribute
     const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute('nonce')
 
-    promise = Promise.all(
+    promise = Promise.allSettled(
       deps.map((dep) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
@@ -144,18 +145,21 @@ function preload(
     )
   }
 
-  return promise
-    .then(() => baseModule())
-    .catch((err) => {
+  return promise.then((res) => {
+    for (const item of res || []) {
+      if (item.status !== 'rejected') continue
+
       const e = new Event('vite:preloadError', {
         cancelable: true,
       }) as VitePreloadErrorEvent
-      e.payload = err
+      e.payload = item.reason
       window.dispatchEvent(e)
       if (!e.defaultPrevented) {
-        throw err
+        throw item.reason
       }
-    })
+    }
+    return baseModule()
+  })
 }
 
 /**
