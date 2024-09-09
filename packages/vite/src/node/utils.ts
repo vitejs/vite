@@ -725,7 +725,7 @@ interface ImageCandidate {
   descriptor: string
 }
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
-const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
+const imageSetUrlRE = /^(?:[\w-]+\(.*?\)|'.*?'|".*?"|\S*)/
 function joinSrcset(ret: ImageCandidate[]) {
   return ret
     .map(({ url, descriptor }) => url + (descriptor ? ` ${descriptor}` : ''))
@@ -773,7 +773,7 @@ export function processSrcSetSync(
 }
 
 const cleanSrcSetRE =
-  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+\-]+;base64,[\w+/=]+|\?\S+,/g
+  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+-]+;base64,[\w+/=]+|\?\S+,/g
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
   /**
