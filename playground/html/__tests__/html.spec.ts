@@ -471,3 +471,8 @@ test('html fallback works non browser accept header', async () => {
     ).status,
   ).toBe(200)
 })
+
+test('escape html attribute', async () => {
+  const el = await page.$('.unescape-div')
+  expect(el).toBeNull()
+})

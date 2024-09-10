@@ -214,5 +214,22 @@ ${
         ]
       },
     },
+    {
+      name: 'escape-html-attribute',
+      transformIndexHtml: {
+        order: 'post',
+        handler() {
+          return [
+            {
+              tag: 'link',
+              attrs: {
+                href: `"><div class=unescape-div>extra content</div>`,
+              },
+              injectTo: 'body',
+            },
+          ]
+        },
+      },
+    },
   ],
 })
