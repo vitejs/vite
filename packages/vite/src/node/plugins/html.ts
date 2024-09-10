@@ -1511,7 +1511,7 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
     if (typeof attrs[key] === 'boolean') {
       res += attrs[key] ? ` ${key}` : ``
     } else {
-      res += ` ${key}=${JSON.stringify(escapeHtml(attrs[key]))}`
+      res += ` ${key}="${escapeHtml(attrs[key])}"`
     }
   }
   return res
