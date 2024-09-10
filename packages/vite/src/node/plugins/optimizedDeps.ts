@@ -1,10 +1,10 @@
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import type { ResolvedConfig } from '..'
+import type { DevEnvironment, ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { createDebugger } from '../utils'
-import { getDepsOptimizer, optimizedDepInfoFromFile } from '../optimizer'
+import { optimizedDepInfoFromFile } from '../optimizer'
 import { cleanUrl } from '../../shared/utils'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
@@ -19,8 +19,9 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:optimized-deps',
 
-    resolveId(id, source, { ssr }) {
-      if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
+    resolveId(id) {
+      const environment = this.environment as DevEnvironment
+      if (environment.depsOptimizer?.isOptimizedDepFile(id)) {
         return id
       }
     },
@@ -29,9 +30,9 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
     // The logic to register an id to wait until it is processed
     // is in importAnalysis, see call to delayDepsOptimizerUntil
 
-    async load(id, options) {
-      const ssr = options?.ssr === true
-      const depsOptimizer = getDepsOptimizer(config, ssr)
+    async load(id) {
+      const environment = this.environment as DevEnvironment
+      const depsOptimizer = environment.depsOptimizer
       if (depsOptimizer?.isOptimizedDepFile(id)) {
         const metadata = depsOptimizer.metadata
         const file = cleanUrl(id)

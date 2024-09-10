@@ -142,11 +142,27 @@ And create an `index.html` file like this:
 <p>Hello Vite!</p>
 ```
 
-Then run the `vite` CLI in your terminal:
+Then run the appropriate CLI command in your terminal:
 
-```bash
-vite
+::: code-group
+
+```bash [NPM]
+$ npx vite
 ```
+
+```bash [Yarn]
+$ yarn vite
+```
+
+```bash [PNPM]
+$ pnpm vite
+```
+
+```bash [Bun]
+$ bunx vite
+```
+
+:::
 
 The `index.html` will be served on `http://localhost:5173`.
 

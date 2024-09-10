@@ -7,6 +7,7 @@
 @import '=/pkg-dep'; // package w/out sass field
 @import '=/weapp.wxss'; // wxss file
 @import 'virtual-file-absolute';
+@import '=/scss-dir/main.scss'; // "./dir" reference from vite custom importer
 
 .sass {
   /* injected via vite.config.js */
