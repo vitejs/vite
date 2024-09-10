@@ -505,15 +505,15 @@ importers:
 
   playground/backend-integration:
     devDependencies:
-      fast-glob:
-        specifier: ^3.3.2
-        version: 3.3.2
       sass:
         specifier: ^1.78.0
         version: 1.78.0
       tailwindcss:
         specifier: ^3.4.10
         version: 3.4.10(ts-node@10.9.2(@types/node@20.16.5)(typescript@5.5.3))
+      tinyglobby:
+        specifier: ^0.2.6
+        version: 0.2.6
 
   playground/build-old: {}
 
