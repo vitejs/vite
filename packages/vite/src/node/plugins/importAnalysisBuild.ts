@@ -188,7 +188,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         const scriptRel =
           modulePreload && modulePreload.polyfill
             ? `'modulepreload'`
-            : `(${detectScriptRel.toString()})()`
+            : `/* @__PURE__ */ (${detectScriptRel.toString()})()`
 
         // There are two different cases for the preload list format in __vitePreload
         //
@@ -207,7 +207,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               // is appended inside __vitePreload too.
               `function(dep) { return ${JSON.stringify(config.base)}+dep }`
         const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
-        return preloadCode
+        return { code: preloadCode, moduleSideEffects: false }
       }
     },
 
