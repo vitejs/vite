@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import glob from 'fast-glob'
 import colors from 'picocolors'
+import { glob } from 'tinyglobby'
 import { FS_PREFIX } from '../constants'
 import { normalizePath } from '../utils'
 import type { ViteDevServer } from '../index'
@@ -71,7 +71,8 @@ function fileToUrl(file: string, root: string) {
 
 function mapFiles(files: string[], root: string) {
   return glob(files, {
-    cwd: root,
     absolute: true,
+    cwd: root,
+    expandDirectories: false,
   })
 }

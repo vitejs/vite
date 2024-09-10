@@ -1,6 +1,6 @@
 import path from 'node:path'
-import glob from 'fast-glob'
 import micromatch from 'micromatch'
+import { globSync } from 'tinyglobby'
 import type { ResolvedConfig } from '../config'
 import { escapeRegex, getNpmPackageName } from '../utils'
 import { resolvePackageData } from '../packages'
@@ -89,11 +89,11 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
           )
 
           possibleExportPaths.push(
-            ...glob
-              .sync(exportValuePattern, {
-                cwd: pkgData.dir,
-                ignore: ['node_modules'],
-              })
+            ...globSync([exportValuePattern], {
+              cwd: pkgData.dir,
+              expandDirectories: false,
+              ignore: ['node_modules'],
+            })
               .map((filePath) => {
                 // ensure "./" prefix for inconsistent fast-glob result
                 //   glob.sync("./some-dir/**/*") -> "./some-dir/some-file"
@@ -146,9 +146,11 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
     return matched
   } else {
     // for packages without exports, we can do a simple glob
-    const matched = glob
-      .sync(pattern, { cwd: pkgData.dir, ignore: ['node_modules'] })
-      .map((match) => path.posix.join(pkgName, slash(match)))
+    const matched = globSync([pattern], {
+      cwd: pkgData.dir,
+      expandDirectories: false,
+      ignore: ['node_modules'],
+    }).map((match) => path.posix.join(pkgName, slash(match)))
     matched.unshift(pkgName)
     return matched
   }
