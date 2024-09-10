@@ -360,7 +360,7 @@ const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const svelteScriptModuleRE =
   /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
-const svelteModuleRE = /\s(module)\b/i
+const svelteModuleRE = /\smodule\b/i
 
 function esbuildScanPlugin(
   environment: ScanEnvironment,
@@ -573,7 +573,7 @@ function esbuildScanPlugin(
               const context =
                 (contextMatch &&
                   (contextMatch[1] || contextMatch[2] || contextMatch[3])) ||
-                (moduleMatch && moduleMatch[1])
+                moduleMatch
 
               if (context !== 'module') {
                 addedImport = true
