@@ -568,14 +568,16 @@ function esbuildScanPlugin(
             // exports in <script> means component props. To avoid having two same export name from the
             // star exports, we need to ignore exports in <script>
             if (p.endsWith('.svelte')) {
-              const contextMatch = svelteScriptModuleRE.exec(openTag)
-              const moduleMatch = svelteModuleRE.exec(openTag)
-              const context =
-                (contextMatch &&
-                  (contextMatch[1] || contextMatch[2] || contextMatch[3])) ||
-                moduleMatch
-
-              if (context !== 'module') {
+              let isModule = svelteModuleRE.test(openTag) // test for svelte5 <script module> syntax
+              if (!isModule) {
+                // fallback, test for svelte4 <script context="module"> syntax
+                const contextMatch = svelteScriptModuleRE.exec(openTag)
+                const context =
+                  contextMatch &&
+                  (contextMatch[1] || contextMatch[2] || contextMatch[3])
+                isModule = context === 'module'
+              }
+              if (!isModule) {
                 addedImport = true
                 js += `import ${virtualModulePath}\n`
               }
