@@ -358,7 +358,7 @@ export const commentRE = /<!--.*?-->/gs
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
-const contextRE =
+const svelteScriptModuleRE =
   /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))|\b(?<!=)(?<!['"])(module)\b(?!['"])(?![^>]+['"]\s*>)/i
 
 function esbuildScanPlugin(
@@ -567,7 +567,7 @@ function esbuildScanPlugin(
             // exports in <script> means component props. To avoid having two same export name from the
             // star exports, we need to ignore exports in <script>
             if (p.endsWith('.svelte')) {
-              const contextMatch = contextRE.exec(openTag)
+              const contextMatch = svelteScriptModuleRE.exec(openTag)
               const context =
                 contextMatch &&
                 (contextMatch[1] ||
