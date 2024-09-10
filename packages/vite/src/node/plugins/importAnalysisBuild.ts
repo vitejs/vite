@@ -173,7 +173,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:build-import-analysis',
     resolveId(id) {
       if (id === preloadHelperId) {
-        return { id, moduleSideEffects: false }
+        return id
       }
     },
 
@@ -203,7 +203,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               // is appended inside __vitePreload too.
               `function(dep) { return ${JSON.stringify(config.base)}+dep }`
         const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
-        return preloadCode
+        return { code: preloadCode, moduleSideEffects: false }
       }
     },
 
