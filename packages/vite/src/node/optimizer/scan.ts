@@ -359,7 +359,8 @@ const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const svelteScriptModuleRE =
-  /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))|\b(?<!=)(?<!['"])(module)\b(?!['"])(?![^>]+['"]\s*>)/i
+  /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
+const svelteModuleRE = /\s(module)\b/i
 
 function esbuildScanPlugin(
   environment: ScanEnvironment,
@@ -568,12 +569,11 @@ function esbuildScanPlugin(
             // star exports, we need to ignore exports in <script>
             if (p.endsWith('.svelte')) {
               const contextMatch = svelteScriptModuleRE.exec(openTag)
+              const moduleMatch = svelteModuleRE.exec(openTag)
               const context =
-                contextMatch &&
-                (contextMatch[1] ||
-                  contextMatch[2] ||
-                  contextMatch[3] ||
-                  contextMatch[4])
+                (contextMatch &&
+                  (contextMatch[1] || contextMatch[2] || contextMatch[3])) ||
+                (moduleMatch && moduleMatch[1])
 
               if (context !== 'module') {
                 addedImport = true
