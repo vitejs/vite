@@ -53,7 +53,10 @@ export function cachedTransformMiddleware(
     const ifNoneMatch = req.headers['if-none-match']
     if (ifNoneMatch) {
       const moduleByEtag = environment.moduleGraph.getModuleByEtag(ifNoneMatch)
-      if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
+      if (
+        moduleByEtag?.transformResult?.etag === ifNoneMatch &&
+        moduleByEtag?.url === req.url
+      ) {
         // For CSS requests, if the same CSS file is imported in a module,
         // the browser sends the request for the direct CSS request with the etag
         // from the imported CSS module. We ignore the etag in this case.
