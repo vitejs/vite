@@ -1,6 +1,5 @@
 import fs from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { dirname, posix, resolve } from 'node:path'
+import { posix, resolve } from 'node:path'
 import EventEmitter from 'node:events'
 import {
   afterAll,
@@ -11,16 +10,19 @@ import {
   test,
   vi,
 } from 'vitest'
-import type { InlineConfig, Logger, ViteDevServer } from 'vite'
+import type { InlineConfig, ViteDevServer } from 'vite'
 import { createServer, createServerModuleRunner } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
-import type { RollupError } from 'rollup'
 import {
   addFile,
+  createInMemoryLogger,
+  editFile,
   page,
   promiseWithResolvers,
   readFile,
+  removeFile,
   slash,
+  testDir,
   untilUpdated,
 } from '~utils'
 
@@ -31,24 +33,8 @@ let runner: ModuleRunner
 
 const logsEmitter = new EventEmitter()
 
-const originalFiles = new Map<string, string>()
-const createdFiles = new Set<string>()
-const deletedFiles = new Map<string, string>()
 afterAll(async () => {
   await server.close()
-
-  originalFiles.forEach((content, file) => {
-    fs.writeFileSync(file, content, 'utf-8')
-  })
-  createdFiles.forEach((file) => {
-    if (fs.existsSync(file)) fs.unlinkSync(file)
-  })
-  deletedFiles.forEach((file) => {
-    fs.writeFileSync(file, deletedFiles.get(file)!, 'utf-8')
-  })
-  originalFiles.clear()
-  createdFiles.clear()
-  deletedFiles.clear()
 })
 
 const hmr = (key: string) => (globalThis.__HMR__[key] as string) || ''
@@ -335,9 +321,10 @@ describe('self accept with different entry point formats', () => {
     async (entrypoint) => {
       await setupModuleRunner(entrypoint, {}, '/unresolved.ts')
 
+      const originalUnresolvedFile = readFile('unresolved.ts')
       onTestFinished(() => {
-        const filepath = resolvePath('..', 'unresolved.ts')
-        fs.writeFileSync(filepath, originalFiles.get(filepath)!, 'utf-8')
+        const filepath = resolve(testDir, 'unresolved.ts')
+        fs.writeFileSync(filepath, originalUnresolvedFile, 'utf-8')
       })
 
       const el = () => hmr('.app')
@@ -811,7 +798,7 @@ test.todo('should hmr when file is deleted and restored', async () => {
   await untilUpdated(() => hmr('.file-delete-restore'), 'parent:not-child')
 
   // restore the file
-  createFile(childFile, originalChildFileCode)
+  addFile(childFile, originalChildFileCode)
   editFile(parentFile, (code) =>
     code.replace(
       "export const childValue = 'not-child'",
@@ -968,34 +955,6 @@ test('assets HMR', async () => {
   await vi.waitUntil(() => el().includes('logo.svg?t='))
 })
 
-export function createFile(file: string, content: string): void {
-  const filepath = resolvePath(import.meta.url, '..', file)
-  createdFiles.add(filepath)
-  fs.mkdirSync(dirname(filepath), { recursive: true })
-  fs.writeFileSync(filepath, content, 'utf-8')
-}
-
-export function removeFile(file: string): void {
-  const filepath = resolvePath('..', file)
-  deletedFiles.set(filepath, fs.readFileSync(filepath, 'utf-8'))
-  fs.unlinkSync(filepath)
-}
-
-export function editFile(
-  file: string,
-  callback: (content: string) => string,
-): void {
-  const filepath = resolvePath('..', file)
-  const content = fs.readFileSync(filepath, 'utf-8')
-  if (!originalFiles.has(filepath)) originalFiles.set(filepath, content)
-  fs.writeFileSync(filepath, callback(content), 'utf-8')
-}
-
-export function resolvePath(...segments: string[]): string {
-  const filename = fileURLToPath(import.meta.url)
-  return resolve(dirname(filename), ...segments).replace(/\\/g, '/')
-}
-
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
 
 export async function untilConsoleLogAfter(
@@ -1119,38 +1078,6 @@ function waitForWatcher(server: ViteDevServer, watched: string) {
   })
 }
 
-function createInMemoryLogger(logs: string[]) {
-  const loggedErrors = new WeakSet<Error | RollupError>()
-  const warnedMessages = new Set<string>()
-
-  const logger: Logger = {
-    hasWarned: false,
-    hasErrorLogged: (err) => loggedErrors.has(err),
-    clearScreen: () => {},
-    info(msg) {
-      logs.push(msg)
-    },
-    warn(msg) {
-      logs.push(msg)
-      logger.hasWarned = true
-    },
-    warnOnce(msg) {
-      if (warnedMessages.has(msg)) return
-      logs.push(msg)
-      logger.hasWarned = true
-      warnedMessages.add(msg)
-    },
-    error(msg, opts) {
-      logs.push(msg)
-      if (opts?.error) {
-        loggedErrors.add(opts.error)
-      }
-    },
-  }
-
-  return logger
-}
-
 async function setupModuleRunner(
   entrypoint: string,
   serverOptions: InlineConfig = {},
@@ -1165,10 +1092,9 @@ async function setupModuleRunner(
 
   globalThis.__HMR__ = {} as any
 
-  const root = resolvePath('..')
   server = await createServer({
-    configFile: resolvePath('../vite.config.ts'),
-    root,
+    configFile: resolve(testDir, 'vite.config.ts'),
+    root: testDir,
     customLogger: createInMemoryLogger(serverLogs),
     server: {
       middlewareMode: true,

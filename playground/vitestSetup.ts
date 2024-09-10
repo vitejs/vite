@@ -82,6 +82,14 @@ export function setViteUrl(url: string): void {
 
 beforeAll(async (s) => {
   const suite = s as File
+
+  testPath = suite.filepath!
+  testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
+  testDir = path.dirname(testPath)
+  if (testName) {
+    testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
+  }
+
   // skip browser setup for non-playground tests
   // TODO: ssr playground?
   if (
@@ -124,15 +132,9 @@ beforeAll(async (s) => {
       browserErrors.push(error)
     })
 
-    testPath = suite.filepath!
-    testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
-    testDir = path.dirname(testPath)
-
     // if this is a test placed under playground/xxx/__tests__
     // start a vite server in that directory.
     if (testName) {
-      testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
-
       // when `root` dir is present, use it as vite's root
       const testCustomRoot = path.resolve(testDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : testDir
