@@ -2214,7 +2214,10 @@ const makeScssWorker = (
         return !!(
           (options.functions && Object.keys(options.functions).length > 0) ||
           (options.importer &&
-            (!Array.isArray(options.importer) || options.importer.length > 0))
+            (!Array.isArray(options.importer) ||
+              options.importer.length > 0)) ||
+          options.logger ||
+          options.pkgImporter
         )
       },
       max: maxWorkers,
@@ -2324,7 +2327,9 @@ const makeModernScssWorker = (
         return !!(
           (options.functions && Object.keys(options.functions).length > 0) ||
           (options.importers &&
-            (!Array.isArray(options.importers) || options.importers.length > 0))
+            (!Array.isArray(options.importers) ||
+              options.importers.length > 0)) ||
+          options.logger
         )
       },
       max: maxWorkers,
