@@ -641,7 +641,7 @@ function resolveEnvironmentOptions(
   )
   const isClientEnvironment = environmentName === 'client'
   const consumer =
-    (options.consumer ?? isClientEnvironment) ? 'client' : 'server'
+    options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   return {
     resolve,
     consumer,
