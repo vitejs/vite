@@ -18,7 +18,6 @@ import {
   createInMemoryLogger,
   editFile,
   isBuild,
-  page,
   promiseWithResolvers,
   readFile,
   removeFile,
@@ -781,7 +780,7 @@ if (!isBuild) {
     await untilUpdated(el, '[wow]1')
   })
 
-  test.todo('should hmr when file is deleted and restored', async () => {
+  test('should hmr when file is deleted and restored', async () => {
     await setupModuleRunner('/hmr.ts')
 
     const parentFile = 'file-delete-restore/parent.js'
@@ -816,18 +815,20 @@ if (!isBuild) {
     await untilUpdated(() => hmr('.file-delete-restore'), 'parent:child')
   })
 
-  test.todo('delete file should not break hmr', async () => {
-    // await page.goto(viteTestUrl)
+  test('delete file should not break hmr', async () => {
+    await setupModuleRunner('/hmr.ts', undefined, undefined, {
+      '.intermediate-file-delete-increment': '1',
+    })
 
     await untilUpdated(
-      () => page.textContent('.intermediate-file-delete-display'),
+      () => hmr('.intermediate-file-delete-display'),
       'count is 1',
     )
 
     // add state
-    await page.click('.intermediate-file-delete-increment')
+    globalThis.__HMR__['.delete-intermediate-file']()
     await untilUpdated(
-      () => page.textContent('.intermediate-file-delete-display'),
+      () => hmr('.intermediate-file-delete-display'),
       'count is 2',
     )
 
@@ -839,21 +840,22 @@ if (!isBuild) {
       code.replace('count is ${count}', 'count is ${count}!'),
     )
     await untilUpdated(
-      () => page.textContent('.intermediate-file-delete-display'),
+      () => hmr('.intermediate-file-delete-display'),
       'count is 2!',
     )
 
-    // remove unused file, page reload because it's considered entry point now
+    // remove unused file
     removeFile('intermediate-file-delete/re-export.js')
+    __HMR__['.intermediate-file-delete-increment'] = '1' // reset state
     await untilUpdated(
-      () => page.textContent('.intermediate-file-delete-display'),
+      () => hmr('.intermediate-file-delete-display'),
       'count is 1!',
     )
 
     // re-add state
-    await page.click('.intermediate-file-delete-increment')
+    globalThis.__HMR__['.delete-intermediate-file']()
     await untilUpdated(
-      () => page.textContent('.intermediate-file-delete-display'),
+      () => hmr('.intermediate-file-delete-display'),
       'count is 2!',
     )
 
@@ -862,49 +864,41 @@ if (!isBuild) {
       code.replace('count is ${count}!', 'count is ${count}'),
     )
     await untilUpdated(
-      () => page.textContent('.intermediate-file-delete-display'),
+      () => hmr('.intermediate-file-delete-display'),
       'count is 2',
     )
   })
 
-  test.todo(
-    'deleted file should trigger dispose and prune callbacks',
-    async () => {
-      await setupModuleRunner('/hmr.ts')
+  test('deleted file should trigger dispose and prune callbacks', async () => {
+    await setupModuleRunner('/hmr.ts')
 
-      const parentFile = 'file-delete-restore/parent.js'
-      const childFile = 'file-delete-restore/child.js'
+    const parentFile = 'file-delete-restore/parent.js'
+    const childFile = 'file-delete-restore/child.js'
 
-      // delete the file
-      editFile(parentFile, (code) =>
-        code.replace(
-          "export { value as childValue } from './child'",
-          "export const childValue = 'not-child'",
-        ),
-      )
-      const originalChildFileCode = readFile(childFile)
-      removeFile(childFile)
-      await untilUpdated(
-        () => page.textContent('.file-delete-restore'),
-        'parent:not-child',
-      )
-      expect(clientLogs).to.include('file-delete-restore/child.js is disposed')
-      expect(clientLogs).to.include('file-delete-restore/child.js is pruned')
+    // delete the file
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export { value as childValue } from './child'",
+        "export const childValue = 'not-child'",
+      ),
+    )
+    const originalChildFileCode = readFile(childFile)
+    removeFile(childFile)
 
-      // restore the file
-      addFile(childFile, originalChildFileCode)
-      editFile(parentFile, (code) =>
-        code.replace(
-          "export const childValue = 'not-child'",
-          "export { value as childValue } from './child'",
-        ),
-      )
-      await untilUpdated(
-        () => page.textContent('.file-delete-restore'),
-        'parent:child',
-      )
-    },
-  )
+    await untilUpdated(() => hmr('.file-delete-restore'), 'parent:not-child')
+    expect(clientLogs).to.include('file-delete-restore/child.js is disposed')
+    expect(clientLogs).to.include('file-delete-restore/child.js is pruned')
+
+    // restore the file
+    addFile(childFile, originalChildFileCode)
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export const childValue = 'not-child'",
+        "export { value as childValue } from './child'",
+      ),
+    )
+    await untilUpdated(() => hmr('.file-delete-restore'), 'parent:child')
+  })
 
   test('import.meta.hot?.accept', async () => {
     await setupModuleRunner('/hmr.ts')
@@ -1095,6 +1089,7 @@ async function setupModuleRunner(
   entrypoint: string,
   serverOptions: InlineConfig = {},
   waitForFile: string = entrypoint,
+  initHmrState: Record<string, string> = {},
 ) {
   if (server) {
     await server.close()
@@ -1103,7 +1098,7 @@ async function setupModuleRunner(
     runner.clearCache()
   }
 
-  globalThis.__HMR__ = {} as any
+  globalThis.__HMR__ = initHmrState as any
 
   server = await createServer({
     configFile: resolve(testDir, 'vite.config.ts'),
