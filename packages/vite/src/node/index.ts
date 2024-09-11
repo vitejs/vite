@@ -53,6 +53,7 @@ export type {
   UserConfigFn,
   UserConfigFnObject,
   UserConfigFnPromise,
+  EnvironmentOptions,
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
 } from './config'
