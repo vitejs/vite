@@ -1,3 +1,11 @@
+## <small>5.4.4 (2024-09-11)</small>
+
+* fix: backport #17997, ensure req.url matches moduleByEtag URL to avoid incorrect 304 (#18078) ([74a79c5](https://github.com/vitejs/vite/commit/74a79c53b2286c91739d1473945012b5d206eddf)), closes [#17997](https://github.com/vitejs/vite/issues/17997) [#18078](https://github.com/vitejs/vite/issues/18078)
+* fix: backport #18063, allow scanning exports from `script module` in svelte (#18077) ([d90ba40](https://github.com/vitejs/vite/commit/d90ba40474aa1da8e722e1660ba739621238e5ac)), closes [#18063](https://github.com/vitejs/vite/issues/18063) [#18077](https://github.com/vitejs/vite/issues/18077)
+* fix(preload): backport #18046, allow ignoring dep errors (#18076) ([8760293](https://github.com/vitejs/vite/commit/8760293d6836dac554d1d6f214b8b09ed97cccd4)), closes [#18046](https://github.com/vitejs/vite/issues/18046) [#18076](https://github.com/vitejs/vite/issues/18076)
+
+
+
 ## <small>5.4.3 (2024-09-03)</small>
 
 * fix: allow getting URL of JS files in publicDir (#17915) ([943ece1](https://github.com/vitejs/vite/commit/943ece177e7709b3ba574e810afce347c51d4442)), closes [#17915](https://github.com/vitejs/vite/issues/17915)
