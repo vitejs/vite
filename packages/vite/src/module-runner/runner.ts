@@ -385,8 +385,8 @@ export class ModuleRunner {
           if (!this.hmrClient) {
             throw new Error(`[module runner] HMR client was destroyed.`)
           }
-          this.debug?.('[module runner] creating hmr context for', moduleId)
-          hotContext ||= new HMRContext(this.hmrClient, moduleId)
+          this.debug?.('[module runner] creating hmr context for', mod.url)
+          hotContext ||= new HMRContext(this.hmrClient, mod.url)
           return hotContext
         },
         set: (value) => {
