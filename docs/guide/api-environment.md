@@ -827,7 +827,7 @@ export const runner = new ModuleRunner(
 await runner.import('/entry.js')
 ```
 
-::: warning Acessing Module on the Server
+::: warning Accessing Module on the Server
 We do not want to encourage communication between the server and the runner. One of the problems that was exposed with `vite.ssrLoadModule` is over-reliance on the server state inside the processed modules. This makes it harder to implement runtime-agnostic SSR since user environment might have no access to server APIs. For example, this code assumes that Vite server and user code can run in the same context:
 
 ```ts
