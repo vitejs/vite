@@ -105,47 +105,6 @@ export class ModuleRunnerGraph {
     this.idToModuleMap.clear()
     this.fileToModuleMap.clear()
   }
-
-  /**
-   * Invalidate modules that dependent on the given modules, up to the main entry
-   */
-  invalidateDepTree(
-    ids: string[] | Set<string>,
-    invalidated = new Set<string>(),
-  ): Set<string> {
-    for (const _id of ids) {
-      const id = normalizeModuleId(_id)
-      if (invalidated.has(id)) continue
-      invalidated.add(id)
-      const mod = this.getModuleById(id)
-      if (mod?.importers) this.invalidateDepTree(mod.importers, invalidated)
-      if (mod) this.invalidateModule(mod)
-    }
-    return invalidated
-  }
-
-  /**
-   * Invalidate dependency modules of the given modules, down to the bottom-level dependencies
-   */
-  invalidateSubDepTree(
-    ids: string[] | Set<string>,
-    invalidated = new Set<string>(),
-  ): Set<string> {
-    for (const _id of ids) {
-      const id = normalizeModuleId(_id)
-      if (invalidated.has(id)) continue
-      invalidated.add(id)
-      const subIds = Array.from(this.idToModuleMap.entries())
-        .filter(([, mod]) => mod.importers?.has(id))
-        .map(([key]) => key)
-      if (subIds.length) {
-        this.invalidateSubDepTree(subIds, invalidated)
-      }
-      const mod = this.getModuleById(id)
-      if (mod) this.invalidateModule(mod)
-    }
-    return invalidated
-  }
 }
 
 // unique id that is not available as "$bare_import" like "test"
