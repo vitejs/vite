@@ -271,7 +271,7 @@ export class ModuleGraph {
 
   async getModuleByUrl(
     url: string,
-    ssr?: boolean,
+    _ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
     // In the mixed graph, the ssr flag was used to resolve the id.
     const [clientModule, ssrModule] = await Promise.all([

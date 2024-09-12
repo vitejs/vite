@@ -338,8 +338,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const publicPath = `/${relativeUrlPath}`
         const publicBase = getBaseInHTML(relativeUrlPath, config)
 
-        const publicToRelative = (filename: string, importer: string) =>
-          publicBase + filename
+        const publicToRelative = (filename: string) => publicBase + filename
         const toOutputPublicFilePath = (url: string) =>
           toOutputFilePathInHtml(
             url.slice(1),
@@ -797,7 +796,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               relativeUrlPath,
               'html',
               config,
-              (filename: string, importer: string) => assetsBase + filename,
+              (filename) => assetsBase + filename,
             )
           }
         }

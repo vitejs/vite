@@ -115,7 +115,18 @@ export default tseslint.config(
       '@typescript-eslint/no-extra-semi': 'off', // conflicts with prettier
       '@typescript-eslint/no-inferrable-types': 'off',
       '@typescript-eslint/no-unused-expressions': 'off', // maybe we should turn this on in a new PR
-      '@typescript-eslint/no-unused-vars': 'off', // maybe we should turn this on in a new PR
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          args: 'all',
+          argsIgnorePattern: '^_',
+          caughtErrors: 'all',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/consistent-type-imports': [
         'error',
@@ -270,6 +281,7 @@ export default tseslint.config(
       'n/no-unsupported-features/es-builtins': 'off',
       'n/no-unsupported-features/node-builtins': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
       'no-undef': 'off',
       'no-empty': 'off',
       'no-constant-condition': 'off',

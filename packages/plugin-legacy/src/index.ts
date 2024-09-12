@@ -115,7 +115,7 @@ function toAssetPathFromHtml(
   config: ResolvedConfig,
 ): string {
   const relativeUrlPath = normalizePath(path.relative(config.root, htmlPath))
-  const toRelative = (filename: string, hostId: string) =>
+  const toRelative = (filename: string, _hostId: string) =>
     getBaseInHTML(relativeUrlPath, config) + filename
   return toOutputFilePathInHtml(
     filename,

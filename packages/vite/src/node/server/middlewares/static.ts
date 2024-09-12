@@ -73,7 +73,7 @@ export function servePublicMiddleware(
     if (filePath.indexOf('%') !== -1) {
       try {
         filePath = decodeURI(filePath)
-      } catch (err) {
+      } catch {
         /* malform uri */
       }
     }

@@ -633,7 +633,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     return [...this._container.watchFiles]
   }
 
-  emitFile(assetOrFile: EmittedFile): string {
+  emitFile(_assetOrFile: EmittedFile): string {
     this._warnIncompatibleMethod(`emitFile`)
     return ''
   }

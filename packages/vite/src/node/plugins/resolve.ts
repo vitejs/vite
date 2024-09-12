@@ -598,7 +598,6 @@ export function tryFsResolve(
   fsPath: string,
   options: InternalResolveOptions,
   tryIndex = true,
-  targetWeb = true,
   skipPackageJson = false,
 ): string | undefined {
   // Dependencies like es5-ext use `#` in their paths. We don't support `#` in user
@@ -610,25 +609,13 @@ export function tryFsResolve(
     // We only need to check foo#bar?baz and foo#bar, ignore foo?bar#baz
     if (queryIndex < 0 || queryIndex > hashIndex) {
       const file = queryIndex > hashIndex ? fsPath.slice(0, queryIndex) : fsPath
-      const res = tryCleanFsResolve(
-        file,
-        options,
-        tryIndex,
-        targetWeb,
-        skipPackageJson,
-      )
+      const res = tryCleanFsResolve(file, options, tryIndex, skipPackageJson)
       if (res) return res + fsPath.slice(file.length)
     }
   }
 
   const { file, postfix } = splitFileAndPostfix(fsPath)
-  const res = tryCleanFsResolve(
-    file,
-    options,
-    tryIndex,
-    targetWeb,
-    skipPackageJson,
-  )
+  const res = tryCleanFsResolve(file, options, tryIndex, skipPackageJson)
   if (res) return res + postfix
 }
 
@@ -639,7 +626,6 @@ function tryCleanFsResolve(
   file: string,
   options: InternalResolveOptions,
   tryIndex = true,
-  targetWeb = true,
   skipPackageJson = false,
 ): string | undefined {
   const { tryPrefix, extensions, preserveSymlinks } = options
@@ -1103,7 +1089,6 @@ export function resolvePackageEntry(
       const resolvedEntryPoint = tryFsResolve(
         entryPointPath,
         options,
-        true,
         true,
         skipPackageJson,
       )
