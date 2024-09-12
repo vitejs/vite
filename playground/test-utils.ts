@@ -142,7 +142,9 @@ export function editFile(
 }
 
 export function addFile(filename: string, content: string): void {
-  fs.writeFileSync(path.resolve(testDir, filename), content)
+  const resolvedFilename = path.resolve(testDir, filename)
+  fs.mkdirSync(path.dirname(resolvedFilename), { recursive: true })
+  fs.writeFileSync(resolvedFilename, content)
 }
 
 export function removeFile(filename: string): void {
