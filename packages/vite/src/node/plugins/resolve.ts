@@ -1213,7 +1213,6 @@ function resolveDeepImport(
       path.join(dir, relativeId),
       options,
       !exportsField, // try index only if no exports field
-      !!options.webCompatible,
     )
     if (resolved) {
       debug?.(
