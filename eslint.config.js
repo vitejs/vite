@@ -134,7 +134,6 @@ export default tseslint.config(
       // disable rules set in @typescript-eslint/stylistic which conflict with current code
       // maybe we should turn them on in a new PR
       '@typescript-eslint/array-type': 'off',
-      '@typescript-eslint/consistent-indexed-object-style': 'off',
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/prefer-for-of': 'off',
       '@typescript-eslint/prefer-function-type': 'off',
@@ -308,6 +307,7 @@ export default tseslint.config(
     name: 'disables/dts',
     files: ['**/*.d.ts'],
     rules: {
+      '@typescript-eslint/consistent-indexed-object-style': 'off',
       '@typescript-eslint/triple-slash-reference': 'off',
     },
   },
