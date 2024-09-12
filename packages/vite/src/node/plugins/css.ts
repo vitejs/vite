@@ -2174,9 +2174,11 @@ const makeScssWorker = (
         }
         const importer = [_internalImporter]
         if (options.importer) {
-          Array.isArray(options.importer)
-            ? importer.unshift(...options.importer)
-            : importer.unshift(options.importer)
+          if (Array.isArray(options.importer)) {
+            importer.unshift(...options.importer)
+          } else {
+            importer.unshift(options.importer)
+          }
         }
 
         const finalOptions: Sass.LegacyOptions<'async'> = {
