@@ -169,12 +169,12 @@ importers:
       cross-spawn:
         specifier: ^7.0.3
         version: 7.0.3
-      kolorist:
-        specifier: ^1.8.0
-        version: 1.8.0
       minimist:
         specifier: ^1.2.8
         version: 1.2.8
+      picocolors:
+        specifier: ^1.1.0
+        version: 1.1.0
       prompts:
         specifier: ^2.4.2
         version: 2.4.2
@@ -5204,9 +5204,6 @@ packages:
   kleur@3.0.3:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
-
-  kolorist@1.8.0:
-    resolution: {integrity: sha512-Y+60/zizpJ3HRH8DCss+q95yr6145JXZo46OTpFvDZWLfRCE4qChOyk1b26nMaNpfHHgxagk9dXT5OP0Tfe+dQ==}
 
   launch-editor-middleware@2.9.1:
     resolution: {integrity: sha512-4wF6AtPtaIENiZdH/a+3yW8Xni7uxzTEDd1z+gH00hUWBCSmQknFohznMd9BWhLk8MXObeB5ir69GbIr9qFW1w==}
@@ -10855,8 +10852,6 @@ snapshots:
       shell-exec: 1.0.2
 
   kleur@3.0.3: {}
-
-  kolorist@1.8.0: {}
 
   launch-editor-middleware@2.9.1:
     dependencies:
