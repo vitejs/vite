@@ -42,14 +42,14 @@ Options:
   -t, --template NAME        use a specific template
 
 Available templates:
-${yellow   ('vanilla-ts     vanilla'  )}
-${green    ('vue-ts         vue'      )}
-${cyan     ('react-ts       react'    )}
-${cyan     ('react-swc-ts   react-swc')}
-${magenta  ('preact-ts      preact'   )}
+${yellow    ('vanilla-ts     vanilla'  )}
+${green     ('vue-ts         vue'      )}
+${cyan      ('react-ts       react'    )}
+${cyan      ('react-swc-ts   react-swc')}
+${magenta   ('preact-ts      preact'   )}
 ${redBright ('lit-ts         lit'      )}
-${red      ('svelte-ts      svelte'   )}
-${blue     ('solid-ts       solid'    )}
+${red       ('svelte-ts      svelte'   )}
+${blue      ('solid-ts       solid'    )}
 ${blueBright('qwik-ts        qwik'     )}`
 
 type ColorFunc = (str: string | number) => string
