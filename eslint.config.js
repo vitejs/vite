@@ -132,7 +132,7 @@ export default tseslint.config(
         { prefer: 'type-imports', disallowTypeAnnotations: false },
       ],
       // disable rules set in @typescript-eslint/stylistic which conflict with current code
-      // maybe we should turn them on in a new PR
+      // we should discuss if we want to enable these as they encourage consistent code
       '@typescript-eslint/array-type': 'off',
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/prefer-for-of': 'off',
