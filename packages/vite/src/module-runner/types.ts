@@ -5,7 +5,7 @@ import type {
   DefineImportMetadata,
   SSRImportMetadata,
 } from '../shared/ssrTransform'
-import type { ModuleCacheMap } from './moduleCache'
+import type { ModuleRunnerGraph } from './moduleCache'
 import type {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -119,7 +119,11 @@ export interface ViteFetchResult {
   /**
    * Module ID in the server module graph.
    */
-  serverId: string
+  id: string
+  /**
+   * Module URL used in the import.
+   */
+  url: string
   /**
    * Invalidate module on the client side.
    */
@@ -128,6 +132,7 @@ export interface ViteFetchResult {
 
 export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {
   url: string
+  id: string
 }
 
 export type FetchFunction = (
@@ -177,7 +182,7 @@ export interface ModuleRunnerOptions {
   /**
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */
-  moduleCache?: ModuleCacheMap
+  moduleGraph?: ModuleRunnerGraph
 }
 
 export interface ImportMetaEnv {

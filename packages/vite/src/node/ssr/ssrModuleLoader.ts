@@ -1,5 +1,5 @@
 import colors from 'picocolors'
-import type { ModuleCache } from 'vite/module-runner'
+import type { ModuleRunnerNode } from 'vite/module-runner'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type { ViteDevServer } from '../server'
 import { unwrapId } from '../../shared/utils'
@@ -73,18 +73,17 @@ class SSRCompatModuleRunner extends ModuleRunner {
   }
 
   protected override async directRequest(
-    id: string,
-    mod: ModuleCache,
+    url: string,
+    mod: ModuleRunnerNode,
     _callstack: string[],
   ): Promise<any> {
-    const serverId = mod.meta && 'serverId' in mod.meta && mod.meta.serverId
+    const id = mod.meta && 'id' in mod.meta && mod.meta.id
     // serverId doesn't exist for external modules
-    if (!serverId) {
-      return super.directRequest(id, mod, _callstack)
+    if (!id) {
+      return super.directRequest(url, mod, _callstack)
     }
 
-    const viteMod =
-      this.server.environments.ssr.moduleGraph.getModuleById(serverId)
+    const viteMod = this.server.environments.ssr.moduleGraph.getModuleById(id)
 
     if (!viteMod) {
       return super.directRequest(id, mod, _callstack)

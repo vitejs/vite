@@ -1,85 +1,109 @@
-import { isWindows, slash, withTrailingSlash } from '../shared/utils'
+import {
+  cleanUrl,
+  isWindows,
+  slash,
+  unwrapId,
+  withTrailingSlash,
+} from '../shared/utils'
 import { SOURCEMAPPING_URL } from '../shared/constants'
-import { decodeBase64 } from './utils'
+import { decodeBase64, posixResolve } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
-import type { ModuleCache } from './types'
+import type { ResolvedResult } from './types'
 
 const MODULE_RUNNER_SOURCEMAPPING_REGEXP = new RegExp(
   `//# ${SOURCEMAPPING_URL}=data:application/json;base64,(.+)`,
 )
 
-export class ModuleCacheMap extends Map<string, ModuleCache> {
+export class ModuleRunnerNode {
+  public importers = new Set<string>()
+  public imports = new Set<string>()
+  public lastInvalidationTimestamp = 0
+  public evaluated = false
+  public meta: ResolvedResult | undefined
+  public promise: Promise<any> | undefined
+  public exports: any | undefined
+  public file: string
+  public map: DecodedMap | undefined
+
+  constructor(
+    public id: string,
+    public url: string,
+  ) {
+    this.file = cleanUrl(url)
+  }
+}
+
+export class ModuleRunnerGraph {
   private root: string
 
-  constructor(root: string, entries?: [string, ModuleCache][]) {
-    super(entries)
+  public idToModuleMap = new Map<string, ModuleRunnerNode>()
+  public fileToModuleMap = new Map<string, ModuleRunnerNode[]>()
+
+  constructor(root: string) {
     this.root = withTrailingSlash(root)
   }
 
-  normalize(fsPath: string): string {
-    return normalizeModuleId(fsPath, this.root)
+  public getModuleById(id: string): ModuleRunnerNode | undefined {
+    return this.idToModuleMap.get(id)
   }
 
-  /**
-   * Assign partial data to the map
-   */
-  update(fsPath: string, mod: ModuleCache): this {
-    fsPath = this.normalize(fsPath)
-    if (!super.has(fsPath)) this.setByModuleId(fsPath, mod)
-    else Object.assign(super.get(fsPath)!, mod)
-    return this
+  public getModulesByFile(file: string): ModuleRunnerNode[] {
+    return this.fileToModuleMap.get(file) || []
   }
 
-  setByModuleId(modulePath: string, mod: ModuleCache): this {
-    return super.set(modulePath, mod)
-  }
-
-  override set(fsPath: string, mod: ModuleCache): this {
-    return this.setByModuleId(this.normalize(fsPath), mod)
-  }
-
-  getByModuleId(modulePath: string): ModuleCache {
-    if (!super.has(modulePath)) this.setByModuleId(modulePath, {})
-
-    const mod = super.get(modulePath)!
-    if (!mod.imports) {
-      Object.assign(mod, {
-        imports: new Set(),
-        importers: new Set(),
-        timestamp: 0,
-      })
+  public getModuleByUrl(url: string): ModuleRunnerNode | undefined {
+    url = unwrapId(url)
+    if (url.startsWith('/')) {
+      const id = posixResolve(this.root, url.slice(1))
+      return this.idToModuleMap.get(id)
     }
-    return mod
+    return this.idToModuleMap.get(url)
   }
 
-  override get(fsPath: string): ModuleCache {
-    return this.getByModuleId(this.normalize(fsPath))
+  public ensureModule(id: string, url: string): ModuleRunnerNode {
+    id = normalizeModuleId(id)
+    if (this.idToModuleMap.has(id)) {
+      return this.idToModuleMap.get(id)!
+    }
+    const moduleNode = new ModuleRunnerNode(id, url)
+    this.idToModuleMap.set(id, moduleNode)
+
+    const fileModules = this.fileToModuleMap.get(moduleNode.file) || []
+    fileModules.push(moduleNode)
+    this.fileToModuleMap.set(moduleNode.file, fileModules)
+    return moduleNode
   }
 
-  deleteByModuleId(modulePath: string): boolean {
-    return super.delete(modulePath)
-  }
-
-  override delete(fsPath: string): boolean {
-    return this.deleteByModuleId(this.normalize(fsPath))
-  }
-
-  invalidateUrl(id: string): void {
-    const module = this.get(id)
-    this.invalidateModule(module)
-  }
-
-  invalidateModule(module: ModuleCache): void {
-    module.evaluated = false
-    module.meta = undefined
-    module.map = undefined
-    module.promise = undefined
-    module.exports = undefined
+  public invalidateModule(node: ModuleRunnerNode): void {
+    node.evaluated = false
+    node.meta = undefined
+    node.map = undefined
+    node.promise = undefined
+    node.exports = undefined
     // remove imports in case they are changed,
     // don't remove the importers because otherwise it will be empty after evaluation
     // this can create a bug when file was removed but it still triggers full-reload
     // we are fine with the bug for now because it's not a common case
-    module.imports?.clear()
+    node.imports?.clear()
+  }
+
+  getModuleSourceMapById(id: string): null | DecodedMap {
+    const mod = this.getModuleById(id)
+    if (!mod) return null
+    if (mod.map) return mod.map
+    if (!mod.meta || !('code' in mod.meta)) return null
+    const mapString = MODULE_RUNNER_SOURCEMAPPING_REGEXP.exec(
+      mod.meta.code,
+    )?.[1]
+    if (!mapString) return null
+    const baseFile = mod.file
+    mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), baseFile)
+    return mod.map
+  }
+
+  public clear(): void {
+    this.idToModuleMap.clear()
+    this.fileToModuleMap.clear()
   }
 
   /**
@@ -90,12 +114,12 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     invalidated = new Set<string>(),
   ): Set<string> {
     for (const _id of ids) {
-      const id = this.normalize(_id)
+      const id = normalizeModuleId(_id)
       if (invalidated.has(id)) continue
       invalidated.add(id)
-      const mod = super.get(id)
+      const mod = this.getModuleById(id)
       if (mod?.importers) this.invalidateDepTree(mod.importers, invalidated)
-      this.invalidateUrl(id)
+      if (mod) this.invalidateModule(mod)
     }
     return invalidated
   }
@@ -108,31 +132,19 @@ export class ModuleCacheMap extends Map<string, ModuleCache> {
     invalidated = new Set<string>(),
   ): Set<string> {
     for (const _id of ids) {
-      const id = this.normalize(_id)
+      const id = normalizeModuleId(_id)
       if (invalidated.has(id)) continue
       invalidated.add(id)
-      const subIds = Array.from(super.entries())
+      const subIds = Array.from(this.idToModuleMap.entries())
         .filter(([, mod]) => mod.importers?.has(id))
         .map(([key]) => key)
       if (subIds.length) {
         this.invalidateSubDepTree(subIds, invalidated)
       }
-      super.delete(id)
+      const mod = this.getModuleById(id)
+      if (mod) this.invalidateModule(mod)
     }
     return invalidated
-  }
-
-  getSourceMap(moduleId: string): null | DecodedMap {
-    const mod = this.get(moduleId)
-    if (mod.map) return mod.map
-    if (!mod.meta || !('code' in mod.meta)) return null
-    const mapString = MODULE_RUNNER_SOURCEMAPPING_REGEXP.exec(
-      mod.meta.code,
-    )?.[1]
-    if (!mapString) return null
-    const baseFile = mod.meta.file || moduleId.split('?')[0]
-    mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), baseFile)
-    return mod.map
   }
 }
 
@@ -146,19 +158,14 @@ const prefixedBuiltins = new Set(['node:test', 'node:sqlite'])
 // /root/id.js -> /id.js
 // C:/root/id.js -> /id.js
 // C:\root\id.js -> /id.js
-function normalizeModuleId(file: string, root: string): string {
+function normalizeModuleId(file: string): string {
   if (prefixedBuiltins.has(file)) return file
 
   // unix style, but Windows path still starts with the drive letter to check the root
-  let unixFile = slash(file)
+  const unixFile = slash(file)
     .replace(/^\/@fs\//, isWindows ? '' : '/')
     .replace(/^node:/, '')
     .replace(/^\/+/, '/')
-
-  if (unixFile.startsWith(root)) {
-    // keep slash
-    unixFile = unixFile.slice(root.length - 1)
-  }
 
   // if it's not in the root, keep it as a path, not a URL
   return unixFile.replace(/^file:\//, '/')
