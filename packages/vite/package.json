@@ -72,9 +72,9 @@
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "scripts": {
     "dev": "tsx scripts/dev.ts",
-    "build": "rimraf dist && run-s build-bundle build-types",
+    "build": "rimraf dist && pnpm build-bundle && pnpm build-types",
     "build-bundle": "rollup --config rollup.config.ts --configPlugin esbuild",
-    "build-types": "run-s build-types-temp build-types-roll build-types-check",
+    "build-types": "pnpm build-types-temp && pnpm build-types-roll && pnpm build-types-check",
     "build-types-temp": "tsc --emitDeclarationOnly --outDir temp -p src/node",
     "build-types-roll": "rollup --config rollup.dts.config.ts --configPlugin esbuild && rimraf temp",
     "build-types-check": "tsc --project tsconfig.check.json",
