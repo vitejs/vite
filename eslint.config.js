@@ -96,7 +96,7 @@ export default tseslint.config(
       ],
 
       '@typescript-eslint/ban-ts-comment': 'error',
-      '@typescript-eslint/no-unsafe-function-type': 'off', // TODO: we should turn this on in a new PR
+      '@typescript-eslint/no-unsafe-function-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': [
         'error',
         { allowArgumentsExplicitlyTypedAsAny: true },
@@ -107,10 +107,10 @@ export default tseslint.config(
       ],
       '@typescript-eslint/no-empty-object-type': [
         'error',
-        { allowInterfaces: 'with-single-extends' }, // maybe we should turn this on in a new PR
+        { allowInterfaces: 'with-single-extends' },
       ],
       '@typescript-eslint/no-empty-interface': 'off',
-      '@typescript-eslint/no-explicit-any': 'off', // maybe we should turn this on in a new PR
+      '@typescript-eslint/no-explicit-any': 'off',
       'no-extra-semi': 'off',
       '@typescript-eslint/no-extra-semi': 'off', // conflicts with prettier
       '@typescript-eslint/no-inferrable-types': 'off',
@@ -134,8 +134,6 @@ export default tseslint.config(
       // disable rules set in @typescript-eslint/stylistic which conflict with current code
       // maybe we should turn them on in a new PR
       '@typescript-eslint/array-type': 'off',
-      '@typescript-eslint/ban-tslint-comment': 'off',
-      '@typescript-eslint/consistent-generic-constructors': 'off',
       '@typescript-eslint/consistent-indexed-object-style': 'off',
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/prefer-for-of': 'off',

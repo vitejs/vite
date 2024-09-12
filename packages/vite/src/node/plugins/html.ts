@@ -693,7 +693,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
-      const analyzedChunk: Map<OutputChunk, number> = new Map()
+      const analyzedChunk = new Map<OutputChunk, number>()
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
         chunk: OutputChunk,
