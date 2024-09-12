@@ -361,6 +361,12 @@ export class ModuleRunner {
       glob() {
         throw new Error('[module runner] "import.meta.glob" is not supported.')
       },
+
+      // TODO: this is a proposal to start a discussion
+      environment: {
+        module: mod,
+        moduleGraph: this.moduleGraph,
+      },
     }
     const exports = Object.create(null)
     Object.defineProperty(exports, Symbol.toStringTag, {

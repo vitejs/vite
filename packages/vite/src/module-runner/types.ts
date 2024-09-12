@@ -5,7 +5,7 @@ import type {
   DefineImportMetadata,
   SSRImportMetadata,
 } from '../shared/ssrTransform'
-import type { ModuleRunnerGraph } from './moduleCache'
+import type { ModuleRunnerGraph, ModuleRunnerNode } from './moduleCache'
 import type {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -31,6 +31,12 @@ export interface ModuleRunnerImportMeta extends ImportMeta {
   url: string
   env: ImportMetaEnv
   hot?: ViteHotContext
+
+  // TODO: this is a proposal to start a discussion
+  environment: {
+    module: ModuleRunnerNode
+    moduleGraph: ModuleRunnerGraph
+  }
   [key: string]: any
 }
 
