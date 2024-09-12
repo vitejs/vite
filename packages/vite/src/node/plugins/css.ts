@@ -210,6 +210,7 @@ const enum PreprocessLang {
   styl = 'styl',
   stylus = 'stylus',
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- bug in typescript-eslint
 const enum PureCssLang {
   css = 'css',
 }
@@ -964,7 +965,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-analysis',
 
-    async transform(_, id, options) {
+    async transform(_, id) {
       if (
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
@@ -2056,7 +2057,7 @@ function loadSassPackage(root: string): {
     try {
       const path = loadPreprocessorPath(PreprocessLang.sass, root)
       return { name: 'sass', path }
-    } catch (e2) {
+    } catch {
       throw e1
     }
   }
@@ -2173,9 +2174,11 @@ const makeScssWorker = (
         }
         const importer = [_internalImporter]
         if (options.importer) {
-          Array.isArray(options.importer)
-            ? importer.unshift(...options.importer)
-            : importer.unshift(options.importer)
+          if (Array.isArray(options.importer)) {
+            importer.unshift(...options.importer)
+          } else {
+            importer.unshift(options.importer)
+          }
         }
 
         const finalOptions: Sass.LegacyOptions<'async'> = {
@@ -2847,7 +2850,7 @@ const stylProcessor = (
         worker.stop()
       }
     },
-    async process(environment, source, root, options, resolvers) {
+    async process(_environment, source, root, options, _resolvers) {
       const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
 
       if (!workerMap.has(options.alias)) {

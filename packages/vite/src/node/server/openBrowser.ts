@@ -104,7 +104,7 @@ async function startBrowserProcess(
         )
         return true
       }
-    } catch (err) {
+    } catch {
       // Ignore errors
     }
   }
@@ -135,7 +135,7 @@ async function startBrowserProcess(
     })
 
     return true
-  } catch (err) {
+  } catch {
     return false
   }
 }

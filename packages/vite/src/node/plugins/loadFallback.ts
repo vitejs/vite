@@ -14,7 +14,7 @@ export function buildLoadFallbackPlugin(): Plugin {
         const content = await fsp.readFile(cleanedId, 'utf-8')
         this.addWatchFile(cleanedId)
         return content
-      } catch (e) {
+      } catch {
         const content = await fsp.readFile(id, 'utf-8')
         this.addWatchFile(id)
         return content

@@ -351,7 +351,7 @@ export function createInMemoryLogger(logs: string[]): Logger {
 function setupConsoleWarnCollector(logs: string[]) {
   const warn = console.warn
   console.warn = (...args) => {
-    serverLogs.push(args.join(' '))
+    logs.push(args.join(' '))
     return warn.call(console, ...args)
   }
 }

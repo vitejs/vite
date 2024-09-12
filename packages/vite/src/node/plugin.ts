@@ -14,7 +14,7 @@ import type {
   ResolvedConfig,
   UserConfig,
 } from './config'
-import type { ServerHook, ViteDevServer } from './server'
+import type { ServerHook } from './server'
 import type { IndexHtmlTransform } from './plugins/html'
 import type { EnvironmentModuleNode } from './server/moduleGraph'
 import type { ModuleNode } from './server/mixedModuleGraph'

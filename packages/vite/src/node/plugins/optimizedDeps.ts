@@ -1,6 +1,6 @@
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import type { DevEnvironment, ResolvedConfig } from '..'
+import type { DevEnvironment } from '..'
 import type { Plugin } from '../plugin'
 import { DEP_VERSION_RE } from '../constants'
 import { createDebugger } from '../utils'
@@ -15,7 +15,7 @@ export const ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR =
 
 const debug = createDebugger('vite:optimize-deps')
 
-export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
+export function optimizedDepsPlugin(): Plugin {
   return {
     name: 'vite:optimized-deps',
 
@@ -70,7 +70,7 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
         // we are sure that the file has been properly save to disk
         try {
           return await fsp.readFile(file, 'utf-8')
-        } catch (e) {
+        } catch {
           const newMetadata = depsOptimizer.metadata
           if (optimizedDepInfoFromFile(newMetadata, file)) {
             // Outdated non-entry points (CHUNK), loaded after a rerun

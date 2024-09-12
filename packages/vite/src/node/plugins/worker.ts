@@ -244,7 +244,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(raw, id, options) {
+    async transform(raw, id) {
       const workerFileMatch = workerFileRE.exec(id)
       if (workerFileMatch) {
         // if import worker by worker constructor will have query.type

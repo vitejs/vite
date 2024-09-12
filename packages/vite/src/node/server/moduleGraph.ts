@@ -164,7 +164,7 @@ export class EnvironmentModuleGraph {
 
   invalidateModule(
     mod: EnvironmentModuleNode,
-    seen: Set<EnvironmentModuleNode> = new Set(),
+    seen = new Set<EnvironmentModuleNode>(),
     timestamp: number = Date.now(),
     isHmr: boolean = false,
     /** @internal */

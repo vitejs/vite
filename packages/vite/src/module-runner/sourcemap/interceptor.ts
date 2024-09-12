@@ -21,7 +21,7 @@ export interface InterceptorOptions {
 const sourceMapCache: Record<string, CachedMapEntry> = {}
 const fileContentsCache: Record<string, string> = {}
 
-const moduleGraphs: Set<ModuleCacheMap> = new Set()
+const moduleGraphs = new Set<ModuleCacheMap>()
 const retrieveFileHandlers = new Set<RetrieveFileHandler>()
 const retrieveSourceMapHandlers = new Set<RetrieveSourceMapHandler>()
 

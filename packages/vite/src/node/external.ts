@@ -95,7 +95,7 @@ export function createIsConfiguredAsExternal(
         // configured as external
         !!configuredAsExternal,
       )?.external
-    } catch (e) {
+    } catch {
       debug?.(
         `Failed to node resolve "${id}". Skipping externalizing it by default.`,
       )

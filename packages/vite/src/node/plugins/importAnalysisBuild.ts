@@ -513,7 +513,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
                   url = rawUrl.slice(1, -1)
               }
-              const deps: Set<string> = new Set()
+              const deps = new Set<string>()
               let hasRemovedPureCssChunk = false
 
               let normalizedFile: string | undefined = undefined

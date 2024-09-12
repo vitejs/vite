@@ -134,7 +134,7 @@ export function manifestPlugin(): Plugin {
           try {
             const fileName = this.getFileName(id)
             entryCssAssetFileNames.add(fileName)
-          } catch (error: unknown) {
+          } catch {
             // The asset was generated as part of a different output option.
             // It was already handled during the previous run of this plugin.
             assets.delete(id)

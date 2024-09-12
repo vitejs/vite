@@ -20,7 +20,7 @@ export default defineBuildConfig({
     prompts: 'prompts/lib/index.js',
   },
   hooks: {
-    'rollup:options'(ctx, options) {
+    'rollup:options'(_ctx, options) {
       options.plugins = [
         options.plugins,
         // @ts-expect-error TODO: unbuild uses rollup v3 and Vite uses rollup v4

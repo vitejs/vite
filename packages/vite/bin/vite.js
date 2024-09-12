@@ -5,7 +5,7 @@ if (!import.meta.url.includes('node_modules')) {
   try {
     // only available as dev dependency
     await import('source-map-support').then((r) => r.default.install())
-  } catch (e) {}
+  } catch {}
 }
 
 global.__vite_start_time = performance.now()

@@ -13,7 +13,7 @@ export function htmlFallbackMiddleware(
   fsUtils: FsUtils = commonFsUtils,
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteHtmlFallbackMiddleware(req, res, next) {
+  return function viteHtmlFallbackMiddleware(req, _res, next) {
     if (
       // Only accept GET or HEAD
       (req.method !== 'GET' && req.method !== 'HEAD') ||
