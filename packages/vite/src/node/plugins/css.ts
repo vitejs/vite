@@ -2057,7 +2057,7 @@ function loadSassPackage(root: string): {
     try {
       const path = loadPreprocessorPath(PreprocessLang.sass, root)
       return { name: 'sass', path }
-    } catch (_e2) {
+    } catch {
       throw e1
     }
   }
