@@ -128,7 +128,7 @@ export function transformMiddleware(
             return send(req, res, JSON.stringify(map), 'json', {
               headers: server.config.server.headers,
             })
-          } catch (e) {
+          } catch {
             // Outdated source map request for optimized deps, this isn't an error
             // but part of the normal flow when re-optimizing after missing deps
             // Send back an empty source map so the browser doesn't issue warnings

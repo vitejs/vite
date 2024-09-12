@@ -220,7 +220,7 @@ export async function parseImportGlob(
   let cleanCode: string
   try {
     cleanCode = stripLiteral(code)
-  } catch (e) {
+  } catch {
     // skip invalid js code
     return []
   }

@@ -364,7 +364,7 @@ export class ModuleRunner {
       dirname: isWindows ? toWindowsPath(dirname) : dirname,
       url: href,
       env: this.envProxy,
-      resolve(id, parent) {
+      resolve(_id, _parent) {
         throw new Error(
           '[module runner] "import.meta.resolve" is not supported.',
         )
@@ -437,7 +437,7 @@ function exportAll(exports: any, sourceModule: any) {
           configurable: true,
           get: () => sourceModule[key],
         })
-      } catch (_err) {}
+      } catch {}
     }
   }
 }

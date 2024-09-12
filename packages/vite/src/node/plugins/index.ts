@@ -44,7 +44,7 @@ export async function resolvePlugins(
     )
 
   return [
-    depOptimizationEnabled ? optimizedDepsPlugin(config) : null,
+    depOptimizationEnabled ? optimizedDepsPlugin() : null,
     isBuild ? metadataPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     preAliasPlugin(config),
@@ -81,7 +81,7 @@ export async function resolvePlugins(
       },
       isBuild,
     ),
-    wasmHelperPlugin(config),
+    wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
 

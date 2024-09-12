@@ -9,7 +9,7 @@ export function completeSystemWrapPlugin(): Plugin {
   return {
     name: 'vite:force-systemjs-wrap-complete',
 
-    renderChunk(code, chunk, opts) {
+    renderChunk(code, _chunk, opts) {
       if (opts.format === 'system') {
         return {
           code: code.replace(SystemJSWrapRE, (s, s1) =>
