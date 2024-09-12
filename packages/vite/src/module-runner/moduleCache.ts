@@ -29,7 +29,7 @@ export class ModuleRunnerNode {
     public id: string,
     public url: string,
   ) {
-    this.file = cleanUrl(url)
+    this.file = cleanUrl(id)
   }
 }
 
