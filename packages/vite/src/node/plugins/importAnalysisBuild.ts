@@ -145,20 +145,23 @@ function preload(
     )
   }
 
+  function handlePreloadError(err: Error) {
+    const e = new Event('vite:preloadError', {
+      cancelable: true,
+    }) as VitePreloadErrorEvent
+    e.payload = err
+    window.dispatchEvent(e)
+    if (!e.defaultPrevented) {
+      throw err
+    }
+  }
+
   return promise.then((res) => {
     for (const item of res || []) {
       if (item.status !== 'rejected') continue
-
-      const e = new Event('vite:preloadError', {
-        cancelable: true,
-      }) as VitePreloadErrorEvent
-      e.payload = item.reason
-      window.dispatchEvent(e)
-      if (!e.defaultPrevented) {
-        throw item.reason
-      }
+      handlePreloadError(item.reason)
     }
-    return baseModule()
+    return baseModule().catch(handlePreloadError)
   })
 }
 
