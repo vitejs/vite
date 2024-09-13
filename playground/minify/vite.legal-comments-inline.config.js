@@ -2,7 +2,10 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   esbuild: {
-    legalComments: 'none',
+    legalComments: 'inline',
     minifySyntax: false,
+  },
+  build: {
+    outDir: 'dist/inline',
   },
 })
