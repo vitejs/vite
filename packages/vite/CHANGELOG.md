@@ -1,3 +1,9 @@
+## <small>5.4.5 (2024-09-13)</small>
+
+* fix(preload): backport #18098, throw error preloading module as well (#18099) ([faa2405](https://github.com/vitejs/vite/commit/faa2405e5d1da07a7c7fb6d48e887bf97a2f3dba)), closes [#18098](https://github.com/vitejs/vite/issues/18098) [#18099](https://github.com/vitejs/vite/issues/18099)
+
+
+
 ## <small>5.4.4 (2024-09-11)</small>
 
 * fix: backport #17997, ensure req.url matches moduleByEtag URL to avoid incorrect 304 (#18078) ([74a79c5](https://github.com/vitejs/vite/commit/74a79c53b2286c91739d1473945012b5d206eddf)), closes [#17997](https://github.com/vitejs/vite/issues/17997) [#18078](https://github.com/vitejs/vite/issues/18078)
