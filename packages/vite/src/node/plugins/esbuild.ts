@@ -329,6 +329,10 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
 
       if (res.legalComments) {
         collectLegalComments.push(res.legalComments)
+
+        if (config.esbuild && config.esbuild.legalComments === 'linked') {
+          res.code += '\n/*! For license information please see LEGAL.txt */'
+        }
       }
 
       if (config.build.lib) {
@@ -364,7 +368,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
     generateBundle(options) {
       if (collectLegalComments.length && options.dir) {
         this.emitFile({
-          fileName: '.LEGAL.txt',
+          fileName: 'LEGAL.txt',
           type: 'asset',
           source: collectLegalComments.join('\n'),
         })

@@ -36,4 +36,12 @@ export async function serve() {
       '../vite.legal-comments-none.config.js',
     ),
   })
+
+  await build({
+    root: rootDir,
+    configFile: path.resolve(
+      __dirname,
+      '../vite.legal-comments-linked.config.js',
+    ),
+  })
 }
