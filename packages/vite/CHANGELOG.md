@@ -1,3 +1,8 @@
+## <small>4.5.5 (2024-09-16)</small>
+
+
+
+
 ## <small>4.5.4 (2024-09-16)</small>
 
 * fix: avoid DOM Clobbering gadget in `getRelativeUrlFromDocument` (#18115) ([e812716](https://github.com/vitejs/vite/commit/e812716)), closes [#18115](https://github.com/vitejs/vite/issues/18115)
