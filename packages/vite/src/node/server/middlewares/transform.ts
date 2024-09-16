@@ -38,7 +38,8 @@ import {
 } from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
-import { urlRE } from '../../plugins/asset'
+import { rawRE, urlRE } from '../../plugins/asset'
+import { ensureServingAccess } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
@@ -164,6 +165,13 @@ export function transformMiddleware(
 
           logger.warn(colors.yellow(warning))
         }
+      }
+
+      if (
+        (rawRE.test(url) || urlRE.test(url)) &&
+        !ensureServingAccess(url, server, res, next)
+      ) {
+        return
       }
 
       if (
