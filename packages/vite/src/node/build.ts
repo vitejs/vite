@@ -1005,7 +1005,7 @@ const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
   getResolveUrl(
     `'${relativePath}', ${
       umd ? `typeof document === 'undefined' ? location.href : ` : ''
-    }document.currentScript && document.currentScript.src || document.baseURI`
+    }document.currentScript && document.currentScript.tagName.toUpperCase() === 'SCRIPT' && document.currentScript.src || document.baseURI`
   )
 
 const relativeUrlMechanisms: Record<
