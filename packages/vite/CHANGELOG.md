@@ -1,3 +1,10 @@
+## <small>5.4.6 (2024-09-16)</small>
+
+* fix: avoid DOM Clobbering gadget in `getRelativeUrlFromDocument` (#18115) ([179b177](https://github.com/vitejs/vite/commit/179b17773cf35c73ddb041f9e6c703fd9f3126af)), closes [#18115](https://github.com/vitejs/vite/issues/18115)
+* fix: fs raw query (#18112) ([6820bb3](https://github.com/vitejs/vite/commit/6820bb3b9a54334f3268fc5ee1e967d2e1c0db34)), closes [#18112](https://github.com/vitejs/vite/issues/18112)
+
+
+
 ## <small>5.4.5 (2024-09-13)</small>
 
 * fix(preload): backport #18098, throw error preloading module as well (#18099) ([faa2405](https://github.com/vitejs/vite/commit/faa2405e5d1da07a7c7fb6d48e887bf97a2f3dba)), closes [#18098](https://github.com/vitejs/vite/issues/18098) [#18099](https://github.com/vitejs/vite/issues/18099)
