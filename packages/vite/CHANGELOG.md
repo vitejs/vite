@@ -1,3 +1,10 @@
+## <small>5.2.14 (2024-09-16)</small>
+
+* fix: avoid DOM Clobbering gadget in `getRelativeUrlFromDocument` (#18115) ([ebb94c5](https://github.com/vitejs/vite/commit/ebb94c5)), closes [#18115](https://github.com/vitejs/vite/issues/18115)
+* fix: fs raw query (#18112) ([8339d74](https://github.com/vitejs/vite/commit/8339d74)), closes [#18112](https://github.com/vitejs/vite/issues/18112)
+
+
+
 ## <small>5.2.13 (2024-06-07)</small>
 
 * fix: backport to 5.2 (#17411) ([e6913d1](https://github.com/vitejs/vite/commit/e6913d1)), closes [#17411](https://github.com/vitejs/vite/issues/17411)
