@@ -1,3 +1,10 @@
+## <small>5.3.6 (2024-09-16)</small>
+
+* fix: avoid DOM Clobbering gadget in `getRelativeUrlFromDocument` (#18115) ([2691bb3](https://github.com/vitejs/vite/commit/2691bb3ff6b073b41fb9046909e1e03a74e36675)), closes [#18115](https://github.com/vitejs/vite/issues/18115)
+* fix: fs raw query (#18112) ([4573a6f](https://github.com/vitejs/vite/commit/4573a6fd6f1b097fb7296a3e135e0646b996b249)), closes [#18112](https://github.com/vitejs/vite/issues/18112)
+
+
+
 ## <small>5.3.5 (2024-07-25)</small>
 
 * refactor(asset): remove rollup 3 public file watch workaround (#16331) ([66bdb1d](https://github.com/vitejs/vite/commit/66bdb1d7b41e46b5361606ff3811bdad6f625bcc)), closes [#16331](https://github.com/vitejs/vite/issues/16331)
