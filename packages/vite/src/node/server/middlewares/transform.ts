@@ -35,6 +35,8 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP
 } from '../../plugins/optimizedDeps'
 import { getDepsOptimizer } from '../../optimizer'
+import { rawRE, urlRE } from '../../plugins/asset'
+import { ensureServingAccess } from './static'
 
 const debugCache = createDebugger('vite:cache')
 const isDebug = !!process.env.DEBUG
@@ -145,6 +147,13 @@ export function transformMiddleware(
 
           logger.warn(colors.yellow(warning))
         }
+      }
+
+      if (
+        (rawRE.test(url) || urlRE.test(url)) &&
+        !ensureServingAccess(url, server, res, next)
+      ) {
+        return
       }
 
       if (
