@@ -27,7 +27,6 @@ import {
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
 import { cleanUrl, withTrailingSlash } from '../../shared/utils'
 import type { Environment } from '../environment'
-import { isFileServingAllowed } from '../server/middlewares/static'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
@@ -168,10 +167,6 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
       // raw requests, read from disk
       if (rawRE.test(id)) {
-        if (config.command === 'serve' && !isFileServingAllowed(config, id)) {
-          // Let the load fallback handle the fs restriction error
-          return
-        }
         const file = checkPublicFile(id, config) || cleanUrl(id)
         this.addWatchFile(file)
         // raw query, read file and return as string
