@@ -169,12 +169,7 @@
     })
 
   // not imported before, outside of root, treated as unsafe
-  fetch(
-    joinUrlSegments(
-      base,
-      joinUrlSegments('/@fs/', ROOT) + '/unsafe.json?import&raw',
-    ),
-  )
+  fetch('/@fs/' + ROOT + '/unsafe.json?import&raw')
     .then((r) => {
       text('.unsafe-fs-fetch-raw-status', r.status)
       return r.json()
