@@ -259,7 +259,7 @@ export function isFileLoadingAllowed(
   return false
 }
 
-function ensureServingAccess(
+export function ensureServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,
