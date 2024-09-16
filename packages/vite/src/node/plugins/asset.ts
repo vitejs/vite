@@ -29,8 +29,8 @@ export const duplicateAssets = new WeakMap<
   Map<string, OutputAsset>
 >()
 
-const rawRE = /(\?|&)raw(?:&|$)/
-const urlRE = /(\?|&)url(?:&|$)/
+export const rawRE = /(\?|&)raw(?:&|$)/
+export const urlRE = /(\?|&)url(?:&|$)/
 
 const assetCache = new WeakMap<ResolvedConfig, Map<string, string>>()
 
