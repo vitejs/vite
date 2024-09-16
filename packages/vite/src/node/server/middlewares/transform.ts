@@ -12,6 +12,7 @@ import {
   isJSRequest,
   normalizePath,
   prettifyUrl,
+  rawRE,
   removeImportQuery,
   removeTimestampQuery,
   urlRE,
@@ -35,6 +36,7 @@ import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
 import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
+import { ensureServingAccess } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
@@ -156,6 +158,13 @@ export function transformMiddleware(
 
       if (publicDirInRoot && url.startsWith(publicPath)) {
         warnAboutExplicitPublicPathInUrl(url)
+      }
+
+      if (
+        (rawRE.test(url) || urlRE.test(url)) &&
+        !ensureServingAccess(url, server, res, next)
+      ) {
+        return
       }
 
       if (
