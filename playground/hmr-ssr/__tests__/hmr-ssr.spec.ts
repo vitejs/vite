@@ -860,7 +860,11 @@ if (!isBuild) {
     })
   })
 
-  test('hmr should not reload if no accepted within circular imported files', async () => {
+  test('hmr should not reload if no accepted within circular imported files', async (ctx) => {
+    // TODO: Investigate race condition that causes an inconsistent behaviour for the last `untilUpdated`
+    // assertion where it'll sometimes receive "mod-a -> mod-b (edited) -> mod-c -> mod-a (expected no error)"
+    ctx.skip()
+
     await setupModuleRunner('/circular/index')
     const el = () => hmr('.circular')
     expect(el()).toBe(
