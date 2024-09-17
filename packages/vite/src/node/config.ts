@@ -1508,7 +1508,8 @@ export async function loadConfigFromFile(
     return null
   }
 
-  const isESM = isFilePathESM(resolvedPath)
+  const isESM =
+    typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
 
   try {
     const bundled = await bundleConfigFile(resolvedPath, isESM)
