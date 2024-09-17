@@ -2300,7 +2300,7 @@ const makeModernScssWorker = (
               fileURLToPath(canonicalUrl),
               options.filename,
             )
-            return { contents, syntax }
+            return { contents, syntax, sourceMapUrl: canonicalUrl }
           },
         }
         sassOptions.importers = [
@@ -2394,7 +2394,7 @@ const makeModernCompilerScssWorker = (
           )
           const contents =
             result.contents ?? (await fsp.readFile(result.file, 'utf-8'))
-          return { contents, syntax }
+          return { contents, syntax, sourceMapUrl: canonicalUrl }
         },
       }
       sassOptions.importers = [
