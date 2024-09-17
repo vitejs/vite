@@ -133,53 +133,25 @@ describe.runIf(isServe)('serve', () => {
     `)
   })
 
-  test('imported sass', async (context) => {
+  test('imported sass', async () => {
     const css = await getStyleTagContentIncluding('.imported-sass ')
     const map = extractSourcemap(css)
-    if (context.task.file.filepath.includes('sass-modern')) {
-      expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-        {
-          "ignoreList": [],
-          "mappings": "AAGE;EACE,UCJM",
-          "sources": [
-            "/root/imported.sass",
-            "data:;charset=utf-8,$primary:%20red%0A",
-          ],
-          "sourcesContent": [
-            "@import "/imported-nested.sass"
-
-        .imported
-          &-sass
-            color: $primary
-        ",
-            null,
-          ],
-          "version": 3,
-        }
-      `)
-    } else {
-      expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
-        {
-          "ignoreList": [],
-          "mappings": "AAGE;EACE,UCJM",
-          "sources": [
-            "/root/imported.sass",
-            "/root/imported-nested.sass",
-          ],
-          "sourcesContent": [
-            "@import "/imported-nested.sass"
-
-        .imported
-          &-sass
-            color: $primary
-        ",
-            "$primary: red
-        ",
-          ],
-          "version": 3,
-        }
-      `)
-    }
+    expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
+      {
+        "ignoreList": [],
+        "mappings": "AACE;EACE",
+        "sources": [
+          "/root/imported.sass",
+        ],
+        "sourcesContent": [
+          ".imported
+        &-sass
+          color: red
+      ",
+        ],
+        "version": 3,
+      }
+    `)
   })
 
   test('imported sass module', async () => {
