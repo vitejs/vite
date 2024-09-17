@@ -478,7 +478,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           const [url, resolvedId] = await normalizeUrl(specifier, start)
 
           // record as safe modules
-          server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(url))
+          const urlWithoutBase =
+            base !== '/' && url.startsWith(base) ? url.replace(base, '/') : url
+          server?.moduleGraph.safeModulesPath.add(fsPathFromUrl(urlWithoutBase))
 
           if (url !== specifier) {
             let rewriteDone = false
