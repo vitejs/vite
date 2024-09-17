@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  root: 'root',
+  root: 'dir',
   css: {
     transformer: 'lightningcss',
   },
