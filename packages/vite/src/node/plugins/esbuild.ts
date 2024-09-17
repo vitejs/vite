@@ -166,7 +166,7 @@ export async function transformWithEsbuild(
   }
 
   const resolvedOptions: TransformOptions = {
-    legalComments: 'external',
+    legalComments: 'linked',
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
@@ -368,7 +368,7 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
     generateBundle(options) {
       if (collectLegalComments.length && options.dir) {
         this.emitFile({
-          fileName: 'LEGAL.txt',
+          name: 'LEGAL.txt',
           type: 'asset',
           source: collectLegalComments.join('\n'),
         })
