@@ -86,7 +86,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.21.3",
-    "postcss": "^8.4.45",
+    "postcss": "^8.4.47",
     "rollup": "^4.20.0"
   },
   "optionalDependencies": {
@@ -123,7 +123,7 @@
     "fast-glob": "^3.3.2",
     "http-proxy": "^1.18.1",
     "launch-editor-middleware": "^2.9.1",
-    "lightningcss": "^1.26.0",
+    "lightningcss": "^1.27.0",
     "magic-string": "^0.30.11",
     "micromatch": "^4.0.8",
     "mlly": "^1.7.1",
