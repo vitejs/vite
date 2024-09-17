@@ -1,3 +1,11 @@
+## <small>3.2.11 (2024-09-17)</small>
+
+* fix: backport #18112, fs raw query ([a6da450](https://github.com/vitejs/vite/commit/a6da450)), closes [#18112](https://github.com/vitejs/vite/issues/18112)
+* fix: backport #18115, DOM Clobbering in ([2ddd854](https://github.com/vitejs/vite/commit/2ddd854)), closes [#18115](https://github.com/vitejs/vite/issues/18115)
+* fix(importAnalysis): backport #13712, strip url base before passing as safeModulePaths ([5d1d81e](https://github.com/vitejs/vite/commit/5d1d81e)), closes [#13712](https://github.com/vitejs/vite/issues/13712)
+
+
+
 ## <small>3.2.10 (2024-03-24)</small>
 
 
