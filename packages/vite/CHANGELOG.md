@@ -42,7 +42,7 @@
 * fix(css): fix sass `file://` reference (#17909) ([561b940](https://github.com/vitejs/vite/commit/561b940f6f963fbb78058a6e23b4adad53a2edb9)), closes [#17909](https://github.com/vitejs/vite/issues/17909)
 * fix(css): fix sass modern source map (#17938) ([d428e7e](https://github.com/vitejs/vite/commit/d428e7e3a05f8da5ea00bb1b6a0827a5cc225899)), closes [#17938](https://github.com/vitejs/vite/issues/17938)
 * fix(deps): bump tsconfck  (#17990) ([8c661b2](https://github.com/vitejs/vite/commit/8c661b20e92f33eb2e3ba3841b20dd6f6076f1ef)), closes [#17990](https://github.com/vitejs/vite/issues/17990)
-* fix(html): rewrite assets url in <template> (#17988) ([413c86a](https://github.com/vitejs/vite/commit/413c86aa971bc1ad8958578c929f45a368799f74)), closes [#17988](https://github.com/vitejs/vite/issues/17988)
+* fix(html): rewrite assets url in `<template>` (#17988) ([413c86a](https://github.com/vitejs/vite/commit/413c86aa971bc1ad8958578c929f45a368799f74)), closes [#17988](https://github.com/vitejs/vite/issues/17988)
 * fix(preload): add crossorigin attribute in CSS link tags (#17930) ([15871c7](https://github.com/vitejs/vite/commit/15871c75e0722adeda23f771fd6c45fecba4d118)), closes [#17930](https://github.com/vitejs/vite/issues/17930)
 * chore: reduce diffs with v6 branch (#17942) ([bf9065a](https://github.com/vitejs/vite/commit/bf9065aa13da6a519014c3bc1d34cfb1cb49ccca)), closes [#17942](https://github.com/vitejs/vite/issues/17942)
 * chore(deps): update all non-major dependencies (#17945) ([cfb621e](https://github.com/vitejs/vite/commit/cfb621e7a5a3e24d710a9af156e6855e73caf891)), closes [#17945](https://github.com/vitejs/vite/issues/17945)
