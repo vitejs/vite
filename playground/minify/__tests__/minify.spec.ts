@@ -16,8 +16,16 @@ function getJsAndCssContent(assetsDir: string) {
 }
 
 function getLegalFileContent(assetsDir: string) {
-  return readFile(path.resolve(assetsDir, 'LEGAL.txt'))
+  const files = fs.readdirSync(assetsDir)
+
+  for (const fileName of files) {
+    if (fileName.startsWith('LEGAL')) {
+      return readFile(path.join(assetsDir, fileName))
+    }
+  }
 }
+
+const legalComments = '/*! explicit comment */'
 
 describe.runIf(isBuild)('minify', () => {
   test('Do not preserve any legal comments', () => {
@@ -26,10 +34,9 @@ describe.runIf(isBuild)('minify', () => {
     )
 
     expect(jsContent).toContain('{console.log("hello world")}')
-    expect(jsContent).not.toContain('/*! explicit comment */')
-
+    expect(jsContent).not.toContain(legalComments)
     expect(cssContent).toContain('color:#ff0000')
-    expect(cssContent).not.toContain('/*! explicit comment */')
+    expect(cssContent).not.toContain(legalComments)
   })
 
   test('Preserve legal comments', () => {
@@ -37,42 +44,39 @@ describe.runIf(isBuild)('minify', () => {
       path.resolve(testDir, 'dist/inline/assets'),
     )
 
-    expect(jsContent).toContain('/*! explicit comment */')
-    expect(cssContent).toContain('/*! explicit comment */')
+    expect(jsContent).toContain(legalComments)
+    expect(cssContent).toContain(legalComments)
   })
 
   test('Move all legal comments to the end of the file.', () => {
     const { jsContent, cssContent } = getJsAndCssContent(
       path.resolve(testDir, 'dist/eof/assets'),
     )
-    expect(jsContent.endsWith('/*! explicit comment */')).toBeTruthy()
-    expect(cssContent.endsWith('/*! explicit comment */')).toBeTruthy()
+
+    expect(jsContent.endsWith(legalComments)).toBeTruthy()
+    expect(cssContent.endsWith(legalComments)).toBeTruthy()
   })
 
   test('Move all legal comments to a LEGAL.txt file but to not link to them.', () => {
-    const { jsContent, cssContent } = getJsAndCssContent(
-      path.resolve(testDir, 'dist/external/assets'),
-    )
-    const legaContent = getLegalFileContent(
-      path.resolve(testDir, 'dist/external'),
-    )
-    expect(jsContent).not.toContain('/*! explicit comment */')
-    expect(cssContent).not.toContain('/*! explicit comment */')
-    expect(legaContent).toContain('/*! explicit comment */')
+    const assetsPath = path.resolve(testDir, 'dist/external/assets')
+    const { jsContent, cssContent } = getJsAndCssContent(assetsPath)
+    const legaContent = getLegalFileContent(assetsPath)
+
+    expect(jsContent).not.toContain(legalComments)
+    expect(cssContent).not.toContain(legalComments)
+    expect(legaContent).toContain(legalComments)
   })
 
   test('Move all legal comments to a LEGAL.txt file and link to them with a comment.', () => {
-    const { jsContent, cssContent } = getJsAndCssContent(
-      path.resolve(testDir, 'dist/linked/assets'),
-    )
-    const legaContent = getLegalFileContent(
-      path.resolve(testDir, 'dist/linked'),
-    )
-    expect(jsContent).not.toContain('/*! explicit comment */')
-    expect(jsContent).toContain(
-      '/*! For license information please see LEGAL.txt */',
-    )
-    expect(cssContent).not.toContain('/*! explicit comment */')
-    expect(legaContent).toContain('/*! explicit comment */')
+    const linkedCommentsPre = 'For license information please see'
+    const assetsPath = path.resolve(testDir, 'dist/linked/assets')
+    const { jsContent, cssContent } = getJsAndCssContent(assetsPath)
+    const legaContent = getLegalFileContent(assetsPath)
+
+    expect(jsContent).not.toContain(legalComments)
+    expect(jsContent.includes(linkedCommentsPre)).toBeTruthy()
+    expect(cssContent).not.toContain(legalComments)
+    expect(cssContent.includes(linkedCommentsPre)).toBeTruthy()
+    expect(legaContent).toContain(legalComments)
   })
 })

@@ -329,10 +329,6 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
 
       if (res.legalComments) {
         collectLegalComments.push(res.legalComments)
-
-        if (config.esbuild && config.esbuild.legalComments === 'linked') {
-          res.code += '\n/*! For license information please see LEGAL.txt */'
-        }
       }
 
       if (config.build.lib) {
@@ -365,13 +361,33 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       return res
     },
 
-    generateBundle(options) {
+    generateBundle(options, bundle) {
       if (collectLegalComments.length && options.dir) {
-        this.emitFile({
+        const referenceId = this.emitFile({
           name: 'LEGAL.txt',
           type: 'asset',
           source: collectLegalComments.join('\n'),
         })
+
+        if (config.esbuild && config.esbuild.legalComments === 'linked') {
+          const legalCommentsFileName = this.getFileName(referenceId)
+          const linkedComments = `/*! For license information please see ${legalCommentsFileName} */`
+
+          for (const file in bundle) {
+            const chunk = bundle[file]
+
+            if (
+              chunk.fileName.endsWith('.css') ||
+              chunk.fileName.endsWith('.js')
+            ) {
+              if (chunk.type === 'asset') {
+                chunk.source += linkedComments
+              } else if (chunk.type === 'chunk') {
+                chunk.code += linkedComments
+              }
+            }
+          }
+        }
       }
     },
   }
