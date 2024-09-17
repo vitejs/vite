@@ -5,8 +5,6 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "dev:root": "vite --config ./vite.config-root.js dev",
-    "build:root": "vite --config ./vite.config-root.js build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
     "preview": "vite preview"
   },
