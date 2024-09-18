@@ -403,7 +403,14 @@ export default defineConfig({
     },
   },
   vite: {
-    plugins: [groupIconVitePlugin()],
+    plugins: [
+      groupIconVitePlugin({
+        customIcon: {
+          firebase: 'vscode-icons:file-type-firebase',
+          '.gitlab-ci.yml': 'vscode-icons:file-type-gitlab',
+        },
+      }),
+    ],
   },
   buildEnd,
 })
