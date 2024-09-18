@@ -53,10 +53,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
           if (depsOptimizer.options.noDiscovery) {
             return
           }
-          const resolved = await this.resolve(id, importer, {
-            ...options,
-            custom: { ...options.custom, 'vite:pre-alias': true },
-          })
+          const resolved = await this.resolve(id, importer, options)
           if (resolved && !depsOptimizer.isOptimizedDepFile(resolved.id)) {
             const optimizeDeps = depsOptimizer.options
             const resolvedId = cleanUrl(resolved.id)

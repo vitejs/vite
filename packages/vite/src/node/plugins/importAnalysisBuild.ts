@@ -81,7 +81,8 @@ function preload(
   deps?: string[],
   importerUrl?: string,
 ) {
-  let promise: Promise<unknown> = Promise.resolve()
+  let promise: Promise<PromiseSettledResult<unknown>[] | void> =
+    Promise.resolve()
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
     const links = document.getElementsByTagName('link')
@@ -93,7 +94,7 @@ function preload(
     // in that case fallback to getAttribute
     const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute('nonce')
 
-    promise = Promise.all(
+    promise = Promise.allSettled(
       deps.map((dep) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
@@ -144,18 +145,24 @@ function preload(
     )
   }
 
-  return promise
-    .then(() => baseModule())
-    .catch((err) => {
-      const e = new Event('vite:preloadError', {
-        cancelable: true,
-      }) as VitePreloadErrorEvent
-      e.payload = err
-      window.dispatchEvent(e)
-      if (!e.defaultPrevented) {
-        throw err
-      }
-    })
+  function handlePreloadError(err: Error) {
+    const e = new Event('vite:preloadError', {
+      cancelable: true,
+    }) as VitePreloadErrorEvent
+    e.payload = err
+    window.dispatchEvent(e)
+    if (!e.defaultPrevented) {
+      throw err
+    }
+  }
+
+  return promise.then((res) => {
+    for (const item of res || []) {
+      if (item.status !== 'rejected') continue
+      handlePreloadError(item.reason)
+    }
+    return baseModule().catch(handlePreloadError)
+  })
 }
 
 /**
@@ -184,7 +191,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         const scriptRel =
           modulePreload && modulePreload.polyfill
             ? `'modulepreload'`
-            : `(${detectScriptRel.toString()})()`
+            : `/* @__PURE__ */ (${detectScriptRel.toString()})()`
 
         // There are two different cases for the preload list format in __vitePreload
         //
@@ -203,7 +210,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               // is appended inside __vitePreload too.
               `function(dep) { return ${JSON.stringify(config.base)}+dep }`
         const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
-        return preloadCode
+        return { code: preloadCode, moduleSideEffects: false }
       }
     },
 
@@ -509,7 +516,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
                   url = rawUrl.slice(1, -1)
               }
-              const deps: Set<string> = new Set()
+              const deps = new Set<string>()
               let hasRemovedPureCssChunk = false
 
               let normalizedFile: string | undefined = undefined

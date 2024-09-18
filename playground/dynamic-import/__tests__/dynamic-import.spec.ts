@@ -160,6 +160,14 @@ test('should work with load ../ and contain itself directory', async () => {
   )
 })
 
+test('should work a load path that contains parentheses.', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-contains-parenthesis'),
+    'dynamic-import-with-vars-contains-parenthesis',
+    true,
+  )
+})
+
 test.runIf(isBuild)(
   'should rollup warn when static and dynamic import a module in same chunk',
   async () => {

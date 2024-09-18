@@ -2,7 +2,7 @@ export interface Options {
   /**
    * default: 'defaults'
    */
-  targets?: string | string[] | { [key: string]: string }
+  targets?: string | string[] | Record<string, string>
   /**
    * default: 'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'
    */

@@ -223,6 +223,7 @@ const enum PreprocessLang {
   styl = 'styl',
   stylus = 'stylus',
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- bug in typescript-eslint
 const enum PureCssLang {
   css = 'css',
 }
@@ -977,7 +978,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-analysis',
 
-    async transform(_, id, options) {
+    async transform(_, id) {
       if (
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
@@ -1649,7 +1650,7 @@ export const cssDataUriRE =
 export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
 // Assuming a function name won't be longer than 256 chars
 // eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
-const cssImageSetRE = /(?<=image-set\()((?:[\w\-]{1,256}\([^)]*\)|[^)])*)(?=\))/
+const cssImageSetRE = /(?<=image-set\()((?:[\w-]{1,256}\([^)]*\)|[^)])*)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
   replacer: CssUrlReplacer
@@ -2043,7 +2044,7 @@ function loadSassPackage(root: string): {
     try {
       const path = loadPreprocessorPath(PreprocessLang.sass, root)
       return { name: 'sass', path }
-    } catch (e2) {
+    } catch {
       throw e1
     }
   }
@@ -2163,9 +2164,11 @@ const makeScssWorker = (
         }
         const importer = [_internalImporter]
         if (options.importer) {
-          Array.isArray(options.importer)
-            ? importer.unshift(...options.importer)
-            : importer.unshift(options.importer)
+          if (Array.isArray(options.importer)) {
+            importer.unshift(...options.importer)
+          } else {
+            importer.unshift(options.importer)
+          }
         }
 
         const finalOptions: Sass.LegacyOptions<'async'> = {
@@ -2206,7 +2209,10 @@ const makeScssWorker = (
         return !!(
           (options.functions && Object.keys(options.functions).length > 0) ||
           (options.importer &&
-            (!Array.isArray(options.importer) || options.importer.length > 0))
+            (!Array.isArray(options.importer) ||
+              options.importer.length > 0)) ||
+          options.logger ||
+          options.pkgImporter
         )
       },
       max: maxWorkers,
@@ -2319,7 +2325,9 @@ const makeModernScssWorker = (
         return !!(
           (options.functions && Object.keys(options.functions).length > 0) ||
           (options.importers &&
-            (!Array.isArray(options.importers) || options.importers.length > 0))
+            (!Array.isArray(options.importers) ||
+              options.importers.length > 0)) ||
+          options.logger
         )
       },
       max: maxWorkers,
@@ -2857,7 +2865,7 @@ const stylProcessor = (
         worker.stop()
       }
     },
-    async process(environment, source, root, options, resolvers) {
+    async process(_environment, source, root, options, _resolvers) {
       const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
 
       if (!workerMap.has(options.alias)) {

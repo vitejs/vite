@@ -367,7 +367,7 @@ export async function loadCachedDepOptimizationMetadata(
         await fsp.readFile(cachedMetadataPath, 'utf-8'),
         depsCacheDir,
       )
-    } catch (e) {}
+    } catch {}
     // hash is consistent, no need to re-bundle
     if (cachedMetadata) {
       if (cachedMetadata.lockfileHash !== getLockfileHash(environment)) {
@@ -508,7 +508,7 @@ export function runOptimizeDeps(
       try {
         // When exiting the process, `fsp.rm` may not take effect, so we use `fs.rmSync`
         fs.rmSync(processingCacheDir, { recursive: true, force: true })
-      } catch (error) {
+      } catch {
         // Ignore errors
       }
     }
@@ -1286,7 +1286,7 @@ export async function cleanupDepsCacheStaleDirs(
       for (const dirent of dirents) {
         if (dirent.isDirectory() && dirent.name.includes('_temp_')) {
           const tempDirPath = path.resolve(config.cacheDir, dirent.name)
-          const stats = await fsp.stat(tempDirPath).catch((_) => null)
+          const stats = await fsp.stat(tempDirPath).catch(() => null)
           if (
             stats?.mtime &&
             Date.now() - stats.mtime.getTime() > MAX_TEMP_DIR_AGE_MS
@@ -1331,7 +1331,7 @@ const safeRename = promisify(function gracefulRename(
       Date.now() - start < GRACEFUL_RENAME_TIMEOUT
     ) {
       setTimeout(function () {
-        fs.stat(to, function (stater, st) {
+        fs.stat(to, function (stater, _st) {
           if (stater && stater.code === 'ENOENT') fs.rename(from, to, CB)
           else CB(er)
         })

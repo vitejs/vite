@@ -227,7 +227,7 @@ async function createCssPluginTransform(
   const mockFs = vi
     .spyOn(fs, 'readFile')
     // @ts-expect-error vi.spyOn not recognize override `fs.readFile` definition.
-    .mockImplementationOnce((p, encoding, callback) => {
+    .mockImplementationOnce((p, _encoding, callback) => {
       callback(null, Buffer.from(files?.[p] ?? ''))
     })
 

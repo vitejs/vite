@@ -19,7 +19,6 @@ import {
 } from '../utils'
 import type { Environment } from '../environment'
 import { usePerEnvironmentState } from '../environment'
-import { toAbsoluteGlob } from './importMetaGlob'
 import { hasViteIgnoreRE } from './importAnalysis'
 import { workerOrSharedWorkerRE } from './worker'
 
@@ -144,11 +143,13 @@ export async function transformDynamicImport(
   }
   const { globParams, rawPattern, userPattern } = dynamicImportPattern
   const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
+  const dir = importer ? posix.dirname(importer) : root
+  const normalized =
+    rawPattern[0] === '/'
+      ? posix.join(root, rawPattern.slice(1))
+      : posix.join(dir, rawPattern)
 
-  let newRawPattern = posix.relative(
-    posix.dirname(importer),
-    await toAbsoluteGlob(rawPattern, root, importer, resolve),
-  )
+  let newRawPattern = posix.relative(posix.dirname(importer), normalized)
 
   if (!relativePathRE.test(newRawPattern)) {
     newRawPattern = `./${newRawPattern}`
@@ -206,7 +207,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
       let imports: readonly ImportSpecifier[] = []
       try {
         imports = parseImports(source)[0]
-      } catch (e: any) {
+      } catch {
         // ignore as it might not be a JS file, the subsequent plugins will catch the error
         return null
       }
