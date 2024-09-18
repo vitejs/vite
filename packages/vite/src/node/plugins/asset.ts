@@ -39,7 +39,7 @@ const assetCache = new WeakMap<Environment, Map<string, string>>()
 // For the manifest, we need to preserve the original file path and isEntry
 // for CSS assets. We keep a map from referenceId to this information.
 export interface GeneratedAssetMeta {
-  originalFileName: string
+  originalFileName?: string
   isEntry?: boolean
 }
 export const generatedAssetsMap = new WeakMap<
