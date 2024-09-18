@@ -1071,7 +1071,7 @@ export function resolvePackageEntry(
         options.mainFields[0] === 'sass' &&
         !options.extensions.includes(path.extname(entry))
       ) {
-        entry = ''
+        entry = path.dirname(entry);
         skipPackageJson = true
       } else {
         // resolve object browser field in package.json
