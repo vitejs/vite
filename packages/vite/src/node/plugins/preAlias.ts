@@ -28,7 +28,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
       const { environment } = this
-      const ssr = options?.ssr === true
+      const ssr = environment.config.consumer === 'server'
       const depsOptimizer =
         environment.mode === 'dev' ? environment.depsOptimizer : undefined
       if (
