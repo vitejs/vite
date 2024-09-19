@@ -185,6 +185,7 @@ class EnvironmentPluginContainer {
       warn: noop,
       // @ts-expect-error noop
       error: noop,
+      environment,
     }
     const utils = createPluginHookUtils(plugins)
     this.getSortedPlugins = utils.getSortedPlugins
