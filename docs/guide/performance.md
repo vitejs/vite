@@ -59,8 +59,7 @@ If you are using TypeScript, enable `"moduleResolution": "bundler"` and `"allowI
 
 Barrel files are files that re-export the APIs of other files in the same directory. For example:
 
-```js
-// src/utils/index.js
+```js [src/utils/index.js]
 export * from './color.js'
 export * from './dom.js'
 export * from './slash.js'
@@ -92,7 +91,7 @@ vite:transform 62.95ms /src/components/BigComponent.vue +1ms
 vite:transform 102.54ms /src/utils/big-utils.js +1ms
 ```
 
-```js
+```js [vite.config.js]
 export default defineConfig({
   server: {
     warmup: {

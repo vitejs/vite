@@ -44,7 +44,7 @@ A typical SSR application will have the following source file structure:
 
 The `index.html` will need to reference `entry-client.js` and include a placeholder where the server-rendered markup should be injected:
 
-```html
+```html [index.html]
 <div id="app"><!--ssr-outlet--></div>
 <script type="module" src="/src/entry-client.js"></script>
 ```
@@ -69,9 +69,7 @@ This is statically replaced during build so it will allow tree-shaking of unused
 
 When building an SSR app, you likely want to have full control over your main server and decouple Vite from the production environment. It is therefore recommended to use Vite in middleware mode. Here is an example with [express](https://expressjs.com/):
 
-**server.js**
-
-```js{15-18} twoslash
+```js{15-18} twoslash [server.js]
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -113,7 +111,7 @@ Here `vite` is an instance of [ViteDevServer](./api-javascript#vitedevserver). `
 
 The next step is implementing the `*` handler to serve server-rendered HTML:
 
-```js twoslash
+```js twoslash [server.js]
 // @noErrors
 import fs from 'node:fs'
 import path from 'node:path'
@@ -166,7 +164,7 @@ app.use('*', async (req, res, next) => {
 
 The `dev` script in `package.json` should also be changed to use the server script instead:
 
-```diff
+```diff [package.json]
   "scripts": {
 -   "dev": "vite"
 +   "dev": "node server"
@@ -182,7 +180,7 @@ To ship an SSR project for production, we need to:
 
 Our scripts in `package.json` will look like this:
 
-```json
+```json [package.json]
 {
   "scripts": {
     "dev": "node server",
@@ -219,8 +217,7 @@ To leverage the manifest, frameworks need to provide a way to collect the module
 
 `@vitejs/plugin-vue` supports this out of the box and automatically registers used component module IDs on to the associated Vue SSR context:
 
-```js
-// src/entry-server.js
+```js [src/entry-server.js]
 const ctx = {}
 const html = await vueServerRenderer.renderToString(app, ctx)
 // ctx.modules is now a Set of module IDs that were used during the render

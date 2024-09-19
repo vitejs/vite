@@ -8,10 +8,9 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
 1. In your Vite config, configure the entry and enable build manifest:
 
-   ```js twoslash
+   ```js twoslash [vite.config.js]
    import { defineConfig } from 'vite'
    // ---cut---
-   // vite.config.js
    export default defineConfig({
      build: {
        // generate .vite/manifest.json in outDir
@@ -60,7 +59,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
 3. For production: after running `vite build`, a `.vite/manifest.json` file will be generated alongside other asset files. An example manifest file looks like this:
 
-   ```json
+   ```json [.vite/manifest.json]
    {
      "_shared-!~{003}~.js": {
        "file": "assets/shared-ChJ_j-JJ.css",

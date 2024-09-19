@@ -10,8 +10,7 @@ To use a plugin, it needs to be added to the `devDependencies` of the project an
 $ npm add -D @vitejs/plugin-legacy
 ```
 
-```js twoslash
-// vite.config.js
+```js twoslash [vite.config.js]
 import legacy from '@vitejs/plugin-legacy'
 import { defineConfig } from 'vite'
 
@@ -46,8 +45,7 @@ For compatibility with some Rollup plugins, it may be needed to enforce the orde
 - default: invoke plugin after Vite core plugins
 - `post`: invoke plugin after Vite build plugins
 
-```js twoslash
-// vite.config.js
+```js twoslash [vite.config.js]
 import image from '@rollup/plugin-image'
 import { defineConfig } from 'vite'
 
@@ -67,8 +65,7 @@ Check out [Plugins API Guide](./api-plugin.md#plugin-ordering) for detailed info
 
 By default, plugins are invoked for both serve and build. In cases where a plugin needs to be conditionally applied only during serve or build, use the `apply` property to only invoke them during `'build'` or `'serve'`:
 
-```js twoslash
-// vite.config.js
+```js twoslash [vite.config.js]
 import typescript2 from 'rollup-plugin-typescript2'
 import { defineConfig } from 'vite'
 

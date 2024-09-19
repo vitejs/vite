@@ -37,7 +37,7 @@ In a monorepo setup, a dependency may be a linked package from the same repo. Vi
 
 However, this requires the linked dep to be exported as ESM. If not, you can add the dependency to [`optimizeDeps.include`](/config/dep-optimization-options.md#optimizedeps-include) and [`build.commonjsOptions.include`](/config/build-options.md#build-commonjsoptions) in your config.
 
-```js twoslash
+```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'
 // ---cut---
 export default defineConfig({
