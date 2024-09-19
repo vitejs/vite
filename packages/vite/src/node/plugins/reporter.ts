@@ -93,7 +93,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
       code: string | Uint8Array,
     ): Promise<number | null> {
       if (
-        environment.config.build.ssr ||
+        environment.config.consumer !== 'client' ||
         !environment.config.build.reportCompressedSize
       ) {
         return null
@@ -255,7 +255,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
           hasLargeChunks &&
           environment.config.build.minify &&
           !config.build.lib &&
-          !environment.config.build.ssr
+          environment.config.consumer === 'client'
         ) {
           environment.logger.warn(
             colors.yellow(

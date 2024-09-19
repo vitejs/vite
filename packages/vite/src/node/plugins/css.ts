@@ -452,7 +452,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       codeSplitEmitQueue = createSerialPromiseQueue()
     },
 
-    async transform(css, id, options) {
+    async transform(css, id) {
       if (
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
@@ -510,7 +510,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           return null
         }
         // server only
-        if (options?.ssr) {
+        if (this.environment.config.consumer !== 'client') {
           return modulesCode || `export default ${JSON.stringify(css)}`
         }
         if (inlined) {
@@ -783,7 +783,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             })
             generatedAssets.set(referenceId, { originalFileName, isEntry })
             chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
-          } else if (!config.build.ssr) {
+          } else if (this.environment.config.consumer === 'client') {
             // legacy build and inline css
 
             // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
