@@ -1,3 +1,10 @@
+## <small>5.1.8 (2024-09-19)</small>
+
+* fix: avoid DOM Clobbering gadget in `getRelativeUrlFromDocument` (#18115) ([5caa08f](https://github.com/vitejs/vite/commit/5caa08f)), closes [#18115](https://github.com/vitejs/vite/issues/18115)
+* fix: fs raw query (#18112) ([03f1033](https://github.com/vitejs/vite/commit/03f1033)), closes [#18112](https://github.com/vitejs/vite/issues/18112)
+
+
+
 ## <small>5.1.7 (2024-03-24)</small>
 
 * fix: `fs.deny` with globs with directories (#16250) ([5a056dd](https://github.com/vitejs/vite/commit/5a056dd)), closes [#16250](https://github.com/vitejs/vite/issues/16250)
