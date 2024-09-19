@@ -322,7 +322,7 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 
 4. Specify a project name and branch.
 
-   - **Build Command**: `npm run build`
+   - **Build Command**: `npm install && npm run build`
    - **Publish Directory**: `dist`
 
 5. Click **Create Static Site**.
