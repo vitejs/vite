@@ -1,6 +1,6 @@
 import path from 'node:path'
 import type { ImportKind, Plugin } from 'esbuild'
-import { KNOWN_ASSET_TYPES } from '../constants'
+import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
 import {
   escapeRegex,
@@ -160,7 +160,7 @@ export function esbuildDepPlugin(
             // `resolved` can be javascript even when `id` matches `allExternalTypes`
             // due to cjs resolution (e.g. require("./test.pdf") for "./test.pdf.js")
             // or package name (e.g. import "some-package.pdf")
-            if (resolved.endsWith('.js')) {
+            if (JS_TYPES_RE.test(resolved)) {
               return {
                 path: resolved,
                 external: false,
