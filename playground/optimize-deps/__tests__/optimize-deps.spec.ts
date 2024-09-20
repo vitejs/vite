@@ -343,3 +343,9 @@ test('import the CommonJS external package that omits the js suffix', async () =
     page.textContent('.external-package-tsx-js'),
   ).toBe('tsx')
 })
+
+test('import the CommonJS external package that omits the js suffix', async () => {
+  await expectWithRetry(() => page.textContent('.dep-with-asset-ext')).toBe(
+    'good',
+  )
+})
