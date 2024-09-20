@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { parse as parseUrl } from 'node:url'
+import { URL } from 'node:url'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
@@ -371,7 +371,7 @@ async function fileToBuiltUrl(
     }
   } else {
     // emit as asset
-    const { search, hash } = parseUrl(id)
+    const { search, hash } = new URL(id)
     const postfix = (search || '') + (hash || '')
 
     const originalFileName = normalizePath(
