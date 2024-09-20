@@ -1,3 +1,9 @@
+## <small>5.4.7 (2024-09-20)</small>
+
+* fix: treat config file as ESM in Deno (#18158) ([b5908a2](https://github.com/vitejs/vite/commit/b5908a24ba0808380e3c8ec415624b108c65e08d)), closes [#18158](https://github.com/vitejs/vite/issues/18158)
+
+
+
 ## <small>5.4.6 (2024-09-16)</small>
 
 * fix: avoid DOM Clobbering gadget in `getRelativeUrlFromDocument` (#18115) ([179b177](https://github.com/vitejs/vite/commit/179b17773cf35c73ddb041f9e6c703fd9f3126af)), closes [#18115](https://github.com/vitejs/vite/issues/18115)
