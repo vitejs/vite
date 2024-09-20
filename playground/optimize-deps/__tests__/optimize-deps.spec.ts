@@ -344,8 +344,11 @@ test('import the CommonJS external package that omits the js suffix', async () =
   ).toBe('tsx')
 })
 
-test('import the CommonJS external package that omits the js suffix', async () => {
-  await expectWithRetry(() => page.textContent('.dep-with-asset-ext')).toBe(
-    'good',
-  )
+test('external package name with asset extension', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-asset-ext-no-dual-package'),
+  ).toBe('true')
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-asset-ext-prebundled'),
+  ).toBe(String(isServe))
 })
