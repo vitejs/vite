@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { URL } from 'node:url'
+import { URL, parse as parseUrl } from 'node:url'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
@@ -384,6 +384,10 @@ async function fileToBuiltUrl(
           search = '?'
         }
       }
+      // eslint-disable-next-line no-console
+      console.log(id, search, hash)
+      // eslint-disable-next-line no-console
+      console.log(parseUrl(id))
     } catch {}
 
     const postfix = (search || '') + (hash || '')
