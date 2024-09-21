@@ -22,7 +22,6 @@ import {
   rawRE,
   removeLeadingSlash,
   removeUrlQuery,
-  urlCanParse,
   urlRE,
 } from '../utils'
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
@@ -374,7 +373,7 @@ async function fileToBuiltUrl(
     // emit as asset
     let search = ''
     let hash = ''
-    if (urlCanParse(id)) {
+    try {
       const parsed = new URL(id)
       search = parsed.search
       hash = parsed.hash
@@ -385,7 +384,7 @@ async function fileToBuiltUrl(
           search = '?'
         }
       }
-    }
+    } catch {}
 
     const postfix = (search || '') + (hash || '')
 
