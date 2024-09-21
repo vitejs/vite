@@ -22,6 +22,7 @@ import {
   rawRE,
   removeLeadingSlash,
   removeUrlQuery,
+  urlCanParse,
   urlRE,
 } from '../utils'
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
@@ -371,14 +372,21 @@ async function fileToBuiltUrl(
     }
   } else {
     // emit as asset
-    let { search, hash } = new URL(id)
-    if (!search) {
-      const hasSearchCharacter = id.includes('?')
-      if (hasSearchCharacter) {
-        // When the string structure is like `woff2?#iefix`, the search value obtained by parsing the new URL is an empty string
-        search = '?'
+    let search = ''
+    let hash = ''
+    if (urlCanParse(id)) {
+      const parsed = new URL(id)
+      search = parsed.search
+      hash = parsed.hash
+      if (!search) {
+        const hasSearchCharacter = id.includes('?')
+        if (hasSearchCharacter) {
+          // When the string structure is like `woff2?#iefix`, the search value obtained by parsing the new URL is an empty string
+          search = '?'
+        }
       }
     }
+
     const postfix = (search || '') + (hash || '')
 
     const originalFileName = normalizePath(
