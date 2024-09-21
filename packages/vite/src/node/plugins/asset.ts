@@ -371,7 +371,14 @@ async function fileToBuiltUrl(
     }
   } else {
     // emit as asset
-    const { search, hash } = new URL(id)
+    let { search, hash } = new URL(id)
+    if (!search) {
+      const hasSearchCharacter = id.includes('?')
+      if (hasSearchCharacter) {
+        // When the string structure is like `woff2?#iefix`, the search value obtained by parsing the new URL is an empty string
+        search = '?'
+      }
+    }
     const postfix = (search || '') + (hash || '')
 
     const originalFileName = normalizePath(
