@@ -107,7 +107,7 @@
     "@types/pnpapi": "^0.0.5",
     "artichokie": "^0.2.1",
     "cac": "^6.7.14",
-    "chokidar": "^3.6.0",
+    "chokidar": "^4.0.1",
     "connect": "^3.7.0",
     "convert-source-map": "^2.0.0",
     "cors": "^2.8.5",
