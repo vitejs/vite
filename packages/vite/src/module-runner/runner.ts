@@ -352,7 +352,10 @@ export class ModuleRunner {
       },
       // should be replaced during transformation
       glob() {
-        throw new Error('[module runner] "import.meta.glob" is not supported.')
+        throw new Error(
+          `[module runner] "import.meta.glob" is statically replaced during ` +
+            `file transformation. Make sure to reference it by the full name.`,
+        )
       },
     }
     const exports = Object.create(null)
