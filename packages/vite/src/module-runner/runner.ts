@@ -36,15 +36,9 @@ interface ModuleRunnerDebugger {
 }
 
 export class ModuleRunner {
-  /**
-   * Holds the cache of modules
-   * Keys of the map are ids
-   */
   public moduleGraph: ModuleRunnerGraph
   public hmrClient?: HMRClient
 
-  // private readonly urlToIdMap = new Map<string, string>()
-  // private readonly fileToIdMap = new Map<string, string[]>()
   private readonly envProxy = new Proxy({} as any, {
     get(_, p) {
       throw new Error(
@@ -129,9 +123,9 @@ export class ModuleRunner {
     if (!('externalize' in fetchResult)) {
       return exports
     }
-    const { url: id, type } = fetchResult
+    const { url, type } = fetchResult
     if (type !== 'module' && type !== 'commonjs') return exports
-    analyzeImportedModDifference(exports, id, type, metadata)
+    analyzeImportedModDifference(exports, url, type, metadata)
     return exports
   }
 
@@ -229,10 +223,9 @@ export class ModuleRunner {
   ): Promise<ModuleRunnerNode> {
     url = normalizeAbsoluteUrl(url, this.root)
 
-    const cachedModule = this.moduleGraph.getModuleById(url)
-
     let cached = this.moduleInfoCache.get(url)
     if (!cached) {
+      const cachedModule = this.moduleGraph.getModuleByUrl(url)
       cached = this.getModuleInformation(url, importer, cachedModule).finally(
         () => {
           this.moduleInfoCache.delete(url)
