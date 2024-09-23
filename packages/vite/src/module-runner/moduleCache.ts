@@ -1,12 +1,6 @@
-import {
-  cleanUrl,
-  isWindows,
-  slash,
-  unwrapId,
-  withTrailingSlash,
-} from '../shared/utils'
+import { cleanUrl, isWindows, slash, unwrapId } from '../shared/utils'
 import { SOURCEMAPPING_URL } from '../shared/constants'
-import { decodeBase64, posixResolve } from './utils'
+import { decodeBase64 } from './utils'
 import { DecodedMap } from './sourcemap/decoder'
 import type { ResolvedResult } from './types'
 
@@ -34,43 +28,61 @@ export class ModuleRunnerNode {
 }
 
 export class ModuleRunnerGraph {
-  private root: string
+  public readonly idToModuleMap = new Map<string, ModuleRunnerNode>()
+  public readonly fileToModulesMap = new Map<string, Set<ModuleRunnerNode>>()
+  public readonly urlToIdModuleMap = new Map<string, ModuleRunnerNode>()
 
-  public idToModuleMap = new Map<string, ModuleRunnerNode>()
-  public fileToModuleMap = new Map<string, ModuleRunnerNode[]>()
-
-  constructor(root: string) {
-    this.root = withTrailingSlash(root)
-  }
-
+  /**
+   * Returns the module node by the resolved module ID. Usually, module ID is
+   * the file system path with query and/or hash. It can also be a virtual module.
+   *
+   * Module runner graph will have 1 to 1 mapping with the server module graph.
+   * @param id Resolved module ID
+   */
   public getModuleById(id: string): ModuleRunnerNode | undefined {
     return this.idToModuleMap.get(id)
   }
 
-  public getModulesByFile(file: string): ModuleRunnerNode[] {
-    return this.fileToModuleMap.get(file) || []
+  /**
+   * Returns all modules related to the file system path. Different modules
+   * might have different query parameters or hash, so it's possible to have
+   * multiple modules for the same file.
+   * @param file The file system path of the module
+   */
+  public getModulesByFile(file: string): Set<ModuleRunnerNode> {
+    return this.fileToModulesMap.get(file) || new Set()
   }
 
+  /**
+   * Returns the module node by the URL that was used in the import statement.
+   * Unlike module graph on the server, the URL is not resolved and is used as is.
+   * @param url Server URL that was used in the import statement
+   */
   public getModuleByUrl(url: string): ModuleRunnerNode | undefined {
-    url = unwrapId(url)
-    if (url.startsWith('/')) {
-      const id = posixResolve(this.root, url.slice(1))
-      return this.idToModuleMap.get(id)
-    }
-    return this.idToModuleMap.get(url)
+    return this.urlToIdModuleMap.get(unwrapId(url))
   }
 
+  /**
+   * Ensure that module is in the graph. If the module is already in the graph,
+   * it will return the existing module node. Otherwise, it will create a new
+   * module node and add it to the graph.
+   * @param id Resolved module ID
+   * @param url URL that was used in the import statement
+   */
   public ensureModule(id: string, url: string): ModuleRunnerNode {
     id = normalizeModuleId(id)
     if (this.idToModuleMap.has(id)) {
-      return this.idToModuleMap.get(id)!
+      const moduleNode = this.idToModuleMap.get(id)!
+      this.urlToIdModuleMap.set(url, moduleNode)
+      return moduleNode
     }
     const moduleNode = new ModuleRunnerNode(id, url)
     this.idToModuleMap.set(id, moduleNode)
+    this.urlToIdModuleMap.set(url, moduleNode)
 
-    const fileModules = this.fileToModuleMap.get(moduleNode.file) || []
-    fileModules.push(moduleNode)
-    this.fileToModuleMap.set(moduleNode.file, fileModules)
+    const fileModules = this.fileToModulesMap.get(moduleNode.file) || new Set()
+    fileModules.add(moduleNode)
+    this.fileToModulesMap.set(moduleNode.file, fileModules)
     return moduleNode
   }
 
@@ -87,6 +99,11 @@ export class ModuleRunnerGraph {
     node.imports?.clear()
   }
 
+  /**
+   * Extracts the inlined source map from the module code and returns the decoded
+   * source map. If the source map is not inlined, it will return null.
+   * @param id Resolved module ID
+   */
   getModuleSourceMapById(id: string): null | DecodedMap {
     const mod = this.getModuleById(id)
     if (!mod) return null
@@ -103,7 +120,8 @@ export class ModuleRunnerGraph {
 
   public clear(): void {
     this.idToModuleMap.clear()
-    this.fileToModuleMap.clear()
+    this.fileToModulesMap.clear()
+    this.urlToIdModuleMap.clear()
   }
 }
 
