@@ -122,7 +122,7 @@ class Queue {
 
 function getModulesByFile(runner: ModuleRunner, file: string) {
   const modules: string[] = []
-  for (const [_, mod] of runner.moduleGraph.idToModuleMap.entries()) {
+  for (const mod of runner.moduleGraph.idToModuleMap.values()) {
     if (mod.meta && 'file' in mod.meta && mod.meta.file === file) {
       modules.push(mod.url)
     }
@@ -158,7 +158,7 @@ function findAllEntrypoints(
   runner: ModuleRunner,
   entrypoints = new Set<string>(),
 ): Set<string> {
-  for (const [_, mod] of runner.moduleGraph.idToModuleMap.entries()) {
+  for (const mod of runner.moduleGraph.idToModuleMap.values()) {
     if (mod.importers && !mod.importers.size) {
       entrypoints.add(mod.url)
     }

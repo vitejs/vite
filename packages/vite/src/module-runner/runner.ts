@@ -49,7 +49,7 @@ export class ModuleRunner {
   private readonly transport: RunnerTransport
   private readonly resetSourceMapSupport?: () => void
   private readonly root: string
-  private readonly moduleInfoCache = new Map<
+  private readonly concurrentModuleNodePromises = new Map<
     string,
     Promise<ModuleRunnerNode>
   >()
@@ -63,8 +63,7 @@ export class ModuleRunner {
   ) {
     const root = this.options.root
     this.root = root[root.length - 1] === '/' ? root : `${root}/`
-    this.moduleGraph =
-      options.moduleGraph ?? new ModuleRunnerGraph(options.root)
+    this.moduleGraph = options.moduleGraph ?? new ModuleRunnerGraph()
     this.transport = options.transport
     if (typeof options.hmr === 'object') {
       this.hmrClient = new HMRClient(
@@ -223,15 +222,15 @@ export class ModuleRunner {
   ): Promise<ModuleRunnerNode> {
     url = normalizeAbsoluteUrl(url, this.root)
 
-    let cached = this.moduleInfoCache.get(url)
+    let cached = this.concurrentModuleNodePromises.get(url)
     if (!cached) {
       const cachedModule = this.moduleGraph.getModuleByUrl(url)
       cached = this.getModuleInformation(url, importer, cachedModule).finally(
         () => {
-          this.moduleInfoCache.delete(url)
+          this.concurrentModuleNodePromises.delete(url)
         },
       )
-      this.moduleInfoCache.set(url, cached)
+      this.concurrentModuleNodePromises.set(url, cached)
     } else {
       this.debug?.('[module runner] using cached module info for', url)
     }
@@ -301,8 +300,8 @@ export class ModuleRunner {
     const request = async (dep: string, metadata?: SSRImportMetadata) => {
       const importer = ('file' in fetchResult && fetchResult.file) || moduleId
       const depMod = await this.cachedModule(dep, importer)
-      depMod.importers!.add(moduleId)
-      mod.imports!.add(depMod.id)
+      depMod.importers.add(moduleId)
+      mod.imports.add(depMod.id)
 
       return this.cachedRequest(dep, depMod, callstack, metadata)
     }
