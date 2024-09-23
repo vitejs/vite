@@ -49,8 +49,8 @@ export class ModuleRunnerGraph {
    * multiple modules for the same file.
    * @param file The file system path of the module
    */
-  public getModulesByFile(file: string): Set<ModuleRunnerNode> {
-    return this.fileToModulesMap.get(file) || new Set()
+  public getModulesByFile(file: string): Set<ModuleRunnerNode> | undefined {
+    return this.fileToModulesMap.get(file)
   }
 
   /**
