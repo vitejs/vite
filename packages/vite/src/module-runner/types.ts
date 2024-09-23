@@ -13,7 +13,6 @@ import type {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
-import type { DecodedMap } from './sourcemap/decoder'
 import type { InterceptorOptions } from './sourcemap/interceptor'
 import type { RunnerTransport } from './runnerTransport'
 
@@ -64,19 +63,6 @@ export interface ModuleEvaluator {
   runExternalModule(file: string): Promise<any>
 }
 
-export interface ModuleCache {
-  promise?: Promise<any>
-  exports?: any
-  evaluated?: boolean
-  map?: DecodedMap
-  meta?: ResolvedResult
-  /**
-   * Module ids that imports this module
-   */
-  importers?: Set<string>
-  imports?: Set<string>
-}
-
 export type FetchResult =
   | CachedFetchResult
   | ExternalFetchResult
@@ -101,7 +87,7 @@ export interface ExternalFetchResult {
    * Type of the module. Will be used to determine if import statement is correct.
    * For example, if Vite needs to throw an error if variable is not actually exported
    */
-  type?: 'module' | 'commonjs' | 'builtin' | 'network'
+  type: 'module' | 'commonjs' | 'builtin' | 'network'
 }
 
 export interface ViteFetchResult {
