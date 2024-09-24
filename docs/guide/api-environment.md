@@ -137,15 +137,12 @@ class ModuleRunner {
 In the v5.1 Runtime API, there were `executeUrl` and `executeEntryPoint` methods - they are now merged into a single `import` method. If you want to opt-out of the HMR support, create a runner with `hmr: false` flag.
 :::
 
-The default SSR Node module runner is not exposed. You can use `createNodeEnvironment` API with `createServerModuleRunner` together to create a runner that runs code in the same thread, supports HMR and doesn't conflict with the SSR implementation (in case it's been overridden in the config). Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
+The default SSR Node module runner is exposed on `environment.ssr` during dev. You can guard any runnable environment with a `isRunnableDevEnvironment` function.
+
+Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
 
 ```js
-import {
-  createServer,
-  createServerHotChannel,
-  createServerModuleRunner,
-  createNodeDevEnvironment,
-} from 'vite'
+import { createServer, createRunnableDevEnvironment } from 'vite'
 
 const server = await createServer({
   server: { middlewareMode: true },
@@ -156,16 +153,16 @@ const server = await createServer({
         // Default Vite SSR environment can be overridden in the config, so
         // make sure you have a Node environment before the request is received.
         createEnvironment(name, config) {
-          return createNodeDevEnvironment(name, config, {
-            hot: createServerHotChannel(),
-          })
+          return createRunnableDevEnvironment(name, config)
         },
       },
     },
   },
 })
 
-const runner = createServerModuleRunner(server.environments.node)
+// You might need to cast this to RunnableDevEnvironment in TypeScript or use
+// the "isRunnableDevEnvironment" function to guard the access to the runner
+const environment = server.environments.node
 
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
@@ -181,7 +178,7 @@ app.use('*', async (req, res, next) => {
   // 3. Load the server entry. import(url) automatically transforms
   //    ESM source code to be usable in Node.js! There is no bundling
   //    required, and provides full HMR support.
-  const { render } = await runner.import('/src/entry-server.js')
+  const { render } = await environment.import('/src/entry-server.js')
 
   // 4. render the app HTML. This assumes entry-server.js's exported
   //     `render` function calls appropriate framework SSR APIs,
@@ -310,7 +307,7 @@ function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, conte
       ...context.options,
     },
     hot,
-    runner: {
+    runnerOptions: {
       transport,
     },
   })
@@ -395,7 +392,7 @@ export default {
       dev: {
         createEnvironment(name, config, { watcher }) {
           // Called with 'rsc' and the resolved config during dev
-          return createNodeDevEnvironment(name, config, {
+          return createRunnableDevEnvironment(name, config, {
             hot: customHotChannel(),
             watcher
           })
@@ -786,7 +783,7 @@ function createWorkerEnvironment(name, config, context) {
   const worker = new Worker('./worker.js')
   return new DevEnvironment(name, config, {
     hot: /* custom hot channel */,
-    runner: {
+    runnerOptions: {
       transport: new RemoteEnvironmentTransport({
         send: (data) => worker.postMessage(data),
         onMessage: (listener) => worker.on('message', listener),
