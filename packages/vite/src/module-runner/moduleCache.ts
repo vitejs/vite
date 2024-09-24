@@ -11,7 +11,6 @@ const MODULE_RUNNER_SOURCEMAPPING_REGEXP = new RegExp(
 export class ModuleRunnerNode {
   public importers = new Set<string>()
   public imports = new Set<string>()
-  public lastInvalidationTimestamp = 0
   public evaluated = false
   public meta: ResolvedResult | undefined
   public promise: Promise<any> | undefined
