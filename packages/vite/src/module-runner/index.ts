@@ -1,6 +1,6 @@
 // this file should re-export only things that don't rely on Node.js or other runner features
 
-export { ModuleRunnerGraph, type ModuleRunnerNode } from './moduleCache'
+export { EvaluatedModules, type EvaluatedModuleNode } from './evaluatedModules'
 export { ModuleRunner } from './runner'
 export { ESModulesEvaluator } from './esmEvaluator'
 export { RemoteRunnerTransport } from './runnerTransport'

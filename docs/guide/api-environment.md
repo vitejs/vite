@@ -704,7 +704,7 @@ export interface ModuleRunnerOptions {
   /**
    * Custom module cache. If not provided, it creates a separate module cache for each module runner instance.
    */
-  moduleGraph?: ModuleRunnerGraph
+  evaluatedModules?: EvaluatedModules
 }
 ```
 

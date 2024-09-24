@@ -2,8 +2,8 @@ import type { ViteHotContext } from 'types/hot'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
-import type { ModuleRunnerNode } from './moduleCache'
-import { ModuleRunnerGraph } from './moduleCache'
+import type { EvaluatedModuleNode } from './evaluatedModules'
+import { EvaluatedModules } from './evaluatedModules'
 import type {
   ModuleEvaluator,
   ModuleRunnerContext,
@@ -36,7 +36,7 @@ interface ModuleRunnerDebugger {
 }
 
 export class ModuleRunner {
-  public moduleGraph: ModuleRunnerGraph
+  public evaluatedModules: EvaluatedModules
   public hmrClient?: HMRClient
 
   private readonly envProxy = new Proxy({} as any, {
@@ -51,7 +51,7 @@ export class ModuleRunner {
   private readonly root: string
   private readonly concurrentModuleNodePromises = new Map<
     string,
-    Promise<ModuleRunnerNode>
+    Promise<EvaluatedModuleNode>
   >()
 
   private destroyed = false
@@ -63,7 +63,7 @@ export class ModuleRunner {
   ) {
     const root = this.options.root
     this.root = root[root.length - 1] === '/' ? root : `${root}/`
-    this.moduleGraph = options.moduleGraph ?? new ModuleRunnerGraph()
+    this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = options.transport
     if (typeof options.hmr === 'object') {
       this.hmrClient = new HMRClient(
@@ -92,7 +92,7 @@ export class ModuleRunner {
    * Clear all caches including HMR listeners.
    */
   public clearCache(): void {
-    this.moduleGraph.clear()
+    this.evaluatedModules.clear()
     this.hmrClient?.clear()
   }
 
@@ -128,7 +128,7 @@ export class ModuleRunner {
     return exports
   }
 
-  private isCircularModule(mod: ModuleRunnerNode) {
+  private isCircularModule(mod: EvaluatedModuleNode) {
     for (const importedFile of mod.imports) {
       if (mod.importers.has(importedFile)) {
         return true
@@ -150,7 +150,7 @@ export class ModuleRunner {
       if (importer === moduleUrl) {
         return true
       }
-      const mod = this.moduleGraph.getModuleById(importer)
+      const mod = this.evaluatedModules.getModuleById(importer)
       if (
         mod &&
         mod.importers.size &&
@@ -164,7 +164,7 @@ export class ModuleRunner {
 
   private async cachedRequest(
     url: string,
-    mod: ModuleRunnerNode,
+    mod: EvaluatedModuleNode,
     callstack: string[] = [],
     metadata?: SSRImportMetadata,
   ): Promise<any> {
@@ -219,12 +219,12 @@ export class ModuleRunner {
   private async cachedModule(
     url: string,
     importer?: string,
-  ): Promise<ModuleRunnerNode> {
+  ): Promise<EvaluatedModuleNode> {
     url = normalizeAbsoluteUrl(url, this.root)
 
     let cached = this.concurrentModuleNodePromises.get(url)
     if (!cached) {
-      const cachedModule = this.moduleGraph.getModuleByUrl(url)
+      const cachedModule = this.evaluatedModules.getModuleByUrl(url)
       cached = this.getModuleInformation(url, importer, cachedModule).finally(
         () => {
           this.concurrentModuleNodePromises.delete(url)
@@ -241,8 +241,8 @@ export class ModuleRunner {
   private async getModuleInformation(
     url: string,
     importer: string | undefined,
-    cachedModule: ModuleRunnerNode | undefined,
-  ): Promise<ModuleRunnerNode> {
+    cachedModule: EvaluatedModuleNode | undefined,
+  ): Promise<EvaluatedModuleNode> {
     if (this.destroyed) {
       throw new Error(`Vite module runner has been destroyed.`)
     }
@@ -274,10 +274,10 @@ export class ModuleRunner {
         ? fetchedModule.externalize
         : fetchedModule.id
     const moduleUrl = 'url' in fetchedModule ? fetchedModule.url : url
-    const module = this.moduleGraph.ensureModule(moduleId, moduleUrl)
+    const module = this.evaluatedModules.ensureModule(moduleId, moduleUrl)
 
     if ('invalidate' in fetchedModule && fetchedModule.invalidate) {
-      this.moduleGraph.invalidateModule(module)
+      this.evaluatedModules.invalidateModule(module)
     }
 
     fetchedModule.url = moduleUrl
@@ -290,7 +290,7 @@ export class ModuleRunner {
   // override is allowed, consider this a public API
   protected async directRequest(
     url: string,
-    mod: ModuleRunnerNode,
+    mod: EvaluatedModuleNode,
     _callstack: string[],
   ): Promise<any> {
     const fetchResult = mod.meta!

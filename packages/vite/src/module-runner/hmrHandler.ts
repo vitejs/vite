@@ -54,7 +54,7 @@ export async function handleHotPayload(
 
       hmrClient.logger.debug(`program reload`)
       await hmrClient.notifyListeners('vite:beforeFullReload', payload)
-      runner.moduleGraph.clear()
+      runner.evaluatedModules.clear()
 
       for (const url of clearEntrypointUrls) {
         await runner.import(url)
@@ -121,7 +121,7 @@ class Queue {
 }
 
 function getModulesByFile(runner: ModuleRunner, file: string): string[] {
-  const nodes = runner.moduleGraph.getModulesByFile(file)
+  const nodes = runner.evaluatedModules.getModulesByFile(file)
   if (!nodes) {
     return []
   }
@@ -137,7 +137,7 @@ function getModulesEntrypoints(
   for (const moduleId of modules) {
     if (visited.has(moduleId)) continue
     visited.add(moduleId)
-    const module = runner.moduleGraph.getModuleById(moduleId)
+    const module = runner.evaluatedModules.getModuleById(moduleId)
     if (!module) {
       continue
     }
@@ -156,7 +156,7 @@ function findAllEntrypoints(
   runner: ModuleRunner,
   entrypoints = new Set<string>(),
 ): Set<string> {
-  for (const mod of runner.moduleGraph.idToModuleMap.values()) {
+  for (const mod of runner.evaluatedModules.idToModuleMap.values()) {
     if (mod.importers && !mod.importers.size) {
       entrypoints.add(mod.url)
     }

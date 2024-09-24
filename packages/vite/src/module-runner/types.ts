@@ -5,7 +5,7 @@ import type {
   DefineImportMetadata,
   SSRImportMetadata,
 } from '../shared/ssrTransform'
-import type { ModuleRunnerGraph } from './moduleCache'
+import type { EvaluatedModules } from './evaluatedModules'
 import type {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -168,7 +168,7 @@ export interface ModuleRunnerOptions {
   /**
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */
-  moduleGraph?: ModuleRunnerGraph
+  evaluatedModules?: EvaluatedModules
 }
 
 export interface ImportMetaEnv {

@@ -8,7 +8,7 @@ const MODULE_RUNNER_SOURCEMAPPING_REGEXP = new RegExp(
   `//# ${SOURCEMAPPING_URL}=data:application/json;base64,(.+)`,
 )
 
-export class ModuleRunnerNode {
+export class EvaluatedModuleNode {
   public importers = new Set<string>()
   public imports = new Set<string>()
   public evaluated = false
@@ -26,10 +26,10 @@ export class ModuleRunnerNode {
   }
 }
 
-export class ModuleRunnerGraph {
-  public readonly idToModuleMap = new Map<string, ModuleRunnerNode>()
-  public readonly fileToModulesMap = new Map<string, Set<ModuleRunnerNode>>()
-  public readonly urlToIdModuleMap = new Map<string, ModuleRunnerNode>()
+export class EvaluatedModules {
+  public readonly idToModuleMap = new Map<string, EvaluatedModuleNode>()
+  public readonly fileToModulesMap = new Map<string, Set<EvaluatedModuleNode>>()
+  public readonly urlToIdModuleMap = new Map<string, EvaluatedModuleNode>()
 
   /**
    * Returns the module node by the resolved module ID. Usually, module ID is
@@ -38,7 +38,7 @@ export class ModuleRunnerGraph {
    * Module runner graph will have 1 to 1 mapping with the server module graph.
    * @param id Resolved module ID
    */
-  public getModuleById(id: string): ModuleRunnerNode | undefined {
+  public getModuleById(id: string): EvaluatedModuleNode | undefined {
     return this.idToModuleMap.get(id)
   }
 
@@ -48,7 +48,7 @@ export class ModuleRunnerGraph {
    * multiple modules for the same file.
    * @param file The file system path of the module
    */
-  public getModulesByFile(file: string): Set<ModuleRunnerNode> | undefined {
+  public getModulesByFile(file: string): Set<EvaluatedModuleNode> | undefined {
     return this.fileToModulesMap.get(file)
   }
 
@@ -57,7 +57,7 @@ export class ModuleRunnerGraph {
    * Unlike module graph on the server, the URL is not resolved and is used as is.
    * @param url Server URL that was used in the import statement
    */
-  public getModuleByUrl(url: string): ModuleRunnerNode | undefined {
+  public getModuleByUrl(url: string): EvaluatedModuleNode | undefined {
     return this.urlToIdModuleMap.get(unwrapId(url))
   }
 
@@ -68,14 +68,14 @@ export class ModuleRunnerGraph {
    * @param id Resolved module ID
    * @param url URL that was used in the import statement
    */
-  public ensureModule(id: string, url: string): ModuleRunnerNode {
+  public ensureModule(id: string, url: string): EvaluatedModuleNode {
     id = normalizeModuleId(id)
     if (this.idToModuleMap.has(id)) {
       const moduleNode = this.idToModuleMap.get(id)!
       this.urlToIdModuleMap.set(url, moduleNode)
       return moduleNode
     }
-    const moduleNode = new ModuleRunnerNode(id, url)
+    const moduleNode = new EvaluatedModuleNode(id, url)
     this.idToModuleMap.set(id, moduleNode)
     this.urlToIdModuleMap.set(url, moduleNode)
 
@@ -85,7 +85,7 @@ export class ModuleRunnerGraph {
     return moduleNode
   }
 
-  public invalidateModule(node: ModuleRunnerNode): void {
+  public invalidateModule(node: EvaluatedModuleNode): void {
     node.evaluated = false
     node.meta = undefined
     node.map = undefined
