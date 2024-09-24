@@ -1,6 +1,7 @@
 import type { ResolvedConfig } from '../../config'
 import type { DevEnvironmentContext } from '../environment'
 import { DevEnvironment } from '../environment'
+import { createServerHotChannel } from '../hmr'
 
 export function createNodeDevEnvironment(
   name: string,
@@ -8,9 +9,7 @@ export function createNodeDevEnvironment(
   context: DevEnvironmentContext,
 ): DevEnvironment {
   if (context.hot == null) {
-    throw new Error(
-      '`hot` is a required option. Either explicitly opt out of HMR by setting `hot: false` or provide a hot channel.',
-    )
+    context.hot = createServerHotChannel()
   }
 
   return new DevEnvironment(name, config, context)
