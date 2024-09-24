@@ -46,6 +46,7 @@ export interface ModuleRunnerContext {
 }
 
 export interface ModuleEvaluator {
+  startOffset?: number
   /**
    * Run code that was transformed by Vite.
    * @param context Function context
@@ -138,6 +139,7 @@ export type FetchFunction = (
 
 export interface FetchFunctionOptions {
   cached?: boolean
+  startOffset?: number
 }
 
 export interface ModuleRunnerHmr {
