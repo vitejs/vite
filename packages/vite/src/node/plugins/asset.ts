@@ -373,8 +373,8 @@ async function fileToBuiltUrl(
     // emit as asset
     // On Mac or Linux platforms, the path resolution is considered an invalid URL by the new URL and an error will be thrown.
     // So it will be converted into a valid URL.
-    const _id = 'http://example.com/' + id.split('/').slice(-1)[0]
-    let { search, hash } = new URL(_id)
+    const validUrl = 'http://example.com/' + id.split('/').slice(-1)[0]
+    let { search, hash } = new URL(validUrl)
     if (!search && id.includes('?')) {
       // When the string structure is like `woff2?#iefix`, the search value obtained by parsing the new URL is an empty string
       search = '?'
