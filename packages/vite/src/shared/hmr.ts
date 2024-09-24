@@ -178,8 +178,8 @@ class HMRMessenger {
 
   private queue: HotPayload[] = []
 
-  public send(message: HotPayload): void {
-    this.queue.push(message)
+  public send(payload: HotPayload): void {
+    this.queue.push(payload)
     this.flush()
   }
 

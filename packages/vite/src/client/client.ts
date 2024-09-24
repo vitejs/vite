@@ -142,7 +142,7 @@ const hmrClient = new HMRClient(
   },
   {
     isReady: () => socket && socket.readyState === 1,
-    send: (message) => socket.send(JSON.stringify(message)),
+    send: (payload) => socket.send(JSON.stringify(payload)),
   },
   async function importUpdatedModule({
     acceptedPath,
