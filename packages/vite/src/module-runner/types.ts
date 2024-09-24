@@ -46,6 +46,9 @@ export interface ModuleRunnerContext {
 }
 
 export interface ModuleEvaluator {
+  /**
+   * Number of prefixed lines in the transformed code.
+   */
   startOffset?: number
   /**
    * Run code that was transformed by Vite.
