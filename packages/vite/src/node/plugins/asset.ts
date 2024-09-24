@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { parse as parseUrl } from 'node:url'
+import { URL } from 'node:url'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
@@ -371,8 +371,15 @@ async function fileToBuiltUrl(
     }
   } else {
     // emit as asset
-    const { search, hash } = parseUrl(id)
-    const postfix = (search || '') + (hash || '')
+    // On Mac or Linux platforms, the path resolution is considered an invalid URL by the new URL and an error will be thrown.
+    // So it will be converted into a valid URL.
+    const _id = 'http://example.com/' + id.split('/').slice(-1)[0]
+    let { search, hash } = new URL(_id)
+    if (!search && id.includes('?')) {
+      // When the string structure is like `woff2?#iefix`, the search value obtained by parsing the new URL is an empty string
+      search = '?'
+    }
+    const postfix = search + hash
 
     const originalFileName = normalizePath(
       path.relative(environment.config.root, file),
