@@ -265,6 +265,7 @@ export class ModuleRunner {
           ? { externalize: url, type: 'builtin' }
           : await this.transport.fetchModule(url, importer, {
               cached: isCached,
+              startOffset: this.evaluator.startOffset,
             })
       ) as ResolvedResult
 

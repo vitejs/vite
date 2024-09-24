@@ -47,6 +47,10 @@ export interface ModuleRunnerContext {
 
 export interface ModuleEvaluator {
   /**
+   * Number of prefixed lines in the transformed code.
+   */
+  startOffset?: number
+  /**
    * Run code that was transformed by Vite.
    * @param context Function context
    * @param code Transformed code
@@ -138,6 +142,7 @@ export type FetchFunction = (
 
 export interface FetchFunctionOptions {
   cached?: boolean
+  startOffset?: number
 }
 
 export interface ModuleRunnerHmr {

@@ -715,6 +715,10 @@ export interface ModuleRunnerOptions {
 ```ts
 export interface ModuleEvaluator {
   /**
+   * Number of prefixed lines in the transformed code.
+   */
+  startOffset?: number
+  /**
    * Evaluate code that was transformed by Vite.
    * @param context Function context
    * @param code Transformed code
@@ -733,7 +737,7 @@ export interface ModuleEvaluator {
 }
 ```
 
-Vite exports `ESModulesEvaluator` that implements this interface by default. It uses `new AsyncFunction` to evaluate code, so if the code has inlined source map it should contain an [offset of 2 lines](https://tc39.es/ecma262/#sec-createdynamicfunction) to accommodate for new lines added. This is done automatically in the server node environment. If your runner implementation doesn't have this constraint, you should use `fetchModule` (exported from `vite`) directly.
+Vite exports `ESModulesEvaluator` that implements this interface by default. It uses `new AsyncFunction` to evaluate code, so if the code has inlined source map it should contain an [offset of 2 lines](https://tc39.es/ecma262/#sec-createdynamicfunction) to accommodate for new lines added. This is done automatically by the `ESModulesEvaluator`. Custom evaluators will not add additional lines.
 
 ## RunnerTransport
 
