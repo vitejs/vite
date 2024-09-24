@@ -139,14 +139,19 @@ describe.runIf(isServe)('serve', () => {
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
         "ignoreList": [],
-        "mappings": "AACE;EACE",
+        "mappings": "AAGE;EACE,UCJM",
         "sources": [
           "/root/imported.sass",
+          "/root/imported-nested.sass",
         ],
         "sourcesContent": [
-          ".imported
+          "@import "/imported-nested.sass"
+
+      .imported
         &-sass
-          color: red
+          color: $primary
+      ",
+          "$primary: red
       ",
         ],
         "version": 3,
