@@ -43,21 +43,21 @@ export async function handleHotPayload(
     }
     case 'full-reload': {
       const { triggeredBy } = payload
-      const clearEntrypoints = triggeredBy
+      const clearEntrypointUrls = triggeredBy
         ? getModulesEntrypoints(
             runner,
             getModulesByFile(runner, slash(triggeredBy)),
           )
         : findAllEntrypoints(runner)
 
-      if (!clearEntrypoints.size) break
+      if (!clearEntrypointUrls.size) break
 
       hmrClient.logger.debug(`program reload`)
       await hmrClient.notifyListeners('vite:beforeFullReload', payload)
       runner.moduleGraph.clear()
 
-      for (const id of clearEntrypoints) {
-        await runner.import(id)
+      for (const url of clearEntrypointUrls) {
+        await runner.import(url)
       }
       break
     }
@@ -120,14 +120,12 @@ class Queue {
   }
 }
 
-function getModulesByFile(runner: ModuleRunner, file: string) {
-  const modules: string[] = []
-  for (const mod of runner.moduleGraph.idToModuleMap.values()) {
-    if (mod.meta && 'file' in mod.meta && mod.meta.file === file) {
-      modules.push(mod.url)
-    }
+function getModulesByFile(runner: ModuleRunner, file: string): string[] {
+  const nodes = runner.moduleGraph.getModulesByFile(file)
+  if (!nodes) {
+    return []
   }
-  return modules
+  return [...nodes].map((node) => node.id)
 }
 
 function getModulesEntrypoints(
