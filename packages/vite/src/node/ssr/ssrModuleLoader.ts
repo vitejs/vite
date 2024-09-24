@@ -1,5 +1,5 @@
 import colors from 'picocolors'
-import type { ModuleRunnerNode } from 'vite/module-runner'
+import type { EvaluatedModuleNode } from 'vite/module-runner'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type { ViteDevServer } from '../server'
 import { unwrapId } from '../../shared/utils'
@@ -74,7 +74,7 @@ class SSRCompatModuleRunner extends ModuleRunner {
 
   protected override async directRequest(
     url: string,
-    mod: ModuleRunnerNode,
+    mod: EvaluatedModuleNode,
     _callstack: string[],
   ): Promise<any> {
     const id = mod.meta && 'id' in mod.meta && mod.meta.id
