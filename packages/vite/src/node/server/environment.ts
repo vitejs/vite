@@ -35,7 +35,7 @@ import type { RemoteEnvironmentTransport } from './environmentTransport'
 export interface DevEnvironmentContext {
   hot: false | HotChannel
   options?: EnvironmentOptions
-  runner?: FetchModuleOptions & {
+  runnerOptions?: FetchModuleOptions & {
     transport?: RemoteEnvironmentTransport
   }
   depsOptimizer?: DepsOptimizer
@@ -123,8 +123,8 @@ export class DevEnvironment extends BaseEnvironment {
       this._onCrawlEndCallbacks.forEach((cb) => cb())
     })
 
-    this._ssrRunnerOptions = context.runner ?? {}
-    context.runner?.transport?.register(this)
+    this._ssrRunnerOptions = context.runnerOptions ?? {}
+    context.runnerOptions?.transport?.register(this)
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {

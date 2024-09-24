@@ -39,7 +39,7 @@ import { resolveBuildEnvironmentOptions, resolveBuilderOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import { DevEnvironment } from './server/environment'
-import { createNodeDevEnvironment } from './server/environments/nodeEnvironment'
+import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
 import { createServerHotChannel } from './server/hmr'
 import type { WebSocketServer } from './server/ws'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
@@ -213,7 +213,7 @@ function defaultCreateSsrDevEnvironment(
   name: string,
   config: ResolvedConfig,
 ): DevEnvironment {
-  return createNodeDevEnvironment(name, config, {
+  return createRunnableDevEnvironment(name, config, {
     hot: createServerHotChannel(),
   })
 }
