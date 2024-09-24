@@ -8,7 +8,7 @@ import { createServerModuleRunner } from '../../ssr/runtime/serverModuleRunner'
 export function createRunnableDevEnvironment(
   name: string,
   config: ResolvedConfig,
-  context: DevEnvironmentContext,
+  context: RunnableDevEnvironmentContext,
 ): DevEnvironment {
   if (context.hot == null) {
     throw new Error(
@@ -32,7 +32,7 @@ export function createRunnableDevEnvironment(
 }
 
 export interface RunnableDevEnvironmentContext extends DevEnvironmentContext {
-  runner?: ModuleRunner
+  runner?: (environment: RunnableDevEnvironment) => ModuleRunner
 }
 
 export function isRunnableDevEnvironment(
@@ -50,7 +50,9 @@ class RunnableDevEnvironment extends DevEnvironment {
     context: RunnableDevEnvironmentContext,
   ) {
     super(name, config, context)
-    this.runner = context.runner || createServerModuleRunner(this)
+    this.runner = context.runner
+      ? context.runner(this)
+      : createServerModuleRunner(this)
   }
 
   import<T = any>(url: string): Promise<T> {

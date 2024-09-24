@@ -24,6 +24,7 @@ export {
   createRunnableDevEnvironment,
   isRunnableDevEnvironment,
   type RunnableDevEnvironment,
+  type RunnableDevEnvironmentContext,
 } from './server/environments/runnableEnvironment'
 export {
   DevEnvironment,
