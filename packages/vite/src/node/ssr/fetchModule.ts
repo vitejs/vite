@@ -126,7 +126,7 @@ export async function fetchModule(
     )
   }
 
-  if (options.startOffset != null) {
+  if (options.inlineSourceMap !== false) {
     result = inlineSourceMap(mod, result, options.startOffset)
   }
 
@@ -150,7 +150,7 @@ const OTHER_SOURCE_MAP_REGEXP = new RegExp(
 function inlineSourceMap(
   mod: EnvironmentModuleNode,
   result: TransformResult,
-  startOffset: number,
+  startOffset: number | undefined,
 ) {
   const map = result.map
   let code = result.code
@@ -167,9 +167,11 @@ function inlineSourceMap(
   if (OTHER_SOURCE_MAP_REGEXP.test(code))
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
-  const sourceMap = Object.assign({}, map, {
-    mappings: ';'.repeat(startOffset) + map.mappings,
-  })
+  const sourceMap = startOffset
+    ? Object.assign({}, map, {
+        mappings: ';'.repeat(startOffset) + map.mappings,
+      })
+    : map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
     mod.id
   }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
