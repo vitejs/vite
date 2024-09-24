@@ -155,7 +155,9 @@ const server = await createServer({
         // Default Vite SSR environment can be overridden in the config, so
         // make sure you have a Node environment before the request is received.
         // By default, "createNodeDevEnvironment" also creates an HMR channel
-        createNodeDevEnvironment,
+        createEnvironment(name, config) {
+          return createNodeDevEnvironment(name, config)
+        },
       },
     },
   },
