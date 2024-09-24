@@ -1,4 +1,4 @@
-import type { Update } from 'types/hmrPayload'
+import type { HotPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 
@@ -28,7 +28,7 @@ export interface HMRConnection {
   /**
    * Send message to the client.
    */
-  send(messages: string): void
+  send(messages: HotPayload): void
 }
 
 export class HMRContext implements ViteHotContext {
@@ -154,9 +154,7 @@ export class HMRContext implements ViteHotContext {
   }
 
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
-    this.hmrClient.messenger.send(
-      JSON.stringify({ type: 'custom', event, data }),
-    )
+    this.hmrClient.messenger.send({ type: 'custom', event, data })
   }
 
   private acceptDeps(
@@ -178,9 +176,9 @@ export class HMRContext implements ViteHotContext {
 class HMRMessenger {
   constructor(private connection: HMRConnection) {}
 
-  private queue: string[] = []
+  private queue: HotPayload[] = []
 
-  public send(message: string): void {
+  public send(message: HotPayload): void {
     this.queue.push(message)
     this.flush()
   }
