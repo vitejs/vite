@@ -33,7 +33,7 @@ import {
 import type { RemoteEnvironmentTransport } from './environmentTransport'
 
 export interface DevEnvironmentContext {
-  hot: false | HotChannel
+  hot?: false | HotChannel
   options?: EnvironmentOptions
   runner?: FetchModuleOptions & {
     transport?: RemoteEnvironmentTransport
