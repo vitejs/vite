@@ -134,6 +134,16 @@ test('export * as from', async () => {
     `)
 })
 
+test('export * as from arbitrary module namespace identifier', async () => {
+  expect(
+    await ssrTransformSimpleCode(`export * as "arbitrary string" from 'vue'`),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue");
+
+    Object.defineProperty(__vite_ssr_exports__, "arbitrary string", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_0__ }});"
+  `)
+})
+
 test('export as arbitrary module namespace identifier', async () => {
   expect(
     await ssrTransformSimpleCode(
@@ -141,7 +151,19 @@ test('export as arbitrary module namespace identifier', async () => {
     ),
   ).toMatchInlineSnapshot(`
       "const something = "Something";
-      Object.defineProperty(__vite_ssr_exports__, "arbitrary string", { enumerable: true, configurable: true, get(){ return something }});"  
+      Object.defineProperty(__vite_ssr_exports__, "arbitrary string", { enumerable: true, configurable: true, get(){ return something }});"
+  `)
+})
+
+test('export as from arbitrary module namespace identifier', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `export { "arbitrary string2" as "arbitrary string" } from 'vue';`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["arbitrary string2"]});
+
+    Object.defineProperty(__vite_ssr_exports__, "arbitrary string", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_0__["arbitrary string2"] }});"
   `)
 })
 
