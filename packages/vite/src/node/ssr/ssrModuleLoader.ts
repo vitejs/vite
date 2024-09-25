@@ -1,8 +1,9 @@
 import colors from 'picocolors'
-import type { ModuleCache } from 'vite/module-runner'
+import type { EvaluatedModuleNode } from 'vite/module-runner'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type { ViteDevServer } from '../server'
 import { unwrapId } from '../../shared/utils'
+import type { DevEnvironment } from '../server/environment'
 import { ssrFixStacktrace } from './ssrStacktrace'
 
 type SSRModule = Record<string, any>
@@ -12,13 +13,14 @@ export async function ssrLoadModule(
   server: ViteDevServer,
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
-  server._ssrCompatModuleRunner ||= new SSRCompatModuleRunner(server)
+  const environment = server.environments.ssr
+  server._ssrCompatModuleRunner ||= new SSRCompatModuleRunner(environment)
   url = unwrapId(url)
 
   return instantiateModule(
     url,
     server._ssrCompatModuleRunner,
-    server,
+    environment,
     fixStacktrace,
   )
 }
@@ -26,10 +28,9 @@ export async function ssrLoadModule(
 async function instantiateModule(
   url: string,
   runner: ModuleRunner,
-  server: ViteDevServer,
+  environment: DevEnvironment,
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
-  const environment = server.environments.ssr
   const mod = await environment.moduleGraph.ensureEntryFromUrl(url)
 
   if (mod.ssrError) {
@@ -47,7 +48,7 @@ async function instantiateModule(
       colors.red(`Error when evaluating SSR module ${url}:\n|- ${e.stack}\n`),
       {
         timestamp: true,
-        clear: server.config.clearScreen,
+        clear: environment.config.clearScreen,
         error: e,
       },
     )
@@ -57,13 +58,13 @@ async function instantiateModule(
 }
 
 class SSRCompatModuleRunner extends ModuleRunner {
-  constructor(private server: ViteDevServer) {
+  constructor(private environment: DevEnvironment) {
     super(
       {
-        root: server.environments.ssr.config.root,
+        root: environment.config.root,
         transport: {
           fetchModule: (id, importer, options) =>
-            server.environments.ssr.fetchModule(id, importer, options),
+            environment.fetchModule(id, importer, options),
         },
         sourcemapInterceptor: false,
         hmr: false,
@@ -73,25 +74,24 @@ class SSRCompatModuleRunner extends ModuleRunner {
   }
 
   protected override async directRequest(
-    id: string,
-    mod: ModuleCache,
-    _callstack: string[],
+    url: string,
+    mod: EvaluatedModuleNode,
+    callstack: string[],
   ): Promise<any> {
-    const serverId = mod.meta && 'serverId' in mod.meta && mod.meta.serverId
+    const id = mod.meta && 'id' in mod.meta && mod.meta.id
     // serverId doesn't exist for external modules
-    if (!serverId) {
-      return super.directRequest(id, mod, _callstack)
+    if (!id) {
+      return super.directRequest(url, mod, callstack)
     }
 
-    const viteMod =
-      this.server.environments.ssr.moduleGraph.getModuleById(serverId)
+    const viteMod = this.environment.moduleGraph.getModuleById(id)
 
     if (!viteMod) {
-      return super.directRequest(id, mod, _callstack)
+      return super.directRequest(id, mod, callstack)
     }
 
     try {
-      const exports = await super.directRequest(id, mod, _callstack)
+      const exports = await super.directRequest(id, mod, callstack)
       viteMod.ssrModule = exports
       return exports
     } catch (err) {

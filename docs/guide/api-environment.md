@@ -644,7 +644,7 @@ export class ModuleRunner {
 
 The module evaluator in `ModuleRunner` is responsible for executing the code. Vite exports `ESModulesEvaluator` out of the box, it uses `new AsyncFunction` to evaluate the code. You can provide your own implementation if your JavaScript runtime doesn't support unsafe evaluation.
 
-Module runner exposes `import` method. When Vite server triggers `full-reload` HMR event, all affected modules will be re-executed. Be aware that Module Runner doesn't update `exports` object when this happens (it overrides it), you would need to run `import` or get the module from `moduleCache` again if you rely on having the latest `exports` object.
+Module runner exposes `import` method. When Vite server triggers `full-reload` HMR event, all affected modules will be re-executed. Be aware that Module Runner doesn't update `exports` object when this happens (it overrides it), you would need to run `import` or get the module from `evaluatedModules` again if you rely on having the latest `exports` object.
 
 **Example Usage:**
 
@@ -704,7 +704,7 @@ export interface ModuleRunnerOptions {
   /**
    * Custom module cache. If not provided, it creates a separate module cache for each module runner instance.
    */
-  moduleCache?: ModuleCacheMap
+  evaluatedModules?: EvaluatedModules
 }
 ```
 

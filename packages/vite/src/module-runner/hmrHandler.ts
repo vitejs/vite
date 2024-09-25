@@ -43,21 +43,21 @@ export async function handleHotPayload(
     }
     case 'full-reload': {
       const { triggeredBy } = payload
-      const clearEntrypoints = triggeredBy
+      const clearEntrypointUrls = triggeredBy
         ? getModulesEntrypoints(
             runner,
             getModulesByFile(runner, slash(triggeredBy)),
           )
         : findAllEntrypoints(runner)
 
-      if (!clearEntrypoints.size) break
+      if (!clearEntrypointUrls.size) break
 
       hmrClient.logger.debug(`program reload`)
       await hmrClient.notifyListeners('vite:beforeFullReload', payload)
-      runner.moduleCache.clear()
+      runner.evaluatedModules.clear()
 
-      for (const id of clearEntrypoints) {
-        await runner.import(id)
+      for (const url of clearEntrypointUrls) {
+        await runner.import(url)
       }
       break
     }
@@ -120,14 +120,12 @@ class Queue {
   }
 }
 
-function getModulesByFile(runner: ModuleRunner, file: string) {
-  const modules: string[] = []
-  for (const [id, mod] of runner.moduleCache.entries()) {
-    if (mod.meta && 'file' in mod.meta && mod.meta.file === file) {
-      modules.push(id)
-    }
+function getModulesByFile(runner: ModuleRunner, file: string): string[] {
+  const nodes = runner.evaluatedModules.getModulesByFile(file)
+  if (!nodes) {
+    return []
   }
-  return modules
+  return [...nodes].map((node) => node.id)
 }
 
 function getModulesEntrypoints(
@@ -139,9 +137,12 @@ function getModulesEntrypoints(
   for (const moduleId of modules) {
     if (visited.has(moduleId)) continue
     visited.add(moduleId)
-    const module = runner.moduleCache.getByModuleId(moduleId)
+    const module = runner.evaluatedModules.getModuleById(moduleId)
+    if (!module) {
+      continue
+    }
     if (module.importers && !module.importers.size) {
-      entrypoints.add(moduleId)
+      entrypoints.add(module.url)
       continue
     }
     for (const importer of module.importers || []) {
@@ -155,9 +156,9 @@ function findAllEntrypoints(
   runner: ModuleRunner,
   entrypoints = new Set<string>(),
 ): Set<string> {
-  for (const [id, mod] of runner.moduleCache.entries()) {
+  for (const mod of runner.evaluatedModules.idToModuleMap.values()) {
     if (mod.importers && !mod.importers.size) {
-      entrypoints.add(id)
+      entrypoints.add(mod.url)
     }
   }
   return entrypoints

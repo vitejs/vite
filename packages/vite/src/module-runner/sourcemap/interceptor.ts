@@ -1,7 +1,7 @@
 import type { OriginalMapping } from '@jridgewell/trace-mapping'
 import type { ModuleRunner } from '../runner'
 import { posixDirname, posixResolve } from '../utils'
-import type { ModuleCacheMap } from '../moduleCache'
+import type { EvaluatedModules } from '../evaluatedModules'
 import { slash } from '../../shared/utils'
 import { DecodedMap, getOriginalPosition } from './decoder'
 
@@ -21,7 +21,7 @@ export interface InterceptorOptions {
 const sourceMapCache: Record<string, CachedMapEntry> = {}
 const fileContentsCache: Record<string, string> = {}
 
-const moduleGraphs = new Set<ModuleCacheMap>()
+const evaluatedModulesCache = new Set<EvaluatedModules>()
 const retrieveFileHandlers = new Set<RetrieveFileHandler>()
 const retrieveSourceMapHandlers = new Set<RetrieveSourceMapHandler>()
 
@@ -46,11 +46,11 @@ let overridden = false
 const originalPrepare = Error.prepareStackTrace
 
 function resetInterceptor(runner: ModuleRunner, options: InterceptorOptions) {
-  moduleGraphs.delete(runner.moduleCache)
+  evaluatedModulesCache.delete(runner.evaluatedModules)
   if (options.retrieveFile) retrieveFileHandlers.delete(options.retrieveFile)
   if (options.retrieveSourceMap)
     retrieveSourceMapHandlers.delete(options.retrieveSourceMap)
-  if (moduleGraphs.size === 0) {
+  if (evaluatedModulesCache.size === 0) {
     Error.prepareStackTrace = originalPrepare
     overridden = false
   }
@@ -64,7 +64,7 @@ export function interceptStackTrace(
     Error.prepareStackTrace = prepareStackTrace
     overridden = true
   }
-  moduleGraphs.add(runner.moduleCache)
+  evaluatedModulesCache.add(runner.evaluatedModules)
   if (options.retrieveFile) retrieveFileHandlers.add(options.retrieveFile)
   if (options.retrieveSourceMap)
     retrieveSourceMapHandlers.add(options.retrieveSourceMap)
@@ -102,8 +102,8 @@ function supportRelativeURL(file: string, url: string) {
 }
 
 function getRunnerSourceMap(position: OriginalMapping): CachedMapEntry | null {
-  for (const moduleCache of moduleGraphs) {
-    const sourceMap = moduleCache.getSourceMap(position.source!)
+  for (const moduleGraph of evaluatedModulesCache) {
+    const sourceMap = moduleGraph.getModuleSourceMapById(position.source!)
     if (sourceMap) {
       return {
         url: position.source,
