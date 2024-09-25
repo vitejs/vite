@@ -95,7 +95,7 @@ export class EvaluatedModules {
     // don't remove the importers because otherwise it will be empty after evaluation
     // this can create a bug when file was removed but it still triggers full-reload
     // we are fine with the bug for now because it's not a common case
-    node.imports?.clear()
+    node.imports.clear()
   }
 
   /**
@@ -103,7 +103,7 @@ export class EvaluatedModules {
    * source map. If the source map is not inlined, it will return null.
    * @param id Resolved module ID
    */
-  getModuleSourceMapById(id: string): null | DecodedMap {
+  getModuleSourceMapById(id: string): DecodedMap | null {
     const mod = this.getModuleById(id)
     if (!mod) return null
     if (mod.map) return mod.map
@@ -112,8 +112,7 @@ export class EvaluatedModules {
       mod.meta.code,
     )?.[1]
     if (!mapString) return null
-    const baseFile = mod.file
-    mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), baseFile)
+    mod.map = new DecodedMap(JSON.parse(decodeBase64(mapString)), mod.file)
     return mod.map
   }
 
