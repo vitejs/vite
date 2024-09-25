@@ -1,5 +1,4 @@
 import path from 'node:path'
-import { URL } from 'node:url'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
@@ -25,7 +24,11 @@ import {
   urlRE,
 } from '../utils'
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
-import { cleanUrl, withTrailingSlash } from '../../shared/utils'
+import {
+  cleanUrl,
+  splitFileAndPostfix,
+  withTrailingSlash,
+} from '../../shared/utils'
 import type { Environment } from '../environment'
 
 // referenceId is base64url but replaces - with $
@@ -351,7 +354,7 @@ async function fileToBuiltUrl(
     return cached
   }
 
-  const file = cleanUrl(id)
+  const { file, postfix } = splitFileAndPostfix(id)
   const content = await fsp.readFile(file)
 
   let url: string
@@ -371,15 +374,6 @@ async function fileToBuiltUrl(
     }
   } else {
     // emit as asset
-    // On Mac or Linux platforms, the path resolution is considered an invalid URL by the new URL and an error will be thrown.
-    // So it will be converted into a valid URL.
-    let { search, hash } = new URL(id, 'http://vitejs.dev')
-    if (!search && id.includes('?')) {
-      // When the string structure is like `woff2?#iefix`, the search value obtained by parsing the new URL is an empty string
-      search = '?'
-    }
-    const postfix = search + hash
-
     const originalFileName = normalizePath(
       path.relative(environment.config.root, file),
     )
