@@ -1,3 +1,10 @@
+## <small>5.4.8 (2024-09-25)</small>
+
+* fix(css): backport #18113, fix missing source file warning with sass modern api custom importer (#18 ([7d47fc1](https://github.com/vitejs/vite/commit/7d47fc1c749053095a3345ca1d47406a5f31792a)), closes [#18183](https://github.com/vitejs/vite/issues/18183)
+* fix(css): backport #18128, ensure sass compiler initialized only once (#18184) ([8464d97](https://github.com/vitejs/vite/commit/8464d976b1d9280ed915622c0e7477b36bdb7d8c)), closes [#18128](https://github.com/vitejs/vite/issues/18128) [#18184](https://github.com/vitejs/vite/issues/18184)
+
+
+
 ## <small>5.4.7 (2024-09-20)</small>
 
 * fix: treat config file as ESM in Deno (#18158) ([b5908a2](https://github.com/vitejs/vite/commit/b5908a24ba0808380e3c8ec415624b108c65e08d)), closes [#18158](https://github.com/vitejs/vite/issues/18158)
