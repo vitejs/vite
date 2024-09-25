@@ -5,7 +5,7 @@ import type {
   DefineImportMetadata,
   SSRImportMetadata,
 } from '../shared/ssrTransform'
-import type { EvaluatedModules } from './evaluatedModules'
+import type { EvaluatedModuleNode, EvaluatedModules } from './evaluatedModules'
 import type {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -49,12 +49,12 @@ export interface ModuleEvaluator {
    * Run code that was transformed by Vite.
    * @param context Function context
    * @param code Transformed code
-   * @param id ID that was used to fetch the module
+   * @param module The module node
    */
   runInlinedModule(
     context: ModuleRunnerContext,
     code: string,
-    id: string,
+    module: Readonly<EvaluatedModuleNode>,
   ): Promise<any>
   /**
    * Run externalized module.

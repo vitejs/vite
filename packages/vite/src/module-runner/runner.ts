@@ -394,7 +394,7 @@ export class ModuleRunner {
 
     this.debug?.('[module runner] executing', href)
 
-    await this.evaluator.runInlinedModule(context, code, url)
+    await this.evaluator.runInlinedModule(context, code, mod)
 
     return exports
   }
