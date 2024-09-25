@@ -2,7 +2,7 @@
   "name": "@vite/test-config-sibling",
   "type": "module",
   "devDependencies": {
-    "@types/lodash": "^4.17.7",
+    "@types/lodash": "^4.17.9",
     "lodash": "^4.17.21"
   }
 }

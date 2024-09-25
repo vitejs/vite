@@ -8,6 +8,7 @@ import type {
   Function as FunctionNode,
   Identifier,
   ImportDeclaration,
+  Literal,
   Pattern,
   Property,
   VariableDeclaration,
@@ -130,7 +131,7 @@ async function ssrTransformScript(
   function defineExport(position: number, name: string, local = name) {
     s.appendLeft(
       position,
-      `\nObject.defineProperty(${ssrModuleExportsKey}, "${name}", ` +
+      `\nObject.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
         `{ enumerable: true, configurable: true, get(){ return ${local} }});`,
     )
   }
@@ -163,10 +164,7 @@ async function ssrTransformScript(
       importedNames: node.specifiers
         .map((s) => {
           if (s.type === 'ImportSpecifier')
-            return s.imported.type === 'Identifier'
-              ? s.imported.name
-              : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-                s.imported.value
+            return getIdentifierNameOrLiteralValue(s.imported) as string
           else if (s.type === 'ImportDefaultSpecifier') return 'default'
         })
         .filter(isDefined),
@@ -182,10 +180,7 @@ async function ssrTransformScript(
         } else {
           idToImportMap.set(
             spec.local.name,
-            `${importId}[${
-              // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-              JSON.stringify(spec.imported.value)
-            }]`,
+            `${importId}[${JSON.stringify(spec.imported.value as string)}]`,
           )
         }
       } else if (spec.type === 'ImportDefaultSpecifier') {
@@ -226,33 +221,39 @@ async function ssrTransformScript(
             node.start,
             node.source.value as string,
             {
-              importedNames: node.specifiers.map((s) => s.local.name),
+              importedNames: node.specifiers.map(
+                (s) => getIdentifierNameOrLiteralValue(s.local) as string,
+              ),
             },
           )
           for (const spec of node.specifiers) {
-            const exportedAs =
-              spec.exported.type === 'Identifier'
-                ? spec.exported.name
-                : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-                  spec.exported.value
+            const exportedAs = getIdentifierNameOrLiteralValue(
+              spec.exported,
+            ) as string
 
-            defineExport(
-              node.start,
-              exportedAs,
-              `${importId}.${spec.local.name}`,
-            )
+            if (spec.local.type === 'Identifier') {
+              defineExport(
+                node.start,
+                exportedAs,
+                `${importId}.${spec.local.name}`,
+              )
+            } else {
+              defineExport(
+                node.start,
+                exportedAs,
+                `${importId}[${JSON.stringify(spec.local.value as string)}]`,
+              )
+            }
           }
         } else {
           // export { foo, bar }
           for (const spec of node.specifiers) {
-            const local = spec.local.name
+            // spec.local can be Literal only when it has "from 'something'"
+            const local = (spec.local as Identifier).name
             const binding = idToImportMap.get(local)
-
-            const exportedAs =
-              spec.exported.type === 'Identifier'
-                ? spec.exported.name
-                : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-                  spec.exported.value
+            const exportedAs = getIdentifierNameOrLiteralValue(
+              spec.exported,
+            ) as string
 
             defineExport(node.end, exportedAs, binding || local)
           }
@@ -292,7 +293,10 @@ async function ssrTransformScript(
       s.remove(node.start, node.end)
       const importId = defineImport(node.start, node.source.value as string)
       if (node.exported) {
-        defineExport(node.start, node.exported.name, `${importId}`)
+        const exportedAs = getIdentifierNameOrLiteralValue(
+          node.exported,
+        ) as string
+        defineExport(node.start, exportedAs, `${importId}`)
       } else {
         s.appendLeft(node.start, `${ssrExportAllKey}(${importId});\n`)
       }
@@ -375,6 +379,10 @@ async function ssrTransformScript(
     deps: [...deps],
     dynamicDeps: [...dynamicDeps],
   }
+}
+
+function getIdentifierNameOrLiteralValue(node: Identifier | Literal) {
+  return node.type === 'Identifier' ? node.name : node.value
 }
 
 interface Visitors {
