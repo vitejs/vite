@@ -1,10 +1,10 @@
 import type { ViteHotContext } from 'types/hot'
 import { HMRClient, HMRContext } from '../shared/hmr'
-import { cleanUrl, isPrimitive, isWindows, unwrapId } from '../shared/utils'
+import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
-import { ModuleCacheMap } from './moduleCache'
+import type { EvaluatedModuleNode } from './evaluatedModules'
+import { EvaluatedModules } from './evaluatedModules'
 import type {
-  ModuleCache,
   ModuleEvaluator,
   ModuleRunnerContext,
   ModuleRunnerImportMeta,
@@ -36,15 +36,9 @@ interface ModuleRunnerDebugger {
 }
 
 export class ModuleRunner {
-  /**
-   * Holds the cache of modules
-   * Keys of the map are ids
-   */
-  public moduleCache: ModuleCacheMap
+  public evaluatedModules: EvaluatedModules
   public hmrClient?: HMRClient
 
-  private readonly urlToIdMap = new Map<string, string>()
-  private readonly fileToIdMap = new Map<string, string[]>()
   private readonly envProxy = new Proxy({} as any, {
     get(_, p) {
       throw new Error(
@@ -55,7 +49,10 @@ export class ModuleRunner {
   private readonly transport: RunnerTransport
   private readonly resetSourceMapSupport?: () => void
   private readonly root: string
-  private readonly moduleInfoCache = new Map<string, Promise<ModuleCache>>()
+  private readonly concurrentModuleNodePromises = new Map<
+    string,
+    Promise<EvaluatedModuleNode>
+  >()
 
   private destroyed = false
 
@@ -66,7 +63,7 @@ export class ModuleRunner {
   ) {
     const root = this.options.root
     this.root = root[root.length - 1] === '/' ? root : `${root}/`
-    this.moduleCache = options.moduleCache ?? new ModuleCacheMap(options.root)
+    this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = options.transport
     if (typeof options.hmr === 'object') {
       this.hmrClient = new HMRClient(
@@ -95,8 +92,7 @@ export class ModuleRunner {
    * Clear all caches including HMR listeners.
    */
   public clearCache(): void {
-    this.moduleCache.clear()
-    this.urlToIdMap.clear()
+    this.evaluatedModules.clear()
     this.hmrClient?.clear()
   }
 
@@ -126,13 +122,13 @@ export class ModuleRunner {
     if (!('externalize' in fetchResult)) {
       return exports
     }
-    const { url: id, type } = fetchResult
+    const { url, type } = fetchResult
     if (type !== 'module' && type !== 'commonjs') return exports
-    analyzeImportedModDifference(exports, id, type, metadata)
+    analyzeImportedModDifference(exports, url, type, metadata)
     return exports
   }
 
-  private isCircularModule(mod: Required<ModuleCache>) {
+  private isCircularModule(mod: EvaluatedModuleNode) {
     for (const importedFile of mod.imports) {
       if (mod.importers.has(importedFile)) {
         return true
@@ -154,10 +150,9 @@ export class ModuleRunner {
       if (importer === moduleUrl) {
         return true
       }
-      const mod = this.moduleCache.getByModuleId(
-        importer,
-      ) as Required<ModuleCache>
+      const mod = this.evaluatedModules.getModuleById(importer)
       if (
+        mod &&
         mod.importers.size &&
         this.isCircularImport(mod.importers, moduleUrl, visited)
       ) {
@@ -168,14 +163,13 @@ export class ModuleRunner {
   }
 
   private async cachedRequest(
-    id: string,
-    mod_: ModuleCache,
+    url: string,
+    mod: EvaluatedModuleNode,
     callstack: string[] = [],
     metadata?: SSRImportMetadata,
   ): Promise<any> {
-    const mod = mod_ as Required<ModuleCache>
     const meta = mod.meta!
-    const moduleUrl = meta.url
+    const moduleId = meta.id
 
     const { importers } = mod
 
@@ -185,9 +179,9 @@ export class ModuleRunner {
 
     // check circular dependency
     if (
-      callstack.includes(moduleUrl) ||
+      callstack.includes(moduleId) ||
       this.isCircularModule(mod) ||
-      this.isCircularImport(importers, moduleUrl)
+      this.isCircularImport(importers, moduleId)
     ) {
       if (mod.exports) return this.processImport(mod.exports, meta, metadata)
     }
@@ -196,13 +190,13 @@ export class ModuleRunner {
     if (this.debug) {
       debugTimer = setTimeout(() => {
         const getStack = () =>
-          `stack:\n${[...callstack, moduleUrl]
+          `stack:\n${[...callstack, moduleId]
             .reverse()
             .map((p) => `  - ${p}`)
             .join('\n')}`
 
         this.debug!(
-          `[module runner] module ${moduleUrl} takes over 2s to load.\n${getStack()}`,
+          `[module runner] module ${moduleId} takes over 2s to load.\n${getStack()}`,
         )
       }, 2000)
     }
@@ -212,7 +206,7 @@ export class ModuleRunner {
       if (mod.promise)
         return this.processImport(await mod.promise, meta, metadata)
 
-      const promise = this.directRequest(id, mod, callstack)
+      const promise = this.directRequest(url, mod, callstack)
       mod.promise = promise
       mod.evaluated = false
       return this.processImport(await promise, meta, metadata)
@@ -222,23 +216,21 @@ export class ModuleRunner {
     }
   }
 
-  private async cachedModule(url: string, importer?: string) {
+  private async cachedModule(
+    url: string,
+    importer?: string,
+  ): Promise<EvaluatedModuleNode> {
     url = normalizeAbsoluteUrl(url, this.root)
 
-    const normalized = this.urlToIdMap.get(url)
-    let cachedModule = normalized && this.moduleCache.getByModuleId(normalized)
-    if (!cachedModule) {
-      cachedModule = this.moduleCache.getByModuleId(url)
-    }
-
-    let cached = this.moduleInfoCache.get(url)
+    let cached = this.concurrentModuleNodePromises.get(url)
     if (!cached) {
+      const cachedModule = this.evaluatedModules.getModuleByUrl(url)
       cached = this.getModuleInformation(url, importer, cachedModule).finally(
         () => {
-          this.moduleInfoCache.delete(url)
+          this.concurrentModuleNodePromises.delete(url)
         },
       )
-      this.moduleInfoCache.set(url, cached)
+      this.concurrentModuleNodePromises.set(url, cached)
     } else {
       this.debug?.('[module runner] using cached module info for', url)
     }
@@ -249,8 +241,8 @@ export class ModuleRunner {
   private async getModuleInformation(
     url: string,
     importer: string | undefined,
-    cachedModule: ModuleCache | undefined,
-  ): Promise<ModuleCache> {
+    cachedModule: EvaluatedModuleNode | undefined,
+  ): Promise<EvaluatedModuleNode> {
     if (this.destroyed) {
       throw new Error(`Vite module runner has been destroyed.`)
     }
@@ -278,60 +270,48 @@ export class ModuleRunner {
       return cachedModule
     }
 
-    // base moduleId on "file" and not on id
-    // if `import(variable)` is called it's possible that it doesn't have an extension for example
-    // if we used id for that, then a module will be duplicated
-    const idQuery = url.split('?')[1]
-    const query = idQuery ? `?${idQuery}` : ''
-    const file = 'file' in fetchedModule ? fetchedModule.file : undefined
-    const fileId = file ? `${file}${query}` : url
-    const moduleUrl = this.moduleCache.normalize(fileId)
-    const mod = this.moduleCache.getByModuleId(moduleUrl)
+    const moduleId =
+      'externalize' in fetchedModule
+        ? fetchedModule.externalize
+        : fetchedModule.id
+    const moduleUrl = 'url' in fetchedModule ? fetchedModule.url : url
+    const module = this.evaluatedModules.ensureModule(moduleId, moduleUrl)
 
     if ('invalidate' in fetchedModule && fetchedModule.invalidate) {
-      this.moduleCache.invalidateModule(mod)
+      this.evaluatedModules.invalidateModule(module)
     }
 
     fetchedModule.url = moduleUrl
-    mod.meta = fetchedModule
+    fetchedModule.id = moduleId
+    module.meta = fetchedModule
 
-    if (file) {
-      const fileModules = this.fileToIdMap.get(file) || []
-      fileModules.push(moduleUrl)
-      this.fileToIdMap.set(file, fileModules)
-    }
-
-    this.urlToIdMap.set(url, moduleUrl)
-    this.urlToIdMap.set(unwrapId(url), moduleUrl)
-    return mod
+    return module
   }
 
   // override is allowed, consider this a public API
   protected async directRequest(
-    id: string,
-    mod: ModuleCache,
+    url: string,
+    mod: EvaluatedModuleNode,
     _callstack: string[],
   ): Promise<any> {
     const fetchResult = mod.meta!
-    const moduleUrl = fetchResult.url
-    const callstack = [..._callstack, moduleUrl]
+    const moduleId = fetchResult.id
+    const callstack = [..._callstack, moduleId]
 
     const request = async (dep: string, metadata?: SSRImportMetadata) => {
-      const importer = ('file' in fetchResult && fetchResult.file) || moduleUrl
-      const fetchedModule = await this.cachedModule(dep, importer)
-      const resolvedId = fetchedModule.meta!.url
-      const depMod = this.moduleCache.getByModuleId(resolvedId)
-      depMod.importers!.add(moduleUrl)
-      mod.imports!.add(resolvedId)
+      const importer = ('file' in fetchResult && fetchResult.file) || moduleId
+      const depMod = await this.cachedModule(dep, importer)
+      depMod.importers.add(moduleId)
+      mod.imports.add(depMod.id)
 
-      return this.cachedRequest(dep, fetchedModule, callstack, metadata)
+      return this.cachedRequest(dep, depMod, callstack, metadata)
     }
 
     const dynamicRequest = async (dep: string) => {
       // it's possible to provide an object with toString() method inside import()
       dep = String(dep)
       if (dep[0] === '.') {
-        dep = posixResolve(posixDirname(id), dep)
+        dep = posixResolve(posixDirname(url), dep)
       }
       return request(dep, { isDynamicImport: true })
     }
@@ -349,13 +329,13 @@ export class ModuleRunner {
     if (code == null) {
       const importer = callstack[callstack.length - 2]
       throw new Error(
-        `[module runner] Failed to load "${id}"${
+        `[module runner] Failed to load "${url}"${
           importer ? ` imported from ${importer}` : ''
         }`,
       )
     }
 
-    const modulePath = cleanUrl(file || moduleUrl)
+    const modulePath = cleanUrl(file || moduleId)
     // disambiguate the `<UNIT>:/` on windows: see nodejs/node#31710
     const href = posixPathToFileHref(modulePath)
     const filename = modulePath
@@ -372,7 +352,10 @@ export class ModuleRunner {
       },
       // should be replaced during transformation
       glob() {
-        throw new Error('[module runner] "import.meta.glob" is not supported.')
+        throw new Error(
+          `[module runner] "import.meta.glob" is statically replaced during ` +
+            `file transformation. Make sure to reference it by the full name.`,
+        )
       },
     }
     const exports = Object.create(null)
@@ -392,8 +375,8 @@ export class ModuleRunner {
           if (!this.hmrClient) {
             throw new Error(`[module runner] HMR client was destroyed.`)
           }
-          this.debug?.('[module runner] creating hmr context for', moduleUrl)
-          hotContext ||= new HMRContext(this.hmrClient, moduleUrl)
+          this.debug?.('[module runner] creating hmr context for', mod.url)
+          hotContext ||= new HMRContext(this.hmrClient, mod.url)
           return hotContext
         },
         set: (value) => {
@@ -412,7 +395,7 @@ export class ModuleRunner {
 
     this.debug?.('[module runner] executing', href)
 
-    await this.evaluator.runInlinedModule(context, code, id)
+    await this.evaluator.runInlinedModule(context, code, mod)
 
     return exports
   }
