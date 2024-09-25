@@ -1,5 +1,4 @@
 import path from 'node:path'
-import { parse as parseUrl } from 'node:url'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
@@ -25,7 +24,11 @@ import {
   urlRE,
 } from '../utils'
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
-import { cleanUrl, withTrailingSlash } from '../../shared/utils'
+import {
+  cleanUrl,
+  splitFileAndPostfix,
+  withTrailingSlash,
+} from '../../shared/utils'
 import type { Environment } from '../environment'
 
 // referenceId is base64url but replaces - with $
@@ -351,7 +354,7 @@ async function fileToBuiltUrl(
     return cached
   }
 
-  const file = cleanUrl(id)
+  const { file, postfix } = splitFileAndPostfix(id)
   const content = await fsp.readFile(file)
 
   let url: string
@@ -371,9 +374,6 @@ async function fileToBuiltUrl(
     }
   } else {
     // emit as asset
-    const { search, hash } = parseUrl(id)
-    const postfix = (search || '') + (hash || '')
-
     const originalFileName = normalizePath(
       path.relative(environment.config.root, file),
     )

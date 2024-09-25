@@ -33,6 +33,14 @@ export function cleanUrl(url: string): string {
   return url.replace(postfixRE, '')
 }
 
+export function splitFileAndPostfix(path: string): {
+  file: string
+  postfix: string
+} {
+  const file = cleanUrl(path)
+  return { file, postfix: path.slice(file.length) }
+}
+
 export function isPrimitive(value: unknown): boolean {
   return !value || (typeof value !== 'object' && typeof value !== 'function')
 }

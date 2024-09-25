@@ -53,6 +53,7 @@ import {
   cleanUrl,
   isWindows,
   slash,
+  splitFileAndPostfix,
   withTrailingSlash,
 } from '../../shared/utils'
 
@@ -587,11 +588,6 @@ function ensureVersionQuery(
     }
   }
   return resolved
-}
-
-function splitFileAndPostfix(path: string) {
-  const file = cleanUrl(path)
-  return { file, postfix: path.slice(file.length) }
 }
 
 export function tryFsResolve(
