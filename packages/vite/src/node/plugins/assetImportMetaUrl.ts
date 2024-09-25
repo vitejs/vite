@@ -160,19 +160,21 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
 function buildGlobPattern(ast: any) {
   let pattern = ''
-  let lastElementIndex = -1
-  for (const exp of ast.expressions) {
-    for (let i = lastElementIndex + 1; i < ast.quasis.length; i++) {
-      const el = ast.quasis[i]
-      if (el.end < exp.start) {
-        pattern += el.value.raw
-        lastElementIndex = i
+  let lastIsGlob = false
+  for (let i = 0; i < ast.quasis.length; i++) {
+    const str = ast.quasis[i].value.raw
+    if (str) {
+      if (lastIsGlob && str[0] !== '/') {
+        pattern += '/*'
       }
+      pattern += str
+      lastIsGlob = false
     }
-    pattern += '**'
-  }
-  for (let i = lastElementIndex + 1; i < ast.quasis.length; i++) {
-    pattern += ast.quasis[i].value.raw
+
+    if (ast.expressions[i] && !lastIsGlob) {
+      pattern += '**'
+      lastIsGlob = true
+    }
   }
   return pattern
 }
