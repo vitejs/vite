@@ -107,6 +107,18 @@ interface TransformResult {
 }
 ```
 
+Vite also supports a `RunnableDevEnvironment`, which is a subset of a `DevEnvironment` that exposes a `ModuleRunner` instance. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
+
+```ts
+export class RunnableDevEnvironment extends DevEnvironment {
+  public readonly runner: ModuleRunnner
+}
+
+if (isRunnableDevEnvironment(server.environments.ssr)) {
+  await server.environments.ssr.runner.import('/entry-point.js')
+}
+```
+
 An environment instance in the Vite server lets you process a URL using the `environment.transformRequest(url)` method. This function will use the plugin pipeline to resolve the `url` to a module `id`, load it (reading the file from the file system or through a plugin that implements a virtual module), and then transform the code. While transforming the module, imports and other metadata will be recorded in the environment module graph by creating or updating the corresponding module node. When processing is done, the transform result is also stored in the module.
 
 But the environment instance can't execute the code itself, as the runtime where the module will be run could be different from the one the Vite server is running in. This is the case for the browser environment. When a html is loaded in the browser, its scripts are executed triggering the evaluation of the entire static module graph. Each imported URL generates a request to the Vite server to get the module code, which ends up handled by the Transform Middleware by calling `server.environments.client.transformRequest(url)`. The connection between the environment instance in the server and the module runner in the browser is carried out through HTTP in this case.
@@ -119,7 +131,7 @@ We are using `transformRequest(url)` and `warmupRequest(url)` in the current ver
 The initial proposal had a `run` method that would allow consumers to invoke an import on the runner side by using the `transport` option. During our testing we found out that the API was not universal enough to start recommending it. We are open to implement a built-in layer for remote SSR implementation based on the frameworks feedback. In the meantime, Vite still exposes a [`RunnerTransport` API](#runnertransport) to hide the complexity of the runner RPC.
 :::
 
-For the `ssr` environment running in Node by default, Vite creates a module runner that implements evaluation using `new AsyncFunction` running in the same JS runtime as the dev server. This runner is an instance of `ModuleRunner` that exposes:
+In dev mode the default `ssr` environment is a `RunnableDevEnvironment` with a module runner that implements evaluation using `new AsyncFunction` running in the same JS runtime as the dev server. This runner is an instance of `ModuleRunner` that exposes:
 
 ```ts
 class ModuleRunner {
@@ -136,8 +148,6 @@ class ModuleRunner {
 :::info
 In the v5.1 Runtime API, there were `executeUrl` and `executeEntryPoint` methods - they are now merged into a single `import` method. If you want to opt-out of the HMR support, create a runner with `hmr: false` flag.
 :::
-
-The default SSR Node module runner is exposed on `environment.ssr` during dev. You can guard any runnable environment with a `isRunnableDevEnvironment` function.
 
 Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
 
