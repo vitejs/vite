@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'vitest'
 import { port } from './serve'
-import { getColor, page } from '~utils'
+import { getColor, isServe, page } from '~utils'
 
 const url = `http://localhost:${port}`
 
-describe('injected inline style', () => {
+describe.runIf(isServe)('injected inline style', () => {
   test('injected inline style is present', async () => {
     await page.goto(url)
     const el = await page.$('.ssr-proxy')
