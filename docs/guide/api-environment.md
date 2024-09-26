@@ -914,13 +914,13 @@ This keeps the HTML processing server agnostic.
 ```ts
 export interface ModuleRunnerHMRConnection {
   /**
-   * Checked before sending messages to the client.
+   * Checked before sending messages to the server.
    */
   isReady(): boolean
   /**
-   * Send a message to the client.
+   * Send a message to the server.
    */
-  send(message: string): void
+  send(payload: HotPayload): void
   /**
    * Configure how HMR is handled when this connection triggers an update.
    * This method expects that the connection will start listening for HMR updates and call this callback when it's received.
