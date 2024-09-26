@@ -598,6 +598,12 @@ importers:
         specifier: ^1.27.0
         version: 1.27.0
 
+  playground/css-lightningcss-root:
+    devDependencies:
+      lightningcss:
+        specifier: ^1.27.0
+        version: 1.27.0
+
   playground/css-no-codesplit: {}
 
   playground/css-sourcemap:
