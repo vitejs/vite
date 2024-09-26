@@ -463,6 +463,31 @@ test('sourcemap with multiple sources', async () => {
   }
 })
 
+test('sourcemap with multiple sources and nested paths', async () => {
+  const code = readFixture('dist.js')
+  const map = readFixture('dist.js.map')
+
+  const result = await ssrTransform(code, JSON.parse(map), '', code)
+  assert(result?.map)
+
+  const { sources } = result.map as SourceMap
+  expect(sources).toMatchInlineSnapshot(`
+    [
+      "nested-directory/nested-file.js",
+      "entrypoint.js",
+    ]
+  `)
+
+  function readFixture(filename: string) {
+    const url = new URL(
+      `./fixtures/multi-source-sourcemaps/${filename}`,
+      import.meta.url,
+    )
+
+    return readFileSync(fileURLToPath(url), 'utf8')
+  }
+})
+
 test('overwrite bindings', async () => {
   expect(
     await ssrTransformSimpleCode(
