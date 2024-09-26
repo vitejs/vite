@@ -8,6 +8,7 @@ const { version } = JSON.parse(
 )
 
 export const ROLLUP_HOOKS = [
+  'options',
   'buildStart',
   'buildEnd',
   'renderStart',
@@ -33,6 +34,7 @@ export const ROLLUP_HOOKS = [
   'resolveId',
   'shouldTransformCachedModule',
   'transform',
+  'onLog',
 ] satisfies RollupPluginHooks[]
 
 export const VERSION = version as string

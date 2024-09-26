@@ -1,6 +1,10 @@
 import type { DefaultTheme } from 'vitepress'
 import { defineConfig } from 'vitepress'
 import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
+import {
+  groupIconMdPlugin,
+  groupIconVitePlugin,
+} from 'vitepress-plugin-group-icons'
 import { buildEnd } from './buildEnd.config'
 
 const ogDescription = 'Next Generation Frontend Tooling'
@@ -121,7 +125,7 @@ export default defineConfig({
 
     algolia: {
       appId: '7H67QR5P0A',
-      apiKey: 'deaab78bcdfe96b599497d25acc6460e',
+      apiKey: '208bb9c14574939326032b937431014b',
       indexName: 'vitejs',
       searchParameters: {
         facetFilters: ['tags:en'],
@@ -394,6 +398,19 @@ export default defineConfig({
   },
   markdown: {
     codeTransformers: [transformerTwoslash()],
+    config(md) {
+      md.use(groupIconMdPlugin)
+    },
+  },
+  vite: {
+    plugins: [
+      groupIconVitePlugin({
+        customIcon: {
+          firebase: 'vscode-icons:file-type-firebase',
+          '.gitlab-ci.yml': 'vscode-icons:file-type-gitlab',
+        },
+      }),
+    ],
   },
   buildEnd,
 })

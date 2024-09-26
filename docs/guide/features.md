@@ -125,7 +125,7 @@ Vite's default types are for its Node.js API. To shim the environment of client 
 
 Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsconfig.json`:
 
-```json
+```json [tsconfig.json]
 {
   "compilerOptions": {
     "types": ["vite/client"]
@@ -176,8 +176,7 @@ Vue users should use the official [@vitejs/plugin-vue-jsx](https://github.com/vi
 
 If using JSX without React or Vue, custom `jsxFactory` and `jsxFragment` can be configured using the [`esbuild` option](/config/shared-options.md#esbuild). For example for Preact:
 
-```js twoslash
-// vite.config.js
+```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -192,8 +191,7 @@ More details in [esbuild docs](https://esbuild.github.io/content-types/#jsx).
 
 You can inject the JSX helpers using `jsxInject` (which is a Vite-only option) to avoid manual imports:
 
-```js twoslash
-// vite.config.js
+```js twoslash [vite.config.js]
 import { defineConfig } from 'vite'
 
 export default defineConfig({
@@ -223,8 +221,7 @@ Note that CSS minification will run after PostCSS and will use [`build.cssTarget
 
 Any CSS file ending with `.module.css` is considered a [CSS modules file](https://github.com/css-modules/css-modules). Importing such a file will return the corresponding module object:
 
-```css
-/* example.module.css */
+```css [example.module.css]
 .red {
   color: red;
 }

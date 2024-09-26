@@ -644,7 +644,7 @@ export class ModuleRunner {
 
 The module evaluator in `ModuleRunner` is responsible for executing the code. Vite exports `ESModulesEvaluator` out of the box, it uses `new AsyncFunction` to evaluate the code. You can provide your own implementation if your JavaScript runtime doesn't support unsafe evaluation.
 
-Module runner exposes `import` method. When Vite server triggers `full-reload` HMR event, all affected modules will be re-executed. Be aware that Module Runner doesn't update `exports` object when this happens (it overrides it), you would need to run `import` or get the module from `moduleCache` again if you rely on having the latest `exports` object.
+Module runner exposes `import` method. When Vite server triggers `full-reload` HMR event, all affected modules will be re-executed. Be aware that Module Runner doesn't update `exports` object when this happens (it overrides it), you would need to run `import` or get the module from `evaluatedModules` again if you rely on having the latest `exports` object.
 
 **Example Usage:**
 
@@ -704,7 +704,7 @@ export interface ModuleRunnerOptions {
   /**
    * Custom module cache. If not provided, it creates a separate module cache for each module runner instance.
    */
-  moduleCache?: ModuleCacheMap
+  evaluatedModules?: EvaluatedModules
 }
 ```
 
@@ -714,6 +714,10 @@ export interface ModuleRunnerOptions {
 
 ```ts
 export interface ModuleEvaluator {
+  /**
+   * Number of prefixed lines in the transformed code.
+   */
+  startOffset?: number
   /**
    * Evaluate code that was transformed by Vite.
    * @param context Function context
@@ -733,7 +737,7 @@ export interface ModuleEvaluator {
 }
 ```
 
-Vite exports `ESModulesEvaluator` that implements this interface by default. It uses `new AsyncFunction` to evaluate code, so if the code has inlined source map it should contain an [offset of 2 lines](https://tc39.es/ecma262/#sec-createdynamicfunction) to accommodate for new lines added. This is done automatically in the server node environment. If your runner implementation doesn't have this constraint, you should use `fetchModule` (exported from `vite`) directly.
+Vite exports `ESModulesEvaluator` that implements this interface by default. It uses `new AsyncFunction` to evaluate code, so if the code has inlined source map it should contain an [offset of 2 lines](https://tc39.es/ecma262/#sec-createdynamicfunction) to accommodate for new lines added. This is done automatically by the `ESModulesEvaluator`. Custom evaluators will not add additional lines.
 
 ## RunnerTransport
 
@@ -910,13 +914,13 @@ This keeps the HTML processing server agnostic.
 ```ts
 export interface ModuleRunnerHMRConnection {
   /**
-   * Checked before sending messages to the client.
+   * Checked before sending messages to the server.
    */
   isReady(): boolean
   /**
-   * Send a message to the client.
+   * Send a message to the server.
    */
-  send(message: string): void
+  send(payload: HotPayload): void
   /**
    * Configure how HMR is handled when this connection triggers an update.
    * This method expects that the connection will start listening for HMR updates and call this callback when it's received.
