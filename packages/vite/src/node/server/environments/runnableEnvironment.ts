@@ -28,7 +28,10 @@ export function isRunnableDevEnvironment(
 }
 
 class RunnableDevEnvironment extends DevEnvironment {
-  public readonly runner: ModuleRunner
+  private _runner: ModuleRunner | undefined
+  private _runnerFactory:
+    | ((environment: RunnableDevEnvironment) => ModuleRunner)
+    | undefined
 
   constructor(
     name: string,
@@ -36,9 +39,18 @@ class RunnableDevEnvironment extends DevEnvironment {
     context: RunnableDevEnvironmentContext,
   ) {
     super(name, config, context)
-    this.runner = context.runner
-      ? context.runner(this)
-      : createServerModuleRunner(this)
+    this._runnerFactory = context.runner
+  }
+
+  get runner(): ModuleRunner {
+    if (this._runner) {
+      return this._runner
+    }
+    if (this._runnerFactory) {
+      this._runner = this._runnerFactory(this)
+      return this._runner
+    }
+    return createServerModuleRunner(this)
   }
 }
 
