@@ -4,6 +4,7 @@ import type { DevEnvironmentContext } from '../environment'
 import { DevEnvironment } from '../environment'
 import { createServerModuleRunner } from '../../ssr/runtime/serverModuleRunner'
 import { createServerHotChannel } from '../hmr'
+import type { Environment } from '../../environment'
 
 export function createRunnableDevEnvironment(
   name: string,
@@ -22,7 +23,7 @@ export interface RunnableDevEnvironmentContext extends DevEnvironmentContext {
 }
 
 export function isRunnableDevEnvironment(
-  environment: DevEnvironment,
+  environment: Environment,
 ): environment is RunnableDevEnvironment {
   return environment instanceof RunnableDevEnvironment
 }
