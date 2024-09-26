@@ -47,8 +47,8 @@ export class ServerHMRConnector implements ModuleRunnerHMRConnection {
     return this.connected
   }
 
-  send(message: string): void {
-    const payload = JSON.parse(message) as CustomPayload
+  send(payload_: HotPayload): void {
+    const payload = payload_ as CustomPayload
     this.hotChannel.api.innerEmitter.emit(
       payload.event,
       payload.data,
