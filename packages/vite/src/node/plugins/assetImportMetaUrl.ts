@@ -3,7 +3,12 @@ import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { injectQuery, isParentDirectory, transformStableResult } from '../utils'
+import {
+  injectQuery,
+  isDataUrl,
+  isParentDirectory,
+  transformStableResult,
+} from '../utils'
 import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
 import { createBackCompatIdResolver } from '../idResolver'
@@ -102,6 +107,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           const url = rawUrl.slice(1, -1)
+          if (isDataUrl(url)) {
+            continue
+          }
           let file: string | undefined
           if (url[0] === '.') {
             file = slash(path.resolve(path.dirname(id), url))

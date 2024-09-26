@@ -440,6 +440,18 @@ test('new URL("/...", import.meta.url)', async () => {
   )
 })
 
+test('new URL("data:...", import.meta.url)', async () => {
+  const img = await page.$('.import-meta-url-data-uri-img')
+  expect(
+    (await img.getAttribute('src')).startsWith('data:image/png;base64'),
+  ).toBe(true)
+  expect(
+    (await page.textContent('.import-meta-url-data-uri')).startsWith(
+      'data:image/png;base64',
+    ),
+  ).toBe(true)
+})
+
 test('new URL(..., import.meta.url) without extension', async () => {
   expect(await page.textContent('.import-meta-url-without-extension')).toMatch(
     isBuild ? 'data:text/javascript' : 'nested/test.js',
