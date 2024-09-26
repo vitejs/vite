@@ -407,10 +407,9 @@ if (hasDocument) {
     })
 }
 
-const cspNonce =
-  hasDocument
-    ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
-    : undefined
+const cspNonce = hasDocument
+  ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
+  : undefined
 
 // all css imports should be inserted at the same position
 // because after build it will be a single css file
