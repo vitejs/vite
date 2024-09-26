@@ -321,7 +321,7 @@ function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, conte
       ...context.options,
     },
     hot,
-    runnerOptions: {
+    remoteRunner: {
       transport,
     },
   })
@@ -797,7 +797,7 @@ function createWorkerEnvironment(name, config, context) {
   const worker = new Worker('./worker.js')
   return new DevEnvironment(name, config, {
     hot: /* custom hot channel */,
-    runnerOptions: {
+    remoteRunner: {
       transport: new RemoteEnvironmentTransport({
         send: (data) => worker.postMessage(data),
         onMessage: (listener) => worker.on('message', listener),
