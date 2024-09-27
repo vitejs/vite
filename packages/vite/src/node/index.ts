@@ -20,7 +20,12 @@ export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
 
 export { RemoteEnvironmentTransport } from './server/environmentTransport'
-export { createNodeDevEnvironment } from './server/environments/nodeEnvironment'
+export {
+  createRunnableDevEnvironment,
+  isRunnableDevEnvironment,
+  type RunnableDevEnvironment,
+  type RunnableDevEnvironmentContext,
+} from './server/environments/runnableEnvironment'
 export {
   DevEnvironment,
   type DevEnvironmentContext,
