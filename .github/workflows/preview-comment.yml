@@ -1,18 +1,14 @@
-name: Publish Any Commit
-
-env:
-  # install playwright binary manually (because pnpm only runs install script once)
-  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+name: Add continuous release label
 
 on:
-  push:
-    branches:
-      - main
   issue_comment:
     types: [created]
 
+permissions:
+  pull-requests: write
+
 jobs:
-  build:
+  label:
     if: github.repository == 'vitejs/vite' && (github.event_name == 'push' || github.event.issue.pull_request && startsWith(github.event.comment.body, '/pkg-pr-new'))
     runs-on: ubuntu-latest
 
@@ -54,18 +50,7 @@ jobs:
               })
               throw new Error('not allowed')
             }
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4.0.0
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build
-        working-directory: ./packages/vite
-        run: pnpm build
-
-      - run: pnpm dlx pkg-pr-new@0.0 publish --compact --pnpm ./packages/vite
+      - run: |
+          gh issue edit ${{ github.event.issue.number }} --add-label "pr: preview" --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

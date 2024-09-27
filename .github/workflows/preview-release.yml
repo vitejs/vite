@@ -1,0 +1,38 @@
+name: Preview release
+
+env:
+  # install playwright binary manually (because pnpm only runs install script once)
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [labeled]
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4.0.0
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build
+        working-directory: ./packages/vite
+        run: pnpm build
+
+      - run: pnpm dlx pkg-pr-new@0.0 publish --compact --pnpm ./packages/vite
+
+      - if: github.event_name != 'push'
+        run: |
+          gh issue edit ${{ github.event.issue.number }} --remove-label "pr: preview" --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
