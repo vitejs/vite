@@ -139,6 +139,7 @@ const _require = createRequire(import.meta.url)
 
 const _dirname = path.dirname(fileURLToPath(import.meta.url))
 
+// NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
 export const rollupVersion =
   resolvePackageData('rollup', _dirname, true)?.data.version ?? ''
 
