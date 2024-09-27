@@ -18,18 +18,24 @@ async function testClientReload(serverOptions: ServerOptions) {
   await server.listen()
   const serverUrl = server.resolvedUrls.local[0]
 
-  // open page
+  // open page and wait for connection
+  const connectedPromise = page.waitForEvent('console', {
+    predicate: (message) => message.text().includes('[vite] connected.'),
+    timeout: 5000,
+  })
   await page.goto(serverUrl)
+  await connectedPromise
 
   // input state
   await page.locator('input').fill('hello')
 
-  // restart
-  const reloadPromise = page.waitForEvent('load')
+  // restart and wait for reconnection after reload
+  const reConnectedPromise = page.waitForEvent('console', {
+    predicate: (message) => message.text().includes('[vite] connected.'),
+    timeout: 5000,
+  })
   await server.restart()
-
-  // wait for reload and also check the state is reset
-  await reloadPromise
+  await reConnectedPromise
   expect(await page.textContent('input')).toBe('')
 }
 
