@@ -40,7 +40,6 @@ import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import { DevEnvironment } from './server/environment'
 import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
-import { createServerHotChannel } from './server/hmr'
 import type { WebSocketServer } from './server/ws'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
@@ -213,9 +212,7 @@ function defaultCreateSsrDevEnvironment(
   name: string,
   config: ResolvedConfig,
 ): DevEnvironment {
-  return createRunnableDevEnvironment(name, config, {
-    hot: createServerHotChannel(),
-  })
+  return createRunnableDevEnvironment(name, config)
 }
 
 function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
