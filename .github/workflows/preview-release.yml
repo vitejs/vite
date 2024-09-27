@@ -4,6 +4,9 @@ env:
   # install playwright binary manually (because pnpm only runs install script once)
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
 
+permissions:
+  pull-requests: write
+
 on:
   push:
     branches:
