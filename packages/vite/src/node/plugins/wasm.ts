@@ -1,4 +1,3 @@
-import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { fileToUrl } from './asset'
 
@@ -47,7 +46,7 @@ const wasmHelper = async (opts = {}, url: string) => {
 
 const wasmHelperCode = wasmHelper.toString()
 
-export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
+export const wasmHelperPlugin = (): Plugin => {
   return {
     name: 'vite:wasm-helper',
 
@@ -66,7 +65,7 @@ export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
         return
       }
 
-      const url = await fileToUrl(id, config, this)
+      const url = await fileToUrl(this, id)
 
       return `
 import initWasm from "${wasmHelperId}"

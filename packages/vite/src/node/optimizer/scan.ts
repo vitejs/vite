@@ -11,8 +11,8 @@ import type {
   Plugin,
 } from 'esbuild'
 import esbuild, { formatMessages, transform } from 'esbuild'
+import type { PartialResolvedId } from 'rollup'
 import colors from 'picocolors'
-import type { ResolvedConfig } from '..'
 import {
   CSS_LANGS_RE,
   JS_TYPES_RE,
@@ -34,13 +34,81 @@ import {
   virtualModulePrefix,
   virtualModuleRE,
 } from '../utils'
-import type { PluginContainer } from '../server/pluginContainer'
-import { createPluginContainer } from '../server/pluginContainer'
+import { resolveEnvironmentPlugins } from '../plugin'
+import type { EnvironmentPluginContainer } from '../server/pluginContainer'
+import { createEnvironmentPluginContainer } from '../server/pluginContainer'
+import { BaseEnvironment } from '../baseEnvironment'
+import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 import { cleanUrl } from '../../shared/utils'
 import { loadTsconfigJsonForFile } from '../plugins/esbuild'
 
-type ResolveIdOptions = Parameters<PluginContainer['resolveId']>[2]
+export class ScanEnvironment extends BaseEnvironment {
+  mode = 'scan' as const
+
+  get pluginContainer(): EnvironmentPluginContainer {
+    if (!this._pluginContainer)
+      throw new Error(
+        `${this.name} environment.pluginContainer called before initialized`,
+      )
+    return this._pluginContainer
+  }
+  /**
+   * @internal
+   */
+  _pluginContainer: EnvironmentPluginContainer | undefined
+
+  async init(): Promise<void> {
+    if (this._initiated) {
+      return
+    }
+    this._initiated = true
+    this._plugins = resolveEnvironmentPlugins(this)
+    this._pluginContainer = await createEnvironmentPluginContainer(
+      this,
+      this.plugins,
+    )
+    await this._pluginContainer.buildStart()
+  }
+}
+
+// Restrict access to the module graph and the server while scanning
+export function devToScanEnvironment(
+  environment: DevEnvironment,
+): ScanEnvironment {
+  return {
+    mode: 'scan',
+    get name() {
+      return environment.name
+    },
+    getTopLevelConfig() {
+      return environment.getTopLevelConfig()
+    },
+    /**
+     * @deprecated use environment.config instead
+     **/
+    get options() {
+      return environment.options
+    },
+    get config() {
+      return environment.config
+    },
+    get logger() {
+      return environment.logger
+    },
+    get pluginContainer() {
+      return environment.pluginContainer
+    },
+    get plugins() {
+      return environment.plugins
+    },
+  } as unknown as ScanEnvironment
+}
+
+type ResolveIdOptions = Omit<
+  Parameters<EnvironmentPluginContainer['resolveId']>[2],
+  'environment'
+>
 
 const debug = createDebugger('vite:deps')
 
@@ -57,7 +125,7 @@ const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
 export const importsRE =
   /(?<!\/\/.*)(?<=^|;|\*\/)\s*import(?!\s+type)(?:[\w*{}\n\r\t, ]+from)?\s*("[^"]+"|'[^']+')\s*(?=$|;|\/\/|\/\*)/gm
 
-export function scanImports(config: ResolvedConfig): {
+export function scanImports(environment: ScanEnvironment): {
   cancel: () => Promise<void>
   result: Promise<{
     deps: Record<string, string>
@@ -71,16 +139,16 @@ export function scanImports(config: ResolvedConfig): {
   const missing: Record<string, string> = {}
   let entries: string[]
 
+  const { config } = environment
   const scanContext = { cancelled: false }
-
   const esbuildContext: Promise<BuildContext | undefined> = computeEntries(
-    config,
+    environment,
   ).then((computedEntries) => {
     entries = computedEntries
 
     if (!entries.length) {
-      if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
-        config.logger.warn(
+      if (!config.optimizeDeps.entries && !config.dev.optimizeDeps.include) {
+        environment.logger.warn(
           colors.yellow(
             '(!) Could not auto-determine entry point from rollupOptions or html files ' +
               'and there are no explicit optimizeDeps.include patterns. ' +
@@ -97,14 +165,22 @@ export function scanImports(config: ResolvedConfig): {
         .map((entry) => `\n  ${colors.dim(entry)}`)
         .join('')}`,
     )
-    return prepareEsbuildScanner(config, entries, deps, missing, scanContext)
+    return prepareEsbuildScanner(
+      environment,
+      entries,
+      deps,
+      missing,
+      scanContext,
+    )
   })
 
   const result = esbuildContext
     .then((context) => {
       function disposeContext() {
         return context?.dispose().catch((e) => {
-          config.logger.error('Failed to dispose esbuild context', { error: e })
+          environment.logger.error('Failed to dispose esbuild context', {
+            error: e,
+          })
         })
       }
       if (!context || scanContext?.cancelled) {
@@ -168,16 +244,16 @@ export function scanImports(config: ResolvedConfig): {
   }
 }
 
-async function computeEntries(config: ResolvedConfig) {
+async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
-  const explicitEntryPatterns = config.optimizeDeps.entries
-  const buildInput = config.build.rollupOptions?.input
+  const explicitEntryPatterns = environment.config.dev.optimizeDeps.entries
+  const buildInput = environment.config.build.rollupOptions?.input
 
   if (explicitEntryPatterns) {
-    entries = await globEntries(explicitEntryPatterns, config)
+    entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
-    const resolvePath = (p: string) => path.resolve(config.root, p)
+    const resolvePath = (p: string) => path.resolve(environment.config.root, p)
     if (typeof buildInput === 'string') {
       entries = [resolvePath(buildInput)]
     } else if (Array.isArray(buildInput)) {
@@ -188,14 +264,14 @@ async function computeEntries(config: ResolvedConfig) {
       throw new Error('invalid rollupOptions.input value.')
     }
   } else {
-    entries = await globEntries('**/*.html', config)
+    entries = await globEntries('**/*.html', environment)
   }
 
   // Non-supported entry file types and virtual files should not be scanned for
   // dependencies.
   entries = entries.filter(
     (entry) =>
-      isScannable(entry, config.optimizeDeps.extensions) &&
+      isScannable(entry, environment.config.dev.optimizeDeps.extensions) &&
       fs.existsSync(entry),
   )
 
@@ -203,20 +279,18 @@ async function computeEntries(config: ResolvedConfig) {
 }
 
 async function prepareEsbuildScanner(
-  config: ResolvedConfig,
+  environment: ScanEnvironment,
   entries: string[],
   deps: Record<string, string>,
   missing: Record<string, string>,
   scanContext?: { cancelled: boolean },
 ): Promise<BuildContext | undefined> {
-  const container = await createPluginContainer(config)
-
   if (scanContext?.cancelled) return
 
-  const plugin = esbuildScanPlugin(config, container, deps, missing, entries)
+  const plugin = esbuildScanPlugin(environment, deps, missing, entries)
 
   const { plugins = [], ...esbuildOptions } =
-    config.optimizeDeps?.esbuildOptions ?? {}
+    environment.config.dev.optimizeDeps.esbuildOptions ?? {}
 
   // The plugin pipeline automatically loads the closest tsconfig.json.
   // But esbuild doesn't support reading tsconfig.json if the plugin has resolved the path (https://github.com/evanw/esbuild/issues/2265).
@@ -226,7 +300,7 @@ async function prepareEsbuildScanner(
   let tsconfigRaw = esbuildOptions.tsconfigRaw
   if (!tsconfigRaw && !esbuildOptions.tsconfig) {
     const tsconfigResult = await loadTsconfigJsonForFile(
-      path.join(config.root, '_dummy.js'),
+      path.join(environment.config.root, '_dummy.js'),
     )
     if (tsconfigResult.compilerOptions?.experimentalDecorators) {
       tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
@@ -256,20 +330,20 @@ function orderedDependencies(deps: Record<string, string>) {
   return Object.fromEntries(depsList)
 }
 
-function globEntries(pattern: string | string[], config: ResolvedConfig) {
+function globEntries(pattern: string | string[], environment: ScanEnvironment) {
   const resolvedPatterns = arraify(pattern)
   if (resolvedPatterns.every((str) => !glob.isDynamicPattern(str))) {
     return resolvedPatterns.map((p) =>
-      normalizePath(path.resolve(config.root, p)),
+      normalizePath(path.resolve(environment.config.root, p)),
     )
   }
   return glob(pattern, {
-    cwd: config.root,
+    cwd: environment.config.root,
     ignore: [
       '**/node_modules/**',
-      `**/${config.build.outDir}/**`,
+      `**/${environment.config.build.outDir}/**`,
       // if there aren't explicit entries, also ignore other common folders
-      ...(config.optimizeDeps.entries
+      ...(environment.config.dev.optimizeDeps.entries
         ? []
         : [`**/__tests__/**`, `**/coverage/**`]),
     ],
@@ -284,17 +358,31 @@ export const commentRE = /<!--.*?-->/gs
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
-const contextRE = /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
+const svelteScriptModuleRE =
+  /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
+const svelteModuleRE = /\smodule\b/i
 
 function esbuildScanPlugin(
-  config: ResolvedConfig,
-  container: PluginContainer,
+  environment: ScanEnvironment,
   depImports: Record<string, string>,
   missing: Record<string, string>,
   entries: string[],
 ): Plugin {
   const seen = new Map<string, string | undefined>()
-
+  async function resolveId(
+    id: string,
+    importer?: string,
+    options?: ResolveIdOptions,
+  ): Promise<PartialResolvedId | null> {
+    return environment.pluginContainer.resolveId(
+      id,
+      importer && normalizePath(importer),
+      {
+        ...options,
+        scan: true,
+      },
+    )
+  }
   const resolve = async (
     id: string,
     importer?: string,
@@ -304,22 +392,16 @@ function esbuildScanPlugin(
     if (seen.has(key)) {
       return seen.get(key)
     }
-    const resolved = await container.resolveId(
-      id,
-      importer && normalizePath(importer),
-      {
-        ...options,
-        scan: true,
-      },
-    )
+    const resolved = await resolveId(id, importer, options)
     const res = resolved?.id
     seen.set(key, res)
     return res
   }
 
-  const include = config.optimizeDeps?.include
+  const optimizeDepsOptions = environment.config.dev.optimizeDeps
+  const include = optimizeDepsOptions.include
   const exclude = [
-    ...(config.optimizeDeps?.exclude || []),
+    ...(optimizeDepsOptions.exclude ?? []),
     '@vite/client',
     '@vite/env',
   ]
@@ -347,7 +429,7 @@ function esbuildScanPlugin(
     const result = await transformGlobImport(
       transpiledContents,
       id,
-      config.root,
+      environment.config.root,
       resolve,
     )
 
@@ -393,7 +475,7 @@ function esbuildScanPlugin(
         // bare import resolve, and recorded as optimization dep.
         if (
           isInNodeModules(resolved) &&
-          isOptimizable(resolved, config.optimizeDeps)
+          isOptimizable(resolved, optimizeDepsOptions)
         )
           return
         return {
@@ -480,17 +562,28 @@ function esbuildScanPlugin(
 
             const virtualModulePath = JSON.stringify(virtualModulePrefix + key)
 
-            const contextMatch = contextRE.exec(openTag)
-            const context =
-              contextMatch &&
-              (contextMatch[1] || contextMatch[2] || contextMatch[3])
+            let addedImport = false
 
-            // Especially for Svelte files, exports in <script context="module"> means module exports,
+            // For Svelte files, exports in <script context="module"> or <script module> means module exports,
             // exports in <script> means component props. To avoid having two same export name from the
             // star exports, we need to ignore exports in <script>
-            if (p.endsWith('.svelte') && context !== 'module') {
-              js += `import ${virtualModulePath}\n`
-            } else {
+            if (p.endsWith('.svelte')) {
+              let isModule = svelteModuleRE.test(openTag) // test for svelte5 <script module> syntax
+              if (!isModule) {
+                // fallback, test for svelte4 <script context="module"> syntax
+                const contextMatch = svelteScriptModuleRE.exec(openTag)
+                const context =
+                  contextMatch &&
+                  (contextMatch[1] || contextMatch[2] || contextMatch[3])
+                isModule = context === 'module'
+              }
+              if (!isModule) {
+                addedImport = true
+                js += `import ${virtualModulePath}\n`
+              }
+            }
+
+            if (!addedImport) {
               js += `export * from ${virtualModulePath}\n`
             }
           }
@@ -547,11 +640,11 @@ function esbuildScanPlugin(
             }
             if (isInNodeModules(resolved) || include?.includes(id)) {
               // dependency or forced included, externalize and stop crawling
-              if (isOptimizable(resolved, config.optimizeDeps)) {
+              if (isOptimizable(resolved, optimizeDepsOptions)) {
                 depImports[id] = resolved
               }
               return externalUnlessEntry({ path: id })
-            } else if (isScannable(resolved, config.optimizeDeps.extensions)) {
+            } else if (isScannable(resolved, optimizeDepsOptions.extensions)) {
               const namespace = htmlTypesRE.test(resolved) ? 'html' : undefined
               // linked package, keep crawling
               return {
@@ -612,7 +705,7 @@ function esbuildScanPlugin(
           if (resolved) {
             if (
               shouldExternalizeDep(resolved, id) ||
-              !isScannable(resolved, config.optimizeDeps.extensions)
+              !isScannable(resolved, optimizeDepsOptions.extensions)
             ) {
               return externalUnlessEntry({ path: id })
             }
@@ -637,13 +730,14 @@ function esbuildScanPlugin(
         let ext = path.extname(id).slice(1)
         if (ext === 'mjs') ext = 'js'
 
+        const esbuildConfig = environment.config.esbuild
         let contents = await fsp.readFile(id, 'utf-8')
-        if (ext.endsWith('x') && config.esbuild && config.esbuild.jsxInject) {
-          contents = config.esbuild.jsxInject + `\n` + contents
+        if (ext.endsWith('x') && esbuildConfig && esbuildConfig.jsxInject) {
+          contents = esbuildConfig.jsxInject + `\n` + contents
         }
 
         const loader =
-          config.optimizeDeps?.esbuildOptions?.loader?.[`.${ext}`] ||
+          optimizeDepsOptions.esbuildOptions?.loader?.[`.${ext}`] ??
           (ext as Loader)
 
         if (contents.includes('import.meta.glob')) {

@@ -46,7 +46,8 @@ export const ports = {
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
   'css/lightningcss-proxy': 5008,
-  'client-reload': 5009,
+  'backend-integration': 5009,
+  'client-reload': 5010,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
@@ -143,7 +144,9 @@ export function editFile(
 }
 
 export function addFile(filename: string, content: string): void {
-  fs.writeFileSync(path.resolve(testDir, filename), content)
+  const resolvedFilename = path.resolve(testDir, filename)
+  fs.mkdirSync(path.dirname(resolvedFilename), { recursive: true })
+  fs.writeFileSync(resolvedFilename, content)
 }
 
 export function removeFile(filename: string): void {

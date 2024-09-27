@@ -2156,11 +2156,11 @@ Repository: lukeed/mrmime
 
 ## ms
 License: MIT
-Repository: zeit/ms
+Repository: vercel/ms
 
 > The MIT License (MIT)
 > 
-> Copyright (c) 2016 Zeit, Inc.
+> Copyright (c) 2020 Vercel, Inc.
 > 
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal
@@ -2447,7 +2447,7 @@ Repository: alexeyraspopov/picocolors
 
 > ISC License
 > 
-> Copyright (c) 2021 Alexey Raspopov, Kostiantyn Denysov, Anton Verinov
+> Copyright (c) 2021-2024 Oleksii Raspopov, Kostiantyn Denysov, Anton Verinov
 > 
 > Permission to use, copy, modify, and/or distribute this software for any
 > purpose with or without fee is hereby granted, provided that the above

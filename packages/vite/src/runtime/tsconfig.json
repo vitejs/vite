@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "include": ["./", "../node", "../dep-types", "../types"],
-  "exclude": ["**/__tests__"],
-  "compilerOptions": {
-    "lib": ["ESNext", "DOM"],
-    "stripInternal": true
-  }
-}

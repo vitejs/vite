@@ -10,6 +10,7 @@ import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
 import { stripLiteral } from 'strip-literal'
+import escapeHtml from 'escape-html'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
@@ -173,6 +174,9 @@ function traverseNodes(
   node: DefaultTreeAdapterMap['node'],
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
 ) {
+  if (node.nodeName === 'template') {
+    node = (node as DefaultTreeAdapterMap['template']).content
+  }
   visitor(node)
   if (
     nodeIsElement(node) ||
@@ -334,8 +338,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const publicPath = `/${relativeUrlPath}`
         const publicBase = getBaseInHTML(relativeUrlPath, config)
 
-        const publicToRelative = (filename: string, importer: string) =>
-          publicBase + filename
+        const publicToRelative = (filename: string) => publicBase + filename
         const toOutputPublicFilePath = (url: string) =>
           toOutputFilePathInHtml(
             url.slice(1),
@@ -412,7 +415,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             !namedOutput.includes(removeLeadingSlash(url)) // Allow for absolute references as named output can't be an absolute path
           ) {
             try {
-              return await urlToBuiltUrl(url, id, config, this, shouldInline)
+              return await urlToBuiltUrl(this, url, id, shouldInline)
             } catch (e) {
               if (e.code !== 'ENOENT') {
                 throw e
@@ -647,7 +650,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             s.update(
               start,
               end,
-              partialEncodeURIPath(await urlToBuiltUrl(url, id, config, this)),
+              partialEncodeURIPath(await urlToBuiltUrl(this, url, id)),
             )
           }
         }
@@ -674,7 +677,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         processedHtml.set(id, s.toString())
 
         // inject module preload polyfill only when configured and needed
-        const { modulePreload } = config.build
+        const { modulePreload } = this.environment.config.build
         if (
           modulePreload !== false &&
           modulePreload.polyfill &&
@@ -690,7 +693,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
-      const analyzedChunk: Map<OutputChunk, number> = new Map()
+      const analyzedChunk = new Map<OutputChunk, number>()
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
         chunk: OutputChunk,
@@ -793,7 +796,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               relativeUrlPath,
               'html',
               config,
-              (filename: string, importer: string) => assetsBase + filename,
+              (filename) => assetsBase + filename,
             )
           }
         }
@@ -837,8 +840,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               toScriptTag(chunk, toOutputAssetFilePath, isAsync),
             )
           } else {
+            const { modulePreload } = this.environment.config.build
             assetTags = [toScriptTag(chunk, toOutputAssetFilePath, isAsync)]
-            const { modulePreload } = config.build
             if (modulePreload !== false) {
               const resolveDependencies =
                 typeof modulePreload === 'object' &&
@@ -863,7 +866,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         }
 
         // inject css link when cssCodeSplit is false
-        if (!config.build.cssCodeSplit) {
+        if (!this.environment.config.build.cssCodeSplit) {
           const cssChunk = Object.values(bundle).find(
             (chunk) => chunk.type === 'asset' && chunk.name === 'style.css',
           ) as OutputAsset | undefined
@@ -1507,7 +1510,7 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
     if (typeof attrs[key] === 'boolean') {
       res += attrs[key] ? ` ${key}` : ``
     } else {
-      res += ` ${key}=${JSON.stringify(attrs[key])}`
+      res += ` ${key}="${escapeHtml(attrs[key])}"`
     }
   }
   return res

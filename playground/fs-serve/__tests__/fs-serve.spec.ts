@@ -77,6 +77,11 @@ describe.runIf(isServe)('main', () => {
     expect(await page.textContent('.unsafe-fs-fetch-status')).toBe('403')
   })
 
+  test('unsafe fs fetch', async () => {
+    expect(await page.textContent('.unsafe-fs-fetch-raw')).toBe('')
+    expect(await page.textContent('.unsafe-fs-fetch-raw-status')).toBe('403')
+  })
+
   test('unsafe fs fetch with special characters (#8498)', async () => {
     expect(await page.textContent('.unsafe-fs-fetch-8498')).toBe('')
     expect(await page.textContent('.unsafe-fs-fetch-8498-status')).toBe('404')
