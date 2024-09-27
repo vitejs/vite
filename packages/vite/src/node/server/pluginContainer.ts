@@ -57,7 +57,6 @@ import type {
   SourceMap,
   TransformResult,
 } from 'rollup'
-import { VERSION as ROLLUP_VERSION } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
@@ -74,6 +73,7 @@ import {
   normalizePath,
   numberToPos,
   prettifyUrl,
+  rollupVersion,
   timeFrom,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
@@ -177,7 +177,7 @@ class EnvironmentPluginContainer {
   ) {
     this.minimalContext = {
       meta: {
-        rollupVersion: ROLLUP_VERSION,
+        rollupVersion,
         watchMode: true,
       },
       debug: noop,
