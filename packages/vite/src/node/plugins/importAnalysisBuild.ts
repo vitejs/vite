@@ -21,6 +21,7 @@ import { genSourceMapUrl } from '../server/sourcemap'
 import type { Environment } from '../environment'
 import { removedPureCssFilesCache } from './css'
 import { createParseErrorInfo } from './importAnalysis'
+import { createChunkImportMap } from './chunkImportMap'
 
 type FileDep = {
   url: string
@@ -77,6 +78,7 @@ function detectScriptRel() {
 
 declare const scriptRel: string
 declare const seen: Record<string, boolean>
+declare const chunkImportMapFilePairs: [string, string][]
 function preload(
   baseModule: () => Promise<unknown>,
   deps?: string[],
@@ -101,6 +103,9 @@ function preload(
         dep = assetsURL(dep, importerUrl)
         if (dep in seen) return
         seen[dep] = true
+        chunkImportMapFilePairs.forEach(([k, v]) => {
+          dep = dep.replace(k, v)
+        })
         const isCss = dep.endsWith('.css')
         const cssSelector = isCss ? '[rel="stylesheet"]' : ''
         const isBaseRelative = !!importerUrl
@@ -211,7 +216,25 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
               // is appended inside __vitePreload too.
               `function(dep) { return ${JSON.stringify(config.base)}+dep }`
-        const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+
+        const chunkImportMapFilePairs = () => {
+          const importMapString = document.head.querySelector(
+            'script[type="importmap"]',
+          )?.textContent
+          const importMap: Record<string, string> = importMapString
+            ? JSON.parse(importMapString).imports
+            : {}
+          return Object.entries(importMap)
+            .map(([k, v]) => {
+              const key = /[^/]+\.js$/.exec(k)
+              const value = /[^/]+\.js$/.exec(v)
+              if (!key || !value) return null
+              return [key[0], value[0]]
+            })
+            .filter(Boolean) as [string, string][]
+        }
+
+        const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const chunkImportMapFilePairs = (${chunkImportMapFilePairs.toString()})();export const ${preloadMethod} = ${preload.toString()}`
         return { code: preloadCode, moduleSideEffects: false }
       }
     },
@@ -464,6 +487,18 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       const buildSourcemap = this.environment.config.build.sourcemap
       const { modulePreload } = this.environment.config.build
 
+      const chunkImportMap = config.build.chunkImportMap
+        ? createChunkImportMap(bundle)
+        : {}
+      const valueKeyChunkImportMapFilePairs = Object.entries(chunkImportMap)
+        .map(([k, v]) => {
+          const key = /[^/]+\.js$/.exec(k)
+          const value = /[^/]+\.js$/.exec(v)
+          if (!key || !value) return null
+          return [value[0], key[0]]
+        })
+        .filter(Boolean) as [string, string][]
+
       for (const file in bundle) {
         const chunk = bundle[file]
         // can't use chunk.dynamicImports.length here since some modules e.g.
@@ -537,7 +572,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   if (filename === ownerFilename) return
                   if (analyzed.has(filename)) return
                   analyzed.add(filename)
-                  const chunk = bundle[filename]
+                  const chunk =
+                    bundle[filename] ?? bundle[chunkImportMap[filename]]
                   if (chunk) {
                     deps.add(chunk.fileName)
                     if (chunk.type === 'chunk') {
@@ -652,9 +688,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (fileDeps.length > 0) {
             const fileDepsCode = `[${fileDeps
-              .map((fileDep) =>
-                fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url),
-              )
+              .map((fileDep) => {
+                let url = fileDep.url
+                valueKeyChunkImportMapFilePairs.forEach(([v, k]) => {
+                  url = url.replace(v, k)
+                })
+                return fileDep.runtime ? url : JSON.stringify(url)
+              })
               .join(',')}]`
 
             const mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
