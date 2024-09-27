@@ -81,10 +81,6 @@ export class DevEnvironment extends BaseEnvironment {
   /**
    * @internal
    */
-  _onCrawlEndCallbacks: (() => void)[]
-  /**
-   * @internal
-   */
   _crawlEndFinder: CrawlEndFinder
 
   /**
@@ -118,10 +114,7 @@ export class DevEnvironment extends BaseEnvironment {
 
     this.hot = context.hot || createNoopHotChannel()
 
-    this._onCrawlEndCallbacks = []
-    this._crawlEndFinder = setupOnCrawlEnd(() => {
-      this._onCrawlEndCallbacks.forEach((cb) => cb())
-    })
+    this._crawlEndFinder = setupOnCrawlEnd()
 
     this._ssrRunnerOptions = context.runner ?? {}
     context.runner?.transport?.register(this)
@@ -243,13 +236,6 @@ export class DevEnvironment extends BaseEnvironment {
   _registerRequestProcessing(id: string, done: () => Promise<unknown>): void {
     this._crawlEndFinder.registerRequestProcessing(id, done)
   }
-  /**
-   * @internal
-   * TODO: use waitForRequestsIdle in the optimizer instead of this function
-   */
-  _onCrawlEnd(cb: () => void): void {
-    this._onCrawlEndCallbacks.push(cb)
-  }
 }
 
 function invalidateModule(
@@ -292,7 +278,7 @@ interface CrawlEndFinder {
   cancel: () => void
 }
 
-function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
+function setupOnCrawlEnd(): CrawlEndFinder {
   const registeredIds = new Set<string>()
   const seenIds = new Set<string>()
   const onCrawlEndPromiseWithResolvers = promiseWithResolvers<void>()
@@ -302,15 +288,6 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   let cancelled = false
   function cancel() {
     cancelled = true
-  }
-
-  let crawlEndCalled = false
-  function callOnCrawlEnd() {
-    if (!cancelled && !crawlEndCalled) {
-      crawlEndCalled = true
-      onCrawlEnd()
-    }
-    onCrawlEndPromiseWithResolvers.resolve()
   }
 
   function registerRequestProcessing(
@@ -352,7 +329,7 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   }
   async function callOnCrawlEndWhenIdle() {
     if (cancelled || registeredIds.size > 0) return
-    callOnCrawlEnd()
+    onCrawlEndPromiseWithResolvers.resolve()
   }
 
   return {

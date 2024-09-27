@@ -159,7 +159,7 @@ export function createDepsOptimizer(
       cachedMetadata || initDepsOptimizerMetadata(environment, sessionTimestamp)
 
     if (!cachedMetadata) {
-      environment._onCrawlEnd(onCrawlEnd)
+      environment.waitForRequestsIdle().then(onCrawlEnd)
       waitingForCrawlEnd = true
 
       // Enter processing state until crawl of static imports ends
