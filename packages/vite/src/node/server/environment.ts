@@ -31,6 +31,7 @@ import {
   createEnvironmentPluginContainer,
 } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
+import { isWebSocketServer } from './ws'
 
 export interface DevEnvironmentContext {
   hot: false | HotChannel
@@ -206,6 +207,8 @@ export class DevEnvironment extends BaseEnvironment {
     await Promise.allSettled([
       this.pluginContainer.close(),
       this.depsOptimizer?.close(),
+      // WebSocketServer is independent of HotChannel and should not be closed on environment close
+      isWebSocketServer in this.hot ? this.hot.close() : Promise.resolve(),
       (async () => {
         while (this._pendingRequests.size > 0) {
           await Promise.allSettled(
