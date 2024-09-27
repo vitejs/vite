@@ -17,7 +17,7 @@ on:
 jobs:
   preview:
     if: |
-      ${{ github.repository == 'vitejs/vite' && github.event.issue.pull_request && contains(github.event.pull_request.labels.*.name, 'pr: preview') }}
+      ${{ github.repository == 'vitejs/vite' && (github.event_name == 'push' || github.event.issue.pull_request && contains(github.event.pull_request.labels.*.name, 'pr: preview')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
