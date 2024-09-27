@@ -660,7 +660,7 @@ export async function _createServer(
 
       await Promise.allSettled([
         watcher.close(),
-        ws.close(),
+        ws.actualClose(),
         Promise.allSettled(
           Object.values(server.environments).map((environment) =>
             environment.close(),

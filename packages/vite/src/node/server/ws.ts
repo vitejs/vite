@@ -43,7 +43,7 @@ export interface WebSocketServer extends HotChannel {
   /**
    * Disconnect all clients and terminate the server.
    */
-  close(): Promise<void>
+  actualClose(): Promise<void>
   /**
    * Handle custom event emitted by `import.meta.hot.send`
    */
@@ -90,6 +90,9 @@ export function createWebSocketServer(
     return {
       get clients() {
         return new Set<WebSocketClient>()
+      },
+      async actualClose() {
+        // noop
       },
       async close() {
         // noop
@@ -285,6 +288,12 @@ export function createWebSocketServer(
     },
 
     close() {
+      // noop
+      // WebSocketServer is independent of HotChannel and should not be closed on environment close
+      // actualClose() will be called when needed
+    },
+
+    actualClose() {
       // should remove listener if hmr.server is set
       // otherwise the old listener swallows all WebSocket connections
       if (hmrServerWsListener && wsServer) {

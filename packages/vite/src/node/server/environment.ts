@@ -213,6 +213,7 @@ export class DevEnvironment extends BaseEnvironment {
     await Promise.allSettled([
       this.pluginContainer.close(),
       this.depsOptimizer?.close(),
+      this.hot.close(),
       (async () => {
         while (this._pendingRequests.size > 0) {
           await Promise.allSettled(
