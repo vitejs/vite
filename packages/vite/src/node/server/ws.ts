@@ -31,7 +31,10 @@ export type WebSocketCustomListener<T> = (
   client: WebSocketClient,
 ) => void
 
+export const isWebSocketServer = Symbol('isWebSocketServer')
+
 export interface WebSocketServer extends HotChannel {
+  [isWebSocketServer]: true
   /**
    * Listen on port and host
    */
@@ -43,7 +46,7 @@ export interface WebSocketServer extends HotChannel {
   /**
    * Disconnect all clients and terminate the server.
    */
-  actualClose(): Promise<void>
+  close(): Promise<void>
   /**
    * Handle custom event emitted by `import.meta.hot.send`
    */
@@ -88,11 +91,9 @@ export function createWebSocketServer(
 ): WebSocketServer {
   if (config.server.ws === false) {
     return {
+      [isWebSocketServer]: true,
       get clients() {
         return new Set<WebSocketClient>()
-      },
-      async actualClose() {
-        // noop
       },
       async close() {
         // noop
@@ -237,6 +238,7 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
+    [isWebSocketServer]: true,
     listen: () => {
       wsHttpServer?.listen(port, host)
     },
@@ -288,12 +290,6 @@ export function createWebSocketServer(
     },
 
     close() {
-      // noop
-      // WebSocketServer is independent of HotChannel and should not be closed on environment close
-      // actualClose() will be called when needed
-    },
-
-    actualClose() {
       // should remove listener if hmr.server is set
       // otherwise the old listener swallows all WebSocket connections
       if (hmrServerWsListener && wsServer) {
