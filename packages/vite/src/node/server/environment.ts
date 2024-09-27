@@ -10,7 +10,6 @@ import type {
 } from '../config'
 import { getDefaultResolvedEnvironmentOptions } from '../config'
 import { mergeConfig, promiseWithResolvers } from '../utils'
-import type { FetchModuleOptions } from '../ssr/fetchModule'
 import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
 import { isDepOptimizationDisabled } from '../optimizer'
@@ -36,7 +35,8 @@ import { isWebSocketServer } from './ws'
 export interface DevEnvironmentContext {
   hot: false | HotChannel
   options?: EnvironmentOptions
-  runner?: FetchModuleOptions & {
+  remoteRunner?: {
+    inlineSourceMap?: boolean
     transport?: RemoteEnvironmentTransport
   }
   depsOptimizer?: DepsOptimizer
@@ -50,7 +50,7 @@ export class DevEnvironment extends BaseEnvironment {
   /**
    * @internal
    */
-  _ssrRunnerOptions: FetchModuleOptions | undefined
+  _remoteRunnerOptions: DevEnvironmentContext['remoteRunner']
 
   get pluginContainer(): EnvironmentPluginContainer {
     if (!this._pluginContainer)
@@ -117,8 +117,8 @@ export class DevEnvironment extends BaseEnvironment {
 
     this._crawlEndFinder = setupOnCrawlEnd()
 
-    this._ssrRunnerOptions = context.runner ?? {}
-    context.runner?.transport?.register(this)
+    this._remoteRunnerOptions = context.remoteRunner ?? {}
+    context.remoteRunner?.transport?.register(this)
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {
@@ -166,7 +166,7 @@ export class DevEnvironment extends BaseEnvironment {
     options?: FetchFunctionOptions,
   ): Promise<FetchResult> {
     return fetchModule(this, id, importer, {
-      ...this._ssrRunnerOptions,
+      ...this._remoteRunnerOptions,
       ...options,
     })
   }
