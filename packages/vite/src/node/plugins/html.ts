@@ -32,6 +32,7 @@ import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
 import type { Logger } from '../logger'
 import { cleanUrl } from '../../shared/utils'
+import { usePerEnvironmentState } from '../environment'
 import {
   assetUrlRE,
   getPublicAssetFilename,
@@ -320,7 +321,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   preHooks.push(htmlEnvHook(config))
   postHooks.push(injectNonceAttributeTagHook(config))
   postHooks.push(postImportMapHook())
-  const processedHtml = new Map<string, string>()
+  const processedHtml = usePerEnvironmentState(() => new Map<string, string>())
 
   const isExcludedUrl = (url: string) =>
     url[0] === '#' || isExternalUrl(url) || isDataUrl(url)
@@ -674,7 +675,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        processedHtml.set(id, s.toString())
+        processedHtml(this).set(id, s.toString())
 
         // inject module preload polyfill only when configured and needed
         const { modulePreload } = this.environment.config.build
@@ -778,7 +779,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         return tags
       }
 
-      for (const [normalizedId, html] of processedHtml) {
+      for (const [normalizedId, html] of processedHtml(this)) {
         const relativeUrlPath = normalizePath(
           path.relative(config.root, normalizedId),
         )
