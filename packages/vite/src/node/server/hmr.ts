@@ -115,7 +115,7 @@ export interface HotChannel {
   /**
    * Disconnect all clients, called when server is closed or restarted.
    */
-  close(): void
+  close(): Promise<unknown> | void
 }
 /** @deprecated use `HotChannel` instead */
 export type HMRChannel = HotChannel
