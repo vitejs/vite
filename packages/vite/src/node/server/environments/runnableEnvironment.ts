@@ -54,7 +54,8 @@ class RunnableDevEnvironment extends DevEnvironment {
       this._runner = this._runnerFactory(this)
       return this._runner
     }
-    return createServerModuleRunner(this)
+    this._runner = createServerModuleRunner(this)
+    return this._runner
   }
 }
 
