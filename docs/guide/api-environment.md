@@ -107,7 +107,7 @@ interface TransformResult {
 }
 ```
 
-Vite also supports a `RunnableDevEnvironment`, which is a subset of a `DevEnvironment` that exposes a `ModuleRunner` instance. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
+Vite also supports a `RunnableDevEnvironment`, that extends a `DevEnvironment` exposing a `ModuleRunner` instance. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
 
 :::warning
 The `runner` is evaluated eagerly when it's accessed for the first time. Beware that Vite enables source map support when the `runner` is created by calling `process.setSourceMapsEnabled` or by overriding `Error.prepareStackTrace` if it's not available.
