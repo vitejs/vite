@@ -31,7 +31,10 @@ export type WebSocketCustomListener<T> = (
   client: WebSocketClient,
 ) => void
 
+export const isWebSocketServer = Symbol('isWebSocketServer')
+
 export interface WebSocketServer extends HotChannel {
+  [isWebSocketServer]: true
   /**
    * Listen on port and host
    */
@@ -88,6 +91,7 @@ export function createWebSocketServer(
 ): WebSocketServer {
   if (config.server.ws === false) {
     return {
+      [isWebSocketServer]: true,
       get clients() {
         return new Set<WebSocketClient>()
       },
@@ -234,6 +238,7 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
+    [isWebSocketServer]: true,
     listen: () => {
       wsHttpServer?.listen(port, host)
     },
