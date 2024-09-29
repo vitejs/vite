@@ -152,10 +152,10 @@ export async function transformWithEsbuild(
     // esbuild uses tsconfig fields when both the normal options and tsconfig was set
     // but we want to prioritize the normal options
     if (options) {
-      options.jsx && (compilerOptions.jsx = undefined)
-      options.jsxFactory && (compilerOptions.jsxFactory = undefined)
-      options.jsxFragment && (compilerOptions.jsxFragmentFactory = undefined)
-      options.jsxImportSource && (compilerOptions.jsxImportSource = undefined)
+      if (options.jsx) compilerOptions.jsx = undefined
+      if (options.jsxFactory) compilerOptions.jsxFactory = undefined
+      if (options.jsxFragment) compilerOptions.jsxFragmentFactory = undefined
+      if (options.jsxImportSource) compilerOptions.jsxImportSource = undefined
     }
 
     tsconfigRaw = {

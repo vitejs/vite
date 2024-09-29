@@ -358,7 +358,9 @@ export const commentRE = /<!--.*?-->/gs
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
-const contextRE = /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
+const svelteScriptModuleRE =
+  /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
+const svelteModuleRE = /\smodule\b/i
 
 function esbuildScanPlugin(
   environment: ScanEnvironment,
@@ -560,17 +562,28 @@ function esbuildScanPlugin(
 
             const virtualModulePath = JSON.stringify(virtualModulePrefix + key)
 
-            const contextMatch = contextRE.exec(openTag)
-            const context =
-              contextMatch &&
-              (contextMatch[1] || contextMatch[2] || contextMatch[3])
+            let addedImport = false
 
-            // Especially for Svelte files, exports in <script context="module"> means module exports,
+            // For Svelte files, exports in <script context="module"> or <script module> means module exports,
             // exports in <script> means component props. To avoid having two same export name from the
             // star exports, we need to ignore exports in <script>
-            if (p.endsWith('.svelte') && context !== 'module') {
-              js += `import ${virtualModulePath}\n`
-            } else {
+            if (p.endsWith('.svelte')) {
+              let isModule = svelteModuleRE.test(openTag) // test for svelte5 <script module> syntax
+              if (!isModule) {
+                // fallback, test for svelte4 <script context="module"> syntax
+                const contextMatch = svelteScriptModuleRE.exec(openTag)
+                const context =
+                  contextMatch &&
+                  (contextMatch[1] || contextMatch[2] || contextMatch[3])
+                isModule = context === 'module'
+              }
+              if (!isModule) {
+                addedImport = true
+                js += `import ${virtualModulePath}\n`
+              }
+            }
+
+            if (!addedImport) {
               js += `export * from ${virtualModulePath}\n`
             }
           }

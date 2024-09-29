@@ -10,6 +10,7 @@ import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
 import { stripLiteral } from 'strip-literal'
+import escapeHtml from 'escape-html'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
@@ -31,6 +32,7 @@ import { toOutputFilePathInHtml } from '../build'
 import { resolveEnvPrefix } from '../env'
 import type { Logger } from '../logger'
 import { cleanUrl } from '../../shared/utils'
+import { usePerEnvironmentState } from '../environment'
 import {
   assetUrlRE,
   getPublicAssetFilename,
@@ -319,7 +321,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
   preHooks.push(htmlEnvHook(config))
   postHooks.push(injectNonceAttributeTagHook(config))
   postHooks.push(postImportMapHook())
-  const processedHtml = new Map<string, string>()
+  const processedHtml = usePerEnvironmentState(() => new Map<string, string>())
 
   const isExcludedUrl = (url: string) =>
     url[0] === '#' || isExternalUrl(url) || isDataUrl(url)
@@ -337,8 +339,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         const publicPath = `/${relativeUrlPath}`
         const publicBase = getBaseInHTML(relativeUrlPath, config)
 
-        const publicToRelative = (filename: string, importer: string) =>
-          publicBase + filename
+        const publicToRelative = (filename: string) => publicBase + filename
         const toOutputPublicFilePath = (url: string) =>
           toOutputFilePathInHtml(
             url.slice(1),
@@ -674,7 +675,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        processedHtml.set(id, s.toString())
+        processedHtml(this).set(id, s.toString())
 
         // inject module preload polyfill only when configured and needed
         const { modulePreload } = this.environment.config.build
@@ -693,7 +694,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
-      const analyzedChunk: Map<OutputChunk, number> = new Map()
+      const analyzedChunk = new Map<OutputChunk, number>()
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
         chunk: OutputChunk,
@@ -778,7 +779,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         return tags
       }
 
-      for (const [normalizedId, html] of processedHtml) {
+      for (const [normalizedId, html] of processedHtml(this)) {
         const relativeUrlPath = normalizePath(
           path.relative(config.root, normalizedId),
         )
@@ -796,7 +797,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               relativeUrlPath,
               'html',
               config,
-              (filename: string, importer: string) => assetsBase + filename,
+              (filename) => assetsBase + filename,
             )
           }
         }
@@ -1510,7 +1511,7 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
     if (typeof attrs[key] === 'boolean') {
       res += attrs[key] ? ` ${key}` : ``
     } else {
-      res += ` ${key}=${JSON.stringify(attrs[key])}`
+      res += ` ${key}="${escapeHtml(attrs[key])}"`
     }
   }
   return res

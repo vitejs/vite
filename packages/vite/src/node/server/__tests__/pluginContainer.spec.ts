@@ -29,7 +29,7 @@ describe('plugin container', () => {
             return { code: 'export {}', meta: { x: 2 } }
           }
         },
-        transform(code, id) {
+        transform(_code, id) {
           if (id === entryUrl) {
             const { meta } = this.getModuleInfo(entryUrl) ?? {}
             metaArray.push(meta)
@@ -191,7 +191,7 @@ describe('plugin container', () => {
           if (id === entryUrl) return { code: '1' }
           else if (id === otherUrl) return { code: '2', meta: { code: '2' } }
         },
-        async transform(code, id) {
+        async transform(_code, id) {
           if (id === entryUrl) {
             // NOTE: ModuleInfo.code not implemented, used `.meta.code` for now
             return (await this.load({ id: otherUrl }))?.meta.code

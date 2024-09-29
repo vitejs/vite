@@ -207,7 +207,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
       let imports: readonly ImportSpecifier[] = []
       try {
         imports = parseImports(source)[0]
-      } catch (e: any) {
+      } catch {
         // ignore as it might not be a JS file, the subsequent plugins will catch the error
         return null
       }

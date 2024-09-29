@@ -73,7 +73,7 @@ export function servePublicMiddleware(
     if (filePath.indexOf('%') !== -1) {
       try {
         filePath = decodeURI(filePath)
-      } catch (err) {
+      } catch {
         /* malform uri */
       }
     }
@@ -259,7 +259,7 @@ export function isFileLoadingAllowed(
   return false
 }
 
-function ensureServingAccess(
+export function ensureServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,

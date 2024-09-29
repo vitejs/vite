@@ -210,6 +210,7 @@ const enum PreprocessLang {
   styl = 'styl',
   stylus = 'stylus',
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- bug in typescript-eslint
 const enum PureCssLang {
   css = 'css',
 }
@@ -451,7 +452,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       codeSplitEmitQueue = createSerialPromiseQueue()
     },
 
-    async transform(css, id, options) {
+    async transform(css, id) {
       if (
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
@@ -509,7 +510,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           return null
         }
         // server only
-        if (options?.ssr) {
+        if (this.environment.config.consumer !== 'client') {
           return modulesCode || `export default ${JSON.stringify(css)}`
         }
         if (inlined) {
@@ -782,7 +783,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             })
             generatedAssets.set(referenceId, { originalFileName, isEntry })
             chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
-          } else if (!config.build.ssr) {
+          } else if (this.environment.config.consumer === 'client') {
             // legacy build and inline css
 
             // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
@@ -964,7 +965,7 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:css-analysis',
 
-    async transform(_, id, options) {
+    async transform(_, id) {
       if (
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
@@ -2056,7 +2057,7 @@ function loadSassPackage(root: string): {
     try {
       const path = loadPreprocessorPath(PreprocessLang.sass, root)
       return { name: 'sass', path }
-    } catch (e2) {
+    } catch {
       throw e1
     }
   }
@@ -2173,9 +2174,11 @@ const makeScssWorker = (
         }
         const importer = [_internalImporter]
         if (options.importer) {
-          Array.isArray(options.importer)
-            ? importer.unshift(...options.importer)
-            : importer.unshift(options.importer)
+          if (Array.isArray(options.importer)) {
+            importer.unshift(...options.importer)
+          } else {
+            importer.unshift(options.importer)
+          }
         }
 
         const finalOptions: Sass.LegacyOptions<'async'> = {
@@ -2214,7 +2217,10 @@ const makeScssWorker = (
         return !!(
           (options.functions && Object.keys(options.functions).length > 0) ||
           (options.importer &&
-            (!Array.isArray(options.importer) || options.importer.length > 0))
+            (!Array.isArray(options.importer) ||
+              options.importer.length > 0)) ||
+          options.logger ||
+          options.pkgImporter
         )
       },
       max: maxWorkers,
@@ -2294,7 +2300,7 @@ const makeModernScssWorker = (
               fileURLToPath(canonicalUrl),
               options.filename,
             )
-            return { contents, syntax }
+            return { contents, syntax, sourceMapUrl: canonicalUrl }
           },
         }
         sassOptions.importers = [
@@ -2324,7 +2330,9 @@ const makeModernScssWorker = (
         return !!(
           (options.functions && Object.keys(options.functions).length > 0) ||
           (options.importers &&
-            (!Array.isArray(options.importers) || options.importers.length > 0))
+            (!Array.isArray(options.importers) ||
+              options.importers.length > 0)) ||
+          options.logger
         )
       },
       max: maxWorkers,
@@ -2342,7 +2350,7 @@ const makeModernCompilerScssWorker = (
   alias: Alias[],
   _maxWorkers: number | undefined,
 ) => {
-  let compiler: Sass.AsyncCompiler | undefined
+  let compilerPromise: Promise<Sass.AsyncCompiler> | undefined
 
   const worker: Awaited<ReturnType<typeof makeModernScssWorker>> = {
     async run(sassPath, data, options) {
@@ -2350,7 +2358,8 @@ const makeModernCompilerScssWorker = (
       // https://github.com/nodejs/node/issues/31710
       const sass: typeof Sass = (await import(pathToFileURL(sassPath).href))
         .default
-      compiler ??= await sass.initAsyncCompiler()
+      compilerPromise ??= sass.initAsyncCompiler()
+      const compiler = await compilerPromise
 
       const sassOptions = { ...options } as Sass.StringOptions<'async'>
       sassOptions.url = pathToFileURL(options.filename)
@@ -2386,7 +2395,7 @@ const makeModernCompilerScssWorker = (
           )
           const contents =
             result.contents ?? (await fsp.readFile(result.file, 'utf-8'))
-          return { contents, syntax }
+          return { contents, syntax, sourceMapUrl: canonicalUrl }
         },
       }
       sassOptions.importers = [
@@ -2406,8 +2415,8 @@ const makeModernCompilerScssWorker = (
       } satisfies ScssWorkerResult
     },
     async stop() {
-      compiler?.dispose()
-      compiler = undefined
+      ;(await compilerPromise)?.dispose()
+      compilerPromise = undefined
     },
   }
 
@@ -2842,7 +2851,7 @@ const stylProcessor = (
         worker.stop()
       }
     },
-    async process(environment, source, root, options, resolvers) {
+    async process(_environment, source, root, options, _resolvers) {
       const stylusPath = loadPreprocessorPath(PreprocessLang.stylus, root)
 
       if (!workerMap.has(options.alias)) {
@@ -3086,7 +3095,10 @@ async function compileLightningCSS(
         }
         deps.add(dep.url)
         if (urlReplacer) {
-          const replaceUrl = await urlReplacer(dep.url, dep.loc.filePath)
+          const replaceUrl = await urlReplacer(
+            dep.url,
+            toAbsolute(dep.loc.filePath),
+          )
           css = css.replace(dep.placeholder, () => replaceUrl)
         } else {
           css = css.replace(dep.placeholder, () => dep.url)
