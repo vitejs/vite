@@ -98,7 +98,7 @@
     "@jridgewell/trace-mapping": "^0.3.25",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.1",
-    "@rollup/plugin-commonjs": "^26.0.3",
+    "@rollup/plugin-commonjs": "^28.0.0",
     "@rollup/plugin-dynamic-import-vars": "^2.1.3",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "15.3.0",
