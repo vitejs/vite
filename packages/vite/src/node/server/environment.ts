@@ -1,7 +1,10 @@
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
-import { BaseEnvironment } from '../baseEnvironment'
+import {
+  BaseEnvironment,
+  getDefaultResolvedEnvironmentOptions,
+} from '../baseEnvironment'
 import type {
   EnvironmentOptions,
   ResolvedConfig,
@@ -30,19 +33,6 @@ import {
 } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
 import { isWebSocketServer } from './ws'
-
-export function getDefaultResolvedEnvironmentOptions(
-  config: ResolvedConfig,
-): ResolvedEnvironmentOptions {
-  return {
-    define: config.define,
-    resolve: config.resolve,
-    consumer: 'server',
-    webCompatible: false,
-    dev: config.dev,
-    build: config.build,
-  }
-}
 
 export interface DevEnvironmentContext {
   hot: false | HotChannel
