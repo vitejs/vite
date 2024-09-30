@@ -22,7 +22,7 @@ export function dataURIPlugin(): Plugin {
     },
 
     resolveId(id) {
-      if (!dataUriRE.test(id)) {
+      if (!id.trimStart().startsWith('data:')) {
         return
       }
 
