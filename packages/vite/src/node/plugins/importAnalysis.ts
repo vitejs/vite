@@ -13,6 +13,7 @@ import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import type { PartialResolvedId } from 'rollup'
+import type { Identifier } from 'estree'
 import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
@@ -984,7 +985,7 @@ export function transformCjsImport(
       ) {
         // for ExportSpecifier, local name is same as imported name
         // prefix the variable name to avoid clashing with other local variables
-        const importedName = spec.local.name
+        const importedName = (spec.local as Identifier).name
         // we want to specify exported name as variable and re-export it
         const exportedName = spec.exported.name
         if (exportedName === 'default') {
