@@ -359,6 +359,16 @@ describe('processSrcSetSync', () => {
       processSrcSetSync('https://anydomain/image.jpg', ({ url }) => url),
     ).toBe(source)
   })
+
+  test('should not break URLs with commas in srcSet', async () => {
+    const source = `
+      \thttps://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img   1x,
+      \thttps://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img\t\t2x
+    `
+    const result =
+      'https://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img 1x, https://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
 })
 
 describe('flattenId', () => {

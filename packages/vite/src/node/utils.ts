@@ -720,26 +720,40 @@ interface ImageCandidate {
   url: string
   descriptor: string
 }
-const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
-const imageSetUrlRE = /^(?:[\w-]+\(.*?\)|'.*?'|".*?"|\S*)/
+
 function joinSrcset(ret: ImageCandidate[]) {
   return ret
     .map(({ url, descriptor }) => url + (descriptor ? ` ${descriptor}` : ''))
     .join(', ')
 }
 
-// NOTE: The returned `url` should perhaps be decoded so all handled URLs within Vite are consistently decoded.
-// However, this may also require a refactor for `cssReplacer` to accept decoded URLs instead.
-function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
-  return splitSrcSet(srcs)
-    .map((s) => {
-      const src = s.replace(escapedSpaceCharacters, ' ').trim()
-      const url = imageSetUrlRE.exec(src)?.[0] ?? ''
+/**
+ This regex represents a loose rule of an “image candidate string”.
 
-      return {
-        url,
-        descriptor: src.slice(url.length).trim(),
-      }
+ @see https://html.spec.whatwg.org/multipage/images.html#srcset-attribute
+
+  An “image candidate string” roughly consists of the following:
+  1. Zero or more whitespace characters.
+  2. A non-empty URL that does not start or end with `,`.
+  3. Zero or more whitespace characters.
+  4. An optional “descriptor” that starts with a whitespace character.
+  5. Zero or more whitespace characters.
+  6. Each image candidate string is separated by a `,`.
+ */
+// eslint-disable-next-line regexp/no-super-linear-backtracking
+const imageCandidateRegex = /\s*([^,]\S*[^,](?:\s[^,]+)?)\s*(?:,|$)/
+const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
+
+export function parseSrcset(string: string): ImageCandidate[] {
+  return string
+    .replace(escapedSpaceCharacters, ' ')
+    .replace(/\r?\n/, '')
+    .replace(/,\s+/, ', ')
+    .split(imageCandidateRegex)
+    .filter((_part, index) => index % 2 === 1)
+    .map((part) => {
+      const [url, descriptor] = part.trim().split(/\s+/)
+      return { url, descriptor }
     })
     .filter(({ url }) => !!url)
 }
@@ -749,7 +763,7 @@ export function processSrcSet(
   replacer: (arg: ImageCandidate) => Promise<string>,
 ): Promise<string> {
   return Promise.all(
-    splitSrcSetDescriptor(srcs).map(async ({ url, descriptor }) => ({
+    parseSrcset(srcs).map(async ({ url, descriptor }) => ({
       url: await replacer({ url, descriptor }),
       descriptor,
     })),
@@ -761,36 +775,11 @@ export function processSrcSetSync(
   replacer: (arg: ImageCandidate) => string,
 ): string {
   return joinSrcset(
-    splitSrcSetDescriptor(srcs).map(({ url, descriptor }) => ({
+    parseSrcset(srcs).map(({ url, descriptor }) => ({
       url: replacer({ url, descriptor }),
       descriptor,
     })),
   )
-}
-
-const cleanSrcSetRE =
-  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+-]+;base64,[\w+/=]+|\?\S+,/g
-function splitSrcSet(srcs: string) {
-  const parts: string[] = []
-  /**
-   * There could be a ',' inside of:
-   * - url(data:...)
-   * - linear-gradient(...)
-   * - "data:..."
-   * - data:...
-   * - query parameter ?...
-   */
-  const cleanedSrcs = srcs.replace(cleanSrcSetRE, blankReplacer)
-  let startIndex = 0
-  let splitIndex: number
-  do {
-    splitIndex = cleanedSrcs.indexOf(',', startIndex)
-    parts.push(
-      srcs.slice(startIndex, splitIndex !== -1 ? splitIndex : undefined),
-    )
-    startIndex = splitIndex + 1
-  } while (splitIndex !== -1)
-  return parts
 }
 
 const windowsDriveRE = /^[A-Z]:/
