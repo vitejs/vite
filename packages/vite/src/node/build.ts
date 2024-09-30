@@ -33,7 +33,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
-import { getDefaultResolvedEnvironmentOptions, resolveConfig } from './config'
+import { resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -67,8 +67,11 @@ import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
-import { BaseEnvironment } from './baseEnvironment'
-import type { Plugin, PluginContext } from './plugin'
+import {
+  BaseEnvironment,
+  getDefaultResolvedEnvironmentOptions,
+} from './baseEnvironment'
+import type { MinimalPluginContext, Plugin, PluginContext } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
 
 export interface BuildEnvironmentOptions {
@@ -1253,7 +1256,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
   }
 }
 
-function injectEnvironmentInContext<Context extends PluginContext>(
+function injectEnvironmentInContext<Context extends MinimalPluginContext>(
   context: Context,
   environment: BuildEnvironment,
 ) {
@@ -1297,7 +1300,7 @@ const getRelativeUrlFromDocument = (relativePath: string, umd = false) =>
   getResolveUrl(
     `'${escapeId(partialEncodeURIPath(relativePath))}', ${
       umd ? `typeof document === 'undefined' ? location.href : ` : ''
-    }document.currentScript && document.currentScript.src || document.baseURI`,
+    }document.currentScript && document.currentScript.tagName.toUpperCase() === 'SCRIPT' && document.currentScript.src || document.baseURI`,
   )
 
 const getFileUrlFromFullPath = (path: string) =>

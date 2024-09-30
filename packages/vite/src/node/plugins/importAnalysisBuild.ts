@@ -18,6 +18,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
+import type { Environment } from '../environment'
 import { removedPureCssFilesCache } from './css'
 import { createParseErrorInfo } from './importAnalysis'
 
@@ -145,20 +146,23 @@ function preload(
     )
   }
 
+  function handlePreloadError(err: Error) {
+    const e = new Event('vite:preloadError', {
+      cancelable: true,
+    }) as VitePreloadErrorEvent
+    e.payload = err
+    window.dispatchEvent(e)
+    if (!e.defaultPrevented) {
+      throw err
+    }
+  }
+
   return promise.then((res) => {
     for (const item of res || []) {
       if (item.status !== 'rejected') continue
-
-      const e = new Event('vite:preloadError', {
-        cancelable: true,
-      }) as VitePreloadErrorEvent
-      e.payload = item.reason
-      window.dispatchEvent(e)
-      if (!e.defaultPrevented) {
-        throw item.reason
-      }
+      handlePreloadError(item.reason)
     }
-    return baseModule()
+    return baseModule().catch(handlePreloadError)
   })
 }
 
@@ -166,9 +170,10 @@ function preload(
  * Build only. During serve this is performed as part of ./importAnalysis.
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
-  const ssr = !!config.build.ssr
-  const isWorker = config.isWorker
-  const insertPreload = !(ssr || !!config.build.lib || isWorker)
+  const getInsertPreload = (environment: Environment) =>
+    environment.config.consumer === 'client' &&
+    !config.isWorker &&
+    !config.build.lib
 
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const isRelativeBase = config.base === './' || config.base === ''
@@ -234,6 +239,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
+      const insertPreload = getInsertPreload(this.environment)
       // when wrapping dynamic imports with a preload helper, Rollup is unable to analyze the
       // accessed variables for treeshaking. This below tries to match common accessed syntax
       // to "copy" it over to the dynamic import wrapped by the preload helper.
@@ -399,7 +405,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       // If preload is not enabled, we parse through each imports and remove any imports to pure CSS chunks
       // as they are removed from the bundle
-      if (!insertPreload) {
+      if (!getInsertPreload(this.environment)) {
         const removedPureCssFiles = removedPureCssFilesCache.get(config)
         if (removedPureCssFiles && removedPureCssFiles.size > 0) {
           for (const file in bundle) {
@@ -513,7 +519,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
                   url = rawUrl.slice(1, -1)
               }
-              const deps: Set<string> = new Set()
+              const deps = new Set<string>()
               let hasRemovedPureCssChunk = false
 
               let normalizedFile: string | undefined = undefined

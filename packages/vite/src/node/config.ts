@@ -39,8 +39,7 @@ import { resolveBuildEnvironmentOptions, resolveBuilderOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import { DevEnvironment } from './server/environment'
-import { createNodeDevEnvironment } from './server/environments/nodeEnvironment'
-import { createServerHotChannel } from './server/hmr'
+import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
 import type { WebSocketServer } from './server/ws'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
@@ -213,9 +212,7 @@ function defaultCreateSsrDevEnvironment(
   name: string,
   config: ResolvedConfig,
 ): DevEnvironment {
-  return createNodeDevEnvironment(name, config, {
-    hot: createServerHotChannel(),
-  })
+  return createRunnableDevEnvironment(name, config)
 }
 
 function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
@@ -641,7 +638,7 @@ function resolveEnvironmentOptions(
   )
   const isClientEnvironment = environmentName === 'client'
   const consumer =
-    (options.consumer ?? isClientEnvironment) ? 'client' : 'server'
+    options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   return {
     resolve,
     consumer,
@@ -668,19 +665,6 @@ export function getDefaultEnvironmentOptions(
   return {
     define: config.define,
     resolve: config.resolve,
-    dev: config.dev,
-    build: config.build,
-  }
-}
-
-export function getDefaultResolvedEnvironmentOptions(
-  config: ResolvedConfig,
-): ResolvedEnvironmentOptions {
-  return {
-    define: config.define,
-    resolve: config.resolve,
-    consumer: 'server',
-    webCompatible: false,
     dev: config.dev,
     build: config.build,
   }
@@ -1508,7 +1492,8 @@ export async function loadConfigFromFile(
     return null
   }
 
-  const isESM = isFilePathESM(resolvedPath)
+  const isESM =
+    typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
 
   try {
     const bundled = await bundleConfigFile(resolvedPath, isESM)

@@ -1,16 +1,16 @@
 import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
-import { BaseEnvironment } from '../baseEnvironment'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
+import {
+  BaseEnvironment,
+  getDefaultResolvedEnvironmentOptions,
+} from '../baseEnvironment'
 import type {
   EnvironmentOptions,
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from '../config'
-import { getDefaultResolvedEnvironmentOptions } from '../config'
 import { mergeConfig, promiseWithResolvers } from '../utils'
-import type { FetchModuleOptions } from '../ssr/fetchModule'
 import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
 import { isDepOptimizationDisabled } from '../optimizer'
@@ -19,6 +19,7 @@ import {
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
 import { resolveEnvironmentPlugins } from '../plugin'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel } from './hmr'
@@ -31,11 +32,13 @@ import {
   createEnvironmentPluginContainer,
 } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
+import { isWebSocketServer } from './ws'
 
 export interface DevEnvironmentContext {
   hot: false | HotChannel
   options?: EnvironmentOptions
-  runner?: FetchModuleOptions & {
+  remoteRunner?: {
+    inlineSourceMap?: boolean
     transport?: RemoteEnvironmentTransport
   }
   depsOptimizer?: DepsOptimizer
@@ -49,7 +52,7 @@ export class DevEnvironment extends BaseEnvironment {
   /**
    * @internal
    */
-  _ssrRunnerOptions: FetchModuleOptions | undefined
+  _remoteRunnerOptions: DevEnvironmentContext['remoteRunner']
 
   get pluginContainer(): EnvironmentPluginContainer {
     if (!this._pluginContainer)
@@ -78,10 +81,6 @@ export class DevEnvironment extends BaseEnvironment {
       abort: () => void
     }
   >
-  /**
-   * @internal
-   */
-  _onCrawlEndCallbacks: (() => void)[]
   /**
    * @internal
    */
@@ -118,13 +117,10 @@ export class DevEnvironment extends BaseEnvironment {
 
     this.hot = context.hot || createNoopHotChannel()
 
-    this._onCrawlEndCallbacks = []
-    this._crawlEndFinder = setupOnCrawlEnd(() => {
-      this._onCrawlEndCallbacks.forEach((cb) => cb())
-    })
+    this._crawlEndFinder = setupOnCrawlEnd()
 
-    this._ssrRunnerOptions = context.runner ?? {}
-    context.runner?.transport?.register(this)
+    this._remoteRunnerOptions = context.remoteRunner ?? {}
+    context.remoteRunner?.transport?.register(this)
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {
@@ -172,7 +168,7 @@ export class DevEnvironment extends BaseEnvironment {
     options?: FetchFunctionOptions,
   ): Promise<FetchResult> {
     return fetchModule(this, id, importer, {
-      ...this._ssrRunnerOptions,
+      ...this._remoteRunnerOptions,
       ...options,
     })
   }
@@ -213,6 +209,8 @@ export class DevEnvironment extends BaseEnvironment {
     await Promise.allSettled([
       this.pluginContainer.close(),
       this.depsOptimizer?.close(),
+      // WebSocketServer is independent of HotChannel and should not be closed on environment close
+      isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close(),
       (async () => {
         while (this._pendingRequests.size > 0) {
           await Promise.allSettled(
@@ -242,13 +240,6 @@ export class DevEnvironment extends BaseEnvironment {
    */
   _registerRequestProcessing(id: string, done: () => Promise<unknown>): void {
     this._crawlEndFinder.registerRequestProcessing(id, done)
-  }
-  /**
-   * @internal
-   * TODO: use waitForRequestsIdle in the optimizer instead of this function
-   */
-  _onCrawlEnd(cb: () => void): void {
-    this._onCrawlEndCallbacks.push(cb)
   }
 }
 
@@ -292,7 +283,7 @@ interface CrawlEndFinder {
   cancel: () => void
 }
 
-function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
+function setupOnCrawlEnd(): CrawlEndFinder {
   const registeredIds = new Set<string>()
   const seenIds = new Set<string>()
   const onCrawlEndPromiseWithResolvers = promiseWithResolvers<void>()
@@ -302,15 +293,6 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   let cancelled = false
   function cancel() {
     cancelled = true
-  }
-
-  let crawlEndCalled = false
-  function callOnCrawlEnd() {
-    if (!cancelled && !crawlEndCalled) {
-      crawlEndCalled = true
-      onCrawlEnd()
-    }
-    onCrawlEndPromiseWithResolvers.resolve()
   }
 
   function registerRequestProcessing(
@@ -352,7 +334,7 @@ function setupOnCrawlEnd(onCrawlEnd: () => void): CrawlEndFinder {
   }
   async function callOnCrawlEndWhenIdle() {
     if (cancelled || registeredIds.size > 0) return
-    callOnCrawlEnd()
+    onCrawlEndPromiseWithResolvers.resolve()
   }
 
   return {

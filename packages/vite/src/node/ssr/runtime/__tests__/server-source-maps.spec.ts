@@ -52,7 +52,7 @@ describe('module runner initialization', async () => {
       resolvePath(import.meta.url, './fixtures/throws-error-method.ts'),
       (code) => '\n\n\n\n\n' + code + '\n',
     )
-    runner.moduleCache.clear()
+    runner.evaluatedModules.clear()
     server.environments.ssr.moduleGraph.invalidateAll()
 
     const methodErrorNew = await getError(async () => {

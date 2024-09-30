@@ -271,7 +271,7 @@ export class ModuleGraph {
 
   async getModuleByUrl(
     url: string,
-    ssr?: boolean,
+    _ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
     // In the mixed graph, the ssr flag was used to resolve the id.
     const [clientModule, ssrModule] = await Promise.all([
@@ -301,7 +301,7 @@ export class ModuleGraph {
     }
     if (ssrModules) {
       for (const mod of ssrModules) {
-        if (!this._client.getModuleById(mod.id!)) {
+        if (mod.id == null || !this._client.getModuleById(mod.id)) {
           result.add(this.getBackwardCompatibleBrowserModuleNode(mod)!)
         }
       }
@@ -333,7 +333,7 @@ export class ModuleGraph {
 
   invalidateModule(
     mod: ModuleNode,
-    seen: Set<ModuleNode> = new Set(),
+    seen = new Set<ModuleNode>(),
     timestamp: number = Date.now(),
     isHmr: boolean = false,
     /** @internal */

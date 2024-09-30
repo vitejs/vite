@@ -15,7 +15,7 @@ import { normalizeResolvedIdToUrl } from '../plugins/importAnalysis'
 export interface FetchModuleOptions {
   cached?: boolean
   inlineSourceMap?: boolean
-  processSourceMap?<T extends NonNullable<TransformResult['map']>>(map: T): T
+  startOffset?: number
 }
 
 /**
@@ -127,7 +127,7 @@ export async function fetchModule(
   }
 
   if (options.inlineSourceMap !== false) {
-    result = inlineSourceMap(mod, result, options.processSourceMap)
+    result = inlineSourceMap(mod, result, options.startOffset)
   }
 
   // remove shebang
@@ -137,7 +137,8 @@ export async function fetchModule(
   return {
     code: result.code,
     file: mod.file,
-    serverId: mod.id!,
+    id: mod.id!,
+    url: mod.url,
     invalidate: !cached,
   }
 }
@@ -150,7 +151,7 @@ const OTHER_SOURCE_MAP_REGEXP = new RegExp(
 function inlineSourceMap(
   mod: EnvironmentModuleNode,
   result: TransformResult,
-  processSourceMap?: FetchModuleOptions['processSourceMap'],
+  startOffset: number | undefined,
 ) {
   const map = result.map
   let code = result.code
@@ -167,7 +168,11 @@ function inlineSourceMap(
   if (OTHER_SOURCE_MAP_REGEXP.test(code))
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
-  const sourceMap = processSourceMap?.(map) || map
+  const sourceMap = startOffset
+    ? Object.assign({}, map, {
+        mappings: ';'.repeat(startOffset) + map.mappings,
+      })
+    : map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
     mod.id
   }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`

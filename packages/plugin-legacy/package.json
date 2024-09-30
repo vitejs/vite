@@ -43,7 +43,7 @@
   "dependencies": {
     "@babel/core": "^7.25.2",
     "@babel/preset-env": "^7.25.4",
-    "browserslist": "^4.23.3",
+    "browserslist": "^4.24.0",
     "browserslist-to-esbuild": "^2.1.1",
     "core-js": "^3.38.1",
     "magic-string": "^0.30.11",

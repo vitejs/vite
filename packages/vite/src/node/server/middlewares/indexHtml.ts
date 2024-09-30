@@ -169,7 +169,7 @@ const processNodeUrl = (
       if (preTransformUrl) {
         try {
           preTransformUrl = decodeURI(preTransformUrl)
-        } catch (err) {
+        } catch {
           // Malformed uri. Skip pre-transform.
           return url
         }
