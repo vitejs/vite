@@ -10,6 +10,19 @@ const environmentColors = [
   colors.gray,
 ]
 
+export function getDefaultResolvedEnvironmentOptions(
+  config: ResolvedConfig,
+): ResolvedEnvironmentOptions {
+  return {
+    define: config.define,
+    resolve: config.resolve,
+    consumer: 'server',
+    webCompatible: false,
+    dev: config.dev,
+    build: config.build,
+  }
+}
+
 export class PartialEnvironment {
   name: string
   getTopLevelConfig(): ResolvedConfig {
