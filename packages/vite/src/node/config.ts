@@ -670,19 +670,6 @@ export function getDefaultEnvironmentOptions(
   }
 }
 
-export function getDefaultResolvedEnvironmentOptions(
-  config: ResolvedConfig,
-): ResolvedEnvironmentOptions {
-  return {
-    define: config.define,
-    resolve: config.resolve,
-    consumer: 'server',
-    webCompatible: false,
-    dev: config.dev,
-    build: config.build,
-  }
-}
-
 export interface PluginHookUtils {
   getSortedPlugins: <K extends keyof Plugin>(
     hookName: K,
