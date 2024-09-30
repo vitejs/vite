@@ -319,9 +319,6 @@ importers:
       etag:
         specifier: ^1.8.1
         version: 1.8.1
-      fast-glob:
-        specifier: ^3.3.2
-        version: 3.3.2
       http-proxy:
         specifier: ^1.18.1
         version: 1.18.1(patch_hash=qqiqxx62zlcu62nljjmhlvexni)(debug@4.3.7)

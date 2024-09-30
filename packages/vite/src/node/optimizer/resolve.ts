@@ -79,6 +79,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
           const exportsValue = getFirstExportStringValue(exports[key])
           if (!exportsValue) continue
 
+          // TODO: Raise during the PR review.
           // "./dist/glob/*-browser/*.js" => "./dist/glob/**/*-browser/**/*.js"
           // NOTE: in some cases, this could expand to consecutive /**/*/**/* etc
           // but it's fine since fast-glob handles it the same.
@@ -95,16 +96,6 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
               ignore: ['node_modules'],
             })
               .map((filePath) => {
-                // ensure "./" prefix for inconsistent fast-glob result
-                //   glob.sync("./some-dir/**/*") -> "./some-dir/some-file"
-                //   glob.sync("./**/*")          -> "some-dir/some-file"
-                if (
-                  exportsValue.startsWith('./') &&
-                  !filePath.startsWith('./')
-                ) {
-                  filePath = './' + filePath
-                }
-
                 // "./glob/*": "./dist/glob/*-browser/*.js"
                 // `filePath`: "./dist/glob/foo-browser/foo.js"
                 // we need to revert the file path back to the export key by
