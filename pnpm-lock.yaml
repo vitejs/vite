@@ -231,8 +231,8 @@ importers:
         specifier: ^8.4.47
         version: 8.4.47
       rollup:
-        specifier: ^4.22.5
-        version: 4.22.5
+        specifier: rollup/rollup#original-file-names-array
+        version: https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343
     optionalDependencies:
       fsevents:
         specifier: ~2.3.3
@@ -252,22 +252,22 @@ importers:
         version: 1.0.0-next.25
       '@rollup/plugin-alias':
         specifier: ^5.1.1
-        version: 5.1.1(rollup@4.22.5)
+        version: 5.1.1(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
       '@rollup/plugin-commonjs':
         specifier: ^26.0.3
-        version: 26.0.3(rollup@4.22.5)
+        version: 26.0.3(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
       '@rollup/plugin-dynamic-import-vars':
         specifier: ^2.1.3
-        version: 2.1.3(rollup@4.22.5)
+        version: 2.1.3(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
       '@rollup/plugin-json':
         specifier: ^6.1.0
-        version: 6.1.0(rollup@4.22.5)
+        version: 6.1.0(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
       '@rollup/plugin-node-resolve':
         specifier: 15.3.0
-        version: 15.3.0(rollup@4.22.5)
+        version: 15.3.0(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
       '@rollup/pluginutils':
         specifier: ^5.1.2
-        version: 5.1.2(rollup@4.22.5)
+        version: 5.1.2(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
       '@types/escape-html':
         specifier: ^1.0.4
         version: 1.0.4
@@ -378,13 +378,13 @@ importers:
         version: 2.0.2
       rollup-plugin-dts:
         specifier: ^6.1.1
-        version: 6.1.1(rollup@4.22.5)(typescript@5.5.3)
+        version: 6.1.1(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)(typescript@5.5.3)
       rollup-plugin-esbuild:
         specifier: ^6.1.1
-        version: 6.1.1(esbuild@0.24.0)(rollup@4.22.5)
+        version: 6.1.1(esbuild@0.24.0)(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
       rollup-plugin-license:
         specifier: ^3.5.3
-        version: 3.5.3(picomatch@2.3.1)(rollup@4.22.5)
+        version: 3.5.3(picomatch@2.3.1)(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
       sass:
         specifier: ^1.79.4
         version: 1.79.4
@@ -3065,6 +3065,7 @@ packages:
 
   '@rollup/plugin-alias@5.1.1':
     resolution: {integrity: sha512-PR9zDb+rOzkRb2VD+EuKB7UC41vU5DIwZ5qqCpk0KJudcWAyi8rvYOhS7+L5aZCspw1stTViLgN5v6FF1p5cgQ==}
+    version: 5.1.1
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
@@ -3083,6 +3084,7 @@ packages:
 
   '@rollup/plugin-commonjs@26.0.3':
     resolution: {integrity: sha512-2BJcolt43MY+y5Tz47djHkodCC3c1VKVrBDKpVqHKpQ9z9S158kCCqB8NF6/gzxLdNlYW9abB3Ibh+kOWLp8KQ==}
+    version: 26.0.3
     engines: {node: '>=16.0.0 || 14 >= 14.17'}
     peerDependencies:
       rollup: ^2.68.0||^3.0.0||^4.0.0
@@ -3092,6 +3094,7 @@ packages:
 
   '@rollup/plugin-dynamic-import-vars@2.1.3':
     resolution: {integrity: sha512-9ZuItXkvbx0NUeEO0TMIYY7KAK/c7biumCTVrk6nwW81om7apA3/yju6JUm1pFMWmF/bZbyrom20NupRZWk9Wg==}
+    version: 2.1.3
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
@@ -3119,6 +3122,7 @@ packages:
 
   '@rollup/plugin-node-resolve@15.3.0':
     resolution: {integrity: sha512-9eO5McEICxMzJpDW9OnMYSv4Sta3hmt7VtBFz5zR9273suNOydOyq/FrGeGy+KsTRFm8w0SLVhzig2ILFT63Ag==}
+    version: 15.3.0
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^2.78.0||^3.0.0||^4.0.0
@@ -6271,6 +6275,7 @@ packages:
 
   rollup-plugin-license@3.5.3:
     resolution: {integrity: sha512-r3wImZSo2d6sEk9BRJtlzeI/upjyjnpthy06Fdl0EzqRrlg3ULb9KQR7xHJI0zuayW/8bchEXSF5dO6dha4OyA==}
+    version: 3.5.3
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.0.0 || ^2.0.0 || ^3.0.0 || ^4.0.0
@@ -6282,6 +6287,12 @@ packages:
 
   rollup@4.22.5:
     resolution: {integrity: sha512-WoinX7GeQOFMGznEcWA1WrTQCd/tpEbMkc3nuMs9BT0CPjMdSjPMTVClwWd4pgSQwJdP65SK9mTCNvItlr5o7w==}
+    engines: {node: '>=18.0.0', npm: '>=8.0.0'}
+    hasBin: true
+
+  rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343:
+    resolution: {tarball: https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343}
+    version: 4.22.5
     engines: {node: '>=18.0.0', npm: '>=8.0.0'}
     hasBin: true
 
@@ -8617,9 +8628,9 @@ snapshots:
     optionalDependencies:
       rollup: 3.29.4
 
-  '@rollup/plugin-alias@5.1.1(rollup@4.22.5)':
+  '@rollup/plugin-alias@5.1.1(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)':
     optionalDependencies:
-      rollup: 4.22.5
+      rollup: https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343
 
   '@rollup/plugin-commonjs@25.0.4(rollup@3.29.4)':
     dependencies:
@@ -8632,26 +8643,26 @@ snapshots:
     optionalDependencies:
       rollup: 3.29.4
 
-  '@rollup/plugin-commonjs@26.0.3(rollup@4.22.5)':
+  '@rollup/plugin-commonjs@26.0.3(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@4.22.5)
+      '@rollup/pluginutils': 5.1.2(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
       commondir: 1.0.1
       estree-walker: 2.0.2
       glob: 10.4.5
       is-reference: 1.2.1
       magic-string: 0.30.11
     optionalDependencies:
-      rollup: 4.22.5
+      rollup: https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343
 
-  '@rollup/plugin-dynamic-import-vars@2.1.3(rollup@4.22.5)':
+  '@rollup/plugin-dynamic-import-vars@2.1.3(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@4.22.5)
+      '@rollup/pluginutils': 5.1.2(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
       astring: 1.8.6
       estree-walker: 2.0.2
       fast-glob: 3.3.2
       magic-string: 0.30.11
     optionalDependencies:
-      rollup: 4.22.5
+      rollup: https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343
 
   '@rollup/plugin-json@6.1.0(rollup@3.29.4)':
     dependencies:
@@ -8659,11 +8670,11 @@ snapshots:
     optionalDependencies:
       rollup: 3.29.4
 
-  '@rollup/plugin-json@6.1.0(rollup@4.22.5)':
+  '@rollup/plugin-json@6.1.0(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@4.22.5)
+      '@rollup/pluginutils': 5.1.2(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
     optionalDependencies:
-      rollup: 4.22.5
+      rollup: https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343
 
   '@rollup/plugin-node-resolve@15.2.3(rollup@3.29.4)':
     dependencies:
@@ -8676,15 +8687,15 @@ snapshots:
     optionalDependencies:
       rollup: 3.29.4
 
-  '@rollup/plugin-node-resolve@15.3.0(rollup@4.22.5)':
+  '@rollup/plugin-node-resolve@15.3.0(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@4.22.5)
+      '@rollup/pluginutils': 5.1.2(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
       '@types/resolve': 1.20.2
       deepmerge: 4.2.2
       is-module: 1.0.0
       resolve: 1.22.8
     optionalDependencies:
-      rollup: 4.22.5
+      rollup: https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343
 
   '@rollup/plugin-replace@5.0.2(rollup@3.29.4)':
     dependencies:
@@ -8716,6 +8727,14 @@ snapshots:
       picomatch: 2.3.1
     optionalDependencies:
       rollup: 4.22.5
+
+  '@rollup/pluginutils@5.1.2(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)':
+    dependencies:
+      '@types/estree': 1.0.6
+      estree-walker: 2.0.2
+      picomatch: 2.3.1
+    optionalDependencies:
+      rollup: https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343
 
   '@rollup/rollup-android-arm-eabi@4.22.5':
     optional: true
@@ -12113,10 +12132,10 @@ snapshots:
     optionalDependencies:
       '@babel/code-frame': 7.24.7
 
-  rollup-plugin-dts@6.1.1(rollup@4.22.5)(typescript@5.5.3):
+  rollup-plugin-dts@6.1.1(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)(typescript@5.5.3):
     dependencies:
       magic-string: 0.30.11
-      rollup: 4.22.5
+      rollup: https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343
       typescript: 5.5.3
     optionalDependencies:
       '@babel/code-frame': 7.24.7
@@ -12132,7 +12151,18 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  rollup-plugin-license@3.5.3(picomatch@2.3.1)(rollup@4.22.5):
+  rollup-plugin-esbuild@6.1.1(esbuild@0.24.0)(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343):
+    dependencies:
+      '@rollup/pluginutils': 5.1.2(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343)
+      debug: 4.3.7
+      es-module-lexer: 1.5.4
+      esbuild: 0.24.0
+      get-tsconfig: 4.7.5
+      rollup: https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343
+    transitivePeerDependencies:
+      - supports-color
+
+  rollup-plugin-license@3.5.3(picomatch@2.3.1)(rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343):
     dependencies:
       commenting: 1.1.0
       fdir: 6.3.0(picomatch@2.3.1)
@@ -12140,7 +12170,7 @@ snapshots:
       magic-string: 0.30.11
       moment: 2.30.1
       package-name-regex: 2.0.6
-      rollup: 4.22.5
+      rollup: https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343
       spdx-expression-validate: 2.0.0
       spdx-satisfies: 5.0.1
     transitivePeerDependencies:
@@ -12170,6 +12200,12 @@ snapshots:
       '@rollup/rollup-win32-arm64-msvc': 4.22.5
       '@rollup/rollup-win32-ia32-msvc': 4.22.5
       '@rollup/rollup-win32-x64-msvc': 4.22.5
+      fsevents: 2.3.3
+
+  rollup@https://codeload.github.com/rollup/rollup/tar.gz/50e471fdc6d82866967a24de14ad9cb36b13d343:
+    dependencies:
+      '@types/estree': 1.0.6
+    optionalDependencies:
       fsevents: 2.3.3
 
   run-parallel@1.2.0:
