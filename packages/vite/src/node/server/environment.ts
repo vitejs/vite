@@ -2,7 +2,6 @@ import type { FetchFunctionOptions, FetchResult } from 'vite/module-runner'
 import type { FSWatcher } from 'dep-types/chokidar'
 import colors from 'picocolors'
 import { BaseEnvironment } from '../baseEnvironment'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
 import type {
   EnvironmentOptions,
   ResolvedConfig,
@@ -17,6 +16,7 @@ import {
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
 import { resolveEnvironmentPlugins } from '../plugin'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel } from './hmr'
