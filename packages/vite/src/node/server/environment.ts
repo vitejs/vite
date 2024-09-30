@@ -8,7 +8,6 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from '../config'
-import { getDefaultResolvedEnvironmentOptions } from '../config'
 import { mergeConfig, promiseWithResolvers } from '../utils'
 import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
@@ -31,6 +30,19 @@ import {
 } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
 import { isWebSocketServer } from './ws'
+
+export function getDefaultResolvedEnvironmentOptions(
+  config: ResolvedConfig,
+): ResolvedEnvironmentOptions {
+  return {
+    define: config.define,
+    resolve: config.resolve,
+    consumer: 'server',
+    webCompatible: false,
+    dev: config.dev,
+    build: config.build,
+  }
+}
 
 export interface DevEnvironmentContext {
   hot: false | HotChannel

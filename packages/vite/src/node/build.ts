@@ -33,7 +33,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
-import { getDefaultResolvedEnvironmentOptions, resolveConfig } from './config'
+import { resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -70,6 +70,7 @@ import { getHookHandler } from './plugins'
 import { BaseEnvironment } from './baseEnvironment'
 import type { MinimalPluginContext, Plugin, PluginContext } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
+import { getDefaultResolvedEnvironmentOptions } from './server/environment'
 
 export interface BuildEnvironmentOptions {
   /**
