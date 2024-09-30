@@ -14,7 +14,7 @@ function BackendIntegrationExample() {
       const root = path.join(sourceCodeDir, 'entrypoints')
       const outDir = path.relative(root, path.join(projectRoot, 'dist/dev'))
 
-      const entrypoints = globSync([`${normalizePath(root)}/**/*`], {
+      const entrypoints = globSync(`${normalizePath(root)}/**/*`, {
         expandDirectories: false,
         onlyFiles: true,
       }).map((filename) => [path.relative(root, filename), filename])

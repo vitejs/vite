@@ -89,7 +89,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
           )
 
           possibleExportPaths.push(
-            ...globSync([exportValuePattern], {
+            ...globSync(exportValuePattern, {
               cwd: pkgData.dir,
               expandDirectories: false,
               ignore: ['node_modules'],
@@ -146,7 +146,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
     return matched
   } else {
     // for packages without exports, we can do a simple glob
-    const matched = globSync([pattern], {
+    const matched = globSync(pattern, {
       cwd: pkgData.dir,
       expandDirectories: false,
       ignore: ['node_modules'],

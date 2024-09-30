@@ -19,7 +19,7 @@ function testDirDep() {
         const pattern = normalizePath(
           path.resolve(path.dirname(result.opts.from), './glob-dep/**/*.css'),
         )
-        const files = globSync([pattern], { expandDirectories: false })
+        const files = globSync(pattern, { expandDirectories: false })
         const text = files.map((f) => fs.readFileSync(f, 'utf-8')).join('\n')
         atRule.parent.insertAfter(atRule, text)
         atRule.remove()
