@@ -727,10 +727,15 @@ function joinSrcset(ret: ImageCandidate[]) {
     .join(', ')
 }
 
+/*!
+ * Based on https://github.com/sindresorhus/srcset
+ * MIT License, Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
+ */
 /**
- This regex represents a loose rule of an “image candidate string”.
+ This regex represents a loose rule of an “image candidate string” and "image set options".
 
  @see https://html.spec.whatwg.org/multipage/images.html#srcset-attribute
+ @see https://drafts.csswg.org/css-images-4/#image-set-notation
 
   An “image candidate string” roughly consists of the following:
   1. Zero or more whitespace characters.
@@ -752,8 +757,10 @@ export function parseSrcset(string: string): ImageCandidate[] {
     .split(imageCandidateRegex)
     .filter((_part, index) => index % 2 === 1)
     .map((part) => {
-      const [url, descriptor] = part.trim().split(/\s+/)
-      return { url, descriptor }
+      const [url, ...descriptors] = part.trim().split(/\s+/)
+      // in `image-set()` context descriptor can have `resolution` and `type` parts separated by whitespace,
+      // we need to join them back together
+      return { url, descriptor: descriptors.join(' ') }
     })
     .filter(({ url }) => !!url)
 }
