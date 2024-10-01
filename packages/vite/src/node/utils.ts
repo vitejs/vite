@@ -19,7 +19,13 @@ import type MagicString from 'magic-string'
 
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
-import { cleanUrl, isWindows, slash, withTrailingSlash } from '../shared/utils'
+import {
+  cleanUrl,
+  isWindows,
+  slash,
+  splitFileAndPostfix,
+  withTrailingSlash,
+} from '../shared/utils'
 import { VALID_ID_PREFIX } from '../shared/constants'
 import {
   CLIENT_ENTRY,
@@ -311,20 +317,10 @@ export function removeRawQuery(url: string): string {
   return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
 }
 
-const replacePercentageRE = /%/g
 export function injectQuery(url: string, queryToInject: string): string {
-  // encode percents for consistent behavior with pathToFileURL
-  // see #2614 for details
-  const resolvedUrl = new URL(
-    url.replace(replacePercentageRE, '%25'),
-    'relative:///',
-  )
-  const { search, hash } = resolvedUrl
-  let pathname = cleanUrl(url)
-  pathname = isWindows ? slash(pathname) : pathname
-  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-    hash ?? ''
-  }`
+  const { file, postfix } = splitFileAndPostfix(url)
+  const normalizedFile = isWindows ? slash(file) : file
+  return `${normalizedFile}?${queryToInject}${postfix[0] === '?' ? `&${postfix.slice(1)}` : /* hash only */ postfix}`
 }
 
 const timestampRE = /\bt=\d{13}&?\b/
