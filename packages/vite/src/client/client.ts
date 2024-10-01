@@ -419,7 +419,7 @@ export function updateStyle(id: string, content: string): void {
   if (!hasDocument) {
     return
   }
-  
+
   let style = sheetsMap.get(id)
   if (!style) {
     style = document.createElement('style')
