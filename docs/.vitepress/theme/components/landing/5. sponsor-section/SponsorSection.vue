@@ -152,7 +152,7 @@ const { data } = useSponsor()
       border-radius: 12px;
       border: 1px solid rgba(38, 38, 38, 0.7);
       background: #161616;
-      margin: 20px auto;
+      margin: 20px auto !important;
 
       @media (min-width: 768px) {
         background: rgba(38, 38, 38, 0.25);
