@@ -747,8 +747,8 @@ export function parseSrcset(string: string): ImageCandidate[] {
       /\s*(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?<descriptor>[^,]*(?:\stype\([^)]*\))?)\s*(?:,|$)/g,
     )
   return Array.from(matches, ({ groups }) => ({
-    url: groups.url.trim(),
-    descriptor: groups.descriptor.trim(),
+    url: groups?.url?.trim() ?? '',
+    descriptor: groups?.descriptor?.trim() ?? '',
   })).filter(({ url }) => !!url)
 }
 
