@@ -727,42 +727,29 @@ function joinSrcset(ret: ImageCandidate[]) {
     .join(', ')
 }
 
-/*!
- * Based on https://github.com/sindresorhus/srcset
- * MIT License, Copyright (c) Sindre Sorhus <sindresorhus@gmail.com> (https://sindresorhus.com)
- */
-/**
- This regex represents a loose rule of an “image candidate string” and "image set options".
-
- @see https://html.spec.whatwg.org/multipage/images.html#srcset-attribute
- @see https://drafts.csswg.org/css-images-4/#image-set-notation
-
-  An “image candidate string” roughly consists of the following:
-  1. Zero or more whitespace characters.
-  2. A non-empty URL that does not start or end with `,`.
-  3. Zero or more whitespace characters.
-  4. An optional “descriptor” that starts with a whitespace character.
-  5. Zero or more whitespace characters.
-  6. Each image candidate string is separated by a `,`.
- */
-// eslint-disable-next-line regexp/no-super-linear-backtracking
-const imageCandidateRegex = /\s*([^,]\S*[^,](?:\s[^,]+)?)\s*(?:,|$)/
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {
-  return string
+  const matches = string
+    .trim()
     .replace(escapedSpaceCharacters, ' ')
     .replace(/\r?\n/, '')
     .replace(/,\s+/, ', ')
-    .split(imageCandidateRegex)
-    .filter((_part, index) => index % 2 === 1)
-    .map((part) => {
-      const [url, ...descriptors] = part.trim().split(/\s+/)
-      // in `image-set()` context descriptor can have `resolution` and `type` parts separated by whitespace,
-      // we need to join them back together
-      return { url, descriptor: descriptors.join(' ') }
-    })
-    .filter(({ url }) => !!url)
+    .replaceAll(/\s+/g, ' ')
+    .matchAll(
+      /**
+       This regex represents a loose rule of an “image candidate string” and "image set options".
+
+       @see https://html.spec.whatwg.org/multipage/images.html#srcset-attribute
+       @see https://drafts.csswg.org/css-images-4/#image-set-notation
+       */
+      // eslint-disable-next-line regexp/no-super-linear-backtracking
+      /\s*(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?<descriptor>[^,]*(?:\stype\([^)]*\))?)\s*(?:,|$)/g,
+    )
+  return Array.from(matches, ({ groups }) => ({
+    url: groups.url.trim(),
+    descriptor: groups.descriptor.trim(),
+  })).filter(({ url }) => !!url)
 }
 
 export function processSrcSet(

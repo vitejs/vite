@@ -407,6 +407,21 @@ describe('processSrcSetSync', () => {
     const result = 'url("picture.png") 1x type("image/jpeg")'
     expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
   })
+
+  test('should capture whole image set options', async () => {
+    const source = `linear-gradient(cornflowerblue, white) 1x,
+                    url("detailed-gradient.png") 3x`
+    const expected = [
+      'linear-gradient(cornflowerblue, white)',
+      'url("detailed-gradient.png")',
+    ]
+    const result: string[] = []
+    processSrcSetSync(source, ({ url }) => {
+      result.push(url)
+      return url
+    })
+    expect(result).toEqual(expected)
+  })
 })
 
 describe('flattenId', () => {
