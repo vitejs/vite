@@ -96,6 +96,13 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
               ignore: ['node_modules'],
             })
               .map((filePath) => {
+                // `tinyglobby` returns paths as they are formatted by the underlying `fdir`.
+                // Both `globSync("./some-dir/**/*")` and `globSync("./**/*")` result in
+                // `"some-dir/somefile"` being returned, so we ensure the correct prefix manually.
+                if (exportsValue.startsWith('./')) {
+                  filePath = './' + filePath
+                }
+
                 // "./glob/*": "./dist/glob/*-browser/*.js"
                 // `filePath`: "./dist/glob/foo-browser/foo.js"
                 // we need to revert the file path back to the export key by

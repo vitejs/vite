@@ -1410,6 +1410,7 @@ async function compileCSS(
           `/` +
           globPattern
         const files = globSync(pattern, {
+          absolute: true,
           expandDirectories: false,
           ignore: ['**/node_modules/**'],
         })
