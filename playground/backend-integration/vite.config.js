@@ -15,6 +15,7 @@ function BackendIntegrationExample() {
       const outDir = path.relative(root, path.join(projectRoot, 'dist/dev'))
 
       const entrypoints = globSync(`${normalizePath(root)}/**/*`, {
+        absolute: true,
         expandDirectories: false,
         onlyFiles: true,
       }).map((filename) => [path.relative(root, filename), filename])
