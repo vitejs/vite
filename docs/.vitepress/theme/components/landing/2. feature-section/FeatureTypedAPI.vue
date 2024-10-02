@@ -12,7 +12,7 @@ useSlideIn('#fully-typed-api')
  */
 const { isCardActive, startAnimation } = useCardAnimation(
   '#fully-typed-api',
-  null,
+  undefined,
   {
     once: true,
   },
@@ -69,9 +69,7 @@ const { isCardActive, startAnimation } = useCardAnimation(
     </div>
     <div class="feature__meta meta--center">
       <div class="meta__title">Fully typed API</div>
-      <div class="meta__description">
-        Vite's JavaScript APIs are fully typed.
-      </div>
+      <div class="meta__description">Designed to be built on top of.</div>
     </div>
   </div>
 </template>

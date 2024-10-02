@@ -12,7 +12,7 @@ useSlideIn('#ssr-support')
  */
 const { isCardActive, startAnimation } = useCardAnimation(
   '#ssr-support',
-  null,
+  undefined,
   {
     once: true,
   },
@@ -32,6 +32,7 @@ const { isCardActive, startAnimation } = useCardAnimation(
         viewBox="0 0 402 166"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        style="margin-top: 10px"
       >
         <!-- JS Box -->
         <g class="js">
@@ -418,8 +419,8 @@ const { isCardActive, startAnimation } = useCardAnimation(
     <div class="feature__meta">
       <div class="meta__title">First class SSR Support</div>
       <div class="meta__description">
-        Experience seamless performance and lightning-fast load times with our
-        first-class SSR (Server-Side Rendering) support.
+        It's never been easier to setup custom SSR (Server-Side Rendering), or
+        build your own SSR framework.
       </div>
     </div>
   </div>

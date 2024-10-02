@@ -7,31 +7,81 @@ import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 gsap.registerPlugin(ScrollTrigger)
 
 // Framework assets
-import logoAstro from '../../../../../images/frameworks/astro.svg'
-import logoNuxt from '../../../../../images/frameworks/nuxt.svg'
-import logoVue from '../../../../../images/frameworks/vue.svg'
-import logoAnalog from '../../../../../images/frameworks/analog.svg'
-import logoPlaywright from '../../../../../images/frameworks/playwright.svg'
-import logoMarko from '../../../../../images/frameworks/marko.svg'
-import logoStorybook from '../../../../../images/frameworks/storybook.svg'
-import logoQwik from '../../../../../images/frameworks/qwik.svg'
-import logoVitest from '../../../../../images/frameworks/vitest.svg'
-import logoRedwood from '../../../../../images/frameworks/redwood.svg'
-import logoSolid from '../../../../../images/frameworks/solid.svg'
-import logoAngular from '../../../../../images/frameworks/angular.svg'
-import logoReact from '../../../../../images/frameworks/react.svg'
-import logoRemix from '../../../../../images/frameworks/remix.svg'
-import logoSvelte from '../../../../../images/frameworks/svelte.svg'
+import logoAstro from './images/astro.svg'
+import logoNuxt from './images/nuxt.svg'
+import logoVue from './images/vue.svg'
+import logoAnalog from './images/analog.svg'
+import logoPlaywright from './images/playwright.svg'
+import logoMarko from './images/marko.svg'
+import logoStorybook from './images/storybook.svg'
+import logoQwik from './images/qwik.svg'
+import logoVitest from './images/vitest.svg'
+import logoRedwood from './images/redwood.svg'
+import logoSolid from './images/solid.svg'
+import logoAngular from './images/angular.svg'
+import logoReact from './images/react.svg'
+import logoRemix from './images/remix.svg'
+import logoSvelte from './images/svelte.svg'
+import logoLaravel from './images/laravel.svg'
 
 /**
  * The frameworks and tools to display in this section.
  */
 const frameworks: Framework[] = [
   {
+    name: 'Vitest',
+    logo: logoVitest,
+    color: '#fac52b',
+    url: 'https://vitest.dev/',
+    visible: ref(false),
+  },
+  {
+    name: 'React',
+    logo: logoReact,
+    color: '#00d6fd',
+    url: 'https://react.dev/',
+    visible: ref(false),
+  },
+  {
+    name: 'Angular',
+    logo: logoAngular,
+    color: '#e03237',
+    url: 'https://angularjs.org/',
+    visible: ref(false),
+  },
+  {
+    name: 'Vue',
+    logo: logoVue,
+    color: '#40b782',
+    url: 'https://vuejs.org/',
+    visible: ref(false),
+  },
+  {
+    name: 'Solid',
+    logo: logoSolid,
+    color: '#75b2df',
+    url: 'https://www.solidjs.com/',
+    visible: ref(false),
+  },
+  {
+    name: 'Svelte',
+    logo: logoSvelte,
+    color: '#fd3e00',
+    url: 'https://svelte.dev/',
+    visible: ref(false),
+  },
+  {
     name: 'Astro',
     logo: logoAstro,
     color: '#FFFFFF',
     url: 'https://astro.build',
+    visible: ref(false),
+  },
+  {
+    name: 'Remix',
+    logo: logoRemix,
+    color: '#3991fd',
+    url: 'https://remix.run/',
     visible: ref(false),
   },
   {
@@ -42,10 +92,17 @@ const frameworks: Framework[] = [
     visible: ref(false),
   },
   {
-    name: 'Vue',
-    logo: logoVue,
-    color: '#40b782',
-    url: 'https://vuejs.org/',
+    name: 'Qwik',
+    logo: logoQwik,
+    color: '#18b5f4',
+    url: 'https://qwik.builder.io/',
+    visible: ref(false),
+  },
+  {
+    name: 'Redwood',
+    logo: logoRedwood,
+    color: '#be4622',
+    url: 'https://redwoodjs.com/',
     visible: ref(false),
   },
   {
@@ -63,13 +120,6 @@ const frameworks: Framework[] = [
     visible: ref(false),
   },
   {
-    name: 'Marko',
-    logo: logoMarko,
-    color: '#de2a87',
-    url: 'https://markojs.com/',
-    visible: ref(false),
-  },
-  {
     name: 'Storybook',
     logo: logoStorybook,
     color: '#fd4684',
@@ -77,59 +127,17 @@ const frameworks: Framework[] = [
     visible: ref(false),
   },
   {
-    name: 'Qwik',
-    logo: logoQwik,
-    color: '#18b5f4',
-    url: 'https://qwik.builder.io/',
+    name: 'Marko',
+    logo: logoMarko,
+    color: '#de2a87',
+    url: 'https://markojs.com/',
     visible: ref(false),
   },
   {
-    name: 'Vitest',
-    logo: logoVitest,
-    color: '#fac52b',
-    url: 'https://vitest.dev/',
-    visible: ref(false),
-  },
-  {
-    name: 'Redwood',
-    logo: logoRedwood,
-    color: '#be4622',
-    url: 'https://redwoodjs.com/',
-    visible: ref(false),
-  },
-  {
-    name: 'Solid',
-    logo: logoSolid,
-    color: '#75b2df',
-    url: 'https://www.solidjs.com/',
-    visible: ref(false),
-  },
-  {
-    name: 'Angular',
-    logo: logoAngular,
-    color: '#e03237',
-    url: 'https://angularjs.org/',
-    visible: ref(false),
-  },
-  {
-    name: 'React',
-    logo: logoReact,
-    color: '#00d6fd',
-    url: 'https://react.dev/',
-    visible: ref(false),
-  },
-  {
-    name: 'Remix',
-    logo: logoRemix,
-    color: '#3991fd',
-    url: 'https://remix.run/',
-    visible: ref(false),
-  },
-  {
-    name: 'Svelte',
-    logo: logoSvelte,
-    color: '#fd3e00',
-    url: 'https://svelte.dev/',
+    name: 'Laravel',
+    logo: logoLaravel,
+    color: '#eb4432',
+    url: 'https://laravel.com/',
     visible: ref(false),
   },
 ]
@@ -175,7 +183,7 @@ onMounted(() => {
   })
 
   frameworks.forEach((framework, index) => {
-    timeline.set(framework.visible, { value: true }, index * 0.05)
+    timeline!.set(framework.visible, { value: true }, index * 0.05)
   })
 })
 
@@ -203,13 +211,26 @@ const numBlocksPerRow: ComputedRef<number> = computed(() => {
   return Math.floor(screenWidth.value / (96 + 24))
 })
 
-/**
- * How many framework blocks will fit in a single row?
- * The most we support for our layout is 7, but it can be less for narrower screens.
- */
-const numFrameworksPerRow: ComputedRef<number> = computed(() => {
-  return Math.min(numBlocksPerRow.value, 8)
+const paddedBlocksPerSide: ComputedRef<number> = computed(() => {
+  return Math.max(Math.floor(screenWidth.value / 700), 1)
 })
+
+const numFrameworksPerRow = computed(
+  () => numBlocksPerRow.value - paddedBlocksPerSide.value * 2,
+)
+
+/**
+ * The indexes of the blocks on each row that support framework cards.
+ */
+const centerIndexes: ComputedRef<{ start: number; end: number }> = computed(
+  () => {
+    const startIndex = paddedBlocksPerSide.value
+    return {
+      start: startIndex,
+      end: numBlocksPerRow.value - paddedBlocksPerSide.value,
+    }
+  },
+)
 
 /**
  * How many rows do we need to display all the frameworks?
@@ -218,28 +239,9 @@ const numRows: ComputedRef<number> = computed(() => {
   return Math.ceil(frameworks.length / numFrameworksPerRow.value)
 })
 
-/**
- * The indexes of the blocks on each row that support framework cards.
- */
-const centerIndexes: ComputedRef<{ start: number; end: number }> = computed(
-  () => {
-    if (numBlocksPerRow.value === numFrameworksPerRow.value) {
-      return {
-        start: 1,
-        end: numBlocksPerRow.value + 1,
-      }
-    }
-    const startIndex = Math.max(
-      Math.ceil(numBlocksPerRow.value / 2) -
-        Math.floor(frameworks.length / (numRows.value * 2)),
-      0,
-    )
-    return {
-      start: startIndex,
-      end: startIndex + Math.floor(frameworks.length / numRows.value),
-    }
-  },
-)
+console.log(numBlocksPerRow.value)
+console.log(centerIndexes.value)
+console.log(numRows.value)
 
 /**
  * Generate CSS transformations for each row, to gracefully slide between horizontal positions.
@@ -275,7 +277,7 @@ const rowStyle: ComputedRef<{ transform: string }> = computed(() => {
             <template
               v-if="
                 columnIndex >= centerIndexes.start &&
-                columnIndex < centerIndexes.end
+                columnIndex <= centerIndexes.end
               "
             >
               <FrameworkCard

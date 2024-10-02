@@ -174,7 +174,7 @@ onUnmounted(() => {
         <div class="terminal__enter-pulse" v-show="highlightEnter" />
         <Transition name="ready-label-transition">
           <span class="terminal__ready-label" v-if="commandTriggered"
-            >Ready in 0ms</span
+            >Ready in 96ms</span
           >
         </Transition>
         <div class="terminal__glow" />

@@ -6,22 +6,17 @@ import HeroDiagram from './HeroDiagram.vue'
   <div class="hero">
     <div class="container">
       <!-- ViteConf Replay Button -->
-      <a
-        href="https://viteconf.org/23/replay?utm=vite-homepage"
-        class="hero__pill"
-        target="_blank"
-      >
+      <a href="https://viteconf.org/" class="hero__pill" target="_blank">
         <img src="/viteconf.svg" alt="Viteconf logo" width="20" height="20" />
-        <span>ViteConf 2023 - watch the replay</span>
+        <span>ViteConf 2024 - Oct 3rd & 4th</span>
       </a>
 
       <!-- Heading -->
-      <h1>Vite is the next generation of frontend tooling</h1>
-
+      <h1>The Build Tool<br />for the Web</h1>
       <!-- Tagline -->
       <h3>
-        Get ready for a development environment that can finally catch up with
-        you.
+        Vite is a blazing fast frontend build tool powering the next generation
+        of web frameworks.
       </h3>
 
       <!-- CTA Buttons -->
