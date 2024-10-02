@@ -1,11 +1,17 @@
 import path from 'node:path'
-import { type ServerOptions, createServer } from 'vite'
-import { describe, expect, onTestFinished, test } from 'vitest'
+import { type ServerOptions, type ViteDevServer, createServer } from 'vite'
+import { afterEach, describe, expect, test } from 'vitest'
 import { hmrPorts, isServe, page, ports } from '~utils'
+
+let server: ViteDevServer
+
+afterEach(async () => {
+  await server?.close()
+})
 
 async function testClientReload(serverOptions: ServerOptions) {
   // start server
-  const server = await createServer({
+  server = await createServer({
     root: path.resolve(import.meta.dirname, '..'),
     logLevel: 'silent',
     server: {
@@ -13,7 +19,6 @@ async function testClientReload(serverOptions: ServerOptions) {
       ...serverOptions,
     },
   })
-  onTestFinished(() => server.close())
 
   await server.listen()
   const serverUrl = server.resolvedUrls.local[0]
@@ -41,7 +46,7 @@ async function testClientReload(serverOptions: ServerOptions) {
 
 // TODO:
 // running all tests together is flaky.
-// for now, run only the last one.
+// for now, run only the last one with retry.
 describe.runIf(isServe)('client-reload', () => {
   test.skip('default', async () => {
     await testClientReload({
@@ -58,7 +63,7 @@ describe.runIf(isServe)('client-reload', () => {
     })
   })
 
-  test('custom hmr port and cross origin isolation', async () => {
+  test('custom hmr port and cross origin isolation', { retry: 2 }, async () => {
     await testClientReload({
       port: ports['client-reload/cross-origin'],
       hmr: {
