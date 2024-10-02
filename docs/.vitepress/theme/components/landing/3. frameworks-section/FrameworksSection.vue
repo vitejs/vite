@@ -46,7 +46,7 @@ const frameworks: Framework[] = [
     name: 'Angular',
     logo: logoAngular,
     color: '#e03237',
-    url: 'https://angularjs.org/',
+    url: 'https://angular.dev/',
     visible: ref(false),
   },
   {
