@@ -77,6 +77,7 @@ export default defineConfig({
             return url.endsWith('.wxss') ? { contents: '' } : null
           },
         ],
+        silenceDeprecations: ['legacy-js-api'],
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,
