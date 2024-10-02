@@ -137,15 +137,11 @@ export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 // TODO: use import()
 const _require = createRequire(import.meta.url)
 
-export function resolveDependencyVersion(
-  dep: string,
-  pkgRelativePath = '../../package.json',
-): string {
-  const pkgPath = path.resolve(_require.resolve(dep), pkgRelativePath)
-  return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version
-}
+const _dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export const rollupVersion = resolveDependencyVersion('rollup')
+// NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
+export const rollupVersion =
+  resolvePackageData('rollup', _dirname, true)?.data.version ?? ''
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
@@ -1035,8 +1031,6 @@ export function getHash(text: Buffer | string, length = 8): string {
   if (length <= 64) return h
   return h.padEnd(length, '_')
 }
-
-const _dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export const requireResolveFromRootWithFallback = (
   root: string,

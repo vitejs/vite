@@ -1176,6 +1176,7 @@ function getConfigHash(environment: Environment): string {
           plugins: optimizeDeps?.esbuildOptions?.plugins?.map((p) => p.name),
         },
       },
+      webCompatible: config.webCompatible,
     },
     (_, value) => {
       if (typeof value === 'function' || value instanceof RegExp) {
