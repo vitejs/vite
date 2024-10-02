@@ -26,7 +26,7 @@ import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
-import { escapePath, globSync } from 'tinyglobby'
+import { globSync } from 'tinyglobby'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -1405,12 +1405,9 @@ async function compileCSS(
       } else if (message.type === 'dir-dependency') {
         // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
         const { dir, glob: globPattern = '**' } = message
-        const pattern =
-          escapePath(normalizePath(path.resolve(path.dirname(id), dir))) +
-          `/` +
-          globPattern
-        const files = globSync(pattern, {
+        const files = globSync(globPattern, {
           absolute: true,
+          cwd: path.resolve(path.dirname(id), dir),
           expandDirectories: false,
           ignore: ['**/node_modules/**'],
         })
