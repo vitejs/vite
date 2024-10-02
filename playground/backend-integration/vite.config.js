@@ -52,4 +52,11 @@ function BackendIntegrationExample() {
 export default defineConfig({
   base: '/dev/',
   plugins: [BackendIntegrationExample()],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: ['legacy-js-api'],
+      },
+    },
+  },
 })
