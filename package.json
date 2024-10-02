@@ -63,6 +63,7 @@
     "eslint-plugin-regexp": "^2.6.0",
     "execa": "^9.4.0",
     "globals": "^15.9.0",
+    "gsap": "^3.12.4",
     "lint-staged": "^15.2.10",
     "picocolors": "^1.1.0",
     "playwright-chromium": "^1.47.2",

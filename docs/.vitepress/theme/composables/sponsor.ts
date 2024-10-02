@@ -99,7 +99,7 @@ export function useSponsor() {
 function mapSponsors(sponsors: Sponsors) {
   return [
     {
-      tier: 'Special Sponsors',
+      tier: 'in partnership with',
       size: 'big',
       items: viteSponsors['special'],
     },
