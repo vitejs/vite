@@ -79,10 +79,9 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
           const exportsValue = getFirstExportStringValue(exports[key])
           if (!exportsValue) continue
 
-          // TODO: Raise during the PR review.
           // "./dist/glob/*-browser/*.js" => "./dist/glob/**/*-browser/**/*.js"
           // NOTE: in some cases, this could expand to consecutive /**/*/**/* etc
-          // but it's fine since fast-glob handles it the same.
+          // but it's fine since `tinyglobby` handles it the same.
           const exportValuePattern = exportsValue.replace(/\*/g, '**/*')
           // "./dist/glob/*-browser/*.js" => /dist\/glob\/(.*)-browser\/(.*)\.js/
           const exportsValueGlobRe = new RegExp(
