@@ -727,6 +727,22 @@ function joinSrcset(ret: ImageCandidate[]) {
     .join(', ')
 }
 
+/**
+ This regex represents a loose rule of an “image candidate string” and "image set options".
+
+ @see https://html.spec.whatwg.org/multipage/images.html#srcset-attribute
+ @see https://drafts.csswg.org/css-images-4/#image-set-notation
+
+  The Regex has named capturing groups `url` and `descriptor`.
+  The `url` group can be:
+  * any CSS function
+  * CSS string (single or double-quoted)
+  * or URL string.
+  The `descriptor` is anything after the space and before the comma,
+  and can have optional `type(...)` for the `image-set` case.
+ */
+const imageCandidateRegex =
+  /(?:^|\s)(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>[^,\s]+(?:\stype\([^)]*\))?)\s*)?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {
@@ -736,16 +752,7 @@ export function parseSrcset(string: string): ImageCandidate[] {
     .replace(/\r?\n/, '')
     .replace(/,\s+/, ', ')
     .replaceAll(/\s+/g, ' ')
-    .matchAll(
-      /**
-       This regex represents a loose rule of an “image candidate string” and "image set options".
-
-       @see https://html.spec.whatwg.org/multipage/images.html#srcset-attribute
-       @see https://drafts.csswg.org/css-images-4/#image-set-notation
-       */
-      // eslint-disable-next-line regexp/no-super-linear-backtracking
-      /\s*(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?<descriptor>[^,]*(?:\stype\([^)]*\))?)\s*(?:,|$)/g,
-    )
+    .matchAll(imageCandidateRegex)
   return Array.from(matches, ({ groups }) => ({
     url: groups?.url?.trim() ?? '',
     descriptor: groups?.descriptor?.trim() ?? '',
