@@ -31,6 +31,9 @@ export default defineConfig({
           }
         },
       },
+      sass: {
+        silenceDeprecations: ['legacy-js-api'],
+      },
     },
   },
   build: {
