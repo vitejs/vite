@@ -737,12 +737,11 @@ function joinSrcset(ret: ImageCandidate[]) {
   The `url` group can be:
   * any CSS function
   * CSS string (single or double-quoted)
-  * or URL string.
-  The `descriptor` is anything after the space and before the comma,
-  and can have optional `type(...)` for the `image-set` case.
+  * URL string (unquoted)
+  The `descriptor` is anything after the space and before the comma.
  */
 const imageCandidateRegex =
-  /(?:^|\s)(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>[^,\s]+(?:\stype\([^)]*\))?)\s*)?(?:,|$)/g
+  /(?:^|\s)(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {

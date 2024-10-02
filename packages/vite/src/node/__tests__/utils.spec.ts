@@ -403,8 +403,9 @@ describe('processSrcSetSync', () => {
   })
 
   test('should parse image-set-options with resolution and type specified', async () => {
-    const source = `url("picture.png")\t1x\t type("image/jpeg")`
-    const result = 'url("picture.png") 1x type("image/jpeg")'
+    const source = `url("picture.png")\t1x\t type("image/jpeg"), url("picture.png")\t type("image/jpeg")\t2x`
+    const result =
+      'url("picture.png") 1x type("image/jpeg"), url("picture.png") type("image/jpeg") 2x'
     expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
   })
 
