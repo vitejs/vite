@@ -33,7 +33,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
-import { getDefaultResolvedEnvironmentOptions, resolveConfig } from './config'
+import { resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -67,7 +67,10 @@ import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
-import { BaseEnvironment } from './baseEnvironment'
+import {
+  BaseEnvironment,
+  getDefaultResolvedEnvironmentOptions,
+} from './baseEnvironment'
 import type { MinimalPluginContext, Plugin, PluginContext } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
 
