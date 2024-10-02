@@ -23,6 +23,7 @@ import logoReact from './images/react.svg'
 import logoRemix from './images/remix.svg'
 import logoSvelte from './images/svelte.svg'
 import logoLaravel from './images/laravel.svg'
+import logoAdonis from './images/adonis.svg'
 
 /**
  * The frameworks and tools to display in this section.
@@ -138,6 +139,13 @@ const frameworks: Framework[] = [
     logo: logoLaravel,
     color: '#eb4432',
     url: 'https://laravel.com/',
+    visible: ref(false),
+  },
+  {
+    name: 'Adonis',
+    logo: logoAdonis,
+    color: '#5a45ff',
+    url: 'https://adonisjs.com/',
     visible: ref(false),
   },
 ]
