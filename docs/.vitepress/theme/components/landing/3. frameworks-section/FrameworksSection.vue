@@ -142,7 +142,7 @@ const frameworks: Framework[] = [
     visible: ref(false),
   },
   {
-    name: 'Adonis',
+    name: 'AdonisJS',
     logo: logoAdonis,
     color: '#5a45ff',
     url: 'https://adonisjs.com/',
