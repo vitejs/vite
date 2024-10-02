@@ -212,7 +212,16 @@ const numBlocksPerRow: ComputedRef<number> = computed(() => {
 })
 
 const paddedBlocksPerSide: ComputedRef<number> = computed(() => {
-  return Math.max(Math.floor(screenWidth.value / 700), 1)
+  if (screenWidth.value < 840) {
+    return 0
+  }
+  if (screenWidth.value < 1280) {
+    return 1
+  }
+  if (screenWidth.value < 1600) {
+    return 2
+  }
+  return Math.max(Math.floor((screenWidth.value - 840) / 280), 0)
 })
 
 const numFrameworksPerRow = computed(
@@ -239,24 +248,12 @@ const numRows: ComputedRef<number> = computed(() => {
   return Math.ceil(frameworks.length / numFrameworksPerRow.value)
 })
 
-console.log(numBlocksPerRow.value)
-console.log(centerIndexes.value)
-console.log(numRows.value)
-
 /**
  * Generate CSS transformations for each row, to gracefully slide between horizontal positions.
  */
 const rowStyle: ComputedRef<{ transform: string }> = computed(() => {
-  if (numBlocksPerRow.value % 2 === 0 && screenWidth.value > 768) {
-    return {
-      transform: `translate3d(calc(((100% - ${
-        numBlocksPerRow.value * (96 + 24)
-      }px) / 1) + var(--row-offset)), 0, 0)`,
-    }
-  } else {
-    return {
-      transform: `translate3d(var(--row-offset), 0, 0)`,
-    }
+  return {
+    transform: `translate3d(var(--row-offset), 0, 0)`,
   }
 })
 </script>
@@ -276,15 +273,15 @@ const rowStyle: ComputedRef<{ transform: string }> = computed(() => {
           <template v-for="columnIndex in numBlocksPerRow + 2">
             <template
               v-if="
-                columnIndex >= centerIndexes.start &&
-                columnIndex <= centerIndexes.end
+                columnIndex - 1 >= centerIndexes.start &&
+                columnIndex - 1 < centerIndexes.end
               "
             >
               <FrameworkCard
                 :framework="
                   frameworks[
                     (rowIndex - 1) * numFrameworksPerRow +
-                      columnIndex -
+                      (columnIndex - 1) -
                       centerIndexes.start
                   ]
                 "
@@ -333,7 +330,7 @@ const rowStyle: ComputedRef<{ transform: string }> = computed(() => {
     margin-top: -20px;
     overflow: hidden;
 
-    @media (min-width: 1300px) {
+    @media (min-width: 840px) {
       mask-image: linear-gradient(
         90deg,
         transparent 0%,
