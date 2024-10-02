@@ -109,12 +109,12 @@
       </svg>
       <img src="/logo.svg" alt="Vite Logo" class="vite-chip__logo" />
     </div>
-    <h2>Getting started with Vite</h2>
+    <h2>Start building with Vite</h2>
     <h3>
-      Prepare for a development environment that can finally keep pace with your
-      expertise.
+      Prepare for a development environment that can finally keep pace with the
+      speed of your mind.
     </h3>
-    <a href="/guide/" class="btn btn--primary">Build now</a>
+    <a href="/guide/" class="btn btn--primary">Get started</a>
     <div class="glow glow--purple" />
     <div class="glow glow--blue" />
   </div>

@@ -4,96 +4,92 @@ import placeholderAvatar from '/images/community/placeholder.jpg'
 
 const testimonials: Testimonial[] = [
   {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment:
-      'Vite is a next-gen build tool that significantly improves the frontend development experience.',
+    name: 'Ryan Carniato',
+    handle: '@RyanCarniato',
+    avatar:
+      'https://pbs.twimg.com/profile_images/1810837163447308292/8Piov0f6_400x400.jpg',
+    comment: [
+      `I'm loving what Vite enables. We've found building SolidStart that it is less a metaframework but a system of symbiotic Vite plugins. While built with
+SolidJS in mind, they should scale from our simplest template to opinionated starter. We're building an ecosystem on Vite.`,
+    ],
   },
   {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment:
-      'When I started in frontend, build tooling was a pain to setup. Vite was the first tool that made it fast and easy.',
+    name: 'Rich Harris',
+    handle: '@Rich_Harris',
+    avatar:
+      'https://pbs.twimg.com/profile_images/557940120184041473/bFyXy8Pu_400x400.jpeg',
+    comment: [
+      `Vite is basically the united nations of JavaScript at this point. I'll be there as a representative of Sveltelandia`,
+    ],
   },
   {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment:
-      'Vite revolutionized my development workflow with its lightning-fast 🚀 HMR and seamless integration.',
+    name: 'David East',
+    handle: '@_davideast',
+    avatar:
+      'https://pbs.twimg.com/profile_images/1691627325794725888/voQFcYjY_400x400.jpg',
+    comment: [
+      'Each and every time I use Vite, I feel a true sense of pure and unbridled joy.',
+    ],
   },
   {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment:
-      'The simplicity and speed of Vite have significantly boosted my productivity in web projects.',
+    name: 'Mark Dalgleish',
+    handle: '@markdalgleish',
+    avatar:
+      'https://pbs.twimg.com/profile_images/754886061872979968/BzaOWhs1_400x400.jpg',
+    comment: [
+      `It’s also a great platform to build a framework on since it provides a pluggable dev environment.`,
+      `Community is amazing too.`,
+    ],
   },
   {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment:
-      'Switching to Vite was a game-changer - faster builds, less configuration, more coding. 🙌',
+    name: 'Jason Miller',
+    handle: '@_developit',
+    avatar:
+      'https://pbs.twimg.com/profile_images/1374778373239681025/Sc9ehtAr_400x400.jpg',
+    comment: [
+      `Every time I suspect I've hit the bounds of what Vite can do, I end up being wrong.`,
+    ],
   },
   {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment: 'No more endless config files and setup hassles.',
+    name: 'David Cramer',
+    handle: '@zeeg',
+    avatar:
+      'https://pbs.twimg.com/profile_images/1706891973553168384/zdAPOznc_400x400.jpg',
+    comment: ['Vite has been a game changer for the industry.'],
   },
   {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment:
-      "The ease of setting up a project with Vite is unparalleled. It's a joy to work with.",
+    name: 'Dion Almaer',
+    handle: '@dalmaer',
+    avatar:
+      'https://pbs.twimg.com/profile_images/3380865881/f73b3687ff39b795db05fcaf35972270_400x400.jpeg',
+    comment: [
+      'I am so excited to see so many great frameworks teaming up on top of vite. So many will benefit. ❤️ to the vite team.',
+    ],
   },
   {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment:
-      "I love 😍 how Vite is framework agnostic, making it a versatile tool for any project. 🚀 I've switched everything to Vite, including Vue, React and Svelte projects. ",
+    name: 'Christoph Nakazawa',
+    handle: '@cpojer',
+    avatar:
+      'https://pbs.twimg.com/profile_images/1189537722286952449/OrscO0bD_400x400.jpg',
+    comment: ['Vite is gonna eat the (JavaScript) world.'],
   },
   {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment:
-      "Vite's live reloading (HMR) is incredibly fast, making UI development a breeze.",
-  },
-  {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment:
-      "The documentation and community support for Vite have made my journey smooth and enjoyable. I used to dread web development, but now I can't get enough of it, thanks to Vite! 🙌 Building websites has never been this enjoyable.",
-  },
-  {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment:
-      "Vite's asset handling and module resolution are incredibly efficient and developer-friendly.",
-  },
-  {
-    name: 'Persona',
-    handle: '@XXX',
-    avatar: placeholderAvatar,
-    comment:
-      "Adopting Vite has been a major efficiency boost for our team's front-end projects.",
+    name: 'Nikolaj',
+    handle: '@lopugit',
+    avatar: 'https://avatars.githubusercontent.com/u/13629190?v=4',
+    comment: [
+      'Wow, wow, wow, wow, wow, wow, Vite is..... Vite is.... Wow 🤤🤯🙏',
+    ],
   },
 ]
 </script>
 
 <template>
   <section class="community-section">
-    <h2>Join the community</h2>
+    <h2>Loved by the community</h2>
     <h3>
-      Supported by a network of early advocates, contributors, and champions.
+      Don't take our word for it - listen to what Vite community members have to
+      say.
     </h3>
     <div class="community-grid-container">
       <div class="community-grid">
@@ -133,26 +129,7 @@ const testimonials: Testimonial[] = [
   }
 
   .community-grid-container {
-    overflow: hidden;
-    max-height: 700px;
     position: relative;
-
-    &:after {
-      content: '';
-      display: block;
-      width: 100%;
-      height: 150px;
-      background: linear-gradient(
-        180deg,
-        rgba(23, 23, 23, 0) 0%,
-        rgba(16, 16, 16, 0.7) 50%,
-        #101010 100%
-      );
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-    }
   }
 
   .community-grid {

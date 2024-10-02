@@ -47,10 +47,14 @@ const { data } = useSponsor()
       height="55"
     />
     <h2>Free &amp; open source</h2>
-    <h4>
-      Vite is MIT Licensed and will always be free and open source. This is made
-      possible by our wonderful sponsors.
-    </h4>
+    <h4>Vite is MIT Licensed and will always be free and open source.</h4>
+
+    <h4>Brought to you by</h4>
+    <div class="voidzero">
+      <a href="https://voidzero.dev" target="_blank">
+        <img src="./voidzero.svg" />
+      </a>
+    </div>
 
     <!-- Sponsor Grid -->
     <div class="sponsor-grid">
@@ -63,13 +67,7 @@ const { data } = useSponsor()
         href="https://github.com/sponsors/vitejs"
         target="_blank"
         class="btn btn--outline btn--rounded"
-        >Sponsor Vite</a
-      >
-      <a
-        href="https://github.com/sponsors/yyx990803"
-        target="_blank"
-        class="btn btn--outline btn--rounded"
-        >Sponsor Evan You</a
+        >Become a Sponsor</a
       >
     </div>
   </div>
@@ -94,6 +92,7 @@ const { data } = useSponsor()
     width: 100%;
     z-index: 0;
     display: none;
+    pointer-events: none;
 
     @media (min-width: 1240px) {
       display: block;
@@ -113,6 +112,15 @@ const { data } = useSponsor()
     text-align: center;
   }
 
+  .voidzero {
+    text-align: center;
+    img {
+      position: relative;
+      display: inline-block;
+      max-width: 260px;
+    }
+  }
+
   h4 {
     color: #a3a3a3;
     text-align: center;
@@ -122,9 +130,9 @@ const { data } = useSponsor()
     font-weight: 400;
     line-height: 150%; /* 24px */
     letter-spacing: -0.32px;
-    width: 366px;
+    width: 300px;
     max-width: 100%;
-    margin: 0 auto;
+    margin: 0 auto 40px;
   }
 
   .sponsor-grid {

@@ -16,7 +16,7 @@ import HeroDiagram from './HeroDiagram.vue'
       <!-- Tagline -->
       <h3>
         Vite is a blazing fast frontend build tool powering the next generation
-        of web frameworks.
+        of web applications.
       </h3>
 
       <!-- CTA Buttons -->

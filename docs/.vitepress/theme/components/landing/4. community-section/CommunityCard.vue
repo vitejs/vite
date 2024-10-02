@@ -18,7 +18,7 @@ export interface Testimonial {
   /**
    * Their comment/testimonial about Vite.
    */
-  comment: string
+  comment: string[]
 }
 
 defineProps<{
@@ -46,7 +46,9 @@ defineProps<{
         </span>
       </div>
     </div>
-    <span class="card__content">{{ testimonial.comment }}</span>
+    <div class="card__content">
+      <p v-for="p of testimonial.comment">{{ p }}</p>
+    </div>
   </div>
 </template>
 
@@ -79,6 +81,10 @@ defineProps<{
     letter-spacing: -0.32px;
     text-wrap: pretty;
     cursor: default;
+  }
+
+  .card__content p {
+    margin-top: 10px;
   }
 
   .card__header {

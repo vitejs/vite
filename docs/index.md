@@ -28,7 +28,7 @@ import FeatureCI from './.vitepress/theme/components/landing/2. feature-section/
 
 <div class="VPHome">
   <Hero/>
-  <FeatureSection title="Redefining developer experience" description="Experience the future of web bundling" type="blue">
+  <FeatureSection title="Redefining developer experience" description="Vite makes web development simple again" type="blue">
     <FeatureInstantServerStart />
     <FeatureHMR />
     <FeatureRichFeatures />
