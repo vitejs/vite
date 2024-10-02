@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref, Ref } from 'vue'
+import { type Ref, onMounted, onUnmounted, ref } from 'vue'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger'
 
@@ -13,7 +13,7 @@ gsap.registerPlugin(ScrollTrigger)
  */
 export function useCardAnimation(
   el: HTMLElement | string,
-  animation: () => GSAPTimeline | null = null,
+  animation: (() => GSAPTimeline) | undefined = undefined,
   options?: {
     /**
      * A flag to indicate whether the animation should only run once, and not reset once complete.
@@ -69,7 +69,7 @@ export function useCardAnimation(
   /**
    * The ScrollTrigger instance for this card.
    */
-  let scrollTriggerInstance = null
+  let scrollTriggerInstance: ScrollTrigger | null = null
 
   /**
    * Trigger's the card's animation automatically on mobile devices (no hover method)
