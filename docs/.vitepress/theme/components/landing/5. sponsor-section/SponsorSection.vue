@@ -42,12 +42,15 @@ const { data } = useSponsor()
     <img
       class="icon-heart"
       src="/heart.svg"
-      alt="Vite is made possible by our wonderful sponsors"
+      alt="Vite is made possible by our contributors, partner companies, and sponsors"
       width="58"
       height="55"
     />
     <h2>Free &amp; open source</h2>
-    <h4>Vite is MIT Licensed and will always be free and open source.</h4>
+    <h4>
+      Vite is MIT Licensed and will always be free and open source. This is made
+      possible by our contributors and these companies:
+    </h4>
 
     <h4>Brought to you by</h4>
     <div class="voidzero">
@@ -130,7 +133,7 @@ const { data } = useSponsor()
     font-weight: 400;
     line-height: 150%; /* 24px */
     letter-spacing: -0.32px;
-    width: 300px;
+    width: 480px;
     max-width: 100%;
     margin: 0 auto 40px;
   }
