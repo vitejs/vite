@@ -345,7 +345,7 @@ export class ModuleRunner {
       dirname: isWindows ? toWindowsPath(dirname) : dirname,
       url: href,
       env: this.envProxy,
-      resolve(_id, _parent) {
+      resolve(_id, _parent?) {
         throw new Error(
           '[module runner] "import.meta.resolve" is not supported.',
         )
