@@ -1,10 +1,10 @@
 <script setup>
-import logoJSON from './../../../../../images/supports/json.svg'
-import logoCSS from './../../../../../images/supports/css3.svg'
-import logoJS from './../../../../../images/supports/js.svg'
-import logoTS from './../../../../../images/supports/ts.svg'
-import logoWA from './../../../../../images/supports/wa.svg'
-import logoPostCSS from './../../../../../images/supports/postcss.svg'
+import logoJSON from './images/json.svg'
+import logoCSS from './images/css3.svg'
+import logoJS from './images/js.svg'
+import logoTS from './images/ts.svg'
+import logoWA from './images/wa.svg'
+import logoPostCSS from './images/postcss.svg'
 import { useSlideIn } from '../../../composables/useSlideIn'
 import { useCardAnimation } from '../../../composables/useCardAnimation'
 
