@@ -901,7 +901,7 @@ export async function _createServer(
   // this code is to avoid calling buildStart multiple times
   let initingServer: Promise<void> | undefined
   let serverInited = false
-  const initServer = async () => {
+  const initServer = async (onListen: boolean) => {
     if (serverInited) return
     if (initingServer) return initingServer
 
@@ -912,7 +912,7 @@ export async function _createServer(
       await environments.client.pluginContainer.buildStart()
 
       // ensure ws server started
-      if (options.listen) {
+      if (!onListen && options.listen) {
         await Promise.all(
           Object.values(environments).map((e) => e.listen(server)),
         )
@@ -929,7 +929,7 @@ export async function _createServer(
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
-        await initServer()
+        await initServer(true)
       } catch (e) {
         httpServer.emit('error', e)
         return
@@ -937,7 +937,7 @@ export async function _createServer(
       return listen(port, ...args)
     }) as any
   } else {
-    await initServer()
+    await initServer(false)
   }
 
   return server
