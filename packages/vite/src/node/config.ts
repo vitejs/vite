@@ -1650,7 +1650,7 @@ async function bundleConfigFile(
       {
         name: 'inject-file-scope-variables',
         setup(build) {
-          build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
+          build.onLoad({ filter: /\.[cm]?[jt]sx?$/ }, async (args) => {
             const contents = await fsp.readFile(args.path, 'utf-8')
             const injectValues =
               `const ${dirnameVarName} = ${JSON.stringify(
@@ -1662,7 +1662,7 @@ async function bundleConfigFile(
               )};`
 
             return {
-              loader: args.path.endsWith('ts') ? 'ts' : 'js',
+              loader: /tsx?$/.test(args.path) ? 'ts' : 'js',
               contents: injectValues + contents,
             }
           })
