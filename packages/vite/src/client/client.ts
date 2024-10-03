@@ -337,12 +337,21 @@ async function waitForSuccessfulPing(
       'vite-ping',
     )
     return new Promise<boolean>((resolve) => {
-      socket.addEventListener('open', () => {
+      function onOpen() {
         resolve(true)
-      })
-      socket.addEventListener('error', () => {
+        close()
+      }
+      function onError() {
         resolve(false)
-      })
+        close()
+      }
+      function close() {
+        socket.removeEventListener('open', onOpen)
+        socket.removeEventListener('error', onError)
+        socket.close()
+      }
+      socket.addEventListener('open', onOpen)
+      socket.addEventListener('error', onError)
     })
   }
 
