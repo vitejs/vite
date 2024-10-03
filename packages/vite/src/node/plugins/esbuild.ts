@@ -7,11 +7,11 @@ import type {
   TransformResult,
 } from 'esbuild'
 import { transform } from 'esbuild'
-// TODO: import type { FSWatcher } from 'chokidar'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rollup'
 import type { TSConfckParseResult } from 'tsconfck'
 import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
+import type { FSWatcher } from 'dep-types/chokidar'
 import {
   combineSourcemaps,
   createDebugger,
@@ -81,7 +81,7 @@ export async function transformWithEsbuild(
   options?: TransformOptions,
   inMap?: object,
   config?: ResolvedConfig,
-  watcher?: any, // TODO: module-runner bundling issue with FSWatcher,
+  watcher?: FSWatcher,
 ): Promise<ESBuildTransformResult> {
   let loader = options?.loader
 
