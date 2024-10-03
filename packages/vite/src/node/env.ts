@@ -18,6 +18,7 @@ export function loadEnv(
   mode: string,
   envDir: string,
   prefixes: string | string[] = 'VITE_',
+  includeProcessEnv = true
 ): Record<string, string> {
   if (mode === 'local') {
     throw new Error(
@@ -67,6 +68,14 @@ export function loadEnv(
     if (prefixes.some((prefix) => key.startsWith(prefix))) {
       env[key] = process.env[key] as string
     }
+  }
+
+  if (!includeProcessEnv) {
+    const parsedKeys = Object.keys(parsed)
+    
+    Object.keys(process.env)
+      .filter(processEnvKey => processEnvKey in env && !parseKeys.includes(processEnvKey))
+      .forEach(unwantedKey => delete env[unwantedKey])
   }
 
   return env
