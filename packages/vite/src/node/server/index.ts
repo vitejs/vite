@@ -418,7 +418,7 @@ export interface ResolvedServerUrls {
 export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
-  return _createServer(inlineConfig, { isRestart: true })
+  return _createServer(inlineConfig, { isRestart: false })
 }
 
 export async function _createServer(
