@@ -457,9 +457,8 @@ async function handleModuleSoftInvalidation(
   }
 
   let result: TransformResult
-  // For SSR or direct CSS, no transformation is needed
-  // Note that direct CSS soft invalidation happens when files included by tailwind's `content` option is updated
-  if (transformResult.ssr || mod.type === 'css') {
+  // For SSR soft-invalidation, no transformation is needed
+  if (transformResult.ssr) {
     result = transformResult
   }
   // We need to transform each imports with new timestamps if available
