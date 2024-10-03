@@ -149,7 +149,10 @@ export class DevEnvironment extends BaseEnvironment {
     }
   }
 
-  async init(options?: { watcher?: FSWatcher }): Promise<void> {
+  async init(options?: {
+    watcher?: FSWatcher
+    isRestart?: boolean
+  }): Promise<void> {
     if (this._initiated) {
       return
     }
@@ -202,7 +205,7 @@ export class DevEnvironment extends BaseEnvironment {
     }
   }
 
-  async close(): Promise<void> {
+  async close(_options?: { isRestart?: boolean }): Promise<void> {
     this._closing = true
 
     this._crawlEndFinder?.cancel()

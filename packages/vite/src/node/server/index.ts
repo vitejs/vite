@@ -347,7 +347,7 @@ export interface ViteDevServer {
   /**
    * Stop the server.
    */
-  close(): Promise<void>
+  close(options?: { isRestart?: boolean }): Promise<void>
   /**
    * Print server urls
    */
@@ -418,12 +418,12 @@ export interface ResolvedServerUrls {
 export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
-  return _createServer(inlineConfig, { hotListen: true })
+  return _createServer(inlineConfig, { isRestart: true })
 }
 
 export async function _createServer(
   inlineConfig: InlineConfig = {},
-  options: { hotListen: boolean },
+  options: { isRestart: boolean },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
@@ -494,12 +494,13 @@ export async function _createServer(
       config,
       {
         ws,
+        isRestart: options.isRestart,
       },
     )
   }
 
   for (const environment of Object.values(environments)) {
-    await environment.init({ watcher })
+    await environment.init({ watcher, isRestart: options.isRestart })
   }
 
   // Backward compatibility
@@ -656,7 +657,7 @@ export async function _createServer(
         server.config.logger.warn('No URL available to open in browser')
       }
     },
-    async close() {
+    async close(options) {
       if (!middlewareMode) {
         teardownSIGTERMListener(closeServerAndExit)
       }
@@ -666,7 +667,7 @@ export async function _createServer(
         ws.close(),
         Promise.allSettled(
           Object.values(server.environments).map((environment) =>
-            environment.close(),
+            environment.close({ isRestart: options?.isRestart }),
           ),
         ),
         closeHttpServer(),
@@ -941,7 +942,7 @@ export async function _createServer(
       return listen(port, ...args)
     }) as any
   } else {
-    if (options.hotListen) {
+    if (!options.isRestart) {
       Object.values(environments).forEach((e) => e.hot.listen())
     }
     await initServer()
@@ -1115,7 +1116,7 @@ async function restartServer(server: ViteDevServer) {
     let newServer: ViteDevServer | null = null
     try {
       // delay ws server listen
-      newServer = await _createServer(inlineConfig, { hotListen: false })
+      newServer = await _createServer(inlineConfig, { isRestart: true })
     } catch (err: any) {
       server.config.logger.error(err.message, {
         timestamp: true,

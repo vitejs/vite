@@ -138,6 +138,7 @@ export function defineConfig(config: UserConfigExport): UserConfigExport {
 
 export interface CreateDevEnvironmentContext {
   ws: WebSocketServer
+  isRestart?: boolean
 }
 
 export interface DevEnvironmentOptions {
