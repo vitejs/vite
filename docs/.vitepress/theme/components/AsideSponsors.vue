@@ -23,7 +23,7 @@ const sponsors = computed(() => {
     href="https://viteconf.org/?utm=vite-sidebar"
     target="_blank"
   >
-    <img width="22" height="22" src="/viteconf.svg" />
+    <img width="22" height="22" src="/viteconf.svg" alt="ViteConf Logo" />
     <span>
       <p class="extra-info">Building Together</p>
       <p class="heading">ViteConf 24 - Oct 3</p>
