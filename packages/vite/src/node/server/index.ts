@@ -912,7 +912,7 @@ export async function _createServer(
       await environments.client.pluginContainer.buildStart()
 
       // ensure ws server started
-      if (!onListen && options.listen) {
+      if (onListen || options.listen) {
         await Promise.all(
           Object.values(environments).map((e) => e.listen(server)),
         )
