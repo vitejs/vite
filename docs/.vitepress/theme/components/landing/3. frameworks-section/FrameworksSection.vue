@@ -23,6 +23,7 @@ import logoReact from './images/react.svg'
 import logoRemix from './images/remix.svg'
 import logoSvelte from './images/svelte.svg'
 import logoLaravel from './images/laravel.svg'
+import logoEmber from './images/ember.svg'
 
 /**
  * The frameworks and tools to display in this section.
@@ -138,6 +139,13 @@ const frameworks: Framework[] = [
     logo: logoLaravel,
     color: '#eb4432',
     url: 'https://laravel.com/',
+    visible: ref(false),
+  },
+  {
+    name: 'EmberJS',
+    logo: logoEmber,
+    color: '#e04e39',
+    url: 'https://emberjs.com/',
     visible: ref(false),
   },
 ]
