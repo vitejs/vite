@@ -20,6 +20,7 @@ import {
 } from '../optimizer/optimizer'
 import { resolveEnvironmentPlugins } from '../plugin'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
+import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel } from './hmr'
@@ -33,6 +34,7 @@ import {
 } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
 import { isWebSocketServer } from './ws'
+import { warmupFiles } from './warmup'
 
 export interface DevEnvironmentContext {
   hot: false | HotChannel
@@ -160,6 +162,12 @@ export class DevEnvironment extends BaseEnvironment {
       this._plugins,
       options?.watcher,
     )
+  }
+
+  async listen(server: ViteDevServer): Promise<void> {
+    this.hot.listen()
+    await this.depsOptimizer?.init()
+    warmupFiles(server, this)
   }
 
   fetchModule(

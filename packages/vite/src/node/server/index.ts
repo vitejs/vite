@@ -93,7 +93,6 @@ import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
-import { warmupFiles } from './warmup'
 import type { DevEnvironment } from './environment'
 
 export interface ServerOptions extends CommonServerOptions {
@@ -418,12 +417,12 @@ export interface ResolvedServerUrls {
 export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
-  return _createServer(inlineConfig, { hotListen: true })
+  return _createServer(inlineConfig, { listen: true })
 }
 
 export async function _createServer(
   inlineConfig: InlineConfig = {},
-  options: { hotListen: boolean },
+  options: { listen: boolean },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
@@ -912,14 +911,13 @@ export async function _createServer(
       // buildStart will be called when the first request is transformed
       await environments.client.pluginContainer.buildStart()
 
-      await Promise.all(
-        Object.values(server.environments).map((environment) =>
-          environment.depsOptimizer?.init(),
-        ),
-      )
+      // ensure ws server started
+      if (options.listen) {
+        await Promise.all(
+          Object.values(environments).map((e) => e.listen(server)),
+        )
+      }
 
-      // TODO: move warmup call inside environment init()
-      warmupFiles(server)
       initingServer = undefined
       serverInited = true
     })()
@@ -931,8 +929,6 @@ export async function _createServer(
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
-        // ensure ws server started
-        Object.values(environments).forEach((e) => e.hot.listen())
         await initServer()
       } catch (e) {
         httpServer.emit('error', e)
@@ -941,9 +937,6 @@ export async function _createServer(
       return listen(port, ...args)
     }) as any
   } else {
-    if (options.hotListen) {
-      Object.values(environments).forEach((e) => e.hot.listen())
-    }
     await initServer()
   }
 
@@ -1115,7 +1108,7 @@ async function restartServer(server: ViteDevServer) {
     let newServer: ViteDevServer | null = null
     try {
       // delay ws server listen
-      newServer = await _createServer(inlineConfig, { hotListen: false })
+      newServer = await _createServer(inlineConfig, { listen: false })
     } catch (err: any) {
       server.config.logger.error(err.message, {
         timestamp: true,
@@ -1148,7 +1141,9 @@ async function restartServer(server: ViteDevServer) {
   if (!middlewareMode) {
     await server.listen(port, true)
   } else {
-    Object.values(server.environments).forEach((e) => e.hot.listen())
+    await Promise.all(
+      Object.values(server.environments).map((e) => e.listen(server)),
+    )
   }
   logger.info('server restarted.', { timestamp: true })
 
