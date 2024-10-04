@@ -133,9 +133,10 @@ const { data } = useSponsor()
     font-weight: 400;
     line-height: 150%; /* 24px */
     letter-spacing: -0.32px;
-    width: 480px;
+    width: 520px;
     max-width: 100%;
     margin: 0 auto 40px;
+    padding: 0 20px;
   }
 
   .sponsor-grid {
