@@ -8,7 +8,7 @@ import {
 import { buildEnd } from './buildEnd.config'
 
 const ogDescription = 'Next Generation Frontend Tooling'
-const ogImage = 'https://vite.dev/og-image.png'
+const ogImage = 'https://vite.dev/og-image.jpg'
 const ogTitle = 'Vite'
 const ogUrl = 'https://vite.dev'
 
