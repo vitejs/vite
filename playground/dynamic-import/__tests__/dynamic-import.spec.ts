@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest'
 import {
+  browserLogs,
   findAssetFile,
   getColor,
   isBuild,
@@ -159,6 +160,14 @@ test('should work with load ../ and contain itself directory', async () => {
   )
 })
 
+test('should work a load path that contains parentheses.', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-contains-parenthesis'),
+    'dynamic-import-with-vars-contains-parenthesis',
+    true,
+  )
+})
+
 test.runIf(isBuild)(
   'should rollup warn when static and dynamic import a module in same chunk',
   async () => {
@@ -177,6 +186,30 @@ test.runIf(isBuild)(
     )
   },
 )
+
+test('dynamic import treeshaken log', async () => {
+  const log = browserLogs.join('\n')
+  expect(log).toContain('treeshaken foo')
+  expect(log).toContain('treeshaken bar')
+  expect(log).toContain('treeshaken baz1')
+  expect(log).toContain('treeshaken baz2')
+  expect(log).toContain('treeshaken baz3')
+  expect(log).toContain('treeshaken baz4')
+  expect(log).toContain('treeshaken baz5')
+  expect(log).toContain('treeshaken default')
+
+  expect(log).not.toContain('treeshaken removed')
+})
+
+test('dynamic import syntax parsing', async () => {
+  const log = browserLogs.join('\n')
+  expect(log).toContain('treeshaken syntax foo')
+  expect(log).toContain('treeshaken syntax default')
+})
+
+test.runIf(isBuild)('dynamic import treeshaken file', async () => {
+  expect(findAssetFile(/treeshaken.+\.js$/)).not.toContain('treeshaken removed')
+})
 
 test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
   const js = findAssetFile(/index-[-\w]{8}\.js$/)

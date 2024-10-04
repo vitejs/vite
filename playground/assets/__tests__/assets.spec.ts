@@ -143,6 +143,18 @@ describe('asset imports from js', () => {
         "
       `)
   })
+
+  test('from /public (js)', async () => {
+    expect(await page.textContent('.public-js-import')).toMatch(
+      '/foo/bar/raw.js',
+    )
+    expect(await page.textContent('.public-js-import-content'))
+      .toMatchInlineSnapshot(`
+        "document.querySelector('.raw-js').textContent =
+          '[success] Raw js from /public loaded'
+        "
+      `)
+  })
 })
 
 describe('css url() references', () => {
@@ -358,6 +370,12 @@ describe('svg fragments', () => {
         : /svg#icon-heart-view$/,
     )
   })
+
+  test('url with an alias', async () => {
+    expect(await getBg('.icon-clock-alias')).toMatch(
+      /\.svg#icon-clock-view"\)$/,
+    )
+  })
 })
 
 test('Unknown extension assets import', async () => {
@@ -420,6 +438,18 @@ test('new URL("/...", import.meta.url)', async () => {
   expect(await page.textContent('.import-meta-url-base-path')).toMatch(
     iconMatch,
   )
+})
+
+test('new URL("data:...", import.meta.url)', async () => {
+  const img = await page.$('.import-meta-url-data-uri-img')
+  expect(
+    (await img.getAttribute('src')).startsWith('data:image/png;base64'),
+  ).toBe(true)
+  expect(
+    (await page.textContent('.import-meta-url-data-uri')).startsWith(
+      'data:image/png;base64',
+    ),
+  ).toBe(true)
 })
 
 test('new URL(..., import.meta.url) without extension', async () => {
@@ -568,5 +598,12 @@ test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
   const indexHtml = readFile('./dist/foo/index.html')
   expect(indexHtml).toMatch(
     /<img class="noscript" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
+  )
+})
+
+test.runIf(isBuild)('assets inside <template> is rewrote', async () => {
+  const indexHtml = readFile('./dist/foo/index.html')
+  expect(indexHtml).toMatch(
+    /<img class="template" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
   )
 })

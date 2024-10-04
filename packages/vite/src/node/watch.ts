@@ -3,10 +3,9 @@ import path from 'node:path'
 import glob from 'fast-glob'
 import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
 import type { OutputOptions } from 'rollup'
-import * as colors from 'picocolors'
+import colors from 'picocolors'
 import { withTrailingSlash } from '../shared/utils'
 import { arraify, normalizePath } from './utils'
-import type { ResolvedConfig } from './config'
 import type { Logger } from './logger'
 
 export function getResolvedOutDirs(
@@ -50,17 +49,17 @@ export function resolveEmptyOutDir(
 }
 
 export function resolveChokidarOptions(
-  config: ResolvedConfig,
   options: WatchOptions | undefined,
   resolvedOutDirs: Set<string>,
   emptyOutDir: boolean,
+  cacheDir: string,
 ): WatchOptions {
   const { ignored: ignoredList, ...otherOptions } = options ?? {}
   const ignored: WatchOptions['ignored'] = [
     '**/.git/**',
     '**/node_modules/**',
     '**/test-results/**', // Playwright
-    glob.escapePath(config.cacheDir) + '/**',
+    glob.escapePath(cacheDir) + '/**',
     ...arraify(ignoredList || []),
   ]
   if (emptyOutDir) {

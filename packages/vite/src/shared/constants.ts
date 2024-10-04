@@ -19,5 +19,5 @@ export const NULL_BYTE_PLACEHOLDER = `__x00__`
 export let SOURCEMAPPING_URL = 'sourceMa'
 SOURCEMAPPING_URL += 'ppingURL'
 
-export const VITE_RUNTIME_SOURCEMAPPING_SOURCE =
-  '//# sourceMappingSource=vite-runtime'
+export const MODULE_RUNNER_SOURCEMAPPING_SOURCE =
+  '//# sourceMappingSource=vite-generated'

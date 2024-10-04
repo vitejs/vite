@@ -42,8 +42,7 @@ See also [Virtual Modules Convention](#virtual-modules-convention).
 
 Users will add plugins to the project `devDependencies` and configure them using the `plugins` array option.
 
-```js
-// vite.config.js
+```js [vite.config.js]
 import vitePlugin from 'vite-plugin-feature'
 import rollupPlugin from 'rollup-plugin-feature'
 
@@ -66,8 +65,7 @@ export default function framework(config) {
 }
 ```
 
-```js
-// vite.config.js
+```js [vite.config.js]
 import { defineConfig } from 'vite'
 import framework from 'vite-plugin-framework'
 
@@ -399,6 +397,10 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   }
   ```
 
+  ::: warning Note
+  This hook won't be called if you are using a framework that has custom handling of entry files (for example [SvelteKit](https://github.com/sveltejs/kit/discussions/8269#discussioncomment-4509145)).
+  :::
+
 ### `handleHotUpdate`
 
 - **Type:** `(ctx: HmrContext) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
@@ -428,7 +430,6 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
     ```js
     handleHotUpdate({ server, modules, timestamp }) {
-      server.ws.send({ type: 'full-reload' })
       // Invalidate modules manually
       const invalidatedModules = new Set()
       for (const mod of modules) {
@@ -439,6 +440,7 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
           true
         )
       }
+      server.ws.send({ type: 'full-reload' })
       return []
     }
     ```
@@ -515,8 +517,7 @@ If a Rollup plugin only makes sense for the build phase, then it can be specifie
 
 You can also augment an existing Rollup plugin with Vite-only properties:
 
-```js
-// vite.config.js
+```js [vite.config.js]
 import example from 'rollup-plugin-example'
 import { defineConfig } from 'vite'
 
@@ -556,8 +557,7 @@ Since Vite 2.9, we provide some utilities for plugins to help handle the communi
 
 On the plugin side, we could use `server.ws.send` to broadcast events to the client:
 
-```js
-// vite.config.js
+```js [vite.config.js]
 export default defineConfig({
   plugins: [
     {
@@ -602,8 +602,7 @@ if (import.meta.hot) {
 
 Then use `server.ws.on` and listen to the events on the server side:
 
-```js
-// vite.config.js
+```js [vite.config.js]
 export default defineConfig({
   plugins: [
     {
@@ -628,8 +627,7 @@ Internally, vite infers the type of a payload from the `CustomEventMap` interfac
 Make sure to include the `.d.ts` extension when specifying TypeScript declaration files. Otherwise, Typescript may not know which file the module is trying to extend.
 :::
 
-```ts
-// events.d.ts
+```ts [events.d.ts]
 import 'vite/types/customEvent.d.ts'
 
 declare module 'vite/types/customEvent.d.ts' {

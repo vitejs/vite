@@ -9,7 +9,9 @@ import {
   cssUrlRE,
   getEmptyChunkReplacer,
   hoistAtRules,
+  preprocessCSS,
 } from '../../plugins/css'
+import { PartialEnvironment } from '../../baseEnvironment'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
@@ -65,6 +67,7 @@ background: #f0f;
 }`,
       },
       {
+        configFile: false,
         resolve: {
           alias: [
             {
@@ -101,6 +104,7 @@ position: fixed;
 
   test('custom generateScopedName', async () => {
     const { transform, resetMock } = await createCssPluginTransform(undefined, {
+      configFile: false,
       css: {
         modules: {
           generateScopedName: 'custom__[hash:base64:5]',
@@ -213,6 +217,8 @@ async function createCssPluginTransform(
   inlineConfig: InlineConfig = {},
 ) {
   const config = await resolveConfig(inlineConfig, 'serve')
+  const environment = new PartialEnvironment('client', config)
+
   const { transform, buildStart } = cssPlugin(config)
 
   // @ts-expect-error buildStart is function
@@ -221,7 +227,7 @@ async function createCssPluginTransform(
   const mockFs = vi
     .spyOn(fs, 'readFile')
     // @ts-expect-error vi.spyOn not recognize override `fs.readFile` definition.
-    .mockImplementationOnce((p, encoding, callback) => {
+    .mockImplementationOnce((p, _encoding, callback) => {
       callback(null, Buffer.from(files?.[p] ?? ''))
     })
 
@@ -233,6 +239,7 @@ async function createCssPluginTransform(
           addWatchFile() {
             return
           },
+          environment,
         },
         code,
         id,
@@ -336,5 +343,52 @@ require("other-module");`
     expect(replacer(code)).toMatchInlineSnapshot(
       `"require("some-module");/* empty css               */const v=require("other-module");"`,
     )
+  })
+})
+
+describe('preprocessCSS', () => {
+  test('works', async () => {
+    const resolvedConfig = await resolveConfig({ configFile: false }, 'serve')
+    const result = await preprocessCSS(
+      `\
+.foo {
+  color:red;
+  background: url(./foo.png);
+}`,
+      'foo.css',
+      resolvedConfig,
+    )
+    expect(result.code).toMatchInlineSnapshot(`
+      ".foo {
+        color:red;
+        background: url(./foo.png);
+      }"
+    `)
+  })
+
+  test('works with lightningcss', async () => {
+    const resolvedConfig = await resolveConfig(
+      {
+        configFile: false,
+        css: { transformer: 'lightningcss' },
+      },
+      'serve',
+    )
+    const result = await preprocessCSS(
+      `\
+.foo {
+  color: red;
+  background: url(./foo.png);
+}`,
+      'foo.css',
+      resolvedConfig,
+    )
+    expect(result.code).toMatchInlineSnapshot(`
+      ".foo {
+        color: red;
+        background: url("./foo.png");
+      }
+      "
+    `)
   })
 })

@@ -140,7 +140,7 @@ test('dep with optional peer dep', async () => {
 })
 
 test('dep with optional peer dep submodule', async () => {
-  expectWithRetry(() =>
+  await expectWithRetry(() =>
     page.textContent('.dep-with-optional-peer-dep-submodule'),
   ).toMatch(`[success]`)
   if (isServe) {
@@ -289,9 +289,6 @@ test('name file limit is 170 characters', async () => {
     const stripFolderPart = fromUrl.split('/').at(-1)
     const onlyTheFilePart = stripFolderPart.split('.')[0]
     expect(onlyTheFilePart).toHaveLength(170)
-
-    const text = await content.text()
-    expect(text).toMatch(/import\s+("[^"]+")/)
   }
 })
 

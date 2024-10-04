@@ -1,14 +1,16 @@
-import * as staticModule from './basic'
+import path from 'node:path'
+import * as staticModule from './simple'
 
 export const initialize = async () => {
-  const nameRelative = './basic'
-  const nameAbsolute = '/fixtures/basic'
-  const nameAbsoluteExtension = '/fixtures/basic.js'
+  const nameRelative = './simple'
+  const nameAbsolute = '/fixtures/simple'
+  const nameAbsoluteExtension = '/fixtures/simple.js'
   return {
-    dynamicProcessed: await import('./basic'),
+    dynamicProcessed: await import('./simple'),
     dynamicRelative: await import(nameRelative),
     dynamicAbsolute: await import(nameAbsolute),
     dynamicAbsoluteExtension: await import(nameAbsoluteExtension),
+    dynamicAbsoluteFull: await import(path.join(import.meta.dirname, "simple.js")),
     static: staticModule,
   }
 }

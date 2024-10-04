@@ -30,7 +30,7 @@ import {
   loopbackHosts,
   wildcardHosts,
 } from './constants'
-import type { DepOptimizationConfig } from './optimizer'
+import type { DepOptimizationOptions } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
 import type { PreviewServer } from './preview'
@@ -57,7 +57,7 @@ export const createFilter = _createFilter as (
 
 const replaceSlashOrColonRE = /[/:]/g
 const replaceDotRE = /\./g
-const replaceNestedIdRE = /(\s*>\s*)/g
+const replaceNestedIdRE = /\s*>\s*/g
 const replaceHashRE = /#/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
@@ -122,7 +122,7 @@ export function moduleListContains(
 
 export function isOptimizable(
   id: string,
-  optimizeDeps: DepOptimizationConfig,
+  optimizeDeps: DepOptimizationOptions,
 ): boolean {
   const { extensions } = optimizeDeps
   return (
@@ -137,15 +137,11 @@ export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 // TODO: use import()
 const _require = createRequire(import.meta.url)
 
-export function resolveDependencyVersion(
-  dep: string,
-  pkgRelativePath = '../../package.json',
-): string {
-  const pkgPath = path.resolve(_require.resolve(dep), pkgRelativePath)
-  return JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version
-}
+const _dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export const rollupVersion = resolveDependencyVersion('rollup')
+// NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
+export const rollupVersion =
+  resolvePackageData('rollup', _dirname, true)?.data.version ?? ''
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
@@ -558,7 +554,7 @@ export function emptyDir(dir: string, skip?: string[]): void {
   if (skip?.length) {
     for (const file of skip) {
       if (path.dirname(file) !== '.') {
-        const matched = file.match(splitFirstDirRE)
+        const matched = splitFirstDirRE.exec(file)
         if (matched) {
           nested ??= new Map()
           const [, nestedDir, skipPath] = matched
@@ -656,7 +652,7 @@ function windowsMappedRealpathSync(path: string) {
   }
   return realPath
 }
-const parseNetUseRE = /^(\w+)? +(\w:) +([^ ]+)\s/
+const parseNetUseRE = /^\w* +(\w:) +([^ ]+)\s/
 let firstSafeRealPathSyncRun = false
 
 function windowsSafeRealPathSync(path: string): string {
@@ -691,8 +687,8 @@ function optimizeSafeRealPathSync() {
     // OK           Y:        \\NETWORKA\Foo         Microsoft Windows Network
     // OK           Z:        \\NETWORKA\Bar         Microsoft Windows Network
     for (const line of lines) {
-      const m = line.match(parseNetUseRE)
-      if (m) windowsNetworkMap.set(m[3], m[2])
+      const m = parseNetUseRE.exec(line)
+      if (m) windowsNetworkMap.set(m[2], m[1])
     }
     if (windowsNetworkMap.size === 0) {
       safeRealpathSync = fs.realpathSync.native
@@ -724,8 +720,8 @@ interface ImageCandidate {
   url: string
   descriptor: string
 }
-const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
-const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
+const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
+const imageSetUrlRE = /^(?:[\w-]+\(.*?\)|'.*?'|".*?"|\S*)/
 function joinSrcset(ret: ImageCandidate[]) {
   return ret
     .map(({ url, descriptor }) => url + (descriptor ? ` ${descriptor}` : ''))
@@ -773,7 +769,7 @@ export function processSrcSetSync(
 }
 
 const cleanSrcSetRE =
-  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+\-]+;base64,[\w+/=]+|\?\S+,/g
+  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+-]+;base64,[\w+/=]+|\?\S+,/g
 function splitSrcSet(srcs: string) {
   const parts: string[] = []
   /**
@@ -852,7 +848,6 @@ export function combineSourcemaps(
     }
     return newSourcemaps
   })
-  const escapedFilename = escapeToLinuxLikePath(filename)
 
   // We don't declare type here so we can convert/fake/map as RawSourceMap
   let map //: SourceMap
@@ -863,11 +858,15 @@ export function combineSourcemaps(
     map = remapping(sourcemapList, () => null)
   } else {
     map = remapping(sourcemapList[0], function loader(sourcefile) {
-      if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
-        return sourcemapList[mapIndex++]
-      } else {
-        return null
+      const mapForSources = sourcemapList
+        .slice(mapIndex)
+        .find((s) => s.sources.includes(sourcefile))
+
+      if (mapForSources) {
+        mapIndex++
+        return mapForSources
       }
+      return null
     })
   }
   if (!map.file) {
@@ -1033,8 +1032,6 @@ export function getHash(text: Buffer | string, length = 8): string {
   return h.padEnd(length, '_')
 }
 
-const _dirname = path.dirname(fileURLToPath(import.meta.url))
-
 export const requireResolveFromRootWithFallback = (
   root: string,
   id: string,
@@ -1096,7 +1093,7 @@ function mergeConfigRecursively(
       continue
     } else if (
       key === 'noExternal' &&
-      rootPath === 'ssr' &&
+      (rootPath === 'ssr' || rootPath === 'resolve') &&
       (existing === true || value === true)
     ) {
       merged[key] = true
@@ -1106,6 +1103,9 @@ function mergeConfigRecursively(
         ...backwardCompatibleWorkerPlugins(existing),
         ...backwardCompatibleWorkerPlugins(value),
       ]
+      continue
+    } else if (key === 'server' && rootPath === 'server.hmr') {
+      merged[key] = value
       continue
     }
 
@@ -1437,4 +1437,20 @@ export function partialEncodeURIPath(uri: string): string {
   const filePath = cleanUrl(uri)
   const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
   return filePath.replaceAll('%', '%25') + postfix
+}
+
+export const setupSIGTERMListener = (callback: () => Promise<void>): void => {
+  process.once('SIGTERM', callback)
+  if (process.env.CI !== 'true') {
+    process.stdin.on('end', callback)
+  }
+}
+
+export const teardownSIGTERMListener = (
+  callback: () => Promise<void>,
+): void => {
+  process.off('SIGTERM', callback)
+  if (process.env.CI !== 'true') {
+    process.stdin.off('end', callback)
+  }
 }

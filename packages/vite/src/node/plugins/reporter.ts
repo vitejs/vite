@@ -2,8 +2,11 @@ import path from 'node:path'
 import { gzip } from 'node:zlib'
 import { promisify } from 'node:util'
 import colors from 'picocolors'
-import type { Plugin } from 'rollup'
+import type { OutputBundle } from 'rollup'
+import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
+import type { Environment } from '../environment'
+import { usePerEnvironmentState } from '../environment'
 import { isDefined, isInNodeModules, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 import { withTrailingSlash } from '../../shared/utils'
@@ -25,7 +28,6 @@ const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml)$/
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
-  const chunkLimit = config.build.chunkSizeWarningLimit
 
   const numberFormatter = new Intl.NumberFormat('en', {
     maximumFractionDigits: 2,
@@ -37,85 +39,259 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
 
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
-  let hasTransformed = false
-  let hasRenderedChunk = false
-  let hasCompressChunk = false
-  let transformedCount = 0
-  let chunkCount = 0
-  let compressedCount = 0
 
-  async function getCompressedSize(
-    code: string | Uint8Array,
-  ): Promise<number | null> {
-    if (config.build.ssr || !config.build.reportCompressedSize) {
-      return null
+  const modulesReporter = usePerEnvironmentState((environment: Environment) => {
+    let hasTransformed = false
+    let transformedCount = 0
+
+    const logTransform = throttle((id: string) => {
+      writeLine(
+        `transforming (${transformedCount}) ${colors.dim(
+          path.relative(config.root, id),
+        )}`,
+      )
+    })
+
+    return {
+      reset() {
+        transformedCount = 0
+      },
+      register(id: string) {
+        transformedCount++
+        if (shouldLogInfo) {
+          if (!tty) {
+            if (!hasTransformed) {
+              config.logger.info(`transforming...`)
+            }
+          } else {
+            if (id.includes(`?`)) return
+            logTransform(id)
+          }
+          hasTransformed = true
+        }
+      },
+      log() {
+        if (shouldLogInfo) {
+          if (tty) {
+            clearLine()
+          }
+          environment.logger.info(
+            `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
+          )
+        }
+      },
     }
-    if (shouldLogInfo && !hasCompressChunk) {
-      if (!tty) {
-        config.logger.info('computing gzip size...')
-      } else {
-        writeLine('computing gzip size (0)...')
+  })
+
+  const chunksReporter = usePerEnvironmentState((environment: Environment) => {
+    let hasRenderedChunk = false
+    let hasCompressChunk = false
+    let chunkCount = 0
+    let compressedCount = 0
+
+    async function getCompressedSize(
+      code: string | Uint8Array,
+    ): Promise<number | null> {
+      if (
+        environment.config.consumer !== 'client' ||
+        !environment.config.build.reportCompressedSize
+      ) {
+        return null
       }
-      hasCompressChunk = true
+      if (shouldLogInfo && !hasCompressChunk) {
+        if (!tty) {
+          config.logger.info('computing gzip size...')
+        } else {
+          writeLine('computing gzip size (0)...')
+        }
+        hasCompressChunk = true
+      }
+      const compressed = await compress(
+        typeof code === 'string' ? code : Buffer.from(code),
+      )
+      compressedCount++
+      if (shouldLogInfo && tty) {
+        writeLine(`computing gzip size (${compressedCount})...`)
+      }
+      return compressed.length
     }
-    const compressed = await compress(
-      typeof code === 'string' ? code : Buffer.from(code),
-    )
-    compressedCount++
-    if (shouldLogInfo && tty) {
-      writeLine(`computing gzip size (${compressedCount})...`)
-    }
-    return compressed.length
-  }
 
-  const logTransform = throttle((id: string) => {
-    writeLine(
-      `transforming (${transformedCount}) ${colors.dim(
-        path.relative(config.root, id),
-      )}`,
-    )
+    return {
+      reset() {
+        chunkCount = 0
+        compressedCount = 0
+      },
+      register() {
+        chunkCount++
+        if (shouldLogInfo) {
+          if (!tty) {
+            if (!hasRenderedChunk) {
+              environment.logger.info('rendering chunks...')
+            }
+          } else {
+            writeLine(`rendering chunks (${chunkCount})...`)
+          }
+          hasRenderedChunk = true
+        }
+      },
+      async log(output: OutputBundle, outDir?: string) {
+        const chunkLimit = environment.config.build.chunkSizeWarningLimit
+
+        let hasLargeChunks = false
+
+        if (shouldLogInfo) {
+          const entries = (
+            await Promise.all(
+              Object.values(output).map(
+                async (chunk): Promise<LogEntry | null> => {
+                  if (chunk.type === 'chunk') {
+                    return {
+                      name: chunk.fileName,
+                      group: 'JS',
+                      size: chunk.code.length,
+                      compressedSize: await getCompressedSize(chunk.code),
+                      mapSize: chunk.map ? chunk.map.toString().length : null,
+                    }
+                  } else {
+                    if (chunk.fileName.endsWith('.map')) return null
+                    const isCSS = chunk.fileName.endsWith('.css')
+                    const isCompressible =
+                      isCSS || COMPRESSIBLE_ASSETS_RE.test(chunk.fileName)
+                    return {
+                      name: chunk.fileName,
+                      group: isCSS ? 'CSS' : 'Assets',
+                      size: chunk.source.length,
+                      mapSize: null, // Rollup doesn't support CSS maps?
+                      compressedSize: isCompressible
+                        ? await getCompressedSize(chunk.source)
+                        : null,
+                    }
+                  }
+                },
+              ),
+            )
+          ).filter(isDefined)
+          if (tty) clearLine()
+
+          let longest = 0
+          let biggestSize = 0
+          let biggestMap = 0
+          let biggestCompressSize = 0
+          for (const entry of entries) {
+            if (entry.name.length > longest) longest = entry.name.length
+            if (entry.size > biggestSize) biggestSize = entry.size
+            if (entry.mapSize && entry.mapSize > biggestMap) {
+              biggestMap = entry.mapSize
+            }
+            if (
+              entry.compressedSize &&
+              entry.compressedSize > biggestCompressSize
+            ) {
+              biggestCompressSize = entry.compressedSize
+            }
+          }
+
+          const sizePad = displaySize(biggestSize).length
+          const mapPad = displaySize(biggestMap).length
+          const compressPad = displaySize(biggestCompressSize).length
+
+          const relativeOutDir = normalizePath(
+            path.relative(
+              config.root,
+              path.resolve(
+                config.root,
+                outDir ?? environment.config.build.outDir,
+              ),
+            ),
+          )
+          const assetsDir = path.join(environment.config.build.assetsDir, '/')
+
+          for (const group of groups) {
+            const filtered = entries.filter((e) => e.group === group.name)
+            if (!filtered.length) continue
+            for (const entry of filtered.sort((a, z) => a.size - z.size)) {
+              const isLarge =
+                group.name === 'JS' && entry.size / 1000 > chunkLimit
+              if (isLarge) hasLargeChunks = true
+              const sizeColor = isLarge ? colors.yellow : colors.dim
+              let log = colors.dim(withTrailingSlash(relativeOutDir))
+              log +=
+                !config.build.lib &&
+                entry.name.startsWith(withTrailingSlash(assetsDir))
+                  ? colors.dim(assetsDir) +
+                    group.color(
+                      entry.name
+                        .slice(assetsDir.length)
+                        .padEnd(longest + 2 - assetsDir.length),
+                    )
+                  : group.color(entry.name.padEnd(longest + 2))
+              log += colors.bold(
+                sizeColor(displaySize(entry.size).padStart(sizePad)),
+              )
+              if (entry.compressedSize) {
+                log += colors.dim(
+                  ` │ gzip: ${displaySize(entry.compressedSize).padStart(
+                    compressPad,
+                  )}`,
+                )
+              }
+              if (entry.mapSize) {
+                log += colors.dim(
+                  ` │ map: ${displaySize(entry.mapSize).padStart(mapPad)}`,
+                )
+              }
+              config.logger.info(log)
+            }
+          }
+        } else {
+          hasLargeChunks = Object.values(output).some((chunk) => {
+            return (
+              chunk.type === 'chunk' && chunk.code.length / 1000 > chunkLimit
+            )
+          })
+        }
+
+        if (
+          hasLargeChunks &&
+          environment.config.build.minify &&
+          !config.build.lib &&
+          environment.config.consumer === 'client'
+        ) {
+          environment.logger.warn(
+            colors.yellow(
+              `\n(!) Some chunks are larger than ${chunkLimit} kB after minification. Consider:\n` +
+                `- Using dynamic import() to code-split the application\n` +
+                `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n` +
+                `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`,
+            ),
+          )
+        }
+      },
+    }
   })
 
   return {
     name: 'vite:reporter',
+    sharedDuringBuild: true,
+    perEnvironmentStartEndDuringDev: true,
 
     transform(_, id) {
-      transformedCount++
-      if (shouldLogInfo) {
-        if (!tty) {
-          if (!hasTransformed) {
-            config.logger.info(`transforming...`)
-          }
-        } else {
-          if (id.includes(`?`)) return
-          logTransform(id)
-        }
-        hasTransformed = true
-      }
-      return null
+      modulesReporter(this).register(id)
     },
 
     buildStart() {
-      transformedCount = 0
+      modulesReporter(this).reset()
     },
 
     buildEnd() {
-      if (shouldLogInfo) {
-        if (tty) {
-          clearLine()
-        }
-        config.logger.info(
-          `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
-        )
-      }
+      modulesReporter(this).log()
     },
 
     renderStart() {
-      chunkCount = 0
-      compressedCount = 0
+      chunksReporter(this).reset()
     },
 
-    renderChunk(code, chunk, options) {
+    renderChunk(_, chunk, options) {
       if (!options.inlineDynamicImports) {
         for (const id of chunk.moduleIds) {
           const module = this.getModuleInfo(id)
@@ -146,149 +322,15 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
-      chunkCount++
-      if (shouldLogInfo) {
-        if (!tty) {
-          if (!hasRenderedChunk) {
-            config.logger.info('rendering chunks...')
-          }
-        } else {
-          writeLine(`rendering chunks (${chunkCount})...`)
-        }
-        hasRenderedChunk = true
-      }
-      return null
+      chunksReporter(this).register()
     },
 
     generateBundle() {
       if (shouldLogInfo && tty) clearLine()
     },
 
-    async writeBundle({ dir: outDir }, output) {
-      let hasLargeChunks = false
-
-      if (shouldLogInfo) {
-        const entries = (
-          await Promise.all(
-            Object.values(output).map(
-              async (chunk): Promise<LogEntry | null> => {
-                if (chunk.type === 'chunk') {
-                  return {
-                    name: chunk.fileName,
-                    group: 'JS',
-                    size: chunk.code.length,
-                    compressedSize: await getCompressedSize(chunk.code),
-                    mapSize: chunk.map ? chunk.map.toString().length : null,
-                  }
-                } else {
-                  if (chunk.fileName.endsWith('.map')) return null
-                  const isCSS = chunk.fileName.endsWith('.css')
-                  const isCompressible =
-                    isCSS || COMPRESSIBLE_ASSETS_RE.test(chunk.fileName)
-                  return {
-                    name: chunk.fileName,
-                    group: isCSS ? 'CSS' : 'Assets',
-                    size: chunk.source.length,
-                    mapSize: null, // Rollup doesn't support CSS maps?
-                    compressedSize: isCompressible
-                      ? await getCompressedSize(chunk.source)
-                      : null,
-                  }
-                }
-              },
-            ),
-          )
-        ).filter(isDefined)
-        if (tty) clearLine()
-
-        let longest = 0
-        let biggestSize = 0
-        let biggestMap = 0
-        let biggestCompressSize = 0
-        for (const entry of entries) {
-          if (entry.name.length > longest) longest = entry.name.length
-          if (entry.size > biggestSize) biggestSize = entry.size
-          if (entry.mapSize && entry.mapSize > biggestMap) {
-            biggestMap = entry.mapSize
-          }
-          if (
-            entry.compressedSize &&
-            entry.compressedSize > biggestCompressSize
-          ) {
-            biggestCompressSize = entry.compressedSize
-          }
-        }
-
-        const sizePad = displaySize(biggestSize).length
-        const mapPad = displaySize(biggestMap).length
-        const compressPad = displaySize(biggestCompressSize).length
-
-        const relativeOutDir = normalizePath(
-          path.relative(
-            config.root,
-            path.resolve(config.root, outDir ?? config.build.outDir),
-          ),
-        )
-        const assetsDir = path.join(config.build.assetsDir, '/')
-
-        for (const group of groups) {
-          const filtered = entries.filter((e) => e.group === group.name)
-          if (!filtered.length) continue
-          for (const entry of filtered.sort((a, z) => a.size - z.size)) {
-            const isLarge =
-              group.name === 'JS' && entry.size / 1000 > chunkLimit
-            if (isLarge) hasLargeChunks = true
-            const sizeColor = isLarge ? colors.yellow : colors.dim
-            let log = colors.dim(withTrailingSlash(relativeOutDir))
-            log +=
-              !config.build.lib &&
-              entry.name.startsWith(withTrailingSlash(assetsDir))
-                ? colors.dim(assetsDir) +
-                  group.color(
-                    entry.name
-                      .slice(assetsDir.length)
-                      .padEnd(longest + 2 - assetsDir.length),
-                  )
-                : group.color(entry.name.padEnd(longest + 2))
-            log += colors.bold(
-              sizeColor(displaySize(entry.size).padStart(sizePad)),
-            )
-            if (entry.compressedSize) {
-              log += colors.dim(
-                ` │ gzip: ${displaySize(entry.compressedSize).padStart(
-                  compressPad,
-                )}`,
-              )
-            }
-            if (entry.mapSize) {
-              log += colors.dim(
-                ` │ map: ${displaySize(entry.mapSize).padStart(mapPad)}`,
-              )
-            }
-            config.logger.info(log)
-          }
-        }
-      } else {
-        hasLargeChunks = Object.values(output).some((chunk) => {
-          return chunk.type === 'chunk' && chunk.code.length / 1000 > chunkLimit
-        })
-      }
-
-      if (
-        hasLargeChunks &&
-        config.build.minify &&
-        !config.build.lib &&
-        !config.build.ssr
-      ) {
-        config.logger.warn(
-          colors.yellow(
-            `\n(!) Some chunks are larger than ${chunkLimit} kB after minification. Consider:\n` +
-              `- Using dynamic import() to code-split the application\n` +
-              `- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks\n` +
-              `- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.`,
-          ),
-        )
-      }
+    async writeBundle({ dir }, output) {
+      await chunksReporter(this).log(output, dir)
     },
   }
 }

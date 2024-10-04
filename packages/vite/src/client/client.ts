@@ -1,4 +1,4 @@
-import type { ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { HMRClient, HMRContext } from '../shared/hmr'
@@ -103,7 +103,7 @@ function setupWebSocket(
     notifyListeners('vite:ws:disconnect', { webSocket: socket })
 
     if (hasDocument) {
-      console.log(`[vite] server connection lost. polling for restart...`)
+      console.log(`[vite] server connection lost. Polling for restart...`)
       await waitForSuccessfulPing(protocol, hostAndPath)
       location.reload()
     }
@@ -136,10 +136,13 @@ const debounceReload = (time: number) => {
 const pageReload = debounceReload(50)
 
 const hmrClient = new HMRClient(
-  console,
+  {
+    error: (err) => console.error('[vite]', err),
+    debug: (...msg) => console.debug('[vite]', ...msg),
+  },
   {
     isReady: () => socket && socket.readyState === 1,
-    send: (message) => socket.send(message),
+    send: (payload) => socket.send(JSON.stringify(payload)),
   },
   async function importUpdatedModule({
     acceptedPath,
@@ -169,7 +172,7 @@ const hmrClient = new HMRClient(
   },
 )
 
-async function handleMessage(payload: HMRPayload) {
+async function handleMessage(payload: HotPayload) {
   switch (payload.type) {
     case 'connected':
       console.debug(`[vite] connected.`)
@@ -190,7 +193,7 @@ async function handleMessage(payload: HMRPayload) {
         // module script failed to load (since one of the nested imports is 500).
         // in this case a normal update won't work and a full reload is needed.
         if (isFirstUpdate && hasErrorOverlay()) {
-          window.location.reload()
+          location.reload()
           return
         } else {
           if (enableOverlay) {
@@ -353,7 +356,6 @@ async function waitForSuccessfulPing(
   }
   await wait(ms)
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     if (document.visibilityState === 'visible') {
       if (await ping()) {

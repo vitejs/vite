@@ -3,7 +3,6 @@ import MagicString from 'magic-string'
 import type { OutputChunk } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
-import type { ViteDevServer } from '../server'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
 import {
   encodeURIPath,
@@ -13,14 +12,20 @@ import {
   urlRE,
 } from '../utils'
 import {
+  BuildEnvironment,
   createToImportMetaURLBasedRelativeRuntime,
+  injectEnvironmentToHooks,
   onRollupWarning,
   toOutputFilePathInJS,
 } from '../build'
 import { cleanUrl } from '../../shared/utils'
 import { fileToUrl } from './asset'
 
-type WorkerBundleAsset = { fileName: string; source: string | Uint8Array }
+type WorkerBundleAsset = {
+  fileName: string
+  originalFileName: string | null
+  source: string | Uint8Array
+}
 
 interface WorkerCache {
   // save worker all emit chunk avoid rollup make the same asset unique.
@@ -68,12 +73,17 @@ async function bundleWorkerEntry(
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
+  const { plugins: resolvedPlugins, config: workerConfig } =
+    await plugins(newBundleChain)
+  const workerEnvironment = new BuildEnvironment('client', workerConfig) // TODO: should this be 'worker'?
   const bundle = await rollup({
     ...rollupOptions,
     input,
-    plugins: await plugins(newBundleChain),
+    plugins: resolvedPlugins.map((p) =>
+      injectEnvironmentToHooks(workerEnvironment, p),
+    ),
     onwarn(warning, warn) {
-      onRollupWarning(warning, warn, config)
+      onRollupWarning(warning, warn, workerEnvironment)
     },
     preserveEntrySignatures: false,
   })
@@ -111,6 +121,7 @@ async function bundleWorkerEntry(
       } else if (outputChunk.type === 'chunk') {
         saveEmitWorkerAsset(config, {
           fileName: outputChunk.fileName,
+          originalFileName: null,
           source: outputChunk.code,
         })
       }
@@ -136,6 +147,7 @@ function emitSourcemapForWorkerEntry(
       const mapFileName = chunk.fileName + '.map'
       saveEmitWorkerAsset(config, {
         fileName: mapFileName,
+        originalFileName: null,
         source: data,
       })
     }
@@ -169,6 +181,7 @@ export async function workerFileToUrl(
     fileName = outputChunk.fileName
     saveEmitWorkerAsset(config, {
       fileName,
+      originalFileName: null,
       source: outputChunk.code,
     })
     workerMap.bundle.set(id, fileName)
@@ -203,15 +216,10 @@ export function webWorkerPostPlugin(): Plugin {
 
 export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  let server: ViteDevServer
   const isWorker = config.isWorker
 
   return {
     name: 'vite:worker',
-
-    configureServer(_server) {
-      server = _server
-    },
 
     buildStart() {
       if (isWorker) {
@@ -255,17 +263,19 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         } else if (workerType === 'ignore') {
           if (isBuild) {
             injectEnv = ''
-          } else if (server) {
+          } else {
             // dynamic worker type we can't know how import the env
             // so we copy /@vite/env code of server transform result into file header
-            const { moduleGraph } = server
-            const module = moduleGraph.getModuleById(ENV_ENTRY)
+            const environment = this.environment
+            const moduleGraph =
+              environment.mode === 'dev' ? environment.moduleGraph : undefined
+            const module = moduleGraph?.getModuleById(ENV_ENTRY)
             injectEnv = module?.transformResult?.code || ''
           }
         }
         if (injectEnv) {
           const s = new MagicString(raw)
-          s.prepend(injectEnv)
+          s.prepend(injectEnv + ';\n')
           return {
             code: s.toString(),
             map: s.generateMap({ hires: 'boundary' }),
@@ -292,7 +302,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
 
       let urlCode: string
       if (isBuild) {
-        if (isWorker && this.getModuleInfo(cleanUrl(id))?.isEntry) {
+        if (isWorker && config.bundleChain.at(-1) === cleanUrl(id)) {
           urlCode = 'self.location.href'
         } else if (inlineRE.test(id)) {
           const chunk = await bundleWorkerEntry(config, id)
@@ -305,7 +315,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             workerConstructor === 'Worker'
               ? `${encodedJs}
           const decodeBase64 = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-          const blob = typeof window !== "undefined" && window.Blob && new Blob([${
+          const blob = typeof self !== "undefined" && self.Blob && new Blob([${
             workerType === 'classic'
               ? ''
               : // `URL` is always available, in `Worker[type="module"]`
@@ -314,11 +324,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           export default function WorkerWrapper(options) {
             let objURL;
             try {
-              objURL = blob && (window.URL || window.webkitURL).createObjectURL(blob);
+              objURL = blob && (self.URL || self.webkitURL).createObjectURL(blob);
               if (!objURL) throw ''
               const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
               worker.addEventListener("error", () => {
-                (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                (self.URL || self.webkitURL).revokeObjectURL(objURL);
               });
               return worker;
             } catch(e) {
@@ -331,7 +341,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               // otherwise the worker fails to run
               workerType === 'classic'
                 ? ` finally {
-                    objURL && (window.URL || window.webkitURL).revokeObjectURL(objURL);
+                    objURL && (self.URL || self.webkitURL).revokeObjectURL(objURL);
                   }`
                 : ''
             }
@@ -354,7 +364,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           urlCode = JSON.stringify(await workerFileToUrl(config, id))
         }
       } else {
-        let url = await fileToUrl(cleanUrl(id), config, this)
+        let url = await fileToUrl(this, cleanUrl(id))
         url = injectQuery(url, `${WORKER_FILE_ID}&type=${workerType}`)
         urlCode = JSON.stringify(url)
       }
@@ -383,7 +393,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         return (
           s && {
             code: s.toString(),
-            map: config.build.sourcemap
+            map: this.environment.config.build.sourcemap
               ? s.generateMap({ hires: 'boundary' })
               : null,
           }
@@ -393,7 +403,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       if (workerAssetUrlRE.test(code)) {
         const toRelativeRuntime = createToImportMetaURLBasedRelativeRuntime(
           outputOptions.format,
-          config.isWorker,
+          this.environment.config.isWorker,
         )
 
         let match: RegExpExecArray | null
@@ -408,11 +418,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const [full, hash] = match
           const filename = fileNameHash.get(hash)!
           const replacement = toOutputFilePathInJS(
+            this.environment,
             filename,
             'asset',
             chunk.fileName,
             'js',
-            config,
             toRelativeRuntime,
           )
           const replacementString =
@@ -447,6 +457,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         this.emitFile({
           type: 'asset',
           fileName: asset.fileName,
+          originalFileName: asset.originalFileName,
           source: asset.source,
         })
       })

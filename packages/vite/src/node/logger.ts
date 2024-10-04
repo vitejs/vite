@@ -4,7 +4,6 @@ import readline from 'node:readline'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
 import type { ResolvedServerUrls } from './server'
-import { splitRE } from './utils'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -21,6 +20,7 @@ export interface Logger {
 export interface LogOptions {
   clear?: boolean
   timestamp?: boolean
+  environment?: string
 }
 
 export interface LogErrorOptions extends LogOptions {
@@ -64,8 +64,6 @@ function getTimeFormatter() {
   return timeFormatter
 }
 
-const MAX_LOG_CHAR = 5000
-
 export function createLogger(
   level: LogLevel = 'info',
   options: LoggerOptions = {},
@@ -81,32 +79,18 @@ export function createLogger(
     allowClearScreen && process.stdout.isTTY && !process.env.CI
   const clear = canClearScreen ? clearScreen : () => {}
 
-  function preventOverflow(msg: string) {
-    if (msg.length > MAX_LOG_CHAR) {
-      const shorten = msg.slice(0, MAX_LOG_CHAR)
-      const lines = msg.slice(MAX_LOG_CHAR).match(splitRE)?.length || 0
-
-      return `${shorten}\n... and ${lines} lines more`
-    }
-    return msg
-  }
-
-  function format(
-    type: LogType,
-    rawMsg: string,
-    options: LogErrorOptions = {},
-  ) {
-    const msg = preventOverflow(rawMsg)
+  function format(type: LogType, msg: string, options: LogErrorOptions = {}) {
     if (options.timestamp) {
-      const tag =
-        type === 'info'
-          ? colors.cyan(colors.bold(prefix))
-          : type === 'warn'
-            ? colors.yellow(colors.bold(prefix))
-            : colors.red(colors.bold(prefix))
-      return `${colors.dim(
-        getTimeFormatter().format(new Date()),
-      )} ${tag} ${msg}`
+      let tag = ''
+      if (type === 'info') {
+        tag = colors.cyan(colors.bold(prefix))
+      } else if (type === 'warn') {
+        tag = colors.yellow(colors.bold(prefix))
+      } else {
+        tag = colors.red(colors.bold(prefix))
+      }
+      const environment = options.environment ? options.environment + ' ' : ''
+      return `${colors.dim(getTimeFormatter().format(new Date()))} ${tag} ${environment}${msg}`
     } else {
       return msg
     }

@@ -13,7 +13,7 @@ The production bundle assumes support for modern JavaScript. By default, Vite ta
 
 You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`.
 
-Note that by default, Vite only handles syntax transforms and **does not cover polyfills**. You can check out [Polyfill.io](https://polyfill.io/) which is a service that automatically generates polyfill bundles based on the user's browser UserAgent string.
+Note that by default, Vite only handles syntax transforms and **does not cover polyfills**. You can check out https://cdnjs.cloudflare.com/polyfill/ which automatically generates polyfill bundles based on the user's browser UserAgent string.
 
 Legacy browsers can be supported via [@vitejs/plugin-legacy](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy), which will automatically generate legacy chunks and corresponding ES language feature polyfills. The legacy chunks are conditionally loaded only in browsers that do not have native ESM support.
 
@@ -33,7 +33,7 @@ For advanced base path control, check out [Advanced Base Options](#advanced-base
 
 The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/configuration-options/) via `build.rollupOptions`:
 
-```js
+```js [vite.config.js]
 export default defineConfig({
   build: {
     rollupOptions: {
@@ -65,8 +65,7 @@ When a new deployment occurs, the hosting service may delete the assets from pre
 
 You can enable rollup watcher with `vite build --watch`. Or, you can directly adjust the underlying [`WatcherOptions`](https://rollupjs.org/configuration-options/#watch) via `build.watch`:
 
-```js
-// vite.config.js
+```js [vite.config.js]
 export default defineConfig({
   build: {
     watch: {
@@ -96,8 +95,7 @@ During dev, simply navigate or link to `/nested/` - it works as expected, just l
 
 During build, all you need to do is to specify multiple `.html` files as entry points:
 
-```js twoslash
-// vite.config.js
+```js twoslash [vite.config.js]
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 
@@ -123,8 +121,7 @@ When you are developing a browser-oriented library, you are likely spending most
 
 When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/build-options.md#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
 
-```js twoslash
-// vite.config.js
+```js twoslash [vite.config.js]
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 
@@ -155,8 +152,7 @@ export default defineConfig({
 
 The entry file would contain exports that can be imported by users of your package:
 
-```js
-// lib/main.js
+```js [lib/main.js]
 import Foo from './Foo.vue'
 import Bar from './Bar.vue'
 export { Foo, Bar }
@@ -173,7 +169,7 @@ dist/my-lib.umd.cjs 0.30 kB / gzip: 0.16 kB
 
 Recommended `package.json` for your lib:
 
-```json
+```json [package.json]
 {
   "name": "my-lib",
   "type": "module",
@@ -191,7 +187,7 @@ Recommended `package.json` for your lib:
 
 Or, if exposing multiple entry points:
 
-```json
+```json [package.json]
 {
   "name": "my-lib",
   "type": "module",

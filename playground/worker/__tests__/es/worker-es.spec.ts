@@ -111,7 +111,7 @@ describe.runIf(isBuild)('build', () => {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/es/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(34)
+    expect(files.length).toBe(35)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))
@@ -127,10 +127,10 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(`new Worker("/es/assets`)
     expect(content).toMatch(`new SharedWorker("/es/assets`)
     // inlined worker
-    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
-    expect(content).toMatch(`window.Blob`)
+    expect(content).toMatch(`(self.URL||self.webkitURL).createObjectURL`)
+    expect(content).toMatch(`self.Blob`)
     expect(content).toMatch(
-      /try\{if\(\w+=\w+&&\(window\.URL\|\|window\.webkitURL\)\.createObjectURL\(\w+\),!\w+\)throw""/,
+      /try\{if\(\w+=\w+&&\(self\.URL\|\|self\.webkitURL\)\.createObjectURL\(\w+\),!\w+\)throw""/,
     )
     // inlined shared worker
     expect(content).toMatch(
@@ -230,13 +230,13 @@ test('import.meta.glob with eager in worker', async () => {
 })
 
 test('self reference worker', async () => {
-  expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
+  await expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
     'pong: main\npong: nested\n',
   )
 })
 
 test('self reference url worker', async () => {
-  expectWithRetry(() => page.textContent('.self-reference-url-worker')).toBe(
-    'pong: main\npong: nested\n',
-  )
+  await expectWithRetry(() =>
+    page.textContent('.self-reference-url-worker'),
+  ).toBe('pong: main\npong: nested\n')
 })

@@ -83,7 +83,7 @@ function toOutputFilePathInHtml(
   if (relative && !config.build.ssr) {
     return toRelative(filename, hostId)
   } else {
-    return config.base + filename
+    return joinUrlSegments(config.decodedBase, filename)
   }
 }
 function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
@@ -96,6 +96,18 @@ function getBaseInHTML(urlRelativePath: string, config: ResolvedConfig) {
       )
     : config.base
 }
+function joinUrlSegments(a: string, b: string): string {
+  if (!a || !b) {
+    return a || b || ''
+  }
+  if (a[a.length - 1] === '/') {
+    a = a.substring(0, a.length - 1)
+  }
+  if (b[0] !== '/') {
+    b = '/' + b
+  }
+  return a + b
+}
 
 function toAssetPathFromHtml(
   filename: string,
@@ -103,7 +115,7 @@ function toAssetPathFromHtml(
   config: ResolvedConfig,
 ): string {
   const relativeUrlPath = normalizePath(path.relative(config.root, htmlPath))
-  const toRelative = (filename: string, hostId: string) =>
+  const toRelative = (filename: string, _hostId: string) =>
     getBaseInHTML(relativeUrlPath, config) + filename
   return toOutputFilePathInHtml(
     filename,
@@ -120,7 +132,7 @@ const legacyEnvVarMarker = `__VITE_IS_LEGACY__`
 const _require = createRequire(import.meta.url)
 
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
-const prefixedHashInFileNameRE = /\W?\[hash(:\d+)?\]/
+const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
 
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
@@ -284,11 +296,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         if (!modernPolyfills.size) {
           return
         }
-        isDebug &&
+        if (isDebug) {
           console.log(
             `[@vitejs/plugin-legacy] modern polyfills:`,
             modernPolyfills,
           )
+        }
         const polyfillChunk = await buildPolyfillChunk(
           config.mode,
           modernPolyfills,
@@ -326,11 +339,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       }
 
       if (legacyPolyfills.size || !options.externalSystemJS) {
-        isDebug &&
+        if (isDebug) {
           console.log(
             `[@vitejs/plugin-legacy] legacy polyfills:`,
             legacyPolyfills,
           )
+        }
 
         await buildPolyfillChunk(
           config.mode,
@@ -365,8 +379,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       config = _config
 
       modernTargets = options.modernTargets || modernTargetsBabel
-      isDebug &&
+      if (isDebug) {
         console.log(`[@vitejs/plugin-legacy] modernTargets:`, modernTargets)
+      }
 
       if (!genLegacy || config.build.ssr) {
         return
@@ -376,7 +391,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         options.targets ||
         browserslistLoadConfig({ path: config.root }) ||
         'last 2 versions and not dead, > 0.3%, Firefox ESR'
-      isDebug && console.log(`[@vitejs/plugin-legacy] targets:`, targets)
+      if (isDebug) {
+        console.log(`[@vitejs/plugin-legacy] targets:`, targets)
+      }
 
       const getLegacyOutputFileName = (
         fileNames:
@@ -533,7 +550,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         configFile: false,
         compact: !!config.build.minify,
         sourceMaps,
-        inputSourceMap: undefined, // sourceMaps ? chunk.map : undefined, `.map` TODO: moved to OutputChunk?
+        inputSourceMap: undefined,
         presets: [
           // forcing our plugin to run before preset-env by wrapping it in a
           // preset so we can catch the injected import statements...

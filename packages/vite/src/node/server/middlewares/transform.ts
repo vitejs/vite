@@ -12,6 +12,7 @@ import {
   isJSRequest,
   normalizePath,
   prettifyUrl,
+  rawRE,
   removeImportQuery,
   removeTimestampQuery,
   urlRE,
@@ -20,21 +21,22 @@ import { send } from '../send'
 import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
-import { DEP_VERSION_RE, FS_PREFIX } from '../../constants'
+import {
+  DEP_VERSION_RE,
+  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
+  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  FS_PREFIX,
+} from '../../constants'
 import {
   isCSSRequest,
   isDirectCSSRequest,
   isDirectRequest,
 } from '../../plugins/css'
-import {
-  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
-  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  ERR_OUTDATED_OPTIMIZED_DEP,
-} from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
-import { getDepsOptimizer } from '../../optimizer'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
 import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
+import { ensureServingAccess } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
@@ -48,11 +50,16 @@ export function cachedTransformMiddleware(
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteCachedTransformMiddleware(req, res, next) {
+    const environment = server.environments.client
+
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
     if (ifNoneMatch) {
-      const moduleByEtag = server.moduleGraph.getModuleByEtag(ifNoneMatch)
-      if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
+      const moduleByEtag = environment.moduleGraph.getModuleByEtag(ifNoneMatch)
+      if (
+        moduleByEtag?.transformResult?.etag === ifNoneMatch &&
+        moduleByEtag?.url === req.url
+      ) {
         // For CSS requests, if the same CSS file is imported in a module,
         // the browser sends the request for the direct CSS request with the etag
         // from the imported CSS module. We ignore the etag in this case.
@@ -80,6 +87,8 @@ export function transformMiddleware(
   const publicPath = `${publicDir.slice(root.length)}/`
 
   return async function viteTransformMiddleware(req, res, next) {
+    const environment = server.environments.client
+
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()
     }
@@ -100,7 +109,7 @@ export function transformMiddleware(
       const isSourceMap = withoutQuery.endsWith('.map')
       // since we generate source map references, handle those requests here
       if (isSourceMap) {
-        const depsOptimizer = getDepsOptimizer(server.config, false) // non-ssr
+        const depsOptimizer = environment.depsOptimizer
         if (depsOptimizer?.isOptimizedDepUrl(url)) {
           // If the browser is requesting a source map for an optimized dep, it
           // means that the dependency has already been pre-bundled and loaded
@@ -122,7 +131,7 @@ export function transformMiddleware(
             return send(req, res, JSON.stringify(map), 'json', {
               headers: server.config.server.headers,
             })
-          } catch (e) {
+          } catch {
             // Outdated source map request for optimized deps, this isn't an error
             // but part of the normal flow when re-optimizing after missing deps
             // Send back an empty source map so the browser doesn't issue warnings
@@ -142,7 +151,7 @@ export function transformMiddleware(
         } else {
           const originalUrl = url.replace(/\.map($|\?)/, '$1')
           const map = (
-            await server.moduleGraph.getModuleByUrl(originalUrl, false)
+            await environment.moduleGraph.getModuleByUrl(originalUrl)
           )?.transformResult?.map
           if (map) {
             return send(req, res, JSON.stringify(map), 'json', {
@@ -156,6 +165,13 @@ export function transformMiddleware(
 
       if (publicDirInRoot && url.startsWith(publicPath)) {
         warnAboutExplicitPublicPathInUrl(url)
+      }
+
+      if (
+        (rawRE.test(url) || urlRE.test(url)) &&
+        !ensureServingAccess(url, server, res, next)
+      ) {
+        return
       }
 
       if (
@@ -185,8 +201,8 @@ export function transformMiddleware(
           const ifNoneMatch = req.headers['if-none-match']
           if (
             ifNoneMatch &&
-            (await server.moduleGraph.getModuleByUrl(url, false))
-              ?.transformResult?.etag === ifNoneMatch
+            (await environment.moduleGraph.getModuleByUrl(url))?.transformResult
+              ?.etag === ifNoneMatch
           ) {
             debugCache?.(`[304] ${prettifyUrl(url, server.config.root)}`)
             res.statusCode = 304
@@ -195,11 +211,11 @@ export function transformMiddleware(
         }
 
         // resolve, load and transform using the plugin container
-        const result = await transformRequest(url, server, {
+        const result = await transformRequest(environment, url, {
           html: req.headers.accept?.includes('text/html'),
         })
         if (result) {
-          const depsOptimizer = getDepsOptimizer(server.config, false) // non-ssr
+          const depsOptimizer = environment.depsOptimizer
           const type = isDirectCSSRequest(url) ? 'css' : 'js'
           const isDep =
             DEP_VERSION_RE.test(url) || depsOptimizer?.isOptimizedDepUrl(url)
