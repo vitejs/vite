@@ -159,14 +159,27 @@ export function createWebSocketServer(
       })
       res.end(body)
     }) as Parameters<typeof createHttpServer>[1]
+    // vite dev server in middleware mode
+    // need to call ws listen manually
     if (httpsOptions) {
       wsHttpServer = createHttpsServer(httpsOptions, route)
     } else {
       wsHttpServer = createHttpServer(route)
     }
-    // vite dev server in middleware mode
-    // need to call ws listen manually
-    wss = new WebSocketServerRaw({ server: wsHttpServer })
+    wss = new WebSocketServerRaw({ noServer: true })
+    wsHttpServer.on('upgrade', (req, socket, head) => {
+      const protocol = req.headers['sec-websocket-protocol']!
+      if (protocol === 'vite-ping' && server && !server.listening) {
+        // reject connection to tell the vite/client that the server is not ready
+        // if the http server is not listening
+        // because the ws server listens before the http server listens
+        req.destroy()
+        return
+      }
+      wss.handleUpgrade(req, socket as Socket, head, (ws) => {
+        wss.emit('connection', ws, req)
+      })
+    })
   }
 
   wss.on('connection', (socket) => {
