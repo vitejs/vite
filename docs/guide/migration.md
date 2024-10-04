@@ -243,4 +243,4 @@ Also there are other breaking changes which only affect few users.
 
 ## Migration from v3
 
-Check the [Migration from v3 Guide](https://v4.vitejs.dev/guide/migration.html) in the Vite v4 docs first to see the needed changes to port your app to Vite v4, and then proceed with the changes on this page.
+Check the [Migration from v3 Guide](https://v4.vite.dev/guide/migration.html) in the Vite v4 docs first to see the needed changes to port your app to Vite v4, and then proceed with the changes on this page.

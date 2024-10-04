@@ -599,6 +599,6 @@ export function getCommonBase(globsResolved: string[]): null | string {
 }
 
 export function isVirtualModule(id: string): boolean {
-  // https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention
+  // https://vite.dev/guide/api-plugin.html#virtual-modules-convention
   return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
 }
