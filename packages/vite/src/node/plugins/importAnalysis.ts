@@ -13,7 +13,7 @@ import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
 import type { PartialResolvedId } from 'rollup'
-import type { Identifier } from 'estree'
+import type { Identifier, Literal } from 'estree'
 import {
   CLIENT_DIR,
   CLIENT_PUBLIC_PATH,
@@ -32,6 +32,7 @@ import {
   createDebugger,
   fsPathFromUrl,
   generateCodeFrame,
+  getHash,
   injectQuery,
   isBuiltin,
   isDataUrl,
@@ -965,11 +966,10 @@ export function transformCjsImport(
     const exportNames: string[] = []
     let defaultExports: string = ''
     for (const spec of node.specifiers) {
-      if (
-        spec.type === 'ImportSpecifier' &&
-        spec.imported.type === 'Identifier'
-      ) {
-        const importedName = spec.imported.name
+      if (spec.type === 'ImportSpecifier') {
+        const importedName = getIdentifierNameOrLiteralValue(
+          spec.imported,
+        ) as string
         const localName = spec.local.name
         importNames.push({ importedName, localName })
       } else if (spec.type === 'ImportDefaultSpecifier') {
@@ -979,26 +979,31 @@ export function transformCjsImport(
         })
       } else if (spec.type === 'ImportNamespaceSpecifier') {
         importNames.push({ importedName: '*', localName: spec.local.name })
-      } else if (
-        spec.type === 'ExportSpecifier' &&
-        spec.exported.type === 'Identifier'
-      ) {
+      } else if (spec.type === 'ExportSpecifier') {
         // for ExportSpecifier, local name is same as imported name
         // prefix the variable name to avoid clashing with other local variables
-        const importedName = (spec.local as Identifier).name
+        const importedName = getIdentifierNameOrLiteralValue(
+          spec.local,
+        ) as string
         // we want to specify exported name as variable and re-export it
-        const exportedName = spec.exported.name
+        const exportedName = getIdentifierNameOrLiteralValue(
+          spec.exported,
+        ) as string
         if (exportedName === 'default') {
           defaultExports = makeLegalIdentifier(
             `__vite__cjsExportDefault_${importIndex}`,
           )
           importNames.push({ importedName, localName: defaultExports })
         } else {
-          const localName = makeLegalIdentifier(
-            `__vite__cjsExport_${exportedName}`,
-          )
+          const localName = `__vite__cjsExport${
+            spec.exported.type === 'Literal'
+              ? `L_${getHash(spec.exported.value as string)}`
+              : 'I_' + spec.exported.name
+          }`
           importNames.push({ importedName, localName })
-          exportNames.push(`${localName} as ${exportedName}`)
+          exportNames.push(
+            `${localName} as ${spec.exported.type === 'Literal' ? JSON.stringify(exportedName) : exportedName}`,
+          )
         }
       }
     }
@@ -1031,6 +1036,10 @@ export function transformCjsImport(
 
     return lines.join('; ')
   }
+}
+
+function getIdentifierNameOrLiteralValue(node: Identifier | Literal) {
+  return node.type === 'Identifier' ? node.name : node.value
 }
 
 // Copied from `client/client.ts`. Only needed so we can inline inject this function for classic workers.

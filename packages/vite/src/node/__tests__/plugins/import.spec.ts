@@ -18,7 +18,7 @@ describe('transformCjsImport', () => {
   test('import specifier', () => {
     expect(
       transformCjsImport(
-        'import { useState, Component } from "react"',
+        'import { useState, Component, "👋" as fake } from "react"',
         url,
         rawUrl,
         0,
@@ -28,7 +28,8 @@ describe('transformCjsImport', () => {
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
         'const useState = __vite__cjsImport0_react["useState"]; ' +
-        'const Component = __vite__cjsImport0_react["Component"]',
+        'const Component = __vite__cjsImport0_react["Component"]; ' +
+        'const fake = __vite__cjsImport0_react["👋"]',
     )
   })
 
@@ -111,7 +112,7 @@ describe('transformCjsImport', () => {
   test('export name specifier', () => {
     expect(
       transformCjsImport(
-        'export { useState, Component } from "react"',
+        'export { useState, Component, "👋" } from "react"',
         url,
         rawUrl,
         0,
@@ -120,14 +121,15 @@ describe('transformCjsImport', () => {
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        'const __vite__cjsExport_useState = __vite__cjsImport0_react["useState"]; ' +
-        'const __vite__cjsExport_Component = __vite__cjsImport0_react["Component"]; ' +
-        'export { __vite__cjsExport_useState as useState, __vite__cjsExport_Component as Component }',
+        'const __vite__cjsExportI_useState = __vite__cjsImport0_react["useState"]; ' +
+        'const __vite__cjsExportI_Component = __vite__cjsImport0_react["Component"]; ' +
+        'const __vite__cjsExportL_1d0452e3 = __vite__cjsImport0_react["👋"]; ' +
+        'export { __vite__cjsExportI_useState as useState, __vite__cjsExportI_Component as Component, __vite__cjsExportL_1d0452e3 as "👋" }',
     )
 
     expect(
       transformCjsImport(
-        'export { useState as useStateAlias, Component as ComponentAlias } from "react"',
+        'export { useState as useStateAlias, Component as ComponentAlias, "👋" as "👍" } from "react"',
         url,
         rawUrl,
         0,
@@ -136,9 +138,10 @@ describe('transformCjsImport', () => {
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        'const __vite__cjsExport_useStateAlias = __vite__cjsImport0_react["useState"]; ' +
-        'const __vite__cjsExport_ComponentAlias = __vite__cjsImport0_react["Component"]; ' +
-        'export { __vite__cjsExport_useStateAlias as useStateAlias, __vite__cjsExport_ComponentAlias as ComponentAlias }',
+        'const __vite__cjsExportI_useStateAlias = __vite__cjsImport0_react["useState"]; ' +
+        'const __vite__cjsExportI_ComponentAlias = __vite__cjsImport0_react["Component"]; ' +
+        'const __vite__cjsExportL_5d57d39e = __vite__cjsImport0_react["👋"]; ' +
+        'export { __vite__cjsExportI_useStateAlias as useStateAlias, __vite__cjsExportI_ComponentAlias as ComponentAlias, __vite__cjsExportL_5d57d39e as "👍" }',
     )
   })
 
@@ -169,8 +172,8 @@ describe('transformCjsImport', () => {
       ),
     ).toBe(
       'import __vite__cjsImport0_react from "./node_modules/.vite/deps/react.js"; ' +
-        'const __vite__cjsExport_React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
-        'export { __vite__cjsExport_React as React }',
+        'const __vite__cjsExportI_React = __vite__cjsImport0_react.__esModule ? __vite__cjsImport0_react.default : __vite__cjsImport0_react; ' +
+        'export { __vite__cjsExportI_React as React }',
     )
 
     expect(
