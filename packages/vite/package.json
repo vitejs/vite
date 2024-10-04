@@ -68,7 +68,7 @@
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
   },
-  "homepage": "https://vitejs.dev",
+  "homepage": "https://vite.dev",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "scripts": {
     "dev": "tsx scripts/dev.ts",

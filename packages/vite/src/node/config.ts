@@ -1428,7 +1428,7 @@ export function resolveBaseUrl(
 
   // parse base when command is serve or base is not External URL
   if (!isBuild || !isExternal) {
-    base = new URL(base, 'http://vitejs.dev').pathname
+    base = new URL(base, 'http://vite.dev').pathname
     // ensure leading slash
     if (base[0] !== '/') {
       base = '/' + base
@@ -1619,7 +1619,7 @@ async function bundleConfigFile(
                     throw new Error(
                       `Failed to resolve ${JSON.stringify(
                         id,
-                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
                     )
                   }
                 }
@@ -1636,7 +1636,7 @@ async function bundleConfigFile(
                 throw new Error(
                   `${JSON.stringify(
                     id,
-                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
                 )
               }
               return {
