@@ -96,7 +96,7 @@ const frameworks: Framework[] = [
     name: 'Qwik',
     logo: logoQwik,
     color: '#18b5f4',
-    url: 'https://qwik.builder.io/',
+    url: 'https://qwik.dev/',
     visible: ref(false),
   },
   {
