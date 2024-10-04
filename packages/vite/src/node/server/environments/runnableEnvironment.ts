@@ -57,6 +57,13 @@ class RunnableDevEnvironment extends DevEnvironment {
     this._runner = createServerModuleRunner(this)
     return this._runner
   }
+
+  override async close(): Promise<void> {
+    await super.close()
+    if (this._runner) {
+      this._runner.destroy()
+    }
+  }
 }
 
 export type { RunnableDevEnvironment }
