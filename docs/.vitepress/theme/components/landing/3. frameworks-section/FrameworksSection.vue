@@ -24,6 +24,7 @@ import logoRemix from './images/remix.svg'
 import logoSvelte from './images/svelte.svg'
 import logoLaravel from './images/laravel.svg'
 import logoEmber from './images/ember.svg'
+import logoPreact from './images/preact.svg'
 
 /**
  * The frameworks and tools to display in this section.
@@ -69,6 +70,13 @@ const frameworks: Framework[] = [
     logo: logoSvelte,
     color: '#fd3e00',
     url: 'https://svelte.dev/',
+    visible: ref(false),
+  },
+  {
+    name: 'Preact',
+    logo: logoPreact,
+    color: '#673ab8',
+    url: 'https://preactjs.com/',
     visible: ref(false),
   },
   {
