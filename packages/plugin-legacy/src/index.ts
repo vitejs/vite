@@ -13,7 +13,9 @@ import type {
 } from 'vite'
 import type {
   NormalizedOutputOptions,
+  OutputAsset,
   OutputBundle,
+  OutputChunk,
   OutputOptions,
   PreRenderedChunk,
   RenderedChunk,
@@ -302,7 +304,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
             modernPolyfills,
           )
         }
-        const polyfillChunk = await buildPolyfillChunk(
+        await buildPolyfillChunk(
           config.mode,
           modernPolyfills,
           bundle,
@@ -311,10 +313,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           'es',
           opts,
           true,
+          genLegacy,
         )
-        if (genLegacy && polyfillChunk) {
-          polyfillChunk.code = modernChunkLegacyGuard + polyfillChunk.code
-        }
         return
       }
 
@@ -789,8 +789,9 @@ async function buildPolyfillChunk(
   format: 'iife' | 'es',
   rollupOutputOptions: NormalizedOutputOptions,
   excludeSystemJS?: boolean,
+  prependModenChunkLegacyGuard?: boolean,
 ) {
-  let { minify, assetsDir } = buildOptions
+  let { minify, assetsDir, sourcemap } = buildOptions
   minify = minify ? 'terser' : false
   const res = await build({
     mode,
@@ -798,11 +799,15 @@ async function buildPolyfillChunk(
     root: path.dirname(fileURLToPath(import.meta.url)),
     configFile: false,
     logLevel: 'error',
-    plugins: [polyfillsPlugin(imports, excludeSystemJS)],
+    plugins: [
+      polyfillsPlugin(imports, excludeSystemJS),
+      prependModenChunkLegacyGuard && prependModenChunkLegacyGuardPlugin(),
+    ],
     build: {
       write: false,
       minify,
       assetsDir,
+      sourcemap,
       rollupOptions: {
         input: {
           polyfills: polyfillId,
@@ -828,7 +833,9 @@ async function buildPolyfillChunk(
   })
   const _polyfillChunk = Array.isArray(res) ? res[0] : res
   if (!('output' in _polyfillChunk)) return
-  const polyfillChunk = _polyfillChunk.output[0]
+  const polyfillChunk = _polyfillChunk.output.find(
+    (chunk) => chunk.type === 'chunk' && chunk.isEntry,
+  ) as OutputChunk
 
   // associate the polyfill chunk to every entry chunk so that we can retrieve
   // the polyfill filename in index html transform
@@ -841,8 +848,16 @@ async function buildPolyfillChunk(
 
   // add the chunk to the bundle
   bundle[polyfillChunk.fileName] = polyfillChunk
-
-  return polyfillChunk
+  if (polyfillChunk.sourcemapFileName) {
+    const polyfillChunkMapAsset = _polyfillChunk.output.find(
+      (chunk) =>
+        chunk.type === 'asset' &&
+        chunk.fileName === polyfillChunk.sourcemapFileName,
+    ) as OutputAsset | undefined
+    if (polyfillChunkMapAsset) {
+      bundle[polyfillChunk.sourcemapFileName] = polyfillChunkMapAsset
+    }
+  }
 }
 
 const polyfillId = '\0vite/legacy-polyfills'
@@ -864,6 +879,28 @@ function polyfillsPlugin(
           [...imports].map((i) => `import ${JSON.stringify(i)};`).join('') +
           (excludeSystemJS ? '' : `import "systemjs/dist/s.min.js";`)
         )
+      }
+    },
+  }
+}
+
+function prependModenChunkLegacyGuardPlugin(): Plugin {
+  let sourceMapEnabled!: boolean
+  return {
+    name: 'vite:legacy-prepend-moden-chunk-legacy-guard',
+    configResolved(config) {
+      sourceMapEnabled = !!config.build.sourcemap
+    },
+    renderChunk(code) {
+      if (!sourceMapEnabled) {
+        return modernChunkLegacyGuard + code
+      }
+
+      const ms = new MagicString(code)
+      ms.prepend(modernChunkLegacyGuard)
+      return {
+        code: ms.toString(),
+        map: ms.generateMap({ hires: 'boundary' }),
       }
     },
   }
