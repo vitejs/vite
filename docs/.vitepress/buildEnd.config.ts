@@ -16,7 +16,7 @@ export const buildEnd = async (config: SiteConfig): Promise<void> => {
     language: 'en',
     image: 'https://vitejs.dev/og-image.png',
     favicon: 'https://vitejs.dev/logo.svg',
-    copyright: 'Copyright © 2019-present Evan You & Vite Contributors',
+    copyright: 'Copyright © 2019-present VoidZero Inc. & Vite Contributors',
   })
 
   const posts = await createContentLoader('blog/*.md', {
