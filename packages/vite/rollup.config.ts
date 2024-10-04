@@ -117,8 +117,8 @@ const nodeConfig = defineConfig({
         replacement: `__require('sugarss')`,
       },
       'lilconfig/src/index.js': {
-        pattern: /: require,/g,
-        replacement: `: __require,`,
+        pattern: /: require;/g,
+        replacement: `: __require;`,
       },
       'postcss-load-config/src/index.js': {
         src: "await import('yaml')",
