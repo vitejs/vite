@@ -23,6 +23,7 @@ import logoReact from './images/react.svg'
 import logoRemix from './images/remix.svg'
 import logoSvelte from './images/svelte.svg'
 import logoLaravel from './images/laravel.svg'
+import logoEmber from './images/ember.svg'
 import logoPreact from './images/preact.svg'
 
 /**
@@ -103,7 +104,7 @@ const frameworks: Framework[] = [
     name: 'Qwik',
     logo: logoQwik,
     color: '#18b5f4',
-    url: 'https://qwik.builder.io/',
+    url: 'https://qwik.dev/',
     visible: ref(false),
   },
   {
@@ -146,6 +147,13 @@ const frameworks: Framework[] = [
     logo: logoLaravel,
     color: '#eb4432',
     url: 'https://laravel.com/',
+    visible: ref(false),
+  },
+  {
+    name: 'EmberJS',
+    logo: logoEmber,
+    color: '#e04e39',
+    url: 'https://emberjs.com/',
     visible: ref(false),
   },
 ]

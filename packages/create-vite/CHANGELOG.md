@@ -1,3 +1,18 @@
+## <small>5.5.3 (2024-10-04)</small>
+
+* chore: enable some eslint rules (#18084) ([e9a2746](https://github.com/vitejs/vite/commit/e9a2746ca77473b1814fd05db3d299c074135fe5)), closes [#18084](https://github.com/vitejs/vite/issues/18084)
+* chore(deps): update all non-major dependencies (#17896) ([3dc23d9](https://github.com/vitejs/vite/commit/3dc23d9aa5deac4d5591ff94eeb978ec1d702072)), closes [#17896](https://github.com/vitejs/vite/issues/17896)
+* chore(deps): update all non-major dependencies (#17945) ([cfb621e](https://github.com/vitejs/vite/commit/cfb621e7a5a3e24d710a9af156e6855e73caf891)), closes [#17945](https://github.com/vitejs/vite/issues/17945)
+* chore(deps): update all non-major dependencies (#17991) ([0ca53cf](https://github.com/vitejs/vite/commit/0ca53cff9ff49108fcec75ff01d2445f9c2f2a4c)), closes [#17991](https://github.com/vitejs/vite/issues/17991)
+* chore(deps): update all non-major dependencies (#18050) ([7cac03f](https://github.com/vitejs/vite/commit/7cac03fa5197a72d2e2422bd0243a85a9a18abfc)), closes [#18050](https://github.com/vitejs/vite/issues/18050)
+* chore(deps): update all non-major dependencies (#18108) ([a73bbaa](https://github.com/vitejs/vite/commit/a73bbaadb512a884924cc884060e50ea6d809d74)), closes [#18108](https://github.com/vitejs/vite/issues/18108)
+* chore(deps): update all non-major dependencies (#18230) ([c0edd26](https://github.com/vitejs/vite/commit/c0edd26bbfeb9a8d80ebaa420e54fbb7f165bd9b)), closes [#18230](https://github.com/vitejs/vite/issues/18230)
+* chore(deps): update dependency svelte-check to v4 (#18051) ([ecabf89](https://github.com/vitejs/vite/commit/ecabf8954ff1db3f9f3e32861de765f028108d2e)), closes [#18051](https://github.com/vitejs/vite/issues/18051)
+* fix(deps): update all non-major dependencies (#18170) ([c8aea5a](https://github.com/vitejs/vite/commit/c8aea5ae0af90dc6796ef3bdd612d1eb819f157b)), closes [#18170](https://github.com/vitejs/vite/issues/18170)
+* refactor(create-vite): use picocolors (#18085) ([ba37df0](https://github.com/vitejs/vite/commit/ba37df0813ad3864fc4b8c6c0b289a1f2bc00c36)), closes [#18085](https://github.com/vitejs/vite/issues/18085)
+
+
+
 ## <small>5.5.2 (2024-08-15)</small>
 
 * fix(create-vite): move ESLint "ignores" config to a separate object in React templates (#17885) ([1b3b702](https://github.com/vitejs/vite/commit/1b3b702a7ec04fecb81f2642ffdde0b13e38a921)), closes [#17885](https://github.com/vitejs/vite/issues/17885)
