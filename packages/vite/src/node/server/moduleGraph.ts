@@ -215,8 +215,10 @@ export class EnvironmentModuleGraph {
         // to only update the import timestamps. If it's not statically imported, e.g. watched/glob file,
         // we can only soft invalidate if the current module was also soft-invalidated. A soft-invalidation
         // doesn't need to trigger a re-load and re-transform of the importer.
+        // But we exclude direct CSS files as those cannot be soft invalidated.
         const shouldSoftInvalidateImporter =
-          importer.staticImportedUrls?.has(mod.url) || softInvalidate
+          (importer.staticImportedUrls?.has(mod.url) || softInvalidate) &&
+          importer.type !== 'css'
         this.invalidateModule(
           importer,
           seen,
