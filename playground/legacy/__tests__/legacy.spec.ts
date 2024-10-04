@@ -143,13 +143,21 @@ describe.runIf(isBuild)('build', () => {
 
   test('should generate legacy sourcemap file', async () => {
     expect(
-      listAssets().some((filename) => /index-legacy.+\.map$/.test(filename)),
+      listAssets().some((filename) =>
+        /index-legacy-[-\w]{8}\.js\.map$/.test(filename),
+      ),
     ).toBeTruthy()
     expect(
       listAssets().some((filename) =>
-        /polyfills-legacy.+\.map$/.test(filename),
+        /polyfills-legacy-[-\w]{8}\.js\.map$/.test(filename),
       ),
-    ).toBeFalsy()
+    ).toBeTruthy()
+    // also for modern polyfills
+    expect(
+      listAssets().some((filename) =>
+        /polyfills-[-\w]{8}\.js\.map$/.test(filename),
+      ),
+    ).toBeTruthy()
   })
 
   test('should have only modern entry files guarded', async () => {
