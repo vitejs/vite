@@ -17,7 +17,6 @@
 
     /* Linting */
     "strict": true,
-    "strictBuiltinIteratorReturn": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,

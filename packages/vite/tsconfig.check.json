@@ -7,7 +7,6 @@
     "types": [], // Avoid checking unrelated node_modules types
     "noEmit": true,
     "strict": true,
-    "strictBuiltinIteratorReturn": true,
     "noUncheckedSideEffectImports": true,
     "exactOptionalPropertyTypes": true
   },

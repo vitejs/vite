@@ -6,7 +6,6 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
-    "strictBuiltinIteratorReturn": true,
     "noEmit": true,
     "noUncheckedSideEffectImports": true
   },
