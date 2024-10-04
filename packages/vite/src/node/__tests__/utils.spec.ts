@@ -113,6 +113,12 @@ describe('injectQuery', () => {
       '/usr/vite/東京 %20 hello?direct',
     )
   })
+
+  test('path with url-encoded path as query parameter', () => {
+    const src = '/src/module.ts?url=https%3A%2F%2Fusr.vite%2F'
+    const expected = '/src/module.ts?t=1234&url=https%3A%2F%2Fusr.vite%2F'
+    expect(injectQuery(src, 't=1234')).toEqual(expected)
+  })
 })
 
 describe('resolveHostname', () => {
