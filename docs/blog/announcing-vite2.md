@@ -13,7 +13,7 @@ head:
       content: Announcing Vite 2.0
   - - meta
     - property: og:url
-      content: https://vitejs.dev/blog/announcing-vite2
+      content: https://vite.dev/blog/announcing-vite2
   - - meta
     - property: og:description
       content: Vite 2 Release Announcement
@@ -33,7 +33,7 @@ Vite (French word for "fast", pronounced `/vit/`) is a new kind of build tool fo
 
 To get a sense of how fast Vite is, check out [this video comparison](https://twitter.com/amasad/status/1355379680275128321) of booting up a React application on Repl.it using Vite vs. `create-react-app` (CRA).
 
-If you've never heard of Vite before and would love to learn more about it, check out [the rationale behind the project](https://vitejs.dev/guide/why.html). If you are interested in how Vite differs from other similar tools, check out the [comparisons](https://vitejs.dev/guide/comparisons.html).
+If you've never heard of Vite before and would love to learn more about it, check out [the rationale behind the project](https://vite.dev/guide/why.html). If you are interested in how Vite differs from other similar tools, check out the [comparisons](https://vite.dev/guide/comparisons.html).
 
 ## What's New in 2.0
 
@@ -49,7 +49,7 @@ Vite 2.0 takes what we learned along the way and is redesigned from scratch with
 
 Inspired by [WMR](https://github.com/preactjs/wmr), the new plugin system extends Rollup's plugin interface and is [compatible with many Rollup plugins](https://vite-rollup-plugins.patak.dev/) out of the box. Plugins can use Rollup-compatible hooks, with additional Vite-specific hooks and properties to adjust Vite-only behavior (e.g. differentiating dev vs. build or custom handling of HMR).
 
-The [programmatic API](https://vitejs.dev/guide/api-javascript.html) has also been greatly improved to facilitate higher level tools / frameworks built on top of Vite.
+The [programmatic API](https://vite.dev/guide/api-javascript.html) has also been greatly improved to facilitate higher level tools / frameworks built on top of Vite.
 
 ### esbuild Powered Dep Pre-Bundling
 
@@ -65,7 +65,7 @@ Vite treats CSS as a first-class citizen of the module graph and supports the fo
 
 ### Server-Side Rendering (SSR) Support
 
-Vite 2.0 ships with [experimental SSR support](https://vitejs.dev/guide/ssr.html). Vite provides APIs to efficiently load and update ESM-based source code in Node.js during development (almost like server-side HMR), and automatically externalizes CommonJS-compatible dependencies to improve development and SSR build speed. The production server can be completely decoupled from Vite, and the same setup can be easily adapted to perform pre-rendering / SSG.
+Vite 2.0 ships with [experimental SSR support](https://vite.dev/guide/ssr.html). Vite provides APIs to efficiently load and update ESM-based source code in Node.js during development (almost like server-side HMR), and automatically externalizes CommonJS-compatible dependencies to improve development and SSR build speed. The production server can be completely decoupled from Vite, and the same setup can be easily adapted to perform pre-rendering / SSG.
 
 Vite SSR is provided as a low-level feature and we are expecting to see higher level frameworks leveraging it under the hood.
 
@@ -81,4 +81,4 @@ That was a lot of features, but getting started with Vite is simple! You can spi
 npm init @vitejs/app
 ```
 
-Then, check out [the guide](https://vitejs.dev/guide/) to see what Vite provides out of the box. You can also check out the source code on [GitHub](https://github.com/vitejs/vite), follow updates on [Twitter](https://twitter.com/vite_js), or join discussions with other Vite users on our [Discord chat server](http://chat.vitejs.dev/).
+Then, check out [the guide](https://vite.dev/guide/) to see what Vite provides out of the box. You can also check out the source code on [GitHub](https://github.com/vitejs/vite), follow updates on [Twitter](https://twitter.com/vite_js), or join discussions with other Vite users on our [Discord chat server](http://chat.vite.dev/).

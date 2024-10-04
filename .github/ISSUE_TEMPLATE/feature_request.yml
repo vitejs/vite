@@ -41,7 +41,7 @@ body:
           required: true
         - label: Read the [Contributing Guidelines](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md).
           required: true
-        - label: Read the [docs](https://vitejs.dev/guide).
+        - label: Read the [docs](https://vite.dev/guide).
           required: true
         - label: Check that there isn't already an issue that request the same feature to avoid creating a duplicate.
           required: true

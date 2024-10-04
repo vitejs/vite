@@ -192,7 +192,7 @@
   text('.nested-include', nestedInclude)
 
   import { parse } from 'node:url'
-  text('.url', parse('https://vitejs.dev').hostname)
+  text('.url', parse('https://vite.dev').hostname)
 
   import('./dynamic-use-dep-alias-using-absolute-path.js').then((mod) =>
     text('.alias-using-absolute-path', mod.default),

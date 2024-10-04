@@ -217,4 +217,4 @@ Then go to your Vite based project and run `pnpm link --global vite` (or the pac
 
 ## Community
 
-If you have questions or need help, reach out to the community at [Discord](https://chat.vitejs.dev) and [GitHub Discussions](https://github.com/vitejs/vite/discussions).
+If you have questions or need help, reach out to the community at [Discord](https://chat.vite.dev) and [GitHub Discussions](https://github.com/vitejs/vite/discussions).

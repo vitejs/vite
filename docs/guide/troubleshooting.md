@@ -2,7 +2,7 @@
 
 See [Rollup's troubleshooting guide](https://rollupjs.org/troubleshooting/) for more information too.
 
-If the suggestions here don't work, please try posting questions on [GitHub Discussions](https://github.com/vitejs/vite/discussions) or in the `#help` channel of [Vite Land Discord](https://chat.vitejs.dev).
+If the suggestions here don't work, please try posting questions on [GitHub Discussions](https://github.com/vitejs/vite/discussions) or in the `#help` channel of [Vite Land Discord](https://chat.vite.dev).
 
 ## CJS
 
@@ -123,7 +123,7 @@ Or, by importing it into the Keychain Access app and updating the trust of your 
 
 When the server / WebSocket server receives a large HTTP header, the request will be dropped and the following warning will be shown.
 
-> Server responded with status code 431. See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.
+> Server responded with status code 431. See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.
 
 This is because Node.js limits request header size to mitigate [CVE-2018-12121](https://www.cve.org/CVERecord?id=CVE-2018-12121).
 

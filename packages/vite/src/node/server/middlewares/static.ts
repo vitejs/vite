@@ -273,7 +273,7 @@ export function ensureServingAccess(
     const hintMessage = `
 ${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}
 
-Refer to docs https://vitejs.dev/config/server-options.html#server-fs-allow for configurations and more details.`
+Refer to docs https://vite.dev/config/server-options.html#server-fs-allow for configurations and more details.`
 
     server.config.logger.error(urlMessage)
     server.config.logger.warnOnce(hintMessage + '\n')

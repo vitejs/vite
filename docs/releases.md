@@ -26,7 +26,7 @@ As an example, if the Vite latest is at 5.3.10:
 - Security patches are also backported to `vite@3`, and `vite@5.1`.
 - `vite@2` and `vite@5.0` are no longer supported. Users should upgrade to receive updates.
 
-We recommend updating Vite regularly. Check out the [Migration Guides](https://vitejs.dev/guide/migration.html) when you update to each Major. The Vite team works closely with the main projects in the ecosystem to ensure the quality of new versions. We test new Vite versions before releasing them through the [vite-ecosystem-ci project](https://github.com/vitejs/vite-ecosystem-ci). Most projects using Vite should be able to quickly offer support or migrate to new versions as soon as they are released.
+We recommend updating Vite regularly. Check out the [Migration Guides](https://vite.dev/guide/migration.html) when you update to each Major. The Vite team works closely with the main projects in the ecosystem to ensure the quality of new versions. We test new Vite versions before releasing them through the [vite-ecosystem-ci project](https://github.com/vitejs/vite-ecosystem-ci). Most projects using Vite should be able to quickly offer support or migrate to new versions as soon as they are released.
 
 ## Semantic Versioning Edge Cases
 
@@ -54,7 +54,7 @@ Pre-releases allow early adopters and maintainers from the Ecosystem to do integ
 
 ## Deprecations
 
-We periodically deprecate features that have been superseded by better alternatives in Minor releases. Deprecated features will continue to work with a type or logged warning. They will be removed in the next major release after entering deprecated status. The [Migration Guide](https://vitejs.dev/guide/migration.html) for each major will list these removals and document an upgrade path for them.
+We periodically deprecate features that have been superseded by better alternatives in Minor releases. Deprecated features will continue to work with a type or logged warning. They will be removed in the next major release after entering deprecated status. The [Migration Guide](https://vite.dev/guide/migration.html) for each major will list these removals and document an upgrade path for them.
 
 ## Experimental Features
 
