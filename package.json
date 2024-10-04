@@ -5,7 +5,7 @@
   "engines": {
     "node": "^18.0.0 || >=20.0.0"
   },
-  "homepage": "https://vitejs.dev/",
+  "homepage": "https://vite.dev/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vitejs/vite.git"
