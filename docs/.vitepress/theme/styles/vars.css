@@ -50,6 +50,7 @@
 
 .DocSearch {
   --docsearch-primary-color: var(--vp-c-brand) !important;
+  --docsearch-container-background: rgba(0, 0, 0, 0.7);
 }
 
 /**
