@@ -180,6 +180,19 @@ export function createWebSocketServer(
         wss.emit('connection', ws, req)
       })
     })
+    wsHttpServer.on('error', (e: Error & { code: string }) => {
+      if (e.code === 'EADDRINUSE') {
+        config.logger.error(
+          colors.red(`WebSocket server error: Port is already in use`),
+          { error: e },
+        )
+      } else {
+        config.logger.error(
+          colors.red(`WebSocket server error:\n${e.stack || e.message}`),
+          { error: e },
+        )
+      }
+    })
   }
 
   wss.on('connection', (socket) => {
