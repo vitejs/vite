@@ -40,7 +40,7 @@ function warnCjsUsage() {
   const yellow = (str) => `\u001b[33m${str}\u001b[39m`
   console.warn(
     yellow(
-      `The CJS build of Vite's Node API is deprecated. See https://vitejs.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.`,
+      `The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.`,
     ),
   )
   if (process.env.VITE_CJS_TRACE) {
