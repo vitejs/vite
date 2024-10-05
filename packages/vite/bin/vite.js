@@ -31,6 +31,7 @@ if (debugIndex > 0) {
   process.env.DEBUG = `${
     process.env.DEBUG ? process.env.DEBUG + ',' : ''
   }${value}`
+  process.env.DEBUG_DEPTH = '10'
 
   if (filterIndex > 0) {
     const filter = process.argv[filterIndex + 1]
