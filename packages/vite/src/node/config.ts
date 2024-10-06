@@ -440,6 +440,12 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * @default 'spa'
    */
   appType?: AppType
+  /**
+   * Specifies the number of times to recurse while formatting object.
+   *
+   * https://nodejs.org/api/util.html#utilinspectobject-options
+   */
+  debugDepth?: string | undefined
 }
 
 export interface HTMLOptions {
@@ -845,6 +851,10 @@ export async function resolveConfig(
       config = mergeConfig(loadResult.config, config)
       configFile = loadResult.path
       configFileDependencies = loadResult.dependencies
+    }
+
+    if (config.debugDepth && process.env.DEBUG) {
+      process.env.DEBUG_DEPTH = config.debugDepth
     }
   }
 
