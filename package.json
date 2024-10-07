@@ -47,6 +47,7 @@
     "@types/convert-source-map": "^2.0.3",
     "@types/cross-spawn": "^6.0.6",
     "@types/debug": "^4.1.12",
+    "@types/eslint__js": "^8.42.3",
     "@types/estree": "^1.0.6",
     "@types/etag": "^1.8.3",
     "@types/less": "^3.0.6",
