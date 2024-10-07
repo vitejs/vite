@@ -1148,7 +1148,7 @@ async function restartServer(server: ViteDevServer) {
   if (!middlewareMode) {
     await server.listen(port, true)
   } else {
-    server.ws.listen()
+    Object.values(server.environments).forEach((e) => e.hot.listen())
   }
   logger.info('server restarted.', { timestamp: true })
 
