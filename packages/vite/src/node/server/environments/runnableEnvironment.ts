@@ -64,6 +64,13 @@ class RunnableDevEnvironment extends DevEnvironment {
     this._runner = factory(this, this._runnerOptions)
     return this._runner
   }
+
+  override async close(): Promise<void> {
+    await super.close()
+    if (this._runner) {
+      await this._runner.destroy()
+    }
+  }
 }
 
 export type { RunnableDevEnvironment }
