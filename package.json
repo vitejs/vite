@@ -40,7 +40,7 @@
     "ci-docs": "pnpm build && pnpm docs-build"
   },
   "devDependencies": {
-    "@eslint/js": "^9.11.1",
+    "@eslint/js": "^9.12.0",
     "@type-challenges/utils": "^0.1.1",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.9.7",
@@ -57,13 +57,13 @@
     "@types/ws": "^8.5.12",
     "@vitejs/release-scripts": "^1.3.2",
     "conventional-changelog-cli": "^5.0.0",
-    "eslint": "^9.11.1",
+    "eslint": "^9.12.0",
     "eslint-plugin-import-x": "^4.3.1",
     "eslint-plugin-n": "^17.10.3",
     "eslint-plugin-regexp": "^2.6.0",
     "execa": "^9.4.0",
-    "globals": "^15.9.0",
-    "gsap": "^3.12.4",
+    "globals": "^15.10.0",
+    "gsap": "^3.12.5",
     "lint-staged": "^15.2.10",
     "picocolors": "^1.1.0",
     "playwright-chromium": "^1.47.2",
@@ -75,9 +75,9 @@
     "tslib": "^2.7.0",
     "tsx": "^4.19.1",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^8.7.0",
+    "typescript-eslint": "^8.8.0",
     "vite": "workspace:*",
-    "vitest": "^2.1.1"
+    "vitest": "^2.1.2"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -96,7 +96,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@9.11.0",
+  "packageManager": "pnpm@9.12.0",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
