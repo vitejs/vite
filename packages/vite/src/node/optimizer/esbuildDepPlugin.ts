@@ -1,6 +1,6 @@
 import path from 'node:path'
 import type { ImportKind, Plugin } from 'esbuild'
-import { KNOWN_ASSET_TYPES } from '../constants'
+import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
 import {
   escapeRegex,
@@ -157,15 +157,17 @@ export function esbuildDepPlugin(
 
           const resolved = await resolve(id, importer, kind)
           if (resolved) {
-            if (kind === 'require-call') {
-              // #16116 fix: Import the module.scss path, which is actually module.scss.js
-              if (resolved.endsWith('.js')) {
-                return {
-                  path: resolved,
-                  external: false,
-                }
+            // `resolved` can be javascript even when `id` matches `allExternalTypes`
+            // due to cjs resolution (e.g. require("./test.pdf") for "./test.pdf.js")
+            // or package name (e.g. import "some-package.pdf")
+            if (JS_TYPES_RE.test(resolved)) {
+              return {
+                path: resolved,
+                external: false,
               }
+            }
 
+            if (kind === 'require-call') {
               // here it is not set to `external: true` to convert `require` to `import`
               return {
                 path: resolved,
