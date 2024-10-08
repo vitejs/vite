@@ -1151,13 +1151,7 @@ function resolveExportsOrImports(
 
 function resolveDeepImport(
   id: string,
-  {
-    webResolvedImports,
-    setResolvedCache,
-    getResolvedCache,
-    dir,
-    data,
-  }: PackageData,
+  { setResolvedCache, getResolvedCache, dir, data }: PackageData,
   options: InternalResolveOptions,
 ): string | undefined {
   const cache = getResolvedCache(id, !!options.webCompatible)
@@ -1200,7 +1194,8 @@ function resolveDeepImport(
     if (mapped) {
       relativeId = mapped + postfix
     } else if (mapped === false) {
-      return (webResolvedImports[id] = browserExternalId)
+      setResolvedCache(id, browserExternalId, !!options.webCompatible)
+      return browserExternalId
     }
   }
 
