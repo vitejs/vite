@@ -12,6 +12,7 @@ describe('custom environment conditions', () => {
       root: import.meta.dirname,
       logLevel: 'error',
       environments: {
+        // no web / default
         ssr: {
           resolve: {
             noExternal: true,
@@ -26,6 +27,7 @@ describe('custom environment conditions', () => {
             },
           },
         },
+        // web / worker
         worker: {
           webCompatible: true,
           resolve: {
@@ -42,6 +44,7 @@ describe('custom environment conditions', () => {
             },
           },
         },
+        // web / custom1
         custom1: {
           webCompatible: true,
           resolve: {
@@ -58,6 +61,7 @@ describe('custom environment conditions', () => {
             },
           },
         },
+        // no web / custom2
         custom2: {
           webCompatible: false,
           resolve: {
@@ -74,6 +78,7 @@ describe('custom environment conditions', () => {
             },
           },
         },
+        // no web / custom3
         custom3: {
           webCompatible: false,
           resolve: {
@@ -90,6 +95,23 @@ describe('custom environment conditions', () => {
             },
           },
         },
+        // same as custom3
+        custom3_2: {
+          webCompatible: false,
+          resolve: {
+            noExternal: true,
+            conditions: ['custom3'],
+          },
+          build: {
+            outDir: path.join(
+              import.meta.dirname,
+              'fixtures/test-dep-conditions/dist/custom3_2',
+            ),
+            rollupOptions: {
+              input: { index: '@vitejs/test-dep-conditions' },
+            },
+          },
+        },
       },
     })
   }
@@ -97,7 +119,14 @@ describe('custom environment conditions', () => {
   test('dev', async () => {
     const server = await createServer(getConfig())
     const results: Record<string, unknown> = {}
-    for (const key of ['ssr', 'worker', 'custom1', 'custom2', 'custom3']) {
+    for (const key of [
+      'ssr',
+      'worker',
+      'custom1',
+      'custom2',
+      'custom3',
+      'custom3_2',
+    ]) {
       const runner = createServerModuleRunner(server.environments[key], {
         hmr: {
           logger: false,
@@ -112,6 +141,7 @@ describe('custom environment conditions', () => {
         "custom1": "index.custom1.js",
         "custom2": "index.custom2.js",
         "custom3": "index.custom3.js",
+        "custom3_2": "index.custom3.js",
         "ssr": "index.default.js",
         "worker": "index.worker.js",
       }
@@ -121,7 +151,14 @@ describe('custom environment conditions', () => {
   test('build', async () => {
     const builder = await createBuilder(getConfig())
     const results: Record<string, unknown> = {}
-    for (const key of ['ssr', 'worker', 'custom1', 'custom2', 'custom3']) {
+    for (const key of [
+      'ssr',
+      'worker',
+      'custom1',
+      'custom2',
+      'custom3',
+      'custom3_2',
+    ]) {
       const output = await builder.build(builder.environments[key])
       const chunk = (output as RollupOutput).output[0]
       const mod = await import(
@@ -139,6 +176,7 @@ describe('custom environment conditions', () => {
         "custom1": "index.custom1.js",
         "custom2": "index.custom2.js",
         "custom3": "index.custom3.js",
+        "custom3_2": "index.custom3.js",
         "ssr": "index.default.js",
         "worker": "index.worker.js",
       }
