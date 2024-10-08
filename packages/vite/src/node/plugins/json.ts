@@ -19,10 +19,11 @@ export interface JsonOptions {
   namedExports?: boolean
   /**
    * Generate performant output as JSON.parse("stringified").
-   * Enabling this will disable namedExports.
+   *
+   * When set to 'auto', the data will be stringified only if the data is bigger than 10kB.
    * @default false
    */
-  stringify?: boolean
+  stringify?: boolean | 'auto'
 }
 
 // Custom json filter for vite
@@ -47,9 +48,15 @@ export function jsonPlugin(
       json = stripBomTag(json)
 
       try {
+        const stringify =
+          options.stringify === true ||
+          // use 10kB as a threshold
+          // https://v8.dev/blog/cost-of-javascript-2019#:~:text=A%20good%20rule%20of%20thumb%20is%20to%20apply%20this%20technique%20for%20objects%20of%2010%20kB%20or%20larger
+          (options.stringify === 'auto' && json.length >= 10 * 1000)
+
         const parsed = JSON.parse(json)
 
-        if (options.stringify) {
+        if (stringify) {
           const contentCode = isBuild
             ? // during build, parse then double-stringify to remove all
               // unnecessary whitespaces to reduce bundle size.

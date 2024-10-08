@@ -112,4 +112,27 @@ describe('transform', () => {
       `"export default JSON.parse("{\\"a\\":1,\\"🫠\\":\\"\\",\\"const\\":false}")"`,
     )
   })
+
+  test("namedExports: true, stringify: 'auto'", () => {
+    const actualSmall = transform(
+      '{"a":1,\n"🫠": "",\n"const": false}',
+      { namedExports: true, stringify: 'auto' },
+      false,
+    )
+    expect(actualSmall).toMatchInlineSnapshot(`
+      "export const a = 1;
+      export default {
+      	a: a,
+      	"🫠": "",
+      	"const": false
+      };
+      "
+    `)
+    const actualLarge = transform(
+      `{"a":1,\n"🫠": "${'vite'.repeat(3000)}",\n"const": false}`,
+      { namedExports: true, stringify: 'auto' },
+      false,
+    )
+    expect(actualLarge).toContain('JSON.parse(')
+  })
 })
