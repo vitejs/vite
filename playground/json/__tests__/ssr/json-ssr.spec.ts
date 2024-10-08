@@ -11,7 +11,9 @@ beforeEach(async () => {
 test('load json module', async () => {
   await untilUpdated(
     () => page.textContent('.fetch-json-module pre'),
-    'export default JSON.parse("{\\n  \\"hello\\": \\"hi\\"\\n}\\n")',
+    'const default_ = JSON.parse("{\\n  \\"hello\\": \\"hi\\"\\n}\\n");\n' +
+      'export default default_;\n' +
+      'export const hello = default_.hello;',
   )
 })
 

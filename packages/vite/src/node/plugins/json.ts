@@ -6,7 +6,7 @@
  * https://github.com/rollup/plugins/blob/master/LICENSE
  */
 
-import { dataToEsm } from '@rollup/pluginutils'
+import { dataToEsm, makeLegalIdentifier } from '@rollup/pluginutils'
 import { SPECIAL_QUERY_RE } from '../constants'
 import type { Plugin } from '../plugin'
 import { stripBomTag } from '../utils'
@@ -47,22 +47,40 @@ export function jsonPlugin(
       json = stripBomTag(json)
 
       try {
+        const parsed = JSON.parse(json)
+
         if (options.stringify) {
-          if (isBuild) {
-            return {
-              // during build, parse then double-stringify to remove all
+          const contentCode = isBuild
+            ? // during build, parse then double-stringify to remove all
               // unnecessary whitespaces to reduce bundle size.
-              code: `export default JSON.parse(${JSON.stringify(
-                JSON.stringify(JSON.parse(json)),
-              )})`,
-              map: { mappings: '' },
+              `JSON.parse(${JSON.stringify(JSON.stringify(parsed))})`
+            : `JSON.parse(${JSON.stringify(json)})`
+
+          let code: string
+          if (options.namedExports) {
+            let defaultKey = 'default_'
+            const keys = Object.keys(parsed)
+            const keysSet = new Set(keys)
+            while (keysSet.has(defaultKey)) {
+              defaultKey += '_'
+            }
+
+            code = `const ${defaultKey} = ${contentCode};\nexport default default_;\n`
+            for (const key of keys) {
+              if (key === makeLegalIdentifier(key)) {
+                code += `export const ${key} = ${defaultKey}.${key};\n`
+              }
             }
           } else {
-            return `export default JSON.parse(${JSON.stringify(json)})`
+            code = `export default ${contentCode}`
+          }
+
+          return {
+            code,
+            map: { mappings: '' },
           }
         }
 
-        const parsed = JSON.parse(json)
         return {
           code: dataToEsm(parsed, {
             preferConst: true,
