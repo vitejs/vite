@@ -9,6 +9,7 @@ import {
   tryStatSync,
 } from './utils'
 import type { Plugin } from './plugin'
+import type { InternalResolveOptions } from './plugins/resolve'
 
 let pnp: typeof import('pnpapi') | undefined
 if (process.versions.pnp) {
@@ -23,8 +24,17 @@ export type PackageCache = Map<string, PackageData>
 export interface PackageData {
   dir: string
   hasSideEffects: (id: string) => boolean | 'no-treeshake' | null
-  setResolvedCache: (key: string, entry: string, targetWeb: boolean) => void
-  getResolvedCache: (key: string, targetWeb: boolean) => string | undefined
+  // setResolvedCache: (key: string, entry: string, targetWeb: boolean) => void
+  // getResolvedCache: (key: string, targetWeb: boolean) => string | undefined
+  setResolvedCache: (
+    key: string,
+    entry: string,
+    options: InternalResolveOptions,
+  ) => void
+  getResolvedCache: (
+    key: string,
+    options: InternalResolveOptions,
+  ) => string | undefined
   data: {
     [field: string]: any
     name: string
@@ -199,29 +209,49 @@ export function loadPackageData(pkgPath: string): PackageData {
     hasSideEffects = () => null
   }
 
-  const webResolvedImports: Record<string, string | undefined> = {}
-  const nodeResolvedImports: Record<string, string | undefined> = {}
+  // const webResolvedImports: Record<string, string | undefined> = {}
+  // const nodeResolvedImports: Record<string, string | undefined> = {}
+  const resolvedCache: Record<string, string | undefined> = {}
   const pkg: PackageData = {
     dir: pkgDir,
     data,
     hasSideEffects,
-    setResolvedCache(key: string, entry: string, targetWeb: boolean) {
-      if (targetWeb) {
-        webResolvedImports[key] = entry
-      } else {
-        nodeResolvedImports[key] = entry
-      }
+    // setResolvedCache(key: string, entry: string, targetWeb: boolean) {
+    //   if (targetWeb) {
+    //     webResolvedImports[key] = entry
+    //   } else {
+    //     nodeResolvedImports[key] = entry
+    //   }
+    // },
+    // getResolvedCache(key: string, targetWeb: boolean) {
+    //   if (targetWeb) {
+    //     return webResolvedImports[key]
+    //   } else {
+    //     return nodeResolvedImports[key]
+    //   }
+    // },
+    setResolvedCache(key, entry, options) {
+      resolvedCache[getResolveCacheKey(key, options)] = entry
     },
-    getResolvedCache(key: string, targetWeb: boolean) {
-      if (targetWeb) {
-        return webResolvedImports[key]
-      } else {
-        return nodeResolvedImports[key]
-      }
+    getResolvedCache(key, options) {
+      return resolvedCache[getResolveCacheKey(key, options)]
     },
   }
 
   return pkg
+}
+
+function getResolveCacheKey(key: string, options: InternalResolveOptions) {
+  // cache key needs to include options which affect
+  // `resolvePackageEntry` or `resolveDeepImport`
+  return [
+    key,
+    ...options.conditions,
+    ...options.extensions,
+    ...options.mainFields,
+    !!options.webCompatible,
+    !!options.isRequire,
+  ].join('_')
 }
 
 export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {

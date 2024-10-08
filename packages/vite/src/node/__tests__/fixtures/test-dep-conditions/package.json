@@ -1,0 +1,15 @@
+{
+  "name": "@vitejs/test-dep-conditions",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "custom1": "./index.custom1.js",
+      "custom2": "./index.custom2.js",
+      "custom3": "./index.custom3.js",
+      "worker": "./index.worker.js",
+      "browser": "./index.browser.js",
+      "default": "./index.default.js"
+    }
+  }
+}
