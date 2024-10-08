@@ -23,8 +23,6 @@ export type PackageCache = Map<string, PackageData>
 export interface PackageData {
   dir: string
   hasSideEffects: (id: string) => boolean | 'no-treeshake' | null
-  webResolvedImports: Record<string, string | undefined>
-  nodeResolvedImports: Record<string, string | undefined>
   setResolvedCache: (key: string, entry: string, targetWeb: boolean) => void
   getResolvedCache: (key: string, targetWeb: boolean) => string | undefined
   data: {
@@ -201,24 +199,24 @@ export function loadPackageData(pkgPath: string): PackageData {
     hasSideEffects = () => null
   }
 
+  const webResolvedImports: Record<string, string | undefined> = {}
+  const nodeResolvedImports: Record<string, string | undefined> = {}
   const pkg: PackageData = {
     dir: pkgDir,
     data,
     hasSideEffects,
-    webResolvedImports: {},
-    nodeResolvedImports: {},
     setResolvedCache(key: string, entry: string, targetWeb: boolean) {
       if (targetWeb) {
-        pkg.webResolvedImports[key] = entry
+        webResolvedImports[key] = entry
       } else {
-        pkg.nodeResolvedImports[key] = entry
+        nodeResolvedImports[key] = entry
       }
     },
     getResolvedCache(key: string, targetWeb: boolean) {
       if (targetWeb) {
-        return pkg.webResolvedImports[key]
+        return webResolvedImports[key]
       } else {
-        return pkg.nodeResolvedImports[key]
+        return nodeResolvedImports[key]
       }
     },
   }
