@@ -231,3 +231,20 @@ describe('module runner initialization', async () => {
     expect(action).toBeDefined()
   })
 })
+
+describe('optimize-deps', async () => {
+  const it = await createModuleRunnerTester({
+    cacheDir: 'node_modules/.vite-test',
+    ssr: {
+      noExternal: true,
+      optimizeDeps: {
+        include: ['@vitejs/cjs-external'],
+      },
+    },
+  })
+
+  it('optimized dep as entry', async ({ runner }) => {
+    const mod = await runner.import('@vitejs/cjs-external')
+    expect(mod.default.hello()).toMatchInlineSnapshot(`"world"`)
+  })
+})
