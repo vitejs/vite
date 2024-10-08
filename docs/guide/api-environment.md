@@ -645,11 +645,11 @@ export class ModuleRunner {
    * Clears all caches, removes all HMR listeners, and resets source map support.
    * This method doesn't stop the HMR connection.
    */
-  public async destroy(): Promise<void>
+  public async close(): Promise<void>
   /**
-   * Returns `true` if the runner has been destroyed by calling `destroy()` method.
+   * Returns `true` if the runner has been closed by calling `close()` method.
    */
-  public isDestroyed(): boolean
+  public isClosed(): boolean
 }
 ```
 
