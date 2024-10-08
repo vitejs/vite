@@ -126,6 +126,7 @@ export type {
 export type {
   CSSOptions,
   CSSModulesOptions,
+  PostCSSConfigResolutionOptions,
   PreprocessCSSResult,
   ResolvedCSSOptions,
 } from './plugins/css'
