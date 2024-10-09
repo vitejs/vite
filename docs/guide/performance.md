@@ -81,7 +81,7 @@ main.js -> BigComponent.vue -> big-utils.js -> large-data.json
 
 The import relationship can only be known after the file is transformed. If `BigComponent.vue` takes some time to transform, `big-utils.js` has to wait for its turn, and so on. This causes an internal waterfall even with pre-transformation built-in.
 
-Vite allows you to warm up files that you know are frequently used, e.g. `big-utils.js`, using the [`server.warmup`](/config/server-options.md#server-warmup) option. This way `big-utils.js` will be ready and cached to be served immediately when requested.
+Vite allows you to warm up files that you know are frequently used, e.g. `big-utils.js` or any fast-glob compliant path names, using the [`server.warmup`](/config/server-options.md#server-warmup) option. This way `big-utils.js` will be ready and cached to be served immediately when requested.
 
 You can find files that are frequently used by running `vite --debug transform` and inspect the logs:
 
