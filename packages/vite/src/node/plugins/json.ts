@@ -48,48 +48,53 @@ export function jsonPlugin(
       json = stripBomTag(json)
 
       try {
-        const stringify =
-          options.stringify === true ||
-          // use 10kB as a threshold
-          // https://v8.dev/blog/cost-of-javascript-2019#:~:text=A%20good%20rule%20of%20thumb%20is%20to%20apply%20this%20technique%20for%20objects%20of%2010%20kB%20or%20larger
-          (options.stringify === 'auto' && json.length >= 10 * 1000)
-
-        const parsed = JSON.parse(json)
-
-        if (stringify) {
-          const contentCode = isBuild
-            ? // during build, parse then double-stringify to remove all
-              // unnecessary whitespaces to reduce bundle size.
-              `JSON.parse(${JSON.stringify(JSON.stringify(parsed))})`
-            : `JSON.parse(${JSON.stringify(json)})`
-
-          let code: string
+        if (options.stringify !== false) {
           if (options.namedExports) {
-            let defaultKey = 'default_'
-            const keys = Object.keys(parsed)
-            const keysSet = new Set(keys)
-            while (keysSet.has(defaultKey)) {
-              defaultKey += '_'
-            }
+            const parsed = JSON.parse(json)
+            if (typeof parsed === 'object' && parsed != null) {
+              const keys = Object.keys(parsed)
 
-            code = `const ${defaultKey} = ${contentCode};\nexport default default_;\n`
-            for (const key of keys) {
-              if (key === makeLegalIdentifier(key)) {
-                code += `export const ${key} = ${defaultKey}.${key};\n`
+              let code = ''
+              let defaultObjectCode = '{\n'
+              for (const key of keys) {
+                if (key === makeLegalIdentifier(key)) {
+                  code += `export const ${key} = ${serializeValue(parsed[key])};\n`
+                  defaultObjectCode += `  ${key},\n`
+                } else {
+                  defaultObjectCode += `  ${JSON.stringify(key)}: ${serializeValue(parsed[key])},\n`
+                }
+              }
+              defaultObjectCode += '}'
+
+              code += `export default ${defaultObjectCode};\n`
+              return {
+                code,
+                map: { mappings: '' },
               }
             }
-          } else {
-            code = `export default ${contentCode}`
           }
 
-          return {
-            code,
-            map: { mappings: '' },
+          if (
+            options.stringify === true ||
+            // use 10kB as a threshold
+            // https://v8.dev/blog/cost-of-javascript-2019#:~:text=A%20good%20rule%20of%20thumb%20is%20to%20apply%20this%20technique%20for%20objects%20of%2010%20kB%20or%20larger
+            (options.stringify === 'auto' && json.length > 10 * 1000)
+          ) {
+            // during build, parse then double-stringify to remove all
+            // unnecessary whitespaces to reduce bundle size.
+            if (isBuild) {
+              json = JSON.stringify(JSON.parse(json))
+            }
+
+            return {
+              code: `export default JSON.parse(${JSON.stringify(json)})`,
+              map: { mappings: '' },
+            }
           }
         }
 
         return {
-          code: dataToEsm(parsed, {
+          code: dataToEsm(JSON.parse(json), {
             preferConst: true,
             namedExports: options.namedExports,
           }),
@@ -104,6 +109,20 @@ export function jsonPlugin(
       }
     },
   }
+}
+
+function serializeValue(value: unknown): string {
+  const valueAsString = JSON.stringify(value)
+  // use 10kB as a threshold
+  // https://v8.dev/blog/cost-of-javascript-2019#:~:text=A%20good%20rule%20of%20thumb%20is%20to%20apply%20this%20technique%20for%20objects%20of%2010%20kB%20or%20larger
+  if (
+    typeof value === 'object' &&
+    value != null &&
+    valueAsString.length > 10 * 1000
+  ) {
+    return `JSON.parse(${JSON.stringify(valueAsString)})`
+  }
+  return valueAsString
 }
 
 export function extractJsonErrorPosition(

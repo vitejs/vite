@@ -68,27 +68,18 @@ describe('transform', () => {
   })
 
   test('namedExports: true, stringify: true', () => {
-    const actualDev = transform(
+    const actual = transform(
       '{"a":1,\n"🫠": "",\n"const": false}',
       { namedExports: true, stringify: true },
       false,
     )
-    expect(actualDev).toMatchInlineSnapshot(`
-      "const default_ = JSON.parse("{\\"a\\":1,\\n\\"🫠\\": \\"\\",\\n\\"const\\": false}");
-      export default default_;
-      export const a = default_.a;
-      "
-    `)
-
-    const actualBuild = transform(
-      '{"a":1,\n"🫠": "",\n"const": false}',
-      { namedExports: true, stringify: true },
-      true,
-    )
-    expect(actualBuild).toMatchInlineSnapshot(`
-      "const default_ = JSON.parse("{\\"a\\":1,\\"🫠\\":\\"\\",\\"const\\":false}");
-      export default default_;
-      export const a = default_.a;
+    expect(actual).toMatchInlineSnapshot(`
+      "export const a = 1;
+      export default {
+        a,
+        "🫠": "",
+        "const": false,
+      };
       "
     `)
   })
@@ -122,14 +113,21 @@ describe('transform', () => {
     expect(actualSmall).toMatchInlineSnapshot(`
       "export const a = 1;
       export default {
-      	a: a,
-      	"🫠": "",
-      	"const": false
+        a,
+        "🫠": "",
+        "const": false,
       };
       "
     `)
-    const actualLarge = transform(
+    const actualLargeNonObject = transform(
       `{"a":1,\n"🫠": "${'vite'.repeat(3000)}",\n"const": false}`,
+      { namedExports: true, stringify: 'auto' },
+      false,
+    )
+    expect(actualLargeNonObject).not.toContain('JSON.parse(')
+
+    const actualLarge = transform(
+      `{"a":1,\n"🫠": {\n"foo": "${'vite'.repeat(3000)}"\n},\n"const": false}`,
       { namedExports: true, stringify: 'auto' },
       false,
     )
