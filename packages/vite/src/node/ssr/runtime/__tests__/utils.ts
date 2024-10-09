@@ -88,7 +88,7 @@ export async function createModuleRunnerTester(
   })
 
   afterEach<TestClient>(async (t) => {
-    await t.runner.destroy()
+    await t.runner.close()
     await t.server.close()
   })
 

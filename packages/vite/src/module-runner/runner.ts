@@ -54,7 +54,7 @@ export class ModuleRunner {
     Promise<EvaluatedModuleNode>
   >()
 
-  private destroyed = false
+  private closed = false
 
   constructor(
     public options: ModuleRunnerOptions,
@@ -100,18 +100,18 @@ export class ModuleRunner {
    * Clears all caches, removes all HMR listeners, and resets source map support.
    * This method doesn't stop the HMR connection.
    */
-  public async destroy(): Promise<void> {
+  public async close(): Promise<void> {
     this.resetSourceMapSupport?.()
     this.clearCache()
     this.hmrClient = undefined
-    this.destroyed = true
+    this.closed = true
   }
 
   /**
-   * Returns `true` if the runtime has been destroyed by calling `destroy()` method.
+   * Returns `true` if the runtime has been closed by calling `close()` method.
    */
-  public isDestroyed(): boolean {
-    return this.destroyed
+  public isClosed(): boolean {
+    return this.closed
   }
 
   private processImport(
@@ -243,8 +243,8 @@ export class ModuleRunner {
     importer: string | undefined,
     cachedModule: EvaluatedModuleNode | undefined,
   ): Promise<EvaluatedModuleNode> {
-    if (this.destroyed) {
-      throw new Error(`Vite module runner has been destroyed.`)
+    if (this.closed) {
+      throw new Error(`Vite module runner has been closed.`)
     }
 
     this.debug?.('[module runner] fetching', url)
@@ -373,7 +373,7 @@ export class ModuleRunner {
         enumerable: true,
         get: () => {
           if (!this.hmrClient) {
-            throw new Error(`[module runner] HMR client was destroyed.`)
+            throw new Error(`[module runner] HMR client was closed.`)
           }
           this.debug?.('[module runner] creating hmr context for', mod.url)
           hotContext ||= new HMRContext(this.hmrClient, mod.url)
