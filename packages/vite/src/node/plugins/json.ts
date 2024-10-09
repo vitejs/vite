@@ -21,7 +21,7 @@ export interface JsonOptions {
    * Generate performant output as JSON.parse("stringified").
    *
    * When set to 'auto', the data will be stringified only if the data is bigger than 10kB.
-   * @default false
+   * @default 'auto'
    */
   stringify?: boolean | 'auto'
 }

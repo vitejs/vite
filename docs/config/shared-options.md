@@ -344,7 +344,7 @@ Whether to support named imports from `.json` files.
 ## json.stringify
 
 - **Type:** `boolean | 'auto'`
-- **Default:** `false`
+- **Default:** `'auto'`
 
 If set to `true`, imported JSON will be transformed into `export default JSON.parse("...")` which is significantly more performant than Object literals, especially when the JSON file is large.
 
