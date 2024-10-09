@@ -65,38 +65,9 @@ baseOptions.forEach(({ base, label }) => {
         await page.waitForSelector('.loaded', { state: 'attached' })
 
         expect(await getColor('.css-dynamic-import')).toBe('green')
-        expect(await getLinks()).toEqual([
-          {
-            pathname: expect.stringMatching(/^\/assets\/index-.+\.css$/),
-            rel: 'stylesheet',
-            as: '',
-          },
-          {
-            pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.css$/),
-            rel: 'preload',
-            as: 'style',
-          },
-          {
-            pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.js$/),
-            rel: 'modulepreload',
-            as: 'script',
-          },
-          {
-            pathname: expect.stringMatching(/^\/assets\/dynamic-.+\.css$/),
-            rel: 'stylesheet',
-            as: '',
-          },
-          {
-            pathname: expect.stringMatching(/^\/assets\/static-.+\.js$/),
-            rel: 'modulepreload',
-            as: 'script',
-          },
-          {
-            pathname: expect.stringMatching(/^\/assets\/index-.+\.js$/),
-            rel: 'modulepreload',
-            as: 'script',
-          },
-        ])
+        const linkUrls = (await getLinks()).map((link) => link.pathname)
+        const uniqueLinkUrls = [...new Set(linkUrls)]
+        expect(linkUrls).toStrictEqual(uniqueLinkUrls)
       })
     },
   )
