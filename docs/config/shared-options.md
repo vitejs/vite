@@ -350,8 +350,6 @@ If set to `true`, imported JSON will be transformed into `export default JSON.pa
 
 If set to `'auto'`, the data will be stringified only if the data is bigger than 10kB.
 
-Enabling this disables named imports.
-
 ## esbuild
 
 - **Type:** `ESBuildOptions | false`
