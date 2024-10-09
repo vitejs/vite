@@ -315,12 +315,29 @@ export default defineConfig({
               link: '/guide/api-javascript',
             },
             {
-              text: 'Environment API',
+              text: 'Config Reference',
+              link: '/config/',
+            },
+          ],
+        },
+        {
+          text: 'Environment API',
+          items: [
+            {
+              text: 'Introduction',
               link: '/guide/api-environment',
             },
             {
-              text: 'Config Reference',
-              link: '/config/',
+              text: 'Frameworks',
+              link: '/guide/api-environment-frameworks',
+            },
+            {
+              text: 'Plugins',
+              link: '/guide/api-environment-plugins',
+            },
+            {
+              text: 'Runtimes',
+              link: '/guide/api-environment-runtimes',
             },
           ],
         },
