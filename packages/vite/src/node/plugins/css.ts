@@ -568,7 +568,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let chunkCSS = ''
       // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
       const isJsChunkEmpty = code === '' && !chunk.isEntry
-      let isPureCssChunk = true
+      let isPureCssChunk = chunk.exports.length === 0
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
         if (styles.has(id)) {
