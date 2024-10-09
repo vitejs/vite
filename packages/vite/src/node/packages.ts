@@ -228,12 +228,12 @@ function getResolveCacheKey(key: string, options: InternalResolveOptions) {
   // `resolvePackageEntry` or `resolveDeepImport`
   return [
     key,
-    ...options.conditions,
-    ...options.extensions,
-    ...options.mainFields,
-    !!options.webCompatible,
-    !!options.isRequire,
-  ].join('_')
+    options.webCompatible ? '1' : '0',
+    options.isRequire ? '1' : '0',
+    options.conditions.join('_'),
+    options.extensions.join('_'),
+    options.mainFields.join('_'),
+  ].join('|')
 }
 
 export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
