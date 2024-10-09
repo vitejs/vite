@@ -57,7 +57,10 @@ export function manifestPlugin(): Plugin {
       const buildOptions = this.environment.config.build
 
       function getChunkName(chunk: OutputChunk) {
-        return getChunkOriginalFileName(chunk, root, format)
+        return (
+          getChunkOriginalFileName(chunk, root, format) ??
+          `_` + path.basename(chunk.fileName)
+        )
       }
 
       function getInternalImports(imports: string[]): string[] {
@@ -150,7 +153,8 @@ export function manifestPlugin(): Plugin {
           manifest[getChunkName(chunk)] = createChunk(chunk)
         } else if (chunk.type === 'asset' && typeof chunk.name === 'string') {
           // Add every unique asset to the manifest, keyed by its original name
-          const src = chunk.originalFileName ?? chunk.name
+          const src =
+            chunk.originalFileName ?? '_' + path.basename(chunk.fileName)
           const isEntry = entryCssAssetFileNames.has(chunk.fileName)
           const asset = createAsset(chunk, src, isEntry)
 
@@ -166,7 +170,7 @@ export function manifestPlugin(): Plugin {
 
       // Add deduplicated assets to the manifest
       for (const [referenceId, { originalFileName }] of assets.entries()) {
-        if (!manifest[originalFileName]) {
+        if (originalFileName && !manifest[originalFileName]) {
           const fileName = this.getFileName(referenceId)
           const asset = fileNameToAsset.get(fileName)
           if (asset) {
@@ -196,7 +200,7 @@ export function getChunkOriginalFileName(
   chunk: OutputChunk | RenderedChunk,
   root: string,
   format: InternalModuleFormat,
-): string {
+): string | undefined {
   if (chunk.facadeModuleId) {
     let name = normalizePath(path.relative(root, chunk.facadeModuleId))
     if (format === 'system' && !chunk.name.includes('-legacy')) {
@@ -205,7 +209,5 @@ export function getChunkOriginalFileName(
       name = name.slice(0, endPos) + `-legacy` + ext
     }
     return name.replace(/\0/g, '')
-  } else {
-    return `_` + path.basename(chunk.fileName)
   }
 }
