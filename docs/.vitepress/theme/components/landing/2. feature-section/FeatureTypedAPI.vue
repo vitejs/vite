@@ -30,10 +30,10 @@ const { isCardActive, startAnimation } = useCardAnimation(
         <span class="code code__inactive">
           <span class="code--red">import</span> { createServer }
           <span class="code--red">from</span>
-          <span class="code--blue">'vite'</span><br /><br />
+          <span class="code--blue">&nbsp;'vite'</span><br /><br />
           <span class="code--red">const</span> server =
           <span class="code--red">await</span>
-          <span class="code--purple">createServer</span>({<br />
+          <span class="code--purple">&nbsp;createServer</span>({<br />
           <span class="code--grey"
             >&nbsp;&nbsp;&nbsp;// user config options</span
           ><br />
