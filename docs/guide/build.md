@@ -91,7 +91,7 @@ Suppose you have the following source code structure:
     └── nested.js
 ```
 
-During dev, simply navigate or link to `/nested/` - it works as expected, just like for a normal static file server.
+During dev, simply navigate or link to `/nested/` (the trailing slash is required!) - it works as expected, just like for a normal static file server.
 
 During build, all you need to do is to specify multiple `.html` files as entry points:
 
