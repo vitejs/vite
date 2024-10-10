@@ -343,12 +343,12 @@ Whether to support named imports from `.json` files.
 
 ## json.stringify
 
-- **Type:** `boolean`
-- **Default:** `false`
+- **Type:** `boolean | 'auto'`
+- **Default:** `'auto'`
 
 If set to `true`, imported JSON will be transformed into `export default JSON.parse("...")` which is significantly more performant than Object literals, especially when the JSON file is large.
 
-Enabling this disables named imports.
+If set to `'auto'`, the data will be stringified only if the data is bigger than 10kB.
 
 ## esbuild
 
