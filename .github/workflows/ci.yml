@@ -130,7 +130,7 @@ jobs:
         run: pnpm run test-build
 
   test-passed:
-    if: ${{ !cancelled() && !failure() }}
+    if: (!cancelled() && !failure())
     needs: test
     runs-on: ubuntu-latest
     name: Build & Test Passed or Skipped
