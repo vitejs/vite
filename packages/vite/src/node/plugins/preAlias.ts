@@ -45,7 +45,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
             id,
             importer,
             config.resolve.preserveSymlinks,
-            config.packageCache,
+            environment.config.packageCache,
           )
           if (optimizedId) {
             return optimizedId // aliased dep already optimized

@@ -113,6 +113,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     root: config.root,
     isProduction: config.isProduction,
     isBuild: config.command === 'build',
+    // TODO
     packageCache: config.packageCache,
     asSrc: true,
   }
