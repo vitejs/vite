@@ -138,7 +138,7 @@ jobs:
       - run: echo "Build & Test Passed or Skipped"
 
   test-failed:
-    if: !cancelled()
+    if: !cancelled() && failure()
     needs: test
     runs-on: ubuntu-latest
     name: Build & Test Failed
