@@ -1,6 +1,6 @@
 /* eslint-disable n/no-extraneous-import */
 import path from 'node:path'
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import { build, normalizePath } from 'vite'
@@ -970,12 +970,21 @@ function wrapIIFEBabelPlugin(): BabelPlugin {
   }
 }
 
+const hash =
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- crypto.hash is supported in Node 21.7.0+, 20.12.0+
+  crypto.hash ??
+  ((
+    algorithm: string,
+    data: crypto.BinaryLike,
+    outputEncoding: crypto.BinaryToTextEncoding,
+  ) => crypto.createHash(algorithm).update(data).digest(outputEncoding))
+
 export const cspHashes = [
   safari10NoModuleFix,
   systemJSInlineCode,
   detectModernBrowserCode,
   dynamicFallbackInlineCode,
-].map((i) => createHash('sha256').update(i).digest('base64'))
+].map((i) => hash('sha256', i, 'base64'))
 
 export type { Options }
 

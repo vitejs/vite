@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { exec } from 'node:child_process'
-import { createHash } from 'node:crypto'
+import crypto from 'node:crypto'
 import { URL, fileURLToPath } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
@@ -1011,8 +1011,17 @@ export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
+const hash =
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- crypto.hash is supported in Node 21.7.0+, 20.12.0+
+  crypto.hash ??
+  ((
+    algorithm: string,
+    data: crypto.BinaryLike,
+    outputEncoding: crypto.BinaryToTextEncoding,
+  ) => crypto.createHash(algorithm).update(data).digest(outputEncoding))
+
 export function getHash(text: Buffer | string, length = 8): string {
-  const h = createHash('sha256').update(text).digest('hex').substring(0, length)
+  const h = hash('sha256', text, 'hex').substring(0, length)
   if (length <= 64) return h
   return h.padEnd(length, '_')
 }
