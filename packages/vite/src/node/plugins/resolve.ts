@@ -245,6 +245,7 @@ export function resolvePlugin(
         webCompatible: currentEnvironmentOptions.webCompatible,
         ...resolveOptions, // plugin options + resolve options overrides
         scan: resolveOpts?.scan ?? resolveOptions.scan,
+        packageCache: currentEnvironmentOptions.packageCache,
       }
 
       const depsOptimizerOptions = this.environment.config.dev.optimizeDeps

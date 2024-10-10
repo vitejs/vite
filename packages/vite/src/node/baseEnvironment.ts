@@ -2,6 +2,7 @@ import colors from 'picocolors'
 import type { Logger } from './logger'
 import type { ResolvedConfig, ResolvedEnvironmentOptions } from './config'
 import type { Plugin } from './plugin'
+import type { PackageCache } from './packages'
 
 const environmentColors = [
   colors.blue,
@@ -64,6 +65,7 @@ export class PartialEnvironment {
     this.name = name
     this._topLevelConfig = topLevelConfig
     this._options = options
+    const packageCache: PackageCache = new Map()
     this.config = new Proxy(
       options as ResolvedConfig & ResolvedEnvironmentOptions,
       {
@@ -73,6 +75,9 @@ export class PartialEnvironment {
           }
           if (prop in target) {
             return this._options[prop as keyof ResolvedEnvironmentOptions]
+          }
+          if (prop === 'packageCache') {
+            return packageCache
           }
           return this._topLevelConfig[prop]
         },
