@@ -427,8 +427,13 @@ importers:
       '@vitejs/cjs-ssr-dep':
         specifier: link:./fixtures/cjs-ssr-dep
         version: link:fixtures/cjs-ssr-dep
+      '@vitejs/test-dep-conditions':
+        specifier: file:./fixtures/test-dep-conditions
+        version: file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions
 
   packages/vite/src/node/__tests__/fixtures/cjs-ssr-dep: {}
+
+  packages/vite/src/node/__tests__/fixtures/test-dep-conditions: {}
 
   packages/vite/src/node/__tests__/packages/module: {}
 
@@ -3601,6 +3606,9 @@ packages:
 
   '@vitejs/test-dep-cjs-with-assets@file:playground/optimize-deps/dep-cjs-with-assets':
     resolution: {directory: playground/optimize-deps/dep-cjs-with-assets, type: directory}
+
+  '@vitejs/test-dep-conditions@file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions':
+    resolution: {directory: packages/vite/src/node/__tests__/fixtures/test-dep-conditions, type: directory}
 
   '@vitejs/test-dep-css-require@file:playground/optimize-deps/dep-css-require':
     resolution: {directory: playground/optimize-deps/dep-css-require, type: directory}
@@ -9214,6 +9222,8 @@ snapshots:
   '@vitejs/test-dep-cjs-external-package-omit-js-suffix@file:playground/optimize-deps/dep-cjs-external-package-omit-js-suffix': {}
 
   '@vitejs/test-dep-cjs-with-assets@file:playground/optimize-deps/dep-cjs-with-assets': {}
+
+  '@vitejs/test-dep-conditions@file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions': {}
 
   '@vitejs/test-dep-css-require@file:playground/optimize-deps/dep-css-require': {}
 
