@@ -365,8 +365,8 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0
       picomatch:
-        specifier: ^2.3.1
-        version: 2.3.1
+        specifier: ^4.0.2
+        version: 4.0.2
       postcss-import:
         specifier: ^16.1.0
         version: 16.1.0(postcss@8.4.47)
@@ -387,7 +387,7 @@ importers:
         version: 6.1.1(esbuild@0.24.0)(rollup@4.22.5)
       rollup-plugin-license:
         specifier: ^3.5.3
-        version: 3.5.3(picomatch@2.3.1)(rollup@4.22.5)
+        version: 3.5.3(picomatch@4.0.2)(rollup@4.22.5)
       sass:
         specifier: ^1.79.4
         version: 1.79.4
@@ -5982,6 +5982,10 @@ packages:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
 
+  picomatch@4.0.2:
+    resolution: {integrity: sha512-M7BAV6Rlcy5u+m6oPhAPFgJTzAioX/6B0DxyvDlo9l8+T3nLKbrczg2WLUyzd45L8RqfUMyGPzekbMvX2Ldkwg==}
+    engines: {node: '>=12'}
+
   pidtree@0.6.0:
     resolution: {integrity: sha512-eG2dWTVw5bzqGRztnHExczNxt5VGsE6OwTeCG3fdUf9KBsZzO3R5OIIIzWR+iZA0NtZ+RDVdaoE2dK1cn6jH4g==}
     engines: {node: '>=0.10'}
@@ -10601,9 +10605,9 @@ snapshots:
     dependencies:
       reusify: 1.0.4
 
-  fdir@6.3.0(picomatch@2.3.1):
+  fdir@6.3.0(picomatch@4.0.2):
     optionalDependencies:
-      picomatch: 2.3.1
+      picomatch: 4.0.2
 
   feed@4.2.2:
     dependencies:
@@ -11856,6 +11860,8 @@ snapshots:
 
   picomatch@2.3.1: {}
 
+  picomatch@4.0.2: {}
+
   pidtree@0.6.0: {}
 
   pify@2.3.0: {}
@@ -12245,10 +12251,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  rollup-plugin-license@3.5.3(picomatch@2.3.1)(rollup@4.22.5):
+  rollup-plugin-license@3.5.3(picomatch@4.0.2)(rollup@4.22.5):
     dependencies:
       commenting: 1.1.0
-      fdir: 6.3.0(picomatch@2.3.1)
+      fdir: 6.3.0(picomatch@4.0.2)
       lodash: 4.17.21
       magic-string: 0.30.11
       moment: 2.30.1
