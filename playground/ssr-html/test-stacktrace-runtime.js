@@ -10,6 +10,7 @@ const server = await createServer({
   root: fileURLToPath(new URL('.', import.meta.url)),
   server: {
     middlewareMode: true,
+    ws: false,
   },
 })
 

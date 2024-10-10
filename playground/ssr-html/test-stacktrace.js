@@ -29,6 +29,7 @@ const vite = await createServer({
   logLevel: isTest ? 'error' : 'info',
   server: {
     middlewareMode: true,
+    ws: false,
   },
   appType: 'custom',
 })
