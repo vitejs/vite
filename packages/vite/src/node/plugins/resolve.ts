@@ -243,6 +243,7 @@ export function resolvePlugin(
         isRequire,
         ...environmentResolveOptions,
         webCompatible: currentEnvironmentOptions.webCompatible,
+        packageCache: this.environment.config.packageCache,
         ...resolveOptions, // plugin options + resolve options overrides
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }

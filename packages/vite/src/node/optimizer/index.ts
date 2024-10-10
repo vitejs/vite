@@ -827,7 +827,7 @@ export async function addManuallyIncludedOptimizeDeps(
     for (let i = 0; i < includes.length; i++) {
       const id = includes[i]
       if (glob.isDynamicPattern(id)) {
-        const globIds = expandGlobIds(id, environment.getTopLevelConfig())
+        const globIds = expandGlobIds(id, environment.config)
         includes.splice(i, 1, ...globIds)
         i += globIds.length - 1
       }

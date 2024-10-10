@@ -9,6 +9,7 @@ import {
   tryStatSync,
 } from './utils'
 import type { Plugin } from './plugin'
+import { usePerEnvironmentState } from './environment'
 
 let pnp: typeof import('pnpapi') | undefined
 if (process.versions.pnp) {
@@ -226,37 +227,51 @@ export function loadPackageData(pkgPath: string): PackageData {
   return pkg
 }
 
-export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
-  // a list of files to watch before the plugin is ready
-  const watchQueue = new Set<string>()
-  const watchedDirs = new Set<string>()
+export function watchPackageDataPlugin(): Plugin {
+  const getEnvironmentState = usePerEnvironmentState((environment) => {
+    // a list of files to watch before the plugin is ready
+    const watchQueue = new Set<string>()
+    const watchedDirs = new Set<string>()
 
-  const watchFileStub = (id: string) => {
-    watchQueue.add(id)
-  }
-  let watchFile = watchFileStub
-
-  const setPackageData = packageCache.set.bind(packageCache)
-  packageCache.set = (id, pkg) => {
-    if (!isInNodeModules(pkg.dir) && !watchedDirs.has(pkg.dir)) {
-      watchedDirs.add(pkg.dir)
-      watchFile(path.join(pkg.dir, 'package.json'))
+    const watchFileStub = (id: string) => {
+      watchQueue.add(id)
     }
-    return setPackageData(id, pkg)
-  }
+    let watchFile = watchFileStub
+
+    const { packageCache } = environment.config
+    const setPackageData = packageCache.set.bind(packageCache)
+    packageCache.set = function (id, pkg) {
+      if (!isInNodeModules(pkg.dir) && !watchedDirs.has(pkg.dir)) {
+        watchedDirs.add(pkg.dir)
+        watchFile(path.join(pkg.dir, 'package.json'))
+      }
+      return setPackageData(id, pkg)
+    }
+
+    const buildStart = (watchFileActual: (id: string) => void) => {
+      watchFile = watchFileActual
+      watchQueue.forEach(watchFile)
+      watchQueue.clear()
+    }
+
+    const buildEnd = () => {
+      watchFile = watchFileStub
+    }
+
+    return { buildStart, buildEnd }
+  })
 
   return {
     name: 'vite:watch-package-data',
     buildStart() {
-      watchFile = this.addWatchFile.bind(this)
-      watchQueue.forEach(watchFile)
-      watchQueue.clear()
+      getEnvironmentState(this).buildStart(this.addWatchFile.bind(this))
     },
     buildEnd() {
-      watchFile = watchFileStub
+      getEnvironmentState(this).buildEnd()
     },
     watchChange(id) {
       if (id.endsWith('/package.json')) {
+        const { packageCache } = this.environment.config
         invalidatePackageData(packageCache, path.normalize(id))
       }
     },

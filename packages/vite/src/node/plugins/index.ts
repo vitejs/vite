@@ -46,7 +46,7 @@ export async function resolvePlugins(
   return [
     depOptimizationEnabled ? optimizedDepsPlugin() : null,
     isBuild ? metadataPlugin() : null,
-    !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
+    !isWorker ? watchPackageDataPlugin() : null,
     preAliasPlugin(config),
     aliasPlugin({
       entries: config.resolve.alias,
@@ -63,7 +63,6 @@ export async function resolvePlugins(
         root: config.root,
         isProduction: config.isProduction,
         isBuild,
-        packageCache: config.packageCache,
         asSrc: true,
         fsUtils: getFsUtils(config),
         optimizeDeps: true,

@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "dependencies": {
-    "@vitejs/cjs-ssr-dep": "link:./fixtures/cjs-ssr-dep"
+    "@vitejs/cjs-ssr-dep": "link:./fixtures/cjs-ssr-dep",
+    "@vitejs/test-dep-conditions": "file:./fixtures/test-dep-conditions"
   }
 }
