@@ -13,17 +13,17 @@ describe('import and resolveId', () => {
       },
     })
     onTestFinished(() => server.close())
-    return server
-  }
-
-  test('import first', async () => {
-    const server = await createTestServer()
     const runner = createServerModuleRunner(server.environments.ssr, {
       hmr: {
         logger: false,
       },
       sourcemapInterceptor: false,
     })
+    return { server, runner }
+  }
+
+  test('import first', async () => {
+    const { server, runner } = await createTestServer()
     const mod = await runner.import(
       '/fixtures/test-dep-conditions-app/entry-with-module',
     )
@@ -37,13 +37,7 @@ describe('import and resolveId', () => {
   })
 
   test('resolveId first', async () => {
-    const server = await createTestServer()
-    const runner = createServerModuleRunner(server.environments.ssr, {
-      hmr: {
-        logger: false,
-      },
-      sourcemapInterceptor: false,
-    })
+    const { server, runner } = await createTestServer()
     const resolved = await server.environments.ssr.pluginContainer.resolveId(
       '@vitejs/test-dep-conditions/with-module',
     )
