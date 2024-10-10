@@ -328,12 +328,16 @@ export default defineConfig({
               link: '/guide/api-environment',
             },
             {
-              text: 'Frameworks',
-              link: '/guide/api-environment-frameworks',
+              text: 'JavaScript',
+              link: '/guide/api-environment-javascript',
             },
             {
               text: 'Plugins',
               link: '/guide/api-environment-plugins',
+            },
+            {
+              text: 'Frameworks',
+              link: '/guide/api-environment-frameworks',
             },
             {
               text: 'Runtimes',
