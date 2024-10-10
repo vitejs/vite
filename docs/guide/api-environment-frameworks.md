@@ -1,4 +1,4 @@
-# Environment API
+# Environment API for Frameworks
 
 :::warning Experimental
 Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Environment API. This API will be released in Vite 6 as experimental. You can already test it in the latest `vite@6.0.0-beta.x` version.
@@ -89,11 +89,19 @@ interface TransformResult {
 }
 ```
 
-Vite also supports a `RunnableDevEnvironment`, that extends a `DevEnvironment` exposing a `ModuleRunner` instance. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
-
 :::warning
 The `runner` is evaluated eagerly when it's accessed for the first time. Beware that Vite enables source map support when the `runner` is created by calling `process.setSourceMapsEnabled` or by overriding `Error.prepareStackTrace` if it's not available.
 :::
+
+An environment instance in the Vite server lets you process a URL using the `environment.transformRequest(url)` method. This function will use the plugin pipeline to resolve the `url` to a module `id`, load it (reading the file from the file system or through a plugin that implements a virtual module), and then transform the code. While transforming the module, imports and other metadata will be recorded in the environment module graph by creating or updating the corresponding module node. When processing is done, the transform result is also stored in the module.
+
+But the environment instance can't execute the code itself, as the runtime where the module will be run could be different from the one the Vite server is running in. This is the case for the browser environment. When a html is loaded in the browser, its scripts are executed triggering the evaluation of the entire static module graph. Each imported URL generates a request to the Vite server to get the module code, which ends up handled by the Transform Middleware by calling `server.environments.client.transformRequest(url)`. The connection between the environment instance in the server and the module runner in the browser is carried out through HTTP in this case.
+
+:::info transformRequest naming
+We are using `transformRequest(url)` and `warmupRequest(url)` in the current version of this proposal so it is easier to discuss and understand for users used to Vite's current API. Before releasing, we can take the opportunity to review these names too. For example, it could be named `environment.processModule(url)` or `environment.loadModule(url)` taking a page from Rollup's `context.load(id)` in plugin hooks. For the moment, we think keeping the current names and delaying this discussion is better.
+:::
+
+Vite also exposes a `RunnableDevEnvironment`. While this is only implementable for some runtimes as it requires the runtime to be the same with the one the Vite server is running in, this works similarly with `ssrLoadModule`. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
 
 ```ts
 export class RunnableDevEnvironment extends DevEnvironment {
@@ -104,18 +112,6 @@ if (isRunnableDevEnvironment(server.environments.ssr)) {
   await server.environments.ssr.runner.import('/entry-point.js')
 }
 ```
-
-An environment instance in the Vite server lets you process a URL using the `environment.transformRequest(url)` method. This function will use the plugin pipeline to resolve the `url` to a module `id`, load it (reading the file from the file system or through a plugin that implements a virtual module), and then transform the code. While transforming the module, imports and other metadata will be recorded in the environment module graph by creating or updating the corresponding module node. When processing is done, the transform result is also stored in the module.
-
-But the environment instance can't execute the code itself, as the runtime where the module will be run could be different from the one the Vite server is running in. This is the case for the browser environment. When a html is loaded in the browser, its scripts are executed triggering the evaluation of the entire static module graph. Each imported URL generates a request to the Vite server to get the module code, which ends up handled by the Transform Middleware by calling `server.environments.client.transformRequest(url)`. The connection between the environment instance in the server and the module runner in the browser is carried out through HTTP in this case.
-
-:::info transformRequest naming
-We are using `transformRequest(url)` and `warmupRequest(url)` in the current version of this proposal so it is easier to discuss and understand for users used to Vite's current API. Before releasing, we can take the opportunity to review these names too. For example, it could be named `environment.processModule(url)` or `environment.loadModule(url)` taking a page from Rollup's `context.load(id)` in plugin hooks. For the moment, we think keeping the current names and delaying this discussion is better.
-:::
-
-:::info Running a module
-The initial proposal had a `run` method that would allow consumers to invoke an import on the runner side by using the `transport` option. During our testing we found out that the API was not universal enough to start recommending it. We are open to implement a built-in layer for remote SSR implementation based on the frameworks feedback. In the meantime, Vite still exposes a [`RunnerTransport` API](#runnertransport) to hide the complexity of the runner RPC.
-:::
 
 In dev mode the default `ssr` environment is a `RunnableDevEnvironment` with a module runner that implements evaluation using `new AsyncFunction` running in the same JS runtime as the dev server. This runner is an instance of `ModuleRunner` that exposes:
 
@@ -134,6 +130,38 @@ class ModuleRunner {
 :::info
 In the v5.1 Runtime API, there were `executeUrl` and `executeEntryPoint` methods - they are now merged into a single `import` method. If you want to opt-out of the HMR support, create a runner with `hmr: false` flag.
 :::
+
+## Using custom environments
+
+A Vite dev server exposes two environments by default: a `client` environment and an `ssr` environment. The client environment is a browser environment by default and the SSR environment runs in the same Node runtime as the Vite server by default.
+
+To register a custom environment (for example to have a separate module graph for [RSC](https://react.dev/blog/2023/03/22/react-labs-what-we-have-been-working-on-march-2023#react-server-components)), you can pass a new property to the `environments` option. You can also use a plugin (See [Environment API for Plugins](./api-environment-plugins.md#registering-new-environments-using-hooks)).
+
+```ts
+import { createServer, createRunnableDevEnvironment } from 'vite'
+
+const server = await createServer({
+  /* ... */
+  environments: {
+    rsc: {
+      dev: {
+        createEnvironment(name, config) {
+          return createRunnableDevEnvironment(name, config)
+        },
+      },
+      build: {
+        outDir: '/dist/rsc',
+      },
+    },
+  },
+})
+
+// TODO: Maybe we should expose a `createNodeEnvironment` function (an environment factory for Node)?
+```
+
+Then, you can access the environment from `server.environments[environmentName]` (e.g. `server.environments.rsc`) as usual.
+
+## Using `RunnableDevEnvironment`
 
 Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
 
@@ -189,10 +217,88 @@ app.use('*', async (req, res, next) => {
 })
 ```
 
-## Environment agnostic SSR
+::: warning Accessing Module on the Server
+We do not want to encourage communication between the server and the runner. One of the problems that was exposed with `vite.ssrLoadModule` is over-reliance on the server state inside the processed modules. This makes it harder to implement runtime-agnostic SSR since user environment might have no access to server APIs. For example, this code assumes that Vite server and user code can run in the same context:
 
-::: info
-It isn't clear yet what APIs Vite should provide to cover the most common SSR use cases. We are thinking on releasing the Environment API without an official way to do environment agnostic SSR to let the ecosystem explore common patterns first.
+```ts
+const vite = createServer()
+const routes = collectRoutes()
+
+const { processRoutes } = await vite.ssrLoadModule('internal:routes-processor')
+processRoutes(routes)
+```
+
+This makes it impossible to run user code in the same way it might run in production (for example, on the edge) because the server state and user state are coupled. So instead, we recommend using virtual modules to import the state and process it inside the user module:
+
+```ts
+// this code runs on another machine or in another thread
+
+import { runner } from './ssr-module-runner.js'
+import { processRoutes } from './routes-processor.js'
+
+const { routes } = await runner.import('virtual:ssr-routes')
+processRoutes(routes)
+```
+
+Simple setups like in [SSR Guide](/guide/ssr) can still use `server.transformIndexHtml` directly if it's not expected that the server will run in a different process in production. However, if the server will run in an edge environment or a separate process, we recommend creating a virtual module to load HTML:
+
+```ts {13-21}
+function vitePluginVirtualIndexHtml(): Plugin {
+  let server: ViteDevServer | undefined
+  return {
+    name: vitePluginVirtualIndexHtml.name,
+    configureServer(server_) {
+      server = server_
+    },
+    resolveId(source) {
+      return source === 'virtual:index-html' ? '\0' + source : undefined
+    },
+    async load(id) {
+      if (id === '\0' + 'virtual:index-html') {
+        let html: string
+        if (server) {
+          this.addWatchFile('index.html')
+          html = await fs.promises.readFile('index.html', 'utf-8')
+          html = await server.transformIndexHtml('/', html)
+        } else {
+          html = await fs.promises.readFile('dist/client/index.html', 'utf-8')
+        }
+        return `export default ${JSON.stringify(html)}`
+      }
+      return
+    },
+  }
+}
+```
+
+Then in SSR entry point you can call `import('virtual:index-html')` to retrieve the processed HTML:
+
+```ts
+import { render } from 'framework'
+
+// this example uses cloudflare syntax
+export default {
+  async fetch() {
+    // during dev, it will return transformed HTML
+    // during build, it will bundle the basic index.html into a string
+    const { default: html } = await import('virtual:index-html')
+    return new Response(render(html), {
+      headers: { 'content-type': 'text/html' },
+    })
+  },
+}
+```
+
+This keeps the HTML processing server agnostic.
+
+:::
+
+## Runtime agnostic SSR
+
+:::info Running a module without relying on `RunnableDevEnvironment`
+
+The initial proposal had a `run` method on the `DevEnvironment` class that would allow consumers to invoke an import on the runner side by using the `transport` option. During our testing we found out that the API was not universal enough to start recommending it. At the moment, we are looking for feedback on [the `FetchableDevEnvironment` proposal](https://github.com/vitejs/vite/discussions/18191).
+
 :::
 
 ## Separate module graphs
@@ -303,4 +409,4 @@ export default {
 
 ## Environment agnostic code
 
-Most of the time, the current `environment` instance will be available as part of the context of the code being run so the need to access them through `server.environments` should be rare. For example, inside plugin hooks the environment is exposed as part of the `PluginContext`, so it can be accessed using `this.environment`. See [./api-environment-plugins.md] to learn about how to build environment aware plugins.
+Most of the time, the current `environment` instance will be available as part of the context of the code being run so the need to access them through `server.environments` should be rare. For example, inside plugin hooks the environment is exposed as part of the `PluginContext`, so it can be accessed using `this.environment`. See [Environment API for Plugins](./api-environment-plugins.md) to learn about how to build environment aware plugins.

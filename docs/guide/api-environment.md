@@ -19,9 +19,9 @@ Vite 6 formalizes the concept of Environments. Until Vite 5, there were two impl
 
 For a simple SPA, there is a single environment. The app will run in the user browser. During dev, except for Vite's requiring a modern browser, the environment matches closely the production runtime. In Vite 6, it would still be possible to use Vite without users knowing about environments. The usual vite config works for the default client environment in this case.
 
-In a typical server side rendered Vite app, there are two environments. The client environment is running the app in the browser, and a node environment runs the server that performs SSR. When running vite in dev mode, the server code is executed in the same Node process as the vite dev server giving a close approximation of the production environment. But an app can run servers in other JS runtimes, like [Cloudflare's workerd](https://github.com/cloudflare/workerd). And it is also common for modern apps to have more than two environments (for example, an app could be running by a browser, a node server, and an edge server). Vite 5 didn't allow for these cases to be properly represented.
+In a typical server side rendered Vite app, there are two environments. The client environment is running the app in the browser, and the node environment runs the server that performs SSR. When running Vite in dev mode, the server code is executed in the same Node process as the Vite dev server giving a close approximation of the production environment. But an app can run servers in other JS runtimes, like [Cloudflare's workerd](https://github.com/cloudflare/workerd). And it is also common for modern apps to have more than two environments (for example, an app could be running by a browser, a node server, and an edge server). Vite 5 didn't allow for these cases to be properly represented.
 
-Vite 6 allows users to configure their app during build and dev to map all of its environments. During dev, a single Vite dev server can now be used to run code in multiple different environments concurrently. The app source code is still transformed by Vite dev server. On top of the shared HTTP server, middlewares, resolved config, and plugins pipeline, the Vite server now has a set of independent dev environments. Each has is configured to match as closely as possible the production environment, and is connected to a dev runtime where the code is executed (for workerd, the server code can now run in miniflare locally). In the client, the browser imports and executes the code. In other environments, a module runner fetches and evaluates the transformed code.
+Vite 6 allows users to configure their app during build and dev to map all of its environments. During dev, a single Vite dev server can now be used to run code in multiple different environments concurrently. The app source code is still transformed by Vite dev server. On top of the shared HTTP server, middlewares, resolved config, and plugins pipeline, the Vite server now has a set of independent dev environments. Each of them is configured to match the production environment as closely as possible, and is connected to a dev runtime where the code is executed (for workerd, the server code can now run in miniflare locally). In the client, the browser imports and executes the code. In other environments, a module runner fetches and evaluates the transformed code.
 
 ![Vite Environments](../images/vite-environments.svg)
 
@@ -99,7 +99,7 @@ export default {
         outDir: '/dist/client',
       },
     }
-    server: createCustomEnvironment({
+    ssr: createCustomEnvironment({
       build: {
         outDir: '/dist/ssr',
       },
@@ -124,7 +124,7 @@ We don't recommend switching to Environment API yet. We are aiming for a good po
 
 ## Target users
 
-This guide provides the basic concepts about environments for final users. Frameworks could decide to expose environments at different levels. If you're a framework author, continue reading the [Environment API Frameworks Guide](./api-environment-frameworks) to learn about the Environment API programmatic side.
+This guide provides the basic concepts about environments for end users. Frameworks could decide to expose environments at different levels. If you're a framework author, continue reading the [Environment API Frameworks Guide](./api-environment-frameworks) to learn about the Environment API programmatic side.
 
 Plugin authors have a more consistent API available to interact with the current environment configuration. If you're building on top of Vite, the [Environment API Plugins Guide](./api-environment-plugins.md) guide describes the way extended plugin APIs available to support multiple custom environments.
 
