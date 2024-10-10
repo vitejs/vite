@@ -10,7 +10,10 @@ describe('custom environment conditions', () => {
   function getConfig() {
     return defineConfig({
       root: import.meta.dirname,
-      logLevel: 'error',
+      logLevel: 'silent',
+      server: {
+        middlewareMode: true,
+      },
       environments: {
         // no web / default
         ssr: {
@@ -145,6 +148,23 @@ describe('custom environment conditions', () => {
         "ssr": "index.default.js",
         "worker": "index.worker.js",
       }
+    `)
+  })
+
+  test('css', async () => {
+    const server = await createServer(getConfig())
+    const modJs = await server.ssrLoadModule(
+      '/fixtures/test-dep-conditions-app/entry.js',
+    )
+    const modCss = await server.ssrLoadModule(
+      '/fixtures/test-dep-conditions-app/entry.css?inline',
+    )
+    expect([modCss.default.replace(/\s+/g, ' '), modJs.default])
+      .toMatchInlineSnapshot(`
+      [
+        ".test-css { color: orange; } ",
+        "index.default.js",
+      ]
     `)
   })
 
