@@ -521,15 +521,6 @@ export async function build(
     }
   }
   const config = await resolveConfigToBuild(inlineConfig, patchConfig)
-  return buildWithResolvedConfig(config)
-}
-
-/**
- * @internal used to implement `vite build` for backward compatibility
- */
-export async function buildWithResolvedConfig(
-  config: ResolvedConfig,
-): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const environmentName = config.build.ssr ? 'ssr' : 'client'
   const environment = await config.environments[
     environmentName
@@ -538,7 +529,7 @@ export async function buildWithResolvedConfig(
   return buildEnvironment(environment)
 }
 
-export function resolveConfigToBuild(
+function resolveConfigToBuild(
   inlineConfig: InlineConfig = {},
   patchConfig?: (config: ResolvedConfig) => void,
   patchPlugins?: (resolvedPlugins: Plugin[]) => void,
@@ -1503,7 +1494,6 @@ export interface ViteBuilder {
 export interface BuilderOptions {
   sharedConfigBuild?: boolean
   sharedPlugins?: boolean
-  entireApp?: boolean
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
@@ -1519,7 +1509,6 @@ export function resolveBuilderOptions(
   return {
     sharedConfigBuild: options.sharedConfigBuild ?? false,
     sharedPlugins: options.sharedPlugins ?? false,
-    entireApp: options.entireApp ?? false,
     buildApp: options.buildApp ?? defaultBuildApp,
   }
 }
@@ -1533,17 +1522,6 @@ export async function createBuilder(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteBuilder> {
   const config = await resolveConfigToBuild(inlineConfig)
-  return createBuilderWithResolvedConfig(inlineConfig, config)
-}
-
-/**
- * Used to implement the `vite build` command without resolving the config twice
- * @internal
- */
-export async function createBuilderWithResolvedConfig(
-  inlineConfig: InlineConfig,
-  config: ResolvedConfig,
-): Promise<ViteBuilder> {
   const environments: Record<string, BuildEnvironment> = {}
 
   const builder: ViteBuilder = {
