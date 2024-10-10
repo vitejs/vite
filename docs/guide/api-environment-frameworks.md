@@ -102,20 +102,13 @@ We are using `transformRequest(url)` and `warmupRequest(url)` in the current ver
 :::
 
 Vite also exposes a `RunnableDevEnvironment`. While this is only implementable for some runtimes as it requires the runtime to be the same with the one the Vite server is running in, this works similarly with `ssrLoadModule`. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
+In dev mode the default `ssr` environment is a `RunnableDevEnvironment`.
 
 ```ts
 export class RunnableDevEnvironment extends DevEnvironment {
   public readonly runner: ModuleRunnner
 }
 
-if (isRunnableDevEnvironment(server.environments.ssr)) {
-  await server.environments.ssr.runner.import('/entry-point.js')
-}
-```
-
-In dev mode the default `ssr` environment is a `RunnableDevEnvironment` with a module runner that implements evaluation using `new AsyncFunction` running in the same JS runtime as the dev server. This runner is an instance of `ModuleRunner` that exposes:
-
-```ts
 class ModuleRunner {
   /**
    * URL to execute. Accepts file path, server path, or id relative to the root.
@@ -125,6 +118,11 @@ class ModuleRunner {
   /**
    * Other ModuleRunner methods...
    */
+}
+
+if (isRunnableDevEnvironment(server.environments.ssr)) {
+  await server.environments.ssr.runner.import('/entry-point.js')
+}
 ```
 
 :::info
