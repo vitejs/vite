@@ -1,6 +1,6 @@
-# Environment API - Runtimes
+# Environment API for Runtimes
 
-:::warning Experimental API
+:::warning Experimental
 Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Environment API. This API will be released in Vite 6 as experimental. You can already test it in the latest `vite@6.0.0-beta.x` version.
 
 Resources:
@@ -11,34 +11,14 @@ Resources:
 Please share with us your feedback as you test the proposal.
 :::
 
-## Custom environments
+## Environment factories
 
-To create custom dev or build environment instances, you can use the `dev.createEnvironment` or `build.createEnvironment` functions.
+Environments factories are intended to be implemented by Environment providers like Cloudflare, and not by end users. Environment factories return a `EnvironmentOptions` for the most common case of using the target runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
 
-```js
-export default {
-  environments: {
-    rsc: {
-      dev: {
-        createEnvironment(name, config) {
-          return createCustomDevEnvironment(name, config)
-        }
-      },
-      build: {
-        createEnvironment(name, config) {
-          return createCustomBuildEnvironment(name, config)
-        }
-        outDir: '/dist/rsc',
-      },
-    },
-  },
-}
-```
-
-Custom environments factories are intended to be implemented by Environment providers like Cloudflare, and not by final users. can expose an environment provider for the most common case of using the same runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
-
-```js
-function createWorkedEnvironment(userConfig) {
+```ts
+function createWorkedEnvironment(
+  userConfig: EnvironmentOptions,
+): EnvironmentOptions {
   return mergeConfig(
     {
       resolve: {
@@ -47,10 +27,9 @@ function createWorkedEnvironment(userConfig) {
         ],
       },
       dev: {
-        createEnvironment(name, config, { watcher }) {
+        createEnvironment(name, config) {
           return createWorkerdDevEnvironment(name, config, {
             hot: customHotChannel(),
-            watcher,
           })
         },
       },
@@ -65,7 +44,7 @@ function createWorkedEnvironment(userConfig) {
 }
 ```
 
-Then the config file can be written as
+Then the config file can be written as:
 
 ```js
 import { createWorkerdEnvironment } from 'vite-environment-workerd'
@@ -82,19 +61,25 @@ export default {
         outDir: '/dist/rsc',
       },
     }),
-  ],
+  },
 }
 ```
 
-## Creating new environments
+and frameworks can use an environment with the workerd runtime to do SSR using:
 
-A Vite dev server exposes two environments by default: a `client` environment and an `ssr` environment. The client environment is a browser environment by default, and the module runner is implemented by importing the virtual module `/@vite/client` to client apps. The SSR environment runs in the same Node runtime as the Vite server by default and allows application servers to be used to render requests during dev with full HMR support. We'll discuss later how frameworks and users can change the environment types for the default client and SSR environments, or register new environments (for example to have a separate module graph for [RSC](https://react.dev/blog/2023/03/22/react-labs-what-we-have-been-working-on-march-2023#react-server-components)).
+```js
+const ssrEnvironment = server.environments.ssr
+```
+
+## Creating a new environment factory
+
+A Vite dev server exposes two environments by default: a `client` environment and an `ssr` environment. The client environment is a browser environment by default, and the module runner is implemented by importing the virtual module `/@vite/client` to client apps. The SSR environment runs in the same Node runtime as the Vite server by default and allows application servers to be used to render requests during dev with full HMR support.
 
 The transformed source code is called a module, and the relationships between the modules processed in each environment are kept in a module graph. The transformed code for these modules is sent to the runtimes associated with each environment to be executed. When a module is evaluated in the runtime, its imported modules will be requested triggering the processing of a section of the module graph.
 
 A Vite Module Runner allows running any code by processing it with Vite plugins first. It is different from `server.ssrLoadModule` because the runner implementation is decoupled from the server. This allows library and framework authors to implement their layer of communication between the Vite server and the runner. The browser communicates with its corresponding environment using the server Web Socket and through HTTP requests. The Node Module runner can directly do function calls to process modules as it is running in the same process. Other environments could run modules connecting to a JS runtime like workerd, or a Worker Thread as Vitest does.
 
-One of the goals of this feature is to provide a customizable API to process and run code. Users can create new environment types using the exposed primitives.
+One of the goals of this feature is to provide a customizable API to process and run code. Users can create new environment factories using the exposed primitives.
 
 ```ts
 import { DevEnvironment, RemoteEnvironmentTransport } from 'vite'
@@ -119,12 +104,6 @@ function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, conte
   })
   return workerdDevEnvironment
 }
-```
-
-Then users can create a workerd environment to do SSR using:
-
-```js
-const ssrEnvironment = createWorkerdEnvironment('ssr', config)
 ```
 
 ## `ModuleRunner`
@@ -348,82 +327,6 @@ export const runner = new ModuleRunner(
 
 await runner.import('/entry.js')
 ```
-
-::: warning Accessing Module on the Server
-We do not want to encourage communication between the server and the runner. One of the problems that was exposed with `vite.ssrLoadModule` is over-reliance on the server state inside the processed modules. This makes it harder to implement runtime-agnostic SSR since user environment might have no access to server APIs. For example, this code assumes that Vite server and user code can run in the same context:
-
-```ts
-const vite = createServer()
-const routes = collectRoutes()
-
-const { processRoutes } = await vite.ssrLoadModule('internal:routes-processor')
-processRoutes(routes)
-```
-
-This makes it impossible to run user code in the same way it might run in production (for example, on the edge) because the server state and user state are coupled. So instead, we recommend using virtual modules to import the state and process it inside the user module:
-
-```ts
-// this code runs on another machine or in another thread
-
-import { runner } from './ssr-module-runner.js'
-import { processRoutes } from './routes-processor.js'
-
-const { routes } = await runner.import('virtual:ssr-routes')
-processRoutes(routes)
-```
-
-Simple setups like in [SSR Guide](/guide/ssr) can still use `server.transformIndexHtml` directly if it's not expected that the server will run in a different process in production. However, if the server will run in an edge environment or a separate process, we recommend creating a virtual module to load HTML:
-
-```ts {13-21}
-function vitePluginVirtualIndexHtml(): Plugin {
-  let server: ViteDevServer | undefined
-  return {
-    name: vitePluginVirtualIndexHtml.name,
-    configureServer(server_) {
-      server = server_
-    },
-    resolveId(source) {
-      return source === 'virtual:index-html' ? '\0' + source : undefined
-    },
-    async load(id) {
-      if (id === '\0' + 'virtual:index-html') {
-        let html: string
-        if (server) {
-          this.addWatchFile('index.html')
-          html = await fs.promises.readFile('index.html', 'utf-8')
-          html = await server.transformIndexHtml('/', html)
-        } else {
-          html = await fs.promises.readFile('dist/client/index.html', 'utf-8')
-        }
-        return `export default ${JSON.stringify(html)}`
-      }
-      return
-    },
-  }
-}
-```
-
-Then in SSR entry point you can call `import('virtual:index-html')` to retrieve the processed HTML:
-
-```ts
-import { render } from 'framework'
-
-// this example uses cloudflare syntax
-export default {
-  async fetch() {
-    // during dev, it will return transformed HTML
-    // during build, it will bundle the basic index.html into a string
-    const { default: html } = await import('virtual:index-html')
-    return new Response(render(html), {
-      headers: { 'content-type': 'text/html' },
-    })
-  },
-}
-```
-
-This keeps the HTML processing server agnostic.
-
-:::
 
 ## ModuleRunnerHMRConnection
 
