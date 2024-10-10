@@ -624,7 +624,6 @@ export function resolveDevEnvironmentOptions(
 
 function resolveEnvironmentOptions(
   options: EnvironmentOptions,
-  resolvedRoot: string,
   alias: Alias[],
   preserveSymlinks: boolean,
   logger: Logger,
@@ -655,7 +654,6 @@ function resolveEnvironmentOptions(
     build: resolveBuildEnvironmentOptions(
       options.build ?? {},
       logger,
-      resolvedRoot,
       consumer,
     ),
   }
@@ -987,7 +985,6 @@ export async function resolveConfig(
   for (const environmentName of Object.keys(config.environments)) {
     resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
       config.environments[environmentName],
-      resolvedRoot,
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
       logger,
@@ -1014,7 +1011,6 @@ export async function resolveConfig(
   const resolvedBuildOptions = resolveBuildEnvironmentOptions(
     config.build ?? {},
     logger,
-    resolvedRoot,
     undefined,
   )
 
