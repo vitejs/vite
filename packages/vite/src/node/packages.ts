@@ -226,7 +226,7 @@ export function loadPackageData(pkgPath: string): PackageData {
   return pkg
 }
 
-export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
+export function watchPackageDataPlugin(): Plugin {
   // a list of files to watch before the plugin is ready
   const watchQueue = new Set<string>()
   const watchedDirs = new Set<string>()
@@ -236,18 +236,18 @@ export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
   }
   let watchFile = watchFileStub
 
-  const setPackageData = packageCache.set.bind(packageCache)
-  packageCache.set = (id, pkg) => {
-    if (!isInNodeModules(pkg.dir) && !watchedDirs.has(pkg.dir)) {
-      watchedDirs.add(pkg.dir)
-      watchFile(path.join(pkg.dir, 'package.json'))
-    }
-    return setPackageData(id, pkg)
-  }
-
   return {
     name: 'vite:watch-package-data',
     buildStart() {
+      const { packageCache } = this.environment.config
+      const setPackageData = packageCache.set.bind(packageCache)
+      packageCache.set = function (id, pkg) {
+        if (!isInNodeModules(pkg.dir) && !watchedDirs.has(pkg.dir)) {
+          watchedDirs.add(pkg.dir)
+          watchFile(path.join(pkg.dir, 'package.json'))
+        }
+        return setPackageData(id, pkg)
+      }
       watchFile = this.addWatchFile.bind(this)
       watchQueue.forEach(watchFile)
       watchQueue.clear()
@@ -257,6 +257,7 @@ export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
     },
     watchChange(id) {
       if (id.endsWith('/package.json')) {
+        const { packageCache } = this.environment.config
         invalidatePackageData(packageCache, path.normalize(id))
       }
     },

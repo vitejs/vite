@@ -47,7 +47,7 @@ export async function resolvePlugins(
     depOptimizationEnabled ? optimizedDepsPlugin() : null,
     isBuild ? metadataPlugin() : null,
     // TODO
-    !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
+    !isWorker ? watchPackageDataPlugin() : null,
     preAliasPlugin(config),
     aliasPlugin({
       entries: config.resolve.alias,
