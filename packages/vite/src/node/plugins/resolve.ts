@@ -1022,7 +1022,7 @@ export function resolvePackageEntry(
 ): string | undefined {
   const { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id)
 
-  const cached = getResolvedCache('.', options)
+  const cached = getResolvedCache('.', !!options.webCompatible)
   if (cached) {
     return cached + postfix
   }
@@ -1094,7 +1094,7 @@ export function resolvePackageEntry(
             resolvedEntryPoint,
           )}${postfix !== '' ? ` (postfix: ${postfix})` : ''}`,
         )
-        setResolvedCache('.', resolvedEntryPoint, options)
+        setResolvedCache('.', resolvedEntryPoint, !!options.webCompatible)
         return resolvedEntryPoint + postfix
       }
     }
@@ -1151,10 +1151,16 @@ function resolveExportsOrImports(
 
 function resolveDeepImport(
   id: string,
-  { setResolvedCache, getResolvedCache, dir, data }: PackageData,
+  {
+    webResolvedImports,
+    setResolvedCache,
+    getResolvedCache,
+    dir,
+    data,
+  }: PackageData,
   options: InternalResolveOptions,
 ): string | undefined {
-  const cache = getResolvedCache(id, options)
+  const cache = getResolvedCache(id, !!options.webCompatible)
   if (cache) {
     return cache
   }
@@ -1194,8 +1200,7 @@ function resolveDeepImport(
     if (mapped) {
       relativeId = mapped + postfix
     } else if (mapped === false) {
-      setResolvedCache(id, browserExternalId, options)
-      return browserExternalId
+      return (webResolvedImports[id] = browserExternalId)
     }
   }
 
@@ -1209,7 +1214,7 @@ function resolveDeepImport(
       debug?.(
         `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`,
       )
-      setResolvedCache(id, resolved, options)
+      setResolvedCache(id, resolved, !!options.webCompatible)
       return resolved
     }
   }
