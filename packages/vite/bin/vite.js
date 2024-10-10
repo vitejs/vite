@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { performance } from 'node:perf_hooks'
+import module from 'node:module'
 
 if (!import.meta.url.includes('node_modules')) {
   try {
@@ -41,6 +42,9 @@ if (debugIndex > 0) {
 }
 
 function start() {
+  try {
+    module.enableCompileCache?.()
+  } catch {}
   return import('../dist/node/cli.js')
 }
 
