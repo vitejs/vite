@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, onTestFinished, test } from 'vitest'
 import type { RollupOutput } from 'rollup'
 import { createServer } from '../server'
 import { defineConfig } from '../config'
@@ -10,7 +10,7 @@ describe('custom environment conditions', () => {
   function getConfig() {
     return defineConfig({
       root: import.meta.dirname,
-      logLevel: 'silent',
+      logLevel: 'error',
       server: {
         middlewareMode: true,
       },
@@ -121,6 +121,8 @@ describe('custom environment conditions', () => {
 
   test('dev', async () => {
     const server = await createServer(getConfig())
+    onTestFinished(() => server.close())
+
     const results: Record<string, unknown> = {}
     for (const key of [
       'ssr',
@@ -153,6 +155,8 @@ describe('custom environment conditions', () => {
 
   test('css', async () => {
     const server = await createServer(getConfig())
+    onTestFinished(() => server.close())
+
     const modJs = await server.ssrLoadModule(
       '/fixtures/test-dep-conditions-app/entry.js',
     )
