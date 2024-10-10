@@ -46,7 +46,6 @@ export async function resolvePlugins(
   return [
     depOptimizationEnabled ? optimizedDepsPlugin() : null,
     isBuild ? metadataPlugin() : null,
-    // TODO
     !isWorker ? watchPackageDataPlugin() : null,
     preAliasPlugin(config),
     aliasPlugin({
