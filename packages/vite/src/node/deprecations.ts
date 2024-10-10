@@ -2,7 +2,7 @@ import colors from 'picocolors'
 import type { FutureOptions, ResolvedConfig } from './config'
 
 // TODO: switch to production docs URL
-const docsURL = 'https://deploy-preview-16471--vite-docs-main.netlify.app'
+const docsURL = 'https://main.vite.dev'
 
 const deprecationCode = {
   removePluginHookSsrArgument: 'changes/this-environment-in-hooks',
