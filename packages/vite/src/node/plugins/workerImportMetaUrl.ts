@@ -113,8 +113,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     root: config.root,
     isProduction: config.isProduction,
     isBuild: config.command === 'build',
-    // TODO
-    packageCache: config.packageCache,
     asSrc: true,
   }
 
@@ -158,7 +156,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let file: string | undefined
           if (url[0] === '.') {
             file = path.resolve(path.dirname(id), url)
-            file = tryFsResolve(file, fsResolveOptions) ?? file
+            const resolveOptions = {
+              ...fsResolveOptions,
+              packageCache: this.environment.config.packageCache,
+            }
+            file = tryFsResolve(file, resolveOptions) ?? file
           } else {
             workerResolver ??= createBackCompatIdResolver(config, {
               extensions: [],
