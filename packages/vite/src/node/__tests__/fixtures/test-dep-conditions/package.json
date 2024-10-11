@@ -11,6 +11,10 @@
       "worker": "./index.worker.js",
       "browser": "./index.browser.js",
       "default": "./index.default.js"
+    },
+    "./with-module": {
+      "module": "./dir/index.module.js",
+      "default": "./dir/index.default.js"
     }
   }
 }
