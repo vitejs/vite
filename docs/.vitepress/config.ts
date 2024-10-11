@@ -328,7 +328,7 @@ export default defineConfig({
               link: '/guide/api-environment',
             },
             {
-              text: '`Environment` instances',
+              text: 'Environment instances',
               link: '/guide/api-environment-instances',
             },
             {
