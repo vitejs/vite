@@ -13,7 +13,7 @@ Please share with us your feedback as you test the proposal.
 
 ## Environments and frameworks
 
-The implicit `ssr` environment and other non-client environments use a `RunnableDevEnvironment` by default during dev. While this requires the runtime to be the same with the one the Vite server is running in, this works similarly with `ssrLoadModule` and allows frameworks for to migrate and enable HMR during for their SSR dev story. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
+The implicit `ssr` environment and other non-client environments use a `RunnableDevEnvironment` by default during dev. While this requires the runtime to be the same with the one the Vite server is running in, this works similarly with `ssrLoadModule` and allows frameworks to migrate and enable HMR for their SSR dev story. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
 
 ```ts
 export class RunnableDevEnvironment extends DevEnvironment {
