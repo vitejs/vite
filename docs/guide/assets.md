@@ -109,7 +109,6 @@ The directory defaults to `<root>/public`, but can be configured via the [`publi
 Note that:
 
 - You should always reference `public` assets using root absolute path - for example, `public/icon.png` should be referenced in source code as `/icon.png`.
-- Assets in `public` cannot be imported from JavaScript, but you can use the `fetch()` function to retrieve them.
 
 ## new URL(url, import.meta.url)
 
