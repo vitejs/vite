@@ -121,7 +121,7 @@ export function createHandler(input) {
 }
 ```
 
-If your code can run in the same runtime with the user modules (= does not rely on Node.js specific APIs), you can use a virtual module so that you don't need to access the value from the code using the Vite's APIs.
+If your code can run in the same runtime as the user modules (i.e., it does not rely on Node.js-specific APIs), you can use a virtual module. This approach eliminates the need to access the value from the code using Vite's APIs.
 
 ```ts
 // code using the Vite's APIs
@@ -195,7 +195,7 @@ function vitePluginVirtualIndexHtml(): Plugin {
 }
 ```
 
-If your code requires Node.js APIs, you can use `hot.send` to communicate with the code that uses Vite's APIs from the user modules. Note that you might not achieve the same thing after build.
+If your code requires Node.js APIs, you can use `hot.send` to communicate with the code that uses Vite's APIs from the user modules. However, be aware that this approach may not work the same way after the build process.
 
 ```ts
 // code using the Vite's APIs
