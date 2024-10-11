@@ -143,8 +143,8 @@ const input = {}
 // check for each environment factories what they provide
 if (ssrEnvironment instanceof RunnableDevEnvironment) {
   ssrEnvironment.runner.import('virtual:entrypoint')
-} else if (ssrEnvironment instanceof CloudflareDevEnvironment) {
-  ssrEnvironment.evaluate('virtual:entrypoint')
+} else if (ssrEnvironment instanceof CustomDevEnvironment) {
+  ssrEnvironment.runEntrypoint('virtual:entrypoint')
 } else {
   throw new Error(`Unsupported runtime for ${ssrEnvironment.name}`)
 }
@@ -217,8 +217,8 @@ const input = {}
 // check for each environment factories what they provide
 if (ssrEnvironment instanceof RunnableDevEnvironment) {
   ssrEnvironment.runner.import('virtual:entrypoint')
-} else if (ssrEnvironment instanceof CloudflareDevEnvironment) {
-  ssrEnvironment.evaluate('virtual:entrypoint')
+} else if (ssrEnvironment instanceof CustomDevEnvironment) {
+  ssrEnvironment.runEntrypoint('virtual:entrypoint')
 } else {
   throw new Error(`Unsupported runtime for ${ssrEnvironment.name}`)
 }
