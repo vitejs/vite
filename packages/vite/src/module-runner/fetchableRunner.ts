@@ -18,8 +18,7 @@ export function createFetchableModuleRunner(
 ): ModuleRunner {
   const { serverURL, environmentName } = options
   // eslint-disable-next-line n/no-unsupported-features/node-builtins
-  const fetch = globalThis.fetch
-  if (!fetch) {
+  if (typeof fetch === 'undefined') {
     throw new TypeError('fetch is not available in this environment')
   }
   return new ModuleRunner(
