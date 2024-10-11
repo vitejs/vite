@@ -16,6 +16,8 @@ export const VALID_ID_PREFIX = `/@id/`
  */
 export const NULL_BYTE_PLACEHOLDER = `__x00__`
 
+export const ENVIRONMENT_URL_PUBLIC_PATH = '/@vite/import'
+
 export let SOURCEMAPPING_URL = 'sourceMa'
 SOURCEMAPPING_URL += 'ppingURL'
 

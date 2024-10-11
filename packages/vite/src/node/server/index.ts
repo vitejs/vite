@@ -95,6 +95,7 @@ import { transformRequest } from './transformRequest'
 import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import { warmupFiles } from './warmup'
 import type { DevEnvironment } from './environment'
+import { environmentTransformMiddleware } from './middlewares/environmentTransform'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -829,6 +830,7 @@ export async function _createServer(
   }
 
   middlewares.use(cachedTransformMiddleware(server))
+  middlewares.use(environmentTransformMiddleware(server))
 
   // proxy
   const { proxy } = serverConfig

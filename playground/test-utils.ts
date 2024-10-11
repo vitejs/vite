@@ -47,6 +47,7 @@ export const ports = {
   'css/dynamic-import': 5007,
   'css/lightningcss-proxy': 5008,
   'backend-integration': 5009,
+  'runner-fetchable': 5010, // not imported but used in `server-fetchable-runner.spec.ts`
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
