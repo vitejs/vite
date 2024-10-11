@@ -1,5 +1,5 @@
-import { ENVIRONMENT_URL_PUBLIC_PATH } from '../shared/constants'
 import { ESModulesEvaluator } from './esmEvaluator'
+import { FetchTransport } from './fetchTransport'
 import { ModuleRunner } from './runner'
 import type { ModuleRunnerOptions } from './types'
 
@@ -25,33 +25,7 @@ export function createFetchableModuleRunner(
   return new ModuleRunner(
     {
       root: options.root,
-      transport: {
-        async fetchModule(moduleUrl, importer, { cached, startOffset } = {}) {
-          const serverUrl = new URL(
-            `${ENVIRONMENT_URL_PUBLIC_PATH}/${environmentName}`,
-            serverURL,
-          )
-          serverUrl.searchParams.set('moduleUrl', encodeURIComponent(moduleUrl))
-          if (importer) {
-            serverUrl.searchParams.set('importer', encodeURIComponent(importer))
-          }
-          // eslint-disable-next-line n/no-unsupported-features/node-builtins
-          const request = new Request(serverUrl, {
-            headers: {
-              'x-vite-cache': String(cached ?? false),
-              'x-vite-start-offset': String(startOffset ?? ''),
-            },
-          })
-          const response = await fetch(request)
-          if (response.status !== 200) {
-            // TODO: better error?
-            throw new Error(
-              `Failed to fetch module ${moduleUrl}, responded with ${response.status} (${response.statusText})`,
-            )
-          }
-          return await response.json()
-        },
-      },
+      transport: new FetchTransport(environmentName, serverURL),
       hmr: options.hmr,
     },
     new ESModulesEvaluator(),
