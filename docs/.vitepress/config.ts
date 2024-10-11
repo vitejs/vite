@@ -328,8 +328,8 @@ export default defineConfig({
               link: '/guide/api-environment',
             },
             {
-              text: 'JavaScript',
-              link: '/guide/api-environment-javascript',
+              text: 'Environment instances',
+              link: '/guide/api-environment-instances',
             },
             {
               text: 'Plugins',

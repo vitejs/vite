@@ -1,4 +1,4 @@
-# Environment API for Frameworks
+# Using `Environment` instances
 
 :::warning Experimental
 Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Environment API. This API will be released in Vite 6 as experimental. You can already test it in the latest `vite@6.0.0-beta.x` version.
@@ -11,19 +11,24 @@ Resources:
 Please share with us your feedback as you test the proposal.
 :::
 
-## Environment JavasScript API
+## Accessing the environments
 
 During dev, the available environments in a dev server can be accessed using `server.environments`:
 
 ```js
+// create the server, or get it from the configureServer hook
+const server = await createServer(/* options */)
+
 const environment = server.environments.client
-
 environment.transformRequest(url)
-
 console.log(server.environments.ssr.moduleGraph)
 ```
 
-A dev environment is an instance of the `DevEnvironment` class:
+You can also access the current environment from plugins. See the [Environment API for Plugins](./api-environment-plugins.md#accessing-the-current-environment-in-hooks) for more details.
+
+## `DevEnvironment` class
+
+During dev, each environment is an instance of the `DevEnvironment` class:
 
 ```ts
 class DevEnvironment {
@@ -89,13 +94,7 @@ interface TransformResult {
 }
 ```
 
-:::warning
-The `runner` is evaluated eagerly when it's accessed for the first time. Beware that Vite enables source map support when the `runner` is created by calling `process.setSourceMapsEnabled` or by overriding `Error.prepareStackTrace` if it's not available.
-:::
-
 An environment instance in the Vite server lets you process a URL using the `environment.transformRequest(url)` method. This function will use the plugin pipeline to resolve the `url` to a module `id`, load it (reading the file from the file system or through a plugin that implements a virtual module), and then transform the code. While transforming the module, imports and other metadata will be recorded in the environment module graph by creating or updating the corresponding module node. When processing is done, the transform result is also stored in the module.
-
-But the environment instance can't execute the code itself, as the runtime where the module will be run could be different from the one the Vite server is running in. This is the case for the browser environment. When a html is loaded in the browser, its scripts are executed triggering the evaluation of the entire static module graph. Each imported URL generates a request to the Vite server to get the module code, which ends up handled by the Transform Middleware by calling `server.environments.client.transformRequest(url)`. The connection between the environment instance in the server and the module runner in the browser is carried out through HTTP in this case.
 
 :::info transformRequest naming
 We are using `transformRequest(url)` and `warmupRequest(url)` in the current version of this proposal so it is easier to discuss and understand for users used to Vite's current API. Before releasing, we can take the opportunity to review these names too. For example, it could be named `environment.processModule(url)` or `environment.loadModule(url)` taking a page from Rollup's `context.load(id)` in plugin hooks. For the moment, we think keeping the current names and delaying this discussion is better.
