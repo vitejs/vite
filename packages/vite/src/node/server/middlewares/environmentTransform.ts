@@ -52,7 +52,7 @@ export function environmentTransformMiddleware(
     // }
 
     try {
-      const importer = searchParams.get('importer') || ''
+      const importer = searchParams.get('importer') || undefined
       const cached = req.headers['x-vite-cache'] === 'true'
       const startOffset = req.headers['x-vite-start-offset']
         ? Number(req.headers['x-vite-start-offset'])
