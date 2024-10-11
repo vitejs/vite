@@ -17,7 +17,7 @@ The implicit `ssr` environment and other non-client environments use a `Runnable
 
 ```ts
 export class RunnableDevEnvironment extends DevEnvironment {
-  public readonly runner: ModuleRunnner
+  public readonly runner: ModuleRunner
 }
 
 class ModuleRunner {
@@ -35,6 +35,10 @@ if (isRunnableDevEnvironment(server.environments.ssr)) {
   await server.environments.ssr.runner.import('/entry-point.js')
 }
 ```
+
+:::warning
+The `runner` is evaluated eagerly when it's accessed for the first time. Beware that Vite enables source map support when the `runner` is created by calling `process.setSourceMapsEnabled` or by overriding `Error.prepareStackTrace` if it's not available.
+:::
 
 ## Default `RunnableDevEnvironment`
 

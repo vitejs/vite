@@ -87,7 +87,7 @@ The `ssr` top level property has many options in common with `EnvironmentOptions
 
 ## Custom environment instances
 
-Low level configuration APIs are available so environment providers can offer utilities to configure and setup its connected module runners.
+Low level configuration APIs are available so runtime providers can provide environments for their runtimes.
 
 ```js
 import { createCustomEnvironment } from 'vite-environment-provider'
@@ -124,8 +124,10 @@ We don't recommend switching to Environment API yet. We are aiming for a good po
 
 ## Target users
 
-This guide provides the basic concepts about environments for end users. Frameworks could decide to expose environments at different levels. If you're a framework author, continue reading the [Environment API Frameworks Guide](./api-environment-frameworks) to learn about the Environment API programmatic side.
+This guide provides the basic concepts about environments for end users.
 
 Plugin authors have a more consistent API available to interact with the current environment configuration. If you're building on top of Vite, the [Environment API Plugins Guide](./api-environment-plugins.md) guide describes the way extended plugin APIs available to support multiple custom environments.
+
+Frameworks could decide to expose environments at different levels. If you're a framework author, continue reading the [Environment API Frameworks Guide](./api-environment-frameworks) to learn about the Environment API programmatic side.
 
 For Runtime providers, the [Environment API Runtimes Guide](./api-environment-runtimes.md) explains how to offer custom environment to be consumed by frameworks and users.

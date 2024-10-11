@@ -29,7 +29,7 @@ A plugin could use the `environment` instance to change how a module is processe
 
 ## Registering new environments using hooks
 
-Plugins can add new environments in the `config` hook:
+Plugins can add new environments in the `config` hook (for example to have a separate module graph for [RSC](https://react.dev/blog/2023/03/22/react-labs-what-we-have-been-working-on-march-2023#react-server-components)):
 
 ```ts
   config(config: UserConfig) {
