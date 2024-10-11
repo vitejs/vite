@@ -13,7 +13,7 @@ Please share with us your feedback as you test the proposal.
 
 ## Environments and frameworks
 
-The implicit `ssr` environment and other non-client environments use a `RunnableDevEnvironment` by default during dev. While this is only implementable for some runtimes as it requires the runtime to be the same with the one the Vite server is running in, this works similarly with `ssrLoadModule` and allows frameworks for to migrate and enable HMR during for their SSR dev story. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
+The implicit `ssr` environment and other non-client environments use a `RunnableDevEnvironment` by default during dev. While this requires the runtime to be the same with the one the Vite server is running in, this works similarly with `ssrLoadModule` and allows frameworks for to migrate and enable HMR during for their SSR dev story. You can guard any runnable environment with an `isRunnableDevEnvironment` function.
 
 ```ts
 export class RunnableDevEnvironment extends DevEnvironment {
@@ -86,30 +86,85 @@ app.use('*', async (req, res, next) => {
 })
 ```
 
-::: warning Accessing Module on the Server
-We do not want to encourage communication between the server and the runner. One of the problems that was exposed with `vite.ssrLoadModule` is over-reliance on the server state inside the processed modules. This makes it harder to implement runtime-agnostic SSR since user environment might have no access to server APIs. For example, this code assumes that Vite server and user code can run in the same context:
+## Runtime agnostic SSR
+
+Since the `RunnableDevEnvironment` can only be used to run the code in the same runtime as the Vite server, it requires a runtime that can run the Vite Server (a runtime that is compatible with Node.js). This means that you will need to use the raw `DevEnvironment` to make it runtime agnostic.
+
+:::info `FetchableDevEnvironment` proposal
+
+The initial proposal had a `run` method on the `DevEnvironment` class that would allow consumers to invoke an import on the runner side by using the `transport` option. During our testing we found out that the API was not universal enough to start recommending it. At the moment, we are looking for feedback on [the `FetchableDevEnvironment` proposal](https://github.com/vitejs/vite/discussions/18191).
+
+:::
+
+`RunnableDevEnvironment` has a `runner.import` function that returns the value of the module. But this function is not available in the raw `DevEnvironment` and requires the code using the Vite's APIs and the user modules to be decoupled.
+
+For example, the following example uses the value of the user module from the code using the Vite's APIs:
 
 ```ts
-const vite = createServer()
-const routes = collectRoutes()
+// code using the Vite's APIs
+import { createServer } from 'vite'
 
-const { processRoutes } = await vite.ssrLoadModule('internal:routes-processor')
-processRoutes(routes)
+const server = createServer()
+const ssrEnvironment = server.environment.ssr
+const input = {}
+
+const { createHandler } = await ssrEnvironment.runner.import('./entrypoint.js')
+const handler = createHandler(input)
+const response = handler(new Request('/'))
+
+// -------------------------------------
+// ./entrypoint.js
+export function createHandler(input) {
+  return function handler(req) {
+    return new Response('hello')
+  }
+}
 ```
 
-This makes it impossible to run user code in the same way it might run in production (for example, on the edge) because the server state and user state are coupled. So instead, we recommend using virtual modules to import the state and process it inside the user module:
+If your code can run in the same runtime with the user modules (= does not rely on Node.js specific APIs), you can use a virtual module so that you don't need to access the value from the code using the Vite's APIs.
 
 ```ts
-// this code runs on another machine or in another thread
+// code using the Vite's APIs
+import { createServer } from 'vite'
 
-import { runner } from './ssr-module-runner.js'
-import { processRoutes } from './routes-processor.js'
+const server = createServer({
+  plugins: [
+    // a plugin that handles `virtual:entrypoint`
+    {
+      name: 'virtual-module',
+      /* plugin implementation */
+    },
+  ],
+})
+const ssrEnvironment = server.environment.ssr
+const input = {}
 
-const { routes } = await runner.import('virtual:ssr-routes')
-processRoutes(routes)
+// use exposed functions by each environment factories that runs the code
+// check for each environment factories what they provide
+if (ssrEnvironment instanceof RunnableDevEnvironment) {
+  ssrEnvironment.runner.import('virtual:entrypoint')
+} else if (ssrEnvironment instanceof CloudflareDevEnvironment) {
+  ssrEnvironment.evaluate('virtual:entrypoint')
+} else {
+  throw new Error(`Unsupported runtime for ${ssrEnvironment.name}`)
+}
+
+// -------------------------------------
+// virtual:entrypoint
+const { createHandler } = await import('./entrypoint.js')
+const handler = createHandler(input)
+const response = handler(new Request('/'))
+
+// -------------------------------------
+// ./entrypoint.js
+export function createHandler(input) {
+  return function handler(req) {
+    return new Response('hello')
+  }
+}
 ```
 
-Simple setups like in [SSR Guide](/guide/ssr) can still use `server.transformIndexHtml` directly if it's not expected that the server will run in a different process in production. However, if the server will run in an edge environment or a separate process, we recommend creating a virtual module to load HTML:
+For example, to call `transformIndexHtml` on the user module, the following plugin can be used:
 
 ```ts {13-21}
 function vitePluginVirtualIndexHtml(): Plugin {
@@ -140,35 +195,68 @@ function vitePluginVirtualIndexHtml(): Plugin {
 }
 ```
 
-Then in SSR entry point you can call `import('virtual:index-html')` to retrieve the processed HTML:
+If your code requires Node.js APIs, you can use `hot.send` to communicate with the code that uses Vite's APIs from the user modules. Note that you might not achieve the same thing after build.
 
 ```ts
-import { render } from 'framework'
+// code using the Vite's APIs
+import { createServer } from 'vite'
 
-// this example uses cloudflare syntax
-export default {
-  async fetch() {
-    // during dev, it will return transformed HTML
-    // during build, it will bundle the basic index.html into a string
-    const { default: html } = await import('virtual:index-html')
-    return new Response(render(html), {
-      headers: { 'content-type': 'text/html' },
-    })
-  },
+const server = createServer({
+  plugins: [
+    // a plugin that handles `virtual:entrypoint`
+    {
+      name: 'virtual-module',
+      /* plugin implementation */
+    },
+  ],
+})
+const ssrEnvironment = server.environment.ssr
+const input = {}
+
+// use exposed functions by each environment factories that runs the code
+// check for each environment factories what they provide
+if (ssrEnvironment instanceof RunnableDevEnvironment) {
+  ssrEnvironment.runner.import('virtual:entrypoint')
+} else if (ssrEnvironment instanceof CloudflareDevEnvironment) {
+  ssrEnvironment.evaluate('virtual:entrypoint')
+} else {
+  throw new Error(`Unsupported runtime for ${ssrEnvironment.name}`)
+}
+
+const req = new Request('/')
+
+const uniqueId = 'a-unique-id'
+ssrEnvironment.send('request', serialize({ req, uniqueId }))
+const response = await new Promise((resolve) => {
+  ssrEnvironment.on('response', (data) => {
+    data = deserialize(data)
+    if (data.uniqueId === uniqueId) {
+      resolve(data.res)
+    }
+  })
+})
+
+// -------------------------------------
+// virtual:entrypoint
+const { createHandler } = await import('./entrypoint.js')
+const handler = createHandler(input)
+
+import.meta.hot.on('request', (data) => {
+  const { req, uniqueId } = deserialize(data)
+  const res = handler(req)
+  import.meta.hot.send('response', serialize({ res: res, uniqueId }))
+})
+
+const response = handler(new Request('/'))
+
+// -------------------------------------
+// ./entrypoint.js
+export function createHandler(input) {
+  return function handler(req) {
+    return new Response('hello')
+  }
 }
 ```
-
-This keeps the HTML processing server agnostic.
-
-:::
-
-## Runtime agnostic SSR
-
-:::info Running a module without relying on `RunnableDevEnvironment`
-
-The initial proposal had a `run` method on the `DevEnvironment` class that would allow consumers to invoke an import on the runner side by using the `transport` option. During our testing we found out that the API was not universal enough to start recommending it. At the moment, we are looking for feedback on [the `FetchableDevEnvironment` proposal](https://github.com/vitejs/vite/discussions/18191).
-
-:::
 
 ## Environments during build
 
