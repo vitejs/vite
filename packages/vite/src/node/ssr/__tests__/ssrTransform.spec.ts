@@ -906,11 +906,27 @@ console.log(foo);
 import foo from "foo"`,
     ),
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_identity__ = v => v;
-    #!/usr/bin/env node
+    "#!/usr/bin/env node
+    const __vite_ssr_identity__ = v => v;
     const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["default"]});
     console.log(__vite_ssr_identity__(__vite_ssr_import_0__.default));
     "
+  `)
+})
+
+test('indentity function helper injected after hashbang', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `#!/usr/bin/env node
+import { foo } from "foo"
+foo()`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "#!/usr/bin/env node
+    const __vite_ssr_identity__ = v => v;
+    const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["foo"]});
+
+    __vite_ssr_identity__(__vite_ssr_import_0__.foo)()"
   `)
 })
 

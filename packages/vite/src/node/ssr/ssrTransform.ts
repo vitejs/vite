@@ -360,7 +360,7 @@ async function ssrTransformScript(
   })
 
   if (injectIdentityFunction) {
-    s.prepend(`const ${ssrIdentityFunction} = v => v;\n`)
+    s.prependLeft(hoistIndex, `const ${ssrIdentityFunction} = v => v;\n`)
   }
 
   let map = s.generateMap({ hires: 'boundary' })
