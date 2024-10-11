@@ -2,13 +2,14 @@ import path from 'node:path'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import type { RollupOutput } from 'rollup'
 import { createServer } from '../server'
-import { defineConfig } from '../config'
+import type { InlineConfig } from '../config'
 import { createBuilder } from '../build'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
 
 describe('custom environment conditions', () => {
-  function getConfig() {
-    return defineConfig({
+  function getConfig(): InlineConfig {
+    return {
+      configFile: false,
       root: import.meta.dirname,
       logLevel: 'error',
       server: {
@@ -116,7 +117,7 @@ describe('custom environment conditions', () => {
           },
         },
       },
-    })
+    }
   }
 
   test('dev', async () => {
