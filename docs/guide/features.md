@@ -2,7 +2,7 @@
 
 At the very basic level, developing using Vite is not that different from using a static file server. However, Vite provides many enhancements over native ESM imports to support various features that are typically seen in bundler-based setups.
 
-## NPM Dependency Resolving and Pre-Bundling
+## npm Dependency Resolving and Pre-Bundling
 
 Native ES imports do not support bare module imports like the following:
 
