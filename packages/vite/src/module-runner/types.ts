@@ -5,6 +5,7 @@ import type {
   DefineImportMetadata,
   SSRImportMetadata,
 } from '../shared/ssrTransform'
+import type { CreateRunnerTransport } from '../shared/runnerTransport'
 import type { EvaluatedModuleNode, EvaluatedModules } from './evaluatedModules'
 import type {
   ssrDynamicImportKey,
@@ -14,7 +15,6 @@ import type {
   ssrModuleExportsKey,
 } from './constants'
 import type { InterceptorOptions } from './sourcemap/interceptor'
-import type { RunnerTransport } from './runnerTransport'
 
 export type { DefineImportMetadata, SSRImportMetadata }
 
@@ -138,10 +138,6 @@ export interface FetchFunctionOptions {
 
 export interface ModuleRunnerHmr {
   /**
-   * Configure how HMR communicates between the client and the server.
-   */
-  connection: ModuleRunnerHMRConnection
-  /**
    * Configure HMR logger.
    */
   logger?: false | HMRLogger
@@ -155,7 +151,7 @@ export interface ModuleRunnerOptions {
   /**
    * A set of methods to communicate with the server.
    */
-  transport: RunnerTransport
+  createTransport: CreateRunnerTransport
   /**
    * Configure how source maps are resolved. Prefers `node` if `process.setSourceMapsEnabled` is available.
    * Otherwise it will use `prepareStackTrace` by default which overrides `Error.prepareStackTrace` method.

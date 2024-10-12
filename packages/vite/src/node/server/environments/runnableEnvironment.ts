@@ -13,21 +13,25 @@ export function createRunnableDevEnvironment(
   config: ResolvedConfig,
   context: RunnableDevEnvironmentContext = {},
 ): DevEnvironment {
+  if (context.transport == null) {
+    context.transport = createServerHotChannel()
+  }
   if (context.hot == null) {
-    context.hot = createServerHotChannel()
+    context.hot = true
   }
 
   return new RunnableDevEnvironment(name, config, context)
 }
 
 export interface RunnableDevEnvironmentContext
-  extends Omit<DevEnvironmentContext, 'hot'> {
+  extends Omit<DevEnvironmentContext, 'hot' | 'transport'> {
   runner?: (
     environment: RunnableDevEnvironment,
     options?: ServerModuleRunnerOptions,
   ) => ModuleRunner
   runnerOptions?: ServerModuleRunnerOptions
-  hot?: false | HotChannel
+  hot?: boolean
+  transport?: Pick<HotChannel, 'send' | 'on'> & Partial<HotChannel>
 }
 
 export function isRunnableDevEnvironment(

@@ -2,6 +2,10 @@ import type { ViteHotContext } from 'types/hot'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
+import {
+  type RunnerTransport,
+  createRunnerTransport,
+} from '../shared/runnerTransport'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
 import type {
@@ -29,7 +33,6 @@ import {
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
-import type { RunnerTransport } from './runnerTransport'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -53,6 +56,7 @@ export class ModuleRunner {
     string,
     Promise<EvaluatedModuleNode>
   >()
+  private readonly hmrHandlerForTransport?: (payload: any) => void
 
   private closed = false
 
@@ -64,17 +68,23 @@ export class ModuleRunner {
     const root = this.options.root
     this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
-    this.transport = options.transport
+    this.transport = createRunnerTransport(options.createTransport)
     if (typeof options.hmr === 'object') {
-      this.hmrClient = new HMRClient(
+      const resolvedHmrLogger =
         options.hmr.logger === false
           ? silentConsole
-          : options.hmr.logger || hmrLogger,
-        options.hmr.connection,
+          : options.hmr.logger || hmrLogger
+      this.hmrClient = new HMRClient(
+        resolvedHmrLogger,
+        this.transport,
         ({ acceptedPath }) => this.import(acceptedPath),
       )
-      options.hmr.connection.onUpdate(createHMRHandler(this))
+      this.hmrHandlerForTransport = createHMRHandler(this)
+      if (!this.transport.connect) {
+        resolvedHmrLogger.error('HMR is not supported by this runner transport')
+      }
     }
+    this.transport.connect?.(this.hmrHandlerForTransport)
     if (options.sourcemapInterceptor !== false) {
       this.resetSourceMapSupport = enableSourceMapSupport(this)
     }
@@ -105,6 +115,7 @@ export class ModuleRunner {
     this.clearCache()
     this.hmrClient = undefined
     this.closed = true
+    await this.transport.disconnect?.()
   }
 
   /**
@@ -255,9 +266,13 @@ export class ModuleRunner {
       (
         url.startsWith('data:')
           ? { externalize: url, type: 'builtin' }
-          : await this.transport.fetchModule(url, importer, {
-              cached: isCached,
-              startOffset: this.evaluator.startOffset,
+          : await this.transport.invoke('vite:fetchModule', {
+              url,
+              importer,
+              data: {
+                cached: isCached,
+                startOffset: this.evaluator.startOffset,
+              },
             })
       ) as ResolvedResult
 

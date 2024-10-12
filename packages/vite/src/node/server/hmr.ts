@@ -79,6 +79,11 @@ export interface HotChannelClient {
    * Send custom event
    */
   send(event: string, payload?: CustomPayload['data']): void
+  respond(
+    event: string,
+    invoke: 'response' | `response:${string}` | undefined,
+    payload?: any,
+  ): void
 }
 /** @deprecated use `HotChannelClient` instead */
 export type HMRBroadcasterClient = HotChannelClient
@@ -100,6 +105,7 @@ export interface HotChannel {
     listener: (
       data: InferCustomEventPayload<T>,
       client: HotChannelClient,
+      invoke?: 'send' | `send:${string}`,
       ...args: any[]
     ) => void,
   ): void

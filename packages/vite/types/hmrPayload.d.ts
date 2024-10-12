@@ -44,6 +44,14 @@ export interface FullReloadPayload {
 
 export interface CustomPayload {
   type: 'custom'
+  /**
+   * - undefined: for non-invoke requests
+   * - 'send': for invoke requests without an id
+   * - `send:${string}`: for invoke requests with an id
+   * - 'response': for invoke responses without an id
+   * - `response:${string}`: for invoke responses with an id
+   */
+  invoke?: 'send' | `send:${string}` | 'response' | `response:${string}`
   event: string
   data?: any
 }

@@ -2,13 +2,13 @@ import { existsSync, readFileSync } from 'node:fs'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type {
   ModuleEvaluator,
-  ModuleRunnerHMRConnection,
   ModuleRunnerHmr,
   ModuleRunnerOptions,
 } from 'vite/module-runner'
+import type { HotPayload } from 'types/hmrPayload'
 import type { DevEnvironment } from '../../server/environment'
-import type { ServerHotChannel } from '../../server/hmr'
-import { ServerHMRConnector } from './serverHmrConnector'
+import type { HotChannelClient, ServerHotChannel } from '../../server/hmr'
+import type { CreateRunnerTransport } from '../../../shared/runnerTransport'
 
 /**
  * @experimental
@@ -16,7 +16,7 @@ import { ServerHMRConnector } from './serverHmrConnector'
 export interface ServerModuleRunnerOptions
   extends Omit<
     ModuleRunnerOptions,
-    'root' | 'fetchModule' | 'hmr' | 'transport'
+    'root' | 'fetchModule' | 'hmr' | 'createTransport'
   > {
   /**
    * Disable HMR or configure HMR logger.
@@ -24,7 +24,6 @@ export interface ServerModuleRunnerOptions
   hmr?:
     | false
     | {
-        connection?: ModuleRunnerHMRConnection
         logger?: ModuleRunnerHmr['logger']
       }
   /**
@@ -40,16 +39,8 @@ function createHMROptions(
   if (environment.config.server.hmr === false || options.hmr === false) {
     return false
   }
-  if (options.hmr?.connection) {
-    return {
-      connection: options.hmr.connection,
-      logger: options.hmr.logger,
-    }
-  }
   if (!('api' in environment.hot)) return false
-  const connection = new ServerHMRConnector(environment.hot as ServerHotChannel)
   return {
-    connection,
     logger: options.hmr?.logger,
   }
 }
@@ -78,6 +69,74 @@ function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
   return prepareStackTrace
 }
 
+class ServerHMRBroadcasterClient implements HotChannelClient {
+  constructor(private readonly hotChannel: ServerHotChannel) {}
+
+  send(...args: any[]) {
+    let payload: HotPayload
+    if (typeof args[0] === 'string') {
+      payload = {
+        type: 'custom',
+        event: args[0],
+        data: args[1],
+      }
+    } else {
+      payload = args[0]
+    }
+    if (payload.type !== 'custom') {
+      throw new Error(
+        'Cannot send non-custom events from the client to the server.',
+      )
+    }
+    this.hotChannel.send(payload)
+  }
+
+  respond(
+    event: string,
+    invoke: 'response' | `response:${string}` | undefined,
+    payload?: any,
+  ) {
+    this.hotChannel.send({
+      type: 'custom',
+      event,
+      invoke,
+      data: payload,
+    })
+  }
+}
+
+export const createServerRunnerTransportOptions =
+  (options: { channel: ServerHotChannel }): CreateRunnerTransport =>
+  () => {
+    const hmrClient = new ServerHMRBroadcasterClient(options.channel)
+    let handler: ((data: HotPayload) => void) | undefined
+
+    return {
+      connect(handler) {
+        options.channel.api.outsideEmitter.on('send', handler)
+        handler({ type: 'connected' })
+      },
+      disconnect() {
+        if (handler) {
+          options.channel.api.outsideEmitter.off('send', handler)
+        }
+      },
+      send(payload) {
+        if (payload.type !== 'custom') {
+          throw new Error(
+            'Cannot send non-custom events from the server to the client.',
+          )
+        }
+        options.channel.api.innerEmitter.emit(
+          payload.event,
+          payload.data,
+          hmrClient,
+          payload.invoke,
+        )
+      },
+    }
+  }
+
 /**
  * Create an instance of the Vite SSR runtime that support HMR.
  * @experimental
@@ -91,10 +150,9 @@ export function createServerModuleRunner(
     {
       ...options,
       root: environment.config.root,
-      transport: {
-        fetchModule: (id, importer, options) =>
-          environment.fetchModule(id, importer, options),
-      },
+      createTransport: createServerRunnerTransportOptions({
+        channel: environment.transport as ServerHotChannel,
+      }),
       hmr,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },
