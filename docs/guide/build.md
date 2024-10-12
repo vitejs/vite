@@ -103,15 +103,15 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
-        nested: resolve(__dirname, 'nested/index.html'),
+        main: resolve(import.meta.dirname, 'index.html'),
+        nested: resolve(import.meta.dirname, 'nested/index.html'),
       },
     },
   },
 })
 ```
 
-If you specify a different root, remember that `__dirname` will still be the folder of your vite.config.js file when resolving the input paths. Therefore, you will need to add your `root` entry to the arguments for `resolve`.
+If you specify a different root, remember that `import.meta.dirname` will still be the folder of your vite.config.js file when resolving the input paths. Therefore, you will need to add your `root` entry to the arguments for `resolve`.
 
 Note that for HTML files, Vite ignores the name given to the entry in the `rollupOptions.input` object and instead respects the resolved id of the file when generating the HTML asset in the dist folder. This ensures a consistent structure with the way the dev server works.
 
@@ -129,7 +129,7 @@ export default defineConfig({
   build: {
     lib: {
       // Could also be a dictionary or array of multiple entry points
-      entry: resolve(__dirname, 'lib/main.js'),
+      entry: resolve(import.meta.dirname, 'lib/main.js'),
       name: 'MyLib',
       // the proper extensions will be added
       fileName: 'my-lib',
