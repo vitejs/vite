@@ -1,3 +1,17 @@
+## <small>5.4.9 (2024-10-14)</small>
+
+* fix: bump launch-editor-middleware to v2.9.1 (#18348) ([508d9ab](https://github.com/vitejs/vite/commit/508d9ab83412c36e33f4c4ca57b891171429cdd3)), closes [#18348](https://github.com/vitejs/vite/issues/18348)
+* fix(css): fix lightningcss dep url resolution with custom root (#18125) ([eae00b5](https://github.com/vitejs/vite/commit/eae00b561e04f1fe1679d3acf4f88b3c42019e4d)), closes [#18125](https://github.com/vitejs/vite/issues/18125)
+* fix(data-uri): only match ids starting with `data:` (#18241) ([96084d6](https://github.com/vitejs/vite/commit/96084d6e752c03332d101a50bce161a8e3f311cc)), closes [#18241](https://github.com/vitejs/vite/issues/18241)
+* fix(deps): bump tsconfck (#18322) ([dc5434c](https://github.com/vitejs/vite/commit/dc5434ce8781d206bcc4b55e90201691125e662c)), closes [#18322](https://github.com/vitejs/vite/issues/18322)
+* fix(hmr): don't try to rewrite imports for direct CSS soft invalidation (#18252) ([851b258](https://github.com/vitejs/vite/commit/851b258c346fdddd4467a12f41189b7855df8c43)), closes [#18252](https://github.com/vitejs/vite/issues/18252)
+* fix(ssr): (backport #18150) fix source map remapping with multiple sources (#18204) ([262a879](https://github.com/vitejs/vite/commit/262a8796d4be2c4b9c812f203ea9177f42360b13)), closes [#18204](https://github.com/vitejs/vite/issues/18204)
+* chore: update all url references of vitejs.dev to vite.dev (#18276) ([c23558a](https://github.com/vitejs/vite/commit/c23558a7af341d13f0c9da691047713965bc7e7d)), closes [#18276](https://github.com/vitejs/vite/issues/18276)
+* chore: update license copyright (#18278) ([1864eb1](https://github.com/vitejs/vite/commit/1864eb17b21ef21564bd66c6f6a30c2c495e2d4e)), closes [#18278](https://github.com/vitejs/vite/issues/18278)
+* docs: update homepage (#18274) ([ae44163](https://github.com/vitejs/vite/commit/ae4416349e1a373023d0e9e05955d96ae5fa9ab2)), closes [#18274](https://github.com/vitejs/vite/issues/18274)
+
+
+
 ## <small>5.4.8 (2024-09-25)</small>
 
 * fix(css): backport #18113, fix missing source file warning with sass modern api custom importer (#18 ([7d47fc1](https://github.com/vitejs/vite/commit/7d47fc1c749053095a3345ca1d47406a5f31792a)), closes [#18183](https://github.com/vitejs/vite/issues/18183)
