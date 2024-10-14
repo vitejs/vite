@@ -20,7 +20,7 @@
     "@vitejs/plugin-react": "^4.3.2",
     "eslint": "^9.12.0",
     "eslint-plugin-react": "^7.37.1",
-    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.12",
     "globals": "^15.10.0",
     "vite": "^5.4.8"
