@@ -422,7 +422,10 @@ export function createServer(
 
 export async function _createServer(
   inlineConfig: InlineConfig = {},
-  options: { listen: boolean },
+  options: {
+    listen: boolean
+    previousEnvironments?: Record<string, DevEnvironment>
+  },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
@@ -498,7 +501,10 @@ export async function _createServer(
   }
 
   for (const environment of Object.values(environments)) {
-    await environment.init({ watcher })
+    await environment.init({
+      watcher,
+      previousInstance: options.previousEnvironments?.[environment.name],
+    })
   }
 
   // Backward compatibility
@@ -1111,7 +1117,10 @@ async function restartServer(server: ViteDevServer) {
     let newServer: ViteDevServer | null = null
     try {
       // delay ws server listen
-      newServer = await _createServer(inlineConfig, { listen: false })
+      newServer = await _createServer(inlineConfig, {
+        listen: false,
+        previousEnvironments: server.environments,
+      })
     } catch (err: any) {
       server.config.logger.error(err.message, {
         timestamp: true,

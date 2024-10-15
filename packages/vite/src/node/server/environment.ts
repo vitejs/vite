@@ -151,7 +151,10 @@ export class DevEnvironment extends BaseEnvironment {
     }
   }
 
-  async init(options?: { watcher?: FSWatcher }): Promise<void> {
+  async init(options?: {
+    watcher?: FSWatcher
+    previousInstance?: DevEnvironment
+  }): Promise<void> {
     if (this._initiated) {
       return
     }
