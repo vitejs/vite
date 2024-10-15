@@ -66,9 +66,10 @@ export class DevEnvironment extends BaseEnvironment {
    */
   _pluginContainer: EnvironmentPluginContainer | undefined
 
-  /** @internal */
-  _needsRestart: boolean = false
-
+  /**
+   * @internal
+   */
+  _ignoreCloseBecauseRestarted: boolean = false
   /**
    * @internal
    */
@@ -168,10 +169,10 @@ export class DevEnvironment extends BaseEnvironment {
   // TODO: when restart is called, close is not called for the previous environment
   //       that means depOptimizer is initialized but not closed
   async restart(options?: { watcher?: FSWatcher }): Promise<void> {
-    if (!this._needsRestart) return
-    this._needsRestart = false
+    this._ignoreCloseBecauseRestarted = true
 
-    // is this safe?
+    await this._pluginContainer?.close()
+
     this._plugins = resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
@@ -221,6 +222,11 @@ export class DevEnvironment extends BaseEnvironment {
   }
 
   async close(): Promise<void> {
+    if (this._ignoreCloseBecauseRestarted) {
+      this._ignoreCloseBecauseRestarted = false
+      return
+    }
+
     this._closing = true
 
     this._crawlEndFinder?.cancel()
