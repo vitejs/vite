@@ -91,7 +91,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AAAA,CAAC,QAAQ,CAAC,CAAC;AACX,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG,CAAC;AACb,CAAC;",
+        "mappings": "AAAA,CAAC,QAAQ,CAAC;AACV,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG;AACZ;",
         "sources": [
           "/root/imported.css",
         ],
