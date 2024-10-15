@@ -171,10 +171,11 @@ export class DevEnvironment extends BaseEnvironment {
     if (!this._needsRestart) return
     this._needsRestart = false
 
-    // TODO: is this safe?
+    // is this safe?
+    this._plugins = resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
-      this._plugins!,
+      this._plugins,
       options?.watcher,
     )
   }
