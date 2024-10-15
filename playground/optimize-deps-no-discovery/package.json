@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@vitejs/test-dep-no-discovery": "file:./dep-no-discovery",
-    "vue": "^3.5.11",
+    "vue": "^3.5.12",
     "vuex": "^4.1.0"
   }
 }
