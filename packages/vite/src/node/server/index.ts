@@ -423,7 +423,10 @@ export function createServer(
 
 export async function _createServer(
   inlineConfig: InlineConfig = {},
-  options: { hotListen: boolean },
+  options: {
+    hotListen: boolean
+    previousEnvironments?: Record<string, DevEnvironment>
+  },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
@@ -499,7 +502,14 @@ export async function _createServer(
   }
 
   for (const environment of Object.values(environments)) {
-    await environment.init({ watcher })
+    const previousEnvironment = options.previousEnvironments?.[environment.name]
+    // if the previous environment for the same name is an instance of the same class
+    // use restart instead of init
+    if (previousEnvironment instanceof environment.constructor) {
+      environment._needsRestart = true
+    } else {
+      await environment.init({ watcher })
+    }
   }
 
   // Backward compatibility
@@ -1118,7 +1128,10 @@ async function restartServer(server: ViteDevServer) {
     let newServer: ViteDevServer | null = null
     try {
       // delay ws server listen
-      newServer = await _createServer(inlineConfig, { hotListen: false })
+      newServer = await _createServer(inlineConfig, {
+        hotListen: false,
+        previousEnvironments: server.environments,
+      })
     } catch (err: any) {
       server.config.logger.error(err.message, {
         timestamp: true,
@@ -1148,6 +1161,9 @@ async function restartServer(server: ViteDevServer) {
     logger,
     server: { port, middlewareMode },
   } = server.config
+  await Promise.all(
+    Object.values(server.environments).map((env) => env.restart()),
+  )
   if (!middlewareMode) {
     await server.listen(port, true)
   } else {
