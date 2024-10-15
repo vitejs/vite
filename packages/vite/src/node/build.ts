@@ -1576,25 +1576,20 @@ export async function createBuilderWithResolvedConfig(
       }
       const patchPlugins = (resolvedPlugins: Plugin[]) => {
         // Force opt-in shared plugins
-        const environmentPlugins = [...resolvedPlugins]
-        let validMixedPlugins = true
-        for (let i = 0; i < environmentPlugins.length; i++) {
-          const environmentPlugin = environmentPlugins[i]
-          const sharedPlugin = config.plugins[i]
+        let j = 0
+        for (let i = 0; i < resolvedPlugins.length; i++) {
+          const environmentPlugin = resolvedPlugins[i]
           if (
             config.builder.sharedPlugins ||
             environmentPlugin.sharedDuringBuild
           ) {
-            if (environmentPlugin.name !== sharedPlugin.name) {
-              validMixedPlugins = false
-              break
+            for (let k = j; k < config.plugins.length; k++) {
+              if (environmentPlugin.name === config.plugins[k].name) {
+                resolvedPlugins[i] = config.plugins[k]
+                j = k + 1
+                break
+              }
             }
-            environmentPlugins[i] = sharedPlugin
-          }
-        }
-        if (validMixedPlugins) {
-          for (let i = 0; i < environmentPlugins.length; i++) {
-            resolvedPlugins[i] = environmentPlugins[i]
           }
         }
       }
