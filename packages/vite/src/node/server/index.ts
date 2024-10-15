@@ -506,6 +506,7 @@ export async function _createServer(
     // if the previous environment for the same name is an instance of the same class
     // use restart instead of init
     if (previousEnvironment instanceof environment.constructor) {
+      environments[environment.name] = previousEnvironment
       environment._needsRestart = true
     } else {
       await environment.init({ watcher })
