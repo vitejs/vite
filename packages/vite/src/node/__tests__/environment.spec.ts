@@ -7,7 +7,11 @@ import { createBuilder } from '../build'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
 
 describe('custom environment conditions', () => {
-  function getConfig(): InlineConfig {
+  function getConfig({
+    noExternal,
+  }: {
+    noExternal: true | undefined
+  }): InlineConfig {
     return {
       configFile: false,
       root: import.meta.dirname,
@@ -19,7 +23,7 @@ describe('custom environment conditions', () => {
         // no web / default
         ssr: {
           resolve: {
-            noExternal: true,
+            noExternal,
           },
           build: {
             outDir: path.join(
@@ -35,8 +39,9 @@ describe('custom environment conditions', () => {
         worker: {
           webCompatible: true,
           resolve: {
-            noExternal: true,
+            noExternal,
             conditions: ['worker'],
+            externalConditions: ['worker'],
           },
           build: {
             outDir: path.join(
@@ -52,8 +57,9 @@ describe('custom environment conditions', () => {
         custom1: {
           webCompatible: true,
           resolve: {
-            noExternal: true,
+            noExternal,
             conditions: ['custom1'],
+            externalConditions: ['custom1'],
           },
           build: {
             outDir: path.join(
@@ -69,8 +75,9 @@ describe('custom environment conditions', () => {
         custom2: {
           webCompatible: false,
           resolve: {
-            noExternal: true,
+            noExternal,
             conditions: ['custom2'],
+            externalConditions: ['custom2'],
           },
           build: {
             outDir: path.join(
@@ -86,8 +93,9 @@ describe('custom environment conditions', () => {
         custom3: {
           webCompatible: false,
           resolve: {
-            noExternal: true,
+            noExternal,
             conditions: ['custom3'],
+            externalConditions: ['custom3'],
           },
           build: {
             outDir: path.join(
@@ -103,8 +111,9 @@ describe('custom environment conditions', () => {
         custom3_2: {
           webCompatible: false,
           resolve: {
-            noExternal: true,
+            noExternal,
             conditions: ['custom3'],
+            externalConditions: ['custom3'],
           },
           build: {
             outDir: path.join(
@@ -120,8 +129,8 @@ describe('custom environment conditions', () => {
     }
   }
 
-  test('dev', async () => {
-    const server = await createServer(getConfig())
+  test('dev noExternal', async () => {
+    const server = await createServer(getConfig({ noExternal: true }))
     onTestFinished(() => server.close())
 
     const results: Record<string, unknown> = {}
@@ -154,8 +163,44 @@ describe('custom environment conditions', () => {
     `)
   })
 
+  test('dev external', async () => {
+    const server = await createServer(getConfig({ noExternal: undefined }))
+    onTestFinished(() => server.close())
+
+    const results: Record<string, unknown> = {}
+    for (const key of [
+      'ssr',
+      'worker',
+      'custom1',
+      'custom2',
+      'custom3',
+      'custom3_2',
+    ]) {
+      const runner = createServerModuleRunner(server.environments[key], {
+        hmr: {
+          logger: false,
+        },
+        sourcemapInterceptor: false,
+      })
+      const mod = await runner.import(
+        '/fixtures/test-dep-conditions-app/entry.js',
+      )
+      results[key] = mod.default
+    }
+    expect(results).toMatchInlineSnapshot(`
+      {
+        "custom1": "index.custom1.js",
+        "custom2": "index.custom2.js",
+        "custom3": "index.custom3.js",
+        "custom3_2": "index.custom3.js",
+        "ssr": "index.default.js",
+        "worker": "index.worker.js",
+      }
+    `)
+  })
+
   test('css', async () => {
-    const server = await createServer(getConfig())
+    const server = await createServer(getConfig({ noExternal: true }))
     onTestFinished(() => server.close())
 
     const modJs = await server.ssrLoadModule(
@@ -174,7 +219,7 @@ describe('custom environment conditions', () => {
   })
 
   test('build', async () => {
-    const builder = await createBuilder(getConfig())
+    const builder = await createBuilder(getConfig({ noExternal: true }))
     const results: Record<string, unknown> = {}
     for (const key of [
       'ssr',
