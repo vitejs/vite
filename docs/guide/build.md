@@ -29,6 +29,16 @@ The exception is when you need to dynamically concatenate URLs on the fly. In th
 
 For advanced base path control, check out [Advanced Base Options](#advanced-base-options).
 
+### Relative base
+
+If you don't know the base path in advance, you may set a relative base path with `"base": "./"` or `"base": ""`. This will make all generated URLs to be relative to each file.
+
+:::warning Support for older browsers when using relative bases
+
+`import.meta` support is required for relative bases. If you need to support [browsers that do not support `import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta), you can use [the `legacy` plugin](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy).
+
+:::
+
 ## Customizing the Build
 
 The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/configuration-options/) via `build.rollupOptions`:
