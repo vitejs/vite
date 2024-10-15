@@ -156,27 +156,30 @@ If you need a custom integration, you can follow the steps in this guide to conf
    need to be adapted for your programming language and templating language):
 
    ```ts
-   import type { Manifest, ManifestChunk } from 'vite';
-   
-   export default function importedChunks(manifest: Manifest, name: string): ManifestChunk[] {
-    const seen = new Set<string>();
-  
-    function getImportedChunks(chunk: ManifestChunk): ManifestChunk[] {
-       const chunks: ManifestChunk[] = [];
+   import type { Manifest, ManifestChunk } from 'vite'
+
+   export default function importedChunks(
+     manifest: Manifest,
+     name: string,
+   ): ManifestChunk[] {
+     const seen = new Set<string>()
+
+     function getImportedChunks(chunk: ManifestChunk): ManifestChunk[] {
+       const chunks: ManifestChunk[] = []
        for (const file of chunk.imports ?? []) {
-         const importee = manifest[file];
+         const importee = manifest[file]
          if (seen.has(file)) {
-           continue;
+           continue
          }
-         seen.add(file);
-  
-         chunks.push(...getImportedChunks(importee));
-         chunks.push(importee);
+         seen.add(file)
+
+         chunks.push(...getImportedChunks(importee))
+         chunks.push(importee)
        }
-  
-       return chunks;
+
+       return chunks
      }
-  
-     return getImportedChunks(manifest[name]);
+
+     return getImportedChunks(manifest[name])
    }
    ```
