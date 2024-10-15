@@ -17,9 +17,9 @@ patchedDependencies:
   http-proxy@1.18.1:
     hash: qqiqxx62zlcu62nljjmhlvexni
     path: patches/http-proxy@1.18.1.patch
-  sirv@2.0.4:
-    hash: amdes53ifqfntejkflpaq5ifce
-    path: patches/sirv@2.0.4.patch
+  sirv@3.0.0:
+    hash: plxlsciwiebyhal5sm4vtpekka
+    path: patches/sirv@3.0.0.patch
 
 importers:
 
@@ -395,8 +395,8 @@ importers:
         specifier: ^1.79.4
         version: 1.79.4
       sirv:
-        specifier: ^2.0.4
-        version: 2.0.4(patch_hash=amdes53ifqfntejkflpaq5ifce)
+        specifier: ^3.0.0
+        version: 3.0.0(patch_hash=plxlsciwiebyhal5sm4vtpekka)
       source-map-support:
         specifier: ^0.5.21
         version: 0.5.21
@@ -823,8 +823,8 @@ importers:
   playground/lib:
     devDependencies:
       sirv:
-        specifier: ^2.0.4
-        version: 2.0.4(patch_hash=amdes53ifqfntejkflpaq5ifce)
+        specifier: ^3.0.0
+        version: 3.0.0(patch_hash=plxlsciwiebyhal5sm4vtpekka)
 
   playground/minify:
     dependencies:
@@ -6579,9 +6579,9 @@ packages:
     resolution: {integrity: sha512-tgqwPUMDcNDhuf1Xf6KTUsyeqGdgKMhzaH4PAZZuzguOgTl5uuyeYe/8mWgAr6IBxB5V06uqEf6Dy37gIWDtDg==}
     hasBin: true
 
-  sirv@2.0.4:
-    resolution: {integrity: sha512-94Bdh3cC2PKrbgSOUqTiGPWVZeSiXfKOVZNJniWoqrWrRkB1CJzBU3NEbiTsPcYy1lDsANA/THzS+9WBiy5nfQ==}
-    engines: {node: '>= 10'}
+  sirv@3.0.0:
+    resolution: {integrity: sha512-BPwJGUeDaDCHihkORDchNyyTvWFhcusy1XMmhEVTQTwGeybFbp8YEmB+njbPnth1FibULBSBVwCQni25XlCUDg==}
+    engines: {node: '>=18'}
 
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
@@ -12500,7 +12500,7 @@ snapshots:
 
   simple-git-hooks@2.11.1: {}
 
-  sirv@2.0.4(patch_hash=amdes53ifqfntejkflpaq5ifce):
+  sirv@3.0.0(patch_hash=plxlsciwiebyhal5sm4vtpekka):
     dependencies:
       '@polka/url': 1.0.0-next.24
       mrmime: 2.0.0

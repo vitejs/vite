@@ -1,5 +1,5 @@
 diff --git a/build.js b/build.js
-index 0884d9ffaa24d0ae3ec020a6faff12b3125b2071..85b82c90346e829bbf723e913f282c80096df061 100644
+index 0c6ed8e2c0949c93978dd1a244baa9bf2448e9b8..08a9347cfdca06e6a97077ea4582c5b0922ecb2d 100644
 --- a/build.js
 +++ b/build.js
 @@ -35,7 +35,7 @@ function viaCache(cache, uri, extns) {
@@ -29,7 +29,7 @@ index 0884d9ffaa24d0ae3ec020a6faff12b3125b2071..85b82c90346e829bbf723e913f282c80
  
  		if (isEtag && req.headers['if-none-match'] === data.headers['ETag']) {
 diff --git a/build.mjs b/build.mjs
-index c93bbe6bdfb7ad13ee20f0c44d80d6aacdd64087..3dc3e22f09abcae51aef7b75c34dc08b1f6e6abd 100644
+index 3ad14d45630a8627b93842a04a96465120d3f223..8451277c015b56a7d2cb99aaee3a318d9c0893dd 100644
 --- a/build.mjs
 +++ b/build.mjs
 @@ -35,7 +35,7 @@ function viaCache(cache, uri, extns) {
@@ -58,16 +58,29 @@ index c93bbe6bdfb7ad13ee20f0c44d80d6aacdd64087..3dc3e22f09abcae51aef7b75c34dc08b
  		if (!data) return next ? next() : isNotFound(req, res);
  
  		if (isEtag && req.headers['if-none-match'] === data.headers['ETag']) {
-diff --git a/sirv.d.ts b/sirv.d.ts
-index c05040fc6ec504a1828a7badd39f669981acd0ee..e9597e8b5bf24613a09565f0e13024ae3ca8fa5e 100644
---- a/sirv.d.ts
-+++ b/sirv.d.ts
-@@ -19,6 +19,8 @@ declare module 'sirv' {
+diff --git a/index.d.mts b/index.d.mts
+index 8bfe364f1db2d1382c56a9b75a014579083cfa70..a8dfa1c473ff15c979bbfbc28c3630a12e222c3a 100644
+--- a/index.d.mts
++++ b/index.d.mts
+@@ -24,6 +24,8 @@ export interface Options {
+ 	gzip?: boolean;
+ 	onNoMatch?: (req: IncomingMessage, res: ServerResponse) => void;
+ 	setHeaders?: (res: ServerResponse, pathname: string, stats: Stats) => void;
++	/** patched */
++	shouldServe?: (absoluteFilePath: string) => void;
+ }
+ 
+ export default function (dir?: string, opts?: Options): RequestHandler;
+diff --git a/index.d.ts b/index.d.ts
+index 96cc63e7ee1ccdd7266e9193252b799068ef2e3c..9e298d627002cd0b073073aa13528b7492541b5b 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -25,6 +25,8 @@ declare namespace sirv {
  		gzip?: boolean;
  		onNoMatch?: (req: IncomingMessage, res: ServerResponse) => void;
  		setHeaders?: (res: ServerResponse, pathname: string, stats: Stats) => void;
 +		/** patched */
 +		shouldServe?: (absoluteFilePath: string) => void;
  	}
+ }
  
- 	export default function(dir?: string, opts?: Options): RequestHandler;
