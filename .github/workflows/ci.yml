@@ -48,7 +48,7 @@ jobs:
 
       - name: Get changed files
         id: changed-files
-        uses: tj-actions/changed-files@48d8f15b2aaa3d255ca5af3eba4870f807ce6b3c # v45.0.2
+        uses: tj-actions/changed-files@c3a1bb2c992d77180ae65be6ae6c166cf40f857c # v45.0.3
         with:
           files: |
             docs/**
@@ -128,6 +128,22 @@ jobs:
 
       - name: Test build
         run: pnpm run test-build
+
+  test-passed:
+    if: (!cancelled() && !failure())
+    needs: test
+    runs-on: ubuntu-latest
+    name: Build & Test Passed or Skipped
+    steps:
+      - run: echo "Build & Test Passed or Skipped"
+
+  test-failed:
+    if: (!cancelled() && failure())
+    needs: test
+    runs-on: ubuntu-latest
+    name: Build & Test Failed
+    steps:
+      - run: echo "Build & Test Failed"
 
   lint:
     timeout-minutes: 10
