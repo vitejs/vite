@@ -31,7 +31,7 @@ For advanced base path control, check out [Advanced Base Options](#advanced-base
 
 ### Relative base
 
-If you don't know the base path in advance, you may set a relative base path with `"base": "./"` or `"base": ""`. This will make all generated URLs to be relative from each files.
+If you don't know the base path in advance, you may set a relative base path with `"base": "./"` or `"base": ""`. This will make all generated URLs to be relative to each file.
 
 :::warning Support for older browsers when using relative bases
 
