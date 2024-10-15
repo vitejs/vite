@@ -1587,7 +1587,7 @@ export async function createBuilderWithResolvedConfig(
               if (environmentPlugin.name === config.plugins[k].name) {
                 resolvedPlugins[i] = config.plugins[k]
                 j = k + 1
-                continue
+                break
               }
             }
           }
