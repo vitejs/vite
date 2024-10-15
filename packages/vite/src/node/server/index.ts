@@ -1162,11 +1162,6 @@ async function restartServer(server: ViteDevServer) {
     logger,
     server: { port, middlewareMode },
   } = server.config
-  await Promise.all(
-    Object.values(server.environments).map((env) =>
-      env.restart({ watcher: server.watcher }),
-    ),
-  )
   if (!middlewareMode) {
     await server.listen(port, true)
   } else {
