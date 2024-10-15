@@ -253,13 +253,30 @@ async function computeEntries(environment: ScanEnvironment) {
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
-    const resolvePath = (p: string) => path.resolve(environment.config.root, p)
+    const resolvePath = async (p: string) => {
+      const isRelative = ['./', '../', '/'].some((prefix) =>
+        p.startsWith(prefix),
+      )
+
+      if (!isRelative) {
+        // We want to make sure that the path looks like a relative one since a bare import
+        // path doesn't really make sense as an entry and it would also create issues during
+        // module resolution
+        p = `/${p}`
+      }
+
+      const id = (await environment.pluginContainer.resolveId(p))?.id
+      if (id === undefined) {
+        throw new Error('failed to resolve rollupOptions.input value.')
+      }
+      return id
+    }
     if (typeof buildInput === 'string') {
-      entries = [resolvePath(buildInput)]
+      entries = [await resolvePath(buildInput)]
     } else if (Array.isArray(buildInput)) {
-      entries = buildInput.map(resolvePath)
+      entries = await Promise.all(buildInput.map(resolvePath))
     } else if (isObject(buildInput)) {
-      entries = Object.values(buildInput).map(resolvePath)
+      entries = await Promise.all(Object.values(buildInput).map(resolvePath))
     } else {
       throw new Error('invalid rollupOptions.input value.')
     }

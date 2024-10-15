@@ -698,6 +698,12 @@ importers:
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
+      react-fake-client:
+        specifier: npm:react@^18.3.1
+        version: react@18.3.1
+      react-fake-server:
+        specifier: npm:react@^18.3.1
+        version: react@18.3.1
 
   playground/extensions:
     dependencies:
@@ -7123,8 +7129,8 @@ packages:
   zimmerframe@1.0.0:
     resolution: {integrity: sha512-H6qQ6LtjP+kDQwDgol18fPi4OCo7F+73ZBYt2U9c1D3V74bIMKxXvyrN0x+1I7/RYh5YsausflQxQR/qwDLHPQ==}
 
-  zod@3.22.4:
-    resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
+  zod@3.23.8:
+    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
 
   zwitch@2.0.4:
     resolution: {integrity: sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==}
@@ -11301,7 +11307,7 @@ snapshots:
       workerd: 1.20241011.1
       ws: 8.18.0
       youch: 3.2.3
-      zod: 3.22.4
+      zod: 3.23.8
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -12908,6 +12914,6 @@ snapshots:
 
   zimmerframe@1.0.0: {}
 
-  zod@3.22.4: {}
+  zod@3.23.8: {}
 
   zwitch@2.0.4: {}
