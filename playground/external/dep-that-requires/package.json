@@ -5,6 +5,6 @@
   "dependencies": {
     "slash3": "npm:slash@^3.0.0",
     "slash5": "npm:slash@^5.1.0",
-    "vue": "^3.5.11"
+    "vue": "^3.5.12"
   }
 }

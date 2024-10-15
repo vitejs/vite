@@ -13,6 +13,6 @@
     "@vitejs/test-ssr-conditions-no-external": "file:./no-external"
   },
   "devDependencies": {
-    "express": "^4.21.0"
+    "express": "^4.21.1"
   }
 }

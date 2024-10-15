@@ -179,13 +179,16 @@ test('self reference url worker in dependency', async () => {
   ).toBe('pong: main\npong: nested\n')
 })
 
-test.runIf(isServe)('sourcemap boundary', async () => {
-  const response = page.waitForResponse(/my-worker.ts\?worker_file&type=module/)
+test.runIf(isServe)('sourcemap is correct after env is injected', async () => {
+  const response = page.waitForResponse(
+    /my-worker\.ts\?worker_file&type=module/,
+  )
   await page.goto(viteTestUrl)
   const content = await (await response).text()
   const { mappings } = decodeSourceMapUrl(content)
-  expect(mappings.startsWith(';')).toBeTruthy()
-  expect(mappings.endsWith(';')).toBeFalsy()
+  expect(mappings).toMatchInlineSnapshot(
+    `";;AAAA,SAAS,OAAO,kBAAkB;AAClC,SAAS,MAAM,WAAW;AAC1B,SAAS,wBAAwB;AACjC,OAAO,aAAa;AACpB,MAAM,UAAU,YAAY;AAE5B,KAAK,YAAY,CAAC,MAAM;AACtB,MAAI,EAAE,SAAS,QAAQ;AACrB,SAAK,YAAY,EAAE,KAAK,MAAM,kBAAkB,SAAS,SAAS,KAAK,CAAC;AAAA,EAC1E;AACA,MAAI,EAAE,SAAS,gBAAgB;AAC7B,SAAK,YAAY;AAAA,MACf,KAAK;AAAA,MACL;AAAA,MACA;AAAA,MACA;AAAA,MACA;AAAA,MACA;AAAA,IACF,CAAC;AAAA,EACH;AACF;AACA,KAAK,YAAY;AAAA,EACf;AAAA,EACA;AAAA,EACA;AAAA,EACA;AAAA,EACA;AAAA,EACA;AAAA,EACA;AACF,CAAC;AAGD,QAAQ,IAAI,cAAc"`,
+  )
 })
 
 function decodeSourceMapUrl(content: string) {

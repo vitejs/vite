@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "@vitejs/test-json-module": "file:./json-module",
-    "express": "^4.21.0",
-    "vue": "^3.5.11"
+    "express": "^4.21.1",
+    "vue": "^3.5.12"
   }
 }
