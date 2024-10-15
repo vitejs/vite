@@ -116,11 +116,11 @@ The `server.moduleGraph` returns a mixed view of the client and ssr module graph
 
 We don't recommend switching to Environment API yet. We are aiming for a good portion of the user base to adopt Vite 6 before so plugins don't need to maintain two versions. Checkout the future breaking changes section for information on future deprecations and upgrade path:
 
-- [`this.environment` in Hooks](/changes/this-environment-in-hooks)
-- [HMR `hotUpdate` Plugin Hook](/changes/hotupdate-hook)
-- [Move to per-environment APIs](/changes/per-environment-apis)
-- [SSR using `ModuleRunner` API](/changes/ssr-using-modulerunner)
-- [Shared plugins during build](/changes/shared-plugins-during-build)
+- [`this.environment` in Hooks](/docs/changes/this-environment-in-hooks)
+- [HMR `hotUpdate` Plugin Hook](/docs/changes/hotupdate-hook)
+- [Move to per-environment APIs](/docs/changes/per-environment-apis)
+- [SSR using `ModuleRunner` API](/docs/changes/ssr-using-modulerunner)
+- [Shared plugins during build](/docs/changes/shared-plugins-during-build)
 
 ## Target users
 
