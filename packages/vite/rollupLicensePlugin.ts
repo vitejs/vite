@@ -39,31 +39,36 @@ export default function licensePlugin(
         }
 
         let text = `## ${sameDeps.map((d) => d.name).join(', ')}\n`
+        const depInfos = sameDeps.map((d) => getDependencyInformation(d))
 
-        for (let j = 0; j < sameDeps.length; j++) {
-          const { license, author, maintainers, contributors, repository } =
-            sameDeps[j]
+        // If all same dependencies have the same license and contributor names, show them only once
+        if (
+          depInfos.length > 1 &&
+          depInfos.every(
+            (info) =>
+              info.license === depInfos[0].license &&
+              info.names === depInfos[0].names,
+          )
+        ) {
+          const { license, names } = depInfos[0]
+          const repositoryText = depInfos
+            .map((info) => info.repository)
+            .filter(Boolean)
+            .join(', ')
 
-          if (license) {
-            text += `License: ${license}\n`
-          }
-          const names = new Set<string>()
-          for (const person of [author, ...maintainers, ...contributors]) {
-            const name = typeof person === 'string' ? person : person?.name
-            if (name) {
-              names.add(name)
-            }
-          }
-          if (names.size > 0) {
-            text += `By: ${Array.from(names).join(', ')}\n`
-          }
-          if (repository) {
-            text += `Repository: ${
-              typeof repository === 'string' ? repository : repository.url
-            }\n`
-          }
-          if (j !== sameDeps.length - 1) {
-            text += '\n'
+          if (license) text += `License: ${license}\n`
+          if (names) text += `By: ${names}\n`
+          if (repositoryText) text += `Repository: ${repositoryText}\n`
+        }
+        // Else show each dependency separately
+        else {
+          for (let j = 0; j < depInfos.length; j++) {
+            const { license, names, repository } = depInfos[j]
+
+            if (license) text += `License: ${license}\n`
+            if (names) text += `By: ${names}\n`
+            if (repository) text += `Repository: ${repository}\n`
+            if (j !== depInfos.length - 1) text += '\n'
           }
         }
 
@@ -128,4 +133,37 @@ function sortLicenses(licenses: Set<string>) {
   withParenthesis = withParenthesis.sort()
   noParenthesis = noParenthesis.sort()
   return [...noParenthesis, ...withParenthesis]
+}
+
+interface DependencyInfo {
+  license?: string
+  names?: string
+  repository?: string
+}
+
+function getDependencyInformation(dep: Dependency): DependencyInfo {
+  const info: DependencyInfo = {}
+  const { license, author, maintainers, contributors, repository } = dep
+
+  if (license) {
+    info.license = license
+  }
+
+  const names = new Set<string>()
+  for (const person of [author, ...maintainers, ...contributors]) {
+    const name = typeof person === 'string' ? person : person?.name
+    if (name) {
+      names.add(name)
+    }
+  }
+  if (names.size > 0) {
+    info.names = Array.from(names).join(', ')
+  }
+
+  if (repository) {
+    info.repository =
+      typeof repository === 'string' ? repository : repository.url
+  }
+
+  return info
 }
