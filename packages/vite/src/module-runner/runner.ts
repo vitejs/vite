@@ -13,7 +13,6 @@ import type {
   SSRImportMetadata,
 } from './types'
 import {
-  normalizeAbsoluteUrl,
   posixDirname,
   posixPathToFileHref,
   posixResolve,
@@ -220,8 +219,6 @@ export class ModuleRunner {
     url: string,
     importer?: string,
   ): Promise<EvaluatedModuleNode> {
-    url = normalizeAbsoluteUrl(url, this.root)
-
     let cached = this.concurrentModuleNodePromises.get(url)
     if (!cached) {
       const cachedModule = this.evaluatedModules.getModuleByUrl(url)
