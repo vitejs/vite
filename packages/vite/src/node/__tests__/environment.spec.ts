@@ -18,6 +18,7 @@ describe('custom environment conditions', () => {
       logLevel: 'error',
       server: {
         middlewareMode: true,
+        ws: false,
       },
       environments: {
         // no web / default

@@ -718,6 +718,7 @@ test('adjust worker build error for worker.format', async () => {
           },
         },
       },
+      logLevel: 'silent',
     })
   } catch (e) {
     expect(e.message).toContain('worker.format')
