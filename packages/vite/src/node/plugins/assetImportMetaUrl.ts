@@ -164,15 +164,12 @@ function buildGlobPattern(ast: any) {
   for (let i = 0; i < ast.quasis.length; i++) {
     const str = ast.quasis[i].value.raw
     if (str) {
-      if (lastIsGlob && str[0] !== '/') {
-        pattern += '/*'
-      }
       pattern += str
       lastIsGlob = false
     }
 
     if (ast.expressions[i] && !lastIsGlob) {
-      pattern += '**'
+      pattern += '*'
       lastIsGlob = true
     }
   }
