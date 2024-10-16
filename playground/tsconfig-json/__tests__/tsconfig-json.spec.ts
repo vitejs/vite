@@ -5,17 +5,17 @@ import { describe, expect, test } from 'vitest'
 import { browserLogs, isServe, serverLogs } from '~utils'
 
 test('should respected each `tsconfig.json`s compilerOptions', () => {
-  // main side effect should be called (because of `"importsNotUsedAsValues": "preserve"`)
+  // main side effect should be called (because of `"verbatimModuleSyntax": true`)
   expect(browserLogs).toContain('main side effect')
   // main base setter should not be called (because of `"useDefineForClassFields": true"`)
   expect(browserLogs).not.toContain('data setter in MainBase')
 
-  // nested side effect should not be called (because "importsNotUsedAsValues" is not set, defaults to "remove")
+  // nested side effect should not be called (because "verbatimModuleSyntax" is not set, defaults to false)
   expect(browserLogs).not.toContain('nested side effect')
   // nested base setter should be called (because of `"useDefineForClassFields": false"`)
   expect(browserLogs).toContain('data setter in NestedBase')
 
-  // nested-with-extends side effect should be called (because "importsNotUsedAsValues" is extended from the main tsconfig.json, which is "preserve")
+  // nested-with-extends side effect should be called (because "verbatimModuleSyntax" is extended from the main tsconfig.json, which is true)
   expect(browserLogs).toContain('nested-with-extends side effect')
   // nested-with-extends base setter should be called (because of `"useDefineForClassFields": false"`)
   expect(browserLogs).toContain('data setter in NestedWithExtendsBase')
@@ -42,8 +42,8 @@ describe('transformWithEsbuild', () => {
         },
       },
     })
-    // "importsNotUsedAsValues": "preserve" from tsconfig.json should still work
-    expect(result.code).toContain('import "./not-used-type";')
+    // "verbatimModuleSyntax": true from tsconfig.json should still work
+    expect(result.code).toMatch(/import.*".\/not-used-type";/)
   })
 
   test('overwrite tsconfigRaw string', async () => {
@@ -56,26 +56,24 @@ describe('transformWithEsbuild', () => {
         }
       }`,
     })
-    // "importsNotUsedAsValues": "preserve" from tsconfig.json should not be read
-    // and defaults to "remove"
-    expect(result.code).not.toContain('import "./not-used-type";')
+    // "verbatimModuleSyntax": true from from tsconfig.json should not be read
+    // and defaults to false
+    expect(result.code).not.toMatch(/import.*".\/not-used-type";/)
   })
 
-  test('preserveValueImports', async () => {
+  test('verbatimModuleSyntax', async () => {
     const main = path.resolve(__dirname, '../src/main.ts')
     const mainContent = fs.readFileSync(main, 'utf-8')
     const result = await transformWithEsbuild(mainContent, main, {
       tsconfigRaw: {
         compilerOptions: {
           useDefineForClassFields: false,
-          preserveValueImports: true,
+          verbatimModuleSyntax: false,
         },
       },
     })
-    // "importsNotUsedAsValues": "preserve" from tsconfig.json should still work
-    expect(result.code).toContain(
-      'import { MainTypeOnlyClass } from "./not-used-type";',
-    )
+    // "verbatimModuleSyntax": false from tsconfig.json should still work
+    expect(result.code).not.toMatch(/import.*".\/not-used-type";/)
   })
 
   test('experimentalDecorators', async () => {
