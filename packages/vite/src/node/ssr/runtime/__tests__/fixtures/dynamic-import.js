@@ -10,7 +10,10 @@ export const initialize = async () => {
     dynamicRelative: await import(nameRelative),
     dynamicAbsolute: await import(nameAbsolute),
     dynamicAbsoluteExtension: await import(nameAbsoluteExtension),
-    dynamicAbsoluteFull: await import(path.join(import.meta.dirname, "simple.js")),
+    dynamicAbsoluteFull: await import(path.join(
+      ...process.platform === 'win32' ? ['/@fs'] : [],
+      import.meta.dirname, "simple.js"
+    )),
     static: staticModule,
   }
 }
