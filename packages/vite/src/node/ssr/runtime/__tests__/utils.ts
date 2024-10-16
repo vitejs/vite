@@ -70,6 +70,7 @@ export async function createModuleRunnerTester(
             }
           },
         },
+        ...(config.plugins ?? []),
       ],
       ...config,
     })
