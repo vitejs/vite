@@ -451,7 +451,7 @@ export function resolveBuildEnvironmentOptions(
   }
 
   if (resolved.cssMinify == null) {
-    resolved.cssMinify = raw?.ssr ? 'esbuild' : !!resolved.minify
+    resolved.cssMinify = raw.ssr ? 'esbuild' : !!resolved.minify
   }
 
   return resolved
