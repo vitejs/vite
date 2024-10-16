@@ -149,8 +149,8 @@ export interface ModuleRunnerHmr {
 
 export interface ModuleRunnerOptions {
   /**
-   * TODO: remove?
    * Root of the project
+   * @deprecated not used
    */
   root: string
   /**
