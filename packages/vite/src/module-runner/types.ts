@@ -149,6 +149,7 @@ export interface ModuleRunnerHmr {
 
 export interface ModuleRunnerOptions {
   /**
+   * TODO: remove?
    * Root of the project
    */
   root: string
