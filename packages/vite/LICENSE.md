@@ -240,7 +240,7 @@ Repository: git+https://github.com/ampproject/remapping.git
 ## @jridgewell/gen-mapping, @jridgewell/set-array
 License: MIT
 By: Justin Ridgewell
-Repository: https://github.com/jridgewell/gen-mapping, https://github.com/jridgewell/set-array
+Repositories: https://github.com/jridgewell/gen-mapping, https://github.com/jridgewell/set-array
 
 > Copyright 2022 Justin Ridgewell <jridgewell@google.com>
 > 
@@ -442,7 +442,7 @@ Repository: rollup/plugins
 ## ansi-regex, bundle-name, default-browser, default-browser-id, define-lazy-prop, is-docker, is-inside-container, is-wsl, open, run-applescript, strip-ansi
 License: MIT
 By: Sindre Sorhus
-Repository: chalk/ansi-regex, sindresorhus/bundle-name, sindresorhus/default-browser, sindresorhus/default-browser-id, sindresorhus/define-lazy-prop, sindresorhus/is-docker, sindresorhus/is-inside-container, sindresorhus/is-wsl, sindresorhus/open, sindresorhus/run-applescript, chalk/strip-ansi
+Repositories: chalk/ansi-regex, sindresorhus/bundle-name, sindresorhus/default-browser, sindresorhus/default-browser-id, sindresorhus/define-lazy-prop, sindresorhus/is-docker, sindresorhus/is-inside-container, sindresorhus/is-wsl, sindresorhus/open, sindresorhus/run-applescript, chalk/strip-ansi
 
 > MIT License
 > 
@@ -539,7 +539,7 @@ Repository: https://github.com/davidbonnet/astring.git
 ## binary-extensions, is-binary-path
 License: MIT
 By: Sindre Sorhus
-Repository: sindresorhus/binary-extensions, sindresorhus/is-binary-path
+Repositories: sindresorhus/binary-extensions, sindresorhus/is-binary-path
 
 > MIT License
 > 
@@ -655,7 +655,7 @@ Repository: git+https://github.com/paulmillr/chokidar.git
 ## commondir, shell-quote
 License: MIT
 By: James Halliday
-Repository: http://github.com/substack/node-commondir.git, http://github.com/ljharb/shell-quote.git
+Repositories: http://github.com/substack/node-commondir.git, http://github.com/ljharb/shell-quote.git
 
 > The MIT License
 > 
@@ -1380,7 +1380,7 @@ Repository: git+https://github.com/Rich-Harris/is-reference.git
 ## isexe, which
 License: ISC
 By: Isaac Z. Schlueter
-Repository: git+https://github.com/isaacs/isexe.git, git://github.com/isaacs/node-which.git
+Repositories: git+https://github.com/isaacs/isexe.git, git://github.com/isaacs/node-which.git
 
 > The ISC License
 > 
@@ -1432,7 +1432,7 @@ Repository: lydell/js-tokens
 ## launch-editor, launch-editor-middleware
 License: MIT
 By: Evan You
-Repository: git+https://github.com/yyx990803/launch-editor.git, git+https://github.com/yyx990803/launch-editor.git
+Repositories: git+https://github.com/yyx990803/launch-editor.git, git+https://github.com/yyx990803/launch-editor.git
 
 > The MIT License (MIT)
 > 
@@ -1615,7 +1615,7 @@ Repository: git@github.com:teambition/merge2.git
 
 ## mlly, ufo
 License: MIT
-Repository: unjs/mlly, unjs/ufo
+Repositories: unjs/mlly, unjs/ufo
 
 > MIT License
 > 
@@ -1730,7 +1730,7 @@ Repository: jonschlinkert/normalize-path
 ## object-assign, pify
 License: MIT
 By: Sindre Sorhus
-Repository: sindresorhus/object-assign, sindresorhus/pify
+Repositories: sindresorhus/object-assign, sindresorhus/pify
 
 > The MIT License (MIT)
 > 
@@ -1848,7 +1848,7 @@ Repository: pillarjs/parseurl
 ## path-key, shebang-regex
 License: MIT
 By: Sindre Sorhus
-Repository: sindresorhus/path-key, sindresorhus/shebang-regex
+Repositories: sindresorhus/path-key, sindresorhus/shebang-regex
 
 > MIT License
 > 
@@ -2146,7 +2146,7 @@ Repository: https://github.com/TrySound/postcss-value-parser.git
 ## queue-microtask, run-parallel
 License: MIT
 By: Feross Aboukhadijeh
-Repository: git://github.com/feross/queue-microtask.git, git://github.com/feross/run-parallel.git
+Repositories: git://github.com/feross/queue-microtask.git, git://github.com/feross/run-parallel.git
 
 > The MIT License (MIT)
 > 
@@ -2260,7 +2260,7 @@ Repository: https://github.com/unshiftio/requires-port
 ## resolve.exports, totalist
 License: MIT
 By: Luke Edwards
-Repository: lukeed/resolve.exports, lukeed/totalist
+Repositories: lukeed/resolve.exports, lukeed/totalist
 
 > The MIT License (MIT)
 > 

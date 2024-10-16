@@ -60,7 +60,7 @@ Repository: git@github.com:moxystudio/node-cross-spawn.git
 ## isexe, which
 License: ISC
 By: Isaac Z. Schlueter
-Repository: git+https://github.com/isaacs/isexe.git, git://github.com/isaacs/node-which.git
+Repositories: git+https://github.com/isaacs/isexe.git, git://github.com/isaacs/node-which.git
 
 > The ISC License
 > 
@@ -138,7 +138,7 @@ Repository: git://github.com/minimistjs/minimist.git
 ## path-key, shebang-regex
 License: MIT
 By: Sindre Sorhus
-Repository: sindresorhus/path-key, sindresorhus/shebang-regex
+Repositories: sindresorhus/path-key, sindresorhus/shebang-regex
 
 > MIT License
 > 
@@ -178,7 +178,7 @@ Repository: alexeyraspopov/picocolors
 ## prompts, sisteransi
 License: MIT
 By: Terkel Gjervig
-Repository: terkelg/prompts, https://github.com/terkelg/sisteransi
+Repositories: terkelg/prompts, https://github.com/terkelg/sisteransi
 
 > MIT License
 > 

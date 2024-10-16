@@ -58,7 +58,7 @@ export default function licensePlugin(
 
           if (license) text += `License: ${license}\n`
           if (names) text += `By: ${names}\n`
-          if (repositoryText) text += `Repository: ${repositoryText}\n`
+          if (repositoryText) text += `Repositories: ${repositoryText}\n`
         }
         // Else show each dependency separately
         else {
