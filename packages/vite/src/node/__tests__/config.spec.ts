@@ -1,9 +1,10 @@
+import http from 'node:http'
 import { describe, expect, test } from 'vitest'
 import type { InlineConfig } from '..'
 import type { PluginOption, UserConfig, UserConfigExport } from '../config'
 import { defineConfig, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
-import { mergeConfig } from '../publicUtils'
+import { createLogger, mergeConfig } from '../publicUtils'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
@@ -185,6 +186,18 @@ describe('mergeConfig', () => {
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
   })
 
+  test('handles server.hmr.server', () => {
+    const httpServer = http.createServer()
+
+    const baseConfig = { server: { hmr: { server: httpServer } } }
+    const newConfig = { server: { hmr: { server: httpServer } } }
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    // Server instance should not be recreated
+    expect(mergedConfig.server.hmr.server).toBe(httpServer)
+  })
+
   test('throws error with functions', () => {
     const baseConfig = defineConfig(() => ({ base: 'base' }))
     const newConfig = defineConfig(() => ({ base: 'new' }))
@@ -331,5 +344,18 @@ describe('resolveConfig', () => {
 
     expect(results1.clearScreen).toBe(false)
     expect(results2.clearScreen).toBe(false)
+  })
+
+  test('resolveConfig with root path including "#" and "?" should warn ', async () => {
+    expect.assertions(1)
+
+    const logger = createLogger('info')
+    logger.warn = (str) => {
+      expect(str).to.include(
+        'Consider renaming the directory to remove the characters',
+      )
+    }
+
+    await resolveConfig({ root: './inc?ud#s', customLogger: logger }, 'build')
   })
 })

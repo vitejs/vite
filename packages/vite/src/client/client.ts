@@ -1,4 +1,4 @@
-import type { ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { HMRClient, HMRContext } from '../shared/hmr'
@@ -49,14 +49,14 @@ try {
             'your current setup:\n' +
             `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
             `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
-            'Check out your Vite / network configuration and https://vitejs.dev/config/server-options.html#server-hmr .',
+            'Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr .',
         )
       })
       socket.addEventListener(
         'open',
         () => {
           console.info(
-            '[vite] Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.',
+            '[vite] Direct websocket connection fallback. Check out https://vite.dev/config/server-options.html#server-hmr to remove the previous connection error.',
           )
         },
         { once: true },
@@ -102,16 +102,18 @@ function setupWebSocket(
 
     notifyListeners('vite:ws:disconnect', { webSocket: socket })
 
-    console.log(`[vite] server connection lost. polling for restart...`)
-    await waitForSuccessfulPing(protocol, hostAndPath)
-    location.reload()
+    if (hasDocument) {
+      console.log(`[vite] server connection lost. Polling for restart...`)
+      await waitForSuccessfulPing(protocol, hostAndPath)
+      location.reload()
+    }
   })
 
   return socket
 }
 
 function cleanUrl(pathname: string): string {
-  const url = new URL(pathname, location.toString())
+  const url = new URL(pathname, 'http://vite.dev')
   url.searchParams.delete('direct')
   return url.pathname + url.search
 }
@@ -134,10 +136,13 @@ const debounceReload = (time: number) => {
 const pageReload = debounceReload(50)
 
 const hmrClient = new HMRClient(
-  console,
+  {
+    error: (err) => console.error('[vite]', err),
+    debug: (...msg) => console.debug('[vite]', ...msg),
+  },
   {
     isReady: () => socket && socket.readyState === 1,
-    send: (message) => socket.send(message),
+    send: (payload) => socket.send(JSON.stringify(payload)),
   },
   async function importUpdatedModule({
     acceptedPath,
@@ -167,7 +172,7 @@ const hmrClient = new HMRClient(
   },
 )
 
-async function handleMessage(payload: HMRPayload) {
+async function handleMessage(payload: HotPayload) {
   switch (payload.type) {
     case 'connected':
       console.debug(`[vite] connected.`)
@@ -182,16 +187,20 @@ async function handleMessage(payload: HMRPayload) {
       break
     case 'update':
       notifyListeners('vite:beforeUpdate', payload)
-      // if this is the first update and there's already an error overlay, it
-      // means the page opened with existing server compile error and the whole
-      // module script failed to load (since one of the nested imports is 500).
-      // in this case a normal update won't work and a full reload is needed.
-      if (isFirstUpdate && hasErrorOverlay()) {
-        window.location.reload()
-        return
-      } else {
-        clearErrorOverlay()
-        isFirstUpdate = false
+      if (hasDocument) {
+        // if this is the first update and there's already an error overlay, it
+        // means the page opened with existing server compile error and the whole
+        // module script failed to load (since one of the nested imports is 500).
+        // in this case a normal update won't work and a full reload is needed.
+        if (isFirstUpdate && hasErrorOverlay()) {
+          location.reload()
+          return
+        } else {
+          if (enableOverlay) {
+            clearErrorOverlay()
+          }
+          isFirstUpdate = false
+        }
       }
       await Promise.all(
         payload.updates.map(async (update): Promise<void> => {
@@ -249,36 +258,40 @@ async function handleMessage(payload: HMRPayload) {
     }
     case 'full-reload':
       notifyListeners('vite:beforeFullReload', payload)
-      if (payload.path && payload.path.endsWith('.html')) {
-        // if html file is edited, only reload the page if the browser is
-        // currently on that page.
-        const pagePath = decodeURI(location.pathname)
-        const payloadPath = base + payload.path.slice(1)
-        if (
-          pagePath === payloadPath ||
-          payload.path === '/index.html' ||
-          (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
-        ) {
+      if (hasDocument) {
+        if (payload.path && payload.path.endsWith('.html')) {
+          // if html file is edited, only reload the page if the browser is
+          // currently on that page.
+          const pagePath = decodeURI(location.pathname)
+          const payloadPath = base + payload.path.slice(1)
+          if (
+            pagePath === payloadPath ||
+            payload.path === '/index.html' ||
+            (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
+          ) {
+            pageReload()
+          }
+          return
+        } else {
           pageReload()
         }
-        return
-      } else {
-        pageReload()
       }
       break
     case 'prune':
       notifyListeners('vite:beforePrune', payload)
-      hmrClient.prunePaths(payload.paths)
+      await hmrClient.prunePaths(payload.paths)
       break
     case 'error': {
       notifyListeners('vite:error', payload)
-      const err = payload.err
-      if (enableOverlay) {
-        createErrorOverlay(err)
-      } else {
-        console.error(
-          `[vite] Internal Server Error\n${err.message}\n${err.stack}`,
-        )
+      if (hasDocument) {
+        const err = payload.err
+        if (enableOverlay) {
+          createErrorOverlay(err)
+        } else {
+          console.error(
+            `[vite] Internal Server Error\n${err.message}\n${err.stack}`,
+          )
+        }
       }
       break
     }
@@ -298,6 +311,7 @@ function notifyListeners(event: string, data: any): void {
 }
 
 const enableOverlay = __HMR_ENABLE_OVERLAY__
+const hasDocument = 'document' in globalThis
 
 function createErrorOverlay(err: ErrorPayload['err']) {
   clearErrorOverlay()
@@ -342,7 +356,6 @@ async function waitForSuccessfulPing(
   }
   await wait(ms)
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     if (document.visibilityState === 'visible') {
       if (await ping()) {
@@ -383,6 +396,11 @@ if ('document' in globalThis) {
     })
 }
 
+const cspNonce =
+  'document' in globalThis
+    ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
+    : undefined
+
 // all css imports should be inserted at the same position
 // because after build it will be a single css file
 let lastInsertedStyle: HTMLStyleElement | undefined
@@ -394,6 +412,9 @@ export function updateStyle(id: string, content: string): void {
     style.setAttribute('type', 'text/css')
     style.setAttribute('data-vite-dev-id', id)
     style.textContent = content
+    if (cspNonce) {
+      style.setAttribute('nonce', cspNonce)
+    }
 
     if (!lastInsertedStyle) {
       document.head.appendChild(style)
@@ -435,8 +456,8 @@ export function injectQuery(url: string, queryToInject: string): string {
   }
 
   // can't use pathname from URL since it may be relative like ../
-  const pathname = url.replace(/[?#].*$/s, '')
-  const { search, hash } = new URL(url, 'http://vitejs.dev')
+  const pathname = url.replace(/[?#].*$/, '')
+  const { search, hash } = new URL(url, 'http://vite.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''

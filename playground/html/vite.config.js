@@ -1,6 +1,5 @@
-import { resolve } from 'node:path'
+import { relative, resolve } from 'node:path'
 import { defineConfig } from 'vite'
-import { hasWindowsUnicodeFsBug } from '../hasWindowsUnicodeFsBug'
 
 export default defineConfig({
   base: './',
@@ -21,14 +20,10 @@ export default defineConfig({
         inline1: resolve(__dirname, 'inline/shared-1.html'),
         inline2: resolve(__dirname, 'inline/shared-2.html'),
         inline3: resolve(__dirname, 'inline/unique.html'),
-        ...(hasWindowsUnicodeFsBug
-          ? {}
-          : {
-              unicodePath: resolve(
-                __dirname,
-                'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-              ),
-            }),
+        unicodePath: resolve(
+          __dirname,
+          'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+        ),
         linkProps: resolve(__dirname, 'link-props/index.html'),
         valid: resolve(__dirname, 'valid.html'),
         importmapOrder: resolve(__dirname, 'importmapOrder.html'),
@@ -40,13 +35,17 @@ export default defineConfig({
         serveBothFile: resolve(__dirname, 'serve/both.html'),
         serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
         write: resolve(__dirname, 'write.html'),
+        relativeInput: relative(
+          process.cwd(),
+          resolve(__dirname, 'relative-input.html'),
+        ),
       },
     },
   },
 
   server: {
     fs: {
-      cachedChecks: true,
+      cachedChecks: false,
     },
     warmup: {
       clientFiles: ['./warmup/*'],
@@ -213,6 +212,23 @@ ${
             injectTo: 'head',
           },
         ]
+      },
+    },
+    {
+      name: 'escape-html-attribute',
+      transformIndexHtml: {
+        order: 'post',
+        handler() {
+          return [
+            {
+              tag: 'link',
+              attrs: {
+                href: `"><div class=unescape-div>extra content</div>`,
+              },
+              injectTo: 'body',
+            },
+          ]
+        },
       },
     },
   ],

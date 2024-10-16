@@ -1,8 +1,9 @@
 import path from 'node:path'
 import type { Connect } from 'dep-types/connect'
-import { cleanUrl, createDebugger } from '../../utils'
+import { createDebugger } from '../../utils'
 import type { FsUtils } from '../../fsUtils'
 import { commonFsUtils } from '../../fsUtils'
+import { cleanUrl } from '../../../shared/utils'
 
 const debug = createDebugger('vite:html-fallback')
 
@@ -12,7 +13,7 @@ export function htmlFallbackMiddleware(
   fsUtils: FsUtils = commonFsUtils,
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteHtmlFallbackMiddleware(req, res, next) {
+  return function viteHtmlFallbackMiddleware(req, _res, next) {
     if (
       // Only accept GET or HEAD
       (req.method !== 'GET' && req.method !== 'HEAD') ||

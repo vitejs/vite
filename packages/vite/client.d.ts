@@ -54,6 +54,10 @@ declare module '*.apng' {
   const src: string
   export default src
 }
+declare module '*.bmp' {
+  const src: string
+  export default src
+}
 declare module '*.png' {
   const src: string
   export default src
@@ -241,4 +245,12 @@ declare module '*?url' {
 declare module '*?inline' {
   const src: string
   export default src
+}
+
+declare interface VitePreloadErrorEvent extends Event {
+  payload: Error
+}
+
+declare interface WindowEventMap {
+  'vite:preloadError': VitePreloadErrorEvent
 }

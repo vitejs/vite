@@ -4,7 +4,12 @@ import colors from 'picocolors'
 import { describe, expect, test, vi } from 'vitest'
 import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
-import { build, resolveBuildOutputs, resolveLibFilename } from '../build'
+import {
+  build,
+  createBuilder,
+  resolveBuildOutputs,
+  resolveLibFilename,
+} from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
 
@@ -576,6 +581,130 @@ describe('resolveBuildOutputs', () => {
       ),
     )
   })
+
+  test('ssrEmitAssets', async () => {
+    const result = await build({
+      root: resolve(__dirname, 'fixtures/emit-assets'),
+      logLevel: 'silent',
+      build: {
+        ssr: true,
+        ssrEmitAssets: true,
+        rollupOptions: {
+          input: {
+            index: '/entry',
+          },
+        },
+      },
+    })
+    expect(result).toMatchObject({
+      output: [
+        {
+          fileName: 'index.mjs',
+        },
+        {
+          fileName: expect.stringMatching(/assets\/index-\w*\.css/),
+        },
+      ],
+    })
+  })
+
+  test('emitAssets', async () => {
+    const builder = await createBuilder({
+      root: resolve(__dirname, 'fixtures/emit-assets'),
+      logLevel: 'warn',
+      environments: {
+        ssr: {
+          build: {
+            ssr: true,
+            emitAssets: true,
+            rollupOptions: {
+              input: {
+                index: '/entry',
+              },
+            },
+          },
+        },
+      },
+    })
+    const result = await builder.build(builder.environments.ssr)
+    expect(result).toMatchObject({
+      output: [
+        {
+          fileName: 'index.mjs',
+        },
+        {
+          fileName: expect.stringMatching(/assets\/index-\w*\.css/),
+        },
+      ],
+    })
+  })
+
+  test('ssr builtin', async () => {
+    const builder = await createBuilder({
+      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      logLevel: 'warn',
+      environments: {
+        ssr: {
+          build: {
+            ssr: true,
+            rollupOptions: {
+              input: {
+                index: '/entry',
+              },
+            },
+          },
+        },
+      },
+    })
+    const result = await builder.build(builder.environments.ssr)
+    expect((result as RollupOutput).output[0].code).not.toContain('preload')
+  })
+
+  test('ssr custom', async () => {
+    const builder = await createBuilder({
+      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      logLevel: 'warn',
+      environments: {
+        custom: {
+          build: {
+            ssr: true,
+            rollupOptions: {
+              input: {
+                index: '/entry',
+              },
+            },
+          },
+        },
+      },
+    })
+    const result = await builder.build(builder.environments.custom)
+    expect((result as RollupOutput).output[0].code).not.toContain('preload')
+  })
+})
+
+test('default sharedConfigBuild true on build api', async () => {
+  let counter = 0
+  await build({
+    root: resolve(__dirname, 'fixtures/emit-assets'),
+    logLevel: 'warn',
+    build: {
+      ssr: true,
+      rollupOptions: {
+        input: {
+          index: '/entry',
+        },
+      },
+    },
+    plugins: [
+      {
+        name: 'test-plugin',
+        config() {
+          counter++
+        },
+      },
+    ],
+  })
+  expect(counter).toBe(1)
 })
 
 /**

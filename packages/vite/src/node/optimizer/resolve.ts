@@ -2,24 +2,26 @@ import path from 'node:path'
 import glob from 'fast-glob'
 import micromatch from 'micromatch'
 import type { ResolvedConfig } from '../config'
-import { escapeRegex, getNpmPackageName, slash } from '../utils'
+import { escapeRegex, getNpmPackageName } from '../utils'
 import { resolvePackageData } from '../packages'
+import { slash } from '../../shared/utils'
+import type { Environment } from '../environment'
+import { createBackCompatIdResolver } from '../idResolver'
 
 export function createOptimizeDepsIncludeResolver(
-  config: ResolvedConfig,
-  ssr: boolean,
+  environment: Environment,
 ): (id: string) => Promise<string | undefined> {
-  const resolve = config.createResolver({
+  const topLevelConfig = environment.getTopLevelConfig()
+  const resolve = createBackCompatIdResolver(topLevelConfig, {
     asSrc: false,
     scan: true,
-    ssrOptimizeCheck: ssr,
-    ssrConfig: config.ssr,
+    ssrOptimizeCheck: environment.config.consumer === 'server',
     packageCache: new Map(),
   })
   return async (id: string) => {
     const lastArrowIndex = id.lastIndexOf('>')
     if (lastArrowIndex === -1) {
-      return await resolve(id, undefined, undefined, ssr)
+      return await resolve(environment, id, undefined)
     }
     // split nested selected id by last '>', for example:
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
@@ -27,14 +29,13 @@ export function createOptimizeDepsIncludeResolver(
     const nestedPath = id.substring(lastArrowIndex + 1).trim()
     const basedir = nestedResolveBasedir(
       nestedRoot,
-      config.root,
-      config.resolve.preserveSymlinks,
+      topLevelConfig.root,
+      topLevelConfig.resolve.preserveSymlinks,
     )
     return await resolve(
+      environment,
       nestedPath,
       path.resolve(basedir, 'package.json'),
-      undefined,
-      ssr,
     )
   }
 }
@@ -94,11 +95,21 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
                 ignore: ['node_modules'],
               })
               .map((filePath) => {
+                // ensure "./" prefix for inconsistent fast-glob result
+                //   glob.sync("./some-dir/**/*") -> "./some-dir/some-file"
+                //   glob.sync("./**/*")          -> "some-dir/some-file"
+                if (
+                  exportsValue.startsWith('./') &&
+                  !filePath.startsWith('./')
+                ) {
+                  filePath = './' + filePath
+                }
+
                 // "./glob/*": "./dist/glob/*-browser/*.js"
                 // `filePath`: "./dist/glob/foo-browser/foo.js"
                 // we need to revert the file path back to the export key by
                 // matching value regex and replacing the capture groups to the key
-                const matched = slash(filePath).match(exportsValueGlobRe)
+                const matched = exportsValueGlobRe.exec(slash(filePath))
                 // `matched`: [..., 'foo', 'foo']
                 if (matched) {
                   let allGlobSame = matched.length === 2

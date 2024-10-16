@@ -2,14 +2,14 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { exec } from 'node:child_process'
-import { createHash } from 'node:crypto'
-import { URL, URLSearchParams, fileURLToPath } from 'node:url'
+import crypto from 'node:crypto'
+import { URL, fileURLToPath } from 'node:url'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
 import type { AddressInfo, Server } from 'node:net'
 import fsp from 'node:fs/promises'
-import type { FSWatcher } from 'chokidar'
+import type { FSWatcher } from 'dep-types/chokidar'
 import remapping from '@ampproject/remapping'
 import type { DecodedSourceMap, RawSourceMap } from '@ampproject/remapping'
 import colors from 'picocolors'
@@ -20,17 +20,23 @@ import type MagicString from 'magic-string'
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
+  cleanUrl,
+  isWindows,
+  slash,
+  splitFileAndPostfix,
+  withTrailingSlash,
+} from '../shared/utils'
+import { VALID_ID_PREFIX } from '../shared/constants'
+import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
   ENV_PUBLIC_PATH,
   FS_PREFIX,
-  NULL_BYTE_PLACEHOLDER,
   OPTIMIZABLE_ENTRY_RE,
-  VALID_ID_PREFIX,
   loopbackHosts,
   wildcardHosts,
 } from './constants'
-import type { DepOptimizationConfig } from './optimizer'
+import type { DepOptimizationOptions } from './optimizer'
 import type { ResolvedConfig } from './config'
 import type { ResolvedServerUrls, ViteDevServer } from './server'
 import type { PreviewServer } from './preview'
@@ -55,34 +61,9 @@ export const createFilter = _createFilter as (
   options?: { resolve?: string | false | null },
 ) => (id: string | unknown) => boolean
 
-const windowsSlashRE = /\\/g
-export function slash(p: string): string {
-  return p.replace(windowsSlashRE, '/')
-}
-
-/**
- * Prepend `/@id/` and replace null byte so the id is URL-safe.
- * This is prepended to resolved ids that are not valid browser
- * import specifiers by the importAnalysis plugin.
- */
-export function wrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX)
-    ? id
-    : VALID_ID_PREFIX + id.replace('\0', NULL_BYTE_PLACEHOLDER)
-}
-
-/**
- * Undo {@link wrapId}'s `/@id/` and null byte replacements.
- */
-export function unwrapId(id: string): string {
-  return id.startsWith(VALID_ID_PREFIX)
-    ? id.slice(VALID_ID_PREFIX.length).replace(NULL_BYTE_PLACEHOLDER, '\0')
-    : id
-}
-
 const replaceSlashOrColonRE = /[/:]/g
 const replaceDotRE = /\./g
-const replaceNestedIdRE = /(\s*>\s*)/g
+const replaceNestedIdRE = /\s*>\s*/g
 const replaceHashRE = /#/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
@@ -147,7 +128,7 @@ export function moduleListContains(
 
 export function isOptimizable(
   id: string,
-  optimizeDeps: DepOptimizationConfig,
+  optimizeDeps: DepOptimizationOptions,
 ): boolean {
   const { extensions } = optimizeDeps
   return (
@@ -161,6 +142,12 @@ export const deepImportRE = /^([^@][^/]*)\/|^(@[^/]+\/[^/]+)\//
 
 // TODO: use import()
 const _require = createRequire(import.meta.url)
+
+const _dirname = path.dirname(fileURLToPath(import.meta.url))
+
+// NOTE: we don't use VERSION variable exported from rollup to avoid importing rollup in dev
+export const rollupVersion =
+  resolvePackageData('rollup', _dirname, true)?.data.version ?? ''
 
 // set in bin/vite.js
 const filter = process.env.VITE_DEBUG_FILTER
@@ -211,6 +198,7 @@ function testCaseInsensitiveFS() {
 }
 
 export const urlCanParse =
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins
   URL.canParse ??
   // URL.canParse is supported from Node.js 18.17.0+, 20.0.0+
   ((path: string, base?: string | undefined): boolean => {
@@ -223,8 +211,6 @@ export const urlCanParse =
   })
 
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
-
-export const isWindows = os.platform() === 'win32'
 
 const VOLUME_RE = /^[A-Z]:/i
 
@@ -241,13 +227,6 @@ export function fsPathFromId(id: string): string {
 
 export function fsPathFromUrl(url: string): string {
   return fsPathFromId(cleanUrl(url))
-}
-
-export function withTrailingSlash(path: string): string {
-  if (path[path.length - 1] !== '/') {
-    return `${path}/`
-  }
-  return path
 }
 
 /**
@@ -281,13 +260,6 @@ export function isSameFileUri(file1: string, file2: string): boolean {
     file1 === file2 ||
     (isCaseInsensitiveFS && file1.toLowerCase() === file2.toLowerCase())
   )
-}
-
-export const queryRE = /\?.*$/s
-
-const postfixRE = /[?#].*$/s
-export function cleanUrl(url: string): string {
-  return url.replace(postfixRE, '')
 }
 
 export const externalRE = /^(https?:)?\/\//
@@ -345,20 +317,10 @@ export function removeRawQuery(url: string): string {
   return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
 }
 
-const replacePercentageRE = /%/g
 export function injectQuery(url: string, queryToInject: string): string {
-  // encode percents for consistent behavior with pathToFileURL
-  // see #2614 for details
-  const resolvedUrl = new URL(
-    url.replace(replacePercentageRE, '%25'),
-    'relative:///',
-  )
-  const { search, hash } = resolvedUrl
-  let pathname = cleanUrl(url)
-  pathname = isWindows ? slash(pathname) : pathname
-  return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
-    hash ?? ''
-  }`
+  const { file, postfix } = splitFileAndPostfix(url)
+  const normalizedFile = isWindows ? slash(file) : file
+  return `${normalizedFile}?${queryToInject}${postfix[0] === '?' ? `&${postfix.slice(1)}` : /* hash only */ postfix}`
 }
 
 const timestampRE = /\bt=\d{13}&?\b/
@@ -402,7 +364,10 @@ export function prettifyUrl(url: string, root: string): string {
   url = removeTimestampQuery(url)
   const isAbsoluteFile = url.startsWith(root)
   if (isAbsoluteFile || url.startsWith(FS_PREFIX)) {
-    const file = path.relative(root, isAbsoluteFile ? url : fsPathFromId(url))
+    const file = path.posix.relative(
+      root,
+      isAbsoluteFile ? url : fsPathFromId(url),
+    )
     return colors.dim(file)
   } else {
     return colors.dim(url)
@@ -461,7 +426,7 @@ export function isFilePathESM(
   }
 }
 
-const splitRE = /\r?\n/
+export const splitRE = /\r?\n/g
 
 const range: number = 2
 
@@ -585,7 +550,7 @@ export function emptyDir(dir: string, skip?: string[]): void {
   if (skip?.length) {
     for (const file of skip) {
       if (path.dirname(file) !== '.') {
-        const matched = file.match(splitFirstDirRE)
+        const matched = splitFirstDirRE.exec(file)
         if (matched) {
           nested ??= new Map()
           const [, nestedDir, skipPath] = matched
@@ -683,7 +648,7 @@ function windowsMappedRealpathSync(path: string) {
   }
   return realPath
 }
-const parseNetUseRE = /^(\w+)? +(\w:) +([^ ]+)\s/
+const parseNetUseRE = /^\w* +(\w:) +([^ ]+)\s/
 let firstSafeRealPathSyncRun = false
 
 function windowsSafeRealPathSync(path: string): string {
@@ -718,8 +683,8 @@ function optimizeSafeRealPathSync() {
     // OK           Y:        \\NETWORKA\Foo         Microsoft Windows Network
     // OK           Z:        \\NETWORKA\Bar         Microsoft Windows Network
     for (const line of lines) {
-      const m = line.match(parseNetUseRE)
-      if (m) windowsNetworkMap.set(m[3], m[2])
+      const m = parseNetUseRE.exec(line)
+      if (m) windowsNetworkMap.set(m[2], m[1])
     }
     if (windowsNetworkMap.size === 0) {
       safeRealpathSync = fs.realpathSync.native
@@ -751,24 +716,42 @@ interface ImageCandidate {
   url: string
   descriptor: string
 }
-const escapedSpaceCharacters = /( |\\t|\\n|\\f|\\r)+/g
-const imageSetUrlRE = /^(?:[\w\-]+\(.*?\)|'.*?'|".*?"|\S*)/
+
 function joinSrcset(ret: ImageCandidate[]) {
-  return ret.map(({ url, descriptor }) => `${url} ${descriptor}`).join(', ')
+  return ret
+    .map(({ url, descriptor }) => url + (descriptor ? ` ${descriptor}` : ''))
+    .join(', ')
 }
 
-function splitSrcSetDescriptor(srcs: string): ImageCandidate[] {
-  return splitSrcSet(srcs)
-    .map((s) => {
-      const src = s.replace(escapedSpaceCharacters, ' ').trim()
-      const url = imageSetUrlRE.exec(src)?.[0] ?? ''
+/**
+ This regex represents a loose rule of an “image candidate string” and "image set options".
 
-      return {
-        url,
-        descriptor: src.slice(url.length).trim(),
-      }
-    })
-    .filter(({ url }) => !!url)
+ @see https://html.spec.whatwg.org/multipage/images.html#srcset-attribute
+ @see https://drafts.csswg.org/css-images-4/#image-set-notation
+
+  The Regex has named capturing groups `url` and `descriptor`.
+  The `url` group can be:
+  * any CSS function
+  * CSS string (single or double-quoted)
+  * URL string (unquoted)
+  The `descriptor` is anything after the space and before the comma.
+ */
+const imageCandidateRegex =
+  /(?:^|\s)(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
+const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
+
+export function parseSrcset(string: string): ImageCandidate[] {
+  const matches = string
+    .trim()
+    .replace(escapedSpaceCharacters, ' ')
+    .replace(/\r?\n/, '')
+    .replace(/,\s+/, ', ')
+    .replaceAll(/\s+/g, ' ')
+    .matchAll(imageCandidateRegex)
+  return Array.from(matches, ({ groups }) => ({
+    url: groups?.url?.trim() ?? '',
+    descriptor: groups?.descriptor?.trim() ?? '',
+  })).filter(({ url }) => !!url)
 }
 
 export function processSrcSet(
@@ -776,7 +759,7 @@ export function processSrcSet(
   replacer: (arg: ImageCandidate) => Promise<string>,
 ): Promise<string> {
   return Promise.all(
-    splitSrcSetDescriptor(srcs).map(async ({ url, descriptor }) => ({
+    parseSrcset(srcs).map(async ({ url, descriptor }) => ({
       url: await replacer({ url, descriptor }),
       descriptor,
     })),
@@ -788,29 +771,11 @@ export function processSrcSetSync(
   replacer: (arg: ImageCandidate) => string,
 ): string {
   return joinSrcset(
-    splitSrcSetDescriptor(srcs).map(({ url, descriptor }) => ({
+    parseSrcset(srcs).map(({ url, descriptor }) => ({
       url: replacer({ url, descriptor }),
       descriptor,
     })),
   )
-}
-
-const cleanSrcSetRE =
-  /(?:url|image|gradient|cross-fade)\([^)]*\)|"([^"]|(?<=\\)")*"|'([^']|(?<=\\)')*'|data:\w+\/[\w.+\-]+;base64,[\w+/=]+/g
-function splitSrcSet(srcs: string) {
-  const parts: string[] = []
-  // There could be a ',' inside of url(data:...), linear-gradient(...), "data:..." or data:...
-  const cleanedSrcs = srcs.replace(cleanSrcSetRE, blankReplacer)
-  let startIndex = 0
-  let splitIndex: number
-  do {
-    splitIndex = cleanedSrcs.indexOf(',', startIndex)
-    parts.push(
-      srcs.slice(startIndex, splitIndex !== -1 ? splitIndex : undefined),
-    )
-    startIndex = splitIndex + 1
-  } while (splitIndex !== -1)
-  return parts
 }
 
 const windowsDriveRE = /^[A-Z]:/
@@ -868,7 +833,6 @@ export function combineSourcemaps(
     }
     return newSourcemaps
   })
-  const escapedFilename = escapeToLinuxLikePath(filename)
 
   // We don't declare type here so we can convert/fake/map as RawSourceMap
   let map //: SourceMap
@@ -879,11 +843,15 @@ export function combineSourcemaps(
     map = remapping(sourcemapList, () => null)
   } else {
     map = remapping(sourcemapList[0], function loader(sourcefile) {
-      if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
-        return sourcemapList[mapIndex++]
-      } else {
-        return null
+      const mapForSources = sourcemapList
+        .slice(mapIndex)
+        .find((s) => s.sources.includes(sourcefile))
+
+      if (mapForSources) {
+        mapIndex++
+        return mapForSources
       }
+      return null
     })
   }
   if (!map.file) {
@@ -1041,23 +1009,22 @@ export const singlelineCommentsRE = /\/\/.*/g
 export const requestQuerySplitRE = /\?(?!.*[/|}])/
 export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 
-export function parseRequest(id: string): Record<string, string> | null {
-  const [_, search] = id.split(requestQuerySplitRE, 2)
-  if (!search) {
-    return null
-  }
-  return Object.fromEntries(new URLSearchParams(search))
-}
-
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
+const hash =
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- crypto.hash is supported in Node 21.7.0+, 20.12.0+
+  crypto.hash ??
+  ((
+    algorithm: string,
+    data: crypto.BinaryLike,
+    outputEncoding: crypto.BinaryToTextEncoding,
+  ) => crypto.createHash(algorithm).update(data).digest(outputEncoding))
+
 export function getHash(text: Buffer | string, length = 8): string {
-  const h = createHash('sha256').update(text).digest('hex').substring(0, length)
+  const h = hash('sha256', text, 'hex').substring(0, length)
   if (length <= 64) return h
   return h.padEnd(length, '_')
 }
-
-const _dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export const requireResolveFromRootWithFallback = (
   root: string,
@@ -1120,7 +1087,7 @@ function mergeConfigRecursively(
       continue
     } else if (
       key === 'noExternal' &&
-      rootPath === 'ssr' &&
+      (rootPath === 'ssr' || rootPath === 'resolve') &&
       (existing === true || value === true)
     ) {
       merged[key] = true
@@ -1131,10 +1098,13 @@ function mergeConfigRecursively(
         ...backwardCompatibleWorkerPlugins(value),
       ]
       continue
+    } else if (key === 'server' && rootPath === 'server.hmr') {
+      merged[key] = value
+      continue
     }
 
     if (Array.isArray(existing) || Array.isArray(value)) {
-      merged[key] = [...arraify(existing ?? []), ...arraify(value ?? [])]
+      merged[key] = [...arraify(existing), ...arraify(value)]
       continue
     }
     if (isObject(existing) && isObject(value)) {
@@ -1420,4 +1390,61 @@ export function sortObjectKeys<T extends Record<string, any>>(obj: T): T {
     sorted[key] = obj[key]
   }
   return sorted as T
+}
+
+export function displayTime(time: number): string {
+  // display: {X}ms
+  if (time < 1000) {
+    return `${time}ms`
+  }
+
+  time = time / 1000
+
+  // display: {X}s
+  if (time < 60) {
+    return `${time.toFixed(2)}s`
+  }
+
+  const mins = parseInt((time / 60).toString())
+  const seconds = time % 60
+
+  // display: {X}m {Y}s
+  return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
+}
+
+/**
+ * Encodes the URI path portion (ignores part after ? or #)
+ */
+export function encodeURIPath(uri: string): string {
+  if (uri.startsWith('data:')) return uri
+  const filePath = cleanUrl(uri)
+  const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
+  return encodeURI(filePath) + postfix
+}
+
+/**
+ * Like `encodeURIPath`, but only replacing `%` as `%25`. This is useful for environments
+ * that can handle un-encoded URIs, where `%` is the only ambiguous character.
+ */
+export function partialEncodeURIPath(uri: string): string {
+  if (uri.startsWith('data:')) return uri
+  const filePath = cleanUrl(uri)
+  const postfix = filePath !== uri ? uri.slice(filePath.length) : ''
+  return filePath.replaceAll('%', '%25') + postfix
+}
+
+export const setupSIGTERMListener = (callback: () => Promise<void>): void => {
+  process.once('SIGTERM', callback)
+  if (process.env.CI !== 'true') {
+    process.stdin.on('end', callback)
+  }
+}
+
+export const teardownSIGTERMListener = (
+  callback: () => Promise<void>,
+): void => {
+  process.off('SIGTERM', callback)
+  if (process.env.CI !== 'true') {
+    process.stdin.off('end', callback)
+  }
 }

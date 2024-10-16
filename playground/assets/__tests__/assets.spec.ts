@@ -14,6 +14,7 @@ import {
   page,
   readFile,
   readManifest,
+  serverLogs,
   untilUpdated,
   viteTestUrl,
   watcher,
@@ -139,6 +140,18 @@ describe('asset imports from js', () => {
         "{
           "foo": "bar"
         }
+        "
+      `)
+  })
+
+  test('from /public (js)', async () => {
+    expect(await page.textContent('.public-js-import')).toMatch(
+      '/foo/bar/raw.js',
+    )
+    expect(await page.textContent('.public-js-import-content'))
+      .toMatchInlineSnapshot(`
+        "document.querySelector('.raw-js').textContent =
+          '[success] Raw js from /public loaded'
         "
       `)
   })
@@ -282,6 +295,26 @@ describe('css url() references', () => {
 })
 
 describe('image', () => {
+  test('src', async () => {
+    const img = await page.$('.img-src')
+    const src = await img.getAttribute('src')
+    expect(src).toMatch(
+      isBuild
+        ? /\/foo\/bar\/assets\/html-only-asset-[-\w]{8}\.jpg/
+        : /\/foo\/bar\/nested\/html-only-asset.jpg/,
+    )
+  })
+
+  test('src inline', async () => {
+    const img = await page.$('.img-src-inline')
+    const src = await img.getAttribute('src')
+    expect(src).toMatch(
+      isBuild
+        ? /^data:image\/svg\+xml,%3csvg/
+        : /\/foo\/bar\/nested\/inlined.svg/,
+    )
+  })
+
   test('srcset', async () => {
     const img = await page.$('.img-src-set')
     const srcset = await img.getAttribute('srcset')
@@ -337,6 +370,12 @@ describe('svg fragments', () => {
         : /svg#icon-heart-view$/,
     )
   })
+
+  test('url with an alias', async () => {
+    expect(await getBg('.icon-clock-alias')).toMatch(
+      /\.svg#icon-clock-view"\)$/,
+    )
+  })
 })
 
 test('Unknown extension assets import', async () => {
@@ -373,7 +412,7 @@ describe('unicode url', () => {
     expect(await page.textContent('.unicode-url')).toMatch(
       isBuild
         ? `data:text/javascript;base64,${Buffer.from(src).toString('base64')}`
-        : `/foo/bar/テスト-測試-white space.js`,
+        : encodeURI(`/foo/bar/テスト-測試-white space.js`),
     )
   })
 })
@@ -399,6 +438,18 @@ test('new URL("/...", import.meta.url)', async () => {
   expect(await page.textContent('.import-meta-url-base-path')).toMatch(
     iconMatch,
   )
+})
+
+test('new URL("data:...", import.meta.url)', async () => {
+  const img = await page.$('.import-meta-url-data-uri-img')
+  expect(
+    (await img.getAttribute('src')).startsWith('data:image/png;base64'),
+  ).toBe(true)
+  expect(
+    (await page.textContent('.import-meta-url-data-uri')).startsWith(
+      'data:image/png;base64',
+    ),
+  ).toBe(true)
 })
 
 test('new URL(..., import.meta.url) without extension', async () => {
@@ -444,7 +495,7 @@ test('new URL(`./${1 === 0 ? static : dynamic}?abc`, import.meta.url)', async ()
   )
 })
 
-test('new URL(`non-existent`, import.meta.url)', async () => {
+test("new URL(/* @vite-ignore */ 'non-existent', import.meta.url)", async () => {
   // the inlined script tag is extracted in a separate file
   const importMetaUrl = new URL(
     isBuild ? '/foo/bar/assets/index.js' : '/foo/bar/index.html',
@@ -452,6 +503,9 @@ test('new URL(`non-existent`, import.meta.url)', async () => {
   )
   expect(await page.textContent('.non-existent-import-meta-url')).toMatch(
     new URL('non-existent', importMetaUrl).pathname,
+  )
+  expect(serverLogs).not.toContainEqual(
+    expect.stringContaining("doesn't exist at build time"),
   )
 })
 
@@ -544,5 +598,12 @@ test.runIf(isBuild)('assets inside <noscript> is rewrote', async () => {
   const indexHtml = readFile('./dist/foo/index.html')
   expect(indexHtml).toMatch(
     /<img class="noscript" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
+  )
+})
+
+test.runIf(isBuild)('assets inside <template> is rewrote', async () => {
+  const indexHtml = readFile('./dist/foo/index.html')
+  expect(indexHtml).toMatch(
+    /<img class="template" src="\/foo\/bar\/assets\/asset-[-\w]+\.png" \/>/,
   )
 })

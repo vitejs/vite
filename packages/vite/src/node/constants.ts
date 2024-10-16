@@ -1,10 +1,41 @@
 import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
+import type { RollupPluginHooks } from './typeUtils'
 
 const { version } = JSON.parse(
   readFileSync(new URL('../../package.json', import.meta.url)).toString(),
 )
+
+export const ROLLUP_HOOKS = [
+  'options',
+  'buildStart',
+  'buildEnd',
+  'renderStart',
+  'renderError',
+  'renderChunk',
+  'writeBundle',
+  'generateBundle',
+  'banner',
+  'footer',
+  'augmentChunkHash',
+  'outputOptions',
+  'renderDynamicImport',
+  'resolveFileUrl',
+  'resolveImportMeta',
+  'intro',
+  'outro',
+  'closeBundle',
+  'closeWatcher',
+  'load',
+  'moduleParsed',
+  'watchChange',
+  'resolveDynamicImport',
+  'resolveId',
+  'shouldTransformCachedModule',
+  'transform',
+  'onLog',
+] satisfies RollupPluginHooks[]
 
 export const VERSION = version as string
 
@@ -59,24 +90,6 @@ export const SPECIAL_QUERY_RE = /[?&](?:worker|sharedworker|raw|url)\b/
  */
 export const FS_PREFIX = `/@fs/`
 
-/**
- * Prefix for resolved Ids that are not valid browser import specifiers
- */
-export const VALID_ID_PREFIX = `/@id/`
-
-/**
- * Plugins that use 'virtual modules' (e.g. for helper functions), prefix the
- * module ID with `\0`, a convention from the rollup ecosystem.
- * This prevents other plugins from trying to process the id (like node resolution),
- * and core features like sourcemaps can use this info to differentiate between
- * virtual modules and regular files.
- * `\0` is not a permitted char in import URLs so we have to replace them during
- * import analysis. The id will be decoded back before entering the plugins pipeline.
- * These encoded virtual ids are also prefixed by the VALID_ID_PREFIX, so virtual
- * modules in the browser end up encoded as `/@id/__x00__{id}`
- */
-export const NULL_BYTE_PLACEHOLDER = `__x00__`
-
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
 export const VITE_PACKAGE_DIR = resolve(
@@ -98,6 +111,7 @@ export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 export const KNOWN_ASSET_TYPES = [
   // images
   'apng',
+  'bmp',
   'png',
   'jpe?g',
   'jfif',
@@ -159,3 +173,9 @@ export const DEFAULT_PREVIEW_PORT = 4173
 export const DEFAULT_ASSETS_INLINE_LIMIT = 4096
 
 export const METADATA_FILENAME = '_metadata.json'
+
+export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
+  'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
+export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
+export const ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR =
+  'ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR'

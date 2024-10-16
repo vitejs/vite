@@ -1,7 +1,6 @@
 import type * as http from 'node:http'
-import path, { dirname, join, resolve } from 'node:path'
-import os from 'node:os'
-import fs from 'fs-extra'
+import fs from 'node:fs'
+import path from 'node:path'
 import { chromium } from 'playwright-chromium'
 import type {
   ConfigEnv,
@@ -14,6 +13,7 @@ import type {
 } from 'vite'
 import {
   build,
+  createBuilder,
   createServer,
   loadConfigFromFile,
   mergeConfig,
@@ -22,11 +22,11 @@ import {
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
 import type { File } from 'vitest'
-import { beforeAll } from 'vitest'
+import { beforeAll, inject } from 'vitest'
 
 // #region env
 
-export const workspaceRoot = resolve(__dirname, '../')
+export const workspaceRoot = path.resolve(__dirname, '../')
 
 export const isBuild = !!process.env.VITE_TEST_BUILD
 export const isServe = !isBuild
@@ -80,16 +80,26 @@ export function setViteUrl(url: string): void {
 
 // #endregion
 
-const DIR = join(os.tmpdir(), 'vitest_playwright_global_setup')
-
 beforeAll(async (s) => {
   const suite = s as File
+
+  testPath = suite.filepath!
+  testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
+  testDir = path.dirname(testPath)
+  if (testName) {
+    testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
+  }
+
   // skip browser setup for non-playground tests
-  if (!suite.filepath.includes('playground')) {
+  // TODO: ssr playground?
+  if (
+    !suite.filepath.includes('playground') ||
+    suite.filepath.includes('hmr-ssr')
+  ) {
     return
   }
 
-  const wsEndpoint = fs.readFileSync(join(DIR, 'wsEndpoint'), 'utf-8')
+  const wsEndpoint = inject('wsEndpoint')
   if (!wsEndpoint) {
     throw new Error('wsEndpoint not found')
   }
@@ -122,22 +132,25 @@ beforeAll(async (s) => {
       browserErrors.push(error)
     })
 
-    testPath = suite.filepath!
-    testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
-    testDir = dirname(testPath)
-
     // if this is a test placed under playground/xxx/__tests__
     // start a vite server in that directory.
     if (testName) {
-      testDir = resolve(workspaceRoot, 'playground-temp', testName)
-
       // when `root` dir is present, use it as vite's root
-      const testCustomRoot = resolve(testDir, 'root')
+      const testCustomRoot = path.resolve(testDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : testDir
 
+      // separate rootDir for variant
+      const variantName = path.basename(path.dirname(testPath))
+      if (variantName !== '__tests__') {
+        const variantTestDir = testDir + '__' + variantName
+        if (fs.existsSync(variantTestDir)) {
+          rootDir = testDir = variantTestDir
+        }
+      }
+
       const testCustomServe = [
-        resolve(dirname(testPath), 'serve.ts'),
-        resolve(dirname(testPath), 'serve.js'),
+        path.resolve(path.dirname(testPath), 'serve.ts'),
+        path.resolve(path.dirname(testPath), 'serve.js'),
       ].find((i) => fs.existsSync(i))
 
       if (testCustomServe) {
@@ -181,7 +194,7 @@ async function loadConfig(configEnv: ConfigEnv) {
   let config: UserConfig | null = null
 
   // config file named by convention as the *.spec.ts folder
-  const variantName = path.basename(dirname(testPath))
+  const variantName = path.basename(path.dirname(testPath))
   if (variantName !== '__tests__') {
     const configVariantPath = path.resolve(
       rootDir,
@@ -256,15 +269,20 @@ export async function startDefaultServe(): Promise<void> {
         plugins: [resolvedPlugin()],
       },
     )
-    const rollupOutput = await build(buildConfig)
-    const isWatch = !!resolvedConfig!.build.watch
-    // in build watch,call startStaticServer after the build is complete
-    if (isWatch) {
-      watcher = rollupOutput as RollupWatcher
-      await notifyRebuildComplete(watcher)
-    }
-    if (buildConfig.__test__) {
-      buildConfig.__test__()
+    if (buildConfig.builder) {
+      const builder = await createBuilder(buildConfig)
+      await builder.buildApp()
+    } else {
+      const rollupOutput = await build(buildConfig)
+      const isWatch = !!resolvedConfig!.build.watch
+      // in build watch,call startStaticServer after the build is complete
+      if (isWatch) {
+        watcher = rollupOutput as RollupWatcher
+        await notifyRebuildComplete(watcher)
+      }
+      if (buildConfig.__test__) {
+        buildConfig.__test__()
+      }
     }
 
     const previewConfig = await loadConfig({
@@ -335,7 +353,7 @@ export function createInMemoryLogger(logs: string[]): Logger {
 function setupConsoleWarnCollector(logs: string[]) {
   const warn = console.warn
   console.warn = (...args) => {
-    serverLogs.push(args.join(' '))
+    logs.push(args.join(' '))
     return warn.call(console, ...args)
   }
 }
@@ -352,5 +370,11 @@ declare module 'vite' {
      * runs after build and before preview
      */
     __test__?: () => void
+  }
+}
+
+declare module 'vitest' {
+  export interface ProvidedContext {
+    wsEndpoint: string
   }
 }

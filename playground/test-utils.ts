@@ -14,7 +14,7 @@ import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
 import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
-import type { ExecaChildProcess } from 'execa'
+import type { ResultPromise as ExecaResultPromise } from 'execa'
 import { isBuild, isWindows, page, testDir } from './vitestSetup'
 
 export * from './vitestSetup'
@@ -28,20 +28,25 @@ export const ports = {
   lib: 9521,
   'optimize-missing-deps': 9522,
   'legacy/client-and-ssr': 9523,
-  'assets/url-base': 9524, // not imported but used in `assets/vite.config-url-base.js`
+  'assets/encoded-base': 9554, // not imported but used in `assets/vite.config-encoded-base.js`
+  'assets/url-base': 9525, // not imported but used in `assets/vite.config-url-base.js`
   ssr: 9600,
   'ssr-deps': 9601,
   'ssr-html': 9602,
   'ssr-noexternal': 9603,
   'ssr-pug': 9604,
   'ssr-webworker': 9605,
-  'proxy-hmr': 9606, // not imported but used in `proxy-hmr/vite.config.js`
-  'proxy-hmr/other-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
-  'ssr-conditions': 9608,
+  'proxy-bypass': 9606, // not imported but used in `proxy-hmr/vite.config.js`
+  'proxy-bypass/non-existent-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'ssr-hmr': 9609, // not imported but used in `hmr-ssr/__tests__/hmr.spec.ts`
+  'proxy-hmr': 9616, // not imported but used in `proxy-hmr/vite.config.js`
+  'proxy-hmr/other-app': 9617, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'ssr-conditions': 9620,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
   'css/lightningcss-proxy': 5008,
+  'backend-integration': 5009,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
@@ -137,7 +142,9 @@ export function editFile(
 }
 
 export function addFile(filename: string, content: string): void {
-  fs.writeFileSync(path.resolve(testDir, filename), content)
+  const resolvedFilename = path.resolve(testDir, filename)
+  fs.mkdirSync(path.dirname(resolvedFilename), { recursive: true })
+  fs.writeFileSync(resolvedFilename, content)
 }
 
 export function removeFile(filename: string): void {
@@ -153,6 +160,7 @@ export function findAssetFile(
   match: string | RegExp,
   base = '',
   assets = 'assets',
+  matchAll = false,
 ): string {
   const assetsDir = path.join(testDir, 'dist', base, assets)
   let files: string[]
@@ -164,10 +172,21 @@ export function findAssetFile(
     }
     throw e
   }
-  const file = files.find((file) => {
-    return file.match(match)
-  })
-  return file ? fs.readFileSync(path.resolve(assetsDir, file), 'utf-8') : ''
+  if (matchAll) {
+    const matchedFiles = files.filter((file) => file.match(match))
+    return matchedFiles.length
+      ? matchedFiles
+          .map((file) =>
+            fs.readFileSync(path.resolve(assetsDir, file), 'utf-8'),
+          )
+          .join('')
+      : ''
+  } else {
+    const matchedFile = files.find((file) => file.match(match))
+    return matchedFile
+      ? fs.readFileSync(path.resolve(assetsDir, matchedFile), 'utf-8')
+      : ''
+  }
 }
 
 export function readManifest(base = ''): Manifest {
@@ -234,7 +253,6 @@ export async function withRetry(
 }
 
 export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
-  type A = Assertion<T>
   return new Proxy(
     {},
     {
@@ -247,9 +265,9 @@ export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
         }
       },
     },
-  ) as {
-    [K in keyof A]: (...params: Parameters<A[K]>) => Promise<ReturnType<A[K]>>
-  }
+  ) as Assertion<T>['resolves']
+  // NOTE: `Assertion<T>['resolves']` has the special "promisify all assertion property functions"
+  // behaviour that we're lending here, which is the same as `PromisifyAssertion<T>` if Vitest exposes it
 }
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
@@ -365,7 +383,7 @@ export const formatSourcemapForSnapshot = (map: any): any => {
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too
 export async function killProcess(
-  serverProcess: ExecaChildProcess,
+  serverProcess: ExecaResultPromise,
 ): Promise<void> {
   if (isWindows) {
     try {
@@ -375,7 +393,7 @@ export async function killProcess(
       console.error('failed to taskkill:', e)
     }
   } else {
-    serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
+    serverProcess.kill('SIGTERM')
   }
 }
 

@@ -18,7 +18,7 @@ See [Project Root](/guide/#index-html-and-project-root) for more details.
 Base public path when served in development or production. Valid values include:
 
 - Absolute URL pathname, e.g. `/foo/`
-- Full URL, e.g. `https://foo.com/` (The origin part won't be used in development)
+- Full URL, e.g. `https://bar.com/foo/` (The origin part won't be used in development so the value is the same as `/foo/`)
 - Empty string or `./` (for embedded deployment)
 
 See [Public Base Path](/guide/build#public-base-path) for more details.
@@ -163,6 +163,13 @@ Enabling this setting causes vite to determine file identity by the original fil
 - **Related:** [esbuild#preserve-symlinks](https://esbuild.github.io/api/#preserve-symlinks), [webpack#resolve.symlinks
   ](https://webpack.js.org/configuration/resolve/#resolvesymlinks)
 
+## html.cspNonce
+
+- **Type:** `string`
+- **Related:** [Content Security Policy (CSP)](/guide/features#content-security-policy-csp)
+
+A nonce value placeholder that will be used when generating script / style tags. Setting this value will also generate a meta tag with nonce value.
+
 ## css.modules
 
 - **Type:**
@@ -218,21 +225,16 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 
 Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessors can be found in their respective documentation:
 
-- `sass`/`scss` - [Options](https://sass-lang.com/documentation/js-api/interfaces/LegacyStringOptions).
+- `sass`/`scss` - top level option `api: "legacy" | "modern" | "modern-compiler"` (default `"legacy"`) allows switching which sass API to use. For the best performance, it's recommended to use `api: "modern-compiler"` with `sass-embedded` package. [Options (legacy)](https://sass-lang.com/documentation/js-api/interfaces/LegacyStringOptions), [Options (modern)](https://sass-lang.com/documentation/js-api/interfaces/stringoptions/).
 - `less` - [Options](https://lesscss.org/usage/#less-options).
 - `styl`/`stylus` - Only [`define`](https://stylus-lang.com/docs/js.html#define-name-node) is supported, which can be passed as an object.
 
-All preprocessor options also support the `additionalData` option, which can be used to inject extra code for each style content. Note that if you include actual styles and not just variables, those styles will be duplicated in the final bundle.
-
-Example:
+**Example:**
 
 ```js
 export default defineConfig({
   css: {
     preprocessorOptions: {
-      scss: {
-        additionalData: `$injectedColor: orange;`,
-      },
       less: {
         math: 'parens-division',
       },
@@ -241,10 +243,44 @@ export default defineConfig({
           $specialColor: new stylus.nodes.RGBA(51, 197, 255, 1),
         },
       },
+      scss: {
+        api: 'modern-compiler', // or "modern", "legacy"
+        importers: [
+          // ...
+        ],
+      },
     },
   },
 })
 ```
+
+### css.preprocessorOptions[extension].additionalData
+
+- **Type:** `string | ((source: string, filename: string) => (string | { content: string; map?: SourceMap }))`
+
+This option can be used to inject extra code for each style content. Note that if you include actual styles and not just variables, those styles will be duplicated in the final bundle.
+
+**Example:**
+
+```js
+export default defineConfig({
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `$injectedColor: orange;`,
+      },
+    },
+  },
+})
+```
+
+## css.preprocessorMaxWorkers
+
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/15835)
+- **Type:** `number | true`
+- **Default:** `0` (does not create any workers and run in the main thread)
+
+If this option is set, CSS preprocessors will run in workers when possible. `true` means the number of CPUs minus 1.
 
 ## css.devSourcemap
 
@@ -261,6 +297,10 @@ Whether to enable sourcemaps during dev.
 - **Default:** `'postcss'`
 
 Selects the engine used for CSS processing. Check out [Lightning CSS](../guide/features.md#lightning-css) for more information.
+
+::: info Duplicate `@import`s
+Note that postcss (postcss-import) has a different behavior with duplicated `@import` from browsers. See [postcss/postcss-import#462](https://github.com/postcss/postcss-import/issues/462).
+:::
 
 ## css.lightningcss
 
@@ -385,7 +425,7 @@ Adjust console output verbosity. Default is `'info'`.
 
 Use a custom logger to log messages. You can use Vite's `createLogger` API to get the default logger and customize it to, for example, change the message or filter out certain warnings.
 
-```js
+```ts twoslash
 import { createLogger, defineConfig } from 'vite'
 
 const logger = createLogger()
@@ -450,3 +490,12 @@ Whether your application is a Single Page Application (SPA), a [Multi Page Appli
 - `'custom'`: don't include HTML middlewares
 
 Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#server-middlewaremode).
+
+## future
+
+- **Type:** `Record<string, 'warn' | undefined>`
+- **Related:** [Breaking Changes](/changes/)
+
+Enable future breaking changes to prepare for a smooth migration to the next major version of Vite. The list may be updated, added, or removed at any time as new features are developed.
+
+See the [Breaking Changes](/changes/) page for details of the possible options.

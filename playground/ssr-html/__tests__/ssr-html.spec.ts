@@ -98,14 +98,40 @@ describe.runIf(isServe)('stacktrace', () => {
       })
     }
   }
+
+  test('with Vite runtime', async () => {
+    await execFileAsync('node', ['test-stacktrace-runtime.js'], {
+      cwd: fileURLToPath(new URL('..', import.meta.url)),
+    })
+  })
 })
 
-test.runIf(isServe)('network-imports', async () => {
-  await execFileAsync(
-    'node',
-    ['--experimental-network-imports', 'test-network-imports.js'],
-    {
-      cwd: fileURLToPath(new URL('..', import.meta.url)),
-    },
-  )
+// --experimental-network-imports is going to be dropped
+// https://github.com/nodejs/node/pull/53822
+const noNetworkImports = Number(process.version.match(/^v(\d+)\./)[1]) >= 22
+
+describe.runIf(isServe && !noNetworkImports)('network-imports', () => {
+  test('with Vite SSR', async () => {
+    await execFileAsync(
+      'node',
+      ['--experimental-network-imports', 'test-network-imports.js'],
+      {
+        cwd: fileURLToPath(new URL('..', import.meta.url)),
+      },
+    )
+  })
+
+  test('with Vite runtime', async () => {
+    await execFileAsync(
+      'node',
+      [
+        '--experimental-network-imports',
+        'test-network-imports.js',
+        '--module-runner',
+      ],
+      {
+        cwd: fileURLToPath(new URL('..', import.meta.url)),
+      },
+    )
+  })
 })

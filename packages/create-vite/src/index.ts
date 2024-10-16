@@ -4,26 +4,53 @@ import { fileURLToPath } from 'node:url'
 import spawn from 'cross-spawn'
 import minimist from 'minimist'
 import prompts from 'prompts'
-import {
+import colors from 'picocolors'
+
+const {
   blue,
+  blueBright,
   cyan,
   green,
-  lightBlue,
-  lightGreen,
-  lightRed,
+  greenBright,
   magenta,
   red,
+  redBright,
   reset,
   yellow,
-} from 'kolorist'
+} = colors
 
 // Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
 const argv = minimist<{
-  t?: string
   template?: string
-}>(process.argv.slice(2), { string: ['_'] })
+  help?: boolean
+}>(process.argv.slice(2), {
+  default: { help: false },
+  alias: { h: 'help', t: 'template' },
+  string: ['_'],
+})
 const cwd = process.cwd()
+
+// prettier-ignore
+const helpMessage = `\
+Usage: create-vite [OPTION]... [DIRECTORY]
+
+Create a new Vite project in JavaScript or TypeScript.
+With no arguments, start the CLI in interactive mode.
+
+Options:
+  -t, --template NAME        use a specific template
+
+Available templates:
+${yellow    ('vanilla-ts     vanilla'  )}
+${green     ('vue-ts         vue'      )}
+${cyan      ('react-ts       react'    )}
+${cyan      ('react-swc-ts   react-swc')}
+${magenta   ('preact-ts      preact'   )}
+${redBright ('lit-ts         lit'      )}
+${red       ('svelte-ts      svelte'   )}
+${blue      ('solid-ts       solid'    )}
+${blueBright('qwik-ts        qwik'     )}`
 
 type ColorFunc = (str: string | number) => string
 type Framework = {
@@ -81,7 +108,7 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-nuxt',
         display: 'Nuxt ↗',
-        color: lightGreen,
+        color: greenBright,
         customCommand: 'npm exec nuxi init TARGET_DIR',
       },
     ],
@@ -111,6 +138,12 @@ const FRAMEWORKS: Framework[] = [
         display: 'JavaScript + SWC',
         color: yellow,
       },
+      {
+        name: 'custom-remix',
+        display: 'Remix ↗',
+        color: cyan,
+        customCommand: 'npm create remix@latest TARGET_DIR',
+      },
     ],
   },
   {
@@ -128,12 +161,18 @@ const FRAMEWORKS: Framework[] = [
         display: 'JavaScript',
         color: yellow,
       },
+      {
+        name: 'custom-create-preact',
+        display: 'Customize with create-preact ↗',
+        color: magenta,
+        customCommand: 'npm create preact@latest TARGET_DIR',
+      },
     ],
   },
   {
     name: 'lit',
     display: 'Lit',
-    color: lightRed,
+    color: redBright,
     variants: [
       {
         name: 'lit-ts',
@@ -190,12 +229,12 @@ const FRAMEWORKS: Framework[] = [
   {
     name: 'qwik',
     display: 'Qwik',
-    color: lightBlue,
+    color: blueBright,
     variants: [
       {
         name: 'qwik-ts',
         display: 'TypeScript',
-        color: lightBlue,
+        color: blueBright,
       },
       {
         name: 'qwik',
@@ -205,7 +244,7 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-qwik-city',
         display: 'QwikCity ↗',
-        color: lightBlue,
+        color: blueBright,
         customCommand: 'npm create qwik@latest basic TARGET_DIR',
       },
     ],
@@ -245,6 +284,12 @@ async function init() {
   const argTargetDir = formatTargetDir(argv._[0])
   const argTemplate = argv.template || argv.t
 
+  const help = argv.help
+  if (help) {
+    console.log(helpMessage)
+    return
+  }
+
   let targetDir = argTargetDir || defaultTargetDir
   const getProjectName = () =>
     targetDir === '.' ? path.basename(path.resolve()) : targetDir
@@ -252,6 +297,10 @@ async function init() {
   let result: prompts.Answers<
     'projectName' | 'overwrite' | 'packageName' | 'framework' | 'variant'
   >
+
+  prompts.override({
+    overwrite: argv.overwrite,
+  })
 
   try {
     result = await prompts(
@@ -408,7 +457,9 @@ async function init() {
 
     const [command, ...args] = fullCustomCommand.split(' ')
     // we replace TARGET_DIR here because targetDir may include a space
-    const replacedArgs = args.map((arg) => arg.replace('TARGET_DIR', targetDir))
+    const replacedArgs = args.map((arg) =>
+      arg.replace('TARGET_DIR', () => targetDir),
+    )
     const { status } = spawn.sync(command, replacedArgs, {
       stdio: 'inherit',
     })

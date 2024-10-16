@@ -9,10 +9,11 @@ import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
-import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
-import type { ResolvedConfig } from '..'
+import type { HotChannelClient, ResolvedConfig } from '..'
 import { isObject } from '../utils'
+import type { HotChannel } from './hmr'
 import type { HttpServer } from '.'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
@@ -30,7 +31,10 @@ export type WebSocketCustomListener<T> = (
   client: WebSocketClient,
 ) => void
 
-export interface WebSocketServer {
+export const isWebSocketServer = Symbol('isWebSocketServer')
+
+export interface WebSocketServer extends HotChannel {
+  [isWebSocketServer]: true
   /**
    * Listen on port and host
    */
@@ -39,14 +43,6 @@ export interface WebSocketServer {
    * Get all connected clients.
    */
   clients: Set<WebSocketClient>
-  /**
-   * Broadcast events to all clients
-   */
-  send(payload: HMRPayload): void
-  /**
-   * Send custom event
-   */
-  send<T extends string>(event: T, payload?: InferCustomEventPayload<T>): void
   /**
    * Disconnect all clients and terminate the server.
    */
@@ -68,15 +64,7 @@ export interface WebSocketServer {
   }
 }
 
-export interface WebSocketClient {
-  /**
-   * Send event to the client
-   */
-  send(payload: HMRPayload): void
-  /**
-   * Send custom event
-   */
-  send(event: string, payload?: CustomPayload['data']): void
+export interface WebSocketClient extends HotChannelClient {
   /**
    * The raw WebSocket instance
    * @advanced
@@ -92,11 +80,31 @@ const wsServerEvents = [
   'message',
 ]
 
+function noop() {
+  // noop
+}
+
 export function createWebSocketServer(
   server: HttpServer | null,
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
+  if (config.server.ws === false) {
+    return {
+      [isWebSocketServer]: true,
+      get clients() {
+        return new Set<WebSocketClient>()
+      },
+      async close() {
+        // noop
+      },
+      on: noop as any as WebSocketServer['on'],
+      off: noop as any as WebSocketServer['off'],
+      listen: noop,
+      send: noop,
+    }
+  }
+
   let wss: WebSocketServerRaw_
   let wsHttpServer: Server | undefined = undefined
 
@@ -205,7 +213,7 @@ export function createWebSocketServer(
     if (!clientsMap.has(socket)) {
       clientsMap.set(socket, {
         send: (...args) => {
-          let payload: HMRPayload
+          let payload: HotPayload
           if (typeof args[0] === 'string') {
             payload = {
               type: 'custom',
@@ -230,6 +238,7 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
+    [isWebSocketServer]: true,
     listen: () => {
       wsHttpServer?.listen(port, host)
     },
@@ -255,7 +264,7 @@ export function createWebSocketServer(
     },
 
     send(...args: any[]) {
-      let payload: HMRPayload
+      let payload: HotPayload
       if (typeof args[0] === 'string') {
         payload = {
           type: 'custom',

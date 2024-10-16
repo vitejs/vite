@@ -13,19 +13,25 @@ const pkg = JSON.parse(
   readFileSync(new URL('./package.json', import.meta.url)).toString(),
 )
 
+const external = [
+  /^node:*/,
+  /^vite\//,
+  'rollup/parseAst',
+  ...Object.keys(pkg.dependencies),
+  // lightningcss types are bundled
+  ...Object.keys(pkg.devDependencies).filter((d) => d !== 'lightningcss'),
+]
+
 export default defineConfig({
-  input: './temp/node/index.d.ts',
-  output: {
-    file: './dist/node/index.d.ts',
-    format: 'es',
+  input: {
+    index: './temp/node/index.d.ts',
+    'module-runner': './temp/module-runner/index.d.ts',
   },
-  external: [
-    /^node:*/,
-    'rollup/parseAst',
-    ...Object.keys(pkg.dependencies),
-    // lightningcss types are bundled
-    ...Object.keys(pkg.devDependencies).filter((d) => d !== 'lightningcss'),
-  ],
+  output: {
+    dir: './dist/node',
+    format: 'esm',
+  },
+  external,
   plugins: [patchTypes(), dts({ respectExternal: true })],
 })
 
@@ -42,6 +48,8 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
 const identifierReplacements: Record<string, Record<string, string>> = {
   rollup: {
     Plugin$1: 'rollup.Plugin',
+    PluginContext$1: 'rollup.PluginContext',
+    TransformPluginContext$1: 'rollup.TransformPluginContext',
     TransformResult$2: 'rollup.TransformResult',
   },
   esbuild: {
@@ -84,12 +92,35 @@ function patchTypes(): Plugin {
       }
     },
     renderChunk(code, chunk) {
-      validateChunkImports.call(this, chunk)
-      code = replaceConfusingTypeNames.call(this, code, chunk)
-      code = stripInternalTypes.call(this, code, chunk)
-      code = cleanUnnecessaryComments(code)
+      if (
+        chunk.fileName.startsWith('module-runner') ||
+        chunk.fileName.startsWith('types.d-')
+      ) {
+        validateRunnerChunk.call(this, chunk)
+      } else {
+        validateChunkImports.call(this, chunk)
+        code = replaceConfusingTypeNames.call(this, code, chunk)
+        code = stripInternalTypes.call(this, code, chunk)
+        code = cleanUnnecessaryComments(code)
+      }
       return code
     },
+  }
+}
+
+/**
+ * Runner chunk should only import local dependencies to stay lightweight
+ */
+function validateRunnerChunk(this: PluginContext, chunk: RenderedChunk) {
+  for (const id of chunk.imports) {
+    if (
+      !id.startsWith('./') &&
+      !id.startsWith('../') &&
+      !id.startsWith('types.d')
+    ) {
+      this.warn(`${chunk.fileName} imports "${id}" which is not allowed`)
+      process.exitCode = 1
+    }
   }
 }
 
@@ -103,6 +134,8 @@ function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
       !id.startsWith('./') &&
       !id.startsWith('../') &&
       !id.startsWith('node:') &&
+      !id.startsWith('types.d') &&
+      !id.startsWith('vite/') &&
       !deps.includes(id) &&
       !deps.some((name) => id.startsWith(name + '/'))
     ) {
@@ -226,11 +259,15 @@ function removeInternal(s: MagicString, node: any): boolean {
     })
   ) {
     // Examples:
-    // function a(foo: string, /* @internal */ bar: number)
-    //                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    // strip trailing comma
-    const end = s.original[node.end] === ',' ? node.end + 1 : node.end
-    s.remove(node.leadingComments[0].start, end)
+    // function a(foo: string, /* @internal */ bar: number, baz: boolean)
+    //                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // type Enum = Foo | /* @internal */ Bar | Baz
+    //                   ^^^^^^^^^^^^^^^^^^^^^
+    // strip trailing comma or pipe
+    const trailingRe = /\s*[,|]/y
+    trailingRe.lastIndex = node.end
+    const trailingStr = trailingRe.exec(s.original)?.[0] ?? ''
+    s.remove(node.leadingComments[0].start, node.end + trailingStr.length)
     return true
   }
   return false

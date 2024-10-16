@@ -2,7 +2,8 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
-import { isWindows, normalizePath } from '../../../utils'
+import { normalizePath } from '../../../utils'
+import { isWindows } from '../../../../shared/utils'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
@@ -11,7 +12,10 @@ async function run(input: string) {
     (await transformDynamicImport(
       input,
       normalizePath(resolve(__dirname, 'index.js')),
-      (id) => id.replace('@', resolve(__dirname, './mods/')),
+      (id) =>
+        id
+          .replace('@', resolve(__dirname, './mods/'))
+          .replace('#', resolve(__dirname, '../../')),
       __dirname,
     )) || {}
   return `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
@@ -24,6 +28,10 @@ describe('parse positives', () => {
 
   it('alias path', async () => {
     expect(await run('`@/${base}.js`')).toMatchSnapshot()
+  })
+
+  it('alias path with multi ../', async () => {
+    expect(await run('`#/${base}.js`')).toMatchSnapshot()
   })
 
   it('with query', async () => {

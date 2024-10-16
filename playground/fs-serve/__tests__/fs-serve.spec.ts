@@ -77,6 +77,11 @@ describe.runIf(isServe)('main', () => {
     expect(await page.textContent('.unsafe-fs-fetch-status')).toBe('403')
   })
 
+  test('unsafe fs fetch', async () => {
+    expect(await page.textContent('.unsafe-fs-fetch-raw')).toBe('')
+    expect(await page.textContent('.unsafe-fs-fetch-raw-status')).toBe('403')
+  })
+
   test('unsafe fs fetch with special characters (#8498)', async () => {
     expect(await page.textContent('.unsafe-fs-fetch-8498')).toBe('')
     expect(await page.textContent('.unsafe-fs-fetch-8498-status')).toBe('404')
@@ -92,7 +97,13 @@ describe.runIf(isServe)('main', () => {
   })
 
   test('denied', async () => {
-    expect(await page.textContent('.unsafe-dotenv')).toBe('404')
+    expect(await page.textContent('.unsafe-dotenv')).toBe('403')
+  })
+
+  test('denied EnV casing', async () => {
+    // It is 403 in case insensitive system, 404 in others
+    const code = await page.textContent('.unsafe-dotEnV-casing')
+    expect(code === '403' || code === '404').toBeTruthy()
   })
 })
 

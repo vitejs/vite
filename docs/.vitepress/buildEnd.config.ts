@@ -1,21 +1,22 @@
-import path from 'path'
-import { writeFileSync } from 'fs'
+import path from 'node:path'
+import { writeFileSync } from 'node:fs'
 import { Feed } from 'feed'
-import { createContentLoader, type SiteConfig } from 'vitepress'
+import type { SiteConfig } from 'vitepress'
+import { createContentLoader } from 'vitepress'
 
-const siteUrl = 'https://vitejs.dev'
+const siteUrl = 'https://vite.dev'
 const blogUrl = `${siteUrl}/blog`
 
-export const buildEnd = async (config: SiteConfig) => {
+export const buildEnd = async (config: SiteConfig): Promise<void> => {
   const feed = new Feed({
     title: 'Vite',
     description: 'Next Generation Frontend Tooling',
     id: blogUrl,
     link: blogUrl,
     language: 'en',
-    image: 'https://vitejs.dev/og-image.png',
-    favicon: 'https://vitejs.dev/logo.svg',
-    copyright: 'Copyright © 2019-present Evan You & Vite Contributors',
+    image: 'https://vite.dev/og-image.png',
+    favicon: 'https://vite.dev/logo.svg',
+    copyright: 'Copyright © 2019-present VoidZero Inc. & Vite Contributors',
   })
 
   const posts = await createContentLoader('blog/*.md', {

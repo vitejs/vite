@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 interface Sponsors {
   special: Sponsor[]
@@ -13,6 +13,10 @@ interface Sponsor {
   name: string
   img: string
   url: string
+  /**
+   * Expects to also have an **inversed** image with `-dark` postfix.
+   */
+  hasDark?: true
 }
 
 // shared data across instances so we load only once.
@@ -43,17 +47,39 @@ const viteSponsors: Pick<Sponsors, 'special' | 'gold'> = {
     },
   ],
   gold: [
-    // through GitHub -> OpenCollective
-    {
-      name: 'Remix',
-      url: 'https://remix.run/',
-      img: '/remix.svg',
-    },
+    // now automated via sponsors.vuejs.org too
   ],
+}
+
+function toggleDarkLogos() {
+  if (data.value) {
+    const isDark = document.documentElement.classList.contains('dark')
+    data.value.forEach(({ items }) => {
+      items.forEach((s: Sponsor) => {
+        if (s.hasDark) {
+          s.img = isDark
+            ? s.img.replace(/(\.\w+)$/, '-dark$1')
+            : s.img.replace(/-dark(\.\w+)$/, '$1')
+        }
+      })
+    })
+  }
 }
 
 export function useSponsor() {
   onMounted(async () => {
+    const ob = new MutationObserver((list) => {
+      for (const m of list) {
+        if (m.attributeName === 'class') {
+          toggleDarkLogos()
+        }
+      }
+    })
+    ob.observe(document.documentElement, { attributes: true })
+    onUnmounted(() => {
+      ob.disconnect()
+    })
+
     if (data.value) {
       return
     }
@@ -62,6 +88,7 @@ export function useSponsor() {
     const json = await result.json()
 
     data.value = mapSponsors(json)
+    toggleDarkLogos()
   })
 
   return {
@@ -72,7 +99,7 @@ export function useSponsor() {
 function mapSponsors(sponsors: Sponsors) {
   return [
     {
-      tier: 'Special Sponsors',
+      tier: 'in partnership with',
       size: 'big',
       items: viteSponsors['special'],
     },
@@ -84,7 +111,7 @@ function mapSponsors(sponsors: Sponsors) {
     {
       tier: 'Gold Sponsors',
       size: 'medium',
-      items: viteSponsors['gold'].concat(mapImgPath(sponsors['gold'])),
+      items: [...mapImgPath(sponsors['gold']), ...viteSponsors['gold']],
     },
   ]
 }

@@ -15,6 +15,8 @@ import {
   getScriptInfo,
   htmlEnvHook,
   htmlProxyResult,
+  injectCspNonceMetaTagHook,
+  injectNonceAttributeTagHook,
   nodeIsElement,
   overwriteAttrValue,
   postImportMapHook,
@@ -26,7 +28,6 @@ import type { PreviewServer, ResolvedConfig, ViteDevServer } from '../..'
 import { send } from '../send'
 import { CLIENT_PUBLIC_PATH, FS_PREFIX } from '../../constants'
 import {
-  cleanUrl,
   ensureWatchedFile,
   fsPathFromId,
   getHash,
@@ -37,13 +38,12 @@ import {
   normalizePath,
   processSrcSetSync,
   stripBase,
-  unwrapId,
-  wrapId,
 } from '../../utils'
 import { getFsUtils } from '../../fsUtils'
 import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
+import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
 
 interface AssetNode {
   start: number
@@ -71,11 +71,13 @@ export function createDevHtmlTransformFn(
   )
   const transformHooks = [
     preImportMapHook(config),
+    injectCspNonceMetaTagHook(config),
     ...preHooks,
     htmlEnvHook(config),
     devHtmlHook,
     ...normalHooks,
     ...postHooks,
+    injectNonceAttributeTagHook(config),
     postImportMapHook(),
   ]
   return (
@@ -128,8 +130,8 @@ const processNodeUrl = (
 ): string => {
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
-    if (server?.moduleGraph) {
-      const mod = server.moduleGraph.urlToModuleMap.get(url)
+    if (server) {
+      const mod = server.environments.client.moduleGraph.urlToModuleMap.get(url)
       if (mod && mod.lastHMRTimestamp > 0) {
         url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
@@ -165,7 +167,13 @@ const processNodeUrl = (
         )
       }
       if (preTransformUrl) {
-        preTransformRequest(server, preTransformUrl, config.base)
+        try {
+          preTransformUrl = decodeURI(preTransformUrl)
+        } catch {
+          // Malformed uri. Skip pre-transform.
+          return url
+        }
+        preTransformRequest(server, preTransformUrl, config.decodedBase)
       }
     }
     return url
@@ -180,8 +188,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   html,
   { path: htmlPath, filename, server, originalUrl },
 ) => {
-  const { config, moduleGraph, watcher } = server!
+  const { config, watcher } = server!
   const base = config.base || '/'
+  const decodedBase = config.decodedBase || '/'
 
   let proxyModulePath: string
   let proxyModuleUrl: string
@@ -189,7 +198,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   const trailingSlash = htmlPath.endsWith('/')
   if (!trailingSlash && getFsUtils(config).existsSync(filename)) {
     proxyModulePath = htmlPath
-    proxyModuleUrl = joinUrlSegments(base, htmlPath)
+    proxyModuleUrl = proxyModulePath
   } else {
     // There are users of vite.transformIndexHtml calling it with url '/'
     // for SSR integrations #7993, filename is root for this case
@@ -200,6 +209,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     proxyModulePath = `\0${validPath}`
     proxyModuleUrl = wrapId(proxyModulePath)
   }
+  proxyModuleUrl = joinUrlSegments(decodedBase, proxyModuleUrl)
 
   const s = new MagicString(html)
   let inlineModuleIndex = -1
@@ -240,16 +250,17 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
 
     // invalidate the module so the newly cached contents will be served
-    const module = server?.moduleGraph.getModuleById(modulePath)
+    const clientModuleGraph = server?.environments.client.moduleGraph
+    const module = clientModuleGraph?.getModuleById(modulePath)
     if (module) {
-      server?.moduleGraph.invalidateModule(module)
+      clientModuleGraph!.invalidateModule(module)
     }
     s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
       `<script type="module" src="${modulePath}"></script>`,
     )
-    preTransformRequest(server!, modulePath, base)
+    preTransformRequest(server!, modulePath, decodedBase)
   }
 
   await traverseHtml(html, filename, (node) => {
@@ -348,10 +359,16 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       const url = `${proxyModulePath}?html-proxy&direct&index=${index}.css`
 
       // ensure module in graph after successful load
-      const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+      const mod =
+        await server!.environments.client.moduleGraph.ensureEntryFromUrl(
+          url,
+          false,
+        )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      const result = await server!.pluginContainer.transform(code, mod.id!)
+      const result = await server!.pluginContainer.transform(code, mod.id!, {
+        environment: server!.environments.client,
+      })
       let content = ''
       if (result) {
         if (result.map && 'version' in result.map) {
@@ -373,10 +390,16 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       // will transform with css plugin and cache result with css-post plugin
       const url = `${proxyModulePath}?html-proxy&inline-css&style-attr&index=${index}.css`
 
-      const mod = await moduleGraph.ensureEntryFromUrl(url, false)
+      const mod =
+        await server!.environments.client.moduleGraph.ensureEntryFromUrl(
+          url,
+          false,
+        )
       ensureWatchedFile(watcher, mod.file, config.root)
 
-      await server?.pluginContainer.transform(code, mod.id!)
+      await server?.pluginContainer.transform(code, mod.id!, {
+        environment: server!.environments.client,
+      })
 
       const hash = getHash(cleanUrl(mod.id!))
       const result = htmlProxyResult.get(`${hash}_${index}`)
@@ -444,15 +467,16 @@ export function indexHtmlMiddleware(
   }
 }
 
-function preTransformRequest(server: ViteDevServer, url: string, base: string) {
+// NOTE: We usually don't prefix `url` and `base` with `decoded`, but in this file particularly
+// we're dealing with mixed encoded/decoded paths often, so we make this explicit for now.
+function preTransformRequest(
+  server: ViteDevServer,
+  decodedUrl: string,
+  decodedBase: string,
+) {
   if (!server.config.server.preTransformRequests) return
 
   // transform all url as non-ssr as html includes client-side assets only
-  try {
-    url = unwrapId(stripBase(decodeURI(url), base))
-  } catch {
-    // ignore
-    return
-  }
-  server.warmupRequest(url)
+  decodedUrl = unwrapId(stripBase(decodedUrl, decodedBase))
+  server.warmupRequest(decodedUrl)
 }

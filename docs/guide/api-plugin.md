@@ -6,9 +6,9 @@ Vite plugins extends Rollup's well-designed plugin interface with a few extra Vi
 
 ## Authoring a Plugin
 
-Vite strives to offer established patterns out of the box, so before creating a new plugin make sure that you check the [Features guide](https://vitejs.dev/guide/features) to see if your need is covered. Also review available community plugins, both in the form of a [compatible Rollup plugin](https://github.com/rollup/awesome) and [Vite Specific plugins](https://github.com/vitejs/awesome-vite#plugins)
+Vite strives to offer established patterns out of the box, so before creating a new plugin make sure that you check the [Features guide](https://vite.dev/guide/features) to see if your need is covered. Also review available community plugins, both in the form of a [compatible Rollup plugin](https://github.com/rollup/awesome) and [Vite Specific plugins](https://github.com/vitejs/awesome-vite#plugins)
 
-When creating a plugin, you can inline it in your `vite.config.js`. There is no need to create a new package for it. Once you see that a plugin was useful in your projects, consider sharing it to help others [in the ecosystem](https://chat.vitejs.dev).
+When creating a plugin, you can inline it in your `vite.config.js`. There is no need to create a new package for it. Once you see that a plugin was useful in your projects, consider sharing it to help others [in the ecosystem](https://chat.vite.dev).
 
 ::: tip
 When learning, debugging, or authoring plugins, we suggest including [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect) in your project. It allows you to inspect the intermediate state of Vite plugins. After installing, you can visit `localhost:5173/__inspect/` to inspect the modules and transformation stack of your project. Check out install instructions in the [vite-plugin-inspect docs](https://github.com/antfu/vite-plugin-inspect).
@@ -42,8 +42,7 @@ See also [Virtual Modules Convention](#virtual-modules-convention).
 
 Users will add plugins to the project `devDependencies` and configure them using the `plugins` array option.
 
-```js
-// vite.config.js
+```js [vite.config.js]
 import vitePlugin from 'vite-plugin-feature'
 import rollupPlugin from 'rollup-plugin-feature'
 
@@ -66,8 +65,7 @@ export default function framework(config) {
 }
 ```
 
-```js
-// vite.config.js
+```js [vite.config.js]
 import { defineConfig } from 'vite'
 import framework from 'vite-plugin-framework'
 
@@ -399,9 +397,14 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   }
   ```
 
+  ::: warning Note
+  This hook won't be called if you are using a framework that has custom handling of entry files (for example [SvelteKit](https://github.com/sveltejs/kit/discussions/8269#discussioncomment-4509145)).
+  :::
+
 ### `handleHotUpdate`
 
 - **Type:** `(ctx: HmrContext) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>`
+- **See also:** [HMR API](./api-hmr)
 
   Perform custom HMR update handling. The hook receives a context object with the following signature:
 
@@ -422,6 +425,25 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
   The hook can choose to:
 
   - Filter and narrow down the affected module list so that the HMR is more accurate.
+
+  - Return an empty array and perform a full reload:
+
+    ```js
+    handleHotUpdate({ server, modules, timestamp }) {
+      // Invalidate modules manually
+      const invalidatedModules = new Set()
+      for (const mod of modules) {
+        server.moduleGraph.invalidateModule(
+          mod,
+          invalidatedModules,
+          timestamp,
+          true
+        )
+      }
+      server.ws.send({ type: 'full-reload' })
+      return []
+    }
+    ```
 
   - Return an empty array and perform complete custom HMR handling by sending custom events to the client:
 
@@ -458,6 +480,8 @@ A Vite plugin can additionally specify an `enforce` property (similar to webpack
 - User plugins with `enforce: 'post'`
 - Vite post build plugins (minify, manifest, reporting)
 
+Note that this is separate from hooks ordering, those are still separately subject to their `order` attribute [as usual for Rollup hooks](https://rollupjs.org/plugin-development/#build-hooks).
+
 ## Conditional Application
 
 By default plugins are invoked for both serve and build. In cases where a plugin needs to be conditionally applied only during serve or build, use the `apply` property to only invoke them during `'build'` or `'serve'`:
@@ -493,8 +517,7 @@ If a Rollup plugin only makes sense for the build phase, then it can be specifie
 
 You can also augment an existing Rollup plugin with Vite-only properties:
 
-```js
-// vite.config.js
+```js [vite.config.js]
 import example from 'rollup-plugin-example'
 import { defineConfig } from 'vite'
 
@@ -508,8 +531,6 @@ export default defineConfig({
   ],
 })
 ```
-
-Check out [Vite Rollup Plugins](https://vite-rollup-plugins.patak.dev) for a list of compatible official Rollup plugins with usage instructions.
 
 ## Path Normalization
 
@@ -534,16 +555,14 @@ Since Vite 2.9, we provide some utilities for plugins to help handle the communi
 
 ### Server to Client
 
-On the plugin side, we could use `server.ws.send` to broadcast events to all the clients:
+On the plugin side, we could use `server.ws.send` to broadcast events to the client:
 
-```js
-// vite.config.js
+```js [vite.config.js]
 export default defineConfig({
   plugins: [
     {
       // ...
       configureServer(server) {
-        // Example: wait for a client to connect before sending a message
         server.ws.on('connection', () => {
           server.ws.send('my:greetings', { msg: 'hello' })
         })
@@ -559,7 +578,9 @@ We recommend **always prefixing** your event names to avoid collisions with othe
 
 On the client side, use [`hot.on`](/guide/api-hmr.html#hot-on-event-cb) to listen to the events:
 
-```ts
+```ts twoslash
+import 'vite/client'
+// ---cut---
 // client side
 if (import.meta.hot) {
   import.meta.hot.on('my:greetings', (data) => {
@@ -581,8 +602,7 @@ if (import.meta.hot) {
 
 Then use `server.ws.on` and listen to the events on the server side:
 
-```js
-// vite.config.js
+```js [vite.config.js]
 export default defineConfig({
   plugins: [
     {
@@ -601,16 +621,39 @@ export default defineConfig({
 
 ### TypeScript for Custom Events
 
-It is possible to type custom events by extending the `CustomEventMap` interface:
+Internally, vite infers the type of a payload from the `CustomEventMap` interface, it is possible to type custom events by extending the interface:
 
-```ts
-// events.d.ts
-import 'vite/types/customEvent'
+:::tip Note
+Make sure to include the `.d.ts` extension when specifying TypeScript declaration files. Otherwise, Typescript may not know which file the module is trying to extend.
+:::
 
-declare module 'vite/types/customEvent' {
+```ts [events.d.ts]
+import 'vite/types/customEvent.d.ts'
+
+declare module 'vite/types/customEvent.d.ts' {
   interface CustomEventMap {
     'custom:foo': { msg: string }
     // 'event-key': payload
   }
 }
+```
+
+This interface extension is utilized by `InferCustomEventPayload<T>` to infer the payload type for event `T`. For more information on how this interface is utilized, refer to the [HMR API Documentation](./api-hmr#hmr-api).
+
+```ts twoslash
+import 'vite/client'
+import type { InferCustomEventPayload } from 'vite/types/customEvent.d.ts'
+declare module 'vite/types/customEvent.d.ts' {
+  interface CustomEventMap {
+    'custom:foo': { msg: string }
+  }
+}
+// ---cut---
+type CustomFooPayload = InferCustomEventPayload<'custom:foo'>
+import.meta.hot?.on('custom:foo', (payload) => {
+  // The type of payload will be { msg: string }
+})
+import.meta.hot?.on('unknown:event', (payload) => {
+  // The type of payload will be any
+})
 ```

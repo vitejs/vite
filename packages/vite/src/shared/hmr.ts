@@ -1,4 +1,4 @@
-import type { Update } from 'types/hmrPayload'
+import type { HotPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 
@@ -15,6 +15,11 @@ interface HotCallback {
   fn: (modules: Array<ModuleNamespace | undefined>) => void
 }
 
+export interface HMRLogger {
+  error(msg: string | Error): void
+  debug(...msg: unknown[]): void
+}
+
 export interface HMRConnection {
   /**
    * Checked before sending messages to the client.
@@ -23,7 +28,7 @@ export interface HMRConnection {
   /**
    * Send message to the client.
    */
-  send(messages: string): void
+  send(messages: HotPayload): void
 }
 
 export class HMRContext implements ViteHotContext {
@@ -106,9 +111,12 @@ export class HMRContext implements ViteHotContext {
       path: this.ownerPath,
       message,
     })
-    this.send('vite:invalidate', { path: this.ownerPath, message })
+    this.send('vite:invalidate', {
+      path: this.ownerPath,
+      message,
+    })
     this.hmrClient.logger.debug(
-      `[vite] invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
+      `invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
     )
   }
 
@@ -146,9 +154,7 @@ export class HMRContext implements ViteHotContext {
   }
 
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
-    this.hmrClient.messenger.send(
-      JSON.stringify({ type: 'custom', event, data }),
-    )
+    this.hmrClient.messenger.send({ type: 'custom', event, data })
   }
 
   private acceptDeps(
@@ -170,10 +176,10 @@ export class HMRContext implements ViteHotContext {
 class HMRMessenger {
   constructor(private connection: HMRConnection) {}
 
-  private queue: string[] = []
+  private queue: HotPayload[] = []
 
-  public send(message: string): void {
-    this.queue.push(message)
+  public send(payload: HotPayload): void {
+    this.queue.push(payload)
     this.flush()
   }
 
@@ -196,7 +202,7 @@ export class HMRClient {
   public messenger: HMRMessenger
 
   constructor(
-    public logger: Console,
+    public logger: HMRLogger,
     connection: HMRConnection,
     // This allows implementing reloading via different methods depending on the environment
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
@@ -215,11 +221,25 @@ export class HMRClient {
     }
   }
 
+  public clear(): void {
+    this.hotModulesMap.clear()
+    this.disposeMap.clear()
+    this.pruneMap.clear()
+    this.dataMap.clear()
+    this.customListenersMap.clear()
+    this.ctxToListenersMap.clear()
+  }
+
   // After an HMR update, some modules are no longer imported on the page
   // but they may have left behind side effects that need to be cleaned up
   // (.e.g style injections)
-  // TODO Trigger their dispose callbacks.
-  public prunePaths(paths: string[]): void {
+  public async prunePaths(paths: string[]): Promise<void> {
+    await Promise.all(
+      paths.map((path) => {
+        const disposer = this.disposeMap.get(path)
+        if (disposer) return disposer(this.dataMap.get(path))
+      }),
+    )
     paths.forEach((path) => {
       const fn = this.pruneMap.get(path)
       if (fn) {
@@ -233,7 +253,7 @@ export class HMRClient {
       this.logger.error(err)
     }
     this.logger.error(
-      `[hmr] Failed to reload ${path}. ` +
+      `Failed to reload ${path}. ` +
         `This could be due to syntax errors or importing non-existent ` +
         `modules. (see errors above)`,
     )
@@ -259,7 +279,7 @@ export class HMRClient {
     }
   }
 
-  public async fetchUpdate(update: Update): Promise<(() => void) | undefined> {
+  private async fetchUpdate(update: Update): Promise<(() => void) | undefined> {
     const { path, acceptedPath } = update
     const mod = this.hotModulesMap.get(path)
     if (!mod) {
@@ -294,7 +314,7 @@ export class HMRClient {
         )
       }
       const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
-      this.logger.debug(`[vite] hot updated: ${loggedPath}`)
+      this.logger.debug(`hot updated: ${loggedPath}`)
     }
   }
 }
