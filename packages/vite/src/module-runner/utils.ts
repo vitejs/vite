@@ -16,7 +16,7 @@ export function normalizeAbsoluteUrl(url: string, root: string): string {
     // /root/id.js -> /id.js
     // C:/root/id.js -> /id.js
     // 1 is to keep the leading slash
-    url = url.slice(root.length - 1)
+    // url = url.slice(root.length - 1)
   }
 
   return url
