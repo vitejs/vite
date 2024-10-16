@@ -131,14 +131,15 @@ When you are developing a browser-oriented library, you are likely spending most
 
 When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/build-options.md#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
 
-```js twoslash [vite.config.js]
+::: code-group
+
+```js twoslash [vite.config.js (single entry)]
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
   build: {
     lib: {
-      // Could also be a dictionary or array of multiple entry points
       entry: resolve(__dirname, 'lib/main.js'),
       name: 'MyLib',
       // the proper extensions will be added
@@ -160,6 +161,37 @@ export default defineConfig({
 })
 ```
 
+```js twoslash [vite.config.js (multiple entries)]
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  build: {
+    lib: {
+      entry: {
+        'my-lib': resolve(__dirname, 'lib/main.js'),
+        secondary: resolve(__dirname, 'lib/secondary.js'),
+      },
+      name: 'MyLib',
+    },
+    rollupOptions: {
+      // make sure to externalize deps that shouldn't be bundled
+      // into your library
+      external: ['vue'],
+      output: {
+        // Provide global variables to use in the UMD build
+        // for externalized deps
+        globals: {
+          vue: 'Vue',
+        },
+      },
+    },
+  },
+})
+```
+
+:::
+
 The entry file would contain exports that can be imported by users of your package:
 
 ```js [lib/main.js]
@@ -179,7 +211,9 @@ dist/my-lib.umd.cjs 0.30 kB / gzip: 0.16 kB
 
 Recommended `package.json` for your lib:
 
-```json [package.json]
+::: code-group
+
+```json [package.json (single entry)]
 {
   "name": "my-lib",
   "type": "module",
@@ -195,9 +229,7 @@ Recommended `package.json` for your lib:
 }
 ```
 
-Or, if exposing multiple entry points:
-
-```json [package.json]
+```json [package.json (multiple entries)]
 {
   "name": "my-lib",
   "type": "module",
@@ -216,6 +248,8 @@ Or, if exposing multiple entry points:
   }
 }
 ```
+
+:::
 
 ::: tip File Extensions
 If the `package.json` does not contain `"type": "module"`, Vite will generate different file extensions for Node.js compatibility. `.js` will become `.mjs` and `.cjs` will become `.js`.
