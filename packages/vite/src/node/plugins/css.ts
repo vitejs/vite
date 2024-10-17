@@ -2605,7 +2605,7 @@ const makeLessWorker = (
     const resolved = await resolvers.less(
       environment,
       filename,
-      path.join(dir, '*'),
+      rootFile,
     )
     if (!resolved) return undefined
 
