@@ -171,7 +171,7 @@ jobs:
         run: pnpm run lint
 
       - name: Check formatting
-        run: pnpm prettier --write . && git diff
+        run: pnpm prettier --write . && git diff --exit-code
 
       - name: Typecheck
         run: pnpm run typecheck
