@@ -1,6 +1,6 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { SourceMap } from 'rollup'
+import type { RollupAstNode, SourceMap } from 'rollup'
 import type {
   ExportAllDeclaration,
   ExportDefaultDeclaration,
@@ -102,11 +102,17 @@ async function ssrTransformScript(
 
   function defineImport(
     index: number,
-    start: number,
-    end: number,
-    source: string,
+    importNode: (
+      | ImportDeclaration
+      | (ExportNamedDeclaration & { source: Literal })
+      | ExportAllDeclaration
+    ) & {
+      start: number
+      end: number
+    },
     metadata?: DefineImportMetadata,
   ) {
+    const source = importNode.source.value as string
     deps.add(source)
     const importId = `__vite_ssr_import_${uid++}__`
 
@@ -122,19 +128,19 @@ async function ssrTransformScript(
     // There will be an error if the module is called before it is imported,
     // so the module import statement is hoisted to the top
     s.update(
-      start,
-      end,
+      importNode.start,
+      importNode.end,
       `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
         source,
       )}${metadataStr});\n`,
     )
 
-    if (start !== index) {
-      s.move(start, end, index)
+    if (importNode.start !== index) {
+      s.move(importNode.start, importNode.end, index)
     }
 
     if (index === hoistIndex) {
-      hoistIndex = end
+      hoistIndex = importNode.end
     }
 
     return importId
@@ -148,12 +154,12 @@ async function ssrTransformScript(
     )
   }
 
-  const imports: (ImportDeclaration & { start: number; end: number })[] = []
-  const exports: ((
-    | ExportNamedDeclaration
-    | ExportDefaultDeclaration
-    | ExportAllDeclaration
-  ) & { start: number; end: number })[] = []
+  const imports: RollupAstNode<ImportDeclaration>[] = []
+  const exports: (
+    | RollupAstNode<ExportNamedDeclaration>
+    | RollupAstNode<ExportDefaultDeclaration>
+    | RollupAstNode<ExportAllDeclaration>
+  )[] = []
 
   for (const node of ast.body as Node[]) {
     if (node.type === 'ImportDeclaration') {
@@ -172,21 +178,15 @@ async function ssrTransformScript(
     // import foo from 'foo' --> foo -> __import_foo__.default
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
-    const importId = defineImport(
-      hoistIndex,
-      node.start,
-      node.end,
-      node.source.value as string,
-      {
-        importedNames: node.specifiers
-          .map((s) => {
-            if (s.type === 'ImportSpecifier')
-              return getIdentifierNameOrLiteralValue(s.imported) as string
-            else if (s.type === 'ImportDefaultSpecifier') return 'default'
-          })
-          .filter(isDefined),
-      },
-    )
+    const importId = defineImport(hoistIndex, node, {
+      importedNames: node.specifiers
+        .map((s) => {
+          if (s.type === 'ImportSpecifier')
+            return getIdentifierNameOrLiteralValue(s.imported) as string
+          else if (s.type === 'ImportDefaultSpecifier') return 'default'
+        })
+        .filter(isDefined),
+    })
     for (const spec of node.specifiers) {
       if (spec.type === 'ImportSpecifier') {
         if (spec.imported.type === 'Identifier') {
@@ -236,9 +236,7 @@ async function ssrTransformScript(
           // export { foo, bar } from './foo'
           const importId = defineImport(
             node.start,
-            node.start,
-            node.end,
-            node.source.value as string,
+            node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
             {
               importedNames: node.specifiers.map(
                 (s) => getIdentifierNameOrLiteralValue(s.local) as string,
@@ -309,12 +307,7 @@ async function ssrTransformScript(
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      const importId = defineImport(
-        node.start,
-        node.start,
-        node.end,
-        node.source.value as string,
-      )
+      const importId = defineImport(node.start, node)
       if (node.exported) {
         const exportedAs = getIdentifierNameOrLiteralValue(
           node.exported,
