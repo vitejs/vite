@@ -69,7 +69,6 @@ export async function fetchModule(
         webCompatible: environment.config.webCompatible,
       },
       undefined,
-      true,
     )
     if (!resolved) {
       const err: any = new Error(

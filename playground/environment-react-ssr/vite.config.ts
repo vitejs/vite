@@ -30,6 +30,12 @@ export default defineConfig((env) => ({
       },
     },
     ssr: {
+      dev: {
+        optimizeDeps: {
+          noDiscovery: false,
+          entries: ['./src/entry-server.tsx'],
+        },
+      },
       build: {
         outDir: 'dist/server',
         // [feedback]
