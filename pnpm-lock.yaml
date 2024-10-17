@@ -322,9 +322,6 @@ importers:
       etag:
         specifier: ^1.8.1
         version: 1.8.1
-      fast-glob:
-        specifier: ^3.3.2
-        version: 3.3.2
       http-proxy:
         specifier: ^1.18.1
         version: 1.18.1(patch_hash=qqiqxx62zlcu62nljjmhlvexni)(debug@4.3.7)
@@ -406,6 +403,9 @@ importers:
       strip-literal:
         specifier: ^2.1.0
         version: 2.1.0
+      tinyglobby:
+        specifier: ^0.2.9
+        version: 0.2.9
       tsconfck:
         specifier: ^3.1.4
         version: 3.1.4(typescript@5.5.3)
@@ -510,15 +510,15 @@ importers:
 
   playground/backend-integration:
     devDependencies:
-      fast-glob:
-        specifier: ^3.3.2
-        version: 3.3.2
       sass:
         specifier: ^1.79.5
         version: 1.79.5
       tailwindcss:
         specifier: ^3.4.13
         version: 3.4.13(ts-node@10.9.2(@types/node@20.16.11)(typescript@5.5.3))
+      tinyglobby:
+        specifier: ^0.2.9
+        version: 0.2.9
 
   playground/build-old: {}
 
@@ -566,9 +566,6 @@ importers:
       '@vitejs/test-scss-proxy-dep':
         specifier: file:./scss-proxy-dep
         version: file:playground/css/scss-proxy-dep
-      fast-glob:
-        specifier: ^3.3.2
-        version: 3.3.2
       less:
         specifier: ^4.2.0
         version: 4.2.0
@@ -584,6 +581,9 @@ importers:
       sugarss:
         specifier: ^4.0.1
         version: 4.0.1(postcss@8.4.47)
+      tinyglobby:
+        specifier: ^0.2.9
+        version: 0.2.9
 
   playground/css-codesplit: {}
 
@@ -4829,6 +4829,14 @@ packages:
       picomatch:
         optional: true
 
+  fdir@6.4.0:
+    resolution: {integrity: sha512-3oB133prH1o4j/L5lLW7uOCF1PlD+/It2L0eL/iAqWMB91RBbqTewABqxhj0ibBd90EEmWZq7ntIWzVaWcXTGQ==}
+    peerDependencies:
+      picomatch: ^3 || ^4
+    peerDependenciesMeta:
+      picomatch:
+        optional: true
+
   feed@4.2.2:
     resolution: {integrity: sha512-u5/sxGfiMfZNtJ3OvQpXcvotFpYkL0n9u9mM2vkui2nGo8b4wvDkJ8gAkYqbA8QpGyFCv3RK0Z+Iv+9veCS9bQ==}
     engines: {node: '>=0.4.0'}
@@ -5984,6 +5992,10 @@ packages:
     resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
     engines: {node: '>=8.6'}
 
+  picomatch@4.0.2:
+    resolution: {integrity: sha512-M7BAV6Rlcy5u+m6oPhAPFgJTzAioX/6B0DxyvDlo9l8+T3nLKbrczg2WLUyzd45L8RqfUMyGPzekbMvX2Ldkwg==}
+    engines: {node: '>=12'}
+
   pidtree@0.6.0:
     resolution: {integrity: sha512-eG2dWTVw5bzqGRztnHExczNxt5VGsE6OwTeCG3fdUf9KBsZzO3R5OIIIzWR+iZA0NtZ+RDVdaoE2dK1cn6jH4g==}
     engines: {node: '>=0.10'}
@@ -6800,6 +6812,10 @@ packages:
 
   tinyexec@0.3.0:
     resolution: {integrity: sha512-tVGE0mVJPGb0chKhqmsoosjsS+qUnJVGJpZgsHYQcGoPlG3B51R3PouqTgEGH2Dc9jjFyOqOpix6ZHNMXp1FZg==}
+
+  tinyglobby@0.2.9:
+    resolution: {integrity: sha512-8or1+BGEdk1Zkkw2ii16qSS7uVrQJPre5A9o/XkWPATkk23FZh/15BKFxPnlTy6vkljZxLqYCzzBMj30ZrSvjw==}
+    engines: {node: '>=12.0.0'}
 
   tinypool@1.0.0:
     resolution: {integrity: sha512-KIKExllK7jp3uvrNtvRBYBWBOAXSX8ZvoaD8T+7KB/QHIuoJW3Pmr60zucywjAlMb5TeXUkcs/MWeWLu0qvuAQ==}
@@ -10546,6 +10562,10 @@ snapshots:
     optionalDependencies:
       picomatch: 2.3.1
 
+  fdir@6.4.0(picomatch@4.0.2):
+    optionalDependencies:
+      picomatch: 4.0.2
+
   feed@4.2.2:
     dependencies:
       xml-js: 1.6.11
@@ -11806,6 +11826,8 @@ snapshots:
 
   picomatch@2.3.1: {}
 
+  picomatch@4.0.2: {}
+
   pidtree@0.6.0: {}
 
   pify@2.3.0: {}
@@ -12680,6 +12702,11 @@ snapshots:
   tinybench@2.9.0: {}
 
   tinyexec@0.3.0: {}
+
+  tinyglobby@0.2.9:
+    dependencies:
+      fdir: 6.4.0(picomatch@4.0.2)
+      picomatch: 4.0.2
 
   tinypool@1.0.0: {}
 
