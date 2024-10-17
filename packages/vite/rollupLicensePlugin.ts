@@ -8,6 +8,7 @@ export default function licensePlugin(
   licenseFilePath: string,
   licenseTitle: string,
   packageName: string,
+  additionalSection?: string,
 ): Plugin {
   return license({
     thirdParty(dependencies) {
@@ -95,7 +96,9 @@ export default function licensePlugin(
         `# ${licenseTitle}\n` +
         `${packageName} is released under the MIT license:\n\n` +
         coreLicense +
-        `\n# Licenses of bundled dependencies\n` +
+        `\n` +
+        (additionalSection || '') +
+        `# Licenses of bundled dependencies\n` +
         `The published ${packageName} artifact additionally contains code with the following licenses:\n` +
         `${licenses.join(', ')}\n\n` +
         `# Bundled dependencies:\n` +
