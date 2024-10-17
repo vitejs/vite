@@ -152,6 +152,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    <link rel="modulepreload" href="assets/shared-B7PI925R.js" />
    ```
 
+   ::: details Pseudo implementation of `importedChunks`
    An example pseudo implementation of `importedChunks` in TypeScript (This will
    need to be adapted for your programming language and templating language):
 
@@ -183,3 +184,4 @@ If you need a custom integration, you can follow the steps in this guide to conf
      return getImportedChunks(manifest[name])
    }
    ```
+   :::
