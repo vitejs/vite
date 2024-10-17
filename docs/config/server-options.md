@@ -85,7 +85,7 @@ export default defineConfig({
 
 - **Type:** `Record<string, string | ProxyOptions>`
 
-Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. Any requests that request path starts with that key will be proxied to that specified target. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance.
+Configure custom proxy rules for the dev server. Expects an object of `{ key: options }` pairs. Any requests that request path starts with that key will be proxied to that specified target. If the key starts with `^`, it will be interpreted as a `RegExp`. The `configure` option can be used to access the proxy instance. If a request matches any of the configured proxy rules, the request won't be transformed by Vite.
 
 Note that if you are using non-relative [`base`](/config/shared-options.md#base), you must prefix each key with that `base`.
 
