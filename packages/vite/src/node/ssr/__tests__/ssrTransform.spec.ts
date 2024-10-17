@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { assert, expect, test } from 'vitest'
 import type { SourceMap } from 'rollup'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { transformWithEsbuild } from '../../plugins/esbuild'
 import { ssrTransform } from '../ssrTransform'
 
@@ -443,50 +444,6 @@ test('sourcemap source', async () => {
 })
 
 test('sourcemap is correct for hoisted imports', async () => {
-  // Mapping from Base64 character to integer
-  const base64Chars =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-  const base64ToInt = Object.fromEntries(
-    base64Chars.split('').map((c, i) => [c, i]),
-  )
-
-  // Decode a single Base64 VLQ segment
-  function decodeVLQ(segment) {
-    const result: number[] = []
-    let cur = 0
-    let shift = 0
-    let continuation, sign, value
-
-    for (const char of segment) {
-      const integer = base64ToInt[char]
-
-      continuation = integer & 32
-      value = integer & 31
-      cur += value << shift
-      shift += 5
-
-      if (!continuation) {
-        sign = cur & 1
-        cur >>= 1
-        if (sign) {
-          cur = -cur
-        }
-        result.push(cur)
-        cur = 0
-        shift = 0
-      }
-    }
-
-    const [, , originalLine] = result
-    return originalLine
-  }
-
-  // Split the mappings string and decode each segment
-  function decodeMappings(mappings) {
-    const lines = mappings.split(';')
-    return lines.map((line) => line.split(',').map(decodeVLQ))
-  }
-
   const map = (
     await ssrTransform(
       `\n\n\nimport { foo } from 'vue';`,
@@ -496,8 +453,13 @@ test('sourcemap is correct for hoisted imports', async () => {
     )
   )?.map
 
-  const decodedMappings = decodeMappings(map?.mappings || '')
-  expect(decodedMappings[0]).toEqual([3])
+  const traceMap = new TraceMap(map as any)
+  expect(originalPositionFor(traceMap, { line: 1, column: 0 })).toStrictEqual({
+    source: 'input.js',
+    line: 4,
+    column: 0,
+    name: null,
+  })
 })
 
 test('sourcemap with multiple sources', async () => {
