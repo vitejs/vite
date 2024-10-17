@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { assert, expect, test } from 'vitest'
 import type { SourceMap } from 'rollup'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { transformWithEsbuild } from '../../plugins/esbuild'
 import { ssrTransform } from '../ssrTransform'
 
@@ -440,6 +441,25 @@ test('sourcemap source', async () => {
 
   expect(map?.sources).toStrictEqual(['input.js'])
   expect(map?.sourcesContent).toStrictEqual(['export const a = 1 /* */'])
+})
+
+test('sourcemap is correct for hoisted imports', async () => {
+  const map = (
+    await ssrTransform(
+      `\n\n\nimport { foo } from 'vue';`,
+      null,
+      'input.js',
+      'export const a = 1 /* */',
+    )
+  )?.map
+
+  const traceMap = new TraceMap(map as any)
+  expect(originalPositionFor(traceMap, { line: 1, column: 0 })).toStrictEqual({
+    source: 'input.js',
+    line: 4,
+    column: 0,
+    name: null,
+  })
 })
 
 test('sourcemap with multiple sources', async () => {
