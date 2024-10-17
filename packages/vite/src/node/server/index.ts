@@ -501,16 +501,8 @@ export async function _createServer(
   }
 
   for (const environment of Object.values(environments)) {
-    const previousEnvironment = options.previousEnvironments?.[environment.name]
-
-    await environment.init({
-      watcher,
-      previousInstance:
-        // only pass if the previous environment is an instance of the same class
-        previousEnvironment instanceof environment.constructor
-          ? previousEnvironment
-          : undefined,
-    })
+    const previousInstance = options.previousEnvironments?.[environment.name]
+    await environment.init({ watcher, previousInstance })
   }
 
   // Backward compatibility

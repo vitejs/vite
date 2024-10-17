@@ -153,6 +153,11 @@ export class DevEnvironment extends BaseEnvironment {
 
   async init(options?: {
     watcher?: FSWatcher
+    /**
+     * the previous instance used for the environment with the same name
+     *
+     * when using, the consumer should check if it's an instance generated from the same class or factory function
+     */
     previousInstance?: DevEnvironment
   }): Promise<void> {
     if (this._initiated) {
@@ -167,6 +172,12 @@ export class DevEnvironment extends BaseEnvironment {
     )
   }
 
+  /**
+   * When the dev server is restarted, the methods are called in the following order:
+   * - new instance `init`
+   * - previous instance `close`
+   * - new instance `listen`
+   */
   async listen(server: ViteDevServer): Promise<void> {
     this.hot.listen()
     await this.depsOptimizer?.init()
