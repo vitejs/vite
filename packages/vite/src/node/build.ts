@@ -1427,7 +1427,7 @@ export function toOutputFilePathWithoutRuntime(
       type,
       ssr: !!config.build.ssr,
     })
-    if (typeof result === "object") {
+    if (typeof result === 'object') {
       if (result.runtime) {
         throw new Error(
           `{ runtime: "${result.runtime}" } is not supported for assets in ${hostType} files: ${filename}`,
