@@ -262,7 +262,7 @@ export function isSameFileUri(file1: string, file2: string): boolean {
   )
 }
 
-export const externalRE = /^(https?:)?\/\//
+export const externalRE = /^([a-z]+:)?\/\//
 export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 
 export const dataUrlRE = /^\s*data:/i
