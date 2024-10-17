@@ -1,5 +1,7 @@
 # SSR Options
 
+Unless noted, the options in this section are applied to both dev and build.
+
 ## ssr.external
 
 - **Type:** `string[] | true`

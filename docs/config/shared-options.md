@@ -1,5 +1,7 @@
 # Shared Options
 
+Unless noted, the options in this section are applied to all dev, build, and preview.
+
 ## root
 
 - **Type:** `string`

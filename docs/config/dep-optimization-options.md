@@ -2,6 +2,8 @@
 
 - **Related:** [Dependency Pre-Bundling](/guide/dep-pre-bundling)
 
+Unless noted, the options in this section are only applied to the dependency optimizer, which is only used in dev.
+
 ## optimizeDeps.entries
 
 - **Type:** `string | string[]`

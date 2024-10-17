@@ -1,5 +1,7 @@
 # Build Options
 
+Unless noted, the options in this section are only applied to build.
+
 ## build.target
 
 - **Type:** `string | string[]`
