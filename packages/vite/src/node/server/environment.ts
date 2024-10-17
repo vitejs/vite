@@ -23,8 +23,8 @@ import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
 import { promiseWithResolvers } from '../../shared/utils'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import type { HotChannel } from './hmr'
-import { createNoopHotChannel, getShortName, updateModules } from './hmr'
+import type { HotChannel, NormalizedHotChannel } from './hmr'
+import { getShortName, normalizeHotChannel, updateModules } from './hmr'
 import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import type { EnvironmentPluginContainer } from './pluginContainer'
@@ -36,7 +36,7 @@ import { isWebSocketServer } from './ws'
 
 export interface DevEnvironmentContext {
   hot: boolean
-  transport: Pick<HotChannel, 'send' | 'on'> & Partial<HotChannel>
+  transport: HotChannel
   options?: EnvironmentOptions
   remoteRunner?: {
     inlineSourceMap?: boolean
@@ -93,8 +93,7 @@ export class DevEnvironment extends BaseEnvironment {
    * @example
    * environment.hot.send({ type: 'full-reload' })
    */
-  hot: Pick<HotChannel, 'send' | 'on'> & Partial<HotChannel>
-  transport: Pick<HotChannel, 'send' | 'on'> & Partial<HotChannel>
+  hot: NormalizedHotChannel
   constructor(
     name: string,
     config: ResolvedConfig,
@@ -120,9 +119,8 @@ export class DevEnvironment extends BaseEnvironment {
 
     this._remoteRunnerOptions = context.remoteRunner ?? {}
 
-    this.transport = context.transport
-    this.hot = context.hot ? context.transport : createNoopHotChannel()
-    this.transport.on('vite:fetchModule', async (data, client, invoke) => {
+    this.hot = normalizeHotChannel(context.transport)
+    this.hot.on('vite:fetchModule', async (data, client, invoke) => {
       if (!invoke) return
 
       const resInvoke = invoke.replace('send', 'response') as
@@ -130,9 +128,7 @@ export class DevEnvironment extends BaseEnvironment {
         | `response:${string}`
       try {
         const result = await this.fetchModule(
-          data.url,
-          data.importer,
-          data.data,
+          ...(data as [string, string | undefined, any]),
         )
         client.respond('vite:fetchModule', resInvoke, { r: result })
       } catch (error) {

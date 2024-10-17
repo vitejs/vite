@@ -266,14 +266,14 @@ export class ModuleRunner {
       (
         url.startsWith('data:')
           ? { externalize: url, type: 'builtin' }
-          : await this.transport.invoke('vite:fetchModule', {
+          : await this.transport.invoke('vite:fetchModule', [
               url,
               importer,
-              data: {
+              {
                 cached: isCached,
                 startOffset: this.evaluator.startOffset,
               },
-            })
+            ])
       ) as ResolvedResult
 
     if ('cache' in fetchedModule) {

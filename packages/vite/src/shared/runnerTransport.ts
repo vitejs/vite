@@ -16,8 +16,10 @@ export type CreateRunnerTransport = (
 export interface RunnerTransportOptions {
   connect?(handler: (data: HotPayload) => void): Promise<void> | void
   disconnect?(): Promise<void> | void
-  send?(data: HotPayload): void
-  invoke?(data: HotPayload): any
+  send?(data: HotPayload): Promise<void> | void
+  invoke?(
+    data: HotPayload,
+  ): Promise<{ /** result */ r: any } | { /** error */ e: any }>
   timeout?: number
 }
 
@@ -39,16 +41,20 @@ const createInvokeableTransportOptions = (
     const sendOrInvoke = transport.send ?? transport.invoke
     return {
       ...transport,
-      send(data) {
-        sendOrInvoke(data)
+      async send(data) {
+        await sendOrInvoke(data)
       },
-      invoke(name, data) {
-        return transport.invoke!({
+      async invoke(name, data) {
+        const result = await transport.invoke!({
           type: 'custom',
           event: name,
           invoke: 'send',
           data,
         } satisfies CustomPayload)
+        if ('e' in result) {
+          throw result.e
+        }
+        return result.r
       },
     }
   }

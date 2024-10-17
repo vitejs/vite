@@ -4,9 +4,7 @@ import type { HotChannel, HotPayload } from 'vite'
 import { DevEnvironment } from '../../..'
 import { createServer } from '../../../server'
 
-const createWorkerTransport = (
-  w: Worker,
-): Pick<HotChannel, 'send' | 'on'> & Partial<HotChannel> => {
+const createWorkerTransport = (w: Worker): HotChannel => {
   const handlerToWorkerListener = new WeakMap<
     (data: any) => void,
     (value: any) => void
@@ -22,30 +20,8 @@ const createWorkerTransport = (
       const listener = (value: any) => {
         if (value.event === event) {
           const client = {
-            send(...args: any[]) {
-              let payload: HotPayload
-              if (typeof args[0] === 'string') {
-                payload = {
-                  type: 'custom',
-                  event: args[0],
-                  data: args[1],
-                }
-              } else {
-                payload = args[0]
-              }
+            send(payload: HotPayload) {
               w.postMessage(payload)
-            },
-            respond(
-              event: string,
-              invoke: 'response' | `response:${string}` | undefined,
-              payload?: any,
-            ) {
-              w.postMessage({
-                type: 'custom',
-                event,
-                invoke,
-                data: payload,
-              })
             },
           }
           handler(value.data, client, value.invoke)
@@ -65,6 +41,12 @@ const createWorkerTransport = (
         w.off('message', listener)
         handlerToWorkerListener.delete(handler as (data: any) => void)
       }
+    },
+    listen() {
+      /* noop */
+    },
+    close() {
+      /* noop */
     },
   }
 }

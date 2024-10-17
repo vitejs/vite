@@ -215,28 +215,8 @@ export function createWebSocketServer(
   function getSocketClient(socket: WebSocketRaw) {
     if (!clientsMap.has(socket)) {
       clientsMap.set(socket, {
-        send: (...args) => {
-          let payload: HotPayload
-          if (typeof args[0] === 'string') {
-            payload = {
-              type: 'custom',
-              event: args[0],
-              data: args[1],
-            }
-          } else {
-            payload = args[0]
-          }
+        send: (payload) => {
           socket.send(JSON.stringify(payload))
-        },
-        respond(event, invoke, payload) {
-          socket.send(
-            JSON.stringify({
-              type: 'custom',
-              event,
-              invoke,
-              data: payload,
-            }),
-          )
         },
         socket,
       })
@@ -276,18 +256,7 @@ export function createWebSocketServer(
       return new Set(Array.from(wss.clients).map(getSocketClient))
     },
 
-    send(...args: any[]) {
-      let payload: HotPayload
-      if (typeof args[0] === 'string') {
-        payload = {
-          type: 'custom',
-          event: args[0],
-          data: args[1],
-        }
-      } else {
-        payload = args[0]
-      }
-
+    send(payload: HotPayload) {
       if (payload.type === 'error' && !wss.clients.size) {
         bufferedError = payload
         return

@@ -228,7 +228,13 @@ async function getDevEnvironment(
 
   const environment = new DevEnvironment('client', config, {
     hot: false,
-    transport: { on: () => {}, send: () => {} },
+    transport: {
+      on: () => {},
+      off: () => {},
+      send: () => {},
+      listen: () => {},
+      close: () => {},
+    },
   })
   await environment.init()
 

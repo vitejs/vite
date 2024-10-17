@@ -31,7 +31,7 @@ export interface RunnableDevEnvironmentContext
   ) => ModuleRunner
   runnerOptions?: ServerModuleRunnerOptions
   hot?: boolean
-  transport?: Pick<HotChannel, 'send' | 'on'> & Partial<HotChannel>
+  transport?: HotChannel
 }
 
 export function isRunnableDevEnvironment(

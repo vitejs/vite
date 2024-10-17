@@ -71,32 +71,16 @@ interface PropagationBoundary {
 }
 
 export interface HotChannelClient {
-  /**
-   * Send event to the client
-   */
   send(payload: HotPayload): void
-  /**
-   * Send custom event
-   */
-  send(event: string, payload?: CustomPayload['data']): void
-  respond(
-    event: string,
-    invoke: 'response' | `response:${string}` | undefined,
-    payload?: any,
-  ): void
 }
 /** @deprecated use `HotChannelClient` instead */
 export type HMRBroadcasterClient = HotChannelClient
 
-export interface HotChannel {
+export interface HotChannel<Api = any> {
   /**
    * Broadcast events to all clients
    */
   send(payload: HotPayload): void
-  /**
-   * Send custom event
-   */
-  send<T extends string>(event: T, payload?: InferCustomEventPayload<T>): void
   /**
    * Handle custom event emitted by `import.meta.hot.send`
    */
@@ -106,7 +90,6 @@ export interface HotChannel {
       data: InferCustomEventPayload<T>,
       client: HotChannelClient,
       invoke?: 'send' | `send:${string}`,
-      ...args: any[]
     ) => void,
   ): void
   on(event: 'connection', listener: () => void): void
@@ -122,6 +105,8 @@ export interface HotChannel {
    * Disconnect all clients, called when server is closed or restarted.
    */
   close(): Promise<unknown> | void
+
+  api?: Api
 }
 /** @deprecated use `HotChannel` instead */
 export type HMRChannel = HotChannel
@@ -130,6 +115,145 @@ export function getShortName(file: string, root: string): string {
   return file.startsWith(withTrailingSlash(root))
     ? path.posix.relative(root, file)
     : file
+}
+
+export interface NormalizedHotChannelClient {
+  /**
+   * Send event to the client
+   */
+  send(payload: HotPayload): void
+  /**
+   * Send custom event
+   */
+  send(event: string, payload?: CustomPayload['data']): void
+  respond(
+    event: string,
+    invoke: 'response' | `response:${string}` | undefined,
+    payload: { /** resolved */ r: any } | { /** error */ e: any },
+  ): void
+}
+
+export interface NormalizedHotChannel<Api = any> {
+  /**
+   * Broadcast events to all clients
+   */
+  send(payload: HotPayload): void
+  /**
+   * Send custom event
+   */
+  send<T extends string>(event: T, payload?: InferCustomEventPayload<T>): void
+  /**
+   * Handle custom event emitted by `import.meta.hot.send`
+   */
+  on<T extends string>(
+    event: T,
+    listener: (
+      data: InferCustomEventPayload<T>,
+      client: NormalizedHotChannelClient,
+      invoke?: 'send' | `send:${string}`,
+    ) => void,
+  ): void
+  on(event: 'connection', listener: () => void): void
+  /**
+   * Unregister event listener
+   */
+  off(event: string, listener: Function): void
+  /**
+   * Start listening for messages
+   */
+  listen(): void
+  /**
+   * Disconnect all clients, called when server is closed or restarted.
+   */
+  close(): Promise<unknown> | void
+
+  api?: Api
+}
+
+export const normalizeHotChannel = (
+  channel: HotChannel,
+): NormalizedHotChannel => {
+  const normalizedListenerMap = new WeakMap<
+    (
+      data: any,
+      client: NormalizedHotChannelClient,
+      invoke?: 'send' | `send:${string}`,
+    ) => void,
+    (
+      data: any,
+      client: HotChannelClient,
+      invoke?: 'send' | `send:${string}`,
+    ) => void
+  >()
+
+  return {
+    ...channel,
+    on: (
+      event: string,
+      fn: (
+        data: any,
+        client: NormalizedHotChannelClient,
+        invoke?: 'send' | `send:${string}`,
+      ) => void,
+    ) => {
+      if (event === 'connection') {
+        channel.on(event, fn as () => void)
+        return
+      }
+
+      const listenerWithNormalizedClient = (
+        data: any,
+        client: HotChannelClient,
+        invoke?: 'send' | `send:${string}`,
+      ) => {
+        const normalizedClient: NormalizedHotChannelClient = {
+          send: (...args) => {
+            let payload: HotPayload
+            if (typeof args[0] === 'string') {
+              payload = {
+                type: 'custom',
+                event: args[0],
+                data: args[1],
+              }
+            } else {
+              payload = args[0]
+            }
+            client.send(payload)
+          },
+          respond: (event, invoke, payload) => {
+            client.send({
+              type: 'custom',
+              event,
+              invoke,
+              data: payload,
+            })
+          },
+        }
+        fn(data, normalizedClient, invoke)
+      }
+      normalizedListenerMap.set(fn, listenerWithNormalizedClient)
+      channel.on(event, listenerWithNormalizedClient)
+    },
+    off: (event: string, fn: () => void) => {
+      const normalizedListener = normalizedListenerMap.get(fn)
+      if (normalizedListener) {
+        channel.off(event, normalizedListener)
+      }
+    },
+    send: (...args: any[]) => {
+      let payload: HotPayload
+      if (typeof args[0] === 'string') {
+        payload = {
+          type: 'custom',
+          event: args[0],
+          data: args[1],
+        }
+      } else {
+        payload = args[0]
+      }
+      channel.send(payload)
+    },
+  }
 }
 
 export function getSortedPluginsByHotUpdateHook(
@@ -898,12 +1022,14 @@ async function readModifiedFile(file: string): Promise<string> {
   }
 }
 
-export interface ServerHotChannel extends HotChannel {
-  api: {
-    innerEmitter: EventEmitter
-    outsideEmitter: EventEmitter
-  }
+export type ServerHotChannelApi = {
+  innerEmitter: EventEmitter
+  outsideEmitter: EventEmitter
 }
+
+export type ServerHotChannel = HotChannel<ServerHotChannelApi>
+export type NormalizedServerHotChannel =
+  NormalizedHotChannel<ServerHotChannelApi>
 /** @deprecated use `ServerHotChannel` instead */
 export type ServerHMRChannel = ServerHotChannel
 
@@ -912,17 +1038,7 @@ export function createServerHotChannel(): ServerHotChannel {
   const outsideEmitter = new EventEmitter()
 
   return {
-    send(...args: any[]) {
-      let payload: HotPayload
-      if (typeof args[0] === 'string') {
-        payload = {
-          type: 'custom',
-          event: args[0],
-          data: args[1],
-        }
-      } else {
-        payload = args[0]
-      }
+    send(payload: HotPayload) {
       outsideEmitter.emit('send', payload)
     },
     off(event, listener: () => void) {
@@ -942,20 +1058,6 @@ export function createServerHotChannel(): ServerHotChannel {
       innerEmitter,
       outsideEmitter,
     },
-  }
-}
-
-export function createNoopHotChannel(): HotChannel {
-  function noop() {
-    // noop
-  }
-
-  return {
-    send: noop,
-    on: noop,
-    off: noop,
-    listen: noop,
-    close: noop,
   }
 }
 

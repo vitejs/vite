@@ -7,7 +7,11 @@ import type {
 } from 'vite/module-runner'
 import type { HotPayload } from 'types/hmrPayload'
 import type { DevEnvironment } from '../../server/environment'
-import type { HotChannelClient, ServerHotChannel } from '../../server/hmr'
+import type {
+  HotChannelClient,
+  NormalizedServerHotChannel,
+  ServerHotChannel,
+} from '../../server/hmr'
 import type { CreateRunnerTransport } from '../../../shared/runnerTransport'
 
 /**
@@ -69,56 +73,30 @@ function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
   return prepareStackTrace
 }
 
-class ServerHMRBroadcasterClient implements HotChannelClient {
-  constructor(private readonly hotChannel: ServerHotChannel) {}
-
-  send(...args: any[]) {
-    let payload: HotPayload
-    if (typeof args[0] === 'string') {
-      payload = {
-        type: 'custom',
-        event: args[0],
-        data: args[1],
-      }
-    } else {
-      payload = args[0]
-    }
-    if (payload.type !== 'custom') {
-      throw new Error(
-        'Cannot send non-custom events from the client to the server.',
-      )
-    }
-    this.hotChannel.send(payload)
-  }
-
-  respond(
-    event: string,
-    invoke: 'response' | `response:${string}` | undefined,
-    payload?: any,
-  ) {
-    this.hotChannel.send({
-      type: 'custom',
-      event,
-      invoke,
-      data: payload,
-    })
-  }
-}
-
 export const createServerRunnerTransportOptions =
   (options: { channel: ServerHotChannel }): CreateRunnerTransport =>
   () => {
-    const hmrClient = new ServerHMRBroadcasterClient(options.channel)
+    const hmrClient: HotChannelClient = {
+      send: (payload: HotPayload) => {
+        if (payload.type !== 'custom') {
+          throw new Error(
+            'Cannot send non-custom events from the client to the server.',
+          )
+        }
+        options.channel.send(payload)
+      },
+    }
+
     let handler: ((data: HotPayload) => void) | undefined
 
     return {
       connect(handler) {
-        options.channel.api.outsideEmitter.on('send', handler)
+        options.channel.api!.outsideEmitter.on('send', handler)
         handler({ type: 'connected' })
       },
       disconnect() {
         if (handler) {
-          options.channel.api.outsideEmitter.off('send', handler)
+          options.channel.api!.outsideEmitter.off('send', handler)
         }
       },
       send(payload) {
@@ -127,7 +105,7 @@ export const createServerRunnerTransportOptions =
             'Cannot send non-custom events from the server to the client.',
           )
         }
-        options.channel.api.innerEmitter.emit(
+        options.channel.api!.innerEmitter.emit(
           payload.event,
           payload.data,
           hmrClient,
@@ -151,7 +129,7 @@ export function createServerModuleRunner(
       ...options,
       root: environment.config.root,
       createTransport: createServerRunnerTransportOptions({
-        channel: environment.transport as ServerHotChannel,
+        channel: environment.hot as NormalizedServerHotChannel,
       }),
       hmr,
       sourcemapInterceptor: resolveSourceMapOptions(options),
