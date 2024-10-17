@@ -707,6 +707,27 @@ test('default sharedConfigBuild true on build api', async () => {
   expect(counter).toBe(1)
 })
 
+test('adjust worker build error for worker.format', async () => {
+  try {
+    await build({
+      root: resolve(__dirname, 'fixtures/worker-dynamic'),
+      build: {
+        rollupOptions: {
+          input: {
+            index: '/main.js',
+          },
+        },
+      },
+      logLevel: 'silent',
+    })
+  } catch (e) {
+    expect(e.message).toContain('worker.format')
+    expect(e.message).not.toContain('output.format')
+    return
+  }
+  expect.unreachable()
+})
+
 /**
  * for each chunks in output1, if there's a chunk in output2 with the same fileName,
  * ensure that the chunk code is the same. if not, the chunk hash should have changed.

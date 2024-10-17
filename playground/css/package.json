@@ -21,12 +21,12 @@
     "@vitejs/test-css-js-dep": "file:./css-js-dep",
     "@vitejs/test-css-proxy-dep": "file:./css-proxy-dep",
     "@vitejs/test-scss-proxy-dep": "file:./scss-proxy-dep",
-    "fast-glob": "^3.3.2",
     "less": "^4.2.0",
     "postcss-nested": "^6.2.0",
     "sass": "^1.79.5",
     "stylus": "^0.63.0",
-    "sugarss": "^4.0.1"
+    "sugarss": "^4.0.1",
+    "tinyglobby": "^0.2.9"
   },
   "imports": {
     "#imports": "./imports-field.css"
