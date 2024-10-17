@@ -11,6 +11,7 @@ import type { RawSourceMap } from '@ampproject/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rollup'
 import type { TSConfckParseResult } from 'tsconfck'
 import { TSConfckCache, TSConfckParseError, parse } from 'tsconfck'
+import type { FSWatcher } from 'dep-types/chokidar'
 import {
   combineSourcemaps,
   createDebugger,
@@ -40,10 +41,6 @@ export const defaultEsbuildSupported = {
   'dynamic-import': true,
   'import-meta': true,
 }
-
-// TODO: rework to avoid caching the server for this module.
-// If two servers are created in the same process, they will interfere with each other.
-let server: ViteDevServer
 
 export interface ESBuildOptions extends TransformOptions {
   include?: string | RegExp | string[] | RegExp[]
@@ -83,6 +80,8 @@ export async function transformWithEsbuild(
   filename: string,
   options?: TransformOptions,
   inMap?: object,
+  config?: ResolvedConfig,
+  watcher?: FSWatcher,
 ): Promise<ESBuildTransformResult> {
   let loader = options?.loader
 
@@ -123,14 +122,29 @@ export async function transformWithEsbuild(
     ]
     const compilerOptionsForFile: TSCompilerOptions = {}
     if (loader === 'ts' || loader === 'tsx') {
-      const loadedTsconfig = await loadTsconfigJsonForFile(filename)
-      const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
-
-      for (const field of meaningfulFields) {
-        if (field in loadedCompilerOptions) {
-          // @ts-expect-error TypeScript can't tell they are of the same type
-          compilerOptionsForFile[field] = loadedCompilerOptions[field]
+      try {
+        const { tsconfig: loadedTsconfig, tsconfigFile } =
+          await loadTsconfigJsonForFile(filename, config)
+        // tsconfig could be out of root, make sure it is watched on dev
+        if (watcher && tsconfigFile && config) {
+          ensureWatchedFile(watcher, tsconfigFile, config.root)
         }
+        const loadedCompilerOptions = loadedTsconfig.compilerOptions ?? {}
+
+        for (const field of meaningfulFields) {
+          if (field in loadedCompilerOptions) {
+            // @ts-expect-error TypeScript can't tell they are of the same type
+            compilerOptionsForFile[field] = loadedCompilerOptions[field]
+          }
+        }
+      } catch (e) {
+        if (e instanceof TSConfckParseError) {
+          // tsconfig could be out of root, make sure it is watched on dev
+          if (watcher && e.tsconfigFile && config) {
+            ensureWatchedFile(watcher, e.tsconfigFile, config.root)
+          }
+        }
+        throw e
       }
     }
 
@@ -251,22 +265,23 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     },
   }
 
+  let server: ViteDevServer
+
   return {
     name: 'vite:esbuild',
     configureServer(_server) {
       server = _server
-      server.watcher
-        .on('add', reloadOnTsconfigChange)
-        .on('change', reloadOnTsconfigChange)
-        .on('unlink', reloadOnTsconfigChange)
-    },
-    buildEnd() {
-      // recycle serve to avoid preventing Node self-exit (#6815)
-      server = null as any
     },
     async transform(code, id) {
       if (filter(id) || filter(cleanUrl(id))) {
-        const result = await transformWithEsbuild(code, id, transformOptions)
+        const result = await transformWithEsbuild(
+          code,
+          id,
+          transformOptions,
+          undefined,
+          config,
+          server?.watcher,
+        )
         if (result.warnings.length) {
           result.warnings.forEach((m) => {
             this.warn(prettifyMessage(m, code))
@@ -317,7 +332,13 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         return null
       }
 
-      const res = await transformWithEsbuild(code, chunk.fileName, options)
+      const res = await transformWithEsbuild(
+        code,
+        chunk.fileName,
+        options,
+        undefined,
+        config,
+      )
 
       if (config.build.lib) {
         // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
@@ -448,63 +469,69 @@ function prettifyMessage(m: Message, code: string): string {
   return res + `\n`
 }
 
-let tsconfckCache: TSConfckCache<TSConfckParseResult> | undefined
+let globalTSConfckCache: TSConfckCache<TSConfckParseResult> | undefined
+const tsconfckCacheMap = new WeakMap<
+  ResolvedConfig,
+  TSConfckCache<TSConfckParseResult>
+>()
+
+function getTSConfckCache(config?: ResolvedConfig) {
+  if (!config) {
+    return (globalTSConfckCache ??= new TSConfckCache<TSConfckParseResult>())
+  }
+  let cache = tsconfckCacheMap.get(config)
+  if (!cache) {
+    cache = new TSConfckCache<TSConfckParseResult>()
+    tsconfckCacheMap.set(config, cache)
+  }
+  return cache
+}
 
 export async function loadTsconfigJsonForFile(
   filename: string,
-): Promise<TSConfigJSON> {
-  try {
-    if (!tsconfckCache) {
-      tsconfckCache = new TSConfckCache<TSConfckParseResult>()
-    }
-    const result = await parse(filename, {
-      cache: tsconfckCache,
-      ignoreNodeModules: true,
-    })
-    // tsconfig could be out of root, make sure it is watched on dev
-    if (server && result.tsconfigFile) {
-      ensureWatchedFile(server.watcher, result.tsconfigFile, server.config.root)
-    }
-    return result.tsconfig
-  } catch (e) {
-    if (e instanceof TSConfckParseError) {
-      // tsconfig could be out of root, make sure it is watched on dev
-      if (server && e.tsconfigFile) {
-        ensureWatchedFile(server.watcher, e.tsconfigFile, server.config.root)
-      }
-    }
-    throw e
-  }
+  config?: ResolvedConfig,
+): Promise<{ tsconfigFile: string; tsconfig: TSConfigJSON }> {
+  const { tsconfig, tsconfigFile } = await parse(filename, {
+    cache: getTSConfckCache(config),
+    ignoreNodeModules: true,
+  })
+  return { tsconfigFile, tsconfig }
 }
 
-async function reloadOnTsconfigChange(changedFile: string) {
-  // server could be closed externally after a file change is detected
-  if (!server) return
+export async function reloadOnTsconfigChange(
+  server: ViteDevServer,
+  changedFile: string,
+): Promise<void> {
   // any tsconfig.json that's added in the workspace could be closer to a code file than a previously cached one
   // any json file in the tsconfig cache could have been used to compile ts
-  if (
-    path.basename(changedFile) === 'tsconfig.json' ||
-    (changedFile.endsWith('.json') &&
-      tsconfckCache?.hasParseResult(changedFile))
-  ) {
-    server.config.logger.info(
-      `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
-      { clear: server.config.clearScreen, timestamp: true },
-    )
+  if (changedFile.endsWith('.json')) {
+    const cache = getTSConfckCache(server.config)
+    if (
+      changedFile.endsWith('/tsconfig.json') ||
+      cache.hasParseResult(changedFile)
+    ) {
+      server.config.logger.info(
+        `changed tsconfig file detected: ${changedFile} - Clearing cache and forcing full-reload to ensure TypeScript is compiled with updated config values.`,
+        { clear: server.config.clearScreen, timestamp: true },
+      )
 
-    // clear module graph to remove code compiled with outdated config
-    server.moduleGraph.invalidateAll()
+      // TODO: more finegrained invalidation than the nuclear option below
 
-    // reset tsconfck so that recompile works with up2date configs
-    tsconfckCache?.clear()
+      // clear module graph to remove code compiled with outdated config
+      for (const environment of Object.values(server.environments)) {
+        environment.moduleGraph.invalidateAll()
+      }
 
-    // server may not be available if vite config is updated at the same time
-    if (server) {
-      // force full reload
-      server.hot.send({
-        type: 'full-reload',
-        path: '*',
-      })
+      // reset tsconfck cache so that recompile works with up2date configs
+      cache.clear()
+
+      // reload environments
+      for (const environment of Object.values(server.environments)) {
+        environment.hot.send({
+          type: 'full-reload',
+          path: '*',
+        })
+      }
     }
   }
 }
