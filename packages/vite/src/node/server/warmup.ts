@@ -7,15 +7,16 @@ import { normalizePath } from '../utils'
 import type { ViteDevServer } from '../index'
 import type { DevEnvironment } from './environment'
 
-export function warmupFiles(server: ViteDevServer): void {
+export function warmupFiles(
+  server: ViteDevServer,
+  environment: DevEnvironment,
+): void {
   const { root } = server.config
-  for (const environment of Object.values(server.environments)) {
-    mapFiles(environment.config.dev.warmup, root).then((files) => {
-      for (const file of files) {
-        warmupFile(server, environment, file)
-      }
-    })
-  }
+  mapFiles(environment.config.dev.warmup, root).then((files) => {
+    for (const file of files) {
+      warmupFile(server, environment, file)
+    }
+  })
 }
 
 async function warmupFile(
