@@ -7,7 +7,7 @@ contact_links:
     url: https://github.com/vitejs/vite-plugin-vue/issues/new/choose
     about: Vue related issues should be reported on the vite-plugin-vue repository.
   - name: Discord Chat
-    url: https://chat.vitejs.dev
+    url: https://chat.vite.dev
     about: Ask questions and discuss with other Vite users in real time.
   - name: Questions & Discussions
     url: https://github.com/vitejs/vite/discussions

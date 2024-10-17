@@ -1,12 +1,13 @@
 import { beforeAll, describe, expect, test } from 'vitest'
-import { hasWindowsUnicodeFsBug } from '../../hasWindowsUnicodeFsBug'
 import {
   browserLogs,
   editFile,
+  expectWithRetry,
   getColor,
   isBuild,
   isServe,
   page,
+  untilBrowserLogAfter,
   viteServer,
   viteTestUrl,
   withRetry,
@@ -219,7 +220,7 @@ describe('noBody', () => {
   })
 })
 
-describe.skipIf(hasWindowsUnicodeFsBug)('Unicode path', () => {
+describe('Unicode path', () => {
   test('direct access', async () => {
     await page.goto(
       viteTestUrl + '/unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
@@ -274,9 +275,35 @@ describe.runIf(isServe)('invalid', () => {
     expect(isVisbleOverlay).toBeFalsy()
   })
 
-  test('should reload when fixed', async () => {
+  test('stack is updated', async () => {
     await page.goto(viteTestUrl + '/invalid.html')
-    await editFile('invalid.html', (content) => {
+
+    const errorOverlay = await page.waitForSelector('vite-error-overlay')
+    const hiddenPromise = errorOverlay.waitForElementState('hidden')
+    await page.keyboard.press('Escape')
+    await hiddenPromise
+
+    viteServer.environments.client.hot.send({
+      type: 'error',
+      err: {
+        message: 'someError',
+        stack: [
+          'Error: someError',
+          '    at someMethod (/some/file.ts:1:2)',
+        ].join('\n'),
+      },
+    })
+    const newErrorOverlay = await page.waitForSelector('vite-error-overlay')
+    const stack = await newErrorOverlay.$$eval('.stack', (m) => m[0].innerHTML)
+    expect(stack).toMatch(/^Error: someError/)
+  })
+
+  test('should reload when fixed', async () => {
+    await untilBrowserLogAfter(
+      () => page.goto(viteTestUrl + '/invalid.html'),
+      /connected/, // wait for HMR connection
+    )
+    editFile('invalid.html', (content) => {
       return content.replace('<div Bad', '<div> Good')
     })
     const content = await page.waitForSelector('text=Good HTML')
@@ -352,12 +379,25 @@ describe('special character', () => {
   })
 })
 
+describe('relative input', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/relative-input.html')
+  })
+
+  test('passing relative path to rollupOptions.input works', async () => {
+    await expectWithRetry(() => page.textContent('.relative-input')).toBe('OK')
+  })
+})
+
 describe.runIf(isServe)('warmup', () => {
   test('should warmup /warmup/warm.js', async () => {
     // warmup transform files async during server startup, so the module check
     // here might take a while to load
     await withRetry(async () => {
-      const mod = await viteServer.moduleGraph.getModuleByUrl('/warmup/warm.js')
+      const mod =
+        await viteServer.environments.client.moduleGraph.getModuleByUrl(
+          '/warmup/warm.js',
+        )
       expect(mod).toBeTruthy()
     })
   })
@@ -430,4 +470,9 @@ test('html fallback works non browser accept header', async () => {
       })
     ).status,
   ).toBe(200)
+})
+
+test('escape html attribute', async () => {
+  const el = await page.$('.unescape-div')
+  expect(el).toBeNull()
 })

@@ -140,7 +140,7 @@ test('dep with optional peer dep', async () => {
 })
 
 test('dep with optional peer dep submodule', async () => {
-  expectWithRetry(() =>
+  await expectWithRetry(() =>
     page.textContent('.dep-with-optional-peer-dep-submodule'),
   ).toMatch(`[success]`)
   if (isServe) {
@@ -189,7 +189,7 @@ test('import optimize-excluded package that imports optimized-included package',
 })
 
 test('import aliased package with colon', async () => {
-  await expectWithRetry(() => page.textContent('.url')).toBe('vitejs.dev')
+  await expectWithRetry(() => page.textContent('.url')).toBe('vite.dev')
 })
 
 test('import aliased package using absolute path', async () => {
@@ -289,9 +289,6 @@ test('name file limit is 170 characters', async () => {
     const stripFolderPart = fromUrl.split('/').at(-1)
     const onlyTheFilePart = stripFolderPart.split('.')[0]
     expect(onlyTheFilePart).toHaveLength(170)
-
-    const text = await content.text()
-    expect(text).toMatch(/import\s+("[^"]+")/)
   }
 })
 
@@ -330,4 +327,28 @@ test.runIf(isServe)('warn on incompatible dependency', () => {
       'The dependency might be incompatible with the dep optimizer.',
     ),
   )
+})
+
+test('import the CommonJS external package that omits the js suffix', async () => {
+  await expectWithRetry(() => page.textContent('.external-package-js')).toBe(
+    'okay',
+  )
+  await expectWithRetry(() =>
+    page.textContent('.external-package-scss-js'),
+  ).toBe('scss')
+  await expectWithRetry(() =>
+    page.textContent('.external-package-astro-js'),
+  ).toBe('astro')
+  await expectWithRetry(() =>
+    page.textContent('.external-package-tsx-js'),
+  ).toBe('tsx')
+})
+
+test('external package name with asset extension', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-asset-ext-no-dual-package'),
+  ).toBe('true')
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-asset-ext-prebundled'),
+  ).toBe(String(isServe))
 })

@@ -93,6 +93,8 @@ test('sass', async () => {
     isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
   expect(await getColor(partialImport)).toBe('orchid')
+  expect(await getColor(await page.$('.sass-file-absolute'))).toBe('orange')
+  expect(await getColor(await page.$('.sass-dir-index'))).toBe('orange')
 
   editFile('sass.scss', (code) =>
     code.replace('color: $injectedColor', 'color: red'),
@@ -448,6 +450,16 @@ test('?raw', async () => {
   expect(await rawImportCss.textContent()).toBe(
     readFileSync(require.resolve('../raw-imported.css'), 'utf-8'),
   )
+
+  if (!isBuild) {
+    editFile('raw-imported.css', (code) =>
+      code.replace('color: yellow', 'color: blue'),
+    )
+    await untilUpdated(
+      () => page.textContent('.raw-imported-css'),
+      'color: blue',
+    )
+  }
 })
 
 test('import css in less', async () => {

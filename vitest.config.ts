@@ -14,6 +14,7 @@ export default defineConfig({
       './playground-temp/**/*.*',
     ],
     testTimeout: 20000,
+    isolate: false,
   },
   esbuild: {
     target: 'node18',
@@ -21,9 +22,9 @@ export default defineConfig({
   publicDir: false,
   resolve: {
     alias: {
-      'vite/runtime': path.resolve(
+      'vite/module-runner': path.resolve(
         _dirname,
-        './packages/vite/src/runtime/index.ts',
+        './packages/vite/src/module-runner/index.ts',
       ),
     },
   },

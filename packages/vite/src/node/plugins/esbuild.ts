@@ -28,7 +28,7 @@ const debug = createDebugger('vite:esbuild')
 // IIFE content looks like `var MyLib = function() {`.
 // Spaces are removed and parameters are mangled when minified
 const IIFE_BEGIN_RE =
-  /(const|var)\s+\S+\s*=\s*function\([^()]*\)\s*\{\s*"use strict";/
+  /(?:const|var)\s+\S+\s*=\s*function\([^()]*\)\s*\{\s*"use strict";/
 
 const validExtensionRE = /\.\w+$/
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
@@ -41,6 +41,8 @@ export const defaultEsbuildSupported = {
   'import-meta': true,
 }
 
+// TODO: rework to avoid caching the server for this module.
+// If two servers are created in the same process, they will interfere with each other.
 let server: ViteDevServer
 
 export interface ESBuildOptions extends TransformOptions {
@@ -150,10 +152,10 @@ export async function transformWithEsbuild(
     // esbuild uses tsconfig fields when both the normal options and tsconfig was set
     // but we want to prioritize the normal options
     if (options) {
-      options.jsx && (compilerOptions.jsx = undefined)
-      options.jsxFactory && (compilerOptions.jsxFactory = undefined)
-      options.jsxFragment && (compilerOptions.jsxFragmentFactory = undefined)
-      options.jsxImportSource && (compilerOptions.jsxImportSource = undefined)
+      if (options.jsx) compilerOptions.jsx = undefined
+      if (options.jsxFactory) compilerOptions.jsxFactory = undefined
+      if (options.jsxFragment) compilerOptions.jsxFragmentFactory = undefined
+      if (options.jsxImportSource) compilerOptions.jsxImportSource = undefined
     }
 
     tsconfigRaw = {

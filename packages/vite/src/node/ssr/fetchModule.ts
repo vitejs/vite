@@ -1,27 +1,29 @@
 import { pathToFileURL } from 'node:url'
-import type { ModuleNode, TransformResult, ViteDevServer } from '..'
-import type { InternalResolveOptionsWithOverrideConditions } from '../plugins/resolve'
+import type { FetchResult } from 'vite/module-runner'
+import type { EnvironmentModuleNode, TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import type { FetchResult } from '../../runtime/types'
 import { unwrapId } from '../../shared/utils'
 import {
+  MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
-  VITE_RUNTIME_SOURCEMAPPING_SOURCE,
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
+import type { DevEnvironment } from '../server/environment'
+import { normalizeResolvedIdToUrl } from '../plugins/importAnalysis'
 
 export interface FetchModuleOptions {
+  cached?: boolean
   inlineSourceMap?: boolean
-  processSourceMap?<T extends NonNullable<TransformResult['map']>>(map: T): T
+  startOffset?: number
 }
 
 /**
- * Fetch module information for Vite runtime.
+ * Fetch module information for Vite runner.
  * @experimental
  */
 export async function fetchModule(
-  server: ViteDevServer,
+  environment: DevEnvironment,
   url: string,
   importer?: string,
   options: FetchModuleOptions = {},
@@ -35,34 +37,37 @@ export async function fetchModule(
     return { externalize: url, type: 'network' }
   }
 
-  if (url[0] !== '.' && url[0] !== '/') {
-    const {
-      isProduction,
-      resolve: { dedupe, preserveSymlinks },
-      root,
-      ssr,
-    } = server.config
-    const overrideConditions = ssr.resolve?.externalConditions || []
-
-    const resolveOptions: InternalResolveOptionsWithOverrideConditions = {
-      mainFields: ['main'],
-      conditions: [],
-      overrideConditions: [...overrideConditions, 'production', 'development'],
-      extensions: ['.js', '.cjs', '.json'],
-      dedupe,
-      preserveSymlinks,
-      isBuild: false,
-      isProduction,
-      root,
-      ssrConfig: ssr,
-      packageCache: server.config.packageCache,
-    }
+  // if there is no importer, the file is an entry point
+  // entry points are always internalized
+  if (importer && url[0] !== '.' && url[0] !== '/') {
+    const { isProduction, root } = environment.config
+    const { externalConditions, dedupe, preserveSymlinks } =
+      environment.config.resolve
 
     const resolved = tryNodeResolve(
       url,
       importer,
-      { ...resolveOptions, tryEsmOnly: true },
-      false,
+      {
+        mainFields: ['main'],
+        conditions: [],
+        externalConditions,
+        external: [],
+        noExternal: [],
+        overrideConditions: [
+          ...externalConditions,
+          'production',
+          'development',
+        ],
+        extensions: ['.js', '.cjs', '.json'],
+        dedupe,
+        preserveSymlinks,
+        isBuild: false,
+        isProduction,
+        root,
+        packageCache: environment.config.packageCache,
+        tryEsmOnly: true,
+        webCompatible: environment.config.webCompatible,
+      },
       undefined,
       true,
     )
@@ -74,15 +79,33 @@ export async function fetchModule(
       throw err
     }
     const file = pathToFileURL(resolved.id).toString()
-    const type = isFilePathESM(resolved.id, server.config.packageCache)
+    const type = isFilePathESM(resolved.id, environment.config.packageCache)
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }
   }
 
+  // this is an entry point module, very high chance it's not resolved yet
+  // for example: runner.import('./some-file') or runner.import('/some-file')
+  if (!importer) {
+    const resolved = await environment.pluginContainer.resolveId(url)
+    if (!resolved) {
+      throw new Error(`[vite] cannot find entry point module '${url}'.`)
+    }
+    url = normalizeResolvedIdToUrl(environment, url, resolved)
+  }
+
   url = unwrapId(url)
 
-  let result = await server.transformRequest(url, { ssr: true })
+  let mod = await environment.moduleGraph.getModuleByUrl(url)
+  const cached = !!mod?.transformResult
+
+  // if url is already cached, we can just confirm it's also cached on the server
+  if (options.cached && cached) {
+    return { cache: true }
+  }
+
+  let result = await environment.transformRequest(url)
 
   if (!result) {
     throw new Error(
@@ -93,7 +116,7 @@ export async function fetchModule(
   }
 
   // module entry should be created by transformRequest
-  const mod = await server.moduleGraph.getModuleByUrl(url, true)
+  mod ??= await environment.moduleGraph.getModuleByUrl(url)
 
   if (!mod) {
     throw new Error(
@@ -104,14 +127,20 @@ export async function fetchModule(
   }
 
   if (options.inlineSourceMap !== false) {
-    result = inlineSourceMap(mod, result, options.processSourceMap)
+    result = inlineSourceMap(mod, result, options.startOffset)
   }
 
   // remove shebang
   if (result.code[0] === '#')
     result.code = result.code.replace(/^#!.*/, (s) => ' '.repeat(s.length))
 
-  return { code: result.code, file: mod.file }
+  return {
+    code: result.code,
+    file: mod.file,
+    id: mod.id!,
+    url: mod.url,
+    invalidate: !cached,
+  }
 }
 
 const OTHER_SOURCE_MAP_REGEXP = new RegExp(
@@ -120,9 +149,9 @@ const OTHER_SOURCE_MAP_REGEXP = new RegExp(
 )
 
 function inlineSourceMap(
-  mod: ModuleNode,
+  mod: EnvironmentModuleNode,
   result: TransformResult,
-  processSourceMap?: FetchModuleOptions['processSourceMap'],
+  startOffset: number | undefined,
 ) {
   const map = result.map
   let code = result.code
@@ -130,7 +159,7 @@ function inlineSourceMap(
   if (
     !map ||
     !('version' in map) ||
-    code.includes(VITE_RUNTIME_SOURCEMAPPING_SOURCE)
+    code.includes(MODULE_RUNNER_SOURCEMAPPING_SOURCE)
   )
     return result
 
@@ -139,10 +168,14 @@ function inlineSourceMap(
   if (OTHER_SOURCE_MAP_REGEXP.test(code))
     code = code.replace(OTHER_SOURCE_MAP_REGEXP, '')
 
-  const sourceMap = processSourceMap?.(map) || map
+  const sourceMap = startOffset
+    ? Object.assign({}, map, {
+        mappings: ';'.repeat(startOffset) + map.mappings,
+      })
+    : map
   result.code = `${code.trimEnd()}\n//# sourceURL=${
     mod.id
-  }\n${VITE_RUNTIME_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
+  }\n${MODULE_RUNNER_SOURCEMAPPING_SOURCE}\n//# ${SOURCEMAPPING_URL}=${genSourceMapUrl(sourceMap)}\n`
 
   return result
 }
