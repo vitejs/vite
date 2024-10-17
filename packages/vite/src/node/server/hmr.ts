@@ -128,7 +128,7 @@ export interface NormalizedHotChannelClient {
   send(event: string, payload?: CustomPayload['data']): void
   respond(
     event: string,
-    invoke: 'response' | `response:${string}` | undefined,
+    invoke: 'send' | `send:${string}`,
     payload: { /** resolved */ r: any } | { /** error */ e: any },
   ): void
 }
@@ -221,10 +221,13 @@ export const normalizeHotChannel = (
             client.send(payload)
           },
           respond: (event, invoke, payload) => {
+            const resInvoke = invoke.replace('send', 'response') as
+              | 'response'
+              | `response:${string}`
             client.send({
               type: 'custom',
               event,
-              invoke,
+              invoke: resInvoke,
               data: payload,
             })
           },

@@ -123,16 +123,13 @@ export class DevEnvironment extends BaseEnvironment {
     this.hot.on('vite:fetchModule', async (data, client, invoke) => {
       if (!invoke) return
 
-      const resInvoke = invoke.replace('send', 'response') as
-        | 'response'
-        | `response:${string}`
       try {
         const result = await this.fetchModule(
           ...(data as [string, string | undefined, any]),
         )
-        client.respond('vite:fetchModule', resInvoke, { r: result })
+        client.respond('vite:fetchModule', invoke, { r: result })
       } catch (error) {
-        client.respond('vite:fetchModule', resInvoke, {
+        client.respond('vite:fetchModule', invoke, {
           e: {
             name: error.name,
             message: error.message,
