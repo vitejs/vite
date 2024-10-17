@@ -15,7 +15,6 @@ import {
   createRunnableDevEnvironment,
   createServer,
   createServerHotChannel,
-  createServerModuleRunner,
 } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
@@ -1067,8 +1066,7 @@ async function setupModuleRunner(
         dev: {
           createEnvironment(name, config) {
             return createRunnableDevEnvironment(name, config, {
-              runner: (env) =>
-                createServerModuleRunner(env, { hmr: { logger } }),
+              runnerOptions: { hmr: { logger } },
               hot: createServerHotChannel(),
             })
           },
