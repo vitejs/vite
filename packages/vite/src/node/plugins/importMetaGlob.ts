@@ -12,10 +12,10 @@ import type {
 } from 'estree'
 import type { CustomPluginOptions, RollupAstNode, RollupError } from 'rollup'
 import MagicString from 'magic-string'
-import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
 import type { GeneralImportGlobOptions } from 'types/importGlob'
 import { parseAstAsync } from 'rollup/parseAst'
+import { escapePath, glob } from 'tinyglobby'
 import type { Plugin } from '../plugin'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
@@ -354,7 +354,7 @@ function findCorrespondingCloseParenthesisPosition(
 
 const importPrefix = '__vite_glob_'
 
-const { basename, dirname, relative, join } = posix
+const { basename, dirname, relative } = posix
 
 export interface TransformGlobImportResult {
   s: MagicString
@@ -396,13 +396,12 @@ export async function transformGlobImport(
         async ({ globsResolved, isRelative, options, index, start, end }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
-            await fg(globsResolved, {
-              cwd,
+            await glob(globsResolved, {
               absolute: true,
+              cwd,
               dot: !!options.exhaustive,
-              ignore: options.exhaustive
-                ? []
-                : [join(cwd, '**/node_modules/**')],
+              expandDirectories: false,
+              ignore: options.exhaustive ? [] : ['**/node_modules/**'],
             })
           )
             .filter((file) => file !== id)
@@ -515,8 +514,7 @@ type IdResolver = (
 
 function globSafePath(path: string) {
   // slash path to ensure \ is converted to / as \ could lead to a double escape scenario
-  // see https://github.com/mrmlnc/fast-glob#advanced-syntax
-  return fg.escapePath(normalizePath(path))
+  return escapePath(normalizePath(path))
 }
 
 function lastNthChar(str: string, n: number) {

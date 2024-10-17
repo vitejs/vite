@@ -1,9 +1,9 @@
 import { EventEmitter } from 'node:events'
 import path from 'node:path'
-import glob from 'fast-glob'
 import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
 import type { OutputOptions } from 'rollup'
 import colors from 'picocolors'
+import { escapePath } from 'tinyglobby'
 import { withTrailingSlash } from '../shared/utils'
 import { arraify, normalizePath } from './utils'
 import type { Logger } from './logger'
@@ -59,12 +59,12 @@ export function resolveChokidarOptions(
     '**/.git/**',
     '**/node_modules/**',
     '**/test-results/**', // Playwright
-    glob.escapePath(cacheDir) + '/**',
+    escapePath(cacheDir) + '/**',
     ...arraify(ignoredList || []),
   ]
   if (emptyOutDir) {
     ignored.push(
-      ...[...resolvedOutDirs].map((outDir) => glob.escapePath(outDir) + '/**'),
+      ...[...resolvedOutDirs].map((outDir) => escapePath(outDir) + '/**'),
     )
   }
 

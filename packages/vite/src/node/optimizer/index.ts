@@ -7,7 +7,7 @@ import colors from 'picocolors'
 import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import esbuild, { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
-import glob from 'fast-glob'
+import { isDynamicPattern } from 'tinyglobby'
 import type { ResolvedConfig } from '../config'
 import {
   createDebugger,
@@ -151,8 +151,8 @@ export type DepOptimizationOptions = DepOptimizationConfig & {
    * will crawl those entry points instead.
    *
    * If neither of these fit your needs, you can specify custom entries using
-   * this option - the value should be a fast-glob pattern or array of patterns
-   * (https://github.com/mrmlnc/fast-glob#basic-syntax) that are relative from
+   * this option - the value should be a tinyglobby pattern or array of patterns
+   * (https://github.com/SuperchupuDev/tinyglobby) that are relative from
    * vite project root. This will overwrite default entries inference.
    */
   entries?: string | string[]
@@ -826,7 +826,7 @@ export async function addManuallyIncludedOptimizeDeps(
     const includes = [...optimizeDepsInclude]
     for (let i = 0; i < includes.length; i++) {
       const id = includes[i]
-      if (glob.isDynamicPattern(id)) {
+      if (isDynamicPattern(id)) {
         const globIds = expandGlobIds(id, environment.getTopLevelConfig())
         includes.splice(i, 1, ...globIds)
         i += globIds.length - 1
