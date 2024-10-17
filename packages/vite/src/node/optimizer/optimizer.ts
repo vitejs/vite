@@ -1,6 +1,9 @@
 import colors from 'picocolors'
-import { createDebugger, getHash, promiseWithResolvers } from '../utils'
-import type { PromiseWithResolvers } from '../utils'
+import { createDebugger, getHash } from '../utils'
+import {
+  type PromiseWithResolvers,
+  promiseWithResolvers,
+} from '../../shared/utils'
 import type { DevEnvironment } from '../server/environment'
 import { devToScanEnvironment } from './scan'
 import {

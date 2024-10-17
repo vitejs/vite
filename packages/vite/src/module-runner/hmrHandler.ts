@@ -19,7 +19,6 @@ export async function handleHotPayload(
   switch (payload.type) {
     case 'connected':
       hmrClient.logger.debug(`connected.`)
-      hmrClient.messenger.flush()
       break
     case 'update':
       await hmrClient.notifyListeners('vite:beforeUpdate', payload)

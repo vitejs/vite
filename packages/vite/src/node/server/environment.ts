@@ -10,7 +10,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from '../config'
-import { mergeConfig, promiseWithResolvers } from '../utils'
+import { mergeConfig } from '../utils'
 import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
 import { isDepOptimizationDisabled } from '../optimizer'
@@ -20,10 +20,11 @@ import {
 } from '../optimizer/optimizer'
 import { resolveEnvironmentPlugins } from '../plugin'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
+import { promiseWithResolvers } from '../../shared/utils'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import type { HotChannel } from './hmr'
-import { createNoopHotChannel, getShortName, updateModules } from './hmr'
+import type { HotChannel, NormalizedHotChannel } from './hmr'
+import { getShortName, normalizeHotChannel, updateModules } from './hmr'
 import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import type { EnvironmentPluginContainer } from './pluginContainer'
@@ -31,15 +32,14 @@ import {
   ERR_CLOSED_SERVER,
   createEnvironmentPluginContainer,
 } from './pluginContainer'
-import type { RemoteEnvironmentTransport } from './environmentTransport'
 import { isWebSocketServer } from './ws'
 
 export interface DevEnvironmentContext {
-  hot: false | HotChannel
+  hot: boolean
+  transport: HotChannel
   options?: EnvironmentOptions
   remoteRunner?: {
     inlineSourceMap?: boolean
-    transport?: RemoteEnvironmentTransport
   }
   depsOptimizer?: DepsOptimizer
 }
@@ -93,7 +93,7 @@ export class DevEnvironment extends BaseEnvironment {
    * @example
    * environment.hot.send({ type: 'full-reload' })
    */
-  hot: HotChannel
+  hot: NormalizedHotChannel
   constructor(
     name: string,
     config: ResolvedConfig,
@@ -115,12 +115,29 @@ export class DevEnvironment extends BaseEnvironment {
       this.pluginContainer!.resolveId(url, undefined),
     )
 
-    this.hot = context.hot || createNoopHotChannel()
-
     this._crawlEndFinder = setupOnCrawlEnd()
 
     this._remoteRunnerOptions = context.remoteRunner ?? {}
-    context.remoteRunner?.transport?.register(this)
+
+    this.hot = normalizeHotChannel(context.transport)
+    this.hot.on('vite:fetchModule', async (data, client, invoke) => {
+      if (!invoke) return
+
+      try {
+        const result = await this.fetchModule(
+          ...(data as [string, string | undefined, any]),
+        )
+        client.respond('vite:fetchModule', invoke, { r: result })
+      } catch (error) {
+        client.respond('vite:fetchModule', invoke, {
+          e: {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          },
+        })
+      }
+    })
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {
@@ -210,7 +227,7 @@ export class DevEnvironment extends BaseEnvironment {
       this.pluginContainer.close(),
       this.depsOptimizer?.close(),
       // WebSocketServer is independent of HotChannel and should not be closed on environment close
-      isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close(),
+      isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close?.(),
       (async () => {
         while (this._pendingRequests.size > 0) {
           await Promise.allSettled(

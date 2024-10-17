@@ -932,7 +932,7 @@ export async function _createServer(
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
         // ensure ws server started
-        Object.values(environments).forEach((e) => e.hot.listen())
+        Object.values(environments).forEach((e) => e.hot.listen?.())
         await initServer()
       } catch (e) {
         httpServer.emit('error', e)
@@ -942,7 +942,7 @@ export async function _createServer(
     }) as any
   } else {
     if (options.hotListen) {
-      Object.values(environments).forEach((e) => e.hot.listen())
+      Object.values(environments).forEach((e) => e.hot.listen?.())
     }
     await initServer()
   }
@@ -1151,7 +1151,7 @@ async function restartServer(server: ViteDevServer) {
   if (!middlewareMode) {
     await server.listen(port, true)
   } else {
-    Object.values(server.environments).forEach((e) => e.hot.listen())
+    Object.values(server.environments).forEach((e) => e.hot.listen?.())
   }
   logger.info('server restarted.', { timestamp: true })
 

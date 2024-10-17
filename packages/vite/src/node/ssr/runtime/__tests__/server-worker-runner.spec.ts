@@ -1,7 +1,55 @@
 import { BroadcastChannel, Worker } from 'node:worker_threads'
 import { describe, expect, it, onTestFinished } from 'vitest'
-import { DevEnvironment, RemoteEnvironmentTransport } from '../../..'
+import type { HotChannel, HotPayload } from 'vite'
+import { DevEnvironment } from '../../..'
 import { createServer } from '../../../server'
+
+const createWorkerTransport = (w: Worker): HotChannel => {
+  const handlerToWorkerListener = new WeakMap<
+    (data: any) => void,
+    (value: any) => void
+  >()
+
+  return {
+    send: (data: HotPayload) => w.postMessage(data),
+    on: (event, handler) => {
+      if (event === 'connection') {
+        return
+      }
+
+      const listener = (value: any) => {
+        if (value.event === event) {
+          const client = {
+            send(payload: HotPayload) {
+              w.postMessage(payload)
+            },
+          }
+          handler(value.data, client, value.invoke)
+        }
+      }
+      handlerToWorkerListener.set(handler, listener)
+      w.on('message', listener)
+    },
+    off: (event, handler) => {
+      if (event === 'connection') {
+        return
+      }
+      const listener = handlerToWorkerListener.get(
+        handler as (data: any) => void,
+      )
+      if (listener) {
+        w.off('message', listener)
+        handlerToWorkerListener.delete(handler as (data: any) => void)
+      }
+    },
+    listen() {
+      /* noop */
+    },
+    close() {
+      /* noop */
+    },
+  }
+}
 
 describe('running module runner inside a worker', () => {
   it('correctly runs ssr code', async () => {
@@ -31,12 +79,7 @@ describe('running module runner inside a worker', () => {
           dev: {
             createEnvironment: (name, config) => {
               return new DevEnvironment(name, config, {
-                remoteRunner: {
-                  transport: new RemoteEnvironmentTransport({
-                    send: (data) => worker.postMessage(data),
-                    onMessage: (handler) => worker.on('message', handler),
-                  }),
-                },
+                transport: createWorkerTransport(worker),
                 hot: false,
               })
             },

@@ -29,6 +29,7 @@ export const HMR_HEADER = 'vite-hmr'
 export type WebSocketCustomListener<T> = (
   data: T,
   client: WebSocketClient,
+  invoke?: 'send' | `send:${string}`,
 ) => void
 
 export const isWebSocketServer = Symbol('isWebSocketServer')
@@ -178,7 +179,9 @@ export function createWebSocketServer(
       const listeners = customListeners.get(parsed.event)
       if (!listeners?.size) return
       const client = getSocketClient(socket)
-      listeners.forEach((listener) => listener(parsed.data, client))
+      listeners.forEach((listener) =>
+        listener(parsed.data, client, parsed.invoke),
+      )
     })
     socket.on('error', (err) => {
       config.logger.error(`${colors.red(`ws error:`)}\n${err.stack}`, {
@@ -212,17 +215,7 @@ export function createWebSocketServer(
   function getSocketClient(socket: WebSocketRaw) {
     if (!clientsMap.has(socket)) {
       clientsMap.set(socket, {
-        send: (...args) => {
-          let payload: HotPayload
-          if (typeof args[0] === 'string') {
-            payload = {
-              type: 'custom',
-              event: args[0],
-              data: args[1],
-            }
-          } else {
-            payload = args[0]
-          }
+        send: (payload) => {
           socket.send(JSON.stringify(payload))
         },
         socket,
@@ -263,18 +256,7 @@ export function createWebSocketServer(
       return new Set(Array.from(wss.clients).map(getSocketClient))
     },
 
-    send(...args: any[]) {
-      let payload: HotPayload
-      if (typeof args[0] === 'string') {
-        payload = {
-          type: 'custom',
-          event: args[0],
-          data: args[1],
-        }
-      } else {
-        payload = args[0]
-      }
-
+    send(payload: HotPayload) {
       if (payload.type === 'error' && !wss.clients.size) {
         bufferedError = payload
         return
