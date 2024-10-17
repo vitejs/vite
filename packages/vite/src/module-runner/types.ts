@@ -150,6 +150,7 @@ export interface ModuleRunnerHmr {
 export interface ModuleRunnerOptions {
   /**
    * Root of the project
+   * @deprecated not used
    */
   root: string
   /**
