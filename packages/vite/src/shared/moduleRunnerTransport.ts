@@ -214,71 +214,64 @@ export const normalizeModuleRunnerTransport = (
 }
 
 export const createWebSocketModuleRunnerTransport = (options: {
-  protocol: string
-  hostAndPort: string
-  pingInterval?: number
   // eslint-disable-next-line n/no-unsupported-features/node-builtins
-  WebSocket?: typeof WebSocket
+  createConnection: () => WebSocket
+  pingInterval?: number
 }): Required<
   Pick<ModuleRunnerTransport, 'connect' | 'disconnect' | 'send'>
 > => {
   const pingInterval = options.pingInterval ?? 30000
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins
-  const WebSocket = options.WebSocket || globalThis.WebSocket
-  if (!WebSocket) {
-    throw new Error('WebSocket is not supported in this environment.')
-  }
-  const url = `${options.protocol}://${options.hostAndPort}`
 
   // eslint-disable-next-line n/no-unsupported-features/node-builtins
   let ws: WebSocket | undefined
   let pingIntervalId: ReturnType<typeof setInterval> | undefined
   return {
     async connect({ onMessage, onDisconnection }) {
-      const socket = new WebSocket(url, 'vite-hmr')
+      const socket = options.createConnection()
       socket.addEventListener('message', async ({ data }) => {
         onMessage(JSON.parse(data))
       })
 
-      await new Promise<void>((resolve, reject) => {
-        let isOpened = false
-        socket.addEventListener(
-          'open',
-          () => {
-            isOpened = true
+      let isOpened = socket.readyState === socket.OPEN
+      if (!isOpened) {
+        await new Promise<void>((resolve, reject) => {
+          socket.addEventListener(
+            'open',
+            () => {
+              isOpened = true
+              resolve()
+            },
+            { once: true },
+          )
+          socket.addEventListener('close', async ({ wasClean }) => {
+            if (wasClean) return
+
+            if (!isOpened) {
+              reject(new Error('WebSocket closed without opened.'))
+              return
+            }
+
             onMessage({
               type: 'custom',
-              event: 'vite:ws:connect',
+              event: 'vite:ws:disconnect',
               data: { webSocket: socket },
             })
-            resolve()
-          },
-          { once: true },
-        )
-
-        socket.addEventListener('close', async ({ wasClean }) => {
-          if (wasClean) return
-
-          if (!isOpened) {
-            reject(new Error('WebSocket closed without opened.'))
-            return
-          }
-
-          onMessage({
-            type: 'custom',
-            event: 'vite:ws:disconnect',
-            data: { webSocket: socket },
+            onDisconnection()
           })
-          onDisconnection()
         })
-      })
+      }
 
+      onMessage({
+        type: 'custom',
+        event: 'vite:ws:connect',
+        data: { webSocket: socket },
+      })
       ws = socket
 
       // proxy(nginx, docker) hmr ws maybe caused timeout,
       // so send ping package let ws keep alive.
       pingIntervalId = setInterval(() => {
-        if (socket.readyState === WebSocket.OPEN) {
+        if (socket.readyState === socket.OPEN) {
           socket.send(JSON.stringify({ type: 'ping' }))
         }
       }, pingInterval)

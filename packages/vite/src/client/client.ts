@@ -39,8 +39,8 @@ const hmrTimeout = __HMR_TIMEOUT__
 const transport = normalizeModuleRunnerTransport(
   (() => {
     let wsTransport = createWebSocketModuleRunnerTransport({
-      protocol: socketProtocol,
-      hostAndPort: socketHost,
+      createConnection: () =>
+        new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr'),
       pingInterval: hmrTimeout,
     })
 
@@ -52,8 +52,11 @@ const transport = normalizeModuleRunnerTransport(
           // only use fallback when port is inferred and was not connected before to prevent confusion
           if (!hmrPort) {
             wsTransport = createWebSocketModuleRunnerTransport({
-              protocol: socketProtocol,
-              hostAndPort: directSocketHost,
+              createConnection: () =>
+                new WebSocket(
+                  `${socketProtocol}://${directSocketHost}`,
+                  'vite-hmr',
+                ),
               pingInterval: hmrTimeout,
             })
             try {
