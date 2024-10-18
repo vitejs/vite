@@ -3012,6 +3012,8 @@ function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && preprocessorSet.has(lang)
 }
 
+const absoluteOrProtocolRelativeUrlRE = /^(?:[a-z]+:)?\/\//i
+
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
 async function compileLightningCSS(
   id: string,
@@ -3058,7 +3060,10 @@ async function compileLightningCSS(
             if (publicFile) {
               return publicFile
             }
-
+            // contrary to lightningcss, postcss-import does this internally
+            if (absoluteOrProtocolRelativeUrlRE.test(id)) {
+              return id
+            }
             const resolved = await getAtImportResolvers(
               environment.getTopLevelConfig(),
             ).css(environment, id, toAbsolute(from))
