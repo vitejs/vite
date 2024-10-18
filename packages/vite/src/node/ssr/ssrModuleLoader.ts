@@ -4,7 +4,9 @@ import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import type { ViteDevServer } from '../server'
 import { unwrapId } from '../../shared/utils'
 import type { DevEnvironment } from '../server/environment'
+import type { NormalizedServerHotChannel } from '../server/hmr'
 import { ssrFixStacktrace } from './ssrStacktrace'
+import { createServerModuleRunnerTransport } from './runtime/serverModuleRunner'
 
 type SSRModule = Record<string, any>
 
@@ -62,10 +64,9 @@ class SSRCompatModuleRunner extends ModuleRunner {
     super(
       {
         root: environment.config.root,
-        transport: {
-          fetchModule: (id, importer, options) =>
-            environment.fetchModule(id, importer, options),
-        },
+        transport: createServerModuleRunnerTransport({
+          channel: environment.hot as NormalizedServerHotChannel,
+        }),
         sourcemapInterceptor: false,
         hmr: false,
       },

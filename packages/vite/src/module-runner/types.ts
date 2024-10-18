@@ -1,10 +1,10 @@
 import type { ViteHotContext } from 'types/hot'
-import type { HotPayload } from 'types/hmrPayload'
-import type { HMRConnection, HMRLogger } from '../shared/hmr'
+import type { HMRLogger } from '../shared/hmr'
 import type {
   DefineImportMetadata,
   SSRImportMetadata,
 } from '../shared/ssrTransform'
+import type { ModuleRunnerTransport } from '../shared/moduleRunnerTransport'
 import type { EvaluatedModuleNode, EvaluatedModules } from './evaluatedModules'
 import type {
   ssrDynamicImportKey,
@@ -14,17 +14,8 @@ import type {
   ssrModuleExportsKey,
 } from './constants'
 import type { InterceptorOptions } from './sourcemap/interceptor'
-import type { RunnerTransport } from './runnerTransport'
 
 export type { DefineImportMetadata, SSRImportMetadata }
-
-export interface ModuleRunnerHMRConnection extends HMRConnection {
-  /**
-   * Configure how HMR is handled when this connection triggers an update.
-   * This method expects that connection will start listening for HMR updates and call this callback when it's received.
-   */
-  onUpdate(callback: (payload: HotPayload) => void): void
-}
 
 export interface ModuleRunnerImportMeta extends ImportMeta {
   url: string
@@ -138,10 +129,6 @@ export interface FetchFunctionOptions {
 
 export interface ModuleRunnerHmr {
   /**
-   * Configure how HMR communicates between the client and the server.
-   */
-  connection: ModuleRunnerHMRConnection
-  /**
    * Configure HMR logger.
    */
   logger?: false | HMRLogger
@@ -155,7 +142,7 @@ export interface ModuleRunnerOptions {
   /**
    * A set of methods to communicate with the server.
    */
-  transport: RunnerTransport
+  transport: ModuleRunnerTransport
   /**
    * Configure how source maps are resolved. Prefers `node` if `process.setSourceMapsEnabled` is available.
    * Otherwise it will use `prepareStackTrace` by default which overrides `Error.prepareStackTrace` method.

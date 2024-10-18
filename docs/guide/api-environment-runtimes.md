@@ -82,25 +82,22 @@ A Vite Module Runner allows running any code by processing it with Vite plugins 
 One of the goals of this feature is to provide a customizable API to process and run code. Users can create new environment factories using the exposed primitives.
 
 ```ts
-import { DevEnvironment, RemoteEnvironmentTransport } from 'vite'
+import { DevEnvironment, HotChannel } from 'vite'
 
 function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, context: DevEnvironmentContext) {
-  const hot = /* ... */
   const connection = /* ... */
-  const transport = new RemoteEnvironmentTransport({
+  const transport: HotChannel = {
+    on: (listener) => { connection.on('message', listener) },
     send: (data) => connection.send(data),
-    onMessage: (listener) => connection.on('message', listener),
-  })
+  }
 
   const workerdDevEnvironment = new DevEnvironment(name, config, {
     options: {
       resolve: { conditions: ['custom'] },
       ...context.options,
     },
-    hot,
-    remoteRunner: {
-      transport,
-    },
+    hot: true,
+    transport,
   })
   return workerdDevEnvironment
 }
@@ -147,13 +144,12 @@ Module runner exposes `import` method. When Vite server triggers `full-reload` H
 
 ```js
 import { ModuleRunner, ESModulesEvaluator } from 'vite/module-runner'
-import { root, fetchModule } from './rpc-implementation.js'
+import { root, transport } from './rpc-implementation.js'
 
 const moduleRunner = new ModuleRunner(
   {
     root,
-    fetchModule,
-    // you can also provide hmr.connection to support HMR
+    transport,
   },
   new ESModulesEvaluator(),
 )
@@ -172,7 +168,7 @@ export interface ModuleRunnerOptions {
   /**
    * A set of methods to communicate with the server.
    */
-  transport: RunnerTransport
+  transport: ModuleRunnerTransport
   /**
    * Configure how source maps are resolved. Prefers `node` if `process.setSourceMapsEnabled` is available.
    * Otherwise it will use `prepareStackTrace` by default which overrides `Error.prepareStackTrace` method.
@@ -189,10 +185,6 @@ export interface ModuleRunnerOptions {
   hmr?:
     | false
     | {
-        /**
-         * Configure how HMR communicates between the client and the server.
-         */
-        connection: ModuleRunnerHMRConnection
         /**
          * Configure HMR logger.
          */
@@ -241,54 +233,91 @@ Vite exports `ESModulesEvaluator` that implements this interface by default. It 
 **Type Signature:**
 
 ```ts
-interface RunnerTransport {
-  /**
-   * A method to get the information about the module.
-   */
-  fetchModule: FetchFunction
+interface ModuleRunnerTransport {
+  connect?(handlers: ModuleRunnerTransportHandlers): Promise<void> | void
+  disconnect?(): Promise<void> | void
+  send?(data: HotPayload): Promise<void> | void
+  invoke?(
+    data: HotPayload,
+  ): Promise<{ /** result */ r: any } | { /** error */ e: any }>
+  timeout?: number
 }
 ```
 
-Transport object that communicates with the environment via an RPC or by directly calling the function. By default, you need to pass an object with `fetchModule` method - it can use any type of RPC inside of it, but Vite also exposes bidirectional transport interface via a `RemoteRunnerTransport` class to make the configuration easier. You need to couple it with the `RemoteEnvironmentTransport` instance on the server like in this example where module runner is created in the worker thread:
+Transport object that communicates with the environment via an RPC or by directly calling the function. When `invoke` method is not implemented, the `send` method and `connect` method is required to be implemented. Vite will construct the `invoke` internally.
+
+You need to couple it with the `HotChannel` instance on the server like in this example where module runner is created in the worker thread:
 
 ::: code-group
 
-```ts [worker.js]
+```js [worker.js]
 import { parentPort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
-import {
-  ESModulesEvaluator,
-  ModuleRunner,
-  RemoteRunnerTransport,
-} from 'vite/module-runner'
+import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+
+/** @type {import('vite/module-runner').ModuleRunnerTransport} */
+const transport = {
+  connect({ onMessage, onDisconnection }) {
+    parentPort.on('message', onMessage)
+    parentPort.on('close', onDisconnection)
+  },
+  send(data) {
+    parentPort.postMessage(data)
+  },
+}
 
 const runner = new ModuleRunner(
   {
     root: fileURLToPath(new URL('./', import.meta.url)),
-    transport: new RemoteRunnerTransport({
-      send: (data) => parentPort.postMessage(data),
-      onMessage: (listener) => parentPort.on('message', listener),
-      timeout: 5000,
-    }),
+    transport,
   },
   new ESModulesEvaluator(),
 )
 ```
 
-```ts [server.js]
+```js [server.js]
 import { BroadcastChannel } from 'node:worker_threads'
 import { createServer, RemoteEnvironmentTransport, DevEnvironment } from 'vite'
 
 function createWorkerEnvironment(name, config, context) {
   const worker = new Worker('./worker.js')
-  return new DevEnvironment(name, config, {
-    hot: /* custom hot channel */,
-    remoteRunner: {
-      transport: new RemoteEnvironmentTransport({
-        send: (data) => worker.postMessage(data),
-        onMessage: (listener) => worker.on('message', listener),
-      }),
+
+  const workerHotChannel = {
+    send: (data) => w.postMessage(data),
+    on: (event, handler) => {
+      if (event === 'connection') return
+
+      const listener = (value) => {
+        if (value.type === 'custom' && value.event === event) {
+          const client = {
+            send(payload) {
+              w.postMessage(payload)
+            },
+          }
+          handler(value.data, client, value.invoke)
+        }
+      }
+      handlerToWorkerListener.set(handler, listener)
+      w.on('message', listener)
     },
+    off: (event, handler) => {
+      if (event === 'connection') return
+      const listener = handlerToWorkerListener.get(handler)
+      if (listener) {
+        w.off('message', listener)
+        handlerToWorkerListener.delete(handler)
+      }
+    },
+    listen() {
+      /* noop */
+    },
+    close() {
+      /* noop */
+    },
+  }
+
+  return new DevEnvironment(name, config, {
+    transport: workerHotChannel,
   })
 }
 
@@ -305,7 +334,7 @@ await createServer({
 
 :::
 
-`RemoteRunnerTransport` and `RemoteEnvironmentTransport` are meant to be used together, but you don't have to use them at all. You can define your own function to communicate between the runner and the server. For example, if you connect to the environment via an HTTP request, you can call `fetch().json()` in `fetchModule` function:
+`ModuleRunnerTransport` and `HotChannel` are meant to be used together, but you don't have to use them at all. You can define your own function to communicate between the runner and the server. For example, if you connect to the environment via an HTTP request, you can call `fetch().json()` in `invoke` method:
 
 ```ts
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
@@ -314,10 +343,11 @@ export const runner = new ModuleRunner(
   {
     root: fileURLToPath(new URL('./', import.meta.url)),
     transport: {
-      async fetchModule(id, importer) {
-        const response = await fetch(
-          `http://my-vite-server/fetch?id=${id}&importer=${importer}`,
-        )
+      async invoke(data) {
+        const response = await fetch(`http://my-vite-server/fetch`, {
+          method: 'POST',
+          body: JSON.stringify(data),
+        })
         return response.json()
       },
     },
@@ -328,36 +358,6 @@ export const runner = new ModuleRunner(
 await runner.import('/entry.js')
 ```
 
-## ModuleRunnerHMRConnection
+But note that for HMR support, `send` and `connect` methods are required. The `send` method is usually called when the custom event is triggered (like, `import.meta.hot.send("my-event")`).
 
-**Type Signature:**
-
-```ts
-export interface ModuleRunnerHMRConnection {
-  /**
-   * Checked before sending messages to the server.
-   */
-  isReady(): boolean
-  /**
-   * Send a message to the server.
-   */
-  send(payload: HotPayload): void
-  /**
-   * Configure how HMR is handled when this connection triggers an update.
-   * This method expects that the connection will start listening for HMR updates and call this callback when it's received.
-   */
-  onUpdate(callback: (payload: HotPayload) => void): void
-}
-```
-
-This interface defines how HMR communication is established. Vite exports `ServerHMRConnector` from the main entry point to support HMR during Vite SSR. The `isReady` and `send` methods are usually called when the custom event is triggered (like, `import.meta.hot.send("my-event")`).
-
-`onUpdate` is called only once when the new module runner is initiated. It passed down a method that should be called when connection triggers the HMR event. The implementation depends on the type of connection (as an example, it can be `WebSocket`/`EventEmitter`/`MessageChannel`), but it usually looks something like this:
-
-```js
-function onUpdate(callback) {
-  this.connection.on('hmr', (event) => callback(event.data))
-}
-```
-
-The callback is queued and it will wait for the current update to be resolved before processing the next update. Unlike the browser implementation, HMR updates in a module runner will wait until all listeners (like, `vite:beforeUpdate`/`vite:beforeFullReload`) are finished before updating the modules.
+Vite exports `createServerHotChannel` from the main entry point to support HMR during Vite SSR.

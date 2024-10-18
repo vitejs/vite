@@ -2,6 +2,7 @@
 export type HMRPayload = HotPayload
 export type HotPayload =
   | ConnectedPayload
+  | PingPayload
   | UpdatePayload
   | FullReloadPayload
   | CustomPayload
@@ -10,6 +11,10 @@ export type HotPayload =
 
 export interface ConnectedPayload {
   type: 'connected'
+}
+
+export interface PingPayload {
+  type: 'ping'
 }
 
 export interface UpdatePayload {
@@ -44,6 +49,14 @@ export interface FullReloadPayload {
 
 export interface CustomPayload {
   type: 'custom'
+  /**
+   * - undefined: for non-invoke requests
+   * - 'send': for invoke requests without an id
+   * - `send:${string}`: for invoke requests with an id
+   * - 'response': for invoke responses without an id
+   * - `response:${string}`: for invoke responses with an id
+   */
+  invoke?: 'send' | `send:${string}` | 'response' | `response:${string}`
   event: string
   data?: any
 }
