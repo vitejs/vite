@@ -1079,7 +1079,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
       return (cssResolve ??= createBackCompatIdResolver(config, {
         extensions: ['.css'],
         mainFields: ['style'],
-        conditions: ['style'],
+        conditions: ['style', 'production', 'development'],
         tryIndex: false,
         preferRelative: true,
       }))
@@ -1090,7 +1090,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
         const resolver = createBackCompatIdResolver(config, {
           extensions: ['.scss', '.sass', '.css'],
           mainFields: ['sass', 'style'],
-          conditions: ['sass', 'style'],
+          conditions: ['sass', 'style', 'production', 'development'],
           tryIndex: true,
           tryPrefix: '_',
           preferRelative: true,
@@ -1109,7 +1109,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
       return (lessResolve ??= createBackCompatIdResolver(config, {
         extensions: ['.less', '.css'],
         mainFields: ['less', 'style'],
-        conditions: ['less', 'style'],
+        conditions: ['less', 'style', 'production', 'development'],
         tryIndex: false,
         preferRelative: true,
       }))

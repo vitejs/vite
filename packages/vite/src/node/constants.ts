@@ -46,6 +46,16 @@ export const DEFAULT_MAIN_FIELDS = [
   'jsnext',
 ]
 
+export const DEFAULT_CONDITIONS = [
+  'module',
+  'browser',
+  'node',
+  'production',
+  'development',
+]
+
+export const DEFAULT_EXTERNAL_CONDITIONS = ['node']
+
 // Baseline support browserslist
 // "defaults and supports es6-module and supports es6-module-dynamic-import"
 // Higher browser versions may be needed for extra features.

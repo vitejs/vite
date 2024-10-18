@@ -6,7 +6,14 @@ export default defineConfig({
   },
   resolve: {
     dedupe: ['react'],
-    conditions: ['worker'],
+    conditions: [
+      'module',
+      'browser',
+      'node',
+      'production',
+      'development',
+      'worker',
+    ],
   },
   ssr: {
     target: 'webworker',
