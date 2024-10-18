@@ -1035,7 +1035,12 @@ export function resolveServerOptions(
     middlewareMode: raw?.middlewareMode || false,
   }
   let allowDirs = server.fs?.allow
-  const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
+  const deny = server.fs?.deny || [
+    '.env',
+    '.env.*',
+    '*.{crt,pem}',
+    '**/.git/**',
+  ]
 
   if (!allowDirs) {
     allowDirs = [searchForWorkspaceRoot(root)]
