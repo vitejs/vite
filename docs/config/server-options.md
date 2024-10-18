@@ -1,5 +1,7 @@
 # Server Options
 
+Unless noted, the options in this section are only applied to dev.
+
 ## server.host
 
 - **Type:** `string | boolean`
