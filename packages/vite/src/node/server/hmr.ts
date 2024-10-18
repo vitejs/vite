@@ -238,6 +238,11 @@ export const normalizeHotChannel = (
       channel.on(event, listenerWithNormalizedClient)
     },
     off: (event: string, fn: () => void) => {
+      if (event === 'connection') {
+        channel.off(event, fn as () => void)
+        return
+      }
+
       const normalizedListener = normalizedListenerMap.get(fn)
       if (normalizedListener) {
         channel.off(event, normalizedListener)

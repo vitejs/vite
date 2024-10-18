@@ -38,12 +38,12 @@ import {
   ERR_CLOSED_SERVER,
   createEnvironmentPluginContainer,
 } from './pluginContainer'
-import { isWebSocketServer } from './ws'
+import { type WebSocketServer, isWebSocketServer } from './ws'
 import { warmupFiles } from './warmup'
 
 export interface DevEnvironmentContext {
   hot: boolean
-  transport?: HotChannel
+  transport?: HotChannel | WebSocketServer
   options?: EnvironmentOptions
   remoteRunner?: {
     inlineSourceMap?: boolean
@@ -127,7 +127,9 @@ export class DevEnvironment extends BaseEnvironment {
     this._remoteRunnerOptions = context.remoteRunner ?? {}
 
     this.hot = context.transport
-      ? normalizeHotChannel(context.transport)
+      ? isWebSocketServer in context.transport
+        ? context.transport
+        : normalizeHotChannel(context.transport)
       : createNoopHotChannel()
     this.hot.on('vite:fetchModule', async (data, client, invoke) => {
       if (!invoke) return

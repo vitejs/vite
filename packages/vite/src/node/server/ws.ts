@@ -9,11 +9,11 @@ import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
-import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
+import type { ErrorPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { HotChannelClient, ResolvedConfig } from '..'
 import { isObject } from '../utils'
-import type { HotChannel } from './hmr'
+import { type NormalizedHotChannel, normalizeHotChannel } from './hmr'
 import type { HttpServer } from '.'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
@@ -34,20 +34,7 @@ export type WebSocketCustomListener<T> = (
 
 export const isWebSocketServer = Symbol('isWebSocketServer')
 
-export interface WebSocketServer extends HotChannel {
-  [isWebSocketServer]: true
-  /**
-   * Listen on port and host
-   */
-  listen(): void
-  /**
-   * Get all connected clients.
-   */
-  clients: Set<WebSocketClient>
-  /**
-   * Disconnect all clients and terminate the server.
-   */
-  close(): Promise<void>
+export interface WebSocketServer extends NormalizedHotChannel {
   /**
    * Handle custom event emitted by `import.meta.hot.send`
    */
@@ -63,6 +50,20 @@ export interface WebSocketServer extends HotChannel {
   off: WebSocketTypes.Server['off'] & {
     (event: string, listener: Function): void
   }
+  /**
+   * Listen on port and host
+   */
+  listen(): void
+  /**
+   * Disconnect all clients and terminate the server.
+   */
+  close(): Promise<void>
+
+  [isWebSocketServer]: true
+  /**
+   * Get all connected clients.
+   */
+  clients: Set<WebSocketClient>
 }
 
 export interface WebSocketClient extends HotChannelClient {
@@ -230,33 +231,8 @@ export function createWebSocketServer(
   // connected client.
   let bufferedError: ErrorPayload | null = null
 
-  return {
-    [isWebSocketServer]: true,
-    listen: () => {
-      wsHttpServer?.listen(port, host)
-    },
-    on: ((event: string, fn: () => void) => {
-      if (wsServerEvents.includes(event)) wss.on(event, fn)
-      else {
-        if (!customListeners.has(event)) {
-          customListeners.set(event, new Set())
-        }
-        customListeners.get(event)!.add(fn)
-      }
-    }) as WebSocketServer['on'],
-    off: ((event: string, fn: () => void) => {
-      if (wsServerEvents.includes(event)) {
-        wss.off(event, fn)
-      } else {
-        customListeners.get(event)?.delete(fn)
-      }
-    }) as WebSocketServer['off'],
-
-    get clients() {
-      return new Set(Array.from(wss.clients).map(getSocketClient))
-    },
-
-    send(payload: HotPayload) {
+  const normalizedHotChannel = normalizeHotChannel({
+    send(payload) {
       if (payload.type === 'error' && !wss.clients.size) {
         bufferedError = payload
         return
@@ -270,14 +246,25 @@ export function createWebSocketServer(
         }
       })
     },
-
+    on(event: string, fn: any) {
+      if (!customListeners.has(event)) {
+        customListeners.set(event, new Set())
+      }
+      customListeners.get(event)!.add(fn)
+    },
+    off(event: string, fn: any) {
+      customListeners.get(event)?.delete(fn)
+    },
+    listen() {
+      wsHttpServer?.listen(port, host)
+    },
     close() {
       // should remove listener if hmr.server is set
       // otherwise the old listener swallows all WebSocket connections
       if (hmrServerWsListener && wsServer) {
         wsServer.off('upgrade', hmrServerWsListener)
       }
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve, reject) => {
         wss.clients.forEach((client) => {
           client.terminate()
         })
@@ -299,6 +286,32 @@ export function createWebSocketServer(
           }
         })
       })
+    },
+  })
+  return {
+    ...normalizedHotChannel,
+
+    on: ((event: string, fn: any) => {
+      if (wsServerEvents.includes(event)) {
+        wss.on(event, fn)
+        return
+      }
+      normalizedHotChannel.on(event, fn)
+    }) as WebSocketServer['on'],
+    off: ((event: string, fn: any) => {
+      if (wsServerEvents.includes(event)) {
+        wss.off(event, fn)
+        return
+      }
+      normalizedHotChannel.off(event, fn)
+    }) as WebSocketServer['off'],
+    async close() {
+      await normalizedHotChannel.close()
+    },
+
+    [isWebSocketServer]: true,
+    get clients() {
+      return new Set(Array.from(wss.clients).map(getSocketClient))
     },
   }
 }
