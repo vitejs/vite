@@ -30,6 +30,7 @@ interface GlobalCLIOptions {
   m?: string
   mode?: string
   force?: boolean
+  w?: boolean
 }
 
 interface BuilderCLIOptions {
@@ -92,6 +93,7 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   delete ret.filter
   delete ret.m
   delete ret.mode
+  delete ret.w
 
   // convert the sourcemap option to a boolean if necessary
   if ('sourcemap' in ret) {
@@ -102,6 +104,10 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
         : sourcemap === 'false'
           ? false
           : ret.sourcemap
+  }
+  if ('watch' in ret) {
+    const watch = ret.watch
+    ret.watch = watch ? {} : undefined
   }
 
   return ret
