@@ -7,8 +7,6 @@ import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
   CLIENT_ENTRY,
-  DEFAULT_EXTENSIONS,
-  DEFAULT_MAIN_FIELDS,
   DEP_VERSION_RE,
   ENV_ENTRY,
   FS_PREFIX,
@@ -126,7 +124,6 @@ interface ResolvePluginOptions {
   // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
   // should also try import from `.ts/tsx/mts/cts` source file as fallback.
   isFromTsImporter?: boolean
-  tryEsmOnly?: boolean
   // True when resolving during the scan phase to discover dependencies
   scan?: boolean
   // Appends ?__vite_skip_optimization to the resolved id if shouldn't be optimized
@@ -818,22 +815,7 @@ export function tryNodeResolve(
   const resolveId = deepMatch ? resolveDeepImport : resolvePackageEntry
   const unresolvedId = deepMatch ? '.' + id.slice(pkgId.length) : id
 
-  let resolved: string | undefined
-  try {
-    resolved = resolveId(unresolvedId, pkg, options)
-  } catch (err) {
-    if (!options.tryEsmOnly) {
-      throw err
-    }
-  }
-  if (!resolved && options.tryEsmOnly) {
-    resolved = resolveId(unresolvedId, pkg, {
-      ...options,
-      isRequire: false,
-      mainFields: DEFAULT_MAIN_FIELDS,
-      extensions: DEFAULT_EXTENSIONS,
-    })
-  }
+  let resolved = resolveId(unresolvedId, pkg, options)
   if (!resolved) {
     return
   }
