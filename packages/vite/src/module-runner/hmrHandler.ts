@@ -15,7 +15,7 @@ export async function handleHotPayload(
   payload: HotPayload,
 ): Promise<void> {
   const hmrClient = runner.hmrClient
-  if (!hmrClient || runner.isDestroyed()) return
+  if (!hmrClient || runner.isClosed()) return
   switch (payload.type) {
     case 'connected':
       hmrClient.logger.debug(`connected.`)

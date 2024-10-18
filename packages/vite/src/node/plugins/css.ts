@@ -3,7 +3,6 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
@@ -27,6 +26,7 @@ import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
+import { globSync } from 'tinyglobby'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -568,7 +568,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let chunkCSS = ''
       // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
       const isJsChunkEmpty = code === '' && !chunk.isEntry
-      let isPureCssChunk = true
+      let isPureCssChunk = chunk.exports.length === 0
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
         if (styles.has(id)) {
@@ -956,6 +956,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           delete bundle[fileName]
           delete bundle[`${fileName}.map`]
         })
+      }
+
+      const cssAssets = Object.values(bundle).filter(
+        (asset): asset is OutputAsset =>
+          asset.type === 'asset' && asset.fileName.endsWith('.css'),
+      )
+      for (const cssAsset of cssAssets) {
+        if (typeof cssAsset.source === 'string') {
+          cssAsset.source = cssAsset.source.replace(viteHashUpdateMarkerRE, '')
+        }
       }
     },
   }
@@ -1405,11 +1415,10 @@ async function compileCSS(
       } else if (message.type === 'dir-dependency') {
         // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
         const { dir, glob: globPattern = '**' } = message
-        const pattern =
-          glob.escapePath(normalizePath(path.resolve(path.dirname(id), dir))) +
-          `/` +
-          globPattern
-        const files = glob.sync(pattern, {
+        const files = globSync(globPattern, {
+          absolute: true,
+          cwd: path.resolve(path.dirname(id), dir),
+          expandDirectories: false,
           ignore: ['**/node_modules/**'],
         })
         for (let i = 0; i < files.length; i++) {
@@ -1577,6 +1586,9 @@ function combineSourcemapsIfExists(
     : map1
 }
 
+const viteHashUpdateMarker = '/*$vite$:1*/'
+const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
+
 async function finalizeCss(
   css: string,
   minify: boolean,
@@ -1589,6 +1601,16 @@ async function finalizeCss(
   if (minify && config.build.cssMinify) {
     css = await minifyCSS(css, config, false)
   }
+  // inject an additional string to generate a different hash for https://github.com/vitejs/vite/issues/18038
+  //
+  // pre-5.4.3, we generated CSS link tags without crossorigin attribute and generated an hash without
+  // this string
+  // in 5.4.3, we added crossorigin attribute to the generated CSS link tags but that made chromium browsers
+  // to block the CSSs from loading due to chromium's weird behavior
+  // (https://www.hacksoft.io/blog/handle-images-cors-error-in-chrome, https://issues.chromium.org/issues/40381978)
+  // to avoid that happening, we inject an additional string so that a different hash is generated
+  // for the same CSS content
+  css += viteHashUpdateMarker
   return css
 }
 

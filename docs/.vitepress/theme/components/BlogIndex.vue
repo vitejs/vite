@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { data as posts } from './blog.data'
+import { data as posts } from '../../../_data/blog.data'
 
 function getDateTime(time: number) {
   return new Date(time).toISOString()
