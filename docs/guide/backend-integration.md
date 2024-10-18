@@ -151,3 +151,38 @@ If you need a custom integration, you can follow the steps in this guide to conf
    <!-- optional -->
    <link rel="modulepreload" href="assets/shared-B7PI925R.js" />
    ```
+
+   ::: details Pseudo implementation of `importedChunks`
+   An example pseudo implementation of `importedChunks` in TypeScript (This will
+   need to be adapted for your programming language and templating language):
+
+   ```ts
+   import type { Manifest, ManifestChunk } from 'vite'
+
+   export default function importedChunks(
+     manifest: Manifest,
+     name: string,
+   ): ManifestChunk[] {
+     const seen = new Set<string>()
+
+     function getImportedChunks(chunk: ManifestChunk): ManifestChunk[] {
+       const chunks: ManifestChunk[] = []
+       for (const file of chunk.imports ?? []) {
+         const importee = manifest[file]
+         if (seen.has(file)) {
+           continue
+         }
+         seen.add(file)
+
+         chunks.push(...getImportedChunks(importee))
+         chunks.push(importee)
+       }
+
+       return chunks
+     }
+
+     return getImportedChunks(manifest[name])
+   }
+   ```
+
+   :::
