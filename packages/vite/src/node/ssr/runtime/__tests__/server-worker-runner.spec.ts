@@ -6,19 +6,17 @@ import { createServer } from '../../../server'
 
 const createWorkerTransport = (w: Worker): HotChannel => {
   const handlerToWorkerListener = new WeakMap<
-    (data: any) => void,
-    (value: any) => void
+    (data: HotPayload) => void,
+    (value: HotPayload) => void
   >()
 
   return {
     send: (data: HotPayload) => w.postMessage(data),
     on: (event, handler) => {
-      if (event === 'connection') {
-        return
-      }
+      if (event === 'connection') return
 
-      const listener = (value: any) => {
-        if (value.event === event) {
+      const listener = (value: HotPayload) => {
+        if (value.type === 'custom' && value.event === event) {
           const client = {
             send(payload: HotPayload) {
               w.postMessage(payload)
@@ -31,15 +29,13 @@ const createWorkerTransport = (w: Worker): HotChannel => {
       w.on('message', listener)
     },
     off: (event, handler) => {
-      if (event === 'connection') {
-        return
-      }
+      if (event === 'connection') return
       const listener = handlerToWorkerListener.get(
-        handler as (data: any) => void,
+        handler as (data: HotPayload) => void,
       )
       if (listener) {
         w.off('message', listener)
-        handlerToWorkerListener.delete(handler as (data: any) => void)
+        handlerToWorkerListener.delete(handler as (data: HotPayload) => void)
       }
     },
     listen() {
