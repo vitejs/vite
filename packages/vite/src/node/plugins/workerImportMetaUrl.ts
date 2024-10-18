@@ -34,7 +34,7 @@ function parseWorkerOptions(
     opts = evalValue<WorkerOptions>(rawOpts)
   } catch {
     throw err(
-      'Vite is unable to parse the worker options as the value is not static.' +
+      'Vite is unable to parse the worker options as the value is neither static or variable.' +
         'To ignore this error, please use /* @vite-ignore */ in the worker options.',
       optsStartIndex,
     )
@@ -52,6 +52,38 @@ function parseWorkerOptions(
   }
 
   return opts
+}
+
+function findVarDefinition(
+  raw: string,
+  clean: string,
+  endIndex: number,
+  errorReportIndex: number,
+  varName: string,
+): [string, number] {
+  const workerOptionsVarRE = new RegExp(
+    `(?:var|let|const)\\s*${varName}\\s*=\\s*`,
+    'g',
+  )
+
+  let optsStartIndex = 0
+  while (workerOptionsVarRE.exec(clean)) {
+    if (workerOptionsVarRE.lastIndex >= endIndex) break
+    optsStartIndex = workerOptionsVarRE.lastIndex
+  }
+
+  if (optsStartIndex == 0) {
+    throw err(
+      'Vite is unable to parse the worker options as the value is neither static or variable. ' +
+        'To ignore this error, please use /* @vite-ignore */ in the worker options.',
+      errorReportIndex,
+    )
+  }
+
+  const optsEndIndex = clean.indexOf('}', optsStartIndex)
+  const workerOptString = raw.substring(optsStartIndex, optsEndIndex + 1)
+
+  return [workerOptString, optsStartIndex]
 }
 
 function getWorkerType(raw: string, clean: string, i: number): WorkerType {
@@ -82,7 +114,23 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
     return 'classic'
   }
 
-  const workerOpts = parseWorkerOptions(workerOptString, commaIndex + 1)
+  let workerOpts: WorkerOptions
+
+  // if worker options is a variable, try to find its closest definition
+  const varMatch = cleanWorkerOptString.match(/^\s*(\w+)\s*(?:,\s*)?$/)
+  if (varMatch) {
+    const [workerOptString, workerOptIndex] = findVarDefinition(
+      raw,
+      clean,
+      i,
+      commaIndex + 1,
+      varMatch[1],
+    )
+    workerOpts = parseWorkerOptions(workerOptString, workerOptIndex)
+  } else {
+    workerOpts = parseWorkerOptions(workerOptString, commaIndex + 1)
+  }
+
   if (
     workerOpts.type &&
     (workerOpts.type === 'module' || workerOpts.type === 'classic')

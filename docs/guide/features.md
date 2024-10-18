@@ -657,7 +657,15 @@ const worker = new Worker(new URL('./worker.js', import.meta.url), {
 })
 ```
 
-The worker detection will only work if the `new URL()` constructor is used directly inside the `new Worker()` declaration. Additionally, all options parameters must be static values (i.e. string literals).
+The worker detection will only work if the `new URL()` constructor is used directly inside the `new Worker()` declaration. Additionally, all options parameters must be static values (i.e. string literals), or a variable that is defined before the `new Worker()`, as follows:
+
+```ts
+const workerOptions = { type: 'module' }
+const worker = new Worker(
+  new URL('./worker.js', import.meta.url),
+  workerOptions,
+)
+```
 
 ### Import with Query Suffixes
 
