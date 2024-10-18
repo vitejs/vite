@@ -98,7 +98,7 @@ async function ssrTransformScript(
   const declaredConst = new Set<string>()
 
   // hoist at the start of the file, after the hashbang
-  const hoistIndex = hashbangRE.exec(code)?.[0].length ?? 0
+  let hoistIndex = hashbangRE.exec(code)?.[0].length ?? 0
 
   function defineImport(
     index: number,
@@ -133,9 +133,12 @@ async function ssrTransformScript(
       )}${metadataStr});\n`,
     )
 
-    // There will be an error if the module is called before it is imported,
-    // so the module import statement is hoisted to the top
-    if (importNode.start !== index) {
+    if (importNode.start === index) {
+      // no need to hoist, but update hoistIndex to keep the order
+      hoistIndex = importNode.end
+    } else {
+      // There will be an error if the module is called before it is imported,
+      // so the module import statement is hoisted to the top
       s.move(importNode.start, importNode.end, index)
     }
 

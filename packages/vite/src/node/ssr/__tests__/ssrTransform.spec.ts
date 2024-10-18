@@ -854,8 +854,8 @@ test('jsx', async () => {
   const result = await transformWithEsbuild(code, id)
   expect(await ssrTransformSimpleCode(result.code, '/foo.jsx'))
     .toMatchInlineSnapshot(`
-      "const __vite_ssr_import_1__ = await __vite_ssr_import__("foo", {"importedNames":["Foo","Slot"]});
-      const __vite_ssr_import_0__ = await __vite_ssr_import__("react", {"importedNames":["default"]});
+      "const __vite_ssr_import_0__ = await __vite_ssr_import__("react", {"importedNames":["default"]});
+      const __vite_ssr_import_1__ = await __vite_ssr_import__("foo", {"importedNames":["Foo","Slot"]});
 
 
       function Bar({ Slot: Slot2 = /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_1__.Foo, null) }) {
