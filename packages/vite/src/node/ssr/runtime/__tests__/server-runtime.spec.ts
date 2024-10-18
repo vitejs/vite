@@ -230,6 +230,13 @@ describe('module runner initialization', async () => {
     const action = await mod.importAction('/fixtures/cyclic/action')
     expect(action).toBeDefined()
   })
+
+  it('this of the exported function should be undefined', async ({
+    runner,
+  }) => {
+    const mod = await runner.import('/fixtures/no-this/importer.js')
+    expect(mod.result).toBe(undefined)
+  })
 })
 
 describe('optimize-deps', async () => {
