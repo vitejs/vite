@@ -253,13 +253,24 @@ async function computeEntries(environment: ScanEnvironment) {
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
-    const resolvePath = (p: string) => path.resolve(environment.config.root, p)
+    const resolveRollupInputPath = (p: string) => {
+      const resolvedPath = path.resolve(
+        environment.config.root,
+        p.replace(/^\//, ''),
+      )
+      if (fs.existsSync(resolvedPath)) return resolvedPath
+      for (const extension of environment.config.resolve.extensions) {
+        const pathWithExtension = `${resolvedPath}${extension}`
+        if (fs.existsSync(pathWithExtension)) return pathWithExtension
+      }
+      throw new Error('invalid rollupOptions.input value.')
+    }
     if (typeof buildInput === 'string') {
-      entries = [resolvePath(buildInput)]
+      entries = [resolveRollupInputPath(buildInput)]
     } else if (Array.isArray(buildInput)) {
-      entries = buildInput.map(resolvePath)
+      entries = buildInput.map(resolveRollupInputPath)
     } else if (isObject(buildInput)) {
-      entries = Object.values(buildInput).map(resolvePath)
+      entries = Object.values(buildInput).map(resolveRollupInputPath)
     } else {
       throw new Error('invalid rollupOptions.input value.')
     }

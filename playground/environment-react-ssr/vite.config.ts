@@ -30,6 +30,11 @@ export default defineConfig((env) => ({
       },
     },
     ssr: {
+      dev: {
+        optimizeDeps: {
+          noDiscovery: false,
+        },
+      },
       build: {
         outDir: 'dist/server',
         // [feedback]
