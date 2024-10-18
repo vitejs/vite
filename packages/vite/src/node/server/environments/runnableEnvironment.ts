@@ -4,7 +4,6 @@ import type { DevEnvironmentContext } from '../environment'
 import { DevEnvironment } from '../environment'
 import type { ServerModuleRunnerOptions } from '../../ssr/runtime/serverModuleRunner'
 import { createServerModuleRunner } from '../../ssr/runtime/serverModuleRunner'
-import type { HotChannel } from '../hmr'
 import { createServerHotChannel } from '../hmr'
 import type { Environment } from '../../environment'
 
@@ -24,14 +23,13 @@ export function createRunnableDevEnvironment(
 }
 
 export interface RunnableDevEnvironmentContext
-  extends Omit<DevEnvironmentContext, 'hot' | 'transport'> {
+  extends Omit<DevEnvironmentContext, 'hot'> {
   runner?: (
     environment: RunnableDevEnvironment,
     options?: ServerModuleRunnerOptions,
   ) => ModuleRunner
   runnerOptions?: ServerModuleRunnerOptions
   hot?: boolean
-  transport?: HotChannel
 }
 
 export function isRunnableDevEnvironment(
