@@ -25,7 +25,12 @@ import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel, NormalizedHotChannel } from './hmr'
-import { getShortName, normalizeHotChannel, updateModules } from './hmr'
+import {
+  createNoopHotChannel,
+  getShortName,
+  normalizeHotChannel,
+  updateModules,
+} from './hmr'
 import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import type { EnvironmentPluginContainer } from './pluginContainer'
@@ -38,7 +43,7 @@ import { warmupFiles } from './warmup'
 
 export interface DevEnvironmentContext {
   hot: boolean
-  transport: HotChannel
+  transport?: HotChannel
   options?: EnvironmentOptions
   remoteRunner?: {
     inlineSourceMap?: boolean
@@ -121,7 +126,9 @@ export class DevEnvironment extends BaseEnvironment {
 
     this._remoteRunnerOptions = context.remoteRunner ?? {}
 
-    this.hot = normalizeHotChannel(context.transport)
+    this.hot = context.transport
+      ? normalizeHotChannel(context.transport)
+      : createNoopHotChannel()
     this.hot.on('vite:fetchModule', async (data, client, invoke) => {
       if (!invoke) return
 

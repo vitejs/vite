@@ -1064,6 +1064,20 @@ export function createServerHotChannel(): ServerHotChannel {
   }
 }
 
+export function createNoopHotChannel(): NormalizedHotChannel {
+  function noop() {
+    // noop
+  }
+
+  return {
+    send: noop,
+    on: noop,
+    off: noop,
+    listen: noop,
+    close: noop,
+  }
+}
+
 /** @deprecated use `environment.hot` instead */
 export interface HotBroadcaster extends HotChannel {
   readonly channels: HotChannel[]
