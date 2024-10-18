@@ -47,6 +47,7 @@ import charset from './charset.css?inline'
 text('.charset-css', charset)
 
 import './layered/index.css'
+import './external.css'
 
 import './dep.css'
 import './glob-dep.css'
