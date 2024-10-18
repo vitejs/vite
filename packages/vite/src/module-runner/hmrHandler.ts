@@ -72,6 +72,8 @@ export async function handleHotPayload(
       )
       break
     }
+    case 'ping': // noop
+      break
     default: {
       const check: never = payload
       return check

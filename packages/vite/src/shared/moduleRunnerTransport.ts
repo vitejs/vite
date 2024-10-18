@@ -279,7 +279,7 @@ export const createWebSocketModuleRunnerTransport = (options: {
       // so send ping package let ws keep alive.
       pingIntervalId = setInterval(() => {
         if (socket.readyState === WebSocket.OPEN) {
-          socket.send('ping')
+          socket.send(JSON.stringify({ type: 'ping' }))
         }
       }, pingInterval)
     },

@@ -277,6 +277,8 @@ async function handleMessage(payload: HotPayload) {
       }
       break
     }
+    case 'ping': // noop
+      break
     default: {
       const check: never = payload
       return check
