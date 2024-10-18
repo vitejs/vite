@@ -100,6 +100,13 @@
 <code class="worker-import-meta-url-without-extension"></code>
 
 <p>
+  var workerOptions = { type: 'module' } new Worker(new URL('./url-worker.js',
+  import.meta.url), workerOptions)
+  <span class="classname">.worker-import-meta-url-via-variable</span>
+</p>
+<code class="worker-import-meta-url-via-variable"></code>
+
+<p>
   new SharedWorker(new URL('./url-shared-worker.js', import.meta.url), { type:
   'module' })
   <span class="classname">.shared-worker-import-meta-url</span>
