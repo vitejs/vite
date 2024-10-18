@@ -98,7 +98,7 @@ async function ssrTransformScript(
   const declaredConst = new Set<string>()
 
   // hoist at the start of the file, after the hashbang
-  let hoistIndex = hashbangRE.exec(code)?.[0].length ?? 0
+  const hoistIndex = hashbangRE.exec(code)?.[0].length ?? 0
 
   function defineImport(
     index: number,
@@ -125,8 +125,6 @@ async function ssrTransformScript(
     }
     const metadataStr = metadata ? `, ${JSON.stringify(metadata)}` : ''
 
-    // There will be an error if the module is called before it is imported,
-    // so the module import statement is hoisted to the top
     s.update(
       importNode.start,
       importNode.end,
@@ -135,12 +133,10 @@ async function ssrTransformScript(
       )}${metadataStr});\n`,
     )
 
+    // There will be an error if the module is called before it is imported,
+    // so the module import statement is hoisted to the top
     if (importNode.start !== index) {
       s.move(importNode.start, importNode.end, index)
-    }
-
-    if (index === hoistIndex) {
-      hoistIndex = importNode.end
     }
 
     return importId

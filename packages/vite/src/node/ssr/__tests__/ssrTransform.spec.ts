@@ -444,19 +444,30 @@ test('sourcemap source', async () => {
 })
 
 test('sourcemap is correct for hoisted imports', async () => {
-  const map = (
-    await ssrTransform(
-      `\n\n\nimport { foo } from 'vue';`,
-      null,
-      'input.js',
-      'export const a = 1 /* */',
-    )
-  )?.map
+  const code = `\n\n\nconsole.log(foo, bar);\nimport { foo } from 'vue';\nimport { bar } from 'vue2';`
+  const result = (await ssrTransform(code, null, 'input.js', code))!
 
-  const traceMap = new TraceMap(map as any)
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["foo"]});
+    const __vite_ssr_import_1__ = await __vite_ssr_import__("vue2", {"importedNames":["bar"]});
+
+
+
+    console.log(__vite_ssr_import_0__.foo, __vite_ssr_import_1__.bar);
+
+    "
+  `)
+
+  const traceMap = new TraceMap(result.map as any)
   expect(originalPositionFor(traceMap, { line: 1, column: 0 })).toStrictEqual({
     source: 'input.js',
-    line: 4,
+    line: 5,
+    column: 0,
+    name: null,
+  })
+  expect(originalPositionFor(traceMap, { line: 2, column: 0 })).toStrictEqual({
+    source: 'input.js',
+    line: 6,
     column: 0,
     name: null,
   })
@@ -843,8 +854,8 @@ test('jsx', async () => {
   const result = await transformWithEsbuild(code, id)
   expect(await ssrTransformSimpleCode(result.code, '/foo.jsx'))
     .toMatchInlineSnapshot(`
-      "const __vite_ssr_import_0__ = await __vite_ssr_import__("react", {"importedNames":["default"]});
-      const __vite_ssr_import_1__ = await __vite_ssr_import__("foo", {"importedNames":["Foo","Slot"]});
+      "const __vite_ssr_import_1__ = await __vite_ssr_import__("foo", {"importedNames":["Foo","Slot"]});
+      const __vite_ssr_import_0__ = await __vite_ssr_import__("react", {"importedNames":["default"]});
 
 
       function Bar({ Slot: Slot2 = /* @__PURE__ */ __vite_ssr_import_0__.default.createElement(__vite_ssr_import_1__.Foo, null) }) {
