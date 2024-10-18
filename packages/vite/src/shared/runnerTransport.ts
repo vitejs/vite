@@ -96,6 +96,13 @@ const createInvokeableTransport = (
         onDisconnection,
       })
     },
+    disconnect() {
+      rpcPromises.forEach((promise) => {
+        promise.reject(new Error('transport was disconnected'))
+      })
+      rpcPromises.clear()
+      transport.disconnect?.()
+    },
     send(data) {
       transport.send!(data)
     },
