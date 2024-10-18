@@ -20,11 +20,10 @@ export interface RunnerTransport {
   timeout?: number
 }
 
-type InvokeableRunnerTransport = Omit<RunnerTransport, 'send' | 'invoke'> & {
-  connect?(handlers: RunnerTransportHandlers): Promise<void> | void
-  send(data: HotPayload): void
-  invoke(name: string, data: any): any
-}
+type InvokeableRunnerTransport = Omit<RunnerTransport, 'invoke'> &
+  Required<Pick<RunnerTransport, 'send'>> & {
+    invoke(name: string, data: any): any
+  }
 
 const createInvokeableTransport = (
   transport: RunnerTransport,
@@ -146,44 +145,41 @@ export const normalizeRunnerTransport = (
   let isConnected = !invokeableTransport.connect
   let connectingPromise: Promise<void> | undefined
 
-  const connect = async (onMessage?: (data: HotPayload) => void) => {
-    if (isConnected) return
-    if (connectingPromise) {
-      await connectingPromise
-      return
-    }
-
-    if (invokeableTransport.connect) {
-      const maybePromise = invokeableTransport.connect({
-        onMessage: onMessage ?? (() => {}),
-        onDisconnection() {
-          isConnected = false
-        },
-      })
-      if (maybePromise) {
-        connectingPromise = maybePromise
-        await connectingPromise
-        connectingPromise = undefined
-      }
-    }
-    isConnected = true
-  }
-
   return {
-    ...(invokeableTransport as Omit<
-      InvokeableRunnerTransport,
-      'connect' | 'send' | 'invoke'
-    >),
+    ...(transport as Omit<RunnerTransport, 'connect'>),
     ...(invokeableTransport.connect
       ? {
-          connect,
+          async connect(onMessage) {
+            if (isConnected) return
+            if (connectingPromise) {
+              await connectingPromise
+              return
+            }
+
+            const maybePromise = invokeableTransport.connect!({
+              onMessage: onMessage ?? (() => {}),
+              onDisconnection() {
+                isConnected = false
+              },
+            })
+            if (maybePromise) {
+              connectingPromise = maybePromise
+              await connectingPromise
+              connectingPromise = undefined
+            }
+            isConnected = true
+          },
+        }
+      : {}),
+    ...(invokeableTransport.disconnect
+      ? {
           async disconnect() {
             if (!isConnected) return
             if (connectingPromise) {
               await connectingPromise
             }
             isConnected = false
-            await invokeableTransport.disconnect?.()
+            await invokeableTransport.disconnect!()
           },
         }
       : {}),
