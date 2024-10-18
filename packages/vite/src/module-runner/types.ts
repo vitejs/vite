@@ -5,7 +5,7 @@ import type {
   DefineImportMetadata,
   SSRImportMetadata,
 } from '../shared/ssrTransform'
-import type { CreateRunnerTransport } from '../shared/runnerTransport'
+import type { RunnerTransport } from '../shared/runnerTransport'
 import type { EvaluatedModuleNode, EvaluatedModules } from './evaluatedModules'
 import type {
   ssrDynamicImportKey,
@@ -151,7 +151,7 @@ export interface ModuleRunnerOptions {
   /**
    * A set of methods to communicate with the server.
    */
-  createTransport: CreateRunnerTransport
+  transport: RunnerTransport
   /**
    * Configure how source maps are resolved. Prefers `node` if `process.setSourceMapsEnabled` is available.
    * Otherwise it will use `prepareStackTrace` by default which overrides `Error.prepareStackTrace` method.

@@ -3,8 +3,8 @@ import type { ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import {
-  createRunnerTransport,
-  createWebSocketRunnerTransportOptions,
+  createWebSocketRunnerTransport,
+  normalizeRunnerTransport,
 } from '../shared/runnerTransport'
 import { ErrorOverlay, overlayId } from './overlay'
 import '@vite/env'
@@ -36,62 +36,64 @@ const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
 const hmrTimeout = __HMR_TIMEOUT__
 
-const transport = createRunnerTransport(({ onDisconnection }) => {
-  let transportOptions = createWebSocketRunnerTransportOptions({
-    protocol: socketProtocol,
-    hostAndPort: socketHost,
-    pingInterval: hmrTimeout,
-  })({ onDisconnection })
+const transport = normalizeRunnerTransport(
+  (() => {
+    let wsTransport = createWebSocketRunnerTransport({
+      protocol: socketProtocol,
+      hostAndPort: socketHost,
+      pingInterval: hmrTimeout,
+    })
 
-  return {
-    async connect(handler) {
-      try {
-        await transportOptions.connect(handler)
-      } catch (e) {
-        // only use fallback when port is inferred and was not connected before to prevent confusion
-        if (!hmrPort) {
-          transportOptions = createWebSocketRunnerTransportOptions({
-            protocol: socketProtocol,
-            hostAndPort: directSocketHost,
-            pingInterval: hmrTimeout,
-          })({ onDisconnection })
-          try {
-            await transportOptions.connect(handler)
-            console.info(
-              '[vite] Direct websocket connection fallback. Check out https://vite.dev/config/server-options.html#server-hmr to remove the previous connection error.',
-            )
-          } catch (e) {
-            if (
-              e instanceof Error &&
-              e.message.includes('WebSocket closed without opened.')
-            ) {
-              const currentScriptHostURL = new URL(import.meta.url)
-              const currentScriptHost =
-                currentScriptHostURL.host +
-                currentScriptHostURL.pathname.replace(/@vite\/client$/, '')
-              console.error(
-                '[vite] failed to connect to websocket.\n' +
-                  'your current setup:\n' +
-                  `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
-                  `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
-                  'Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr .',
+    return {
+      async connect(handlers) {
+        try {
+          await wsTransport.connect(handlers)
+        } catch (e) {
+          // only use fallback when port is inferred and was not connected before to prevent confusion
+          if (!hmrPort) {
+            wsTransport = createWebSocketRunnerTransport({
+              protocol: socketProtocol,
+              hostAndPort: directSocketHost,
+              pingInterval: hmrTimeout,
+            })
+            try {
+              await wsTransport.connect(handlers)
+              console.info(
+                '[vite] Direct websocket connection fallback. Check out https://vite.dev/config/server-options.html#server-hmr to remove the previous connection error.',
               )
+            } catch (e) {
+              if (
+                e instanceof Error &&
+                e.message.includes('WebSocket closed without opened.')
+              ) {
+                const currentScriptHostURL = new URL(import.meta.url)
+                const currentScriptHost =
+                  currentScriptHostURL.host +
+                  currentScriptHostURL.pathname.replace(/@vite\/client$/, '')
+                console.error(
+                  '[vite] failed to connect to websocket.\n' +
+                    'your current setup:\n' +
+                    `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
+                    `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
+                    'Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr .',
+                )
+              }
             }
+            return
           }
-          return
+          console.error(`[vite] failed to connect to websocket (${e}). `)
+          throw e
         }
-        console.error(`[vite] failed to connect to websocket (${e}). `)
-        throw e
-      }
-    },
-    async disconnect() {
-      await transportOptions.disconnect()
-    },
-    send(data) {
-      transportOptions.send(data)
-    },
-  }
-})
+      },
+      async disconnect() {
+        await wsTransport.disconnect()
+      },
+      send(data) {
+        wsTransport.send(data)
+      },
+    }
+  })(),
+)
 
 function cleanUrl(pathname: string): string {
   const url = new URL(pathname, 'http://vite.dev')

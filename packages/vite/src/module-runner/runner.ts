@@ -1,10 +1,11 @@
 import type { ViteHotContext } from 'types/hot'
+import type { HotPayload } from 'types/hmrPayload'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import {
-  type RunnerTransport,
-  createRunnerTransport,
+  type NormalizedRunnerTransport,
+  normalizeRunnerTransport,
 } from '../shared/runnerTransport'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
@@ -49,14 +50,13 @@ export class ModuleRunner {
       )
     },
   })
-  private readonly transport: RunnerTransport
+  private readonly transport: NormalizedRunnerTransport
   private readonly resetSourceMapSupport?: () => void
   private readonly root: string
   private readonly concurrentModuleNodePromises = new Map<
     string,
     Promise<EvaluatedModuleNode>
   >()
-  private readonly hmrHandlerForTransport?: (payload: any) => void
 
   private closed = false
 
@@ -68,7 +68,8 @@ export class ModuleRunner {
     const root = this.options.root
     this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
-    this.transport = createRunnerTransport(options.createTransport)
+    this.transport = normalizeRunnerTransport(options.transport)
+    let hmrHandlerForTransport: ((payload: HotPayload) => void) | undefined
     if (typeof options.hmr === 'object') {
       const resolvedHmrLogger =
         options.hmr.logger === false
@@ -79,12 +80,12 @@ export class ModuleRunner {
         this.transport,
         ({ acceptedPath }) => this.import(acceptedPath),
       )
-      this.hmrHandlerForTransport = createHMRHandler(this)
+      hmrHandlerForTransport = createHMRHandler(this)
       if (!this.transport.connect) {
         resolvedHmrLogger.error('HMR is not supported by this runner transport')
       }
     }
-    this.transport.connect?.(this.hmrHandlerForTransport)
+    this.transport.connect?.(hmrHandlerForTransport)
     if (options.sourcemapInterceptor !== false) {
       this.resetSourceMapSupport = enableSourceMapSupport(this)
     }

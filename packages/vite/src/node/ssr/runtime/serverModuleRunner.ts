@@ -12,7 +12,7 @@ import type {
   NormalizedServerHotChannel,
   ServerHotChannel,
 } from '../../server/hmr'
-import type { CreateRunnerTransport } from '../../../shared/runnerTransport'
+import type { RunnerTransport } from '../../../shared/runnerTransport'
 
 /**
  * @experimental
@@ -20,7 +20,7 @@ import type { CreateRunnerTransport } from '../../../shared/runnerTransport'
 export interface ServerModuleRunnerOptions
   extends Omit<
     ModuleRunnerOptions,
-    'root' | 'fetchModule' | 'hmr' | 'createTransport'
+    'root' | 'fetchModule' | 'hmr' | 'transport'
   > {
   /**
    * Disable HMR or configure HMR logger.
@@ -73,47 +73,48 @@ function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
   return prepareStackTrace
 }
 
-export const createServerRunnerTransportOptions =
-  (options: { channel: ServerHotChannel }): CreateRunnerTransport =>
-  () => {
-    const hmrClient: HotChannelClient = {
-      send: (payload: HotPayload) => {
-        if (payload.type !== 'custom') {
-          throw new Error(
-            'Cannot send non-custom events from the client to the server.',
-          )
-        }
-        options.channel.send(payload)
-      },
-    }
-
-    let handler: ((data: HotPayload) => void) | undefined
-
-    return {
-      connect(handler) {
-        options.channel.api!.outsideEmitter.on('send', handler)
-        handler({ type: 'connected' })
-      },
-      disconnect() {
-        if (handler) {
-          options.channel.api!.outsideEmitter.off('send', handler)
-        }
-      },
-      send(payload) {
-        if (payload.type !== 'custom') {
-          throw new Error(
-            'Cannot send non-custom events from the server to the client.',
-          )
-        }
-        options.channel.api!.innerEmitter.emit(
-          payload.event,
-          payload.data,
-          hmrClient,
-          payload.invoke,
+export const createServerRunnerTransport = (options: {
+  channel: ServerHotChannel
+}): RunnerTransport => {
+  const hmrClient: HotChannelClient = {
+    send: (payload: HotPayload) => {
+      if (payload.type !== 'custom') {
+        throw new Error(
+          'Cannot send non-custom events from the client to the server.',
         )
-      },
-    }
+      }
+      options.channel.send(payload)
+    },
   }
+
+  let handler: ((data: HotPayload) => void) | undefined
+
+  return {
+    connect({ onMessage }) {
+      options.channel.api!.outsideEmitter.on('send', onMessage)
+      onMessage({ type: 'connected' })
+      handler = onMessage
+    },
+    disconnect() {
+      if (handler) {
+        options.channel.api!.outsideEmitter.off('send', handler)
+      }
+    },
+    send(payload) {
+      if (payload.type !== 'custom') {
+        throw new Error(
+          'Cannot send non-custom events from the server to the client.',
+        )
+      }
+      options.channel.api!.innerEmitter.emit(
+        payload.event,
+        payload.data,
+        hmrClient,
+        payload.invoke,
+      )
+    },
+  }
+}
 
 /**
  * Create an instance of the Vite SSR runtime that support HMR.
@@ -128,7 +129,7 @@ export function createServerModuleRunner(
     {
       ...options,
       root: environment.config.root,
-      createTransport: createServerRunnerTransportOptions({
+      transport: createServerRunnerTransport({
         channel: environment.hot as NormalizedServerHotChannel,
       }),
       hmr,

@@ -1,7 +1,7 @@
 import type { HotPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
-import type { RunnerTransport } from './runnerTransport'
+import type { NormalizedRunnerTransport } from './runnerTransport'
 
 type CustomListenersMap = Map<string, ((data: any) => void)[]>
 
@@ -184,7 +184,7 @@ export class HMRClient {
 
   constructor(
     public logger: HMRLogger,
-    private transport: RunnerTransport,
+    private transport: NormalizedRunnerTransport,
     // This allows implementing reloading via different methods depending on the environment
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
   ) {}

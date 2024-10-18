@@ -6,7 +6,7 @@ import { unwrapId } from '../../shared/utils'
 import type { DevEnvironment } from '../server/environment'
 import type { NormalizedServerHotChannel } from '../server/hmr'
 import { ssrFixStacktrace } from './ssrStacktrace'
-import { createServerRunnerTransportOptions } from './runtime/serverModuleRunner'
+import { createServerRunnerTransport } from './runtime/serverModuleRunner'
 
 type SSRModule = Record<string, any>
 
@@ -64,7 +64,7 @@ class SSRCompatModuleRunner extends ModuleRunner {
     super(
       {
         root: environment.config.root,
-        createTransport: createServerRunnerTransportOptions({
+        transport: createServerRunnerTransport({
           channel: environment.hot as NormalizedServerHotChannel,
         }),
         sourcemapInterceptor: false,

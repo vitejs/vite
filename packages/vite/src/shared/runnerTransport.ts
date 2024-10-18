@@ -3,18 +3,15 @@ import type { CustomPayload, HotPayload } from 'types/hmrPayload'
 import { promiseWithResolvers } from './utils'
 
 export type RunnerTransportHandlers = {
+  onMessage: (data: HotPayload) => void
   onDisconnection: () => void
 }
-
-export type CreateRunnerTransport = (
-  handlers: RunnerTransportHandlers,
-) => RunnerTransportOptions
 
 /**
  * "send and connect" or "invoke" must be implemented
  */
-export interface RunnerTransportOptions {
-  connect?(handler: (data: HotPayload) => void): Promise<void> | void
+export interface RunnerTransport {
+  connect?(handlers: RunnerTransportHandlers): Promise<void> | void
   disconnect?(): Promise<void> | void
   send?(data: HotPayload): Promise<void> | void
   invoke?(
@@ -23,20 +20,15 @@ export interface RunnerTransportOptions {
   timeout?: number
 }
 
-type NormalizedRunnerTransportOptions = Omit<
-  RunnerTransportOptions,
-  'send' | 'invoke'
-> & {
-  connect?(
-    handler: ((data: HotPayload) => void) | undefined,
-  ): Promise<void> | void
+type InvokeableRunnerTransport = Omit<RunnerTransport, 'send' | 'invoke'> & {
+  connect?(handlers: RunnerTransportHandlers): Promise<void> | void
   send(data: HotPayload): void
   invoke(name: string, data: any): any
 }
 
-const createInvokeableTransportOptions = (
-  transport: RunnerTransportOptions,
-): NormalizedRunnerTransportOptions => {
+const createInvokeableTransport = (
+  transport: RunnerTransport,
+): InvokeableRunnerTransport => {
   if (transport.invoke) {
     const sendOrInvoke = transport.send ?? transport.invoke
     return {
@@ -76,30 +68,33 @@ const createInvokeableTransportOptions = (
 
   return {
     ...transport,
-    connect(handler) {
-      transport.connect!((data) => {
-        if (
-          data.type === 'custom' &&
-          data.invoke &&
-          data.invoke.startsWith('response:')
-        ) {
-          const invokeId = data.invoke.slice('response:'.length)
-          const promise = rpcPromises.get(invokeId)
-          if (!promise) return
+    connect({ onMessage, onDisconnection }) {
+      transport.connect!({
+        onMessage(data) {
+          if (
+            data.type === 'custom' &&
+            data.invoke &&
+            data.invoke.startsWith('response:')
+          ) {
+            const invokeId = data.invoke.slice('response:'.length)
+            const promise = rpcPromises.get(invokeId)
+            if (!promise) return
 
-          if (promise.timeoutId) clearTimeout(promise.timeoutId)
+            if (promise.timeoutId) clearTimeout(promise.timeoutId)
 
-          rpcPromises.delete(invokeId)
+            rpcPromises.delete(invokeId)
 
-          const { e, r } = data.data
-          if (e) {
-            promise.reject(e)
-          } else {
-            promise.resolve(r)
+            const { e, r } = data.data
+            if (e) {
+              promise.reject(e)
+            } else {
+              promise.resolve(r)
+            }
+            return
           }
-          return
-        }
-        handler?.(data)
+          onMessage(data)
+        },
+        onDisconnection,
       })
     },
     send(data) {
@@ -136,23 +131,22 @@ const createInvokeableTransportOptions = (
   }
 }
 
-export interface RunnerTransport {
-  connect?(
-    handler: ((data: HotPayload) => void) | undefined,
-  ): Promise<void> | void
+export interface NormalizedRunnerTransport {
+  connect?(onMessage?: (data: HotPayload) => void): Promise<void> | void
   disconnect?(): Promise<void> | void
   send(data: HotPayload): void
   invoke(name: string, data: any): any
 }
 
-export const createRunnerTransport = (
-  createTransport: CreateRunnerTransport,
-): RunnerTransport => {
-  let previousHandler: ((data: any) => void) | undefined
+export const normalizeRunnerTransport = (
+  transport: RunnerTransport,
+): NormalizedRunnerTransport => {
+  const invokeableTransport = createInvokeableTransport(transport)
+
+  let isConnected = !invokeableTransport.connect
   let connectingPromise: Promise<void> | undefined
 
-  const connect = async (handler: ((data: any) => void) | undefined) => {
-    previousHandler = handler
+  const connect = async (onMessage?: (data: HotPayload) => void) => {
     if (isConnected) return
     if (connectingPromise) {
       await connectingPromise
@@ -160,7 +154,12 @@ export const createRunnerTransport = (
     }
 
     if (invokeableTransport.connect) {
-      const maybePromise = invokeableTransport.connect(previousHandler)
+      const maybePromise = invokeableTransport.connect({
+        onMessage: onMessage ?? (() => {}),
+        onDisconnection() {
+          isConnected = false
+        },
+      })
       if (maybePromise) {
         connectingPromise = maybePromise
         await connectingPromise
@@ -170,17 +169,11 @@ export const createRunnerTransport = (
     isConnected = true
   }
 
-  const onDisconnection = () => {
-    isConnected = false
-  }
-
-  const transport = createTransport({ onDisconnection })
-  const invokeableTransport = createInvokeableTransportOptions(transport)
-
-  let isConnected = !invokeableTransport.connect
-
-  const normalizedTransport = {
-    ...invokeableTransport,
+  return {
+    ...(invokeableTransport as Omit<
+      InvokeableRunnerTransport,
+      'connect' | 'send' | 'invoke'
+    >),
     ...(invokeableTransport.connect
       ? {
           connect,
@@ -214,91 +207,83 @@ export const createRunnerTransport = (
       }
       return invokeableTransport.invoke(name, data)
     },
-  } as const satisfies NormalizedRunnerTransportOptions
-
-  return normalizedTransport
+  }
 }
 
-export const createWebSocketRunnerTransportOptions =
-  (options: {
-    protocol: string
-    hostAndPort: string
-    pingInterval?: number
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins
-    WebSocket?: typeof WebSocket
-  }) =>
-  ({
-    onDisconnection,
-  }: RunnerTransportHandlers): Required<
-    Pick<RunnerTransportOptions, 'connect' | 'disconnect' | 'send'>
-  > => {
-    const pingInterval = options.pingInterval ?? 30000
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins
-    const WebSocket = options.WebSocket || globalThis.WebSocket
-    if (!WebSocket) {
-      throw new Error('WebSocket is not supported in this environment.')
-    }
-    const url = `${options.protocol}://${options.hostAndPort}`
+export const createWebSocketRunnerTransport = (options: {
+  protocol: string
+  hostAndPort: string
+  pingInterval?: number
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins
+  WebSocket?: typeof WebSocket
+}): Required<Pick<RunnerTransport, 'connect' | 'disconnect' | 'send'>> => {
+  const pingInterval = options.pingInterval ?? 30000
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins
+  const WebSocket = options.WebSocket || globalThis.WebSocket
+  if (!WebSocket) {
+    throw new Error('WebSocket is not supported in this environment.')
+  }
+  const url = `${options.protocol}://${options.hostAndPort}`
 
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins
-    let ws: WebSocket | undefined
-    let pingIntervalId: ReturnType<typeof setInterval> | undefined
-    return {
-      async connect(handler) {
-        const socket = new WebSocket(url, 'vite-hmr')
-        socket.addEventListener('message', async ({ data }) => {
-          handler(JSON.parse(data))
-        })
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins
+  let ws: WebSocket | undefined
+  let pingIntervalId: ReturnType<typeof setInterval> | undefined
+  return {
+    async connect({ onMessage, onDisconnection }) {
+      const socket = new WebSocket(url, 'vite-hmr')
+      socket.addEventListener('message', async ({ data }) => {
+        onMessage(JSON.parse(data))
+      })
 
-        await new Promise<void>((resolve, reject) => {
-          let isOpened = false
-          socket.addEventListener(
-            'open',
-            () => {
-              isOpened = true
-              handler({
-                type: 'custom',
-                event: 'vite:ws:connect',
-                data: { webSocket: socket },
-              })
-              resolve()
-            },
-            { once: true },
-          )
-
-          socket.addEventListener('close', async ({ wasClean }) => {
-            if (wasClean) return
-
-            if (!isOpened) {
-              reject(new Error('WebSocket closed without opened.'))
-              return
-            }
-
-            handler({
+      await new Promise<void>((resolve, reject) => {
+        let isOpened = false
+        socket.addEventListener(
+          'open',
+          () => {
+            isOpened = true
+            onMessage({
               type: 'custom',
-              event: 'vite:ws:disconnect',
+              event: 'vite:ws:connect',
               data: { webSocket: socket },
             })
-            onDisconnection()
-          })
-        })
+            resolve()
+          },
+          { once: true },
+        )
 
-        ws = socket
+        socket.addEventListener('close', async ({ wasClean }) => {
+          if (wasClean) return
 
-        // proxy(nginx, docker) hmr ws maybe caused timeout,
-        // so send ping package let ws keep alive.
-        pingIntervalId = setInterval(() => {
-          if (socket.readyState === WebSocket.OPEN) {
-            socket.send('ping')
+          if (!isOpened) {
+            reject(new Error('WebSocket closed without opened.'))
+            return
           }
-        }, pingInterval)
-      },
-      disconnect() {
-        clearInterval(pingIntervalId)
-        ws?.close()
-      },
-      send(data) {
-        ws!.send(JSON.stringify(data))
-      },
-    }
+
+          onMessage({
+            type: 'custom',
+            event: 'vite:ws:disconnect',
+            data: { webSocket: socket },
+          })
+          onDisconnection()
+        })
+      })
+
+      ws = socket
+
+      // proxy(nginx, docker) hmr ws maybe caused timeout,
+      // so send ping package let ws keep alive.
+      pingIntervalId = setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send('ping')
+        }
+      }, pingInterval)
+    },
+    disconnect() {
+      clearInterval(pingIntervalId)
+      ws?.close()
+    },
+    send(data) {
+      ws!.send(JSON.stringify(data))
+    },
   }
+}

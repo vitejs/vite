@@ -11,24 +11,21 @@ if (!parentPort) {
 /** @type {import('worker_threads').MessagePort} */
 const pPort = parentPort
 
-/** @type {import('vite/module-runner').CreateRunnerTransport} */
-const messagePortTransportOptions = ({ onDisconnection }) => {
-  pPort.on('close', onDisconnection)
-
-  return {
-    connect(handler) {
-      pPort.on('message', handler)
-    },
-    send(data) {
-      pPort.postMessage(data)
-    },
-  }
+/** @type {import('vite/module-runner').RunnerTransport} */
+const messagePortTransport = {
+  connect({ onMessage, onDisconnection }) {
+    pPort.on('message', onMessage)
+    pPort.on('close', onDisconnection)
+  },
+  send(data) {
+    pPort.postMessage(data)
+  },
 }
 
 const runner = new ModuleRunner(
   {
     root: fileURLToPath(new URL('./', import.meta.url)),
-    createTransport: messagePortTransportOptions,
+    transport: messagePortTransport,
   },
   new ESModulesEvaluator(),
 )
