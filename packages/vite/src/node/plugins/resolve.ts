@@ -1171,7 +1171,11 @@ function resolveDeepImport(
           `${path.join(dir, 'package.json')}.`,
       )
     }
-  } else if (options.mainFields.includes('browser') && isObject(browserField)) {
+  } else if (
+    options.webCompatible &&
+    options.mainFields.includes('browser') &&
+    isObject(browserField)
+  ) {
     // resolve without postfix (see #7098)
     const { file, postfix } = splitFileAndPostfix(relativeId)
     const mapped = mapWithBrowserField(file, browserField)
