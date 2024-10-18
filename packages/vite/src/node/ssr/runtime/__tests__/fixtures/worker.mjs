@@ -11,7 +11,7 @@ if (!parentPort) {
 /** @type {import('worker_threads').MessagePort} */
 const pPort = parentPort
 
-/** @type {import('vite/module-runner').RunnerTransport} */
+/** @type {import('vite/module-runner').ModuleRunnerTransport} */
 const messagePortTransport = {
   connect({ onMessage, onDisconnection }) {
     pPort.on('message', onMessage)

@@ -4,12 +4,12 @@ export { EvaluatedModules, type EvaluatedModuleNode } from './evaluatedModules'
 export { ModuleRunner } from './runner'
 export { ESModulesEvaluator } from './esmEvaluator'
 
-export { createWebSocketRunnerTransport } from '../shared/runnerTransport'
+export { createWebSocketModuleRunnerTransport } from '../shared/moduleRunnerTransport'
 
 export type {
-  RunnerTransportHandlers,
-  RunnerTransport,
-} from '../shared/runnerTransport'
+  ModuleRunnerTransportHandlers,
+  ModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
 export type { HMRLogger, HMRConnection } from '../shared/hmr'
 export type {
   ModuleEvaluator,

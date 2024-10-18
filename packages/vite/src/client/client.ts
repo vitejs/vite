@@ -3,9 +3,9 @@ import type { ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { HMRClient, HMRContext } from '../shared/hmr'
 import {
-  createWebSocketRunnerTransport,
-  normalizeRunnerTransport,
-} from '../shared/runnerTransport'
+  createWebSocketModuleRunnerTransport,
+  normalizeModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
 import { ErrorOverlay, overlayId } from './overlay'
 import '@vite/env'
 
@@ -36,9 +36,9 @@ const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
 const hmrTimeout = __HMR_TIMEOUT__
 
-const transport = normalizeRunnerTransport(
+const transport = normalizeModuleRunnerTransport(
   (() => {
-    let wsTransport = createWebSocketRunnerTransport({
+    let wsTransport = createWebSocketModuleRunnerTransport({
       protocol: socketProtocol,
       hostAndPort: socketHost,
       pingInterval: hmrTimeout,
@@ -51,7 +51,7 @@ const transport = normalizeRunnerTransport(
         } catch (e) {
           // only use fallback when port is inferred and was not connected before to prevent confusion
           if (!hmrPort) {
-            wsTransport = createWebSocketRunnerTransport({
+            wsTransport = createWebSocketModuleRunnerTransport({
               protocol: socketProtocol,
               hostAndPort: directSocketHost,
               pingInterval: hmrTimeout,

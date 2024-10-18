@@ -12,7 +12,7 @@ import type {
   NormalizedServerHotChannel,
   ServerHotChannel,
 } from '../../server/hmr'
-import type { RunnerTransport } from '../../../shared/runnerTransport'
+import type { ModuleRunnerTransport } from '../../../shared/moduleRunnerTransport'
 
 /**
  * @experimental
@@ -73,9 +73,9 @@ function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
   return prepareStackTrace
 }
 
-export const createServerRunnerTransport = (options: {
+export const createServerModuleRunnerTransport = (options: {
   channel: ServerHotChannel
-}): RunnerTransport => {
+}): ModuleRunnerTransport => {
   const hmrClient: HotChannelClient = {
     send: (payload: HotPayload) => {
       if (payload.type !== 'custom') {
@@ -129,7 +129,7 @@ export function createServerModuleRunner(
     {
       ...options,
       root: environment.config.root,
-      transport: createServerRunnerTransport({
+      transport: createServerModuleRunnerTransport({
         channel: environment.hot as NormalizedServerHotChannel,
       }),
       hmr,

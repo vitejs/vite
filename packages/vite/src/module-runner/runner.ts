@@ -4,9 +4,9 @@ import { HMRClient, HMRContext } from '../shared/hmr'
 import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import {
-  type NormalizedRunnerTransport,
-  normalizeRunnerTransport,
-} from '../shared/runnerTransport'
+  type NormalizedModuleRunnerTransport,
+  normalizeModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
 import type {
@@ -50,7 +50,7 @@ export class ModuleRunner {
       )
     },
   })
-  private readonly transport: NormalizedRunnerTransport
+  private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
   private readonly root: string
   private readonly concurrentModuleNodePromises = new Map<
@@ -68,7 +68,7 @@ export class ModuleRunner {
     const root = this.options.root
     this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
-    this.transport = normalizeRunnerTransport(options.transport)
+    this.transport = normalizeModuleRunnerTransport(options.transport)
     let hmrHandlerForTransport: ((payload: HotPayload) => void) | undefined
     if (typeof options.hmr === 'object') {
       const resolvedHmrLogger =

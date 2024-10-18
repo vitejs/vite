@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid/non-secure'
 import type { CustomPayload, HotPayload } from 'types/hmrPayload'
 import { promiseWithResolvers } from './utils'
 
-export type RunnerTransportHandlers = {
+export type ModuleRunnerTransportHandlers = {
   onMessage: (data: HotPayload) => void
   onDisconnection: () => void
 }
@@ -10,8 +10,8 @@ export type RunnerTransportHandlers = {
 /**
  * "send and connect" or "invoke" must be implemented
  */
-export interface RunnerTransport {
-  connect?(handlers: RunnerTransportHandlers): Promise<void> | void
+export interface ModuleRunnerTransport {
+  connect?(handlers: ModuleRunnerTransportHandlers): Promise<void> | void
   disconnect?(): Promise<void> | void
   send?(data: HotPayload): Promise<void> | void
   invoke?(
@@ -20,14 +20,14 @@ export interface RunnerTransport {
   timeout?: number
 }
 
-type InvokeableRunnerTransport = Omit<RunnerTransport, 'invoke'> &
-  Required<Pick<RunnerTransport, 'send'>> & {
+type InvokeableModuleRunnerTransport = Omit<ModuleRunnerTransport, 'invoke'> &
+  Required<Pick<ModuleRunnerTransport, 'send'>> & {
     invoke(name: string, data: any): any
   }
 
 const createInvokeableTransport = (
-  transport: RunnerTransport,
-): InvokeableRunnerTransport => {
+  transport: ModuleRunnerTransport,
+): InvokeableModuleRunnerTransport => {
   if (transport.invoke) {
     const sendOrInvoke = transport.send ?? transport.invoke
     return {
@@ -137,23 +137,23 @@ const createInvokeableTransport = (
   }
 }
 
-export interface NormalizedRunnerTransport {
+export interface NormalizedModuleRunnerTransport {
   connect?(onMessage?: (data: HotPayload) => void): Promise<void> | void
   disconnect?(): Promise<void> | void
   send(data: HotPayload): void
   invoke(name: string, data: any): any
 }
 
-export const normalizeRunnerTransport = (
-  transport: RunnerTransport,
-): NormalizedRunnerTransport => {
+export const normalizeModuleRunnerTransport = (
+  transport: ModuleRunnerTransport,
+): NormalizedModuleRunnerTransport => {
   const invokeableTransport = createInvokeableTransport(transport)
 
   let isConnected = !invokeableTransport.connect
   let connectingPromise: Promise<void> | undefined
 
   return {
-    ...(transport as Omit<RunnerTransport, 'connect'>),
+    ...(transport as Omit<ModuleRunnerTransport, 'connect'>),
     ...(invokeableTransport.connect
       ? {
           async connect(onMessage) {
@@ -213,13 +213,15 @@ export const normalizeRunnerTransport = (
   }
 }
 
-export const createWebSocketRunnerTransport = (options: {
+export const createWebSocketModuleRunnerTransport = (options: {
   protocol: string
   hostAndPort: string
   pingInterval?: number
   // eslint-disable-next-line n/no-unsupported-features/node-builtins
   WebSocket?: typeof WebSocket
-}): Required<Pick<RunnerTransport, 'connect' | 'disconnect' | 'send'>> => {
+}): Required<
+  Pick<ModuleRunnerTransport, 'connect' | 'disconnect' | 'send'>
+> => {
   const pingInterval = options.pingInterval ?? 30000
   // eslint-disable-next-line n/no-unsupported-features/node-builtins
   const WebSocket = options.WebSocket || globalThis.WebSocket
