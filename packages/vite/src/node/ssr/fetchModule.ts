@@ -49,15 +49,10 @@ export async function fetchModule(
       importer,
       {
         mainFields: ['main'],
-        conditions: [],
+        conditions: [...externalConditions, 'production', 'development'],
         externalConditions,
         external: [],
         noExternal: [],
-        overrideConditions: [
-          ...externalConditions,
-          'production',
-          'development',
-        ],
         extensions: ['.js', '.cjs', '.json'],
         dedupe,
         preserveSymlinks,

@@ -15,8 +15,10 @@ import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
+  DEFAULT_CONDITIONS,
   DEFAULT_CONFIG_FILES,
   DEFAULT_EXTENSIONS,
+  DEFAULT_EXTERNAL_CONDITIONS,
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
@@ -739,8 +741,9 @@ function resolveEnvironmentResolveOptions(
 ): ResolvedAllResolveOptions {
   const resolvedResolve: ResolvedAllResolveOptions = {
     mainFields: resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
-    conditions: resolve?.conditions ?? [],
-    externalConditions: resolve?.externalConditions ?? [],
+    conditions: resolve?.conditions ?? DEFAULT_CONDITIONS,
+    externalConditions:
+      resolve?.externalConditions ?? DEFAULT_EXTERNAL_CONDITIONS,
     external: resolve?.external ?? [],
     noExternal: resolve?.noExternal ?? [],
     extensions: resolve?.extensions ?? DEFAULT_EXTENSIONS,
@@ -1570,11 +1573,10 @@ async function bundleConfigFile(
               preferRelative: false,
               tryIndex: true,
               mainFields: [],
-              conditions: [],
+              conditions: ['node'],
               externalConditions: [],
               external: [],
               noExternal: [],
-              overrideConditions: ['node'],
               dedupe: [],
               extensions: DEFAULT_EXTENSIONS,
               preserveSymlinks: false,

@@ -733,18 +733,10 @@ function tryCleanFsResolve(
   }
 }
 
-export type InternalResolveOptionsWithOverrideConditions =
-  InternalResolveOptions & {
-    /**
-     * @internal
-     */
-    overrideConditions?: string[]
-  }
-
 export function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
-  options: InternalResolveOptionsWithOverrideConditions,
+  options: InternalResolveOptions,
   depsOptimizer?: DepsOptimizer,
   ssr: boolean = false,
   externalize?: boolean,
@@ -1099,35 +1091,31 @@ function packageEntryFailure(id: string, details?: string) {
 function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
-  options: InternalResolveOptionsWithOverrideConditions,
+  options: InternalResolveOptions,
   type: 'imports' | 'exports',
 ) {
-  const additionalConditions = new Set(
-    options.overrideConditions || [
-      'production',
-      'development',
-      'module',
-      ...options.conditions,
-    ],
+  const conditions = [...options.conditions, 'require', 'import'].filter(
+    (condition) => {
+      switch (condition) {
+        case 'production':
+          return options.isProduction
+        case 'development':
+          return !options.isProduction
+        case 'require':
+          return options.isRequire
+        case 'import':
+          return !options.isRequire
+        case 'node':
+          return !options.webCompatible
+        case 'browser':
+          return options.webCompatible
+      }
+      return true
+    },
   )
 
-  const conditions = [...additionalConditions].filter((condition) => {
-    switch (condition) {
-      case 'production':
-        return options.isProduction
-      case 'development':
-        return !options.isProduction
-    }
-    return true
-  })
-
   const fn = type === 'imports' ? imports : exports
-  const result = fn(pkg, key, {
-    browser: options.webCompatible && !additionalConditions.has('node'),
-    require: options.isRequire && !additionalConditions.has('import'),
-    conditions,
-  })
-
+  const result = fn(pkg, key, { conditions, unsafe: true })
   return result ? result[0] : undefined
 }
 
