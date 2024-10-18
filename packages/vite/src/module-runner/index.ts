@@ -10,7 +10,7 @@ export type {
   ModuleRunnerTransportHandlers,
   ModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
-export type { HMRLogger, HMRConnection } from '../shared/hmr'
+export type { HMRLogger } from '../shared/hmr'
 export type {
   ModuleEvaluator,
   ModuleRunnerContext,
@@ -19,7 +19,6 @@ export type {
   FetchFunctionOptions,
   ResolvedResult,
   SSRImportMetadata,
-  ModuleRunnerHMRConnection,
   ModuleRunnerImportMeta,
   ModuleRunnerOptions,
   ModuleRunnerHmr,

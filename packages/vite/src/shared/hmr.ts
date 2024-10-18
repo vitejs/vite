@@ -21,17 +21,6 @@ export interface HMRLogger {
   debug(...msg: unknown[]): void
 }
 
-export interface HMRConnection {
-  /**
-   * Checked before sending messages to the client.
-   */
-  isReady(): boolean
-  /**
-   * Send message to the client.
-   */
-  send(messages: HotPayload): void
-}
-
 export class HMRContext implements ViteHotContext {
   private newListeners: CustomListenersMap
 
