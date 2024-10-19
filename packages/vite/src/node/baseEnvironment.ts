@@ -10,6 +10,19 @@ const environmentColors = [
   colors.gray,
 ]
 
+export function getDefaultResolvedEnvironmentOptions(
+  config: ResolvedConfig,
+): ResolvedEnvironmentOptions {
+  return {
+    define: config.define,
+    resolve: config.resolve,
+    consumer: 'server',
+    webCompatible: false,
+    dev: config.dev,
+    build: config.build,
+  }
+}
+
 export class PartialEnvironment {
   name: string
   getTopLevelConfig(): ResolvedConfig {
@@ -41,6 +54,13 @@ export class PartialEnvironment {
     topLevelConfig: ResolvedConfig,
     options: ResolvedEnvironmentOptions = topLevelConfig.environments[name],
   ) {
+    // only allow some characters so that we can use name without escaping for directory names
+    // and make users easier to access with `environments.*`
+    if (!/^[\w$]+$/.test(name)) {
+      throw new Error(
+        `Invalid environment name "${name}". Environment names must only contain alphanumeric characters and "$", "_".`,
+      )
+    }
     this.name = name
     this._topLevelConfig = topLevelConfig
     this._options = options

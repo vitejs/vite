@@ -10,6 +10,6 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "sirv": "^2.0.4"
+    "sirv": "^3.0.0"
   }
 }

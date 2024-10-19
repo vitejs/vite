@@ -33,7 +33,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
-import { getDefaultResolvedEnvironmentOptions, resolveConfig } from './config'
+import { resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -68,8 +68,11 @@ import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
 import { getHookHandler } from './plugins'
-import { BaseEnvironment } from './baseEnvironment'
-import type { Plugin, PluginContext } from './plugin'
+import {
+  BaseEnvironment,
+  getDefaultResolvedEnvironmentOptions,
+} from './baseEnvironment'
+import type { MinimalPluginContext, Plugin, PluginContext } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
 
 export interface BuildEnvironmentOptions {
@@ -1264,7 +1267,7 @@ function wrapEnvironmentHook<HookName extends keyof Plugin>(
   }
 }
 
-function injectEnvironmentInContext<Context extends PluginContext>(
+function injectEnvironmentInContext<Context extends MinimalPluginContext>(
   context: Context,
   environment: BuildEnvironment,
 ) {
@@ -1584,25 +1587,20 @@ export async function createBuilderWithResolvedConfig(
       }
       const patchPlugins = (resolvedPlugins: Plugin[]) => {
         // Force opt-in shared plugins
-        const environmentPlugins = [...resolvedPlugins]
-        let validMixedPlugins = true
-        for (let i = 0; i < environmentPlugins.length; i++) {
-          const environmentPlugin = environmentPlugins[i]
-          const sharedPlugin = config.plugins[i]
+        let j = 0
+        for (let i = 0; i < resolvedPlugins.length; i++) {
+          const environmentPlugin = resolvedPlugins[i]
           if (
             config.builder.sharedPlugins ||
             environmentPlugin.sharedDuringBuild
           ) {
-            if (environmentPlugin.name !== sharedPlugin.name) {
-              validMixedPlugins = false
-              break
+            for (let k = j; k < config.plugins.length; k++) {
+              if (environmentPlugin.name === config.plugins[k].name) {
+                resolvedPlugins[i] = config.plugins[k]
+                j = k + 1
+                break
+              }
             }
-            environmentPlugins[i] = sharedPlugin
-          }
-        }
-        if (validMixedPlugins) {
-          for (let i = 0; i < environmentPlugins.length; i++) {
-            resolvedPlugins[i] = environmentPlugins[i]
           }
         }
       }

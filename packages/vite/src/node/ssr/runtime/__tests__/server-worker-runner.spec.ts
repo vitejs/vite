@@ -1,8 +1,7 @@
 import { BroadcastChannel, Worker } from 'node:worker_threads'
 import { describe, expect, it, onTestFinished } from 'vitest'
-import { DevEnvironment } from '../../../server/environment'
+import { DevEnvironment, RemoteEnvironmentTransport } from '../../..'
 import { createServer } from '../../../server'
-import { RemoteEnvironmentTransport } from '../../..'
 
 describe('running module runner inside a worker', () => {
   it('correctly runs ssr code', async () => {
@@ -32,7 +31,7 @@ describe('running module runner inside a worker', () => {
           dev: {
             createEnvironment: (name, config) => {
               return new DevEnvironment(name, config, {
-                runner: {
+                remoteRunner: {
                   transport: new RemoteEnvironmentTransport({
                     send: (data) => worker.postMessage(data),
                     onMessage: (handler) => worker.on('message', handler),
