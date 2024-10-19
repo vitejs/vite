@@ -920,10 +920,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // in this case the `bundle` is not populated with the other output files
         // but they are still in `pureCssChunks`.
         // So we need to filter the names and only use those who are defined
-        const pureCssChunkNames = [...pureCssChunks].flatMap((pureCssChunk) => {
-          const chunkName = prelimaryNameToChunkMap[pureCssChunk.fileName]
-          return [chunkName, valueKeyChunkImportMap[chunkName]].filter(Boolean)
-        })
+        const pureCssChunkNames = [...pureCssChunks]
+          .map((pureCssChunk) => {
+            const chunkName = prelimaryNameToChunkMap[pureCssChunk.fileName]
+            return config.build.chunkImportMap
+              ? valueKeyChunkImportMap[chunkName]
+              : chunkName
+          })
+          .filter(Boolean)
 
         const replaceEmptyChunk = getEmptyChunkReplacer(
           pureCssChunkNames,
