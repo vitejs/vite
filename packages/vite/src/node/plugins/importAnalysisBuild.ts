@@ -78,7 +78,6 @@ function detectScriptRel() {
 
 declare const scriptRel: string
 declare const seen: Record<string, boolean>
-declare const chunkImportMapFilePairs: [string, string][]
 function preload(
   baseModule: () => Promise<unknown>,
   deps?: string[],
@@ -101,11 +100,9 @@ function preload(
       deps.map((dep) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
+        dep = import.meta.resolve(dep)
         if (dep in seen) return
         seen[dep] = true
-        chunkImportMapFilePairs.forEach(([k, v]) => {
-          dep = dep.replace(k, v)
-        })
         const isCss = dep.endsWith('.css')
         const cssSelector = isCss ? '[rel="stylesheet"]' : ''
         const isBaseRelative = !!importerUrl
@@ -123,7 +120,9 @@ function preload(
             }
           }
         } else if (
-          document.querySelector(`link[href="${dep}"]${cssSelector}`)
+          document.querySelector(
+            `link[href="${new URL(dep).pathname}"]${cssSelector}`,
+          )
         ) {
           return
         }
@@ -217,24 +216,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               // is appended inside __vitePreload too.
               `function(dep) { return ${JSON.stringify(config.base)}+dep }`
 
-        const chunkImportMapFilePairs = () => {
-          const importMapString = document.head.querySelector(
-            'script[type="importmap"]',
-          )?.textContent
-          const importMap: Record<string, string> = importMapString
-            ? JSON.parse(importMapString).imports
-            : {}
-          return Object.entries(importMap)
-            .map(([k, v]) => {
-              const key = /[^/]+\.js$/.exec(k)
-              const value = /[^/]+\.js$/.exec(v)
-              if (!key || !value) return null
-              return [key[0], value[0]]
-            })
-            .filter(Boolean) as [string, string][]
-        }
-
-        const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};const chunkImportMapFilePairs = (${chunkImportMapFilePairs.toString()})();export const ${preloadMethod} = ${preload.toString()}`
+        const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
         return { code: preloadCode, moduleSideEffects: false }
       }
     },
