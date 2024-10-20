@@ -64,13 +64,13 @@ export function chunkImportMapPlugin(): Plugin {
         )
       })
 
-      const codeProcessed = augmentFacadeModuleIdHash(code)
-      return {
-        code: codeProcessed,
-        map: new MagicString(codeProcessed).generateMap({
-          hires: 'boundary',
-        }),
-      }
+      const s = new MagicString(code)
+      // note that MagicString::replace is used instead of String::replace
+      s.replace(
+        hashPlaceholderRE,
+        (match) => hashPlaceholderToFacadeModuleIdHashMap.get(match) ?? match,
+      )
+      return { code: s.toString(), map: s.generateMap({ hires: 'boundary' }) }
     },
   }
 }
