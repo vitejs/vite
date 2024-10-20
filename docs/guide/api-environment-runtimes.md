@@ -228,7 +228,7 @@ export interface ModuleEvaluator {
 
 Vite exports `ESModulesEvaluator` that implements this interface by default. It uses `new AsyncFunction` to evaluate code, so if the code has inlined source map it should contain an [offset of 2 lines](https://tc39.es/ecma262/#sec-createdynamicfunction) to accommodate for new lines added. This is done automatically by the `ESModulesEvaluator`. Custom evaluators will not add additional lines.
 
-## RunnerTransport
+## ModuleRunnerTransport
 
 **Type Signature:**
 
