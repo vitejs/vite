@@ -53,6 +53,7 @@ export interface ESBuildOptions extends TransformOptions {
    * This option is not respected. Use `build.minify` instead.
    */
   minify?: never
+  legalComments?: 'none' | 'inline' | 'eof' | 'linked' | 'external'
 }
 
 export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
@@ -165,12 +166,17 @@ export async function transformWithEsbuild(
   }
 
   const resolvedOptions: TransformOptions = {
+    legalComments: 'linked',
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
     ...options,
     loader,
     tsconfigRaw,
+  }
+
+  if (resolvedOptions.legalComments === 'linked') {
+    resolvedOptions.legalComments = 'external'
   }
 
   // Some projects in the ecosystem are calling this function with an ESBuildOptions
@@ -303,6 +309,8 @@ const rollupToEsbuildFormatMap: Record<
 }
 
 export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
+  const collectLegalComments: string[] = []
+
   return {
     name: 'vite:esbuild-transpile',
     async renderChunk(code, chunk, opts) {
@@ -318,6 +326,10 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       }
 
       const res = await transformWithEsbuild(code, chunk.fileName, options)
+
+      if (res.legalComments) {
+        collectLegalComments.push(res.legalComments)
+      }
 
       if (config.build.lib) {
         // #7188, esbuild adds helpers out of the UMD and IIFE wrappers, and the
@@ -347,6 +359,36 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
       }
 
       return res
+    },
+
+    generateBundle(options, bundle) {
+      if (collectLegalComments.length && options.dir) {
+        const referenceId = this.emitFile({
+          name: 'LEGAL.txt',
+          type: 'asset',
+          source: collectLegalComments.join('\n'),
+        })
+
+        if (config.esbuild && config.esbuild.legalComments === 'linked') {
+          const legalCommentsFileName = this.getFileName(referenceId)
+          const linkedComments = `/*! For license information please see ${legalCommentsFileName} */`
+
+          for (const file in bundle) {
+            const chunk = bundle[file]
+
+            if (
+              chunk.fileName.endsWith('.css') ||
+              chunk.fileName.endsWith('.js')
+            ) {
+              if (chunk.type === 'asset') {
+                chunk.source += linkedComments
+              } else if (chunk.type === 'chunk') {
+                chunk.code += linkedComments
+              }
+            }
+          }
+        }
+      }
     },
   }
 }
