@@ -628,6 +628,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   ]
                 }
 
+                if (config.build.chunkImportMap) {
+                  depsArray = depsArray.map((dep) => {
+                    valueKeyChunkImportMapFilePairs.forEach(([v, k]) => {
+                      dep = dep.replace(v, k)
+                    })
+                    return dep
+                  })
+                }
+
                 let renderedDeps: number[]
                 if (renderBuiltUrl) {
                   renderedDeps = depsArray.map((dep) => {
@@ -670,13 +679,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (fileDeps.length > 0) {
             const fileDepsCode = `[${fileDeps
-              .map((fileDep) => {
-                let url = fileDep.url
-                valueKeyChunkImportMapFilePairs.forEach(([v, k]) => {
-                  url = url.replace(v, k)
-                })
-                return fileDep.runtime ? url : JSON.stringify(url)
-              })
+              .map((fileDep) =>
+                fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url),
+              )
               .join(',')}]`
 
             const mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
