@@ -3,7 +3,7 @@ import type { FetchResult } from 'vite/module-runner'
 import type { EnvironmentModuleNode, TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import { isWindows, slash, unwrapId } from '../../shared/utils'
+import { unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
   SOURCEMAPPING_URL,
@@ -37,13 +37,9 @@ export async function fetchModule(
     return { externalize: url, type: 'network' }
   }
 
-  // support 'file://' by default like node, but this is a different behavior from browser
-  url = slash(url)
-  const isFileUrl = url.startsWith('file://')
-
   // if there is no importer, the file is an entry point
   // entry points are always internalized
-  if (!isFileUrl && importer && url[0] !== '.' && url[0] !== '/') {
+  if (importer && url[0] !== '.' && url[0] !== '/') {
     const { isProduction, root } = environment.config
     const { externalConditions, dedupe, preserveSymlinks } =
       environment.config.resolve
@@ -86,13 +82,6 @@ export async function fetchModule(
       ? 'module'
       : 'commonjs'
     return { externalize: file, type }
-  }
-
-  // file:///root/id.js -> /root/id.js
-  // file:///C:/root/id.js -> C:/root/id.js
-  if (isFileUrl) {
-    // 8 is the length of "file:///"
-    url = url.slice(isWindows ? 8 : 7)
   }
 
   // this is an entry point module, very high chance it's not resolved yet

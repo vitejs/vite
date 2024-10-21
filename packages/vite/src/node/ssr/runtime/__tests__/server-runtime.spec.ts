@@ -14,12 +14,8 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('/fixtures/simple.js')
     expect(mod.test).toEqual('I am initialized')
 
-    // loads the same module if id is a file url
-    const fileUrl = new _URL('./fixtures/simple.js', import.meta.url)
-    const mod2 = await runner.import(fileUrl.toString())
-    expect(mod).toBe(mod2)
-
     // loads the same module if id is a file path
+    const fileUrl = new _URL('./fixtures/simple.js', import.meta.url)
     const filePath = fileURLToPath(fileUrl)
     const mod3 = await runner.import(filePath)
     expect(mod).toBe(mod3)
@@ -170,7 +166,6 @@ describe('module runner initialization', async () => {
     expect(modules.static).toBe(modules.dynamicAbsolute)
     expect(modules.static).toBe(modules.dynamicAbsoluteExtension)
     expect(modules.static).toBe(modules.dynamicAbsoluteFull)
-    expect(modules.static).toBe(modules.dynamicAbsoluteFullUrl)
   })
 
   it('correctly imports a virtual module', async ({ runner }) => {
