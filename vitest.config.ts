@@ -14,8 +14,7 @@ export default defineConfig({
       './playground-temp/**/*.*',
     ],
     testTimeout: 20000,
-    // TODO: why macos fail
-    // isolate: false,
+    isolate: false,
   },
   esbuild: {
     target: 'node18',
