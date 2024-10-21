@@ -20,6 +20,7 @@ import {
 } from '../optimizer/optimizer'
 import { resolveEnvironmentPlugins } from '../plugin'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
+import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel } from './hmr'
@@ -33,6 +34,7 @@ import {
 } from './pluginContainer'
 import type { RemoteEnvironmentTransport } from './environmentTransport'
 import { isWebSocketServer } from './ws'
+import { warmupFiles } from './warmup'
 
 export interface DevEnvironmentContext {
   hot: false | HotChannel
@@ -149,7 +151,15 @@ export class DevEnvironment extends BaseEnvironment {
     }
   }
 
-  async init(options?: { watcher?: FSWatcher }): Promise<void> {
+  async init(options?: {
+    watcher?: FSWatcher
+    /**
+     * the previous instance used for the environment with the same name
+     *
+     * when using, the consumer should check if it's an instance generated from the same class or factory function
+     */
+    previousInstance?: DevEnvironment
+  }): Promise<void> {
     if (this._initiated) {
       return
     }
@@ -160,6 +170,18 @@ export class DevEnvironment extends BaseEnvironment {
       this._plugins,
       options?.watcher,
     )
+  }
+
+  /**
+   * When the dev server is restarted, the methods are called in the following order:
+   * - new instance `init`
+   * - previous instance `close`
+   * - new instance `listen`
+   */
+  async listen(server: ViteDevServer): Promise<void> {
+    this.hot.listen()
+    await this.depsOptimizer?.init()
+    warmupFiles(server, this)
   }
 
   fetchModule(

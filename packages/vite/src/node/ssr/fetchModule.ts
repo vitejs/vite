@@ -69,7 +69,6 @@ export async function fetchModule(
         isProduction,
         root,
         packageCache: environment.config.packageCache,
-        tryEsmOnly: true,
         webCompatible: environment.config.webCompatible,
       },
       undefined,

@@ -1,21 +1,22 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import glob from 'fast-glob'
 import colors from 'picocolors'
+import { glob } from 'tinyglobby'
 import { FS_PREFIX } from '../constants'
 import { normalizePath } from '../utils'
 import type { ViteDevServer } from '../index'
 import type { DevEnvironment } from './environment'
 
-export function warmupFiles(server: ViteDevServer): void {
+export function warmupFiles(
+  server: ViteDevServer,
+  environment: DevEnvironment,
+): void {
   const { root } = server.config
-  for (const environment of Object.values(server.environments)) {
-    mapFiles(environment.config.dev.warmup, root).then((files) => {
-      for (const file of files) {
-        warmupFile(server, environment, file)
-      }
-    })
-  }
+  mapFiles(environment.config.dev.warmup, root).then((files) => {
+    for (const file of files) {
+      warmupFile(server, environment, file)
+    }
+  })
 }
 
 async function warmupFile(
@@ -71,7 +72,8 @@ function fileToUrl(file: string, root: string) {
 
 function mapFiles(files: string[], root: string) {
   return glob(files, {
-    cwd: root,
     absolute: true,
+    cwd: root,
+    expandDirectories: false,
   })
 }
