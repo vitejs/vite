@@ -74,7 +74,7 @@
     "simple-git-hooks": "^2.11.1",
     "tslib": "^2.8.0",
     "tsx": "^4.19.1",
-    "typescript": "^5.6.2",
+    "typescript": "~5.6.2",
     "typescript-eslint": "^8.10.0",
     "vite": "workspace:*",
     "vitest": "^2.1.3"
