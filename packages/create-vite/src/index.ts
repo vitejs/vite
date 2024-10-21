@@ -261,8 +261,8 @@ const FRAMEWORKS: Framework[] = [
         customCommand: 'npx -p @angular/cli@latest ng new TARGET_DIR',
       },
       {
-        name: 'custom-analog-js',
-        display: 'Analog.js ↗',
+        name: 'custom-analog',
+        display: 'Analog ↗',
         color: yellow,
         customCommand: 'npm create analog@latest TARGET_DIR',
       },
