@@ -7,8 +7,6 @@ import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
   CLIENT_ENTRY,
-  DEFAULT_EXTENSIONS,
-  DEFAULT_MAIN_FIELDS,
   DEP_VERSION_RE,
   ENV_ENTRY,
   FS_PREFIX,
@@ -126,7 +124,6 @@ interface ResolvePluginOptions {
   // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
   // should also try import from `.ts/tsx/mts/cts` source file as fallback.
   isFromTsImporter?: boolean
-  tryEsmOnly?: boolean
   // True when resolving during the scan phase to discover dependencies
   scan?: boolean
   // Appends ?__vite_skip_optimization to the resolved id if shouldn't be optimized
@@ -490,7 +487,7 @@ export function resolvePlugin(
             } else if (isProduction) {
               this.warn(
                 `Module "${id}" has been externalized for browser compatibility, imported by "${importer}". ` +
-                  `See https://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
+                  `See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
               )
             }
             return isProduction
@@ -512,7 +509,7 @@ export function resolvePlugin(
           return `\
 export default new Proxy({}, {
   get(_, key) {
-    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.  See https://vitejs.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
+    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.  See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
   }
 })`
         }
@@ -818,22 +815,7 @@ export function tryNodeResolve(
   const resolveId = deepMatch ? resolveDeepImport : resolvePackageEntry
   const unresolvedId = deepMatch ? '.' + id.slice(pkgId.length) : id
 
-  let resolved: string | undefined
-  try {
-    resolved = resolveId(unresolvedId, pkg, options)
-  } catch (err) {
-    if (!options.tryEsmOnly) {
-      throw err
-    }
-  }
-  if (!resolved && options.tryEsmOnly) {
-    resolved = resolveId(unresolvedId, pkg, {
-      ...options,
-      isRequire: false,
-      mainFields: DEFAULT_MAIN_FIELDS,
-      extensions: DEFAULT_EXTENSIONS,
-    })
-  }
+  let resolved = resolveId(unresolvedId, pkg, options)
   if (!resolved) {
     return
   }
@@ -1022,7 +1004,7 @@ export function resolvePackageEntry(
 ): string | undefined {
   const { file: idWithoutPostfix, postfix } = splitFileAndPostfix(id)
 
-  const cached = getResolvedCache('.', !!options.webCompatible)
+  const cached = getResolvedCache('.', options)
   if (cached) {
     return cached + postfix
   }
@@ -1094,7 +1076,7 @@ export function resolvePackageEntry(
             resolvedEntryPoint,
           )}${postfix !== '' ? ` (postfix: ${postfix})` : ''}`,
         )
-        setResolvedCache('.', resolvedEntryPoint, !!options.webCompatible)
+        setResolvedCache('.', resolvedEntryPoint, options)
         return resolvedEntryPoint + postfix
       }
     }
@@ -1151,16 +1133,10 @@ function resolveExportsOrImports(
 
 function resolveDeepImport(
   id: string,
-  {
-    webResolvedImports,
-    setResolvedCache,
-    getResolvedCache,
-    dir,
-    data,
-  }: PackageData,
+  { setResolvedCache, getResolvedCache, dir, data }: PackageData,
   options: InternalResolveOptions,
 ): string | undefined {
-  const cache = getResolvedCache(id, !!options.webCompatible)
+  const cache = getResolvedCache(id, options)
   if (cache) {
     return cache
   }
@@ -1200,7 +1176,8 @@ function resolveDeepImport(
     if (mapped) {
       relativeId = mapped + postfix
     } else if (mapped === false) {
-      return (webResolvedImports[id] = browserExternalId)
+      setResolvedCache(id, browserExternalId, options)
+      return browserExternalId
     }
   }
 
@@ -1214,7 +1191,7 @@ function resolveDeepImport(
       debug?.(
         `[node/deep-import] ${colors.cyan(id)} -> ${colors.dim(resolved)}`,
       )
-      setResolvedCache(id, resolved, !!options.webCompatible)
+      setResolvedCache(id, resolved, options)
       return resolved
     }
   }

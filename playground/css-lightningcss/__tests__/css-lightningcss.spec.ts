@@ -70,7 +70,7 @@ test.runIf(isBuild)('minify css', async () => {
 
 test('css with external url', async () => {
   const css = await page.$('.external')
-  expect(await getBg(css)).toMatch('url("https://vitejs.dev/logo.svg")')
+  expect(await getBg(css)).toMatch('url("https://vite.dev/logo.svg")')
 })
 
 test('nested css with relative asset', async () => {

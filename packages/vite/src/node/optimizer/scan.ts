@@ -2,7 +2,6 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import glob from 'fast-glob'
 import type {
   BuildContext,
   Loader,
@@ -13,6 +12,7 @@ import type {
 import esbuild, { formatMessages, transform } from 'esbuild'
 import type { PartialResolvedId } from 'rollup'
 import colors from 'picocolors'
+import { glob, isDynamicPattern } from 'tinyglobby'
 import {
   CSS_LANGS_RE,
   JS_TYPES_RE,
@@ -332,12 +332,13 @@ function orderedDependencies(deps: Record<string, string>) {
 
 function globEntries(pattern: string | string[], environment: ScanEnvironment) {
   const resolvedPatterns = arraify(pattern)
-  if (resolvedPatterns.every((str) => !glob.isDynamicPattern(str))) {
+  if (resolvedPatterns.every((str) => !isDynamicPattern(str))) {
     return resolvedPatterns.map((p) =>
       normalizePath(path.resolve(environment.config.root, p)),
     )
   }
   return glob(pattern, {
+    absolute: true,
     cwd: environment.config.root,
     ignore: [
       '**/node_modules/**',
@@ -347,8 +348,6 @@ function globEntries(pattern: string | string[], environment: ScanEnvironment) {
         ? []
         : [`**/__tests__/**`, `**/coverage/**`]),
     ],
-    absolute: true,
-    suppressErrors: true, // suppress EACCES errors
   })
 }
 
