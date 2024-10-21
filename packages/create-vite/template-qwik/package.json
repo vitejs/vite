@@ -9,7 +9,7 @@
     "preview": "serve dist"
   },
   "devDependencies": {
-    "serve": "^14.2.3",
+    "serve": "^14.2.4",
     "vite": "^5.4.9"
   },
   "dependencies": {
