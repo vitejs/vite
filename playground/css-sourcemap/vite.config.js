@@ -32,7 +32,7 @@ export default defineConfig({
         },
       },
       sass: {
-        silenceDeprecations: ['legacy-js-api'],
+        silenceDeprecations: ['legacy-js-api', 'import'],
       },
     },
   },
