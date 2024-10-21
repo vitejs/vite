@@ -2567,8 +2567,7 @@ async function rebaseUrls(
     }
     const absolute =
       (await resolver(environment, url, file)) || path.resolve(fileDir, url)
-    const relative = path.relative(rootDir, absolute)
-    return normalizePath(relative)
+    return normalizePath(absolute)
   }
 
   // fix css imports in less such as `@import "foo.css"`
@@ -2606,7 +2605,7 @@ const makeLessWorker = (
     const resolved = await resolvers.less(
       environment,
       filename,
-      rootFile,
+      path.join(dir, '*'),
     )
     if (!resolved) return undefined
 
