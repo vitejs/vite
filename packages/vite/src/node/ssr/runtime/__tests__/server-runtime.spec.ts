@@ -294,3 +294,46 @@ describe('resolveId absolute path entry', async () => {
     expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
   })
 })
+
+describe('resolve file url via plugin', async () => {
+  const it = await createModuleRunnerTester({
+    plugins: [
+      {
+        name: 'virtual-re-export-file-url',
+        resolveId(source) {
+          if (source === 'virtual:test-dep') {
+            return '\0' + source
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test-dep') {
+            const fileUrl = new URL('./fixtures/simple.js', import.meta.url)
+            return `export { test } from ${JSON.stringify(fileUrl.href)}`
+          }
+        },
+      },
+      {
+        name: 'resolve-file-url',
+        resolveId(source) {
+          if (source.startsWith('file://')) {
+            return fileURLToPath(new URL(source))
+          }
+        },
+      },
+    ],
+  })
+
+  it('entry', async ({ runner }) => {
+    const mod = await runner.import('/fixtures/simple.js')
+    expect(mod.test).toEqual('I am initialized')
+
+    const fileUrl = new _URL('./fixtures/simple.js', import.meta.url)
+    const mod2 = await runner.import(fileUrl.toString())
+    expect(mod).toBe(mod2)
+  })
+
+  it('dep', async ({ runner }) => {
+    const mod = await runner.import('virtual:test-dep')
+    expect(mod.test).toMatchInlineSnapshot(`"I am initialized"`)
+  })
+})
