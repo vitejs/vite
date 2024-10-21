@@ -34,7 +34,7 @@ export default defineConfig({
             },
             load() {
               return {
-                contents: `@import "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
+                contents: `@use "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
                 syntax: 'scss',
               }
             },
