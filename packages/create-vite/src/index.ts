@@ -255,9 +255,15 @@ const FRAMEWORKS: Framework[] = [
     color: red,
     variants: [
       {
+        name: 'custom-angular',
+        display: 'Angular ↗',
+        color: red,
+        customCommand: 'npx -p @angular/cli@latest ng new TARGET_DIR',
+      },
+      {
         name: 'custom-analog-js',
         display: 'Analog.js ↗',
-        color: red,
+        color: yellow,
         customCommand: 'npm create analog@latest TARGET_DIR',
       },
     ],
