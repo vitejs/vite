@@ -250,6 +250,19 @@ const FRAMEWORKS: Framework[] = [
     ],
   },
   {
+    name: 'angular',
+    display: 'Angular',
+    color: red,
+    variants: [
+      {
+        name: 'custom-analog-js',
+        display: 'Analog.js ↗',
+        color: red,
+        customCommand: 'npm create analog@latest TARGET_DIR',
+      },
+    ],
+  },
+  {
     name: 'others',
     display: 'Others',
     color: reset,
