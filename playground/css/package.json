@@ -23,8 +23,8 @@
     "@vitejs/test-scss-proxy-dep": "file:./scss-proxy-dep",
     "less": "^4.2.0",
     "postcss-nested": "^6.2.0",
-    "sass": "^1.79.5",
-    "stylus": "^0.63.0",
+    "sass": "^1.80.3",
+    "stylus": "^0.64.0",
     "sugarss": "^4.0.1",
     "tinyglobby": "^0.2.9"
   },
