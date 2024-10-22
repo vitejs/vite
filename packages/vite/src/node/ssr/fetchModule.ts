@@ -37,9 +37,13 @@ export async function fetchModule(
     return { externalize: url, type: 'network' }
   }
 
+  // handle raw file urls, which are not noramlized by import analysis
+  // (this can happen for runner import entry or non static import)
+  const isFileUrl = url.startsWith('file://')
+
   // if there is no importer, the file is an entry point
   // entry points are always internalized
-  if (importer && url[0] !== '.' && url[0] !== '/') {
+  if (!isFileUrl && importer && url[0] !== '.' && url[0] !== '/') {
     const { isProduction, root } = environment.config
     const { externalConditions, dedupe, preserveSymlinks } =
       environment.config.resolve
@@ -86,7 +90,7 @@ export async function fetchModule(
 
   // this is an entry point module, very high chance it's not resolved yet
   // for example: runner.import('./some-file') or runner.import('/some-file')
-  if (!importer) {
+  if (isFileUrl || !importer) {
     const resolved = await environment.pluginContainer.resolveId(url)
     if (!resolved) {
       throw new Error(`[vite] cannot find entry point module '${url}'.`)

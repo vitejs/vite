@@ -290,45 +290,49 @@ describe('resolveId absolute path entry', async () => {
   })
 })
 
-describe('resolve file url via plugin', async () => {
+describe('resolve file url', async () => {
+  const fileUrl = new URL('./fixtures/simple.js', import.meta.url)
+
   const it = await createModuleRunnerTester({
     plugins: [
       {
         name: 'virtual-re-export-file-url',
         resolveId(source) {
-          if (source === 'virtual:test-dep') {
+          if (source.startsWith('virtual:test-dep/')) {
             return '\0' + source
           }
         },
         load(id) {
-          if (id === '\0virtual:test-dep') {
-            const fileUrl = new URL('./fixtures/simple.js', import.meta.url)
-            return `export { test } from ${JSON.stringify(fileUrl.href)}`
+          if (id === '\0virtual:test-dep/static') {
+            return `
+              import * as dep from ${JSON.stringify(fileUrl.href)};
+              export default dep;
+            `
           }
-        },
-      },
-      {
-        name: 'resolve-file-url',
-        resolveId(source) {
-          if (source.startsWith('file://')) {
-            return fileURLToPath(new URL(source))
+          if (id === '\0virtual:test-dep/non-static') {
+            return `
+              const dep = await import(/* @vite-ignore */ String(${JSON.stringify(fileUrl.href)}));
+              export default dep;
+            `
           }
         },
       },
     ],
   })
 
-  it('entry', async ({ runner }) => {
+  it('dev', async ({ runner }) => {
     const mod = await runner.import('/fixtures/simple.js')
     expect(mod.test).toEqual('I am initialized')
 
-    const fileUrl = new _URL('./fixtures/simple.js', import.meta.url)
-    const mod2 = await runner.import(fileUrl.toString())
-    expect(mod).toBe(mod2)
+    const mod2 = await runner.import(fileUrl.href)
+    expect(mod2).toBe(mod)
+
+    const mod3 = await runner.import('virtual:test-dep/static')
+    expect(mod3.default).toBe(mod)
+
+    const mod4 = await runner.import('virtual:test-dep/non-static')
+    expect(mod4.default).toBe(mod)
   })
 
-  it('dep', async ({ runner }) => {
-    const mod = await runner.import('virtual:test-dep')
-    expect(mod.test).toMatchInlineSnapshot(`"I am initialized"`)
-  })
+  // TODO: test build
 })

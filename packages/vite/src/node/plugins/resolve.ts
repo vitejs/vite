@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
 import { exports, imports } from 'resolve.exports'
@@ -380,6 +381,14 @@ export function resolvePlugin(
           debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
           return ensureVersionQuery(res, id, options, ssr, depsOptimizer)
         }
+      }
+
+      // file url as path
+      if (
+        currentEnvironmentOptions.consumer === 'server' &&
+        id.startsWith('file://')
+      ) {
+        id = fileURLToPath(id)
       }
 
       // absolute fs paths
