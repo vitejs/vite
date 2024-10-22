@@ -86,6 +86,8 @@ export class ModuleRunner {
         )
       }
       this.transport.connect(createHMRHandler(this))
+    } else {
+      this.transport.connect?.()
     }
     if (options.sourcemapInterceptor !== false) {
       this.resetSourceMapSupport = enableSourceMapSupport(this)
