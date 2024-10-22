@@ -132,7 +132,9 @@ export class DevEnvironment extends BaseEnvironment {
         : normalizeHotChannel(context.transport)
       : createNoopHotChannel()
     this.hot.on('vite:fetchModule', async (data, client, invoke) => {
-      if (!invoke) return
+      if (!invoke) {
+        throw new Error('vite:fetchModule should be invoked instead of a sent')
+      }
 
       try {
         const result = await this.fetchModule(
