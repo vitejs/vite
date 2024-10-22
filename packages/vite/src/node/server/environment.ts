@@ -131,26 +131,16 @@ export class DevEnvironment extends BaseEnvironment {
         ? context.transport
         : normalizeHotChannel(context.transport)
       : createNoopHotChannel()
-    this.hot.on('vite:fetchModule', async (data, client, invoke) => {
-      if (!invoke) {
-        throw new Error('vite:fetchModule should be invoked instead of a sent')
-      }
 
-      try {
-        const result = await this.fetchModule(
-          ...(data as [string, string | undefined, any]),
-        )
-        client.respond('vite:fetchModule', invoke, { r: result })
-      } catch (error) {
-        client.respond('vite:fetchModule', invoke, {
-          e: {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-          },
-        })
-      }
-    })
+    for (const [event, handler] of Object.entries(this.getInvokeHandlers())) {
+      this.hot.on(event, async (data, client, invoke) => {
+        if (!invoke) {
+          throw new Error(`${event} should be invoked instead of a sent`)
+        }
+        const result = await handler(data)
+        client.respond(event, invoke, result)
+      })
+    }
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {
@@ -210,6 +200,30 @@ export class DevEnvironment extends BaseEnvironment {
     this.hot.listen()
     await this.depsOptimizer?.init()
     warmupFiles(server, this)
+  }
+
+  getInvokeHandlers(): Record<
+    string,
+    (data: any) => Promise<{ r: any } | { e: any }>
+  > {
+    return {
+      'vite:fetchModule': async (data) => {
+        try {
+          const result = await this.fetchModule(
+            ...(data as [string, string | undefined, any]),
+          )
+          return { r: result }
+        } catch (error) {
+          return {
+            e: {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            },
+          }
+        }
+      },
+    }
   }
 
   fetchModule(

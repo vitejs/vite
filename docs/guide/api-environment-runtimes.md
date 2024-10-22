@@ -228,7 +228,7 @@ export interface ModuleEvaluator {
 
 Vite exports `ESModulesEvaluator` that implements this interface by default. It uses `new AsyncFunction` to evaluate code, so if the code has inlined source map it should contain an [offset of 2 lines](https://tc39.es/ecma262/#sec-createdynamicfunction) to accommodate for new lines added. This is done automatically by the `ESModulesEvaluator`. Custom evaluators will not add additional lines.
 
-## ModuleRunnerTransport
+## `ModuleRunnerTransport`
 
 **Type Signature:**
 
@@ -356,6 +356,22 @@ export const runner = new ModuleRunner(
 )
 
 await runner.import('/entry.js')
+```
+
+In this case, the server that handles those HTTP request can use `environment.getInvokeHandlers()` to process those requests:
+
+```ts
+server.onRequest((request: Request) => {
+  const payload = (await request.json()) as CustomPayload
+  if (payload.type !== 'custom') return
+
+  for (const [event, handler] of Object.entries(invokeHandlers)) {
+    if (payload.event === event) {
+      const result = await handler(payload.data)
+      return new Response(JSON.stringify(result))
+    }
+  }
+})
 ```
 
 But note that for HMR support, `send` and `connect` methods are required. The `send` method is usually called when the custom event is triggered (like, `import.meta.hot.send("my-event")`).
