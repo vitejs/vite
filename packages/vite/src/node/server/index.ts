@@ -277,7 +277,7 @@ export interface ViteDevServer {
   /**
    * Module execution environments attached to the Vite server.
    */
-  environments: Record<'client' | 'ssr' | (string & {}), DevEnvironment>
+  environments: Record<'$client' | '$ssr' | (string & {}), DevEnvironment>
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -508,8 +508,8 @@ export async function _createServer(
   // Backward compatibility
 
   let moduleGraph = new ModuleGraph({
-    client: () => environments.client.moduleGraph,
-    ssr: () => environments.ssr.moduleGraph,
+    client: () => environments.$client.moduleGraph,
+    ssr: () => environments.$ssr.moduleGraph,
   })
   const pluginContainer = createPluginContainer(environments)
 
@@ -555,12 +555,13 @@ export async function _createServer(
         'removeServerTransformRequest',
         'server.transformRequest() is deprecated. Use environment.transformRequest() instead.',
       )
-      const environment = server.environments[options?.ssr ? 'ssr' : 'client']
+      const environment = server.environments[options?.ssr ? '$ssr' : '$client']
       return transformRequest(environment, url, options)
     },
     async warmupRequest(url, options) {
       try {
-        const environment = server.environments[options?.ssr ? 'ssr' : 'client']
+        const environment =
+          server.environments[options?.ssr ? '$ssr' : '$client']
         await transformRequest(environment, url, options)
       } catch (e) {
         if (
@@ -585,10 +586,10 @@ export async function _createServer(
       return ssrLoadModule(url, server, opts?.fixStacktrace)
     },
     ssrFixStacktrace(e) {
-      ssrFixStacktrace(e, server.environments.ssr.moduleGraph)
+      ssrFixStacktrace(e, server.environments.$ssr.moduleGraph)
     },
     ssrRewriteStacktrace(stack: string) {
-      return ssrRewriteStacktrace(stack, server.environments.ssr.moduleGraph)
+      return ssrRewriteStacktrace(stack, server.environments.$ssr.moduleGraph)
     },
     async reloadModule(module) {
       if (serverConfig.hmr !== false && module.file) {
@@ -706,7 +707,7 @@ export async function _createServer(
     },
 
     waitForRequestsIdle(ignoredId?: string): Promise<void> {
-      return environments.client.waitForRequestsIdle(ignoredId)
+      return environments.$client.waitForRequestsIdle(ignoredId)
     },
 
     _setInternalServer(_server: ViteDevServer) {
@@ -764,7 +765,7 @@ export async function _createServer(
         const path = file.slice(publicDir.length)
         publicFiles[isUnlink ? 'delete' : 'add'](path)
         if (!isUnlink) {
-          const clientModuleGraph = server.environments.client.moduleGraph
+          const clientModuleGraph = server.environments.$client.moduleGraph
           const moduleWithSamePath =
             await clientModuleGraph.getModuleByUrl(path)
           const etag = moduleWithSamePath?.transformResult?.etag
@@ -913,7 +914,7 @@ export async function _createServer(
       // For backward compatibility, we call buildStart for the client
       // environment when initing the server. For other environments
       // buildStart will be called when the first request is transformed
-      await environments.client.pluginContainer.buildStart()
+      await environments.$client.pluginContainer.buildStart()
 
       // ensure ws server started
       if (onListen || options.listen) {

@@ -31,8 +31,8 @@ class ModuleRunner {
    */
 }
 
-if (isRunnableDevEnvironment(server.environments.ssr)) {
-  await server.environments.ssr.runner.import('/entry-point.js')
+if (isRunnableDevEnvironment(server.environments.$ssr)) {
+  await server.environments.$ssr.runner.import('/entry-point.js')
 }
 ```
 
@@ -50,16 +50,14 @@ import { createServer } from 'vite'
 const server = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
-  environments: {
-    server: {
-      // by default, the modules are run in the same process as the vite dev server during dev
-    },
+  $server: {
+    // by default, the modules are run in the same process as the vite dev server during dev
   },
 })
 
 // You might need to cast this to RunnableDevEnvironment in TypeScript or use
 // the "isRunnableDevEnvironment" function to guard the access to the runner
-const environment = server.environments.node
+const environment = server.environments.$server
 
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
@@ -109,7 +107,7 @@ For example, the following example uses the value of the user module from the co
 import { createServer } from 'vite'
 
 const server = createServer()
-const ssrEnvironment = server.environment.ssr
+const ssrEnvironment = server.environments.$ssr
 const input = {}
 
 const { createHandler } = await ssrEnvironment.runner.import('./entrypoint.js')
@@ -140,7 +138,7 @@ const server = createServer({
     },
   ],
 })
-const ssrEnvironment = server.environment.ssr
+const ssrEnvironment = server.environments.$ssr
 const input = {}
 
 // use exposed functions by each environment factories that runs the code
@@ -214,7 +212,7 @@ const server = createServer({
     },
   ],
 })
-const ssrEnvironment = server.environment.ssr
+const ssrEnvironment = server.environments.$ssr
 const input = {}
 
 // use exposed functions by each environment factories that runs the code

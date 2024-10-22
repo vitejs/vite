@@ -82,7 +82,7 @@ The hook can choose to:
 
   ```js
   hotUpdate({ modules, timestamp }) {
-    if (this.environment.name !== 'client')
+    if (this.environment.name !== '$client')
       return
 
     // Invalidate modules manually
@@ -104,7 +104,7 @@ The hook can choose to:
 
   ```js
   hotUpdate() {
-    if (this.environment.name !== 'client')
+    if (this.environment.name !== '$client')
       return
 
     this.environment.hot.send({

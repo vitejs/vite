@@ -50,25 +50,23 @@ Then the config file can be written as:
 import { createWorkerdEnvironment } from 'vite-environment-workerd'
 
 export default {
-  environments: {
-    ssr: createWorkerdEnvironment({
-      build: {
-        outDir: '/dist/ssr',
-      },
-    }),
-    rsc: createWorkerdEnvironment({
-      build: {
-        outDir: '/dist/rsc',
-      },
-    }),
-  },
+  $ssr: createWorkerdEnvironment({
+    build: {
+      outDir: '/dist/ssr',
+    },
+  }),
+  $rsc: createWorkerdEnvironment({
+    build: {
+      outDir: '/dist/rsc',
+    },
+  }),
 }
 ```
 
 and frameworks can use an environment with the workerd runtime to do SSR using:
 
 ```js
-const ssrEnvironment = server.environments.ssr
+const ssrEnvironment = server.environments.$ssr
 ```
 
 ## Creating a new environment factory
@@ -293,11 +291,9 @@ function createWorkerEnvironment(name, config, context) {
 }
 
 await createServer({
-  environments: {
-    worker: {
-      dev: {
-        createEnvironment: createWorkerEnvironment,
-      },
+  $worker: {
+    dev: {
+      createEnvironment: createWorkerEnvironment,
     },
   },
 })

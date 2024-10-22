@@ -318,7 +318,7 @@ class EnvironmentPluginContainer {
         (plugin) => this._getPluginContext(plugin),
         () => [this.options as NormalizedInputOptions],
         (plugin) =>
-          this.environment.name === 'client' ||
+          this.environment.name === '$client' ||
           plugin.perEnvironmentStartEndDuringDev === true,
       ),
     ) as Promise<void>
@@ -517,7 +517,7 @@ class EnvironmentPluginContainer {
       (plugin) => this._getPluginContext(plugin),
       () => [],
       (plugin) =>
-        this.environment.name === 'client' ||
+        this.environment.name === '$client' ||
         plugin.perEnvironmentStartEndDuringDev !== true,
     )
     await this.hookParallel(
@@ -949,7 +949,7 @@ class PluginContainer {
   }) {
     return options?.environment
       ? options.environment
-      : this.environments?.[options?.ssr ? 'ssr' : 'client']
+      : this.environments?.[options?.ssr ? '$ssr' : '$client']
   }
 
   private _getPluginContainer(options?: {
@@ -962,23 +962,23 @@ class PluginContainer {
   getModuleInfo(id: string): ModuleInfo | null {
     return (
       (
-        this.environments.client as DevEnvironment
+        this.environments.$client as DevEnvironment
       ).pluginContainer.getModuleInfo(id) ||
-      (this.environments.ssr as DevEnvironment).pluginContainer.getModuleInfo(
+      (this.environments.$ssr as DevEnvironment).pluginContainer.getModuleInfo(
         id,
       )
     )
   }
 
   get options(): InputOptions {
-    return (this.environments.client as DevEnvironment).pluginContainer.options
+    return (this.environments.$client as DevEnvironment).pluginContainer.options
   }
 
   // For backward compatibility, buildStart and watchChange are called only for the client environment
   // buildStart is called per environment for a plugin with the perEnvironmentStartEndDuring dev flag
 
   async buildStart(_options?: InputOptions): Promise<void> {
-    ;(this.environments.client as DevEnvironment).pluginContainer.buildStart(
+    ;(this.environments.$client as DevEnvironment).pluginContainer.buildStart(
       _options,
     )
   }
@@ -987,7 +987,7 @@ class PluginContainer {
     id: string,
     change: { event: 'create' | 'update' | 'delete' },
   ): Promise<void> {
-    ;(this.environments.client as DevEnvironment).pluginContainer.watchChange(
+    ;(this.environments.$client as DevEnvironment).pluginContainer.watchChange(
       id,
       change,
     )

@@ -25,6 +25,6 @@ async function createIsExternal(external?: true) {
     },
     'serve',
   )
-  const environment = new PartialEnvironment('ssr', resolvedConfig)
+  const environment = new PartialEnvironment('$ssr', resolvedConfig)
   return createIsConfiguredAsExternal(environment)
 }

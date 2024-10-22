@@ -429,7 +429,7 @@ export class EnvironmentModuleGraph {
     mod: EnvironmentModuleNode,
     result: TransformResult | null,
   ): void {
-    if (this.environment === 'client') {
+    if (this.environment === '$client') {
       const prevEtag = mod.transformResult?.etag
       if (prevEtag) this.etagToModuleMap.delete(prevEtag)
       if (result?.etag) this.etagToModuleMap.set(result.etag, mod)

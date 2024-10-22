@@ -31,27 +31,25 @@ Environments are explicitly configured with the `environments` config option.
 
 ```js
 export default {
-  environments: {
-    client: {
-      resolve: {
-        conditions: [], // configure the Client environment
-      },
+  $client: {
+    resolve: {
+      conditions: [], // configure the Client environment
     },
-    ssr: {
-      dev: {
-        optimizeDeps: {}, // configure the SSR environment
-      },
+  },
+  $ssr: {
+    dev: {
+      optimizeDeps: {}, // configure the SSR environment
     },
-    rsc: {
-      resolve: {
-        noExternal: true, // configure a custom environment
-      },
+  },
+  $rsc: {
+    resolve: {
+      noExternal: true, // configure a custom environment
     },
   },
 }
 ```
 
-All environment configs extend from user's root config, allowing users add defaults for all environments at the root level. This is quite useful for the common use case of configuring a Vite client only app, that can be done without going through `environments.client`.
+All environment configs extend from user's root config, allowing users add defaults for all environments at the root level. This is quite useful for the common use case of configuring a Vite client only app, that can be done without going through `environments.$client`.
 
 ```js
 export default {
@@ -70,7 +68,7 @@ interface EnvironmentOptions extends SharedEnvironmentOptions {
 }
 ```
 
-As we explained, Environment specific options defined at the root level of user config are used for the default client environment (the `UserConfig` interface extends from the `EnvironmentOptions` interface). And environments can be configured explicitly using the `environments` record. The `client` and `ssr` environments are always present during dev, even if an empty object is set to `environments`. This allows backward compatibility with `server.ssrLoadModule(url)` and `server.moduleGraph`. During build, the `client` environment is always present, and the `ssr` environment is only present if it is explicitly configured (using `environments.ssr` or for backward compatibility `build.ssr`).
+As we explained, Environment specific options defined at the root level of user config are used for the default client environment (the `UserConfig` interface extends from the `EnvironmentOptions` interface). And environments can be configured explicitly using the `environments` record. The `client` and `ssr` environments are always present during dev, even if an empty object is set to `environments`. This allows backward compatibility with `server.ssrLoadModule(url)` and `server.moduleGraph`. During build, the `client` environment is always present, and the `ssr` environment is only present if it is explicitly configured (using `environments.$ssr` or for backward compatibility `build.ssr`).
 
 ```ts
 interface UserConfig extends EnvironmentOptions {
@@ -93,18 +91,16 @@ Low level configuration APIs are available so runtime providers can provide envi
 import { createCustomEnvironment } from 'vite-environment-provider'
 
 export default {
-  environments: {
-    client: {
-      build: {
-        outDir: '/dist/client',
-      },
-    }
-    ssr: createCustomEnvironment({
-      build: {
-        outDir: '/dist/ssr',
-      },
-    }),
-  },
+  $client: {
+    build: {
+      outDir: '/dist/client',
+    },
+  }
+  $ssr: createCustomEnvironment({
+    build: {
+      outDir: '/dist/ssr',
+    },
+  }),
 }
 ```
 

@@ -20,110 +20,108 @@ describe('custom environment conditions', () => {
         middlewareMode: true,
         ws: false,
       },
-      environments: {
-        // no web / default
-        ssr: {
-          resolve: {
-            noExternal,
-          },
-          build: {
-            outDir: path.join(
-              import.meta.dirname,
-              'fixtures/test-dep-conditions/dist/ssr',
-            ),
-            rollupOptions: {
-              input: { index: '@vitejs/test-dep-conditions' },
-            },
+      // no web / default
+      $ssr: {
+        resolve: {
+          noExternal,
+        },
+        build: {
+          outDir: path.join(
+            import.meta.dirname,
+            'fixtures/test-dep-conditions/dist/ssr',
+          ),
+          rollupOptions: {
+            input: { index: '@vitejs/test-dep-conditions' },
           },
         },
-        // web / worker
-        worker: {
-          webCompatible: true,
-          resolve: {
-            noExternal,
-            conditions: ['worker'],
-            externalConditions: ['worker'],
-          },
-          build: {
-            outDir: path.join(
-              import.meta.dirname,
-              'fixtures/test-dep-conditions/dist/worker',
-            ),
-            rollupOptions: {
-              input: { index: '@vitejs/test-dep-conditions' },
-            },
+      },
+      // web / worker
+      $worker: {
+        webCompatible: true,
+        resolve: {
+          noExternal,
+          conditions: ['worker'],
+          externalConditions: ['worker'],
+        },
+        build: {
+          outDir: path.join(
+            import.meta.dirname,
+            'fixtures/test-dep-conditions/dist/worker',
+          ),
+          rollupOptions: {
+            input: { index: '@vitejs/test-dep-conditions' },
           },
         },
-        // web / custom1
-        custom1: {
-          webCompatible: true,
-          resolve: {
-            noExternal,
-            conditions: ['custom1'],
-            externalConditions: ['custom1'],
-          },
-          build: {
-            outDir: path.join(
-              import.meta.dirname,
-              'fixtures/test-dep-conditions/dist/custom1',
-            ),
-            rollupOptions: {
-              input: { index: '@vitejs/test-dep-conditions' },
-            },
+      },
+      // web / custom1
+      $custom1: {
+        webCompatible: true,
+        resolve: {
+          noExternal,
+          conditions: ['custom1'],
+          externalConditions: ['custom1'],
+        },
+        build: {
+          outDir: path.join(
+            import.meta.dirname,
+            'fixtures/test-dep-conditions/dist/custom1',
+          ),
+          rollupOptions: {
+            input: { index: '@vitejs/test-dep-conditions' },
           },
         },
-        // no web / custom2
-        custom2: {
-          webCompatible: false,
-          resolve: {
-            noExternal,
-            conditions: ['custom2'],
-            externalConditions: ['custom2'],
-          },
-          build: {
-            outDir: path.join(
-              import.meta.dirname,
-              'fixtures/test-dep-conditions/dist/custom2',
-            ),
-            rollupOptions: {
-              input: { index: '@vitejs/test-dep-conditions' },
-            },
+      },
+      // no web / custom2
+      $custom2: {
+        webCompatible: false,
+        resolve: {
+          noExternal,
+          conditions: ['custom2'],
+          externalConditions: ['custom2'],
+        },
+        build: {
+          outDir: path.join(
+            import.meta.dirname,
+            'fixtures/test-dep-conditions/dist/custom2',
+          ),
+          rollupOptions: {
+            input: { index: '@vitejs/test-dep-conditions' },
           },
         },
-        // no web / custom3
-        custom3: {
-          webCompatible: false,
-          resolve: {
-            noExternal,
-            conditions: ['custom3'],
-            externalConditions: ['custom3'],
-          },
-          build: {
-            outDir: path.join(
-              import.meta.dirname,
-              'fixtures/test-dep-conditions/dist/custom3',
-            ),
-            rollupOptions: {
-              input: { index: '@vitejs/test-dep-conditions' },
-            },
+      },
+      // no web / custom3
+      $custom3: {
+        webCompatible: false,
+        resolve: {
+          noExternal,
+          conditions: ['custom3'],
+          externalConditions: ['custom3'],
+        },
+        build: {
+          outDir: path.join(
+            import.meta.dirname,
+            'fixtures/test-dep-conditions/dist/custom3',
+          ),
+          rollupOptions: {
+            input: { index: '@vitejs/test-dep-conditions' },
           },
         },
-        // same as custom3
-        custom3_2: {
-          webCompatible: false,
-          resolve: {
-            noExternal,
-            conditions: ['custom3'],
-            externalConditions: ['custom3'],
-          },
-          build: {
-            outDir: path.join(
-              import.meta.dirname,
-              'fixtures/test-dep-conditions/dist/custom3_2',
-            ),
-            rollupOptions: {
-              input: { index: '@vitejs/test-dep-conditions' },
-            },
+      },
+      // same as custom3
+      $custom3_2: {
+        webCompatible: false,
+        resolve: {
+          noExternal,
+          conditions: ['custom3'],
+          externalConditions: ['custom3'],
+        },
+        build: {
+          outDir: path.join(
+            import.meta.dirname,
+            'fixtures/test-dep-conditions/dist/custom3_2',
+          ),
+          rollupOptions: {
+            input: { index: '@vitejs/test-dep-conditions' },
           },
         },
       },
@@ -136,12 +134,12 @@ describe('custom environment conditions', () => {
 
     const results: Record<string, unknown> = {}
     for (const key of [
-      'ssr',
-      'worker',
-      'custom1',
-      'custom2',
-      'custom3',
-      'custom3_2',
+      '$ssr',
+      '$worker',
+      '$custom1',
+      '$custom2',
+      '$custom3',
+      '$custom3_2',
     ]) {
       const runner = createServerModuleRunner(server.environments[key], {
         hmr: {
@@ -154,12 +152,12 @@ describe('custom environment conditions', () => {
     }
     expect(results).toMatchInlineSnapshot(`
       {
-        "custom1": "index.custom1.js",
-        "custom2": "index.custom2.js",
-        "custom3": "index.custom3.js",
-        "custom3_2": "index.custom3.js",
-        "ssr": "index.default.js",
-        "worker": "index.worker.js",
+        "$custom1": "index.custom1.js",
+        "$custom2": "index.custom2.js",
+        "$custom3": "index.custom3.js",
+        "$custom3_2": "index.custom3.js",
+        "$ssr": "index.default.js",
+        "$worker": "index.worker.js",
       }
     `)
   })
@@ -170,12 +168,12 @@ describe('custom environment conditions', () => {
 
     const results: Record<string, unknown> = {}
     for (const key of [
-      'ssr',
-      'worker',
-      'custom1',
-      'custom2',
-      'custom3',
-      'custom3_2',
+      '$ssr',
+      '$worker',
+      '$custom1',
+      '$custom2',
+      '$custom3',
+      '$custom3_2',
     ]) {
       const runner = createServerModuleRunner(server.environments[key], {
         hmr: {
@@ -190,12 +188,12 @@ describe('custom environment conditions', () => {
     }
     expect(results).toMatchInlineSnapshot(`
       {
-        "custom1": "index.custom1.js",
-        "custom2": "index.custom2.js",
-        "custom3": "index.custom3.js",
-        "custom3_2": "index.custom3.js",
-        "ssr": "index.default.js",
-        "worker": "index.worker.js",
+        "$custom1": "index.custom1.js",
+        "$custom2": "index.custom2.js",
+        "$custom3": "index.custom3.js",
+        "$custom3_2": "index.custom3.js",
+        "$ssr": "index.default.js",
+        "$worker": "index.worker.js",
       }
     `)
   })
@@ -223,12 +221,12 @@ describe('custom environment conditions', () => {
     const builder = await createBuilder(getConfig({ noExternal: true }))
     const results: Record<string, unknown> = {}
     for (const key of [
-      'ssr',
-      'worker',
-      'custom1',
-      'custom2',
-      'custom3',
-      'custom3_2',
+      '$ssr',
+      '$worker',
+      '$custom1',
+      '$custom2',
+      '$custom3',
+      '$custom3_2',
     ]) {
       const output = await builder.build(builder.environments[key])
       const chunk = (output as RollupOutput).output[0]
@@ -236,7 +234,7 @@ describe('custom environment conditions', () => {
         path.join(
           import.meta.dirname,
           'fixtures/test-dep-conditions/dist',
-          key,
+          key.slice(1),
           chunk.fileName,
         )
       )
@@ -244,12 +242,12 @@ describe('custom environment conditions', () => {
     }
     expect(results).toMatchInlineSnapshot(`
       {
-        "custom1": "index.custom1.js",
-        "custom2": "index.custom2.js",
-        "custom3": "index.custom3.js",
-        "custom3_2": "index.custom3.js",
-        "ssr": "index.default.js",
-        "worker": "index.worker.js",
+        "$custom1": "index.custom1.js",
+        "$custom2": "index.custom2.js",
+        "$custom3": "index.custom3.js",
+        "$custom3_2": "index.custom3.js",
+        "$ssr": "index.default.js",
+        "$worker": "index.worker.js",
       }
     `)
   })

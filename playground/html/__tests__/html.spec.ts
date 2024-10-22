@@ -283,7 +283,7 @@ describe.runIf(isServe)('invalid', () => {
     await page.keyboard.press('Escape')
     await hiddenPromise
 
-    viteServer.environments.client.hot.send({
+    viteServer.environments.$client.hot.send({
       type: 'error',
       err: {
         message: 'someError',
@@ -395,7 +395,7 @@ describe.runIf(isServe)('warmup', () => {
     // here might take a while to load
     await withRetry(async () => {
       const mod =
-        await viteServer.environments.client.moduleGraph.getModuleByUrl(
+        await viteServer.environments.$client.moduleGraph.getModuleByUrl(
           '/warmup/warm.js',
         )
       expect(mod).toBeTruthy()

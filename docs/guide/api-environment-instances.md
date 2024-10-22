@@ -19,9 +19,9 @@ During dev, the available environments in a dev server can be accessed using `se
 // create the server, or get it from the configureServer hook
 const server = await createServer(/* options */)
 
-const environment = server.environments.client
+const environment = server.environments.$client
 environment.transformRequest(url)
-console.log(server.environments.ssr.moduleGraph)
+console.log(server.environments.$ssr.moduleGraph)
 ```
 
 You can also access the current environment from plugins. See the [Environment API for Plugins](./api-environment-plugins.md#accessing-the-current-environment-in-hooks) for more details.
@@ -34,7 +34,7 @@ During dev, each environment is an instance of the `DevEnvironment` class:
 class DevEnvironment {
   /**
    * Unique identifier for the environment in a Vite server.
-   * By default Vite exposes 'client' and 'ssr' environments.
+   * By default Vite exposes '$client' and '$ssr' environments.
    */
   name: string
   /**

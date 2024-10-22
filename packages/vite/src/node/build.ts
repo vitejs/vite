@@ -244,7 +244,7 @@ export interface BuildEnvironmentOptions {
    */
   ssrEmitAssets?: boolean
   /**
-   * Emit assets during build. Frameworks can set environments.ssr.build.emitAssets
+   * Emit assets during build. Frameworks can set environments.$ssr.build.emitAssets
    * By default, it is true for the client and false for other environments.
    */
   emitAssets?: boolean
@@ -515,7 +515,7 @@ export async function build(
     // we need to make override `config.build` for the current environment.
     // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
     // remove the default values that shouldn't be used at all once the config is resolved
-    const environmentName = resolved.build.ssr ? 'ssr' : 'client'
+    const environmentName = resolved.build.ssr ? '$ssr' : '$client'
     ;(resolved.build as ResolvedBuildOptions) = {
       ...resolved.environments[environmentName].build,
     }
@@ -530,7 +530,7 @@ export async function build(
 export async function buildWithResolvedConfig(
   config: ResolvedConfig,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const environmentName = config.build.ssr ? 'ssr' : 'client'
+  const environmentName = config.build.ssr ? '$ssr' : '$client'
   const environment = await config.environments[
     environmentName
   ].build.createEnvironment(environmentName, config)

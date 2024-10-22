@@ -255,7 +255,7 @@ export async function optimizeDeps(
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
 
-  const environment = new ScanEnvironment('client', config)
+  const environment = new ScanEnvironment('$client', config)
   await environment.init()
 
   const cachedMetadata = await loadCachedDepOptimizationMetadata(
@@ -877,7 +877,7 @@ export function getOptimizedDepPath(
 }
 
 function getDepsCacheSuffix(environment: Environment): string {
-  return environment.name === 'client' ? '' : `_${environment.name}`
+  return environment.name === '$client' ? '' : `_${environment.name}`
 }
 
 export function getDepsCacheDir(environment: Environment): string {

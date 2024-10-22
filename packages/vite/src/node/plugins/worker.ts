@@ -75,7 +75,7 @@ async function bundleWorkerEntry(
   const { plugins, rollupOptions, format } = config.worker
   const { plugins: resolvedPlugins, config: workerConfig } =
     await plugins(newBundleChain)
-  const workerEnvironment = new BuildEnvironment('client', workerConfig) // TODO: should this be 'worker'?
+  const workerEnvironment = new BuildEnvironment('$client', workerConfig) // TODO: should this be '$worker'?
   const bundle = await rollup({
     ...rollupOptions,
     input,

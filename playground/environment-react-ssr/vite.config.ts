@@ -21,26 +21,24 @@ export default defineConfig((env) => ({
       },
     },
   ],
-  environments: {
-    client: {
-      build: {
-        minify: false,
-        sourcemap: true,
-        outDir: 'dist/client',
-      },
+  $client: {
+    build: {
+      minify: false,
+      sourcemap: true,
+      outDir: 'dist/client',
     },
-    ssr: {
-      build: {
-        outDir: 'dist/server',
-        // [feedback]
-        // is this still meant to be used?
-        // for example, `ssr: true` seems to make `minify: false` automatically
-        // and also externalization.
-        ssr: true,
-        rollupOptions: {
-          input: {
-            index: '/src/entry-server',
-          },
+  },
+  $ssr: {
+    build: {
+      outDir: 'dist/server',
+      // [feedback]
+      // is this still meant to be used?
+      // for example, `ssr: true` seems to make `minify: false` automatically
+      // and also externalization.
+      ssr: true,
+      rollupOptions: {
+        input: {
+          index: '/src/entry-server',
         },
       },
     },
@@ -48,8 +46,8 @@ export default defineConfig((env) => ({
 
   builder: {
     async buildApp(builder) {
-      await builder.build(builder.environments.client)
-      await builder.build(builder.environments.ssr)
+      await builder.build(builder.environments.$client)
+      await builder.build(builder.environments.$ssr)
     },
   },
 }))
@@ -66,7 +64,7 @@ export function vitePluginSsrMiddleware({
     name: vitePluginSsrMiddleware.name,
 
     configureServer(server) {
-      const runner = createServerModuleRunner(server.environments.ssr, {
+      const runner = createServerModuleRunner(server.environments.$ssr, {
         hmr: { logger: false },
       })
       const handler: Connect.NextHandleFunction = async (req, res, next) => {

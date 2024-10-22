@@ -612,21 +612,19 @@ describe('resolveBuildOutputs', () => {
     const builder = await createBuilder({
       root: resolve(__dirname, 'fixtures/emit-assets'),
       logLevel: 'warn',
-      environments: {
-        ssr: {
-          build: {
-            ssr: true,
-            emitAssets: true,
-            rollupOptions: {
-              input: {
-                index: '/entry',
-              },
+      $ssr: {
+        build: {
+          ssr: true,
+          emitAssets: true,
+          rollupOptions: {
+            input: {
+              index: '/entry',
             },
           },
         },
       },
     })
-    const result = await builder.build(builder.environments.ssr)
+    const result = await builder.build(builder.environments.$ssr)
     expect(result).toMatchObject({
       output: [
         {
@@ -643,20 +641,18 @@ describe('resolveBuildOutputs', () => {
     const builder = await createBuilder({
       root: resolve(__dirname, 'fixtures/dynamic-import'),
       logLevel: 'warn',
-      environments: {
-        ssr: {
-          build: {
-            ssr: true,
-            rollupOptions: {
-              input: {
-                index: '/entry',
-              },
+      $ssr: {
+        build: {
+          ssr: true,
+          rollupOptions: {
+            input: {
+              index: '/entry',
             },
           },
         },
       },
     })
-    const result = await builder.build(builder.environments.ssr)
+    const result = await builder.build(builder.environments.$ssr)
     expect((result as RollupOutput).output[0].code).not.toContain('preload')
   })
 
@@ -664,20 +660,18 @@ describe('resolveBuildOutputs', () => {
     const builder = await createBuilder({
       root: resolve(__dirname, 'fixtures/dynamic-import'),
       logLevel: 'warn',
-      environments: {
-        custom: {
-          build: {
-            ssr: true,
-            rollupOptions: {
-              input: {
-                index: '/entry',
-              },
+      $custom: {
+        build: {
+          ssr: true,
+          rollupOptions: {
+            input: {
+              index: '/entry',
             },
           },
         },
       },
     })
-    const result = await builder.build(builder.environments.custom)
+    const result = await builder.build(builder.environments.$custom)
     expect((result as RollupOutput).output[0].code).not.toContain('preload')
   })
 })

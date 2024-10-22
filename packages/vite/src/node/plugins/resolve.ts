@@ -227,7 +227,8 @@ export function resolvePlugin(
       const isRequire: boolean =
         resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
 
-      const environmentName = this.environment.name ?? (ssr ? 'ssr' : 'client')
+      const environmentName =
+        this.environment.name ?? (ssr ? '$ssr' : '$client')
       const currentEnvironmentOptions =
         this.environment.config || environmentsOptions?.[environmentName]
       const environmentResolveOptions = currentEnvironmentOptions?.resolve
