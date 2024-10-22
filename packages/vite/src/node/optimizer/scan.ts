@@ -254,20 +254,15 @@ async function computeEntries(environment: ScanEnvironment) {
     entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
     const resolvePath = async (p: string) => {
-      const isRelative = ['./', '../', '/'].some((prefix) =>
-        p.startsWith(prefix),
-      )
-
-      if (!isRelative) {
-        // We want to make sure that the path looks like a relative one since a bare import
-        // path doesn't really make sense as an entry and it would also create issues during
-        // module resolution
-        p = `/${p}`
-      }
-
-      const id = (await environment.pluginContainer.resolveId(p))?.id
+      const id = (
+        await environment.pluginContainer.resolveId(p, undefined, {
+          scan: true,
+        })
+      )?.id
       if (id === undefined) {
-        throw new Error('failed to resolve rollupOptions.input value.')
+        throw new Error(
+          `failed to resolve rollupOptions.input value: ${JSON.stringify(p)}.`,
+        )
       }
       return id
     }
