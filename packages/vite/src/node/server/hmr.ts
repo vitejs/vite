@@ -76,6 +76,12 @@ export interface HotChannelClient {
 /** @deprecated use `HotChannelClient` instead */
 export type HMRBroadcasterClient = HotChannelClient
 
+export type HotChannelListener<T extends string = string> = (
+  data: InferCustomEventPayload<T>,
+  client: HotChannelClient,
+  invoke: 'send' | `send:${string}` | undefined,
+) => void
+
 export interface HotChannel<Api = any> {
   /**
    * Broadcast events to all clients
@@ -84,14 +90,7 @@ export interface HotChannel<Api = any> {
   /**
    * Handle custom event emitted by `import.meta.hot.send`
    */
-  on<T extends string>(
-    event: T,
-    listener: (
-      data: InferCustomEventPayload<T>,
-      client: HotChannelClient,
-      invoke?: 'send' | `send:${string}`,
-    ) => void,
-  ): void
+  on<T extends string>(event: T, listener: HotChannelListener<T>): void
   on(event: 'connection', listener: () => void): void
   /**
    * Unregister event listener
@@ -150,7 +149,7 @@ export interface NormalizedHotChannel<Api = any> {
     listener: (
       data: InferCustomEventPayload<T>,
       client: NormalizedHotChannelClient,
-      invoke?: 'send' | `send:${string}`,
+      invoke: 'send' | `send:${string}` | undefined,
     ) => void,
   ): void
   on(event: 'connection', listener: () => void): void
@@ -177,12 +176,12 @@ export const normalizeHotChannel = (
     (
       data: any,
       client: NormalizedHotChannelClient,
-      invoke?: 'send' | `send:${string}`,
+      invoke: 'send' | `send:${string}` | undefined,
     ) => void,
     (
       data: any,
       client: HotChannelClient,
-      invoke?: 'send' | `send:${string}`,
+      invoke: 'send' | `send:${string}` | undefined,
     ) => void
   >()
 
@@ -193,7 +192,7 @@ export const normalizeHotChannel = (
       fn: (
         data: any,
         client: NormalizedHotChannelClient,
-        invoke?: 'send' | `send:${string}`,
+        invoke: 'send' | `send:${string}` | undefined,
       ) => void,
     ) => {
       if (event === 'connection') {

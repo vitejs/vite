@@ -281,6 +281,7 @@ import { createServer, RemoteEnvironmentTransport, DevEnvironment } from 'vite'
 
 function createWorkerEnvironment(name, config, context) {
   const worker = new Worker('./worker.js')
+  const handlerToWorkerListener = new WeakMap()
 
   const workerHotChannel = {
     send: (data) => w.postMessage(data),

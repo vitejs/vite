@@ -160,6 +160,7 @@ export type {
   HMRBroadcasterClient,
   ServerHMRChannel,
   HMRChannel,
+  HotChannelListener,
   HotChannel,
   ServerHotChannel,
   HotChannelClient,

@@ -1,21 +1,21 @@
 import { BroadcastChannel, Worker } from 'node:worker_threads'
 import { describe, expect, it, onTestFinished } from 'vitest'
-import type { HotChannel, HotPayload } from 'vite'
+import type { HotChannel, HotChannelListener, HotPayload } from 'vite'
 import { DevEnvironment } from '../../..'
 import { createServer } from '../../../server'
 
 const createWorkerTransport = (w: Worker): HotChannel => {
   const handlerToWorkerListener = new WeakMap<
-    (data: HotPayload) => void,
+    HotChannelListener,
     (value: HotPayload) => void
   >()
 
   return {
-    send: (data: HotPayload) => w.postMessage(data),
-    on: (event, handler) => {
+    send: (data) => w.postMessage(data),
+    on: (event: string, handler: HotChannelListener) => {
       if (event === 'connection') return
 
-      const listener = (value: HotPayload) => {
+      const listener = (value: any) => {
         if (value.type === 'custom' && value.event === event) {
           const client = {
             send(payload: HotPayload) {
@@ -28,14 +28,12 @@ const createWorkerTransport = (w: Worker): HotChannel => {
       handlerToWorkerListener.set(handler, listener)
       w.on('message', listener)
     },
-    off: (event, handler) => {
+    off: (event, handler: HotChannelListener) => {
       if (event === 'connection') return
-      const listener = handlerToWorkerListener.get(
-        handler as (data: HotPayload) => void,
-      )
+      const listener = handlerToWorkerListener.get(handler)
       if (listener) {
         w.off('message', listener)
-        handlerToWorkerListener.delete(handler as (data: HotPayload) => void)
+        handlerToWorkerListener.delete(handler)
       }
     },
     listen() {
