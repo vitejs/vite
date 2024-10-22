@@ -21,6 +21,9 @@ export default defineConfig((env) => ({
       },
     },
   ],
+  resolve: {
+    noExternal: true,
+  },
   environments: {
     client: {
       build: {
