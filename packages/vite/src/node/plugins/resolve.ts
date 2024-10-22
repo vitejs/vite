@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
 import { exports, imports } from 'resolve.exports'
@@ -370,6 +371,14 @@ export function resolvePlugin(
           }
           return res
         }
+      }
+
+      // file url as path
+      if (
+        currentEnvironmentOptions.consumer === 'server' &&
+        id.startsWith('file://')
+      ) {
+        id = fileURLToPath(id)
       }
 
       // drive relative fs paths (only windows)
