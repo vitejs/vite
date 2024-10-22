@@ -156,7 +156,7 @@ export interface ModuleRunnerOptions {
   /**
    * Disable HMR or configure HMR options.
    */
-  hmr?: false | ModuleRunnerHmr
+  hmr?: boolean | ModuleRunnerHmr
   /**
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */

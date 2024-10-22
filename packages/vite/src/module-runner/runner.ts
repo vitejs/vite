@@ -1,6 +1,5 @@
 import type { ViteHotContext } from 'types/hot'
-import type { HotPayload } from 'types/hmrPayload'
-import { HMRClient, HMRContext } from '../shared/hmr'
+import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
 import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import {
@@ -69,23 +68,25 @@ export class ModuleRunner {
     this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
-    let hmrHandlerForTransport: ((payload: HotPayload) => void) | undefined
-    if (typeof options.hmr === 'object') {
-      const resolvedHmrLogger =
-        options.hmr.logger === false
-          ? silentConsole
-          : options.hmr.logger || hmrLogger
+    if (options.hmr) {
+      const resolvedHmrLogger: HMRLogger =
+        options.hmr === true || options.hmr.logger === undefined
+          ? hmrLogger
+          : options.hmr.logger === false
+            ? silentConsole
+            : options.hmr.logger
       this.hmrClient = new HMRClient(
         resolvedHmrLogger,
         this.transport,
         ({ acceptedPath }) => this.import(acceptedPath),
       )
-      hmrHandlerForTransport = createHMRHandler(this)
       if (!this.transport.connect) {
-        resolvedHmrLogger.error('HMR is not supported by this runner transport')
+        throw new Error(
+          'HMR is not supported by this runner transport, but `hmr` option was set to true',
+        )
       }
+      this.transport.connect(createHMRHandler(this))
     }
-    this.transport.connect?.(hmrHandlerForTransport)
     if (options.sourcemapInterceptor !== false) {
       this.resetSourceMapSupport = enableSourceMapSupport(this)
     }
