@@ -99,7 +99,8 @@
   "packageManager": "pnpm@9.12.2",
   "pnpm": {
     "overrides": {
-      "vite": "workspace:*"
+      "vite": "workspace:*",
+      "vitest>vite": "^5.4.9"
     },
     "patchedDependencies": {
       "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
