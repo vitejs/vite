@@ -23,7 +23,6 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
-  isFilePathESM,
   isInNodeModules,
   isNonDriveRelativeAbsolutePath,
   isObject,
@@ -445,7 +444,6 @@ export function resolvePlugin(
             importer,
             options,
             depsOptimizer,
-            ssr,
             external,
             undefined,
             depsOptimizerOptions,
@@ -747,7 +745,6 @@ export function tryNodeResolve(
   importer: string | null | undefined,
   options: InternalResolveOptionsWithOverrideConditions,
   depsOptimizer?: DepsOptimizer,
-  ssr: boolean = false,
   externalize?: boolean,
   allowLinkedExternal: boolean = true,
   depsOptimizerOptions?: DepOptimizationOptions,
@@ -881,11 +878,9 @@ export function tryNodeResolve(
     : OPTIMIZABLE_ENTRY_RE.test(resolved)
 
   let exclude = depsOptimizer?.options.exclude
-  let include = depsOptimizer?.options.include
   if (options.ssrOptimizeCheck) {
     // we don't have the depsOptimizer
     exclude = depsOptimizerOptions?.exclude
-    include = depsOptimizerOptions?.include
   }
 
   const skipOptimization =
@@ -894,15 +889,7 @@ export function tryNodeResolve(
     (importer && isInNodeModules(importer)) ||
     exclude?.includes(pkgId) ||
     exclude?.includes(id) ||
-    SPECIAL_QUERY_RE.test(resolved) ||
-    // During dev SSR, we don't have a way to reload the module graph if
-    // a non-optimized dep is found. So we need to skip optimization here.
-    // The only optimized deps are the ones explicitly listed in the config.
-    (!options.ssrOptimizeCheck && !isBuild && ssr) ||
-    // Only optimize non-external CJS deps during SSR by default
-    (ssr &&
-      isFilePathESM(resolved, options.packageCache) &&
-      !(include?.includes(pkgId) || include?.includes(id)))
+    SPECIAL_QUERY_RE.test(resolved)
 
   if (options.ssrOptimizeCheck) {
     return {
@@ -1220,7 +1207,6 @@ function tryResolveBrowserMapping(
               browserMappedPath,
               importer,
               options,
-              undefined,
               undefined,
               undefined,
               undefined,
