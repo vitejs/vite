@@ -20,9 +20,6 @@ patchedDependencies:
   sirv@3.0.0:
     hash: plxlsciwiebyhal5sm4vtpekka
     path: patches/sirv@3.0.0.patch
-  vitest:
-    hash: 4lwmb4rvdtbdrdx3wvyapxjsxq
-    path: patches/vitest.patch
 
 importers:
 
@@ -141,7 +138,7 @@ importers:
         version: link:packages/vite
       vitest:
         specifier: ^2.1.3
-        version: 2.1.3(patch_hash=4lwmb4rvdtbdrdx3wvyapxjsxq)(@types/node@20.16.13)
+        version: 2.1.3(@types/node@20.16.13)
 
   docs:
     devDependencies:
@@ -12767,7 +12764,7 @@ snapshots:
       - typescript
       - universal-cookie
 
-  vitest@2.1.3(patch_hash=4lwmb4rvdtbdrdx3wvyapxjsxq)(@types/node@20.16.13):
+  vitest@2.1.3(@types/node@20.16.13):
     dependencies:
       '@vitest/expect': 2.1.3
       '@vitest/mocker': 2.1.3(vite@packages+vite)

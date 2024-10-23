@@ -105,8 +105,7 @@
       "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
       "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch",
       "sirv@3.0.0": "patches/sirv@3.0.0.patch",
-      "acorn@8.13.0": "patches/acorn@8.13.0.patch",
-      "vitest": "patches/vitest.patch"
+      "acorn@8.13.0": "patches/acorn@8.13.0.patch"
     },
     "peerDependencyRules": {
       "allowedVersions": {
