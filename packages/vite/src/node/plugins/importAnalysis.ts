@@ -512,7 +512,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             if (isExternalUrl(specifier) || isDataUrl(specifier)) {
               return
             }
-            // skip ssr external
+            // skip ssr externals and builtins
             if (ssr && !matchAlias(specifier)) {
               if (shouldExternalize(environment, specifier, importer)) {
                 return
