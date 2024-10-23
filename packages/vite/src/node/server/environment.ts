@@ -97,12 +97,11 @@ export class DevEnvironment extends BaseEnvironment {
    */
   hot: HotChannel
   constructor(
-    name: string,
+    name: `$${string}`,
     config: ResolvedConfig,
     context: DevEnvironmentContext,
   ) {
-    let options =
-      config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
+    let options = config[name] ?? getDefaultResolvedEnvironmentOptions(config)
     if (context.options) {
       options = mergeConfig(
         options,

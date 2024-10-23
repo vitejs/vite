@@ -28,8 +28,8 @@ export function createBackCompatIdResolver(
   const compatResolve = config.createResolver(options)
   let resolve: ResolveIdFn
   return async (environment, id, importer, aliasOnly) => {
-    if (environment.name === 'client' || environment.name === 'ssr') {
-      return compatResolve(id, importer, aliasOnly, environment.name === 'ssr')
+    if (environment.name === '$client' || environment.name === '$ssr') {
+      return compatResolve(id, importer, aliasOnly, environment.name === '$ssr')
     }
     resolve ??= createIdResolver(config, options)
     return resolve(environment, id, importer, aliasOnly)

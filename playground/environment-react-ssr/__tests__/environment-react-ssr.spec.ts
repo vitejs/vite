@@ -31,7 +31,7 @@ describe.runIf(!isBuild)('pre-bundling', () => {
   })
 
   test('ssr', async () => {
-    const meta = await readFile('node_modules/.vite/deps_ssr/_metadata.json')
+    const meta = await readFile('node_modules/.vite/deps_$ssr/_metadata.json')
     const metaJson: DepOptimizationMetadata = JSON.parse(meta)
 
     expect(metaJson.optimized['react']).toBeTruthy()
@@ -46,7 +46,7 @@ describe.runIf(!isBuild)('pre-bundling', () => {
 
     const getMeta = (env: (typeof envs)[number]): DepOptimizationMetadata => {
       const meta = readFile(
-        `node_modules/.vite/deps${env === 'client' ? '' : '_ssr'}/_metadata.json`,
+        `node_modules/.vite/deps${env === 'client' ? '' : '_$ssr'}/_metadata.json`,
       )
       return JSON.parse(meta)
     }

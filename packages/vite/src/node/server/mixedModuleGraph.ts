@@ -322,9 +322,9 @@ export class ModuleGraph {
   /** @internal */
   _getModuleGraph(environment: string): EnvironmentModuleGraph {
     switch (environment) {
-      case 'client':
+      case '$client':
         return this._client
-      case 'ssr':
+      case '$ssr':
         return this._ssr
       default:
         throw new Error(`Invalid module node environment ${environment}`)
@@ -412,9 +412,9 @@ export class ModuleGraph {
     result: TransformResult | null,
     ssr?: boolean,
   ): void {
-    const environment = ssr ? 'ssr' : 'client'
+    const environment = ssr ? '$ssr' : '$client'
     this._getModuleGraph(environment).updateModuleTransformResult(
-      (environment === 'client' ? mod._clientModule : mod._ssrModule)!,
+      (environment === '$client' ? mod._clientModule : mod._ssrModule)!,
       result,
     )
   }
@@ -443,7 +443,7 @@ export class ModuleGraph {
   }
 
   getBackwardCompatibleModuleNode(mod: EnvironmentModuleNode): ModuleNode {
-    return mod.environment === 'client'
+    return mod.environment === '$client'
       ? this.getBackwardCompatibleBrowserModuleNode(mod)
       : this.getBackwardCompatibleServerModuleNode(mod)
   }

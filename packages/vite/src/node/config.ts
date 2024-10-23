@@ -179,7 +179,7 @@ export interface DevEnvironmentOptions {
    * create the Dev Environment instance
    */
   createEnvironment?: (
-    name: string,
+    name: `$${string}`,
     config: ResolvedConfig,
     context: CreateDevEnvironmentContext,
   ) => Promise<DevEnvironment> | DevEnvironment
@@ -201,7 +201,7 @@ export interface DevEnvironmentOptions {
 }
 
 function defaultCreateClientDevEnvironment(
-  name: string,
+  name: `$${string}`,
   config: ResolvedConfig,
   context: CreateDevEnvironmentContext,
 ) {
@@ -211,13 +211,16 @@ function defaultCreateClientDevEnvironment(
 }
 
 function defaultCreateSsrDevEnvironment(
-  name: string,
+  name: `$${string}`,
   config: ResolvedConfig,
 ): DevEnvironment {
   return createRunnableDevEnvironment(name, config)
 }
 
-function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
+function defaultCreateDevEnvironment(
+  name: `$${string}`,
+  config: ResolvedConfig,
+) {
   return new DevEnvironment(name, config, {
     hot: false,
   })
@@ -435,7 +438,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Environment overrides
    */
-  environments?: Record<string, EnvironmentOptions>
+  [key: `$${string}`]: EnvironmentOptions
   /**
    * Whether your application is a Single Page Application (SPA),
    * a Multi-Page Application (MPA), or Custom Application (SSR
@@ -533,7 +536,6 @@ export type ResolvedConfig = Readonly<
     | 'worker'
     | 'build'
     | 'dev'
-    | 'environments'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -579,7 +581,8 @@ export type ResolvedConfig = Readonly<
     worker: ResolvedWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
-    environments: Record<string, ResolvedEnvironmentOptions>
+    environments: Record<`$${string}`, ResolvedEnvironmentOptions>
+    [key: `$${string}`]: ResolvedEnvironmentOptions
     /** @internal */
     fsDenyGlob: AnymatchFn
     /** @internal */
@@ -610,9 +613,9 @@ export function resolveDevEnvironmentOptions(
     ),
     createEnvironment:
       dev?.createEnvironment ??
-      (environmentName === 'client'
+      (environmentName === '$client'
         ? defaultCreateClientDevEnvironment
-        : environmentName === 'ssr'
+        : environmentName === '$ssr'
           ? defaultCreateSsrDevEnvironment
           : defaultCreateDevEnvironment),
     recoverable: dev?.recoverable ?? consumer === 'client',
@@ -640,7 +643,7 @@ function resolveEnvironmentOptions(
     preserveSymlinks,
     logger,
   )
-  const isClientEnvironment = environmentName === 'client'
+  const isClientEnvironment = environmentName === '$client'
   const consumer =
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   return {
@@ -883,21 +886,18 @@ export async function resolveConfig(
 
   // Ensure default client and ssr environments
   // If there are present, ensure order { client, ssr, ...custom }
-  config.environments ??= {}
-  if (
-    !config.environments.ssr &&
-    (!isBuild || config.ssr || config.build?.ssr)
-  ) {
+
+  if (!config.$ssr && (!isBuild || config.ssr || config.build?.ssr)) {
     // During dev, the ssr environment is always available even if it isn't configure
     // There is no perf hit, because the optimizer is initialized only if ssrLoadModule
     // is called.
     // During build, we only build the ssr environment if it is configured
     // through the deprecated ssr top level options or if it is explicitly defined
     // in the environments config
-    config.environments = { ssr: {}, ...config.environments }
+    config.$ssr = {}
   }
-  if (!config.environments.client) {
-    config.environments = { client: {}, ...config.environments }
+  if (!config.$client) {
+    config.$client = {}
   }
 
   // Define logger
@@ -913,8 +913,8 @@ export async function resolveConfig(
 
   checkBadCharactersInPath(resolvedRoot, logger)
 
-  // Backward compatibility: merge optimizeDeps into environments.client.dev.optimizeDeps as defaults
-  const configEnvironmentsClient = config.environments!.client!
+  // Backward compatibility: merge optimizeDeps into config.$client.dev.optimizeDeps as defaults
+  const configEnvironmentsClient = config.$client
   configEnvironmentsClient.dev ??= {}
   configEnvironmentsClient.dev.optimizeDeps = mergeConfig(
     config.optimizeDeps ?? {},
@@ -922,7 +922,7 @@ export async function resolveConfig(
   )
 
   const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
-  let configEnvironmentsSsr = config.environments!.ssr
+  let configEnvironmentsSsr = config.$ssr
 
   // Backward compatibility: server.warmup.clientFiles/ssrFiles -> environment.dev.warmup
   const warmupOptions = config.server?.warmup
@@ -935,7 +935,7 @@ export async function resolveConfig(
     configEnvironmentsSsr.dev.warmup = warmupOptions?.ssrFiles
   }
 
-  // Backward compatibility: merge ssr into environments.ssr.config as defaults
+  // Backward compatibility: merge ssr into environments.$ssr.config as defaults
   if (configEnvironmentsSsr) {
     configEnvironmentsSsr.dev ??= {}
     configEnvironmentsSsr.dev.optimizeDeps = mergeConfig(
@@ -962,33 +962,33 @@ export async function resolveConfig(
   }
 
   // The client and ssr environment configs can't be removed by the user in the config hook
-  if (
-    !config.environments ||
-    !config.environments.client ||
-    (!config.environments.ssr && !isBuild)
-  ) {
+  if (!config.$client || (!config.$ssr && !isBuild)) {
     throw new Error(
       'Required environments configuration were stripped out in the config hook',
     )
   }
 
   // Merge default environment config values
+  const environments: Record<string, EnvironmentOptions> = {}
   const defaultEnvironmentOptions = getDefaultEnvironmentOptions(config)
-  for (const name of Object.keys(config.environments)) {
-    config.environments[name] = mergeConfig(
-      defaultEnvironmentOptions,
-      config.environments[name],
-    )
+  for (const name of Object.keys(config)) {
+    if (name.startsWith('$')) {
+      const environmentName = name as `$${string}`
+      environments[environmentName] = config[environmentName] = mergeConfig(
+        defaultEnvironmentOptions,
+        config[environmentName],
+      )
+    }
   }
 
-  await runConfigEnvironmentHook(config.environments, userPlugins, configEnv)
+  await runConfigEnvironmentHook(environments, userPlugins, configEnv)
 
   const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
 
   const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
-  for (const environmentName of Object.keys(config.environments)) {
+  for (const environmentName of Object.keys(environments)) {
     resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
-      config.environments[environmentName],
+      environments[environmentName],
       resolvedRoot,
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
@@ -998,12 +998,12 @@ export async function resolveConfig(
     )
   }
 
-  // Backward compatibility: merge environments.client.dev.optimizeDeps back into optimizeDeps
+  // Backward compatibility: merge environments.$client.dev.optimizeDeps back into optimizeDeps
   // The same object is assigned back for backward compatibility. The ecosystem is modifying
   // optimizeDeps in the ResolvedConfig hook, so these changes will be reflected on the
   // client environment.
   const backwardCompatibleOptimizeDeps =
-    resolvedEnvironments.client.dev.optimizeDeps
+    resolvedEnvironments.$client.dev.optimizeDeps
 
   const resolvedDevEnvironmentOptions = resolveDevEnvironmentOptions(
     config.dev,
@@ -1020,17 +1020,17 @@ export async function resolveConfig(
     undefined,
   )
 
-  // Backward compatibility: merge config.environments.ssr back into config.ssr
-  // so ecosystem SSR plugins continue to work if only environments.ssr is configured
+  // Backward compatibility: merge config.$ssr back into config.ssr
+  // so ecosystem SSR plugins continue to work if only config.$ssr is configured
   const patchedConfigSsr = {
     ...config.ssr,
-    external: resolvedEnvironments.ssr?.resolve.external,
-    noExternal: resolvedEnvironments.ssr?.resolve.noExternal,
-    optimizeDeps: resolvedEnvironments.ssr?.dev?.optimizeDeps,
+    external: resolvedEnvironments.$ssr?.resolve.external,
+    noExternal: resolvedEnvironments.$ssr?.resolve.noExternal,
+    optimizeDeps: resolvedEnvironments.$ssr?.dev?.optimizeDeps,
     resolve: {
       ...config.ssr?.resolve,
-      conditions: resolvedEnvironments.ssr?.resolve.conditions,
-      externalConditions: resolvedEnvironments.ssr?.resolve.externalConditions,
+      conditions: resolvedEnvironments.$ssr?.resolve.conditions,
+      externalConditions: resolvedEnvironments.$ssr?.resolve.externalConditions,
     },
   }
   const ssr = resolveSSROptions(
@@ -1243,6 +1243,7 @@ export async function resolveConfig(
     build: resolvedBuildOptions,
 
     environments: resolvedEnvironments,
+    ...resolvedEnvironments,
 
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
@@ -1256,11 +1257,11 @@ export async function resolveConfig(
      */
     createResolver(options) {
       const resolve = createIdResolver(this, options)
-      const clientEnvironment = new PartialEnvironment('client', this)
+      const clientEnvironment = new PartialEnvironment('$client', this)
       let ssrEnvironment: PartialEnvironment | undefined
       return async (id, importer, aliasOnly, ssr) => {
         if (ssr) {
-          ssrEnvironment ??= new PartialEnvironment('ssr', this)
+          ssrEnvironment ??= new PartialEnvironment('$ssr', this)
         }
         return await resolve(
           ssr ? ssrEnvironment! : clientEnvironment,
@@ -1288,7 +1289,7 @@ export async function resolveConfig(
   resolved = {
     ...config,
     ...resolved,
-  }
+  } as ResolvedConfig
 
   // Backward compatibility hook, modify the resolved config before it is used
   // to create internal plugins. For example, `config.build.ssr`. Once we rework
@@ -1327,8 +1328,8 @@ export async function resolveConfig(
 
   // For backward compat, set ssr environment build.emitAssets with the same value as build.ssrEmitAssets that might be changed in configResolved hook
   // https://github.com/vikejs/vike/blob/953614cea7b418fcc0309b5c918491889fdec90a/vike/node/plugin/plugins/buildConfig.ts#L67
-  if (resolved.environments.ssr) {
-    resolved.environments.ssr.build.emitAssets =
+  if (resolved.$ssr) {
+    resolved.$ssr.build.emitAssets =
       resolved.build.ssrEmitAssets || resolved.build.emitAssets
   }
 

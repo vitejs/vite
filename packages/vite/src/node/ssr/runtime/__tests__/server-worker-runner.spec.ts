@@ -26,20 +26,18 @@ describe('running module runner inside a worker', () => {
           port: 9609,
         },
       },
-      environments: {
-        worker: {
-          dev: {
-            createEnvironment: (name, config) => {
-              return new DevEnvironment(name, config, {
-                remoteRunner: {
-                  transport: new RemoteEnvironmentTransport({
-                    send: (data) => worker.postMessage(data),
-                    onMessage: (handler) => worker.on('message', handler),
-                  }),
-                },
-                hot: false,
-              })
-            },
+      $worker: {
+        dev: {
+          createEnvironment: (name, config) => {
+            return new DevEnvironment(name, config, {
+              remoteRunner: {
+                transport: new RemoteEnvironmentTransport({
+                  send: (data) => worker.postMessage(data),
+                  onMessage: (handler) => worker.on('message', handler),
+                }),
+              },
+              hot: false,
+            })
           },
         },
       },

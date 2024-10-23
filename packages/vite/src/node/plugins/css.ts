@@ -1537,7 +1537,7 @@ export async function preprocessCSS(
   // cases. We should revisit in the future if there's a case to preprocess CSS based on a
   // different environment instance.
   const environment: PartialEnvironment = new PartialEnvironment(
-    'client',
+    '$client',
     config,
   )
 

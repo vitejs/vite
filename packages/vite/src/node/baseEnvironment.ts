@@ -24,7 +24,7 @@ export function getDefaultResolvedEnvironmentOptions(
 }
 
 export class PartialEnvironment {
-  name: string
+  name: `$${string}`
   getTopLevelConfig(): ResolvedConfig {
     return this._topLevelConfig
   }
@@ -50,9 +50,9 @@ export class PartialEnvironment {
   _topLevelConfig: ResolvedConfig
 
   constructor(
-    name: string,
+    name: `$${string}`,
     topLevelConfig: ResolvedConfig,
-    options: ResolvedEnvironmentOptions = topLevelConfig.environments[name],
+    options: ResolvedEnvironmentOptions = topLevelConfig[name],
   ) {
     // only allow some characters so that we can use name without escaping for directory names
     // and make users easier to access with `environments.*`
@@ -140,9 +140,9 @@ export class BaseEnvironment extends PartialEnvironment {
   _initiated: boolean = false
 
   constructor(
-    name: string,
+    name: `$${string}`,
     config: ResolvedConfig,
-    options: ResolvedEnvironmentOptions = config.environments[name],
+    options: ResolvedEnvironmentOptions = config[name],
   ) {
     super(name, config, options)
   }
