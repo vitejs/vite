@@ -39,8 +39,7 @@ import { resolveBuildEnvironmentOptions, resolveBuilderOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import { DevEnvironment } from './server/environment'
-import { createNodeDevEnvironment } from './server/environments/nodeEnvironment'
-import { createServerHotChannel } from './server/hmr'
+import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
 import type { WebSocketServer } from './server/ws'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
@@ -132,6 +131,8 @@ export type UserConfigExport =
 export function defineConfig(config: UserConfig): UserConfig
 export function defineConfig(config: Promise<UserConfig>): Promise<UserConfig>
 export function defineConfig(config: UserConfigFnObject): UserConfigFnObject
+export function defineConfig(config: UserConfigFnPromise): UserConfigFnPromise
+export function defineConfig(config: UserConfigFn): UserConfigFn
 export function defineConfig(config: UserConfigExport): UserConfigExport
 export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
@@ -213,9 +214,7 @@ function defaultCreateSsrDevEnvironment(
   name: string,
   config: ResolvedConfig,
 ): DevEnvironment {
-  return createNodeDevEnvironment(name, config, {
-    hot: createServerHotChannel(),
-  })
+  return createRunnableDevEnvironment(name, config)
 }
 
 function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
@@ -346,6 +345,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   assetsInclude?: string | RegExp | (string | RegExp)[]
   /**
    * Builder specific options
+   * @experimental
    */
   builder?: BuilderOptions
   /**
@@ -565,6 +565,7 @@ export type ResolvedConfig = Readonly<
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     dev: ResolvedDevEnvironmentOptions
+    /** @experimental */
     builder: ResolvedBuilderOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
@@ -666,19 +667,6 @@ export function getDefaultEnvironmentOptions(
   return {
     define: config.define,
     resolve: config.resolve,
-    dev: config.dev,
-    build: config.build,
-  }
-}
-
-export function getDefaultResolvedEnvironmentOptions(
-  config: ResolvedConfig,
-): ResolvedEnvironmentOptions {
-  return {
-    define: config.define,
-    resolve: config.resolve,
-    consumer: 'server',
-    webCompatible: false,
     dev: config.dev,
     build: config.build,
   }
@@ -1440,7 +1428,7 @@ export function resolveBaseUrl(
 
   // parse base when command is serve or base is not External URL
   if (!isBuild || !isExternal) {
-    base = new URL(base, 'http://vitejs.dev').pathname
+    base = new URL(base, 'http://vite.dev').pathname
     // ensure leading slash
     if (base[0] !== '/') {
       base = '/' + base
@@ -1631,7 +1619,7 @@ async function bundleConfigFile(
                     throw new Error(
                       `Failed to resolve ${JSON.stringify(
                         id,
-                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
                     )
                   }
                 }
@@ -1648,7 +1636,7 @@ async function bundleConfigFile(
                 throw new Error(
                   `${JSON.stringify(
                     id,
-                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
                 )
               }
               return {
