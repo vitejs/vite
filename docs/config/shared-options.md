@@ -217,7 +217,7 @@ Inline PostCSS config or a custom directory to search PostCSS config from (defau
 
 For inline PostCSS config, it expects the same format as `postcss.config.js`. But for `plugins` property, only [array format](https://github.com/postcss/postcss-load-config/blob/main/README.md#array) can be used.
 
-The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config) and only the supported config file names are loaded. Config files outside the project root are not searched by default. If required, e.g. to share the same PostCSS config across projects, you can set an custom path to the config file instead.
+The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config) and only the supported config file names are loaded. Config files outside the project root are not searched by default. If required, e.g. to share the same PostCSS config across projects, you can set a custom path to the config file instead.
 
 Note if an inline config is provided, Vite will not search for other PostCSS config sources.
 
