@@ -57,7 +57,6 @@ export async function fetchModule(
       isProduction,
       root,
       packageCache: environment.config.packageCache,
-      webCompatible: environment.config.webCompatible,
     })
     if (!resolved) {
       const err: any = new Error(

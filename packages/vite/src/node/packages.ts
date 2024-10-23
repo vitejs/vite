@@ -228,7 +228,6 @@ function getResolveCacheKey(key: string, options: InternalResolveOptions) {
   // `resolvePackageEntry` or `resolveDeepImport`
   return [
     key,
-    options.webCompatible ? '1' : '0',
     options.isRequire ? '1' : '0',
     options.conditions.join('_'),
     options.extensions.join('_'),

@@ -117,7 +117,6 @@ interface ResolvePluginOptions {
   tryPrefix?: string
   preferRelative?: boolean
   isRequire?: boolean
-  webCompatible?: boolean
   // #3040
   // when the importer is a ts module,
   // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
@@ -238,7 +237,6 @@ export function resolvePlugin(
       const options: InternalResolveOptions = {
         isRequire,
         ...environmentResolveOptions,
-        webCompatible: currentEnvironmentOptions.webCompatible,
         ...resolveOptions, // plugin options + resolve options overrides
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
@@ -330,7 +328,6 @@ export function resolvePlugin(
         }
 
         if (
-          options.webCompatible &&
           options.mainFields.includes('browser') &&
           (res = tryResolveBrowserMapping(
             fsPath,
@@ -423,7 +420,6 @@ export function resolvePlugin(
         }
 
         if (
-          options.webCompatible &&
           options.mainFields.includes('browser') &&
           (res = tryResolveBrowserMapping(
             id,
@@ -456,7 +452,6 @@ export function resolvePlugin(
         if (isBuiltin(id)) {
           if (currentEnvironmentOptions.consumer === 'server') {
             if (
-              options.webCompatible &&
               options.noExternal === true &&
               // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
               // only if the id is explicitly listed in external, we will externalize it and skip this error.
@@ -1001,11 +996,9 @@ export function resolvePackageEntry(
     if (!entryPoint) {
       for (const field of options.mainFields) {
         if (field === 'browser') {
-          if (options.webCompatible) {
-            entryPoint = tryResolveBrowserEntry(dir, data, options)
-            if (entryPoint) {
-              break
-            }
+          entryPoint = tryResolveBrowserEntry(dir, data, options)
+          if (entryPoint) {
+            break
           }
         } else if (typeof data[field] === 'string') {
           entryPoint = data[field]
@@ -1033,11 +1026,7 @@ export function resolvePackageEntry(
       } else {
         // resolve object browser field in package.json
         const { browser: browserField } = data
-        if (
-          options.webCompatible &&
-          options.mainFields.includes('browser') &&
-          isObject(browserField)
-        ) {
+        if (options.mainFields.includes('browser') && isObject(browserField)) {
           entry = mapWithBrowserField(entry, browserField) || entry
         }
       }
@@ -1092,10 +1081,6 @@ function resolveExportsOrImports(
           return options.isRequire
         case 'import':
           return !options.isRequire
-        case 'node':
-          return !options.webCompatible
-        case 'browser':
-          return options.webCompatible
       }
       return true
     },
@@ -1140,11 +1125,7 @@ function resolveDeepImport(
           `${path.join(dir, 'package.json')}.`,
       )
     }
-  } else if (
-    options.webCompatible &&
-    options.mainFields.includes('browser') &&
-    isObject(browserField)
-  ) {
+  } else if (options.mainFields.includes('browser') && isObject(browserField)) {
     // resolve without postfix (see #7098)
     const { file, postfix } = splitFileAndPostfix(relativeId)
     const mapped = mapWithBrowserField(file, browserField)
