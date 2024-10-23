@@ -35,10 +35,12 @@ export function buildErrorMessage(
   return args.join('\n')
 }
 
+const stackRE = /^\s*at/
+const newlineRE = /\n/
 function cleanStack(stack: string) {
   return stack
-    .split(/\n/)
-    .filter((l) => /^\s*at/.test(l))
+    .split(newlineRE)
+    .filter((l) => stackRE.test(l))
     .join('\n')
 }
 
