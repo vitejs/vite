@@ -1640,7 +1640,7 @@ async function resolvePostcssConfig(
   } else {
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
-    result = postcssrc({}, searchPath).catch((e) => {
+    result = postcssrc({}, searchPath, { stopDir: config.root }).catch((e) => {
       if (!e.message.includes('No PostCSS Config found')) {
         if (e instanceof Error) {
           const { name, message, stack } = e
