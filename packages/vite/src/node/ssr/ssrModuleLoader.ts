@@ -13,7 +13,7 @@ export async function ssrLoadModule(
   server: ViteDevServer,
   fixStacktrace?: boolean,
 ): Promise<SSRModule> {
-  const environment = server.environments.$ssr
+  const environment = server.$ssr
   server._ssrCompatModuleRunner ||= new SSRCompatModuleRunner(environment)
   url = unwrapId(url)
 

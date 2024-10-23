@@ -179,7 +179,7 @@ export interface DevEnvironmentOptions {
    * create the Dev Environment instance
    */
   createEnvironment?: (
-    name: string,
+    name: `$${string}`,
     config: ResolvedConfig,
     context: CreateDevEnvironmentContext,
   ) => Promise<DevEnvironment> | DevEnvironment
@@ -201,7 +201,7 @@ export interface DevEnvironmentOptions {
 }
 
 function defaultCreateClientDevEnvironment(
-  name: string,
+  name: `$${string}`,
   config: ResolvedConfig,
   context: CreateDevEnvironmentContext,
 ) {
@@ -211,13 +211,16 @@ function defaultCreateClientDevEnvironment(
 }
 
 function defaultCreateSsrDevEnvironment(
-  name: string,
+  name: `$${string}`,
   config: ResolvedConfig,
 ): DevEnvironment {
   return createRunnableDevEnvironment(name, config)
 }
 
-function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
+function defaultCreateDevEnvironment(
+  name: `$${string}`,
+  config: ResolvedConfig,
+) {
   return new DevEnvironment(name, config, {
     hot: false,
   })
@@ -576,7 +579,7 @@ export type ResolvedConfig = Readonly<
     worker: ResolvedWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
-    environments: Record<string, ResolvedEnvironmentOptions>
+    environments: Record<`$${string}`, ResolvedEnvironmentOptions>
     [key: `$${string}`]: ResolvedEnvironmentOptions
     /** @internal */
     fsDenyGlob: AnymatchFn

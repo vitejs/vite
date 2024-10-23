@@ -31,8 +31,8 @@ class ModuleRunner {
    */
 }
 
-if (isRunnableDevEnvironment(server.environments.$ssr)) {
-  await server.environments.$ssr.runner.import('/entry-point.js')
+if (isRunnableDevEnvironment(server.$ssr)) {
+  await server.$ssr.runner.import('/entry-point.js')
 }
 ```
 
@@ -57,7 +57,7 @@ const server = await createServer({
 
 // You might need to cast this to RunnableDevEnvironment in TypeScript or use
 // the "isRunnableDevEnvironment" function to guard the access to the runner
-const environment = server.environments.$server
+const environment = server.$server
 
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
@@ -107,7 +107,7 @@ For example, the following example uses the value of the user module from the co
 import { createServer } from 'vite'
 
 const server = createServer()
-const ssrEnvironment = server.environments.$ssr
+const ssrEnvironment = server.$ssr
 const input = {}
 
 const { createHandler } = await ssrEnvironment.runner.import('./entrypoint.js')
@@ -138,7 +138,7 @@ const server = createServer({
     },
   ],
 })
-const ssrEnvironment = server.environments.$ssr
+const ssrEnvironment = server.$ssr
 const input = {}
 
 // use exposed functions by each environment factories that runs the code
@@ -212,7 +212,7 @@ const server = createServer({
     },
   ],
 })
-const ssrEnvironment = server.environments.$ssr
+const ssrEnvironment = server.$ssr
 const input = {}
 
 // use exposed functions by each environment factories that runs the code
@@ -281,4 +281,4 @@ export default {
 
 ## Environment agnostic code
 
-Most of the time, the current `environment` instance will be available as part of the context of the code being run so the need to access them through `server.environments` should be rare. For example, inside plugin hooks the environment is exposed as part of the `PluginContext`, so it can be accessed using `this.environment`. See [Environment API for Plugins](./api-environment-plugins.md) to learn about how to build environment aware plugins.
+Most of the time, the current `environment` instance will be available as part of the context of the code being run so the need to access them by name should be rare. For example, inside plugin hooks the environment is exposed as part of the `PluginContext`, so it can be accessed using `this.environment`. See [Environment API for Plugins](./api-environment-plugins.md) to learn about how to build environment aware plugins.

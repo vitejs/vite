@@ -275,9 +275,10 @@ export interface ViteDevServer {
    */
   pluginContainer: PluginContainer
   /**
-   * Module execution environments attached to the Vite server.
+   * Dev environments attached to the Vite server.
    */
   environments: Record<'$client' | '$ssr' | (string & {}), DevEnvironment>
+  [key: `$${string}`]: DevEnvironment
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -492,7 +493,7 @@ export async function _createServer(
     config.environments,
   )) {
     environments[name] = await environmentOptions.dev.createEnvironment(
-      name,
+      name as `$${string}`,
       config,
       {
         ws,
@@ -526,6 +527,8 @@ export async function _createServer(
     hot: createDeprecatedHotBroadcaster(ws),
 
     environments,
+    ...environments,
+
     pluginContainer,
     get moduleGraph() {
       warnFutureDeprecation(config, 'removeServerModuleGraph')
@@ -555,13 +558,12 @@ export async function _createServer(
         'removeServerTransformRequest',
         'server.transformRequest() is deprecated. Use environment.transformRequest() instead.',
       )
-      const environment = server.environments[options?.ssr ? '$ssr' : '$client']
+      const environment = server[options?.ssr ? '$ssr' : '$client']
       return transformRequest(environment, url, options)
     },
     async warmupRequest(url, options) {
       try {
-        const environment =
-          server.environments[options?.ssr ? '$ssr' : '$client']
+        const environment = server[options?.ssr ? '$ssr' : '$client']
         await transformRequest(environment, url, options)
       } catch (e) {
         if (
@@ -586,10 +588,10 @@ export async function _createServer(
       return ssrLoadModule(url, server, opts?.fixStacktrace)
     },
     ssrFixStacktrace(e) {
-      ssrFixStacktrace(e, server.environments.$ssr.moduleGraph)
+      ssrFixStacktrace(e, server.$ssr.moduleGraph)
     },
     ssrRewriteStacktrace(stack: string) {
-      return ssrRewriteStacktrace(stack, server.environments.$ssr.moduleGraph)
+      return ssrRewriteStacktrace(stack, server.$ssr.moduleGraph)
     },
     async reloadModule(module) {
       if (serverConfig.hmr !== false && module.file) {
@@ -765,7 +767,7 @@ export async function _createServer(
         const path = file.slice(publicDir.length)
         publicFiles[isUnlink ? 'delete' : 'add'](path)
         if (!isUnlink) {
-          const clientModuleGraph = server.environments.$client.moduleGraph
+          const clientModuleGraph = server.$client.moduleGraph
           const moduleWithSamePath =
             await clientModuleGraph.getModuleByUrl(path)
           const etag = moduleWithSamePath?.transformResult?.etag

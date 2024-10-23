@@ -53,7 +53,7 @@ export function logError(server: ViteDevServer, err: RollupError): void {
     error: err,
   })
 
-  server.environments.$client.hot.send({
+  server.$client.hot.send({
     type: 'error',
     err: prepareError(err),
   })

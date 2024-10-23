@@ -13,15 +13,15 @@ Please share with us your feedback as you test the proposal.
 
 ## Accessing the environments
 
-During dev, the available environments in a dev server can be accessed using `server.environments`:
+During dev, the available environments in a dev server can be accessed using `server`:
 
 ```js
 // create the server, or get it from the configureServer hook
 const server = await createServer(/* options */)
 
-const environment = server.environments.$client
+const environment = server.$client
 environment.transformRequest(url)
-console.log(server.environments.$ssr.moduleGraph)
+console.log(server.$ssr.moduleGraph)
 ```
 
 You can also access the current environment from plugins. See the [Environment API for Plugins](./api-environment-plugins.md#accessing-the-current-environment-in-hooks) for more details.

@@ -253,15 +253,13 @@ export async function handleHMRUpdate(
     modules: [...mixedMods],
   }
 
-  const clientEnvironment = server.environments.$client
-  const ssrEnvironment = server.environments.$ssr
+  const clientEnvironment = server.$client
+  const ssrEnvironment = server.$ssr
   const clientContext = { environment: clientEnvironment }
   const clientHotUpdateOptions = hotMap.get(clientEnvironment)!.options
   const ssrHotUpdateOptions = hotMap.get(ssrEnvironment)?.options
   try {
-    for (const plugin of getSortedHotUpdatePlugins(
-      server.environments.$client,
-    )) {
+    for (const plugin of getSortedHotUpdatePlugins(server.$client)) {
       if (plugin.hotUpdate) {
         const filteredModules = await getHookHandler(plugin.hotUpdate).call(
           clientContext,
@@ -340,7 +338,7 @@ export async function handleHMRUpdate(
       }
     }
   } catch (error) {
-    hotMap.get(server.environments.$client)!.error = error
+    hotMap.get(server.$client)!.error = error
   }
 
   for (const environment of Object.values(server.environments)) {

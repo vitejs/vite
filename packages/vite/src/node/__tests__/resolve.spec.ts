@@ -13,7 +13,7 @@ describe('import and resolveId', () => {
       },
     })
     onTestFinished(() => server.close())
-    const runner = createServerModuleRunner(server.environments.$ssr, {
+    const runner = createServerModuleRunner(server.$ssr, {
       hmr: {
         logger: false,
       },
@@ -27,7 +27,7 @@ describe('import and resolveId', () => {
     const mod = await runner.import(
       '/fixtures/test-dep-conditions-app/entry-with-module',
     )
-    const resolved = await server.environments.$ssr.pluginContainer.resolveId(
+    const resolved = await server.$ssr.pluginContainer.resolveId(
       '@vitejs/test-dep-conditions/with-module',
     )
     expect([mod.default, resolved?.id]).toEqual([
@@ -38,7 +38,7 @@ describe('import and resolveId', () => {
 
   test('resolveId first', async () => {
     const { server, runner } = await createTestServer()
-    const resolved = await server.environments.$ssr.pluginContainer.resolveId(
+    const resolved = await server.$ssr.pluginContainer.resolveId(
       '@vitejs/test-dep-conditions/with-module',
     )
     const mod = await runner.import(

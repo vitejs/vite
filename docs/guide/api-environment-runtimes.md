@@ -66,7 +66,7 @@ export default {
 and frameworks can use an environment with the workerd runtime to do SSR using:
 
 ```js
-const ssrEnvironment = server.environments.$ssr
+const ssrEnvironment = server.$ssr
 ```
 
 ## Creating a new environment factory

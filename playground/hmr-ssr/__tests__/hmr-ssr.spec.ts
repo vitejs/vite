@@ -498,7 +498,7 @@ if (!isBuild) {
         beforeAll(async () => {
           clientLogs.length = 0
           // so it's in the module graph
-          const ssrEnvironment = server.environments.$ssr
+          const ssrEnvironment = server.$ssr
           await ssrEnvironment.transformRequest(testFile)
           await ssrEnvironment.transformRequest('non-tested/dep.js')
         })
@@ -1079,7 +1079,7 @@ async function setupModuleRunner(
     ...serverOptions,
   })
 
-  runner = (server.environments.$ssr as RunnableDevEnvironment).runner
+  runner = (server.$ssr as RunnableDevEnvironment).runner
 
   await waitForWatcher(server, waitForFile)
 

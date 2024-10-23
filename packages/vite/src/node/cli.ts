@@ -319,7 +319,7 @@ cli
           // remove the default values that shouldn't be used at all once the config is resolved
           const environmentName = resolved.build.ssr ? '$ssr' : '$client'
           ;(resolved.build as ResolvedBuildOptions) = {
-            ...resolved.environments[environmentName].build,
+            ...resolved[environmentName].build,
           }
         }
         const config = await build.resolveConfigToBuild(

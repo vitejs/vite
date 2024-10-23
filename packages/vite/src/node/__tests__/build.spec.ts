@@ -624,7 +624,7 @@ describe('resolveBuildOutputs', () => {
         },
       },
     })
-    const result = await builder.build(builder.environments.$ssr)
+    const result = await builder.build(builder.$ssr)
     expect(result).toMatchObject({
       output: [
         {
@@ -652,7 +652,7 @@ describe('resolveBuildOutputs', () => {
         },
       },
     })
-    const result = await builder.build(builder.environments.$ssr)
+    const result = await builder.build(builder.$ssr)
     expect((result as RollupOutput).output[0].code).not.toContain('preload')
   })
 
@@ -671,7 +671,7 @@ describe('resolveBuildOutputs', () => {
         },
       },
     })
-    const result = await builder.build(builder.environments.$custom)
+    const result = await builder.build(builder.$custom)
     expect((result as RollupOutput).output[0].code).not.toContain('preload')
   })
 })

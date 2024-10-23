@@ -17,12 +17,9 @@ export default defineConfig({
         }
       },
       configureServer(server) {
-        server.environments.$ssr.hot.on(
-          'custom:remote-add',
-          ({ a, b }, client) => {
-            client.send('custom:remote-add-result', { result: a + b })
-          },
-        )
+        server.$ssr.hot.on('custom:remote-add', ({ a, b }, client) => {
+          client.send('custom:remote-add-result', { result: a + b })
+        })
       },
     },
     virtualPlugin(),
@@ -48,14 +45,12 @@ export const virtual = _virtual + '${num}';`
       }
     },
     configureServer(server) {
-      server.environments.$ssr.hot.on('virtual:increment', async () => {
+      server.$ssr.hot.on('virtual:increment', async () => {
         const mod =
-          await server.environments.$ssr.moduleGraph.getModuleByUrl(
-            '\0virtual:file',
-          )
+          await server.$ssr.moduleGraph.getModuleByUrl('\0virtual:file')
         if (mod) {
           num++
-          server.environments.$ssr.reloadModule(mod)
+          server.$ssr.reloadModule(mod)
         }
       })
     },

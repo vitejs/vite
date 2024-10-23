@@ -50,7 +50,7 @@ export function cachedTransformMiddleware(
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteCachedTransformMiddleware(req, res, next) {
-    const environment = server.environments.$client
+    const environment = server.$client
 
     // check if we can return 304 early
     const ifNoneMatch = req.headers['if-none-match']
@@ -87,7 +87,7 @@ export function transformMiddleware(
   const publicPath = `${publicDir.slice(root.length)}/`
 
   return async function viteTransformMiddleware(req, res, next) {
-    const environment = server.environments.$client
+    const environment = server.$client
 
     if (req.method !== 'GET' || knownIgnoreList.has(req.url!)) {
       return next()

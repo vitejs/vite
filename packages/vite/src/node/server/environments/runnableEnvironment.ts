@@ -9,7 +9,7 @@ import { createServerHotChannel } from '../hmr'
 import type { Environment } from '../../environment'
 
 export function createRunnableDevEnvironment(
-  name: string,
+  name: `$${string}`,
   config: ResolvedConfig,
   context: RunnableDevEnvironmentContext = {},
 ): DevEnvironment {
@@ -47,7 +47,7 @@ class RunnableDevEnvironment extends DevEnvironment {
   private _runnerOptions: ServerModuleRunnerOptions | undefined
 
   constructor(
-    name: string,
+    name: `$${string}`,
     config: ResolvedConfig,
     context: RunnableDevEnvironmentContext,
   ) {

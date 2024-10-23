@@ -269,7 +269,7 @@ export interface BuildEnvironmentOptions {
    * create the Build Environment instance
    */
   createEnvironment?: (
-    name: string,
+    name: `$${string}`,
     config: ResolvedConfig,
   ) => Promise<BuildEnvironment> | BuildEnvironment
 }
@@ -517,7 +517,7 @@ export async function build(
     // remove the default values that shouldn't be used at all once the config is resolved
     const environmentName = resolved.build.ssr ? '$ssr' : '$client'
     ;(resolved.build as ResolvedBuildOptions) = {
-      ...resolved.environments[environmentName].build,
+      ...resolved[environmentName].build,
     }
   }
   const config = await resolveConfigToBuild(inlineConfig, patchConfig)
@@ -531,9 +531,10 @@ export async function buildWithResolvedConfig(
   config: ResolvedConfig,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const environmentName = config.build.ssr ? '$ssr' : '$client'
-  const environment = await config.environments[
-    environmentName
-  ].build.createEnvironment(environmentName, config)
+  const environment = await config[environmentName].build.createEnvironment(
+    environmentName,
+    config,
+  )
   await environment.init()
   return buildEnvironment(environment)
 }
@@ -1464,14 +1465,13 @@ export class BuildEnvironment extends BaseEnvironment {
   mode = 'build' as const
 
   constructor(
-    name: string,
+    name: `$${string}`,
     config: ResolvedConfig,
     setup?: {
       options?: EnvironmentOptions
     },
   ) {
-    let options =
-      config.environments[name] ?? getDefaultResolvedEnvironmentOptions(config)
+    let options = config[name] ?? getDefaultResolvedEnvironmentOptions(config)
     if (setup?.options) {
       options = mergeConfig(
         options,
@@ -1493,6 +1493,7 @@ export class BuildEnvironment extends BaseEnvironment {
 
 export interface ViteBuilder {
   environments: Record<string, BuildEnvironment>
+  [key: `$${string}`]: BuildEnvironment
   config: ResolvedConfig
   buildApp(): Promise<void>
   build(
@@ -1557,7 +1558,9 @@ export async function createBuilderWithResolvedConfig(
     },
   }
 
-  for (const environmentName of Object.keys(config.environments)) {
+  for (const environmentName of Object.keys(
+    config.environments,
+  ) as `$${string}`[]) {
     // We need to resolve the config again so we can properly merge options
     // and get a new set of plugins for each build environment. The ecosystem
     // expects plugins to be run for the same environment once they are created
@@ -1571,7 +1574,7 @@ export async function createBuilderWithResolvedConfig(
         // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
         // remove the default values that shouldn't be used at all once the config is resolved
         ;(resolved.build as ResolvedBuildOptions) = {
-          ...resolved.environments[environmentName].build,
+          ...resolved[environmentName].build,
         }
       }
       const patchPlugins = (resolvedPlugins: Plugin[]) => {
@@ -1607,7 +1610,7 @@ export async function createBuilderWithResolvedConfig(
 
     await environment.init()
 
-    environments[environmentName] = environment
+    builder[environmentName] = environments[environmentName] = environment
   }
 
   return builder

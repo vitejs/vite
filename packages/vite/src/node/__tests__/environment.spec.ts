@@ -141,7 +141,7 @@ describe('custom environment conditions', () => {
       '$custom3',
       '$custom3_2',
     ]) {
-      const runner = createServerModuleRunner(server.environments[key], {
+      const runner = createServerModuleRunner(server[key], {
         hmr: {
           logger: false,
         },
@@ -175,7 +175,7 @@ describe('custom environment conditions', () => {
       '$custom3',
       '$custom3_2',
     ]) {
-      const runner = createServerModuleRunner(server.environments[key], {
+      const runner = createServerModuleRunner(server[key], {
         hmr: {
           logger: false,
         },
@@ -228,7 +228,7 @@ describe('custom environment conditions', () => {
       '$custom3',
       '$custom3_2',
     ]) {
-      const output = await builder.build(builder.environments[key])
+      const output = await builder.build(builder[key])
       const chunk = (output as RollupOutput).output[0]
       const mod = await import(
         path.join(
