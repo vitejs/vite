@@ -1,3 +1,23 @@
+## <small>5.5.4 (2024-10-23)</small>
+
+* chore: change Angular customCommand (#18425) ([b53db53](https://github.com/vitejs/vite/commit/b53db53df17c43602d61a24e9bf579267ee8eb6b)), closes [#18425](https://github.com/vitejs/vite/issues/18425)
+* chore: combine deps license with same text (#18356) ([b5d1a05](https://github.com/vitejs/vite/commit/b5d1a058f9dab6a6b1243c2a0b11d2c421dd3291)), closes [#18356](https://github.com/vitejs/vite/issues/18356)
+* chore: specify TypeScript version with `~` (#18406) ([70bb8de](https://github.com/vitejs/vite/commit/70bb8ded1d5d2f1323d0350a8ad9cb3954c0bd61)), closes [#18406](https://github.com/vitejs/vite/issues/18406)
+* chore: update all url references of vitejs.dev to vite.dev (#18276) ([7052c8f](https://github.com/vitejs/vite/commit/7052c8f6fc253f0a88ff04a4c18c108f3bfdaa78)), closes [#18276](https://github.com/vitejs/vite/issues/18276)
+* chore: update license copyright (#18278) ([56eb869](https://github.com/vitejs/vite/commit/56eb869a67551a257d20cba00016ea59b1e1a2c4)), closes [#18278](https://github.com/vitejs/vite/issues/18278)
+* chore: update moduleResolution value casing (#18409) ([ff018dc](https://github.com/vitejs/vite/commit/ff018dca959c73481ae5f8328cd77d3b02f02134)), closes [#18409](https://github.com/vitejs/vite/issues/18409)
+* chore(create-vite): mark template files as CC0 (#18366) ([f6b9074](https://github.com/vitejs/vite/commit/f6b90747eb2b1ad863e5f147a80c75b15e38a51b)), closes [#18366](https://github.com/vitejs/vite/issues/18366)
+* chore(deps): bump TypeScript to 5.6 (#18254) ([57a0e85](https://github.com/vitejs/vite/commit/57a0e85186b88118bf5f79dd53391676fb91afec)), closes [#18254](https://github.com/vitejs/vite/issues/18254)
+* chore(deps): update all non-major dependencies (#18404) ([802839d](https://github.com/vitejs/vite/commit/802839d48335a69eb15f71f2cd816d0b6e4d3556)), closes [#18404](https://github.com/vitejs/vite/issues/18404)
+* chore(deps): update eslint-plugin-react-hooks to stable v5 (#18335) ([0ddfb9f](https://github.com/vitejs/vite/commit/0ddfb9f31a74eea6d61bbedbda2a5c280c9bcc77)), closes [#18335](https://github.com/vitejs/vite/issues/18335)
+* feat: add custom Angular variants (#18410) ([ac1fd41](https://github.com/vitejs/vite/commit/ac1fd41059f5549922b9f1a93c2bc00fbfcca3e8)), closes [#18410](https://github.com/vitejs/vite/issues/18410)
+* feat(create-vite): update to svelte 5 (#18407) ([291830f](https://github.com/vitejs/vite/commit/291830fa632c756b2a0311142d1f25ca7b56a637)), closes [#18407](https://github.com/vitejs/vite/issues/18407)
+* fix(create-vite): update qwik URL (#18285) ([45c9b5c](https://github.com/vitejs/vite/commit/45c9b5cca160346b41dbddacf6f9000ab1b638bc)), closes [#18285](https://github.com/vitejs/vite/issues/18285)
+* fix(deps): update all non-major dependencies (#18292) ([5cac054](https://github.com/vitejs/vite/commit/5cac0544dca2764f0114aac38e9922a0c13d7ef4)), closes [#18292](https://github.com/vitejs/vite/issues/18292)
+* fix(deps): update all non-major dependencies (#18345) ([5552583](https://github.com/vitejs/vite/commit/5552583a2272cd4208b30ad60e99d984e34645f0)), closes [#18345](https://github.com/vitejs/vite/issues/18345)
+
+
+
 ## <small>5.5.3 (2024-10-04)</small>
 
 * chore: enable some eslint rules (#18084) ([e9a2746](https://github.com/vitejs/vite/commit/e9a2746ca77473b1814fd05db3d299c074135fe5)), closes [#18084](https://github.com/vitejs/vite/issues/18084)
