@@ -365,6 +365,70 @@ describe('processSrcSetSync', () => {
       processSrcSetSync('https://anydomain/image.jpg', ({ url }) => url),
     ).toBe(source)
   })
+
+  test('should not break URLs with commas in srcSet', async () => {
+    const source = `
+      \thttps://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img   1x,
+      \thttps://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img\t\t2x
+    `
+    const result =
+      'https://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img 1x, https://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should not break URLs with commas in image-set-options', async () => {
+    const source = `url(https://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img)   1x,
+      url("https://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img")\t\t2x
+    `
+    const result =
+      'url(https://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img) 1x, url("https://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img") 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should parse image-set-options with resolution', async () => {
+    const source = ` "foo.png" 1x,
+                     "foo-2x.png" 2x,
+                     "foo-print.png" 600dpi`
+    const result = '"foo.png" 1x, "foo-2x.png" 2x, "foo-print.png" 600dpi'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should parse image-set-options with type', async () => {
+    const source = ` "foo.avif" type("image/avif"),
+                     "foo.jpg" type("image/jpeg") `
+    const result = '"foo.avif" type("image/avif"), "foo.jpg" type("image/jpeg")'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should parse image-set-options with linear-gradient', async () => {
+    const source = `linear-gradient(cornflowerblue, white) 1x,
+                    url("detailed-gradient.png") 3x`
+    const result =
+      'linear-gradient(cornflowerblue, white) 1x, url("detailed-gradient.png") 3x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should parse image-set-options with resolution and type specified', async () => {
+    const source = `url("picture.png")\t1x\t type("image/jpeg"), url("picture.png")\t type("image/jpeg")\t2x`
+    const result =
+      'url("picture.png") 1x type("image/jpeg"), url("picture.png") type("image/jpeg") 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should capture whole image set options', async () => {
+    const source = `linear-gradient(cornflowerblue, white) 1x,
+                    url("detailed-gradient.png") 3x`
+    const expected = [
+      'linear-gradient(cornflowerblue, white)',
+      'url("detailed-gradient.png")',
+    ]
+    const result: string[] = []
+    processSrcSetSync(source, ({ url }) => {
+      result.push(url)
+      return url
+    })
+    expect(result).toEqual(expected)
+  })
 })
 
 describe('flattenId', () => {

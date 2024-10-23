@@ -315,12 +315,33 @@ export default defineConfig({
               link: '/guide/api-javascript',
             },
             {
-              text: 'Environment API',
+              text: 'Config Reference',
+              link: '/config/',
+            },
+          ],
+        },
+        {
+          text: 'Environment API',
+          items: [
+            {
+              text: 'Introduction',
               link: '/guide/api-environment',
             },
             {
-              text: 'Config Reference',
-              link: '/config/',
+              text: 'Environment instances',
+              link: '/guide/api-environment-instances',
+            },
+            {
+              text: 'Plugins',
+              link: '/guide/api-environment-plugins',
+            },
+            {
+              text: 'Frameworks',
+              link: '/guide/api-environment-frameworks',
+            },
+            {
+              text: 'Runtimes',
+              link: '/guide/api-environment-runtimes',
             },
           ],
         },
@@ -435,6 +456,20 @@ export default defineConfig({
         },
       }),
     ],
+    environments: {
+      client: {
+        dev: {
+          optimizeDeps: {
+            include: [
+              '@shikijs/vitepress-twoslash/client',
+              'gsap',
+              'gsap/dist/ScrollTrigger',
+              'gsap/dist/MotionPathPlugin',
+            ],
+          },
+        },
+      },
+    },
   },
   buildEnd,
 })

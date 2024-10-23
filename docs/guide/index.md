@@ -49,7 +49,7 @@ Vite requires [Node.js](https://nodejs.org/en/) version 18+ or 20+. However, som
 
 ::: code-group
 
-```bash [NPM]
+```bash [npm]
 $ npm create vite@latest
 ```
 
@@ -57,7 +57,7 @@ $ npm create vite@latest
 $ yarn create vite
 ```
 
-```bash [PNPM]
+```bash [pnpm]
 $ pnpm create vite
 ```
 
@@ -73,7 +73,7 @@ You can also directly specify the project name and the template you want to use 
 
 ::: code-group
 
-```bash [NPM]
+```bash [npm]
 # npm 7+, extra double-dash is needed:
 $ npm create vite@latest my-vue-app -- --template vue
 ```
@@ -82,7 +82,7 @@ $ npm create vite@latest my-vue-app -- --template vue
 $ yarn create vite my-vue-app --template vue
 ```
 
-```bash [PNPM]
+```bash [pnpm]
 $ pnpm create vite my-vue-app --template vue
 ```
 
@@ -118,7 +118,7 @@ In your project, you can install the `vite` CLI using:
 
 ::: code-group
 
-```bash [NPM]
+```bash [npm]
 $ npm install -D vite
 ```
 
@@ -126,7 +126,7 @@ $ npm install -D vite
 $ yarn add -D vite
 ```
 
-```bash [PNPM]
+```bash [pnpm]
 $ pnpm add -D vite
 ```
 
@@ -146,7 +146,7 @@ Then run the appropriate CLI command in your terminal:
 
 ::: code-group
 
-```bash [NPM]
+```bash [npm]
 $ npx vite
 ```
 
@@ -154,7 +154,7 @@ $ npx vite
 $ yarn vite
 ```
 
-```bash [PNPM]
+```bash [pnpm]
 $ pnpm vite
 ```
 
