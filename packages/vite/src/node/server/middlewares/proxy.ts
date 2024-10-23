@@ -24,7 +24,8 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
    */
   bypass?: (
     req: http.IncomingMessage,
-    res: http.ServerResponse,
+    /** undefined for WebSocket upgrade requests */
+    res: http.ServerResponse | undefined,
     options: ProxyOptions,
   ) => void | null | undefined | false | string
   /**
@@ -167,6 +168,19 @@ export function proxyMiddleware(
             opts.target?.toString().startsWith('ws:') ||
             opts.target?.toString().startsWith('wss:')
           ) {
+            if (opts.bypass) {
+              const bypassResult = opts.bypass(req, undefined, opts)
+              if (typeof bypassResult === 'string') {
+                req.url = bypassResult
+                debug?.(`bypass: ${req.url} -> ${bypassResult}`)
+                return
+              } else if (bypassResult === false) {
+                debug?.(`bypass: ${req.url} -> 404`)
+                socket.end('HTTP/1.1 404 Not Found\r\n\r\n', '')
+                return
+              }
+            }
+
             if (opts.rewrite) {
               req.url = opts.rewrite(url)
             }
