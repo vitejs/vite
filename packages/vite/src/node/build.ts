@@ -1523,20 +1523,21 @@ export async function createBuilder(
     }
   }
   const config = await resolveConfigToBuild(inlineConfig, patchConfig)
+  useLegacyBuilder ??= !config.builder
+  const configBuilder = config.builder ?? resolveBuilderOptions({})!
 
   const environments: Record<string, BuildEnvironment> = {}
-  const selectedEnvironmentName =
-    (useLegacyBuilder ?? !config.builder)
-      ? config.build.ssr
-        ? 'ssr'
-        : 'client'
-      : undefined
+  const selectedEnvironmentName = useLegacyBuilder
+    ? config.build.ssr
+      ? 'ssr'
+      : 'client'
+    : undefined
 
   const builder: ViteBuilder = {
     environments,
     config,
     async buildApp() {
-      return config.builder?.buildApp(builder) ?? defaultBuildApp(builder)
+      return configBuilder.buildApp(builder)
     },
     async build(environment: BuildEnvironment) {
       return buildEnvironment(environment)
@@ -1553,7 +1554,7 @@ export async function createBuilder(
     // and to process a single bundle at a time (contrary to dev mode where
     // plugins are built to handle multiple environments concurrently).
     let environmentConfig = config
-    if (config.builder && !config.builder.sharedConfigBuild) {
+    if (!useLegacyBuilder && !configBuilder.sharedConfigBuild) {
       const patchConfig = (resolved: ResolvedConfig) => {
         // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
         // we need to make override `config.build` for the current environment.
@@ -1569,7 +1570,7 @@ export async function createBuilder(
         for (let i = 0; i < resolvedPlugins.length; i++) {
           const environmentPlugin = resolvedPlugins[i]
           if (
-            config.builder!.sharedPlugins ||
+            configBuilder.sharedPlugins ||
             environmentPlugin.sharedDuringBuild
           ) {
             for (let k = j; k < config.plugins.length; k++) {
