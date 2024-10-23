@@ -253,6 +253,8 @@ const numRows: ComputedRef<number> = computed(() => {
 
 /**
  * The indexes of the blocks on each row that support framework cards.
+ *
+ * Note that the index of the returned array is 1-based.
  */
 const centerIndexes: ComputedRef<{ start: number; end: number }[]> = computed(
   () => {
