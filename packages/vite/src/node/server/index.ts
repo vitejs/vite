@@ -542,7 +542,13 @@ export async function _createServer(
       url: string,
       originalCode = code,
     ) {
-      return ssrTransform(code, inMap, url, originalCode, server.config)
+      return ssrTransform(code, inMap, url, originalCode, {
+        json: {
+          stringify:
+            config.json?.stringify === true &&
+            config.json.namedExports !== true,
+        },
+      })
     },
     // environment.transformRequest and .warmupRequest don't take an options param for now,
     // so the logic and error handling needs to be duplicated here.
