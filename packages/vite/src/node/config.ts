@@ -878,8 +878,6 @@ export async function resolveConfig(
 
   const isBuild = command === 'build'
 
-  config = mergeConfig({ resolve: { conditions: DEFAULT_CONDITIONS } }, config)
-
   // run config hooks
   const userPlugins = [...prePlugins, ...normalPlugins, ...postPlugins]
   config = await runConfigHook(config, userPlugins, configEnv)
