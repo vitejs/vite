@@ -408,14 +408,15 @@ async function loadAndTransform(
   if (environment._closing && environment.config.dev.recoverable)
     throwClosedServerError()
 
+  const topLevelConfig = environment.getTopLevelConfig()
   const result = environment.config.dev.moduleRunnerTransform
-    ? await ssrTransform(
-        code,
-        normalizedMap,
-        url,
-        originalCode,
-        environment.getTopLevelConfig(),
-      )
+    ? await ssrTransform(code, normalizedMap, url, originalCode, {
+        json: {
+          stringify:
+            topLevelConfig.json?.stringify === true &&
+            topLevelConfig.json.namedExports !== true,
+        },
+      })
     : ({
         code,
         map: normalizedMap,
