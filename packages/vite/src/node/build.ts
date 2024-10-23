@@ -1131,7 +1131,10 @@ export function injectEnvironmentToHooks(
 
   const clone = { ...plugin }
 
-  for (const hook in clone as Record<RollupPluginHooks, any>) {
+  for (const untypedHook in clone) {
+    // TypeScript automatically infers the keys of objects as `string`, so we need to explicitly type it.
+    // Otherwise, dependent type checks will fail
+    const hook = untypedHook as Extract<keyof typeof clone, RollupPluginHooks>
     switch (hook) {
       case 'resolveId':
         clone[hook] = wrapEnvironmentResolveId(environment, resolveId)
