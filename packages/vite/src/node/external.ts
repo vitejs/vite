@@ -87,7 +87,6 @@ export function createIsConfiguredAsExternal(
         config.command === 'build' ? undefined : importer,
         resolveOptions,
         undefined,
-        true,
         // try to externalize, will return undefined or an object without
         // a external flag if it isn't externalizable
         true,

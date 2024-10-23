@@ -253,13 +253,25 @@ async function computeEntries(environment: ScanEnvironment) {
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
-    const resolvePath = (p: string) => path.resolve(environment.config.root, p)
+    const resolvePath = async (p: string) => {
+      const id = (
+        await environment.pluginContainer.resolveId(p, undefined, {
+          scan: true,
+        })
+      )?.id
+      if (id === undefined) {
+        throw new Error(
+          `failed to resolve rollupOptions.input value: ${JSON.stringify(p)}.`,
+        )
+      }
+      return id
+    }
     if (typeof buildInput === 'string') {
-      entries = [resolvePath(buildInput)]
+      entries = [await resolvePath(buildInput)]
     } else if (Array.isArray(buildInput)) {
-      entries = buildInput.map(resolvePath)
+      entries = await Promise.all(buildInput.map(resolvePath))
     } else if (isObject(buildInput)) {
-      entries = Object.values(buildInput).map(resolvePath)
+      entries = await Promise.all(Object.values(buildInput).map(resolvePath))
     } else {
       throw new Error('invalid rollupOptions.input value.')
     }
