@@ -566,7 +566,7 @@ export type ResolvedConfig = Readonly<
     server: ResolvedServerOptions
     dev: ResolvedDevEnvironmentOptions
     /** @experimental */
-    builder: ResolvedBuilderOptions
+    builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
