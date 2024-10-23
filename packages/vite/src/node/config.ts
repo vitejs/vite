@@ -345,6 +345,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   assetsInclude?: string | RegExp | (string | RegExp)[]
   /**
    * Builder specific options
+   * @experimental
    */
   builder?: BuilderOptions
   /**
@@ -564,6 +565,7 @@ export type ResolvedConfig = Readonly<
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     dev: ResolvedDevEnvironmentOptions
+    /** @experimental */
     builder: ResolvedBuilderOptions
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
