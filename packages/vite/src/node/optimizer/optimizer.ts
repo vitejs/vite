@@ -212,7 +212,7 @@ export function createDepsOptimizer(
               // Add these dependencies to the discovered list, as these are currently
               // used by the preAliasPlugin to support aliased and optimized deps.
               // This is also used by the CJS externalization heuristics in legacy mode
-              for (const id of Object.keys(deps)) {
+              for (const id in deps) {
                 if (!metadata.discovered[id]) {
                   addMissingDep(id, deps[id])
                 }

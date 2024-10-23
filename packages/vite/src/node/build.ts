@@ -1131,7 +1131,7 @@ export function injectEnvironmentToHooks(
 
   const clone = { ...plugin }
 
-  for (const hook of Object.keys(clone) as RollupPluginHooks[]) {
+  for (const hook in clone as RollupPluginHooks[]) {
     switch (hook) {
       case 'resolveId':
         clone[hook] = wrapEnvironmentResolveId(environment, resolveId)
@@ -1508,8 +1508,8 @@ export interface BuilderOptions {
 }
 
 async function defaultBuildApp(builder: ViteBuilder): Promise<void> {
-  for (const environment of Object.values(builder.environments)) {
-    await builder.build(environment)
+  for (const environment in builder.environments) {
+    await builder.build(builder.environments[environment])
   }
 }
 
@@ -1557,7 +1557,7 @@ export async function createBuilderWithResolvedConfig(
     },
   }
 
-  for (const environmentName of Object.keys(config.environments)) {
+  for (const environmentName in config.environments) {
     // We need to resolve the config again so we can properly merge options
     // and get a new set of plugins for each build environment. The ecosystem
     // expects plugins to be run for the same environment once they are created

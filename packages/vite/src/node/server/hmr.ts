@@ -230,7 +230,8 @@ export async function handleHMRUpdate(
     { options: HotUpdateOptions; error?: Error }
   >()
 
-  for (const environment of Object.values(server.environments)) {
+  for (const environmentId in server.environments) {
+    const environment = server.environments[environmentId]
     const mods = new Set(environment.moduleGraph.getModulesByFile(file))
     if (type === 'create') {
       for (const mod of environment.moduleGraph._hasResolveFailedErrorModules) {
@@ -343,7 +344,8 @@ export async function handleHMRUpdate(
     hotMap.get(server.environments.client)!.error = error
   }
 
-  for (const environment of Object.values(server.environments)) {
+  for (const environmentId in server.environments) {
+    const environment = server.environments[environmentId]
     if (environment.name === 'client') continue
     const hot = hotMap.get(environment)!
     const environmentThis = { environment }
