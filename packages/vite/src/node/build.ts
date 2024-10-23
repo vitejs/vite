@@ -1492,7 +1492,7 @@ export class BuildEnvironment extends BaseEnvironment {
 }
 
 export interface ViteBuilder {
-  environments: Record<string, BuildEnvironment>
+  environments: BuildEnvironment[]
   [key: `$${string}`]: BuildEnvironment
   config: ResolvedConfig
   buildApp(): Promise<void>
@@ -1509,7 +1509,7 @@ export interface BuilderOptions {
 }
 
 async function defaultBuildApp(builder: ViteBuilder): Promise<void> {
-  for (const environment of Object.values(builder.environments)) {
+  for (const environment of builder.environments) {
     await builder.build(environment)
   }
 }
@@ -1545,7 +1545,7 @@ export async function createBuilderWithResolvedConfig(
   inlineConfig: InlineConfig,
   config: ResolvedConfig,
 ): Promise<ViteBuilder> {
-  const environments: Record<string, BuildEnvironment> = {}
+  const environments: BuildEnvironment[] = []
 
   const builder: ViteBuilder = {
     environments,
@@ -1558,9 +1558,9 @@ export async function createBuilderWithResolvedConfig(
     },
   }
 
-  for (const environmentName of Object.keys(
-    config.environments,
-  ) as `$${string}`[]) {
+  for (const environmentOptions of config.environments) {
+    const environmentName = environmentOptions.name
+
     // We need to resolve the config again so we can properly merge options
     // and get a new set of plugins for each build environment. The ecosystem
     // expects plugins to be run for the same environment once they are created
@@ -1610,7 +1610,8 @@ export async function createBuilderWithResolvedConfig(
 
     await environment.init()
 
-    builder[environmentName] = environments[environmentName] = environment
+    environments.push(environment)
+    builder[environmentName] = environment
   }
 
   return builder

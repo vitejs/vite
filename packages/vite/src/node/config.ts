@@ -270,6 +270,7 @@ export interface EnvironmentOptions extends SharedEnvironmentOptions {
 export type ResolvedResolveOptions = Required<ResolveOptions>
 
 export type ResolvedEnvironmentOptions = {
+  name: `$${string}`
   define?: Record<string, any>
   resolve: ResolvedResolveOptions
   consumer: 'client' | 'server'
@@ -579,7 +580,7 @@ export type ResolvedConfig = Readonly<
     worker: ResolvedWorkerOptions
     appType: AppType
     experimental: ExperimentalOptions
-    environments: Record<`$${string}`, ResolvedEnvironmentOptions>
+    environments: ResolvedEnvironmentOptions[]
     [key: `$${string}`]: ResolvedEnvironmentOptions
     /** @internal */
     fsDenyGlob: AnymatchFn
@@ -626,6 +627,7 @@ export function resolveDevEnvironmentOptions(
 }
 
 function resolveEnvironmentOptions(
+  name: `$${string}`,
   options: EnvironmentOptions,
   resolvedRoot: string,
   alias: Alias[],
@@ -645,6 +647,7 @@ function resolveEnvironmentOptions(
   const consumer =
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   return {
+    name,
     resolve,
     consumer,
     webCompatible: options.webCompatible ?? consumer === 'client',
@@ -983,9 +986,11 @@ export async function resolveConfig(
 
   const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
 
-  const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
-  for (const environmentName of Object.keys(environments)) {
+  const resolvedEnvironments: Record<`$${string}`, ResolvedEnvironmentOptions> =
+    {}
+  for (const environmentName of Object.keys(environments) as `$${string}`[]) {
     resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
+      environmentName,
       environments[environmentName],
       resolvedRoot,
       resolvedDefaultResolve.alias,
@@ -1240,7 +1245,7 @@ export async function resolveConfig(
     dev: resolvedDevEnvironmentOptions,
     build: resolvedBuildOptions,
 
-    environments: resolvedEnvironments,
+    environments: Object.values(resolvedEnvironments),
     ...resolvedEnvironments,
 
     getSortedPlugins: undefined!,

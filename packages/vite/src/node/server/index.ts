@@ -277,7 +277,7 @@ export interface ViteDevServer {
   /**
    * Dev environments attached to the Vite server.
    */
-  environments: Record<'$client' | '$ssr' | (string & {}), DevEnvironment>
+  environments: DevEnvironment[]
   [key: `$${string}`]: DevEnvironment
   /**
    * Module graph that tracks the import relationships, url to file mapping
@@ -425,7 +425,7 @@ export async function _createServer(
   inlineConfig: InlineConfig = {},
   options: {
     listen: boolean
-    previousEnvironments?: Record<string, DevEnvironment>
+    previousEnvironments?: DevEnvironment[]
   },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
@@ -489,20 +489,18 @@ export async function _createServer(
 
   const environments: Record<string, DevEnvironment> = {}
 
-  for (const [name, environmentOptions] of Object.entries(
-    config.environments,
-  )) {
-    environments[name] = await environmentOptions.dev.createEnvironment(
-      name as `$${string}`,
-      config,
-      {
+  for (const environmentOptions of config.environments) {
+    const environmentName = environmentOptions.name
+    environments[environmentName] =
+      await environmentOptions.dev.createEnvironment(environmentName, config, {
         ws,
-      },
-    )
+      })
   }
 
   for (const environment of Object.values(environments)) {
-    const previousInstance = options.previousEnvironments?.[environment.name]
+    const previousInstance = options.previousEnvironments?.find(
+      (previousEnvironment) => previousEnvironment.name === environment.name,
+    )
     await environment.init({ watcher, previousInstance })
   }
 
@@ -526,7 +524,7 @@ export async function _createServer(
     ws,
     hot: createDeprecatedHotBroadcaster(ws),
 
-    environments,
+    environments: Object.values(environments),
     ...environments,
 
     pluginContainer,
@@ -781,7 +779,7 @@ export async function _createServer(
     }
     if (isUnlink) {
       // invalidate module graph cache on file change
-      for (const environment of Object.values(server.environments)) {
+      for (const environment of server.environments) {
         environment.moduleGraph.onFileDelete(file)
       }
     }
@@ -793,7 +791,7 @@ export async function _createServer(
 
     await pluginContainer.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
-    for (const environment of Object.values(server.environments)) {
+    for (const environment of server.environments) {
       environment.moduleGraph.onFileChange(file)
     }
     await onHMRUpdate('update', file)
@@ -1159,9 +1157,7 @@ async function restartServer(server: ViteDevServer) {
   if (!middlewareMode) {
     await server.listen(port, true)
   } else {
-    await Promise.all(
-      Object.values(server.environments).map((e) => e.listen(server)),
-    )
+    await Promise.all(server.environments.map((e) => e.listen(server)))
   }
   logger.info('server restarted.', { timestamp: true })
 

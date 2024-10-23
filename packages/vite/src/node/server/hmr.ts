@@ -173,7 +173,6 @@ export async function handleHMRUpdate(
   const { config } = server
   const mixedModuleGraph = ignoreDeprecationWarnings(() => server.moduleGraph)
 
-  const environments = Object.values(server.environments)
   const shortFile = getShortName(file, config.root)
 
   const isConfig = file === config.configFile
@@ -207,7 +206,7 @@ export async function handleHMRUpdate(
 
   // (dev only) the client itself cannot be hot updated.
   if (file.startsWith(withTrailingSlash(normalizedClientDir))) {
-    environments.forEach(({ hot }) =>
+    server.environments.forEach(({ hot }) =>
       hot.send({
         type: 'full-reload',
         path: '*',
@@ -230,7 +229,7 @@ export async function handleHMRUpdate(
     { options: HotUpdateOptions; error?: Error }
   >()
 
-  for (const environment of Object.values(server.environments)) {
+  for (const environment of server.environments) {
     const mods = new Set(environment.moduleGraph.getModulesByFile(file))
     if (type === 'create') {
       for (const mod of environment.moduleGraph._hasResolveFailedErrorModules) {
@@ -341,7 +340,7 @@ export async function handleHMRUpdate(
     hotMap.get(server.$client)!.error = error
   }
 
-  for (const environment of Object.values(server.environments)) {
+  for (const environment of server.environments) {
     if (environment.name === '$client') continue
     const hot = hotMap.get(environment)!
     const environmentThis = { environment }
@@ -407,9 +406,7 @@ export async function handleHMRUpdate(
     ((server, hmr) => {
       // Run HMR in parallel for all environments by default
       return Promise.all(
-        Object.values(server.environments).map((environment) =>
-          hmr(environment),
-        ),
+        server.environments.map((environment) => hmr(environment)),
       )
     })
 

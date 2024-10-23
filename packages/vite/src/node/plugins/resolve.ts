@@ -185,7 +185,7 @@ export function resolvePlugin(
    * The resolve plugin is especial as it works without environments to enable this use case.
    * It only needs access to the resolve options.
    */
-  environmentsOptions?: Record<string, ResolvedEnvironmentOptions>,
+  environmentsOptions?: ResolvedEnvironmentOptions[],
 ): Plugin {
   const { root, isProduction, asSrc, preferRelative = false } = resolveOptions
 
@@ -229,7 +229,10 @@ export function resolvePlugin(
       const environmentName =
         this.environment.name ?? (ssr ? '$ssr' : '$client')
       const currentEnvironmentOptions =
-        this.environment.config || environmentsOptions?.[environmentName]
+        this.environment.config ||
+        environmentsOptions?.find(
+          (environment) => environment.name === environmentName,
+        )
       const environmentResolveOptions = currentEnvironmentOptions?.resolve
       if (!environmentResolveOptions) {
         throw new Error(

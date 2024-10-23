@@ -14,6 +14,7 @@ export function getDefaultResolvedEnvironmentOptions(
   config: ResolvedConfig,
 ): ResolvedEnvironmentOptions {
   return {
+    name: '$',
     define: config.define,
     resolve: config.resolve,
     consumer: 'server',

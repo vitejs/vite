@@ -270,9 +270,8 @@ When `builder.entireApp` is `true` (or when calling `vite build --app`), `vite b
 export default {
   builder: {
     buildApp: async (builder) => {
-      const environments = Object.values(builder.environments)
       return Promise.all(
-        environments.map((environment) => builder.build(environment)),
+        builder.environments.map((environment) => builder.build(environment)),
       )
     },
   },
