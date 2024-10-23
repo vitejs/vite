@@ -8,6 +8,7 @@ const { version } = JSON.parse(
 )
 
 export const ROLLUP_HOOKS = [
+  'options',
   'buildStart',
   'buildEnd',
   'renderStart',
@@ -33,6 +34,7 @@ export const ROLLUP_HOOKS = [
   'resolveId',
   'shouldTransformCachedModule',
   'transform',
+  'onLog',
 ] satisfies RollupPluginHooks[]
 
 export const VERSION = version as string
@@ -171,3 +173,9 @@ export const DEFAULT_PREVIEW_PORT = 4173
 export const DEFAULT_ASSETS_INLINE_LIMIT = 4096
 
 export const METADATA_FILENAME = '_metadata.json'
+
+export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
+  'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
+export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
+export const ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR =
+  'ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR'

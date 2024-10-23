@@ -3,7 +3,6 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
@@ -27,6 +26,7 @@ import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
+import { globSync } from 'tinyglobby'
 import type {
   LessPreprocessorBaseOptions,
   SassLegacyPreprocessBaseOptions,
@@ -210,7 +210,7 @@ const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
-const functionCallRE = /^[A-Z_][\w-]*\(/i
+const functionCallRE = /^[A-Z_][.\w-]*\(/i
 const transformOnlyRE = /[?&]transform-only\b/
 const nonEscapedDoubleQuoteRe = /(?<!\\)"/g
 
@@ -465,7 +465,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       codeSplitEmitQueue = createSerialPromiseQueue()
     },
 
-    async transform(css, id, options) {
+    async transform(css, id) {
       if (
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
@@ -523,7 +523,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           return null
         }
         // server only
-        if (options?.ssr) {
+        if (this.environment.config.consumer !== 'client') {
           return modulesCode || `export default ${JSON.stringify(css)}`
         }
         if (inlined) {
@@ -581,7 +581,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let chunkCSS = ''
       // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
       const isJsChunkEmpty = code === '' && !chunk.isEntry
-      let isPureCssChunk = true
+      let isPureCssChunk = chunk.exports.length === 0
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
         if (styles.has(id)) {
@@ -796,7 +796,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             })
             generatedAssets.set(referenceId, { originalFileName, isEntry })
             chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
-          } else if (!config.build.ssr) {
+          } else if (this.environment.config.consumer === 'client') {
             // legacy build and inline css
 
             // Entry chunk CSS will be collected into `chunk.viteMetadata.importedCss`
@@ -969,6 +969,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           delete bundle[fileName]
           delete bundle[`${fileName}.map`]
         })
+      }
+
+      const cssAssets = Object.values(bundle).filter(
+        (asset): asset is OutputAsset =>
+          asset.type === 'asset' && asset.fileName.endsWith('.css'),
+      )
+      for (const cssAsset of cssAssets) {
+        if (typeof cssAsset.source === 'string') {
+          cssAsset.source = cssAsset.source.replace(viteHashUpdateMarkerRE, '')
+        }
       }
     },
   }
@@ -1401,11 +1411,10 @@ async function compileCSS(
       } else if (message.type === 'dir-dependency') {
         // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
         const { dir, glob: globPattern = '**' } = message
-        const pattern =
-          glob.escapePath(normalizePath(path.resolve(path.dirname(id), dir))) +
-          `/` +
-          globPattern
-        const files = glob.sync(pattern, {
+        const files = globSync(globPattern, {
+          absolute: true,
+          cwd: path.resolve(path.dirname(id), dir),
+          expandDirectories: false,
           ignore: ['**/node_modules/**'],
         })
         for (let i = 0; i < files.length; i++) {
@@ -1573,6 +1582,9 @@ function combineSourcemapsIfExists(
     : map1
 }
 
+const viteHashUpdateMarker = '/*$vite$:1*/'
+const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
+
 async function finalizeCss(
   css: string,
   minify: boolean,
@@ -1585,6 +1597,16 @@ async function finalizeCss(
   if (minify && config.build.cssMinify) {
     css = await minifyCSS(css, config, false)
   }
+  // inject an additional string to generate a different hash for https://github.com/vitejs/vite/issues/18038
+  //
+  // pre-5.4.3, we generated CSS link tags without crossorigin attribute and generated an hash without
+  // this string
+  // in 5.4.3, we added crossorigin attribute to the generated CSS link tags but that made chromium browsers
+  // to block the CSSs from loading due to chromium's weird behavior
+  // (https://www.hacksoft.io/blog/handle-images-cors-error-in-chrome, https://issues.chromium.org/issues/40381978)
+  // to avoid that happening, we inject an additional string so that a different hash is generated
+  // for the same CSS content
+  css += viteHashUpdateMarker
   return css
 }
 
@@ -2295,7 +2317,7 @@ const makeModernScssWorker = (
               fileURLToPath(canonicalUrl),
               options.filename,
             )
-            return { contents, syntax }
+            return { contents, syntax, sourceMapUrl: canonicalUrl }
           },
         }
         sassOptions.importers = [
@@ -2345,7 +2367,7 @@ const makeModernCompilerScssWorker = (
   alias: Alias[],
   _maxWorkers: number | undefined,
 ) => {
-  let compiler: Sass.AsyncCompiler | undefined
+  let compilerPromise: Promise<Sass.AsyncCompiler> | undefined
 
   const worker: Awaited<ReturnType<typeof makeModernScssWorker>> = {
     async run(sassPath, data, options) {
@@ -2353,7 +2375,8 @@ const makeModernCompilerScssWorker = (
       // https://github.com/nodejs/node/issues/31710
       const sass: typeof Sass = (await import(pathToFileURL(sassPath).href))
         .default
-      compiler ??= await sass.initAsyncCompiler()
+      compilerPromise ??= sass.initAsyncCompiler()
+      const compiler = await compilerPromise
 
       const sassOptions = { ...options } as Sass.StringOptions<'async'>
       sassOptions.url = pathToFileURL(options.filename)
@@ -2389,7 +2412,7 @@ const makeModernCompilerScssWorker = (
           )
           const contents =
             result.contents ?? (await fsp.readFile(result.file, 'utf-8'))
-          return { contents, syntax }
+          return { contents, syntax, sourceMapUrl: canonicalUrl }
         },
       }
       sassOptions.importers = [
@@ -2409,8 +2432,8 @@ const makeModernCompilerScssWorker = (
       } satisfies ScssWorkerResult
     },
     async stop() {
-      compiler?.dispose()
-      compiler = undefined
+      ;(await compilerPromise)?.dispose()
+      compilerPromise = undefined
     },
   }
 
@@ -3111,7 +3134,10 @@ async function compileLightningCSS(
         }
         deps.add(dep.url)
         if (urlReplacer) {
-          const replaceUrl = await urlReplacer(dep.url, dep.loc.filePath)
+          const replaceUrl = await urlReplacer(
+            dep.url,
+            toAbsolute(dep.loc.filePath),
+          )
           css = css.replace(dep.placeholder, () => replaceUrl)
         } else {
           css = css.replace(dep.placeholder, () => dep.url)

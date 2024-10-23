@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-dep-with-asset-ext1.pdf",
+  "private": true,
+  "type": "module",
+  "exports": "./index.mjs"
+}

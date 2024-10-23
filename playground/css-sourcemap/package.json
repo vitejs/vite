@@ -11,9 +11,9 @@
   },
   "devDependencies": {
     "less": "^4.2.0",
-    "magic-string": "^0.30.11",
-    "sass": "^1.78.0",
-    "stylus": "^0.63.0",
+    "magic-string": "^0.30.12",
+    "sass": "^1.80.3",
+    "stylus": "^0.64.0",
     "sugarss": "^4.0.1"
   }
 }

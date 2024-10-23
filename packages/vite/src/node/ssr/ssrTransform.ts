@@ -8,6 +8,7 @@ import type {
   Function as FunctionNode,
   Identifier,
   ImportDeclaration,
+  Literal,
   Pattern,
   Property,
   VariableDeclaration,
@@ -38,6 +39,7 @@ export const ssrImportKey = `__vite_ssr_import__`
 export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
+const ssrIdentityFunction = `__vite_ssr_identity__`
 
 const hashbangRE = /^#!.*\n/
 
@@ -130,7 +132,7 @@ async function ssrTransformScript(
   function defineExport(position: number, name: string, local = name) {
     s.appendLeft(
       position,
-      `\nObject.defineProperty(${ssrModuleExportsKey}, "${name}", ` +
+      `\nObject.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
         `{ enumerable: true, configurable: true, get(){ return ${local} }});`,
     )
   }
@@ -163,10 +165,7 @@ async function ssrTransformScript(
       importedNames: node.specifiers
         .map((s) => {
           if (s.type === 'ImportSpecifier')
-            return s.imported.type === 'Identifier'
-              ? s.imported.name
-              : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-                s.imported.value
+            return getIdentifierNameOrLiteralValue(s.imported) as string
           else if (s.type === 'ImportDefaultSpecifier') return 'default'
         })
         .filter(isDefined),
@@ -182,10 +181,7 @@ async function ssrTransformScript(
         } else {
           idToImportMap.set(
             spec.local.name,
-            `${importId}[${
-              // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-              JSON.stringify(spec.imported.value)
-            }]`,
+            `${importId}[${JSON.stringify(spec.imported.value as string)}]`,
           )
         }
       } else if (spec.type === 'ImportDefaultSpecifier') {
@@ -226,33 +222,39 @@ async function ssrTransformScript(
             node.start,
             node.source.value as string,
             {
-              importedNames: node.specifiers.map((s) => s.local.name),
+              importedNames: node.specifiers.map(
+                (s) => getIdentifierNameOrLiteralValue(s.local) as string,
+              ),
             },
           )
           for (const spec of node.specifiers) {
-            const exportedAs =
-              spec.exported.type === 'Identifier'
-                ? spec.exported.name
-                : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-                  spec.exported.value
+            const exportedAs = getIdentifierNameOrLiteralValue(
+              spec.exported,
+            ) as string
 
-            defineExport(
-              node.start,
-              exportedAs,
-              `${importId}.${spec.local.name}`,
-            )
+            if (spec.local.type === 'Identifier') {
+              defineExport(
+                node.start,
+                exportedAs,
+                `${importId}.${spec.local.name}`,
+              )
+            } else {
+              defineExport(
+                node.start,
+                exportedAs,
+                `${importId}[${JSON.stringify(spec.local.value as string)}]`,
+              )
+            }
           }
         } else {
           // export { foo, bar }
           for (const spec of node.specifiers) {
-            const local = spec.local.name
+            // spec.local can be Literal only when it has "from 'something'"
+            const local = (spec.local as Identifier).name
             const binding = idToImportMap.get(local)
-
-            const exportedAs =
-              spec.exported.type === 'Identifier'
-                ? spec.exported.name
-                : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-                  spec.exported.value
+            const exportedAs = getIdentifierNameOrLiteralValue(
+              spec.exported,
+            ) as string
 
             defineExport(node.end, exportedAs, binding || local)
           }
@@ -292,13 +294,17 @@ async function ssrTransformScript(
       s.remove(node.start, node.end)
       const importId = defineImport(node.start, node.source.value as string)
       if (node.exported) {
-        defineExport(node.start, node.exported.name, `${importId}`)
+        const exportedAs = getIdentifierNameOrLiteralValue(
+          node.exported,
+        ) as string
+        defineExport(node.start, exportedAs, `${importId}`)
       } else {
         s.appendLeft(node.start, `${ssrExportAllKey}(${importId});\n`)
       }
     }
   }
 
+  let injectIdentityFunction = false
   // 3. convert references to import bindings & import.meta references
   walk(ast, {
     onIdentifier(id, parent, parentStack) {
@@ -328,6 +334,13 @@ async function ssrTransformScript(
           const topNode = parentStack[parentStack.length - 2]
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
+      } else if (parent.type === 'CallExpression') {
+        s.update(id.start, id.end, binding)
+        // wrap with identity function to avoid method binding `this`
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors#method_binding
+        s.prependRight(id.start, `${ssrIdentityFunction}(`)
+        s.appendLeft(id.end, `)`)
+        injectIdentityFunction = true
       } else if (
         // don't transform class name identifier
         !(parent.type === 'ClassExpression' && id === parent.id)
@@ -346,7 +359,15 @@ async function ssrTransformScript(
     },
   })
 
+  if (injectIdentityFunction) {
+    s.prependLeft(hoistIndex, `const ${ssrIdentityFunction} = v => v;\n`)
+  }
+
   let map = s.generateMap({ hires: 'boundary' })
+  map.sources = [path.basename(url)]
+  // needs to use originalCode instead of code
+  // because code might be already transformed even if map is null
+  map.sourcesContent = [originalCode]
   if (
     inMap &&
     inMap.mappings &&
@@ -354,18 +375,9 @@ async function ssrTransformScript(
     inMap.sources.length > 0
   ) {
     map = combineSourcemaps(url, [
-      {
-        ...map,
-        sources: inMap.sources,
-        sourcesContent: inMap.sourcesContent,
-      } as RawSourceMap,
+      map as RawSourceMap,
       inMap as RawSourceMap,
     ]) as SourceMap
-  } else {
-    map.sources = [path.basename(url)]
-    // needs to use originalCode instead of code
-    // because code might be already transformed even if map is null
-    map.sourcesContent = [originalCode]
   }
 
   return {
@@ -375,6 +387,10 @@ async function ssrTransformScript(
     deps: [...deps],
     dynamicDeps: [...dynamicDeps],
   }
+}
+
+function getIdentifierNameOrLiteralValue(node: Identifier | Literal) {
+  return node.type === 'Identifier' ? node.name : node.value
 }
 
 interface Visitors {
