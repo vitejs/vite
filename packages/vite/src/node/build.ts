@@ -1528,6 +1528,7 @@ export type ResolvedBuilderOptions = Required<BuilderOptions>
 
 /**
  * Creates a ViteBuilder to orchestrate building multiple environments.
+ * @experimental
  */
 export async function createBuilder(
   inlineConfig: InlineConfig = {},
