@@ -1527,11 +1527,6 @@ export async function createBuilder(
   const configBuilder = config.builder ?? resolveBuilderOptions({})!
 
   const environments: Record<string, BuildEnvironment> = {}
-  const selectedEnvironmentName = useLegacyBuilder
-    ? config.build.ssr
-      ? 'ssr'
-      : 'client'
-    : undefined
 
   const builder: ViteBuilder = {
     environments,
@@ -1544,60 +1539,60 @@ export async function createBuilder(
     },
   }
 
-  for (const environmentName of Object.keys(config.environments)) {
-    if (selectedEnvironmentName && selectedEnvironmentName !== environmentName)
-      continue
+  async function setupEnvironment(name: string, config: ResolvedConfig) {
+    const environment = await config.build.createEnvironment(name, config)
+    await environment.init()
+    environments[name] = environment
+  }
 
-    // We need to resolve the config again so we can properly merge options
-    // and get a new set of plugins for each build environment. The ecosystem
-    // expects plugins to be run for the same environment once they are created
-    // and to process a single bundle at a time (contrary to dev mode where
-    // plugins are built to handle multiple environments concurrently).
-    let environmentConfig = config
-    if (!useLegacyBuilder && !configBuilder.sharedConfigBuild) {
-      const patchConfig = (resolved: ResolvedConfig) => {
-        // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
-        // we need to make override `config.build` for the current environment.
-        // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
-        // remove the default values that shouldn't be used at all once the config is resolved
-        ;(resolved.build as ResolvedBuildOptions) = {
-          ...resolved.environments[environmentName].build,
+  if (useLegacyBuilder) {
+    await setupEnvironment(config.build.ssr ? 'ssr' : 'client', config)
+  } else {
+    for (const environmentName of Object.keys(config.environments)) {
+      // We need to resolve the config again so we can properly merge options
+      // and get a new set of plugins for each build environment. The ecosystem
+      // expects plugins to be run for the same environment once they are created
+      // and to process a single bundle at a time (contrary to dev mode where
+      // plugins are built to handle multiple environments concurrently).
+      let environmentConfig = config
+      if (!configBuilder.sharedConfigBuild) {
+        const patchConfig = (resolved: ResolvedConfig) => {
+          // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
+          // we need to make override `config.build` for the current environment.
+          // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
+          // remove the default values that shouldn't be used at all once the config is resolved
+          ;(resolved.build as ResolvedBuildOptions) = {
+            ...resolved.environments[environmentName].build,
+          }
         }
-      }
-      const patchPlugins = (resolvedPlugins: Plugin[]) => {
-        // Force opt-in shared plugins
-        let j = 0
-        for (let i = 0; i < resolvedPlugins.length; i++) {
-          const environmentPlugin = resolvedPlugins[i]
-          if (
-            configBuilder.sharedPlugins ||
-            environmentPlugin.sharedDuringBuild
-          ) {
-            for (let k = j; k < config.plugins.length; k++) {
-              if (environmentPlugin.name === config.plugins[k].name) {
-                resolvedPlugins[i] = config.plugins[k]
-                j = k + 1
-                break
+        const patchPlugins = (resolvedPlugins: Plugin[]) => {
+          // Force opt-in shared plugins
+          let j = 0
+          for (let i = 0; i < resolvedPlugins.length; i++) {
+            const environmentPlugin = resolvedPlugins[i]
+            if (
+              configBuilder.sharedPlugins ||
+              environmentPlugin.sharedDuringBuild
+            ) {
+              for (let k = j; k < config.plugins.length; k++) {
+                if (environmentPlugin.name === config.plugins[k].name) {
+                  resolvedPlugins[i] = config.plugins[k]
+                  j = k + 1
+                  break
+                }
               }
             }
           }
         }
+        environmentConfig = await resolveConfigToBuild(
+          inlineConfig,
+          patchConfig,
+          patchPlugins,
+        )
       }
-      environmentConfig = await resolveConfigToBuild(
-        inlineConfig,
-        patchConfig,
-        patchPlugins,
-      )
+
+      await setupEnvironment(environmentName, environmentConfig)
     }
-
-    const environment = await environmentConfig.build.createEnvironment(
-      environmentName,
-      environmentConfig,
-    )
-
-    await environment.init()
-
-    environments[environmentName] = environment
   }
 
   return builder
