@@ -1131,7 +1131,7 @@ export function injectEnvironmentToHooks(
 
   const clone = { ...plugin }
 
-  for (const hook in clone as RollupPluginHooks[]) {
+  for (const hook in clone as Record<RollupPluginHooks, any>) {
     switch (hook) {
       case 'resolveId':
         clone[hook] = wrapEnvironmentResolveId(environment, resolveId)
