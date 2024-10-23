@@ -4,13 +4,13 @@ import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import { VERSION } from './constants'
-import type { BuildEnvironmentOptions, ResolvedBuildOptions } from './build'
+import type { BuildEnvironmentOptions } from './build'
 import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { resolveConfig } from './config'
-import type { InlineConfig, ResolvedConfig } from './config'
+import type { InlineConfig } from './config'
 
 const cli = cac('vite')
 
@@ -285,14 +285,14 @@ cli
     `[boolean] force empty outDir when it's outside of root`,
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
-  .option('--app', `[boolean] same as builder.entireApp`)
+  .option('--app', `[boolean] same as \`builder: {}\``)
   .action(
     async (
       root: string,
       options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
     ) => {
       filterDuplicateOptions(options)
-      const build = await import('./build')
+      const { createBuilder } = await import('./build')
 
       const buildOptions: BuildEnvironmentOptions = cleanGlobalCLIOptions(
         cleanBuilderCLIOptions(options),
@@ -307,36 +307,10 @@ cli
           logLevel: options.logLevel,
           clearScreen: options.clearScreen,
           build: buildOptions,
-          ...(options.app ? { builder: { entireApp: true } } : {}),
+          ...(options.app ? { builder: {} } : {}),
         }
-        const patchConfig = (resolved: ResolvedConfig) => {
-          if (resolved.builder.entireApp) {
-            return
-          }
-          // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
-          // we need to make override `config.build` for the current environment.
-          // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
-          // remove the default values that shouldn't be used at all once the config is resolved
-          const environmentName = resolved.build.ssr ? 'ssr' : 'client'
-          ;(resolved.build as ResolvedBuildOptions) = {
-            ...resolved.environments[environmentName].build,
-          }
-        }
-        const config = await build.resolveConfigToBuild(
-          inlineConfig,
-          patchConfig,
-        )
-
-        if (config.builder.entireApp) {
-          const builder = await build.createBuilderWithResolvedConfig(
-            inlineConfig,
-            config,
-          )
-          await builder.buildApp()
-        } else {
-          // Single environment (client or ssr) build or library mode build
-          await build.buildWithResolvedConfig(config)
-        }
+        const builder = await createBuilder(inlineConfig, null)
+        await builder.buildApp()
       } catch (e) {
         createLogger(options.logLevel).error(
           colors.red(`error during build:\n${e.stack}`),
