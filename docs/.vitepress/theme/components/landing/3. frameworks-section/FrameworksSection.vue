@@ -284,7 +284,6 @@ const centerIndexes: ComputedRef<{ start: number; end: number }[]> = computed(
   },
 )
 
-console.log(centerIndexes.value)
 /**
  * Generate CSS transformations for each row, to gracefully slide between horizontal positions.
  */
