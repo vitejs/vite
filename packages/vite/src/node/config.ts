@@ -812,8 +812,6 @@ export async function resolveConfig(
   isPreview = false,
   /** @internal */
   patchConfig: ((config: ResolvedConfig) => void) | undefined = undefined,
-  /** @internal */
-  patchPlugins: ((resolvedPlugins: Plugin[]) => void) | undefined = undefined,
 ): Promise<ResolvedConfig> {
   let config = inlineConfig
   let configFileDependencies: string[] = []
@@ -1288,13 +1286,6 @@ export async function resolveConfig(
     ...resolved,
   }
 
-  // Backward compatibility hook, modify the resolved config before it is used
-  // to create internal plugins. For example, `config.build.ssr`. Once we rework
-  // internal plugins to use environment.config, we can remove the dual
-  // patchConfig/patchPlugins and have a single patchConfig before configResolved
-  // gets called
-  patchConfig?.(resolved)
-
   const resolvedPlugins = await resolvePlugins(
     resolved,
     prePlugins,
@@ -1302,12 +1293,14 @@ export async function resolveConfig(
     postPlugins,
   )
 
-  // Backward compatibility hook used in builder, opt-in to shared plugins during build
-  patchPlugins?.(resolvedPlugins)
   ;(resolved.plugins as Plugin[]) = resolvedPlugins
 
   // TODO: Deprecate config.getSortedPlugins and config.getSortedPluginHooks
   Object.assign(resolved, createPluginHookUtils(resolved.plugins))
+
+  // Backward compatibility hook, modify the resolved config before it is used
+  // to create internal plugins. For example, `config.build.ssr`.
+  patchConfig?.(resolved)
 
   // call configResolved hooks
   await Promise.all(

@@ -541,7 +541,6 @@ export async function buildWithResolvedConfig(
 export function resolveConfigToBuild(
   inlineConfig: InlineConfig = {},
   patchConfig?: (config: ResolvedConfig) => void,
-  patchPlugins?: (resolvedPlugins: Plugin[]) => void,
 ): Promise<ResolvedConfig> {
   return resolveConfig(
     inlineConfig,
@@ -550,7 +549,6 @@ export function resolveConfigToBuild(
     'production',
     false,
     patchConfig,
-    patchPlugins,
   )
 }
 
@@ -1573,8 +1571,8 @@ export async function createBuilderWithResolvedConfig(
         ;(resolved.build as ResolvedBuildOptions) = {
           ...resolved.environments[environmentName].build,
         }
-      }
-      const patchPlugins = (resolvedPlugins: Plugin[]) => {
+
+        const resolvedPlugins = resolved.plugins as Plugin[]
         // Force opt-in shared plugins
         let j = 0
         for (let i = 0; i < resolvedPlugins.length; i++) {
@@ -1593,11 +1591,7 @@ export async function createBuilderWithResolvedConfig(
           }
         }
       }
-      environmentConfig = await resolveConfigToBuild(
-        inlineConfig,
-        patchConfig,
-        patchPlugins,
-      )
+      environmentConfig = await resolveConfigToBuild(inlineConfig, patchConfig)
     }
 
     const environment = await environmentConfig.build.createEnvironment(
