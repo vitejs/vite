@@ -51,6 +51,8 @@ Ensuring optimal output and behavioral consistency between the dev server and th
 
 ## Why Not Bundle with esbuild?
 
+While Vite leverages esbuild to [pre-bundle some dependencies in dev](./dep-pre-bundling.md), Vite does not use esbuild as a bundler for production builds.
+
 Vite's current plugin API isn't compatible with using `esbuild` as a bundler. In spite of `esbuild` being faster, Vite's adoption of Rollup's flexible plugin API and infrastructure heavily contributed to its success in the ecosystem. For the time being, we believe that Rollup offers a better performance-vs-flexibility tradeoff.
 
 Rollup has also been working on performance improvements, [switching its parser to SWC in v4](https://github.com/rollup/rollup/pull/5073). And there is an ongoing effort to build a Rust-port of Rollup called Rolldown. Once Rolldown is ready, it could replace both Rollup and esbuild in Vite, improving build performance significantly and removing inconsistencies between development and build. You can watch [Evan You's ViteConf 2023 keynote for more details](https://youtu.be/hrdwQHoAp0M).

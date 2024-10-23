@@ -129,6 +129,22 @@ jobs:
       - name: Test build
         run: pnpm run test-build
 
+  test-passed:
+    if: (!cancelled() && !failure())
+    needs: test
+    runs-on: ubuntu-latest
+    name: Build & Test Passed or Skipped
+    steps:
+      - run: echo "Build & Test Passed or Skipped"
+
+  test-failed:
+    if: (!cancelled() && failure())
+    needs: test
+    runs-on: ubuntu-latest
+    name: Build & Test Failed
+    steps:
+      - run: echo "Build & Test Failed"
+
   lint:
     timeout-minutes: 10
     runs-on: ubuntu-latest
@@ -155,7 +171,7 @@ jobs:
         run: pnpm run lint
 
       - name: Check formatting
-        run: pnpm prettier --check .
+        run: pnpm prettier --write --log-level=warn . && git diff --exit-code
 
       - name: Typecheck
         run: pnpm run typecheck

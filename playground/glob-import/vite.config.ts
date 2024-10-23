@@ -24,5 +24,14 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('foo.css')) {
+            return 'foo_css'
+          }
+        },
+      },
+    },
   },
 })
