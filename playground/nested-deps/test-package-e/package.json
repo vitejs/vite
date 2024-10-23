@@ -1,10 +1,10 @@
 {
-  "name": "test-package-e",
+  "name": "@vitejs/test-package-e",
   "private": true,
   "version": "0.1.0",
   "main": "index.js",
   "dependencies": {
-    "test-package-e-excluded": "link:./test-package-e-excluded",
-    "test-package-e-included": "link:./test-package-e-included"
+    "@vitejs/test-package-e-excluded": "link:./test-package-e-excluded",
+    "@vitejs/test-package-e-included": "link:./test-package-e-included"
   }
 }

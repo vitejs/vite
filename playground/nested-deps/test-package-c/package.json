@@ -1,5 +1,5 @@
 {
-  "name": "test-package-c",
+  "name": "@vitejs/test-package-c",
   "private": true,
   "version": "1.0.0",
   "type": "module",

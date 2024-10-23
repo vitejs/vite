@@ -11,7 +11,7 @@ import {
   rootDir,
   serverLogs,
   setViteUrl,
-  viteTestUrl
+  viteTestUrl,
 } from '~utils'
 
 export const port = ports.lib
@@ -27,23 +27,25 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
         root: rootDir,
         logLevel: 'silent',
         server: {
+          port,
+          strictPort: true,
           watch: {
             usePolling: true,
-            interval: 100
+            interval: 100,
           },
           host: true,
           fs: {
-            strict: !isBuild
-          }
+            strict: !isBuild,
+          },
         },
         build: {
-          target: 'esnext'
-        }
+          target: 'esnext',
+        },
       })
     ).listen()
     // use resolved port/base from server
     const devBase = viteServer.config.base === '/' ? '' : viteServer.config.base
-    setViteUrl(`http://localhost:${viteServer.config.server.port}${devBase}`)
+    setViteUrl(`http://localhost:${port}${devBase}`)
     await page.goto(viteTestUrl)
 
     return viteServer
@@ -52,13 +54,40 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     await build({
       root: rootDir,
       logLevel: 'silent',
-      configFile: path.resolve(__dirname, '../vite.config.js')
+      configFile: path.resolve(__dirname, '../vite.config.js'),
     })
 
     await build({
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
-      configFile: path.resolve(__dirname, '../vite.dyimport.config.js')
+      configFile: path.resolve(__dirname, '../vite.dyimport.config.js'),
+    })
+
+    await build({
+      root: rootDir,
+      logLevel: 'warn', // output esbuild warns
+      configFile: path.resolve(__dirname, '../vite.multiple-output.config.js'),
+    })
+
+    await build({
+      root: rootDir,
+      logLevel: 'warn', // output esbuild warns
+      configFile: path.resolve(__dirname, '../vite.nominify.config.js'),
+    })
+
+    await build({
+      root: rootDir,
+      logLevel: 'warn', // output esbuild warns
+      configFile: path.resolve(
+        __dirname,
+        '../vite.helpers-injection.config.js',
+      ),
+    })
+
+    await build({
+      root: rootDir,
+      logLevel: 'warn', // output esbuild warns
+      configFile: path.resolve(__dirname, '../vite.named-exports.config.js'),
     })
 
     // start static file server
@@ -82,7 +111,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
               await new Promise((resolve) => {
                 server.close(resolve)
               })
-            }
+            },
           })
         })
       } catch (e) {

@@ -31,41 +31,37 @@ declare module '*.module.pcss' {
   const classes: CSSModuleClasses
   export default classes
 }
+declare module '*.module.sss' {
+  const classes: CSSModuleClasses
+  export default classes
+}
 
 // CSS
-declare module '*.css' {
-  const css: string
-  export default css
-}
-declare module '*.scss' {
-  const css: string
-  export default css
-}
-declare module '*.sass' {
-  const css: string
-  export default css
-}
-declare module '*.less' {
-  const css: string
-  export default css
-}
-declare module '*.styl' {
-  const css: string
-  export default css
-}
-declare module '*.stylus' {
-  const css: string
-  export default css
-}
-declare module '*.pcss' {
-  const css: string
-  export default css
-}
+declare module '*.css' {}
+declare module '*.scss' {}
+declare module '*.sass' {}
+declare module '*.less' {}
+declare module '*.styl' {}
+declare module '*.stylus' {}
+declare module '*.pcss' {}
+declare module '*.sss' {}
 
 // Built-in asset types
-// see `src/constants.ts`
+// see `src/node/constants.ts`
 
 // images
+declare module '*.apng' {
+  const src: string
+  export default src
+}
+declare module '*.bmp' {
+  const src: string
+  export default src
+}
+declare module '*.png' {
+  const src: string
+  export default src
+}
 declare module '*.jpg' {
   const src: string
   export default src
@@ -83,10 +79,6 @@ declare module '*.pjpeg' {
   export default src
 }
 declare module '*.pjp' {
-  const src: string
-  export default src
-}
-declare module '*.png' {
   const src: string
   export default src
 }
@@ -140,6 +132,22 @@ declare module '*.aac' {
   const src: string
   export default src
 }
+declare module '*.opus' {
+  const src: string
+  export default src
+}
+declare module '*.mov' {
+  const src: string
+  export default src
+}
+declare module '*.m4a' {
+  const src: string
+  export default src
+}
+declare module '*.vtt' {
+  const src: string
+  export default src
+}
 
 // fonts
 declare module '*.woff' {
@@ -164,12 +172,6 @@ declare module '*.otf' {
 }
 
 // other
-declare module '*.wasm?init' {
-  const initWasm: (
-    options: WebAssembly.Imports
-  ) => Promise<WebAssembly.Instance>
-  export default initWasm
-}
 declare module '*.webmanifest' {
   const src: string
   export default src
@@ -183,26 +185,51 @@ declare module '*.txt' {
   export default src
 }
 
+// wasm?init
+declare module '*.wasm?init' {
+  const initWasm: (
+    options?: WebAssembly.Imports,
+  ) => Promise<WebAssembly.Instance>
+  export default initWasm
+}
+
 // web worker
 declare module '*?worker' {
   const workerConstructor: {
-    new (): Worker
+    new (options?: { name?: string }): Worker
   }
   export default workerConstructor
 }
 
 declare module '*?worker&inline' {
   const workerConstructor: {
-    new (): Worker
+    new (options?: { name?: string }): Worker
   }
   export default workerConstructor
 }
 
+declare module '*?worker&url' {
+  const src: string
+  export default src
+}
+
 declare module '*?sharedworker' {
   const sharedWorkerConstructor: {
-    new (): SharedWorker
+    new (options?: { name?: string }): SharedWorker
   }
   export default sharedWorkerConstructor
+}
+
+declare module '*?sharedworker&inline' {
+  const sharedWorkerConstructor: {
+    new (options?: { name?: string }): SharedWorker
+  }
+  export default sharedWorkerConstructor
+}
+
+declare module '*?sharedworker&url' {
+  const src: string
+  export default src
 }
 
 declare module '*?raw' {
@@ -218,4 +245,12 @@ declare module '*?url' {
 declare module '*?inline' {
   const src: string
   export default src
+}
+
+declare interface VitePreloadErrorEvent extends Event {
+  payload: Error
+}
+
+declare interface WindowEventMap {
+  'vite:preloadError': VitePreloadErrorEvent
 }

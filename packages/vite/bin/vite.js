@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 import { performance } from 'node:perf_hooks'
+import module from 'node:module'
 
 if (!import.meta.url.includes('node_modules')) {
   try {
     // only available as dev dependency
     await import('source-map-support').then((r) => r.default.install())
-  } catch (e) {}
+  } catch {}
 }
 
 global.__vite_start_time = performance.now()
@@ -13,7 +14,7 @@ global.__vite_start_time = performance.now()
 // check debug mode first before requiring the CLI.
 const debugIndex = process.argv.findIndex((arg) => /^(?:-d|--debug)$/.test(arg))
 const filterIndex = process.argv.findIndex((arg) =>
-  /^(?:-f|--filter)$/.test(arg)
+  /^(?:-f|--filter)$/.test(arg),
 )
 const profileIndex = process.argv.indexOf('--profile')
 
@@ -41,6 +42,10 @@ if (debugIndex > 0) {
 }
 
 function start() {
+  try {
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- it is supported in Node 22.8.0+ and only called if it exists
+    module.enableCompileCache?.()
+  } catch {}
   return import('../dist/node/cli.js')
 }
 

@@ -1,0 +1,24 @@
+<h1>Optimize Deps</h1>
+
+<h2>Optimized Dep</h2>
+<div class="optimized-dep"></div>
+
+<h2>Vue & Vuex</h2>
+<div class="vue"></div>
+
+<script>
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>
+
+<script type="module">
+  import msg from '@vitejs/test-dep-no-discovery'
+  text('.optimized-dep', msg)
+
+  import { createApp } from 'vue'
+  import { createStore } from 'vuex'
+  if (typeof createApp === 'function' && typeof createStore === 'function') {
+    text('.vue', '[success]')
+  }
+</script>

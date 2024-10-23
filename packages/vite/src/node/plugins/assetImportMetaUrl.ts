@@ -3,9 +3,21 @@ import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import { transformStableResult } from '../utils'
+import {
+  injectQuery,
+  isDataUrl,
+  isParentDirectory,
+  transformStableResult,
+} from '../utils'
+import { CLIENT_ENTRY } from '../constants'
+import { slash } from '../../shared/utils'
+import { createBackCompatIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
+import type { InternalResolveOptions } from './resolve'
+import { tryFsResolve } from './resolve'
+import { hasViteIgnoreRE } from './importAnalysis'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -18,66 +30,131 @@ import { preloadHelperId } from './importAnalysisBuild'
  * ```
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
+  const { publicDir } = config
+  let assetResolver: ResolveIdFn
+
+  const fsResolveOptions: InternalResolveOptions = {
+    ...config.resolve,
+    root: config.root,
+    isProduction: config.isProduction,
+    isBuild: config.command === 'build',
+    packageCache: config.packageCache,
+    asSrc: true,
+  }
+
   return {
     name: 'vite:asset-import-meta-url',
-    async transform(code, id, options) {
+    async transform(code, id) {
+      const { environment } = this
       if (
-        !options?.ssr &&
+        environment.config.consumer === 'client' &&
         id !== preloadHelperId &&
+        id !== CLIENT_ENTRY &&
         code.includes('new URL') &&
         code.includes(`import.meta.url`)
       ) {
         let s: MagicString | undefined
         const assetImportMetaUrlRE =
-          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*,?\s*\)/g
+          /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
         const cleanString = stripLiteral(code)
 
         let match: RegExpExecArray | null
         while ((match = assetImportMetaUrlRE.exec(cleanString))) {
-          const { 0: exp, 1: emptyUrl, index } = match
+          const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
+          if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
 
-          const urlStart = cleanString.indexOf(emptyUrl, index)
-          const urlEnd = urlStart + emptyUrl.length
           const rawUrl = code.slice(urlStart, urlEnd)
 
           if (!s) s = new MagicString(code)
 
           // potential dynamic template string
-          if (rawUrl[0] === '`' && /\$\{/.test(rawUrl)) {
-            const ast = this.parse(rawUrl)
+          if (rawUrl[0] === '`' && rawUrl.includes('${')) {
+            const queryDelimiterIndex = getQueryDelimiterIndex(rawUrl)
+            const hasQueryDelimiter = queryDelimiterIndex !== -1
+            const pureUrl = hasQueryDelimiter
+              ? rawUrl.slice(0, queryDelimiterIndex) + '`'
+              : rawUrl
+            const queryString = hasQueryDelimiter
+              ? rawUrl.slice(queryDelimiterIndex, -1)
+              : ''
+            const ast = this.parse(pureUrl)
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
-              const pattern = JSON.stringify(buildGlobPattern(templateLiteral))
-              // Note: native import.meta.url is not supported in the baseline
-              // target so we use the global location here. It can be
-              // window.location or self.location in case it is used in a Web Worker.
-              // @see https://developer.mozilla.org/en-US/docs/Web/API/Window/self
-              s.overwrite(
-                index,
-                index + exp.length,
-                `new URL((import.meta.glob(${pattern}, { eager: true, import: 'default', as: 'url' }))[${rawUrl}], self.location)`,
-                { contentOnly: true }
+              const pattern = buildGlobPattern(templateLiteral)
+              if (pattern.startsWith('**')) {
+                // don't transform for patterns like this
+                // because users won't intend to do that in most cases
+                continue
+              }
+
+              const globOptions = {
+                eager: true,
+                import: 'default',
+                // A hack to allow 'as' & 'query' exist at the same time
+                query: injectQuery(queryString, 'url'),
+              }
+              s.update(
+                startIndex,
+                endIndex,
+                `new URL((import.meta.glob(${JSON.stringify(
+                  pattern,
+                )}, ${JSON.stringify(
+                  globOptions,
+                )}))[${pureUrl}], import.meta.url)`,
               )
               continue
             }
           }
 
           const url = rawUrl.slice(1, -1)
-          const file = path.resolve(path.dirname(id), url)
-          // Get final asset URL. Catch error if the file does not exist,
-          // in which we can resort to the initial URL and let it resolve in runtime
-          const builtUrl = await fileToUrl(file, config, this).catch(() => {
-            const rawExp = code.slice(index, index + exp.length)
+          if (isDataUrl(url)) {
+            continue
+          }
+          let file: string | undefined
+          if (url[0] === '.') {
+            file = slash(path.resolve(path.dirname(id), url))
+            file = tryFsResolve(file, fsResolveOptions) ?? file
+          } else {
+            assetResolver ??= createBackCompatIdResolver(config, {
+              extensions: [],
+              mainFields: [],
+              tryIndex: false,
+              preferRelative: true,
+            })
+            file = await assetResolver(environment, url, id)
+            file ??=
+              url[0] === '/'
+                ? slash(path.join(publicDir, url))
+                : slash(path.resolve(path.dirname(id), url))
+          }
+
+          // Get final asset URL. If the file does not exist,
+          // we fall back to the initial URL and let it resolve in runtime
+          let builtUrl: string | undefined
+          if (file) {
+            try {
+              if (publicDir && isParentDirectory(publicDir, file)) {
+                const publicPath = '/' + path.posix.relative(publicDir, file)
+                builtUrl = await fileToUrl(this, publicPath)
+              } else {
+                builtUrl = await fileToUrl(this, file)
+              }
+            } catch {
+              // do nothing, we'll log a warning after this
+            }
+          }
+          if (!builtUrl) {
+            const rawExp = code.slice(startIndex, endIndex)
             config.logger.warnOnce(
-              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`
+              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime. ` +
+                `If this is intended, you can use the /* @vite-ignore */ comment to suppress this warning.`,
             )
-            return url
-          })
-          s.overwrite(
-            index,
-            index + exp.length,
-            `new URL(${JSON.stringify(builtUrl)}, self.location)`,
-            { contentOnly: true }
+            builtUrl = url
+          }
+          s.update(
+            startIndex,
+            endIndex,
+            `new URL(${JSON.stringify(builtUrl)}, import.meta.url)`,
           )
         }
         if (s) {
@@ -85,7 +162,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         }
       }
       return null
-    }
+    },
   }
 }
 
@@ -106,4 +183,18 @@ function buildGlobPattern(ast: any) {
     pattern += ast.quasis[i].value.raw
   }
   return pattern
+}
+
+function getQueryDelimiterIndex(rawUrl: string): number {
+  let bracketsStack = 0
+  for (let i = 0; i < rawUrl.length; i++) {
+    if (rawUrl[i] === '{') {
+      bracketsStack++
+    } else if (rawUrl[i] === '}') {
+      bracketsStack--
+    } else if (rawUrl[i] === '?' && bracketsStack === 0) {
+      return i
+    }
+  }
+  return -1
 }

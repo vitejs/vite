@@ -25,7 +25,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
             if (vite) {
               await vite.close()
             }
-          }
+          },
         })
       })
     } catch (e) {

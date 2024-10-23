@@ -1,6 +1,7 @@
 // @ts-nocheck
 import '../nested/main'
 import '../nested-with-extends/main'
+import './decorator'
 
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { MainTypeOnlyClass } from './not-used-type'

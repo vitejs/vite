@@ -14,17 +14,17 @@ self.postMessage(self.location.href)
 subWorker.onmessage = (ev) => {
   self.postMessage({
     type: 'module',
-    data: ev.data
+    data: ev.data,
   })
 }
 
 const classicWorker = new Worker(new URL('./url-worker.js', import.meta.url), {
-  type: 'module'
+  type: 'module',
 })
 classicWorker.addEventListener('message', (ev) => {
   self.postMessage({
     type: 'constructor',
-    data: ev.data
+    data: ev.data,
   })
 })
 
@@ -35,7 +35,7 @@ importMetaGlobEagerWorker.postMessage('1')
 importMetaGlobEagerWorker.addEventListener('message', (ev) => {
   self.postMessage({
     type: 'importMetaGlobEager',
-    data: ev.data
+    data: ev.data,
   })
 })
 

@@ -5,15 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "preact": "^10.10.6"
+    "preact": "^10.24.3"
   },
   "devDependencies": {
-    "@preact/preset-vite": "^2.3.0",
-    "typescript": "^4.6.4",
-    "vite": "^3.0.9"
+    "@preact/preset-vite": "^2.9.1",
+    "typescript": "~5.6.2",
+    "vite": "^5.4.9"
   }
 }

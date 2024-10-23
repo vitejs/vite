@@ -5,14 +5,14 @@ const chunks = [
   'chunk-async-legacy',
   'immutable-chunk',
   'immutable-chunk-legacy',
-  'polyfills-legacy'
+  'polyfills-legacy',
 ]
 
 export function fn() {
   return Promise.all(
     chunks.map(async (name) => {
       const response = await fetch(`/assets/${name}.js`)
-      return `${name}: ${response.status}`
-    })
+      return `${name}: ${response.headers.get('Content-Type')}`
+    }),
   )
 }

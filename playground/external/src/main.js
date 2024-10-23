@@ -1,2 +1,2 @@
-import '@vitejs/dep-that-imports-vue'
-import '@vitejs/dep-that-requires-vue'
+import '@vitejs/test-dep-that-imports'
+import '@vitejs/test-dep-that-requires'

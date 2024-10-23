@@ -38,9 +38,9 @@
     template: '[{{ msg }}] alias optimized dep',
     setup() {
       return {
-        msg: ref('success')
+        msg: ref('success'),
       }
-    }
+    },
   }).mount('.optimized')
 
   // aliased to an absolute URL in CJS, should be optimized

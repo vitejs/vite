@@ -1,65 +1,55 @@
 import { isAbsolute, posix } from 'node:path'
 import micromatch from 'micromatch'
 import { stripLiteral } from 'strip-literal'
+import colors from 'picocolors'
 import type {
   ArrayExpression,
-  CallExpression,
   Expression,
   Literal,
-  MemberExpression,
   Node,
-  SequenceExpression,
   SpreadElement,
-  TemplateLiteral
+  TemplateLiteral,
 } from 'estree'
-import { parseExpressionAt } from 'acorn'
+import type { CustomPluginOptions, RollupAstNode, RollupError } from 'rollup'
 import MagicString from 'magic-string'
-import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
 import type { GeneralImportGlobOptions } from 'types/importGlob'
+import { parseAstAsync } from 'rollup/parseAst'
+import { escapePath, glob } from 'tinyglobby'
 import type { Plugin } from '../plugin'
-import type { ViteDevServer } from '../server'
-import type { ModuleNode } from '../server/moduleGraph'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
-import { normalizePath, slash, transformStableResult } from '../utils'
+import { evalValue, normalizePath, transformStableResult } from '../utils'
+import type { Logger } from '../logger'
+import { slash } from '../../shared/utils'
+import type { Environment } from '../environment'
 
 const { isMatch, scan } = micromatch
 
 export interface ParsedImportGlob {
-  match: RegExpMatchArray
   index: number
   globs: string[]
   globsResolved: string[]
   isRelative: boolean
-  options: GeneralImportGlobOptions
-  type: string
+  options: ParsedGeneralImportGlobOptions
   start: number
   end: number
 }
 
-export function getAffectedGlobModules(
-  file: string,
-  server: ViteDevServer
-): ModuleNode[] {
-  const modules: ModuleNode[] = []
-  for (const [id, allGlobs] of server._importGlobMap!) {
-    if (allGlobs.some((glob) => isMatch(file, glob)))
-      modules.push(...(server.moduleGraph.getModulesByFile(id) || []))
-  }
-  modules.forEach((i) => {
-    if (i?.file) server.moduleGraph.onFileChange(i.file)
-  })
-  return modules
+interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
+  query?: string
 }
 
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
-  let server: ViteDevServer | undefined
+  const importGlobMaps = new Map<
+    Environment,
+    Map<string, { affirmed: string[]; negated: string[] }[]>
+  >()
 
   return {
     name: 'vite:import-glob',
-    configureServer(_server) {
-      server = _server
-      server._importGlobMap.clear()
+    buildStart() {
+      importGlobMaps.clear()
     },
     async transform(code, id) {
       if (!code.includes('import.meta.glob')) return
@@ -67,49 +57,176 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         code,
         id,
         config.root,
-        (im) => this.resolve(im, id).then((i) => i?.id || im),
-        config.experimental.importGlobRestoreExtension
+        (im, _, options) =>
+          this.resolve(im, id, options).then((i) => i?.id || im),
+        config.experimental.importGlobRestoreExtension,
+        config.logger,
       )
       if (result) {
-        if (server) {
-          const allGlobs = result.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(id, allGlobs)
+        const allGlobs = result.matches.map((i) => i.globsResolved)
+        if (!importGlobMaps.has(this.environment)) {
+          importGlobMaps.set(this.environment, new Map())
         }
+        importGlobMaps.get(this.environment)!.set(
+          id,
+          allGlobs.map((globs) => {
+            const affirmed: string[] = []
+            const negated: string[] = []
+
+            for (const glob of globs) {
+              ;(glob[0] === '!' ? negated : affirmed).push(glob)
+            }
+            return { affirmed, negated }
+          }),
+        )
+
         return transformStableResult(result.s, id, config)
       }
-    }
+    },
+    hotUpdate({ type, file, modules: oldModules }) {
+      if (type === 'update') return
+
+      const importGlobMap = importGlobMaps.get(this.environment)
+      if (!importGlobMap) return
+
+      const modules: EnvironmentModuleNode[] = []
+      for (const [id, allGlobs] of importGlobMap) {
+        // (glob1 || glob2) && !glob3 && !glob4...
+        if (
+          allGlobs.some(
+            ({ affirmed, negated }) =>
+              (!affirmed.length ||
+                affirmed.some((glob) => isMatch(file, glob))) &&
+              (!negated.length || negated.every((glob) => isMatch(file, glob))),
+          )
+        ) {
+          const mod = this.environment.moduleGraph.getModuleById(id)
+          if (mod) modules.push(mod)
+        }
+      }
+      return modules.length > 0 ? [...oldModules, ...modules] : undefined
+    },
   }
 }
 
-const importGlobRE =
-  /\bimport\.meta\.(glob|globEager|globEagerDefault)(?:<\w+>)?\s*\(/g
+const importGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(/g
 
 const knownOptions = {
-  as: 'string',
-  eager: 'boolean',
-  import: 'string',
-  exhaustive: 'boolean'
-} as const
+  as: ['string'],
+  eager: ['boolean'],
+  import: ['string'],
+  exhaustive: ['boolean'],
+  query: ['object', 'string'],
+}
 
 const forceDefaultAs = ['raw', 'url']
+
+function err(e: string, pos: number) {
+  const error = new Error(e) as RollupError
+  error.pos = pos
+  return error
+}
+
+function parseGlobOptions(
+  rawOpts: string,
+  optsStartIndex: number,
+  logger?: Logger,
+): ParsedGeneralImportGlobOptions {
+  let opts: GeneralImportGlobOptions = {}
+  try {
+    opts = evalValue(rawOpts)
+  } catch {
+    throw err(
+      'Vite is unable to parse the glob options as the value is not static',
+      optsStartIndex,
+    )
+  }
+
+  if (opts == null) {
+    return {}
+  }
+
+  for (const key in opts) {
+    if (!(key in knownOptions)) {
+      throw err(`Unknown glob option "${key}"`, optsStartIndex)
+    }
+    const allowedTypes = knownOptions[key as keyof typeof knownOptions]
+    const valueType = typeof opts[key as keyof GeneralImportGlobOptions]
+    if (!allowedTypes.includes(valueType)) {
+      throw err(
+        `Expected glob option "${key}" to be of type ${allowedTypes.join(
+          ' or ',
+        )}, but got ${valueType}`,
+        optsStartIndex,
+      )
+    }
+  }
+
+  if (typeof opts.query === 'object') {
+    for (const key in opts.query) {
+      const value = opts.query[key]
+      if (!['string', 'number', 'boolean'].includes(typeof value)) {
+        throw err(
+          `Expected glob option "query.${key}" to be of type string, number, or boolean, but got ${typeof value}`,
+          optsStartIndex,
+        )
+      }
+    }
+    // normalize query as string so it's easier to handle later
+    opts.query = stringifyQuery(opts.query)
+  }
+
+  if (opts.as && logger) {
+    const importSuggestion = forceDefaultAs.includes(opts.as)
+      ? `, import: 'default'`
+      : ''
+    logger.warn(
+      colors.yellow(
+        `The glob option "as" has been deprecated in favour of "query". Please update \`as: '${opts.as}'\` to \`query: '?${opts.as}'${importSuggestion}\`.`,
+      ),
+    )
+  }
+
+  // validate `import` option based on `as` option
+  if (opts.as && forceDefaultAs.includes(opts.as)) {
+    if (opts.import && opts.import !== 'default' && opts.import !== '*')
+      throw err(
+        `Option "import" can only be "default" or "*" when "as" is "${opts.as}", but got "${opts.import}"`,
+        optsStartIndex,
+      )
+    opts.import = opts.import || 'default'
+  }
+
+  if (opts.as && opts.query)
+    throw err(
+      'Options "as" and "query" cannot be used together',
+      optsStartIndex,
+    )
+
+  if (opts.as) opts.query = opts.as
+
+  if (opts.query && opts.query[0] !== '?') opts.query = `?${opts.query}`
+
+  return opts as ParsedGeneralImportGlobOptions
+}
 
 export async function parseImportGlob(
   code: string,
   importer: string | undefined,
   root: string,
-  resolveId: IdResolver
+  resolveId: IdResolver,
+  logger?: Logger,
 ): Promise<ParsedImportGlob[]> {
-  let cleanCode
+  let cleanCode: string
   try {
     cleanCode = stripLiteral(code)
-  } catch (e) {
+  } catch {
     // skip invalid js code
     return []
   }
   const matches = Array.from(cleanCode.matchAll(importGlobRE))
 
   const tasks = matches.map(async (match, index) => {
-    const type = match[1]
     const start = match.index!
 
     const err = (msg: string) => {
@@ -118,57 +235,30 @@ export async function parseImportGlob(
       return e
     }
 
-    let ast: CallExpression | SequenceExpression | MemberExpression
-    let lastTokenPos: number | undefined
-
-    try {
-      ast = parseExpressionAt(code, start, {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ranges: true,
-        onToken: (token) => {
-          lastTokenPos = token.end
-        }
-      }) as any
-    } catch (e) {
-      const _e = e as any
-      if (_e.message && _e.message.startsWith('Unterminated string constant'))
-        return undefined!
-      if (lastTokenPos == null || lastTokenPos <= start) throw _e
-
-      // tailing comma in object or array will make the parser think it's a comma operation
-      // we try to parse again removing the comma
-      try {
-        const statement = code.slice(start, lastTokenPos).replace(/[,\s]*$/, '')
-        ast = parseExpressionAt(
-          ' '.repeat(start) + statement, // to keep the ast position
-          start,
-          {
-            ecmaVersion: 'latest',
-            sourceType: 'module',
-            ranges: true
-          }
-        ) as any
-      } catch {
-        throw _e
-      }
+    const end =
+      findCorrespondingCloseParenthesisPosition(
+        cleanCode,
+        start + match[0].length,
+      ) + 1
+    if (end <= 0) {
+      throw err('Close parenthesis not found')
     }
 
-    if (ast.type === 'SequenceExpression')
-      ast = ast.expressions[0] as CallExpression
+    const statementCode = code.slice(start, end)
 
-    // immediate property access, call expression is nested
-    // import.meta.glob(...)['prop']
-    if (ast.type === 'MemberExpression') ast = ast.object as CallExpression
-
-    if (ast.type !== 'CallExpression')
+    const rootAst = (await parseAstAsync(statementCode)).body[0]
+    if (rootAst.type !== 'ExpressionStatement') {
+      throw err(`Expect CallExpression, got ${rootAst.type}`)
+    }
+    const ast = rootAst.expression
+    if (ast.type !== 'CallExpression') {
       throw err(`Expect CallExpression, got ${ast.type}`)
-
+    }
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
 
     const arg1 = ast.arguments[0] as ArrayExpression | Literal | TemplateLiteral
-    const arg2 = ast.arguments[1] as Node | undefined
+    const arg2 = ast.arguments[1] as RollupAstNode<Node> | undefined
 
     const globs: string[] = []
 
@@ -177,13 +267,13 @@ export async function parseImportGlob(
       if (element.type === 'Literal') {
         if (typeof element.value !== 'string')
           throw err(
-            `Expected glob to be a string, but got "${typeof element.value}"`
+            `Expected glob to be a string, but got "${typeof element.value}"`,
           )
         globs.push(element.value)
       } else if (element.type === 'TemplateLiteral') {
         if (element.expressions.length !== 0) {
           throw err(
-            `Expected glob to be a string, but got dynamic template literal`
+            `Expected glob to be a string, but got dynamic template literal`,
           )
         }
         globs.push(element.quasis[0].value.raw)
@@ -201,108 +291,70 @@ export async function parseImportGlob(
     }
 
     // arg2
-    const options: GeneralImportGlobOptions = {}
+    let options: ParsedGeneralImportGlobOptions = {}
     if (arg2) {
       if (arg2.type !== 'ObjectExpression')
         throw err(
-          `Expected the second argument o to be a object literal, but got "${arg2.type}"`
+          `Expected the second argument to be an object literal, but got "${arg2.type}"`,
         )
 
-      for (const property of arg2.properties) {
-        if (
-          property.type === 'SpreadElement' ||
-          (property.key.type !== 'Identifier' &&
-            property.key.type !== 'Literal')
-        )
-          throw err('Could only use literals')
-
-        const name = ((property.key as any).name ||
-          (property.key as any).value) as keyof GeneralImportGlobOptions
-        if (name === 'query') {
-          if (property.value.type === 'ObjectExpression') {
-            const data: Record<string, string> = {}
-            for (const prop of property.value.properties) {
-              if (
-                prop.type === 'SpreadElement' ||
-                prop.key.type !== 'Identifier' ||
-                prop.value.type !== 'Literal'
-              )
-                throw err('Could only use literals')
-              data[prop.key.name] = prop.value.value as any
-            }
-            options.query = data
-          } else if (property.value.type === 'Literal') {
-            if (typeof property.value.value !== 'string')
-              throw err(
-                `Expected query to be a string, but got "${typeof property.value
-                  .value}"`
-              )
-            options.query = property.value.value
-          } else {
-            throw err('Could only use literals')
-          }
-          continue
-        }
-
-        if (!(name in knownOptions)) throw err(`Unknown options ${name}`)
-
-        if (property.value.type !== 'Literal')
-          throw err('Could only use literals')
-
-        const valueType = typeof property.value.value
-        if (valueType === 'undefined') continue
-
-        if (valueType !== knownOptions[name])
-          throw err(
-            `Expected the type of option "${name}" to be "${knownOptions[name]}", but got "${valueType}"`
-          )
-        options[name] = property.value.value as any
-      }
-    }
-
-    if (options.as && forceDefaultAs.includes(options.as)) {
-      if (
-        options.import &&
-        options.import !== 'default' &&
-        options.import !== '*'
+      options = parseGlobOptions(
+        code.slice(start + arg2.start, start + arg2.end),
+        start + arg2.start,
+        logger,
       )
-        throw err(
-          `Option "import" can only be "default" or "*" when "as" is "${options.as}", but got "${options.import}"`
-        )
-      options.import = options.import || 'default'
     }
-
-    if (options.as && options.query)
-      throw err('Options "as" and "query" cannot be used together')
-
-    if (options.as) options.query = options.as
-
-    const end = ast.range![1]
 
     const globsResolved = await Promise.all(
-      globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId))
+      globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
 
     return {
-      match,
       index,
       globs,
       globsResolved,
       isRelative,
       options,
-      type,
       start,
-      end
+      end,
     }
   })
 
   return (await Promise.all(tasks)).filter(Boolean)
 }
 
+function findCorrespondingCloseParenthesisPosition(
+  cleanCode: string,
+  openPos: number,
+) {
+  const closePos = cleanCode.indexOf(')', openPos)
+  if (closePos < 0) return -1
+
+  if (!cleanCode.slice(openPos, closePos).includes('(')) return closePos
+
+  let remainingParenthesisCount = 0
+  const cleanCodeLen = cleanCode.length
+  for (let pos = openPos; pos < cleanCodeLen; pos++) {
+    switch (cleanCode[pos]) {
+      case '(': {
+        remainingParenthesisCount++
+        break
+      }
+      case ')': {
+        remainingParenthesisCount--
+        if (remainingParenthesisCount <= 0) {
+          return pos
+        }
+      }
+    }
+  }
+  return -1
+}
+
 const importPrefix = '__vite_glob_'
 
-const { basename, dirname, relative, join } = posix
+const { basename, dirname, relative } = posix
 
 export interface TransformGlobImportResult {
   s: MagicString
@@ -318,7 +370,8 @@ export async function transformGlobImport(
   id: string,
   root: string,
   resolveId: IdResolver,
-  restoreQueryExtension = false
+  restoreQueryExtension = false,
+  logger?: Logger,
 ): Promise<TransformGlobImportResult | null> {
   id = slash(id)
   root = slash(root)
@@ -328,18 +381,10 @@ export async function transformGlobImport(
     code,
     isVirtual ? undefined : id,
     root,
-    resolveId
+    resolveId,
+    logger,
   )
   const matchedFiles = new Set<string>()
-
-  // TODO: backwards compatibility
-  matches.forEach((i) => {
-    if (i.type === 'globEager') i.options.eager = true
-    if (i.type === 'globEagerDefault') {
-      i.options.eager = true
-      i.options.import = 'default'
-    }
-  })
 
   if (!matches.length) return null
 
@@ -351,13 +396,12 @@ export async function transformGlobImport(
         async ({ globsResolved, isRelative, options, index, start, end }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
-            await fg(globsResolved, {
-              cwd,
+            await glob(globsResolved, {
               absolute: true,
+              cwd,
               dot: !!options.exhaustive,
-              ignore: options.exhaustive
-                ? []
-                : [join(cwd, '**/node_modules/**')]
+              expandDirectories: false,
+              ignore: options.exhaustive ? [] : ['**/node_modules/**'],
             })
           )
             .filter((file) => file !== id)
@@ -366,33 +410,25 @@ export async function transformGlobImport(
           const objectProps: string[] = []
           const staticImports: string[] = []
 
-          let query = !options.query
-            ? ''
-            : typeof options.query === 'string'
-            ? options.query
-            : stringifyQuery(options.query as any)
-
-          if (query && !query.startsWith('?')) query = `?${query}`
-
           const resolvePaths = (file: string) => {
             if (!dir) {
               if (isRelative)
                 throw new Error(
-                  "In virtual modules, all globs must start with '/'"
+                  "In virtual modules, all globs must start with '/'",
                 )
               const filePath = `/${relative(root, file)}`
               return { filePath, importPath: filePath }
             }
 
             let importPath = relative(dir, file)
-            if (!importPath.startsWith('.')) importPath = `./${importPath}`
+            if (importPath[0] !== '.') importPath = `./${importPath}`
 
             let filePath: string
             if (isRelative) {
               filePath = importPath
             } else {
               filePath = relative(root, file)
-              if (!filePath.startsWith('.')) filePath = `/${filePath}`
+              if (filePath[0] !== '.') filePath = `/${filePath}`
             }
 
             return { filePath, importPath }
@@ -402,7 +438,7 @@ export async function transformGlobImport(
             const paths = resolvePaths(file)
             const filePath = paths.filePath
             let importPath = paths.importPath
-            let importQuery = query
+            let importQuery = options.query ?? ''
 
             if (importQuery && importQuery !== '?raw') {
               const fileExtension = basename(file).split('.').slice(-1)[0]
@@ -423,7 +459,7 @@ export async function transformGlobImport(
                 ? `{ ${importKey} as ${variableName} }`
                 : `* as ${variableName}`
               staticImports.push(
-                `import ${expression} from ${JSON.stringify(importPath)}`
+                `import ${expression} from ${JSON.stringify(importPath)}`,
               )
               objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
             } else {
@@ -431,21 +467,28 @@ export async function transformGlobImport(
               if (importKey)
                 importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
               objectProps.push(
-                `${JSON.stringify(filePath)}: () => ${importStatement}`
+                `${JSON.stringify(filePath)}: () => ${importStatement}`,
               )
             }
           })
 
           files.forEach((i) => matchedFiles.add(i))
 
+          const originalLineBreakCount =
+            code.slice(start, end).match(/\n/g)?.length ?? 0
+          const lineBreaks =
+            originalLineBreakCount > 0
+              ? '\n'.repeat(originalLineBreakCount)
+              : ''
+
           const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-            ','
-          )}})`
+            ',',
+          )}${lineBreaks}})`
           s.overwrite(start, end, replacement)
 
           return staticImports
-        }
-      )
+        },
+      ),
     )
   ).flat()
 
@@ -454,19 +497,24 @@ export async function transformGlobImport(
   return {
     s,
     matches,
-    files: matchedFiles
+    files: matchedFiles,
   }
 }
 
 type IdResolver = (
   id: string,
-  importer?: string
+  importer?: string,
+  options?: {
+    attributes?: Record<string, string>
+    custom?: CustomPluginOptions
+    isEntry?: boolean
+    skipSelf?: boolean
+  },
 ) => Promise<string | undefined> | string | undefined
 
 function globSafePath(path: string) {
   // slash path to ensure \ is converted to / as \ could lead to a double escape scenario
-  // see https://github.com/mrmlnc/fast-glob#advanced-syntax
-  return fg.escapePath(normalizePath(path))
+  return escapePath(normalizePath(path))
 }
 
 function lastNthChar(str: string, n: number) {
@@ -495,33 +543,39 @@ export async function toAbsoluteGlob(
   glob: string,
   root: string,
   importer: string | undefined,
-  resolveId: IdResolver
+  resolveId: IdResolver,
 ): Promise<string> {
   let pre = ''
-  if (glob.startsWith('!')) {
+  if (glob[0] === '!') {
     pre = '!'
     glob = glob.slice(1)
   }
   root = globSafePath(root)
   const dir = importer ? globSafePath(dirname(importer)) : root
-  if (glob.startsWith('/')) return pre + posix.join(root, glob.slice(1))
+  if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
   if (glob.startsWith('**')) return pre + glob
 
-  const resolved = normalizePath((await resolveId(glob, importer)) || glob)
+  const isSubImportsPattern = glob[0] === '#' && glob.includes('*')
+
+  const resolved = normalizePath(
+    (await resolveId(glob, importer, {
+      custom: { 'vite:import-glob': { isSubImportsPattern } },
+    })) || glob,
+  )
   if (isAbsolute(resolved)) {
     return pre + globSafeResolvedPath(resolved, glob)
   }
 
   throw new Error(
-    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must start with '/' or './'`
+    `Invalid glob: "${glob}" (resolved: "${resolved}"). It must start with '/' or './'`,
   )
 }
 
 export function getCommonBase(globsResolved: string[]): null | string {
   const bases = globsResolved
-    .filter((g) => !g.startsWith('!'))
+    .filter((g) => g[0] !== '!')
     .map((glob) => {
       let { base } = scan(glob)
       // `scan('a/foo.js')` returns `base: 'a/foo.js'`
@@ -546,6 +600,6 @@ export function getCommonBase(globsResolved: string[]): null | string {
 }
 
 export function isVirtualModule(id: string): boolean {
-  // https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention
-  return id.startsWith('virtual:') || id.startsWith('\0') || !id.includes('/')
+  // https://vite.dev/guide/api-plugin.html#virtual-modules-convention
+  return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
 }

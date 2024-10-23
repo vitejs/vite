@@ -1,5 +1,5 @@
 {
-  "name": "@vitejs/css-lib",
+  "name": "@vitejs/test-css-lib",
   "private": true,
   "version": "0.0.0",
   "main": "./index.css"

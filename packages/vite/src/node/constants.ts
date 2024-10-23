@@ -1,14 +1,49 @@
 import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-// @ts-expect-error
-import { version } from '../../package.json'
+import { readFileSync } from 'node:fs'
+import type { RollupPluginHooks } from './typeUtils'
+
+const { version } = JSON.parse(
+  readFileSync(new URL('../../package.json', import.meta.url)).toString(),
+)
+
+export const ROLLUP_HOOKS = [
+  'options',
+  'buildStart',
+  'buildEnd',
+  'renderStart',
+  'renderError',
+  'renderChunk',
+  'writeBundle',
+  'generateBundle',
+  'banner',
+  'footer',
+  'augmentChunkHash',
+  'outputOptions',
+  'renderDynamicImport',
+  'resolveFileUrl',
+  'resolveImportMeta',
+  'intro',
+  'outro',
+  'closeBundle',
+  'closeWatcher',
+  'load',
+  'moduleParsed',
+  'watchChange',
+  'resolveDynamicImport',
+  'resolveId',
+  'shouldTransformCachedModule',
+  'transform',
+  'onLog',
+] satisfies RollupPluginHooks[]
 
 export const VERSION = version as string
 
 export const DEFAULT_MAIN_FIELDS = [
+  'browser',
   'module',
   'jsnext:main', // moment still uses this...
-  'jsnext'
+  'jsnext',
 ]
 
 // Baseline support browserslist
@@ -19,7 +54,7 @@ export const ESBUILD_MODULES_TARGET = [
   'edge88',
   'firefox78',
   'chrome87',
-  'safari13' // transpile nullish coalescing
+  'safari14',
 ]
 
 export const DEFAULT_EXTENSIONS = [
@@ -29,7 +64,7 @@ export const DEFAULT_EXTENSIONS = [
   '.ts',
   '.jsx',
   '.tsx',
-  '.json'
+  '.json',
 ]
 
 export const DEFAULT_CONFIG_FILES = [
@@ -38,44 +73,29 @@ export const DEFAULT_CONFIG_FILES = [
   'vite.config.ts',
   'vite.config.cjs',
   'vite.config.mts',
-  'vite.config.cts'
+  'vite.config.cts',
 ]
 
 export const JS_TYPES_RE = /\.(?:j|t)sx?$|\.mjs$/
 
-export const OPTIMIZABLE_ENTRY_RE = /\.(?:[cm]?[jt]s)$/
+export const CSS_LANGS_RE =
+  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/
 
-export const SPECIAL_QUERY_RE = /[\?&](?:worker|sharedworker|raw|url)\b/
+export const OPTIMIZABLE_ENTRY_RE = /\.[cm]?[jt]s$/
+
+export const SPECIAL_QUERY_RE = /[?&](?:worker|sharedworker|raw|url)\b/
 
 /**
  * Prefix for resolved fs paths, since windows paths may not be valid as URLs.
  */
 export const FS_PREFIX = `/@fs/`
 
-/**
- * Prefix for resolved Ids that are not valid browser import specifiers
- */
-export const VALID_ID_PREFIX = `/@id/`
-
-/**
- * Plugins that use 'virtual modules' (e.g. for helper functions), prefix the
- * module ID with `\0`, a convention from the rollup ecosystem.
- * This prevents other plugins from trying to process the id (like node resolution),
- * and core features like sourcemaps can use this info to differentiate between
- * virtual modules and regular files.
- * `\0` is not a permitted char in import URLs so we have to replace them during
- * import analysis. The id will be decoded back before entering the plugins pipeline.
- * These encoded virtual ids are also prefixed by the VALID_ID_PREFIX, so virtual
- * modules in the browser end up encoded as `/@id/__x00__{id}`
- */
-export const NULL_BYTE_PLACEHOLDER = `__x00__`
-
 export const CLIENT_PUBLIC_PATH = `/@vite/client`
 export const ENV_PUBLIC_PATH = `/@vite/env`
 export const VITE_PACKAGE_DIR = resolve(
   // import.meta.url is `dist/node/constants.js` after bundle
   fileURLToPath(import.meta.url),
-  '../../..'
+  '../../..',
 )
 
 export const CLIENT_ENTRY = resolve(VITE_PACKAGE_DIR, 'dist/client/client.mjs')
@@ -90,6 +110,8 @@ export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 //   looked up by mrmime.
 export const KNOWN_ASSET_TYPES = [
   // images
+  'apng',
+  'bmp',
   'png',
   'jpe?g',
   'jfif',
@@ -109,6 +131,10 @@ export const KNOWN_ASSET_TYPES = [
   'wav',
   'flac',
   'aac',
+  'opus',
+  'mov',
+  'm4a',
+  'vtt',
 
   // fonts
   'woff2?',
@@ -119,23 +145,37 @@ export const KNOWN_ASSET_TYPES = [
   // other
   'webmanifest',
   'pdf',
-  'txt'
+  'txt',
 ]
 
 export const DEFAULT_ASSETS_RE = new RegExp(
-  `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`
+  `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`,
 )
 
-export const DEP_VERSION_RE = /[\?&](v=[\w\.-]+)\b/
+export const DEP_VERSION_RE = /[?&](v=[\w.-]+)\b/
 
 export const loopbackHosts = new Set([
   'localhost',
   '127.0.0.1',
   '::1',
-  '0000:0000:0000:0000:0000:0000:0000:0001'
+  '0000:0000:0000:0000:0000:0000:0000:0001',
 ])
 export const wildcardHosts = new Set([
   '0.0.0.0',
   '::',
-  '0000:0000:0000:0000:0000:0000:0000:0000'
+  '0000:0000:0000:0000:0000:0000:0000:0000',
 ])
+
+export const DEFAULT_DEV_PORT = 5173
+
+export const DEFAULT_PREVIEW_PORT = 4173
+
+export const DEFAULT_ASSETS_INLINE_LIMIT = 4096
+
+export const METADATA_FILENAME = '_metadata.json'
+
+export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
+  'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
+export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
+export const ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR =
+  'ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR'

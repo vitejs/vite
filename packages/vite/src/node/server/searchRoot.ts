@@ -6,7 +6,7 @@ import { isFileReadable } from '../utils'
 const ROOT_FILES = [
   // '.git',
 
-  // https://pnpm.js.org/workspaces/
+  // https://pnpm.io/workspaces/
   'pnpm-workspace.yaml',
 
   // https://rushjs.io/pages/advanced/config_files/
@@ -17,7 +17,7 @@ const ROOT_FILES = [
   // 'nx.json',
 
   // https://github.com/lerna/lerna#lernajson
-  'lerna.json'
+  'lerna.json',
 ]
 
 // npm: https://docs.npmjs.com/cli/v7/using-npm/workspaces#installing-workspaces
@@ -27,8 +27,12 @@ function hasWorkspacePackageJSON(root: string): boolean {
   if (!isFileReadable(path)) {
     return false
   }
-  const content = JSON.parse(fs.readFileSync(path, 'utf-8')) || {}
-  return !!content.workspaces
+  try {
+    const content = JSON.parse(fs.readFileSync(path, 'utf-8')) || {}
+    return !!content.workspaces
+  } catch {
+    return false
+  }
 }
 
 function hasRootFile(root: string): boolean {
@@ -58,7 +62,7 @@ export function searchForPackageRoot(current: string, root = current): string {
  */
 export function searchForWorkspaceRoot(
   current: string,
-  root = searchForPackageRoot(current)
+  root = searchForPackageRoot(current),
 ): string {
   if (hasRootFile(current)) return current
   if (hasWorkspacePackageJSON(current)) return current

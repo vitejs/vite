@@ -1,5 +1,5 @@
 {
-  "name": "dep-with-dynamic-import",
+  "name": "@vitejs/test-dep-with-dynamic-import",
   "private": true,
   "version": "0.0.0",
   "type": "module",

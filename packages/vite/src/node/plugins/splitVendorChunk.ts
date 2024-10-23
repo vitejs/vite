@@ -1,17 +1,21 @@
 import type {
   GetManualChunk,
-  GetManualChunkApi,
   GetModuleInfo,
-  OutputOptions
+  ManualChunkMeta,
+  OutputOptions,
 } from 'rollup'
+import { arraify, isInNodeModules } from '../utils'
 import type { UserConfig } from '../../node'
 import type { Plugin } from '../plugin'
 
 // This file will be built for both ESM and CJS. Avoid relying on other modules as possible.
-const cssLangs = `\\.(css|less|sass|scss|styl|stylus|pcss|postcss)($|\\?)`
-const cssLangRE = new RegExp(cssLangs)
+
+// copy from constants.ts
+const CSS_LANGS_RE =
+  // eslint-disable-next-line regexp/no-unused-capturing-group
+  /\.(css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/
 export const isCSSRequest = (request: string): boolean =>
-  cssLangRE.test(request)
+  CSS_LANGS_RE.test(request)
 
 // Use splitVendorChunkPlugin() to get the same manualChunks strategy as Vite 2.7
 // We don't recommend using this strategy as a general solution moving forward
@@ -22,6 +26,9 @@ export const isCSSRequest = (request: string): boolean =>
 // The cache needs to be reset on buildStart for watch mode to work correctly
 // Don't use this manualChunks strategy for ssr, lib mode, and 'umd' or 'iife'
 
+/**
+ * @deprecated use build.rollupOptions.output.manualChunks or framework specific configuration
+ */
 export class SplitVendorChunkCache {
   cache: Map<string, boolean>
   constructor() {
@@ -32,13 +39,16 @@ export class SplitVendorChunkCache {
   }
 }
 
+/**
+ * @deprecated use build.rollupOptions.output.manualChunks or framework specific configuration
+ */
 export function splitVendorChunk(
-  options: { cache?: SplitVendorChunkCache } = {}
+  options: { cache?: SplitVendorChunkCache } = {},
 ): GetManualChunk {
   const cache = options.cache ?? new SplitVendorChunkCache()
   return (id, { getModuleInfo }) => {
     if (
-      id.includes('node_modules') &&
+      isInNodeModules(id) &&
       !isCSSRequest(id) &&
       staticImportedByEntry(id, getModuleInfo, cache.cache)
     ) {
@@ -51,7 +61,7 @@ function staticImportedByEntry(
   id: string,
   getModuleInfo: GetModuleInfo,
   cache: Map<string, boolean>,
-  importStack: string[] = []
+  importStack: string[] = [],
 ): boolean {
   if (cache.has(id)) {
     return cache.get(id) as boolean
@@ -76,13 +86,16 @@ function staticImportedByEntry(
       importer,
       getModuleInfo,
       cache,
-      importStack.concat(id)
-    )
+      importStack.concat(id),
+    ),
   )
   cache.set(id, someImporterIs)
   return someImporterIs
 }
 
+/**
+ * @deprecated use build.rollupOptions.output.manualChunks or framework specific configuration
+ */
 export function splitVendorChunkPlugin(): Plugin {
   const caches: SplitVendorChunkCache[] = []
   function createSplitVendorChunk(output: OutputOptions, config: UserConfig) {
@@ -99,19 +112,24 @@ export function splitVendorChunkPlugin(): Plugin {
     config(config) {
       let outputs = config?.build?.rollupOptions?.output
       if (outputs) {
-        outputs = Array.isArray(outputs) ? outputs : [outputs]
+        outputs = arraify(outputs)
         for (const output of outputs) {
           const viteManualChunks = createSplitVendorChunk(output, config)
           if (viteManualChunks) {
             if (output.manualChunks) {
               if (typeof output.manualChunks === 'function') {
                 const userManualChunks = output.manualChunks
-                output.manualChunks = (id: string, api: GetManualChunkApi) => {
+                output.manualChunks = (id: string, api: ManualChunkMeta) => {
                   return userManualChunks(id, api) ?? viteManualChunks(id, api)
                 }
+              } else {
+                // else, leave the object form of manualChunks untouched, as
+                // we can't safely replicate rollup handling.
+                // eslint-disable-next-line no-console
+                console.warn(
+                  "(!) the `splitVendorChunk` plugin doesn't have any effect when using the object form of `build.rollupOptions.output.manualChunks`. Consider using the function form instead.",
+                )
               }
-              // else, leave the object form of manualChunks untouched, as
-              // we can't safely replicate rollup handling.
             } else {
               output.manualChunks = viteManualChunks
             }
@@ -122,15 +140,15 @@ export function splitVendorChunkPlugin(): Plugin {
           build: {
             rollupOptions: {
               output: {
-                manualChunks: createSplitVendorChunk({}, config)
-              }
-            }
-          }
+                manualChunks: createSplitVendorChunk({}, config),
+              },
+            },
+          },
         }
       }
     },
     buildStart() {
       caches.forEach((cache) => cache.reset())
-    }
+    },
   }
 }

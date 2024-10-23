@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-external-cjs",
+  "private": true,
+  "version": "0.0.0",
+  "exports": {
+    "require": "./require.cjs",
+    "import": "./import.mjs"
+  }
+}

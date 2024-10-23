@@ -17,7 +17,7 @@ if (!isBuild) {
     expect(await page.textContent('.plus-circle')).toMatch(plusCircleAsset)
     expect(await getBg('.underscore-circle')).toMatch(underscoreCircleAsset)
     expect(await page.textContent('.underscore-circle')).toMatch(
-      underscoreCircleAsset
+      underscoreCircleAsset,
     )
     expect(plusCircleAsset).toMatch('/_circle')
     expect(underscoreCircleAsset).toMatch('/_circle')
@@ -25,3 +25,8 @@ if (!isBuild) {
     expect(Object.keys(manifest).length).toBe(3) // 2 svg, 1 index.js
   })
 }
+
+test.runIf(!isBuild)('denied .env', async () => {
+  expect(await page.textContent('.unsafe-dotenv')).toBe('403')
+  expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('403')
+})

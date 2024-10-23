@@ -1,4 +1,7 @@
-import { msg as linkedMsg } from 'resolve-linked'
+import { equal } from 'node:assert'
+import { msg as linkedMsg } from '@vitejs/test-resolve-linked'
+import browserExportsMessage from '@vitejs/test-browser-exports'
+import workerExportsMessage from '@vitejs/test-worker-exports'
 import React from 'react'
 
 let loaded = false
@@ -14,12 +17,15 @@ addEventListener('fetch', function (event) {
     <p class="linked">${linkedMsg}</p>
     <p class="external">${typeof React}</p>
     <p>dynamic: ${loaded}</p>
+    <p class="browser-exports">${browserExportsMessage}</p>
+    <p class="worker-exports">${workerExportsMessage}</p>
+    <p class="nodejs-compat">${equal('a', 'a') || '[success] nodejs compat'}</p>
     `,
       {
         headers: {
-          'content-type': 'text/html'
-        }
-      }
-    )
+          'content-type': 'text/html',
+        },
+      },
+    ),
   )
 })

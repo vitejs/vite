@@ -1,5 +1,13 @@
 import { expect, test } from 'vitest'
-import { getColor, page, serverLogs, untilUpdated } from '~utils'
+import {
+  browserLogs,
+  findAssetFile,
+  getColor,
+  isBuild,
+  page,
+  serverLogs,
+  untilUpdated,
+} from '~utils'
 
 test('should load literal dynamic import', async () => {
   await page.click('.baz')
@@ -11,7 +19,7 @@ test('should load full dynamic import from public', async () => {
   await untilUpdated(() => page.textContent('.view'), 'Qux view', true)
   // No warning should be logged as we are using @vite-ignore
   expect(
-    serverLogs.some((log) => log.includes('cannot be analyzed by vite'))
+    serverLogs.some((log) => log.includes('cannot be analyzed by vite')),
   ).toBe(false)
 })
 
@@ -57,7 +65,7 @@ test('should load dynamic import with css', async () => {
   await untilUpdated(
     () => page.$eval('.view', (node) => window.getComputedStyle(node).color),
     'rgb(255, 0, 0)',
-    true
+    true,
   )
 })
 
@@ -65,15 +73,37 @@ test('should load dynamic import with vars', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars'),
     'hello',
-    true
+    true,
+  )
+})
+
+test('should load dynamic import with vars ignored', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-ignored'),
+    'hello',
+    true,
+  )
+  // No warning should be logged as we are using @vite-ignore
+  expect(
+    serverLogs.some((log) =>
+      log.includes('"https" has been externalized for browser compatibility'),
+    ),
+  ).toBe(false)
+})
+
+test('should load dynamic import with double slash ignored', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-double-slash-ignored'),
+    'hello',
+    true,
   )
 })
 
 test('should load dynamic import with vars multiline', async () => {
   await untilUpdated(
-    () => page.textContent('.dynamic-import-with-vars'),
+    () => page.textContent('.dynamic-import-with-vars-multiline'),
     'hello',
-    true
+    true,
   )
 })
 
@@ -81,7 +111,7 @@ test('should load dynamic import with vars alias', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-alias'),
     'hi',
-    true
+    true,
   )
 })
 
@@ -89,7 +119,23 @@ test('should load dynamic import with vars raw', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-with-vars-raw'),
     'export function hello()',
-    true
+    true,
+  )
+})
+
+test('should load dynamic import with vars url', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-url'),
+    isBuild ? 'data:text/javascript' : '/alias/url.js',
+    true,
+  )
+})
+
+test('should load dynamic import with vars worker', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-worker'),
+    'load worker',
+    true,
   )
 })
 
@@ -102,7 +148,7 @@ test('should work with load ../ and itself directory', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-self'),
     'dynamic-import-self-content',
-    true
+    true,
   )
 })
 
@@ -110,6 +156,63 @@ test('should work with load ../ and contain itself directory', async () => {
   await untilUpdated(
     () => page.textContent('.dynamic-import-nested-self'),
     'dynamic-import-nested-self-content',
-    true
+    true,
   )
+})
+
+test('should work a load path that contains parentheses.', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-contains-parenthesis'),
+    'dynamic-import-with-vars-contains-parenthesis',
+    true,
+  )
+})
+
+test.runIf(isBuild)(
+  'should rollup warn when static and dynamic import a module in same chunk',
+  async () => {
+    const log = serverLogs.join('\n')
+    expect(log).toContain(
+      'dynamic import will not move module into another chunk',
+    )
+    expect(log).toMatch(
+      /\(!\).*\/dynamic-import\/files\/mxd\.js is dynamically imported by/,
+    )
+    expect(log).toMatch(
+      /\(!\).*\/dynamic-import\/files\/mxd\.json is dynamically imported by/,
+    )
+    expect(log).not.toMatch(
+      /\(!\).*\/dynamic-import\/nested\/shared\.js is dynamically imported by/,
+    )
+  },
+)
+
+test('dynamic import treeshaken log', async () => {
+  const log = browserLogs.join('\n')
+  expect(log).toContain('treeshaken foo')
+  expect(log).toContain('treeshaken bar')
+  expect(log).toContain('treeshaken baz1')
+  expect(log).toContain('treeshaken baz2')
+  expect(log).toContain('treeshaken baz3')
+  expect(log).toContain('treeshaken baz4')
+  expect(log).toContain('treeshaken baz5')
+  expect(log).toContain('treeshaken default')
+
+  expect(log).not.toContain('treeshaken removed')
+})
+
+test('dynamic import syntax parsing', async () => {
+  const log = browserLogs.join('\n')
+  expect(log).toContain('treeshaken syntax foo')
+  expect(log).toContain('treeshaken syntax default')
+})
+
+test.runIf(isBuild)('dynamic import treeshaken file', async () => {
+  expect(findAssetFile(/treeshaken.+\.js$/)).not.toContain('treeshaken removed')
+})
+
+test.runIf(isBuild)('should not preload for non-analyzable urls', () => {
+  const js = findAssetFile(/index-[-\w]{8}\.js$/)
+  // should match e.g. await import(e.jss);o(".view",p===i)
+  expect(js).to.match(/\.jss\);/)
 })

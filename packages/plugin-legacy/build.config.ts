@@ -5,6 +5,10 @@ export default defineBuildConfig({
   clean: true,
   declaration: true,
   rollup: {
-    emitCJS: true
-  }
+    emitCJS: true,
+    inlineDependencies: true,
+    esbuild: {
+      target: 'node18',
+    },
+  },
 })

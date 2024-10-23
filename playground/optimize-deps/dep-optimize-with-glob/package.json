@@ -1,0 +1,6 @@
+{
+  "name": "@vitejs/test-dep-optimize-with-glob",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module"
+}

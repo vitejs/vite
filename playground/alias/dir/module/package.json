@@ -1,5 +1,5 @@
 {
-  "name": "@vite/aliased-module",
+  "name": "@vitejs/test-aliased-module",
   "private": true,
   "type": "module",
   "version": "0.0.0"

@@ -3,8 +3,14 @@ import { browserLogs, isBuild, page } from '~utils'
 
 test('importmap', () => {
   expect(browserLogs).not.toContain(
-    'An import map is added after module script load was triggered.'
+    'An import map is added after module script load was triggered.',
   )
+})
+
+test('should have default exports', async () => {
+  expect(await page.textContent('#imported-slash5-exists')).toBe('true')
+  expect(await page.textContent('#imported-slash3-exists')).toBe('true')
+  expect(await page.textContent('#required-slash3-exists')).toBe('true')
 })
 
 describe.runIf(isBuild)('build', () => {

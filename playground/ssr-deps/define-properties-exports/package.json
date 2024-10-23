@@ -1,5 +1,5 @@
 {
-  "name": "define-properties-exports",
+  "name": "@vitejs/test-define-properties-exports",
   "private": true,
   "version": "0.0.0"
 }

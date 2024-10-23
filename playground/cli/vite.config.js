@@ -1,15 +1,15 @@
-const { defineConfig } = require('vite')
+import { defineConfig } from 'vite'
 
-module.exports = defineConfig({
+export default defineConfig({
   server: {
     host: 'localhost',
     headers: {
-      'Cache-Control': 'no-store'
-    }
+      'Cache-Control': 'no-store',
+    },
   },
   build: {
     //speed up build
     minify: false,
-    target: 'esnext'
-  }
+    target: 'esnext',
+  },
 })

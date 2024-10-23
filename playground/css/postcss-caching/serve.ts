@@ -5,6 +5,6 @@
 // function or a default server will be created
 export async function serve(): Promise<{ close(): Promise<void> }> {
   return {
-    close: () => Promise.resolve()
+    close: () => Promise.resolve(),
   }
 }

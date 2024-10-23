@@ -20,6 +20,7 @@ export interface Logger {
 export interface LogOptions {
   clear?: boolean
   timestamp?: boolean
+  environment?: string
 }
 
 export interface LogErrorOptions extends LogOptions {
@@ -30,7 +31,7 @@ export const LogLevels: Record<LogLevel, number> = {
   silent: 0,
   error: 1,
   warn: 2,
-  info: 3
+  info: 3,
 }
 
 let lastType: LogType | undefined
@@ -51,9 +52,21 @@ export interface LoggerOptions {
   customLogger?: Logger
 }
 
+// Only initialize the timeFormatter when the timestamp option is used, and
+// reuse it across all loggers
+let timeFormatter: Intl.DateTimeFormat
+function getTimeFormatter() {
+  timeFormatter ??= new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+  })
+  return timeFormatter
+}
+
 export function createLogger(
   level: LogLevel = 'info',
-  options: LoggerOptions = {}
+  options: LoggerOptions = {},
 ): Logger {
   if (options.customLogger) {
     return options.customLogger
@@ -66,22 +79,27 @@ export function createLogger(
     allowClearScreen && process.stdout.isTTY && !process.env.CI
   const clear = canClearScreen ? clearScreen : () => {}
 
+  function format(type: LogType, msg: string, options: LogErrorOptions = {}) {
+    if (options.timestamp) {
+      let tag = ''
+      if (type === 'info') {
+        tag = colors.cyan(colors.bold(prefix))
+      } else if (type === 'warn') {
+        tag = colors.yellow(colors.bold(prefix))
+      } else {
+        tag = colors.red(colors.bold(prefix))
+      }
+      const environment = options.environment ? options.environment + ' ' : ''
+      return `${colors.dim(getTimeFormatter().format(new Date()))} ${tag} ${environment}${msg}`
+    } else {
+      return msg
+    }
+  }
+
   function output(type: LogType, msg: string, options: LogErrorOptions = {}) {
     if (thresh >= LogLevels[type]) {
       const method = type === 'info' ? 'log' : type
-      const format = () => {
-        if (options.timestamp) {
-          const tag =
-            type === 'info'
-              ? colors.cyan(colors.bold(prefix))
-              : type === 'warn'
-              ? colors.yellow(colors.bold(prefix))
-              : colors.red(colors.bold(prefix))
-          return `${colors.dim(new Date().toLocaleTimeString())} ${tag} ${msg}`
-        } else {
-          return msg
-        }
-      }
+
       if (options.error) {
         loggedErrors.add(options.error)
       }
@@ -89,7 +107,10 @@ export function createLogger(
         if (type === lastType && msg === lastMsg) {
           sameCount++
           clear()
-          console[method](format(), colors.yellow(`(x${sameCount + 1})`))
+          console[method](
+            format(type, msg, options),
+            colors.yellow(`(x${sameCount + 1})`),
+          )
         } else {
           sameCount = 0
           lastMsg = msg
@@ -97,10 +118,10 @@ export function createLogger(
           if (options.clear) {
             clear()
           }
-          console[method](format())
+          console[method](format(type, msg, options))
         }
       } else {
-        console[method](format())
+        console[method](format(type, msg, options))
       }
     }
   }
@@ -133,7 +154,7 @@ export function createLogger(
     },
     hasErrorLogged(error) {
       return loggedErrors.has(error)
-    }
+    },
   }
 
   return logger
@@ -142,7 +163,7 @@ export function createLogger(
 export function printServerUrls(
   urls: ResolvedServerUrls,
   optionsHost: string | boolean | undefined,
-  info: Logger['info']
+  info: Logger['info'],
 ): void {
   const colorUrl = (url: string) =>
     colors.cyan(url.replace(/:(\d+)\//, (_, port) => `:${colors.bold(port)}/`))
@@ -153,9 +174,10 @@ export function printServerUrls(
     info(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${colorUrl(url)}`)
   }
   if (urls.network.length === 0 && optionsHost === undefined) {
-    const note = `use ${colors.white(colors.bold('--host'))} to expose`
     info(
-      colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${note}`)
+      colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: use `) +
+        colors.bold('--host') +
+        colors.dim(' to expose'),
     )
   }
 }

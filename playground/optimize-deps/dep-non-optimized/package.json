@@ -1,5 +1,5 @@
 {
-  "name": "dep-non-optimized",
+  "name": "@vitejs/test-dep-non-optimized",
   "private": true,
   "version": "1.0.0",
   "type": "module"

@@ -16,17 +16,17 @@ nestedWorker.addEventListener('message', (ev) => {
     '.emit-chunk-worker',
     JSON.stringify(
       dataList.sort(
-        (a, b) => JSON.stringify(a).length - JSON.stringify(b).length
-      )
-    )
+        (a, b) => JSON.stringify(a).length - JSON.stringify(b).length,
+      ),
+    ),
   )
 })
 
 const dynamicImportWorker = new Worker(
   new URL('../emit-chunk-dynamic-import-worker.js', import.meta.url),
   {
-    type: 'module'
-  }
+    type: 'module',
+  },
 )
 dynamicImportWorker.addEventListener('message', (ev) => {
   text('.emit-chunk-dynamic-import-worker', JSON.stringify(ev.data))
@@ -34,7 +34,7 @@ dynamicImportWorker.addEventListener('message', (ev) => {
 
 const moduleWorker = new Worker(
   new URL('../module-and-worker.js', import.meta.url),
-  { type: 'module' }
+  { type: 'module' },
 )
 
 moduleWorker.addEventListener('message', (ev) => {

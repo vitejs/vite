@@ -1,10 +1,10 @@
 {
-  "name": "test-package-d",
+  "name": "@vitejs/test-package-d",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "main": "index.js",
   "dependencies": {
-    "test-package-d-nested": "link:./test-package-d-nested"
+    "@vitejs/test-package-d-nested": "link:./test-package-d-nested"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "css-js-dep",
+  "name": "@vitejs/test-css-js-dep",
   "private": true,
   "type": "module",
   "version": "1.0.0",

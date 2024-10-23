@@ -9,7 +9,7 @@ const escapeAliases = fs
   .reduce((aliases: Record<string, string>, dir) => {
     aliases[`@escape_${dir}_mod`] = path.resolve(
       __dirname,
-      `./escape/${dir}/mod`
+      `./escape/${dir}/mod`,
     )
     return aliases
   }, {})
@@ -18,10 +18,20 @@ export default defineConfig({
   resolve: {
     alias: {
       ...escapeAliases,
-      '@dir': path.resolve(__dirname, './dir/')
-    }
+      '@dir': path.resolve(__dirname, './dir/'),
+      '#alias': path.resolve(__dirname, './imports-path/'),
+    },
   },
   build: {
-    sourcemap: true
-  }
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('foo.css')) {
+            return 'foo_css'
+          }
+        },
+      },
+    },
+  },
 })

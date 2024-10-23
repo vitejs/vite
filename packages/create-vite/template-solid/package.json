@@ -1,0 +1,18 @@
+{
+  "name": "vite-solid-starter",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "solid-js": "^1.9.2"
+  },
+  "devDependencies": {
+    "vite": "^5.4.9",
+    "vite-plugin-solid": "^2.10.2"
+  }
+}

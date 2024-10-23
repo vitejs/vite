@@ -57,7 +57,7 @@ document.querySelector('.issue-2658-1').addEventListener('click', async () => {
 // data URLs (`data:`)
 const code2 = 'export const msg = "data";'
 const dataURL = `data:text/javascript;charset=utf-8,${encodeURIComponent(
-  code2
+  code2,
 )}`
 document.querySelector('.issue-2658-2').addEventListener('click', async () => {
   const { msg } = await import(/*@vite-ignore*/ dataURL)
@@ -84,6 +84,16 @@ import(`../alias/${base}.js`).then((mod) => {
   text('.dynamic-import-with-vars', mod.hello())
 })
 
+import(/*@vite-ignore*/ `https://localhost`).catch((mod) => {
+  console.log(mod)
+  text('.dynamic-import-with-vars-ignored', 'hello')
+})
+
+import(/*@vite-ignore*/ `https://localhost//${'test'}`).catch((mod) => {
+  console.log(mod)
+  text('.dynamic-import-with-double-slash-ignored', 'hello')
+})
+
 // prettier-ignore
 import(
   /* this messes with */
@@ -95,6 +105,21 @@ import(
 
 import(`../alias/${base}.js?raw`).then((mod) => {
   text('.dynamic-import-with-vars-raw', JSON.stringify(mod))
+})
+
+base = 'url'
+import(`../alias/${base}.js?url`).then((mod) => {
+  text('.dynamic-import-with-vars-url', JSON.stringify(mod))
+})
+
+base = 'worker'
+import(`../alias/${base}.js?worker`).then((workerMod) => {
+  const worker = new workerMod.default()
+  worker.postMessage('1')
+  worker.addEventListener('message', (ev) => {
+    console.log(ev)
+    text('.dynamic-import-with-vars-worker', JSON.stringify(ev.data))
+  })
 })
 
 base = 'hi'
@@ -109,6 +134,66 @@ import(`../nested/${base}.js`).then((mod) => {
 
 import(`../nested/nested/${base}.js`).then((mod) => {
   text('.dynamic-import-nested-self', mod.self)
+})
+;(async function () {
+  const { foo } = await import('./treeshaken/treeshaken.js')
+  const { bar, default: tree } = await import('./treeshaken/treeshaken.js')
+  const default2 = (await import('./treeshaken/treeshaken.js')).default
+  const baz1 = (await import('./treeshaken/treeshaken.js')).baz1
+  const baz2 = (await import('./treeshaken/treeshaken.js')).baz2.log
+  const baz3 = (await import('./treeshaken/treeshaken.js')).baz3?.log
+  const baz4 = await import('./treeshaken/treeshaken.js').then(
+    ({ baz4 }) => baz4,
+  )
+  const baz5 = await import('./treeshaken/treeshaken.js').then(function ({
+      baz5,
+    }) {
+      return baz5
+    }),
+    { baz6 } = await import('./treeshaken/treeshaken.js')
+  foo()
+  bar()
+  tree()
+  ;(await import('./treeshaken/treeshaken.js')).default()
+  default2()
+  baz1()
+  baz2()
+  baz3()
+  baz4()
+  baz5()
+  baz6()
+})()
+// Test syntax parsing only
+;(async function () {
+  const default1 = await import('./treeshaken/syntax.js').then(
+    (mod) => mod.default,
+  )
+  const default2 = (await import('./treeshaken/syntax.js')).default,
+    other = () => {}
+  const foo = await import('./treeshaken/syntax.js').then((mod) => mod.foo)
+  const foo2 = await import('./treeshaken/syntax.js').then(
+    ({ foo = {} }) => foo,
+  )
+  await import('./treeshaken/syntax.js').then((mod) => mod.foo({ foo }))
+  const obj = [
+    '',
+    {
+      async lazy() {
+        const { foo } = await import('./treeshaken/treeshaken.js')
+        return { foo: aaa(foo) }
+      },
+    },
+  ]
+  default1()
+  default2()
+  other()
+  foo()
+  foo2()
+  obj[1].lazy()
+})()
+
+import(`../nested/static.js`).then((mod) => {
+  text('.dynamic-import-static', mod.self)
 })
 
 console.log('index.js')

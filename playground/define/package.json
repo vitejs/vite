@@ -1,7 +1,8 @@
 {
-  "name": "test-define",
+  "name": "@vitejs/test-define",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -9,6 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "dep": "file:./commonjs-dep"
+    "@vitejs/test-commonjs-dep": "file:./commonjs-dep"
   }
 }

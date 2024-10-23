@@ -1,5 +1,5 @@
 {
-  "name": "object-assigned-exports",
+  "name": "@vitejs/test-object-assigned-exports",
   "private": true,
   "version": "0.0.0"
 }

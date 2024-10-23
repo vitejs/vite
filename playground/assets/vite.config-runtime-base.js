@@ -1,31 +1,27 @@
-const path = require('node:path')
+import { defineConfig } from 'vite'
+import baseConfig from './vite.config.js'
 
 const dynamicBaseAssetsCode = `
 globalThis.__toAssetUrl = url => '/' + url
 globalThis.__publicBase = '/'
 `
 
-const baseConfig = require('./vite.config.js')
-
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   ...baseConfig,
   base: './', // overwrite the original base: '/foo/'
   build: {
     ...baseConfig.build,
     outDir: 'dist',
-    watch: false,
+    watch: null,
     minify: false,
     assetsInlineLimit: 0,
     rollupOptions: {
       output: {
         entryFileNames: 'entries/[name].js',
-        chunkFileNames: 'chunks/[name].[hash].js',
-        assetFileNames: 'other-assets/[name].[hash][extname]'
-      }
-    }
+        chunkFileNames: 'chunks/[name]-[hash].js',
+        assetFileNames: 'other-assets/[name]-[hash][extname]',
+      },
+    },
   },
   plugins: [
     {
@@ -37,28 +33,29 @@ module.exports = {
             {
               tag: 'script',
               attrs: { type: 'module' },
-              children: dynamicBaseAssetsCode
-            }
+              children: dynamicBaseAssetsCode,
+            },
           ]
         }
-      }
-    }
+      },
+    },
   ],
   experimental: {
     renderBuiltUrl(filename, { hostType, type }) {
       if (type === 'asset') {
         if (hostType === 'js') {
           return {
-            runtime: `globalThis.__toAssetUrl(${JSON.stringify(filename)})`
+            runtime: `globalThis.__toAssetUrl(${JSON.stringify(filename)})`,
           }
         }
       } else if (type === 'public') {
         if (hostType === 'js') {
           return {
-            runtime: `globalThis.__publicBase+${JSON.stringify(filename)}`
+            runtime: `globalThis.__publicBase+${JSON.stringify(filename)}`,
           }
         }
       }
-    }
-  }
-}
+    },
+  },
+  cacheDir: 'node_modules/.vite-runtime-base',
+})

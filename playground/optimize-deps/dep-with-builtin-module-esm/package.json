@@ -1,5 +1,5 @@
 {
-  "name": "dep-with-builtin-module-esm",
+  "name": "@vitejs/test-dep-with-builtin-module-esm",
   "private": true,
   "version": "0.0.0",
   "main": "index.js",

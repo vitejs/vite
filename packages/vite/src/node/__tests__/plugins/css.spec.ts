@@ -1,19 +1,27 @@
-import fs from 'node:fs'
 import path from 'node:path'
-import { describe, expect, test, vi } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { resolveConfig } from '../../config'
-import { cssPlugin, cssUrlRE, hoistAtRules } from '../../plugins/css'
+import type { InlineConfig } from '../../config'
+import {
+  convertTargets,
+  cssPlugin,
+  cssUrlRE,
+  getEmptyChunkReplacer,
+  hoistAtRules,
+  preprocessCSS,
+} from '../../plugins/css'
+import { PartialEnvironment } from '../../baseEnvironment'
 
 describe('search css url function', () => {
   test('some spaces before it', () => {
     expect(
-      cssUrlRE.test("list-style-image: url('../images/bullet.jpg');")
+      cssUrlRE.test("list-style-image: url('../images/bullet.jpg');"),
     ).toBe(true)
   })
 
   test('no space after colon', () => {
     expect(cssUrlRE.test("list-style-image:url('../images/bullet.jpg');")).toBe(
-      true
+      true,
     )
   })
 
@@ -25,94 +33,82 @@ describe('search css url function', () => {
     expect(
       cssUrlRE.test(`@function svg-url($string) {
       @return "";
-    }`)
+    }`),
     ).toBe(false)
   })
 
   test('after parenthesis', () => {
     expect(
       cssUrlRE.test(
-        'mask-image: image(url(mask.png), skyblue, linear-gradient(rgba(0, 0, 0, 1.0), transparent));'
-      )
+        'mask-image: image(url(mask.png), skyblue, linear-gradient(rgba(0, 0, 0, 1.0), transparent));',
+      ),
     ).toBe(true)
   })
 
   test('after comma', () => {
     expect(
       cssUrlRE.test(
-        'mask-image: image(skyblue,url(mask.png), linear-gradient(rgba(0, 0, 0, 1.0), transparent));'
-      )
+        'mask-image: image(skyblue,url(mask.png), linear-gradient(rgba(0, 0, 0, 1.0), transparent));',
+      ),
     ).toBe(true)
   })
 })
 
-describe('css path resolutions', () => {
-  const mockedProjectPath = path.join(process.cwd(), '/foo/bar/project')
-  const mockedBarCssRelativePath = '/css/bar.module.css'
-  const mockedFooCssRelativePath = '/css/foo.module.css'
-
-  test('cssmodule compose/from path resolutions', async () => {
-    const config = await resolveConfig(
-      {
-        resolve: {
-          alias: [
-            {
-              find: '@',
-              replacement: mockedProjectPath
-            }
-          ]
-        }
+describe('css modules', () => {
+  test('css module compose/from path resolutions', async () => {
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      resolve: {
+        alias: [
+          {
+            find: '@',
+            replacement: path.join(
+              import.meta.dirname,
+              './fixtures/css-module-compose',
+            ),
+          },
+        ],
       },
-      'serve'
-    )
+    })
 
-    const { transform, buildStart } = cssPlugin(config)
-
-    await buildStart.call({})
-
-    const mockFs = vi
-      .spyOn(fs, 'readFile')
-      // @ts-ignore vi.spyOn not recognize override `fs.readFile` definition.
-      .mockImplementationOnce((p, encoding, callback) => {
-        expect(p).toBe(path.join(mockedProjectPath, mockedBarCssRelativePath))
-        expect(encoding).toBe('utf-8')
-        callback(
-          null,
-          Buffer.from(`
-.bar {
-  display: block;
-  background: #f0f;
-}
-      `)
-        )
-      })
-
-    const { code } = await transform.call(
-      {
-        addWatchFile() {
-          return
-        }
-      },
-      `
+    const result = await transform(
+      `\
 .foo {
-  position: fixed;
-  composes: bar from '@${mockedBarCssRelativePath}';
-}
-    `,
-      path.join(mockedProjectPath, mockedFooCssRelativePath)
+position: fixed;
+composes: bar from '@/css/bar.module.css';
+}`,
+      '/css/foo.module.css',
     )
 
-    expect(code).toBe(`
-._bar_soicv_2 {
-  display: block;
-  background: #f0f;
-}
-._foo_sctn3_2 {
-  position: fixed;
-}
-    `)
+    expect(result.code).toMatchInlineSnapshot(
+      `
+      "._bar_1b4ow_1 {
+        display: block;
+        background: #f0f;
+      }
+      ._foo_86148_1 {
+      position: fixed;
+      }"
+    `,
+    )
+  })
 
-    mockFs.mockReset()
+  test('custom generateScopedName', async () => {
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      css: {
+        modules: {
+          generateScopedName: 'custom__[hash:base64:5]',
+        },
+      },
+    })
+    const css = `\
+.foo {
+  color: red;
+}`
+    const result1 = await transform(css, '/foo.module.css') // server
+    const result2 = await transform(css, '/foo.module.css?direct') // client
+    expect(result1.code).toBe(result2.code)
   })
 })
 
@@ -133,7 +129,7 @@ describe('hoist @ rules', () => {
     const css = `.foo{color:red;}@import url(data:image/png;base64,iRxVB0);`
     const result = await hoistAtRules(css)
     expect(result).toBe(
-      `@import url(data:image/png;base64,iRxVB0);.foo{color:red;}`
+      `@import url(data:image/png;base64,iRxVB0);.foo{color:red;}`,
     )
   })
 
@@ -159,7 +155,7 @@ describe('hoist @ rules', () => {
     const css = `.foo{color:red;}@import "bla";@charset "utf-8";.bar{color:green;}@import "baz";`
     const result = await hoistAtRules(css)
     expect(result).toBe(
-      `@charset "utf-8";@import "bla";@import "baz";.foo{color:red;}.bar{color:green;}`
+      `@charset "utf-8";@import "bla";@import "baz";.foo{color:red;}.bar{color:green;}`,
     )
   })
 
@@ -173,7 +169,7 @@ describe('hoist @ rules', () => {
     const css = `.foo{color:red;}/* @charset "utf-8"; */@charset "utf-8";`
     const result = await hoistAtRules(css)
     expect(result).toBe(
-      `@charset "utf-8";.foo{color:red;}/* @charset "utf-8"; */`
+      `@charset "utf-8";.foo{color:red;}/* @charset "utf-8"; */`,
     )
   })
 
@@ -191,16 +187,184 @@ describe('hoist @ rules', () => {
 @import "baz";`
     const result = await hoistAtRules(css)
     expect(result).toMatchInlineSnapshot(`
-      "@charset \\"utf-8\\";@import \\"baz\\";
+      "@charset "utf-8";@import "baz";
       .foo{color:red;}
       /*
-        @import \\"bla\\";
+        @import "bla";
       */
 
       /*
-        @charset \\"utf-8\\";
-        @import \\"bar\\";
+        @charset "utf-8";
+        @import "bar";
       */
+      "
+    `)
+  })
+})
+
+async function createCssPluginTransform(inlineConfig: InlineConfig = {}) {
+  const config = await resolveConfig(inlineConfig, 'serve')
+  const environment = new PartialEnvironment('client', config)
+
+  const { transform, buildStart } = cssPlugin(config)
+
+  // @ts-expect-error buildStart is function
+  await buildStart.call({})
+
+  return {
+    async transform(code: string, id: string) {
+      // @ts-expect-error transform is function
+      return await transform.call(
+        {
+          addWatchFile() {
+            return
+          },
+          environment,
+        },
+        code,
+        id,
+      )
+    },
+  }
+}
+
+describe('convertTargets', () => {
+  test('basic cases', () => {
+    expect(convertTargets('es2018')).toStrictEqual({
+      chrome: 4128768,
+      edge: 5177344,
+      firefox: 3801088,
+      safari: 786432,
+      opera: 3276800,
+    })
+    expect(convertTargets(['safari13.1', 'ios13', 'node14'])).toStrictEqual({
+      ios_saf: 851968,
+      safari: 852224,
+    })
+  })
+})
+
+describe('getEmptyChunkReplacer', () => {
+  test('replaces import call', () => {
+    const code = `\
+import "some-module";
+import "pure_css_chunk.js";
+import "other-module";`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(`
+      "import "some-module";
+      /* empty css             */
+      import "other-module";"
+    `)
+  })
+
+  test('replaces import call without new lines', () => {
+    const code = `import "some-module";import "pure_css_chunk.js";import "other-module";`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'es')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(
+      `"import "some-module";/* empty css             */import "other-module";"`,
+    )
+  })
+
+  test('replaces require call', () => {
+    const code = `\
+require("some-module");
+require("pure_css_chunk.js");
+require("other-module");`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(`
+      "require("some-module");
+      ;/* empty css              */
+      require("other-module");"
+    `)
+  })
+
+  test('replaces require call in minified code without new lines', () => {
+    const code = `require("some-module");require("pure_css_chunk.js");require("other-module");`
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const replaced = replacer(code)
+    expect(replaced.length).toBe(code.length)
+    expect(replaced).toMatchInlineSnapshot(
+      `"require("some-module");;/* empty css              */require("other-module");"`,
+    )
+  })
+
+  test('replaces require call in minified code that uses comma operator', () => {
+    const code =
+      'require("some-module"),require("pure_css_chunk.js"),require("other-module");'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    const newCode = replacer(code)
+    expect(newCode).toMatchInlineSnapshot(
+      `"require("some-module"),/* empty css               */require("other-module");"`,
+    )
+    // So there should be no pure css chunk anymore
+    expect(newCode).not.toContain('pure_css_chunk.js')
+  })
+
+  test('replaces require call in minified code that uses comma operator followed by assignment', () => {
+    const code =
+      'require("some-module"),require("pure_css_chunk.js");const v=require("other-module");'
+
+    const replacer = getEmptyChunkReplacer(['pure_css_chunk.js'], 'cjs')
+    expect(replacer(code)).toMatchInlineSnapshot(
+      `"require("some-module");/* empty css               */const v=require("other-module");"`,
+    )
+  })
+})
+
+describe('preprocessCSS', () => {
+  test('works', async () => {
+    const resolvedConfig = await resolveConfig({ configFile: false }, 'serve')
+    const result = await preprocessCSS(
+      `\
+.foo {
+  color:red;
+  background: url(./foo.png);
+}`,
+      'foo.css',
+      resolvedConfig,
+    )
+    expect(result.code).toMatchInlineSnapshot(`
+      ".foo {
+        color:red;
+        background: url(./foo.png);
+      }"
+    `)
+  })
+
+  test('works with lightningcss', async () => {
+    const resolvedConfig = await resolveConfig(
+      {
+        configFile: false,
+        css: { transformer: 'lightningcss' },
+      },
+      'serve',
+    )
+    const result = await preprocessCSS(
+      `\
+.foo {
+  color: red;
+  background: url(./foo.png);
+}`,
+      'foo.css',
+      resolvedConfig,
+    )
+    expect(result.code).toMatchInlineSnapshot(`
+      ".foo {
+        color: red;
+        background: url("./foo.png");
+      }
       "
     `)
   })

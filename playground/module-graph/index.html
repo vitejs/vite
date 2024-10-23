@@ -1,0 +1,10 @@
+<div class="imported-urls-order"></div>
+
+<script type="module">
+  import importedUrlsOrderSuccess from './imported-urls-order'
+  text('.imported-urls-order', importedUrlsOrderSuccess)
+
+  function text(el, text) {
+    document.querySelector(el).textContent = text
+  }
+</script>

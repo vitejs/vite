@@ -9,7 +9,7 @@ describe('injected inline scripts', () => {
   test('no injected inline scripts are present', async () => {
     await page.goto(url)
     const inlineScripts = await page.$$eval('script', (nodes) =>
-      nodes.filter((n) => !n.getAttribute('src') && n.innerHTML)
+      nodes.filter((n) => !n.getAttribute('src') && n.innerHTML),
     )
     expect(inlineScripts).toHaveLength(0)
   })
@@ -23,14 +23,14 @@ describe('injected inline scripts', () => {
           if (!src) return false
           return src.includes('?html-proxy&index')
         })
-        .map((n) => n.getAttribute('src'))
+        .map((n) => n.getAttribute('src')),
     )
 
     // assert at least 1 proxied script exists
     expect(proxiedScripts).not.toHaveLength(0)
 
     const scriptContents = await Promise.all(
-      proxiedScripts.map((src) => fetch(url + src).then((res) => res.text()))
+      proxiedScripts.map((src) => fetch(url + src).then((res) => res.text())),
     )
 
     // all proxied scripts return code
