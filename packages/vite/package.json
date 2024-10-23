@@ -162,7 +162,7 @@
     "sass-embedded": "*",
     "stylus": "*",
     "sugarss": "*",
-    "terser": "^5.4.0"
+    "terser": "^5.16.0"
   },
   "peerDependenciesMeta": {
     "@types/node": {
