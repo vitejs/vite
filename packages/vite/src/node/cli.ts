@@ -285,7 +285,7 @@ cli
     `[boolean] force empty outDir when it's outside of root`,
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
-  .option('--app', `[boolean] same as builder.entireApp`)
+  .option('--app', `[boolean] same as \`builder: {}\``)
   .action(
     async (
       root: string,
@@ -307,7 +307,7 @@ cli
           logLevel: options.logLevel,
           clearScreen: options.clearScreen,
           build: buildOptions,
-          ...(options.app ? { builder: { entireApp: true } } : {}),
+          ...(options.app ? { builder: {} } : {}),
         }
         const builder = await createBuilder(inlineConfig, null)
         await builder.buildApp()

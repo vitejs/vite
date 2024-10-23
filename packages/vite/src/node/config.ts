@@ -564,7 +564,7 @@ export type ResolvedConfig = Readonly<
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     dev: ResolvedDevEnvironmentOptions
-    builder: ResolvedBuilderOptions
+    builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
