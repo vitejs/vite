@@ -137,14 +137,8 @@ export class DevEnvironment extends BaseEnvironment {
     } else if (isDepOptimizationDisabled(optimizeDeps)) {
       this.depsOptimizer = undefined
     } else {
-      // We only support auto-discovery for the client environment, for all other
-      // environments `noDiscovery` has no effect and a simpler explicit deps
-      // optimizer is used that only optimizes explicitly included dependencies
-      // so it doesn't need to reload the environment. Now that we have proper HMR
-      // and full reload for general environments, we can enable auto-discovery for
-      // them in the future
       this.depsOptimizer = (
-        optimizeDeps.noDiscovery || options.consumer !== 'client'
+        optimizeDeps.noDiscovery
           ? createExplicitDepsOptimizer
           : createDepsOptimizer
       )(this)

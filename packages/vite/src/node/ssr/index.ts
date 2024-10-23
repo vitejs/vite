@@ -62,7 +62,6 @@ export function resolveSSROptions(
     ...ssr,
     optimizeDeps: {
       ...optimizeDeps,
-      noDiscovery: true, // always true for ssr
       esbuildOptions: {
         preserveSymlinks,
         ...optimizeDeps.esbuildOptions,
