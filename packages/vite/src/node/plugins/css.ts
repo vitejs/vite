@@ -79,7 +79,8 @@ import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { PartialEnvironment } from '../baseEnvironment'
 import type { TransformPluginContext } from '../server/pluginContainer'
-import type { DevEnvironment } from '..'
+import { searchForWorkspaceRoot } from '../server/searchRoot'
+import { type DevEnvironment } from '..'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -1637,7 +1638,8 @@ async function resolvePostcssConfig(
   } else {
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
-    result = postcssrc({}, searchPath).catch((e) => {
+    const stopDir = searchForWorkspaceRoot(config.root)
+    result = postcssrc({}, searchPath, { stopDir }).catch((e) => {
       if (!e.message.includes('No PostCSS Config found')) {
         if (e instanceof Error) {
           const { name, message, stack } = e
