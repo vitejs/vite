@@ -128,8 +128,8 @@ interface ViteDevServer {
    */
   moduleGraph: ModuleGraph
   /**
-   * The resolved urls Vite prints on the CLI. null in middleware mode or
-   * before `server.listen` is called.
+   * The resolved urls Vite prints on the CLI (URL-encoded). Returns `null`
+   * in middleware mode or if the server is not listening on any port.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -274,8 +274,8 @@ interface PreviewServer {
    */
   httpServer: http.Server
   /**
-   * The resolved urls Vite prints on the CLI.
-   * null before server is listening.
+   * The resolved urls Vite prints on the CLI (URL-encoded). Returns `null`
+   * if the server is not listening on any port.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
