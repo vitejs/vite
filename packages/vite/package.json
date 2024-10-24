@@ -133,7 +133,7 @@
     "pathe": "^1.1.2",
     "periscopic": "^4.0.2",
     "picocolors": "^1.1.1",
-    "picomatch": "^2.3.1",
+    "picomatch": "^4.0.2",
     "postcss-import": "^16.1.0",
     "postcss-load-config": "^4.0.2",
     "postcss-modules": "^6.0.0",
