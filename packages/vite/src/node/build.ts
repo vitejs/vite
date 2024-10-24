@@ -1092,7 +1092,10 @@ export function injectEnvironmentToHooks(
 
   const clone = { ...plugin }
 
-  for (const hook of Object.keys(clone) as RollupPluginHooks[]) {
+  for (const untypedHook in clone) {
+    // TypeScript automatically infers the keys of objects as `string`, so we need to explicitly type it.
+    // Otherwise, dependent type checks will fail
+    const hook = untypedHook as Extract<keyof typeof clone, RollupPluginHooks>
     switch (hook) {
       case 'resolveId':
         clone[hook] = wrapEnvironmentResolveId(environment, resolveId)
@@ -1468,8 +1471,8 @@ export interface BuilderOptions {
 }
 
 async function defaultBuildApp(builder: ViteBuilder): Promise<void> {
-  for (const environment of Object.values(builder.environments)) {
-    await builder.build(environment)
+  for (const environment in builder.environments) {
+    await builder.build(builder.environments[environment])
   }
 }
 
@@ -1532,7 +1535,7 @@ export async function createBuilder(
   if (useLegacyBuilder) {
     await setupEnvironment(config.build.ssr ? 'ssr' : 'client', config)
   } else {
-    for (const environmentName of Object.keys(config.environments)) {
+    for (const environmentName in config.environments) {
       // We need to resolve the config again so we can properly merge options
       // and get a new set of plugins for each build environment. The ecosystem
       // expects plugins to be run for the same environment once they are created

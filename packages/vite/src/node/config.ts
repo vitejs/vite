@@ -972,7 +972,7 @@ export async function resolveConfig(
 
   // Merge default environment config values
   const defaultEnvironmentOptions = getDefaultEnvironmentOptions(config)
-  for (const name of Object.keys(config.environments)) {
+  for (const name in config.environments) {
     config.environments[name] = mergeConfig(
       defaultEnvironmentOptions,
       config.environments[name],
@@ -984,7 +984,7 @@ export async function resolveConfig(
   const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
 
   const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
-  for (const environmentName of Object.keys(config.environments)) {
+  for (const environmentName in config.environments) {
     resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
       config.environments[environmentName],
       resolvedDefaultResolve.alias,

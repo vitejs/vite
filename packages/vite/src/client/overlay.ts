@@ -14,8 +14,8 @@ function h(
   ...children: (string | Node)[]
 ) {
   const elem = document.createElement(e)
-  for (const [k, v] of Object.entries(attrs)) {
-    elem.setAttribute(k, v)
+  for (const k in attrs) {
+    elem.setAttribute(k, attrs[k])
   }
   elem.append(...children)
   return elem

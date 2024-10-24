@@ -654,7 +654,7 @@ export function runOptimizeDeps(
           })
         }
 
-        for (const o of Object.keys(meta.outputs)) {
+        for (const o in meta.outputs) {
           if (!jsMapExtensionRE.test(o)) {
             const id = path
               .relative(processingCacheDirOutputPath, o)
@@ -965,14 +965,14 @@ function parseDepsOptimizerMetadata(
     chunks: {},
     depInfoList: [],
   }
-  for (const id of Object.keys(optimized)) {
+  for (const id in optimized) {
     addOptimizedDepInfo(metadata, 'optimized', {
       ...optimized[id],
       id,
       browserHash,
     })
   }
-  for (const id of Object.keys(chunks)) {
+  for (const id in chunks) {
     addOptimizedDepInfo(metadata, 'chunks', {
       ...chunks[id],
       id,
@@ -1046,9 +1046,9 @@ function esbuildOutputFromId(
   }
   // If the root dir was symlinked, esbuild could return output keys as `../cwd/`
   // Normalize keys to support this case too
-  for (const [key, value] of Object.entries(outputs)) {
+  for (const key in outputs) {
     if (normalizePath(path.relative(cwd, key)) === normalizedOutputPath) {
-      return value
+      return outputs[key]
     }
   }
 }
@@ -1251,7 +1251,7 @@ function findOptimizedDepInfoInRecord(
   dependenciesInfo: Record<string, OptimizedDepInfo>,
   callbackFn: (depInfo: OptimizedDepInfo, id: string) => any,
 ): OptimizedDepInfo | undefined {
-  for (const o of Object.keys(dependenciesInfo)) {
+  for (const o in dependenciesInfo) {
     const info = dependenciesInfo[o]
     if (callbackFn(info, o)) {
       return info

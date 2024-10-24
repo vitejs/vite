@@ -55,9 +55,9 @@ export function loadEnv(
   expand({ parsed, processEnv })
 
   // only keys that start with prefix are exposed to client
-  for (const [key, value] of Object.entries(parsed)) {
+  for (const key in parsed) {
     if (prefixes.some((prefix) => key.startsWith(prefix))) {
-      env[key] = value
+      env[key] = parsed[key]
     }
   }
 

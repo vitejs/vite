@@ -186,7 +186,7 @@ function extractImportedBindings(
     bindings.add('default')
   }
   if (parsed.namedImports) {
-    for (const name of Object.keys(parsed.namedImports)) {
+    for (const name in parsed.namedImports) {
       bindings.add(name)
     }
   }

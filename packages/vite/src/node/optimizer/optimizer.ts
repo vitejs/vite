@@ -176,9 +176,9 @@ export function createDepsOptimizer(
         sessionTimestamp,
       )
 
-      for (const depInfo of Object.values(manuallyIncludedDepsInfo)) {
+      for (const depIdentifier in manuallyIncludedDepsInfo) {
         addOptimizedDepInfo(metadata, 'discovered', {
-          ...depInfo,
+          ...manuallyIncludedDepsInfo[depIdentifier],
           processing: depOptimizationProcessing.promise,
         })
         newDepsDiscovered = true
@@ -212,7 +212,7 @@ export function createDepsOptimizer(
               // Add these dependencies to the discovered list, as these are currently
               // used by the preAliasPlugin to support aliased and optimized deps.
               // This is also used by the CJS externalization heuristics in legacy mode
-              for (const id of Object.keys(deps)) {
+              for (const id in deps) {
                 if (!metadata.discovered[id]) {
                   addMissingDep(id, deps[id])
                 }
@@ -272,10 +272,10 @@ export function createDepsOptimizer(
     const knownDeps: Record<string, OptimizedDepInfo> = {}
     // Clone optimized info objects, fileHash, browserHash may be changed for them
     const metadata = depsOptimizer.metadata!
-    for (const dep of Object.keys(metadata.optimized)) {
+    for (const dep in metadata.optimized) {
       knownDeps[dep] = { ...metadata.optimized[dep] }
     }
-    for (const dep of Object.keys(metadata.discovered)) {
+    for (const dep in metadata.discovered) {
       // Clone the discovered info discarding its processing promise
       const { processing, ...info } = metadata.discovered[dep]
       knownDeps[dep] = info
