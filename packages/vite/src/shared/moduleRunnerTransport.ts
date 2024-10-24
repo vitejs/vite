@@ -61,6 +61,7 @@ const createInvokeableTransport = (
     {
       resolve: (data: any) => void
       reject: (data: any) => void
+      name: string
       timeoutId?: ReturnType<typeof setTimeout>
     }
   >()
@@ -98,7 +99,11 @@ const createInvokeableTransport = (
     },
     disconnect() {
       rpcPromises.forEach((promise) => {
-        promise.reject(new Error('transport was disconnected'))
+        promise.reject(
+          new Error(
+            `transport was disconnected, cannot call ${JSON.stringify(promise.name)}`,
+          ),
+        )
       })
       rpcPromises.clear()
       transport.disconnect?.()
@@ -130,7 +135,7 @@ const createInvokeableTransport = (
         }, timeout)
         timeoutId?.unref?.()
       }
-      rpcPromises.set(promiseId, { resolve, reject, timeoutId })
+      rpcPromises.set(promiseId, { resolve, reject, name, timeoutId })
 
       return await promise
     },
