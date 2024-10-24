@@ -4,6 +4,9 @@ export { EvaluatedModules, type EvaluatedModuleNode } from './evaluatedModules'
 export { ModuleRunner } from './runner'
 export { ESModulesEvaluator } from './esmEvaluator'
 export { RemoteRunnerTransport } from './runnerTransport'
+export { FetchTransport } from './fetchTransport'
+
+export { createFetchableModuleRunner } from './fetchableRunner'
 
 export type { RunnerTransport } from './runnerTransport'
 export type { HMRLogger, HMRConnection } from '../shared/hmr'
