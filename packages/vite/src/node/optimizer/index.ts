@@ -1146,6 +1146,7 @@ const lockfileFormats = [
   { name: 'package-lock.json', checkPatches: true, manager: 'npm' },
   { name: 'yarn.lock', checkPatches: true, manager: 'yarn' }, // Included in lockfile for v2+
   { name: 'pnpm-lock.yaml', checkPatches: false, manager: 'pnpm' }, // Included in lockfile
+  { name: 'bun.lock', checkPatches: true, manager: 'bun' },
   { name: 'bun.lockb', checkPatches: true, manager: 'bun' },
 ].sort((_, { manager }) => {
   return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
