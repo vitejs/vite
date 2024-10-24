@@ -2595,8 +2595,7 @@ async function rebaseUrls(
     }
     const absolute =
       (await resolver(environment, url, file)) || path.resolve(fileDir, url)
-    const relative = path.relative(rootDir, absolute)
-    return normalizePath(relative)
+    return normalizePath(absolute)
   }
 
   // fix css imports in less such as `@import "foo.css"`

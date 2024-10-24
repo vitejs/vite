@@ -116,6 +116,7 @@ test('less', async () => {
   const imported = await page.$('.less')
   const atImport = await page.$('.less-at-import')
   const atImportAlias = await page.$('.less-at-import-alias')
+  const atImportUrlOmmer = await page.$('.less-at-import-url-ommer')
   const urlStartsWithVariable = await page.$('.less-url-starts-with-variable')
 
   expect(await getColor(imported)).toBe('blue')
@@ -125,6 +126,7 @@ test('less', async () => {
   expect(await getBg(atImportAlias)).toMatch(
     isBuild ? /base64/ : '/nested/icon.png',
   )
+  expect(await getColor(atImportUrlOmmer)).toBe('darkorange')
   expect(await getBg(urlStartsWithVariable)).toMatch(
     isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
