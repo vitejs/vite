@@ -84,8 +84,8 @@ export interface PreviewServer {
    */
   httpServer: HttpServer
   /**
-   * The resolved urls Vite prints on the CLI.
-   * null before server is listening.
+   * The resolved urls Vite prints on the CLI (URL-encoded). Returns `null`
+   * if the server is not listening on any port.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -153,6 +153,7 @@ export async function preview(
     async close() {
       teardownSIGTERMListener(closeServerAndExit)
       await closeHttpServer()
+      server.resolvedUrls = null
     },
     resolvedUrls: null,
     printUrls() {

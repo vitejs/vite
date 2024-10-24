@@ -77,6 +77,7 @@ export async function resolvePlugins(
     jsonPlugin(
       {
         namedExports: true,
+        stringify: 'auto',
         ...config.json,
       },
       isBuild,
