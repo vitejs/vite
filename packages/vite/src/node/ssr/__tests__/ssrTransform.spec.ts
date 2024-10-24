@@ -1184,7 +1184,7 @@ console.log(foo + 2)
   `)
 })
 
-test('identity function is decalred before used', async () => {
+test('identity function is declared before used', async () => {
   expect(
     await ssrTransformSimpleCode(`
 import { foo } from './foo'
