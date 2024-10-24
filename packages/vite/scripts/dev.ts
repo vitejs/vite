@@ -24,7 +24,6 @@ const serverOptions: BuildOptions = {
   external: [
     ...Object.keys(packageJSON.dependencies),
     ...Object.keys(packageJSON.peerDependencies),
-    ...Object.keys(packageJSON.optionalDependencies),
     ...Object.keys(packageJSON.devDependencies),
   ],
 }

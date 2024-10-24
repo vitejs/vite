@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { type ViteDevServer, createServer } from '../index'
 
-const stubGetWatchedCode = /getWatched\(\) \{.+?return \{\};.+?\}/s
+const stubGetWatchedCode = /function\(\)\s*\{\s*return this;\s*\}/
 
 describe('watcher configuration', () => {
   let server: ViteDevServer | undefined
@@ -21,7 +21,7 @@ describe('watcher configuration', () => {
         watch: null,
       },
     })
-    expect(server.watcher.getWatched.toString()).toMatch(stubGetWatchedCode)
+    expect(server.watcher.add.toString()).toMatch(stubGetWatchedCode)
   })
 
   it('when watcher is not disabled, return chokidar watcher', async () => {
@@ -30,7 +30,7 @@ describe('watcher configuration', () => {
         watch: {},
       },
     })
-    expect(server.watcher.getWatched.toString()).not.toMatch(stubGetWatchedCode)
+    expect(server.watcher.add.toString()).not.toMatch(stubGetWatchedCode)
   })
 
   it('should watch the root directory, config file dependencies, dotenv files, and the public directory', async () => {
