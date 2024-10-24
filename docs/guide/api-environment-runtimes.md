@@ -364,14 +364,14 @@ In this case, the server that handles those HTTP requests can use `environment.g
 ```ts
 server.onRequest((request: Request) => {
   const payload = (await request.json()) as CustomPayload
-  if (payload.type !== 'custom') return
-
-  for (const [event, handler] of Object.entries(invokeHandlers)) {
-    if (payload.event === event) {
+  if (payload.type === 'custom') {
+    const handler = invokeHandlers[payload.event]
+    if (handler) {
       const result = await handler(payload.data)
       return new Response(JSON.stringify(result))
     }
   }
+  return Response.error()
 })
 ```
 
