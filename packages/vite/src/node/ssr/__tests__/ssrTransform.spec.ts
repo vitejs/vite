@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { assert, expect, test } from 'vitest'
 import type { SourceMap } from 'rollup'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { transformWithEsbuild } from '../../plugins/esbuild'
 import { ssrTransform } from '../ssrTransform'
 
@@ -443,6 +444,36 @@ test('sourcemap source', async () => {
 
   expect(map?.sources).toStrictEqual(['input.js'])
   expect(map?.sourcesContent).toStrictEqual(['export const a = 1 /* */'])
+})
+
+test('sourcemap is correct for hoisted imports', async () => {
+  const code = `\n\n\nconsole.log(foo, bar);\nimport { foo } from 'vue';\nimport { bar } from 'vue2';`
+  const result = (await ssrTransform(code, null, 'input.js', code))!
+
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["foo"]});
+    const __vite_ssr_import_1__ = await __vite_ssr_import__("vue2", {"importedNames":["bar"]});
+
+
+
+    console.log(__vite_ssr_import_0__.foo, __vite_ssr_import_1__.bar);
+
+    "
+  `)
+
+  const traceMap = new TraceMap(result.map as any)
+  expect(originalPositionFor(traceMap, { line: 1, column: 0 })).toStrictEqual({
+    source: 'input.js',
+    line: 5,
+    column: 0,
+    name: null,
+  })
+  expect(originalPositionFor(traceMap, { line: 2, column: 0 })).toStrictEqual({
+    source: 'input.js',
+    line: 6,
+    column: 0,
+    name: null,
+  })
 })
 
 test('sourcemap with multiple sources', async () => {
