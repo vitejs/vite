@@ -362,8 +362,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       picomatch:
-        specifier: ^2.3.1
-        version: 2.3.1
+        specifier: ^4.0.2
+        version: 4.0.2
       postcss-import:
         specifier: ^16.1.0
         version: 16.1.0(postcss@8.4.47)
@@ -384,7 +384,7 @@ importers:
         version: 6.1.1(esbuild@0.24.0)(rollup@4.22.5)
       rollup-plugin-license:
         specifier: ^3.5.3
-        version: 3.5.3(picomatch@2.3.1)(rollup@4.22.5)
+        version: 3.5.3(picomatch@4.0.2)(rollup@4.22.5)
       sass:
         specifier: ^1.80.3
         version: 1.80.3
@@ -10335,9 +10335,9 @@ snapshots:
     dependencies:
       reusify: 1.0.4
 
-  fdir@6.3.0(picomatch@2.3.1):
+  fdir@6.3.0(picomatch@4.0.2):
     optionalDependencies:
-      picomatch: 2.3.1
+      picomatch: 4.0.2
 
   fdir@6.4.0(picomatch@4.0.2):
     optionalDependencies:
@@ -11952,10 +11952,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  rollup-plugin-license@3.5.3(picomatch@2.3.1)(rollup@4.22.5):
+  rollup-plugin-license@3.5.3(picomatch@4.0.2)(rollup@4.22.5):
     dependencies:
       commenting: 1.1.0
-      fdir: 6.3.0(picomatch@2.3.1)
+      fdir: 6.3.0(picomatch@4.0.2)
       lodash: 4.17.21
       magic-string: 0.30.12
       moment: 2.30.1
