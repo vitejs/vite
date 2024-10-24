@@ -176,6 +176,11 @@ export function createDebugger(
   if (enabled) {
     return (...args: [string, ...any[]]) => {
       if (!filter || args.some((a) => a?.includes?.(filter))) {
+        if (process.env.DEBUG_DEPTH) {
+          const depth = parseInt(process.env.DEBUG_DEPTH)
+          // @ts-expect-error - The log function is bound to inspectOpts, but the type is not reflected
+          log.inspectOpts.depth = depth
+        }
         log(...args)
       }
     }
