@@ -99,7 +99,8 @@ async function ssrTransformScript(
   const declaredConst = new Set<string>()
 
   // hoist at the start of the file, after the hashbang
-  let hoistIndex = hashbangRE.exec(code)?.[0].length ?? 0
+  const fileStartIndex = hashbangRE.exec(code)?.[0].length ?? 0
+  let hoistIndex = fileStartIndex
 
   function defineImport(
     index: number,
@@ -375,7 +376,7 @@ async function ssrTransformScript(
   })
 
   if (injectIdentityFunction) {
-    s.prependLeft(hoistIndex, `const ${ssrIdentityFunction} = v => v;\n`)
+    s.prependLeft(fileStartIndex, `const ${ssrIdentityFunction} = v => v;\n`)
   }
 
   let map = s.generateMap({ hires: 'boundary' })
