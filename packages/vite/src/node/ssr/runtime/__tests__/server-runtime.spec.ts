@@ -32,12 +32,7 @@ describe('module runner initialization', async () => {
 
   it('css is loaded correctly', async ({ runner }) => {
     const css = await runner.import('/fixtures/test.css')
-    expect(css.default).toMatchInlineSnapshot(`
-      ".test {
-        color: red;
-      }
-      "
-    `)
+    expect(css.default).toBe(undefined)
     const module = await runner.import('/fixtures/test.module.css')
     expect(module).toMatchObject({
       default: {
