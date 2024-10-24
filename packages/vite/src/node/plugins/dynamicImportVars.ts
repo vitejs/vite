@@ -7,6 +7,7 @@ import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
+import { createBackCompatIdResolver } from '../idResolver'
 import {
   createFilter,
   normalizePath,
@@ -16,7 +17,8 @@ import {
   transformStableResult,
   urlRE,
 } from '../utils'
-import { toAbsoluteGlob } from './importMetaGlob'
+import type { Environment } from '../environment'
+import { usePerEnvironmentState } from '../environment'
 import { hasViteIgnoreRE } from './importAnalysis'
 import { workerOrSharedWorkerRE } from './worker'
 
@@ -141,11 +143,13 @@ export async function transformDynamicImport(
   }
   const { globParams, rawPattern, userPattern } = dynamicImportPattern
   const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
+  const dir = importer ? posix.dirname(importer) : root
+  const normalized =
+    rawPattern[0] === '/'
+      ? posix.join(root, rawPattern.slice(1))
+      : posix.join(dir, rawPattern)
 
-  let newRawPattern = posix.relative(
-    posix.dirname(importer),
-    await toAbsoluteGlob(rawPattern, root, importer, resolve),
-  )
+  let newRawPattern = posix.relative(posix.dirname(importer), normalized)
 
   if (!relativePathRE.test(newRawPattern)) {
     newRawPattern = `./${newRawPattern}`
@@ -161,14 +165,17 @@ export async function transformDynamicImport(
 }
 
 export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
-  const resolve = config.createResolver({
+  const resolve = createBackCompatIdResolver(config, {
     preferRelative: true,
     tryIndex: false,
     extensions: [],
   })
-  const { include, exclude, warnOnError } =
-    config.build.dynamicImportVarsOptions
-  const filter = createFilter(include, exclude)
+
+  const getFilter = usePerEnvironmentState((environment: Environment) => {
+    const { include, exclude } =
+      environment.config.build.dynamicImportVarsOptions
+    return createFilter(include, exclude)
+  })
 
   return {
     name: 'vite:dynamic-import-vars',
@@ -186,8 +193,9 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
+      const { environment } = this
       if (
-        !filter(importer) ||
+        !getFilter(this)(importer) ||
         importer === CLIENT_ENTRY ||
         !hasDynamicImportRE.test(source)
       ) {
@@ -199,7 +207,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
       let imports: readonly ImportSpecifier[] = []
       try {
         imports = parseImports(source)[0]
-      } catch (e: any) {
+      } catch {
         // ignore as it might not be a JS file, the subsequent plugins will catch the error
         return null
       }
@@ -234,11 +242,11 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           result = await transformDynamicImport(
             source.slice(start, end),
             importer,
-            resolve,
+            (id, importer) => resolve(environment, id, importer),
             config.root,
           )
         } catch (error) {
-          if (warnOnError) {
+          if (environment.config.build.dynamicImportVarsOptions.warnOnError) {
             this.warn(error)
           } else {
             this.error(error)

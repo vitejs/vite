@@ -1,6 +1,6 @@
 # Worker Options
 
-Options related to Web Workers.
+Unless noted, the options in this section are applied to all dev, build, and preview.
 
 ## worker.format
 

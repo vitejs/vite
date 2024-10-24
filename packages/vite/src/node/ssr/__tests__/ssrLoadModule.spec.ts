@@ -63,6 +63,110 @@ test('import.meta.filename/dirname returns same value with Node', async () => {
   expect(viteValue.filename).toBe(filename)
 })
 
+test('virtual module invalidation simple', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    optimizeDeps: {
+      noDiscovery: true,
+    },
+    plugins: [
+      {
+        name: 'virtual-test',
+        resolveId(id) {
+          if (id === 'virtual:test') {
+            return '\0virtual:test'
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test') {
+            return `
+              globalThis.__virtual_test_state ??= 0;
+              globalThis.__virtual_test_state++;
+              export default globalThis.__virtual_test_state;
+            `
+          }
+        },
+      },
+    ],
+  })
+  await server.pluginContainer.buildStart({})
+
+  const mod1 = await server.ssrLoadModule('virtual:test')
+  expect(mod1.default).toEqual(1)
+  const mod2 = await server.ssrLoadModule('virtual:test')
+  expect(mod2.default).toEqual(1)
+
+  const modNode = server.moduleGraph.getModuleById('\0virtual:test')
+  server.moduleGraph.invalidateModule(modNode!)
+
+  const mod3 = await server.ssrLoadModule('virtual:test')
+  expect(mod3.default).toEqual(2)
+})
+
+test('virtual module invalidation nested', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'silent',
+    optimizeDeps: {
+      noDiscovery: true,
+    },
+    plugins: [
+      {
+        name: 'test-virtual',
+        resolveId(id) {
+          if (id === 'virtual:test') {
+            return '\0virtual:test'
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test') {
+            return `
+              import testDep from "virtual:test-dep";
+              export default testDep;
+            `
+          }
+        },
+      },
+      {
+        name: 'test-virtual-dep',
+        resolveId(id) {
+          if (id === 'virtual:test-dep') {
+            return '\0virtual:test-dep'
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test-dep') {
+            return `
+              globalThis.__virtual_test_state2 ??= 0;
+              globalThis.__virtual_test_state2++;
+              export default globalThis.__virtual_test_state2;
+            `
+          }
+        },
+      },
+    ],
+  })
+  await server.pluginContainer.buildStart({})
+
+  const mod1 = await server.ssrLoadModule('virtual:test')
+  expect(mod1.default).toEqual(1)
+  const mod2 = await server.ssrLoadModule('virtual:test')
+  expect(mod2.default).toEqual(1)
+
+  server.moduleGraph.invalidateModule(
+    server.moduleGraph.getModuleById('\0virtual:test')!,
+  )
+  server.moduleGraph.invalidateModule(
+    server.moduleGraph.getModuleById('\0virtual:test-dep')!,
+  )
+
+  const mod3 = await server.ssrLoadModule('virtual:test')
+  expect(mod3.default).toEqual(2)
+})
+
 test('can export global', async () => {
   const server = await createDevServer()
   const mod = await server.ssrLoadModule('/fixtures/global/export.js')

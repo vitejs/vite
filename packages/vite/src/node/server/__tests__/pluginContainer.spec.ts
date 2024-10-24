@@ -1,20 +1,11 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
-import { ModuleGraph } from '../moduleGraph'
-import type { PluginContainer } from '../pluginContainer'
-import { createPluginContainer } from '../pluginContainer'
-
-let resolveId: (id: string) => any
-let moduleGraph: ModuleGraph
+import { DevEnvironment } from '../environment'
 
 describe('plugin container', () => {
   describe('getModuleInfo', () => {
-    beforeEach(() => {
-      moduleGraph = new ModuleGraph((id) => resolveId(id))
-    })
-
     it('can pass metadata between hooks', async () => {
       const entryUrl = '/x.js'
 
@@ -38,7 +29,7 @@ describe('plugin container', () => {
             return { code: 'export {}', meta: { x: 2 } }
           }
         },
-        transform(code, id) {
+        transform(_code, id) {
           if (id === entryUrl) {
             const { meta } = this.getModuleInfo(entryUrl) ?? {}
             metaArray.push(meta)
@@ -52,18 +43,21 @@ describe('plugin container', () => {
         },
       }
 
-      const container = await getPluginContainer({
+      const environment = await getDevEnvironment({
         plugins: [plugin],
       })
 
-      const entryModule = await moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const entryModule = await environment.moduleGraph.ensureEntryFromUrl(
+        entryUrl,
+        false,
+      )
       expect(entryModule.meta).toEqual({ x: 1 })
 
-      const loadResult: any = await container.load(entryUrl)
+      const loadResult: any = await environment.pluginContainer.load(entryUrl)
       expect(loadResult?.meta).toEqual({ x: 2 })
 
-      await container.transform(loadResult.code, entryUrl)
-      await container.close()
+      await environment.pluginContainer.transform(loadResult.code, entryUrl)
+      await environment.pluginContainer.close()
 
       expect(metaArray).toEqual([{ x: 1 }, { x: 2 }, { x: 3 }])
     })
@@ -91,12 +85,12 @@ describe('plugin container', () => {
         },
       }
 
-      const container = await getPluginContainer({
+      const environment = await getDevEnvironment({
         plugins: [plugin1, plugin2],
       })
 
-      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
-      await container.load(entryUrl)
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      await environment.pluginContainer.load(entryUrl)
 
       expect.assertions(1)
     })
@@ -137,22 +131,18 @@ describe('plugin container', () => {
         },
       }
 
-      const container = await getPluginContainer({
+      const environment = await getDevEnvironment({
         plugins: [plugin1, plugin2],
       })
 
-      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
-      await container.load(entryUrl)
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      await environment.pluginContainer.load(entryUrl)
 
       expect.assertions(2)
     })
   })
 
   describe('load', () => {
-    beforeEach(() => {
-      moduleGraph = new ModuleGraph((id) => resolveId(id))
-    })
-
     it('can resolve a secondary module', async () => {
       const entryUrl = '/x.js'
 
@@ -176,12 +166,15 @@ describe('plugin container', () => {
         },
       }
 
-      const container = await getPluginContainer({
+      const environment = await getDevEnvironment({
         plugins: [plugin],
       })
-      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
-      const loadResult: any = await container.load(entryUrl)
-      const result: any = await container.transform(loadResult.code, entryUrl)
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const loadResult: any = await environment.pluginContainer.load(entryUrl)
+      const result: any = await environment.pluginContainer.transform(
+        loadResult.code,
+        entryUrl,
+      )
       expect(result.code).equals('2')
     })
 
@@ -198,7 +191,7 @@ describe('plugin container', () => {
           if (id === entryUrl) return { code: '1' }
           else if (id === otherUrl) return { code: '2', meta: { code: '2' } }
         },
-        async transform(code, id) {
+        async transform(_code, id) {
           if (id === entryUrl) {
             // NOTE: ModuleInfo.code not implemented, used `.meta.code` for now
             return (await this.load({ id: otherUrl }))?.meta.code
@@ -208,20 +201,23 @@ describe('plugin container', () => {
         },
       }
 
-      const container = await getPluginContainer({
+      const environment = await getDevEnvironment({
         plugins: [plugin],
       })
-      await moduleGraph.ensureEntryFromUrl(entryUrl, false)
-      const loadResult: any = await container.load(entryUrl)
-      const result: any = await container.transform(loadResult.code, entryUrl)
+      await environment.moduleGraph.ensureEntryFromUrl(entryUrl, false)
+      const loadResult: any = await environment.pluginContainer.load(entryUrl)
+      const result: any = await environment.pluginContainer.transform(
+        loadResult.code,
+        entryUrl,
+      )
       expect(result.code).equals('3')
     })
   })
 })
 
-async function getPluginContainer(
+async function getDevEnvironment(
   inlineConfig?: UserConfig,
-): Promise<PluginContainer> {
+): Promise<DevEnvironment> {
   const config = await resolveConfig(
     { configFile: false, ...inlineConfig },
     'serve',
@@ -230,7 +226,8 @@ async function getPluginContainer(
   // @ts-expect-error This plugin requires a ViteDevServer instance.
   config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
 
-  resolveId = (id) => container.resolveId(id)
-  const container = await createPluginContainer(config, moduleGraph)
-  return container
+  const environment = new DevEnvironment('client', config, { hot: false })
+  await environment.init()
+
+  return environment
 }

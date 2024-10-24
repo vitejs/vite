@@ -42,16 +42,18 @@ export async function setup({ provide }: GlobalSetupContext): Promise<void> {
       }
     })
   // also setup dedicated copy for "variant" tests
-  await fs.cp(
-    path.resolve(tempDir, 'css'),
-    path.resolve(tempDir, 'css__sass-modern'),
-    { recursive: true },
-  )
-  await fs.cp(
-    path.resolve(tempDir, 'css'),
-    path.resolve(tempDir, 'css__sass-modern-compiler'),
-    { recursive: true },
-  )
+  for (const [original, variants] of [
+    ['css', ['sass-modern', 'sass-modern-compiler']],
+    ['css-sourcemap', ['sass-modern', 'sass-modern-compiler']],
+  ] as const) {
+    for (const variant of variants) {
+      await fs.cp(
+        path.resolve(tempDir, original),
+        path.resolve(tempDir, `${original}__${variant}`),
+        { recursive: true },
+      )
+    }
+  }
 }
 
 export async function teardown(): Promise<void> {

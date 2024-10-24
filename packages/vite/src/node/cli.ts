@@ -4,12 +4,13 @@ import { performance } from 'node:perf_hooks'
 import { cac } from 'cac'
 import colors from 'picocolors'
 import { VERSION } from './constants'
-import type { BuildOptions } from './build'
+import type { BuildEnvironmentOptions } from './build'
 import type { ServerOptions } from './server'
 import type { CLIShortcut } from './shortcuts'
 import type { LogLevel } from './logger'
 import { createLogger } from './logger'
 import { resolveConfig } from './config'
+import type { InlineConfig } from './config'
 
 const cli = cac('vite')
 
@@ -29,6 +30,11 @@ interface GlobalCLIOptions {
   m?: string
   mode?: string
   force?: boolean
+  w?: boolean
+}
+
+interface BuilderCLIOptions {
+  app?: boolean
 }
 
 let profileSession = global.__vite_profile_session
@@ -70,7 +76,7 @@ const filterDuplicateOptions = <T extends object>(options: T) => {
 /**
  * removing global flags before passing as command specific sub-configs
  */
-function cleanOptions<Options extends GlobalCLIOptions>(
+function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   options: Options,
 ): Omit<Options, keyof GlobalCLIOptions> {
   const ret = { ...options }
@@ -87,6 +93,7 @@ function cleanOptions<Options extends GlobalCLIOptions>(
   delete ret.filter
   delete ret.m
   delete ret.mode
+  delete ret.w
 
   // convert the sourcemap option to a boolean if necessary
   if ('sourcemap' in ret) {
@@ -98,7 +105,22 @@ function cleanOptions<Options extends GlobalCLIOptions>(
           ? false
           : ret.sourcemap
   }
+  if ('watch' in ret) {
+    const watch = ret.watch
+    ret.watch = watch ? {} : undefined
+  }
 
+  return ret
+}
+
+/**
+ * removing builder flags before passing as command specific sub-configs
+ */
+function cleanBuilderCLIOptions<Options extends BuilderCLIOptions>(
+  options: Options,
+): Omit<Options, keyof BuilderCLIOptions> {
+  const ret = { ...options }
+  delete ret.app
   return ret
 }
 
@@ -161,7 +183,7 @@ cli
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         optimizeDeps: { force: options.force },
-        server: cleanOptions(options),
+        server: cleanGlobalCLIOptions(options),
       })
 
       if (!server.httpServer) {
@@ -263,31 +285,43 @@ cli
     `[boolean] force empty outDir when it's outside of root`,
   )
   .option('-w, --watch', `[boolean] rebuilds when modules have changed on disk`)
-  .action(async (root: string, options: BuildOptions & GlobalCLIOptions) => {
-    filterDuplicateOptions(options)
-    const { build } = await import('./build')
-    const buildOptions: BuildOptions = cleanOptions(options)
+  .option('--app', `[boolean] same as \`builder: {}\``)
+  .action(
+    async (
+      root: string,
+      options: BuildEnvironmentOptions & BuilderCLIOptions & GlobalCLIOptions,
+    ) => {
+      filterDuplicateOptions(options)
+      const { createBuilder } = await import('./build')
 
-    try {
-      await build({
-        root,
-        base: options.base,
-        mode: options.mode,
-        configFile: options.config,
-        logLevel: options.logLevel,
-        clearScreen: options.clearScreen,
-        build: buildOptions,
-      })
-    } catch (e) {
-      createLogger(options.logLevel).error(
-        colors.red(`error during build:\n${e.stack}`),
-        { error: e },
+      const buildOptions: BuildEnvironmentOptions = cleanGlobalCLIOptions(
+        cleanBuilderCLIOptions(options),
       )
-      process.exit(1)
-    } finally {
-      stopProfiler((message) => createLogger(options.logLevel).info(message))
-    }
-  })
+
+      try {
+        const inlineConfig: InlineConfig = {
+          root,
+          base: options.base,
+          mode: options.mode,
+          configFile: options.config,
+          logLevel: options.logLevel,
+          clearScreen: options.clearScreen,
+          build: buildOptions,
+          ...(options.app ? { builder: {} } : {}),
+        }
+        const builder = await createBuilder(inlineConfig, null)
+        await builder.buildApp()
+      } catch (e) {
+        createLogger(options.logLevel).error(
+          colors.red(`error during build:\n${e.stack}`),
+          { error: e },
+        )
+        process.exit(1)
+      } finally {
+        stopProfiler((message) => createLogger(options.logLevel).info(message))
+      }
+    },
+  )
 
 // optimize
 cli
