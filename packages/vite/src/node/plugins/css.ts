@@ -525,8 +525,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (inlined) {
           return `export default ${JSON.stringify(css)}`
         }
-        // server only
-        if (this.environment.config.consumer !== 'client') {
+        if (this.environment.config.consumer === 'server') {
           return modulesCode || 'export {}'
         }
 
