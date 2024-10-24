@@ -869,7 +869,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // inject css link when cssCodeSplit is false
         if (!this.environment.config.build.cssCodeSplit) {
           const cssChunk = Object.values(bundle).find(
-            (chunk) => chunk.type === 'asset' && chunk.name === 'style.css',
+            (chunk) =>
+              chunk.type === 'asset' && chunk.names.includes('style.css'),
           ) as OutputAsset | undefined
           if (cssChunk) {
             result = injectToHead(result, [
