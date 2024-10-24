@@ -13,6 +13,7 @@ import type {
 } from 'vite'
 import {
   build,
+  createBuilder,
   createServer,
   loadConfigFromFile,
   mergeConfig,
@@ -81,6 +82,14 @@ export function setViteUrl(url: string): void {
 
 beforeAll(async (s) => {
   const suite = s as File
+
+  testPath = suite.filepath!
+  testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
+  testDir = path.dirname(testPath)
+  if (testName) {
+    testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
+  }
+
   // skip browser setup for non-playground tests
   // TODO: ssr playground?
   if (
@@ -123,15 +132,9 @@ beforeAll(async (s) => {
       browserErrors.push(error)
     })
 
-    testPath = suite.filepath!
-    testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]
-    testDir = path.dirname(testPath)
-
     // if this is a test placed under playground/xxx/__tests__
     // start a vite server in that directory.
     if (testName) {
-      testDir = path.resolve(workspaceRoot, 'playground-temp', testName)
-
       // when `root` dir is present, use it as vite's root
       const testCustomRoot = path.resolve(testDir, 'root')
       rootDir = fs.existsSync(testCustomRoot) ? testCustomRoot : testDir
@@ -266,15 +269,20 @@ export async function startDefaultServe(): Promise<void> {
         plugins: [resolvedPlugin()],
       },
     )
-    const rollupOutput = await build(buildConfig)
-    const isWatch = !!resolvedConfig!.build.watch
-    // in build watch,call startStaticServer after the build is complete
-    if (isWatch) {
-      watcher = rollupOutput as RollupWatcher
-      await notifyRebuildComplete(watcher)
-    }
-    if (buildConfig.__test__) {
-      buildConfig.__test__()
+    if (buildConfig.builder) {
+      const builder = await createBuilder(buildConfig)
+      await builder.buildApp()
+    } else {
+      const rollupOutput = await build(buildConfig)
+      const isWatch = !!resolvedConfig!.build.watch
+      // in build watch,call startStaticServer after the build is complete
+      if (isWatch) {
+        watcher = rollupOutput as RollupWatcher
+        await notifyRebuildComplete(watcher)
+      }
+      if (buildConfig.__test__) {
+        buildConfig.__test__()
+      }
     }
 
     const previewConfig = await loadConfig({
@@ -345,7 +353,7 @@ export function createInMemoryLogger(logs: string[]): Logger {
 function setupConsoleWarnCollector(logs: string[]) {
   const warn = console.warn
   console.warn = (...args) => {
-    serverLogs.push(args.join(' '))
+    logs.push(args.join(' '))
     return warn.call(console, ...args)
   }
 }

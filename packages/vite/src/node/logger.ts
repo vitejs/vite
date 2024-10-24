@@ -20,6 +20,7 @@ export interface Logger {
 export interface LogOptions {
   clear?: boolean
   timestamp?: boolean
+  environment?: string
 }
 
 export interface LogErrorOptions extends LogOptions {
@@ -88,7 +89,8 @@ export function createLogger(
       } else {
         tag = colors.red(colors.bold(prefix))
       }
-      return `${colors.dim(getTimeFormatter().format(new Date()))} ${tag} ${msg}`
+      const environment = options.environment ? options.environment + ' ' : ''
+      return `${colors.dim(getTimeFormatter().format(new Date()))} ${tag} ${environment}${msg}`
     } else {
       return msg
     }

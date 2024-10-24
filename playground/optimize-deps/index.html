@@ -192,7 +192,7 @@
   text('.nested-include', nestedInclude)
 
   import { parse } from 'node:url'
-  text('.url', parse('https://vitejs.dev').hostname)
+  text('.url', parse('https://vite.dev').hostname)
 
   import('./dynamic-use-dep-alias-using-absolute-path.js').then((mod) =>
     text('.alias-using-absolute-path', mod.default),
@@ -286,4 +286,16 @@
 <script type="module">
   import loadSub from '@vitejs/test-dep-incompatible'
   loadSub() // should show an error that tells there's an incompatible dep
+</script>
+
+<h2>Pre-bundle transitive dependency 'some-package.pdf'</h2>
+<div>prebundled: <span class="dep-with-asset-ext-prebundled">???</span></div>
+<div>
+  no dual package: <span class="dep-with-asset-ext-no-dual-package">???</span>
+</div>
+<script type="module">
+  import original, { isPreBundled } from '@vitejs/test-dep-with-asset-ext1.pdf'
+  import reexport from '@vitejs/test-dep-with-asset-ext2.pdf'
+  text('.dep-with-asset-ext-prebundled', isPreBundled)
+  text('.dep-with-asset-ext-no-dual-package', original === reexport)
 </script>
