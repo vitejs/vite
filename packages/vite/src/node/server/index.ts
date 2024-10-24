@@ -279,6 +279,8 @@ export interface ViteDevServer {
    */
   environments: DevEnvironment[]
   [key: `$${string}`]: DevEnvironment
+  $client: DevEnvironment
+  $ssr: DevEnvironment
   /**
    * Module graph that tracks the import relationships, url to file mapping
    * and hmr state.
@@ -526,6 +528,8 @@ export async function _createServer(
 
     environments: Object.values(environments),
     ...environments,
+    $client: environments.$client,
+    $ssr: environments.$ssr,
 
     pluginContainer,
     get moduleGraph() {

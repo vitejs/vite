@@ -439,7 +439,9 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   /**
    * Environment overrides
    */
-  [key: `$${string}`]: EnvironmentOptions
+  [key: `$${string}`]: EnvironmentOptions | undefined
+  $client?: EnvironmentOptions
+  $ssr?: EnvironmentOptions
   /**
    * Whether your application is a Single Page Application (SPA),
    * a Multi-Page Application (MPA), or Custom Application (SSR
@@ -975,10 +977,12 @@ export async function resolveConfig(
   for (const name of Object.keys(config)) {
     if (name.startsWith('$')) {
       const environmentName = name as `$${string}`
-      environments[environmentName] = config[environmentName] = mergeConfig(
-        defaultEnvironmentOptions,
-        config[environmentName],
-      )
+      if (config[environmentName]) {
+        environments[environmentName] = config[environmentName] = mergeConfig(
+          defaultEnvironmentOptions,
+          config[environmentName],
+        )
+      }
     }
   }
 
@@ -989,15 +993,17 @@ export async function resolveConfig(
   const resolvedEnvironments: Record<`$${string}`, ResolvedEnvironmentOptions> =
     {}
   for (const environmentName of Object.keys(environments) as `$${string}`[]) {
-    resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
-      environmentName,
-      config[environmentName],
-      resolvedDefaultResolve.alias,
-      resolvedDefaultResolve.preserveSymlinks,
-      logger,
-      environmentName,
-      config.experimental?.skipSsrTransform,
-    )
+    if (config[environmentName]) {
+      resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
+        environmentName,
+        config[environmentName],
+        resolvedDefaultResolve.alias,
+        resolvedDefaultResolve.preserveSymlinks,
+        logger,
+        environmentName,
+        config.experimental?.skipSsrTransform,
+      )
+    }
   }
 
   // Backward compatibility: merge environments.$client.dev.optimizeDeps back into optimizeDeps
@@ -1288,9 +1294,9 @@ export async function resolveConfig(
     safeModulePaths: new Set<string>(),
   }
   resolved = {
-    ...config,
+    ...(config as Omit<InlineConfig, `$${string}`>),
     ...resolved,
-  } as ResolvedConfig
+  }
 
   // Backward compatibility hook, modify the resolved config before it is used
   // to create internal plugins. For example, `config.build.ssr`. Once we rework
