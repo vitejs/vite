@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { assert, expect, test } from 'vitest'
 import type { SourceMap } from 'rollup'
+import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { transformWithEsbuild } from '../../plugins/esbuild'
 import { ssrTransform } from '../ssrTransform'
 
@@ -25,8 +26,8 @@ test('named import', async () => {
       `import { ref } from 'vue';function foo() { return ref(0) }`,
     ),
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_identity__ = v => v;
-    const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["ref"]});
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["ref"]});
+    const __vite_ssr_identity__ = v => v;
     function foo() { return __vite_ssr_identity__(__vite_ssr_import_0__.ref)(0) }"
   `)
 })
@@ -37,8 +38,8 @@ test('named import: arbitrary module namespace specifier', async () => {
       `import { "some thing" as ref } from 'vue';function foo() { return ref(0) }`,
     ),
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_identity__ = v => v;
-    const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["some thing"]});
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["some thing"]});
+    const __vite_ssr_identity__ = v => v;
     function foo() { return __vite_ssr_identity__(__vite_ssr_import_0__["some thing"])(0) }"
   `)
 })
@@ -222,8 +223,8 @@ test('do not rewrite method definition', async () => {
     `import { fn } from 'vue';class A { fn() { fn() } }`,
   )
   expect(result?.code).toMatchInlineSnapshot(`
-    "const __vite_ssr_identity__ = v => v;
-    const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["fn"]});
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["fn"]});
+    const __vite_ssr_identity__ = v => v;
     class A { fn() { __vite_ssr_identity__(__vite_ssr_import_0__.fn)() } }"
   `)
   expect(result?.deps).toEqual(['vue'])
@@ -445,6 +446,37 @@ test('sourcemap source', async () => {
   expect(map?.sourcesContent).toStrictEqual(['export const a = 1 /* */'])
 })
 
+test('sourcemap is correct for hoisted imports', async () => {
+  const code = `\n\n\nconsole.log(foo, bar);\nimport { foo } from 'vue';\nimport { bar } from 'vue2';`
+  const result = (await ssrTransform(code, null, 'input.js', code))!
+
+  expect(result.code).toMatchInlineSnapshot(`
+    "const __vite_ssr_identity__ = v => v;
+    const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["foo"]});
+    const __vite_ssr_import_1__ = await __vite_ssr_import__("vue2", {"importedNames":["bar"]});
+
+
+
+    console.log(__vite_ssr_identity__(__vite_ssr_import_0__.foo), __vite_ssr_identity__(__vite_ssr_import_1__.bar));
+
+    "
+  `)
+
+  const traceMap = new TraceMap(result.map as any)
+  expect(originalPositionFor(traceMap, { line: 2, column: 0 })).toStrictEqual({
+    source: 'input.js',
+    line: 5,
+    column: 0,
+    name: null,
+  })
+  expect(originalPositionFor(traceMap, { line: 3, column: 0 })).toStrictEqual({
+    source: 'input.js',
+    line: 6,
+    column: 0,
+    name: null,
+  })
+})
+
 test('sourcemap with multiple sources', async () => {
   const code = readFixture('bundle.js')
   const map = readFixture('bundle.js.map')
@@ -504,8 +536,8 @@ test('overwrite bindings', async () => {
         `function g() { const f = () => { const inject = true }; console.log(inject) }\n`,
     ),
   ).toMatchInlineSnapshot(`
-    "const __vite_ssr_identity__ = v => v;
-    const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["inject"]});
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("vue", {"importedNames":["inject"]});
+    const __vite_ssr_identity__ = v => v;
     const a = { inject: __vite_ssr_import_0__.inject }
     const b = { test: __vite_ssr_import_0__.inject }
     function c() { const { test: inject } = { test: true }; console.log(inject) }
@@ -830,8 +862,8 @@ test('jsx', async () => {
   const result = await transformWithEsbuild(code, id)
   expect(await ssrTransformSimpleCode(result.code, '/foo.jsx'))
     .toMatchInlineSnapshot(`
-      "const __vite_ssr_identity__ = v => v;
-      const __vite_ssr_import_0__ = await __vite_ssr_import__("react", {"importedNames":["default"]});
+      "const __vite_ssr_import_0__ = await __vite_ssr_import__("react", {"importedNames":["default"]});
+      const __vite_ssr_identity__ = v => v;
       const __vite_ssr_import_1__ = await __vite_ssr_import__("foo", {"importedNames":["Foo","Slot"]});
 
 
@@ -923,8 +955,8 @@ foo()`,
     ),
   ).toMatchInlineSnapshot(`
     "#!/usr/bin/env node
-    const __vite_ssr_identity__ = v => v;
     const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["foo"]});
+    const __vite_ssr_identity__ = v => v;
 
     __vite_ssr_identity__(__vite_ssr_import_0__.foo)()"
   `)
@@ -960,8 +992,8 @@ export class Test {
 };`.trim()
 
   expect(await ssrTransformSimpleCode(code)).toMatchInlineSnapshot(`
-    "const __vite_ssr_identity__ = v => v;
-    const __vite_ssr_import_0__ = await __vite_ssr_import__("foobar", {"importedNames":["foo","bar"]});
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("foobar", {"importedNames":["foo","bar"]});
+    const __vite_ssr_identity__ = v => v;
 
     if (false) {
       const foo = 'foo'
