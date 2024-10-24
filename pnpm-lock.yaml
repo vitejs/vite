@@ -270,7 +270,7 @@ importers:
         version: 15.3.0(rollup@4.23.0)
       '@rollup/pluginutils':
         specifier: ^5.1.2
-        version: 5.1.2(rollup@4.23.0)
+        version: 5.1.3(rollup@4.23.0)
       '@types/escape-html':
         specifier: ^1.0.4
         version: 1.0.4
@@ -3120,6 +3120,15 @@ packages:
 
   '@rollup/pluginutils@5.1.2':
     resolution: {integrity: sha512-/FIdS3PyZ39bjZlwqFnWqCOVnW7o963LtKMwQOD0NhQqw22gSr2YY1afu3FxRip4ZCZNsD5jq6Aaz6QV3D/Njw==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
+    peerDependenciesMeta:
+      rollup:
+        optional: true
+
+  '@rollup/pluginutils@5.1.3':
+    resolution: {integrity: sha512-Pnsb6f32CD2W3uCaLZIzDmeFyQ2b8UWMFI7xtwUezpcGBDVDW6y9XgAWIlARiGAo6eNF5FK5aQTr0LFyNyqq5A==}
     engines: {node: '>=14.0.0'}
     peerDependencies:
       rollup: ^1.20.0||^2.0.0||^3.0.0||^4.0.0
@@ -8485,7 +8494,7 @@ snapshots:
 
   '@rollup/plugin-commonjs@25.0.4(rollup@3.29.5)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@3.29.5)
+      '@rollup/pluginutils': 5.1.3(rollup@3.29.5)
       commondir: 1.0.1
       estree-walker: 2.0.2
       glob: 8.1.0
@@ -8496,7 +8505,7 @@ snapshots:
 
   '@rollup/plugin-commonjs@28.0.1(rollup@4.23.0)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@4.23.0)
+      '@rollup/pluginutils': 5.1.3(rollup@4.23.0)
       commondir: 1.0.1
       estree-walker: 2.0.2
       fdir: 6.4.0(picomatch@4.0.2)
@@ -8508,7 +8517,7 @@ snapshots:
 
   '@rollup/plugin-dynamic-import-vars@2.1.4(rollup@4.23.0)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@4.23.0)
+      '@rollup/pluginutils': 5.1.3(rollup@4.23.0)
       astring: 1.8.6
       estree-walker: 2.0.2
       magic-string: 0.30.12
@@ -8518,19 +8527,19 @@ snapshots:
 
   '@rollup/plugin-json@6.1.0(rollup@3.29.5)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@3.29.5)
+      '@rollup/pluginutils': 5.1.3(rollup@3.29.5)
     optionalDependencies:
       rollup: 3.29.5
 
   '@rollup/plugin-json@6.1.0(rollup@4.23.0)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@4.23.0)
+      '@rollup/pluginutils': 5.1.3(rollup@4.23.0)
     optionalDependencies:
       rollup: 4.23.0
 
   '@rollup/plugin-node-resolve@15.2.3(rollup@3.29.5)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@3.29.5)
+      '@rollup/pluginutils': 5.1.3(rollup@3.29.5)
       '@types/resolve': 1.20.2
       deepmerge: 4.2.2
       is-builtin-module: 3.2.1
@@ -8541,7 +8550,7 @@ snapshots:
 
   '@rollup/plugin-node-resolve@15.3.0(rollup@4.23.0)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@4.23.0)
+      '@rollup/pluginutils': 5.1.3(rollup@4.23.0)
       '@types/resolve': 1.20.2
       deepmerge: 4.2.2
       is-module: 1.0.0
@@ -8551,7 +8560,7 @@ snapshots:
 
   '@rollup/plugin-replace@5.0.2(rollup@3.29.5)':
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@3.29.5)
+      '@rollup/pluginutils': 5.1.3(rollup@3.29.5)
       magic-string: 0.27.0
     optionalDependencies:
       rollup: 3.29.5
@@ -8564,11 +8573,19 @@ snapshots:
     optionalDependencies:
       rollup: 3.29.5
 
-  '@rollup/pluginutils@5.1.2(rollup@4.23.0)':
+  '@rollup/pluginutils@5.1.3(rollup@3.29.5)':
     dependencies:
       '@types/estree': 1.0.6
       estree-walker: 2.0.2
-      picomatch: 2.3.1
+      picomatch: 4.0.2
+    optionalDependencies:
+      rollup: 3.29.5
+
+  '@rollup/pluginutils@5.1.3(rollup@4.23.0)':
+    dependencies:
+      '@types/estree': 1.0.6
+      estree-walker: 2.0.2
+      picomatch: 4.0.2
     optionalDependencies:
       rollup: 4.23.0
 
@@ -11978,7 +11995,7 @@ snapshots:
 
   rollup-plugin-esbuild@6.1.1(esbuild@0.24.0)(rollup@4.23.0):
     dependencies:
-      '@rollup/pluginutils': 5.1.2(rollup@4.23.0)
+      '@rollup/pluginutils': 5.1.3(rollup@4.23.0)
       debug: 4.3.7
       es-module-lexer: 1.5.4
       esbuild: 0.24.0
