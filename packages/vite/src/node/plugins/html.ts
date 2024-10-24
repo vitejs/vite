@@ -108,7 +108,8 @@ export function htmlInlineProxyPlugin(config: ResolvedConfig): Plugin {
         const url = file.replace(normalizePath(config.root), '')
         const result = htmlProxyMap.get(config)!.get(url)?.[index]
         if (result) {
-          return result
+          // set moduleSideEffects to keep the module even if `treeshake.moduleSideEffects=false` is set
+          return { ...result, moduleSideEffects: true }
         } else {
           throw new Error(`No matching HTML proxy module found from ${id}`)
         }
@@ -426,6 +427,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           return url
         }
 
+        const setModuleSideEffectPromises: Promise<void>[] = []
         await traverseHtml(html, id, (node) => {
           if (!nodeIsElement(node)) {
             return
@@ -452,6 +454,19 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             if (isModule) {
               inlineModuleIndex++
               if (url && !isExcludedUrl(url) && !isPublicFile) {
+                setModuleSideEffectPromises.push(
+                  this.resolve(url, id)
+                    .then((resolved) => {
+                      if (!resolved) {
+                        return Promise.reject()
+                      }
+                      return this.load(resolved)
+                    })
+                    .then((mod) => {
+                      // set this to keep the module even if `treeshake.moduleSideEffects=false` is set
+                      mod.moduleSideEffects = true
+                    }),
+                )
                 // <script type="module" src="..."/>
                 // add it as an import
                 js += `\nimport ${JSON.stringify(url)}`
@@ -686,6 +701,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         ) {
           js = `import "${modulePreloadPolyfillId}";\n${js}`
         }
+
+        await Promise.all(setModuleSideEffectPromises)
 
         // Force rollup to keep this module from being shared between other entry points.
         // If the resulting chunk is empty, it will be removed in generateBundle.
