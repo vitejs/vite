@@ -135,6 +135,17 @@ wWithoutExt.addEventListener('message', (ev) =>
   text('.worker-import-meta-url-without-extension', JSON.stringify(ev.data)),
 )
 
+const myWorkerOptions = { type: 'module' }
+
+// url import worker via variable
+const wViaVariable = new Worker(
+  new URL('../url-worker', import.meta.url),
+  myWorkerOptions,
+)
+wViaVariable.addEventListener('message', (ev) =>
+  text('.worker-import-meta-url-via-variable', JSON.stringify(ev.data)),
+)
+
 const genWorkerName = () => 'module'
 const w2 = new SharedWorker(
   new URL('../url-shared-worker.js', import.meta.url),
