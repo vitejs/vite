@@ -943,6 +943,8 @@ if (!isBuild) {
   })
 
   test('import.meta.hot?.accept', async () => {
+    await page.goto(viteTestUrl)
+
     const el = await page.$('.optional-chaining')
     await untilBrowserLogAfter(
       () =>

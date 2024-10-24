@@ -1,6 +1,6 @@
-import { EventEmitter } from 'node:events'
 import path from 'node:path'
-import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
+import type { WatchOptions } from 'dep-types/chokidar'
+import picomatch from 'picomatch'
 import type { OutputOptions } from 'rollup'
 import colors from 'picocolors'
 import { escapePath } from 'tinyglobby'
@@ -49,7 +49,7 @@ export function resolveEmptyOutDir(
 }
 
 export function resolveChokidarOptions(
-  options: WatchOptions | undefined,
+  options: WatchOptions | null | undefined,
   resolvedOutDirs: Set<string>,
   emptyOutDir: boolean,
   cacheDir: string,
@@ -67,47 +67,27 @@ export function resolveChokidarOptions(
       ...[...resolvedOutDirs].map((outDir) => escapePath(outDir) + '/**'),
     )
   }
+  // If watch options is turned off, ignore watching anything, which essentially makes it noop
+  // eslint-disable-next-line eqeqeq -- null means disabled
+  if (options === null) {
+    ignored.push(() => true)
+  }
+  // Convert strings to picomatch pattern functions for compat
+  const resolvedIgnored: WatchOptions['ignored'] = ignored.map((pattern) => {
+    if (typeof pattern === 'string') {
+      const matcher = picomatch(pattern)
+      return (path: string) => matcher(path)
+    } else {
+      return pattern
+    }
+  })
 
   const resolvedWatchOptions: WatchOptions = {
-    ignored,
+    ignored: resolvedIgnored,
     ignoreInitial: true,
     ignorePermissionErrors: true,
     ...otherOptions,
   }
 
   return resolvedWatchOptions
-}
-
-class NoopWatcher extends EventEmitter implements FSWatcher {
-  constructor(public options: WatchOptions) {
-    super()
-  }
-
-  add() {
-    return this
-  }
-
-  unwatch() {
-    return this
-  }
-
-  getWatched() {
-    return {}
-  }
-
-  ref() {
-    return this
-  }
-
-  unref() {
-    return this
-  }
-
-  async close() {
-    // noop
-  }
-}
-
-export function createNoopWatcher(options: WatchOptions): FSWatcher {
-  return new NoopWatcher(options)
 }
