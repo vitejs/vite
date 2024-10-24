@@ -96,9 +96,7 @@ async function startBrowserProcess(
       if (openedBrowser) {
         // Try our best to reuse existing tab with AppleScript
         await execAsync(
-          `osascript openChrome.applescript "${encodeURI(
-            url,
-          )}" "${openedBrowser}"`,
+          `osascript openChrome.applescript "${url}" "${openedBrowser}"`,
           {
             cwd: join(VITE_PACKAGE_DIR, 'bin'),
           },
