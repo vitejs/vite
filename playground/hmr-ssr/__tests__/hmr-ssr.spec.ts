@@ -11,11 +11,7 @@ import {
   vi,
 } from 'vitest'
 import type { InlineConfig, RunnableDevEnvironment, ViteDevServer } from 'vite'
-import {
-  createRunnableDevEnvironment,
-  createServer,
-  createServerHotChannel,
-} from 'vite'
+import { createRunnableDevEnvironment, createServer } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
   addFile,
@@ -1067,7 +1063,7 @@ async function setupModuleRunner(
           createEnvironment(name, config) {
             return createRunnableDevEnvironment(name, config, {
               runnerOptions: { hmr: { logger } },
-              hot: createServerHotChannel(),
+              hot: true,
             })
           },
         },

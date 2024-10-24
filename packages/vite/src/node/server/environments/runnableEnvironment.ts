@@ -4,7 +4,6 @@ import type { DevEnvironmentContext } from '../environment'
 import { DevEnvironment } from '../environment'
 import type { ServerModuleRunnerOptions } from '../../ssr/runtime/serverModuleRunner'
 import { createServerModuleRunner } from '../../ssr/runtime/serverModuleRunner'
-import type { HotChannel } from '../hmr'
 import { createServerHotChannel } from '../hmr'
 import type { Environment } from '../../environment'
 
@@ -13,8 +12,11 @@ export function createRunnableDevEnvironment(
   config: ResolvedConfig,
   context: RunnableDevEnvironmentContext = {},
 ): DevEnvironment {
+  if (context.transport == null) {
+    context.transport = createServerHotChannel()
+  }
   if (context.hot == null) {
-    context.hot = createServerHotChannel()
+    context.hot = true
   }
 
   return new RunnableDevEnvironment(name, config, context)
@@ -27,7 +29,7 @@ export interface RunnableDevEnvironmentContext
     options?: ServerModuleRunnerOptions,
   ) => ModuleRunner
   runnerOptions?: ServerModuleRunnerOptions
-  hot?: false | HotChannel
+  hot?: boolean
 }
 
 export function isRunnableDevEnvironment(
