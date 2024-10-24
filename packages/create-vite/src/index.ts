@@ -4,18 +4,20 @@ import { fileURLToPath } from 'node:url'
 import spawn from 'cross-spawn'
 import minimist from 'minimist'
 import prompts from 'prompts'
-import {
+import colors from 'picocolors'
+
+const {
   blue,
+  blueBright,
   cyan,
   green,
-  lightBlue,
-  lightGreen,
-  lightRed,
+  greenBright,
   magenta,
   red,
+  redBright,
   reset,
   yellow,
-} from 'kolorist'
+} = colors
 
 // Avoids autoconversion to number of the project name by defining that the args
 // non associated with an option ( _ ) needs to be parsed as a string. See #4606
@@ -40,15 +42,15 @@ Options:
   -t, --template NAME        use a specific template
 
 Available templates:
-${yellow   ('vanilla-ts     vanilla'  )}
-${green    ('vue-ts         vue'      )}
-${cyan     ('react-ts       react'    )}
-${cyan     ('react-swc-ts   react-swc')}
-${magenta  ('preact-ts      preact'   )}
-${lightRed ('lit-ts         lit'      )}
-${red      ('svelte-ts      svelte'   )}
-${blue     ('solid-ts       solid'    )}
-${lightBlue('qwik-ts        qwik'     )}`
+${yellow    ('vanilla-ts     vanilla'  )}
+${green     ('vue-ts         vue'      )}
+${cyan      ('react-ts       react'    )}
+${cyan      ('react-swc-ts   react-swc')}
+${magenta   ('preact-ts      preact'   )}
+${redBright ('lit-ts         lit'      )}
+${red       ('svelte-ts      svelte'   )}
+${blue      ('solid-ts       solid'    )}
+${blueBright('qwik-ts        qwik'     )}`
 
 type ColorFunc = (str: string | number) => string
 type Framework = {
@@ -106,7 +108,7 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-nuxt',
         display: 'Nuxt ↗',
-        color: lightGreen,
+        color: greenBright,
         customCommand: 'npm exec nuxi init TARGET_DIR',
       },
     ],
@@ -170,7 +172,7 @@ const FRAMEWORKS: Framework[] = [
   {
     name: 'lit',
     display: 'Lit',
-    color: lightRed,
+    color: redBright,
     variants: [
       {
         name: 'lit-ts',
@@ -203,7 +205,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-svelte-kit',
         display: 'SvelteKit ↗',
         color: red,
-        customCommand: 'npm create svelte@latest TARGET_DIR',
+        customCommand: 'npm exec sv create TARGET_DIR',
       },
     ],
   },
@@ -227,12 +229,12 @@ const FRAMEWORKS: Framework[] = [
   {
     name: 'qwik',
     display: 'Qwik',
-    color: lightBlue,
+    color: blueBright,
     variants: [
       {
         name: 'qwik-ts',
         display: 'TypeScript',
-        color: lightBlue,
+        color: blueBright,
       },
       {
         name: 'qwik',
@@ -242,8 +244,27 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'custom-qwik-city',
         display: 'QwikCity ↗',
-        color: lightBlue,
+        color: blueBright,
         customCommand: 'npm create qwik@latest basic TARGET_DIR',
+      },
+    ],
+  },
+  {
+    name: 'angular',
+    display: 'Angular',
+    color: red,
+    variants: [
+      {
+        name: 'custom-angular',
+        display: 'Angular ↗',
+        color: red,
+        customCommand: 'npm exec @angular/cli@latest new TARGET_DIR',
+      },
+      {
+        name: 'custom-analog',
+        display: 'Analog ↗',
+        color: yellow,
+        customCommand: 'npm create analog@latest TARGET_DIR',
       },
     ],
   },

@@ -1,5 +1,7 @@
 # Shared Options
 
+Unless noted, the options in this section are applied to all dev, build, and preview.
+
 ## root
 
 - **Type:** `string`
@@ -215,7 +217,7 @@ Inline PostCSS config or a custom directory to search PostCSS config from (defau
 
 For inline PostCSS config, it expects the same format as `postcss.config.js`. But for `plugins` property, only [array format](https://github.com/postcss/postcss-load-config/blob/main/README.md#array) can be used.
 
-The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config) and only the supported config file names are loaded.
+The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config) and only the supported config file names are loaded. Config files outside the workspace root (or the [project root](/guide/#index-html-and-project-root) if no workspace is found) are not searched by default. You can specify a custom path outside of the root to load the specific config file instead if needed.
 
 Note if an inline config is provided, Vite will not search for other PostCSS config sources.
 
@@ -343,12 +345,12 @@ Whether to support named imports from `.json` files.
 
 ## json.stringify
 
-- **Type:** `boolean`
-- **Default:** `false`
+- **Type:** `boolean | 'auto'`
+- **Default:** `'auto'`
 
 If set to `true`, imported JSON will be transformed into `export default JSON.parse("...")` which is significantly more performant than Object literals, especially when the JSON file is large.
 
-Enabling this disables named imports.
+If set to `'auto'`, the data will be stringified only if [the data is bigger than 10kB](https://v8.dev/blog/cost-of-javascript-2019#json:~:text=A%20good%20rule%20of%20thumb%20is%20to%20apply%20this%20technique%20for%20objects%20of%2010%20kB%20or%20larger).
 
 ## esbuild
 
@@ -490,3 +492,12 @@ Whether your application is a Single Page Application (SPA), a [Multi Page Appli
 - `'custom'`: don't include HTML middlewares
 
 Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#server-middlewaremode).
+
+## future
+
+- **Type:** `Record<string, 'warn' | undefined>`
+- **Related:** [Breaking Changes](/changes/)
+
+Enable future breaking changes to prepare for a smooth migration to the next major version of Vite. The list may be updated, added, or removed at any time as new features are developed.
+
+See the [Breaking Changes](/changes/) page for details of the possible options.

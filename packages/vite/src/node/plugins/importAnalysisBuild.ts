@@ -18,6 +18,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
+import type { Environment } from '../environment'
 import { removedPureCssFilesCache } from './css'
 import { createParseErrorInfo } from './importAnalysis'
 
@@ -81,7 +82,8 @@ function preload(
   deps?: string[],
   importerUrl?: string,
 ) {
-  let promise: Promise<unknown> = Promise.resolve()
+  let promise: Promise<PromiseSettledResult<unknown>[] | void> =
+    Promise.resolve()
   // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
   if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
     const links = document.getElementsByTagName('link')
@@ -93,7 +95,7 @@ function preload(
     // in that case fallback to getAttribute
     const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute('nonce')
 
-    promise = Promise.all(
+    promise = Promise.allSettled(
       deps.map((dep) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
@@ -125,8 +127,8 @@ function preload(
         link.rel = isCss ? 'stylesheet' : scriptRel
         if (!isCss) {
           link.as = 'script'
-          link.crossOrigin = ''
         }
+        link.crossOrigin = ''
         link.href = dep
         if (cspNonce) {
           link.setAttribute('nonce', cspNonce)
@@ -144,54 +146,37 @@ function preload(
     )
   }
 
-  return promise
-    .then(() => baseModule())
-    .catch((err) => {
-      const e = new Event('vite:preloadError', {
-        cancelable: true,
-      }) as VitePreloadErrorEvent
-      e.payload = err
-      window.dispatchEvent(e)
-      if (!e.defaultPrevented) {
-        throw err
-      }
-    })
+  function handlePreloadError(err: Error) {
+    const e = new Event('vite:preloadError', {
+      cancelable: true,
+    }) as VitePreloadErrorEvent
+    e.payload = err
+    window.dispatchEvent(e)
+    if (!e.defaultPrevented) {
+      throw err
+    }
+  }
+
+  return promise.then((res) => {
+    for (const item of res || []) {
+      if (item.status !== 'rejected') continue
+      handlePreloadError(item.reason)
+    }
+    return baseModule().catch(handlePreloadError)
+  })
 }
 
 /**
  * Build only. During serve this is performed as part of ./importAnalysis.
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
-  const ssr = !!config.build.ssr
-  const isWorker = config.isWorker
-  const insertPreload = !(ssr || !!config.build.lib || isWorker)
+  const getInsertPreload = (environment: Environment) =>
+    environment.config.consumer === 'client' &&
+    !config.isWorker &&
+    !config.build.lib
 
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const isRelativeBase = config.base === './' || config.base === ''
-
-  const { modulePreload } = config.build
-  const scriptRel =
-    modulePreload && modulePreload.polyfill
-      ? `'modulepreload'`
-      : `(${detectScriptRel.toString()})()`
-
-  // There are two different cases for the preload list format in __vitePreload
-  //
-  // __vitePreload(() => import(asyncChunk), [ ...deps... ])
-  //
-  // This is maintained to keep backwards compatibility as some users developed plugins
-  // using regex over this list to workaround the fact that module preload wasn't
-  // configurable.
-  const assetsURL =
-    renderBuiltUrl || isRelativeBase
-      ? // If `experimental.renderBuiltUrl` is used, the dependencies might be relative to the current chunk.
-        // If relative base is used, the dependencies are relative to the current chunk.
-        // The importerUrl is passed as third parameter to __vitePreload in this case
-        `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
-      : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
-        // is appended inside __vitePreload too.
-        `function(dep) { return ${JSON.stringify(config.base)}+dep }`
-  const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
 
   return {
     name: 'vite:build-import-analysis',
@@ -203,7 +188,31 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load(id) {
       if (id === preloadHelperId) {
-        return preloadCode
+        const { modulePreload } = this.environment.config.build
+
+        const scriptRel =
+          modulePreload && modulePreload.polyfill
+            ? `'modulepreload'`
+            : `/* @__PURE__ */ (${detectScriptRel.toString()})()`
+
+        // There are two different cases for the preload list format in __vitePreload
+        //
+        // __vitePreload(() => import(asyncChunk), [ ...deps... ])
+        //
+        // This is maintained to keep backwards compatibility as some users developed plugins
+        // using regex over this list to workaround the fact that module preload wasn't
+        // configurable.
+        const assetsURL =
+          renderBuiltUrl || isRelativeBase
+            ? // If `experimental.renderBuiltUrl` is used, the dependencies might be relative to the current chunk.
+              // If relative base is used, the dependencies are relative to the current chunk.
+              // The importerUrl is passed as third parameter to __vitePreload in this case
+              `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
+            : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
+              // is appended inside __vitePreload too.
+              `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+        const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
+        return { code: preloadCode, moduleSideEffects: false }
       }
     },
 
@@ -230,6 +239,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         return null
       }
 
+      const insertPreload = getInsertPreload(this.environment)
       // when wrapping dynamic imports with a preload helper, Rollup is unable to analyze the
       // accessed variables for treeshaking. This below tries to match common accessed syntax
       // to "copy" it over to the dynamic import wrapped by the preload helper.
@@ -359,7 +369,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (s) {
         return {
           code: s.toString(),
-          map: config.build.sourcemap
+          map: this.environment.config.build.sourcemap
             ? s.generateMap({ hires: 'boundary' })
             : null,
         }
@@ -371,7 +381,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (code.indexOf(isModernFlag) > -1) {
         const re = new RegExp(isModernFlag, 'g')
         const isModern = String(format === 'es')
-        if (config.build.sourcemap) {
+        if (this.environment.config.build.sourcemap) {
           const s = new MagicString(code)
           let match: RegExpExecArray | null
           while ((match = re.exec(code))) {
@@ -395,7 +405,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       // If preload is not enabled, we parse through each imports and remove any imports to pure CSS chunks
       // as they are removed from the bundle
-      if (!insertPreload) {
+      if (!getInsertPreload(this.environment)) {
         const removedPureCssFiles = removedPureCssFilesCache.get(config)
         if (removedPureCssFiles && removedPureCssFiles.size > 0) {
           for (const file in bundle) {
@@ -451,6 +461,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
         return
       }
+      const buildSourcemap = this.environment.config.build.sourcemap
+      const { modulePreload } = this.environment.config.build
 
       for (const file in bundle) {
         const chunk = bundle[file]
@@ -507,7 +519,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
                   url = rawUrl.slice(1, -1)
               }
-              const deps: Set<string> = new Set()
+              const deps = new Set<string>()
               let hasRemovedPureCssChunk = false
 
               let normalizedFile: string | undefined = undefined
@@ -602,11 +614,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 if (renderBuiltUrl) {
                   renderedDeps = depsArray.map((dep) => {
                     const replacement = toOutputFilePathInJS(
+                      this.environment,
                       dep,
                       'asset',
                       chunk.fileName,
                       'js',
-                      config,
                       toRelativePath,
                     )
 
@@ -675,7 +687,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
           if (s.hasChanged()) {
             chunk.code = s.toString()
-            if (config.build.sourcemap && chunk.map) {
+            if (buildSourcemap && chunk.map) {
               const nextMap = s.generateMap({
                 source: chunk.fileName,
                 hires: 'boundary',
@@ -687,13 +699,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               map.toUrl = () => genSourceMapUrl(map)
               chunk.map = map
 
-              if (config.build.sourcemap === 'inline') {
+              if (buildSourcemap === 'inline') {
                 chunk.code = chunk.code.replace(
                   convertSourceMap.mapFileCommentRegex,
                   '',
                 )
                 chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
-              } else if (config.build.sourcemap) {
+              } else if (buildSourcemap) {
                 const mapAsset = bundle[chunk.fileName + '.map']
                 if (mapAsset && mapAsset.type === 'asset') {
                   mapAsset.source = map.toString()

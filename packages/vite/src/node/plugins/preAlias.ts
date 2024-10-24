@@ -6,7 +6,7 @@ import type {
   ResolvedConfig,
 } from '..'
 import type { Plugin } from '../plugin'
-import { createIsConfiguredAsSsrExternal } from '../ssr/ssrExternal'
+import { isConfiguredAsExternal } from '../external'
 import {
   bareImportRE,
   isInNodeModules,
@@ -14,7 +14,6 @@ import {
   moduleListContains,
 } from '../utils'
 import { getFsUtils } from '../fsUtils'
-import { getDepsOptimizer } from '../optimizer'
 import { cleanUrl, withTrailingSlash } from '../../shared/utils'
 import { tryOptimizedResolve } from './resolve'
 
@@ -23,14 +22,15 @@ import { tryOptimizedResolve } from './resolve'
  */
 export function preAliasPlugin(config: ResolvedConfig): Plugin {
   const findPatterns = getAliasPatterns(config.resolve.alias)
-  const isConfiguredAsExternal = createIsConfiguredAsSsrExternal(config)
   const isBuild = config.command === 'build'
   const fsUtils = getFsUtils(config)
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
-      const ssr = options?.ssr === true
-      const depsOptimizer = !isBuild && getDepsOptimizer(config, ssr)
+      const { environment } = this
+      const ssr = environment.config.consumer === 'server'
+      const depsOptimizer =
+        environment.mode === 'dev' ? environment.depsOptimizer : undefined
       if (
         importer &&
         depsOptimizer &&
@@ -53,10 +53,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
           if (depsOptimizer.options.noDiscovery) {
             return
           }
-          const resolved = await this.resolve(id, importer, {
-            ...options,
-            custom: { ...options.custom, 'vite:pre-alias': true },
-          })
+          const resolved = await this.resolve(id, importer, options)
           if (resolved && !depsOptimizer.isOptimizedDepFile(resolved.id)) {
             const optimizeDeps = depsOptimizer.options
             const resolvedId = cleanUrl(resolved.id)
@@ -69,7 +66,11 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
               (isInNodeModules(resolvedId) ||
                 optimizeDeps.include?.includes(id)) &&
               isOptimizable(resolvedId, optimizeDeps) &&
-              !(isBuild && ssr && isConfiguredAsExternal(id, importer)) &&
+              !(
+                isBuild &&
+                ssr &&
+                isConfiguredAsExternal(environment, id, importer)
+              ) &&
               (!ssr || optimizeAliasReplacementForSSR(resolvedId, optimizeDeps))
             ) {
               // aliased dep has not yet been optimized

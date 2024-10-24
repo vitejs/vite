@@ -147,10 +147,10 @@ const nodeConfig = defineConfig({
   ],
 })
 
-const runtimeConfig = defineConfig({
+const moduleRunnerConfig = defineConfig({
   ...sharedNodeOptions,
   input: {
-    runtime: path.resolve(__dirname, 'src/runtime/index.ts'),
+    'module-runner': path.resolve(__dirname, 'src/module-runner/index.ts'),
   },
   external: [
     'fsevents',
@@ -187,7 +187,7 @@ export default defineConfig([
   envConfig,
   clientConfig,
   nodeConfig,
-  runtimeConfig,
+  moduleRunnerConfig,
   cjsConfig,
 ])
 
@@ -261,12 +261,8 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
  */
 function cjsPatchPlugin(): Plugin {
   const cjsPatch = `
-import { fileURLToPath as __cjs_fileURLToPath } from 'node:url';
-import { dirname as __cjs_dirname } from 'node:path';
 import { createRequire as __cjs_createRequire } from 'node:module';
 
-const __filename = __cjs_fileURLToPath(import.meta.url);
-const __dirname = __cjs_dirname(__filename);
 const require = __cjs_createRequire(import.meta.url);
 const __require = require;
 `.trimStart()

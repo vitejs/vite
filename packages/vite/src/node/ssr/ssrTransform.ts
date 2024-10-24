@@ -1,6 +1,6 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { SourceMap } from 'rollup'
+import type { RollupAstNode, SourceMap } from 'rollup'
 import type {
   ExportAllDeclaration,
   ExportDefaultDeclaration,
@@ -8,6 +8,7 @@ import type {
   Function as FunctionNode,
   Identifier,
   ImportDeclaration,
+  Literal,
   Pattern,
   Property,
   VariableDeclaration,
@@ -27,7 +28,7 @@ type Node = _Node & {
   end: number
 }
 
-interface TransformOptions {
+export interface ModuleRunnerTransformOptions {
   json?: {
     stringify?: boolean
   }
@@ -38,6 +39,7 @@ export const ssrImportKey = `__vite_ssr_import__`
 export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
+const ssrIdentityFunction = `__vite_ssr_identity__`
 
 const hashbangRE = /^#!.*\n/
 
@@ -46,7 +48,7 @@ export async function ssrTransform(
   inMap: SourceMap | { mappings: '' } | null,
   url: string,
   originalCode: string,
-  options?: TransformOptions,
+  options?: ModuleRunnerTransformOptions,
 ): Promise<TransformResult | null> {
   if (options?.json?.stringify && isJSONRequest(url)) {
     return ssrTransformJSON(code, inMap)
@@ -63,6 +65,7 @@ async function ssrTransformJSON(
     map: inMap,
     deps: [],
     dynamicDeps: [],
+    ssr: true,
   }
 }
 
@@ -96,13 +99,22 @@ async function ssrTransformScript(
   const declaredConst = new Set<string>()
 
   // hoist at the start of the file, after the hashbang
-  const hoistIndex = hashbangRE.exec(code)?.[0].length ?? 0
+  const fileStartIndex = hashbangRE.exec(code)?.[0].length ?? 0
+  let hoistIndex = fileStartIndex
 
   function defineImport(
     index: number,
-    source: string,
+    importNode: (
+      | ImportDeclaration
+      | (ExportNamedDeclaration & { source: Literal })
+      | ExportAllDeclaration
+    ) & {
+      start: number
+      end: number
+    },
     metadata?: DefineImportMetadata,
   ) {
+    const source = importNode.source.value as string
     deps.add(source)
     const importId = `__vite_ssr_import_${uid++}__`
 
@@ -115,31 +127,40 @@ async function ssrTransformScript(
     }
     const metadataStr = metadata ? `, ${JSON.stringify(metadata)}` : ''
 
-    // There will be an error if the module is called before it is imported,
-    // so the module import statement is hoisted to the top
-    s.appendLeft(
-      index,
+    s.update(
+      importNode.start,
+      importNode.end,
       `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
         source,
       )}${metadataStr});\n`,
     )
+
+    if (importNode.start === index) {
+      // no need to hoist, but update hoistIndex to keep the order
+      hoistIndex = importNode.end
+    } else {
+      // There will be an error if the module is called before it is imported,
+      // so the module import statement is hoisted to the top
+      s.move(importNode.start, importNode.end, index)
+    }
+
     return importId
   }
 
   function defineExport(position: number, name: string, local = name) {
     s.appendLeft(
       position,
-      `\nObject.defineProperty(${ssrModuleExportsKey}, "${name}", ` +
+      `\nObject.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
         `{ enumerable: true, configurable: true, get(){ return ${local} }});`,
     )
   }
 
-  const imports: (ImportDeclaration & { start: number; end: number })[] = []
-  const exports: ((
-    | ExportNamedDeclaration
-    | ExportDefaultDeclaration
-    | ExportAllDeclaration
-  ) & { start: number; end: number })[] = []
+  const imports: RollupAstNode<ImportDeclaration>[] = []
+  const exports: (
+    | RollupAstNode<ExportNamedDeclaration>
+    | RollupAstNode<ExportDefaultDeclaration>
+    | RollupAstNode<ExportAllDeclaration>
+  )[] = []
 
   for (const node of ast.body as Node[]) {
     if (node.type === 'ImportDeclaration') {
@@ -158,19 +179,15 @@ async function ssrTransformScript(
     // import foo from 'foo' --> foo -> __import_foo__.default
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
-    const importId = defineImport(hoistIndex, node.source.value as string, {
+    const importId = defineImport(hoistIndex, node, {
       importedNames: node.specifiers
         .map((s) => {
           if (s.type === 'ImportSpecifier')
-            return s.imported.type === 'Identifier'
-              ? s.imported.name
-              : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-                s.imported.value
+            return getIdentifierNameOrLiteralValue(s.imported) as string
           else if (s.type === 'ImportDefaultSpecifier') return 'default'
         })
         .filter(isDefined),
     })
-    s.remove(node.start, node.end)
     for (const spec of node.specifiers) {
       if (spec.type === 'ImportSpecifier') {
         if (spec.imported.type === 'Identifier') {
@@ -181,10 +198,7 @@ async function ssrTransformScript(
         } else {
           idToImportMap.set(
             spec.local.name,
-            `${importId}[${
-              // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-              JSON.stringify(spec.imported.value)
-            }]`,
+            `${importId}[${JSON.stringify(spec.imported.value as string)}]`,
           )
         }
       } else if (spec.type === 'ImportDefaultSpecifier') {
@@ -223,35 +237,41 @@ async function ssrTransformScript(
           // export { foo, bar } from './foo'
           const importId = defineImport(
             node.start,
-            node.source.value as string,
+            node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
             {
-              importedNames: node.specifiers.map((s) => s.local.name),
+              importedNames: node.specifiers.map(
+                (s) => getIdentifierNameOrLiteralValue(s.local) as string,
+              ),
             },
           )
           for (const spec of node.specifiers) {
-            const exportedAs =
-              spec.exported.type === 'Identifier'
-                ? spec.exported.name
-                : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-                  spec.exported.value
+            const exportedAs = getIdentifierNameOrLiteralValue(
+              spec.exported,
+            ) as string
 
-            defineExport(
-              node.start,
-              exportedAs,
-              `${importId}.${spec.local.name}`,
-            )
+            if (spec.local.type === 'Identifier') {
+              defineExport(
+                node.end,
+                exportedAs,
+                `${importId}.${spec.local.name}`,
+              )
+            } else {
+              defineExport(
+                node.end,
+                exportedAs,
+                `${importId}[${JSON.stringify(spec.local.value as string)}]`,
+              )
+            }
           }
         } else {
           // export { foo, bar }
           for (const spec of node.specifiers) {
-            const local = spec.local.name
+            // spec.local can be Literal only when it has "from 'something'"
+            const local = (spec.local as Identifier).name
             const binding = idToImportMap.get(local)
-
-            const exportedAs =
-              spec.exported.type === 'Identifier'
-                ? spec.exported.name
-                : // @ts-expect-error TODO: Estree types don't consider arbitrary module namespace specifiers yet
-                  spec.exported.value
+            const exportedAs = getIdentifierNameOrLiteralValue(
+              spec.exported,
+            ) as string
 
             defineExport(node.end, exportedAs, binding || local)
           }
@@ -288,16 +308,19 @@ async function ssrTransformScript(
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      s.remove(node.start, node.end)
-      const importId = defineImport(node.start, node.source.value as string)
+      const importId = defineImport(node.start, node)
       if (node.exported) {
-        defineExport(node.start, node.exported.name, `${importId}`)
+        const exportedAs = getIdentifierNameOrLiteralValue(
+          node.exported,
+        ) as string
+        defineExport(node.end, exportedAs, `${importId}`)
       } else {
-        s.appendLeft(node.start, `${ssrExportAllKey}(${importId});\n`)
+        s.appendLeft(node.end, `${ssrExportAllKey}(${importId});\n`)
       }
     }
   }
 
+  let injectIdentityFunction = false
   // 3. convert references to import bindings & import.meta references
   walk(ast, {
     onIdentifier(id, parent, parentStack) {
@@ -327,6 +350,13 @@ async function ssrTransformScript(
           const topNode = parentStack[parentStack.length - 2]
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
+      } else if (parent.type === 'CallExpression') {
+        s.update(id.start, id.end, binding)
+        // wrap with identity function to avoid method binding `this`
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors#method_binding
+        s.prependRight(id.start, `${ssrIdentityFunction}(`)
+        s.appendLeft(id.end, `)`)
+        injectIdentityFunction = true
       } else if (
         // don't transform class name identifier
         !(parent.type === 'ClassExpression' && id === parent.id)
@@ -345,7 +375,15 @@ async function ssrTransformScript(
     },
   })
 
+  if (injectIdentityFunction) {
+    s.prependLeft(fileStartIndex, `const ${ssrIdentityFunction} = v => v;\n`)
+  }
+
   let map = s.generateMap({ hires: 'boundary' })
+  map.sources = [path.basename(url)]
+  // needs to use originalCode instead of code
+  // because code might be already transformed even if map is null
+  map.sourcesContent = [originalCode]
   if (
     inMap &&
     inMap.mappings &&
@@ -353,26 +391,22 @@ async function ssrTransformScript(
     inMap.sources.length > 0
   ) {
     map = combineSourcemaps(url, [
-      {
-        ...map,
-        sources: inMap.sources,
-        sourcesContent: inMap.sourcesContent,
-      } as RawSourceMap,
+      map as RawSourceMap,
       inMap as RawSourceMap,
     ]) as SourceMap
-  } else {
-    map.sources = [path.basename(url)]
-    // needs to use originalCode instead of code
-    // because code might be already transformed even if map is null
-    map.sourcesContent = [originalCode]
   }
 
   return {
     code: s.toString(),
     map,
+    ssr: true,
     deps: [...deps],
     dynamicDeps: [...dynamicDeps],
   }
+}
+
+function getIdentifierNameOrLiteralValue(node: Identifier | Literal) {
+  return node.type === 'Identifier' ? node.name : node.value
 }
 
 interface Visitors {

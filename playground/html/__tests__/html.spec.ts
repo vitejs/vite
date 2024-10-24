@@ -7,6 +7,7 @@ import {
   isBuild,
   isServe,
   page,
+  untilBrowserLogAfter,
   viteServer,
   viteTestUrl,
   withRetry,
@@ -282,7 +283,7 @@ describe.runIf(isServe)('invalid', () => {
     await page.keyboard.press('Escape')
     await hiddenPromise
 
-    viteServer.hot.send({
+    viteServer.environments.client.hot.send({
       type: 'error',
       err: {
         message: 'someError',
@@ -298,8 +299,11 @@ describe.runIf(isServe)('invalid', () => {
   })
 
   test('should reload when fixed', async () => {
-    await page.goto(viteTestUrl + '/invalid.html')
-    await editFile('invalid.html', (content) => {
+    await untilBrowserLogAfter(
+      () => page.goto(viteTestUrl + '/invalid.html'),
+      /connected/, // wait for HMR connection
+    )
+    editFile('invalid.html', (content) => {
       return content.replace('<div Bad', '<div> Good')
     })
     const content = await page.waitForSelector('text=Good HTML')
@@ -390,7 +394,10 @@ describe.runIf(isServe)('warmup', () => {
     // warmup transform files async during server startup, so the module check
     // here might take a while to load
     await withRetry(async () => {
-      const mod = await viteServer.moduleGraph.getModuleByUrl('/warmup/warm.js')
+      const mod =
+        await viteServer.environments.client.moduleGraph.getModuleByUrl(
+          '/warmup/warm.js',
+        )
       expect(mod).toBeTruthy()
     })
   })
@@ -463,4 +470,9 @@ test('html fallback works non browser accept header', async () => {
       })
     ).status,
   ).toBe(200)
+})
+
+test('escape html attribute', async () => {
+  const el = await page.$('.unescape-div')
+  expect(el).toBeNull()
 })
