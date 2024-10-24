@@ -91,7 +91,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AAAA,CAAC,QAAQ,CAAC,CAAC;AACX,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG,CAAC;AACb,CAAC;",
+        "mappings": "AAAA,CAAC,QAAQ,CAAC;AACV,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG;AACZ;",
         "sources": [
           "/root/imported.css",
         ],
@@ -145,11 +145,11 @@ describe.runIf(isServe)('serve', () => {
           "/root/imported-nested.sass",
         ],
         "sourcesContent": [
-          "@import "/imported-nested.sass"
+          "@use "/imported-nested.sass"
 
       .imported
         &-sass
-          color: $primary
+          color: imported-nested.$primary
       ",
           "$primary: red
       ",

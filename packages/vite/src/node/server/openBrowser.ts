@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import { exec } from 'node:child_process'
 import type { ExecOptions } from 'node:child_process'
 import open from 'open'
+import type { Options } from 'open'
 import spawn from 'cross-spawn'
 import colors from 'picocolors'
 import type { Logger } from '../logger'
@@ -95,9 +96,7 @@ async function startBrowserProcess(
       if (openedBrowser) {
         // Try our best to reuse existing tab with AppleScript
         await execAsync(
-          `osascript openChrome.applescript "${encodeURI(
-            url,
-          )}" "${openedBrowser}"`,
+          `osascript openChrome.applescript "${url}" "${openedBrowser}"`,
           {
             cwd: join(VITE_PACKAGE_DIR, 'bin'),
           },
@@ -120,7 +119,7 @@ async function startBrowserProcess(
   // Fallback to open
   // (It will always open new tab)
   try {
-    const options: open.Options = browser
+    const options: Options = browser
       ? { app: { name: browser, arguments: browserArgs } }
       : {}
 
