@@ -260,7 +260,7 @@ importers:
         specifier: ^28.0.1
         version: 28.0.1(rollup@4.23.0)
       '@rollup/plugin-dynamic-import-vars':
-        specifier: 2.1.4
+        specifier: ^2.1.4
         version: 2.1.4(rollup@4.23.0)
       '@rollup/plugin-json':
         specifier: ^6.1.0
