@@ -6,7 +6,7 @@ import { ModuleGraph } from '../mixedModuleGraph'
 describe('moduleGraph', () => {
   describe('invalidateModule', () => {
     it('removes an ssr error', async () => {
-      const moduleGraph = new EnvironmentModuleGraph('ssr', async (url) => ({
+      const moduleGraph = new EnvironmentModuleGraph('$ssr', async (url) => ({
         id: url,
       }))
       const entryUrl = '/x.js'
@@ -20,7 +20,7 @@ describe('moduleGraph', () => {
     })
 
     it('ensureEntryFromUrl should based on resolvedId', async () => {
-      const moduleGraph = new EnvironmentModuleGraph('client', async (url) => {
+      const moduleGraph = new EnvironmentModuleGraph('$client', async (url) => {
         if (url === '/xx.js') {
           return { id: '/x.js' }
         } else {
@@ -37,12 +37,15 @@ describe('moduleGraph', () => {
 
     it('ensure backward compatibility', async () => {
       const clientModuleGraph = new EnvironmentModuleGraph(
-        'client',
+        '$client',
         async (url) => ({ id: url }),
       )
-      const ssrModuleGraph = new EnvironmentModuleGraph('ssr', async (url) => ({
-        id: url,
-      }))
+      const ssrModuleGraph = new EnvironmentModuleGraph(
+        '$ssr',
+        async (url) => ({
+          id: url,
+        }),
+      )
       const moduleGraph = new ModuleGraph({
         client: () => clientModuleGraph,
         ssr: () => ssrModuleGraph,

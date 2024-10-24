@@ -204,7 +204,7 @@ describe('hoist @ rules', () => {
 
 async function createCssPluginTransform(inlineConfig: InlineConfig = {}) {
   const config = await resolveConfig(inlineConfig, 'serve')
-  const environment = new PartialEnvironment('client', config)
+  const environment = new PartialEnvironment('$client', config)
 
   const { transform, buildStart } = cssPlugin(config)
 
