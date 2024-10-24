@@ -232,7 +232,7 @@ export class HMRClient {
 
   // After an HMR update, some modules are no longer imported on the page
   // but they may have left behind side effects that need to be cleaned up
-  // (.e.g style injections)
+  // (e.g. style injections)
   public async prunePaths(paths: string[]): Promise<void> {
     await Promise.all(
       paths.map((path) => {

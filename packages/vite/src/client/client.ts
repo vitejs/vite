@@ -49,14 +49,14 @@ try {
             'your current setup:\n' +
             `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
             `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
-            'Check out your Vite / network configuration and https://vitejs.dev/config/server-options.html#server-hmr .',
+            'Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr .',
         )
       })
       socket.addEventListener(
         'open',
         () => {
           console.info(
-            '[vite] Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.',
+            '[vite] Direct websocket connection fallback. Check out https://vite.dev/config/server-options.html#server-hmr to remove the previous connection error.',
           )
         },
         { once: true },
@@ -113,7 +113,7 @@ function setupWebSocket(
 }
 
 function cleanUrl(pathname: string): string {
-  const url = new URL(pathname, 'http://vitejs.dev')
+  const url = new URL(pathname, 'http://vite.dev')
   url.searchParams.delete('direct')
   return url.pathname + url.search
 }
@@ -336,7 +336,7 @@ async function waitForSuccessfulPing(
   const ping = async () => {
     // A fetch on a websocket URL will return a successful promise with status 400,
     // but will reject a networking error.
-    // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
+    // When running on middleware mode, it returns status 426, and a cors error happens if mode is not no-cors
     try {
       await fetch(`${pingHostProtocol}://${hostAndPath}`, {
         mode: 'no-cors',
@@ -457,7 +457,7 @@ export function injectQuery(url: string, queryToInject: string): string {
 
   // can't use pathname from URL since it may be relative like ../
   const pathname = url.replace(/[?#].*$/, '')
-  const { search, hash } = new URL(url, 'http://vitejs.dev')
+  const { search, hash } = new URL(url, 'http://vite.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''
