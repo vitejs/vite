@@ -284,8 +284,8 @@ importers:
         specifier: ^6.7.14
         version: 6.7.14
       chokidar:
-        specifier: ^3.6.0
-        version: 3.6.0(patch_hash=bckcfsslxcffppz65mxcq6naau)
+        specifier: ^4.0.1
+        version: 4.0.1
       connect:
         specifier: ^3.7.0
         version: 3.7.0
