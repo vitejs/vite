@@ -3,7 +3,6 @@ import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import glob from 'fast-glob'
 import postcssrc from 'postcss-load-config'
 import type {
   ExistingRawSourceMap,
@@ -27,6 +26,13 @@ import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
+import { globSync } from 'tinyglobby'
+import type {
+  LessPreprocessorBaseOptions,
+  SassLegacyPreprocessBaseOptions,
+  SassModernPreprocessBaseOptions,
+  StylusPreprocessorBaseOptions,
+} from 'types/cssPreprocessorOptions'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -111,7 +117,14 @@ export interface CSSOptions {
    * In addition to options specific to each processors, Vite supports `additionalData` option.
    * The `additionalData` option can be used to inject extra code for each style content.
    */
-  preprocessorOptions?: Record<string, any>
+  preprocessorOptions?: {
+    scss?: SassPreprocessorOptions
+    sass?: SassPreprocessorOptions
+    less?: LessPreprocessorOptions
+    styl?: StylusPreprocessorOptions
+    stylus?: StylusPreprocessorOptions
+  }
+
   /**
    * If this option is set, preprocessors will run in workers when possible.
    * `true` means the number of CPUs minus 1.
@@ -197,7 +210,7 @@ const commonjsProxyRE = /\?commonjs-proxy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
-const functionCallRE = /^[A-Z_][\w-]*\(/i
+const functionCallRE = /^[A-Z_][.\w-]*\(/i
 const transformOnlyRE = /[?&]transform-only\b/
 const nonEscapedDoubleQuoteRe = /(?<!\\)"/g
 
@@ -957,6 +970,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           delete bundle[`${fileName}.map`]
         })
       }
+
+      const cssAssets = Object.values(bundle).filter(
+        (asset): asset is OutputAsset =>
+          asset.type === 'asset' && asset.fileName.endsWith('.css'),
+      )
+      for (const cssAsset of cssAssets) {
+        if (typeof cssAsset.source === 'string') {
+          cssAsset.source = cssAsset.source.replace(viteHashUpdateMarkerRE, '')
+        }
+      }
     },
   }
 }
@@ -1125,32 +1148,15 @@ async function compileCSSPreprocessors(
   const atImportResolvers = getAtImportResolvers(
     environment.getTopLevelConfig(),
   )
+  const opts = {
+    ...((preprocessorOptions && preprocessorOptions[lang]) || {}),
+    alias: config.resolve.alias,
+    // important: set this for relative import resolving
+    filename: cleanUrl(id),
+    enableSourcemap: devSourcemap ?? false,
+  }
 
   const preProcessor = workerController[lang]
-  let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
-  // support @import from node dependencies by default
-  switch (lang) {
-    case PreprocessLang.scss:
-    case PreprocessLang.sass:
-      opts = {
-        includePaths: ['node_modules'],
-        alias: config.resolve.alias,
-        ...opts,
-      }
-      break
-    case PreprocessLang.less:
-    case PreprocessLang.styl:
-    case PreprocessLang.stylus:
-      opts = {
-        paths: ['node_modules'],
-        alias: config.resolve.alias,
-        ...opts,
-      }
-  }
-  // important: set this for relative import resolving
-  opts.filename = cleanUrl(id)
-  opts.enableSourcemap = devSourcemap ?? false
-
   const preprocessResult = await preProcessor(
     environment,
     code,
@@ -1405,11 +1411,10 @@ async function compileCSS(
       } else if (message.type === 'dir-dependency') {
         // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
         const { dir, glob: globPattern = '**' } = message
-        const pattern =
-          glob.escapePath(normalizePath(path.resolve(path.dirname(id), dir))) +
-          `/` +
-          globPattern
-        const files = glob.sync(pattern, {
+        const files = globSync(globPattern, {
+          absolute: true,
+          cwd: path.resolve(path.dirname(id), dir),
+          expandDirectories: false,
           ignore: ['**/node_modules/**'],
         })
         for (let i = 0; i < files.length; i++) {
@@ -1577,6 +1582,9 @@ function combineSourcemapsIfExists(
     : map1
 }
 
+const viteHashUpdateMarker = '/*$vite$:1*/'
+const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
+
 async function finalizeCss(
   css: string,
   minify: boolean,
@@ -1589,6 +1597,16 @@ async function finalizeCss(
   if (minify && config.build.cssMinify) {
     css = await minifyCSS(css, config, false)
   }
+  // inject an additional string to generate a different hash for https://github.com/vitejs/vite/issues/18038
+  //
+  // pre-5.4.3, we generated CSS link tags without crossorigin attribute and generated an hash without
+  // this string
+  // in 5.4.3, we added crossorigin attribute to the generated CSS link tags but that made chromium browsers
+  // to block the CSSs from loading due to chromium's weird behavior
+  // (https://www.hacksoft.io/blog/handle-images-cors-error-in-chrome, https://issues.chromium.org/issues/40381978)
+  // to avoid that happening, we inject an additional string so that a different hash is generated
+  // for the same CSS content
+  css += viteHashUpdateMarker
   return css
 }
 
@@ -1955,52 +1973,43 @@ type PreprocessorAdditionalData =
       | PreprocessorAdditionalDataResult
       | Promise<PreprocessorAdditionalDataResult>)
 
-type StylePreprocessorOptions = {
-  [key: string]: any
+type SassPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
+} & (
+  | ({ api?: 'legacy' } & SassLegacyPreprocessBaseOptions)
+  | ({ api: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
+)
+
+type LessPreprocessorOptions = {
+  additionalData?: PreprocessorAdditionalData
+} & LessPreprocessorBaseOptions
+
+type StylusPreprocessorOptions = {
+  additionalData?: PreprocessorAdditionalData
+} & StylusPreprocessorBaseOptions
+
+type StylePreprocessorInternalOptions = {
   maxWorkers?: number | true
   filename: string
   alias: Alias[]
   enableSourcemap: boolean
 }
 
-type SassStylePreprocessorOptions = StylePreprocessorOptions &
-  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'> & {
-    api?: 'legacy' | 'modern' | 'modern-compiler'
-  }
+type SassStylePreprocessorInternalOptions = StylePreprocessorInternalOptions &
+  SassPreprocessorOptions
 
-type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
-  define?: Record<string, any>
-}
+type LessStylePreprocessorInternalOptions = StylePreprocessorInternalOptions &
+  LessPreprocessorOptions
 
-type StylePreprocessor = {
+type StylusStylePreprocessorInternalOptions = StylePreprocessorInternalOptions &
+  StylusPreprocessorOptions
+
+type StylePreprocessor<Options extends StylePreprocessorInternalOptions> = {
   process: (
     environment: PartialEnvironment,
     source: string,
     root: string,
-    options: StylePreprocessorOptions,
-    resolvers: CSSAtImportResolvers,
-  ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
-  close: () => void
-}
-
-type SassStylePreprocessor = {
-  process: (
-    environment: PartialEnvironment,
-    source: string,
-    root: string,
-    options: SassStylePreprocessorOptions,
-    resolvers: CSSAtImportResolvers,
-  ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
-  close: () => void
-}
-
-type StylusStylePreprocessor = {
-  process: (
-    environment: PartialEnvironment,
-    source: string,
-    root: string,
-    options: StylusStylePreprocessorOptions,
+    options: Options,
     resolvers: CSSAtImportResolvers,
   ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
   close: () => void
@@ -2154,7 +2163,10 @@ const makeScssWorker = (
         sassPath: string,
         data: string,
         // additionalData can a function that is not cloneable but it won't be used
-        options: SassStylePreprocessorOptions & { additionalData: undefined },
+        options: SassStylePreprocessorInternalOptions & {
+          api: 'legacy'
+          additionalData: undefined
+        },
       ) => {
         // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const sass: typeof Sass = require(sassPath)
@@ -2182,6 +2194,8 @@ const makeScssWorker = (
         }
 
         const finalOptions: Sass.LegacyOptions<'async'> = {
+          // support @import from node dependencies by default
+          includePaths: ['node_modules'],
           ...options,
           data,
           file: options.filename,
@@ -2265,7 +2279,10 @@ const makeModernScssWorker = (
         sassPath: string,
         data: string,
         // additionalData can a function that is not cloneable but it won't be used
-        options: SassStylePreprocessorOptions & { additionalData: undefined },
+        options: SassStylePreprocessorInternalOptions & {
+          api: 'modern'
+          additionalData: undefined
+        },
       ) => {
         // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const sass: typeof Sass = require(sassPath)
@@ -2431,8 +2448,15 @@ type ScssWorkerResult = {
 
 const scssProcessor = (
   maxWorkers: number | undefined,
-): SassStylePreprocessor => {
-  const workerMap = new Map<unknown, ReturnType<typeof makeScssWorker>>()
+): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
+  const workerMap = new Map<
+    unknown,
+    ReturnType<
+      | typeof makeScssWorker
+      | typeof makeModernScssWorker
+      | typeof makeModernCompilerScssWorker
+    >
+  >()
 
   return {
     close() {
@@ -2489,6 +2513,7 @@ const scssProcessor = (
         const result = await worker.run(
           sassPackage.path,
           data,
+          // @ts-expect-error the correct worker is selected for `options.type`
           optionsWithoutAdditionalData,
         )
         const deps = result.stats.includedFiles.map((f) => cleanScssBugUrl(f))
@@ -2684,7 +2709,9 @@ const makeLessWorker = (
         lessPath: string,
         content: string,
         // additionalData can a function that is not cloneable but it won't be used
-        options: StylePreprocessorOptions & { additionalData: undefined },
+        options: LessStylePreprocessorInternalOptions & {
+          additionalData: undefined
+        },
       ) => {
         // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const nodeLess: typeof Less = require(lessPath)
@@ -2693,6 +2720,8 @@ const makeLessWorker = (
           options.filename,
         )
         const result = await nodeLess.render(content, {
+          // support @import from node dependencies by default
+          paths: ['node_modules'],
           ...options,
           plugins: [viteResolverPlugin, ...(options.plugins || [])],
           ...(options.enableSourcemap
@@ -2712,7 +2741,7 @@ const makeLessWorker = (
       shouldUseFake(_lessPath, _content, options) {
         // plugins are a function and is not serializable
         // in that case, fallback to running in main thread
-        return options.plugins?.length > 0
+        return !!options.plugins && options.plugins.length > 0
       },
       max: maxWorkers,
     },
@@ -2720,7 +2749,9 @@ const makeLessWorker = (
   return worker
 }
 
-const lessProcessor = (maxWorkers: number | undefined): StylePreprocessor => {
+const lessProcessor = (
+  maxWorkers: number | undefined,
+): StylePreprocessor<LessStylePreprocessorInternalOptions> => {
   const workerMap = new Map<unknown, ReturnType<typeof makeLessWorker>>()
 
   return {
@@ -2798,12 +2829,18 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
         content: string,
         root: string,
         // additionalData can a function that is not cloneable but it won't be used
-        options: StylusStylePreprocessorOptions & { additionalData: undefined },
+        options: StylusStylePreprocessorInternalOptions & {
+          additionalData: undefined
+        },
       ) => {
         // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const nodeStylus: typeof Stylus = require(stylusPath)
 
-        const ref = nodeStylus(content, options)
+        const ref = nodeStylus(content, {
+          // support @import from node dependencies by default
+          paths: ['node_modules'],
+          ...options,
+        })
         if (options.define) {
           for (const key in options.define) {
             ref.define(key, options.define[key])
@@ -2842,7 +2879,7 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
 
 const stylProcessor = (
   maxWorkers: number | undefined,
-): StylusStylePreprocessor => {
+): StylePreprocessor<StylusStylePreprocessorInternalOptions> => {
   const workerMap = new Map<unknown, ReturnType<typeof makeStylWorker>>()
 
   return {
@@ -2959,21 +2996,23 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
   const less = lessProcessor(maxWorkers)
   const styl = stylProcessor(maxWorkers)
 
-  const sassProcess: StylePreprocessor['process'] = (
-    environment,
-    source,
-    root,
-    options,
-    resolvers,
-  ) => {
-    return scss.process(
-      environment,
-      source,
-      root,
-      { ...options, indentedSyntax: true, syntax: 'indented' },
-      resolvers,
-    )
-  }
+  const sassProcess: StylePreprocessor<SassStylePreprocessorInternalOptions>['process'] =
+    (environment, source, root, options, resolvers) => {
+      let opts: SassStylePreprocessorInternalOptions
+      if (options.api === 'modern' || options.api === 'modern-compiler') {
+        opts = { ...options, syntax: 'indented' as const }
+      } else {
+        const narrowedOptions =
+          options as SassStylePreprocessorInternalOptions & {
+            api?: 'legacy'
+          }
+        opts = {
+          ...narrowedOptions,
+          indentedSyntax: true,
+        }
+      }
+      return scss.process(environment, source, root, opts, resolvers)
+    }
 
   const close = () => {
     less.close()

@@ -145,11 +145,11 @@ describe.runIf(isServe)('serve', () => {
           "/root/imported-nested.sass",
         ],
         "sourcesContent": [
-          "@import "/imported-nested.sass"
+          "@use "/imported-nested.sass"
 
       .imported
         &-sass
-          color: $primary
+          color: imported-nested.$primary
       ",
           "$primary: red
       ",
