@@ -86,7 +86,7 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
-  let mod = await environment.moduleGraph.getModuleByUrl(url)
+  let mod = await environment.moduleGraph.ensureEntryFromUrl(url)
   const cached = !!mod?.transformResult
 
   // if url is already cached, we can just confirm it's also cached on the server
@@ -105,15 +105,16 @@ export async function fetchModule(
   }
 
   // module entry should be created by transformRequest
-  mod ??= await environment.moduleGraph.getModuleByUrl(url)
+  const modById = environment.moduleGraph.getModuleById(mod.id!)
 
-  if (!mod) {
+  if (!modById) {
     throw new Error(
       `[vite] cannot find module '${url}' ${
         importer ? ` imported from '${importer}'` : ''
       }.`,
     )
   }
+  mod = modById
 
   if (options.inlineSourceMap !== false) {
     result = inlineSourceMap(mod, result, options.startOffset)
