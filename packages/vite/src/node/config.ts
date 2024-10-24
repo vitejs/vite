@@ -4,7 +4,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
-import { createRequire } from 'node:module'
+import { builtinModules, createRequire } from 'node:module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import { build } from 'esbuild'
@@ -15,8 +15,10 @@ import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
+  DEFAULT_CONDITIONS,
   DEFAULT_CONFIG_FILES,
   DEFAULT_EXTENSIONS,
+  DEFAULT_EXTERNAL_CONDITIONS,
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
@@ -247,10 +249,9 @@ export interface SharedEnvironmentOptions {
    */
   consumer?: 'client' | 'server'
   /**
-   * Runtime Compatibility
-   * Temporal options, we should remove these in favor of fine-grained control
+   * Don't replace `process.env` to a static value.
    */
-  webCompatible?: boolean // was ssr.target === 'webworker'
+  keepProcessEnv?: boolean
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -270,14 +271,14 @@ export type ResolvedEnvironmentOptions = {
   define?: Record<string, any>
   resolve: ResolvedResolveOptions
   consumer: 'client' | 'server'
-  webCompatible: boolean
+  keepProcessEnv?: boolean
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
 }
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  'consumer' | 'webCompatible' | 'resolve'
+  'consumer' | 'resolve'
 > & {
   resolve?: AllResolveOptions
 }
@@ -632,20 +633,27 @@ function resolveEnvironmentOptions(
   environmentName: string,
   // Backward compatibility
   skipSsrTransform?: boolean,
+  ssrTargetWebworker?: boolean,
 ): ResolvedEnvironmentOptions {
+  const isClientEnvironment = environmentName === 'client'
+  const consumer =
+    options.consumer ?? (isClientEnvironment ? 'client' : 'server')
+  const isSsrTargetWebworkerEnvironment =
+    ssrTargetWebworker && environmentName === 'ssr'
   const resolve = resolveEnvironmentResolveOptions(
     options.resolve,
     alias,
     preserveSymlinks,
     logger,
+    consumer,
+    isSsrTargetWebworkerEnvironment,
   )
-  const isClientEnvironment = environmentName === 'client'
-  const consumer =
-    options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   return {
     resolve,
+    keepProcessEnv:
+      options.keepProcessEnv ??
+      (isSsrTargetWebworkerEnvironment ? false : consumer === 'server'),
     consumer,
-    webCompatible: options.webCompatible ?? consumer === 'client',
     dev: resolveDevEnvironmentOptions(
       options.dev,
       resolve.preserveSymlinks,
@@ -657,6 +665,7 @@ function resolveEnvironmentOptions(
       options.build ?? {},
       logger,
       consumer,
+      isSsrTargetWebworkerEnvironment,
     ),
   }
 }
@@ -736,12 +745,26 @@ function resolveEnvironmentResolveOptions(
   alias: Alias[],
   preserveSymlinks: boolean,
   logger: Logger,
+  consumer: 'client' | 'server' | undefined,
+  // Backward compatibility
+  isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedAllResolveOptions {
+  let conditions = resolve?.conditions
+  conditions ??=
+    consumer === 'client' || isSsrTargetWebworkerEnvironment
+      ? DEFAULT_CONDITIONS.filter((c) => c !== 'node')
+      : DEFAULT_CONDITIONS.filter((c) => c !== 'browser')
+
   const resolvedResolve: ResolvedAllResolveOptions = {
     mainFields: resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
-    conditions: resolve?.conditions ?? [],
-    externalConditions: resolve?.externalConditions ?? [],
-    external: resolve?.external ?? [],
+    conditions,
+    externalConditions:
+      resolve?.externalConditions ?? DEFAULT_EXTERNAL_CONDITIONS,
+    external:
+      resolve?.external ??
+      (consumer === 'server' && !isSsrTargetWebworkerEnvironment
+        ? builtinModules
+        : []),
     noExternal: resolve?.noExternal ?? [],
     extensions: resolve?.extensions ?? DEFAULT_EXTENSIONS,
     dedupe: resolve?.dedupe ?? [],
@@ -777,6 +800,7 @@ function resolveResolveOptions(
     alias,
     preserveSymlinks,
     logger,
+    undefined,
   )
 }
 
@@ -947,10 +971,6 @@ export async function resolveConfig(
       config.ssr?.resolve?.externalConditions
     configEnvironmentsSsr.resolve.external ??= config.ssr?.external
     configEnvironmentsSsr.resolve.noExternal ??= config.ssr?.noExternal
-
-    if (config.ssr?.target === 'webworker') {
-      configEnvironmentsSsr.webCompatible = true
-    }
   }
 
   if (config.build?.ssrEmitAssets !== undefined) {
@@ -992,6 +1012,7 @@ export async function resolveConfig(
       logger,
       environmentName,
       config.experimental?.skipSsrTransform,
+      config.ssr?.target === 'webworker',
     )
   }
 
@@ -1568,17 +1589,15 @@ async function bundleConfigFile(
               preferRelative: false,
               tryIndex: true,
               mainFields: [],
-              conditions: [],
+              conditions: ['node'],
               externalConditions: [],
               external: [],
               noExternal: [],
-              overrideConditions: ['node'],
               dedupe: [],
               extensions: DEFAULT_EXTENSIONS,
               preserveSymlinks: false,
               packageCache,
               isRequire,
-              webCompatible: false,
             })?.id
           }
 

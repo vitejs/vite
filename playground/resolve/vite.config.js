@@ -28,7 +28,14 @@ export default defineConfig({
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
     mainFields: ['browser', 'custom', 'module'],
-    conditions: ['custom'],
+    conditions: [
+      'module',
+      'browser',
+      'node',
+      'production',
+      'development',
+      'custom',
+    ],
   },
   define: {
     VITE_CONFIG_DEP_TEST: a,

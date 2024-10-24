@@ -17,7 +17,6 @@ export function getDefaultResolvedEnvironmentOptions(
     define: config.define,
     resolve: config.resolve,
     consumer: 'server',
-    webCompatible: false,
     dev: config.dev,
     build: config.build,
   }

@@ -43,6 +43,6 @@ These conditions are used in the plugin pipeline, and only affect non-externaliz
 ## ssr.resolve.externalConditions
 
 - **Type:** `string[]`
-- **Default:** `[]`
+- **Default:** `['node']`
 
 Conditions that are used during ssr import (including `ssrLoadModule`) of externalized dependencies.
