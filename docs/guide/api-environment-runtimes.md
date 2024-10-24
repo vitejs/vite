@@ -335,7 +335,7 @@ await createServer({
 
 :::
 
-`ModuleRunnerTransport` and `HotChannel` are meant to be used together, but you don't have to use them at all. You can define your own function to communicate between the runner and the server. For example, if you connect to the environment via an HTTP request, you can call `fetch().json()` in `invoke` method:
+You can define your own function to communicate between the runner and the server. For example, if you connect to the environment via an HTTP request, you can call `fetch().json()` inside the `invoke` method:
 
 ```ts
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
@@ -359,7 +359,7 @@ export const runner = new ModuleRunner(
 await runner.import('/entry.js')
 ```
 
-In this case, the server that handles those HTTP request can use `environment.getInvokeHandlers()` to process those requests:
+In this case, the server that handles those HTTP requests can use `environment.getInvokeHandlers()` to process those requests:
 
 ```ts
 server.onRequest((request: Request) => {
