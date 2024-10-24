@@ -416,6 +416,7 @@ const shouldInline = (
   const { assetsInlineLimit } = environment.config.build
   if (environment.config.build.lib) return true
   if (pluginContext.getModuleInfo(id)?.isEntry) return false
+  if (id.endsWith('?url')) return false
   if (forceInline !== undefined) return forceInline
   let limit: number
   if (typeof assetsInlineLimit === 'function') {
