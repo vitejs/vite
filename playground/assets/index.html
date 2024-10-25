@@ -232,6 +232,9 @@
 <h2>?raw import</h2>
 <code class="raw"></code>
 
+<h2>?no-inline import</h2>
+<code class="no-inline"></code>
+
 <h2>?url import</h2>
 <code class="url"></code>
 
@@ -470,6 +473,9 @@
 
   import rawSvg from './nested/fragment.svg?raw'
   text('.raw', rawSvg)
+
+  import noInlineSvg from './nested/fragment.svg?no-inline'
+  text('.no-inline', noInlineSvg)
 
   import fooUrl from './foo.js?url'
   text('.url', fooUrl)

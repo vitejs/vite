@@ -388,6 +388,12 @@ test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
 })
 
+test('?no-inline import', async () => {
+  expect(await page.textContent('.no-inline')).toMatch(
+    '/foo/bar/nested/fragment.svg?no-inline',
+  )
+})
+
 test('?url import', async () => {
   const src = readFile('foo.js')
   expect(await page.textContent('.url')).toMatch(

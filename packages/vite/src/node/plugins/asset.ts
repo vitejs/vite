@@ -414,6 +414,7 @@ const shouldInline = (
 ): boolean => {
   const environment = pluginContext.environment
   const { assetsInlineLimit } = environment.config.build
+  if (id.endsWith('?no-inline')) return false
   if (environment.config.build.lib) return true
   if (pluginContext.getModuleInfo(id)?.isEntry) return false
   if (forceInline !== undefined) return forceInline

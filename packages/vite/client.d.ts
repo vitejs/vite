@@ -247,6 +247,11 @@ declare module '*?inline' {
   export default src
 }
 
+declare module '*?no-inline' {
+  const src: string
+  export default src
+}
+
 declare interface VitePreloadErrorEvent extends Event {
   payload: Error
 }

@@ -55,6 +55,16 @@ import workletURL from 'extra-scalloped-border/worklet.js?url'
 CSS.paintWorklet.addModule(workletURL)
 ```
 
+### Explicit no inlining
+
+Assets can be explicitly imported without inlining using the `?no-inline` suffix.
+
+```js twoslash
+import 'vite/client'
+// ---cut---
+import imgUrl from './img.svg?no-inline'
+```
+
 ### Importing Asset as String
 
 Assets can be imported as strings using the `?raw` suffix.
