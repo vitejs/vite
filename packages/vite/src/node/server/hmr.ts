@@ -4,6 +4,11 @@ import { EventEmitter } from 'node:events'
 import colors from 'picocolors'
 import type { CustomPayload, HotPayload, Update } from 'types/hmrPayload'
 import type { RollupError } from 'rollup'
+import type {
+  InvokeMethods,
+  InvokeResponseData,
+  InvokeSendData,
+} from '../../shared/invokeMethods'
 import { CLIENT_DIR } from '../constants'
 import { createDebugger, normalizePath } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
@@ -79,31 +84,35 @@ export type HMRBroadcasterClient = HotChannelClient
 export type HotChannelListener<T extends string = string> = (
   data: InferCustomEventPayload<T>,
   client: HotChannelClient,
-  invoke: CustomPayload['invoke'],
 ) => void
+
+export type HotChannelInvokeHandler = (
+  payload: HotPayload,
+) => Promise<{ r: any } | { e: any }>
 
 export interface HotChannel<Api = any> {
   /**
    * Broadcast events to all clients
    */
-  send(payload: HotPayload): void
+  send?(payload: HotPayload): void
   /**
    * Handle custom event emitted by `import.meta.hot.send`
    */
-  on<T extends string>(event: T, listener: HotChannelListener<T>): void
-  on(event: 'connection', listener: () => void): void
+  on?<T extends string>(event: T, listener: HotChannelListener<T>): void
+  on?(event: 'connection', listener: () => void): void
   /**
    * Unregister event listener
    */
-  off(event: string, listener: Function): void
+  off?(event: string, listener: Function): void
+  setInvokeHandler?(invokeHandler: HotChannelInvokeHandler | undefined): void
   /**
    * Start listening for messages
    */
-  listen(): void
+  listen?(): void
   /**
    * Disconnect all clients, called when server is closed or restarted.
    */
-  close(): Promise<unknown> | void
+  close?(): Promise<unknown> | void
 
   api?: Api
 }
@@ -125,11 +134,6 @@ export interface NormalizedHotChannelClient {
    * Send custom event
    */
   send(event: string, payload?: CustomPayload['data']): void
-  respond(
-    event: string,
-    invoke: 'send' | `send:${string}`,
-    payload: { /** resolved */ r: any } | { /** error */ e: any },
-  ): void
 }
 
 export interface NormalizedHotChannel<Api = any> {
@@ -149,7 +153,6 @@ export interface NormalizedHotChannel<Api = any> {
     listener: (
       data: InferCustomEventPayload<T>,
       client: NormalizedHotChannelClient,
-      invoke: 'send' | `send:${string}` | undefined,
     ) => void,
   ): void
   on(event: 'connection', listener: () => void): void
@@ -157,6 +160,8 @@ export interface NormalizedHotChannel<Api = any> {
    * Unregister event listener
    */
   off(event: string, listener: Function): void
+  /** @internal */
+  setInvokeHandler(invokeHandlers: InvokeMethods | undefined): void
   /**
    * Start listening for messages
    */
@@ -172,38 +177,34 @@ export interface NormalizedHotChannel<Api = any> {
 export const normalizeHotChannel = (
   channel: HotChannel,
 ): NormalizedHotChannel => {
+  if (!channel.on && !channel.setInvokeHandler) {
+    throw new Error(
+      'HotChannel must implement either `on` or `setInvokeHandler`',
+    )
+  }
+
   const normalizedListenerMap = new WeakMap<
-    (
-      data: any,
-      client: NormalizedHotChannelClient,
-      invoke: 'send' | `send:${string}` | undefined,
-    ) => void,
-    (
-      data: any,
-      client: HotChannelClient,
-      invoke: 'send' | `send:${string}` | undefined,
-    ) => void
+    (data: any, client: NormalizedHotChannelClient) => void,
+    (data: any, client: HotChannelClient) => void
   >()
+  let listenerForInvokeHandler:
+    | ((data: InvokeSendData, client: HotChannelClient) => void)
+    | undefined
 
   return {
     ...channel,
     on: (
       event: string,
-      fn: (
-        data: any,
-        client: NormalizedHotChannelClient,
-        invoke: 'send' | `send:${string}` | undefined,
-      ) => void,
+      fn: (data: any, client: NormalizedHotChannelClient) => void,
     ) => {
       if (event === 'connection') {
-        channel.on(event, fn as () => void)
+        channel.on?.(event, fn as () => void)
         return
       }
 
       const listenerWithNormalizedClient = (
         data: any,
         client: HotChannelClient,
-        invoke?: CustomPayload['invoke'],
       ) => {
         const normalizedClient: NormalizedHotChannelClient = {
           send: (...args) => {
@@ -219,37 +220,77 @@ export const normalizeHotChannel = (
             }
             client.send(payload)
           },
-          respond: (event, invoke, payload) => {
-            const resInvoke = invoke.replace('send', 'response') as
-              | 'response'
-              | `response:${string}`
-            client.send({
-              type: 'custom',
-              event,
-              invoke: resInvoke,
-              data: payload,
-            })
-          },
         }
-        fn(
-          data,
-          normalizedClient,
-          invoke as 'send' | `send:${string}` | undefined,
-        )
+        fn(data, normalizedClient)
       }
       normalizedListenerMap.set(fn, listenerWithNormalizedClient)
-      channel.on(event, listenerWithNormalizedClient)
+      channel.on?.(event, listenerWithNormalizedClient)
     },
     off: (event: string, fn: () => void) => {
       if (event === 'connection') {
-        channel.off(event, fn as () => void)
+        channel.off?.(event, fn as () => void)
         return
       }
 
       const normalizedListener = normalizedListenerMap.get(fn)
       if (normalizedListener) {
-        channel.off(event, normalizedListener)
+        channel.off?.(event, normalizedListener)
       }
+    },
+    setInvokeHandler(invokeHandlers) {
+      if (!invokeHandlers) {
+        channel.setInvokeHandler?.(invokeHandlers)
+        if (listenerForInvokeHandler) {
+          channel.off?.('vite:invoke', listenerForInvokeHandler)
+        }
+        return
+      }
+
+      const wrappedInvokeHandler = async <T extends keyof InvokeMethods>(
+        payload: HotPayload,
+      ) => {
+        // TODO: call custom event listeners when not invoke
+        const data: InvokeSendData<T> = (payload as CustomPayload).data
+        const { name, data: args } = data
+        try {
+          // @ts-expect-error `invokeHandlers[name]` is `InvokeMethods[T]`, so passing the args is fine
+          const result = await invokeHandlers[name](...args)
+          return { r: result }
+        } catch (error) {
+          return {
+            e: {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            },
+          }
+        }
+      }
+
+      if (channel.setInvokeHandler) {
+        channel.setInvokeHandler(wrappedInvokeHandler)
+        return
+      }
+
+      listenerForInvokeHandler = async (payload, client) => {
+        const responseInvoke = payload.id.replace('send', 'response') as
+          | 'response'
+          | `response:${string}`
+        client.send({
+          type: 'custom',
+          event: 'vite:invoke',
+          data: {
+            name: payload.name,
+            id: responseInvoke,
+            data: await wrappedInvokeHandler({
+              type: 'custom',
+              event: 'vite:invoke',
+              data: payload,
+            }),
+          } satisfies InvokeResponseData,
+        })
+      }
+      channel.on?.('vite:invoke', listenerForInvokeHandler)
     },
     send: (...args: any[]) => {
       let payload: HotPayload
@@ -262,7 +303,13 @@ export const normalizeHotChannel = (
       } else {
         payload = args[0]
       }
-      channel.send(payload)
+      channel.send?.(payload)
+    },
+    listen() {
+      return channel.listen?.()
+    },
+    close() {
+      return channel.close?.()
     },
   }
 }
@@ -1081,14 +1128,15 @@ export function createNoopHotChannel(): NormalizedHotChannel {
     send: noop,
     on: noop,
     off: noop,
+    setInvokeHandler: noop,
     listen: noop,
     close: noop,
   }
 }
 
 /** @deprecated use `environment.hot` instead */
-export interface HotBroadcaster extends HotChannel {
-  readonly channels: HotChannel[]
+export interface HotBroadcaster extends NormalizedHotChannel {
+  readonly channels: NormalizedHotChannel[]
   /**
    * A noop.
    * @deprecated
@@ -1099,12 +1147,15 @@ export interface HotBroadcaster extends HotChannel {
 /** @deprecated use `environment.hot` instead */
 export type HMRBroadcaster = HotBroadcaster
 
-export function createDeprecatedHotBroadcaster(ws: HotChannel): HotBroadcaster {
+export function createDeprecatedHotBroadcaster(
+  ws: NormalizedHotChannel,
+): HotBroadcaster {
   const broadcaster: HotBroadcaster = {
     on: ws.on,
     off: ws.off,
     listen: ws.listen,
     send: ws.send,
+    setInvokeHandler: ws.setInvokeHandler,
     get channels() {
       return [ws]
     },
@@ -1112,7 +1163,9 @@ export function createDeprecatedHotBroadcaster(ws: HotChannel): HotBroadcaster {
       return broadcaster
     },
     close() {
-      return Promise.all(broadcaster.channels.map((channel) => channel.close()))
+      return Promise.all(
+        broadcaster.channels.map((channel) => channel.close?.()),
+      )
     },
   }
   return broadcaster

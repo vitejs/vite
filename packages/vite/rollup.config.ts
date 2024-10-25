@@ -161,7 +161,7 @@ const moduleRunnerConfig = defineConfig({
   ],
   plugins: [
     ...createSharedNodePlugins({ esbuildOptions: { minifySyntax: true } }),
-    bundleSizeLimit(52),
+    bundleSizeLimit(53),
   ],
 })
 

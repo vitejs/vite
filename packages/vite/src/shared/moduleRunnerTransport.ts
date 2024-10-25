@@ -1,19 +1,11 @@
 import { nanoid } from 'nanoid/non-secure'
 import type { CustomPayload, HotPayload } from 'types/hmrPayload'
 import { promiseWithResolvers } from './utils'
-
-export interface FetchFunctionOptions {
-  cached?: boolean
-  startOffset?: number
-}
-
-export type InvokeData = {
-  'vite:fetchModule': [
-    id: string,
-    importer?: string,
-    options?: FetchFunctionOptions,
-  ]
-}
+import type {
+  InvokeMethods,
+  InvokeResponseData,
+  InvokeSendData,
+} from './invokeMethods'
 
 export type ModuleRunnerTransportHandlers = {
   onMessage: (data: HotPayload) => void
@@ -35,7 +27,10 @@ export interface ModuleRunnerTransport {
 
 type InvokeableModuleRunnerTransport = Omit<ModuleRunnerTransport, 'invoke'> &
   Required<Pick<ModuleRunnerTransport, 'send'>> & {
-    invoke(name: string, data: any): any
+    invoke<T extends keyof InvokeMethods>(
+      name: T,
+      data: Parameters<InvokeMethods[T]>,
+    ): Promise<ReturnType<Awaited<InvokeMethods[T]>>>
   }
 
 const createInvokeableTransport = (
@@ -51,9 +46,12 @@ const createInvokeableTransport = (
       async invoke(name, data) {
         const result = await transport.invoke!({
           type: 'custom',
-          event: name,
-          invoke: 'send',
-          data,
+          event: 'vite:invoke',
+          data: {
+            id: 'send',
+            name,
+            data,
+          } satisfies InvokeSendData,
         } satisfies CustomPayload)
         if ('e' in result) {
           throw result.e
@@ -83,29 +81,28 @@ const createInvokeableTransport = (
     ...transport,
     connect({ onMessage, onDisconnection }) {
       transport.connect!({
-        onMessage(data) {
-          if (
-            data.type === 'custom' &&
-            data.invoke &&
-            data.invoke.startsWith('response:')
-          ) {
-            const invokeId = data.invoke.slice('response:'.length)
-            const promise = rpcPromises.get(invokeId)
-            if (!promise) return
+        onMessage(payload) {
+          if (payload.type === 'custom' && payload.event === 'vite:invoke') {
+            const data = payload.data as InvokeResponseData
+            if (data.id.startsWith('response:')) {
+              const invokeId = data.id.slice('response:'.length)
+              const promise = rpcPromises.get(invokeId)
+              if (!promise) return
 
-            if (promise.timeoutId) clearTimeout(promise.timeoutId)
+              if (promise.timeoutId) clearTimeout(promise.timeoutId)
 
-            rpcPromises.delete(invokeId)
+              rpcPromises.delete(invokeId)
 
-            const { e, r } = data.data
-            if (e) {
-              promise.reject(e)
-            } else {
-              promise.resolve(r)
+              const { e, r } = data.data
+              if (e) {
+                promise.reject(e)
+              } else {
+                promise.resolve(r)
+              }
+              return
             }
-            return
           }
-          onMessage(data)
+          onMessage(payload)
         },
         onDisconnection,
       })
@@ -124,17 +121,24 @@ const createInvokeableTransport = (
     send(data) {
       transport.send!(data)
     },
-    async invoke(name, data) {
+    async invoke<T extends keyof InvokeMethods>(
+      name: T,
+      data: Parameters<InvokeMethods[T]>,
+    ) {
       const promiseId = nanoid()
       const wrappedData: CustomPayload = {
         type: 'custom',
-        event: name,
-        invoke: `send:${promiseId}`,
-        data,
+        event: 'vite:invoke',
+        data: {
+          name,
+          id: `send:${promiseId}`,
+          data,
+        } satisfies InvokeSendData,
       }
       transport.send!(wrappedData)
 
-      const { promise, resolve, reject } = promiseWithResolvers<any>()
+      const { promise, resolve, reject } =
+        promiseWithResolvers<ReturnType<Awaited<InvokeMethods[T]>>>()
       const timeout = transport.timeout ?? 60000
       let timeoutId
       if (timeout > 0) {
@@ -159,7 +163,10 @@ export interface NormalizedModuleRunnerTransport {
   connect?(onMessage?: (data: HotPayload) => void): Promise<void> | void
   disconnect?(): Promise<void> | void
   send(data: HotPayload): void
-  invoke<T extends keyof InvokeData>(name: T, data: InvokeData[T]): any
+  invoke<T extends keyof InvokeMethods>(
+    name: T,
+    data: Parameters<InvokeMethods[T]>,
+  ): Promise<ReturnType<Awaited<InvokeMethods[T]>>>
 }
 
 export const normalizeModuleRunnerTransport = (

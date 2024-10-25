@@ -5,9 +5,12 @@ import type {
   SSRImportMetadata,
 } from '../shared/ssrTransform'
 import type {
+  ExternalFetchResult,
   FetchFunctionOptions,
-  ModuleRunnerTransport,
-} from '../shared/moduleRunnerTransport'
+  FetchResult,
+  ViteFetchResult,
+} from '../shared/invokeMethods'
+import type { ModuleRunnerTransport } from '../shared/moduleRunnerTransport'
 import type { EvaluatedModuleNode, EvaluatedModules } from './evaluatedModules'
 import type {
   ssrDynamicImportKey,
@@ -59,59 +62,6 @@ export interface ModuleEvaluator {
    * @param file File URL to the external module
    */
   runExternalModule(file: string): Promise<any>
-}
-
-export type FetchResult =
-  | CachedFetchResult
-  | ExternalFetchResult
-  | ViteFetchResult
-
-export interface CachedFetchResult {
-  /**
-   * If module cached in the runner, we can just confirm
-   * it wasn't invalidated on the server side.
-   */
-  cache: true
-}
-
-export interface ExternalFetchResult {
-  /**
-   * The path to the externalized module starting with file://,
-   * by default this will be imported via a dynamic "import"
-   * instead of being transformed by vite and loaded with vite runner
-   */
-  externalize: string
-  /**
-   * Type of the module. Will be used to determine if import statement is correct.
-   * For example, if Vite needs to throw an error if variable is not actually exported
-   */
-  type: 'module' | 'commonjs' | 'builtin' | 'network'
-}
-
-export interface ViteFetchResult {
-  /**
-   * Code that will be evaluated by vite runner
-   * by default this will be wrapped in an async function
-   */
-  code: string
-  /**
-   * File path of the module on disk.
-   * This will be resolved as import.meta.url/filename
-   * Will be equal to `null` for virtual modules
-   */
-  file: string | null
-  /**
-   * Module ID in the server module graph.
-   */
-  id: string
-  /**
-   * Module URL used in the import.
-   */
-  url: string
-  /**
-   * Invalidate module on the client side.
-   */
-  invalidate: boolean
 }
 
 export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {

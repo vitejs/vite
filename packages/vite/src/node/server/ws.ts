@@ -102,6 +102,7 @@ export function createWebSocketServer(
       },
       on: noop as any as WebSocketServer['on'],
       off: noop as any as WebSocketServer['off'],
+      setInvokeHandler: noop,
       listen: noop,
       send: noop,
     }

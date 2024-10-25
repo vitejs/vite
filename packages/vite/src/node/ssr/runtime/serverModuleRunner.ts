@@ -10,7 +10,6 @@ import type { DevEnvironment } from '../../server/environment'
 import type {
   HotChannelClient,
   NormalizedServerHotChannel,
-  ServerHotChannel,
 } from '../../server/hmr'
 import type { ModuleRunnerTransport } from '../../../shared/moduleRunnerTransport'
 
@@ -74,7 +73,7 @@ function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
 }
 
 export const createServerModuleRunnerTransport = (options: {
-  channel: ServerHotChannel
+  channel: NormalizedServerHotChannel
 }): ModuleRunnerTransport => {
   const hmrClient: HotChannelClient = {
     send: (payload: HotPayload) => {
@@ -110,7 +109,6 @@ export const createServerModuleRunnerTransport = (options: {
         payload.event,
         payload.data,
         hmrClient,
-        payload.invoke,
       )
     },
   }

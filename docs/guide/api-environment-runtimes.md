@@ -309,12 +309,6 @@ function createWorkerEnvironment(name, config, context) {
         handlerToWorkerListener.delete(handler)
       }
     },
-    listen() {
-      /* noop */
-    },
-    close() {
-      /* noop */
-    },
   }
 
   return new DevEnvironment(name, config, {
@@ -335,7 +329,7 @@ await createServer({
 
 :::
 
-You can define your own function to communicate between the runner and the server. For example, if you connect to the environment via an HTTP request, you can call `fetch().json()` inside the `invoke` method:
+A different example using an HTTP request to communicate between the runner and the server:
 
 ```ts
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
@@ -359,19 +353,25 @@ export const runner = new ModuleRunner(
 await runner.import('/entry.js')
 ```
 
-In this case, the server that handles those HTTP requests can use `environment.getInvokeHandlers()` to process those requests:
+In this case, the hot channel only needs to implement the `setInvokeHandler`:
 
 ```ts
+let invokeHandler: HotChannelInvokeHandler | undefined
+
+const workerHotChannel = {
+  setInvokeHandler(_invokeHandler) {
+    invokeHandler = _invokeHandler
+  },
+}
+// pass workerHotChannel to environment
+
 server.onRequest((request: Request) => {
   const url = new URL(request.url)
   if (url.pathname === '/invoke') {
-    const payload = (await request.json()) as HotPayload
-    if (payload.type === 'custom') {
-      const handler = invokeHandlers[payload.event]
-      if (handler) {
-        const result = await handler(payload.data)
-        return new Response(JSON.stringify(result))
-      }
+    if (invokeHandler) {
+      const payload = (await request.json()) as HotPayload
+      const result = invokeHandler?.(payload)
+      return new Response(JSON.stringify(result))
     }
   }
   return Response.error()

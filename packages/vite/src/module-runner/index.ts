@@ -6,8 +6,8 @@ export { ESModulesEvaluator } from './esmEvaluator'
 
 export { createWebSocketModuleRunnerTransport } from '../shared/moduleRunnerTransport'
 
+export type { FetchFunctionOptions, FetchResult } from '../shared/invokeMethods'
 export type {
-  FetchFunctionOptions,
   ModuleRunnerTransportHandlers,
   ModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
@@ -15,7 +15,6 @@ export type { HMRLogger } from '../shared/hmr'
 export type {
   ModuleEvaluator,
   ModuleRunnerContext,
-  FetchResult,
   FetchFunction,
   ResolvedResult,
   SSRImportMetadata,

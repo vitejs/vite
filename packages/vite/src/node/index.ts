@@ -161,6 +161,7 @@ export type {
   ServerHMRChannel,
   HMRChannel,
   HotChannelListener,
+  HotChannelInvokeHandler,
   HotChannel,
   ServerHotChannel,
   HotChannelClient,

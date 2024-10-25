@@ -22,7 +22,7 @@ const createWorkerTransport = (w: Worker): HotChannel => {
               w.postMessage(payload)
             },
           }
-          handler(value.data, client, value.invoke)
+          handler(value.data, client)
         }
       }
       handlerToWorkerListener.set(handler, listener)
@@ -35,12 +35,6 @@ const createWorkerTransport = (w: Worker): HotChannel => {
         w.off('message', listener)
         handlerToWorkerListener.delete(handler)
       }
-    },
-    listen() {
-      /* noop */
-    },
-    close() {
-      /* noop */
     },
   }
 }

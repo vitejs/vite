@@ -22,7 +22,6 @@ import { resolveEnvironmentPlugins } from '../plugin'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
 import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
-import type { InvokeData } from '../../shared/moduleRunnerTransport'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel, NormalizedHotChannel } from './hmr'
@@ -133,15 +132,11 @@ export class DevEnvironment extends BaseEnvironment {
         : normalizeHotChannel(context.transport)
       : createNoopHotChannel()
 
-    for (const [event, handler] of Object.entries(this.getInvokeHandlers())) {
-      this.hot.on(event, async (data, client, invoke) => {
-        if (!invoke) {
-          throw new Error(`${event} should be invoked instead of a sent`)
-        }
-        const result = await handler(data)
-        client.respond(event, invoke, result)
-      })
-    }
+    this.hot.setInvokeHandler({
+      fetchModule: (id, importer, options) => {
+        return this.fetchModule(id, importer, options)
+      },
+    })
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {
@@ -195,32 +190,6 @@ export class DevEnvironment extends BaseEnvironment {
     this.hot.listen()
     await this.depsOptimizer?.init()
     warmupFiles(server, this)
-  }
-
-  getInvokeHandlers(): Record<
-    string,
-    (data: any) => Promise<{ r: any } | { e: any }>
-  > {
-    return {
-      'vite:fetchModule': async (data) => {
-        try {
-          const result = await this.fetchModule(...data)
-          return { r: result }
-        } catch (error) {
-          return {
-            e: {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
-            },
-          }
-        }
-      },
-    } satisfies {
-      [Event in keyof InvokeData]: (
-        data: InvokeData[Event],
-      ) => Promise<{ r: any } | { e: any }>
-    }
   }
 
   fetchModule(
