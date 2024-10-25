@@ -966,7 +966,7 @@ export async function resolveConfig(
   const defaultEnvironmentOptions = getDefaultEnvironmentOptions(config)
   // Some top level options only apply to the client environment
   const defaultClientEnvironmentOptions = {
-    defaultEnvironmentOptions,
+    ...defaultEnvironmentOptions,
     optimizeDeps: config.optimizeDeps,
   }
   for (const name of Object.keys(config.environments)) {
