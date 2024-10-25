@@ -373,10 +373,7 @@ export function resolvePlugin(
       }
 
       // file url as path
-      if (
-        currentEnvironmentOptions.consumer === 'server' &&
-        id.startsWith('file://')
-      ) {
+      if (id.startsWith('file://')) {
         id = fileURLToPath(id)
       }
 
