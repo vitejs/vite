@@ -530,6 +530,8 @@ importers:
         specifier: ^0.11.4
         version: 0.11.4
 
+  playground/client-reload: {}
+
   playground/config/packages/entry:
     dependencies:
       '@vite/test-config-plugin-module-condition':
