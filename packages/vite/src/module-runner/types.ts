@@ -4,7 +4,10 @@ import type {
   DefineImportMetadata,
   SSRImportMetadata,
 } from '../shared/ssrTransform'
-import type { ModuleRunnerTransport } from '../shared/moduleRunnerTransport'
+import type {
+  FetchFunctionOptions,
+  ModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
 import type { EvaluatedModuleNode, EvaluatedModules } from './evaluatedModules'
 import type {
   ssrDynamicImportKey,
@@ -121,11 +124,6 @@ export type FetchFunction = (
   importer?: string,
   options?: FetchFunctionOptions,
 ) => Promise<FetchResult>
-
-export interface FetchFunctionOptions {
-  cached?: boolean
-  startOffset?: number
-}
 
 export interface ModuleRunnerHmr {
   /**

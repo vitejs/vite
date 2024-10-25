@@ -7,6 +7,7 @@ export { ESModulesEvaluator } from './esmEvaluator'
 export { createWebSocketModuleRunnerTransport } from '../shared/moduleRunnerTransport'
 
 export type {
+  FetchFunctionOptions,
   ModuleRunnerTransportHandlers,
   ModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
@@ -16,7 +17,6 @@ export type {
   ModuleRunnerContext,
   FetchResult,
   FetchFunction,
-  FetchFunctionOptions,
   ResolvedResult,
   SSRImportMetadata,
   ModuleRunnerImportMeta,

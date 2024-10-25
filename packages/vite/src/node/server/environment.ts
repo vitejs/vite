@@ -22,6 +22,7 @@ import { resolveEnvironmentPlugins } from '../plugin'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
 import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
+import type { InvokeData } from '../../shared/moduleRunnerTransport'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel, NormalizedHotChannel } from './hmr'
@@ -209,9 +210,7 @@ export class DevEnvironment extends BaseEnvironment {
     return {
       'vite:fetchModule': async (data) => {
         try {
-          const result = await this.fetchModule(
-            ...(data as [string, string | undefined, any]),
-          )
+          const result = await this.fetchModule(...data)
           return { r: result }
         } catch (error) {
           return {
@@ -223,6 +222,10 @@ export class DevEnvironment extends BaseEnvironment {
           }
         }
       },
+    } satisfies {
+      [Event in keyof InvokeData]: (
+        data: InvokeData[Event],
+      ) => Promise<{ r: any } | { e: any }>
     }
   }
 

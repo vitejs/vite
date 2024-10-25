@@ -2,6 +2,19 @@ import { nanoid } from 'nanoid/non-secure'
 import type { CustomPayload, HotPayload } from 'types/hmrPayload'
 import { promiseWithResolvers } from './utils'
 
+export interface FetchFunctionOptions {
+  cached?: boolean
+  startOffset?: number
+}
+
+export type InvokeData = {
+  'vite:fetchModule': [
+    id: string,
+    importer?: string,
+    options?: FetchFunctionOptions,
+  ]
+}
+
 export type ModuleRunnerTransportHandlers = {
   onMessage: (data: HotPayload) => void
   onDisconnection: () => void
@@ -146,7 +159,7 @@ export interface NormalizedModuleRunnerTransport {
   connect?(onMessage?: (data: HotPayload) => void): Promise<void> | void
   disconnect?(): Promise<void> | void
   send(data: HotPayload): void
-  invoke(name: string, data: any): any
+  invoke<T extends keyof InvokeData>(name: T, data: InvokeData[T]): any
 }
 
 export const normalizeModuleRunnerTransport = (
