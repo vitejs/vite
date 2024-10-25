@@ -234,8 +234,7 @@ async function handleMessage(payload: HotPayload) {
         if (hasDocument) {
           console.log(`[vite] server connection lost. Polling for restart...`)
           const socket = payload.data.webSocket as WebSocket
-          const url = new URL(socket.url)
-          await waitForSuccessfulPing(socket.protocol, url.host)
+          await waitForSuccessfulPing(socket.url)
           location.reload()
         }
       }
@@ -313,16 +312,9 @@ function hasErrorOverlay() {
   return document.querySelectorAll(overlayId).length
 }
 
-async function waitForSuccessfulPing(
-  socketProtocol: string,
-  hostAndPath: string,
-  ms = 1000,
-) {
+async function waitForSuccessfulPing(socketUrl: string, ms = 1000) {
   async function ping() {
-    const socket = new WebSocket(
-      `${socketProtocol}://${hostAndPath}`,
-      'vite-ping',
-    )
+    const socket = new WebSocket(socketUrl, 'vite-ping')
     return new Promise<boolean>((resolve) => {
       function onOpen() {
         resolve(true)
