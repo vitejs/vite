@@ -867,8 +867,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      function extractCss() {
-        let css = ''
+      // extract as single css bundle if no codesplit
+      if (!config.build.cssCodeSplit && !hasEmitted) {
+        let extractedCss = ''
         const collected = new Set<OutputChunk>()
         // will be populated in order they are used by entry points
         const dynamicImports = new Set<string>()
@@ -884,7 +885,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             dynamicImports.add(importName),
           )
           // Then collect the styles of the current chunk (might overwrite some styles from previous imports)
-          css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          extractedCss += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
         }
 
         // The bundle is guaranteed to be deterministic, if not then we have a bug in rollup.
@@ -899,17 +900,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           collect(bundle[chunkName])
         }
 
-        return css
-      }
-      let extractedCss = !hasEmitted && extractCss()
-      if (extractedCss) {
-        hasEmitted = true
-        extractedCss = await finalizeCss(extractedCss, true, config)
-        this.emitFile({
-          name: cssBundleName,
-          type: 'asset',
-          source: extractedCss,
-        })
+        // Finally, if there's any extracted CSS, we emit the asset
+        if (extractedCss) {
+          hasEmitted = true
+          extractedCss = await finalizeCss(extractedCss, true, config)
+          this.emitFile({
+            name: cssBundleName,
+            type: 'asset',
+            source: extractedCss,
+          })
+        }
       }
 
       // remove empty css chunks and their imports
