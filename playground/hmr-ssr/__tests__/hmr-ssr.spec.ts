@@ -10,8 +10,12 @@ import {
   test,
   vi,
 } from 'vitest'
-import type { InlineConfig, ViteDevServer } from 'vite'
-import { createServer, createServerModuleRunner } from 'vite'
+import type { InlineConfig, RunnableDevEnvironment, ViteDevServer } from 'vite'
+import {
+  createRunnableDevEnvironment,
+  createServer,
+  createServerHotChannel,
+} from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
   addFile,
@@ -1036,6 +1040,10 @@ async function setupModuleRunner(
 
   globalThis.__HMR__ = initHmrState as any
 
+  const logger = new HMRMockLogger()
+  // @ts-expect-error not typed for HMR
+  globalThis.log = (...msg) => logger.log(...msg)
+
   server = await createServer({
     configFile: resolve(testDir, 'vite.config.ts'),
     root: testDir,
@@ -1053,6 +1061,18 @@ async function setupModuleRunner(
       },
       preTransformRequests: false,
     },
+    environments: {
+      ssr: {
+        dev: {
+          createEnvironment(name, config) {
+            return createRunnableDevEnvironment(name, config, {
+              runnerOptions: { hmr: { logger } },
+              hot: createServerHotChannel(),
+            })
+          },
+        },
+      },
+    },
     optimizeDeps: {
       disabled: true,
       noDiscovery: true,
@@ -1061,15 +1081,7 @@ async function setupModuleRunner(
     ...serverOptions,
   })
 
-  const logger = new HMRMockLogger()
-  // @ts-expect-error not typed for HMR
-  globalThis.log = (...msg) => logger.log(...msg)
-
-  runner = createServerModuleRunner(server.environments.ssr, {
-    hmr: {
-      logger,
-    },
-  })
+  runner = (server.environments.ssr as RunnableDevEnvironment).runner
 
   await waitForWatcher(server, waitForFile)
 

@@ -2,16 +2,15 @@ import fsp from 'node:fs/promises'
 import colors from 'picocolors'
 import type { DevEnvironment } from '..'
 import type { Plugin } from '../plugin'
-import { DEP_VERSION_RE } from '../constants'
+import {
+  DEP_VERSION_RE,
+  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
+  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
+  ERR_OUTDATED_OPTIMIZED_DEP,
+} from '../constants'
 import { createDebugger } from '../utils'
 import { optimizedDepInfoFromFile } from '../optimizer'
 import { cleanUrl } from '../../shared/utils'
-
-export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
-  'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
-export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
-export const ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR =
-  'ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR'
 
 const debug = createDebugger('vite:optimize-deps')
 

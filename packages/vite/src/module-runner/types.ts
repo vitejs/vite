@@ -5,7 +5,7 @@ import type {
   DefineImportMetadata,
   SSRImportMetadata,
 } from '../shared/ssrTransform'
-import type { ModuleCacheMap } from './moduleCache'
+import type { EvaluatedModuleNode, EvaluatedModules } from './evaluatedModules'
 import type {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -13,7 +13,6 @@ import type {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
-import type { DecodedMap } from './sourcemap/decoder'
 import type { InterceptorOptions } from './sourcemap/interceptor'
 import type { RunnerTransport } from './runnerTransport'
 
@@ -47,34 +46,25 @@ export interface ModuleRunnerContext {
 
 export interface ModuleEvaluator {
   /**
+   * Number of prefixed lines in the transformed code.
+   */
+  startOffset?: number
+  /**
    * Run code that was transformed by Vite.
    * @param context Function context
    * @param code Transformed code
-   * @param id ID that was used to fetch the module
+   * @param module The module node
    */
   runInlinedModule(
     context: ModuleRunnerContext,
     code: string,
-    id: string,
+    module: Readonly<EvaluatedModuleNode>,
   ): Promise<any>
   /**
    * Run externalized module.
    * @param file File URL to the external module
    */
   runExternalModule(file: string): Promise<any>
-}
-
-export interface ModuleCache {
-  promise?: Promise<any>
-  exports?: any
-  evaluated?: boolean
-  map?: DecodedMap
-  meta?: ResolvedResult
-  /**
-   * Module ids that imports this module
-   */
-  importers?: Set<string>
-  imports?: Set<string>
 }
 
 export type FetchResult =
@@ -101,7 +91,7 @@ export interface ExternalFetchResult {
    * Type of the module. Will be used to determine if import statement is correct.
    * For example, if Vite needs to throw an error if variable is not actually exported
    */
-  type?: 'module' | 'commonjs' | 'builtin' | 'network'
+  type: 'module' | 'commonjs' | 'builtin' | 'network'
 }
 
 export interface ViteFetchResult {
@@ -119,7 +109,11 @@ export interface ViteFetchResult {
   /**
    * Module ID in the server module graph.
    */
-  serverId: string
+  id: string
+  /**
+   * Module URL used in the import.
+   */
+  url: string
   /**
    * Invalidate module on the client side.
    */
@@ -128,6 +122,7 @@ export interface ViteFetchResult {
 
 export type ResolvedResult = (ExternalFetchResult | ViteFetchResult) & {
   url: string
+  id: string
 }
 
 export type FetchFunction = (
@@ -138,6 +133,7 @@ export type FetchFunction = (
 
 export interface FetchFunctionOptions {
   cached?: boolean
+  startOffset?: number
 }
 
 export interface ModuleRunnerHmr {
@@ -177,7 +173,7 @@ export interface ModuleRunnerOptions {
   /**
    * Custom module cache. If not provided, creates a separate module cache for each ModuleRunner instance.
    */
-  moduleCache?: ModuleCacheMap
+  evaluatedModules?: EvaluatedModules
 }
 
 export interface ImportMetaEnv {

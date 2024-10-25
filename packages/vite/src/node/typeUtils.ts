@@ -1,7 +1,7 @@
 import type {
   ObjectHook,
+  MinimalPluginContext as RollupMinimalPluginContext,
   Plugin as RollupPlugin,
-  PluginContext as RollupPluginContext,
 } from 'rollup'
 
 export type NonNeverKeys<T> = {
@@ -11,7 +11,7 @@ export type NonNeverKeys<T> = {
 export type GetHookContextMap<Plugin> = {
   [K in keyof Plugin]-?: Plugin[K] extends ObjectHook<infer T, unknown>
     ? T extends (this: infer This, ...args: any[]) => any
-      ? This extends RollupPluginContext
+      ? This extends RollupMinimalPluginContext
         ? This
         : never
       : never
