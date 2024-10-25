@@ -780,8 +780,6 @@ if (!isBuild) {
   })
 
   test('keep hmr reload after missing import on server startup', async () => {
-    await page.goto(viteTestUrl)
-
     const file = 'missing-import/a.js'
     const importCode = "import 'missing-modules'"
     const unImportCode = `// ${importCode}`
@@ -834,11 +832,16 @@ if (!isBuild) {
       ),
     )
     const originalChildFileCode = readFile(childFile)
-    removeFile(childFile)
-    await untilUpdated(
-      () => page.textContent('.file-delete-restore'),
-      'parent:not-child',
-    )
+    await Promise.all([
+      untilBrowserLogAfter(
+        () => removeFile(childFile),
+        `${childFile} is disposed`,
+      ),
+      untilUpdated(
+        () => page.textContent('.file-delete-restore'),
+        'parent:not-child',
+      ),
+    ])
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
@@ -909,6 +912,7 @@ if (!isBuild) {
   })
 
   test('deleted file should trigger dispose and prune callbacks', async () => {
+    browserLogs.length = 0
     await page.goto(viteTestUrl)
 
     const parentFile = 'file-delete-restore/parent.js'
