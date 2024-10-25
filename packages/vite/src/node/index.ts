@@ -128,6 +128,9 @@ export type {
   CSSModulesOptions,
   PreprocessCSSResult,
   ResolvedCSSOptions,
+  SassPreprocessorOptions,
+  LessPreprocessorOptions,
+  StylusPreprocessorOptions,
 } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
