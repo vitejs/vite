@@ -969,11 +969,23 @@ export async function resolveConfig(
     ...defaultEnvironmentOptions,
     optimizeDeps: config.optimizeDeps,
   }
+  const defaultNonClientEnvironmentOptions = {
+    ...defaultEnvironmentOptions,
+    dev: {
+      ...defaultEnvironmentOptions.dev,
+      createEnvironment: undefined,
+    },
+    build: {
+      ...defaultEnvironmentOptions.build,
+      createEnvironment: undefined,
+    },
+  }
+
   for (const name of Object.keys(config.environments)) {
     config.environments[name] = mergeConfig(
       name === 'client'
         ? defaultClientEnvironmentOptions
-        : defaultEnvironmentOptions,
+        : defaultNonClientEnvironmentOptions,
       config.environments[name],
     )
   }
