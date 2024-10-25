@@ -1428,7 +1428,7 @@ export function resolveBaseUrl(
 
   // parse base when command is serve or base is not External URL
   if (!isBuild || !isExternal) {
-    base = new URL(base, 'http://vite.dev').pathname
+    base = new URL(base, 'https://vite.dev').pathname
     // ensure leading slash
     if (base[0] !== '/') {
       base = '/' + base
