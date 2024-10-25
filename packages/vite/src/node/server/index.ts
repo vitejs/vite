@@ -120,7 +120,7 @@ export interface ServerOptions extends CommonServerOptions {
   }
   /**
    * chokidar watch options or null to disable FS watching
-   * https://github.com/paulmillr/chokidar#api
+   * https://github.com/paulmillr/chokidar#getting-started
    */
   watch?: WatchOptions | null
   /**
@@ -254,8 +254,9 @@ export interface ViteDevServer {
    */
   httpServer: HttpServer | null
   /**
-   * chokidar watcher instance
-   * https://github.com/paulmillr/chokidar#api
+   * Chokidar watcher instance. If `config.server.watch` is set to `null`,
+   * it will not watch any files and calling `add` will have no effect.
+   * https://github.com/paulmillr/chokidar#getting-started
    */
   watcher: FSWatcher
   /**
