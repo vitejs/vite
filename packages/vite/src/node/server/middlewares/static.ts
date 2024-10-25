@@ -8,6 +8,7 @@ import type { ViteDevServer } from '../../server'
 import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
 import {
+  VOLUME_RE,
   fsPathFromId,
   fsPathFromUrl,
   isFileReadable,
@@ -22,6 +23,7 @@ import {
 import {
   cleanUrl,
   isWindows,
+  newlineRegEx,
   slash,
   withTrailingSlash,
 } from '../../../shared/utils'
@@ -56,6 +58,7 @@ const sirvOptions = ({
   }
 }
 
+const leadingSlashesRE = /^\/{2,}/
 export function servePublicMiddleware(
   server: ViteDevServer,
   publicFiles?: Set<string>,
@@ -124,7 +127,10 @@ export function serveStaticMiddleware(
       return next()
     }
 
-    const url = new URL(req.url!.replace(/^\/{2,}/, '/'), 'http://example.com')
+    const url = new URL(
+      req.url!.replace(leadingSlashesRE, '/'),
+      'http://example.com',
+    )
     const pathname = decodeURI(url.pathname)
 
     // apply aliases to static requests as well
@@ -177,7 +183,10 @@ export function serveRawFsMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    const url = new URL(req.url!.replace(/^\/{2,}/, '/'), 'http://example.com')
+    const url = new URL(
+      req.url!.replace(leadingSlashesRE, '/'),
+      'http://example.com',
+    )
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
@@ -197,7 +206,7 @@ export function serveRawFsMiddleware(
       }
 
       let newPathname = pathname.slice(FS_PREFIX.length)
-      if (isWindows) newPathname = newPathname.replace(/^[A-Z]:/i, '')
+      if (isWindows) newPathname = newPathname.replace(VOLUME_RE, '')
 
       url.pathname = encodeURI(newPathname)
       req.url = url.href.slice(url.origin.length)
@@ -294,7 +303,7 @@ function renderRestrictedErrorHTML(msg: string): string {
   return html`
     <body>
       <h1>403 Restricted</h1>
-      <p>${escapeHtml(msg).replace(/\n/g, '<br/>')}</p>
+      <p>${escapeHtml(msg).replace(newlineRegEx, '<br/>')}</p>
       <style>
         body {
           padding: 1em 2em;

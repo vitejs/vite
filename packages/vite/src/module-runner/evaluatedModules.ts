@@ -125,7 +125,10 @@ export class EvaluatedModules {
 
 // unique id that is not available as "$bare_import" like "test"
 const prefixedBuiltins = new Set(['node:test', 'node:sqlite'])
-
+const fsRE = /^\/@fs\//
+const nodeRE = /^node:/
+const leadingSlashRE = /^\/+/
+const fileRE = /^file:\//
 // transform file url to id
 // virtual:custom -> virtual:custom
 // \0custom -> \0custom
@@ -138,10 +141,10 @@ function normalizeModuleId(file: string): string {
 
   // unix style, but Windows path still starts with the drive letter to check the root
   const unixFile = slash(file)
-    .replace(/^\/@fs\//, isWindows ? '' : '/')
-    .replace(/^node:/, '')
-    .replace(/^\/+/, '/')
+    .replace(fsRE, isWindows ? '' : '/')
+    .replace(nodeRE, '')
+    .replace(leadingSlashRE, '/')
 
   // if it's not in the root, keep it as a path, not a URL
-  return unixFile.replace(/^file:\//, '/')
+  return unixFile.replace(fileRE, '/')
 }

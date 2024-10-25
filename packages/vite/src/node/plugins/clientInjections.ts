@@ -15,7 +15,7 @@ const normalizedEnvEntry = normalizePath(ENV_ENTRY)
  */
 export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
   let injectConfigValues: (code: string) => string
-
+  const baseRE = /__BASE__/g
   return {
     name: 'vite:client-inject',
     async buildStart() {
@@ -76,7 +76,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       injectConfigValues = (code: string) => {
         return code
           .replace(`__MODE__`, modeReplacement)
-          .replace(/__BASE__/g, baseReplacement)
+          .replace(baseRE, baseReplacement)
           .replace(`__DEFINES__`, definesReplacement)
           .replace(`__SERVER_HOST__`, serverHostReplacement)
           .replace(`__HMR_PROTOCOL__`, hmrProtocolReplacement)

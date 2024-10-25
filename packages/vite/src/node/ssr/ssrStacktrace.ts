@@ -25,11 +25,12 @@ export function ssrRewriteStacktrace(
   moduleGraph: EnvironmentModuleGraph,
 ): string {
   calculateOffsetOnce()
+  const ssrStacktraceRE = /^ {4}at (?:(\S.*?)\s\()?(.+?):(\d+)(?::(\d+))?\)?/
   return stack
     .split('\n')
     .map((line) => {
       return line.replace(
-        /^ {4}at (?:(\S.*?)\s\()?(.+?):(\d+)(?::(\d+))?\)?/,
+        ssrStacktraceRE,
         (input, varName, id, line, column) => {
           if (!id) return input
 

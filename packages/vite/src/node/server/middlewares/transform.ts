@@ -85,6 +85,8 @@ export function transformMiddleware(
   const { root, publicDir } = server.config
   const publicDirInRoot = publicDir.startsWith(withTrailingSlash(root))
   const publicPath = `${publicDir.slice(root.length)}/`
+  const mapRE = /\.map($|\?)/
+  const trailingMapRE = /\.map$/
 
   return async function viteTransformMiddleware(req, res, next) {
     const environment = server.environments.client
@@ -137,7 +139,7 @@ export function transformMiddleware(
             // Send back an empty source map so the browser doesn't issue warnings
             const dummySourceMap = {
               version: 3,
-              file: sourcemapPath.replace(/\.map$/, ''),
+              file: sourcemapPath.replace(trailingMapRE, ''),
               sources: [],
               sourcesContent: [],
               names: [],
@@ -149,7 +151,7 @@ export function transformMiddleware(
             })
           }
         } else {
-          const originalUrl = url.replace(/\.map($|\?)/, '$1')
+          const originalUrl = url.replace(mapRE, '$1')
           const map = (
             await environment.moduleGraph.getModuleByUrl(originalUrl)
           )?.transformResult?.map

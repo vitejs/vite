@@ -21,6 +21,7 @@ import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
 import {
   cleanUrl,
+  hashRE,
   isWindows,
   slash,
   splitFileAndPostfix,
@@ -62,16 +63,15 @@ export const createFilter = _createFilter as (
 ) => (id: string | unknown) => boolean
 
 const replaceSlashOrColonRE = /[/:]/g
-const replaceDotRE = /\./g
+export const replaceDotRE = /\./g
 const replaceNestedIdRE = /\s*>\s*/g
-const replaceHashRE = /#/g
 export const flattenId = (id: string): string => {
   const flatId = limitFlattenIdLength(
     id
       .replace(replaceSlashOrColonRE, '_')
       .replace(replaceDotRE, '__')
       .replace(replaceNestedIdRE, '___')
-      .replace(replaceHashRE, '____'),
+      .replace(hashRE, '____'),
   )
   return flatId
 }
@@ -212,7 +212,7 @@ export const urlCanParse =
 
 export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 
-const VOLUME_RE = /^[A-Z]:/i
+export const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
   return path.posix.normalize(isWindows ? slash(id) : id)
@@ -407,13 +407,15 @@ export function lookupFile(
   }
 }
 
+const moduleRE = /\.m[jt]s$/
+const commonRE = /\.c[jt]s$/
 export function isFilePathESM(
   filePath: string,
   packageCache?: PackageCache,
 ): boolean {
-  if (/\.m[jt]s$/.test(filePath)) {
+  if (moduleRE.test(filePath)) {
     return true
-  } else if (/\.c[jt]s$/.test(filePath)) {
+  } else if (commonRE.test(filePath)) {
     return false
   } else {
     // check package.json for type: "module"
@@ -739,14 +741,15 @@ function joinSrcset(ret: ImageCandidate[]) {
 const imageCandidateRegex =
   /(?:^|\s)(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
-
+const trailingSpaceRE = /,\s+/
+const singleSplitRE = /\r?\n/
 export function parseSrcset(string: string): ImageCandidate[] {
   const matches = string
     .trim()
     .replace(escapedSpaceCharacters, ' ')
-    .replace(/\r?\n/, '')
-    .replace(/,\s+/, ', ')
-    .replaceAll(/\s+/g, ' ')
+    .replace(singleSplitRE, '')
+    .replace(trailingSpaceRE, ', ')
+    .replaceAll(spaceRE, ' ')
     .matchAll(imageCandidateRegex)
   return Array.from(matches, ({ groups }) => ({
     url: groups?.url?.trim() ?? '',
@@ -1448,3 +1451,7 @@ export const teardownSIGTERMListener = (
     process.stdin.off('end', callback)
   }
 }
+
+export const anyRE = /.*/
+export const spaceRE = /\s+/g
+export const windowsVolumeRE = /^[\w@][^:]/

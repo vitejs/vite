@@ -21,6 +21,7 @@ import {
   rawRE,
   removeLeadingSlash,
   removeUrlQuery,
+  spaceRE,
   urlRE,
 } from '../utils'
 import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
@@ -443,7 +444,7 @@ const shouldInline = (
 }
 
 const nestedQuotesRE = /"[^"']*'[^"]*"|'[^'"]*"[^']*'/
-
+const chevronRE = />\s+</g
 // Inspired by https://github.com/iconify/iconify/blob/main/packages/utils/src/svg/url.ts
 function svgToDataURL(content: Buffer): string {
   const stringContent = content.toString()
@@ -460,7 +461,7 @@ function svgToDataURL(content: Buffer): string {
       'data:image/svg+xml,' +
       stringContent
         .trim()
-        .replaceAll(/>\s+</g, '><')
+        .replaceAll(chevronRE, '><')
         .replaceAll('"', "'")
         .replaceAll('%', '%25')
         .replaceAll('#', '%23')
@@ -469,7 +470,7 @@ function svgToDataURL(content: Buffer): string {
         // Spaces are not valid in srcset it has some use cases
         // it can make the uncompressed URI slightly higher than base64, but will compress way better
         // https://github.com/vitejs/vite/pull/14643#issuecomment-1766288673
-        .replaceAll(/\s+/g, '%20')
+        .replaceAll(spaceRE, '%20')
     )
   }
 }

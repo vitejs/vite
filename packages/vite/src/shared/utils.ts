@@ -23,12 +23,12 @@ export function unwrapId(id: string): string {
     : id
 }
 
-const windowsSlashRE = /\\/g
+export const backslashRE = /\\/g
 export function slash(p: string): string {
-  return p.replace(windowsSlashRE, '/')
+  return p.replace(backslashRE, '/')
 }
 
-const postfixRE = /[?#].*$/
+export const postfixRE = /[?#].*$/
 export function cleanUrl(url: string): string {
   return url.replace(postfixRE, '')
 }
@@ -62,3 +62,6 @@ export const asyncFunctionDeclarationPaddingLineCount =
     const source = new AsyncFunction('a', 'b', body).toString()
     return source.slice(0, source.indexOf(body)).split('\n').length - 1
   })()
+
+export const newlineRegEx = /\n/g
+export const hashRE = /#/g

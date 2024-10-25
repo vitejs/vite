@@ -65,6 +65,7 @@ export function errorMiddleware(
   server: ViteDevServer,
   allowNext = false,
 ): Connect.ErrorHandleFunction {
+  const arrowLeftRE = /</g
   // note the 4 args must be kept for connect to treat this as error middleware
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteErrorMiddleware(err: RollupError, _req, res, next) {
@@ -82,7 +83,7 @@ export function errorMiddleware(
             <title>Error</title>
             <script type="module">
               const error = ${JSON.stringify(prepareError(err)).replace(
-                /</g,
+                arrowLeftRE,
                 '\\u003c',
               )}
               try {

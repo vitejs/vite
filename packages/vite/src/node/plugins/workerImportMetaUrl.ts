@@ -54,6 +54,8 @@ function parseWorkerOptions(
   return opts
 }
 
+const trailingCommaRE = /\}[\s\S]*,/g
+
 function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   const commaIndex = clean.indexOf(',', i)
   if (commaIndex === -1) {
@@ -69,7 +71,7 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   // need to find in comment code
   const workerOptString = raw
     .substring(commaIndex + 1, endIndex)
-    .replace(/\}[\s\S]*,/g, '}') // strip trailing comma for parsing
+    .replace(trailingCommaRE, '}') // strip trailing comma for parsing
 
   const hasViteIgnore = hasViteIgnoreRE.test(workerOptString)
   if (hasViteIgnore) {
@@ -116,7 +118,8 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     packageCache: config.packageCache,
     asSrc: true,
   }
-
+  const workerImportMetaUrlRE =
+    /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
   return {
     name: 'vite:worker-import-meta-url',
 
@@ -133,8 +136,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       ) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
-        const workerImportMetaUrlRE =
-          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
 
         let match: RegExpExecArray | null
         while ((match = workerImportMetaUrlRE.exec(cleanString))) {
