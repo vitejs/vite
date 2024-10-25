@@ -7,6 +7,8 @@ settings:
 overrides:
   vite: workspace:*
 
+packageExtensionsChecksum: 632c5477927702fb9badd3e595784820
+
 patchedDependencies:
   acorn@8.13.0:
     hash: alg6ojsgkjjglvaj7cjzzaqhim
@@ -390,7 +392,7 @@ importers:
         version: 1.80.3
       sass-embedded:
         specifier: ^1.80.3
-        version: 1.80.3
+        version: 1.80.3(source-map-js@1.2.1)
       sirv:
         specifier: ^3.0.0
         version: 3.0.0(patch_hash=plxlsciwiebyhal5sm4vtpekka)
@@ -6416,6 +6418,11 @@ packages:
     resolution: {integrity: sha512-aTxTl4ToSAWg7ILFgAe+kMenj+zNlwHmHK/ZNPrOM8+HTef1Q6zuxolptYLijmHdZHKSMOkWYHgo5MMN6+GIyg==}
     engines: {node: '>=16.0.0'}
     hasBin: true
+    peerDependencies:
+      source-map-js: '*'
+    peerDependenciesMeta:
+      source-map-js:
+        optional: true
 
   sass@1.80.3:
     resolution: {integrity: sha512-ptDWyVmDMVielpz/oWy3YP3nfs7LpJTHIJZboMVs8GEC9eUmtZTZhMHlTW98wY4aEorDfjN38+Wr/XjskFWcfA==}
@@ -12124,7 +12131,7 @@ snapshots:
   sass-embedded-win32-x64@1.80.3:
     optional: true
 
-  sass-embedded@1.80.3:
+  sass-embedded@1.80.3(source-map-js@1.2.1):
     dependencies:
       '@bufbuild/protobuf': 2.1.0
       buffer-builder: 0.2.0
@@ -12154,6 +12161,7 @@ snapshots:
       sass-embedded-win32-arm64: 1.80.3
       sass-embedded-win32-ia32: 1.80.3
       sass-embedded-win32-x64: 1.80.3
+      source-map-js: 1.2.1
 
   sass@1.80.3:
     dependencies:

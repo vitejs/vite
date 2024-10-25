@@ -116,6 +116,18 @@
         "postcss",
         "search-insights"
       ]
+    },
+    "packageExtensions": {
+      "sass-embedded": {
+        "peerDependencies": {
+          "source-map-js": "*"
+        },
+        "peerDependenciesMeta": {
+          "source-map-js": {
+            "optional": true
+          }
+        }
+      }
     }
   },
   "stackblitz": {
