@@ -284,8 +284,8 @@ export interface ViteDevServer {
    */
   moduleGraph: ModuleGraph
   /**
-   * The resolved urls Vite prints on the CLI. null in middleware mode or
-   * before `server.listen` is called.
+   * The resolved urls Vite prints on the CLI (URL-encoded). Returns `null`
+   * in middleware mode or if the server is not listening on any port.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -542,7 +542,13 @@ export async function _createServer(
       url: string,
       originalCode = code,
     ) {
-      return ssrTransform(code, inMap, url, originalCode, server.config)
+      return ssrTransform(code, inMap, url, originalCode, {
+        json: {
+          stringify:
+            config.json?.stringify === true &&
+            config.json.namedExports !== true,
+        },
+      })
     },
     // environment.transformRequest and .warmupRequest don't take an options param for now,
     // so the logic and error handling needs to be duplicated here.
@@ -1035,7 +1041,12 @@ export function resolveServerOptions(
     middlewareMode: raw?.middlewareMode || false,
   }
   let allowDirs = server.fs?.allow
-  const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
+  const deny = server.fs?.deny || [
+    '.env',
+    '.env.*',
+    '*.{crt,pem}',
+    '**/.git/**',
+  ]
 
   if (!allowDirs) {
     allowDirs = [searchForWorkspaceRoot(root)]
