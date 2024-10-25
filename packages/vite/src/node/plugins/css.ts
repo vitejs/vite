@@ -1979,8 +1979,8 @@ type PreprocessorAdditionalData =
 type SassPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
 } & (
-  | ({ api?: 'legacy' } & SassLegacyPreprocessBaseOptions)
-  | ({ api: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
+  | ({ api: 'legacy' } & SassLegacyPreprocessBaseOptions)
+  | ({ api?: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
 )
 
 type LessPreprocessorOptions = {
@@ -3001,18 +3001,11 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
 
   const sassProcess: StylePreprocessor<SassStylePreprocessorInternalOptions>['process'] =
     (environment, source, root, options, resolvers) => {
-      let opts: SassStylePreprocessorInternalOptions
-      if (options.api === 'modern' || options.api === 'modern-compiler') {
-        opts = { ...options, syntax: 'indented' as const }
+      const opts: SassStylePreprocessorInternalOptions = { ...options }
+      if (opts.api === 'legacy') {
+        opts.indentedSyntax = true
       } else {
-        const narrowedOptions =
-          options as SassStylePreprocessorInternalOptions & {
-            api?: 'legacy'
-          }
-        opts = {
-          ...narrowedOptions,
-          indentedSyntax: true,
-        }
+        opts.syntax = 'indented'
       }
       return scss.process(environment, source, root, opts, resolvers)
     }
