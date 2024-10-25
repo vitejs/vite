@@ -365,7 +365,7 @@ In this case, the server that handles those HTTP requests can use `environment.g
 server.onRequest((request: Request) => {
   const url = new URL(request.url)
   if (url.pathname === '/invoke') {
-    const payload = (await request.json()) as CustomPayload
+    const payload = (await request.json()) as HotPayload
     if (payload.type === 'custom') {
       const handler = invokeHandlers[payload.event]
       if (handler) {
