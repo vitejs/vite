@@ -473,7 +473,7 @@ export async function transformGlobImport(
           })
 
           files.forEach((i) => matchedFiles.add(i))
-           
+
           const originalLineBreakCount =
             code.slice(start, end).match(newlineRegEx)?.length ?? 0
           const lineBreaks =
