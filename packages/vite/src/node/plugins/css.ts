@@ -32,7 +32,7 @@ import type {
   SassLegacyPreprocessBaseOptions,
   SassModernPreprocessBaseOptions,
   StylusPreprocessorBaseOptions,
-} from 'types/cssPreprocessorOptions'
+} from 'types/internal/cssPreprocessorOptions'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -1976,18 +1976,18 @@ type PreprocessorAdditionalData =
       | PreprocessorAdditionalDataResult
       | Promise<PreprocessorAdditionalDataResult>)
 
-type SassPreprocessorOptions = {
+export type SassPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
 } & (
   | ({ api: 'legacy' } & SassLegacyPreprocessBaseOptions)
   | ({ api?: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
 )
 
-type LessPreprocessorOptions = {
+export type LessPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
 } & LessPreprocessorBaseOptions
 
-type StylusPreprocessorOptions = {
+export type StylusPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
 } & StylusPreprocessorBaseOptions
 
