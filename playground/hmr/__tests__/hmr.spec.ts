@@ -780,6 +780,8 @@ if (!isBuild) {
   })
 
   test('keep hmr reload after missing import on server startup', async () => {
+    await page.goto(viteTestUrl)
+
     const file = 'missing-import/a.js'
     const importCode = "import 'missing-modules'"
     const unImportCode = `// ${importCode}`

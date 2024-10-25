@@ -53,9 +53,10 @@ export function resolveChokidarOptions(
   resolvedOutDirs: Set<string>,
   emptyOutDir: boolean,
   cacheDir: string,
+  isRollupChokidar3 = false,
 ): WatchOptions {
   const { ignored: ignoredList, ...otherOptions } = options ?? {}
-  const ignored: WatchOptions['ignored'] = [
+  let ignored: WatchOptions['ignored'] = [
     '**/.git/**',
     '**/node_modules/**',
     '**/test-results/**', // Playwright
@@ -67,23 +68,26 @@ export function resolveChokidarOptions(
       ...[...resolvedOutDirs].map((outDir) => escapePath(outDir) + '/**'),
     )
   }
-  // If watch options is turned off, ignore watching anything, which essentially makes it noop
-  // eslint-disable-next-line eqeqeq -- null means disabled
-  if (options === null) {
-    ignored.push(() => true)
-  }
-  // Convert strings to picomatch pattern functions for compat
-  const resolvedIgnored: WatchOptions['ignored'] = ignored.map((pattern) => {
-    if (typeof pattern === 'string') {
-      const matcher = picomatch(pattern)
-      return (path: string) => matcher(path)
-    } else {
-      return pattern
+
+  if (!isRollupChokidar3) {
+    // If watch options is turned off, ignore watching anything, which essentially makes it noop
+    // eslint-disable-next-line eqeqeq -- null means disabled
+    if (options === null) {
+      ignored.push(() => true)
     }
-  })
+    // Convert strings to picomatch pattern functions for compat
+    ignored = ignored.map((pattern) => {
+      if (typeof pattern === 'string') {
+        const matcher = picomatch(pattern)
+        return (path: string) => matcher(path)
+      } else {
+        return pattern
+      }
+    })
+  }
 
   const resolvedWatchOptions: WatchOptions = {
-    ignored: resolvedIgnored,
+    ignored,
     ignoreInitial: true,
     ignorePermissionErrors: true,
     ...otherOptions,
