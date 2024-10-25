@@ -345,7 +345,7 @@ export const runner = new ModuleRunner(
     root: fileURLToPath(new URL('./', import.meta.url)),
     transport: {
       async invoke(data) {
-        const response = await fetch(`http://my-vite-server/fetch`, {
+        const response = await fetch(`http://my-vite-server/invoke`, {
           method: 'POST',
           body: JSON.stringify(data),
         })
@@ -363,12 +363,15 @@ In this case, the server that handles those HTTP requests can use `environment.g
 
 ```ts
 server.onRequest((request: Request) => {
-  const payload = (await request.json()) as CustomPayload
-  if (payload.type === 'custom') {
-    const handler = invokeHandlers[payload.event]
-    if (handler) {
-      const result = await handler(payload.data)
-      return new Response(JSON.stringify(result))
+  const url = new URL(request.url)
+  if (url.pathname === '/invoke') {
+    const payload = (await request.json()) as CustomPayload
+    if (payload.type === 'custom') {
+      const handler = invokeHandlers[payload.event]
+      if (handler) {
+        const result = await handler(payload.data)
+        return new Response(JSON.stringify(result))
+      }
     }
   }
   return Response.error()
