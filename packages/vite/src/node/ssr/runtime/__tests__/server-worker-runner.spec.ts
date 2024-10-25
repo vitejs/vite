@@ -15,7 +15,7 @@ const createWorkerTransport = (w: Worker): HotChannel => {
     on: (event: string, handler: HotChannelListener) => {
       if (event === 'connection') return
 
-      const listener = (value: any) => {
+      const listener = (value: HotPayload) => {
         if (value.type === 'custom' && value.event === event) {
           const client = {
             send(payload: HotPayload) {

@@ -79,7 +79,7 @@ export type HMRBroadcasterClient = HotChannelClient
 export type HotChannelListener<T extends string = string> = (
   data: InferCustomEventPayload<T>,
   client: HotChannelClient,
-  invoke: 'send' | `send:${string}` | undefined,
+  invoke: CustomPayload['invoke'],
 ) => void
 
 export interface HotChannel<Api = any> {
@@ -203,7 +203,7 @@ export const normalizeHotChannel = (
       const listenerWithNormalizedClient = (
         data: any,
         client: HotChannelClient,
-        invoke?: 'send' | `send:${string}`,
+        invoke?: CustomPayload['invoke'],
       ) => {
         const normalizedClient: NormalizedHotChannelClient = {
           send: (...args) => {
@@ -231,7 +231,11 @@ export const normalizeHotChannel = (
             })
           },
         }
-        fn(data, normalizedClient, invoke)
+        fn(
+          data,
+          normalizedClient,
+          invoke as 'send' | `send:${string}` | undefined,
+        )
       }
       normalizedListenerMap.set(fn, listenerWithNormalizedClient)
       channel.on(event, listenerWithNormalizedClient)
