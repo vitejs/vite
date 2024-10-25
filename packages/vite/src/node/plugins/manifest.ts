@@ -57,7 +57,10 @@ export function manifestPlugin(): Plugin {
       const buildOptions = this.environment.config.build
 
       function getChunkName(chunk: OutputChunk) {
-        return getChunkOriginalFileName(chunk, root, format)
+        return (
+          getChunkOriginalFileName(chunk, root, format) ??
+          `_` + path.basename(chunk.fileName)
+        )
       }
 
       function getInternalImports(imports: string[]): string[] {
@@ -150,7 +153,7 @@ export function manifestPlugin(): Plugin {
           const src =
             chunk.originalFileNames.length > 0
               ? chunk.originalFileNames[0]
-              : chunk.names[0]
+              : '_' + path.basename(chunk.fileName)
           const isEntry = entryCssAssetFileNames.has(chunk.fileName)
           const asset = createAsset(chunk, src, isEntry)
 
@@ -189,7 +192,7 @@ export function getChunkOriginalFileName(
   chunk: OutputChunk | RenderedChunk,
   root: string,
   format: InternalModuleFormat,
-): string {
+): string | undefined {
   if (chunk.facadeModuleId) {
     let name = normalizePath(path.relative(root, chunk.facadeModuleId))
     if (format === 'system' && !chunk.name.includes('-legacy')) {
@@ -198,7 +201,5 @@ export function getChunkOriginalFileName(
       name = name.slice(0, endPos) + `-legacy` + ext
     }
     return name.replace(/\0/g, '')
-  } else {
-    return `_` + path.basename(chunk.fileName)
   }
 }
