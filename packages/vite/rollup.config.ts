@@ -99,6 +99,10 @@ const nodeConfig = defineConfig({
     'fsevents',
     'lightningcss',
     'rollup/parseAst',
+    // postcss-load-config
+    'yaml',
+    'jiti',
+    /^tsx(\/|$)/,
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [
@@ -126,21 +130,7 @@ const nodeConfig = defineConfig({
           replacement: ': __require;',
         },
       ],
-      'postcss-load-config/src/index.js': [
-        {
-          src: `await import('yaml')`,
-          replacement: `__require('yaml')`,
-        },
-      ],
       'postcss-load-config/src/req.js': [
-        {
-          src: `(await import('jiti')).default`,
-          replacement: `__require('jiti')`,
-        },
-        {
-          src: `await import('tsx/cjs/api')`,
-          replacement: `__require('tsx/cjs/api')`,
-        },
         {
           src: "const { pathToFileURL } = require('node:url')",
           replacement: `const { fileURLToPath, pathToFileURL } = require('node:url')`,
