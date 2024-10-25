@@ -10,10 +10,7 @@ Unless noted, the options in this section are only applied to build.
 
 Browser compatibility target for the final bundle. The default value is a Vite special value, `'modules'`, which targets browsers with [native ES Modules](https://caniuse.com/es6-module), [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import), and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta) support. Vite will replace `'modules'` to `['es2020', 'edge88', 'firefox78', 'chrome87', 'safari14']`
 
-Another special value is `'esnext'` - which assumes native dynamic imports support and will transpile as little as possible:
-
-- If the [`build.minify`](#build-minify) option is `'terser'` and the installed Terser version is below 5.16.0, `'esnext'` will be forced down to `'es2021'`.
-- In other cases, it will perform no transpilation at all.
+Another special value is `'esnext'` - which assumes native dynamic imports support and will only perform minimal transpiling.
 
 The transform is performed with esbuild and the value should be a valid [esbuild target option](https://esbuild.github.io/api/#target). Custom targets can either be an ES version (e.g. `es2015`), a browser with version (e.g. `chrome58`), or an array of multiple target strings.
 
@@ -133,7 +130,7 @@ In this case, you need to set `build.cssTarget` to `chrome61` to prevent vite fr
 ## build.cssMinify
 
 - **Type:** `boolean | 'esbuild' | 'lightningcss'`
-- **Default:** the same as [`build.minify`](#build-minify)
+- **Default:** the same as [`build.minify`](#build-minify) for client, `'esbuild'` for SSR
 
 This option allows users to override CSS minification specifically instead of defaulting to `build.minify`, so you can configure minification for JS and CSS separately. Vite uses `esbuild` by default to minify CSS. Set the option to `'lightningcss'` to use [Lightning CSS](https://lightningcss.dev/minification.html) instead. If selected, it can be configured using [`css.lightningcss`](./shared-options.md#css-lightningcss).
 

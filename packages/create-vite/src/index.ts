@@ -205,7 +205,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-svelte-kit',
         display: 'SvelteKit ↗',
         color: red,
-        customCommand: 'npm create svelte@latest TARGET_DIR',
+        customCommand: 'npm exec sv create TARGET_DIR',
       },
     ],
   },
@@ -258,7 +258,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-angular',
         display: 'Angular ↗',
         color: red,
-        customCommand: 'npx -p @angular/cli@latest ng new TARGET_DIR',
+        customCommand: 'npm exec @angular/cli@latest new TARGET_DIR',
       },
       {
         name: 'custom-analog',

@@ -61,6 +61,7 @@ export default defineConfig({
     },
     preprocessorOptions: {
       scss: {
+        api: 'legacy',
         additionalData: `$injectedColor: orange;`,
         importer: [
           function (url) {

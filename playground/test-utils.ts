@@ -47,6 +47,9 @@ export const ports = {
   'css/dynamic-import': 5007,
   'css/lightningcss-proxy': 5008,
   'backend-integration': 5009,
+  'client-reload': 5010,
+  'client-reload/hmr-port': 5011,
+  'client-reload/cross-origin': 5012,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
@@ -58,6 +61,8 @@ export const hmrPorts = {
   'css/lightningcss-proxy': 24686,
   json: 24687,
   'ssr-conditions': 24688,
+  'client-reload/hmr-port': 24689,
+  'client-reload/cross-origin': 24690,
 }
 
 const hexToNameMap: Record<string, string> = {}
