@@ -390,7 +390,9 @@ test('?raw import', async () => {
 
 test('?no-inline import', async () => {
   expect(await page.textContent('.no-inline')).toMatch(
-    '/foo/bar/nested/fragment.svg?no-inline',
+    isBuild
+      ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg\?no-inline/
+      : '/foo/bar/nested/fragment.svg?no-inline',
   )
 })
 
