@@ -762,7 +762,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           pureCssChunks.add(chunk)
         }
 
-        if (config.build.cssCodeSplit) {
+        if (this.environment.config.build.cssCodeSplit) {
           if (opts.format === 'es' || opts.format === 'cjs') {
             const isEntry = chunk.isEntry && isPureCssChunk
             const cssFullAssetName = ensureFileExt(chunk.name, '.css')
