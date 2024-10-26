@@ -12,6 +12,6 @@
   "devDependencies": {
     "sass": "^1.80.3",
     "tailwindcss": "^3.4.14",
-    "tinyglobby": "^0.2.9"
+    "tinyglobby": "^0.2.10"
   }
 }
