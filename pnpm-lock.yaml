@@ -108,12 +108,12 @@ importers:
       playwright-chromium:
         specifier: ^1.48.2
         version: 1.48.2
+      premove:
+        specifier: ^4.0.0
+        version: 4.0.0
       prettier:
         specifier: 3.3.3
         version: 3.3.3
-      rimraf:
-        specifier: ^5.0.10
-        version: 5.0.10
       rollup:
         specifier: ^4.23.0
         version: 4.23.0
@@ -1651,6 +1651,9 @@ packages:
     peerDependencies:
       '@algolia/client-search': '>= 4.9.1 < 6'
       algoliasearch: '>= 4.9.1 < 6'
+    peerDependenciesMeta:
+      '@algolia/client-search':
+        optional: true
 
   '@algolia/cache-browser-local-storage@4.20.0':
     resolution: {integrity: sha512-uujahcBt4DxduBTvYdwO3sBfHuJvJokiC3BP1+O70fglmE1ShkH8lpXqZBac1rrU3FnNYSUs4pL9lBdTKeRPOQ==}
@@ -6120,6 +6123,11 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
+  premove@4.0.0:
+    resolution: {integrity: sha512-zim/Hr4+FVdCIM7zL9b9Z0Wfd5Ya3mnKtiuDv7L5lzYzanSq6cOcVJ7EFcgK4I0pt28l8H0jX/x3nyog380XgQ==}
+    engines: {node: '>=6'}
+    hasBin: true
+
   prettier@3.3.3:
     resolution: {integrity: sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==}
     engines: {node: '>=14'}
@@ -6318,10 +6326,6 @@ packages:
   rimraf@3.0.2:
     resolution: {integrity: sha512-JZkJMZkAGFFPP2YqXZXPbMlMBgsxzE8ILs4lMIX/2o0L9UBw9O/Y3o6wFw/i9YLapcUJWwqbi3kdxIPdC62TIA==}
     deprecated: Rimraf versions prior to v4 are no longer supported
-    hasBin: true
-
-  rimraf@5.0.10:
-    resolution: {integrity: sha512-l0OE8wL34P4nJH/H2ffoaniAokM2qSmrtXHmlpvYr5AVVX8msAyW0l8NVJFDxlSK4u3Uh/f41cQheDVdnYijwQ==}
     hasBin: true
 
   rollup-plugin-dts@6.1.1:
@@ -7269,8 +7273,9 @@ snapshots:
 
   '@algolia/autocomplete-shared@1.9.3(@algolia/client-search@4.20.0)(algoliasearch@4.20.0)':
     dependencies:
-      '@algolia/client-search': 4.20.0
       algoliasearch: 4.20.0
+    optionalDependencies:
+      '@algolia/client-search': 4.20.0
 
   '@algolia/cache-browser-local-storage@4.20.0':
     dependencies:
@@ -11914,6 +11919,8 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
+  premove@4.0.0: {}
+
   prettier@3.3.3: {}
 
   pretty-bytes@6.1.1: {}
@@ -12141,10 +12148,6 @@ snapshots:
   rimraf@3.0.2:
     dependencies:
       glob: 7.2.3
-
-  rimraf@5.0.10:
-    dependencies:
-      glob: 10.4.5
 
   rollup-plugin-dts@6.1.1(rollup@3.29.5)(typescript@5.6.2):
     dependencies:
