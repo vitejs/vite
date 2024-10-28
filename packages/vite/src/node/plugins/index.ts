@@ -67,7 +67,7 @@ export async function resolvePlugins(
         asSrc: true,
         fsUtils: getFsUtils(config),
         optimizeDeps: true,
-        externalize: isBuild && !!config.build.ssr, // TODO: should we do this for all environments?
+        externalize: true,
       },
       config.environments,
     ),
