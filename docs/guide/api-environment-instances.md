@@ -41,7 +41,7 @@ class DevEnvironment {
    * Communication channel to send and receive messages from the
    * associated module runner in the target runtime.
    */
-  hot: NormalizedHotChannel | null
+  hot: NormalizedHotChannel
   /**
    * Graph of module nodes, with the imported relationship between
    * processed modules and the cached result of the processed code.
