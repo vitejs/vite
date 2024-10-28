@@ -488,10 +488,8 @@ export async function _createServer(
 
   const environments: Record<string, DevEnvironment> = {}
 
-  for (const [name, environmentOptions] of Object.entries(
-    config.environments,
-  )) {
-    environments[name] = await environmentOptions.dev.createEnvironment(
+  for (const name in config.environments) {
+    environments[name] = await config.environments[name].dev.createEnvironment(
       name,
       config,
       {
@@ -500,7 +498,8 @@ export async function _createServer(
     )
   }
 
-  for (const environment of Object.values(environments)) {
+  for (const environmentId in environments) {
+    const environment = environments[environmentId]
     const previousInstance = options.previousEnvironments?.[environment.name]
     await environment.init({ watcher, previousInstance })
   }
@@ -784,8 +783,8 @@ export async function _createServer(
     }
     if (isUnlink) {
       // invalidate module graph cache on file change
-      for (const environment of Object.values(server.environments)) {
-        environment.moduleGraph.onFileDelete(file)
+      for (const environment in server.environments) {
+        server.environments[environment].moduleGraph.onFileDelete(file)
       }
     }
     await onHMRUpdate(isUnlink ? 'delete' : 'create', file)
@@ -796,8 +795,8 @@ export async function _createServer(
 
     await pluginContainer.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
-    for (const environment of Object.values(server.environments)) {
-      environment.moduleGraph.onFileChange(file)
+    for (const environment in server.environments) {
+      server.environments[environment].moduleGraph.onFileChange(file)
     }
     await onHMRUpdate('update', file)
   })

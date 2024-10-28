@@ -888,7 +888,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         // The bundle is guaranteed to be deterministic, if not then we have a bug in rollup.
         // So we use it to ensure a deterministic order of styles
-        for (const chunk of Object.values(bundle)) {
+        for (const chunkId in bundle) {
+          const chunk = bundle[chunkId]
           if (chunk.type === 'chunk' && chunk.isEntry) {
             collect(chunk)
           }
