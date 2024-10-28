@@ -40,7 +40,7 @@ export async function resolvePlugins(
   const depOptimizationEnabled =
     !isBuild &&
     Object.values(config.environments).some(
-      (environment) => !isDepOptimizationDisabled(environment.dev.optimizeDeps),
+      (environment) => !isDepOptimizationDisabled(environment.optimizeDeps),
     )
 
   return [

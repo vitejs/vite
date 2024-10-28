@@ -38,9 +38,7 @@ export default {
       },
     },
     ssr: {
-      dev: {
-        optimizeDeps: {}, // configure the SSR environment
-      },
+      optimizeDeps: {}, // configure the SSR environment
     },
     rsc: {
       resolve: {
@@ -61,7 +59,7 @@ export default {
 }
 ```
 
-The `EnvironmentOptions` interface exposes all the per-environment options. There are `SharedEnvironmentOptions` that apply to both `build` and `dev`, like `resolve`. And there are `DevEnvironmentOptions` and `BuildEnvironmentOptions` for dev and build specific options (like `dev.optimizeDeps` or `build.outDir`).
+The `EnvironmentOptions` interface exposes all the per-environment options. There are `SharedEnvironmentOptions` that apply to both `build` and `dev`, like `resolve`. And there are `DevEnvironmentOptions` and `BuildEnvironmentOptions` for dev and build specific options (like `optimizeDeps` or `build.outDir`).
 
 ```ts
 interface EnvironmentOptions extends SharedEnvironmentOptions {

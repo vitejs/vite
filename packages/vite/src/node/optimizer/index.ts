@@ -288,7 +288,7 @@ export async function optimizeExplicitEnvironmentDeps(
 ): Promise<DepOptimizationMetadata> {
   const cachedMetadata = await loadCachedDepOptimizationMetadata(
     environment,
-    environment.config.dev.optimizeDeps.force ?? false,
+    environment.config.optimizeDeps.force ?? false,
     false,
   )
   if (cachedMetadata) {
@@ -729,7 +729,7 @@ async function prepareEsbuildOptimizerRun(
   const flatIdDeps: Record<string, string> = {}
   const idToExports: Record<string, ExportsData> = {}
 
-  const { optimizeDeps } = environment.config.dev
+  const { optimizeDeps } = environment.config
 
   const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
     optimizeDeps?.esbuildOptions ?? {}
@@ -812,7 +812,7 @@ export async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
 ): Promise<void> {
   const { logger } = environment
-  const { optimizeDeps } = environment.config.dev
+  const { optimizeDeps } = environment.config
   const optimizeDepsInclude = optimizeDeps?.include ?? []
   if (optimizeDepsInclude.length) {
     const unableToOptimize = (id: string, msg: string) => {
@@ -1059,7 +1059,7 @@ export async function extractExportsData(
 ): Promise<ExportsData> {
   await init
 
-  const { optimizeDeps } = environment.config.dev
+  const { optimizeDeps } = environment.config
 
   const esbuildOptions = optimizeDeps?.esbuildOptions ?? {}
   if (optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
@@ -1112,7 +1112,7 @@ function needsInterop(
   exportsData: ExportsData,
   output?: { exports: string[] },
 ): boolean {
-  if (environment.config.dev.optimizeDeps?.needsInterop?.includes(id)) {
+  if (environment.config.optimizeDeps?.needsInterop?.includes(id)) {
     return true
   }
   const { hasModuleSyntax, exports } = exportsData
@@ -1156,7 +1156,7 @@ function getConfigHash(environment: Environment): string {
   // Take config into account
   // only a subset of config options that can affect dep optimization
   const { config } = environment
-  const { optimizeDeps } = config.dev
+  const { optimizeDeps } = config
   const content = JSON.stringify(
     {
       mode: process.env.NODE_ENV || config.mode,
