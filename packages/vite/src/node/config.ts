@@ -89,7 +89,7 @@ import { resolveSSROptions } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 
-const debug = createDebugger('vite:config')
+const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
 
 export interface ConfigEnv {
@@ -440,12 +440,6 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * @default 'spa'
    */
   appType?: AppType
-  /**
-   * Specifies the number of times to recurse while formatting object.
-   *
-   * https://nodejs.org/api/util.html#utilinspectobject-options
-   */
-  debugDepth?: string | undefined
 }
 
 export interface HTMLOptions {
@@ -851,10 +845,6 @@ export async function resolveConfig(
       config = mergeConfig(loadResult.config, config)
       configFile = loadResult.path
       configFileDependencies = loadResult.dependencies
-    }
-
-    if (config.debugDepth && process.env.DEBUG) {
-      process.env.DEBUG_DEPTH = config.debugDepth
     }
   }
 
