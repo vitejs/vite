@@ -105,6 +105,7 @@ describe('main', () => {
 
   test('external paths works with vite-ignore attribute', async () => {
     expect(await page.textContent('.external-path')).toBe('works')
+    expect(await page.getAttribute('.external-path', 'vite-ignore')).toBe(null)
     expect(await getColor('.external-path')).toBe('red')
     if (isServe) {
       expect(serverLogs).not.toEqual(
