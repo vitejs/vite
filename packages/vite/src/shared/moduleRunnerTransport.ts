@@ -25,24 +25,19 @@ export interface ModuleRunnerTransport {
   timeout?: number
 }
 
-type InvokeableModuleRunnerTransport = Omit<ModuleRunnerTransport, 'invoke'> &
-  Required<Pick<ModuleRunnerTransport, 'send'>> & {
-    invoke<T extends keyof InvokeMethods>(
-      name: T,
-      data: Parameters<InvokeMethods[T]>,
-    ): Promise<ReturnType<Awaited<InvokeMethods[T]>>>
-  }
+type InvokeableModuleRunnerTransport = Omit<ModuleRunnerTransport, 'invoke'> & {
+  invoke<T extends keyof InvokeMethods>(
+    name: T,
+    data: Parameters<InvokeMethods[T]>,
+  ): Promise<ReturnType<Awaited<InvokeMethods[T]>>>
+}
 
 const createInvokeableTransport = (
   transport: ModuleRunnerTransport,
 ): InvokeableModuleRunnerTransport => {
   if (transport.invoke) {
-    const sendOrInvoke = transport.send ?? transport.invoke
     return {
       ...transport,
-      async send(data) {
-        await sendOrInvoke(data)
-      },
       async invoke(name, data) {
         const result = await transport.invoke!({
           type: 'custom',
@@ -224,6 +219,8 @@ export const normalizeModuleRunnerTransport = (
         }
       : {}),
     async send(data) {
+      if (!invokeableTransport.send) return
+
       if (!isConnected) {
         if (connectingPromise) {
           await connectingPromise

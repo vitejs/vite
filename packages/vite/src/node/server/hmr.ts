@@ -88,7 +88,7 @@ export type HotChannelListener<T extends string = string> = (
 
 export type HotChannelInvokeHandler = (
   payload: HotPayload,
-) => Promise<{ r: any } | { e: any } | undefined>
+) => Promise<{ r: any } | { e: any }>
 
 export interface HotChannel<Api = any> {
   /**
@@ -152,8 +152,8 @@ export interface NormalizedHotChannel<Api = any> {
     event: T,
     listener: (
       data: InferCustomEventPayload<T>,
-      client: NormalizedHotChannelClient | undefined,
-    ) => void | Promise<void>,
+      client: NormalizedHotChannelClient,
+    ) => void,
   ): void
   on(event: 'connection', listener: () => void): void
   /**
@@ -184,17 +184,12 @@ export const normalizeHotChannel = (
   }
 
   const normalizedListenerMap = new WeakMap<
-    (
-      data: any,
-      client: NormalizedHotChannelClient | undefined,
-    ) => void | Promise<void>,
-    (data: any, client: HotChannelClient | undefined) => void | Promise<void>
+    (data: any, client: NormalizedHotChannelClient) => void | Promise<void>,
+    (data: any, client: HotChannelClient) => void | Promise<void>
   >()
   const listenersForEvents = new Map<
     string,
-    Set<
-      (data: any, client: HotChannelClient | undefined) => void | Promise<void>
-    >
+    Set<(data: any, client: HotChannelClient) => void | Promise<void>>
   >()
   let listenerForInvokeHandler:
     | ((data: InvokeSendData, client: HotChannelClient) => void)
@@ -204,7 +199,7 @@ export const normalizeHotChannel = (
     ...channel,
     on: (
       event: string,
-      fn: (data: any, client: NormalizedHotChannelClient | undefined) => void,
+      fn: (data: any, client: NormalizedHotChannelClient) => void,
     ) => {
       if (event === 'connection') {
         channel.on?.(event, fn as () => void)
@@ -213,12 +208,8 @@ export const normalizeHotChannel = (
 
       const listenerWithNormalizedClient = (
         data: any,
-        client: HotChannelClient | undefined,
+        client: HotChannelClient,
       ) => {
-        if (!client) {
-          fn(data, undefined)
-          return
-        }
         const normalizedClient: NormalizedHotChannelClient = {
           send: (...args) => {
             let payload: HotPayload
@@ -268,29 +259,19 @@ export const normalizeHotChannel = (
       const wrappedInvokeHandler = async <T extends keyof InvokeMethods>(
         payload: HotPayload,
       ) => {
-        if (payload.type !== 'custom') return
-        if (payload.event === 'vite:invoke') {
-          const data: InvokeSendData<T> = payload.data
-          const { name, data: args } = data
-          try {
-            // @ts-expect-error `invokeHandlers[name]` is `InvokeMethods[T]`, so passing the args is fine
-            const result = await invokeHandlers[name](...args)
-            return { r: result }
-          } catch (error) {
-            return {
-              e: {
-                name: error.name,
-                message: error.message,
-                stack: error.stack,
-              },
-            }
-          }
-        } else {
-          const listeners = listenersForEvents.get(payload.event)
-          if (listeners) {
-            for (const listener of listeners) {
-              listener(payload.data, undefined)
-            }
+        const data: InvokeSendData<T> = (payload as CustomPayload).data
+        const { name, data: args } = data
+        try {
+          // @ts-expect-error `invokeHandlers[name]` is `InvokeMethods[T]`, so passing the args is fine
+          const result = await invokeHandlers[name](...args)
+          return { r: result }
+        } catch (error) {
+          return {
+            e: {
+              name: error.name,
+              message: error.message,
+              stack: error.stack,
+            },
           }
         }
       }
