@@ -21,12 +21,18 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
-import type { LightningCSSOptions } from 'dep-types/lightningcss'
+import type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
+import type {
+  LessPreprocessorBaseOptions,
+  SassLegacyPreprocessBaseOptions,
+  SassModernPreprocessBaseOptions,
+  StylusPreprocessorBaseOptions,
+} from 'types/internal/cssPreprocessorOptions'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -73,13 +79,14 @@ import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { PartialEnvironment } from '../baseEnvironment'
 import type { TransformPluginContext } from '../server/pluginContainer'
-import type { DevEnvironment } from '..'
+import { searchForWorkspaceRoot } from '../server/searchRoot'
+import { type DevEnvironment } from '..'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
+  cssEntriesMap,
   fileToDevUrl,
   fileToUrl,
-  generatedAssetsMap,
   publicAssetUrlCache,
   publicAssetUrlRE,
   publicFileToBuiltUrl,
@@ -111,7 +118,14 @@ export interface CSSOptions {
    * In addition to options specific to each processors, Vite supports `additionalData` option.
    * The `additionalData` option can be used to inject extra code for each style content.
    */
-  preprocessorOptions?: Record<string, any>
+  preprocessorOptions?: {
+    scss?: SassPreprocessorOptions
+    sass?: SassPreprocessorOptions
+    less?: LessPreprocessorOptions
+    styl?: StylusPreprocessorOptions
+    stylus?: StylusPreprocessorOptions
+  }
+
   /**
    * If this option is set, preprocessors will run in workers when possible.
    * `true` means the number of CPUs minus 1.
@@ -167,9 +181,7 @@ export interface CSSModulesOptions {
 }
 
 export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
-  lightningcss?: LightningCSSOptions & {
-    targets: LightningCSSOptions['targets']
-  }
+  lightningcss?: LightningCSSOptions
 }
 
 export function resolveCSSOptions(
@@ -434,7 +446,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         assetFileNames({
           type: 'asset',
           name: cssAssetName,
+          names: [cssAssetName],
           originalFileName: null,
+          originalFileNames: [],
           source: '/* vite internal call, ignore */',
         }),
       )
@@ -563,8 +577,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     async renderChunk(code, chunk, opts) {
-      const generatedAssets = generatedAssetsMap.get(this.environment)!
-
       let chunkCSS = ''
       // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
       const isJsChunkEmpty = code === '' && !chunk.isEntry
@@ -723,7 +735,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             originalFileName,
             source: content,
           })
-          generatedAssets.set(referenceId, { originalFileName })
 
           const filename = this.getFileName(referenceId)
           chunk.viteMetadata!.importedAssets.add(cleanUrl(filename))
@@ -749,7 +760,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           pureCssChunks.add(chunk)
         }
 
-        if (config.build.cssCodeSplit) {
+        if (this.environment.config.build.cssCodeSplit) {
           if (opts.format === 'es' || opts.format === 'cjs') {
             const isEntry = chunk.isEntry && isPureCssChunk
             const cssFullAssetName = ensureFileExt(chunk.name, '.css')
@@ -781,7 +792,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               originalFileName,
               source: chunkCSS,
             })
-            generatedAssets.set(referenceId, { originalFileName, isEntry })
+            if (isEntry) {
+              cssEntriesMap.get(this.environment)!.add(referenceId)
+            }
             chunk.viteMetadata!.importedCss.add(this.getFileName(referenceId))
           } else if (this.environment.config.consumer === 'client') {
             // legacy build and inline css
@@ -852,8 +865,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      function extractCss() {
-        let css = ''
+      // extract as single css bundle if no codesplit
+      if (!config.build.cssCodeSplit && !hasEmitted) {
+        let extractedCss = ''
         const collected = new Set<OutputChunk>()
         // will be populated in order they are used by entry points
         const dynamicImports = new Set<string>()
@@ -869,7 +883,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             dynamicImports.add(importName),
           )
           // Then collect the styles of the current chunk (might overwrite some styles from previous imports)
-          css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          extractedCss += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
         }
 
         // The bundle is guaranteed to be deterministic, if not then we have a bug in rollup.
@@ -884,17 +898,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           collect(bundle[chunkName])
         }
 
-        return css
-      }
-      let extractedCss = !hasEmitted && extractCss()
-      if (extractedCss) {
-        hasEmitted = true
-        extractedCss = await finalizeCss(extractedCss, true, config)
-        this.emitFile({
-          name: cssBundleName,
-          type: 'asset',
-          source: extractedCss,
-        })
+        // Finally, if there's any extracted CSS, we emit the asset
+        if (extractedCss) {
+          hasEmitted = true
+          extractedCss = await finalizeCss(extractedCss, true, config)
+          this.emitFile({
+            name: cssBundleName,
+            type: 'asset',
+            source: extractedCss,
+          })
+        }
       }
 
       // remove empty css chunks and their imports
@@ -1135,32 +1148,15 @@ async function compileCSSPreprocessors(
   const atImportResolvers = getAtImportResolvers(
     environment.getTopLevelConfig(),
   )
+  const opts = {
+    ...((preprocessorOptions && preprocessorOptions[lang]) || {}),
+    alias: config.resolve.alias,
+    // important: set this for relative import resolving
+    filename: cleanUrl(id),
+    enableSourcemap: devSourcemap ?? false,
+  }
 
   const preProcessor = workerController[lang]
-  let opts = (preprocessorOptions && preprocessorOptions[lang]) || {}
-  // support @import from node dependencies by default
-  switch (lang) {
-    case PreprocessLang.scss:
-    case PreprocessLang.sass:
-      opts = {
-        includePaths: ['node_modules'],
-        alias: config.resolve.alias,
-        ...opts,
-      }
-      break
-    case PreprocessLang.less:
-    case PreprocessLang.styl:
-    case PreprocessLang.stylus:
-      opts = {
-        paths: ['node_modules'],
-        alias: config.resolve.alias,
-        ...opts,
-      }
-  }
-  // important: set this for relative import resolving
-  opts.filename = cleanUrl(id)
-  opts.enableSourcemap = devSourcemap ?? false
-
   const preprocessResult = await preProcessor(
     environment,
     code,
@@ -1640,7 +1636,8 @@ async function resolvePostcssConfig(
   } else {
     const searchPath =
       typeof inlineOptions === 'string' ? inlineOptions : config.root
-    result = postcssrc({}, searchPath).catch((e) => {
+    const stopDir = searchForWorkspaceRoot(config.root)
+    result = postcssrc({}, searchPath, { stopDir }).catch((e) => {
       if (!e.message.includes('No PostCSS Config found')) {
         if (e instanceof Error) {
           const { name, message, stack } = e
@@ -1977,52 +1974,43 @@ type PreprocessorAdditionalData =
       | PreprocessorAdditionalDataResult
       | Promise<PreprocessorAdditionalDataResult>)
 
-type StylePreprocessorOptions = {
-  [key: string]: any
+export type SassPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
+} & (
+  | ({ api: 'legacy' } & SassLegacyPreprocessBaseOptions)
+  | ({ api?: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
+)
+
+export type LessPreprocessorOptions = {
+  additionalData?: PreprocessorAdditionalData
+} & LessPreprocessorBaseOptions
+
+export type StylusPreprocessorOptions = {
+  additionalData?: PreprocessorAdditionalData
+} & StylusPreprocessorBaseOptions
+
+type StylePreprocessorInternalOptions = {
   maxWorkers?: number | true
   filename: string
   alias: Alias[]
   enableSourcemap: boolean
 }
 
-type SassStylePreprocessorOptions = StylePreprocessorOptions &
-  Omit<Sass.LegacyOptions<'async'>, 'data' | 'file' | 'outFile'> & {
-    api?: 'legacy' | 'modern' | 'modern-compiler'
-  }
+type SassStylePreprocessorInternalOptions = StylePreprocessorInternalOptions &
+  SassPreprocessorOptions
 
-type StylusStylePreprocessorOptions = StylePreprocessorOptions & {
-  define?: Record<string, any>
-}
+type LessStylePreprocessorInternalOptions = StylePreprocessorInternalOptions &
+  LessPreprocessorOptions
 
-type StylePreprocessor = {
+type StylusStylePreprocessorInternalOptions = StylePreprocessorInternalOptions &
+  StylusPreprocessorOptions
+
+type StylePreprocessor<Options extends StylePreprocessorInternalOptions> = {
   process: (
     environment: PartialEnvironment,
     source: string,
     root: string,
-    options: StylePreprocessorOptions,
-    resolvers: CSSAtImportResolvers,
-  ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
-  close: () => void
-}
-
-type SassStylePreprocessor = {
-  process: (
-    environment: PartialEnvironment,
-    source: string,
-    root: string,
-    options: SassStylePreprocessorOptions,
-    resolvers: CSSAtImportResolvers,
-  ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
-  close: () => void
-}
-
-type StylusStylePreprocessor = {
-  process: (
-    environment: PartialEnvironment,
-    source: string,
-    root: string,
-    options: StylusStylePreprocessorOptions,
+    options: Options,
     resolvers: CSSAtImportResolvers,
   ) => StylePreprocessorResults | Promise<StylePreprocessorResults>
   close: () => void
@@ -2176,7 +2164,10 @@ const makeScssWorker = (
         sassPath: string,
         data: string,
         // additionalData can a function that is not cloneable but it won't be used
-        options: SassStylePreprocessorOptions & { additionalData: undefined },
+        options: SassStylePreprocessorInternalOptions & {
+          api: 'legacy'
+          additionalData: undefined
+        },
       ) => {
         // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const sass: typeof Sass = require(sassPath)
@@ -2204,6 +2195,8 @@ const makeScssWorker = (
         }
 
         const finalOptions: Sass.LegacyOptions<'async'> = {
+          // support @import from node dependencies by default
+          includePaths: ['node_modules'],
           ...options,
           data,
           file: options.filename,
@@ -2287,7 +2280,10 @@ const makeModernScssWorker = (
         sassPath: string,
         data: string,
         // additionalData can a function that is not cloneable but it won't be used
-        options: SassStylePreprocessorOptions & { additionalData: undefined },
+        options: SassStylePreprocessorInternalOptions & {
+          api: 'modern'
+          additionalData: undefined
+        },
       ) => {
         // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const sass: typeof Sass = require(sassPath)
@@ -2453,8 +2449,15 @@ type ScssWorkerResult = {
 
 const scssProcessor = (
   maxWorkers: number | undefined,
-): SassStylePreprocessor => {
-  const workerMap = new Map<unknown, ReturnType<typeof makeScssWorker>>()
+): StylePreprocessor<SassStylePreprocessorInternalOptions> => {
+  const workerMap = new Map<
+    unknown,
+    ReturnType<
+      | typeof makeScssWorker
+      | typeof makeModernScssWorker
+      | typeof makeModernCompilerScssWorker
+    >
+  >()
 
   return {
     close() {
@@ -2464,9 +2467,9 @@ const scssProcessor = (
     },
     async process(environment, source, root, options, resolvers) {
       const sassPackage = loadSassPackage(root)
-      // TODO: change default in v6
-      // options.api ?? sassPackage.name === "sass-embedded" ? "modern-compiler" : "modern";
-      const api = options.api ?? 'legacy'
+      const api =
+        options.api ??
+        (sassPackage.name === 'sass-embedded' ? 'modern-compiler' : 'modern')
 
       if (!workerMap.has(options.alias)) {
         workerMap.set(
@@ -2511,6 +2514,7 @@ const scssProcessor = (
         const result = await worker.run(
           sassPackage.path,
           data,
+          // @ts-expect-error the correct worker is selected for `options.type`
           optionsWithoutAdditionalData,
         )
         const deps = result.stats.includedFiles.map((f) => cleanScssBugUrl(f))
@@ -2706,7 +2710,9 @@ const makeLessWorker = (
         lessPath: string,
         content: string,
         // additionalData can a function that is not cloneable but it won't be used
-        options: StylePreprocessorOptions & { additionalData: undefined },
+        options: LessStylePreprocessorInternalOptions & {
+          additionalData: undefined
+        },
       ) => {
         // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const nodeLess: typeof Less = require(lessPath)
@@ -2715,6 +2721,8 @@ const makeLessWorker = (
           options.filename,
         )
         const result = await nodeLess.render(content, {
+          // support @import from node dependencies by default
+          paths: ['node_modules'],
           ...options,
           plugins: [viteResolverPlugin, ...(options.plugins || [])],
           ...(options.enableSourcemap
@@ -2734,7 +2742,7 @@ const makeLessWorker = (
       shouldUseFake(_lessPath, _content, options) {
         // plugins are a function and is not serializable
         // in that case, fallback to running in main thread
-        return options.plugins?.length > 0
+        return !!options.plugins && options.plugins.length > 0
       },
       max: maxWorkers,
     },
@@ -2742,7 +2750,9 @@ const makeLessWorker = (
   return worker
 }
 
-const lessProcessor = (maxWorkers: number | undefined): StylePreprocessor => {
+const lessProcessor = (
+  maxWorkers: number | undefined,
+): StylePreprocessor<LessStylePreprocessorInternalOptions> => {
   const workerMap = new Map<unknown, ReturnType<typeof makeLessWorker>>()
 
   return {
@@ -2820,12 +2830,18 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
         content: string,
         root: string,
         // additionalData can a function that is not cloneable but it won't be used
-        options: StylusStylePreprocessorOptions & { additionalData: undefined },
+        options: StylusStylePreprocessorInternalOptions & {
+          additionalData: undefined
+        },
       ) => {
         // eslint-disable-next-line no-restricted-globals -- this function runs inside a cjs worker
         const nodeStylus: typeof Stylus = require(stylusPath)
 
-        const ref = nodeStylus(content, options)
+        const ref = nodeStylus(content, {
+          // support @import from node dependencies by default
+          paths: ['node_modules'],
+          ...options,
+        })
         if (options.define) {
           for (const key in options.define) {
             ref.define(key, options.define[key])
@@ -2864,7 +2880,7 @@ const makeStylWorker = (maxWorkers: number | undefined) => {
 
 const stylProcessor = (
   maxWorkers: number | undefined,
-): StylusStylePreprocessor => {
+): StylePreprocessor<StylusStylePreprocessorInternalOptions> => {
   const workerMap = new Map<unknown, ReturnType<typeof makeStylWorker>>()
 
   return {
@@ -2981,21 +2997,16 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
   const less = lessProcessor(maxWorkers)
   const styl = stylProcessor(maxWorkers)
 
-  const sassProcess: StylePreprocessor['process'] = (
-    environment,
-    source,
-    root,
-    options,
-    resolvers,
-  ) => {
-    return scss.process(
-      environment,
-      source,
-      root,
-      { ...options, indentedSyntax: true, syntax: 'indented' },
-      resolvers,
-    )
-  }
+  const sassProcess: StylePreprocessor<SassStylePreprocessorInternalOptions>['process'] =
+    (environment, source, root, options, resolvers) => {
+      const opts: SassStylePreprocessorInternalOptions = { ...options }
+      if (opts.api === 'legacy') {
+        opts.indentedSyntax = true
+      } else {
+        opts.syntax = 'indented'
+      }
+      return scss.process(environment, source, root, opts, resolvers)
+    }
 
   const close = () => {
     less.close()
