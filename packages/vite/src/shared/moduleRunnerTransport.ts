@@ -80,7 +80,7 @@ const createInvokeableTransport = (
   return {
     ...transport,
     connect({ onMessage, onDisconnection }) {
-      transport.connect!({
+      return transport.connect!({
         onMessage(payload) {
           if (payload.type === 'custom' && payload.event === 'vite:invoke') {
             const data = payload.data as InvokeResponseData
@@ -116,10 +116,10 @@ const createInvokeableTransport = (
         )
       })
       rpcPromises.clear()
-      transport.disconnect?.()
+      return transport.disconnect?.()
     },
     send(data) {
-      transport.send!(data)
+      return transport.send!(data)
     },
     async invoke<T extends keyof InvokeMethods>(
       name: T,
@@ -135,12 +135,12 @@ const createInvokeableTransport = (
           data,
         } satisfies InvokeSendData,
       }
-      transport.send!(wrappedData)
+      const sendPromise = transport.send!(wrappedData)
 
       const { promise, resolve, reject } =
         promiseWithResolvers<ReturnType<Awaited<InvokeMethods[T]>>>()
       const timeout = transport.timeout ?? 60000
-      let timeoutId
+      let timeoutId: ReturnType<typeof setTimeout> | undefined
       if (timeout > 0) {
         timeoutId = setTimeout(() => {
           rpcPromises.delete(promiseId)
@@ -153,6 +153,14 @@ const createInvokeableTransport = (
         timeoutId?.unref?.()
       }
       rpcPromises.set(promiseId, { resolve, reject, name, timeoutId })
+
+      if (sendPromise) {
+        sendPromise.catch((err) => {
+          clearTimeout(timeoutId)
+          rpcPromises.delete(promiseId)
+          reject(err)
+        })
+      }
 
       return await promise
     },
@@ -223,7 +231,7 @@ export const normalizeModuleRunnerTransport = (
           throw new Error('send was called before connect')
         }
       }
-      invokeableTransport.send(data)
+      await invokeableTransport.send(data)
     },
     async invoke(name, data) {
       if (!isConnected) {
