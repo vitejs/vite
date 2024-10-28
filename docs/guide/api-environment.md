@@ -17,9 +17,14 @@ Vite 6 formalizes the concept of Environments. Until Vite 5, there were two impl
 
 ## Closing the gap between build and dev
 
-For a simple SPA, there is a single environment that we'll call the `client` environment. The app will run in the user browser. During dev, except for Vite's requiring a modern browser, the environment matches closely the production runtime. In Vite 6, users will still be able to configure and use Vite without knowing about environments. The vite config keeps working as usual in this case.
+For a simple SPA/MPA, no new APIs around environments are exposed to the config. Internally, Vite will apply the options to a `client` environment, but it's not necessary to know of this concept when configuring Vite. The config and behavior from Vite 5 should work seamlessly here.
 
-When we move to a typical server side rendered (SSR) app, we'll have two environments. The `client` environment is running the app in the browser, and a `server` environment runs in node (or other server runtimes) rendering the pages before sending them to the browser. When running Vite in dev mode, the server code is executed in the same Node process as the Vite dev server giving a close approximation to the production environment. But an app can run servers in other JS runtimes, like [Cloudflare's workerd](https://github.com/cloudflare/workerd) that have different constrains. It is also common for modern apps to have more than two environments (for example, an app could be running by a browser, a node server, and an edge server). Vite 5 didn't allow to properly represent these environments.
+When we move to a typical server side rendered (SSR) app, we'll have two environments:
+
+- `client`: runs the app in the browser.
+- `server`: runs the app in node (or other server runtimes) which renders pages before sending them to the browser.
+
+In dev, Vite executes the server code in the same Node process as the Vite dev server, giving a close approximation to the production environment. However, it is also possible for servers to run in other JS runtimes, like [Cloudflare's workerd](https://github.com/cloudflare/workerd) which have different constrains. Modern apps may also run in more than two environments, e.g. a browser, a node server, and an edge server. Vite 5 didn't allow to properly represent these environments.
 
 Vite 6 allows users to configure their app during build and dev to map all of its environments. During dev, a single Vite dev server can now be used to run code in multiple different environments concurrently. The app source code is still transformed by Vite dev server. On top of the shared HTTP server, middlewares, resolved config, and plugins pipeline, the Vite dev server now has a set of independent dev environments. Each of them is configured to match the production environment as closely as possible, and is connected to a dev runtime where the code is executed (for workerd, the server code can now run in miniflare locally). In the client, the browser imports and executes the code. In other environments, a module runner fetches and evaluates the transformed code.
 
@@ -27,7 +32,7 @@ Vite 6 allows users to configure their app during build and dev to map all of it
 
 ## Environments Configuration
 
-Starting from a SPA/MPA, a user will keep configuring Vite as usual. There is a single `client` environment by default.
+For an SPA/MPA, the configuration will look similar to Vite 5. Internally these options are used to configure the `client` environment.
 
 ```js
 export default defineConfig({
@@ -40,7 +45,7 @@ export default defineConfig({
 })
 ```
 
-This is important because we'd like to keep vite approachable and avoid exposing new concepts until they are needed.
+This is important because we'd like to keep Vite approachable and avoid exposing new concepts until they are needed.
 
 If the app is composed of several environments, then these environments can be configured explicitly with the `environments` config option.
 
@@ -63,7 +68,7 @@ export default {
 }
 ```
 
-When not explicitly documented, environment inherit the configured top-level config options (for example, the new `server` and `edge` environments will inherit the `build.sourcemap: false` option). A small number of top-level options, like `optimizeDeps`, only apply to the `client` environment, as they don't make work well when applied as a default to server environments. The `client` environment can also be configured explicitly through `environments.client`, but we recommend to do it with the top-level options so the client config remains unchanged when adding new environments.
+When not explicitly documented, environment inherit the configured top-level config options (for example, the new `server` and `edge` environments will inherit the `build.sourcemap: false` option). A small number of top-level options, like `optimizeDeps`, only apply to the `client` environment, as they don't work well when applied as a default to server environments. The `client` environment can also be configured explicitly through `environments.client`, but we recommend to do it with the top-level options so the client config remains unchanged when adding new environments.
 
 The `EnvironmentOptions` interface exposes all the per-environment options. There are environment options that apply to both `build` and `dev`, like `resolve`. And there are `DevEnvironmentOptions` and `BuildEnvironmentOptions` for dev and build specific options (like `dev.warmup` or `build.outDir`). Some options like `optimizeDeps` only applies to dev, but is kept as top level instead of nested in `dev` for backward compatibility.
 
