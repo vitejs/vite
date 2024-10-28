@@ -28,6 +28,44 @@ From Vite 6, the modern API is used by default for Sass. If you wish to still us
 
 To migrate to the modern API, see [the Sass documentation](https://sass-lang.com/documentation/breaking-changes/legacy-js-api/).
 
+### Customize CSS output file name in library mode
+
+In Vite 5, the CSS output file name in library mode was always `style.css` and cannot be easily changed through the Vite config.
+
+From Vite 6, the file name now uses the package name (e.g. via [`build.lib.fileName`](/config/build-options.html#build-lib) or `"name"` in `package.json`) similar to the JS output files. If `build.lib.fileName` is passed a function, the `format` argument may also now be `"css"` to customize the CSS output file name.
+
+To migrate, if you had relied on the `style.css` file name, you should update references to it to the new name based on your package name. For example:
+
+```json [package.json]
+{
+  "name": "my-lib",
+  "exports": {
+    "./style.css": "./dist/style.css" // [!code --]
+    "./style.css": "./dist/my-lib.css" // [!code ++]
+  }
+}
+```
+
+If you had also passed a function to `build.lib.fileName`, ensure that a proper name is returned for the CSS output:
+
+```js twoslash [vite.config.js] {5-9}
+import { defineConfig } from 'vite'
+// ---cut---
+export default defineConfig({
+  build: {
+    lib: {
+      fileName(format) {
+        if (format === 'css') {
+          return 'my-lib.css'
+        } else {
+          return `my-lib.${format}.js`
+        }
+      },
+    },
+  },
+})
+```
+
 ## Advanced
 
 There are other breaking changes which only affect few users.
@@ -44,3 +82,7 @@ There are other breaking changes which only affect few users.
 ## Migration from v4
 
 Check the [Migration from v4 Guide](https://v5.vite.dev/guide/migration.html) in the Vite v5 docs first to see the needed changes to port your app to Vite 5, and then proceed with the changes on this page.
+
+```
+
+```

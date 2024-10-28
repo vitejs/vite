@@ -200,7 +200,12 @@ import Bar from './Bar.vue'
 export { Foo, Bar }
 ```
 
-Running `vite build` with this config uses a Rollup preset that is oriented towards shipping libraries and produces two bundle formats: `es` and `umd` (configurable via `build.lib`):
+Running `vite build` with this config uses a Rollup preset that is oriented towards shipping libraries and produces two bundle formats:
+
+- `es` and `umd` (for single entry)
+- `es` and `cjs` (for multiple entries)
+
+The formats can be configured with the [`build.lib.formats`](/config/build-options.md#build-lib) option.
 
 ```
 $ vite build
@@ -250,6 +255,27 @@ Recommended `package.json` for your lib:
 ```
 
 :::
+
+### CSS support
+
+If your library imports any CSS, it will be bundled as a single CSS file besides the built JS files, e.g. `dist/my-lib.css`. You can export the CSS file in your `package.json` as well:
+
+```json {12}
+{
+  "name": "my-lib",
+  "type": "module",
+  "files": ["dist"],
+  "main": "./dist/my-lib.umd.cjs",
+  "module": "./dist/my-lib.js",
+  "exports": {
+    ".": {
+      "import": "./dist/my-lib.js",
+      "require": "./dist/my-lib.umd.cjs"
+    },
+    "./style.css": "./dist/my-lib.css"
+  }
+}
+```
 
 ::: tip File Extensions
 If the `package.json` does not contain `"type": "module"`, Vite will generate different file extensions for Node.js compatibility. `.js` will become `.mjs` and `.cjs` will become `.js`.

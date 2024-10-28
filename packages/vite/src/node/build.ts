@@ -44,6 +44,7 @@ import {
   copyDir,
   displayTime,
   emptyDir,
+  getPkgName,
   joinUrlSegments,
   normalizePath,
   partialEncodeURIPath,
@@ -295,7 +296,9 @@ export interface LibraryOptions {
    * of the project package.json. It can also be defined as a function taking the
    * format as an argument.
    */
-  fileName?: string | ((format: ModuleFormat, entryName: string) => string)
+  fileName?:
+    | string
+    | ((format: ModuleFormat | 'css', entryName: string) => string)
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' | 'system'
@@ -876,10 +879,6 @@ function prepareOutDir(
       copyDir(publicDir, outDir)
     }
   }
-}
-
-function getPkgName(name: string) {
-  return name?.[0] === '@' ? name.split('/')[1] : name
 }
 
 type JsExt = 'js' | 'cjs' | 'mjs'
