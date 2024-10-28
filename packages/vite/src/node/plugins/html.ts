@@ -206,18 +206,18 @@ export async function traverseHtml(
   traverseNodes(ast, visitor)
 }
 
-export function getScriptInfo(node: DefaultTreeAdapterMap['element']):
-  | {
-      src: Token.Attribute | undefined
-      sourceCodeLocation: Token.Location | undefined
-      isModule: boolean
-      isAsync: boolean
-    }
-  | undefined {
+export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
+  src: Token.Attribute | undefined
+  sourceCodeLocation: Token.Location | undefined
+  isModule: boolean
+  isAsync: boolean
+  isIgnored: boolean
+} {
   let src: Token.Attribute | undefined
   let sourceCodeLocation: Token.Location | undefined
   let isModule = false
   let isAsync = false
+  let isIgnored = false
   for (const p of node.attrs) {
     if (p.prefix !== undefined) continue
     if (p.name === 'src') {
@@ -230,10 +230,10 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']):
     } else if (p.name === 'async') {
       isAsync = true
     } else if (p.name === 'vite-ignore') {
-      return undefined
+      isIgnored = true
     }
   }
-  return { src, sourceCodeLocation, isModule, isAsync }
+  return { src, sourceCodeLocation, isModule, isAsync, isIgnored }
 }
 
 const attrValueStartRE = /=\s*(.)/
@@ -261,6 +261,19 @@ export function overwriteAttrValue(
     sourceCodeLocation.endOffset - wrapOffset,
     newValue,
   )
+  return s
+}
+
+export function removeViteIgnoreAttr(
+  s: MagicString,
+  sourceCodeLocation: Token.Location,
+): MagicString {
+  const loc = (sourceCodeLocation as Token.LocationWithAttributes).attrs?.[
+    'vite-ignore'
+  ]
+  if (loc) {
+    s.remove(loc.startOffset, loc.endOffset)
+  }
   return s
 }
 
@@ -440,69 +453,73 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           let shouldRemove = false
 
           // script tags
-          const scriptInfo = node.nodeName === 'script' && getScriptInfo(node)
-          if (scriptInfo) {
-            const { src, sourceCodeLocation, isModule, isAsync } = scriptInfo
+          if (node.nodeName === 'script') {
+            const { src, sourceCodeLocation, isModule, isAsync, isIgnored } =
+              getScriptInfo(node)
 
-            const url = src && src.value
-            const isPublicFile = !!(url && checkPublicFile(url, config))
-            if (isPublicFile) {
-              // referencing public dir url, prefix with base
-              overwriteAttrValue(
-                s,
-                sourceCodeLocation!,
-                partialEncodeURIPath(toOutputPublicFilePath(url)),
-              )
-            }
-
-            if (isModule) {
-              inlineModuleIndex++
-              if (url && !isExcludedUrl(url) && !isPublicFile) {
-                setModuleSideEffectPromises.push(
-                  this.resolve(url, id)
-                    .then((resolved) => {
-                      if (!resolved) {
-                        return Promise.reject()
-                      }
-                      return this.load(resolved)
-                    })
-                    .then((mod) => {
-                      // set this to keep the module even if `treeshake.moduleSideEffects=false` is set
-                      mod.moduleSideEffects = true
-                    }),
+            if (isIgnored) {
+              removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+            } else {
+              const url = src && src.value
+              const isPublicFile = !!(url && checkPublicFile(url, config))
+              if (isPublicFile) {
+                // referencing public dir url, prefix with base
+                overwriteAttrValue(
+                  s,
+                  sourceCodeLocation!,
+                  partialEncodeURIPath(toOutputPublicFilePath(url)),
                 )
-                // <script type="module" src="..."/>
-                // add it as an import
-                js += `\nimport ${JSON.stringify(url)}`
-                shouldRemove = true
+              }
+
+              if (isModule) {
+                inlineModuleIndex++
+                if (url && !isExcludedUrl(url) && !isPublicFile) {
+                  setModuleSideEffectPromises.push(
+                    this.resolve(url, id)
+                      .then((resolved) => {
+                        if (!resolved) {
+                          return Promise.reject()
+                        }
+                        return this.load(resolved)
+                      })
+                      .then((mod) => {
+                        // set this to keep the module even if `treeshake.moduleSideEffects=false` is set
+                        mod.moduleSideEffects = true
+                      }),
+                  )
+                  // <script type="module" src="..."/>
+                  // add it as an import
+                  js += `\nimport ${JSON.stringify(url)}`
+                  shouldRemove = true
+                } else if (node.childNodes.length) {
+                  const scriptNode =
+                    node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
+                  const contents = scriptNode.value
+                  // <script type="module">...</script>
+                  const filePath = id.replace(normalizePath(config.root), '')
+                  addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
+                    code: contents,
+                  })
+                  js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
+                  shouldRemove = true
+                }
+
+                everyScriptIsAsync &&= isAsync
+                someScriptsAreAsync ||= isAsync
+                someScriptsAreDefer ||= !isAsync
+              } else if (url && !isPublicFile) {
+                if (!isExcludedUrl(url)) {
+                  config.logger.warn(
+                    `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`,
+                  )
+                }
               } else if (node.childNodes.length) {
                 const scriptNode =
                   node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
-                const contents = scriptNode.value
-                // <script type="module">...</script>
-                const filePath = id.replace(normalizePath(config.root), '')
-                addToHTMLProxyCache(config, filePath, inlineModuleIndex, {
-                  code: contents,
-                })
-                js += `\nimport "${id}?html-proxy&index=${inlineModuleIndex}.js"`
-                shouldRemove = true
-              }
-
-              everyScriptIsAsync &&= isAsync
-              someScriptsAreAsync ||= isAsync
-              someScriptsAreDefer ||= !isAsync
-            } else if (url && !isPublicFile) {
-              if (!isExcludedUrl(url)) {
-                config.logger.warn(
-                  `<script src="${url}"> in "${publicPath}" can't be bundled without type="module" attribute`,
+                scriptUrls.push(
+                  ...extractImportExpressionFromClassicScript(scriptNode),
                 )
               }
-            } else if (node.childNodes.length) {
-              const scriptNode =
-                node.childNodes.pop() as DefaultTreeAdapterMap['textNode']
-              scriptUrls.push(
-                ...extractImportExpressionFromClassicScript(scriptNode),
-              )
             }
           }
 
@@ -516,7 +533,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
             }
             const shouldIgnore =
               node.nodeName === 'link' && 'vite-ignore' in nodeAttrs
-            if (!shouldIgnore) {
+            if (shouldIgnore) {
+              removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+            } else {
               for (const attrKey in nodeAttrs) {
                 const attrValue = nodeAttrs[attrKey]
                 if (attrValue && assetAttrs.includes(attrKey)) {
@@ -558,11 +577,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         node.nodeName === 'link' &&
                         isCSSRequest(url) &&
                         // should not be converted if following attributes are present (#6748)
-                        !node.attrs.some(
-                          (p) =>
-                            p.prefix === undefined &&
-                            (p.name === 'media' || p.name === 'disabled'),
-                        )
+                        !('media' in nodeAttrs || 'disabled' in nodeAttrs)
                       ) {
                         // CSS references, convert to import
                         const importExpression = `\nimport ${JSON.stringify(url)}`
@@ -577,12 +592,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                         // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
                         const isNoInlineLink =
                           node.nodeName === 'link' &&
-                          node.attrs.some(
-                            (p) =>
-                              p.name === 'rel' &&
-                              parseRelAttr(attrValue).some((v) =>
-                                noInlineLinkRels.has(v),
-                              ),
+                          nodeAttrs.rel &&
+                          parseRelAttr(nodeAttrs.rel).some((v) =>
+                            noInlineLinkRels.has(v),
                           )
                         const shouldInline = isNoInlineLink ? false : undefined
                         assetUrlsPromises.push(

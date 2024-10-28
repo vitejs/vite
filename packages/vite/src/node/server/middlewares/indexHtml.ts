@@ -21,6 +21,7 @@ import {
   overwriteAttrValue,
   postImportMapHook,
   preImportMapHook,
+  removeViteIgnoreAttr,
   resolveHtmlTransforms,
   traverseHtml,
 } from '../../plugins/html'
@@ -267,11 +268,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // script tags
-    const scriptInfo = node.nodeName === 'script' && getScriptInfo(node)
-    if (scriptInfo) {
-      const { src, sourceCodeLocation, isModule } = scriptInfo
+    if (node.nodeName === 'script') {
+      const { src, sourceCodeLocation, isModule, isIgnored } =
+        getScriptInfo(node)
 
-      if (src) {
+      if (isIgnored) {
+        removeViteIgnoreAttr(s, sourceCodeLocation!)
+      } else if (src) {
         const processedUrl = processNodeUrl(
           src.value,
           getAttrKey(src) === 'srcset',
@@ -337,7 +340,9 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
       const shouldIgnore =
         node.nodeName === 'link' && 'vite-ignore' in nodeAttrs
-      if (!shouldIgnore) {
+      if (shouldIgnore) {
+        removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+      } else {
         for (const attrKey in nodeAttrs) {
           const attrValue = nodeAttrs[attrKey]
           if (attrValue && assetAttrs.includes(attrKey)) {
