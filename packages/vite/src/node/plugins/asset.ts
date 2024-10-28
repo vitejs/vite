@@ -260,11 +260,11 @@ export async function fileToUrl(
   }
 }
 
-export function fileToDevUrl(
+export async function fileToDevUrl(
   id: string,
   config: ResolvedConfig,
   skipBase = false,
-): string {
+): Promise<string> {
   let rtn: string
   if (checkPublicFile(id, config)) {
     // in public dir during dev, keep the url as-is
@@ -277,6 +277,20 @@ export function fileToDevUrl(
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX, id)
   }
+
+  if (inlineRE.test(id)) {
+    const { file } = splitFileAndPostfix(id)
+    const content = await fsp.readFile(file)
+
+    if (file.endsWith('.svg')) {
+      return svgToDataURL(content)
+    } else {
+      const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
+      // base64 inlined as a string
+      return `data:${mimeType};base64,${content.toString('base64')}`
+    }
+  }
+
   if (skipBase) {
     return rtn
   }

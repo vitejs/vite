@@ -388,12 +388,20 @@ test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
 })
 
-test('?no-inline import', async () => {
-  expect(await page.textContent('.no-inline')).toMatch(
+test('?no-inline svg import', async () => {
+  expect(await page.textContent('.no-inline-svg')).toMatch(
     isBuild
       ? /\/foo\/bar\/assets\/fragment-[-\w]{8}\.svg\?no-inline/
       : '/foo/bar/nested/fragment.svg?no-inline',
   )
+})
+
+test('?inline png import', async () => {
+  expect(
+    (await page.textContent('.inline-png')).startsWith(
+      'data:image/png;base64,',
+    ),
+  ).toBe(true)
 })
 
 test('?url import', async () => {

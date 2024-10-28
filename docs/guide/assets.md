@@ -65,6 +65,16 @@ import 'vite/client'
 import imgUrl from './img.svg?no-inline'
 ```
 
+### Explicit inlining
+
+Assets can be explicitly imported with inlining using the `?inline` suffix.
+
+```js twoslash
+import 'vite/client'
+// ---cut---
+import imgUrl from './img.png?inline'
+```
+
 ### Importing Asset as String
 
 Assets can be imported as strings using the `?raw` suffix.
