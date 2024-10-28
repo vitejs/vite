@@ -78,7 +78,7 @@ export function resolveChokidarOptions(
     // Convert strings to picomatch pattern functions for compat
     ignored = ignored.map((pattern) => {
       if (typeof pattern === 'string') {
-        const matcher = picomatch(pattern)
+        const matcher = picomatch(pattern, { dot: true })
         return (path: string) => matcher(path)
       } else {
         return pattern
