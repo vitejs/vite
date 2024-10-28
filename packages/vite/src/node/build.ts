@@ -369,7 +369,7 @@ export function resolveBuildEnvironmentOptions(
     cssCodeSplit: !raw.lib,
     sourcemap: false,
     rollupOptions: {},
-    minify: raw.ssr ? false : 'esbuild',
+    minify: consumer === 'server' ? false : 'esbuild',
     terserOptions: {},
     write: true,
     emptyOutDir: null,
@@ -434,7 +434,7 @@ export function resolveBuildEnvironmentOptions(
   }
 
   if (resolved.cssMinify == null) {
-    resolved.cssMinify = !!resolved.minify
+    resolved.cssMinify = consumer === 'server' ? 'esbuild' : !!resolved.minify
   }
 
   return resolved
