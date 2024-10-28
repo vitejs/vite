@@ -16,6 +16,6 @@
     "vue-router": "^4.4.5"
   },
   "devDependencies": {
-    "tsx": "^4.11.0"
+    "tsx": "^4.19.2"
   }
 }
