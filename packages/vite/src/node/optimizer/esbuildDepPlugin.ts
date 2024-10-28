@@ -53,7 +53,7 @@ export function esbuildDepPlugin(
   external: string[],
 ): Plugin {
   const { isProduction } = environment.config
-  const { extensions } = environment.config.dev.optimizeDeps
+  const { extensions } = environment.config.optimizeDeps
 
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = extensions
