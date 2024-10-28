@@ -5,6 +5,7 @@ export { ModuleRunner } from './runner'
 export { ESModulesEvaluator } from './esmEvaluator'
 
 export { createWebSocketModuleRunnerTransport } from '../shared/moduleRunnerTransport'
+export { createClientFetchTransport } from './fetchTransport'
 
 export type { FetchFunctionOptions, FetchResult } from '../shared/invokeMethods'
 export type {

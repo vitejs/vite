@@ -36,6 +36,7 @@ export { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
 export { createServerHotChannel } from './server/hmr'
 export { ssrTransform as moduleRunnerTransform } from './ssr/ssrTransform'
 export type { ModuleRunnerTransformOptions } from './ssr/ssrTransform'
+export { createServerFetchTransport } from './server/fetchTransport'
 
 export * from './publicUtils'
 
