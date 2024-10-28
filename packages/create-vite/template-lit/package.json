@@ -12,6 +12,6 @@
     "lit": "^3.2.1"
   },
   "devDependencies": {
-    "vite": "^5.4.9"
+    "vite": "^5.4.10"
   }
 }
