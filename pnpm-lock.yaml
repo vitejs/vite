@@ -148,8 +148,8 @@ importers:
         specifier: ^1.22.1
         version: 1.22.1(typescript@5.6.2)
       '@types/express':
-        specifier: ^4.17.21
-        version: 4.17.21
+        specifier: ^5.0.0
+        version: 5.0.0
       feed:
         specifier: ^4.2.2
         version: 4.2.2
@@ -3340,11 +3340,11 @@ packages:
   '@types/etag@1.8.3':
     resolution: {integrity: sha512-QYHv9Yeh1ZYSMPQOoxY4XC4F1r+xRUiAriB303F4G6uBsT3KKX60DjiogvVv+2VISVDuJhcIzMdbjT+Bm938QQ==}
 
-  '@types/express-serve-static-core@4.17.43':
-    resolution: {integrity: sha512-oaYtiBirUOPQGSWNGPWnzyAFJ0BP3cwvN4oWZQY+zUBwpVIGsKUkpBpSztp74drYcjavs7SKFZ4DX1V2QeN8rg==}
+  '@types/express-serve-static-core@5.0.1':
+    resolution: {integrity: sha512-CRICJIl0N5cXDONAdlTv5ShATZ4HEwk6kDDIW2/w9qOWKg+NU/5F8wYRWCrONad0/UKkloNSmmyN/wX4rtpbVA==}
 
-  '@types/express@4.17.21':
-    resolution: {integrity: sha512-ejlPM315qwLpaQlQDTjPdsUFSc6ZsP4AN6AlWnogPjQ7CVi7PYF3YVz+CY3jE2pwYf7E/7HlDAN0rV2GxTG0HQ==}
+  '@types/express@5.0.0':
+    resolution: {integrity: sha512-DvZriSMehGHL1ZNLzi6MidnsDhUZM/x2pRdDIKdwbUNqqwHxMlRdkxtn6/EPKyqKpHqTl/4nRZsRNLpZxZRpPQ==}
 
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
@@ -8878,17 +8878,17 @@ snapshots:
     dependencies:
       '@types/node': 20.17.1
 
-  '@types/express-serve-static-core@4.17.43':
+  '@types/express-serve-static-core@5.0.1':
     dependencies:
       '@types/node': 20.17.1
       '@types/qs': 6.9.12
       '@types/range-parser': 1.2.7
       '@types/send': 0.17.4
 
-  '@types/express@4.17.21':
+  '@types/express@5.0.0':
     dependencies:
       '@types/body-parser': 1.19.5
-      '@types/express-serve-static-core': 4.17.43
+      '@types/express-serve-static-core': 5.0.1
       '@types/qs': 6.9.12
       '@types/serve-static': 1.15.5
 
