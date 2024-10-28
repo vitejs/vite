@@ -435,6 +435,8 @@ importers:
 
   packages/vite/src/node/__tests__/fixtures/cjs-ssr-dep: {}
 
+  packages/vite/src/node/__tests__/fixtures/file-url: {}
+
   packages/vite/src/node/__tests__/fixtures/test-dep-conditions: {}
 
   packages/vite/src/node/__tests__/packages/module: {}
