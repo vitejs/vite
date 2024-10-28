@@ -42,7 +42,6 @@ import { type WebSocketServer, isWebSocketServer } from './ws'
 import { warmupFiles } from './warmup'
 
 export interface DevEnvironmentContext {
-  hot: boolean
   transport?: HotChannel | WebSocketServer
   options?: EnvironmentOptions
   remoteRunner?: {

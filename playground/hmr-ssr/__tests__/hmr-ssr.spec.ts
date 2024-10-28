@@ -1063,7 +1063,6 @@ async function setupModuleRunner(
           createEnvironment(name, config) {
             return createRunnableDevEnvironment(name, config, {
               runnerOptions: { hmr: { logger } },
-              hot: true,
             })
           },
         },

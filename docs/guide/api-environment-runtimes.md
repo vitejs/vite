@@ -96,7 +96,6 @@ function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, conte
       resolve: { conditions: ['custom'] },
       ...context.options,
     },
-    hot: true,
     transport,
   })
   return workerdDevEnvironment

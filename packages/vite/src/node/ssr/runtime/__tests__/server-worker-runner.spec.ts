@@ -68,7 +68,6 @@ describe('running module runner inside a worker', () => {
             createEnvironment: (name, config) => {
               return new DevEnvironment(name, config, {
                 transport: createWorkerTransport(worker),
-                hot: false,
               })
             },
           },
