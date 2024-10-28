@@ -45,7 +45,7 @@ function PerEnvironmentCountTransformedModulesPlugin() {
   const state = new Map<Environment, { count: number }>()
   return {
     name: 'count-transformed-modules',
-    perEnvironmentBuildStartEnd: true,
+    perEnvironmentStartEndDuringDev: true,
     buildStart() {
       state.set(this.environment, { count: 0 })
     }
@@ -66,7 +66,7 @@ function PerEnvironmentCountTransformedModulesPlugin() {
   const state = usePerEnvironmentState<{ count: number }>(() => ({ count: 0 }))
   return {
     name: 'count-transformed-modules',
-    perEnvironmentBuildStartEnd: true,
+    perEnvironmentStartEndDuringDev: true,
     buildStart() {
       state(this).count = 0
     }
