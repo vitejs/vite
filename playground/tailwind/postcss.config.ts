@@ -1,7 +1,11 @@
 // postcss.config.ts
-module.exports = {
+import { fileURLToPath } from 'node:url'
+
+export default {
   plugins: {
-    tailwindcss: { config: __dirname + '/tailwind.config.js' },
+    tailwindcss: {
+      config: fileURLToPath(new URL('./tailwind.config.ts', import.meta.url)),
+    },
     autoprefixer: {},
   },
 }

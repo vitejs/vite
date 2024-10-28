@@ -2,6 +2,7 @@
   "name": "@vitejs/test-tailwind",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -15,6 +16,6 @@
     "vue-router": "^4.4.5"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2"
+    "tsx": "^4.11.0"
   }
 }

@@ -136,7 +136,7 @@
     "picocolors": "^1.1.1",
     "picomatch": "^4.0.2",
     "postcss-import": "^16.1.0",
-    "postcss-load-config": "^4.0.2",
+    "postcss-load-config": "^6.0.1",
     "postcss-modules": "^6.0.0",
     "resolve.exports": "^2.0.2",
     "rollup-plugin-dts": "^6.1.1",
@@ -157,16 +157,22 @@
   },
   "peerDependencies": {
     "@types/node": "^18.0.0 || >=20.0.0",
+    "jiti": ">=1.21.0",
     "less": "*",
     "lightningcss": "^1.21.0",
     "sass": "*",
     "sass-embedded": "*",
     "stylus": "*",
     "sugarss": "*",
-    "terser": "^5.16.0"
+    "terser": "^5.16.0",
+    "tsx": "^4.8.1",
+    "yaml": "^2.4.2"
   },
   "peerDependenciesMeta": {
     "@types/node": {
+      "optional": true
+    },
+    "jiti": {
       "optional": true
     },
     "sass": {
@@ -188,6 +194,12 @@
       "optional": true
     },
     "terser": {
+      "optional": true
+    },
+    "tsx": {
+      "optional": true
+    },
+    "yaml": {
       "optional": true
     }
   }

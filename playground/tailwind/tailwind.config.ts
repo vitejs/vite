@@ -1,6 +1,6 @@
-/** @type {import('tailwindcss').Config} */
+import type { Config } from 'tailwindcss'
 
-module.exports = {
+export default {
   content: [
     // Before editing this section, make sure no paths are matching with `/src/main.js`
     // Look https://github.com/vitejs/vite/pull/6959 for more details
@@ -14,4 +14,4 @@ module.exports = {
     extend: {},
   },
   plugins: [],
-}
+} satisfies Config
