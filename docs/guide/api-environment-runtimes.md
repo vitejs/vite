@@ -294,7 +294,7 @@ function createWorkerEnvironment(name, config, context) {
               w.postMessage(payload)
             },
           }
-          handler(value.data, client, value.invoke)
+          handler(value.data, client)
         }
       }
       handlerToWorkerListener.set(handler, listener)
