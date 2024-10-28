@@ -13,62 +13,77 @@ Please share with us your feedback as you test the proposal.
 
 ## Formalizing Environments
 
-Vite 6 formalizes the concept of Environments. Until Vite 5, there were two implicit Environments (`client` and `ssr`). The new Environment API allows users to create as many environments as needed to map the way their apps work in production. This new capabilities required a big internal refactoring, but a big effort has been placed on backward compatibility. The initial goal of Vite 6 is to move the ecosystem to the new major as smoothly as possible, delaying the adoption of these new experimental APIs until enough users have migrated and frameworks and plugin authors have validated the new design.
+Vite 6 formalizes the concept of Environments. Until Vite 5, there were two implicit Environments (`client`, and optionally `ssr`). The new Environment API allows users and framework authors to create as many environments as needed to map the way their apps work in production. This new capability required a big internal refactoring, but a lot of effort has been placed on backward compatibility. The initial goal of Vite 6 is to move the ecosystem to the new major as smoothly as possible, delaying the adoption of these new experimental APIs until enough users have migrated and frameworks and plugin authors have validated the new design.
 
 ## Closing the gap between build and dev
 
-For a simple SPA, there is a single environment. The app will run in the user browser. During dev, except for Vite's requiring a modern browser, the environment matches closely the production runtime. In Vite 6, it would still be possible to use Vite without users knowing about environments. The usual vite config works for the default client environment in this case.
+For a simple SPA/MPA, no new APIs around environments are exposed to the config. Internally, Vite will apply the options to a `client` environment, but it's not necessary to know of this concept when configuring Vite. The config and behavior from Vite 5 should work seamlessly here.
 
-In a typical server side rendered Vite app, there are two environments. The client environment is running the app in the browser, and the node environment runs the server that performs SSR. When running Vite in dev mode, the server code is executed in the same Node process as the Vite dev server giving a close approximation of the production environment. But an app can run servers in other JS runtimes, like [Cloudflare's workerd](https://github.com/cloudflare/workerd). And it is also common for modern apps to have more than two environments (for example, an app could be running by a browser, a node server, and an edge server). Vite 5 didn't allow for these cases to be properly represented.
+When we move to a typical server side rendered (SSR) app, we'll have two environments:
 
-Vite 6 allows users to configure their app during build and dev to map all of its environments. During dev, a single Vite dev server can now be used to run code in multiple different environments concurrently. The app source code is still transformed by Vite dev server. On top of the shared HTTP server, middlewares, resolved config, and plugins pipeline, the Vite server now has a set of independent dev environments. Each of them is configured to match the production environment as closely as possible, and is connected to a dev runtime where the code is executed (for workerd, the server code can now run in miniflare locally). In the client, the browser imports and executes the code. In other environments, a module runner fetches and evaluates the transformed code.
+- `client`: runs the app in the browser.
+- `server`: runs the app in node (or other server runtimes) which renders pages before sending them to the browser.
+
+In dev, Vite executes the server code in the same Node process as the Vite dev server, giving a close approximation to the production environment. However, it is also possible for servers to run in other JS runtimes, like [Cloudflare's workerd](https://github.com/cloudflare/workerd) which have different constrains. Modern apps may also run in more than two environments, e.g. a browser, a node server, and an edge server. Vite 5 didn't allow to properly represent these environments.
+
+Vite 6 allows users to configure their app during build and dev to map all of its environments. During dev, a single Vite dev server can now be used to run code in multiple different environments concurrently. The app source code is still transformed by Vite dev server. On top of the shared HTTP server, middlewares, resolved config, and plugins pipeline, the Vite dev server now has a set of independent dev environments. Each of them is configured to match the production environment as closely as possible, and is connected to a dev runtime where the code is executed (for workerd, the server code can now run in miniflare locally). In the client, the browser imports and executes the code. In other environments, a module runner fetches and evaluates the transformed code.
 
 ![Vite Environments](../images/vite-environments.svg)
 
-## Environment Configuration
+## Environments Configuration
 
-Environments are explicitly configured with the `environments` config option.
+For an SPA/MPA, the configuration will look similar to Vite 5. Internally these options are used to configure the `client` environment.
+
+```js
+export default defineConfig({
+  build: {
+    sourcemap: false,
+  },
+  optimizeDeps: {
+    include: ['lib'],
+  },
+})
+```
+
+This is important because we'd like to keep Vite approachable and avoid exposing new concepts until they are needed.
+
+If the app is composed of several environments, then these environments can be configured explicitly with the `environments` config option.
 
 ```js
 export default {
+  build: {
+    sourcemap: false,
+  },
+  optimizeDeps: {
+    include: ['lib'],
+  },
   environments: {
-    client: {
+    server: {},
+    edge: {
       resolve: {
-        conditions: [], // configure the Client environment
-      },
-    },
-    ssr: {
-      optimizeDeps: {}, // configure the SSR environment
-    },
-    rsc: {
-      resolve: {
-        noExternal: true, // configure a custom environment
+        noExternal: true,
       },
     },
   },
 }
 ```
 
-All environment configs extend from user's root config, allowing users add defaults for all environments at the root level. This is quite useful for the common use case of configuring a Vite client only app, that can be done without going through `environments.client`.
+When not explicitly documented, environment inherit the configured top-level config options (for example, the new `server` and `edge` environments will inherit the `build.sourcemap: false` option). A small number of top-level options, like `optimizeDeps`, only apply to the `client` environment, as they don't work well when applied as a default to server environments. The `client` environment can also be configured explicitly through `environments.client`, but we recommend to do it with the top-level options so the client config remains unchanged when adding new environments.
 
-```js
-export default {
-  resolve: {
-    conditions: [], // configure a default for all environments
-  },
-}
-```
-
-The `EnvironmentOptions` interface exposes all the per-environment options. There are `SharedEnvironmentOptions` that apply to both `build` and `dev`, like `resolve`. And there are `DevEnvironmentOptions` and `BuildEnvironmentOptions` for dev and build specific options (like `optimizeDeps` or `build.outDir`).
+The `EnvironmentOptions` interface exposes all the per-environment options. There are environment options that apply to both `build` and `dev`, like `resolve`. And there are `DevEnvironmentOptions` and `BuildEnvironmentOptions` for dev and build specific options (like `dev.warmup` or `build.outDir`). Some options like `optimizeDeps` only applies to dev, but is kept as top level instead of nested in `dev` for backward compatibility.
 
 ```ts
-interface EnvironmentOptions extends SharedEnvironmentOptions {
+interface EnvironmentOptions {
+  define?: Record<string, any>
+  resolve?: EnvironmentResolveOptions
+  optimizeDeps: DepOptimizationOptions
+  consumer?: 'client' | 'server'
   dev: DevOptions
   build: BuildOptions
 }
 ```
 
-As we explained, Environment specific options defined at the root level of user config are used for the default client environment (the `UserConfig` interface extends from the `EnvironmentOptions` interface). And environments can be configured explicitly using the `environments` record. The `client` and `ssr` environments are always present during dev, even if an empty object is set to `environments`. This allows backward compatibility with `server.ssrLoadModule(url)` and `server.moduleGraph`. During build, the `client` environment is always present, and the `ssr` environment is only present if it is explicitly configured (using `environments.ssr` or for backward compatibility `build.ssr`).
+The `UserConfig` interface extends from the `EnvironmentOptions` interface, allowing to configure the client and defaults for other environments, configured through the `environments` option. The `client` and a server environment named `ssr` are always present during dev. This allows backward compatibility with `server.ssrLoadModule(url)` and `server.moduleGraph`. During build, the `client` environment is always present, and the `ssr` environment is only present if it is explicitly configured (using `environments.ssr` or for backward compatibility `build.ssr`). An app doesn't need to use the `ssr` name for their SSR environment, it could name it `server` for example.
 
 ```ts
 interface UserConfig extends EnvironmentOptions {
@@ -77,27 +92,21 @@ interface UserConfig extends EnvironmentOptions {
 }
 ```
 
-::: info
-
-The `ssr` top level property has many options in common with `EnvironmentOptions`. This option was created for the same use case as `environments` but only allowed configuration of a small number of options. We're going to deprecate it in favour of a unified way to define environment configuration.
-
-:::
+Note that the `ssr` top-level property is going to be deprecated once the Environment API is stable. This option has the same role as `environments`, but for the default `ssr` environment and only allowed configuring of a small set of options.
 
 ## Custom environment instances
 
-Low level configuration APIs are available so runtime providers can provide environments for their runtimes.
+Low level configuration APIs are available so runtime providers can provide environments with proper defaults for their runtimes. These environments can also spawn other processes or threads to run the modules during dev in a closer runtime to the production environment.
 
 ```js
-import { createCustomEnvironment } from 'vite-environment-provider'
+import { customEnvironment } from 'vite-environment-provider'
 
 export default {
+  build: {
+    outDir: '/dist/client',
+  },
   environments: {
-    client: {
-      build: {
-        outDir: '/dist/client',
-      },
-    }
-    ssr: createCustomEnvironment({
+    ssr: customEnvironment({
       build: {
         outDir: '/dist/ssr',
       },
