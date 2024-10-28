@@ -1749,7 +1749,7 @@ async function runConfigHook(
     const handler = getHookHandler(hook)
     if (handler) {
       const res = await handler(conf, configEnv)
-      if (res) {
+      if (res && res !== conf) {
         conf = mergeConfig(conf, res)
       }
     }
