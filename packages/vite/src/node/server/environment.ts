@@ -42,6 +42,7 @@ import { type WebSocketServer, isWebSocketServer } from './ws'
 import { warmupFiles } from './warmup'
 
 export interface DevEnvironmentContext {
+  hot: boolean
   transport?: HotChannel | WebSocketServer
   options?: EnvironmentOptions
   remoteRunner?: {
@@ -128,7 +129,7 @@ export class DevEnvironment extends BaseEnvironment {
     this.hot = context.transport
       ? isWebSocketServer in context.transport
         ? context.transport
-        : normalizeHotChannel(context.transport)
+        : normalizeHotChannel(context.transport, context.hot)
       : createNoopHotChannel()
 
     this.hot.setInvokeHandler({

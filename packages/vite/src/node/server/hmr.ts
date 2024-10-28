@@ -176,6 +176,7 @@ export interface NormalizedHotChannel<Api = any> {
 
 export const normalizeHotChannel = (
   channel: HotChannel,
+  enableHmr: boolean,
 ): NormalizedHotChannel => {
   if (!channel.on && !channel.setInvokeHandler) {
     throw new Error(
@@ -312,7 +313,16 @@ export const normalizeHotChannel = (
       } else {
         payload = args[0]
       }
-      channel.send?.(payload)
+
+      if (
+        enableHmr ||
+        payload.type === 'connected' ||
+        payload.type === 'ping' ||
+        payload.type === 'custom' ||
+        payload.type === 'error'
+      ) {
+        channel.send?.(payload)
+      }
     },
     listen() {
       return channel.listen?.()

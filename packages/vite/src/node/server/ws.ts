@@ -263,63 +263,66 @@ export function createWebSocketServer(
   // connected client.
   let bufferedError: ErrorPayload | null = null
 
-  const normalizedHotChannel = normalizeHotChannel({
-    send(payload) {
-      if (payload.type === 'error' && !wss.clients.size) {
-        bufferedError = payload
-        return
-      }
-
-      const stringified = JSON.stringify(payload)
-      wss.clients.forEach((client) => {
-        // readyState 1 means the connection is open
-        if (client.readyState === 1) {
-          client.send(stringified)
+  const normalizedHotChannel = normalizeHotChannel(
+    {
+      send(payload) {
+        if (payload.type === 'error' && !wss.clients.size) {
+          bufferedError = payload
+          return
         }
-      })
-    },
-    on(event: string, fn: any) {
-      if (!customListeners.has(event)) {
-        customListeners.set(event, new Set())
-      }
-      customListeners.get(event)!.add(fn)
-    },
-    off(event: string, fn: any) {
-      customListeners.get(event)?.delete(fn)
-    },
-    listen() {
-      wsHttpServer?.listen(port, host)
-    },
-    close() {
-      // should remove listener if hmr.server is set
-      // otherwise the old listener swallows all WebSocket connections
-      if (hmrServerWsListener && wsServer) {
-        wsServer.off('upgrade', hmrServerWsListener)
-      }
-      return new Promise<void>((resolve, reject) => {
+
+        const stringified = JSON.stringify(payload)
         wss.clients.forEach((client) => {
-          client.terminate()
-        })
-        wss.close((err) => {
-          if (err) {
-            reject(err)
-          } else {
-            if (wsHttpServer) {
-              wsHttpServer.close((err) => {
-                if (err) {
-                  reject(err)
-                } else {
-                  resolve()
-                }
-              })
-            } else {
-              resolve()
-            }
+          // readyState 1 means the connection is open
+          if (client.readyState === 1) {
+            client.send(stringified)
           }
         })
-      })
+      },
+      on(event: string, fn: any) {
+        if (!customListeners.has(event)) {
+          customListeners.set(event, new Set())
+        }
+        customListeners.get(event)!.add(fn)
+      },
+      off(event: string, fn: any) {
+        customListeners.get(event)?.delete(fn)
+      },
+      listen() {
+        wsHttpServer?.listen(port, host)
+      },
+      close() {
+        // should remove listener if hmr.server is set
+        // otherwise the old listener swallows all WebSocket connections
+        if (hmrServerWsListener && wsServer) {
+          wsServer.off('upgrade', hmrServerWsListener)
+        }
+        return new Promise<void>((resolve, reject) => {
+          wss.clients.forEach((client) => {
+            client.terminate()
+          })
+          wss.close((err) => {
+            if (err) {
+              reject(err)
+            } else {
+              if (wsHttpServer) {
+                wsHttpServer.close((err) => {
+                  if (err) {
+                    reject(err)
+                  } else {
+                    resolve()
+                  }
+                })
+              } else {
+                resolve()
+              }
+            }
+          })
+        })
+      },
     },
-  })
+    config.server.hmr !== false,
+  )
   return {
     ...normalizedHotChannel,
 

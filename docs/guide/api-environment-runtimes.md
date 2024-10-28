@@ -29,7 +29,8 @@ function createWorkedEnvironment(
       dev: {
         createEnvironment(name, config) {
           return createWorkerdDevEnvironment(name, config, {
-            hot: customHotChannel(),
+            hot: true,
+            transport: customHotChannel(),
           })
         },
       },
@@ -96,6 +97,7 @@ function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, conte
       resolve: { conditions: ['custom'] },
       ...context.options,
     },
+    hot: true,
     transport,
   })
   return workerdDevEnvironment
