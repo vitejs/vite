@@ -21,7 +21,7 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
-import type { LightningCSSOptions } from 'dep-types/lightningcss'
+import type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
@@ -32,7 +32,7 @@ import type {
   SassLegacyPreprocessBaseOptions,
   SassModernPreprocessBaseOptions,
   StylusPreprocessorBaseOptions,
-} from 'types/cssPreprocessorOptions'
+} from 'types/internal/cssPreprocessorOptions'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -181,9 +181,7 @@ export interface CSSModulesOptions {
 }
 
 export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
-  lightningcss?: LightningCSSOptions & {
-    targets: LightningCSSOptions['targets']
-  }
+  lightningcss?: LightningCSSOptions
 }
 
 export function resolveCSSOptions(
@@ -762,7 +760,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           pureCssChunks.add(chunk)
         }
 
-        if (config.build.cssCodeSplit) {
+        if (this.environment.config.build.cssCodeSplit) {
           if (opts.format === 'es' || opts.format === 'cjs') {
             const isEntry = chunk.isEntry && isPureCssChunk
             const cssFullAssetName = ensureFileExt(chunk.name, '.css')
@@ -867,8 +865,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         return
       }
 
-      function extractCss() {
-        let css = ''
+      // extract as single css bundle if no codesplit
+      if (!config.build.cssCodeSplit && !hasEmitted) {
+        let extractedCss = ''
         const collected = new Set<OutputChunk>()
         // will be populated in order they are used by entry points
         const dynamicImports = new Set<string>()
@@ -884,7 +883,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             dynamicImports.add(importName),
           )
           // Then collect the styles of the current chunk (might overwrite some styles from previous imports)
-          css += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
+          extractedCss += chunkCSSMap.get(chunk.preliminaryFileName) ?? ''
         }
 
         // The bundle is guaranteed to be deterministic, if not then we have a bug in rollup.
@@ -899,17 +898,16 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           collect(bundle[chunkName])
         }
 
-        return css
-      }
-      let extractedCss = !hasEmitted && extractCss()
-      if (extractedCss) {
-        hasEmitted = true
-        extractedCss = await finalizeCss(extractedCss, true, config)
-        this.emitFile({
-          name: cssBundleName,
-          type: 'asset',
-          source: extractedCss,
-        })
+        // Finally, if there's any extracted CSS, we emit the asset
+        if (extractedCss) {
+          hasEmitted = true
+          extractedCss = await finalizeCss(extractedCss, true, config)
+          this.emitFile({
+            name: cssBundleName,
+            type: 'asset',
+            source: extractedCss,
+          })
+        }
       }
 
       // remove empty css chunks and their imports
@@ -1976,18 +1974,18 @@ type PreprocessorAdditionalData =
       | PreprocessorAdditionalDataResult
       | Promise<PreprocessorAdditionalDataResult>)
 
-type SassPreprocessorOptions = {
+export type SassPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
 } & (
-  | ({ api?: 'legacy' } & SassLegacyPreprocessBaseOptions)
-  | ({ api: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
+  | ({ api: 'legacy' } & SassLegacyPreprocessBaseOptions)
+  | ({ api?: 'modern' | 'modern-compiler' } & SassModernPreprocessBaseOptions)
 )
 
-type LessPreprocessorOptions = {
+export type LessPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
 } & LessPreprocessorBaseOptions
 
-type StylusPreprocessorOptions = {
+export type StylusPreprocessorOptions = {
   additionalData?: PreprocessorAdditionalData
 } & StylusPreprocessorBaseOptions
 
@@ -2469,9 +2467,9 @@ const scssProcessor = (
     },
     async process(environment, source, root, options, resolvers) {
       const sassPackage = loadSassPackage(root)
-      // TODO: change default in v6
-      // options.api ?? sassPackage.name === "sass-embedded" ? "modern-compiler" : "modern";
-      const api = options.api ?? 'legacy'
+      const api =
+        options.api ??
+        (sassPackage.name === 'sass-embedded' ? 'modern-compiler' : 'modern')
 
       if (!workerMap.has(options.alias)) {
         workerMap.set(
@@ -3001,18 +2999,11 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
 
   const sassProcess: StylePreprocessor<SassStylePreprocessorInternalOptions>['process'] =
     (environment, source, root, options, resolvers) => {
-      let opts: SassStylePreprocessorInternalOptions
-      if (options.api === 'modern' || options.api === 'modern-compiler') {
-        opts = { ...options, syntax: 'indented' as const }
+      const opts: SassStylePreprocessorInternalOptions = { ...options }
+      if (opts.api === 'legacy') {
+        opts.indentedSyntax = true
       } else {
-        const narrowedOptions =
-          options as SassStylePreprocessorInternalOptions & {
-            api?: 'legacy'
-          }
-        opts = {
-          ...narrowedOptions,
-          indentedSyntax: true,
-        }
+        opts.syntax = 'indented'
       }
       return scss.process(environment, source, root, opts, resolvers)
     }
