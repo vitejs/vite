@@ -85,7 +85,14 @@ export default tseslint.config(
       'n/no-extraneous-import': [
         'error',
         {
-          allowModules: ['vite', 'less', 'sass', 'vitest', 'unbuild'],
+          allowModules: [
+            'vite',
+            'less',
+            'sass',
+            'sass-embedded',
+            'vitest',
+            'unbuild',
+          ],
         },
       ],
       'n/no-extraneous-require': [
@@ -196,7 +203,6 @@ export default tseslint.config(
       'playground/**/*dep*/**',
       'playground/resolve/browser-module-field2/index.web.js',
       'playground/resolve/browser-field/**',
-      'playground/tailwind/**', // blocked by https://github.com/postcss/postcss-load-config/issues/239
     ],
     rules: {
       'import-x/no-commonjs': 'error',
