@@ -334,8 +334,9 @@ Blocklist for sensitive files being restricted to be served by Vite dev server. 
 - **Type:** `boolean`
 - **Default:** `false`
 - **Experimental**
+- **Deprecated**
 
-Caches filenames of accessed directories to avoid repeated filesystem operations. Particularly in Windows, this could result in a performance boost. It is disabled by default due to edge cases when writing a file in a cached folder and immediately importing it.
+This option enabled an optimization to cache filenames of accessed directories to avoid repeated filesystem operations. It is now a noop due to edge cases when writing a file in a cached folder and immediately importing it.
 
 ## server.origin
 

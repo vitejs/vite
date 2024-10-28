@@ -36,7 +36,6 @@ import {
   setupSIGTERMListener,
   teardownSIGTERMListener,
 } from '../utils'
-import { getFsUtils } from '../fsUtils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
@@ -220,9 +219,10 @@ export interface FileSystemServeOptions {
   deny?: string[]
 
   /**
-   * Enable caching of fs calls. It is enabled by default if no custom watch ignored patterns are provided.
+   * This option enabled caching of fs calls. It is now a noop.
    *
    * @experimental
+   * @deprecated noop
    * @default undefined
    */
   cachedChecks?: boolean
@@ -802,8 +802,6 @@ export async function _createServer(
     await onHMRUpdate('update', file)
   })
 
-  getFsUtils(config).initWatcher?.(watcher)
-
   watcher.on('add', (file) => {
     onFileAddUnlink(file, false)
   })
@@ -881,13 +879,7 @@ export async function _createServer(
 
   // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    middlewares.use(
-      htmlFallbackMiddleware(
-        root,
-        config.appType === 'spa',
-        getFsUtils(config),
-      ),
-    )
+    middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
   }
 
   // run post config hooks
