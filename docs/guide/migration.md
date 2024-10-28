@@ -86,7 +86,3 @@ There are other breaking changes which only affect few users.
 ## Migration from v4
 
 Check the [Migration from v4 Guide](https://v5.vite.dev/guide/migration.html) in the Vite v5 docs first to see the needed changes to port your app to Vite 5, and then proceed with the changes on this page.
-
-```
-
-```

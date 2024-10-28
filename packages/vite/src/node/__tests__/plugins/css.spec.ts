@@ -406,17 +406,6 @@ describe('resolveLibCssFilename', () => {
     expect(filename).toBe('custom-name.css')
   })
 
-  test('use fileName if set', () => {
-    const filename = resolveLibCssFilename(
-      {
-        entry: 'mylib.js',
-        fileName: 'custom-name',
-      },
-      path.resolve(__dirname, '../packages/name'),
-    )
-    expect(filename).toBe('custom-name.css')
-  })
-
   test('use fileName if set and has array entry', () => {
     const filename = resolveLibCssFilename(
       {
