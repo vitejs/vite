@@ -206,12 +206,14 @@ export async function traverseHtml(
   traverseNodes(ast, visitor)
 }
 
-export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
-  src: Token.Attribute | undefined
-  sourceCodeLocation: Token.Location | undefined
-  isModule: boolean
-  isAsync: boolean
-} {
+export function getScriptInfo(node: DefaultTreeAdapterMap['element']):
+  | {
+      src: Token.Attribute | undefined
+      sourceCodeLocation: Token.Location | undefined
+      isModule: boolean
+      isAsync: boolean
+    }
+  | undefined {
   let src: Token.Attribute | undefined
   let sourceCodeLocation: Token.Location | undefined
   let isModule = false
@@ -227,6 +229,8 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
       isModule = true
     } else if (p.name === 'async') {
       isAsync = true
+    } else if (p.name === 'vite-ignore') {
+      return undefined
     }
   }
   return { src, sourceCodeLocation, isModule, isAsync }
@@ -436,9 +440,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           let shouldRemove = false
 
           // script tags
-          if (node.nodeName === 'script') {
-            const { src, sourceCodeLocation, isModule, isAsync } =
-              getScriptInfo(node)
+          const scriptInfo = node.nodeName === 'script' && getScriptInfo(node)
+          if (scriptInfo) {
+            const { src, sourceCodeLocation, isModule, isAsync } = scriptInfo
 
             const url = src && src.value
             const isPublicFile = !!(url && checkPublicFile(url, config))
@@ -506,89 +510,97 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // statement for each - this will be handled by the asset plugin
           const assetAttrs = assetAttrsConfig[node.nodeName]
           if (assetAttrs) {
-            for (const p of node.attrs) {
-              const attrKey = getAttrKey(p)
-              if (p.value && assetAttrs.includes(attrKey)) {
-                if (attrKey === 'srcset') {
-                  assetUrlsPromises.push(
-                    (async () => {
-                      const processedEncodedUrl = await processSrcSet(
-                        p.value,
-                        async ({ url }) => {
-                          const decodedUrl = decodeURI(url)
-                          if (!isExcludedUrl(decodedUrl)) {
-                            const result = await processAssetUrl(url)
-                            return result !== decodedUrl
-                              ? encodeURIPath(result)
-                              : url
-                          }
-                          return url
-                        },
+            const nodeAttrs: Record<string, string> = {}
+            for (const attr of node.attrs) {
+              nodeAttrs[getAttrKey(attr)] = attr.value
+            }
+            const shouldIgnore =
+              node.nodeName === 'link' && 'vite-ignore' in nodeAttrs
+            if (!shouldIgnore) {
+              for (const attrKey in nodeAttrs) {
+                const attrValue = nodeAttrs[attrKey]
+                if (attrValue && assetAttrs.includes(attrKey)) {
+                  if (attrKey === 'srcset') {
+                    assetUrlsPromises.push(
+                      (async () => {
+                        const processedEncodedUrl = await processSrcSet(
+                          attrValue,
+                          async ({ url }) => {
+                            const decodedUrl = decodeURI(url)
+                            if (!isExcludedUrl(decodedUrl)) {
+                              const result = await processAssetUrl(url)
+                              return result !== decodedUrl
+                                ? encodeURIPath(result)
+                                : url
+                            }
+                            return url
+                          },
+                        )
+                        if (processedEncodedUrl !== attrValue) {
+                          overwriteAttrValue(
+                            s,
+                            getAttrSourceCodeLocation(node, attrKey),
+                            processedEncodedUrl,
+                          )
+                        }
+                      })(),
+                    )
+                  } else {
+                    const url = decodeURI(attrValue)
+                    if (checkPublicFile(url, config)) {
+                      overwriteAttrValue(
+                        s,
+                        getAttrSourceCodeLocation(node, attrKey),
+                        partialEncodeURIPath(toOutputPublicFilePath(url)),
                       )
-                      if (processedEncodedUrl !== p.value) {
-                        overwriteAttrValue(
-                          s,
-                          getAttrSourceCodeLocation(node, attrKey),
-                          processedEncodedUrl,
+                    } else if (!isExcludedUrl(url)) {
+                      if (
+                        node.nodeName === 'link' &&
+                        isCSSRequest(url) &&
+                        // should not be converted if following attributes are present (#6748)
+                        !node.attrs.some(
+                          (p) =>
+                            p.prefix === undefined &&
+                            (p.name === 'media' || p.name === 'disabled'),
+                        )
+                      ) {
+                        // CSS references, convert to import
+                        const importExpression = `\nimport ${JSON.stringify(url)}`
+                        styleUrls.push({
+                          url,
+                          start: nodeStartWithLeadingWhitespace(node),
+                          end: node.sourceCodeLocation!.endOffset,
+                        })
+                        js += importExpression
+                      } else {
+                        // If the node is a link, check if it can be inlined. If not, set `shouldInline`
+                        // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
+                        const isNoInlineLink =
+                          node.nodeName === 'link' &&
+                          node.attrs.some(
+                            (p) =>
+                              p.name === 'rel' &&
+                              parseRelAttr(attrValue).some((v) =>
+                                noInlineLinkRels.has(v),
+                              ),
+                          )
+                        const shouldInline = isNoInlineLink ? false : undefined
+                        assetUrlsPromises.push(
+                          (async () => {
+                            const processedUrl = await processAssetUrl(
+                              url,
+                              shouldInline,
+                            )
+                            if (processedUrl !== url) {
+                              overwriteAttrValue(
+                                s,
+                                getAttrSourceCodeLocation(node, attrKey),
+                                partialEncodeURIPath(processedUrl),
+                              )
+                            }
+                          })(),
                         )
                       }
-                    })(),
-                  )
-                } else {
-                  const url = decodeURI(p.value)
-                  if (checkPublicFile(url, config)) {
-                    overwriteAttrValue(
-                      s,
-                      getAttrSourceCodeLocation(node, attrKey),
-                      partialEncodeURIPath(toOutputPublicFilePath(url)),
-                    )
-                  } else if (!isExcludedUrl(url)) {
-                    if (
-                      node.nodeName === 'link' &&
-                      isCSSRequest(url) &&
-                      // should not be converted if following attributes are present (#6748)
-                      !node.attrs.some(
-                        (p) =>
-                          p.prefix === undefined &&
-                          (p.name === 'media' || p.name === 'disabled'),
-                      )
-                    ) {
-                      // CSS references, convert to import
-                      const importExpression = `\nimport ${JSON.stringify(url)}`
-                      styleUrls.push({
-                        url,
-                        start: nodeStartWithLeadingWhitespace(node),
-                        end: node.sourceCodeLocation!.endOffset,
-                      })
-                      js += importExpression
-                    } else {
-                      // If the node is a link, check if it can be inlined. If not, set `shouldInline`
-                      // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
-                      const isNoInlineLink =
-                        node.nodeName === 'link' &&
-                        node.attrs.some(
-                          (p) =>
-                            p.name === 'rel' &&
-                            parseRelAttr(p.value).some((v) =>
-                              noInlineLinkRels.has(v),
-                            ),
-                        )
-                      const shouldInline = isNoInlineLink ? false : undefined
-                      assetUrlsPromises.push(
-                        (async () => {
-                          const processedUrl = await processAssetUrl(
-                            url,
-                            shouldInline,
-                          )
-                          if (processedUrl !== url) {
-                            overwriteAttrValue(
-                              s,
-                              getAttrSourceCodeLocation(node, attrKey),
-                              partialEncodeURIPath(processedUrl),
-                            )
-                          }
-                        })(),
-                      )
                     }
                   }
                 }
