@@ -244,7 +244,7 @@ export function resolvePlugin(
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
 
-      const depsOptimizerOptions = this.environment.config.dev.optimizeDeps
+      const depsOptimizerOptions = this.environment.config.optimizeDeps
 
       const resolvedImports = resolveSubpathImports(id, importer, options)
       if (resolvedImports) {
@@ -349,14 +349,7 @@ export function resolvePlugin(
           res = ensureVersionQuery(res, id, options, ssr, depsOptimizer)
           debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
-          // If this isn't a script imported from a .html file, include side effects
-          // hints so the non-used code is properly tree-shaken during build time.
-          if (
-            !options.idOnly &&
-            !options.scan &&
-            options.isBuild &&
-            !importer?.endsWith('.html')
-          ) {
+          if (!options.idOnly && !options.scan && options.isBuild) {
             const resPkg = findNearestPackageData(
               path.dirname(res),
               options.packageCache,
