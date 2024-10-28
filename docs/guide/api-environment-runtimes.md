@@ -357,12 +357,12 @@ In this case, the hot channel only needs to implement the `setInvokeHandler`:
 ```ts
 let invokeHandler: HotChannelInvokeHandler | undefined
 
-const workerHotChannel = {
+const httpHotChannel = {
   setInvokeHandler(_invokeHandler) {
     invokeHandler = _invokeHandler
   },
 }
-// pass workerHotChannel to environment
+// pass httpHotChannel to environment
 
 server.onRequest((request: Request) => {
   const url = new URL(request.url)
