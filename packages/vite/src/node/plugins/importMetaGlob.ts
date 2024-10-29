@@ -69,18 +69,17 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         const globMatchers = allGlobs.map((globs) => {
           const affirmed: string[] = []
           const negated: string[] = []
-
           for (const glob of globs) {
             ;(glob[0] === '!' ? negated : affirmed).push(glob)
           }
+          const affirmedMatcher = picomatch(affirmed)
+          const negatedMatcher = picomatch(negated)
 
           return (file: string) => {
-            // (glob1 || glob2) && !glob3 && !glob4...
+            // (glob1 || glob2) && !(glob3 || glob4)...
             return (
-              (!affirmed.length ||
-                affirmed.some((glob) => picomatch.isMatch(file, glob))) &&
-              (!negated.length ||
-                negated.every((glob) => picomatch.isMatch(file, glob)))
+              (affirmed.length === 0 || affirmedMatcher(file)) &&
+              !(negated.length > 0 && negatedMatcher(file))
             )
           }
         })
