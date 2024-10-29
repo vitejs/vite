@@ -926,9 +926,7 @@ export function tryNodeResolve(
   }
 
   // if we reach here, it's a valid dep import that hasn't been optimized.
-  const isJsType = depsOptimizer
-    ? isOptimizable(resolved, depsOptimizer.options)
-    : OPTIMIZABLE_ENTRY_RE.test(resolved)
+  const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolved)
 
   const exclude = depsOptimizerOptions?.exclude
 
