@@ -13,7 +13,7 @@ import { resolvePackageData } from '../packages'
 import { cleanUrl, slash } from '../../shared/utils'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
-import { OPTIMIZABLE_ENTRY_RE, SPECIAL_QUERY_RE } from '../constants'
+import { SPECIAL_QUERY_RE } from '../constants'
 
 export function createOptimizeDepsIncludeResolver(
   environment: Environment,
@@ -40,18 +40,16 @@ export function createOptimizeDepsIncludeResolver(
     const deepMatch = deepImportRE.exec(id)
     const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : cleanUrl(id)
 
-    const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolvedId)
-
-    const exclude = environment.config.optimizeDeps?.exclude
+    const exclude = environment.config.optimizeDeps.exclude
 
     const skipOptimization =
-      !isJsType ||
+      !optimizable ||
       (importer && isInNodeModules(importer)) ||
       exclude?.includes(pkgId) ||
       exclude?.includes(id) ||
       SPECIAL_QUERY_RE.test(resolvedId)
 
-    return { id: resolvedId, optimizable: optimizable && !skipOptimization }
+    return { id: resolvedId, optimizable: !skipOptimization }
   }
 
   return async (id: string) => {
