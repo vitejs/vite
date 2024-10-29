@@ -6,6 +6,7 @@ env:
 
 permissions:
   pull-requests: write
+  issues: write
 
 on:
   push:
@@ -37,7 +38,7 @@ jobs:
 
       - run: pnpm dlx pkg-pr-new@0.0 publish --compact --pnpm ./packages/vite
 
-      - if: github.event_name != 'push'
+      - if: github.event_name == 'pull_request'
         run: |
           gh issue edit ${{ github.event.pull_request.number }} --remove-label "trigger: preview" --repo ${{ github.repository }}
         env:
