@@ -1,5 +1,5 @@
 import { isAbsolute, posix } from 'node:path'
-import micromatch from 'micromatch'
+import picomatch from 'picomatch'
 import { stripLiteral } from 'strip-literal'
 import colors from 'picocolors'
 import type {
@@ -23,8 +23,6 @@ import { evalValue, normalizePath, transformStableResult } from '../utils'
 import type { Logger } from '../logger'
 import { slash } from '../../shared/utils'
 import type { Environment } from '../environment'
-
-const { isMatch, scan } = micromatch
 
 export interface ParsedImportGlob {
   index: number
@@ -80,8 +78,9 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
             // (glob1 || glob2) && !glob3 && !glob4...
             return (
               (!affirmed.length ||
-                affirmed.some((glob) => isMatch(file, glob))) &&
-              (!negated.length || negated.every((glob) => isMatch(file, glob)))
+                affirmed.some((glob) => picomatch.isMatch(file, glob))) &&
+              (!negated.length ||
+                negated.every((glob) => picomatch.isMatch(file, glob)))
             )
           }
         })
@@ -576,7 +575,7 @@ export function getCommonBase(globsResolved: string[]): null | string {
   const bases = globsResolved
     .filter((g) => g[0] !== '!')
     .map((glob) => {
-      let { base } = scan(glob)
+      let { base } = picomatch.scan(glob)
       // `scan('a/foo.js')` returns `base: 'a/foo.js'`
       if (posix.basename(base).includes('.')) base = posix.dirname(base)
 
