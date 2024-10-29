@@ -14,5 +14,8 @@ test.runIf(isBuild)('no minifySyntax', () => {
   const cssContent = readFile(path.resolve(assetsDir, cssFile))
 
   expect(jsContent).toContain('{console.log("hello world")}')
+  expect(jsContent).not.toContain('/*! explicit comment */')
+
   expect(cssContent).toContain('color:#ff0000')
+  expect(cssContent).not.toContain('/*! explicit comment */')
 })

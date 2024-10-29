@@ -1,5 +1,5 @@
 let base = `/${self.location.pathname.split('/')[1]}`
-if (base === `/worker-entries`) base = '' // relative base
+if (base.endsWith('.js') || base === `/worker-entries`) base = '' // for dev
 
 importScripts(`${base}/classic.js`)
 

@@ -8,6 +8,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const isTest = process.env.VITEST
 
+const noExternal = [
+  '@vitejs/test-no-external-cjs',
+  '@vitejs/test-import-builtin-cjs',
+  '@vitejs/test-no-external-css',
+  '@vitejs/test-external-entry',
+]
+
 export async function createServer(root = process.cwd(), hmrPort) {
   const resolve = (p) => path.resolve(__dirname, p)
 
@@ -35,18 +42,13 @@ export async function createServer(root = process.cwd(), hmrPort) {
     },
     appType: 'custom',
     ssr: {
-      noExternal: [
-        '@vitejs/test-no-external-cjs',
-        '@vitejs/test-import-builtin-cjs',
-        '@vitejs/test-no-external-css',
-        '@vitejs/test-external-entry',
-      ],
+      noExternal,
       external: [
         '@vitejs/test-nested-external',
         '@vitejs/test-external-entry/entry',
       ],
       optimizeDeps: {
-        disabled: 'build',
+        include: noExternal,
       },
     },
     plugins: [
@@ -61,6 +63,23 @@ export async function createServer(root = process.cwd(), hmrPort) {
         load(id) {
           if (id === '@vitejs/test-pkg-exports/virtual') {
             return 'export default "[success]"'
+          }
+        },
+      },
+      {
+        name: 'virtual-isomorphic-module',
+        resolveId(id) {
+          if (id === 'virtual:isomorphic-module') {
+            return '\0virtual:isomorphic-module'
+          }
+        },
+        load(id, { ssr }) {
+          if (id === '\0virtual:isomorphic-module') {
+            if (ssr) {
+              return 'export { default } from "/src/isomorphic-module-server.js";'
+            } else {
+              return 'export { default } from "/src/isomorphic-module-browser.js";'
+            }
           }
         },
       },

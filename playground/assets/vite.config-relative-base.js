@@ -1,15 +1,13 @@
-/**
- * @type {import('vite').UserConfig}
- */
+import { defineConfig } from 'vite'
+import baseConfig from './vite.config.js'
 
-const baseConfig = require('./vite.config.js')
-module.exports = {
+export default defineConfig(({ isPreview }) => ({
   ...baseConfig,
-  base: './', // relative base to make dist portable
+  base: !isPreview ? './' : '/relative-base/', // relative base to make dist portable
   build: {
     ...baseConfig.build,
     outDir: 'dist/relative-base',
-    watch: false,
+    watch: null,
     minify: false,
     assetsInlineLimit: 0,
     rollupOptions: {
@@ -17,10 +15,13 @@ module.exports = {
         entryFileNames: 'entries/[name].js',
         chunkFileNames: 'chunks/[name]-[hash].js',
         assetFileNames: 'other-assets/[name]-[hash][extname]',
+        manualChunks(id) {
+          if (id.includes('css/manual-chunks.css')) {
+            return 'css/manual-chunks'
+          }
+        },
       },
     },
   },
-  testConfig: {
-    baseRoute: '/relative-base/',
-  },
-}
+  cacheDir: 'node_modules/.vite-relative-base',
+}))

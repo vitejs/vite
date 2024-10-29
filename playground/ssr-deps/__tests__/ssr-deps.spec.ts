@@ -1,14 +1,11 @@
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { port } from './serve'
-import { getColor, page } from '~utils'
+import { editFile, getColor, isServe, page, untilUpdated } from '~utils'
 
 const url = `http://localhost:${port}`
 
 /**
  * test for #5809
- *
- * NOTE: This test will always succeed now, unless the temporary workaround for Jest can be removed
- * See https://github.com/vitejs/vite/pull/5197#issuecomment-938054077
  */
 test('msg should be encrypted', async () => {
   await page.goto(url)
@@ -115,4 +112,44 @@ test('msg from linked no external', async () => {
 test('import css library', async () => {
   await page.goto(url)
   expect(await getColor('.css-lib')).toBe('blue')
+})
+
+test('import css library', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.module-condition')).toMatch('[success]')
+})
+
+describe.runIf(isServe)('hmr', () => {
+  // TODO: the server file is not imported on the client at all
+  // so it's not present in the client moduleGraph anymore
+  // we need to decide if we want to support a usecase when ssr change
+  // affects the client in any way
+  test.skip('handle isomorphic module updates', async () => {
+    await page.goto(url)
+
+    expect(await page.textContent('.isomorphic-module-server')).toMatch(
+      '[server]',
+    )
+    // Allowing additional time for this element to be filled in
+    // by a client script that is loaded using dynamic import
+    await untilUpdated(async () => {
+      return page.textContent('.isomorphic-module-browser')
+    }, '[browser]')
+
+    editFile('src/isomorphic-module-browser.js', (code) =>
+      code.replace('[browser]', '[browser-hmr]'),
+    )
+    await page.waitForNavigation()
+    await untilUpdated(async () => {
+      return page.textContent('.isomorphic-module-browser')
+    }, '[browser-hmr]')
+
+    editFile('src/isomorphic-module-server.js', (code) =>
+      code.replace('[server]', '[server-hmr]'),
+    )
+    await page.waitForNavigation()
+    await untilUpdated(async () => {
+      return page.textContent('.isomorphic-module-server')
+    }, '[server-hmr]')
+  })
 })

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SSR Resolve Conditions</title>
+  </head>
+  <body>
+    <h1>SSR Resolve Conditions</h1>
+    <div id="app"><!--app-html--></div>
+
+    <script type="module">
+      import('@vitejs/test-ssr-conditions-no-external/server').then(
+        ({ default: message }) => {
+          document.querySelector(
+            '.browser-no-external-react-server',
+          ).textContent = message
+        },
+      )
+
+      import('@vitejs/test-ssr-conditions-external/server').then(
+        ({ default: message }) => {
+          document.querySelector('.browser-external-react-server').textContent =
+            message
+        },
+      )
+    </script>
+  </body>
+</html>

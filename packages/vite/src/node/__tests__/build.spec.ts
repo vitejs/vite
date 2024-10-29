@@ -1,16 +1,159 @@
-import { resolve } from 'node:path'
+import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import colors from 'picocolors'
-import type { Logger } from 'vite'
 import { describe, expect, test, vi } from 'vitest'
-import type { OutputOptions } from 'rollup'
+import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
-import { resolveBuildOutputs, resolveLibFilename } from '../build'
+import {
+  build,
+  createBuilder,
+  resolveBuildOutputs,
+  resolveLibFilename,
+} from '../build'
+import type { Logger } from '../logger'
 import { createLogger } from '../logger'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
 type FormatsToFileNames = [LibraryFormats, string][]
+
+describe('build', () => {
+  test('file hash should change when css changes for dynamic entries', async () => {
+    const buildProject = async (cssColor: string) => {
+      return (await build({
+        root: resolve(__dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (
+                id === 'entry.js' ||
+                id === 'subentry.js' ||
+                id === 'foo.css'
+              ) {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `window.addEventListener('click', () => { import('subentry.js') });`
+              }
+              if (id === '\0subentry.js') {
+                return `import 'foo.css'`
+              }
+              if (id === '\0foo.css') {
+                return `.foo { color: ${cssColor} }`
+              }
+            },
+          },
+        ],
+      })) as RollupOutput
+    }
+    const result = await Promise.all([
+      buildProject('red'),
+      buildProject('blue'),
+    ])
+    assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('file hash should change when pure css chunk changes', async () => {
+    const buildProject = async (cssColor: string) => {
+      return (await build({
+        root: resolve(__dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (
+                id === 'entry.js' ||
+                id === 'foo.js' ||
+                id === 'bar.js' ||
+                id === 'baz.js' ||
+                id === 'foo.css' ||
+                id === 'bar.css' ||
+                id === 'baz.css'
+              ) {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `
+                  window.addEventListener('click', () => { import('foo.js') });
+                  window.addEventListener('click', () => { import('bar.js') });`
+              }
+              if (id === '\0foo.js') return `import 'foo.css'; import 'baz.js'`
+              if (id === '\0bar.js') return `import 'bar.css'; import 'baz.js'`
+              if (id === '\0baz.js') return `import 'baz.css'`
+              if (id === '\0foo.css') return `.foo { color: red }`
+              if (id === '\0bar.css') return `.foo { color: green }`
+              if (id === '\0baz.css') return `.foo { color: ${cssColor} }`
+            },
+          },
+        ],
+      })) as RollupOutput
+    }
+    const result = await Promise.all([
+      buildProject('yellow'),
+      buildProject('blue'),
+    ])
+    assertOutputHashContentChange(result[0], result[1])
+  })
+
+  test('external modules should not be hoisted in library build', async () => {
+    const [esBundle] = (await build({
+      logLevel: 'silent',
+      build: {
+        lib: {
+          entry: ['foo.js', 'bar.js'],
+          formats: ['es'],
+        },
+        rollupOptions: {
+          external: 'external',
+        },
+        write: false,
+      },
+      plugins: [
+        {
+          name: 'test',
+          resolveId(id) {
+            const name = basename(id)
+            if (name === 'foo.js' || name === 'bar.js') {
+              return name
+            }
+          },
+          load(id) {
+            if (id === 'foo.js') {
+              return `
+                  import bar from 'bar.js'
+                  export default bar()
+                `
+            }
+            if (id === 'bar.js') {
+              return `
+                  import ext from 'external';
+                  export default ext();`
+            }
+          },
+        },
+      ],
+    })) as RollupOutput[]
+
+    const foo = esBundle.output.find(
+      (chunk) => chunk.fileName === 'foo.js',
+    ) as OutputChunk
+    expect(foo.code).not.contains('import "external"')
+  })
+})
+
 const baseLibOptions: LibraryOptions = {
   fileName: 'my-lib',
   entry: 'mylib.js',
@@ -421,8 +564,7 @@ describe('resolveBuildOutputs', () => {
   })
 
   test('array outputs: should ignore build.lib.formats', () => {
-    // @ts-expect-error mock Logger
-    const log = { warn: vi.fn() } as Logger
+    const log = { warn: vi.fn() } as unknown as Logger
     expect(
       resolveBuildOutputs(
         [{ name: 'A' }],
@@ -439,4 +581,172 @@ describe('resolveBuildOutputs', () => {
       ),
     )
   })
+
+  test('ssrEmitAssets', async () => {
+    const result = await build({
+      root: resolve(__dirname, 'fixtures/emit-assets'),
+      logLevel: 'silent',
+      build: {
+        ssr: true,
+        ssrEmitAssets: true,
+        rollupOptions: {
+          input: {
+            index: '/entry',
+          },
+        },
+      },
+    })
+    expect(result).toMatchObject({
+      output: [
+        {
+          fileName: 'index.mjs',
+        },
+        {
+          fileName: expect.stringMatching(/assets\/index-\w*\.css/),
+        },
+      ],
+    })
+  })
+
+  test('emitAssets', async () => {
+    const builder = await createBuilder({
+      root: resolve(__dirname, 'fixtures/emit-assets'),
+      logLevel: 'warn',
+      environments: {
+        ssr: {
+          build: {
+            ssr: true,
+            emitAssets: true,
+            rollupOptions: {
+              input: {
+                index: '/entry',
+              },
+            },
+          },
+        },
+      },
+    })
+    const result = await builder.build(builder.environments.ssr)
+    expect(result).toMatchObject({
+      output: [
+        {
+          fileName: 'index.mjs',
+        },
+        {
+          fileName: expect.stringMatching(/assets\/index-\w*\.css/),
+        },
+      ],
+    })
+  })
+
+  test('ssr builtin', async () => {
+    const builder = await createBuilder({
+      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      logLevel: 'warn',
+      environments: {
+        ssr: {
+          build: {
+            ssr: true,
+            rollupOptions: {
+              input: {
+                index: '/entry',
+              },
+            },
+          },
+        },
+      },
+    })
+    const result = await builder.build(builder.environments.ssr)
+    expect((result as RollupOutput).output[0].code).not.toContain('preload')
+  })
+
+  test('ssr custom', async () => {
+    const builder = await createBuilder({
+      root: resolve(__dirname, 'fixtures/dynamic-import'),
+      logLevel: 'warn',
+      environments: {
+        custom: {
+          build: {
+            ssr: true,
+            rollupOptions: {
+              input: {
+                index: '/entry',
+              },
+            },
+          },
+        },
+      },
+    })
+    const result = await builder.build(builder.environments.custom)
+    expect((result as RollupOutput).output[0].code).not.toContain('preload')
+  })
 })
+
+test('default sharedConfigBuild true on build api', async () => {
+  let counter = 0
+  await build({
+    root: resolve(__dirname, 'fixtures/emit-assets'),
+    logLevel: 'warn',
+    build: {
+      ssr: true,
+      rollupOptions: {
+        input: {
+          index: '/entry',
+        },
+      },
+    },
+    plugins: [
+      {
+        name: 'test-plugin',
+        config() {
+          counter++
+        },
+      },
+    ],
+  })
+  expect(counter).toBe(1)
+})
+
+test('adjust worker build error for worker.format', async () => {
+  try {
+    await build({
+      root: resolve(__dirname, 'fixtures/worker-dynamic'),
+      build: {
+        rollupOptions: {
+          input: {
+            index: '/main.js',
+          },
+        },
+      },
+      logLevel: 'silent',
+    })
+  } catch (e) {
+    expect(e.message).toContain('worker.format')
+    expect(e.message).not.toContain('output.format')
+    return
+  }
+  expect.unreachable()
+})
+
+/**
+ * for each chunks in output1, if there's a chunk in output2 with the same fileName,
+ * ensure that the chunk code is the same. if not, the chunk hash should have changed.
+ */
+function assertOutputHashContentChange(
+  output1: RollupOutput,
+  output2: RollupOutput,
+) {
+  for (const chunk of output1.output) {
+    if (chunk.type === 'chunk') {
+      const chunk2 = output2.output.find(
+        (c) => c.type === 'chunk' && c.fileName === chunk.fileName,
+      ) as OutputChunk | undefined
+      if (chunk2) {
+        expect(
+          chunk.code,
+          `the ${chunk.fileName} chunk has the same hash but different contents between builds`,
+        ).toEqual(chunk2.code)
+      }
+    }
+  }
+}

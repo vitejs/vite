@@ -1,5 +1,8 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { expect, test } from 'vitest'
-import { isBuild, isWindows, page } from '~utils'
+import { isBuild, isWindows, page, testDir, viteTestUrl } from '~utils'
 
 test('bom import', async () => {
   expect(await page.textContent('.utf8-bom')).toMatch('[success]')
@@ -7,6 +10,12 @@ test('bom import', async () => {
 
 test('deep import', async () => {
   expect(await page.textContent('.deep-import')).toMatch('[2,4]')
+})
+
+test('exports and a nested package scope with a different type', async () => {
+  expect(await page.textContent('.exports-and-nested-scope')).toMatch(
+    '[success]',
+  )
 })
 
 test('entry with exports field', async () => {
@@ -36,6 +45,10 @@ test('deep import with exports field + mapped dir', async () => {
   )
 })
 
+test('exports read from the root package.json', async () => {
+  expect(await page.textContent('.exports-from-root')).toMatch('[success]')
+})
+
 // this is how Svelte 3 is packaged
 test('deep import with exports and legacy fallback', async () => {
   expect(await page.textContent('.exports-legacy-fallback')).toMatch(
@@ -53,12 +66,31 @@ test('Respect production/development conditionals', async () => {
   )
 })
 
+test('Respect exports to take precedence over mainFields', async () => {
+  expect(await page.textContent('.exports-with-module')).toMatch('[success]')
+})
+
+test('import and require resolve using module condition', async () => {
+  expect(await page.textContent('.exports-with-module-condition')).toMatch(
+    '[success]',
+  )
+  expect(
+    await page.textContent('.exports-with-module-condition-required'),
+  ).toMatch('[success]')
+})
+
 test('implicit dir/index.js', async () => {
   expect(await page.textContent('.index')).toMatch('[success]')
 })
 
 test('implicit dir/index.js vs explicit file', async () => {
   expect(await page.textContent('.dir-vs-file')).toMatch('[success]')
+})
+
+test('nested extension', async () => {
+  expect(await page.textContent('.nested-extension')).toMatch(
+    '[success] file.json.js',
+  )
 })
 
 test('exact extension vs. duplicated (.js.js)', async () => {
@@ -89,6 +121,10 @@ test.runIf(isWindows)('drive-relative path', async () => {
 
 test('absolute path', async () => {
   expect(await page.textContent('.absolute')).toMatch('[success]')
+})
+
+test('file url', async () => {
+  expect(await page.textContent('.file-url')).toMatch('[success]')
 })
 
 test('browser field', async () => {
@@ -135,12 +171,80 @@ test('resolve.mainFields', async () => {
   expect(await page.textContent('.custom-main-fields')).toMatch('[success]')
 })
 
+test('resolve.mainFields.browser-first', async () => {
+  expect(await page.textContent('.custom-browser-main-field')).toBe(
+    'resolved browser field',
+  )
+})
+
 test('resolve.conditions', async () => {
   expect(await page.textContent('.custom-condition')).toMatch('[success]')
 })
 
 test('resolve package that contains # in path', async () => {
   expect(await page.textContent('.path-contains-sharp-symbol')).toMatch(
-    '[success]',
+    '[success] true #',
   )
+})
+
+test('Resolving top level with imports field', async () => {
+  expect(await page.textContent('.imports-top-level')).toMatch('[success]')
+})
+
+test('Resolving same level with imports field', async () => {
+  expect(await page.textContent('.imports-same-level')).toMatch(
+    await page.textContent('.imports-top-level'),
+  )
+})
+
+test('Resolving nested path with imports field', async () => {
+  expect(await page.textContent('.imports-nested')).toMatch('[success]')
+})
+
+test('Resolving star with imports filed', async () => {
+  expect(await page.textContent('.imports-star')).toMatch('[success]')
+})
+
+test('Resolving slash with imports filed', async () => {
+  expect(await page.textContent('.imports-slash')).toMatch('[success]')
+})
+
+test('Resolving from other package with imports field', async () => {
+  expect(await page.textContent('.imports-pkg-slash')).toMatch('[success]')
+})
+
+test('Resolving with query with imports field', async () => {
+  // since it is imported with `?url` it should return a URL
+  expect(await page.textContent('.imports-query')).toMatch(
+    isBuild ? /base64/ : '/imports-path/query.json',
+  )
+})
+
+test('Resolve doesnt interrupt page request with trailing query and .css', async () => {
+  await page.goto(viteTestUrl + '/?test.css')
+  expect(await page.locator('vite-error-overlay').count()).toBe(0)
+  expect(await page.textContent('h1')).toBe('Resolve')
+})
+
+test('resolve non-normalized absolute path', async () => {
+  expect(await page.textContent('.non-normalized')).toMatch('[success]')
+})
+
+test.runIf(!isWindows)(
+  'Resolve doesnt interrupt page request that clashes with local project package.json',
+  async () => {
+    // Sometimes request path may point to a different project's package.json, but for testing
+    // we point to Vite's own monorepo which always exists, and the package.json is not a library
+    const pathToViteMonorepoRoot = new URL('../../../', import.meta.url)
+    const urlPath = fileURLToPath(pathToViteMonorepoRoot).replace(/\/$/, '')
+    await page.goto(viteTestUrl + urlPath)
+    expect(await page.locator('vite-error-overlay').count()).toBe(0)
+    expect(await page.textContent('h1')).toBe('Resolve')
+  },
+)
+
+test.runIf(isBuild)('public dir is not copied', async () => {
+  expect(
+    fs.existsSync(path.resolve(testDir, 'dist/should-not-be-copied')),
+  ).toBe(false)
 })

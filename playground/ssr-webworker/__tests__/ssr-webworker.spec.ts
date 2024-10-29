@@ -11,7 +11,26 @@ test('/', async () => {
   expect(await page.textContent('.external')).toMatch('object')
 })
 
+test('supports resolve.conditions', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.worker-exports')).toMatch('[success] worker')
+})
+
+test('respects browser export', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.browser-exports')).toMatch(
+    '[success] browser',
+  )
+})
+
+test('supports nodejs_compat', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.nodejs-compat')).toMatch(
+    '[success] nodejs compat',
+  )
+})
+
 test.runIf(isBuild)('inlineDynamicImports', () => {
-  const dynamicJsContent = findAssetFile(/dynamic-\w+\.js/, 'worker')
+  const dynamicJsContent = findAssetFile(/dynamic-[-\w]+\.js/, 'worker')
   expect(dynamicJsContent).toBe('')
 })

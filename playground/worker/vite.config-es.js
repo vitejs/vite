@@ -1,9 +1,8 @@
-const vueJsx = require('@vitejs/plugin-vue-jsx')
-const vite = require('vite')
+import { defineConfig } from 'vite'
+import workerPluginTestPlugin from './worker-plugin-test-plugin'
 
-module.exports = vite.defineConfig({
+export default defineConfig({
   base: '/es/',
-  enforce: 'pre',
   resolve: {
     alias: {
       '@': __dirname,
@@ -11,7 +10,7 @@ module.exports = vite.defineConfig({
   },
   worker: {
     format: 'es',
-    plugins: [vueJsx()],
+    plugins: () => [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
         assetFileNames: 'assets/worker_asset-[name].[ext]',
@@ -22,6 +21,8 @@ module.exports = vite.defineConfig({
   },
   build: {
     outDir: 'dist/es',
+    assetsInlineLimit: (filePath) =>
+      filePath.endsWith('.svg') ? false : undefined,
     rollupOptions: {
       output: {
         assetFileNames: 'assets/[name].[ext]',
@@ -31,6 +32,7 @@ module.exports = vite.defineConfig({
     },
   },
   plugins: [
+    workerPluginTestPlugin(),
     {
       name: 'resolve-format-es',
 
@@ -44,4 +46,5 @@ module.exports = vite.defineConfig({
       },
     },
   ],
+  cacheDir: 'node_modules/.vite-es',
 })

@@ -1,14 +1,13 @@
-const fs = require('node:fs')
-const path = require('node:path')
+import fs from 'node:fs'
+import path from 'node:path'
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   esbuild: {
     supported: {
       // Force esbuild inject helpers to test regex
       'object-rest-spread': false,
+      'optional-chain': false,
     },
   },
   build: {
@@ -39,4 +38,4 @@ module.exports = {
       },
     },
   ],
-}
+})

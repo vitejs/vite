@@ -1,9 +1,7 @@
-const { resolve } = require('node:path')
+import { relative, resolve } from 'node:path'
+import { defineConfig } from 'vite'
 
-/**
- * @type {import('vite').UserConfig}
- */
-module.exports = {
+export default defineConfig({
   base: './',
   build: {
     rollupOptions: {
@@ -28,8 +26,37 @@ module.exports = {
         ),
         linkProps: resolve(__dirname, 'link-props/index.html'),
         valid: resolve(__dirname, 'valid.html'),
+        importmapOrder: resolve(__dirname, 'importmapOrder.html'),
+        env: resolve(__dirname, 'env.html'),
+        sideEffects: resolve(__dirname, 'side-effects/index.html'),
+        'a á': resolve(__dirname, 'a á.html'),
+        serveFile: resolve(__dirname, 'serve/file.html'),
+        serveFolder: resolve(__dirname, 'serve/folder/index.html'),
+        serveBothFile: resolve(__dirname, 'serve/both.html'),
+        serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
+        write: resolve(__dirname, 'write.html'),
+        relativeInput: relative(
+          process.cwd(),
+          resolve(__dirname, 'relative-input.html'),
+        ),
       },
     },
+  },
+
+  server: {
+    fs: {
+      cachedChecks: false,
+    },
+    warmup: {
+      clientFiles: ['./warmup/*'],
+    },
+  },
+
+  define: {
+    'import.meta.env.VITE_NUMBER': 5173,
+    'import.meta.env.VITE_STRING': JSON.stringify('string'),
+    'import.meta.env.VITE_OBJECT_STRING': '{ "foo": "bar" }',
+    'import.meta.env.VITE_NULL_STRING': 'null',
   },
 
   plugins: [
@@ -41,6 +68,10 @@ module.exports = {
           if (html.includes('/@vite/client')) {
             throw new Error('pre transform applied at wrong time!')
           }
+
+          const doctypeRE = /<!doctype html>/i
+          if (doctypeRE.test(html)) return
+
           const head = `
   <head lang="en">
     <meta charset="UTF-8">
@@ -164,7 +195,9 @@ ${
     },
     {
       name: 'head-prepend-importmap',
-      transformIndexHtml() {
+      transformIndexHtml(_, ctx) {
+        if (ctx.path.includes('importmapOrder')) return
+
         return [
           {
             tag: 'script',
@@ -181,5 +214,22 @@ ${
         ]
       },
     },
+    {
+      name: 'escape-html-attribute',
+      transformIndexHtml: {
+        order: 'post',
+        handler() {
+          return [
+            {
+              tag: 'link',
+              attrs: {
+                href: `"><div class=unescape-div>extra content</div>`,
+              },
+              injectTo: 'body',
+            },
+          ]
+        },
+      },
+    },
   ],
-}
+})

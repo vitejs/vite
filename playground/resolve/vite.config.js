@@ -1,5 +1,6 @@
-const path = require('node:path')
-const { normalizePath } = require('vite')
+import path from 'node:path'
+import { defineConfig, normalizePath } from 'vite'
+import { a } from './config-dep.cjs'
 
 const virtualFile = '@virtual-file'
 const virtualId = '\0' + virtualFile
@@ -8,7 +9,6 @@ const virtualFile9036 = 'virtual:file-9036.js'
 const virtualId9036 = '\0' + virtualFile9036
 
 const customVirtualFile = '@custom-virtual-file'
-const { a } = require('./config-dep')
 
 const generatedContentVirtualFile = '@generated-content-virtual-file'
 const generatedContentImports = [
@@ -22,12 +22,16 @@ const generatedContentImports = [
     specifier: normalizePath(path.resolve(__dirname, './absolute.js')),
     elementQuery: '.absolute',
   },
+  {
+    specifier: new URL('file-url.js', import.meta.url),
+    elementQuery: '.file-url',
+  },
 ]
 
-module.exports = {
+export default defineConfig({
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
-    mainFields: ['custom', 'module'],
+    mainFields: ['browser', 'custom', 'module'],
     conditions: ['custom'],
   },
   define: {
@@ -99,8 +103,22 @@ module.exports = {
         }
       },
     },
+    {
+      name: 'resolve to non normalized absolute',
+      async resolveId(id) {
+        if (id !== '@non-normalized') return
+        return this.resolve(__dirname + '//non-normalized')
+      },
+    },
   ],
   optimizeDeps: {
-    include: ['@vitejs/test-require-pkg-with-module-field'],
+    include: [
+      '@vitejs/test-resolve-exports-with-module-condition-required',
+      '@vitejs/test-require-pkg-with-module-field',
+      '@vitejs/test-resolve-sharp-dir',
+    ],
   },
-}
+  build: {
+    copyPublicDir: false,
+  },
+})

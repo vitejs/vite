@@ -1,3 +1,7 @@
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import fetch from 'node-fetch'
 import { describe, expect, test } from 'vitest'
 import { port } from './serve'
@@ -45,13 +49,89 @@ describe.runIf(isServe)('hmr', () => {
     await page.goto(url)
     const el = await page.$('.virtual')
     expect(await el.textContent()).toBe('[success]')
+
+    const loadPromise = page.waitForEvent('load')
     editFile('src/importedVirtual.js', (code) =>
       code.replace('[success]', '[wow]'),
     )
-    await page.waitForNavigation()
+    await loadPromise
+
     await untilUpdated(async () => {
       const el = await page.$('.virtual')
       return await el.textContent()
     }, '[wow]')
+  })
+})
+
+const execFileAsync = promisify(execFile)
+
+describe.runIf(isServe)('stacktrace', () => {
+  for (const ext of ['js', 'ts']) {
+    for (const sourcemapsEnabled of [false, true]) {
+      test(`stacktrace of ${ext} is correct when sourcemaps is${
+        sourcemapsEnabled ? '' : ' not'
+      } enabled in Node.js`, async () => {
+        const testStacktraceFile = path.resolve(
+          __dirname,
+          '../test-stacktrace.js',
+        )
+
+        const p = await execFileAsync('node', [
+          testStacktraceFile,
+          '' + sourcemapsEnabled,
+          ext,
+        ])
+        const lines = p.stdout
+          .split('\n')
+          .filter((line) => line.includes('Module.error'))
+
+        const reg = new RegExp(
+          path
+            .resolve(__dirname, '../src', `error.${ext}`)
+            .replace(/\\/g, '\\\\') + ':2:9',
+          'i',
+        )
+
+        lines.forEach((line) => {
+          expect(line.trim()).toMatch(reg)
+        })
+      })
+    }
+  }
+
+  test('with Vite runtime', async () => {
+    await execFileAsync('node', ['test-stacktrace-runtime.js'], {
+      cwd: fileURLToPath(new URL('..', import.meta.url)),
+    })
+  })
+})
+
+// --experimental-network-imports is going to be dropped
+// https://github.com/nodejs/node/pull/53822
+const noNetworkImports = Number(process.version.match(/^v(\d+)\./)[1]) >= 22
+
+describe.runIf(isServe && !noNetworkImports)('network-imports', () => {
+  test('with Vite SSR', async () => {
+    await execFileAsync(
+      'node',
+      ['--experimental-network-imports', 'test-network-imports.js'],
+      {
+        cwd: fileURLToPath(new URL('..', import.meta.url)),
+      },
+    )
+  })
+
+  test('with Vite runtime', async () => {
+    await execFileAsync(
+      'node',
+      [
+        '--experimental-network-imports',
+        'test-network-imports.js',
+        '--module-runner',
+      ],
+      {
+        cwd: fileURLToPath(new URL('..', import.meta.url)),
+      },
+    )
   })
 })

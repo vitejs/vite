@@ -1,12 +1,19 @@
-const { resolve } = require('node:path')
-const { normalizePath } = require('vite')
+import { resolve } from 'node:path'
+import { defineConfig, normalizePath } from 'vite'
 
+const file = normalizePath(resolve(__dirname, 'index.js'))
 let transformCount = 1
 
 const transformPlugin = {
   name: 'transform',
+  load(id) {
+    if (id === file) {
+      // Ensure `index.js` is reloaded if 'plugin-dep-load.js' is changed
+      this.addWatchFile('./plugin-dep-load.js')
+    }
+  },
   transform(code, id) {
-    if (id === normalizePath(resolve(__dirname, 'index.js'))) {
+    if (id === file) {
       // Ensure `index.js` is reevaluated if 'plugin-dep.js' is changed
       this.addWatchFile('./plugin-dep.js')
 
@@ -20,6 +27,6 @@ const transformPlugin = {
   },
 }
 
-module.exports = {
+export default defineConfig({
   plugins: [transformPlugin],
-}
+})

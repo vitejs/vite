@@ -1,16 +1,28 @@
-import type { Server } from 'node:http'
-import { STATUS_CODES } from 'node:http'
+import path from 'node:path'
+import type { IncomingMessage, Server } from 'node:http'
+import { STATUS_CODES, createServer as createHttpServer } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { createServer as createHttpsServer } from 'node:https'
 import type { Socket } from 'node:net'
+import type { Duplex } from 'node:stream'
 import colors from 'picocolors'
-import type { ServerOptions, WebSocket as WebSocketRaw } from 'ws'
-import { WebSocketServer as WebSocketServerRaw } from 'ws'
+import type { WebSocket as WebSocketRaw } from 'ws'
+import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
-import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
+import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
-import type { ResolvedConfig } from '..'
+import type { HotChannelClient, ResolvedConfig } from '..'
 import { isObject } from '../utils'
+import type { HotChannel } from './hmr'
+import type { HttpServer } from '.'
+
+/* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
+ * of `ws` will not work as Bun's req.socket does not allow reading/writing to the underlying socket.
+ */
+const WebSocketServerRaw = process.versions.bun
+  ? // @ts-expect-error: Bun defines `import.meta.require`
+    import.meta.require('ws').WebSocketServer
+  : WebSocketServerRaw_
 
 export const HMR_HEADER = 'vite-hmr'
 
@@ -19,19 +31,18 @@ export type WebSocketCustomListener<T> = (
   client: WebSocketClient,
 ) => void
 
-export interface WebSocketServer {
+export const isWebSocketServer = Symbol('isWebSocketServer')
+
+export interface WebSocketServer extends HotChannel {
+  [isWebSocketServer]: true
+  /**
+   * Listen on port and host
+   */
+  listen(): void
   /**
    * Get all connected clients.
    */
   clients: Set<WebSocketClient>
-  /**
-   * Broadcast events to all clients
-   */
-  send(payload: HMRPayload): void
-  /**
-   * Send custom event
-   */
-  send<T extends string>(event: T, payload?: InferCustomEventPayload<T>): void
   /**
    * Disconnect all clients and terminate the server.
    */
@@ -53,15 +64,7 @@ export interface WebSocketServer {
   }
 }
 
-export interface WebSocketClient {
-  /**
-   * Send event to the client
-   */
-  send(payload: HMRPayload): void
-  /**
-   * Send custom event
-   */
-  send(event: string, payload?: CustomPayload['data']): void
+export interface WebSocketClient extends HotChannelClient {
   /**
    * The raw WebSocket instance
    * @advanced
@@ -77,13 +80,33 @@ const wsServerEvents = [
   'message',
 ]
 
+function noop() {
+  // noop
+}
+
 export function createWebSocketServer(
-  server: Server | null,
+  server: HttpServer | null,
   config: ResolvedConfig,
   httpsOptions?: HttpsServerOptions,
 ): WebSocketServer {
-  let wss: WebSocketServerRaw
-  let httpsServer: Server | undefined = undefined
+  if (config.server.ws === false) {
+    return {
+      [isWebSocketServer]: true,
+      get clients() {
+        return new Set<WebSocketClient>()
+      },
+      async close() {
+        // noop
+      },
+      on: noop as any as WebSocketServer['on'],
+      off: noop as any as WebSocketServer['off'],
+      listen: noop,
+      send: noop,
+    }
+  }
+
+  let wss: WebSocketServerRaw_
+  let wsHttpServer: Server | undefined = undefined
 
   const hmr = isObject(config.server.hmr) && config.server.hmr
   const hmrServer = hmr && hmr.server
@@ -91,55 +114,91 @@ export function createWebSocketServer(
   // TODO: the main server port may not have been chosen yet as it may use the next available
   const portsAreCompatible = !hmrPort || hmrPort === config.server.port
   const wsServer = hmrServer || (portsAreCompatible && server)
+  let hmrServerWsListener: (
+    req: InstanceType<typeof IncomingMessage>,
+    socket: Duplex,
+    head: Buffer,
+  ) => void
   const customListeners = new Map<string, Set<WebSocketCustomListener<any>>>()
   const clientsMap = new WeakMap<WebSocketRaw, WebSocketClient>()
+  const port = hmrPort || 24678
+  const host = (hmr && hmr.host) || undefined
 
   if (wsServer) {
+    let hmrBase = config.base
+    const hmrPath = hmr ? hmr.path : undefined
+    if (hmrPath) {
+      hmrBase = path.posix.join(hmrBase, hmrPath)
+    }
     wss = new WebSocketServerRaw({ noServer: true })
-    wsServer.on('upgrade', (req, socket, head) => {
-      if (req.headers['sec-websocket-protocol'] === HMR_HEADER) {
+    hmrServerWsListener = (req, socket, head) => {
+      if (
+        [HMR_HEADER, 'vite-ping'].includes(
+          req.headers['sec-websocket-protocol']!,
+        ) &&
+        req.url === hmrBase
+      ) {
         wss.handleUpgrade(req, socket as Socket, head, (ws) => {
           wss.emit('connection', ws, req)
         })
       }
-    })
-  } else {
-    const websocketServerOptions: ServerOptions = {}
-    const port = hmrPort || 24678
-    const host = (hmr && hmr.host) || undefined
-    if (httpsOptions) {
-      // if we're serving the middlewares over https, the ws library doesn't support automatically creating an https server, so we need to do it ourselves
-      // create an inline https server and mount the websocket server to it
-      httpsServer = createHttpsServer(httpsOptions, (req, res) => {
-        const statusCode = 426
-        const body = STATUS_CODES[statusCode]
-        if (!body)
-          throw new Error(
-            `No body text found for the ${statusCode} status code`,
-          )
-
-        res.writeHead(statusCode, {
-          'Content-Length': body.length,
-          'Content-Type': 'text/plain',
-        })
-        res.end(body)
-      })
-
-      httpsServer.listen(port, host)
-      websocketServerOptions.server = httpsServer
-    } else {
-      // we don't need to serve over https, just let ws handle its own server
-      websocketServerOptions.port = port
-      if (host) {
-        websocketServerOptions.host = host
-      }
     }
+    wsServer.on('upgrade', hmrServerWsListener)
+  } else {
+    // http server request handler keeps the same with
+    // https://github.com/websockets/ws/blob/45e17acea791d865df6b255a55182e9c42e5877a/lib/websocket-server.js#L88-L96
+    const route = ((_, res) => {
+      const statusCode = 426
+      const body = STATUS_CODES[statusCode]
+      if (!body)
+        throw new Error(`No body text found for the ${statusCode} status code`)
 
+      res.writeHead(statusCode, {
+        'Content-Length': body.length,
+        'Content-Type': 'text/plain',
+      })
+      res.end(body)
+    }) as Parameters<typeof createHttpServer>[1]
     // vite dev server in middleware mode
-    wss = new WebSocketServerRaw(websocketServerOptions)
+    // need to call ws listen manually
+    if (httpsOptions) {
+      wsHttpServer = createHttpsServer(httpsOptions, route)
+    } else {
+      wsHttpServer = createHttpServer(route)
+    }
+    wss = new WebSocketServerRaw({ noServer: true })
+    wsHttpServer.on('upgrade', (req, socket, head) => {
+      const protocol = req.headers['sec-websocket-protocol']!
+      if (protocol === 'vite-ping' && server && !server.listening) {
+        // reject connection to tell the vite/client that the server is not ready
+        // if the http server is not listening
+        // because the ws server listens before the http server listens
+        req.destroy()
+        return
+      }
+      wss.handleUpgrade(req, socket as Socket, head, (ws) => {
+        wss.emit('connection', ws, req)
+      })
+    })
+    wsHttpServer.on('error', (e: Error & { code: string }) => {
+      if (e.code === 'EADDRINUSE') {
+        config.logger.error(
+          colors.red(`WebSocket server error: Port is already in use`),
+          { error: e },
+        )
+      } else {
+        config.logger.error(
+          colors.red(`WebSocket server error:\n${e.stack || e.message}`),
+          { error: e },
+        )
+      }
+    })
   }
 
   wss.on('connection', (socket) => {
+    if (socket.protocol === 'vite-ping') {
+      return
+    }
     socket.on('message', (raw) => {
       if (!customListeners.size) return
       let parsed: any
@@ -151,6 +210,12 @@ export function createWebSocketServer(
       if (!listeners?.size) return
       const client = getSocketClient(socket)
       listeners.forEach((listener) => listener(parsed.data, client))
+    })
+    socket.on('error', (err) => {
+      config.logger.error(`${colors.red(`ws error:`)}\n${err.stack}`, {
+        timestamp: true,
+        error: err,
+      })
     })
     socket.send(JSON.stringify({ type: 'connected' }))
     if (bufferedError) {
@@ -179,7 +244,7 @@ export function createWebSocketServer(
     if (!clientsMap.has(socket)) {
       clientsMap.set(socket, {
         send: (...args) => {
-          let payload: HMRPayload
+          let payload: HotPayload
           if (typeof args[0] === 'string') {
             payload = {
               type: 'custom',
@@ -204,6 +269,10 @@ export function createWebSocketServer(
   let bufferedError: ErrorPayload | null = null
 
   return {
+    [isWebSocketServer]: true,
+    listen: () => {
+      wsHttpServer?.listen(port, host)
+    },
     on: ((event: string, fn: () => void) => {
       if (wsServerEvents.includes(event)) wss.on(event, fn)
       else {
@@ -226,7 +295,7 @@ export function createWebSocketServer(
     },
 
     send(...args: any[]) {
-      let payload: HMRPayload
+      let payload: HotPayload
       if (typeof args[0] === 'string') {
         payload = {
           type: 'custom',
@@ -252,6 +321,11 @@ export function createWebSocketServer(
     },
 
     close() {
+      // should remove listener if hmr.server is set
+      // otherwise the old listener swallows all WebSocket connections
+      if (hmrServerWsListener && wsServer) {
+        wsServer.off('upgrade', hmrServerWsListener)
+      }
       return new Promise((resolve, reject) => {
         wss.clients.forEach((client) => {
           client.terminate()
@@ -260,8 +334,8 @@ export function createWebSocketServer(
           if (err) {
             reject(err)
           } else {
-            if (httpsServer) {
-              httpsServer.close((err) => {
+            if (wsHttpServer) {
+              wsHttpServer.close((err) => {
                 if (err) {
                   reject(err)
                 } else {

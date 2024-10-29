@@ -15,19 +15,19 @@ import noExternalCjs from '@vitejs/test-no-external-cjs'
 import importBuiltinCjs from '@vitejs/test-import-builtin-cjs'
 import { hello as linkedNoExternal } from '@vitejs/test-linked-no-external'
 import virtualMessage from '@vitejs/test-pkg-exports/virtual'
+import moduleConditionMessage from '@vitejs/test-module-condition'
 import '@vitejs/test-css-lib'
 
 // This import will set a 'Hello World!" message in the nested-external non-entry dependency
 import '@vitejs/test-non-optimized-with-nested-external'
 
-// These two are optimized and get the message from nested-external, if the dependency is
-// not properly externalized and ends up bundled, the message will be undefined
-import optimizedWithNestedExternal from '@vitejs/test-optimized-with-nested-external'
-import optimizedCjsWithNestedExternal from '@vitejs/test-optimized-cjs-with-nested-external'
+import * as optimizedWithNestedExternal from '@vitejs/test-optimized-with-nested-external'
+import * as optimizedCjsWithNestedExternal from '@vitejs/test-optimized-cjs-with-nested-external'
 
 import { setMessage } from '@vitejs/test-external-entry/entry'
 setMessage('Hello World!')
 import externalUsingExternalEntry from '@vitejs/test-external-using-external-entry'
+import isomorphicModuleMessage from 'virtual:isomorphic-module'
 
 export async function render(url, rootDir) {
   let html = ''
@@ -40,7 +40,8 @@ export async function render(url, rootDir) {
 
   html += `\n<p class="primitive-export-message">message from primitive export: ${primitiveExport}</p>`
 
-  const tsDefaultExportMessage = tsDefaultExport()
+  // `.default()` as incorrectly packaged
+  const tsDefaultExportMessage = tsDefaultExport.default()
   html += `\n<p class="ts-default-export-message">message from ts-default-export: ${tsDefaultExportMessage}</p>`
 
   const tsNamedExportMessage = tsNamedExport()
@@ -86,6 +87,12 @@ export async function render(url, rootDir) {
   html += `\n<p class="dep-virtual">message from dep-virtual: ${virtualMessage}</p>`
 
   html += `\n<p class="css-lib">I should be blue</p>`
+
+  html += `\n<p class="module-condition">${moduleConditionMessage}</p>`
+
+  html += `\n<p class="isomorphic-module-server">${isomorphicModuleMessage}</p>`
+
+  html += `\n<p class="isomorphic-module-browser"></p>`
 
   return html + '\n'
 }

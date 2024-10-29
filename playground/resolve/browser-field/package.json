@@ -10,8 +10,14 @@
     "./ext.js": "./out/esm.browser.js",
     "./ext-index/index.js": "./out/esm.browser.js",
     "./no-ext-index": "./out/esm.browser.js",
+    "./bare-import": "./bare-import.js",
     "./not-browser.js": false,
     "./multiple.dot.path.js": false,
-    "jsdom": false
+    "jsdom": false,
+    "@vitejs/test-resolve-browser-field-bare-import-fail": "@vitejs/test-resolve-browser-field-bare-import-success"
+  },
+  "dependencies": {
+    "@vitejs/test-resolve-browser-field-bare-import-fail": "link:../browser-field-bare-import-fail",
+    "@vitejs/test-resolve-browser-field-bare-import-success": "link:../browser-field-bare-import-success"
   }
 }

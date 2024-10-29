@@ -6,7 +6,7 @@ import { isFileReadable } from '../utils'
 const ROOT_FILES = [
   // '.git',
 
-  // https://pnpm.js.org/workspaces/
+  // https://pnpm.io/workspaces/
   'pnpm-workspace.yaml',
 
   // https://rushjs.io/pages/advanced/config_files/
@@ -27,8 +27,12 @@ function hasWorkspacePackageJSON(root: string): boolean {
   if (!isFileReadable(path)) {
     return false
   }
-  const content = JSON.parse(fs.readFileSync(path, 'utf-8')) || {}
-  return !!content.workspaces
+  try {
+    const content = JSON.parse(fs.readFileSync(path, 'utf-8')) || {}
+    return !!content.workspaces
+  } catch {
+    return false
+  }
 }
 
 function hasRootFile(root: string): boolean {

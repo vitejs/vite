@@ -1,6 +1,7 @@
-const { resolve } = require('node:path')
+import { resolve } from 'node:path'
+import { defineConfig } from 'vite'
 
-module.exports = {
+export default defineConfig({
   build: {
     outDir: './dist',
     manifest: true,
@@ -17,4 +18,4 @@ module.exports = {
       },
     },
   },
-}
+})

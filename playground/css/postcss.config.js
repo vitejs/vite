@@ -1,11 +1,12 @@
-module.exports = {
-  plugins: [require('postcss-nested'), testDirDep, testSourceInput],
-}
+import fs from 'node:fs'
+import path from 'node:path'
+import { globSync } from 'tinyglobby'
+import { normalizePath } from 'vite'
+import postcssNested from 'postcss-nested'
 
-const fs = require('node:fs')
-const path = require('node:path')
-const glob = require('fast-glob')
-const { normalizePath } = require('vite')
+export default {
+  plugins: [postcssNested, testDirDep, testSourceInput],
+}
 
 /**
  * A plugin for testing the `dir-dependency` message handling.
@@ -18,7 +19,7 @@ function testDirDep() {
         const pattern = normalizePath(
           path.resolve(path.dirname(result.opts.from), './glob-dep/**/*.css'),
         )
-        const files = glob.sync(pattern)
+        const files = globSync(pattern, { expandDirectories: false })
         const text = files.map((f) => fs.readFileSync(f, 'utf-8')).join('\n')
         atRule.parent.insertAfter(atRule, text)
         atRule.remove()

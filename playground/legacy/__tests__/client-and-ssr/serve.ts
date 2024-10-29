@@ -34,7 +34,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
 
   app.use('/', async (_req, res) => {
     const { render } = await import(
-      path.resolve(rootDir, './dist/server/entry-server-sequential.mjs')
+      path.resolve(rootDir, './dist/server/entry-server-sequential.js')
     )
     const html = await render()
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)

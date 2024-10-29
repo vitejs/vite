@@ -15,5 +15,11 @@ jobs:
     steps:
       - name: Validate PR title
         uses: amannn/action-semantic-pull-request@v5
+        with:
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}"
+            didn't match the configured pattern. Please ensure that the subject
+            doesn't start with an uppercase character.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

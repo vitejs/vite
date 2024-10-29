@@ -1,8 +1,18 @@
 import fs from 'node:fs'
+import path from 'node:path'
 import { parse } from 'dotenv'
-import { expand } from 'dotenv-expand'
-import { arraify, lookupFile } from './utils'
+import { type DotenvPopulateInput, expand } from 'dotenv-expand'
+import { arraify, normalizePath, tryStatSync } from './utils'
 import type { UserConfig } from './config'
+
+export function getEnvFilesForMode(mode: string, envDir: string): string[] {
+  return [
+    /** default file */ `.env`,
+    /** local file */ `.env.local`,
+    /** mode file */ `.env.${mode}`,
+    /** mode local file */ `.env.${mode}.local`,
+  ].map((file) => normalizePath(path.join(envDir, file)))
+}
 
 export function loadEnv(
   mode: string,
@@ -17,48 +27,37 @@ export function loadEnv(
   }
   prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
-  const envFiles = [
-    /** default file */ `.env`,
-    /** local file */ `.env.local`,
-    /** mode file */ `.env.${mode}`,
-    /** mode local file */ `.env.${mode}.local`,
-  ]
+  const envFiles = getEnvFilesForMode(mode, envDir)
 
   const parsed = Object.fromEntries(
-    envFiles.flatMap((file) => {
-      const path = lookupFile(envDir, [file], {
-        pathOnly: true,
-        rootDir: envDir,
-      })
-      if (!path) return []
-      return Object.entries(parse(fs.readFileSync(path)))
+    envFiles.flatMap((filePath) => {
+      if (!tryStatSync(filePath)?.isFile()) return []
+
+      return Object.entries(parse(fs.readFileSync(filePath)))
     }),
   )
 
-  // let environment variables use each other
-  const expandParsed = expand({
-    parsed: {
-      ...(process.env as any),
-      ...parsed,
-    },
-    // prevent process.env mutation
-    ignoreProcessEnv: true,
-  }).parsed!
+  // test NODE_ENV override before expand as otherwise process.env.NODE_ENV would override this
+  if (parsed.NODE_ENV && process.env.VITE_USER_NODE_ENV === undefined) {
+    process.env.VITE_USER_NODE_ENV = parsed.NODE_ENV
+  }
+  // support BROWSER and BROWSER_ARGS env variables
+  if (parsed.BROWSER && process.env.BROWSER === undefined) {
+    process.env.BROWSER = parsed.BROWSER
+  }
+  if (parsed.BROWSER_ARGS && process.env.BROWSER_ARGS === undefined) {
+    process.env.BROWSER_ARGS = parsed.BROWSER_ARGS
+  }
 
-  Object.keys(parsed).forEach((key) => {
-    parsed[key] = expandParsed[key]
-  })
+  // let environment variables use each other. make a copy of `process.env` so that `dotenv-expand`
+  // doesn't re-assign the expanded values to the global `process.env`.
+  const processEnv = { ...process.env } as DotenvPopulateInput
+  expand({ parsed, processEnv })
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
     if (prefixes.some((prefix) => key.startsWith(prefix))) {
       env[key] = value
-    } else if (
-      key === 'NODE_ENV' &&
-      process.env.VITE_USER_NODE_ENV === undefined
-    ) {
-      // NODE_ENV override in .env file
-      process.env.VITE_USER_NODE_ENV = value
     }
   }
 
@@ -77,7 +76,7 @@ export function resolveEnvPrefix({
   envPrefix = 'VITE_',
 }: UserConfig): string[] {
   envPrefix = arraify(envPrefix)
-  if (envPrefix.some((prefix) => prefix === '')) {
+  if (envPrefix.includes('')) {
     throw new Error(
       `envPrefix option contains value '', which could lead unexpected exposure of sensitive information.`,
     )

@@ -3,7 +3,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "lib": ["ESNext", "DOM"],
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "strict": true,
     "sourceMap": true,
     "resolveJsonModule": true,
@@ -14,7 +14,7 @@
     "noImplicitReturns": true,
 
     "useDefineForClassFields": true,
-    "importsNotUsedAsValues": "preserve"
+    "verbatimModuleSyntax": true
   },
   "include": ["./src"]
 }

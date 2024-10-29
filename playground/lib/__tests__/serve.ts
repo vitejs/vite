@@ -27,6 +27,8 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
         root: rootDir,
         logLevel: 'silent',
         server: {
+          port,
+          strictPort: true,
           watch: {
             usePolling: true,
             interval: 100,
@@ -43,7 +45,7 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
     ).listen()
     // use resolved port/base from server
     const devBase = viteServer.config.base === '/' ? '' : viteServer.config.base
-    setViteUrl(`http://localhost:${viteServer.config.server.port}${devBase}`)
+    setViteUrl(`http://localhost:${port}${devBase}`)
     await page.goto(viteTestUrl)
 
     return viteServer
@@ -59,6 +61,33 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
       root: rootDir,
       logLevel: 'warn', // output esbuild warns
       configFile: path.resolve(__dirname, '../vite.dyimport.config.js'),
+    })
+
+    await build({
+      root: rootDir,
+      logLevel: 'warn', // output esbuild warns
+      configFile: path.resolve(__dirname, '../vite.multiple-output.config.js'),
+    })
+
+    await build({
+      root: rootDir,
+      logLevel: 'warn', // output esbuild warns
+      configFile: path.resolve(__dirname, '../vite.nominify.config.js'),
+    })
+
+    await build({
+      root: rootDir,
+      logLevel: 'warn', // output esbuild warns
+      configFile: path.resolve(
+        __dirname,
+        '../vite.helpers-injection.config.js',
+      ),
+    })
+
+    await build({
+      root: rootDir,
+      logLevel: 'warn', // output esbuild warns
+      configFile: path.resolve(__dirname, '../vite.named-exports.config.js'),
     })
 
     // start static file server

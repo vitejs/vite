@@ -25,3 +25,8 @@ if (!isBuild) {
     expect(Object.keys(manifest).length).toBe(3) // 2 svg, 1 index.js
   })
 }
+
+test.runIf(!isBuild)('denied .env', async () => {
+  expect(await page.textContent('.unsafe-dotenv')).toBe('403')
+  expect(await page.textContent('.unsafe-dotenv-double-slash')).toBe('403')
+})
