@@ -515,7 +515,7 @@ Repositories: sindresorhus/binary-extensions, sindresorhus/is-binary-path
 
 ---------------------------------------
 
-## braces, fill-range, is-number, micromatch
+## braces, fill-range, is-number
 License: MIT
 By: Jon Schlinkert, Brian Woodward, Elan Shanker, Eugene Sharygin, hemanth.hm
 Repository: micromatch/braces
@@ -527,10 +527,6 @@ Repository: jonschlinkert/fill-range
 License: MIT
 By: Jon Schlinkert, Olsten Larck, Rouven Weßling
 Repository: jonschlinkert/is-number
-
-License: MIT
-By: Jon Schlinkert, Amila Welihinda, Bogdan Chadkin, Brian Woodward, Devon Govett, Elan Shanker, Fabrício Matté, Martin Kolárik, Olsten Larck, Paul Miller, Tom Byrer, Tyler Akins, Peter Bright, Kuba Juszczyk
-Repository: micromatch/micromatch
 
 > The MIT License (MIT)
 > 
