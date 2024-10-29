@@ -18,53 +18,70 @@ interface HtmlAssetSourceFilterData {
   attributes: Record<string, string>
 }
 
-interface AssetAttribute {
-  attribute: Token.Attribute
-  type: 'src' | 'srcset'
+interface HtmlAssetAction {
+  type: 'src' | 'srcset' | 'remove'
+  attribute: string
+  value: string
+  attributes: Record<string, string>
   location: Token.Location
 }
 
-export function getNodeAssetAttributes(
+export function getNodeAssetActions(
   node: DefaultTreeAdapterMap['element'],
-): AssetAttribute[] {
-  const assetAttrs: AssetAttribute[] = []
+): HtmlAssetAction[] {
+  const matched = DEFAULT_HTML_ASSET_SOURCES[node.nodeName]
+  if (!matched) return []
 
-  for (const assetSource of DEFAULT_HTML_ASSET_SOURCES) {
-    if (assetSource.tag !== node.nodeName) continue
-
-    const attributes = node.attrs.reduce(
-      (acc, attr) => {
-        acc[getAttrKey(attr)] = attr.value
-        return acc
-      },
-      {} as Record<string, string>,
-    )
-
-    const attrNames = Object.keys(attributes)
-
-    for (let i = 0; i < node.attrs.length; i++) {
-      const attr = node.attrs[i]
-
-      if (
-        attr.value &&
-        assetSource.attributes.includes(attrNames[i]) &&
-        (!assetSource.filter ||
-          assetSource.filter({
-            attribute: attrNames[i],
-            value: attr.value,
-            attributes,
-          }))
-      ) {
-        assetAttrs.push({
-          attribute: attr,
-          type: assetSource.type,
-          location: node.sourceCodeLocation!.attrs![attrNames[i]],
-        })
-      }
-    }
+  const attributes: Record<string, string> = {}
+  for (const attr of node.attrs) {
+    attributes[getAttrKey(attr)] = attr.value
   }
 
-  return assetAttrs
+  // If the node has a `vite-ignore` attribute, remove the attribute and early out
+  if ('vite-ignore' in attributes) {
+    return [
+      {
+        type: 'remove',
+        attribute: 'vite-ignore',
+        value: '',
+        attributes,
+        location: node.sourceCodeLocation!.attrs!['vite-ignore'],
+      },
+    ]
+  }
+
+  const actions: HtmlAssetAction[] = []
+  // Check src
+  matched.srcAttributes?.forEach((attribute) => {
+    const value = attributes[attribute]
+    if (!value) return
+    if (matched.filter && !matched.filter({ attribute, value, attributes })) {
+      return
+    }
+    actions.push({
+      type: 'src',
+      attribute,
+      value,
+      attributes,
+      location: node.sourceCodeLocation!.attrs![attribute],
+    })
+  })
+  // Check srcset
+  matched.srcsetAttributes?.forEach((attribute) => {
+    const value = attributes[attribute]
+    if (!value) return
+    if (matched.filter && !matched.filter({ attribute, value, attributes })) {
+      return
+    }
+    actions.push({
+      type: 'srcset',
+      attribute,
+      value,
+      attributes,
+      location: node.sourceCodeLocation!.attrs![attribute],
+    })
+  })
+  return actions
 }
 
 function getAttrKey(attr: Token.Attribute): string {
@@ -118,7 +135,7 @@ const ALLOWED_META_PROPERTY = [
   'vk:image',
 ]
 
-export const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
+const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
   audio: {
     srcAttributes: ['src'],
   },

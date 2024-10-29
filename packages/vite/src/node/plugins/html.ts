@@ -33,7 +33,7 @@ import { resolveEnvPrefix } from '../env'
 import type { Logger } from '../logger'
 import { cleanUrl } from '../../shared/utils'
 import { usePerEnvironmentState } from '../environment'
-import { DEFAULT_HTML_ASSET_SOURCES } from '../assetSource'
+import { getNodeAssetActions } from '../assetSource'
 import {
   assetUrlRE,
   getPublicAssetFilename,
@@ -495,94 +495,83 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // For asset references in index.html, also generate an import
           // statement for each - this will be handled by the asset plugin
-          const assetAttrs = DEFAULT_HTML_ASSET_SOURCES[node.nodeName]
-          if (assetAttrs) {
-            const nodeAttrs: Record<string, string> = {}
-            for (const attr of node.attrs) {
-              nodeAttrs[getAttrKey(attr)] = attr.value
-            }
-            if ('vite-ignore' in nodeAttrs) {
-              // TODO: to be merged
-              // removeViteIgnoreAttr(s, node.sourceCodeLocation!)
-            } else {
-              for (const attrKey in nodeAttrs) {
-                const attrValue = nodeAttrs[attrKey]
-                if (!attrValue) continue
-                if (assetAttrs.srcsetAttributes?.includes(attrKey)) {
+          const assetActions = getNodeAssetActions(node)
+          for (const action of assetActions) {
+            if (action.type === 'remove') {
+              s.remove(action.location.startOffset, action.location.endOffset)
+              continue
+            } else if (action.type === 'srcset') {
+              assetUrlsPromises.push(
+                (async () => {
+                  const processedEncodedUrl = await processSrcSet(
+                    action.value,
+                    async ({ url }) => {
+                      const decodedUrl = decodeURI(url)
+                      if (!isExcludedUrl(decodedUrl)) {
+                        const result = await processAssetUrl(url)
+                        return result !== decodedUrl
+                          ? encodeURIPath(result)
+                          : url
+                      }
+                      return url
+                    },
+                  )
+                  if (processedEncodedUrl !== action.value) {
+                    overwriteAttrValue(s, action.location, processedEncodedUrl)
+                  }
+                })(),
+              )
+            } else if (action.type === 'src') {
+              const url = decodeURI(action.value)
+              if (checkPublicFile(url, config)) {
+                overwriteAttrValue(
+                  s,
+                  action.location,
+                  partialEncodeURIPath(toOutputPublicFilePath(url)),
+                )
+              } else if (!isExcludedUrl(url)) {
+                if (
+                  node.nodeName === 'link' &&
+                  isCSSRequest(url) &&
+                  // should not be converted if following attributes are present (#6748)
+                  !(
+                    'media' in action.attributes ||
+                    'disabled' in action.attributes
+                  )
+                ) {
+                  // CSS references, convert to import
+                  const importExpression = `\nimport ${JSON.stringify(url)}`
+                  styleUrls.push({
+                    url,
+                    start: nodeStartWithLeadingWhitespace(node),
+                    end: node.sourceCodeLocation!.endOffset,
+                  })
+                  js += importExpression
+                } else {
+                  // If the node is a link, check if it can be inlined. If not, set `shouldInline`
+                  // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
+                  const isNoInlineLink =
+                    node.nodeName === 'link' &&
+                    action.attributes.rel &&
+                    parseRelAttr(action.attributes.rel).some((v) =>
+                      noInlineLinkRels.has(v),
+                    )
+                  const shouldInline = isNoInlineLink ? false : undefined
                   assetUrlsPromises.push(
                     (async () => {
-                      const processedEncodedUrl = await processSrcSet(
-                        attrValue,
-                        async ({ url }) => {
-                          const decodedUrl = decodeURI(url)
-                          if (!isExcludedUrl(decodedUrl)) {
-                            const result = await processAssetUrl(url)
-                            return result !== decodedUrl
-                              ? encodeURIPath(result)
-                              : url
-                          }
-                          return url
-                        },
+                      const processedUrl = await processAssetUrl(
+                        url,
+                        shouldInline,
                       )
-                      if (processedEncodedUrl !== attrValue) {
+                      if (processedUrl !== url) {
                         overwriteAttrValue(
                           s,
-                          getAttrSourceCodeLocation(node, attrKey),
-                          processedEncodedUrl,
+                          action.location,
+                          partialEncodeURIPath(processedUrl),
                         )
                       }
                     })(),
                   )
-                } else if (assetAttrs.srcAttributes?.includes(attrKey)) {
-                  const url = decodeURI(attrValue)
-                  if (checkPublicFile(url, config)) {
-                    overwriteAttrValue(
-                      s,
-                      getAttrSourceCodeLocation(node, attrKey),
-                      partialEncodeURIPath(toOutputPublicFilePath(url)),
-                    )
-                  } else if (!isExcludedUrl(url)) {
-                    if (
-                      node.nodeName === 'link' &&
-                      isCSSRequest(url) &&
-                      // should not be converted if following attributes are present (#6748)
-                      !('media' in nodeAttrs || 'disabled' in nodeAttrs)
-                    ) {
-                      // CSS references, convert to import
-                      const importExpression = `\nimport ${JSON.stringify(url)}`
-                      styleUrls.push({
-                        url,
-                        start: nodeStartWithLeadingWhitespace(node),
-                        end: node.sourceCodeLocation!.endOffset,
-                      })
-                      js += importExpression
-                    } else {
-                      // If the node is a link, check if it can be inlined. If not, set `shouldInline`
-                      // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
-                      const isNoInlineLink =
-                        node.nodeName === 'link' &&
-                        nodeAttrs.rel &&
-                        parseRelAttr(nodeAttrs.rel).some((v) =>
-                          noInlineLinkRels.has(v),
-                        )
-                      const shouldInline = isNoInlineLink ? false : undefined
-                      assetUrlsPromises.push(
-                        (async () => {
-                          const processedUrl = await processAssetUrl(
-                            url,
-                            shouldInline,
-                          )
-                          if (processedUrl !== url) {
-                            overwriteAttrValue(
-                              s,
-                              getAttrSourceCodeLocation(node, attrKey),
-                              partialEncodeURIPath(processedUrl),
-                            )
-                          }
-                        })(),
-                      )
-                    }
-                  }
                 }
               }
             }
@@ -1533,11 +1522,4 @@ function incrementIndent(indent: string = '') {
 
 export function getAttrKey(attr: Token.Attribute): string {
   return attr.prefix === undefined ? attr.name : `${attr.prefix}:${attr.name}`
-}
-
-function getAttrSourceCodeLocation(
-  node: DefaultTreeAdapterMap['element'],
-  attrKey: string,
-) {
-  return node.sourceCodeLocation!.attrs![attrKey]
 }

@@ -10,7 +10,6 @@ import {
   applyHtmlTransforms,
   extractImportExpressionFromClassicScript,
   findNeedTransformStyleAttribute,
-  getAttrKey,
   getScriptInfo,
   htmlEnvHook,
   htmlProxyResult,
@@ -43,7 +42,7 @@ import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
-import { DEFAULT_HTML_ASSET_SOURCES } from '../../assetSource'
+import { getNodeAssetActions } from '../../assetSource'
 
 interface AssetNode {
   start: number
@@ -330,37 +329,20 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttrs = DEFAULT_HTML_ASSET_SOURCES[node.nodeName]
-    if (assetAttrs) {
-      const nodeAttrs: Record<string, string> = {}
-      for (const attr of node.attrs) {
-        nodeAttrs[getAttrKey(attr)] = attr.value
-      }
-      if ('vite-ignore' in nodeAttrs) {
-        // TODO: to be merged
-        // removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+    const assetActions = getNodeAssetActions(node)
+    for (const action of assetActions) {
+      if (action.type === 'remove') {
+        s.remove(action.location.startOffset, action.location.endOffset)
       } else {
-        for (const attrKey in nodeAttrs) {
-          const attrValue = nodeAttrs[attrKey]
-          if (!attrValue) continue
-          const isSrcSet = assetAttrs.srcsetAttributes?.includes(attrKey)
-          const isSrc = assetAttrs.srcAttributes?.includes(attrKey)
-          if (isSrcSet || isSrc) {
-            const processedUrl = processNodeUrl(
-              attrValue,
-              !!isSrcSet,
-              config,
-              htmlPath,
-              originalUrl,
-            )
-            if (processedUrl !== attrValue) {
-              overwriteAttrValue(
-                s,
-                node.sourceCodeLocation!.attrs![attrKey],
-                processedUrl,
-              )
-            }
-          }
+        const processedUrl = processNodeUrl(
+          action.value,
+          action.type === 'srcset',
+          config,
+          htmlPath,
+          originalUrl,
+        )
+        if (processedUrl !== action.value) {
+          overwriteAttrValue(s, action.location, processedUrl)
         }
       }
     }
