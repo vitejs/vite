@@ -843,10 +843,7 @@ export function tryNodeResolve(
     return { ...resolved, id: resolvedId, external: true }
   }
 
-  if (
-    !options.idOnly &&
-    ((!options.scan && isBuild && !depsOptimizer) || externalize)
-  ) {
+  if (!options.idOnly && ((!options.scan && isBuild) || externalize)) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return processResult({
@@ -894,7 +891,7 @@ export function tryNodeResolve(
     resolved = depsOptimizer.getOptimizedDepId(optimizedInfo)
   }
 
-  if (!options.idOnly && !options.scan && isBuild) {
+  if (!options.idOnly && isBuild) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return {
