@@ -2,18 +2,11 @@ import path from 'node:path'
 import micromatch from 'micromatch'
 import { globSync } from 'tinyglobby'
 import type { ResolvedConfig } from '../config'
-import {
-  deepImportRE,
-  escapeRegex,
-  getNpmPackageName,
-  isInNodeModules,
-  isOptimizable,
-} from '../utils'
+import { escapeRegex, getNpmPackageName, isOptimizable } from '../utils'
 import { resolvePackageData } from '../packages'
-import { cleanUrl, slash } from '../../shared/utils'
+import { slash } from '../../shared/utils'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
-import { SPECIAL_QUERY_RE } from '../constants'
 
 export function createOptimizeDepsIncludeResolver(
   environment: Environment,
@@ -33,23 +26,7 @@ export function createOptimizeDepsIncludeResolver(
       environment.config.optimizeDeps,
     )
 
-    if (environment.config.consumer !== 'server') {
-      return { id: resolvedId, optimizable }
-    }
-
-    const deepMatch = deepImportRE.exec(id)
-    const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : cleanUrl(id)
-
-    const exclude = environment.config.optimizeDeps.exclude
-
-    const skipOptimization =
-      !optimizable ||
-      (importer && isInNodeModules(importer)) ||
-      exclude?.includes(pkgId) ||
-      exclude?.includes(id) ||
-      SPECIAL_QUERY_RE.test(resolvedId)
-
-    return { id: resolvedId, optimizable: !skipOptimization }
+    return { id: resolvedId, optimizable }
   }
 
   return async (id: string) => {
