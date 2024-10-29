@@ -177,7 +177,7 @@ describe.runIf(isBuild)('build tests', () => {
     const map = findAssetFile(/with-define-object.*\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
-        "mappings": "qBAEA,SAASA,GAAO,CACJC,GACZ,CAEA,SAASA,GAAY,CAEX,QAAA,MAAM,qBAAsBC,CAAkB,CACxD,CAEAF,EAAK",
+        "mappings": "qBAEA,SAASA,GAAO,CACJC,EAAA,CACZ,CAEA,SAASA,GAAY,CAEX,QAAA,MAAM,qBAAsBC,CAAkB,CACxD,CAEAF,EAAK",
         "sources": [
           "../../with-define-object.ts",
         ],
