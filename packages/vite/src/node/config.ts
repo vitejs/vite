@@ -244,7 +244,8 @@ export interface SharedEnvironmentOptions {
    */
   consumer?: 'client' | 'server'
   /**
-   * Don't replace `process.env` to a static value.
+   * If true, `process.env` referenced in code will be preserved as-is and evaluated in runtime.
+   * Otherwise, it is statically replaced as an empty object.
    */
   keepProcessEnv?: boolean
   /**

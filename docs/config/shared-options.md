@@ -136,7 +136,7 @@ A package with conditional exports may have the following `exports` field in its
 
 Here, `import` and `require` are "conditions". Conditions can be nested and should be specified from most specific to least specific.
 
-Some of the default conditions (`production`, `development`, `browser`, `node`) are only applied when the requirements are met. For example, `production` is only applied when `process.env.NODE_ENV === 'production'`, and `browser` is only applied when the environment is `webCompatible`. The `resolve.conditions` config option allows specifying additional allowed conditions and those conditions will be applied unconditionally.
+Some of the default conditions (`production`, `development`) are only applied when the requirements are met. For example, `production` is only applied when `process.env.NODE_ENV === 'production'`. The `resolve.conditions` config option allows specifying additional allowed conditions and those conditions will be applied unconditionally.
 
 Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
 
