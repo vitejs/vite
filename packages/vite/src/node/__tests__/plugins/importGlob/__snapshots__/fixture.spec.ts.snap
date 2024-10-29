@@ -52,6 +52,7 @@ export const cleverCwd2 = /* #__PURE__ */ Object.assign({"./modules/a.ts": () =>
 
 
 });
+export const customBase = /* #__PURE__ */ Object.assign({"fixture-a/modules/a.ts": () => import("./modules/a.ts"),"fixture-a/modules/b.ts": () => import("./modules/b.ts"),"fixture-a/modules/index.ts": () => import("./modules/index.ts"),"fixture-a/sibling.ts": () => import("./sibling.ts")});
 "
 `;
 
@@ -107,6 +108,7 @@ export const cleverCwd2 = /* #__PURE__ */ Object.assign({"./modules/a.ts": () =>
 
 
 });
+export const customBase = /* #__PURE__ */ Object.assign({"fixture-a/modules/a.ts": () => import("./modules/a.ts"),"fixture-a/modules/b.ts": () => import("./modules/b.ts"),"fixture-a/modules/index.ts": () => import("./modules/index.ts"),"fixture-a/sibling.ts": () => import("./sibling.ts")});
 "
 `;
 

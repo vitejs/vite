@@ -419,15 +419,20 @@ export async function transformGlobImport(
                 throw new Error(
                   "In virtual modules, all globs must start with '/'",
                 )
-              const filePath = `/${relative(root, file)}`
-              return { filePath, importPath: filePath }
+              const importPath = `/${relative(root, file)}`
+              const filePath = options.base
+                ? `${relative(posix.join(root, options.base), file)}`
+                : importPath
+              return { filePath, importPath }
             }
 
             let importPath = relative(dir, file)
             if (importPath[0] !== '.') importPath = `./${importPath}`
 
             let filePath: string
-            if (isRelative) {
+            if (options.base) {
+              filePath = relative(posix.join(root, options.base), file)
+            } else if (isRelative) {
               filePath = importPath
             } else {
               filePath = relative(root, file)

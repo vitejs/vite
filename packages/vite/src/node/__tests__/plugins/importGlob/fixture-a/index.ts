@@ -67,3 +67,5 @@ export const cleverCwd2 = import.meta.glob([
   '../fixture-b/*.ts',
   '!**/index.ts',
 ])
+
+export const customBase = import.meta.glob('**/*.ts', { base: './' })
