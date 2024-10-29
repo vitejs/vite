@@ -6,8 +6,8 @@ import {
   deepImportRE,
   escapeRegex,
   getNpmPackageName,
-  injectQuery,
   isInNodeModules,
+  isOptimizable,
 } from '../utils'
 import { resolvePackageData } from '../packages'
 import { cleanUrl, slash } from '../../shared/utils'
@@ -17,7 +17,7 @@ import { OPTIMIZABLE_ENTRY_RE, SPECIAL_QUERY_RE } from '../constants'
 
 export function createOptimizeDepsIncludeResolver(
   environment: Environment,
-): (id: string) => Promise<string | undefined> {
+): (id: string) => Promise<{ id: string; optimizable: boolean } | undefined> {
   const topLevelConfig = environment.getTopLevelConfig()
   const resolverResolve = createBackCompatIdResolver(topLevelConfig, {
     asSrc: false,
@@ -26,10 +26,15 @@ export function createOptimizeDepsIncludeResolver(
   })
   const resolve = async (id: string, importer?: string) => {
     const resolvedId = await resolverResolve(environment, id, importer)
-    if (!resolvedId) return resolvedId
+    if (resolvedId === undefined) return undefined
+
+    const optimizable = isOptimizable(
+      resolvedId,
+      environment.config.optimizeDeps,
+    )
 
     if (environment.config.consumer !== 'server') {
-      return resolvedId
+      return { id: resolvedId, optimizable }
     }
 
     const deepMatch = deepImportRE.exec(id)
@@ -46,9 +51,7 @@ export function createOptimizeDepsIncludeResolver(
       exclude?.includes(id) ||
       SPECIAL_QUERY_RE.test(resolvedId)
 
-    return skipOptimization
-      ? injectQuery(resolvedId, `__vite_skip_optimization`)
-      : resolvedId
+    return { id: resolvedId, optimizable: optimizable && !skipOptimization }
   }
 
   return async (id: string) => {
