@@ -13,9 +13,6 @@ patchedDependencies:
   acorn@8.14.0:
     hash: d727lkisx442fz7p2mupxdcooa
     path: patches/acorn@8.14.0.patch
-  chokidar@3.6.0:
-    hash: bckcfsslxcffppz65mxcq6naau
-    path: patches/chokidar@3.6.0.patch
   http-proxy@1.18.1:
     hash: qqiqxx62zlcu62nljjmhlvexni
     path: patches/http-proxy@1.18.1.patch
@@ -238,10 +235,6 @@ importers:
       rollup:
         specifier: ^4.23.0
         version: 4.24.2
-    optionalDependencies:
-      fsevents:
-        specifier: ~2.3.3
-        version: 2.3.3
     devDependencies:
       '@ampproject/remapping':
         specifier: ^2.3.0
@@ -286,8 +279,8 @@ importers:
         specifier: ^6.7.14
         version: 6.7.14
       chokidar:
-        specifier: ^3.6.0
-        version: 3.6.0(patch_hash=bckcfsslxcffppz65mxcq6naau)
+        specifier: ^4.0.1
+        version: 4.0.1
       connect:
         specifier: ^3.7.0
         version: 3.7.0
@@ -9406,7 +9399,7 @@ snapshots:
 
   check-error@2.1.1: {}
 
-  chokidar@3.6.0(patch_hash=bckcfsslxcffppz65mxcq6naau):
+  chokidar@3.6.0:
     dependencies:
       anymatch: 3.1.2
       braces: 3.0.3
@@ -12381,7 +12374,7 @@ snapshots:
     dependencies:
       '@alloc/quick-lru': 5.2.0
       arg: 5.0.2
-      chokidar: 3.6.0(patch_hash=bckcfsslxcffppz65mxcq6naau)
+      chokidar: 3.6.0
       didyoumean: 1.2.2
       dlv: 1.1.3
       fast-glob: 3.3.2
