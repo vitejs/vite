@@ -47,7 +47,6 @@ import {
   joinUrlSegments,
   normalizePath,
   partialEncodeURIPath,
-  requireResolveFromRootWithFallback,
 } from './utils'
 import { resolveEnvironmentPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
@@ -341,7 +340,6 @@ export interface ResolvedBuildOptions
 export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
   logger: Logger,
-  root: string,
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
   isSsrTargetWebworkerEnvironment?: boolean,
@@ -373,7 +371,7 @@ export function resolveBuildEnvironmentOptions(
     cssCodeSplit: !raw.lib,
     sourcemap: false,
     rollupOptions: {},
-    minify: raw.ssr ? false : 'esbuild',
+    minify: consumer === 'server' ? false : 'esbuild',
     terserOptions: {},
     write: true,
     emptyOutDir: null,
@@ -424,21 +422,6 @@ export function resolveBuildEnvironmentOptions(
   // handle special build targets
   if (resolved.target === 'modules') {
     resolved.target = ESBUILD_MODULES_TARGET
-  } else if (resolved.target === 'esnext' && resolved.minify === 'terser') {
-    try {
-      const terserPackageJsonPath = requireResolveFromRootWithFallback(
-        root,
-        'terser/package.json',
-      )
-      const terserPackageJson = JSON.parse(
-        fs.readFileSync(terserPackageJsonPath, 'utf-8'),
-      )
-      const v = terserPackageJson.version.split('.')
-      if (v[0] === '5' && v[1] < 16) {
-        // esnext + terser 5.16<: limit to es2021 so it can be minified by terser
-        resolved.target = 'es2021'
-      }
-    } catch {}
   }
 
   if (!resolved.cssTarget) {
@@ -453,7 +436,7 @@ export function resolveBuildEnvironmentOptions(
   }
 
   if (resolved.cssMinify == null) {
-    resolved.cssMinify = !!resolved.minify
+    resolved.cssMinify = consumer === 'server' ? 'esbuild' : !!resolved.minify
   }
 
   if (isSsrTargetWebworkerEnvironment) {
@@ -525,35 +508,13 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
 export async function build(
   inlineConfig: InlineConfig = {},
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const patchConfig = (resolved: ResolvedConfig) => {
-    // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
-    // we need to make override `config.build` for the current environment.
-    // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
-    // remove the default values that shouldn't be used at all once the config is resolved
-    const environmentName = resolved.build.ssr ? 'ssr' : 'client'
-    ;(resolved.build as ResolvedBuildOptions) = {
-      ...resolved.environments[environmentName].build,
-    }
-  }
-  const config = await resolveConfigToBuild(inlineConfig, patchConfig)
-  return buildWithResolvedConfig(config)
+  const builder = await createBuilder(inlineConfig, true)
+  const environment = Object.values(builder.environments)[0]
+  if (!environment) throw new Error('No environment found')
+  return builder.build(environment)
 }
 
-/**
- * @internal used to implement `vite build` for backward compatibility
- */
-export async function buildWithResolvedConfig(
-  config: ResolvedConfig,
-): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
-  const environmentName = config.build.ssr ? 'ssr' : 'client'
-  const environment = await config.environments[
-    environmentName
-  ].build.createEnvironment(environmentName, config)
-  await environment.init()
-  return buildEnvironment(environment)
-}
-
-export function resolveConfigToBuild(
+function resolveConfigToBuild(
   inlineConfig: InlineConfig = {},
   patchConfig?: (config: ResolvedConfig) => void,
   patchPlugins?: (resolvedPlugins: Plugin[]) => void,
@@ -572,7 +533,7 @@ export function resolveConfigToBuild(
 /**
  * Build an App environment, or a App library (if libraryOptions is provided)
  **/
-export async function buildEnvironment(
+async function buildEnvironment(
   environment: BuildEnvironment,
 ): Promise<RollupOutput | RollupOutput[] | RollupWatcher> {
   const { root, packageCache } = environment.config
@@ -1514,7 +1475,6 @@ export interface ViteBuilder {
 export interface BuilderOptions {
   sharedConfigBuild?: boolean
   sharedPlugins?: boolean
-  entireApp?: boolean
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
 
@@ -1525,12 +1485,12 @@ async function defaultBuildApp(builder: ViteBuilder): Promise<void> {
 }
 
 export function resolveBuilderOptions(
-  options: BuilderOptions = {},
-): ResolvedBuilderOptions {
+  options: BuilderOptions | undefined,
+): ResolvedBuilderOptions | undefined {
+  if (!options) return
   return {
     sharedConfigBuild: options.sharedConfigBuild ?? false,
     sharedPlugins: options.sharedPlugins ?? false,
-    entireApp: options.entireApp ?? false,
     buildApp: options.buildApp ?? defaultBuildApp,
   }
 }
@@ -1539,86 +1499,95 @@ export type ResolvedBuilderOptions = Required<BuilderOptions>
 
 /**
  * Creates a ViteBuilder to orchestrate building multiple environments.
+ * @experimental
  */
 export async function createBuilder(
   inlineConfig: InlineConfig = {},
+  useLegacyBuilder: null | boolean = false,
 ): Promise<ViteBuilder> {
-  const config = await resolveConfigToBuild(inlineConfig)
-  return createBuilderWithResolvedConfig(inlineConfig, config)
-}
+  const patchConfig = (resolved: ResolvedConfig) => {
+    if (!(useLegacyBuilder ?? !resolved.builder)) return
 
-/**
- * Used to implement the `vite build` command without resolving the config twice
- * @internal
- */
-export async function createBuilderWithResolvedConfig(
-  inlineConfig: InlineConfig,
-  config: ResolvedConfig,
-): Promise<ViteBuilder> {
+    // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
+    // we need to make override `config.build` for the current environment.
+    // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
+    // remove the default values that shouldn't be used at all once the config is resolved
+    const environmentName = resolved.build.ssr ? 'ssr' : 'client'
+    ;(resolved.build as ResolvedBuildOptions) = {
+      ...resolved.environments[environmentName].build,
+    }
+  }
+  const config = await resolveConfigToBuild(inlineConfig, patchConfig)
+  useLegacyBuilder ??= !config.builder
+  const configBuilder = config.builder ?? resolveBuilderOptions({})!
+
   const environments: Record<string, BuildEnvironment> = {}
 
   const builder: ViteBuilder = {
     environments,
     config,
     async buildApp() {
-      return config.builder.buildApp(builder)
+      return configBuilder.buildApp(builder)
     },
     async build(environment: BuildEnvironment) {
       return buildEnvironment(environment)
     },
   }
 
-  for (const environmentName of Object.keys(config.environments)) {
-    // We need to resolve the config again so we can properly merge options
-    // and get a new set of plugins for each build environment. The ecosystem
-    // expects plugins to be run for the same environment once they are created
-    // and to process a single bundle at a time (contrary to dev mode where
-    // plugins are built to handle multiple environments concurrently).
-    let environmentConfig = config
-    if (!config.builder.sharedConfigBuild) {
-      const patchConfig = (resolved: ResolvedConfig) => {
-        // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
-        // we need to make override `config.build` for the current environment.
-        // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
-        // remove the default values that shouldn't be used at all once the config is resolved
-        ;(resolved.build as ResolvedBuildOptions) = {
-          ...resolved.environments[environmentName].build,
+  async function setupEnvironment(name: string, config: ResolvedConfig) {
+    const environment = await config.build.createEnvironment(name, config)
+    await environment.init()
+    environments[name] = environment
+  }
+
+  if (useLegacyBuilder) {
+    await setupEnvironment(config.build.ssr ? 'ssr' : 'client', config)
+  } else {
+    for (const environmentName of Object.keys(config.environments)) {
+      // We need to resolve the config again so we can properly merge options
+      // and get a new set of plugins for each build environment. The ecosystem
+      // expects plugins to be run for the same environment once they are created
+      // and to process a single bundle at a time (contrary to dev mode where
+      // plugins are built to handle multiple environments concurrently).
+      let environmentConfig = config
+      if (!configBuilder.sharedConfigBuild) {
+        const patchConfig = (resolved: ResolvedConfig) => {
+          // Until the ecosystem updates to use `environment.config.build` instead of `config.build`,
+          // we need to make override `config.build` for the current environment.
+          // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
+          // remove the default values that shouldn't be used at all once the config is resolved
+          ;(resolved.build as ResolvedBuildOptions) = {
+            ...resolved.environments[environmentName].build,
+          }
         }
-      }
-      const patchPlugins = (resolvedPlugins: Plugin[]) => {
-        // Force opt-in shared plugins
-        let j = 0
-        for (let i = 0; i < resolvedPlugins.length; i++) {
-          const environmentPlugin = resolvedPlugins[i]
-          if (
-            config.builder.sharedPlugins ||
-            environmentPlugin.sharedDuringBuild
-          ) {
-            for (let k = j; k < config.plugins.length; k++) {
-              if (environmentPlugin.name === config.plugins[k].name) {
-                resolvedPlugins[i] = config.plugins[k]
-                j = k + 1
-                break
+        const patchPlugins = (resolvedPlugins: Plugin[]) => {
+          // Force opt-in shared plugins
+          let j = 0
+          for (let i = 0; i < resolvedPlugins.length; i++) {
+            const environmentPlugin = resolvedPlugins[i]
+            if (
+              configBuilder.sharedPlugins ||
+              environmentPlugin.sharedDuringBuild
+            ) {
+              for (let k = j; k < config.plugins.length; k++) {
+                if (environmentPlugin.name === config.plugins[k].name) {
+                  resolvedPlugins[i] = config.plugins[k]
+                  j = k + 1
+                  break
+                }
               }
             }
           }
         }
+        environmentConfig = await resolveConfigToBuild(
+          inlineConfig,
+          patchConfig,
+          patchPlugins,
+        )
       }
-      environmentConfig = await resolveConfigToBuild(
-        inlineConfig,
-        patchConfig,
-        patchPlugins,
-      )
+
+      await setupEnvironment(environmentName, environmentConfig)
     }
-
-    const environment = await environmentConfig.build.createEnvironment(
-      environmentName,
-      environmentConfig,
-    )
-
-    await environment.init()
-
-    environments[environmentName] = environment
   }
 
   return builder

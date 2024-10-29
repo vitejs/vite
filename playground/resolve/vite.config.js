@@ -22,6 +22,10 @@ const generatedContentImports = [
     specifier: normalizePath(path.resolve(__dirname, './absolute.js')),
     elementQuery: '.absolute',
   },
+  {
+    specifier: new URL('file-url.js', import.meta.url),
+    elementQuery: '.file-url',
+  },
 ]
 
 export default defineConfig({
