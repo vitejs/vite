@@ -19,7 +19,7 @@ jobs:
     if: >
       github.repository == 'vitejs/vite' &&
       (github.event_name == 'push' ||
-      (github.event.issue.pull_request && contains(github.event.pull_request.labels.*.name, 'trigger: preview')))
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'trigger: preview')))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
