@@ -2,26 +2,59 @@ import path from 'node:path'
 import micromatch from 'micromatch'
 import { globSync } from 'tinyglobby'
 import type { ResolvedConfig } from '../config'
-import { escapeRegex, getNpmPackageName } from '../utils'
+import {
+  deepImportRE,
+  escapeRegex,
+  getNpmPackageName,
+  injectQuery,
+  isInNodeModules,
+} from '../utils'
 import { resolvePackageData } from '../packages'
-import { slash } from '../../shared/utils'
+import { cleanUrl, slash } from '../../shared/utils'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
+import { OPTIMIZABLE_ENTRY_RE, SPECIAL_QUERY_RE } from '../constants'
 
 export function createOptimizeDepsIncludeResolver(
   environment: Environment,
 ): (id: string) => Promise<string | undefined> {
   const topLevelConfig = environment.getTopLevelConfig()
-  const resolve = createBackCompatIdResolver(topLevelConfig, {
+  const resolverResolve = createBackCompatIdResolver(topLevelConfig, {
     asSrc: false,
     scan: true,
-    ssrOptimizeCheck: environment.config.consumer === 'server',
     packageCache: new Map(),
   })
+  const resolve = async (id: string, importer?: string) => {
+    const resolvedId = await resolverResolve(environment, id, importer)
+    if (!resolvedId) return resolvedId
+
+    if (environment.config.consumer !== 'server') {
+      return resolvedId
+    }
+
+    const deepMatch = deepImportRE.exec(id)
+    const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : cleanUrl(id)
+
+    const isJsType = OPTIMIZABLE_ENTRY_RE.test(resolvedId)
+
+    const exclude = environment.config.optimizeDeps?.exclude
+
+    const skipOptimization =
+      !isJsType ||
+      (importer && isInNodeModules(importer)) ||
+      exclude?.includes(pkgId) ||
+      exclude?.includes(id) ||
+      SPECIAL_QUERY_RE.test(resolvedId)
+
+    return skipOptimization
+      ? injectQuery(resolvedId, `__vite_skip_optimization`)
+      : resolvedId
+  }
+
   return async (id: string) => {
     const lastArrowIndex = id.lastIndexOf('>')
     if (lastArrowIndex === -1) {
-      return await resolve(environment, id, undefined)
+      return await resolve(id, undefined)
     }
     // split nested selected id by last '>', for example:
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
@@ -32,11 +65,7 @@ export function createOptimizeDepsIncludeResolver(
       topLevelConfig.root,
       topLevelConfig.resolve.preserveSymlinks,
     )
-    return await resolve(
-      environment,
-      nestedPath,
-      path.resolve(basedir, 'package.json'),
-    )
+    return await resolve(nestedPath, path.resolve(basedir, 'package.json'))
   }
 }
 
