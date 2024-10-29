@@ -12,14 +12,14 @@ on:
     branches:
       - main
   pull_request:
-    types: [labeled]
+    types: [opened, synchronize, labeled]
 
 jobs:
   preview:
     if: >
       github.repository == 'vitejs/vite' &&
       (github.event_name == 'push' ||
-      (github.event.issue.pull_request && contains(github.event.pull_request.labels.*.name, 'trigger: preview')))
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'trigger: preview')))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -36,9 +36,3 @@ jobs:
         run: pnpm build
 
       - run: pnpm dlx pkg-pr-new@0.0 publish --compact --pnpm ./packages/vite
-
-      - if: github.event_name != 'push'
-        run: |
-          gh issue edit ${{ github.event.issue.number }} --remove-label "trigger: preview" --repo ${{ github.repository }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
