@@ -61,7 +61,6 @@ class SSRCompatModuleRunner extends ModuleRunner {
   constructor(private environment: DevEnvironment) {
     super(
       {
-        root: environment.config.root,
         transport: {
           fetchModule: (id, importer, options) =>
             environment.fetchModule(id, importer, options),

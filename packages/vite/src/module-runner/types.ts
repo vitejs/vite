@@ -149,11 +149,6 @@ export interface ModuleRunnerHmr {
 
 export interface ModuleRunnerOptions {
   /**
-   * Root of the project
-   * @deprecated not used (TODO: doc)
-   */
-  root: string
-  /**
    * A set of methods to communicate with the server.
    */
   transport: RunnerTransport

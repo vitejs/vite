@@ -14,10 +14,7 @@ import { ServerHMRConnector } from './serverHmrConnector'
  * @experimental
  */
 export interface ServerModuleRunnerOptions
-  extends Omit<
-    ModuleRunnerOptions,
-    'root' | 'fetchModule' | 'hmr' | 'transport'
-  > {
+  extends Omit<ModuleRunnerOptions, 'fetchModule' | 'hmr' | 'transport'> {
   /**
    * Disable HMR or configure HMR logger.
    */
@@ -90,7 +87,6 @@ export function createServerModuleRunner(
   return new ModuleRunner(
     {
       ...options,
-      root: environment.config.root,
       transport: {
         fetchModule: (id, importer, options) =>
           environment.fetchModule(id, importer, options),
