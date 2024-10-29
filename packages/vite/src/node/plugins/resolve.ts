@@ -11,7 +11,6 @@ import {
   DEP_VERSION_RE,
   ENV_ENTRY,
   FS_PREFIX,
-  OPTIMIZABLE_ENTRY_RE,
   SPECIAL_QUERY_RE,
 } from '../constants'
 import {
@@ -865,14 +864,11 @@ export function tryNodeResolve(
   }
 
   // if we reach here, it's a valid dep import that hasn't been optimized.
-  const isJsType = depsOptimizer
-    ? isOptimizable(resolved, depsOptimizer.options)
-    : OPTIMIZABLE_ENTRY_RE.test(resolved)
-
-  const exclude = depsOptimizer?.options.exclude
+  const isJsType = isOptimizable(resolved, depsOptimizer.options)
+  const exclude = depsOptimizer.options.exclude
 
   const skipOptimization =
-    depsOptimizer?.options.noDiscovery ||
+    depsOptimizer.options.noDiscovery ||
     !isJsType ||
     (importer && isInNodeModules(importer)) ||
     exclude?.includes(pkgId) ||
@@ -886,7 +882,7 @@ export function tryNodeResolve(
     // otherwise we may introduce duplicated modules for externalized files
     // from pre-bundled deps.
     if (!isBuild) {
-      const versionHash = depsOptimizer!.metadata.browserHash
+      const versionHash = depsOptimizer.metadata.browserHash
       if (versionHash && isJsType) {
         resolved = injectQuery(resolved, `v=${versionHash}`)
       }
@@ -894,8 +890,8 @@ export function tryNodeResolve(
   } else {
     // this is a missing import, queue optimize-deps re-run and
     // get a resolved its optimized info
-    const optimizedInfo = depsOptimizer!.registerMissingImport(id, resolved)
-    resolved = depsOptimizer!.getOptimizedDepId(optimizedInfo)
+    const optimizedInfo = depsOptimizer.registerMissingImport(id, resolved)
+    resolved = depsOptimizer.getOptimizedDepId(optimizedInfo)
   }
 
   if (!options.idOnly && !options.scan && isBuild) {
@@ -906,7 +902,7 @@ export function tryNodeResolve(
       moduleSideEffects: pkg.hasSideEffects(resolved),
     }
   } else {
-    return { id: resolved! }
+    return { id: resolved }
   }
 }
 
