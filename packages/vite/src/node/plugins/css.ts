@@ -1020,7 +1020,11 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
               isCSSRequest(file)
                 ? moduleGraph.createFileOnlyEntry(file)
                 : await moduleGraph.ensureEntryFromUrl(
-                    await fileToDevUrl(file, config, /* skipBase */ true),
+                    await fileToDevUrl(
+                      this.environment,
+                      file,
+                      /* skipBase */ true,
+                    ),
                   ),
             )
           }

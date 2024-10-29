@@ -254,17 +254,19 @@ export async function fileToUrl(
 ): Promise<string> {
   const { environment } = pluginContext
   if (environment.config.command === 'serve') {
-    return fileToDevUrl(id, environment.getTopLevelConfig())
+    return fileToDevUrl(environment, id)
   } else {
     return fileToBuiltUrl(pluginContext, id)
   }
 }
 
 export async function fileToDevUrl(
+  environment: Environment,
   id: string,
-  config: ResolvedConfig,
   skipBase = false,
 ): Promise<string> {
+  const config = environment.getTopLevelConfig()
+
   let rtn: string
   if (checkPublicFile(id, config)) {
     // in public dir during dev, keep the url as-is
@@ -279,16 +281,9 @@ export async function fileToDevUrl(
   }
 
   if (inlineRE.test(id)) {
-    const { file } = splitFileAndPostfix(id)
+    const file = cleanUrl(id)
     const content = await fsp.readFile(file)
-
-    if (file.endsWith('.svg')) {
-      return svgToDataURL(content)
-    } else {
-      const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
-      // base64 inlined as a string
-      return `data:${mimeType};base64,${content.toString('base64')}`
-    }
+    return assetToDataURL(environment, file, content)
   }
 
   if (skipBase) {
@@ -367,19 +362,7 @@ async function fileToBuiltUrl(
 
   let url: string
   if (shouldInline(pluginContext, file, id, content, forceInline)) {
-    if (environment.config.build.lib && isGitLfsPlaceholder(content)) {
-      environment.logger.warn(
-        colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`),
-      )
-    }
-
-    if (file.endsWith('.svg')) {
-      url = svgToDataURL(content)
-    } else {
-      const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
-      // base64 inlined as a string
-      url = `data:${mimeType};base64,${content.toString('base64')}`
-    }
+    url = assetToDataURL(environment, file, content)
   } else {
     // emit as asset
     const originalFileName = normalizePath(
@@ -431,10 +414,10 @@ const shouldInline = (
 ): boolean => {
   const environment = pluginContext.environment
   const { assetsInlineLimit } = environment.config.build
-  if (noInlineRE.test(id)) return false
-  if (inlineRE.test(id)) return true
   if (environment.config.build.lib) return true
   if (pluginContext.getModuleInfo(id)?.isEntry) return false
+  if (noInlineRE.test(id)) return false
+  if (inlineRE.test(id)) return true
   if (forceInline !== undefined) return forceInline
   let limit: number
   if (typeof assetsInlineLimit === 'function') {
@@ -448,6 +431,26 @@ const shouldInline = (
   // Don't inline SVG with fragments, as they are meant to be reused
   if (file.endsWith('.svg') && id.includes('#')) return false
   return content.length < limit && !isGitLfsPlaceholder(content)
+}
+
+function assetToDataURL(
+  environment: Environment,
+  file: string,
+  content: Buffer,
+) {
+  if (environment.config.build.lib && isGitLfsPlaceholder(content)) {
+    environment.logger.warn(
+      colors.yellow(`Inlined file ${file} was not downloaded via Git LFS`),
+    )
+  }
+
+  if (file.endsWith('.svg')) {
+    return svgToDataURL(content)
+  } else {
+    const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
+    // base64 inlined as a string
+    return `data:${mimeType};base64,${content.toString('base64')}`
+  }
 }
 
 const nestedQuotesRE = /"[^"']*'[^"]*"|'[^'"]*"[^']*'/
