@@ -7,7 +7,7 @@ import colors from 'picocolors'
 import type { BuildContext, BuildOptions as EsbuildBuildOptions } from 'esbuild'
 import esbuild, { build } from 'esbuild'
 import { init, parse } from 'es-module-lexer'
-import glob from 'fast-glob'
+import { isDynamicPattern } from 'tinyglobby'
 import type { ResolvedConfig } from '../config'
 import {
   createDebugger,
@@ -151,8 +151,8 @@ export type DepOptimizationOptions = DepOptimizationConfig & {
    * will crawl those entry points instead.
    *
    * If neither of these fit your needs, you can specify custom entries using
-   * this option - the value should be a fast-glob pattern or array of patterns
-   * (https://github.com/mrmlnc/fast-glob#basic-syntax) that are relative from
+   * this option - the value should be a tinyglobby pattern or array of patterns
+   * (https://github.com/SuperchupuDev/tinyglobby) that are relative from
    * vite project root. This will overwrite default entries inference.
    */
   entries?: string | string[]
@@ -288,7 +288,7 @@ export async function optimizeExplicitEnvironmentDeps(
 ): Promise<DepOptimizationMetadata> {
   const cachedMetadata = await loadCachedDepOptimizationMetadata(
     environment,
-    environment.config.dev.optimizeDeps.force ?? false,
+    environment.config.optimizeDeps.force ?? false,
     false,
   )
   if (cachedMetadata) {
@@ -729,7 +729,7 @@ async function prepareEsbuildOptimizerRun(
   const flatIdDeps: Record<string, string> = {}
   const idToExports: Record<string, ExportsData> = {}
 
-  const { optimizeDeps } = environment.config.dev
+  const { optimizeDeps } = environment.config
 
   const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
     optimizeDeps?.esbuildOptions ?? {}
@@ -812,7 +812,7 @@ export async function addManuallyIncludedOptimizeDeps(
   deps: Record<string, string>,
 ): Promise<void> {
   const { logger } = environment
-  const { optimizeDeps } = environment.config.dev
+  const { optimizeDeps } = environment.config
   const optimizeDepsInclude = optimizeDeps?.include ?? []
   if (optimizeDepsInclude.length) {
     const unableToOptimize = (id: string, msg: string) => {
@@ -826,7 +826,7 @@ export async function addManuallyIncludedOptimizeDeps(
     const includes = [...optimizeDepsInclude]
     for (let i = 0; i < includes.length; i++) {
       const id = includes[i]
-      if (glob.isDynamicPattern(id)) {
+      if (isDynamicPattern(id)) {
         const globIds = expandGlobIds(id, environment.getTopLevelConfig())
         includes.splice(i, 1, ...globIds)
         i += globIds.length - 1
@@ -1059,7 +1059,7 @@ export async function extractExportsData(
 ): Promise<ExportsData> {
   await init
 
-  const { optimizeDeps } = environment.config.dev
+  const { optimizeDeps } = environment.config
 
   const esbuildOptions = optimizeDeps?.esbuildOptions ?? {}
   if (optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
@@ -1112,7 +1112,7 @@ function needsInterop(
   exportsData: ExportsData,
   output?: { exports: string[] },
 ): boolean {
-  if (environment.config.dev.optimizeDeps?.needsInterop?.includes(id)) {
+  if (environment.config.optimizeDeps?.needsInterop?.includes(id)) {
     return true
   }
   const { hasModuleSyntax, exports } = exportsData
@@ -1156,7 +1156,7 @@ function getConfigHash(environment: Environment): string {
   // Take config into account
   // only a subset of config options that can affect dep optimization
   const { config } = environment
-  const { optimizeDeps } = config.dev
+  const { optimizeDeps } = config
   const content = JSON.stringify(
     {
       mode: process.env.NODE_ENV || config.mode,

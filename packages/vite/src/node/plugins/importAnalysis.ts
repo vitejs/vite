@@ -12,7 +12,7 @@ import { parseAst } from 'rollup/parseAst'
 import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import type { PartialResolvedId } from 'rollup'
+import type { PartialResolvedId, RollupError } from 'rollup'
 import type { Identifier, Literal } from 'estree'
 import {
   CLIENT_DIR,
@@ -348,7 +348,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        const resolved = await this.resolve(url, importerFile)
+        const resolved = await this.resolve(url, importerFile).catch((e) => {
+          if (e instanceof Error) {
+            ;(e as RollupError).pos ??= pos
+          }
+          throw e
+        })
 
         if (!resolved || resolved.meta?.['vite:alias']?.noResolved) {
           // in ssr, we should let node handle the missing modules
@@ -504,10 +509,13 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // If resolvable, let's resolve it
           if (specifier !== undefined) {
             // skip external / data uri
-            if (isExternalUrl(specifier) || isDataUrl(specifier)) {
+            if (
+              (isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
+              isDataUrl(specifier)
+            ) {
               return
             }
-            // skip ssr external
+            // skip ssr externals and builtins
             if (ssr && !matchAlias(specifier)) {
               if (shouldExternalize(environment, specifier, importer)) {
                 return

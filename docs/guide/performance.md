@@ -52,7 +52,7 @@ Hence, it's usually better to be explicit with your import paths, e.g. `import '
 If you're a plugin author, make sure to only call [`this.resolve`](https://rollupjs.org/plugin-development/#this-resolve) when needed to reduce the number of checks above.
 
 ::: tip TypeScript
-If you are using TypeScript, enable `"moduleResolution": "bundler"` and `"allowImportingTsExtensions": true` in your `tsconfig.json`'s `compilerOptions` to use `.ts` and `.tsx` extensions directly in your code.
+If you are using TypeScript, enable `"moduleResolution": "Bundler"` and `"allowImportingTsExtensions": true` in your `tsconfig.json`'s `compilerOptions` to use `.ts` and `.tsx` extensions directly in your code.
 :::
 
 ## Avoid Barrel Files

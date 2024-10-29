@@ -61,6 +61,7 @@ export default defineConfig({
     },
     preprocessorOptions: {
       scss: {
+        api: 'legacy',
         additionalData: `$injectedColor: orange;`,
         importer: [
           function (url) {
@@ -69,7 +70,7 @@ export default defineConfig({
           function (url) {
             return url === 'virtual-file-absolute'
               ? {
-                  contents: `@import "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
+                  contents: `@use "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
                 }
               : null
           },
@@ -77,7 +78,7 @@ export default defineConfig({
             return url.endsWith('.wxss') ? { contents: '' } : null
           },
         ],
-        silenceDeprecations: ['legacy-js-api'],
+        silenceDeprecations: ['legacy-js-api', 'import'],
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,

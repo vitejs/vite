@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import glob from 'fast-glob'
+import { globSync } from 'tinyglobby'
 import { normalizePath } from 'vite'
 import postcssNested from 'postcss-nested'
 
@@ -19,7 +19,7 @@ function testDirDep() {
         const pattern = normalizePath(
           path.resolve(path.dirname(result.opts.from), './glob-dep/**/*.css'),
         )
-        const files = glob.sync(pattern)
+        const files = globSync(pattern, { expandDirectories: false })
         const text = files.map((f) => fs.readFileSync(f, 'utf-8')).join('\n')
         atRule.parent.insertAfter(atRule, text)
         atRule.remove()

@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
 import { exports, imports } from 'resolve.exports'
@@ -7,8 +8,6 @@ import { hasESMSyntax } from 'mlly'
 import type { Plugin } from '../plugin'
 import {
   CLIENT_ENTRY,
-  DEFAULT_EXTENSIONS,
-  DEFAULT_MAIN_FIELDS,
   DEP_VERSION_RE,
   ENV_ENTRY,
   FS_PREFIX,
@@ -25,7 +24,6 @@ import {
   isBuiltin,
   isDataUrl,
   isExternalUrl,
-  isFilePathESM,
   isInNodeModules,
   isNonDriveRelativeAbsolutePath,
   isObject,
@@ -88,12 +86,18 @@ export interface EnvironmentResolveOptions {
    */
   extensions?: string[]
   dedupe?: string[]
+  // TODO: better abstraction that works for the client environment too?
   /**
-   * external/noExternal logic, this only works for certain environments
-   * Previously this was ssr.external/ssr.noExternal
-   * TODO: better abstraction that works for the client environment too?
+   * Prevent listed dependencies from being externalized and will get bundled in build.
+   * Only works in server environments for now. Previously this was `ssr.noExternal`.
+   * @experimental
    */
   noExternal?: string | RegExp | (string | RegExp)[] | true
+  /**
+   * Externalize the given dependencies and their transitive dependencies.
+   * Only works in server environments for now. Previously this was `ssr.external`.
+   * @experimental
+   */
   external?: string[] | true
 }
 
@@ -126,7 +130,6 @@ interface ResolvePluginOptions {
   // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
   // should also try import from `.ts/tsx/mts/cts` source file as fallback.
   isFromTsImporter?: boolean
-  tryEsmOnly?: boolean
   // True when resolving during the scan phase to discover dependencies
   scan?: boolean
   // Appends ?__vite_skip_optimization to the resolved id if shouldn't be optimized
@@ -139,7 +142,8 @@ interface ResolvePluginOptions {
   optimizeDeps?: boolean
 
   /**
-   * externalize using external/noExternal, defaults to false // TODO: Review default
+   * Externalize using `resolve.external` and `resolve.noExternal` when running a build in
+   * a server environment. Defaults to false (only for createResolver)
    * @internal
    */
   externalize?: boolean
@@ -247,7 +251,7 @@ export function resolvePlugin(
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
 
-      const depsOptimizerOptions = this.environment.config.dev.optimizeDeps
+      const depsOptimizerOptions = this.environment.config.optimizeDeps
 
       const resolvedImports = resolveSubpathImports(id, importer, options)
       if (resolvedImports) {
@@ -352,14 +356,7 @@ export function resolvePlugin(
           res = ensureVersionQuery(res, id, options, ssr, depsOptimizer)
           debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
-          // If this isn't a script imported from a .html file, include side effects
-          // hints so the non-used code is properly tree-shaken during build time.
-          if (
-            !options.idOnly &&
-            !options.scan &&
-            options.isBuild &&
-            !importer?.endsWith('.html')
-          ) {
+          if (!options.idOnly && !options.scan && options.isBuild) {
             const resPkg = findNearestPackageData(
               path.dirname(res),
               options.packageCache,
@@ -373,6 +370,11 @@ export function resolvePlugin(
           }
           return res
         }
+      }
+
+      // file url as path
+      if (id.startsWith('file://')) {
+        id = fileURLToPath(id)
       }
 
       // drive relative fs paths (only windows)
@@ -409,6 +411,8 @@ export function resolvePlugin(
       if (bareImportRE.test(id)) {
         const external =
           options.externalize &&
+          options.isBuild &&
+          currentEnvironmentOptions.consumer === 'server' &&
           shouldExternalize(this.environment, id, importer)
         if (
           !external &&
@@ -447,7 +451,6 @@ export function resolvePlugin(
             importer,
             options,
             depsOptimizer,
-            ssr,
             external,
             undefined,
             depsOptimizerOptions,
@@ -749,7 +752,6 @@ export function tryNodeResolve(
   importer: string | null | undefined,
   options: InternalResolveOptionsWithOverrideConditions,
   depsOptimizer?: DepsOptimizer,
-  ssr: boolean = false,
   externalize?: boolean,
   allowLinkedExternal: boolean = true,
   depsOptimizerOptions?: DepOptimizationOptions,
@@ -818,22 +820,7 @@ export function tryNodeResolve(
   const resolveId = deepMatch ? resolveDeepImport : resolvePackageEntry
   const unresolvedId = deepMatch ? '.' + id.slice(pkgId.length) : id
 
-  let resolved: string | undefined
-  try {
-    resolved = resolveId(unresolvedId, pkg, options)
-  } catch (err) {
-    if (!options.tryEsmOnly) {
-      throw err
-    }
-  }
-  if (!resolved && options.tryEsmOnly) {
-    resolved = resolveId(unresolvedId, pkg, {
-      ...options,
-      isRequire: false,
-      mainFields: DEFAULT_MAIN_FIELDS,
-      extensions: DEFAULT_EXTENSIONS,
-    })
-  }
+  let resolved = resolveId(unresolvedId, pkg, options)
   if (!resolved) {
     return
   }
@@ -898,11 +885,9 @@ export function tryNodeResolve(
     : OPTIMIZABLE_ENTRY_RE.test(resolved)
 
   let exclude = depsOptimizer?.options.exclude
-  let include = depsOptimizer?.options.include
   if (options.ssrOptimizeCheck) {
     // we don't have the depsOptimizer
     exclude = depsOptimizerOptions?.exclude
-    include = depsOptimizerOptions?.include
   }
 
   const skipOptimization =
@@ -911,15 +896,7 @@ export function tryNodeResolve(
     (importer && isInNodeModules(importer)) ||
     exclude?.includes(pkgId) ||
     exclude?.includes(id) ||
-    SPECIAL_QUERY_RE.test(resolved) ||
-    // During dev SSR, we don't have a way to reload the module graph if
-    // a non-optimized dep is found. So we need to skip optimization here.
-    // The only optimized deps are the ones explicitly listed in the config.
-    (!options.ssrOptimizeCheck && !isBuild && ssr) ||
-    // Only optimize non-external CJS deps during SSR by default
-    (ssr &&
-      isFilePathESM(resolved, options.packageCache) &&
-      !(include?.includes(pkgId) || include?.includes(id)))
+    SPECIAL_QUERY_RE.test(resolved)
 
   if (options.ssrOptimizeCheck) {
     return {
@@ -1237,7 +1214,6 @@ function tryResolveBrowserMapping(
               browserMappedPath,
               importer,
               options,
-              undefined,
               undefined,
               undefined,
               undefined,

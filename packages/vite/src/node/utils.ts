@@ -262,7 +262,7 @@ export function isSameFileUri(file1: string, file2: string): boolean {
   )
 }
 
-export const externalRE = /^(https?:)?\/\//
+export const externalRE = /^([a-z]+:)?\/\//
 export const isExternalUrl = (url: string): boolean => externalRE.test(url)
 
 export const dataUrlRE = /^\s*data:/i
@@ -271,6 +271,9 @@ export const isDataUrl = (url: string): boolean => dataUrlRE.test(url)
 export const virtualModuleRE = /^virtual-module:.*/
 export const virtualModulePrefix = 'virtual-module:'
 
+// NOTE: We should start relying on the "Sec-Fetch-Dest" header instead of this
+// hardcoded list. We can eventually remove this function when the minimum version
+// of browsers we support in dev all support this header.
 const knownJsSrcRE =
   /\.(?:[jt]sx?|m[jt]s|vue|marko|svelte|astro|imba|mdx)(?:$|\?)/
 export const isJSRequest = (url: string): boolean => {

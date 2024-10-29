@@ -9,7 +9,7 @@ import {
   tryStatSync,
 } from './utils'
 import type { Plugin } from './plugin'
-import type { InternalResolveOptions } from './plugins/resolve'
+import type { InternalResolveOptionsWithOverrideConditions } from './plugins/resolve'
 
 let pnp: typeof import('pnpapi') | undefined
 if (process.versions.pnp) {
@@ -27,11 +27,11 @@ export interface PackageData {
   setResolvedCache: (
     key: string,
     entry: string,
-    options: InternalResolveOptions,
+    options: InternalResolveOptionsWithOverrideConditions,
   ) => void
   getResolvedCache: (
     key: string,
-    options: InternalResolveOptions,
+    options: InternalResolveOptionsWithOverrideConditions,
   ) => string | undefined
   data: {
     [field: string]: any
@@ -223,7 +223,10 @@ export function loadPackageData(pkgPath: string): PackageData {
   return pkg
 }
 
-function getResolveCacheKey(key: string, options: InternalResolveOptions) {
+function getResolveCacheKey(
+  key: string,
+  options: InternalResolveOptionsWithOverrideConditions,
+) {
   // cache key needs to include options which affect
   // `resolvePackageEntry` or `resolveDeepImport`
   return [
@@ -231,6 +234,7 @@ function getResolveCacheKey(key: string, options: InternalResolveOptions) {
     options.webCompatible ? '1' : '0',
     options.isRequire ? '1' : '0',
     options.conditions.join('_'),
+    options.overrideConditions?.join('_') || '',
     options.extensions.join('_'),
     options.mainFields.join('_'),
   ].join('|')
