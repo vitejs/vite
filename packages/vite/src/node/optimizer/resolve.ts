@@ -2,7 +2,7 @@ import path from 'node:path'
 import micromatch from 'micromatch'
 import { globSync } from 'tinyglobby'
 import type { ResolvedConfig } from '../config'
-import { escapeRegex, getNpmPackageName, isOptimizable } from '../utils'
+import { escapeRegex, getNpmPackageName } from '../utils'
 import { resolvePackageData } from '../packages'
 import { slash } from '../../shared/utils'
 import type { Environment } from '../environment'
@@ -10,29 +10,18 @@ import { createBackCompatIdResolver } from '../idResolver'
 
 export function createOptimizeDepsIncludeResolver(
   environment: Environment,
-): (id: string) => Promise<{ id: string; optimizable: boolean } | undefined> {
+): (id: string) => Promise<string | undefined> {
   const topLevelConfig = environment.getTopLevelConfig()
-  const resolverResolve = createBackCompatIdResolver(topLevelConfig, {
+  const resolve = createBackCompatIdResolver(topLevelConfig, {
     asSrc: false,
     scan: true,
     packageCache: new Map(),
   })
-  const resolve = async (id: string, importer?: string) => {
-    const resolvedId = await resolverResolve(environment, id, importer)
-    if (resolvedId === undefined) return undefined
-
-    const optimizable = isOptimizable(
-      resolvedId,
-      environment.config.optimizeDeps,
-    )
-
-    return { id: resolvedId, optimizable }
-  }
 
   return async (id: string) => {
     const lastArrowIndex = id.lastIndexOf('>')
     if (lastArrowIndex === -1) {
-      return await resolve(id, undefined)
+      return await resolve(environment, id, undefined)
     }
     // split nested selected id by last '>', for example:
     // 'foo > bar > baz' => 'foo > bar' & 'baz'
@@ -43,7 +32,11 @@ export function createOptimizeDepsIncludeResolver(
       topLevelConfig.root,
       topLevelConfig.resolve.preserveSymlinks,
     )
-    return await resolve(nestedPath, path.resolve(basedir, 'package.json'))
+    return await resolve(
+      environment,
+      nestedPath,
+      path.resolve(basedir, 'package.json'),
+    )
   }
 }
 

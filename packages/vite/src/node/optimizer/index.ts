@@ -13,6 +13,7 @@ import {
   createDebugger,
   flattenId,
   getHash,
+  isOptimizable,
   lookupFile,
   normalizeId,
   normalizePath,
@@ -840,8 +841,8 @@ export async function addManuallyIncludedOptimizeDeps(
       if (!deps[normalizedId]) {
         const entry = await resolve(id)
         if (entry) {
-          if (entry.optimizable) {
-            deps[normalizedId] = entry.id
+          if (isOptimizable(entry, optimizeDeps)) {
+            deps[normalizedId] = entry
           } else {
             unableToOptimize(id, 'Cannot optimize dependency')
           }
