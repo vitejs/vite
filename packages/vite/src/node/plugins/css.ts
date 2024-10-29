@@ -21,7 +21,7 @@ import type Sass from 'sass'
 import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
-import type { LightningCSSOptions } from 'dep-types/lightningcss'
+import type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
 import type { TransformOptions } from 'esbuild'
 import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
@@ -181,9 +181,7 @@ export interface CSSModulesOptions {
 }
 
 export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
-  lightningcss?: LightningCSSOptions & {
-    targets: LightningCSSOptions['targets']
-  }
+  lightningcss?: LightningCSSOptions
 }
 
 export function resolveCSSOptions(
@@ -762,7 +760,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           pureCssChunks.add(chunk)
         }
 
-        if (config.build.cssCodeSplit) {
+        if (this.environment.config.build.cssCodeSplit) {
           if (opts.format === 'es' || opts.format === 'cjs') {
             const isEntry = chunk.isEntry && isPureCssChunk
             const cssFullAssetName = ensureFileExt(chunk.name, '.css')

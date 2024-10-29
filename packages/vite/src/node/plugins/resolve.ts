@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import colors from 'picocolors'
 import type { PartialResolvedId } from 'rollup'
 import { exports, imports } from 'resolve.exports'
@@ -85,12 +86,18 @@ export interface EnvironmentResolveOptions {
    */
   extensions?: string[]
   dedupe?: string[]
+  // TODO: better abstraction that works for the client environment too?
   /**
-   * external/noExternal logic, this only works for certain environments
-   * Previously this was ssr.external/ssr.noExternal
-   * TODO: better abstraction that works for the client environment too?
+   * Prevent listed dependencies from being externalized and will get bundled in build.
+   * Only works in server environments for now. Previously this was `ssr.noExternal`.
+   * @experimental
    */
   noExternal?: string | RegExp | (string | RegExp)[] | true
+  /**
+   * Externalize the given dependencies and their transitive dependencies.
+   * Only works in server environments for now. Previously this was `ssr.external`.
+   * @experimental
+   */
   external?: string[] | true
 }
 
@@ -135,7 +142,8 @@ interface ResolvePluginOptions {
   optimizeDeps?: boolean
 
   /**
-   * externalize using external/noExternal, defaults to false // TODO: Review default
+   * Externalize using `resolve.external` and `resolve.noExternal` when running a build in
+   * a server environment. Defaults to false (only for createResolver)
    * @internal
    */
   externalize?: boolean
@@ -243,7 +251,7 @@ export function resolvePlugin(
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
 
-      const depsOptimizerOptions = this.environment.config.dev.optimizeDeps
+      const depsOptimizerOptions = this.environment.config.optimizeDeps
 
       const resolvedImports = resolveSubpathImports(id, importer, options)
       if (resolvedImports) {
@@ -348,14 +356,7 @@ export function resolvePlugin(
           res = ensureVersionQuery(res, id, options, ssr, depsOptimizer)
           debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
-          // If this isn't a script imported from a .html file, include side effects
-          // hints so the non-used code is properly tree-shaken during build time.
-          if (
-            !options.idOnly &&
-            !options.scan &&
-            options.isBuild &&
-            !importer?.endsWith('.html')
-          ) {
+          if (!options.idOnly && !options.scan && options.isBuild) {
             const resPkg = findNearestPackageData(
               path.dirname(res),
               options.packageCache,
@@ -369,6 +370,11 @@ export function resolvePlugin(
           }
           return res
         }
+      }
+
+      // file url as path
+      if (id.startsWith('file://')) {
+        id = fileURLToPath(id)
       }
 
       // drive relative fs paths (only windows)
@@ -405,6 +411,8 @@ export function resolvePlugin(
       if (bareImportRE.test(id)) {
         const external =
           options.externalize &&
+          options.isBuild &&
+          currentEnvironmentOptions.consumer === 'server' &&
           shouldExternalize(this.environment, id, importer)
         if (
           !external &&
