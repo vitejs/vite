@@ -117,6 +117,7 @@ const knownOptions = {
   import: ['string'],
   exhaustive: ['boolean'],
   query: ['object', 'string'],
+  base: ['string'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -306,7 +307,9 @@ export async function parseImportGlob(
     }
 
     const globsResolved = await Promise.all(
-      globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
+      globs.map((glob) =>
+        toAbsoluteGlob(glob, root, importer, resolveId, options.base),
+      ),
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
 
@@ -544,6 +547,7 @@ export async function toAbsoluteGlob(
   root: string,
   importer: string | undefined,
   resolveId: IdResolver,
+  base?: string,
 ): Promise<string> {
   let pre = ''
   if (glob[0] === '!') {
@@ -552,6 +556,8 @@ export async function toAbsoluteGlob(
   }
   root = globSafePath(root)
   const dir = importer ? globSafePath(dirname(importer)) : root
+  if (base && base.startsWith('./')) return pre + posix.join(dir, base, glob)
+  glob = base ? posix.join(base, glob) : glob
   if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
