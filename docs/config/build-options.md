@@ -179,7 +179,7 @@ export default defineConfig({
     lib: {
       entry: ['src/main.js'],
       fileName: (format, entryName) => `my-lib-${entryName}.${format}.js`,
-      cssFileName: 'my-lib-style.css',
+      cssFileName: 'my-lib-style',
     },
   },
 })
