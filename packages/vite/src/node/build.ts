@@ -296,9 +296,13 @@ export interface LibraryOptions {
    * of the project package.json. It can also be defined as a function taking the
    * format as an argument.
    */
-  fileName?:
-    | string
-    | ((format: ModuleFormat | 'css', entryName: string) => string)
+  fileName?: string | ((format: ModuleFormat, entryName: string) => string)
+  /**
+   * The name of the CSS file output if the library imports CSS. Defaults to the
+   * same value as `build.lib.fileName` if it's set a string, otherwise it falls
+   * back to the name option of the project package.json.
+   */
+  cssFileName?: string
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' | 'system'

@@ -3279,19 +3279,19 @@ export function resolveLibCssFilename(
   root: string,
   packageCache?: PackageCache,
 ): string {
-  if (typeof libOptions.fileName === 'string') {
+  if (typeof libOptions.cssFileName === 'string') {
+    return `${libOptions.cssFileName}.css`
+  } else if (typeof libOptions.fileName === 'string') {
     return `${libOptions.fileName}.css`
   }
 
   const packageJson = findNearestPackageData(root, packageCache)?.data
-  const name =
-    (packageJson && typeof libOptions.entry === 'string'
-      ? getPkgName(packageJson.name)
-      : undefined) ?? 'style'
+  const name = packageJson ? getPkgName(packageJson.name) : undefined
 
-  if (typeof libOptions.fileName === 'function') {
-    return libOptions.fileName('css', name)
-  }
+  if (!name)
+    throw new Error(
+      'Name in package.json is required if option "build.lib.cssFileName" is not provided.',
+    )
 
   return `${name}.css`
 }

@@ -258,7 +258,9 @@ Recommended `package.json` for your lib:
 
 ### CSS support
 
-If your library imports any CSS, it will be bundled as a single CSS file besides the built JS files, e.g. `dist/my-lib.css`. You can export the CSS file in your `package.json` as well:
+If your library imports any CSS, it will be bundled as a single CSS file besides the built JS files, e.g. `dist/my-lib.css`. The name defaults to `build.lib.fileName`, but can also be changed with [`build.lib.cssFileName`](/config/build-options.md#build-lib).
+
+You can export the CSS file in your `package.json` to be imported by users:
 
 ```json {12}
 {

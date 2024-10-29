@@ -385,10 +385,11 @@ describe('resolveLibCssFilename', () => {
     expect(filename).toBe('mylib.css')
   })
 
-  test('fallback to style.css if no name found', () => {
+  test('set cssFileName', () => {
     const filename = resolveLibCssFilename(
       {
         entry: 'mylib.js',
+        cssFileName: 'style',
       },
       path.resolve(__dirname, '../packages/noname'),
     )
@@ -415,29 +416,5 @@ describe('resolveLibCssFilename', () => {
       path.resolve(__dirname, '../packages/name'),
     )
     expect(filename).toBe('custom-name.css')
-  })
-
-  test('use fileName if passed a function', () => {
-    const filename = resolveLibCssFilename(
-      {
-        entry: 'mylib.js',
-        fileName: (format) =>
-          format === 'css' ? 'custom-name.css' : 'name.js',
-      },
-      path.resolve(__dirname, '../packages/name'),
-    )
-    expect(filename).toBe('custom-name.css')
-  })
-
-  test('use fileName if passed a function (with name)', () => {
-    const filename = resolveLibCssFilename(
-      {
-        entry: 'mylib.js',
-        fileName: (format, entry) =>
-          format === 'css' ? `${entry}.css` : 'name.js',
-      },
-      path.resolve(__dirname, '../packages/name'),
-    )
-    expect(filename).toBe('mylib.css')
   })
 })

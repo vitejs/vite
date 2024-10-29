@@ -101,7 +101,7 @@ describe.runIf(isBuild)('build', () => {
   })
 
   test('multi entry with css', () => {
-    const css = readFile('dist/css-multi-entry/style.css')
+    const css = readFile('dist/css-multi-entry/test-my-lib.css')
     const js1 = readFile('dist/css-multi-entry/css-entry-1.js')
     const js2 = readFile('dist/css-multi-entry/css-entry-2.js')
     const cjs1 = readFile('dist/css-multi-entry/css-entry-1.cjs')

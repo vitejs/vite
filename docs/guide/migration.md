@@ -36,7 +36,7 @@ To migrate to the modern API, see [the Sass documentation](https://sass-lang.com
 
 In Vite 5, the CSS output file name in library mode was always `style.css` and cannot be easily changed through the Vite config.
 
-From Vite 6, the file name now uses the package name (e.g. via [`build.lib.fileName`](/config/build-options.html#build-lib) or `"name"` in `package.json`) similar to the JS output files. If `build.lib.fileName` is passed a function, the `format` argument may also now be `"css"` to customize the CSS output file name.
+From Vite 6, the default file name now uses `"name"` in `package.json` similar to the JS output files. If [`build.lib.fileName`](/config/build-options.md#build-lib) is set with a string, the value will also be used for the CSS output file name. To explicitly set a different CSS file name, you can use the new [`build.lib.cssFileName`](/config/build-options.md#build-lib) to configure it.
 
 To migrate, if you had relied on the `style.css` file name, you should update references to it to the new name based on your package name. For example:
 
@@ -50,25 +50,7 @@ To migrate, if you had relied on the `style.css` file name, you should update re
 }
 ```
 
-If you had also passed a function to `build.lib.fileName`, ensure that a proper name is returned for the CSS output:
-
-```js twoslash [vite.config.js] {5-9}
-import { defineConfig } from 'vite'
-// ---cut---
-export default defineConfig({
-  build: {
-    lib: {
-      fileName(format) {
-        if (format === 'css') {
-          return 'my-lib.css'
-        } else {
-          return `my-lib.${format}.js`
-        }
-      },
-    },
-  },
-})
-```
+If you prefer to stick with `style.css` like in Vite 5, you can set `build.lib.cssFileName: 'style'` instead.
 
 ## Advanced
 
