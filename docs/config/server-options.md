@@ -205,11 +205,11 @@ export default defineConfig({
 
 - **Type:** `object | null`
 
-File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
+File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#getting-started). If the `ignored` option is passed, Vite will also automatically convert any strings as [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features).
 
 The Vite server watcher watches the `root` and skips the `.git/`, `node_modules/`, and Vite's `cacheDir` and `build.outDir` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
 
-If set to `null`, no files will be watched. `server.watcher` will provide a compatible event emitter, but calling `add` or `unwatch` will have no effect.
+If set to `null`, no files will be watched. `server.watcher` will not watch any files and calling `add` will have no effect.
 
 ::: warning Watching files in `node_modules`
 
