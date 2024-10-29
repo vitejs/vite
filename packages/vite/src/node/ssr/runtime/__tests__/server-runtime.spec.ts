@@ -14,8 +14,12 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('/fixtures/simple.js')
     expect(mod.test).toEqual('I am initialized')
 
-    // loads the same module if id is a file path
+    // loads the same module if id is a file url
     const fileUrl = new _URL('./fixtures/simple.js', import.meta.url)
+    const mod2 = await runner.import(fileUrl.toString())
+    expect(mod).toBe(mod2)
+
+    // loads the same module if id is a file path
     const filePath = fileURLToPath(fileUrl)
     const mod3 = await runner.import(filePath)
     expect(mod).toBe(mod3)
@@ -250,89 +254,4 @@ describe('optimize-deps', async () => {
     const mod = await runner.import('@vitejs/cjs-external')
     expect(mod.default.hello()).toMatchInlineSnapshot(`"world"`)
   })
-})
-
-describe('resolveId absolute path entry', async () => {
-  const it = await createModuleRunnerTester({
-    plugins: [
-      {
-        name: 'test-resolevId',
-        enforce: 'pre',
-        resolveId(source) {
-          if (
-            source ===
-            posix.join(this.environment.config.root, 'fixtures/basic.js')
-          ) {
-            return '\0virtual:basic'
-          }
-        },
-        load(id) {
-          if (id === '\0virtual:basic') {
-            return `export const name = "virtual:basic"`
-          }
-        },
-      },
-    ],
-  })
-
-  it('ssrLoadModule', async ({ server }) => {
-    const mod = await server.ssrLoadModule(
-      posix.join(server.config.root, 'fixtures/basic.js'),
-    )
-    expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
-  })
-
-  it('runner', async ({ server, runner }) => {
-    const mod = await runner.import(
-      posix.join(server.config.root, 'fixtures/basic.js'),
-    )
-    expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
-  })
-})
-
-describe('resolve file url', async () => {
-  const fileUrl = new URL('./fixtures/simple.js', import.meta.url)
-
-  const it = await createModuleRunnerTester({
-    plugins: [
-      {
-        name: 'virtual-re-export-file-url',
-        resolveId(source) {
-          if (source.startsWith('virtual:test-dep/')) {
-            return '\0' + source
-          }
-        },
-        load(id) {
-          if (id === '\0virtual:test-dep/static') {
-            return `
-              import * as dep from ${JSON.stringify(fileUrl.href)};
-              export default dep;
-            `
-          }
-          if (id === '\0virtual:test-dep/non-static') {
-            return `
-              const dep = await import(/* @vite-ignore */ String(${JSON.stringify(fileUrl.href)}));
-              export default dep;
-            `
-          }
-        },
-      },
-    ],
-  })
-
-  it('dev', async ({ runner }) => {
-    const mod = await runner.import('/fixtures/simple.js')
-    expect(mod.test).toEqual('I am initialized')
-
-    const mod2 = await runner.import(fileUrl.href)
-    expect(mod2).toBe(mod)
-
-    const mod3 = await runner.import('virtual:test-dep/static')
-    expect(mod3.default).toBe(mod)
-
-    const mod4 = await runner.import('virtual:test-dep/non-static')
-    expect(mod4.default).toBe(mod)
-  })
-
-  // TODO: test build
 })
