@@ -414,10 +414,10 @@ const shouldInline = (
 ): boolean => {
   const environment = pluginContext.environment
   const { assetsInlineLimit } = environment.config.build
-  if (environment.config.build.lib) return true
-  if (pluginContext.getModuleInfo(id)?.isEntry) return false
   if (noInlineRE.test(id)) return false
   if (inlineRE.test(id)) return true
+  if (environment.config.build.lib) return true
+  if (pluginContext.getModuleInfo(id)?.isEntry) return false
   if (forceInline !== undefined) return forceInline
   let limit: number
   if (typeof assetsInlineLimit === 'function') {
