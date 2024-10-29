@@ -33,6 +33,7 @@ import { resolveEnvPrefix } from '../env'
 import type { Logger } from '../logger'
 import { cleanUrl } from '../../shared/utils'
 import { usePerEnvironmentState } from '../environment'
+import { DEFAULT_HTML_ASSET_SOURCES } from '../assetSource'
 import {
   assetUrlRE,
   getPublicAssetFilename,
@@ -138,16 +139,6 @@ export function addToHTMLProxyTransformResult(
   code: string,
 ): void {
   htmlProxyResult.set(hash, code)
-}
-
-// this extends the config in @vue/compiler-sfc with <link href>
-export const assetAttrsConfig: Record<string, string[]> = {
-  link: ['href'],
-  video: ['src', 'poster'],
-  source: ['src', 'srcset'],
-  img: ['src', 'srcset'],
-  image: ['xlink:href', 'href'],
-  use: ['xlink:href', 'href'],
 }
 
 // Some `<link rel>` elements should not be inlined in build. Excluding:
@@ -504,16 +495,24 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // For asset references in index.html, also generate an import
           // statement for each - this will be handled by the asset plugin
-          const assetAttrs = assetAttrsConfig[node.nodeName]
+          const assetAttrs = DEFAULT_HTML_ASSET_SOURCES[node.nodeName]
           if (assetAttrs) {
-            for (const p of node.attrs) {
-              const attrKey = getAttrKey(p)
-              if (p.value && assetAttrs.includes(attrKey)) {
-                if (attrKey === 'srcset') {
+            const nodeAttrs: Record<string, string> = {}
+            for (const attr of node.attrs) {
+              nodeAttrs[getAttrKey(attr)] = attr.value
+            }
+            if ('vite-ignore' in nodeAttrs) {
+              // TODO: to be merged
+              // removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+            } else {
+              for (const attrKey in nodeAttrs) {
+                const attrValue = nodeAttrs[attrKey]
+                if (!attrValue) continue
+                if (assetAttrs.srcsetAttributes?.includes(attrKey)) {
                   assetUrlsPromises.push(
                     (async () => {
                       const processedEncodedUrl = await processSrcSet(
-                        p.value,
+                        attrValue,
                         async ({ url }) => {
                           const decodedUrl = decodeURI(url)
                           if (!isExcludedUrl(decodedUrl)) {
@@ -525,7 +524,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                           return url
                         },
                       )
-                      if (processedEncodedUrl !== p.value) {
+                      if (processedEncodedUrl !== attrValue) {
                         overwriteAttrValue(
                           s,
                           getAttrSourceCodeLocation(node, attrKey),
@@ -534,8 +533,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                       }
                     })(),
                   )
-                } else {
-                  const url = decodeURI(p.value)
+                } else if (assetAttrs.srcAttributes?.includes(attrKey)) {
+                  const url = decodeURI(attrValue)
                   if (checkPublicFile(url, config)) {
                     overwriteAttrValue(
                       s,
@@ -547,11 +546,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                       node.nodeName === 'link' &&
                       isCSSRequest(url) &&
                       // should not be converted if following attributes are present (#6748)
-                      !node.attrs.some(
-                        (p) =>
-                          p.prefix === undefined &&
-                          (p.name === 'media' || p.name === 'disabled'),
-                      )
+                      !('media' in nodeAttrs || 'disabled' in nodeAttrs)
                     ) {
                       // CSS references, convert to import
                       const importExpression = `\nimport ${JSON.stringify(url)}`
@@ -566,12 +561,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                       // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
                       const isNoInlineLink =
                         node.nodeName === 'link' &&
-                        node.attrs.some(
-                          (p) =>
-                            p.name === 'rel' &&
-                            parseRelAttr(p.value).some((v) =>
-                              noInlineLinkRels.has(v),
-                            ),
+                        nodeAttrs.rel &&
+                        parseRelAttr(nodeAttrs.rel).some((v) =>
+                          noInlineLinkRels.has(v),
                         )
                       const shouldInline = isNoInlineLink ? false : undefined
                       assetUrlsPromises.push(

@@ -1,9 +1,14 @@
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
 
+// Asset list is derived from https://github.com/webpack-contrib/html-loader
+// MIT license: https://github.com/webpack-contrib/html-loader/blob/master/LICENSE
+
 interface HtmlAssetSource {
-  tag: string
-  attributes: string[]
-  type: 'src' | 'srcset'
+  srcAttributes?: string[]
+  srcsetAttributes?: string[]
+  /**
+   * Called before handling an attribute to determine if it should be processed.
+   */
   filter?: (data: HtmlAssetSourceFilterData) => boolean
 }
 
@@ -27,10 +32,13 @@ export function getNodeAssetAttributes(
   for (const assetSource of DEFAULT_HTML_ASSET_SOURCES) {
     if (assetSource.tag !== node.nodeName) continue
 
-    const attributes = node.attrs.reduce((acc, attr) => {
-      acc[getAttrKey(attr)] = attr.value
-      return acc
-    }, {} as Record<string, string>)
+    const attributes = node.attrs.reduce(
+      (acc, attr) => {
+        acc[getAttrKey(attr)] = attr.value
+        return acc
+      },
+      {} as Record<string, string>,
+    )
 
     const attrNames = Object.keys(attributes)
 
@@ -110,79 +118,54 @@ const ALLOWED_META_PROPERTY = [
   'vk:image',
 ]
 
-const DEFAULT_HTML_ASSET_SOURCES: HtmlAssetSource[] = [
-  {
-    tag: 'audio',
-    type: 'src',
-    attributes: ['src'],
+export const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
+  audio: {
+    srcAttributes: ['src'],
   },
-  {
-    tag: 'embed',
-    type: 'src',
-    attributes: ['src'],
+  embed: {
+    srcAttributes: ['src'],
   },
-  {
-    tag: 'img',
-    type: 'src',
-    attributes: ['src'],
+  img: {
+    srcAttributes: ['src'],
+    srcsetAttributes: ['srcset'],
   },
-  {
-    tag: 'img',
-    type: 'srcset',
-    attributes: ['srcset'],
+  input: {
+    srcAttributes: ['src'],
   },
-  {
-    tag: 'input',
-    type: 'src',
-    attributes: ['src'],
+  object: {
+    srcAttributes: ['data'],
   },
-  {
-    tag: 'object',
-    type: 'src',
-    attributes: ['data'],
+  source: {
+    srcAttributes: ['src'],
+    srcsetAttributes: ['srcset'],
   },
-  {
-    tag: 'source',
-    type: 'src',
-    attributes: ['src'],
+  track: {
+    srcAttributes: ['src'],
   },
-  {
-    tag: 'source',
-    type: 'srcset',
-    attributes: ['srcset'],
+  video: {
+    srcAttributes: ['src', 'poster'],
   },
-  {
-    tag: 'track',
-    type: 'src',
-    attributes: ['src'],
+  image: {
+    srcAttributes: ['href', 'xlink:href'],
   },
-  {
-    tag: 'video',
-    type: 'src',
-    attributes: ['poster', 'src'],
+  use: {
+    srcAttributes: ['href', 'xlink:href'],
   },
-  {
-    tag: 'image',
-    type: 'src',
-    attributes: ['href', 'xlink:href'],
-  },
-  {
-    tag: 'use',
-    type: 'src',
-    attributes: ['href', 'xlink:href'],
-  },
-  {
-    tag: 'link',
-    type: 'src',
-    attributes: ['href'],
-    filter({ attributes }) {
-      if (attributes.rel && ALLOWED_REL.includes(attributes.rel)) {
+  link: {
+    srcAttributes: ['href'],
+    srcsetAttributes: ['imagesrcset'],
+    filter({ attribute, attributes }) {
+      if (
+        attributes.rel &&
+        ALLOWED_REL.includes(attributes.rel.trim().toLowerCase())
+      ) {
         return true
       }
 
       if (
+        attribute === 'href' &&
         attributes.itemprop &&
-        ALLOWED_ITEMPROP.includes(attributes.itemprop)
+        ALLOWED_ITEMPROP.includes(attributes.itemprop.trim().toLowerCase())
       ) {
         return true
       }
@@ -190,37 +173,29 @@ const DEFAULT_HTML_ASSET_SOURCES: HtmlAssetSource[] = [
       return false
     },
   },
-  {
-    tag: 'link',
-    type: 'srcset',
-    attributes: ['imagesrcset'],
-    filter({ attributes }) {
-      if (attributes.rel && ALLOWED_REL.includes(attributes.rel)) {
-        return true
-      }
-
-      return false
-    },
-  },
-  {
-    tag: 'meta',
-    type: 'src',
-    attributes: ['content'],
-    filter({ attributes }) {
-      if (attributes.name && ALLOWED_META_NAME.includes(attributes.name)) {
+  meta: {
+    srcAttributes: ['content'],
+    filter({ attribute, attributes }) {
+      if (
+        attribute === 'content' &&
+        attributes.name &&
+        ALLOWED_META_NAME.includes(attributes.name.trim().toLowerCase())
+      ) {
         return true
       }
 
       if (
+        attribute === 'content' &&
         attributes.property &&
-        ALLOWED_META_PROPERTY.includes(attributes.property)
+        ALLOWED_META_PROPERTY.includes(attributes.property.trim().toLowerCase())
       ) {
         return true
       }
 
       if (
+        attribute === 'content' &&
         attributes.itemprop &&
-        ALLOWED_ITEMPROP.includes(attributes.itemprop)
+        ALLOWED_ITEMPROP.includes(attributes.itemprop.trim().toLowerCase())
       ) {
         return true
       }
@@ -228,4 +203,4 @@ const DEFAULT_HTML_ASSET_SOURCES: HtmlAssetSource[] = [
       return false
     },
   },
-]
+}

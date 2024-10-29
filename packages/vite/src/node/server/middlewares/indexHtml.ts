@@ -8,7 +8,6 @@ import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
-  assetAttrsConfig,
   extractImportExpressionFromClassicScript,
   findNeedTransformStyleAttribute,
   getAttrKey,
@@ -44,6 +43,7 @@ import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { DEFAULT_HTML_ASSET_SOURCES } from '../../assetSource'
 
 interface AssetNode {
   start: number
@@ -330,24 +330,36 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.nodeName]
+    const assetAttrs = DEFAULT_HTML_ASSET_SOURCES[node.nodeName]
     if (assetAttrs) {
-      for (const p of node.attrs) {
-        const attrKey = getAttrKey(p)
-        if (p.value && assetAttrs.includes(attrKey)) {
-          const processedUrl = processNodeUrl(
-            p.value,
-            isSrcSet(p),
-            config,
-            htmlPath,
-            originalUrl,
-          )
-          if (processedUrl !== p.value) {
-            overwriteAttrValue(
-              s,
-              node.sourceCodeLocation!.attrs![attrKey],
-              processedUrl,
+      const nodeAttrs: Record<string, string> = {}
+      for (const attr of node.attrs) {
+        nodeAttrs[getAttrKey(attr)] = attr.value
+      }
+      if ('vite-ignore' in nodeAttrs) {
+        // TODO: to be merged
+        // removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+      } else {
+        for (const attrKey in nodeAttrs) {
+          const attrValue = nodeAttrs[attrKey]
+          if (!attrValue) continue
+          const isSrcSet = assetAttrs.srcsetAttributes?.includes(attrKey)
+          const isSrc = assetAttrs.srcAttributes?.includes(attrKey)
+          if (isSrcSet || isSrc) {
+            const processedUrl = processNodeUrl(
+              attrValue,
+              !!isSrcSet,
+              config,
+              htmlPath,
+              originalUrl,
             )
+            if (processedUrl !== attrValue) {
+              overwriteAttrValue(
+                s,
+                node.sourceCodeLocation!.attrs![attrKey],
+                processedUrl,
+              )
+            }
           }
         }
       }
