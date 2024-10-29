@@ -21,6 +21,9 @@ export default defineConfig((env) => ({
       },
     },
   ],
+  resolve: {
+    noExternal: true,
+  },
   environments: {
     client: {
       build: {
@@ -30,6 +33,9 @@ export default defineConfig((env) => ({
       },
     },
     ssr: {
+      optimizeDeps: {
+        noDiscovery: false,
+      },
       build: {
         outDir: 'dist/server',
         // [feedback]

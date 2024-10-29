@@ -61,14 +61,14 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    ```json [.vite/manifest.json]
    {
-     "_shared-!~{003}~.js": {
-       "file": "assets/shared-ChJ_j-JJ.css",
-       "src": "_shared-!~{003}~.js"
-     },
      "_shared-B7PI925R.js": {
        "file": "assets/shared-B7PI925R.js",
        "name": "shared",
        "css": ["assets/shared-ChJ_j-JJ.css"]
+     },
+     "_shared-ChJ_j-JJ.css": {
+       "file": "assets/shared-ChJ_j-JJ.css",
+       "src": "_shared-ChJ_j-JJ.css"
      },
      "baz.js": {
        "file": "assets/baz-B2H3sXNv.js",

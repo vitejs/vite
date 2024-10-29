@@ -147,7 +147,7 @@ export function scanImports(environment: ScanEnvironment): {
     entries = computedEntries
 
     if (!entries.length) {
-      if (!config.optimizeDeps.entries && !config.dev.optimizeDeps.include) {
+      if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
         environment.logger.warn(
           colors.yellow(
             '(!) Could not auto-determine entry point from rollupOptions or html files ' +
@@ -247,19 +247,31 @@ export function scanImports(environment: ScanEnvironment): {
 async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
-  const explicitEntryPatterns = environment.config.dev.optimizeDeps.entries
+  const explicitEntryPatterns = environment.config.optimizeDeps.entries
   const buildInput = environment.config.build.rollupOptions?.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
-    const resolvePath = (p: string) => path.resolve(environment.config.root, p)
+    const resolvePath = async (p: string) => {
+      const id = (
+        await environment.pluginContainer.resolveId(p, undefined, {
+          scan: true,
+        })
+      )?.id
+      if (id === undefined) {
+        throw new Error(
+          `failed to resolve rollupOptions.input value: ${JSON.stringify(p)}.`,
+        )
+      }
+      return id
+    }
     if (typeof buildInput === 'string') {
-      entries = [resolvePath(buildInput)]
+      entries = [await resolvePath(buildInput)]
     } else if (Array.isArray(buildInput)) {
-      entries = buildInput.map(resolvePath)
+      entries = await Promise.all(buildInput.map(resolvePath))
     } else if (isObject(buildInput)) {
-      entries = Object.values(buildInput).map(resolvePath)
+      entries = await Promise.all(Object.values(buildInput).map(resolvePath))
     } else {
       throw new Error('invalid rollupOptions.input value.')
     }
@@ -271,7 +283,7 @@ async function computeEntries(environment: ScanEnvironment) {
   // dependencies.
   entries = entries.filter(
     (entry) =>
-      isScannable(entry, environment.config.dev.optimizeDeps.extensions) &&
+      isScannable(entry, environment.config.optimizeDeps.extensions) &&
       fs.existsSync(entry),
   )
 
@@ -290,7 +302,7 @@ async function prepareEsbuildScanner(
   const plugin = esbuildScanPlugin(environment, deps, missing, entries)
 
   const { plugins = [], ...esbuildOptions } =
-    environment.config.dev.optimizeDeps.esbuildOptions ?? {}
+    environment.config.optimizeDeps.esbuildOptions ?? {}
 
   // The plugin pipeline automatically loads the closest tsconfig.json.
   // But esbuild doesn't support reading tsconfig.json if the plugin has resolved the path (https://github.com/evanw/esbuild/issues/2265).
@@ -344,7 +356,7 @@ function globEntries(pattern: string | string[], environment: ScanEnvironment) {
       '**/node_modules/**',
       `**/${environment.config.build.outDir}/**`,
       // if there aren't explicit entries, also ignore other common folders
-      ...(environment.config.dev.optimizeDeps.entries
+      ...(environment.config.optimizeDeps.entries
         ? []
         : [`**/__tests__/**`, `**/coverage/**`]),
     ],
@@ -397,7 +409,7 @@ function esbuildScanPlugin(
     return res
   }
 
-  const optimizeDepsOptions = environment.config.dev.optimizeDeps
+  const optimizeDepsOptions = environment.config.optimizeDeps
   const include = optimizeDepsOptions.include
   const exclude = [
     ...(optimizeDepsOptions.exclude ?? []),

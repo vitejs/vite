@@ -44,32 +44,22 @@ export async function fetchModule(
     const { externalConditions, dedupe, preserveSymlinks } =
       environment.config.resolve
 
-    const resolved = tryNodeResolve(
-      url,
-      importer,
-      {
-        mainFields: ['main'],
-        conditions: [],
-        externalConditions,
-        external: [],
-        noExternal: [],
-        overrideConditions: [
-          ...externalConditions,
-          'production',
-          'development',
-        ],
-        extensions: ['.js', '.cjs', '.json'],
-        dedupe,
-        preserveSymlinks,
-        isBuild: false,
-        isProduction,
-        root,
-        packageCache: environment.config.packageCache,
-        webCompatible: environment.config.webCompatible,
-      },
-      undefined,
-      true,
-    )
+    const resolved = tryNodeResolve(url, importer, {
+      mainFields: ['main'],
+      conditions: [],
+      externalConditions,
+      external: [],
+      noExternal: [],
+      overrideConditions: [...externalConditions, 'production', 'development'],
+      extensions: ['.js', '.cjs', '.json'],
+      dedupe,
+      preserveSymlinks,
+      isBuild: false,
+      isProduction,
+      root,
+      packageCache: environment.config.packageCache,
+      webCompatible: environment.config.webCompatible,
+    })
     if (!resolved) {
       const err: any = new Error(
         `Cannot find module '${url}' imported from '${importer}'`,
