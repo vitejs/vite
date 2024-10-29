@@ -43,7 +43,7 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
   const importGlobMaps = new Map<
     Environment,
-    Map<string, { affirmed: string[]; negated: string[] }[]>
+    Map<string, Array<(file: string) => boolean>>
   >()
 
   return {
@@ -67,18 +67,25 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         if (!importGlobMaps.has(this.environment)) {
           importGlobMaps.set(this.environment, new Map())
         }
-        importGlobMaps.get(this.environment)!.set(
-          id,
-          allGlobs.map((globs) => {
-            const affirmed: string[] = []
-            const negated: string[] = []
 
-            for (const glob of globs) {
-              ;(glob[0] === '!' ? negated : affirmed).push(glob)
-            }
-            return { affirmed, negated }
-          }),
-        )
+        const globMatchers = allGlobs.map((globs) => {
+          const affirmed: string[] = []
+          const negated: string[] = []
+
+          for (const glob of globs) {
+            ;(glob[0] === '!' ? negated : affirmed).push(glob)
+          }
+
+          return (file: string) => {
+            // (glob1 || glob2) && !glob3 && !glob4...
+            return (
+              (!affirmed.length ||
+                affirmed.some((glob) => isMatch(file, glob))) &&
+              (!negated.length || negated.every((glob) => isMatch(file, glob)))
+            )
+          }
+        })
+        importGlobMaps.get(this.environment)!.set(id, globMatchers)
 
         return transformStableResult(result.s, id, config)
       }
@@ -90,16 +97,8 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       if (!importGlobMap) return
 
       const modules: EnvironmentModuleNode[] = []
-      for (const [id, allGlobs] of importGlobMap) {
-        // (glob1 || glob2) && !glob3 && !glob4...
-        if (
-          allGlobs.some(
-            ({ affirmed, negated }) =>
-              (!affirmed.length ||
-                affirmed.some((glob) => isMatch(file, glob))) &&
-              (!negated.length || negated.every((glob) => isMatch(file, glob))),
-          )
-        ) {
+      for (const [id, globMatchers] of importGlobMap) {
+        if (globMatchers.some((matcher) => matcher(file))) {
           const mod = this.environment.moduleGraph.getModuleById(id)
           if (mod) modules.push(mod)
         }
