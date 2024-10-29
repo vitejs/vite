@@ -870,13 +870,59 @@ export function tryNodeResolve(
     })
   }
 
-  if (
-    !options.ssrOptimizeCheck &&
-    (!isInNodeModules(resolved) || // linked
+  if (!options.ssrOptimizeCheck) {
+    if (
+      !isInNodeModules(resolved) || // linked
       !depsOptimizer || // resolving before listening to the server
-      options.scan) // initial esbuild scan phase
-  ) {
-    return { id: resolved }
+      options.scan // initial esbuild scan phase
+    ) {
+      return { id: resolved }
+    }
+
+    // if we reach here, it's a valid dep import that hasn't been optimized.
+    const isJsType = depsOptimizer
+      ? isOptimizable(resolved, depsOptimizer.options)
+      : OPTIMIZABLE_ENTRY_RE.test(resolved)
+
+    const exclude = depsOptimizer?.options.exclude
+
+    const skipOptimization =
+      depsOptimizer?.options.noDiscovery ||
+      !isJsType ||
+      (importer && isInNodeModules(importer)) ||
+      exclude?.includes(pkgId) ||
+      exclude?.includes(id) ||
+      SPECIAL_QUERY_RE.test(resolved)
+
+    if (skipOptimization) {
+      // excluded from optimization
+      // Inject a version query to npm deps so that the browser
+      // can cache it without re-validation, but only do so for known js types.
+      // otherwise we may introduce duplicated modules for externalized files
+      // from pre-bundled deps.
+      if (!isBuild) {
+        const versionHash = depsOptimizer!.metadata.browserHash
+        if (versionHash && isJsType) {
+          resolved = injectQuery(resolved, `v=${versionHash}`)
+        }
+      }
+    } else {
+      // this is a missing import, queue optimize-deps re-run and
+      // get a resolved its optimized info
+      const optimizedInfo = depsOptimizer!.registerMissingImport(id, resolved)
+      resolved = depsOptimizer!.getOptimizedDepId(optimizedInfo)
+    }
+
+    if (!options.idOnly && !options.scan && isBuild) {
+      // Resolve package side effects for build so that rollup can better
+      // perform tree-shaking
+      return {
+        id: resolved,
+        moduleSideEffects: pkg.hasSideEffects(resolved),
+      }
+    } else {
+      return { id: resolved! }
+    }
   }
 
   // if we reach here, it's a valid dep import that hasn't been optimized.
@@ -884,56 +930,19 @@ export function tryNodeResolve(
     ? isOptimizable(resolved, depsOptimizer.options)
     : OPTIMIZABLE_ENTRY_RE.test(resolved)
 
-  let exclude = depsOptimizer?.options.exclude
-  if (options.ssrOptimizeCheck) {
-    // we don't have the depsOptimizer
-    exclude = depsOptimizerOptions?.exclude
-  }
+  const exclude = depsOptimizerOptions?.exclude
 
   const skipOptimization =
-    (!options.ssrOptimizeCheck && depsOptimizer?.options.noDiscovery) ||
     !isJsType ||
     (importer && isInNodeModules(importer)) ||
     exclude?.includes(pkgId) ||
     exclude?.includes(id) ||
     SPECIAL_QUERY_RE.test(resolved)
 
-  if (options.ssrOptimizeCheck) {
-    return {
-      id: skipOptimization
-        ? injectQuery(resolved, `__vite_skip_optimization`)
-        : resolved,
-    }
-  }
-
-  if (skipOptimization) {
-    // excluded from optimization
-    // Inject a version query to npm deps so that the browser
-    // can cache it without re-validation, but only do so for known js types.
-    // otherwise we may introduce duplicated modules for externalized files
-    // from pre-bundled deps.
-    if (!isBuild) {
-      const versionHash = depsOptimizer!.metadata.browserHash
-      if (versionHash && isJsType) {
-        resolved = injectQuery(resolved, `v=${versionHash}`)
-      }
-    }
-  } else {
-    // this is a missing import, queue optimize-deps re-run and
-    // get a resolved its optimized info
-    const optimizedInfo = depsOptimizer!.registerMissingImport(id, resolved)
-    resolved = depsOptimizer!.getOptimizedDepId(optimizedInfo)
-  }
-
-  if (!options.idOnly && !options.scan && isBuild) {
-    // Resolve package side effects for build so that rollup can better
-    // perform tree-shaking
-    return {
-      id: resolved,
-      moduleSideEffects: pkg.hasSideEffects(resolved),
-    }
-  } else {
-    return { id: resolved! }
+  return {
+    id: skipOptimization
+      ? injectQuery(resolved, `__vite_skip_optimization`)
+      : resolved,
   }
 }
 
