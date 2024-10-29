@@ -509,7 +509,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // If resolvable, let's resolve it
           if (specifier !== undefined) {
             // skip external / data uri
-            if (isExternalUrl(specifier) || isDataUrl(specifier)) {
+            if (
+              (isExternalUrl(specifier) && !specifier.startsWith('file://')) ||
+              isDataUrl(specifier)
+            ) {
               return
             }
             // skip ssr externals and builtins
