@@ -1,5 +1,5 @@
 import path from 'node:path'
-import micromatch from 'micromatch'
+import picomatch from 'picomatch'
 import { globSync } from 'tinyglobby'
 import type { ResolvedConfig } from '../config'
 import { escapeRegex, getNpmPackageName } from '../utils'
@@ -59,7 +59,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
   const exports = pkgData.data.exports
 
   // if package has exports field, get all possible export paths and apply
-  // glob on them with micromatch
+  // glob on them with picomatch
   if (exports) {
     if (typeof exports === 'string' || Array.isArray(exports)) {
       return [pkgName]
@@ -136,9 +136,9 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
       }
     }
 
-    const matched = micromatch(possibleExportPaths, pattern).map((match) =>
-      path.posix.join(pkgName, match),
-    )
+    const matched = possibleExportPaths
+      .filter(picomatch(pattern))
+      .map((match) => path.posix.join(pkgName, match))
     matched.unshift(pkgName)
     return matched
   } else {
