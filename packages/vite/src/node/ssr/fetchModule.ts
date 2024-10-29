@@ -37,8 +37,7 @@ export async function fetchModule(
     return { externalize: url, type: 'network' }
   }
 
-  // handle raw file urls, which are not noramlized by import analysis
-  // (this can happen for runner import entry or non static import)
+  // handle file urls from not statically analyzable dynamic import
   const isFileUrl = url.startsWith('file://')
 
   // if there is no importer, the file is an entry point
