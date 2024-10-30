@@ -1692,7 +1692,7 @@ async function loadConfigFromBundledFile(
   if (isESM) {
     const nodeModulesDir = findNearestNodeModules(path.dirname(fileName))
     if (nodeModulesDir) {
-      await fsp.mkdir(path.resolve(nodeModulesDir, '.vite/configs/'), {
+      await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
         recursive: true,
       })
     }
@@ -1700,7 +1700,7 @@ async function loadConfigFromBundledFile(
     const tempFileName = nodeModulesDir
       ? path.resolve(
           nodeModulesDir,
-          `.vite/configs/${path.basename(fileName)}.${hash}.mjs`,
+          `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
         )
       : `${fileName}.${hash}.mjs`
     await fsp.writeFile(tempFileName, bundledCode)
