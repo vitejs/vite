@@ -1,7 +1,3 @@
-<!-- markdownlint-disable first-line-h1 -->
-
-<!-- markdownlint-capture -->
-<!-- markdownlint-disable no-inline-html -->
 <div align="center">
   <p>
     <a href="https://vite.dev" target="_blank" rel="noopener noreferrer">
@@ -19,7 +15,6 @@
 </div>
 
 <br/>
-<!-- markdownlint-restore -->
 
 # Vite ⚡
 
@@ -60,11 +55,8 @@ See [Contributing Guide](CONTRIBUTING.md).
 
 ## Sponsors
 
-<!-- markdownlint-capture -->
-<!-- markdownlint-disable no-inline-html -->
 <div align="center">
   <a target="_blank" href="https://github.com/sponsors/yyx990803">
     <img alt="sponsors" src="https://sponsors.vuejs.org/vite.svg?v2">
   </a>
 </div>
-<!-- markdownlint-restore -->
