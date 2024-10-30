@@ -33,7 +33,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
-import { resolveConfig } from './config'
+import { configDefaults, resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -401,17 +401,14 @@ export function resolveBuildEnvironmentOptions(
 
   // @ts-expect-error Fallback options instead of merging
   const resolved: ResolvedBuildEnvironmentOptions = {
-    target: 'modules',
-    cssTarget: false,
+    ...configDefaults.build,
     ...userBuildEnvironmentOptions,
     commonjsOptions: {
-      include: [/node_modules/],
-      extensions: ['.js', '.cjs'],
+      ...configDefaults.build.commonjsOptions,
       ...userBuildEnvironmentOptions.commonjsOptions,
     },
     dynamicImportVarsOptions: {
-      warnOnError: true,
-      exclude: [/node_modules/],
+      ...configDefaults.build.dynamicImportVarsOptions,
       ...userBuildEnvironmentOptions.dynamicImportVarsOptions,
     },
     // Resolve to false | object

@@ -15,11 +15,8 @@ import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
-  DEFAULT_CONDITIONS,
   DEFAULT_CONFIG_FILES,
-  DEFAULT_EXTENSIONS,
-  DEFAULT_EXTERNAL_CONDITIONS,
-  DEFAULT_MAIN_FIELDS,
+  DEV_PROD_CONDITION,
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
@@ -39,7 +36,7 @@ import type {
 } from './build'
 import { resolveBuildEnvironmentOptions, resolveBuilderOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
-import { resolveServerOptions } from './server'
+import { resolveServerOptions, serverConfigDefaults } from './server'
 import { DevEnvironment } from './server/environment'
 import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
 import type { WebSocketServer } from './server/ws'
@@ -48,6 +45,7 @@ import { resolvePreviewOptions } from './preview'
 import {
   type CSSOptions,
   type ResolvedCSSOptions,
+  cssConfigDefaults,
   resolveCSSOptions,
 } from './plugins/css'
 import {
@@ -589,6 +587,166 @@ export type ResolvedConfig = Readonly<
   } & PluginHookUtils
 >
 
+// inferred ones are omitted
+export const configDefaults = Object.freeze({
+  define: {},
+  dev: {
+    warmup: [],
+    // preTransformRequests
+    /** @experimental */
+    sourcemap: { js: true },
+    sourcemapIgnoreList: undefined,
+    // createEnvironment
+    // recoverable
+    // moduleRunnerTransform
+  },
+  build: {
+    target: 'modules',
+    /** @deprecated */
+    polyfillModulePreload: true,
+    modulePreload: true,
+    outDir: 'dist',
+    assetsDir: 'assets',
+    assetsInlineLimit: 4096,
+    cssCodeSplit: true,
+    // cssTarget
+    // cssMinify
+    sourcemap: false,
+    minify: 'esbuild',
+    // terserOptions
+    // rollupOptions
+    commonjsOptions: {
+      include: [/node_modules/],
+      extensions: ['.js', '.cjs'],
+    },
+    dynamicImportVarsOptions: {
+      warnOnError: true,
+      exclude: [/node_modules/],
+    },
+    write: true,
+    emptyOutDir: true,
+    copyPublicDir: true,
+    manifest: false,
+    lib: false,
+    ssr: false,
+    ssrManifest: false,
+    ssrEmitAssets: false,
+    // emitAssets
+    reportCompressedSize: true,
+    chunkSizeWarningLimit: 500,
+    watch: null,
+    // createEnvironment
+  },
+  resolve: {
+    mainFields: [
+      'browser',
+      'module',
+      'jsnext:main', // moment still uses this...
+      'jsnext',
+    ],
+    conditions: ['module', 'browser', 'node', DEV_PROD_CONDITION],
+    externalConditions: ['node'],
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
+    dedupe: [],
+    /** @experimental */
+    noExternal: [],
+    /** @experimental */
+    external: [],
+    preserveSymlinks: false,
+    alias: [],
+  },
+
+  // root
+  base: '/',
+  publicDir: 'public',
+  // cacheDir
+  // mode
+  plugins: [],
+  html: {
+    cspNonce: undefined,
+  },
+  css: cssConfigDefaults,
+  json: {
+    namedExports: true,
+    stringify: 'auto',
+  },
+  // esbuild
+  assetsInclude: undefined,
+  /** @experimental */
+  builder: {
+    sharedConfigBuild: false,
+    sharedPlugins: false,
+    // buildApp
+  },
+  server: serverConfigDefaults,
+  preview: {
+    port: 4173,
+    // strictPort
+    // host
+    // https
+    // open
+    // proxy
+    // cors
+    // headers
+  },
+  /** @experimental */
+  experimental: {
+    importGlobRestoreExtension: false,
+    renderBuiltUrl: undefined,
+    hmrPartialAccept: false,
+    skipSsrTransform: false,
+  },
+  future: {
+    removePluginHookHandleHotUpdate: undefined,
+    removePluginHookSsrArgument: undefined,
+    removeServerModuleGraph: undefined,
+    removeServerHot: undefined,
+    removeServerTransformRequest: undefined,
+    removeSsrLoadModule: undefined,
+  },
+  legacy: {
+    proxySsrExternalModules: false,
+  },
+  logLevel: 'info',
+  customLogger: undefined,
+  clearScreen: true,
+  envDir: undefined,
+  envPrefix: 'VITE_',
+  worker: {
+    format: 'iife',
+    plugins: () => [],
+    // rollupOptions
+  },
+  optimizeDeps: {
+    include: [],
+    exclude: [],
+    needsInterop: [],
+    // esbuildOptions
+    /** @experimental */
+    extensions: [],
+    /** @deprecated @experimental */
+    disabled: 'build',
+    // noDiscovery
+    /** @experimental */
+    holdUntilCrawlEnd: true,
+    // entries
+    /** @experimental */
+    force: false,
+  },
+  ssr: {
+    noExternal: [],
+    external: [],
+    target: 'node',
+    // optimizeDeps
+    resolve: {
+      // conditions
+      externalConditions: [],
+    },
+  },
+  environments: {},
+  appType: 'spa',
+} satisfies UserConfig)
+
 export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
   environmentName: string | undefined,
@@ -597,13 +755,13 @@ export function resolveDevEnvironmentOptions(
   skipSsrTransform?: boolean,
 ): ResolvedDevEnvironmentOptions {
   return {
-    sourcemap: dev?.sourcemap ?? { js: true },
+    sourcemap: dev?.sourcemap ?? configDefaults.dev.sourcemap,
     sourcemapIgnoreList:
       dev?.sourcemapIgnoreList === false
         ? () => false
         : dev?.sourcemapIgnoreList || isInNodeModules,
     preTransformRequests: dev?.preTransformRequests ?? consumer === 'client',
-    warmup: dev?.warmup ?? [],
+    warmup: dev?.warmup ?? configDefaults.dev.warmup,
     createEnvironment:
       dev?.createEnvironment ??
       (environmentName === 'client'
@@ -757,22 +915,22 @@ function resolveEnvironmentResolveOptions(
   let conditions = resolve?.conditions
   conditions ??=
     consumer === 'client' || isSsrTargetWebworkerEnvironment
-      ? DEFAULT_CONDITIONS.filter((c) => c !== 'node')
-      : DEFAULT_CONDITIONS.filter((c) => c !== 'browser')
+      ? configDefaults.resolve.conditions.filter((c) => c !== 'node')
+      : configDefaults.resolve.conditions.filter((c) => c !== 'browser')
 
   const resolvedResolve: ResolvedAllResolveOptions = {
-    mainFields: resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
+    mainFields: resolve?.mainFields ?? configDefaults.resolve.mainFields,
     conditions,
     externalConditions:
-      resolve?.externalConditions ?? DEFAULT_EXTERNAL_CONDITIONS,
+      resolve?.externalConditions ?? configDefaults.resolve.externalConditions,
     external:
       resolve?.external ??
       (consumer === 'server' && !isSsrTargetWebworkerEnvironment
         ? builtinModules
-        : []),
-    noExternal: resolve?.noExternal ?? [],
-    extensions: resolve?.extensions ?? DEFAULT_EXTENSIONS,
-    dedupe: resolve?.dedupe ?? [],
+        : configDefaults.resolve.external),
+    noExternal: resolve?.noExternal ?? configDefaults.resolve.noExternal,
+    extensions: resolve?.extensions ?? configDefaults.resolve.extensions,
+    dedupe: resolve?.dedupe ?? configDefaults.resolve.dedupe,
     preserveSymlinks,
     alias,
   }
@@ -798,8 +956,11 @@ function resolveResolveOptions(
   logger: Logger,
 ): ResolvedAllResolveOptions {
   // resolve alias with internal client alias
-  const alias = normalizeAlias(mergeAlias(clientAlias, resolve?.alias || []))
-  const preserveSymlinks = resolve?.preserveSymlinks ?? false
+  const alias = normalizeAlias(
+    mergeAlias(clientAlias, resolve?.alias || configDefaults.resolve.alias),
+  )
+  const preserveSymlinks =
+    resolve?.preserveSymlinks ?? configDefaults.resolve.preserveSymlinks
   return resolveEnvironmentResolveOptions(
     resolve,
     alias,
@@ -817,19 +978,23 @@ function resolveDepOptimizationOptions(
 ): DepOptimizationOptions {
   optimizeDeps ??= {}
   return {
-    include: optimizeDeps.include ?? [],
-    exclude: optimizeDeps.exclude ?? [],
-    needsInterop: optimizeDeps.needsInterop ?? [],
-    extensions: optimizeDeps.extensions ?? [],
+    include: optimizeDeps.include ?? configDefaults.optimizeDeps.include,
+    exclude: optimizeDeps.exclude ?? configDefaults.optimizeDeps.exclude,
+    needsInterop:
+      optimizeDeps.needsInterop ?? configDefaults.optimizeDeps.needsInterop,
+    extensions:
+      optimizeDeps.extensions ?? configDefaults.optimizeDeps.extensions,
     noDiscovery: optimizeDeps.noDiscovery ?? consumer !== 'client',
-    holdUntilCrawlEnd: optimizeDeps.holdUntilCrawlEnd ?? true,
+    holdUntilCrawlEnd:
+      optimizeDeps.holdUntilCrawlEnd ??
+      configDefaults.optimizeDeps.holdUntilCrawlEnd,
     esbuildOptions: {
       preserveSymlinks,
       ...optimizeDeps.esbuildOptions,
     },
     disabled: optimizeDeps.disabled,
     entries: optimizeDeps.entries,
-    force: optimizeDeps.force ?? false,
+    force: optimizeDeps.force ?? configDefaults.optimizeDeps.force,
   }
 }
 
@@ -1111,7 +1276,7 @@ export async function resolveConfig(
     ? !isBuild || config.build?.ssr
       ? '/'
       : './'
-    : (resolveBaseUrl(config.base, isBuild, logger) ?? '/')
+    : (resolveBaseUrl(config.base, isBuild, logger) ?? configDefaults.base)
 
   // resolve cache directory
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
@@ -1135,7 +1300,9 @@ export async function resolveConfig(
       ? normalizePath(
           path.resolve(
             resolvedRoot,
-            typeof publicDir === 'string' ? publicDir : 'public',
+            typeof publicDir === 'string'
+              ? publicDir
+              : configDefaults.publicDir,
           ),
         )
       : ''
@@ -1612,7 +1779,7 @@ async function bundleConfigFile(
               external: [],
               noExternal: [],
               dedupe: [],
-              extensions: DEFAULT_EXTENSIONS,
+              extensions: configDefaults.resolve.extensions,
               preserveSymlinks: false,
               packageCache,
               isRequire,

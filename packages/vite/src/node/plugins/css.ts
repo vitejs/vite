@@ -185,16 +185,32 @@ export interface CSSModulesOptions {
       ) => string)
 }
 
-export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
-  lightningcss?: LightningCSSOptions
-}
+export const cssConfigDefaults = Object.freeze({
+  /** @experimental */
+  transformer: 'postcss',
+  // modules
+  // preprocessorOptions
+  /** @experimental */
+  preprocessorMaxWorkers: 0,
+  // postcss
+  /** @experimental */
+  devSourcemap: false,
+  // lightningcss
+} satisfies CSSOptions)
+
+export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
+  Required<Pick<CSSOptions, 'transformer'>> & {
+    lightningcss?: LightningCSSOptions
+  }
 
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
 ): ResolvedCSSOptions {
   if (options?.transformer === 'lightningcss') {
     return {
+      ...cssConfigDefaults,
       ...options,
+      transformer: 'lightningcss',
       lightningcss: {
         ...options.lightningcss,
         targets:
@@ -203,7 +219,11 @@ export function resolveCSSOptions(
       },
     }
   }
-  return { ...options, lightningcss: undefined }
+  return {
+    ...cssConfigDefaults,
+    ...options,
+    lightningcss: undefined,
+  }
 }
 
 const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)

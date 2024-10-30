@@ -1016,32 +1016,55 @@ function resolvedAllowDir(root: string, dir: string): string {
   return normalizePath(path.resolve(root, dir))
 }
 
+export const serverConfigDefaults = Object.freeze({
+  port: 5173,
+  strictPort: false,
+  host: 'localhost',
+  https: undefined,
+  open: false,
+  proxy: {},
+  cors: true,
+  headers: {},
+  // hmr
+  // ws
+  warmup: {
+    clientFiles: [],
+    ssrFiles: [],
+  },
+  // watch
+  middlewareMode: false,
+  fs: {
+    strict: true,
+    // allow
+    deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**'],
+  },
+  // origin
+  preTransformRequests: true,
+  // sourcemapIgnoreList
+  perEnvironmentStartEndDuringDev: false,
+  // hotUpdateEnvironments
+} satisfies ServerOptions)
+
 export function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
-    preTransformRequests: true,
-    perEnvironmentStartEndDuringDev: false,
+    ...serverConfigDefaults,
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
+    fs: {
+      strict: raw?.fs?.strict ?? serverConfigDefaults.fs.strict,
+      allow: raw?.fs?.allow ?? [searchForWorkspaceRoot(root)],
+      deny: raw?.fs?.deny ?? serverConfigDefaults.fs.deny,
+    },
     sourcemapIgnoreList:
       raw?.sourcemapIgnoreList === false
         ? () => false
         : raw?.sourcemapIgnoreList || isInNodeModules,
     middlewareMode: raw?.middlewareMode || false,
   }
-  let allowDirs = server.fs?.allow
-  const deny = server.fs?.deny || [
-    '.env',
-    '.env.*',
-    '*.{crt,pem}',
-    '**/.git/**',
-  ]
-
-  if (!allowDirs) {
-    allowDirs = [searchForWorkspaceRoot(root)]
-  }
+  let allowDirs = server.fs.allow
 
   if (process.versions.pnp) {
     // running a command fails if cwd doesn't exist and root may not exist
@@ -1074,11 +1097,7 @@ export function resolveServerOptions(
     allowDirs.push(resolvedClientDir)
   }
 
-  server.fs = {
-    strict: server.fs?.strict ?? true,
-    allow: allowDirs,
-    deny,
-  }
+  server.fs.allow = allowDirs
 
   if (server.origin?.endsWith('/')) {
     server.origin = server.origin.slice(0, -1)
