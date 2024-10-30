@@ -489,6 +489,7 @@ export async function _createServer(
     watcher.add = function () {
       return this
     }
+    await watcher.close()
   }
 
   const environments: Record<string, DevEnvironment> = {}
