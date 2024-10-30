@@ -329,15 +329,6 @@ export default defineConfig({
 
 Blocklist for sensitive files being restricted to be served by Vite dev server. This will have higher priority than [`server.fs.allow`](#server-fs-allow). [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) are supported.
 
-## server.fs.cachedChecks
-
-- **Type:** `boolean`
-- **Default:** `false`
-- **Experimental**
-- **Deprecated**
-
-This option enabled an optimization to cache filenames of accessed directories to avoid repeated filesystem operations. It is now a noop due to edge cases when writing a file in a cached folder and immediately importing it.
-
 ## server.origin
 
 - **Type:** `string`

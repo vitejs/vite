@@ -217,15 +217,6 @@ export interface FileSystemServeOptions {
    * @default ['.env', '.env.*', '*.crt', '*.pem']
    */
   deny?: string[]
-
-  /**
-   * This option enabled caching of fs calls. It is now a noop.
-   *
-   * @experimental
-   * @deprecated noop
-   * @default undefined
-   */
-  cachedChecks?: boolean
 }
 
 export type ServerHook = (
@@ -1079,7 +1070,6 @@ export function resolveServerOptions(
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
     deny,
-    cachedChecks: server.fs?.cachedChecks,
   }
 
   if (server.origin?.endsWith('/')) {
