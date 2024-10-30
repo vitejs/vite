@@ -3,7 +3,6 @@ import type { FetchResult } from 'vite/module-runner'
 import type { EnvironmentModuleNode, TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
 import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
-import { DEV_PROD_CONDITION } from '../constants'
 import { unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
@@ -47,7 +46,7 @@ export async function fetchModule(
 
     const resolved = tryNodeResolve(url, importer, {
       mainFields: ['main'],
-      conditions: [...externalConditions, DEV_PROD_CONDITION],
+      conditions: externalConditions,
       externalConditions,
       external: [],
       noExternal: [],
