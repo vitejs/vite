@@ -44,6 +44,7 @@ import {
   copyDir,
   displayTime,
   emptyDir,
+  getPkgName,
   joinUrlSegments,
   normalizePath,
   partialEncodeURIPath,
@@ -296,6 +297,12 @@ export interface LibraryOptions {
    * format as an argument.
    */
   fileName?: string | ((format: ModuleFormat, entryName: string) => string)
+  /**
+   * The name of the CSS file output if the library imports CSS. Defaults to the
+   * same value as `build.lib.fileName` if it's set a string, otherwise it falls
+   * back to the name option of the project package.json.
+   */
+  cssFileName?: string
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' | 'system'
@@ -877,10 +884,6 @@ function prepareOutDir(
       copyDir(publicDir, outDir)
     }
   }
-}
-
-function getPkgName(name: string) {
-  return name?.[0] === '@' ? name.split('/')[1] : name
 }
 
 type JsExt = 'js' | 'cjs' | 'mjs'
