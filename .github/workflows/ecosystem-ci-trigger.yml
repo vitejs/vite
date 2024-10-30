@@ -10,9 +10,6 @@ on:
 jobs:
   trigger:
     runs-on: ubuntu-latest
-    if: >
-      github.repository == 'vitejs/vite' &&
-      github.event_name == 'push'
     # if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
     steps:
       - uses: actions/github-script@v7
