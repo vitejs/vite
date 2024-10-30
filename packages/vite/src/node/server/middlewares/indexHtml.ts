@@ -21,6 +21,7 @@ import {
   overwriteAttrValue,
   postImportMapHook,
   preImportMapHook,
+  removeViteIgnoreAttr,
   resolveHtmlTransforms,
   traverseHtml,
 } from '../../plugins/html'
@@ -117,8 +118,6 @@ function isBareRelative(url: string) {
   return wordCharRE.test(url[0]) && !url.includes(':')
 }
 
-const isSrcSet = (attr: Token.Attribute) =>
-  attr.name === 'srcset' && attr.prefix === undefined
 const processNodeUrl = (
   url: string,
   useSrcSetReplacer: boolean,
@@ -270,12 +269,15 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
     // script tags
     if (node.nodeName === 'script') {
-      const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
+      const { src, sourceCodeLocation, isModule, isIgnored } =
+        getScriptInfo(node)
 
-      if (src) {
+      if (isIgnored) {
+        removeViteIgnoreAttr(s, sourceCodeLocation!)
+      } else if (src) {
         const processedUrl = processNodeUrl(
           src.value,
-          isSrcSet(src),
+          getAttrKey(src) === 'srcset',
           config,
           htmlPath,
           originalUrl,
@@ -332,22 +334,32 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     // elements with [href/src] attrs
     const assetAttrs = assetAttrsConfig[node.nodeName]
     if (assetAttrs) {
-      for (const p of node.attrs) {
-        const attrKey = getAttrKey(p)
-        if (p.value && assetAttrs.includes(attrKey)) {
-          const processedUrl = processNodeUrl(
-            p.value,
-            isSrcSet(p),
-            config,
-            htmlPath,
-            originalUrl,
-          )
-          if (processedUrl !== p.value) {
-            overwriteAttrValue(
-              s,
-              node.sourceCodeLocation!.attrs![attrKey],
-              processedUrl,
+      const nodeAttrs: Record<string, string> = {}
+      for (const attr of node.attrs) {
+        nodeAttrs[getAttrKey(attr)] = attr.value
+      }
+      const shouldIgnore =
+        node.nodeName === 'link' && 'vite-ignore' in nodeAttrs
+      if (shouldIgnore) {
+        removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+      } else {
+        for (const attrKey in nodeAttrs) {
+          const attrValue = nodeAttrs[attrKey]
+          if (attrValue && assetAttrs.includes(attrKey)) {
+            const processedUrl = processNodeUrl(
+              attrValue,
+              attrKey === 'srcset',
+              config,
+              htmlPath,
+              originalUrl,
             )
+            if (processedUrl !== attrValue) {
+              overwriteAttrValue(
+                s,
+                node.sourceCodeLocation!.attrs![attrKey],
+                processedUrl,
+              )
+            }
           }
         }
       }

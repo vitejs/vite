@@ -160,6 +160,35 @@ For example, to make the default import of `*.svg` a React component:
 
 :::
 
+## HTML
+
+HTML files stand [front-and-center](/guide/#index-html-and-project-root) of a Vite project, serving as the entry points for your application, making it simple to build single-page and [multi-page applications](/guide/build.html#multi-page-app).
+
+Any HTML files in your project root can be directly accessed by its respective directory path:
+
+- `<root>/index.html` -> `http://localhost:5173/`
+- `<root>/about.html` -> `http://localhost:5173/about.html`
+- `<root>/blog/index.html` -> `http://localhost:5173/blog/index.html`
+
+HTML elements such as `<script type="module">` and `<link href>` tags are processed by default, which enables using Vite features in the linked files. General asset elements, such as `<img src>`, `<video src>`, and `<source src>`, are also rebased to ensure they are optimized and linked to the right path.
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <img src="/src/images/logo.svg" alt="logo" />
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+```
+
+To opt-out of HTML processing on certain elements, you can add the `vite-ignore` attribute on the element, which can be useful when referencing external assets or CDN.
+
 ## Vue
 
 Vite provides first-class Vue support:

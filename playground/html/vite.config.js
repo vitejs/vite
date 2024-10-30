@@ -231,5 +231,30 @@ ${
         },
       },
     },
+    serveExternalPathPlugin(),
   ],
 })
+
+/** @returns {import('vite').Plugin} */
+function serveExternalPathPlugin() {
+  const handler = (req, res, next) => {
+    if (req.url === '/external-path.js') {
+      res.setHeader('Content-Type', 'application/javascript')
+      res.end('document.querySelector(".external-path").textContent = "works"')
+    } else if (req.url === '/external-path.css') {
+      res.setHeader('Content-Type', 'text/css')
+      res.end('.external-path{color:red}')
+    } else {
+      next()
+    }
+  }
+  return {
+    name: 'serve-external-path',
+    configureServer(server) {
+      server.middlewares.use(handler)
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(handler)
+    },
+  }
+}
