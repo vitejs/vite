@@ -410,5 +410,8 @@ describe('parse negatives', async () => {
     ).toMatchInlineSnapshot(
       '[Error: Invalid glob: "foo/*.js" (resolved: "foo/*.js"). It must start with \'/\' or \'./\']',
     )
+    expect(
+      await runError('import.meta.glob("./*.js", { base: "!/foo" })'),
+    ).toMatchInlineSnapshot('[Error: Option "base" cannot start with "!"]')
   })
 })

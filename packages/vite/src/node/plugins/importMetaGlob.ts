@@ -163,6 +163,10 @@ function parseGlobOptions(
     }
   }
 
+  if (opts.base && opts.base[0] === '!') {
+    throw err('Option "base" cannot start with "!"', optsStartIndex)
+  }
+
   if (typeof opts.query === 'object') {
     for (const key in opts.query) {
       const value = opts.query[key]
