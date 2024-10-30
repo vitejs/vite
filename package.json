@@ -103,8 +103,7 @@
     },
     "patchedDependencies": {
       "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch",
-      "sirv@3.0.0": "patches/sirv@3.0.0.patch",
-      "acorn@8.14.0": "patches/acorn@8.14.0.patch"
+      "sirv@3.0.0": "patches/sirv@3.0.0.patch"
     },
     "peerDependencyRules": {
       "allowedVersions": {
