@@ -43,7 +43,7 @@ import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
-import { getNodeAssetActions } from '../../assetSource'
+import { getNodeAssetAttributes } from '../../assetSource'
 
 interface AssetNode {
   start: number
@@ -331,20 +331,20 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetActions = getNodeAssetActions(node)
-    for (const action of assetActions) {
-      if (action.type === 'remove') {
-        s.remove(action.location.startOffset, action.location.endOffset)
+    const assetAttributes = getNodeAssetAttributes(node)
+    for (const attr of assetAttributes) {
+      if (attr.type === 'remove') {
+        s.remove(attr.location.startOffset, attr.location.endOffset)
       } else {
         const processedUrl = processNodeUrl(
-          action.value,
-          action.type === 'srcset',
+          attr.value,
+          attr.type === 'srcset',
           config,
           htmlPath,
           originalUrl,
         )
-        if (processedUrl !== action.value) {
-          overwriteAttrValue(s, action.location, processedUrl)
+        if (processedUrl !== attr.value) {
+          overwriteAttrValue(s, attr.location, processedUrl)
         }
       }
     }

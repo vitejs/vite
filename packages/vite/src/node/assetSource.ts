@@ -13,22 +13,25 @@ interface HtmlAssetSource {
 }
 
 interface HtmlAssetSourceFilterData {
-  attribute: string
+  key: string
   value: string
   attributes: Record<string, string>
 }
 
-interface HtmlAssetAction {
+interface HtmlAssetAttribute {
   type: 'src' | 'srcset' | 'remove'
-  attribute: string
+  key: string
   value: string
   attributes: Record<string, string>
   location: Token.Location
 }
 
-export function getNodeAssetActions(
+/**
+ * Given a HTML node, find all attributes that references an asset to be processed
+ */
+export function getNodeAssetAttributes(
   node: DefaultTreeAdapterMap['element'],
-): HtmlAssetAction[] {
+): HtmlAssetAttribute[] {
   const matched = DEFAULT_HTML_ASSET_SOURCES[node.nodeName]
   if (!matched) return []
 
@@ -38,11 +41,12 @@ export function getNodeAssetActions(
   }
 
   // If the node has a `vite-ignore` attribute, remove the attribute and early out
+  // to skip processing any attributes
   if ('vite-ignore' in attributes) {
     return [
       {
         type: 'remove',
-        attribute: 'vite-ignore',
+        key: 'vite-ignore',
         value: '',
         attributes,
         location: node.sourceCodeLocation!.attrs!['vite-ignore'],
@@ -50,37 +54,16 @@ export function getNodeAssetActions(
     ]
   }
 
-  const actions: HtmlAssetAction[] = []
-  // Check src
-  matched.srcAttributes?.forEach((attribute) => {
-    const value = attributes[attribute]
+  const actions: HtmlAssetAttribute[] = []
+  function handleAttributeKey(key: string, type: 'src' | 'srcset') {
+    const value = attributes[key]
     if (!value) return
-    if (matched.filter && !matched.filter({ attribute, value, attributes })) {
-      return
-    }
-    actions.push({
-      type: 'src',
-      attribute,
-      value,
-      attributes,
-      location: node.sourceCodeLocation!.attrs![attribute],
-    })
-  })
-  // Check srcset
-  matched.srcsetAttributes?.forEach((attribute) => {
-    const value = attributes[attribute]
-    if (!value) return
-    if (matched.filter && !matched.filter({ attribute, value, attributes })) {
-      return
-    }
-    actions.push({
-      type: 'srcset',
-      attribute,
-      value,
-      attributes,
-      location: node.sourceCodeLocation!.attrs![attribute],
-    })
-  })
+    if (matched.filter && !matched.filter({ key, value, attributes })) return
+    const location = node.sourceCodeLocation!.attrs![key]
+    actions.push({ type, key, value, attributes, location })
+  }
+  matched.srcAttributes?.forEach((key) => handleAttributeKey(key, 'src'))
+  matched.srcsetAttributes?.forEach((key) => handleAttributeKey(key, 'srcset'))
   return actions
 }
 
@@ -171,7 +154,7 @@ const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
   link: {
     srcAttributes: ['href'],
     srcsetAttributes: ['imagesrcset'],
-    filter({ attribute, attributes }) {
+    filter({ key, attributes }) {
       if (
         attributes.rel &&
         ALLOWED_REL.includes(attributes.rel.trim().toLowerCase())
@@ -180,7 +163,7 @@ const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
       }
 
       if (
-        attribute === 'href' &&
+        key === 'href' &&
         attributes.itemprop &&
         ALLOWED_ITEMPROP.includes(attributes.itemprop.trim().toLowerCase())
       ) {
@@ -192,9 +175,9 @@ const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
   },
   meta: {
     srcAttributes: ['content'],
-    filter({ attribute, attributes }) {
+    filter({ key, attributes }) {
       if (
-        attribute === 'content' &&
+        key === 'content' &&
         attributes.name &&
         ALLOWED_META_NAME.includes(attributes.name.trim().toLowerCase())
       ) {
@@ -202,7 +185,7 @@ const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
       }
 
       if (
-        attribute === 'content' &&
+        key === 'content' &&
         attributes.property &&
         ALLOWED_META_PROPERTY.includes(attributes.property.trim().toLowerCase())
       ) {
@@ -210,7 +193,7 @@ const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
       }
 
       if (
-        attribute === 'content' &&
+        key === 'content' &&
         attributes.itemprop &&
         ALLOWED_ITEMPROP.includes(attributes.itemprop.trim().toLowerCase())
       ) {

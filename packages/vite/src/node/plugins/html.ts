@@ -33,7 +33,7 @@ import { resolveEnvPrefix } from '../env'
 import type { Logger } from '../logger'
 import { cleanUrl } from '../../shared/utils'
 import { usePerEnvironmentState } from '../environment'
-import { getNodeAssetActions } from '../assetSource'
+import { getNodeAssetAttributes } from '../assetSource'
 import {
   assetUrlRE,
   getPublicAssetFilename,
@@ -516,16 +516,16 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // For asset references in index.html, also generate an import
           // statement for each - this will be handled by the asset plugin
-          const assetActions = getNodeAssetActions(node)
-          for (const action of assetActions) {
-            if (action.type === 'remove') {
-              s.remove(action.location.startOffset, action.location.endOffset)
+          const assetAttributes = getNodeAssetAttributes(node)
+          for (const attr of assetAttributes) {
+            if (attr.type === 'remove') {
+              s.remove(attr.location.startOffset, attr.location.endOffset)
               continue
-            } else if (action.type === 'srcset') {
+            } else if (attr.type === 'srcset') {
               assetUrlsPromises.push(
                 (async () => {
                   const processedEncodedUrl = await processSrcSet(
-                    action.value,
+                    attr.value,
                     async ({ url }) => {
                       const decodedUrl = decodeURI(url)
                       if (!isExcludedUrl(decodedUrl)) {
@@ -537,17 +537,17 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                       return url
                     },
                   )
-                  if (processedEncodedUrl !== action.value) {
-                    overwriteAttrValue(s, action.location, processedEncodedUrl)
+                  if (processedEncodedUrl !== attr.value) {
+                    overwriteAttrValue(s, attr.location, processedEncodedUrl)
                   }
                 })(),
               )
-            } else if (action.type === 'src') {
-              const url = decodeURI(action.value)
+            } else if (attr.type === 'src') {
+              const url = decodeURI(attr.value)
               if (checkPublicFile(url, config)) {
                 overwriteAttrValue(
                   s,
-                  action.location,
+                  attr.location,
                   partialEncodeURIPath(toOutputPublicFilePath(url)),
                 )
               } else if (!isExcludedUrl(url)) {
@@ -555,10 +555,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   node.nodeName === 'link' &&
                   isCSSRequest(url) &&
                   // should not be converted if following attributes are present (#6748)
-                  !(
-                    'media' in action.attributes ||
-                    'disabled' in action.attributes
-                  )
+                  !('media' in attr.attributes || 'disabled' in attr.attributes)
                 ) {
                   // CSS references, convert to import
                   const importExpression = `\nimport ${JSON.stringify(url)}`
@@ -573,8 +570,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   // to `false` to force no inline. If `undefined`, it leaves to the default heuristics.
                   const isNoInlineLink =
                     node.nodeName === 'link' &&
-                    action.attributes.rel &&
-                    parseRelAttr(action.attributes.rel).some((v) =>
+                    attr.attributes.rel &&
+                    parseRelAttr(attr.attributes.rel).some((v) =>
                       noInlineLinkRels.has(v),
                     )
                   const shouldInline = isNoInlineLink ? false : undefined
@@ -587,7 +584,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                       if (processedUrl !== url) {
                         overwriteAttrValue(
                           s,
-                          action.location,
+                          attr.location,
                           partialEncodeURIPath(processedUrl),
                         )
                       }
