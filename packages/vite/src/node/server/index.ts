@@ -169,7 +169,7 @@ export interface ServerOptions extends CommonServerOptions {
    * @default false
    * @experimental
    */
-  perEnvironmentBuildStartEnd?: boolean
+  perEnvironmentStartEndDuringDev?: boolean
   /**
    * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
    * @experimental
@@ -1033,7 +1033,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
-    perEnvironmentBuildStartEnd: false,
+    perEnvironmentStartEndDuringDev: false,
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
     sourcemapIgnoreList:
       raw?.sourcemapIgnoreList === false
