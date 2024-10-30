@@ -5,11 +5,7 @@ name: ecosystem-ci trigger
 #     types: [created]
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
-    types: [opened, synchronize, labeled]
 
 jobs:
   trigger:
