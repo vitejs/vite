@@ -637,6 +637,7 @@ function resolveEnvironmentOptions(
   const consumer =
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   return {
+    define: options.define,
     resolve,
     consumer,
     webCompatible: options.webCompatible ?? consumer === 'client',

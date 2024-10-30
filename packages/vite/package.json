@@ -90,9 +90,6 @@
     "postcss": "^8.4.47",
     "rollup": "^4.23.0"
   },
-  "optionalDependencies": {
-    "fsevents": "~2.3.3"
-  },
   "devDependencies": {
     "@ampproject/remapping": "^2.3.0",
     "@babel/parser": "^7.26.1",
@@ -108,7 +105,7 @@
     "@types/pnpapi": "^0.0.5",
     "artichokie": "^0.2.1",
     "cac": "^6.7.14",
-    "chokidar": "^3.6.0",
+    "chokidar": "^4.0.1",
     "connect": "^3.7.0",
     "convert-source-map": "^2.0.0",
     "cors": "^2.8.5",
