@@ -1,6 +1,6 @@
 import path from 'node:path'
-import glob from 'fast-glob'
-import micromatch from 'micromatch'
+import picomatch from 'picomatch'
+import { globSync } from 'tinyglobby'
 import type { ResolvedConfig } from '../config'
 import { escapeRegex, getNpmPackageName } from '../utils'
 import { resolvePackageData } from '../packages'
@@ -59,7 +59,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
   const exports = pkgData.data.exports
 
   // if package has exports field, get all possible export paths and apply
-  // glob on them with micromatch
+  // glob on them with picomatch
   if (exports) {
     if (typeof exports === 'string' || Array.isArray(exports)) {
       return [pkgName]
@@ -81,7 +81,7 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
 
           // "./dist/glob/*-browser/*.js" => "./dist/glob/**/*-browser/**/*.js"
           // NOTE: in some cases, this could expand to consecutive /**/*/**/* etc
-          // but it's fine since fast-glob handles it the same.
+          // but it's fine since `tinyglobby` handles it the same.
           const exportValuePattern = exportsValue.replace(/\*/g, '**/*')
           // "./dist/glob/*-browser/*.js" => /dist\/glob\/(.*)-browser\/(.*)\.js/
           const exportsValueGlobRe = new RegExp(
@@ -89,19 +89,16 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
           )
 
           possibleExportPaths.push(
-            ...glob
-              .sync(exportValuePattern, {
-                cwd: pkgData.dir,
-                ignore: ['node_modules'],
-              })
+            ...globSync(exportValuePattern, {
+              cwd: pkgData.dir,
+              expandDirectories: false,
+              ignore: ['node_modules'],
+            })
               .map((filePath) => {
-                // ensure "./" prefix for inconsistent fast-glob result
-                //   glob.sync("./some-dir/**/*") -> "./some-dir/some-file"
-                //   glob.sync("./**/*")          -> "some-dir/some-file"
-                if (
-                  exportsValue.startsWith('./') &&
-                  !filePath.startsWith('./')
-                ) {
+                // `tinyglobby` returns paths as they are formatted by the underlying `fdir`.
+                // Both `globSync("./some-dir/**/*")` and `globSync("./**/*")` result in
+                // `"some-dir/somefile"` being returned, so we ensure the correct prefix manually.
+                if (exportsValue.startsWith('./')) {
                   filePath = './' + filePath
                 }
 
@@ -139,16 +136,18 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
       }
     }
 
-    const matched = micromatch(possibleExportPaths, pattern).map((match) =>
-      path.posix.join(pkgName, match),
-    )
+    const matched = possibleExportPaths
+      .filter(picomatch(pattern))
+      .map((match) => path.posix.join(pkgName, match))
     matched.unshift(pkgName)
     return matched
   } else {
     // for packages without exports, we can do a simple glob
-    const matched = glob
-      .sync(pattern, { cwd: pkgData.dir, ignore: ['node_modules'] })
-      .map((match) => path.posix.join(pkgName, slash(match)))
+    const matched = globSync(pattern, {
+      cwd: pkgData.dir,
+      expandDirectories: false,
+      ignore: ['node_modules'],
+    }).map((match) => path.posix.join(pkgName, slash(match)))
     matched.unshift(pkgName)
     return matched
   }

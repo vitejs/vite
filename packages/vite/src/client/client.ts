@@ -49,14 +49,14 @@ try {
             'your current setup:\n' +
             `  (browser) ${currentScriptHost} <--[HTTP]--> ${serverHost} (server)\n` +
             `  (browser) ${socketHost} <--[WebSocket (failing)]--> ${directSocketHost} (server)\n` +
-            'Check out your Vite / network configuration and https://vitejs.dev/config/server-options.html#server-hmr .',
+            'Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr .',
         )
       })
       socket.addEventListener(
         'open',
         () => {
           console.info(
-            '[vite] Direct websocket connection fallback. Check out https://vitejs.dev/config/server-options.html#server-hmr to remove the previous connection error.',
+            '[vite] Direct websocket connection fallback. Check out https://vite.dev/config/server-options.html#server-hmr to remove the previous connection error.',
           )
         },
         { once: true },
@@ -113,7 +113,7 @@ function setupWebSocket(
 }
 
 function cleanUrl(pathname: string): string {
-  const url = new URL(pathname, 'http://vitejs.dev')
+  const url = new URL(pathname, 'http://vite.dev')
   url.searchParams.delete('direct')
   return url.pathname + url.search
 }
@@ -142,7 +142,7 @@ const hmrClient = new HMRClient(
   },
   {
     isReady: () => socket && socket.readyState === 1,
-    send: (message) => socket.send(message),
+    send: (payload) => socket.send(JSON.stringify(payload)),
   },
   async function importUpdatedModule({
     acceptedPath,
@@ -331,24 +331,28 @@ async function waitForSuccessfulPing(
   hostAndPath: string,
   ms = 1000,
 ) {
-  const pingHostProtocol = socketProtocol === 'wss' ? 'https' : 'http'
-
-  const ping = async () => {
-    // A fetch on a websocket URL will return a successful promise with status 400,
-    // but will reject a networking error.
-    // When running on middleware mode, it returns status 426, and an cors error happens if mode is not no-cors
-    try {
-      await fetch(`${pingHostProtocol}://${hostAndPath}`, {
-        mode: 'no-cors',
-        headers: {
-          // Custom headers won't be included in a request with no-cors so (ab)use one of the
-          // safelisted headers to identify the ping request
-          Accept: 'text/x-vite-ping',
-        },
-      })
-      return true
-    } catch {}
-    return false
+  async function ping() {
+    const socket = new WebSocket(
+      `${socketProtocol}://${hostAndPath}`,
+      'vite-ping',
+    )
+    return new Promise<boolean>((resolve) => {
+      function onOpen() {
+        resolve(true)
+        close()
+      }
+      function onError() {
+        resolve(false)
+        close()
+      }
+      function close() {
+        socket.removeEventListener('open', onOpen)
+        socket.removeEventListener('error', onError)
+        socket.close()
+      }
+      socket.addEventListener('open', onOpen)
+      socket.addEventListener('error', onError)
+    })
   }
 
   if (await ping()) {
@@ -457,7 +461,7 @@ export function injectQuery(url: string, queryToInject: string): string {
 
   // can't use pathname from URL since it may be relative like ../
   const pathname = url.replace(/[?#].*$/, '')
-  const { search, hash } = new URL(url, 'http://vitejs.dev')
+  const { search, hash } = new URL(url, 'http://vite.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
     hash || ''

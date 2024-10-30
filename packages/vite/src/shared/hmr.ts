@@ -1,4 +1,4 @@
-import type { Update } from 'types/hmrPayload'
+import type { HotPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 
@@ -28,7 +28,7 @@ export interface HMRConnection {
   /**
    * Send message to the client.
    */
-  send(messages: string): void
+  send(messages: HotPayload): void
 }
 
 export class HMRContext implements ViteHotContext {
@@ -154,9 +154,7 @@ export class HMRContext implements ViteHotContext {
   }
 
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
-    this.hmrClient.messenger.send(
-      JSON.stringify({ type: 'custom', event, data }),
-    )
+    this.hmrClient.messenger.send({ type: 'custom', event, data })
   }
 
   private acceptDeps(
@@ -178,10 +176,10 @@ export class HMRContext implements ViteHotContext {
 class HMRMessenger {
   constructor(private connection: HMRConnection) {}
 
-  private queue: string[] = []
+  private queue: HotPayload[] = []
 
-  public send(message: string): void {
-    this.queue.push(message)
+  public send(payload: HotPayload): void {
+    this.queue.push(payload)
     this.flush()
   }
 
@@ -234,7 +232,7 @@ export class HMRClient {
 
   // After an HMR update, some modules are no longer imported on the page
   // but they may have left behind side effects that need to be cleaned up
-  // (.e.g style injections)
+  // (e.g. style injections)
   public async prunePaths(paths: string[]): Promise<void> {
     await Promise.all(
       paths.map((path) => {

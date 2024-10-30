@@ -29,6 +29,16 @@ The exception is when you need to dynamically concatenate URLs on the fly. In th
 
 For advanced base path control, check out [Advanced Base Options](#advanced-base-options).
 
+### Relative base
+
+If you don't know the base path in advance, you may set a relative base path with `"base": "./"` or `"base": ""`. This will make all generated URLs to be relative to each file.
+
+:::warning Support for older browsers when using relative bases
+
+`import.meta` support is required for relative bases. If you need to support [browsers that do not support `import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta), you can use [the `legacy` plugin](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy).
+
+:::
+
 ## Customizing the Build
 
 The build can be customized via various [build config options](/config/build-options.md). Specifically, you can directly adjust the underlying [Rollup options](https://rollupjs.org/configuration-options/) via `build.rollupOptions`:
@@ -121,14 +131,15 @@ When you are developing a browser-oriented library, you are likely spending most
 
 When it is time to bundle your library for distribution, use the [`build.lib` config option](/config/build-options.md#build-lib). Make sure to also externalize any dependencies that you do not want to bundle into your library, e.g. `vue` or `react`:
 
-```js twoslash [vite.config.js]
+::: code-group
+
+```js twoslash [vite.config.js (single entry)]
 import { resolve } from 'path'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
   build: {
     lib: {
-      // Could also be a dictionary or array of multiple entry points
       entry: resolve(__dirname, 'lib/main.js'),
       name: 'MyLib',
       // the proper extensions will be added
@@ -150,6 +161,37 @@ export default defineConfig({
 })
 ```
 
+```js twoslash [vite.config.js (multiple entries)]
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  build: {
+    lib: {
+      entry: {
+        'my-lib': resolve(__dirname, 'lib/main.js'),
+        secondary: resolve(__dirname, 'lib/secondary.js'),
+      },
+      name: 'MyLib',
+    },
+    rollupOptions: {
+      // make sure to externalize deps that shouldn't be bundled
+      // into your library
+      external: ['vue'],
+      output: {
+        // Provide global variables to use in the UMD build
+        // for externalized deps
+        globals: {
+          vue: 'Vue',
+        },
+      },
+    },
+  },
+})
+```
+
+:::
+
 The entry file would contain exports that can be imported by users of your package:
 
 ```js [lib/main.js]
@@ -158,7 +200,12 @@ import Bar from './Bar.vue'
 export { Foo, Bar }
 ```
 
-Running `vite build` with this config uses a Rollup preset that is oriented towards shipping libraries and produces two bundle formats: `es` and `umd` (configurable via `build.lib`):
+Running `vite build` with this config uses a Rollup preset that is oriented towards shipping libraries and produces two bundle formats:
+
+- `es` and `umd` (for single entry)
+- `es` and `cjs` (for multiple entries)
+
+The formats can be configured with the [`build.lib.formats`](/config/build-options.md#build-lib) option.
 
 ```
 $ vite build
@@ -169,7 +216,9 @@ dist/my-lib.umd.cjs 0.30 kB / gzip: 0.16 kB
 
 Recommended `package.json` for your lib:
 
-```json [package.json]
+::: code-group
+
+```json [package.json (single entry)]
 {
   "name": "my-lib",
   "type": "module",
@@ -185,9 +234,7 @@ Recommended `package.json` for your lib:
 }
 ```
 
-Or, if exposing multiple entry points:
-
-```json [package.json]
+```json [package.json (multiple entries)]
 {
   "name": "my-lib",
   "type": "module",
@@ -203,6 +250,31 @@ Or, if exposing multiple entry points:
       "import": "./dist/secondary.js",
       "require": "./dist/secondary.cjs"
     }
+  }
+}
+```
+
+:::
+
+### CSS support
+
+If your library imports any CSS, it will be bundled as a single CSS file besides the built JS files, e.g. `dist/my-lib.css`. The name defaults to `build.lib.fileName`, but can also be changed with [`build.lib.cssFileName`](/config/build-options.md#build-lib).
+
+You can export the CSS file in your `package.json` to be imported by users:
+
+```json {12}
+{
+  "name": "my-lib",
+  "type": "module",
+  "files": ["dist"],
+  "main": "./dist/my-lib.umd.cjs",
+  "module": "./dist/my-lib.js",
+  "exports": {
+    ".": {
+      "import": "./dist/my-lib.js",
+      "require": "./dist/my-lib.umd.cjs"
+    },
+    "./style.css": "./dist/my-lib.css"
   }
 }
 ```

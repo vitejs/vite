@@ -40,15 +40,18 @@ import { getFsUtils } from '../fsUtils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
+import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
-import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
+import {
+  CLIENT_DIR,
+  DEFAULT_DEV_PORT,
+  ERR_OUTDATED_OPTIMIZED_DEP,
+} from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { warnFutureDeprecation } from '../deprecations'
 import {
-  createNoopWatcher,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
@@ -89,8 +92,7 @@ import {
 import { openBrowser as _openBrowser } from './openBrowser'
 import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
-import { searchForWorkspaceRoot } from './searchRoot'
-import { warmupFiles } from './warmup'
+import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
 
 export interface ServerOptions extends CommonServerOptions {
@@ -119,7 +121,7 @@ export interface ServerOptions extends CommonServerOptions {
   }
   /**
    * chokidar watch options or null to disable FS watching
-   * https://github.com/paulmillr/chokidar#api
+   * https://github.com/paulmillr/chokidar#getting-started
    */
   watch?: WatchOptions | null
   /**
@@ -168,7 +170,7 @@ export interface ServerOptions extends CommonServerOptions {
    * @default false
    * @experimental
    */
-  perEnvironmentBuildStartEnd?: boolean
+  perEnvironmentStartEndDuringDev?: boolean
   /**
    * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
    * @experimental
@@ -213,7 +215,7 @@ export interface FileSystemServeOptions {
    * This will have higher priority than `allow`.
    * picomatch patterns are supported.
    *
-   * @default ['.env', '.env.*', '*.crt', '*.pem']
+   * @default ['.env', '.env.*', '*.{crt,pem}', '**\/.git/**']
    */
   deny?: string[]
 
@@ -253,8 +255,9 @@ export interface ViteDevServer {
    */
   httpServer: HttpServer | null
   /**
-   * chokidar watcher instance
-   * https://github.com/paulmillr/chokidar#api
+   * Chokidar watcher instance. If `config.server.watch` is set to `null`,
+   * it will not watch any files and calling `add` will have no effect.
+   * https://github.com/paulmillr/chokidar#getting-started
    */
   watcher: FSWatcher
   /**
@@ -282,8 +285,8 @@ export interface ViteDevServer {
    */
   moduleGraph: ModuleGraph
   /**
-   * The resolved urls Vite prints on the CLI. null in middleware mode or
-   * before `server.listen` is called.
+   * The resolved urls Vite prints on the CLI (URL-encoded). Returns `null`
+   * in middleware mode or if the server is not listening on any port.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -415,12 +418,15 @@ export interface ResolvedServerUrls {
 export function createServer(
   inlineConfig: InlineConfig = {},
 ): Promise<ViteDevServer> {
-  return _createServer(inlineConfig, { hotListen: true })
+  return _createServer(inlineConfig, { listen: true })
 }
 
 export async function _createServer(
   inlineConfig: InlineConfig = {},
-  options: { hotListen: boolean },
+  options: {
+    listen: boolean
+    previousEnvironments?: Record<string, DevEnvironment>
+  },
 ): Promise<ViteDevServer> {
   const config = await resolveConfig(inlineConfig, 'serve')
 
@@ -441,10 +447,7 @@ export async function _createServer(
     resolvedOutDirs,
   )
   const resolvedWatchOptions = resolveChokidarOptions(
-    {
-      disableGlobbing: true,
-      ...serverConfig.watch,
-    },
+    serverConfig.watch,
     resolvedOutDirs,
     emptyOutDir,
     config.cacheDir,
@@ -464,22 +467,26 @@ export async function _createServer(
     setClientErrorHandler(httpServer, config.logger)
   }
 
-  // eslint-disable-next-line eqeqeq
-  const watchEnabled = serverConfig.watch !== null
-  const watcher = watchEnabled
-    ? (chokidar.watch(
-        // config file dependencies and env file might be outside of root
-        [
-          root,
-          ...config.configFileDependencies,
-          ...getEnvFilesForMode(config.mode, config.envDir),
-          // Watch the public directory explicitly because it might be outside
-          // of the root directory.
-          ...(publicDir && publicFiles ? [publicDir] : []),
-        ],
-        resolvedWatchOptions,
-      ) as FSWatcher)
-    : createNoopWatcher(resolvedWatchOptions)
+  const watcher = chokidar.watch(
+    // config file dependencies and env file might be outside of root
+    [
+      root,
+      ...config.configFileDependencies,
+      ...getEnvFilesForMode(config.mode, config.envDir),
+      // Watch the public directory explicitly because it might be outside
+      // of the root directory.
+      ...(publicDir && publicFiles ? [publicDir] : []),
+    ],
+    resolvedWatchOptions,
+  )
+  // If watch is turned off, patch `.add()` as a noop to prevent programmatically
+  // watching additional files and to keep it fast.
+  // eslint-disable-next-line eqeqeq -- null means disabled
+  if (serverConfig.watch === null) {
+    watcher.add = function () {
+      return this
+    }
+  }
 
   const environments: Record<string, DevEnvironment> = {}
 
@@ -496,7 +503,8 @@ export async function _createServer(
   }
 
   for (const environment of Object.values(environments)) {
-    await environment.init({ watcher })
+    const previousInstance = options.previousEnvironments?.[environment.name]
+    await environment.init({ watcher, previousInstance })
   }
 
   // Backward compatibility
@@ -536,7 +544,13 @@ export async function _createServer(
       url: string,
       originalCode = code,
     ) {
-      return ssrTransform(code, inMap, url, originalCode, server.config)
+      return ssrTransform(code, inMap, url, originalCode, {
+        json: {
+          stringify:
+            config.json?.stringify === true &&
+            config.json.namedExports !== true,
+        },
+      })
     },
     // environment.transformRequest and .warmupRequest don't take an options param for now,
     // so the logic and error handling needs to be duplicated here.
@@ -748,6 +762,7 @@ export async function _createServer(
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
+    reloadOnTsconfigChange(server, file)
 
     await pluginContainer.watchChange(file, {
       event: isUnlink ? 'delete' : 'create',
@@ -781,6 +796,7 @@ export async function _createServer(
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
+    reloadOnTsconfigChange(server, file)
 
     await pluginContainer.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
@@ -899,7 +915,7 @@ export async function _createServer(
   // this code is to avoid calling buildStart multiple times
   let initingServer: Promise<void> | undefined
   let serverInited = false
-  const initServer = async () => {
+  const initServer = async (onListen: boolean) => {
     if (serverInited) return
     if (initingServer) return initingServer
 
@@ -909,14 +925,13 @@ export async function _createServer(
       // buildStart will be called when the first request is transformed
       await environments.client.pluginContainer.buildStart()
 
-      await Promise.all(
-        Object.values(server.environments).map((environment) =>
-          environment.depsOptimizer?.init(),
-        ),
-      )
+      // ensure ws server started
+      if (onListen || options.listen) {
+        await Promise.all(
+          Object.values(environments).map((e) => e.listen(server)),
+        )
+      }
 
-      // TODO: move warmup call inside environment init()
-      warmupFiles(server)
       initingServer = undefined
       serverInited = true
     })()
@@ -928,9 +943,7 @@ export async function _createServer(
     const listen = httpServer.listen.bind(httpServer)
     httpServer.listen = (async (port: number, ...args: any[]) => {
       try {
-        // ensure ws server started
-        Object.values(environments).forEach((e) => e.hot.listen())
-        await initServer()
+        await initServer(true)
       } catch (e) {
         httpServer.emit('error', e)
         return
@@ -938,10 +951,7 @@ export async function _createServer(
       return listen(port, ...args)
     }) as any
   } else {
-    if (options.hotListen) {
-      Object.values(environments).forEach((e) => e.hot.listen())
-    }
-    await initServer()
+    await initServer(false)
   }
 
   return server
@@ -1026,7 +1036,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
-    perEnvironmentBuildStartEnd: false,
+    perEnvironmentStartEndDuringDev: false,
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
     sourcemapIgnoreList:
       raw?.sourcemapIgnoreList === false
@@ -1035,21 +1045,29 @@ export function resolveServerOptions(
     middlewareMode: raw?.middlewareMode || false,
   }
   let allowDirs = server.fs?.allow
-  const deny = server.fs?.deny || ['.env', '.env.*', '*.{crt,pem}']
+  const deny = server.fs?.deny || [
+    '.env',
+    '.env.*',
+    '*.{crt,pem}',
+    '**/.git/**',
+  ]
 
   if (!allowDirs) {
     allowDirs = [searchForWorkspaceRoot(root)]
   }
 
   if (process.versions.pnp) {
+    // running a command fails if cwd doesn't exist and root may not exist
+    // search for package root to find a path that exists
+    const cwd = searchForPackageRoot(root)
     try {
       const enableGlobalCache =
-        execSync('yarn config get enableGlobalCache', { cwd: root })
+        execSync('yarn config get enableGlobalCache', { cwd })
           .toString()
           .trim() === 'true'
       const yarnCacheDir = execSync(
         `yarn config get ${enableGlobalCache ? 'globalFolder' : 'cacheFolder'}`,
-        { cwd: root },
+        { cwd },
       )
         .toString()
         .trim()
@@ -1112,7 +1130,10 @@ async function restartServer(server: ViteDevServer) {
     let newServer: ViteDevServer | null = null
     try {
       // delay ws server listen
-      newServer = await _createServer(inlineConfig, { hotListen: false })
+      newServer = await _createServer(inlineConfig, {
+        listen: false,
+        previousEnvironments: server.environments,
+      })
     } catch (err: any) {
       server.config.logger.error(err.message, {
         timestamp: true,
@@ -1145,7 +1166,9 @@ async function restartServer(server: ViteDevServer) {
   if (!middlewareMode) {
     await server.listen(port, true)
   } else {
-    server.ws.listen()
+    await Promise.all(
+      Object.values(server.environments).map((e) => e.listen(server)),
+    )
   }
   logger.info('server restarted.', { timestamp: true })
 

@@ -43,7 +43,17 @@ const clientConfig = defineConfig({
 
 const sharedNodeOptions = defineConfig({
   treeshake: {
-    moduleSideEffects: 'no-external',
+    moduleSideEffects(id, external) {
+      // These nested dependencies should be considered side-effect free
+      // as it's not set within their package.json
+      if (
+        id.includes('node_modules/astring') ||
+        id.includes('node_modules/acorn')
+      ) {
+        return false
+      }
+      return !external
+    },
     propertyReadSideEffects: false,
     tryCatchDeoptimization: false,
   },
@@ -96,9 +106,12 @@ const nodeConfig = defineConfig({
   },
   external: [
     /^vite\//,
-    'fsevents',
     'lightningcss',
     'rollup/parseAst',
+    // postcss-load-config
+    'yaml',
+    'jiti',
+    /^tsx(\/|$)/,
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [
@@ -106,36 +119,49 @@ const nodeConfig = defineConfig({
     // generate code that force require them upfront for side effects.
     // Shim them with eval() so rollup can skip these calls.
     shimDepsPlugin({
-      // chokidar -> fsevents
-      'fsevents-handler.js': {
-        src: `require('fsevents')`,
-        replacement: `__require('fsevents')`,
-      },
       // postcss-import -> sugarss
-      'process-content.js': {
-        src: 'require("sugarss")',
-        replacement: `__require('sugarss')`,
-      },
-      'lilconfig/src/index.js': {
-        pattern: /: require;/g,
-        replacement: `: __require;`,
-      },
-      // postcss-load-config calls require after register ts-node
-      'postcss-load-config/src/index.js': {
-        pattern: /require(?=\((configFile|'ts-node')\))/g,
-        replacement: `__require`,
-      },
+      'process-content.js': [
+        {
+          src: 'require("sugarss")',
+          replacement: `__require('sugarss')`,
+        },
+      ],
+      'lilconfig/src/index.js': [
+        {
+          pattern: /: require;/g,
+          replacement: ': __require;',
+        },
+      ],
+      'postcss-load-config/src/req.js': [
+        {
+          src: "const { pathToFileURL } = require('node:url')",
+          replacement: `const { fileURLToPath, pathToFileURL } = require('node:url')`,
+        },
+        {
+          src: '__filename',
+          replacement: 'fileURLToPath(import.meta.url)',
+        },
+      ],
       // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
-      // However, we always pass the `resolve` option. Remove this import to avoid
-      // bundling the `resolve` dep.
-      'postcss-import/index.js': {
-        src: 'const resolveId = require("./lib/resolve-id")',
-        replacement: 'const resolveId = (id) => id',
-      },
-      'postcss-import/lib/parse-styles.js': {
-        src: 'const resolveId = require("./resolve-id")',
-        replacement: 'const resolveId = (id) => id',
-      },
+      // However, we always pass the `resolve` option. It also uses `read-cache` if
+      // the `load` option is not passed, but we also always pass the `load` option.
+      // Remove these two imports to avoid bundling them.
+      'postcss-import/index.js': [
+        {
+          src: 'const resolveId = require("./lib/resolve-id")',
+          replacement: 'const resolveId = (id) => id',
+        },
+        {
+          src: 'const loadContent = require("./lib/load-content")',
+          replacement: 'const loadContent = () => ""',
+        },
+      ],
+      'postcss-import/lib/parse-styles.js': [
+        {
+          src: 'const resolveId = require("./resolve-id")',
+          replacement: 'const resolveId = (id) => id',
+        },
+      ],
     }),
     ...createSharedNodePlugins({}),
     licensePlugin(
@@ -153,7 +179,6 @@ const moduleRunnerConfig = defineConfig({
     'module-runner': path.resolve(__dirname, 'src/module-runner/index.ts'),
   },
   external: [
-    'fsevents',
     'lightningcss',
     'rollup/parseAst',
     ...Object.keys(pkg.dependencies),
@@ -179,7 +204,7 @@ const cjsConfig = defineConfig({
     freeze: false,
     sourcemap: false,
   },
-  external: ['fsevents', ...Object.keys(pkg.dependencies)],
+  external: Object.keys(pkg.dependencies),
   plugins: [...createSharedNodePlugins({}), bundleSizeLimit(175)],
 })
 
@@ -199,7 +224,7 @@ interface ShimOptions {
   pattern?: RegExp
 }
 
-function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
+function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
   const transformed: Record<string, boolean> = {}
 
   return {
@@ -207,38 +232,45 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
     transform(code, id) {
       for (const file in deps) {
         if (id.replace(/\\/g, '/').endsWith(file)) {
-          const { src, replacement, pattern } = deps[file]
+          for (const { src, replacement, pattern } of deps[file]) {
+            const magicString = new MagicString(code)
 
-          const magicString = new MagicString(code)
-          if (src) {
-            const pos = code.indexOf(src)
-            if (pos < 0) {
-              this.error(
-                `Could not find expected src "${src}" in file "${file}"`,
-              )
-            }
-            transformed[file] = true
-            magicString.overwrite(pos, pos + src.length, replacement)
-            console.log(`shimmed: ${file}`)
-          }
-
-          if (pattern) {
-            let match
-            while ((match = pattern.exec(code))) {
+            if (src) {
+              const pos = code.indexOf(src)
+              if (pos < 0) {
+                this.error(
+                  `Could not find expected src "${src}" in file "${file}"`,
+                )
+              }
               transformed[file] = true
-              const start = match.index
-              const end = start + match[0].length
-              magicString.overwrite(start, end, replacement)
+              magicString.overwrite(pos, pos + src.length, replacement)
             }
-            if (!transformed[file]) {
-              this.error(
-                `Could not find expected pattern "${pattern}" in file "${file}"`,
-              )
+
+            if (pattern) {
+              let match
+              while ((match = pattern.exec(code))) {
+                transformed[file] = true
+                const start = match.index
+                const end = start + match[0].length
+                let _replacement = replacement
+                for (let i = 1; i <= match.length; i++) {
+                  _replacement = _replacement.replace(`$${i}`, match[i] || '')
+                }
+                magicString.overwrite(start, end, _replacement)
+              }
+              if (!transformed[file]) {
+                this.error(
+                  `Could not find expected pattern "${pattern}" in file "${file}"`,
+                )
+              }
             }
-            console.log(`shimmed: ${file}`)
+
+            code = magicString.toString()
           }
 
-          return magicString.toString()
+          console.log(`shimmed: ${file}`)
+
+          return code
         }
       }
     },
@@ -261,12 +293,8 @@ function shimDepsPlugin(deps: Record<string, ShimOptions>): Plugin {
  */
 function cjsPatchPlugin(): Plugin {
   const cjsPatch = `
-import { fileURLToPath as __cjs_fileURLToPath } from 'node:url';
-import { dirname as __cjs_dirname } from 'node:path';
 import { createRequire as __cjs_createRequire } from 'node:module';
 
-const __filename = __cjs_fileURLToPath(import.meta.url);
-const __dirname = __cjs_dirname(__filename);
 const require = __cjs_createRequire(import.meta.url);
 const __require = require;
 `.trimStart()

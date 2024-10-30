@@ -39,8 +39,7 @@ import { resolveBuildEnvironmentOptions, resolveBuilderOptions } from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions } from './server'
 import { DevEnvironment } from './server/environment'
-import { createNodeDevEnvironment } from './server/environments/nodeEnvironment'
-import { createServerHotChannel } from './server/hmr'
+import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
 import type { WebSocketServer } from './server/ws'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
 import { resolvePreviewOptions } from './preview'
@@ -90,7 +89,7 @@ import { resolveSSROptions } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 
-const debug = createDebugger('vite:config')
+const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
 
 export interface ConfigEnv {
@@ -132,6 +131,8 @@ export type UserConfigExport =
 export function defineConfig(config: UserConfig): UserConfig
 export function defineConfig(config: Promise<UserConfig>): Promise<UserConfig>
 export function defineConfig(config: UserConfigFnObject): UserConfigFnObject
+export function defineConfig(config: UserConfigFnPromise): UserConfigFnPromise
+export function defineConfig(config: UserConfigFn): UserConfigFn
 export function defineConfig(config: UserConfigExport): UserConfigExport
 export function defineConfig(config: UserConfigExport): UserConfigExport {
   return config
@@ -168,11 +169,6 @@ export interface DevEnvironmentOptions {
   sourcemapIgnoreList?:
     | false
     | ((sourcePath: string, sourcemapPath: string) => boolean)
-
-  /**
-   * Optimize deps config
-   */
-  optimizeDeps?: DepOptimizationOptions
 
   /**
    * create the Dev Environment instance
@@ -213,9 +209,7 @@ function defaultCreateSsrDevEnvironment(
   name: string,
   config: ResolvedConfig,
 ): DevEnvironment {
-  return createNodeDevEnvironment(name, config, {
-    hot: createServerHotChannel(),
-  })
+  return createRunnableDevEnvironment(name, config)
 }
 
 function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
@@ -252,6 +246,10 @@ export interface SharedEnvironmentOptions {
    * Temporal options, we should remove these in favor of fine-grained control
    */
   webCompatible?: boolean // was ssr.target === 'webworker'
+  /**
+   * Optimize deps config
+   */
+  optimizeDeps?: DepOptimizationOptions
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -272,6 +270,7 @@ export type ResolvedEnvironmentOptions = {
   resolve: ResolvedResolveOptions
   consumer: 'client' | 'server'
   webCompatible: boolean
+  optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
 }
@@ -346,6 +345,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
   assetsInclude?: string | RegExp | (string | RegExp)[]
   /**
    * Builder specific options
+   * @experimental
    */
   builder?: BuilderOptions
   /**
@@ -565,7 +565,8 @@ export type ResolvedConfig = Readonly<
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     dev: ResolvedDevEnvironmentOptions
-    builder: ResolvedBuilderOptions
+    /** @experimental */
+    builder: ResolvedBuilderOptions | undefined
     build: ResolvedBuildOptions
     preview: ResolvedPreviewOptions
     ssr: ResolvedSSROptions
@@ -588,7 +589,6 @@ export type ResolvedConfig = Readonly<
 
 export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
-  preserverSymlinks: boolean,
   environmentName: string | undefined,
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
@@ -602,11 +602,6 @@ export function resolveDevEnvironmentOptions(
         : dev?.sourcemapIgnoreList || isInNodeModules,
     preTransformRequests: dev?.preTransformRequests ?? consumer === 'client',
     warmup: dev?.warmup ?? [],
-    optimizeDeps: resolveDepOptimizationOptions(
-      dev?.optimizeDeps,
-      preserverSymlinks,
-      consumer,
-    ),
     createEnvironment:
       dev?.createEnvironment ??
       (environmentName === 'client'
@@ -625,7 +620,6 @@ export function resolveDevEnvironmentOptions(
 
 function resolveEnvironmentOptions(
   options: EnvironmentOptions,
-  resolvedRoot: string,
   alias: Alias[],
   preserveSymlinks: boolean,
   logger: Logger,
@@ -643,12 +637,17 @@ function resolveEnvironmentOptions(
   const consumer =
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   return {
+    define: options.define,
     resolve,
     consumer,
     webCompatible: options.webCompatible ?? consumer === 'client',
+    optimizeDeps: resolveDepOptimizationOptions(
+      options.optimizeDeps,
+      resolve.preserveSymlinks,
+      consumer,
+    ),
     dev: resolveDevEnvironmentOptions(
       options.dev,
-      resolve.preserveSymlinks,
       environmentName,
       consumer,
       skipSsrTransform,
@@ -656,7 +655,6 @@ function resolveEnvironmentOptions(
     build: resolveBuildEnvironmentOptions(
       options.build ?? {},
       logger,
-      resolvedRoot,
       consumer,
     ),
   }
@@ -668,19 +666,6 @@ export function getDefaultEnvironmentOptions(
   return {
     define: config.define,
     resolve: config.resolve,
-    dev: config.dev,
-    build: config.build,
-  }
-}
-
-export function getDefaultResolvedEnvironmentOptions(
-  config: ResolvedConfig,
-): ResolvedEnvironmentOptions {
-  return {
-    define: config.define,
-    resolve: config.resolve,
-    consumer: 'server',
-    webCompatible: false,
     dev: config.dev,
     build: config.build,
   }
@@ -925,13 +910,8 @@ export async function resolveConfig(
 
   checkBadCharactersInPath(resolvedRoot, logger)
 
-  // Backward compatibility: merge optimizeDeps into environments.client.dev.optimizeDeps as defaults
   const configEnvironmentsClient = config.environments!.client!
   configEnvironmentsClient.dev ??= {}
-  configEnvironmentsClient.dev.optimizeDeps = mergeConfig(
-    config.optimizeDeps ?? {},
-    configEnvironmentsClient.dev.optimizeDeps ?? {},
-  )
 
   const deprecatedSsrOptimizeDepsConfig = config.ssr?.optimizeDeps ?? {}
   let configEnvironmentsSsr = config.environments!.ssr
@@ -949,10 +929,9 @@ export async function resolveConfig(
 
   // Backward compatibility: merge ssr into environments.ssr.config as defaults
   if (configEnvironmentsSsr) {
-    configEnvironmentsSsr.dev ??= {}
-    configEnvironmentsSsr.dev.optimizeDeps = mergeConfig(
+    configEnvironmentsSsr.optimizeDeps = mergeConfig(
       deprecatedSsrOptimizeDepsConfig,
-      configEnvironmentsSsr.dev.optimizeDeps ?? {},
+      configEnvironmentsSsr.optimizeDeps ?? {},
     )
 
     configEnvironmentsSsr.resolve ??= {}
@@ -986,9 +965,28 @@ export async function resolveConfig(
 
   // Merge default environment config values
   const defaultEnvironmentOptions = getDefaultEnvironmentOptions(config)
+  // Some top level options only apply to the client environment
+  const defaultClientEnvironmentOptions = {
+    ...defaultEnvironmentOptions,
+    optimizeDeps: config.optimizeDeps,
+  }
+  const defaultNonClientEnvironmentOptions = {
+    ...defaultEnvironmentOptions,
+    dev: {
+      ...defaultEnvironmentOptions.dev,
+      createEnvironment: undefined,
+    },
+    build: {
+      ...defaultEnvironmentOptions.build,
+      createEnvironment: undefined,
+    },
+  }
+
   for (const name of Object.keys(config.environments)) {
     config.environments[name] = mergeConfig(
-      defaultEnvironmentOptions,
+      name === 'client'
+        ? defaultClientEnvironmentOptions
+        : defaultNonClientEnvironmentOptions,
       config.environments[name],
     )
   }
@@ -1001,7 +999,6 @@ export async function resolveConfig(
   for (const environmentName of Object.keys(config.environments)) {
     resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
       config.environments[environmentName],
-      resolvedRoot,
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
       logger,
@@ -1010,16 +1007,15 @@ export async function resolveConfig(
     )
   }
 
-  // Backward compatibility: merge environments.client.dev.optimizeDeps back into optimizeDeps
+  // Backward compatibility: merge environments.client.optimizeDeps back into optimizeDeps
   // The same object is assigned back for backward compatibility. The ecosystem is modifying
   // optimizeDeps in the ResolvedConfig hook, so these changes will be reflected on the
   // client environment.
   const backwardCompatibleOptimizeDeps =
-    resolvedEnvironments.client.dev.optimizeDeps
+    resolvedEnvironments.client.optimizeDeps
 
   const resolvedDevEnvironmentOptions = resolveDevEnvironmentOptions(
     config.dev,
-    resolvedDefaultResolve.preserveSymlinks,
     // default environment options
     undefined,
     undefined,
@@ -1028,7 +1024,6 @@ export async function resolveConfig(
   const resolvedBuildOptions = resolveBuildEnvironmentOptions(
     config.build ?? {},
     logger,
-    resolvedRoot,
     undefined,
   )
 
@@ -1038,7 +1033,7 @@ export async function resolveConfig(
     ...config.ssr,
     external: resolvedEnvironments.ssr?.resolve.external,
     noExternal: resolvedEnvironments.ssr?.resolve.noExternal,
-    optimizeDeps: resolvedEnvironments.ssr?.dev?.optimizeDeps,
+    optimizeDeps: resolvedEnvironments.ssr?.optimizeDeps,
     resolve: {
       ...config.ssr?.resolve,
       conditions: resolvedEnvironments.ssr?.resolve.conditions,
@@ -1246,10 +1241,9 @@ export async function resolveConfig(
     },
     future: config.future,
 
-    // Backward compatibility, users should use environment.config.dev.optimizeDeps
-    optimizeDeps: backwardCompatibleOptimizeDeps,
     ssr,
 
+    optimizeDeps: backwardCompatibleOptimizeDeps,
     resolve: resolvedDefaultResolve,
     dev: resolvedDevEnvironmentOptions,
     build: resolvedBuildOptions,
@@ -1444,7 +1438,7 @@ export function resolveBaseUrl(
 
   // parse base when command is serve or base is not External URL
   if (!isBuild || !isExternal) {
-    base = new URL(base, 'http://vitejs.dev').pathname
+    base = new URL(base, 'http://vite.dev').pathname
     // ensure leading slash
     if (base[0] !== '/') {
       base = '/' + base
@@ -1635,7 +1629,7 @@ async function bundleConfigFile(
                     throw new Error(
                       `Failed to resolve ${JSON.stringify(
                         id,
-                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
+                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
                     )
                   }
                 }
@@ -1643,17 +1637,6 @@ async function bundleConfigFile(
               }
               if (idFsPath && isImport) {
                 idFsPath = pathToFileURL(idFsPath).href
-              }
-              if (
-                idFsPath &&
-                !isImport &&
-                isFilePathESM(idFsPath, packageCache)
-              ) {
-                throw new Error(
-                  `${JSON.stringify(
-                    id,
-                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See https://vitejs.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
-                )
               }
               return {
                 path: idFsPath,
@@ -1756,7 +1739,7 @@ async function runConfigHook(
     const handler = getHookHandler(hook)
     if (handler) {
       const res = await handler(conf, configEnv)
-      if (res) {
+      if (res && res !== conf) {
         conf = mergeConfig(conf, res)
       }
     }
