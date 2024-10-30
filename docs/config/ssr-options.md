@@ -34,7 +34,7 @@ Build target for the SSR server.
 ## ssr.resolve.conditions
 
 - **Type:** `string[]`
-- **Default:** `['module', 'node', 'production', 'development']` (`['module', 'browser', 'production', 'development']` for `ssr.target === 'webworker'`)
+- **Default:** `['module', 'node', DEV_PROD_CONDITION]` (`['module', 'browser', DEV_PROD_CONDITION]` for `ssr.target === 'webworker'`)
 - **Related:** [Resolve Conditions](./shared-options.md#resolve-conditions)
 
 These conditions are used in the plugin pipeline, and only affect non-externalized dependencies during the SSR build. Use `ssr.resolve.externalConditions` to affect externalized imports.

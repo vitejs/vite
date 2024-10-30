@@ -44,6 +44,7 @@ import {
 import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
+  DEV_PROD_CONDITION,
   ESBUILD_MODULES_TARGET,
   SPECIAL_QUERY_RE,
 } from '../constants'
@@ -1092,7 +1093,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
       return (cssResolve ??= createBackCompatIdResolver(config, {
         extensions: ['.css'],
         mainFields: ['style'],
-        conditions: ['style', 'production', 'development'],
+        conditions: ['style', DEV_PROD_CONDITION],
         tryIndex: false,
         preferRelative: true,
       }))
@@ -1103,7 +1104,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
         const resolver = createBackCompatIdResolver(config, {
           extensions: ['.scss', '.sass', '.css'],
           mainFields: ['sass', 'style'],
-          conditions: ['sass', 'style', 'production', 'development'],
+          conditions: ['sass', 'style', DEV_PROD_CONDITION],
           tryIndex: true,
           tryPrefix: '_',
           preferRelative: true,
@@ -1122,7 +1123,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
       return (lessResolve ??= createBackCompatIdResolver(config, {
         extensions: ['.less', '.css'],
         mainFields: ['less', 'style'],
-        conditions: ['less', 'style', 'production', 'development'],
+        conditions: ['less', 'style', DEV_PROD_CONDITION],
         tryIndex: false,
         preferRelative: true,
       }))

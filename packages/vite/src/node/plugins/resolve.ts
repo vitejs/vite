@@ -9,6 +9,7 @@ import type { Plugin } from '../plugin'
 import {
   CLIENT_ENTRY,
   DEP_VERSION_RE,
+  DEV_PROD_CONDITION,
   ENV_ENTRY,
   FS_PREFIX,
   OPTIMIZABLE_ENTRY_RE,
@@ -1078,21 +1079,18 @@ function resolveExportsOrImports(
   options: InternalResolveOptions,
   type: 'imports' | 'exports',
 ) {
-  const conditions = [...options.conditions, 'require', 'import'].filter(
-    (condition) => {
-      switch (condition) {
-        case 'production':
-          return options.isProduction
-        case 'development':
-          return !options.isProduction
-        case 'require':
-          return options.isRequire
-        case 'import':
-          return !options.isRequire
-      }
-      return true
-    },
-  )
+  const conditions = options.conditions.map((condition) => {
+    if (condition === DEV_PROD_CONDITION) {
+      return options.isProduction ? 'production' : 'development'
+    }
+    return condition
+  })
+
+  if (options.isRequire) {
+    conditions.push('require')
+  } else {
+    conditions.push('import')
+  }
 
   const fn = type === 'imports' ? imports : exports
   const result = fn(pkg, key, { conditions, unsafe: true })
