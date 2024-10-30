@@ -1,3 +1,11 @@
+## <small>5.5.5 (2024-10-30)</small>
+
+* chore: upgrade to unbuild v3 rc (#18502) ([ddd5c5d](https://github.com/vitejs/vite/commit/ddd5c5d00ff7894462a608841560883f9c771f22)), closes [#18502](https://github.com/vitejs/vite/issues/18502)
+* fix(create-vite): add tsBuildInfoFile option (#18435) ([0a4427f](https://github.com/vitejs/vite/commit/0a4427fc44b9b2075225bf8a9f1d88a8a428a217)), closes [#18435](https://github.com/vitejs/vite/issues/18435)
+* fix(deps): update all non-major dependencies (#18484) ([2ec12df](https://github.com/vitejs/vite/commit/2ec12df98d07eb4c986737e86a4a9f8066724658)), closes [#18484](https://github.com/vitejs/vite/issues/18484)
+
+
+
 ## <small>5.5.4 (2024-10-23)</small>
 
 * chore: change Angular customCommand (#18425) ([b53db53](https://github.com/vitejs/vite/commit/b53db53df17c43602d61a24e9bf579267ee8eb6b)), closes [#18425](https://github.com/vitejs/vite/issues/18425)
