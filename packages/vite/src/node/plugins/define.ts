@@ -46,19 +46,19 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     importMetaFallbackKeys['import.meta.env'] = `undefined`
   }
 
-  const userDefine: Record<string, string> = {}
-  const userDefineEnv: Record<string, any> = {}
-  for (const key in config.define) {
-    userDefine[key] = handleDefineValue(config.define[key])
-
-    // make sure `import.meta.env` object has user define properties
-    if (isBuild && key.startsWith('import.meta.env.')) {
-      userDefineEnv[key.slice(16)] = config.define[key]
-    }
-  }
-
   function generatePattern(environment: Environment) {
     const keepProcessEnv = environment.config.keepProcessEnv
+
+    const userDefine: Record<string, string> = {}
+    const userDefineEnv: Record<string, any> = {}
+    for (const key in environment.config.define) {
+      userDefine[key] = handleDefineValue(environment.config.define[key])
+
+      // make sure `import.meta.env` object has user define properties
+      if (isBuild && key.startsWith('import.meta.env.')) {
+        userDefineEnv[key.slice(16)] = environment.config.define[key]
+      }
+    }
 
     const define: Record<string, string> = {
       ...(keepProcessEnv ? {} : processEnv),

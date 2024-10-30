@@ -91,7 +91,7 @@ import { resolveSSROptions } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 
-const debug = createDebugger('vite:config')
+const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
 
 export interface ConfigEnv {
@@ -644,6 +644,7 @@ function resolveEnvironmentOptions(
     isSsrTargetWebworkerEnvironment,
   )
   return {
+    define: options.define,
     resolve,
     keepProcessEnv:
       options.keepProcessEnv ??

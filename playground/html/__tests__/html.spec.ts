@@ -7,6 +7,7 @@ import {
   isBuild,
   isServe,
   page,
+  serverLogs,
   untilBrowserLogAfter,
   viteServer,
   viteTestUrl,
@@ -100,6 +101,27 @@ describe('main', () => {
     const html = await page.innerHTML('body')
     expect(html).toMatch(`<!-- comment one -->`)
     expect(html).toMatch(`<!-- comment two -->`)
+  })
+
+  test('external paths works with vite-ignore attribute', async () => {
+    expect(await page.textContent('.external-path')).toBe('works')
+    expect(await page.getAttribute('.external-path', 'vite-ignore')).toBe(null)
+    expect(await getColor('.external-path')).toBe('red')
+    if (isServe) {
+      expect(serverLogs).not.toEqual(
+        expect.arrayContaining([
+          expect.stringMatching('Failed to load url /external-path.js'),
+        ]),
+      )
+    } else {
+      expect(serverLogs).not.toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(
+            'can\'t be bundled without type="module" attribute',
+          ),
+        ]),
+      )
+    }
   })
 })
 
