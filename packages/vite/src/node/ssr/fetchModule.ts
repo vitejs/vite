@@ -90,7 +90,7 @@ export async function fetchModule(
   url = unwrapId(url)
 
   const mod = await environment.moduleGraph.ensureEntryFromUrl(url)
-  const cached = !!mod?.transformResult
+  const cached = !!mod.transformResult
 
   // if url is already cached, we can just confirm it's also cached on the server
   if (options.cached && cached) {
