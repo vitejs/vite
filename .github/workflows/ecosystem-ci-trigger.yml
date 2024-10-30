@@ -8,7 +8,7 @@ on:
   pull_request:
 
 permissions:
-  reactions: write
+  contents: write
 
 jobs:
   trigger:
