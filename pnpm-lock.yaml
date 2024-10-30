@@ -10,9 +10,6 @@ overrides:
 packageExtensionsChecksum: 632c5477927702fb9badd3e595784820
 
 patchedDependencies:
-  acorn@8.14.0:
-    hash: d727lkisx442fz7p2mupxdcooa
-    path: patches/acorn@8.14.0.patch
   http-proxy@1.18.1:
     hash: qqiqxx62zlcu62nljjmhlvexni
     path: patches/http-proxy@1.18.1.patch
@@ -213,7 +210,7 @@ importers:
     devDependencies:
       acorn:
         specifier: ^8.14.0
-        version: 8.14.0(patch_hash=d727lkisx442fz7p2mupxdcooa)
+        version: 8.14.0
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -9128,15 +9125,15 @@ snapshots:
       mime-types: 2.1.35
       negotiator: 0.6.3
 
-  acorn-jsx@5.3.2(acorn@8.14.0(patch_hash=d727lkisx442fz7p2mupxdcooa)):
+  acorn-jsx@5.3.2(acorn@8.14.0):
     dependencies:
-      acorn: 8.14.0(patch_hash=d727lkisx442fz7p2mupxdcooa)
+      acorn: 8.14.0
 
   acorn-walk@8.3.2: {}
 
   acorn@7.4.1: {}
 
-  acorn@8.14.0(patch_hash=d727lkisx442fz7p2mupxdcooa): {}
+  acorn@8.14.0: {}
 
   add-stream@1.0.0: {}
 
@@ -10044,8 +10041,8 @@ snapshots:
 
   espree@10.2.0:
     dependencies:
-      acorn: 8.14.0(patch_hash=d727lkisx442fz7p2mupxdcooa)
-      acorn-jsx: 5.3.2(acorn@8.14.0(patch_hash=d727lkisx442fz7p2mupxdcooa))
+      acorn: 8.14.0
+      acorn-jsx: 5.3.2(acorn@8.14.0)
       eslint-visitor-keys: 4.1.0
 
   esquery@1.6.0:
@@ -11108,7 +11105,7 @@ snapshots:
   miniflare@3.20241022.0:
     dependencies:
       '@cspotcode/source-map-support': 0.8.1
-      acorn: 8.14.0(patch_hash=d727lkisx442fz7p2mupxdcooa)
+      acorn: 8.14.0
       acorn-walk: 8.3.2
       capnp-ts: 0.7.0
       exit-hook: 2.2.1
@@ -11176,7 +11173,7 @@ snapshots:
 
   mlly@1.7.2:
     dependencies:
-      acorn: 8.14.0(patch_hash=d727lkisx442fz7p2mupxdcooa)
+      acorn: 8.14.0
       pathe: 1.1.2
       pkg-types: 1.2.0
       ufo: 1.5.4
@@ -12417,7 +12414,7 @@ snapshots:
   terser@5.36.0:
     dependencies:
       '@jridgewell/source-map': 0.3.3
-      acorn: 8.14.0(patch_hash=d727lkisx442fz7p2mupxdcooa)
+      acorn: 8.14.0
       commander: 2.20.3
       source-map-support: 0.5.21
 

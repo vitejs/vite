@@ -43,7 +43,17 @@ const clientConfig = defineConfig({
 
 const sharedNodeOptions = defineConfig({
   treeshake: {
-    moduleSideEffects: 'no-external',
+    moduleSideEffects(id, external) {
+      // These nested dependencies should be considered side-effect free
+      // as it's not set within their package.json
+      if (
+        id.includes('node_modules/astring') ||
+        id.includes('node_modules/acorn')
+      ) {
+        return false
+      }
+      return !external
+    },
     propertyReadSideEffects: false,
     tryCatchDeoptimization: false,
   },
@@ -133,12 +143,17 @@ const nodeConfig = defineConfig({
         },
       ],
       // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
-      // However, we always pass the `resolve` option. Remove this import to avoid
-      // bundling the `resolve` dep.
+      // However, we always pass the `resolve` option. It also uses `read-cache` if
+      // the `load` option is not passed, but we also always pass the `load` option.
+      // Remove these two imports to avoid bundling them.
       'postcss-import/index.js': [
         {
           src: 'const resolveId = require("./lib/resolve-id")',
           replacement: 'const resolveId = (id) => id',
+        },
+        {
+          src: 'const loadContent = require("./lib/load-content")',
+          replacement: 'const loadContent = () => ""',
         },
       ],
       'postcss-import/lib/parse-styles.js': [
