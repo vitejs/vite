@@ -539,12 +539,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (isDirectCSSRequest(id)) {
           return null
         }
-        // server only
-        if (this.environment.config.consumer !== 'client') {
-          return modulesCode || `export default ${JSON.stringify(css)}`
-        }
         if (inlined) {
           return `export default ${JSON.stringify(css)}`
+        }
+        if (this.environment.config.consumer === 'server') {
+          return modulesCode || 'export {}'
         }
 
         const cssContent = await getContentWithSourcemap(css)
