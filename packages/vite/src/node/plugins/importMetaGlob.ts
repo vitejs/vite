@@ -1,5 +1,5 @@
 import { isAbsolute, posix } from 'node:path'
-import micromatch from 'micromatch'
+import picomatch from 'picomatch'
 import { stripLiteral } from 'strip-literal'
 import colors from 'picocolors'
 import type {
@@ -24,8 +24,6 @@ import type { Logger } from '../logger'
 import { slash } from '../../shared/utils'
 import type { Environment } from '../environment'
 
-const { isMatch, scan } = micromatch
-
 export interface ParsedImportGlob {
   index: number
   globs: string[]
@@ -43,7 +41,7 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
   const importGlobMaps = new Map<
     Environment,
-    Map<string, { affirmed: string[]; negated: string[] }[]>
+    Map<string, Array<(file: string) => boolean>>
   >()
 
   return {
@@ -67,18 +65,25 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         if (!importGlobMaps.has(this.environment)) {
           importGlobMaps.set(this.environment, new Map())
         }
-        importGlobMaps.get(this.environment)!.set(
-          id,
-          allGlobs.map((globs) => {
-            const affirmed: string[] = []
-            const negated: string[] = []
 
-            for (const glob of globs) {
-              ;(glob[0] === '!' ? negated : affirmed).push(glob)
-            }
-            return { affirmed, negated }
-          }),
-        )
+        const globMatchers = allGlobs.map((globs) => {
+          const affirmed: string[] = []
+          const negated: string[] = []
+          for (const glob of globs) {
+            ;(glob[0] === '!' ? negated : affirmed).push(glob)
+          }
+          const affirmedMatcher = picomatch(affirmed)
+          const negatedMatcher = picomatch(negated)
+
+          return (file: string) => {
+            // (glob1 || glob2) && !(glob3 || glob4)...
+            return (
+              (affirmed.length === 0 || affirmedMatcher(file)) &&
+              !(negated.length > 0 && negatedMatcher(file))
+            )
+          }
+        })
+        importGlobMaps.get(this.environment)!.set(id, globMatchers)
 
         return transformStableResult(result.s, id, config)
       }
@@ -90,16 +95,8 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       if (!importGlobMap) return
 
       const modules: EnvironmentModuleNode[] = []
-      for (const [id, allGlobs] of importGlobMap) {
-        // (glob1 || glob2) && !glob3 && !glob4...
-        if (
-          allGlobs.some(
-            ({ affirmed, negated }) =>
-              (!affirmed.length ||
-                affirmed.some((glob) => isMatch(file, glob))) &&
-              (!negated.length || negated.every((glob) => isMatch(file, glob))),
-          )
-        ) {
+      for (const [id, globMatchers] of importGlobMap) {
+        if (globMatchers.some((matcher) => matcher(file))) {
           const mod = this.environment.moduleGraph.getModuleById(id)
           if (mod) modules.push(mod)
         }
@@ -577,7 +574,7 @@ export function getCommonBase(globsResolved: string[]): null | string {
   const bases = globsResolved
     .filter((g) => g[0] !== '!')
     .map((glob) => {
-      let { base } = scan(glob)
+      let { base } = picomatch.scan(glob)
       // `scan('a/foo.js')` returns `base: 'a/foo.js'`
       if (posix.basename(base).includes('.')) base = posix.dirname(base)
 

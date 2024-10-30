@@ -51,9 +51,6 @@ importers:
       '@types/less':
         specifier: ^3.0.6
         version: 3.0.6
-      '@types/micromatch':
-        specifier: ^4.0.9
-        version: 4.0.9
       '@types/node':
         specifier: ^20.17.1
         version: 20.17.1
@@ -326,9 +323,6 @@ importers:
       magic-string:
         specifier: ^0.30.12
         version: 0.30.12
-      micromatch:
-        specifier: ^4.0.8
-        version: 4.0.8
       mlly:
         specifier: ^1.7.2
         version: 1.7.2
@@ -2998,9 +2992,6 @@ packages:
   '@types/body-parser@1.19.5':
     resolution: {integrity: sha512-fB3Zu92ucau0iQ0JMCFQE7b/dv8Ot07NI3KaZIkIUNXq82k4eBAqUaneXfleGY9JWskeS9y+u0nXMyspcuQrCg==}
 
-  '@types/braces@3.0.4':
-    resolution: {integrity: sha512-0WR3b8eaISjEW7RpZnclONaLFDf7buaowRHdqLp4vLj54AsSAYWfh3DRbfiYJY9XDxMgx1B4sE1Afw2PGpuHOA==}
-
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
 
@@ -3054,9 +3045,6 @@ packages:
 
   '@types/mdurl@2.0.0':
     resolution: {integrity: sha512-RGdgjQUZba5p6QEFAVx2OGb8rQDL/cPRG7GiedRzMcJ1tYnUANBncjbSB1NRGwbvjcPeikRABz2nshyPk1bhWg==}
-
-  '@types/micromatch@4.0.9':
-    resolution: {integrity: sha512-7V+8ncr22h4UoYRLnLXSpTxjQrNUXtWHGeMPRJt1nULXI57G9bIcpyrHlmrQ7QK24EyyuXvYcSSWAM8GA9nqCg==}
 
   '@types/mime@1.3.5':
     resolution: {integrity: sha512-/pyBZWSLD2n0dcHE3hq8s8ZvcETHtEuF+3E7XVt0Ig2nvsVQXdghHVcEkIWjy9A0wKfTn97a/PSDYohKIlnP/w==}
@@ -8491,8 +8479,6 @@ snapshots:
       '@types/connect': 3.4.38
       '@types/node': 20.17.1
 
-  '@types/braces@3.0.4': {}
-
   '@types/connect@3.4.38':
     dependencies:
       '@types/node': 20.17.1
@@ -8553,10 +8539,6 @@ snapshots:
       '@types/unist': 3.0.2
 
   '@types/mdurl@2.0.0': {}
-
-  '@types/micromatch@4.0.9':
-    dependencies:
-      '@types/braces': 3.0.4
 
   '@types/mime@1.3.5': {}
 

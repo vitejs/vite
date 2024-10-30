@@ -122,7 +122,6 @@
     "launch-editor-middleware": "^2.9.1",
     "lightningcss": "^1.27.0",
     "magic-string": "^0.30.12",
-    "micromatch": "^4.0.8",
     "mlly": "^1.7.2",
     "mrmime": "^2.0.0",
     "nanoid": "^5.0.7",
