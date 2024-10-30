@@ -33,12 +33,12 @@ export async function fetchModule(
     return { externalize: url, type: 'builtin' }
   }
 
-  if (isExternalUrl(url)) {
-    return { externalize: url, type: 'network' }
-  }
-
   // handle file urls from not statically analyzable dynamic import
   const isFileUrl = url.startsWith('file://')
+
+  if (isExternalUrl(url) && !isFileUrl) {
+    return { externalize: url, type: 'network' }
+  }
 
   // if there is no importer, the file is an entry point
   // entry points are always internalized
