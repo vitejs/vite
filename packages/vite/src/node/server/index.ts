@@ -214,7 +214,7 @@ export interface FileSystemServeOptions {
    * This will have higher priority than `allow`.
    * picomatch patterns are supported.
    *
-   * @default ['.env', '.env.*', '*.crt', '*.pem']
+   * @default ['.env', '.env.*', '*.{crt,pem}', '**\/.git/**']
    */
   deny?: string[]
 
