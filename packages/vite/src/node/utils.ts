@@ -156,6 +156,7 @@ const DEBUG = process.env.DEBUG
 
 interface DebuggerOptions {
   onlyWhenFocused?: boolean | string
+  depth?: number
 }
 
 export type ViteDebugScope = `vite:${string}`
@@ -165,7 +166,13 @@ export function createDebugger(
   options: DebuggerOptions = {},
 ): debug.Debugger['log'] | undefined {
   const log = debug(namespace)
-  const { onlyWhenFocused } = options
+  const { onlyWhenFocused, depth } = options
+
+  // @ts-expect-error - The log function is bound to inspectOpts, but the type is not reflected
+  if (depth && log.inspectOpts.depth == null) {
+    // @ts-expect-error - The log function is bound to inspectOpts, but the type is not reflected
+    log.inspectOpts.depth = options.depth
+  }
 
   let enabled = log.enabled
   if (enabled && onlyWhenFocused) {
