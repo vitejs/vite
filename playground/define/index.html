@@ -21,6 +21,7 @@
 <p>define variable in html: <code class="exp-define">__EXP__</code></p>
 <p>import json: <code class="import-json"></code></p>
 <p>define in dep: <code class="define-in-dep"></code></p>
+<p>define in environment: <code class="define-in-environment"></code></p>
 
 <h2>Define ignores string literals</h2>
 <section class="ignores-string-literals">
@@ -113,6 +114,8 @@
 
   import { defined } from '@vitejs/test-commonjs-dep'
   text('.define-in-dep', JSON.stringify(defined))
+
+  text('.define-in-environment', JSON.stringify(__DEFINE_IN_ENVIRONMENT__))
 
   text('.ignores-string-literals .process-env-dot', 'process.env.')
   text(
