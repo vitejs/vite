@@ -39,7 +39,7 @@ import {
   publicAssetUrlRE,
   urlToBuiltUrl,
 } from './asset'
-import { isCSSRequest } from './css'
+import { cssBundleNameCache, isCSSRequest } from './css'
 import { modulePreloadPolyfillId } from './modulePreloadPolyfill'
 
 interface ScriptAssetsUrl {
@@ -909,10 +909,13 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         // inject css link when cssCodeSplit is false
         if (!this.environment.config.build.cssCodeSplit) {
-          const cssChunk = Object.values(bundle).find(
-            (chunk) =>
-              chunk.type === 'asset' && chunk.names.includes('style.css'),
-          ) as OutputAsset | undefined
+          const cssBundleName = cssBundleNameCache.get(config)
+          const cssChunk =
+            cssBundleName &&
+            (Object.values(bundle).find(
+              (chunk) =>
+                chunk.type === 'asset' && chunk.names.includes(cssBundleName),
+            ) as OutputAsset | undefined)
           if (cssChunk) {
             result = injectToHead(result, [
               {
