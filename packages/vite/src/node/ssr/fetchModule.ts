@@ -89,7 +89,7 @@ export async function fetchModule(
 
   url = unwrapId(url)
 
-  let mod = await environment.moduleGraph.ensureEntryFromUrl(url)
+  const mod = await environment.moduleGraph.ensureEntryFromUrl(url)
   const cached = !!mod?.transformResult
 
   // if url is already cached, we can just confirm it's also cached on the server
@@ -106,9 +106,6 @@ export async function fetchModule(
       }.`,
     )
   }
-
-  // module entry should be created by transformRequest
-  mod = environment.moduleGraph.getModuleById(mod.id!)!
 
   if (options.inlineSourceMap !== false) {
     result = inlineSourceMap(mod, result, options.startOffset)
