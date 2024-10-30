@@ -311,10 +311,10 @@ async function prepareEsbuildScanner(
   // Therefore, we use the closest tsconfig.json from the root to make it work in most cases.
   let tsconfigRaw = esbuildOptions.tsconfigRaw
   if (!tsconfigRaw && !esbuildOptions.tsconfig) {
-    const tsconfigResult = await loadTsconfigJsonForFile(
+    const { tsconfig } = await loadTsconfigJsonForFile(
       path.join(environment.config.root, '_dummy.js'),
     )
-    if (tsconfigResult.compilerOptions?.experimentalDecorators) {
+    if (tsconfig.compilerOptions?.experimentalDecorators) {
       tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
     }
   }
