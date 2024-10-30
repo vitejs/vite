@@ -832,11 +832,20 @@ if (!isBuild) {
       ),
     )
     const originalChildFileCode = readFile(childFile)
-    removeFile(childFile)
-    await untilUpdated(
-      () => page.textContent('.file-delete-restore'),
-      'parent:not-child',
-    )
+    await Promise.all([
+      untilBrowserLogAfter(
+        () => removeFile(childFile),
+        `${childFile} is disposed`,
+      ),
+      untilUpdated(
+        () => page.textContent('.file-delete-restore'),
+        'parent:not-child',
+      ),
+      // chokidar sometimes detect a file delete and create immediately after as a single
+      // `change` event, which isn't expected in this test, so we create an artificial delay
+      // here to ensure there's ample time to dtect the difference
+      new Promise((r) => setTimeout(r, 200)),
+    ])
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
@@ -907,6 +916,7 @@ if (!isBuild) {
   })
 
   test('deleted file should trigger dispose and prune callbacks', async () => {
+    browserLogs.length = 0
     await page.goto(viteTestUrl)
 
     const parentFile = 'file-delete-restore/parent.js'
@@ -943,6 +953,8 @@ if (!isBuild) {
   })
 
   test('import.meta.hot?.accept', async () => {
+    await page.goto(viteTestUrl)
+
     const el = await page.$('.optional-chaining')
     await untilBrowserLogAfter(
       () =>
