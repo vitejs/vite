@@ -41,6 +41,7 @@ import {
   toOutputFilePathInCss,
   toOutputFilePathInJS,
 } from '../build'
+import type { LibraryOptions } from '../build'
 import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
@@ -60,6 +61,7 @@ import {
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
+  getPkgName,
   injectQuery,
   isDataUrl,
   isExternalUrl,
@@ -81,6 +83,8 @@ import { PartialEnvironment } from '../baseEnvironment'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { searchForWorkspaceRoot } from '../server/searchRoot'
 import { type DevEnvironment } from '..'
+import type { PackageCache } from '../packages'
+import { findNearestPackageData } from '../packages'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -213,7 +217,7 @@ const functionCallRE = /^[A-Z_][.\w-]*\(/i
 const transformOnlyRE = /[?&]transform-only\b/
 const nonEscapedDoubleQuoteRe = /(?<!\\)"/g
 
-const cssBundleName = 'style.css'
+const defaultCssBundleName = 'style.css'
 
 const enum PreprocessLang {
   less = 'less',
@@ -255,6 +259,9 @@ export const removedPureCssFilesCache = new WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
 >()
+
+// Used only if the config doesn't code-split CSS (builds a single CSS file)
+export const cssBundleNameCache = new WeakMap<ResolvedConfig, string>()
 
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
@@ -428,6 +435,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // since output formats have no effect on the generated CSS.
   let hasEmitted = false
   let chunkCSSMap: Map<string, string>
+  let cssBundleName: string
 
   const rollupOptionsOutput = config.build.rollupOptions.output
   const assetFileNames = (
@@ -464,6 +472,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       hasEmitted = false
       chunkCSSMap = new Map()
       codeSplitEmitQueue = createSerialPromiseQueue()
+      cssBundleName = config.build.lib
+        ? resolveLibCssFilename(
+            config.build.lib,
+            config.root,
+            config.packageCache,
+          )
+        : defaultCssBundleName
+      cssBundleNameCache.set(config, cssBundleName)
     },
 
     async transform(css, id) {
@@ -1851,7 +1867,9 @@ async function minifyCSS(
       ...config.css?.lightningcss,
       targets: convertTargets(config.build.cssTarget),
       cssModules: undefined,
-      filename: cssBundleName,
+      // TODO: Pass actual filename here, which can also be passed to esbuild's
+      // `sourcefile` option below to improve error messages
+      filename: defaultCssBundleName,
       code: Buffer.from(css),
       minify: true,
     })
@@ -3254,4 +3272,26 @@ export const convertTargets = (
 
   convertTargetsCache.set(esbuildTarget, targets)
   return targets
+}
+
+export function resolveLibCssFilename(
+  libOptions: LibraryOptions,
+  root: string,
+  packageCache?: PackageCache,
+): string {
+  if (typeof libOptions.cssFileName === 'string') {
+    return `${libOptions.cssFileName}.css`
+  } else if (typeof libOptions.fileName === 'string') {
+    return `${libOptions.fileName}.css`
+  }
+
+  const packageJson = findNearestPackageData(root, packageCache)?.data
+  const name = packageJson ? getPkgName(packageJson.name) : undefined
+
+  if (!name)
+    throw new Error(
+      'Name in package.json is required if option "build.lib.cssFileName" is not provided.',
+    )
+
+  return `${name}.css`
 }

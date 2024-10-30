@@ -1314,6 +1314,10 @@ export function getNpmPackageName(importPath: string): string | null {
   }
 }
 
+export function getPkgName(name: string): string | undefined {
+  return name?.[0] === '@' ? name.split('/')[1] : name
+}
+
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
 export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
