@@ -10,6 +10,23 @@ jobs:
     if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
     steps:
       - uses: actions/github-script@v7
+        id: get-pr-data
+        with:
+          script: |
+            console.log(`Get PR info: ${context.repo.owner}/${context.repo.repo}#${context.issue.number}`)
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            })
+            return {
+              num: context.issue.number,
+              branchName: pr.head.ref,
+              commit: pr.head.sha,
+              repo: pr.head.repo.full_name
+            }
+      - uses: actions/github-script@v7
+        id: check-workflow
         with:
           script: |
             const user = context.payload.sender.login
@@ -22,9 +39,103 @@ jobs:
                 repo: context.repo.repo,
                 username: user,
               });
-              hasTriagePermission = data.user.permissions.triage
+              hasTriagePermission = ['triage', 'write', 'admin'].includes(data.permission);
             } catch (e) {
               console.warn(e)
+            }
+
+            const prData = ${{ steps.get-pr-data.outputs.result }}
+
+            const url = `https://pkg.pr.new/vite@${prData.commit}`
+            const response = await fetch(url)
+            if (response.status === 404) {
+              console.log('Package not found, triggering preview release...')
+
+              const { data: reaction } = await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                content: 'rocket',
+              })
+
+              // Add label "trigger: preview" to the PR
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prData.num,
+                labels: ['trigger: preview']
+              });
+
+              // Get the workflow ID for 'preview-release.yml'
+              const workflowFileName = 'preview-release.yml';
+              const { data: workflow } = await github.rest.actions.getWorkflow({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: workflowFileName,
+              });
+              const workflowId = workflow.id;
+
+              // Wait for 'Preview release' workflow to complete
+              const maxRetries = 60; // Wait up to 10 minutes
+              const delay = 10000; // 10 seconds
+              let completed = false;
+
+              for (let i = 0; i < maxRetries; i++) {
+                let page = 1;
+                let found = false;
+
+                do {
+                  const { data: runsData } = await github.rest.actions.listWorkflowRuns({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    workflow_id: workflowId,
+                    per_page: 100,
+                    page: page,
+                  });
+
+                  const runs = runsData.workflow_runs.filter(
+                    run => run.head_sha === prData.commit
+                  );
+
+                  if (runs.length > 0) {
+                    found = true;
+                    const latestRun = runs[0];
+                    if (latestRun.status === 'completed') {
+                      if (latestRun.conclusion === 'success') {
+                        console.log('Preview release workflow completed successfully.')
+                        completed = true;
+                        break;
+                      } else {
+                        throw new Error(`Workflow "Preview release" failed.`);
+                      }
+                    }
+                  }
+
+                  if (runsData.workflow_runs.length < 100) {
+                    break; // No more pages
+                  }
+                  page++;
+                } while (!found);
+
+                if (completed) {
+                  break;
+                }
+
+                // Wait
+                await new Promise(resolve => setTimeout(resolve, delay));
+              }
+
+              if (!completed) {
+                throw new Error(`Workflow "Preview release" did not complete in time.`);
+              }
+
+              // Remove the 'rocket' reaction
+              await github.rest.reactions.deleteForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                reaction_id: reaction.id,
+              });
             }
 
             if (hasTriagePermission) {
@@ -45,22 +156,6 @@ jobs:
               })
               throw new Error('not allowed')
             }
-      - uses: actions/github-script@v7
-        id: get-pr-data
-        with:
-          script: |
-            console.log(`Get PR info: ${context.repo.owner}/${context.repo.repo}#${context.issue.number}`)
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number
-            })
-            return {
-              num: context.issue.number,
-              branchName: pr.head.ref,
-              repo: pr.head.repo.full_name,
-              commit: pr.head.sha
-            }
       - id: generate-token
         uses: tibdex/github-app-token@v2
         with:
@@ -73,7 +168,6 @@ jobs:
           COMMENT: ${{ github.event.comment.body }}
         with:
           github-token: ${{ steps.generate-token.outputs.token }}
-          result-encoding: string
           script: |
             const comment = process.env.COMMENT.trim()
             const prData = ${{ steps.get-pr-data.outputs.result }}
