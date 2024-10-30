@@ -1,6 +1,6 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { OutputChunk } from 'rollup'
+import type { OutputChunk, RollupError } from 'rollup'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
@@ -23,7 +23,9 @@ import { fileToUrl } from './asset'
 
 type WorkerBundleAsset = {
   fileName: string
+  /** @deprecated */
   originalFileName: string | null
+  originalFileNames: string[]
   source: string | Uint8Array
 }
 
@@ -122,10 +124,22 @@ async function bundleWorkerEntry(
         saveEmitWorkerAsset(config, {
           fileName: outputChunk.fileName,
           originalFileName: null,
+          originalFileNames: [],
           source: outputChunk.code,
         })
       }
     })
+  } catch (e) {
+    // adjust rollup format error
+    if (
+      e instanceof Error &&
+      e.name === 'RollupError' &&
+      (e as RollupError).code === 'INVALID_OPTION' &&
+      e.message.includes('"output.format"')
+    ) {
+      e.message = e.message.replace('output.format', 'worker.format')
+    }
+    throw e
   } finally {
     await bundle.close()
   }
@@ -148,6 +162,7 @@ function emitSourcemapForWorkerEntry(
       saveEmitWorkerAsset(config, {
         fileName: mapFileName,
         originalFileName: null,
+        originalFileNames: [],
         source: data,
       })
     }
@@ -182,6 +197,7 @@ export async function workerFileToUrl(
     saveEmitWorkerAsset(config, {
       fileName,
       originalFileName: null,
+      originalFileNames: [],
       source: outputChunk.code,
     })
     workerMap.bundle.set(id, fileName)
@@ -244,7 +260,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(raw, id, options) {
+    async transform(raw, id) {
       const workerFileMatch = workerFileRE.exec(id)
       if (workerFileMatch) {
         // if import worker by worker constructor will have query.type
@@ -457,8 +473,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         this.emitFile({
           type: 'asset',
           fileName: asset.fileName,
-          originalFileName: asset.originalFileName,
           source: asset.source,
+          // NOTE: fileName is already generated when bundling the worker
+          //       so no need to pass originalFileNames/names
         })
       })
       workerMap.assets.clear()

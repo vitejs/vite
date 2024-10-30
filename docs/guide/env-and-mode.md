@@ -38,7 +38,7 @@ Loaded env variables are also exposed to your client source code via `import.met
 
 To prevent accidentally leaking env variables to the client, only variables prefixed with `VITE_` are exposed to your Vite-processed code. e.g. for the following env variables:
 
-```
+```[.env]
 VITE_SOME_KEY=123
 DB_PASSWORD=foobar
 ```
@@ -55,11 +55,11 @@ console.log(import.meta.env.DB_PASSWORD) // undefined
 As shown above, `VITE_SOME_KEY` is a number but returns a string when parsed. The same would also happen for boolean env variables. Make sure to convert to the desired type when using it in your code.
 :::
 
-Also, Vite uses [dotenv-expand](https://github.com/motdotla/dotenv-expand) to expand variables out of the box. To learn more about the syntax, check out [their docs](https://github.com/motdotla/dotenv-expand#what-rules-does-the-expansion-engine-follow).
+Also, Vite uses [dotenv-expand](https://github.com/motdotla/dotenv-expand) to expand variables written in env files out of the box. To learn more about the syntax, check out [their docs](https://github.com/motdotla/dotenv-expand#what-rules-does-the-expansion-engine-follow).
 
 Note that if you want to use `$` inside your environment value, you have to escape it with `\`.
 
-```
+```[.env]
 KEY=123
 NEW_KEY1=test$foo   # test
 NEW_KEY2=test\$foo  # test$foo
@@ -81,7 +81,7 @@ By default, Vite provides type definitions for `import.meta.env` in [`vite/clien
 
 To achieve this, you can create an `vite-env.d.ts` in `src` directory, then augment `ImportMetaEnv` like this:
 
-```typescript
+```typescript [vite-env.d.ts]
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
@@ -96,7 +96,7 @@ interface ImportMeta {
 
 If your code relies on types from browser environments such as [DOM](https://github.com/microsoft/TypeScript/blob/main/src/lib/dom.generated.d.ts) and [WebWorker](https://github.com/microsoft/TypeScript/blob/main/src/lib/webworker.generated.d.ts), you can update the [lib](https://www.typescriptlang.org/tsconfig#lib) field in `tsconfig.json`.
 
-```json
+```json [tsconfig.json]
 {
   "lib": ["WebWorker"]
 }

@@ -1,9 +1,9 @@
-import { EventEmitter } from 'node:events'
 import path from 'node:path'
-import glob from 'fast-glob'
-import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
+import type { WatchOptions } from 'dep-types/chokidar'
+import picomatch from 'picomatch'
 import type { OutputOptions } from 'rollup'
 import colors from 'picocolors'
+import { escapePath } from 'tinyglobby'
 import { withTrailingSlash } from '../shared/utils'
 import { arraify, normalizePath } from './utils'
 import type { Logger } from './logger'
@@ -49,23 +49,41 @@ export function resolveEmptyOutDir(
 }
 
 export function resolveChokidarOptions(
-  options: WatchOptions | undefined,
+  options: WatchOptions | null | undefined,
   resolvedOutDirs: Set<string>,
   emptyOutDir: boolean,
   cacheDir: string,
+  isRollupChokidar3 = false,
 ): WatchOptions {
   const { ignored: ignoredList, ...otherOptions } = options ?? {}
-  const ignored: WatchOptions['ignored'] = [
+  let ignored: WatchOptions['ignored'] = [
     '**/.git/**',
     '**/node_modules/**',
     '**/test-results/**', // Playwright
-    glob.escapePath(cacheDir) + '/**',
+    escapePath(cacheDir) + '/**',
     ...arraify(ignoredList || []),
   ]
   if (emptyOutDir) {
     ignored.push(
-      ...[...resolvedOutDirs].map((outDir) => glob.escapePath(outDir) + '/**'),
+      ...[...resolvedOutDirs].map((outDir) => escapePath(outDir) + '/**'),
     )
+  }
+
+  if (!isRollupChokidar3) {
+    // If watch options is turned off, ignore watching anything, which essentially makes it noop
+    // eslint-disable-next-line eqeqeq -- null means disabled
+    if (options === null) {
+      ignored.push(() => true)
+    }
+    // Convert strings to picomatch pattern functions for compat
+    ignored = ignored.map((pattern) => {
+      if (typeof pattern === 'string') {
+        const matcher = picomatch(pattern, { dot: true })
+        return (path: string) => matcher(path)
+      } else {
+        return pattern
+      }
+    })
   }
 
   const resolvedWatchOptions: WatchOptions = {
@@ -76,38 +94,4 @@ export function resolveChokidarOptions(
   }
 
   return resolvedWatchOptions
-}
-
-class NoopWatcher extends EventEmitter implements FSWatcher {
-  constructor(public options: WatchOptions) {
-    super()
-  }
-
-  add() {
-    return this
-  }
-
-  unwatch() {
-    return this
-  }
-
-  getWatched() {
-    return {}
-  }
-
-  ref() {
-    return this
-  }
-
-  unref() {
-    return this
-  }
-
-  async close() {
-    // noop
-  }
-}
-
-export function createNoopWatcher(options: WatchOptions): FSWatcher {
-  return new NoopWatcher(options)
 }

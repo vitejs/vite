@@ -44,7 +44,7 @@ export function createDepsOptimizer(
 
   let closed = false
 
-  const options = environment.config.dev.optimizeDeps
+  const options = environment.config.optimizeDeps
 
   const { noDiscovery, holdUntilCrawlEnd } = options
 
@@ -159,7 +159,7 @@ export function createDepsOptimizer(
       cachedMetadata || initDepsOptimizerMetadata(environment, sessionTimestamp)
 
     if (!cachedMetadata) {
-      environment._onCrawlEnd(onCrawlEnd)
+      environment.waitForRequestsIdle().then(onCrawlEnd)
       waitingForCrawlEnd = true
 
       // Enter processing state until crawl of static imports ends
@@ -225,7 +225,7 @@ export function createDepsOptimizer(
               // run on the background
               optimizationResult = runOptimizeDeps(environment, knownDeps)
 
-              // If the holdUntilCrawlEnd stratey is used, we wait until crawling has
+              // If the holdUntilCrawlEnd strategy is used, we wait until crawling has
               // ended to decide if we send this result to the browser or we need to
               // do another optimize step
               if (!holdUntilCrawlEnd) {
@@ -748,7 +748,7 @@ export function createExplicitDepsOptimizer(
     run: () => {},
 
     close: async () => {},
-    options: environment.config.dev.optimizeDeps,
+    options: environment.config.optimizeDeps,
   }
 
   let inited = false

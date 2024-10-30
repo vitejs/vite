@@ -40,11 +40,11 @@ export async function resolvePlugins(
   const depOptimizationEnabled =
     !isBuild &&
     Object.values(config.environments).some(
-      (environment) => !isDepOptimizationDisabled(environment.dev.optimizeDeps),
+      (environment) => !isDepOptimizationDisabled(environment.optimizeDeps),
     )
 
   return [
-    depOptimizationEnabled ? optimizedDepsPlugin(config) : null,
+    depOptimizationEnabled ? optimizedDepsPlugin() : null,
     isBuild ? metadataPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     preAliasPlugin(config),
@@ -67,7 +67,7 @@ export async function resolvePlugins(
         asSrc: true,
         fsUtils: getFsUtils(config),
         optimizeDeps: true,
-        externalize: isBuild && !!config.build.ssr, // TODO: should we do this for all environments?
+        externalize: true,
       },
       config.environments,
     ),
@@ -77,11 +77,12 @@ export async function resolvePlugins(
     jsonPlugin(
       {
         namedExports: true,
+        stringify: 'auto',
         ...config.json,
       },
       isBuild,
     ),
-    wasmHelperPlugin(config),
+    wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
 

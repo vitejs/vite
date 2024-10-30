@@ -220,6 +220,12 @@ export class ModuleGraph {
 
   fileToModulesMap: Map<string, Set<ModuleNode>>
 
+  private moduleNodeCache = new DualWeakMap<
+    EnvironmentModuleNode,
+    EnvironmentModuleNode,
+    ModuleNode
+  >()
+
   constructor(moduleGraphs: {
     client: () => EnvironmentModuleGraph
     ssr: () => EnvironmentModuleGraph
@@ -271,7 +277,7 @@ export class ModuleGraph {
 
   async getModuleByUrl(
     url: string,
-    ssr?: boolean,
+    _ssr?: boolean,
   ): Promise<ModuleNode | undefined> {
     // In the mixed graph, the ssr flag was used to resolve the id.
     const [clientModule, ssrModule] = await Promise.all([
@@ -301,7 +307,7 @@ export class ModuleGraph {
     }
     if (ssrModules) {
       for (const mod of ssrModules) {
-        if (!this._client.getModuleById(mod.id!)) {
+        if (mod.id == null || !this._client.getModuleById(mod.id)) {
           result.add(this.getBackwardCompatibleBrowserModuleNode(mod)!)
         }
       }
@@ -333,7 +339,7 @@ export class ModuleGraph {
 
   invalidateModule(
     mod: ModuleNode,
-    seen: Set<ModuleNode> = new Set(),
+    seen = new Set<ModuleNode>(),
     timestamp: number = Date.now(),
     isHmr: boolean = false,
     /** @internal */
@@ -452,8 +458,36 @@ export class ModuleGraph {
     clientModule?: EnvironmentModuleNode,
     ssrModule?: EnvironmentModuleNode,
   ): ModuleNode {
-    // ...
-    return new ModuleNode(this, clientModule, ssrModule)
+    const cached = this.moduleNodeCache.get(clientModule, ssrModule)
+    if (cached) {
+      return cached
+    }
+
+    const moduleNode = new ModuleNode(this, clientModule, ssrModule)
+    this.moduleNodeCache.set(clientModule, ssrModule, moduleNode)
+    return moduleNode
+  }
+}
+
+class DualWeakMap<K1 extends WeakKey, K2 extends WeakKey, V> {
+  private map = new WeakMap<K1 | object, WeakMap<K2 | object, V>>()
+  private undefinedKey = {}
+
+  get(key1: K1 | undefined, key2: K2 | undefined): V | undefined {
+    const k1 = key1 ?? this.undefinedKey
+    const k2 = key2 ?? this.undefinedKey
+    return this.map.get(k1)?.get(k2)
+  }
+
+  set(key1: K1 | undefined, key2: K2 | undefined, value: V): void {
+    const k1 = key1 ?? this.undefinedKey
+    const k2 = key2 ?? this.undefinedKey
+    if (!this.map.has(k1)) {
+      this.map.set(k1, new Map<K2, V>())
+    }
+
+    const m = this.map.get(k1)!
+    m.set(k2, value)
   }
 }
 

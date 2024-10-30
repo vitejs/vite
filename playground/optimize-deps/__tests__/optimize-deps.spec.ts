@@ -189,7 +189,7 @@ test('import optimize-excluded package that imports optimized-included package',
 })
 
 test('import aliased package with colon', async () => {
-  await expectWithRetry(() => page.textContent('.url')).toBe('vitejs.dev')
+  await expectWithRetry(() => page.textContent('.url')).toBe('vite.dev')
 })
 
 test('import aliased package using absolute path', async () => {
@@ -289,9 +289,6 @@ test('name file limit is 170 characters', async () => {
     const stripFolderPart = fromUrl.split('/').at(-1)
     const onlyTheFilePart = stripFolderPart.split('.')[0]
     expect(onlyTheFilePart).toHaveLength(170)
-
-    const text = await content.text()
-    expect(text).toMatch(/import\s+("[^"]+")/)
   }
 })
 
@@ -345,4 +342,13 @@ test('import the CommonJS external package that omits the js suffix', async () =
   await expectWithRetry(() =>
     page.textContent('.external-package-tsx-js'),
   ).toBe('tsx')
+})
+
+test('external package name with asset extension', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-asset-ext-no-dual-package'),
+  ).toBe('true')
+  await expectWithRetry(() =>
+    page.textContent('.dep-with-asset-ext-prebundled'),
+  ).toBe(String(isServe))
 })

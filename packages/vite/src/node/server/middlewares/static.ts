@@ -73,7 +73,7 @@ export function servePublicMiddleware(
     if (filePath.indexOf('%') !== -1) {
       try {
         filePath = decodeURI(filePath)
-      } catch (err) {
+      } catch {
         /* malform uri */
       }
     }
@@ -259,7 +259,7 @@ export function isFileLoadingAllowed(
   return false
 }
 
-function ensureServingAccess(
+export function ensureServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,
@@ -273,7 +273,7 @@ function ensureServingAccess(
     const hintMessage = `
 ${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}
 
-Refer to docs https://vitejs.dev/config/server-options.html#server-fs-allow for configurations and more details.`
+Refer to docs https://vite.dev/config/server-options.html#server-fs-allow for configurations and more details.`
 
     server.config.logger.error(urlMessage)
     server.config.logger.warnOnce(hintMessage + '\n')

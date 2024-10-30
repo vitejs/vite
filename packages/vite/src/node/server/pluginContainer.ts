@@ -185,6 +185,7 @@ class EnvironmentPluginContainer {
       warn: noop,
       // @ts-expect-error noop
       error: noop,
+      environment,
     }
     const utils = createPluginHookUtils(plugins)
     this.getSortedPlugins = utils.getSortedPlugins
@@ -633,7 +634,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     return [...this._container.watchFiles]
   }
 
-  emitFile(assetOrFile: EmittedFile): string {
+  emitFile(_assetOrFile: EmittedFile): string {
     this._warnIncompatibleMethod(`emitFile`)
     return ''
   }

@@ -10,6 +10,61 @@ Some internal APIs have been removed due to changes in Vite's implementation. If
 
 The experimental Vite Runtime API evolved into the Module Runner API, released in Vite 6 as part of the new experimental [Environment API](/guide/api-environment). Given that the feature was experimental the removal of the previous API introduced in Vite 5.1 isn't a breaking change, but users will need to update their use to the Module Runner equivalent as part of migrating to Vite 6.
 
+## General Changes
+
+### JSON stringify
+
+In Vite 5, when [`json.stringify: true`](/config/shared-options#json-stringify) is set, [`json.namedExports`](/config/shared-options#json-namedexports) was disabled.
+
+From Vite 6, even when `json.stringify: true` is set, `json.namedExports` is not disabled and the value is respected. If you wish to achieve the previous behavior, you can set `json.namedExports: false`.
+
+Vite 6 also introduces a new default value for `json.stringify` which is `'auto'`, which will only stringify large JSON files. To disable this behavior, set `json.stringify: false`.
+
+### postcss-load-config
+
+[`postcss-load-config`](https://npmjs.com/package/postcss-load-config) has been updated to v6 from v4. [`tsx`](https://www.npmjs.com/package/tsx) or [`jiti`](https://www.npmjs.com/package/jiti) is now required to load TypeScript postcss config files instead of [`ts-node`](https://www.npmjs.com/package/ts-node). Also [`yaml`](https://www.npmjs.com/package/yaml) is now required to load YAML postcss config files.
+
+### Sass now uses modern API by default
+
+In Vite 5, the legacy API was used by default for Sass. Vite 5.4 added support for the modern API.
+
+From Vite 6, the modern API is used by default for Sass. If you wish to still use the legacy API, you can set [`css.preprocessorOptions.sass.api: 'legacy'` / `css.preprocessorOptions.scss.api: 'legacy'`](/config/shared-options#css-preprocessoroptions). But note that the legacy API support will be removed in Vite 7.
+
+To migrate to the modern API, see [the Sass documentation](https://sass-lang.com/documentation/breaking-changes/legacy-js-api/).
+
+### Customize CSS output file name in library mode
+
+In Vite 5, the CSS output file name in library mode was always `style.css` and cannot be easily changed through the Vite config.
+
+From Vite 6, the default file name now uses `"name"` in `package.json` similar to the JS output files. If [`build.lib.fileName`](/config/build-options.md#build-lib) is set with a string, the value will also be used for the CSS output file name. To explicitly set a different CSS file name, you can use the new [`build.lib.cssFileName`](/config/build-options.md#build-lib) to configure it.
+
+To migrate, if you had relied on the `style.css` file name, you should update references to it to the new name based on your package name. For example:
+
+```json [package.json]
+{
+  "name": "my-lib",
+  "exports": {
+    "./style.css": "./dist/style.css" // [!code --]
+    "./style.css": "./dist/my-lib.css" // [!code ++]
+  }
+}
+```
+
+If you prefer to stick with `style.css` like in Vite 5, you can set `build.lib.cssFileName: 'style'` instead.
+
+## Advanced
+
+There are other breaking changes which only affect few users.
+
+- [[#15637] fix!: default `build.cssMinify` to `'esbuild'` for SSR](https://github.com/vitejs/vite/pull/15637)
+  - [`build.cssMinify`](/config/build-options#build-cssminify) is now enabled by default even for SSR builds.
+- [[#18209] refactor!: bump minimal terser version to 5.16.0](https://github.com/vitejs/vite/pull/18209)
+  - Minimal supported terser version for [`build.minify: 'terser'`](/config/build-options#build-minify) was bumped to 5.16.0 from 5.4.0.
+- [[#18231] chore(deps): update dependency @rollup/plugin-commonjs to v28](https://github.com/vitejs/vite/pull/18231)
+  - [`commonjsOptions.strictRequires`](https://github.com/rollup/plugins/blob/master/packages/commonjs/README.md#strictrequires) is now `true` by default (was `'auto'` before).
+- [[#18243] chore(deps)!: migrate `fast-glob` to `tinyglobby`](https://github.com/vitejs/vite/pull/18243)
+  - Range braces (`{01..03}` ⇒ `['01', '02', '03']`) and incremental braces (`{2..8..2}` ⇒ `['2', '4', '6', '8']`) are no longer supported in globs.
+
 ## Migration from v4
 
-Check the [Migration from v4 Guide](https://v5.vitejs.dev/guide/migration.html) in the Vite v5 docs first to see the needed changes to port your app to Vite 5, and then proceed with the changes on this page.
+Check the [Migration from v4 Guide](https://v5.vite.dev/guide/migration.html) in the Vite v5 docs first to see the needed changes to port your app to Vite 5, and then proceed with the changes on this page.

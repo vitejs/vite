@@ -20,7 +20,12 @@ export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
 
 export { RemoteEnvironmentTransport } from './server/environmentTransport'
-export { createNodeDevEnvironment } from './server/environments/nodeEnvironment'
+export {
+  createRunnableDevEnvironment,
+  isRunnableDevEnvironment,
+  type RunnableDevEnvironment,
+  type RunnableDevEnvironmentContext,
+} from './server/environments/runnableEnvironment'
 export {
   DevEnvironment,
   type DevEnvironmentContext,
@@ -53,6 +58,7 @@ export type {
   UserConfigFn,
   UserConfigFnObject,
   UserConfigFnPromise,
+  EnvironmentOptions,
   DevEnvironmentOptions,
   ResolvedDevEnvironmentOptions,
 } from './config'
@@ -122,6 +128,9 @@ export type {
   CSSModulesOptions,
   PreprocessCSSResult,
   ResolvedCSSOptions,
+  SassPreprocessorOptions,
+  LessPreprocessorOptions,
+  StylusPreprocessorOptions,
 } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
@@ -201,16 +210,12 @@ export type {
 export type { Connect } from 'dep-types/connect'
 export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
 export type { HttpProxy } from 'dep-types/http-proxy'
-export type {
-  FSWatcher,
-  WatchOptions,
-  AwaitWriteFinishOptions,
-} from 'dep-types/chokidar'
+export type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
 export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
-export type { LightningCSSOptions } from 'dep-types/lightningcss'
+export type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
 
 // Backward compatibility
 export type { ModuleGraph, ModuleNode } from './server/mixedModuleGraph'

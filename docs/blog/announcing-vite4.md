@@ -13,10 +13,10 @@ head:
       content: Announcing Vite 4
   - - meta
     - property: og:image
-      content: https://vitejs.dev/og-image-announcing-vite4.png
+      content: https://vite.dev/og-image-announcing-vite4.png
   - - meta
     - property: og:url
-      content: https://vitejs.dev/blog/announcing-vite4
+      content: https://vite.dev/blog/announcing-vite4
   - - meta
     - property: og:description
       content: Vite 4 Release Announcement
@@ -35,23 +35,23 @@ Vite 3 [was released](./announcing-vite3.md) five months ago. npm downloads per 
 
 As a showcase of the growth Vite and related projects have experienced, the Vite ecosystem gathered on October 11th at [ViteConf 2022](https://viteconf.org/2022/replay). We saw representatives from the main web framework and tools tell stories of innovation and collaboration. And in a symbolic move, the Rollup team choose that exact day to release [Rollup 3](https://rollupjs.org).
 
-Today, the Vite [team](https://vitejs.dev/team) with the help of our ecosystem partners, is happy to announce the release of Vite 4, powered during build time by Rollup 3. We've worked with the ecosystem to ensure a smooth upgrade path for this new major. Vite is now using [Rollup 3](https://github.com/vitejs/vite/issues/9870), which allowed us to simplify Vite's internal asset handling and has many improvements. See the [Rollup 3 release notes here](https://github.com/rollup/rollup/releases/tag/v3.0.0).
+Today, the Vite [team](https://vite.dev/team) with the help of our ecosystem partners, is happy to announce the release of Vite 4, powered during build time by Rollup 3. We've worked with the ecosystem to ensure a smooth upgrade path for this new major. Vite is now using [Rollup 3](https://github.com/vitejs/vite/issues/9870), which allowed us to simplify Vite's internal asset handling and has many improvements. See the [Rollup 3 release notes here](https://github.com/rollup/rollup/releases/tag/v3.0.0).
 
 ![Vite 4 Announcement Cover Image](/og-image-announcing-vite4.png)
 
 Quick links:
 
 - [Docs](/)
-- [Migration Guide](https://v4.vitejs.dev/guide/migration.html)
+- [Migration Guide](https://v4.vite.dev/guide/migration.html)
 - [Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#400-2022-12-09)
 
 Docs in other languages:
 
-- [简体中文](https://cn.vitejs.dev/)
-- [日本語](https://ja.vitejs.dev/)
-- [Español](https://es.vitejs.dev/)
+- [简体中文](https://cn.vite.dev/)
+- [日本語](https://ja.vite.dev/)
+- [Español](https://es.vite.dev/)
 
-If you recently started using Vite, we suggest reading the [Why Vite Guide](https://vitejs.dev/guide/why.html) and checking out [the Getting Started](https://vitejs.dev/guide/) and [Features guide](https://vitejs.dev/guide/features). If you want to get involved, contributions are welcome at [GitHub](https://github.com/vitejs/vite). Almost [700 collaborators](https://github.com/vitejs/vite/graphs/contributors) have contributed to Vite. Follow the updates on [Twitter](https://twitter.com/vite_js) and [Mastodon](https://webtoo.ls/@vite), or join collaborate with others on our [Discord community](http://chat.vitejs.dev/).
+If you recently started using Vite, we suggest reading the [Why Vite Guide](https://vite.dev/guide/why.html) and checking out [the Getting Started](https://vite.dev/guide/) and [Features guide](https://vite.dev/guide/features). If you want to get involved, contributions are welcome at [GitHub](https://github.com/vitejs/vite). Almost [700 collaborators](https://github.com/vitejs/vite/graphs/contributors) have contributed to Vite. Follow the updates on [Twitter](https://twitter.com/vite_js) and [Mastodon](https://webtoo.ls/@vite), or join collaborate with others on our [Discord community](http://chat.vite.dev/).
 
 ## Start playing with Vite 4
 
@@ -91,7 +91,7 @@ This double loading could occur since a `.css` file will be emitted and it's lik
 import stuff from './global.css?inline'
 ```
 
-Learn more in the [Migration Guide](https://v4.vitejs.dev/guide/migration.html).
+Learn more in the [Migration Guide](https://v4.vite.dev/guide/migration.html).
 
 ## Environment Variables
 
@@ -135,6 +135,6 @@ We're also thankful to individuals and companies sponsoring the Vite team, and c
 
 ## Next steps
 
-Our immediate focus would be on triaging newly opened issues to avoid disruption by possible regressions. If you would like to get involved and help us improve Vite, we suggest starting with issues triaging. Join [our Discord](https://chat.vitejs.dev) and reach out on the `#contributing` channel. Polish our `#docs` story, and `#help` others. We need to continue to build a helpful and welcoming community for the next wave of users, as Vite's adoption continues to grow.
+Our immediate focus would be on triaging newly opened issues to avoid disruption by possible regressions. If you would like to get involved and help us improve Vite, we suggest starting with issues triaging. Join [our Discord](https://chat.vite.dev) and reach out on the `#contributing` channel. Polish our `#docs` story, and `#help` others. We need to continue to build a helpful and welcoming community for the next wave of users, as Vite's adoption continues to grow.
 
 There are a lot of open fronts to keep improving the DX of everyone that has chosen Vite to power their frameworks and develop their apps. Onwards!

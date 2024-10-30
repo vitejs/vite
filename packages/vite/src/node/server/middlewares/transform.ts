@@ -12,6 +12,7 @@ import {
   isJSRequest,
   normalizePath,
   prettifyUrl,
+  rawRE,
   removeImportQuery,
   removeTimestampQuery,
   urlRE,
@@ -20,20 +21,22 @@ import { send } from '../send'
 import { ERR_LOAD_URL, transformRequest } from '../transformRequest'
 import { applySourcemapIgnoreList } from '../sourcemap'
 import { isHTMLProxy } from '../../plugins/html'
-import { DEP_VERSION_RE, FS_PREFIX } from '../../constants'
+import {
+  DEP_VERSION_RE,
+  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
+  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  FS_PREFIX,
+} from '../../constants'
 import {
   isCSSRequest,
   isDirectCSSRequest,
   isDirectRequest,
 } from '../../plugins/css'
-import {
-  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
-  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  ERR_OUTDATED_OPTIMIZED_DEP,
-} from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
 import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
+import { ensureServingAccess } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
@@ -53,7 +56,10 @@ export function cachedTransformMiddleware(
     const ifNoneMatch = req.headers['if-none-match']
     if (ifNoneMatch) {
       const moduleByEtag = environment.moduleGraph.getModuleByEtag(ifNoneMatch)
-      if (moduleByEtag?.transformResult?.etag === ifNoneMatch) {
+      if (
+        moduleByEtag?.transformResult?.etag === ifNoneMatch &&
+        moduleByEtag?.url === req.url
+      ) {
         // For CSS requests, if the same CSS file is imported in a module,
         // the browser sends the request for the direct CSS request with the etag
         // from the imported CSS module. We ignore the etag in this case.
@@ -125,7 +131,7 @@ export function transformMiddleware(
             return send(req, res, JSON.stringify(map), 'json', {
               headers: server.config.server.headers,
             })
-          } catch (e) {
+          } catch {
             // Outdated source map request for optimized deps, this isn't an error
             // but part of the normal flow when re-optimizing after missing deps
             // Send back an empty source map so the browser doesn't issue warnings
@@ -162,6 +168,14 @@ export function transformMiddleware(
       }
 
       if (
+        (rawRE.test(url) || urlRE.test(url)) &&
+        !ensureServingAccess(url, server, res, next)
+      ) {
+        return
+      }
+
+      if (
+        req.headers['sec-fetch-dest'] === 'script' ||
         isJSRequest(url) ||
         isImportRequest(url) ||
         isCSSRequest(url) ||

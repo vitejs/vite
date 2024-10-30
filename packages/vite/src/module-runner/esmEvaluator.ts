@@ -1,4 +1,7 @@
-import { AsyncFunction } from '../shared/utils'
+import {
+  AsyncFunction,
+  getAsyncFunctionDeclarationPaddingLineCount,
+} from '../shared/utils'
 import {
   ssrDynamicImportKey,
   ssrExportAllKey,
@@ -9,6 +12,8 @@ import {
 import type { ModuleEvaluator, ModuleRunnerContext } from './types'
 
 export class ESModulesEvaluator implements ModuleEvaluator {
+  startOffset = getAsyncFunctionDeclarationPaddingLineCount()
+
   async runInlinedModule(
     context: ModuleRunnerContext,
     code: string,

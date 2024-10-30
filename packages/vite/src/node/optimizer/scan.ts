@@ -2,7 +2,6 @@ import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import { performance } from 'node:perf_hooks'
-import glob from 'fast-glob'
 import type {
   BuildContext,
   Loader,
@@ -13,6 +12,7 @@ import type {
 import esbuild, { formatMessages, transform } from 'esbuild'
 import type { PartialResolvedId } from 'rollup'
 import colors from 'picocolors'
+import { glob, isDynamicPattern } from 'tinyglobby'
 import {
   CSS_LANGS_RE,
   JS_TYPES_RE,
@@ -147,7 +147,7 @@ export function scanImports(environment: ScanEnvironment): {
     entries = computedEntries
 
     if (!entries.length) {
-      if (!config.optimizeDeps.entries && !config.dev.optimizeDeps.include) {
+      if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
         environment.logger.warn(
           colors.yellow(
             '(!) Could not auto-determine entry point from rollupOptions or html files ' +
@@ -247,19 +247,31 @@ export function scanImports(environment: ScanEnvironment): {
 async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
-  const explicitEntryPatterns = environment.config.dev.optimizeDeps.entries
+  const explicitEntryPatterns = environment.config.optimizeDeps.entries
   const buildInput = environment.config.build.rollupOptions?.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
-    const resolvePath = (p: string) => path.resolve(environment.config.root, p)
+    const resolvePath = async (p: string) => {
+      const id = (
+        await environment.pluginContainer.resolveId(p, undefined, {
+          scan: true,
+        })
+      )?.id
+      if (id === undefined) {
+        throw new Error(
+          `failed to resolve rollupOptions.input value: ${JSON.stringify(p)}.`,
+        )
+      }
+      return id
+    }
     if (typeof buildInput === 'string') {
-      entries = [resolvePath(buildInput)]
+      entries = [await resolvePath(buildInput)]
     } else if (Array.isArray(buildInput)) {
-      entries = buildInput.map(resolvePath)
+      entries = await Promise.all(buildInput.map(resolvePath))
     } else if (isObject(buildInput)) {
-      entries = Object.values(buildInput).map(resolvePath)
+      entries = await Promise.all(Object.values(buildInput).map(resolvePath))
     } else {
       throw new Error('invalid rollupOptions.input value.')
     }
@@ -271,7 +283,7 @@ async function computeEntries(environment: ScanEnvironment) {
   // dependencies.
   entries = entries.filter(
     (entry) =>
-      isScannable(entry, environment.config.dev.optimizeDeps.extensions) &&
+      isScannable(entry, environment.config.optimizeDeps.extensions) &&
       fs.existsSync(entry),
   )
 
@@ -290,7 +302,7 @@ async function prepareEsbuildScanner(
   const plugin = esbuildScanPlugin(environment, deps, missing, entries)
 
   const { plugins = [], ...esbuildOptions } =
-    environment.config.dev.optimizeDeps.esbuildOptions ?? {}
+    environment.config.optimizeDeps.esbuildOptions ?? {}
 
   // The plugin pipeline automatically loads the closest tsconfig.json.
   // But esbuild doesn't support reading tsconfig.json if the plugin has resolved the path (https://github.com/evanw/esbuild/issues/2265).
@@ -299,10 +311,10 @@ async function prepareEsbuildScanner(
   // Therefore, we use the closest tsconfig.json from the root to make it work in most cases.
   let tsconfigRaw = esbuildOptions.tsconfigRaw
   if (!tsconfigRaw && !esbuildOptions.tsconfig) {
-    const tsconfigResult = await loadTsconfigJsonForFile(
+    const { tsconfig } = await loadTsconfigJsonForFile(
       path.join(environment.config.root, '_dummy.js'),
     )
-    if (tsconfigResult.compilerOptions?.experimentalDecorators) {
+    if (tsconfig.compilerOptions?.experimentalDecorators) {
       tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
     }
   }
@@ -332,23 +344,22 @@ function orderedDependencies(deps: Record<string, string>) {
 
 function globEntries(pattern: string | string[], environment: ScanEnvironment) {
   const resolvedPatterns = arraify(pattern)
-  if (resolvedPatterns.every((str) => !glob.isDynamicPattern(str))) {
+  if (resolvedPatterns.every((str) => !isDynamicPattern(str))) {
     return resolvedPatterns.map((p) =>
       normalizePath(path.resolve(environment.config.root, p)),
     )
   }
   return glob(pattern, {
+    absolute: true,
     cwd: environment.config.root,
     ignore: [
       '**/node_modules/**',
       `**/${environment.config.build.outDir}/**`,
       // if there aren't explicit entries, also ignore other common folders
-      ...(environment.config.dev.optimizeDeps.entries
+      ...(environment.config.optimizeDeps.entries
         ? []
         : [`**/__tests__/**`, `**/coverage/**`]),
     ],
-    absolute: true,
-    suppressErrors: true, // suppress EACCES errors
   })
 }
 
@@ -358,7 +369,9 @@ export const commentRE = /<!--.*?-->/gs
 const srcRE = /\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const typeRE = /\btype\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
 const langRE = /\blang\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
-const contextRE = /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
+const svelteScriptModuleRE =
+  /\bcontext\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s'">]+))/i
+const svelteModuleRE = /\smodule\b/i
 
 function esbuildScanPlugin(
   environment: ScanEnvironment,
@@ -396,7 +409,7 @@ function esbuildScanPlugin(
     return res
   }
 
-  const optimizeDepsOptions = environment.config.dev.optimizeDeps
+  const optimizeDepsOptions = environment.config.optimizeDeps
   const include = optimizeDepsOptions.include
   const exclude = [
     ...(optimizeDepsOptions.exclude ?? []),
@@ -560,17 +573,28 @@ function esbuildScanPlugin(
 
             const virtualModulePath = JSON.stringify(virtualModulePrefix + key)
 
-            const contextMatch = contextRE.exec(openTag)
-            const context =
-              contextMatch &&
-              (contextMatch[1] || contextMatch[2] || contextMatch[3])
+            let addedImport = false
 
-            // Especially for Svelte files, exports in <script context="module"> means module exports,
+            // For Svelte files, exports in <script context="module"> or <script module> means module exports,
             // exports in <script> means component props. To avoid having two same export name from the
             // star exports, we need to ignore exports in <script>
-            if (p.endsWith('.svelte') && context !== 'module') {
-              js += `import ${virtualModulePath}\n`
-            } else {
+            if (p.endsWith('.svelte')) {
+              let isModule = svelteModuleRE.test(openTag) // test for svelte5 <script module> syntax
+              if (!isModule) {
+                // fallback, test for svelte4 <script context="module"> syntax
+                const contextMatch = svelteScriptModuleRE.exec(openTag)
+                const context =
+                  contextMatch &&
+                  (contextMatch[1] || contextMatch[2] || contextMatch[3])
+                isModule = context === 'module'
+              }
+              if (!isModule) {
+                addedImport = true
+                js += `import ${virtualModulePath}\n`
+              }
+            }
+
+            if (!addedImport) {
               js += `export * from ${virtualModulePath}\n`
             }
           }

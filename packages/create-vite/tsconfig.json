@@ -4,7 +4,7 @@
     "outDir": "dist",
     "target": "ES2022",
     "module": "ES2020",
-    "moduleResolution": "bundler",
+    "moduleResolution": "Bundler",
     "strict": true,
     "skipLibCheck": true,
     "declaration": false,

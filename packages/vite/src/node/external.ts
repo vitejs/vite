@@ -87,7 +87,6 @@ export function createIsConfiguredAsExternal(
         config.command === 'build' ? undefined : importer,
         resolveOptions,
         undefined,
-        true,
         // try to externalize, will return undefined or an object without
         // a external flag if it isn't externalizable
         true,
@@ -95,7 +94,7 @@ export function createIsConfiguredAsExternal(
         // configured as external
         !!configuredAsExternal,
       )?.external
-    } catch (e) {
+    } catch {
       debug?.(
         `Failed to node resolve "${id}". Skipping externalizing it by default.`,
       )
