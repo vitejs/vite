@@ -201,7 +201,7 @@ const createTemplate = () =>
   )
 
 const fileRE = /(?:[a-zA-Z]:\\|\/).*?:\d+:\d+/g
-const codeframeRE = /^(?:>?\s*\d+\s+\|.*|\s+\|\s*\^.*)\r?\n/gm
+const codeframeRE = /^(?:>?\s*\d+\s+[|│╷╵].*|\s+[|│╷╵]\s*\^.*|\s*[|│╷╵])\r?\n/gm
 
 // Allow `ErrorOverlay` to extend `HTMLElement` even in environments where
 // `HTMLElement` was not originally defined.

@@ -2536,9 +2536,14 @@ const scssProcessor = (
         }
       } catch (e) {
         // normalize SASS error
-        e.message = `[sass] ${e.message}`
+        // extract the part before the trace as we'll manually generate it ourselves
+        const messageFrameStart = e.message.indexOf('╷')
+        e.message = `[sass] ${
+          messageFrameStart > 0
+            ? e.message.slice(0, messageFrameStart).trim()
+            : e.message
+        }`
         e.id = e.file
-        e.frame = e.formatted
         // modern api lacks `line` and `column` property. extract from `span`.
         // NOTE: the values are 0-based so +1 is required.
         if (e.span?.start) {
