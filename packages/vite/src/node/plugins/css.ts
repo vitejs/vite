@@ -1682,10 +1682,11 @@ type CssUrlReplacer = (
 ) => string | Promise<string>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
-  /(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
+  /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const cssDataUriRE =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
-export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
+export const importCssRE =
+  /@import\s+(?:url\()?('[^']+\.css'|"[^"]+\.css"|[^'"\s)]+\.css)/
 // Assuming a function name won't be longer than 256 chars
 // eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
 const cssImageSetRE = /(?<=image-set\()((?:[\w-]{1,256}\([^)]*\)|[^)])*)(?=\))/
@@ -1849,7 +1850,8 @@ async function doImportCSSReplace(
     return matched
   }
 
-  return `@import ${wrap}${await replacer(rawUrl)}${wrap}`
+  const prefix = matched.includes('url(') ? 'url(' : ''
+  return `@import ${prefix}${wrap}${await replacer(rawUrl)}${wrap}`
 }
 
 async function minifyCSS(
