@@ -1,8 +1,5 @@
 import type { DefaultTreeAdapterMap, Token } from 'parse5'
 
-// Asset list is derived from https://github.com/webpack-contrib/html-loader
-// MIT license: https://github.com/webpack-contrib/html-loader/blob/master/LICENSE
-
 interface HtmlAssetSource {
   srcAttributes?: string[]
   srcsetAttributes?: string[]
@@ -18,32 +15,8 @@ interface HtmlAssetSourceFilterData {
   attributes: Record<string, string>
 }
 
-const ALLOWED_LINK_REL = [
-  'stylesheet',
-  'icon',
-  'shortcut icon',
-  'mask-icon',
-  'apple-touch-icon',
-  'apple-touch-icon-precomposed',
-  'apple-touch-startup-image',
-  'manifest',
-  'prefetch',
-  'preload',
-]
-
-const ALLOWED_LINK_OR_META_ITEMPROP = [
-  'image',
-  'logo',
-  'screenshot',
-  'thumbnailurl',
-  'contenturl',
-  'downloadurl',
-  'duringmedia',
-  'embedurl',
-  'installurl',
-  'layoutimage',
-]
-
+// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta/name
+// https://wiki.whatwg.org/wiki/MetaExtensions
 const ALLOWED_META_NAME = [
   'msapplication-tileimage',
   'msapplication-square70x70logo',
@@ -54,6 +27,7 @@ const ALLOWED_META_NAME = [
   'twitter:image',
 ]
 
+// https://ogp.me
 const ALLOWED_META_PROPERTY = [
   'og:image',
   'og:image:url',
@@ -62,7 +36,6 @@ const ALLOWED_META_PROPERTY = [
   'og:audio:secure_url',
   'og:video',
   'og:video:secure_url',
-  'vk:image',
 ]
 
 const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
@@ -76,8 +49,15 @@ const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
     srcAttributes: ['src'],
     srcsetAttributes: ['srcset'],
   },
+  image: {
+    srcAttributes: ['href', 'xlink:href'],
+  },
   input: {
     srcAttributes: ['src'],
+  },
+  link: {
+    srcAttributes: ['href'],
+    srcsetAttributes: ['imagesrcset'],
   },
   object: {
     srcAttributes: ['data'],
@@ -89,44 +69,16 @@ const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
   track: {
     srcAttributes: ['src'],
   },
-  video: {
-    srcAttributes: ['src', 'poster'],
-  },
-  image: {
-    srcAttributes: ['href', 'xlink:href'],
-  },
   use: {
     srcAttributes: ['href', 'xlink:href'],
   },
-  link: {
-    srcAttributes: ['href'],
-    srcsetAttributes: ['imagesrcset'],
-    filter({ key, attributes }) {
-      if (
-        attributes.rel &&
-        ALLOWED_LINK_REL.includes(attributes.rel.trim().toLowerCase())
-      ) {
-        return true
-      }
-
-      if (
-        key === 'href' &&
-        attributes.itemprop &&
-        ALLOWED_LINK_OR_META_ITEMPROP.includes(
-          attributes.itemprop.trim().toLowerCase(),
-        )
-      ) {
-        return true
-      }
-
-      return false
-    },
+  video: {
+    srcAttributes: ['src', 'poster'],
   },
   meta: {
     srcAttributes: ['content'],
-    filter({ key, attributes }) {
+    filter({ attributes }) {
       if (
-        key === 'content' &&
         attributes.name &&
         ALLOWED_META_NAME.includes(attributes.name.trim().toLowerCase())
       ) {
@@ -134,19 +86,8 @@ const DEFAULT_HTML_ASSET_SOURCES: Record<string, HtmlAssetSource> = {
       }
 
       if (
-        key === 'content' &&
         attributes.property &&
         ALLOWED_META_PROPERTY.includes(attributes.property.trim().toLowerCase())
-      ) {
-        return true
-      }
-
-      if (
-        key === 'content' &&
-        attributes.itemprop &&
-        ALLOWED_LINK_OR_META_ITEMPROP.includes(
-          attributes.itemprop.trim().toLowerCase(),
-        )
       ) {
         return true
       }

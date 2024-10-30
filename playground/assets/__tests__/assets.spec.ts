@@ -352,7 +352,9 @@ describe('meta', () => {
     const meta = await page.$('.meta-og-image')
     const content = await meta.getAttribute('content')
     expect(content).toMatch(
-      isBuild ? /\/foo\/assets\/asset-\w{8}\.png/ : /\/foo\/nested\/asset.png/,
+      isBuild
+        ? /\/foo\/bar\/assets\/asset-\w{8}\.png/
+        : /\/foo\/bar\/nested\/asset.png/,
     )
   })
 })

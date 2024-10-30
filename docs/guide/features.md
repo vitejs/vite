@@ -170,9 +170,24 @@ Any HTML files in your project root can be directly accessed by its respective d
 - `<root>/about.html` -> `http://localhost:5173/about.html`
 - `<root>/blog/index.html` -> `http://localhost:5173/blog/index.html`
 
-HTML elements such as `<script type="module">` and `<link href>` tags are processed by default, which enables using Vite features in the linked files. General asset elements, such as `<img src>`, `<video src>`, and `<source src>`, are also rebased to ensure they are optimized and linked to the right path.
+Files referenced by HTML elements such as `<script type="module">` and `<link href>` are processed and bundled as part of the app. General asset elements can also reference assets to be optimized by default, including:
 
-```html
+- `<audio src>`
+- `<embed src>`
+- `<img src>` and `<img srcset>`
+- `<image src>`
+- `<input src>`
+- `<link href>` and `<link imagesrcet>`
+- `<object data>`
+- `<source src>` and `<source srcset>`
+- `<track src>`
+- `<use href>` and `<use xlink:href>`
+- `<video src>` and `<video poster>`
+- `<meta content>`
+  - Only if `name` attribute matches `msapplication-tileimage`, `msapplication-square70x70logo`, `msapplication-square150x150logo`, `msapplication-wide310x150logo`, `msapplication-square310x310logo`, `msapplication-config`, or `twitter:image`
+  - Or only if `property` attribute matches `og:image`, `og:image:url`, `og:image:secure_url`, `og:audio`, `og:audio:secure_url`, `og:video`, or `og:video:secure_url`
+
+```html {4-5,8-9}
 <!doctype html>
 <html>
   <head>
@@ -180,7 +195,6 @@ HTML elements such as `<script type="module">` and `<link href>` tags are proces
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>
-    <div id="app"></div>
     <img src="/src/images/logo.svg" alt="logo" />
     <script type="module" src="/src/main.js"></script>
   </body>

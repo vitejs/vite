@@ -77,14 +77,20 @@ describe('getNodeAssetAttributes', () => {
     expect(attrs[0]).toHaveProperty('value', 'image.jpg')
   })
 
-  test('does not handle link with plain href', () => {
-    const node = getNode('<link href="style.css">')
+  test('does not handle meta with unknown name', () => {
+    const node = getNode('<meta name="unknown" content="image.jpg">')
     const attrs = getNodeAssetAttributes(node)
     expect(attrs).toHaveLength(0)
   })
 
-  test('does not handle meta with disallowed name', () => {
-    const node = getNode('<meta name="twitter:foo" content="image.jpg">')
+  test('does not handle meta with unknown property', () => {
+    const node = getNode('<meta property="unknown" content="image.jpg">')
+    const attrs = getNodeAssetAttributes(node)
+    expect(attrs).toHaveLength(0)
+  })
+
+  test('does not handle meta with no known properties', () => {
+    const node = getNode('<meta foo="bar" content="image.jpg">')
     const attrs = getNodeAssetAttributes(node)
     expect(attrs).toHaveLength(0)
   })
