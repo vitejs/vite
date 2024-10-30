@@ -89,7 +89,7 @@ import { resolveSSROptions } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 
-const debug = createDebugger('vite:config')
+const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
 
 export interface ConfigEnv {
@@ -637,6 +637,7 @@ function resolveEnvironmentOptions(
   const consumer =
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   return {
+    define: options.define,
     resolve,
     consumer,
     webCompatible: options.webCompatible ?? consumer === 'client',
@@ -1636,17 +1637,6 @@ async function bundleConfigFile(
               }
               if (idFsPath && isImport) {
                 idFsPath = pathToFileURL(idFsPath).href
-              }
-              if (
-                idFsPath &&
-                !isImport &&
-                isFilePathESM(idFsPath, packageCache)
-              ) {
-                throw new Error(
-                  `${JSON.stringify(
-                    id,
-                  )} resolved to an ESM file. ESM file cannot be loaded by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
-                )
               }
               return {
                 path: idFsPath,

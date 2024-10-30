@@ -66,7 +66,7 @@ export async function resolvePlugins(
         packageCache: config.packageCache,
         asSrc: true,
         optimizeDeps: true,
-        externalize: isBuild && !!config.build.ssr, // TODO: should we do this for all environments?
+        externalize: true,
       },
       config.environments,
     ),
