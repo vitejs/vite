@@ -1,13 +1,23 @@
 name: ecosystem-ci trigger
 
+# on:
+#   issue_comment:
+#     types: [created]
+
 on:
-  issue_comment:
-    types: [created]
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, labeled]
 
 jobs:
   trigger:
     runs-on: ubuntu-latest
-    if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
+    if: >
+      github.repository == 'vitejs/vite' &&
+      github.event_name == 'push'
+    # if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
     steps:
       - uses: actions/github-script@v7
         id: get-pr-data
@@ -17,10 +27,10 @@ jobs:
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.issue.number
+              pull_number: 18525
             })
             return {
-              num: context.issue.number,
+              num: 18525,
               branchName: pr.head.ref,
               commit: pr.head.sha,
               repo: pr.head.repo.full_name
