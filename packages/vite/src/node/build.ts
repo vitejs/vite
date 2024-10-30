@@ -1463,7 +1463,19 @@ export interface ViteBuilder {
 }
 
 export interface BuilderOptions {
+  /**
+   * Whether to share the config instance among environments to align with the behavior of dev server.
+   *
+   * @default false
+   * @experimental
+   */
   sharedConfigBuild?: boolean
+  /**
+   * Whether to share the plugin instances among environments to align with the behavior of dev server.
+   *
+   * @default false
+   * @experimental
+   */
   sharedPlugins?: boolean
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
