@@ -51,7 +51,6 @@ import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { warnFutureDeprecation } from '../deprecations'
 import {
-  createNoopWatcher,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
@@ -121,7 +120,7 @@ export interface ServerOptions extends CommonServerOptions {
   }
   /**
    * chokidar watch options or null to disable FS watching
-   * https://github.com/paulmillr/chokidar#api
+   * https://github.com/paulmillr/chokidar#getting-started
    */
   watch?: WatchOptions | null
   /**
@@ -170,7 +169,7 @@ export interface ServerOptions extends CommonServerOptions {
    * @default false
    * @experimental
    */
-  perEnvironmentBuildStartEnd?: boolean
+  perEnvironmentStartEndDuringDev?: boolean
   /**
    * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
    * @experimental
@@ -215,7 +214,7 @@ export interface FileSystemServeOptions {
    * This will have higher priority than `allow`.
    * picomatch patterns are supported.
    *
-   * @default ['.env', '.env.*', '*.crt', '*.pem']
+   * @default ['.env', '.env.*', '*.{crt,pem}', '**\/.git/**']
    */
   deny?: string[]
 
@@ -255,8 +254,9 @@ export interface ViteDevServer {
    */
   httpServer: HttpServer | null
   /**
-   * chokidar watcher instance
-   * https://github.com/paulmillr/chokidar#api
+   * Chokidar watcher instance. If `config.server.watch` is set to `null`,
+   * it will not watch any files and calling `add` will have no effect.
+   * https://github.com/paulmillr/chokidar#getting-started
    */
   watcher: FSWatcher
   /**
@@ -446,10 +446,7 @@ export async function _createServer(
     resolvedOutDirs,
   )
   const resolvedWatchOptions = resolveChokidarOptions(
-    {
-      disableGlobbing: true,
-      ...serverConfig.watch,
-    },
+    serverConfig.watch,
     resolvedOutDirs,
     emptyOutDir,
     config.cacheDir,
@@ -469,22 +466,26 @@ export async function _createServer(
     setClientErrorHandler(httpServer, config.logger)
   }
 
-  // eslint-disable-next-line eqeqeq
-  const watchEnabled = serverConfig.watch !== null
-  const watcher = watchEnabled
-    ? (chokidar.watch(
-        // config file dependencies and env file might be outside of root
-        [
-          root,
-          ...config.configFileDependencies,
-          ...getEnvFilesForMode(config.mode, config.envDir),
-          // Watch the public directory explicitly because it might be outside
-          // of the root directory.
-          ...(publicDir && publicFiles ? [publicDir] : []),
-        ],
-        resolvedWatchOptions,
-      ) as FSWatcher)
-    : createNoopWatcher(resolvedWatchOptions)
+  const watcher = chokidar.watch(
+    // config file dependencies and env file might be outside of root
+    [
+      root,
+      ...config.configFileDependencies,
+      ...getEnvFilesForMode(config.mode, config.envDir),
+      // Watch the public directory explicitly because it might be outside
+      // of the root directory.
+      ...(publicDir && publicFiles ? [publicDir] : []),
+    ],
+    resolvedWatchOptions,
+  )
+  // If watch is turned off, patch `.add()` as a noop to prevent programmatically
+  // watching additional files and to keep it fast.
+  // eslint-disable-next-line eqeqeq -- null means disabled
+  if (serverConfig.watch === null) {
+    watcher.add = function () {
+      return this
+    }
+  }
 
   const environments: Record<string, DevEnvironment> = {}
 
@@ -1032,7 +1033,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
-    perEnvironmentBuildStartEnd: false,
+    perEnvironmentStartEndDuringDev: false,
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
     sourcemapIgnoreList:
       raw?.sourcemapIgnoreList === false
