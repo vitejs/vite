@@ -31,4 +31,11 @@ export default defineConfig({
     __STRINGIFIED_OBJ__: JSON.stringify({ foo: true }),
     'import.meta.env.SOME_IDENTIFIER': '__VITE_SOME_IDENTIFIER__',
   },
+  environments: {
+    client: {
+      define: {
+        __DEFINE_IN_ENVIRONMENT__: '"defined only in client"',
+      },
+    },
+  },
 })
