@@ -44,6 +44,7 @@ const clientConfig = defineConfig({
 const sharedNodeOptions = defineConfig({
   treeshake: {
     moduleSideEffects(id, external) {
+      id = id.replaceAll('\\', '/')
       // These nested dependencies should be considered side-effect free
       // as it's not set within their package.json
       if (
