@@ -108,16 +108,7 @@ export async function fetchModule(
   }
 
   // module entry should be created by transformRequest
-  const modById = environment.moduleGraph.getModuleById(mod.id!)
-
-  if (!modById) {
-    throw new Error(
-      `[vite] cannot find module '${url}' ${
-        importer ? ` imported from '${importer}'` : ''
-      }.`,
-    )
-  }
-  mod = modById
+  mod = environment.moduleGraph.getModuleById(mod.id!)!
 
   if (options.inlineSourceMap !== false) {
     result = inlineSourceMap(mod, result, options.startOffset)
