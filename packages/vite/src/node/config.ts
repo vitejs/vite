@@ -674,7 +674,12 @@ export function getDefaultEnvironmentOptions(
 ): EnvironmentOptions {
   return {
     define: config.define,
-    resolve: config.resolve,
+    resolve: {
+      ...config.resolve,
+      // mainFields and conditions are not inherited
+      mainFields: undefined,
+      conditions: undefined,
+    },
     dev: config.dev,
     build: config.build,
   }
@@ -988,6 +993,7 @@ export async function resolveConfig(
   // Some top level options only apply to the client environment
   const defaultClientEnvironmentOptions = {
     ...defaultEnvironmentOptions,
+    resolve: config.resolve, // inherit everything including mainFields and conditions
     optimizeDeps: config.optimizeDeps,
   }
   const defaultNonClientEnvironmentOptions = {

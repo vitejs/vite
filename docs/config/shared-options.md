@@ -117,7 +117,7 @@ For SSR builds, deduplication does not work for ESM build outputs configured fro
 ## resolve.conditions
 
 - **Type:** `string[]`
-- **Default:** `['module', 'browser', 'node', 'production', 'development']`
+- **Default:** `['module', 'browser', 'production', 'development']`
 
 Additional allowed conditions when resolving [Conditional Exports](https://nodejs.org/api/packages.html#packages_conditional_exports) from a package.
 
