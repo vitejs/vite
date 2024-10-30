@@ -56,4 +56,10 @@ describe('assetImportMetaUrlPlugin', async () => {
       `"new URL((import.meta.glob("./foo/*/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${dir2}/index.js\`], import.meta.url)"`,
     )
   })
+
+  test('ignore starting with a variable', async () => {
+    expect(
+      await transform('new URL(`${file}.js`, import.meta.url)'),
+    ).toMatchInlineSnapshot(`"new URL(\`\${file}.js\`, import.meta.url)"`)
+  })
 })
