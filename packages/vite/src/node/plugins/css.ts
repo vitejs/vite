@@ -2558,6 +2558,16 @@ const scssProcessor = (
         e.message = `[sass] ${e.message}`
         e.id = e.file
         e.frame = e.formatted
+        // modern api lacks `line` and `column` property. extract from `e.span`.
+        // NOTE: the values are 0-based so +1 is required.
+        if (e.span?.start) {
+          e.line = e.span.start.line + 1
+          e.column = e.span.start.column + 1
+          // it also lacks `e.formatted`, so we shim with the message here since
+          // sass error messages have the frame already in them and we don't want
+          // to re-generate a new frame (same as legacy api)
+          e.frame = e.message
+        }
         return { code: '', error: e, deps: [] }
       }
     },
