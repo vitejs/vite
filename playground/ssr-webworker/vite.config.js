@@ -1,4 +1,4 @@
-import { DEV_PROD_CONDITION, defineConfig } from 'vite'
+import { defineConfig } from 'vite'
 
 export default defineConfig({
   build: {
@@ -14,7 +14,7 @@ export default defineConfig({
     // in the runtime, and so we can externalize it when bundling.
     external: ['node:assert'],
     resolve: {
-      conditions: ['module', 'browser', DEV_PROD_CONDITION, 'worker'],
+      conditions: ['module', 'browser', 'development|production', 'worker'],
     },
   },
   plugins: [

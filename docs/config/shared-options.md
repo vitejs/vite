@@ -117,7 +117,7 @@ For SSR builds, deduplication does not work for ESM build outputs configured fro
 ## resolve.conditions
 
 - **Type:** `string[]`
-- **Default:** `['module', 'browser', DEV_PROD_CONDITION]`
+- **Default:** `['module', 'browser', 'development|production']`
 
 Additional allowed conditions when resolving [Conditional Exports](https://nodejs.org/api/packages.html#packages_conditional_exports) from a package.
 
@@ -136,7 +136,7 @@ A package with conditional exports may have the following `exports` field in its
 
 Here, `import` and `require` are "conditions". Conditions can be nested and should be specified from most specific to least specific.
 
-`DEV_PROD_CONDITION` is a special variable that is replaced with `production` or `development` depending on the value of `process.env.NODE_ENV`. It is replaced with `production` when `process.env.NODE_ENV === 'production'` and `development` otherwise.
+`development|production` is a special variable that is replaced with `production` or `development` depending on the value of `process.env.NODE_ENV`. It is replaced with `production` when `process.env.NODE_ENV === 'production'` and `development` otherwise.
 
 Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
 

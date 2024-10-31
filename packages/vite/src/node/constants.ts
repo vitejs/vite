@@ -46,17 +46,11 @@ export const DEFAULT_MAIN_FIELDS = [
   'jsnext',
 ]
 
-// using " and $ as conditions would usually avoid using $ or "
-// as it makes difficult to use the condition in command line or json
-// also avoiding a symbol so that dual package hazard won't be a problem
-type SpecialCondition<T extends string> = `vite$"${T}"` & { __brand: never }
-
 /**
  * A special condition that would be replaced with production or development
  * depending on NODE_ENV env variable
  */
-export const DEV_PROD_CONDITION =
-  `vite$"dev-prod"` as SpecialCondition<'dev-prod'>
+export const DEV_PROD_CONDITION = `development|production` as const
 
 export const DEFAULT_CONDITIONS = [
   'module',
