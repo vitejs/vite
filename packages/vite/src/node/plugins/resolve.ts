@@ -11,7 +11,6 @@ import {
   DEP_VERSION_RE,
   ENV_ENTRY,
   FS_PREFIX,
-  OPTIMIZABLE_ENTRY_RE,
   SPECIAL_QUERY_RE,
 } from '../constants'
 import {
@@ -36,7 +35,7 @@ import {
 import type { ResolvedEnvironmentOptions } from '../config'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
-import type { DepOptimizationOptions, SSROptions } from '..'
+import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import { shouldExternalize } from '../external'
 import {
@@ -129,8 +128,6 @@ interface ResolvePluginOptions {
   isFromTsImporter?: boolean
   // True when resolving during the scan phase to discover dependencies
   scan?: boolean
-  // Appends ?__vite_skip_optimization to the resolved id if shouldn't be optimized
-  ssrOptimizeCheck?: boolean
 
   /**
    * Optimize deps during dev, defaults to false // TODO: Review default
@@ -248,8 +245,6 @@ export function resolvePlugin(
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
 
-      const depsOptimizerOptions = this.environment.config.optimizeDeps
-
       const resolvedImports = resolveSubpathImports(id, importer, options)
       if (resolvedImports) {
         id = resolvedImports
@@ -337,14 +332,7 @@ export function resolvePlugin(
         if (
           options.webCompatible &&
           options.mainFields.includes('browser') &&
-          (res = tryResolveBrowserMapping(
-            fsPath,
-            importer,
-            options,
-            true,
-            undefined,
-            depsOptimizerOptions,
-          ))
+          (res = tryResolveBrowserMapping(fsPath, importer, options, true))
         ) {
           return res
         }
@@ -436,7 +424,6 @@ export function resolvePlugin(
             options,
             false,
             external,
-            depsOptimizerOptions,
           ))
         ) {
           return res
@@ -450,7 +437,6 @@ export function resolvePlugin(
             depsOptimizer,
             external,
             undefined,
-            depsOptimizerOptions,
           ))
         ) {
           return res
@@ -742,7 +728,6 @@ export function tryNodeResolve(
   depsOptimizer?: DepsOptimizer,
   externalize?: boolean,
   allowLinkedExternal: boolean = true,
-  depsOptimizerOptions?: DepOptimizationOptions,
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
@@ -846,10 +831,7 @@ export function tryNodeResolve(
     return { ...resolved, id: resolvedId, external: true }
   }
 
-  if (
-    !options.idOnly &&
-    ((!options.scan && isBuild && !depsOptimizer) || externalize)
-  ) {
+  if (!options.idOnly && ((!options.scan && isBuild) || externalize)) {
     // Resolve package side effects for build so that rollup can better
     // perform tree-shaking
     return processResult({
@@ -859,40 +841,24 @@ export function tryNodeResolve(
   }
 
   if (
-    !options.ssrOptimizeCheck &&
-    (!isInNodeModules(resolved) || // linked
-      !depsOptimizer || // resolving before listening to the server
-      options.scan) // initial esbuild scan phase
+    !isInNodeModules(resolved) || // linked
+    !depsOptimizer || // resolving before listening to the server
+    options.scan // initial esbuild scan phase
   ) {
     return { id: resolved }
   }
 
   // if we reach here, it's a valid dep import that hasn't been optimized.
-  const isJsType = depsOptimizer
-    ? isOptimizable(resolved, depsOptimizer.options)
-    : OPTIMIZABLE_ENTRY_RE.test(resolved)
-
-  let exclude = depsOptimizer?.options.exclude
-  if (options.ssrOptimizeCheck) {
-    // we don't have the depsOptimizer
-    exclude = depsOptimizerOptions?.exclude
-  }
+  const isJsType = isOptimizable(resolved, depsOptimizer.options)
+  const exclude = depsOptimizer.options.exclude
 
   const skipOptimization =
-    (!options.ssrOptimizeCheck && depsOptimizer?.options.noDiscovery) ||
+    depsOptimizer.options.noDiscovery ||
     !isJsType ||
     (importer && isInNodeModules(importer)) ||
     exclude?.includes(pkgId) ||
     exclude?.includes(id) ||
     SPECIAL_QUERY_RE.test(resolved)
-
-  if (options.ssrOptimizeCheck) {
-    return {
-      id: skipOptimization
-        ? injectQuery(resolved, `__vite_skip_optimization`)
-        : resolved,
-    }
-  }
 
   if (skipOptimization) {
     // excluded from optimization
@@ -900,29 +866,18 @@ export function tryNodeResolve(
     // can cache it without re-validation, but only do so for known js types.
     // otherwise we may introduce duplicated modules for externalized files
     // from pre-bundled deps.
-    if (!isBuild) {
-      const versionHash = depsOptimizer!.metadata.browserHash
-      if (versionHash && isJsType) {
-        resolved = injectQuery(resolved, `v=${versionHash}`)
-      }
+    const versionHash = depsOptimizer.metadata.browserHash
+    if (versionHash && isJsType) {
+      resolved = injectQuery(resolved, `v=${versionHash}`)
     }
   } else {
     // this is a missing import, queue optimize-deps re-run and
     // get a resolved its optimized info
-    const optimizedInfo = depsOptimizer!.registerMissingImport(id, resolved)
-    resolved = depsOptimizer!.getOptimizedDepId(optimizedInfo)
+    const optimizedInfo = depsOptimizer.registerMissingImport(id, resolved)
+    resolved = depsOptimizer.getOptimizedDepId(optimizedInfo)
   }
 
-  if (!options.idOnly && !options.scan && isBuild) {
-    // Resolve package side effects for build so that rollup can better
-    // perform tree-shaking
-    return {
-      id: resolved,
-      moduleSideEffects: pkg.hasSideEffects(resolved),
-    }
-  } else {
-    return { id: resolved! }
-  }
+  return { id: resolved }
 }
 
 export async function tryOptimizedResolve(
@@ -1186,7 +1141,6 @@ function tryResolveBrowserMapping(
   options: InternalResolveOptions,
   isFilePath: boolean,
   externalize?: boolean,
-  depsOptimizerOptions?: DepOptimizationOptions,
 ) {
   let res: string | undefined
   const pkg =
@@ -1205,7 +1159,6 @@ function tryResolveBrowserMapping(
               undefined,
               undefined,
               undefined,
-              depsOptimizerOptions,
             )?.id
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
