@@ -126,14 +126,10 @@ const processNodeUrl = async (
   server?: ViteDevServer,
   isClassicScriptLink?: boolean,
 ): Promise<string> => {
-  if (server) {
+  if (server && url[0] !== '/' && url[0] !== '.') {
     const normalizedUrl = await server.pluginContainer.resolveId(url)
-    if (
-      normalizedUrl &&
-      !normalizedUrl.id.includes(
-        url.slice(url[0] === '/' || url[0] === '.' ? 1 : 0),
-      )
-    ) {
+    // If normalized url does not contain part of the url, we need to use the resolved alias
+    if (normalizedUrl && !normalizedUrl.id.includes(url)) {
       url = normalizedUrl.id
     }
   }
