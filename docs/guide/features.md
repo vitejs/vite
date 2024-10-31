@@ -537,6 +537,33 @@ const modules = import.meta.glob('./dir/*.js', {
 })
 ```
 
+#### Base Path
+
+You can also use the `base` option to provide base path for the imports:
+
+```ts twoslash
+import 'vite/client'
+// ---cut---
+const moduleRelativeBase = import.meta.glob('**/*.js', {
+  base: './base',
+})
+const moduleRootBase = import.meta.glob('**/*.js', {
+  base: '/base',
+})
+```
+
+```ts
+// code produced by vite:
+const moduleRelativeBase = {
+  'dir/foo.js': () => import('./dir/foo.js'),
+  'dir/bar.js': () => import('./dir/bar.js'),
+}
+const moduleRootBase = {
+  'other_dir/foo.js': () => import('../other_dir/foo.js'),
+  'other_dir/bar.js': () => import('../other_dir/bar.js'),
+}
+```
+
 ### Glob Import Caveats
 
 Note that:
