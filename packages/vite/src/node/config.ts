@@ -966,15 +966,16 @@ export async function resolveConfig(
   // Merge default environment config values
   const defaultEnvironmentOptions = getDefaultEnvironmentOptions(config)
   // Some top level options only apply to the client environment
-  const defaultClientEnvironmentOptions = {
+  const defaultClientEnvironmentOptions: UserConfig = {
     ...defaultEnvironmentOptions,
     optimizeDeps: config.optimizeDeps,
   }
-  const defaultNonClientEnvironmentOptions = {
+  const defaultNonClientEnvironmentOptions: UserConfig = {
     ...defaultEnvironmentOptions,
     dev: {
       ...defaultEnvironmentOptions.dev,
       createEnvironment: undefined,
+      warmup: undefined,
     },
     build: {
       ...defaultEnvironmentOptions.build,
