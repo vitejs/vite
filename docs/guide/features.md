@@ -170,7 +170,7 @@ Any HTML files in your project root can be directly accessed by its respective d
 - `<root>/about.html` -> `http://localhost:5173/about.html`
 - `<root>/blog/index.html` -> `http://localhost:5173/blog/index.html`
 
-Files referenced by HTML elements such as `<script type="module">` and `<link href>` are processed and bundled as part of the app. General asset elements can also reference assets to be optimized by default, including:
+Assets referenced by HTML elements such as `<script type="module" src>` and `<link href>` are processed and bundled as part of the app. The full list of supported elements are as below:
 
 - `<audio src>`
 - `<embed src>`
@@ -179,6 +179,7 @@ Files referenced by HTML elements such as `<script type="module">` and `<link hr
 - `<input src>`
 - `<link href>` and `<link imagesrcet>`
 - `<object data>`
+- `<script type="module" src>`
 - `<source src>` and `<source srcset>`
 - `<track src>`
 - `<use href>` and `<use xlink:href>`
