@@ -51,7 +51,7 @@ export function jsonPlugin(
         if (options.stringify !== false) {
           if (options.namedExports) {
             const parsed = JSON.parse(json)
-            if (typeof parsed === 'object' && parsed != null) {
+            if (typeof parsed === 'object' && parsed != null && !Array.isArray(parsed)) {
               const keys = Object.keys(parsed)
 
               let code = ''
