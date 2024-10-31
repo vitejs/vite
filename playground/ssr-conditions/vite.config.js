@@ -5,8 +5,8 @@ export default defineConfig({
     external: ['@vitejs/test-ssr-conditions-external'],
     noExternal: ['@vitejs/test-ssr-conditions-no-external'],
     resolve: {
-      conditions: ['react-server'],
-      externalConditions: ['workerd', 'react-server'],
+      conditions: ['module', 'node', 'development|production', 'react-server'],
+      externalConditions: ['node', 'workerd', 'react-server'],
     },
   },
 })

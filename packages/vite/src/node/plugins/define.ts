@@ -47,6 +47,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
   }
 
   function generatePattern(environment: Environment) {
+    const keepProcessEnv = environment.config.keepProcessEnv
+
     const userDefine: Record<string, string> = {}
     const userDefineEnv: Record<string, any> = {}
     for (const key in environment.config.define) {
@@ -58,10 +60,8 @@ export function definePlugin(config: ResolvedConfig): Plugin {
       }
     }
 
-    const replaceProcessEnv = environment.config.webCompatible
-
     const define: Record<string, string> = {
-      ...(replaceProcessEnv ? processEnv : {}),
+      ...(keepProcessEnv ? {} : processEnv),
       ...importMetaKeys,
       ...userDefine,
       ...importMetaFallbackKeys,
@@ -85,7 +85,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
 
     // Create regex pattern as a fast check before running esbuild
     const patternKeys = Object.keys(userDefine)
-    if (replaceProcessEnv && Object.keys(processEnv).length) {
+    if (!keepProcessEnv && Object.keys(processEnv).length) {
       patternKeys.push('process.env')
     }
     if (Object.keys(importMetaKeys).length) {

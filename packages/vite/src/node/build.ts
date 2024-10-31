@@ -348,6 +348,8 @@ export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
   logger: Logger,
   consumer: 'client' | 'server' | undefined,
+  // Backward compatibility
+  isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
   const { polyfillModulePreload, ...rest } = raw
@@ -442,6 +444,19 @@ export function resolveBuildEnvironmentOptions(
 
   if (resolved.cssMinify == null) {
     resolved.cssMinify = consumer === 'server' ? 'esbuild' : !!resolved.minify
+  }
+
+  if (isSsrTargetWebworkerEnvironment) {
+    resolved.rollupOptions ??= {}
+    resolved.rollupOptions.output ??= {}
+    const output = resolved.rollupOptions.output
+    for (const out of arraify(output)) {
+      out.entryFileNames ??= `[name].js`
+      out.chunkFileNames ??= `[name]-[hash].js`
+      const input = resolved.rollupOptions.input
+      out.inlineDynamicImports ??=
+        !input || typeof input === 'string' || Object.keys(input).length === 1
+    }
   }
 
   return resolved
@@ -692,7 +707,7 @@ async function buildEnvironment(
 
       const format = output.format || 'es'
       const jsExt =
-        !environment.config.webCompatible || libOptions
+        environment.config.consumer === 'server' || libOptions
           ? resolveOutputJsExtension(
               format,
               findNearestPackageData(root, packageCache)?.data.type,
@@ -730,11 +745,7 @@ async function buildEnvironment(
           ? `[name].[ext]`
           : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
         inlineDynamicImports:
-          output.format === 'umd' ||
-          output.format === 'iife' ||
-          (environment.config.consumer === 'server' &&
-            environment.config.webCompatible &&
-            (typeof input === 'string' || Object.keys(input).length === 1)),
+          output.format === 'umd' || output.format === 'iife',
         ...output,
       }
     }
