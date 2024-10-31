@@ -126,10 +126,10 @@ const processNodeUrl = async (
   server?: ViteDevServer,
   isClassicScriptLink?: boolean,
 ): Promise<string> => {
-  if (server) {
-    const resolve = createBackCompatIdResolver(config)
-    url = (await resolve(server.environments.client, url)) || url
-  }
+  // if (server) {
+  //   const resolve = createBackCompatIdResolver(config)
+  //   url = (await resolve(server.environments.client, url)) || url
+  // }
 
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {

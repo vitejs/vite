@@ -165,7 +165,7 @@ export function nodeIsElement(
 
 async function traverseNodes(
   node: DefaultTreeAdapterMap['node'],
-  visitor: (node: DefaultTreeAdapterMap['node']) => Promise<void>,
+  visitor: (node: DefaultTreeAdapterMap['node']) => Promise<void> | void,
 ) {
   if (node.nodeName === 'template') {
     node = (node as DefaultTreeAdapterMap['template']).content
@@ -187,7 +187,7 @@ async function traverseNodes(
 export async function traverseHtml(
   html: string,
   filePath: string,
-  visitor: (node: DefaultTreeAdapterMap['node']) => void,
+  visitor: (node: DefaultTreeAdapterMap['node']) => Promise<void> | void,
 ): Promise<void> {
   // lazy load compiler
   const { parse } = await import('parse5')
