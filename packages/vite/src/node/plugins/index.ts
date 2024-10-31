@@ -4,7 +4,6 @@ import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepOptimizationDisabled } from '../optimizer'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
-
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
