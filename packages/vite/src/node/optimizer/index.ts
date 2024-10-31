@@ -842,9 +842,7 @@ export async function addManuallyIncludedOptimizeDeps(
         const entry = await resolve(id)
         if (entry) {
           if (isOptimizable(entry, optimizeDeps)) {
-            if (!entry.endsWith('?__vite_skip_optimization')) {
-              deps[normalizedId] = entry
-            }
+            deps[normalizedId] = entry
           } else {
             unableToOptimize(id, 'Cannot optimize dependency')
           }
