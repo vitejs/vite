@@ -24,10 +24,10 @@ jobs:
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: 18525
+              pull_number: 1
             })
             return {
-              num: 18525,
+              num: 1,
               branchName: pr.head.ref,
               commit: pr.head.sha,
               repo: pr.head.repo.full_name
@@ -61,7 +61,7 @@ jobs:
               const { data: reaction } = await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: 2448418810,
+                comment_id: 2449396756,
                 content: 'rocket',
               })
 
@@ -140,7 +140,7 @@ jobs:
               await github.rest.reactions.deleteForIssueComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: 2448418810,
+                comment_id: 2449396756,
                 reaction_id: reaction.id,
               });
             }
@@ -150,7 +150,7 @@ jobs:
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: 2448418810,
+                comment_id: 2449396756,
                 content: '+1',
               })
             } else {
@@ -158,7 +158,7 @@ jobs:
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: 2448418810,
+                comment_id: 2449396756,
                 content: '-1',
               })
               throw new Error('not allowed')
