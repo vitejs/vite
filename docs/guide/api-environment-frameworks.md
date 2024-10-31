@@ -61,7 +61,7 @@ const server = await createServer({
 // the "isRunnableDevEnvironment" function to guard the access to the runner
 const environment = server.environments.node
 
-app.use('*', async (req, res, next) => {
+app.use('*all', async (req, res, next) => {
   const url = req.originalUrl
 
   // 1. Read index.html

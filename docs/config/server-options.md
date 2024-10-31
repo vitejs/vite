@@ -256,7 +256,7 @@ async function createServer() {
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
 
-  app.use('*', async (req, res) => {
+  app.use('*all', async (req, res) => {
     // Since `appType` is `'custom'`, should serve response here.
     // Note: if `appType` is `'spa'` or `'mpa'`, Vite includes middlewares to handle
     // HTML requests and 404s so user middlewares should be added
