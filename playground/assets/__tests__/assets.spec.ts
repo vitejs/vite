@@ -347,6 +347,18 @@ describe('image', () => {
   })
 })
 
+describe('meta', () => {
+  test('og image', async () => {
+    const meta = await page.$('.meta-og-image')
+    const content = await meta.getAttribute('content')
+    expect(content).toMatch(
+      isBuild
+        ? /\/foo\/bar\/assets\/asset-\w{8}\.png/
+        : /\/foo\/bar\/nested\/asset.png/,
+    )
+  })
+})
+
 describe('svg fragments', () => {
   // 404 is checked already, so here we just ensure the urls end with #fragment
   test('img url', async () => {
