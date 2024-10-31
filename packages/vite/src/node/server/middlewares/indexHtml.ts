@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
@@ -8,10 +9,8 @@ import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
-  assetAttrsConfig,
   extractImportExpressionFromClassicScript,
   findNeedTransformStyleAttribute,
-  getAttrKey,
   getScriptInfo,
   htmlEnvHook,
   htmlProxyResult,
@@ -40,11 +39,11 @@ import {
   processSrcSetSync,
   stripBase,
 } from '../../utils'
-import { getFsUtils } from '../../fsUtils'
 import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { getNodeAssetAttributes } from '../../assetSource'
 
 interface AssetNode {
   start: number
@@ -195,7 +194,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   let proxyModuleUrl: string
 
   const trailingSlash = htmlPath.endsWith('/')
-  if (!trailingSlash && getFsUtils(config).existsSync(filename)) {
+  if (!trailingSlash && fs.existsSync(filename)) {
     proxyModulePath = htmlPath
     proxyModuleUrl = proxyModulePath
   } else {
@@ -277,7 +276,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       } else if (src) {
         const processedUrl = processNodeUrl(
           src.value,
-          getAttrKey(src) === 'srcset',
+          /* useSrcSetReplacer */ false,
           config,
           htmlPath,
           originalUrl,
@@ -332,35 +331,20 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.nodeName]
-    if (assetAttrs) {
-      const nodeAttrs: Record<string, string> = {}
-      for (const attr of node.attrs) {
-        nodeAttrs[getAttrKey(attr)] = attr.value
-      }
-      const shouldIgnore =
-        node.nodeName === 'link' && 'vite-ignore' in nodeAttrs
-      if (shouldIgnore) {
-        removeViteIgnoreAttr(s, node.sourceCodeLocation!)
+    const assetAttributes = getNodeAssetAttributes(node)
+    for (const attr of assetAttributes) {
+      if (attr.type === 'remove') {
+        s.remove(attr.location.startOffset, attr.location.endOffset)
       } else {
-        for (const attrKey in nodeAttrs) {
-          const attrValue = nodeAttrs[attrKey]
-          if (attrValue && assetAttrs.includes(attrKey)) {
-            const processedUrl = processNodeUrl(
-              attrValue,
-              attrKey === 'srcset',
-              config,
-              htmlPath,
-              originalUrl,
-            )
-            if (processedUrl !== attrValue) {
-              overwriteAttrValue(
-                s,
-                node.sourceCodeLocation!.attrs![attrKey],
-                processedUrl,
-              )
-            }
-          }
+        const processedUrl = processNodeUrl(
+          attr.value,
+          attr.type === 'srcset',
+          config,
+          htmlPath,
+          originalUrl,
+        )
+        if (processedUrl !== attr.value) {
+          overwriteAttrValue(s, attr.location, processedUrl)
         }
       }
     }
@@ -441,7 +425,6 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
-  const fsUtils = getFsUtils(server.config)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -459,7 +442,7 @@ export function indexHtmlMiddleware(
         filePath = path.join(root, decodeURIComponent(url))
       }
 
-      if (fsUtils.existsSync(filePath)) {
+      if (fs.existsSync(filePath)) {
         const headers = isDev
           ? server.config.server.headers
           : server.config.preview.headers

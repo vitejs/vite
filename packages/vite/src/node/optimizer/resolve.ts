@@ -15,9 +15,9 @@ export function createOptimizeDepsIncludeResolver(
   const resolve = createBackCompatIdResolver(topLevelConfig, {
     asSrc: false,
     scan: true,
-    ssrOptimizeCheck: environment.config.consumer === 'server',
     packageCache: new Map(),
   })
+
   return async (id: string) => {
     const lastArrowIndex = id.lastIndexOf('>')
     if (lastArrowIndex === -1) {
