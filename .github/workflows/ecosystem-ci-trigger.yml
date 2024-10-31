@@ -20,10 +20,10 @@ jobs:
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: 1
+              pull_number: 18525
             })
             return {
-              num: 1,
+              num: 18525,
               branchName: pr.head.ref,
               commit: pr.head.sha,
               repo: pr.head.repo.full_name
