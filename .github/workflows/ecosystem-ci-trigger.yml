@@ -7,10 +7,6 @@ name: ecosystem-ci trigger
 on:
   pull_request:
 
-permissions:
-  issues: write
-  contents: write
-
 jobs:
   trigger:
     runs-on: ubuntu-latest
