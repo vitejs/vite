@@ -165,7 +165,7 @@ export function nodeIsElement(
 
 async function traverseNodes(
   node: DefaultTreeAdapterMap['node'],
-  visitor: (node: DefaultTreeAdapterMap['node']) => void,
+  visitor: (node: DefaultTreeAdapterMap['node']) => Promise<void>,
 ) {
   if (node.nodeName === 'template') {
     node = (node as DefaultTreeAdapterMap['template']).content
