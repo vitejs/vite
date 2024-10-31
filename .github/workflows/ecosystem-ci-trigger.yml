@@ -8,6 +8,7 @@ on:
   pull_request:
 
 permissions:
+  issues: write
   contents: write
 
 jobs:
