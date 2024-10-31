@@ -163,20 +163,24 @@ export function nodeIsElement(
   return node.nodeName[0] !== '#'
 }
 
-function traverseNodes(
+async function traverseNodes(
   node: DefaultTreeAdapterMap['node'],
   visitor: (node: DefaultTreeAdapterMap['node']) => void,
 ) {
   if (node.nodeName === 'template') {
     node = (node as DefaultTreeAdapterMap['template']).content
   }
-  visitor(node)
+  await visitor(node)
   if (
     nodeIsElement(node) ||
     node.nodeName === '#document' ||
     node.nodeName === '#document-fragment'
   ) {
-    node.childNodes.forEach((childNode) => traverseNodes(childNode, visitor))
+    await Promise.all(
+      node.childNodes.map(
+        async (childNode) => await traverseNodes(childNode, visitor),
+      ),
+    )
   }
 }
 
@@ -194,7 +198,7 @@ export async function traverseHtml(
       handleParseError(e, html, filePath)
     },
   })
-  traverseNodes(ast, visitor)
+  await traverseNodes(ast, visitor)
 }
 
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {

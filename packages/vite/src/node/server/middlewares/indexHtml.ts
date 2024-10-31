@@ -117,7 +117,7 @@ function isBareRelative(url: string) {
   return wordCharRE.test(url[0]) && !url.includes(':')
 }
 
-const processNodeUrl = (
+const processNodeUrl = async (
   url: string,
   useSrcSetReplacer: boolean,
   config: ResolvedConfig,
@@ -125,7 +125,12 @@ const processNodeUrl = (
   originalUrl?: string,
   server?: ViteDevServer,
   isClassicScriptLink?: boolean,
-): string => {
+): Promise<string> => {
+  if (server) {
+    const resolve = createBackCompatIdResolver(config)
+    url = (await resolve(server.environments.client, url)) || url
+  }
+
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
     if (server) {
@@ -261,7 +266,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     preTransformRequest(server!, modulePath, decodedBase)
   }
 
-  await traverseHtml(html, filename, (node) => {
+  await traverseHtml(html, filename, async (node) => {
     if (!nodeIsElement(node)) {
       return
     }
@@ -274,7 +279,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       if (isIgnored) {
         removeViteIgnoreAttr(s, sourceCodeLocation!)
       } else if (src) {
-        const processedUrl = processNodeUrl(
+        const processedUrl = await processNodeUrl(
           src.value,
           /* useSrcSetReplacer */ false,
           config,
@@ -297,7 +302,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
           start,
           end,
         } of extractImportExpressionFromClassicScript(scriptNode)) {
-          const processedUrl = processNodeUrl(
+          const processedUrl = await processNodeUrl(
             url,
             false,
             config,
@@ -336,7 +341,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       if (attr.type === 'remove') {
         s.remove(attr.location.startOffset, attr.location.endOffset)
       } else {
-        const processedUrl = processNodeUrl(
+        const processedUrl = await processNodeUrl(
           attr.value,
           attr.type === 'srcset',
           config,
