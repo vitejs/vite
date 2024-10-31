@@ -136,7 +136,7 @@ A package with conditional exports may have the following `exports` field in its
 
 Here, `import` and `require` are "conditions". Conditions can be nested and should be specified from most specific to least specific.
 
-`development|production` is a special variable that is replaced with `production` or `development` depending on the value of `process.env.NODE_ENV`. It is replaced with `production` when `process.env.NODE_ENV === 'production'` and `development` otherwise.
+`development|production` is a special value that is replaced with `production` or `development` depending on the value of `process.env.NODE_ENV`. It is replaced with `production` when `process.env.NODE_ENV === 'production'` and `development` otherwise.
 
 Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
 
