@@ -411,13 +411,13 @@ describe('relative input', () => {
   })
 })
 
-describe('alias', () => {
+describe('resolve alias', () => {
   beforeAll(async () => {
-    await page.goto(viteTestUrl + '/alias.html')
+    await page.goto(viteTestUrl + '/resolve-alias/index.html')
   })
 
   test('should fetch alias.js', async () => {
-    expect(browserLogs).toContain('shared from alias')
+    expect(browserLogs).toContain('shared from resolve alias')
   })
 })
 

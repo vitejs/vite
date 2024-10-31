@@ -39,14 +39,14 @@ export default defineConfig({
           process.cwd(),
           resolve(__dirname, 'relative-input.html'),
         ),
-        alias: resolve(__dirname, 'alias.html'),
+        resolveAlias: resolve(__dirname, 'resolve-alias/index.html'),
       },
     },
   },
 
   resolve: {
     alias: {
-      '@': resolve(__dirname),
+      '@': resolve(__dirname, 'resolve-alias'),
     },
   },
 
