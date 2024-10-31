@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from 'node:fs'
 import type {
   Alias,
   AliasOptions,
@@ -13,7 +14,6 @@ import {
   isOptimizable,
   moduleListContains,
 } from '../utils'
-import { getFsUtils } from '../fsUtils'
 import { cleanUrl, withTrailingSlash } from '../../shared/utils'
 import { tryOptimizedResolve } from './resolve'
 
@@ -23,7 +23,6 @@ import { tryOptimizedResolve } from './resolve'
 export function preAliasPlugin(config: ResolvedConfig): Plugin {
   const findPatterns = getAliasPatterns(config.resolve.alias)
   const isBuild = config.command === 'build'
-  const fsUtils = getFsUtils(config)
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
@@ -60,7 +59,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
             const isVirtual = resolvedId === id || resolvedId.includes('\0')
             if (
               !isVirtual &&
-              fsUtils.existsSync(resolvedId) &&
+              fs.existsSync(resolvedId) &&
               !moduleListContains(optimizeDeps.exclude, id) &&
               path.isAbsolute(resolvedId) &&
               (isInNodeModules(resolvedId) ||

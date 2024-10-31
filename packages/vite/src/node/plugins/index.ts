@@ -4,7 +4,6 @@ import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepOptimizationDisabled } from '../optimizer'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
-import { getFsUtils } from '../fsUtils'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
@@ -65,7 +64,6 @@ export async function resolvePlugins(
         isBuild,
         packageCache: config.packageCache,
         asSrc: true,
-        fsUtils: getFsUtils(config),
         optimizeDeps: true,
         externalize: true,
       },

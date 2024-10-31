@@ -5,7 +5,6 @@ import type { EnvironmentPluginContainer } from './server/pluginContainer'
 import { createEnvironmentPluginContainer } from './server/pluginContainer'
 import { resolvePlugin } from './plugins/resolve'
 import type { InternalResolveOptions } from './plugins/resolve'
-import { getFsUtils } from './fsUtils'
 import type { Environment } from './environment'
 import type { PartialEnvironment } from './baseEnvironment'
 
@@ -69,7 +68,6 @@ export function createIdResolver(
             preferRelative: false,
             tryIndex: true,
             ...options,
-            fsUtils: getFsUtils(config),
             // Ignore sideEffects and other computations as we only need the id
             idOnly: true,
           }),

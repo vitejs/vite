@@ -1,4 +1,5 @@
 import path from 'node:path'
+import fs from 'node:fs'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
 import MagicString from 'magic-string'
@@ -52,7 +53,6 @@ import {
   transformStableResult,
   urlRE,
 } from '../utils'
-import { getFsUtils } from '../fsUtils'
 import { checkPublicFile } from '../publicDir'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
@@ -107,7 +107,6 @@ export function normalizeResolvedIdToUrl(
 ): string {
   const root = environment.config.root
   const depsOptimizer = environment.depsOptimizer
-  const fsUtils = getFsUtils(environment.getTopLevelConfig())
 
   // normalize all imports into resolved URLs
   // e.g. `import 'foo'` -> `import '/@fs/.../node_modules/foo/index.js'`
@@ -121,7 +120,7 @@ export function normalizeResolvedIdToUrl(
     // We'll remove this as soon we're able to fix the react plugins.
     (resolved.id !== '/@react-refresh' &&
       path.isAbsolute(resolved.id) &&
-      fsUtils.existsSync(cleanUrl(resolved.id)))
+      fs.existsSync(cleanUrl(resolved.id)))
   ) {
     // an optimized deps may not yet exists in the filesystem, or
     // a regular file exists but is out of root: rewrite to absolute /@fs/ paths
