@@ -141,7 +141,8 @@ const UnoCssPlugin = () => {
       // use global hooks normally
     },
     applyToEnvironment(environment) {
-      // return true if this plugin should be active in this environment
+      // return true if this plugin should be active in this environment, or return
+      // a new plugin to replace it.
       // if the function isn't provided, the plugin is active in all environments
     },
     resolveId(id, importer) {
@@ -149,6 +150,35 @@ const UnoCssPlugin = () => {
     },
   }
 }
+```
+
+If a plugin isn't environment aware and has state that isn't keyed on the current environment (as it is common in Rollup build plugins like `rollup-plugin-visualizer`), the `applyToEnvironment` hook allows to easily make it per-environment.
+
+```js
+import { visualizer } from 'rollup-plugin-visualizer'
+
+export default defineConfig({
+  plugins: [
+    {
+      name: 'per-environment-visualizer',
+      applyToEnvironment() {
+        return visualizer()
+      },
+    },
+  ],
+})
+```
+
+Vite exports a `perEnvironmentPlugin` helper to simplify these cases where no other hooks are required:
+
+```js
+import { visualizer } from 'rollup-plugin-visualizer'
+
+export default defineConfig({
+  plugins: [
+    perEnvironmentPlugin('per-environment-visualizer', () => visualizer()),
+  ],
+})
 ```
 
 ## Environment in build hooks
