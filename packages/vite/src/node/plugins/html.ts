@@ -176,11 +176,9 @@ async function traverseNodes(
     node.nodeName === '#document' ||
     node.nodeName === '#document-fragment'
   ) {
-    await Promise.all(
-      node.childNodes.map(
-        async (childNode) => await traverseNodes(childNode, visitor),
-      ),
-    )
+    for (const childNode of node.childNodes) {
+      await traverseNodes(childNode, visitor)
+    }
   }
 }
 
