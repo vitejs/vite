@@ -46,7 +46,7 @@ jobs:
                 repo: context.repo.repo,
                 username: user,
               });
-              hasTriagePermission = ['triage', 'write', 'admin'].includes(data.permission);
+              hasTriagePermission = ['triage', 'write', 'admin'].some(p => data.user.permissions[p]);
             } catch (e) {
               console.warn(e)
             }
