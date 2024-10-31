@@ -435,7 +435,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // since output formats have no effect on the generated CSS.
   let hasEmitted = false
   let chunkCSSMap: Map<string, string>
-  let cssBundleName: string
 
   const rollupOptionsOutput = config.build.rollupOptions.output
   const assetFileNames = (
@@ -463,6 +462,21 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     }
   }
 
+  function getCssBundleName() {
+    const cached = cssBundleNameCache.get(config)
+    if (cached) return cached
+
+    const cssBundleName = config.build.lib
+      ? resolveLibCssFilename(
+          config.build.lib,
+          config.root,
+          config.packageCache,
+        )
+      : defaultCssBundleName
+    cssBundleNameCache.set(config, cssBundleName)
+    return cssBundleName
+  }
+
   return {
     name: 'vite:css-post',
 
@@ -472,14 +486,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       hasEmitted = false
       chunkCSSMap = new Map()
       codeSplitEmitQueue = createSerialPromiseQueue()
-      cssBundleName = config.build.lib
-        ? resolveLibCssFilename(
-            config.build.lib,
-            config.root,
-            config.packageCache,
-          )
-        : defaultCssBundleName
-      cssBundleNameCache.set(config, cssBundleName)
     },
 
     async transform(css, id) {
@@ -844,7 +850,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         } else {
           // resolve public URL from CSS paths, we need to use absolute paths
-          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
+          chunkCSS = resolveAssetUrlsInCss(chunkCSS, getCssBundleName())
           // finalizeCss is called for the aggregated chunk in generateBundle
 
           chunkCSSMap.set(chunk.fileName, chunkCSS)
@@ -918,7 +924,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           hasEmitted = true
           extractedCss = await finalizeCss(extractedCss, true, config)
           this.emitFile({
-            name: cssBundleName,
+            name: getCssBundleName(),
             type: 'asset',
             source: extractedCss,
           })
