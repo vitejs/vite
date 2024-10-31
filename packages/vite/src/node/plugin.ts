@@ -350,6 +350,9 @@ export async function resolveEnvironmentPlugins(
   return environmentPlugins
 }
 
+/**
+ * @experimental
+ */
 export function perEnvironmentPlugin(
   name: string,
   applyToEnvironment: (
