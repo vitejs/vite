@@ -15,7 +15,7 @@ export type Environment =
  * to implement object metadata. Used by plugins to implement cross hooks per
  * environment metadata
  */
-export function usePerEnvironmentState<State>(
+export function perEnvironmentState<State>(
   initial: (environment: Environment) => State,
 ): (context: PluginContext) => State {
   const stateMap = new WeakMap<Environment, State>()

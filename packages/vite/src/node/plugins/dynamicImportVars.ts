@@ -18,7 +18,7 @@ import {
   urlRE,
 } from '../utils'
 import type { Environment } from '../environment'
-import { usePerEnvironmentState } from '../environment'
+import { perEnvironmentState } from '../environment'
 import { hasViteIgnoreRE } from './importAnalysis'
 import { workerOrSharedWorkerRE } from './worker'
 
@@ -171,7 +171,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     extensions: [],
   })
 
-  const getFilter = usePerEnvironmentState((environment: Environment) => {
+  const getFilter = perEnvironmentState((environment: Environment) => {
     const { include, exclude } =
       environment.config.build.dynamicImportVarsOptions
     return createFilter(include, exclude)
