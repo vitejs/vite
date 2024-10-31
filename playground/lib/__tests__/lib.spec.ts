@@ -90,6 +90,44 @@ describe.runIf(isBuild)('build', () => {
     expect(iife).toMatch('process.env.NODE_ENV')
     expect(umd).toMatch('process.env.NODE_ENV')
   })
+
+  test('single entry with css', () => {
+    const css = readFile('dist/css-single-entry/test-my-lib.css')
+    const js = readFile('dist/css-single-entry/test-my-lib.js')
+    const umd = readFile('dist/css-single-entry/test-my-lib.umd.cjs')
+    expect(css).toMatch('entry-1.css')
+    expect(js).toMatch('css-entry-1')
+    expect(umd).toContain('css-entry-1')
+  })
+
+  test('multi entry with css', () => {
+    const css = readFile('dist/css-multi-entry/test-my-lib.css')
+    const js1 = readFile('dist/css-multi-entry/css-entry-1.js')
+    const js2 = readFile('dist/css-multi-entry/css-entry-2.js')
+    const cjs1 = readFile('dist/css-multi-entry/css-entry-1.cjs')
+    const cjs2 = readFile('dist/css-multi-entry/css-entry-2.cjs')
+    expect(css).toMatch('entry-1.css')
+    expect(css).toMatch('entry-2.css')
+    expect(js1).toMatch('css-entry-1')
+    expect(js2).toMatch('css-entry-2')
+    expect(cjs1).toContain('css-entry-1')
+    expect(cjs2).toContain('css-entry-2')
+  })
+
+  test('multi entry with css and code split', () => {
+    const css1 = readFile('dist/css-code-split/css-entry-1.css')
+    const css2 = readFile('dist/css-code-split/css-entry-2.css')
+    const js1 = readFile('dist/css-code-split/css-entry-1.js')
+    const js2 = readFile('dist/css-code-split/css-entry-2.js')
+    const cjs1 = readFile('dist/css-code-split/css-entry-1.cjs')
+    const cjs2 = readFile('dist/css-code-split/css-entry-2.cjs')
+    expect(css1).toMatch('entry-1.css')
+    expect(css2).toMatch('entry-2.css')
+    expect(js1).toMatch('css-entry-1')
+    expect(js2).toMatch('css-entry-2')
+    expect(cjs1).toContain('css-entry-1')
+    expect(cjs2).toContain('css-entry-2')
+  })
 })
 
 test.runIf(isServe)('dev', async () => {

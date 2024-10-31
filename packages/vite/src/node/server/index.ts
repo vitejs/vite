@@ -36,10 +36,10 @@ import {
   setupSIGTERMListener,
   teardownSIGTERMListener,
 } from '../utils'
-import { getFsUtils } from '../fsUtils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
+import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
 import {
@@ -51,7 +51,6 @@ import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { warnFutureDeprecation } from '../deprecations'
 import {
-  createNoopWatcher,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
@@ -121,7 +120,7 @@ export interface ServerOptions extends CommonServerOptions {
   }
   /**
    * chokidar watch options or null to disable FS watching
-   * https://github.com/paulmillr/chokidar#api
+   * https://github.com/paulmillr/chokidar#getting-started
    */
   watch?: WatchOptions | null
   /**
@@ -170,7 +169,7 @@ export interface ServerOptions extends CommonServerOptions {
    * @default false
    * @experimental
    */
-  perEnvironmentBuildStartEnd?: boolean
+  perEnvironmentStartEndDuringDev?: boolean
   /**
    * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
    * @experimental
@@ -215,17 +214,9 @@ export interface FileSystemServeOptions {
    * This will have higher priority than `allow`.
    * picomatch patterns are supported.
    *
-   * @default ['.env', '.env.*', '*.crt', '*.pem']
+   * @default ['.env', '.env.*', '*.{crt,pem}', '**\/.git/**']
    */
   deny?: string[]
-
-  /**
-   * Enable caching of fs calls. It is enabled by default if no custom watch ignored patterns are provided.
-   *
-   * @experimental
-   * @default undefined
-   */
-  cachedChecks?: boolean
 }
 
 export type ServerHook = (
@@ -255,8 +246,9 @@ export interface ViteDevServer {
    */
   httpServer: HttpServer | null
   /**
-   * chokidar watcher instance
-   * https://github.com/paulmillr/chokidar#api
+   * Chokidar watcher instance. If `config.server.watch` is set to `null`,
+   * it will not watch any files and calling `add` will have no effect.
+   * https://github.com/paulmillr/chokidar#getting-started
    */
   watcher: FSWatcher
   /**
@@ -446,10 +438,7 @@ export async function _createServer(
     resolvedOutDirs,
   )
   const resolvedWatchOptions = resolveChokidarOptions(
-    {
-      disableGlobbing: true,
-      ...serverConfig.watch,
-    },
+    serverConfig.watch,
     resolvedOutDirs,
     emptyOutDir,
     config.cacheDir,
@@ -469,12 +458,12 @@ export async function _createServer(
     setClientErrorHandler(httpServer, config.logger)
   }
 
-  // eslint-disable-next-line eqeqeq
-  const watchEnabled = serverConfig.watch !== null
-  const watcher = watchEnabled
-    ? (chokidar.watch(
-        // config file dependencies and env file might be outside of root
-        [
+  const watcher = chokidar.watch(
+    // config file dependencies and env file might be outside of root
+    // eslint-disable-next-line eqeqeq -- null means disabled
+    serverConfig.watch === null
+      ? []
+      : [
           root,
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
@@ -482,9 +471,17 @@ export async function _createServer(
           // of the root directory.
           ...(publicDir && publicFiles ? [publicDir] : []),
         ],
-        resolvedWatchOptions,
-      ) as FSWatcher)
-    : createNoopWatcher(resolvedWatchOptions)
+    resolvedWatchOptions,
+  )
+  // If watch is turned off, patch `.add()` as a noop to prevent programmatically
+  // watching additional files and to keep it fast.
+  // eslint-disable-next-line eqeqeq -- null means disabled
+  if (serverConfig.watch === null) {
+    watcher.add = function () {
+      return this
+    }
+    await watcher.close()
+  }
 
   const environments: Record<string, DevEnvironment> = {}
 
@@ -760,6 +757,7 @@ export async function _createServer(
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
+    reloadOnTsconfigChange(server, file)
 
     await pluginContainer.watchChange(file, {
       event: isUnlink ? 'delete' : 'create',
@@ -793,6 +791,7 @@ export async function _createServer(
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
+    reloadOnTsconfigChange(server, file)
 
     await pluginContainer.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
@@ -801,8 +800,6 @@ export async function _createServer(
     }
     await onHMRUpdate('update', file)
   })
-
-  getFsUtils(config).initWatcher?.(watcher)
 
   watcher.on('add', (file) => {
     onFileAddUnlink(file, false)
@@ -881,13 +878,7 @@ export async function _createServer(
 
   // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    middlewares.use(
-      htmlFallbackMiddleware(
-        root,
-        config.appType === 'spa',
-        getFsUtils(config),
-      ),
-    )
+    middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
   }
 
   // run post config hooks
@@ -1032,7 +1023,7 @@ export function resolveServerOptions(
 ): ResolvedServerOptions {
   const server: ResolvedServerOptions = {
     preTransformRequests: true,
-    perEnvironmentBuildStartEnd: false,
+    perEnvironmentStartEndDuringDev: false,
     ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
     sourcemapIgnoreList:
       raw?.sourcemapIgnoreList === false
@@ -1087,7 +1078,6 @@ export function resolveServerOptions(
     strict: server.fs?.strict ?? true,
     allow: allowDirs,
     deny,
-    cachedChecks: server.fs?.cachedChecks,
   }
 
   if (server.origin?.endsWith('/')) {

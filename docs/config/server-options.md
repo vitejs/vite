@@ -205,11 +205,11 @@ export default defineConfig({
 
 - **Type:** `object | null`
 
-File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#api).
+File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#getting-started). If the `ignored` option is passed, Vite will also automatically convert any strings as [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features).
 
 The Vite server watcher watches the `root` and skips the `.git/`, `node_modules/`, and Vite's `cacheDir` and `build.outDir` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
 
-If set to `null`, no files will be watched. `server.watcher` will provide a compatible event emitter, but calling `add` or `unwatch` will have no effect.
+If set to `null`, no files will be watched. `server.watcher` will not watch any files and calling `add` will have no effect.
 
 ::: warning Watching files in `node_modules`
 
@@ -328,14 +328,6 @@ export default defineConfig({
 - **Default:** `['.env', '.env.*', '*.{crt,pem}', '**/.git/**']`
 
 Blocklist for sensitive files being restricted to be served by Vite dev server. This will have higher priority than [`server.fs.allow`](#server-fs-allow). [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) are supported.
-
-## server.fs.cachedChecks
-
-- **Type:** `boolean`
-- **Default:** `false`
-- **Experimental**
-
-Caches filenames of accessed directories to avoid repeated filesystem operations. Particularly in Windows, this could result in a performance boost. It is disabled by default due to edge cases when writing a file in a cached folder and immediately importing it.
 
 ## server.origin
 

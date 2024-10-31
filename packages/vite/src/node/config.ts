@@ -89,7 +89,7 @@ import { resolveSSROptions } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 
-const debug = createDebugger('vite:config')
+const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
 
 export interface ConfigEnv {
@@ -637,6 +637,7 @@ function resolveEnvironmentOptions(
   const consumer =
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   return {
+    define: options.define,
     resolve,
     consumer,
     webCompatible: options.webCompatible ?? consumer === 'client',
@@ -965,15 +966,16 @@ export async function resolveConfig(
   // Merge default environment config values
   const defaultEnvironmentOptions = getDefaultEnvironmentOptions(config)
   // Some top level options only apply to the client environment
-  const defaultClientEnvironmentOptions = {
+  const defaultClientEnvironmentOptions: UserConfig = {
     ...defaultEnvironmentOptions,
     optimizeDeps: config.optimizeDeps,
   }
-  const defaultNonClientEnvironmentOptions = {
+  const defaultNonClientEnvironmentOptions: UserConfig = {
     ...defaultEnvironmentOptions,
     dev: {
       ...defaultEnvironmentOptions.dev,
       createEnvironment: undefined,
+      warmup: undefined,
     },
     build: {
       ...defaultEnvironmentOptions.build,

@@ -7,5 +7,9 @@
 <script type="module" src="/main.js"></script>
 <link rel="icon" href="{{cdn_host}}/cdn/images/favicon.ico" />
 <link rel="stylesheet" href="{{cdn_host}}/css.css" type="text/css" />
-<script src="{{cdn_host}}/js.js"></script>
+<script src="{{cdn_host}}/js.js" vite-ignore></script>
 <p>index.html (fallback)</p>
+
+<div>External path: <span class="external-path"></span></div>
+<script type="module" src="/external-path.js" vite-ignore></script>
+<link rel="stylesheet" href="/external-path.css" vite-ignore />

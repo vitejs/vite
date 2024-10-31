@@ -842,9 +842,7 @@ export async function addManuallyIncludedOptimizeDeps(
         const entry = await resolve(id)
         if (entry) {
           if (isOptimizable(entry, optimizeDeps)) {
-            if (!entry.endsWith('?__vite_skip_optimization')) {
-              deps[normalizedId] = entry
-            }
+            deps[normalizedId] = entry
           } else {
             unableToOptimize(id, 'Cannot optimize dependency')
           }
@@ -1090,9 +1088,13 @@ export async function extractExportsData(
     debug?.(
       `Unable to parse: ${filePath}.\n Trying again with a ${loader} transform.`,
     )
-    const transformed = await transformWithEsbuild(entryContent, filePath, {
-      loader,
-    })
+    const transformed = await transformWithEsbuild(
+      entryContent,
+      filePath,
+      { loader },
+      undefined,
+      environment.config,
+    )
     parseResult = parse(transformed.code)
     usedJsxLoader = true
   }

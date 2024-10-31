@@ -41,6 +41,7 @@ import {
   toOutputFilePathInCss,
   toOutputFilePathInJS,
 } from '../build'
+import type { LibraryOptions } from '../build'
 import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
@@ -60,6 +61,7 @@ import {
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
+  getPkgName,
   injectQuery,
   isDataUrl,
   isExternalUrl,
@@ -81,6 +83,8 @@ import { PartialEnvironment } from '../baseEnvironment'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { searchForWorkspaceRoot } from '../server/searchRoot'
 import { type DevEnvironment } from '..'
+import type { PackageCache } from '../packages'
+import { findNearestPackageData } from '../packages'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -213,7 +217,7 @@ const functionCallRE = /^[A-Z_][.\w-]*\(/i
 const transformOnlyRE = /[?&]transform-only\b/
 const nonEscapedDoubleQuoteRe = /(?<!\\)"/g
 
-const cssBundleName = 'style.css'
+const defaultCssBundleName = 'style.css'
 
 const enum PreprocessLang {
   less = 'less',
@@ -255,6 +259,9 @@ export const removedPureCssFilesCache = new WeakMap<
   ResolvedConfig,
   Map<string, RenderedChunk>
 >()
+
+// Used only if the config doesn't code-split CSS (builds a single CSS file)
+export const cssBundleNameCache = new WeakMap<ResolvedConfig, string>()
 
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
@@ -455,6 +462,21 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     }
   }
 
+  function getCssBundleName() {
+    const cached = cssBundleNameCache.get(config)
+    if (cached) return cached
+
+    const cssBundleName = config.build.lib
+      ? resolveLibCssFilename(
+          config.build.lib,
+          config.root,
+          config.packageCache,
+        )
+      : defaultCssBundleName
+    cssBundleNameCache.set(config, cssBundleName)
+    return cssBundleName
+  }
+
   return {
     name: 'vite:css-post',
 
@@ -523,12 +545,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (isDirectCSSRequest(id)) {
           return null
         }
-        // server only
-        if (this.environment.config.consumer !== 'client') {
-          return modulesCode || `export default ${JSON.stringify(css)}`
-        }
         if (inlined) {
           return `export default ${JSON.stringify(css)}`
+        }
+        if (this.environment.config.consumer === 'server') {
+          return modulesCode || 'export {}'
         }
 
         const cssContent = await getContentWithSourcemap(css)
@@ -829,7 +850,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         } else {
           // resolve public URL from CSS paths, we need to use absolute paths
-          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
+          chunkCSS = resolveAssetUrlsInCss(chunkCSS, getCssBundleName())
           // finalizeCss is called for the aggregated chunk in generateBundle
 
           chunkCSSMap.set(chunk.fileName, chunkCSS)
@@ -903,7 +924,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           hasEmitted = true
           extractedCss = await finalizeCss(extractedCss, true, config)
           this.emitFile({
-            name: cssBundleName,
+            name: getCssBundleName(),
             type: 'asset',
             source: extractedCss,
           })
@@ -1671,10 +1692,11 @@ type CssUrlReplacer = (
 ) => string | Promise<string>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
-  /(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
+  /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const cssDataUriRE =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
-export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
+export const importCssRE =
+  /@import\s+(?:url\()?('[^']+\.css'|"[^"]+\.css"|[^'"\s)]+\.css)/
 // Assuming a function name won't be longer than 256 chars
 // eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
 const cssImageSetRE = /(?<=image-set\()((?:[\w-]{1,256}\([^)]*\)|[^)])*)(?=\))/
@@ -1838,7 +1860,8 @@ async function doImportCSSReplace(
     return matched
   }
 
-  return `@import ${wrap}${await replacer(rawUrl)}${wrap}`
+  const prefix = matched.includes('url(') ? 'url(' : ''
+  return `@import ${prefix}${wrap}${await replacer(rawUrl)}${wrap}`
 }
 
 async function minifyCSS(
@@ -1855,7 +1878,9 @@ async function minifyCSS(
       ...config.css?.lightningcss,
       targets: convertTargets(config.build.cssTarget),
       cssModules: undefined,
-      filename: cssBundleName,
+      // TODO: Pass actual filename here, which can also be passed to esbuild's
+      // `sourcefile` option below to improve error messages
+      filename: defaultCssBundleName,
       code: Buffer.from(css),
       minify: true,
     })
@@ -2543,6 +2568,16 @@ const scssProcessor = (
         e.message = `[sass] ${e.message}`
         e.id = e.file
         e.frame = e.formatted
+        // modern api lacks `line` and `column` property. extract from `e.span`.
+        // NOTE: the values are 0-based so +1 is required.
+        if (e.span?.start) {
+          e.line = e.span.start.line + 1
+          e.column = e.span.start.column + 1
+          // it also lacks `e.formatted`, so we shim with the message here since
+          // sass error messages have the frame already in them and we don't want
+          // to re-generate a new frame (same as legacy api)
+          e.frame = e.message
+        }
         return { code: '', error: e, deps: [] }
       }
     },
@@ -3258,4 +3293,26 @@ export const convertTargets = (
 
   convertTargetsCache.set(esbuildTarget, targets)
   return targets
+}
+
+export function resolveLibCssFilename(
+  libOptions: LibraryOptions,
+  root: string,
+  packageCache?: PackageCache,
+): string {
+  if (typeof libOptions.cssFileName === 'string') {
+    return `${libOptions.cssFileName}.css`
+  } else if (typeof libOptions.fileName === 'string') {
+    return `${libOptions.fileName}.css`
+  }
+
+  const packageJson = findNearestPackageData(root, packageCache)?.data
+  const name = packageJson ? getPkgName(packageJson.name) : undefined
+
+  if (!name)
+    throw new Error(
+      'Name in package.json is required if option "build.lib.cssFileName" is not provided.',
+    )
+
+  return `${name}.css`
 }

@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
@@ -8,10 +9,8 @@ import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
-  assetAttrsConfig,
   extractImportExpressionFromClassicScript,
   findNeedTransformStyleAttribute,
-  getAttrKey,
   getScriptInfo,
   htmlEnvHook,
   htmlProxyResult,
@@ -21,6 +20,7 @@ import {
   overwriteAttrValue,
   postImportMapHook,
   preImportMapHook,
+  removeViteIgnoreAttr,
   resolveHtmlTransforms,
   traverseHtml,
 } from '../../plugins/html'
@@ -39,11 +39,11 @@ import {
   processSrcSetSync,
   stripBase,
 } from '../../utils'
-import { getFsUtils } from '../../fsUtils'
 import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { getNodeAssetAttributes } from '../../assetSource'
 
 interface AssetNode {
   start: number
@@ -117,8 +117,6 @@ function isBareRelative(url: string) {
   return wordCharRE.test(url[0]) && !url.includes(':')
 }
 
-const isSrcSet = (attr: Token.Attribute) =>
-  attr.name === 'srcset' && attr.prefix === undefined
 const processNodeUrl = (
   url: string,
   useSrcSetReplacer: boolean,
@@ -196,7 +194,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   let proxyModuleUrl: string
 
   const trailingSlash = htmlPath.endsWith('/')
-  if (!trailingSlash && getFsUtils(config).existsSync(filename)) {
+  if (!trailingSlash && fs.existsSync(filename)) {
     proxyModulePath = htmlPath
     proxyModuleUrl = proxyModulePath
   } else {
@@ -270,12 +268,15 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
     // script tags
     if (node.nodeName === 'script') {
-      const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
+      const { src, sourceCodeLocation, isModule, isIgnored } =
+        getScriptInfo(node)
 
-      if (src) {
+      if (isIgnored) {
+        removeViteIgnoreAttr(s, sourceCodeLocation!)
+      } else if (src) {
         const processedUrl = processNodeUrl(
           src.value,
-          isSrcSet(src),
+          /* useSrcSetReplacer */ false,
           config,
           htmlPath,
           originalUrl,
@@ -330,25 +331,20 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.nodeName]
-    if (assetAttrs) {
-      for (const p of node.attrs) {
-        const attrKey = getAttrKey(p)
-        if (p.value && assetAttrs.includes(attrKey)) {
-          const processedUrl = processNodeUrl(
-            p.value,
-            isSrcSet(p),
-            config,
-            htmlPath,
-            originalUrl,
-          )
-          if (processedUrl !== p.value) {
-            overwriteAttrValue(
-              s,
-              node.sourceCodeLocation!.attrs![attrKey],
-              processedUrl,
-            )
-          }
+    const assetAttributes = getNodeAssetAttributes(node)
+    for (const attr of assetAttributes) {
+      if (attr.type === 'remove') {
+        s.remove(attr.location.startOffset, attr.location.endOffset)
+      } else {
+        const processedUrl = processNodeUrl(
+          attr.value,
+          attr.type === 'srcset',
+          config,
+          htmlPath,
+          originalUrl,
+        )
+        if (processedUrl !== attr.value) {
+          overwriteAttrValue(s, attr.location, processedUrl)
         }
       }
     }
@@ -429,7 +425,6 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
-  const fsUtils = getFsUtils(server.config)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -447,7 +442,7 @@ export function indexHtmlMiddleware(
         filePath = path.join(root, decodeURIComponent(url))
       }
 
-      if (fsUtils.existsSync(filePath)) {
+      if (fs.existsSync(filePath)) {
         const headers = isDev
           ? server.config.server.headers
           : server.config.preview.headers
