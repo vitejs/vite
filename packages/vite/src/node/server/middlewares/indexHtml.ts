@@ -127,10 +127,10 @@ const processNodeUrl = async (
   isClassicScriptLink?: boolean,
 ): Promise<string> => {
   if (server && url[0] !== '/' && url[0] !== '.') {
-    const normalizedUrl = await server.pluginContainer.resolveId(url)
+    const resolved = await server.pluginContainer.resolveId(url)
     // If normalized url does not contain part of the url, we need to use the resolved alias
-    if (normalizedUrl && !normalizedUrl.id.includes(url)) {
-      url = normalizedUrl.id
+    if (resolved && !normalizePath(resolved.id).includes(url)) {
+      url = resolved.id
     }
   }
 
