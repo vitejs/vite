@@ -20,7 +20,7 @@ From Vite 6, even when `json.stringify: true` is set, `json.namedExports` is not
 
 Vite 6 also introduces a new default value for `json.stringify` which is `'auto'`, which will only stringify large JSON files. To disable this behavior, set `json.stringify: false`.
 
-### Extend support of asset reference in HTML elements
+### Extended support of asset references in HTML elements
 
 In Vite 5, only a few supported HTML elements were able to reference assets that will be processed and bundled by Vite, such as `<link href>`, `<img src>`, etc.
 
