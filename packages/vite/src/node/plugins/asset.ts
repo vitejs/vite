@@ -267,6 +267,13 @@ export async function fileToDevUrl(
 ): Promise<string> {
   const config = environment.getTopLevelConfig()
 
+  // If has inline query, unconditionally inline the asset
+  if (inlineRE.test(id)) {
+    const file = cleanUrl(id)
+    const content = await fsp.readFile(file)
+    return assetToDataURL(environment, file, content)
+  }
+
   let rtn: string
   if (checkPublicFile(id, config)) {
     // in public dir during dev, keep the url as-is
@@ -279,13 +286,6 @@ export async function fileToDevUrl(
     // (this is special handled by the serve static middleware
     rtn = path.posix.join(FS_PREFIX, id)
   }
-
-  if (inlineRE.test(id)) {
-    const file = cleanUrl(id)
-    const content = await fsp.readFile(file)
-    return assetToDataURL(environment, file, content)
-  }
-
   if (skipBase) {
     return rtn
   }
