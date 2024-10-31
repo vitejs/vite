@@ -126,8 +126,17 @@ const processNodeUrl = async (
   server?: ViteDevServer,
   isClassicScriptLink?: boolean,
 ): Promise<string> => {
-  const resolve = config.createResolver()
-  url = (await resolve(url)) || url
+  if (server) {
+    const normalizedUrl = await server.pluginContainer.resolveId(url)
+    if (
+      normalizedUrl &&
+      !normalizedUrl.id.includes(
+        url.slice(url[0] === '/' || url[0] === '.' ? 1 : 0),
+      )
+    ) {
+      url = normalizedUrl.id
+    }
+  }
 
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
