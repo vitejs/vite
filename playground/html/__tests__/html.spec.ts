@@ -411,6 +411,16 @@ describe('relative input', () => {
   })
 })
 
+describe('alias', () => {
+  beforeAll(async () => {
+    await page.goto(viteTestUrl + '/alias.html')
+  })
+
+  test('should fetch alias.js', async () => {
+    expect(browserLogs).toContain('shared from alias')
+  })
+})
+
 describe.runIf(isServe)('warmup', () => {
   test('should warmup /warmup/warm.js', async () => {
     // warmup transform files async during server startup, so the module check
