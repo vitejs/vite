@@ -2563,7 +2563,7 @@ const scssProcessor = (
           e.column = e.span.start.column + 1
           // it also lacks `e.formatted`, so we shim with the message here since
           // sass error messages have the frame already in them and we don't want
-          // to re-generate a new frame (same as legavy api)
+          // to re-generate a new frame (same as legacy api)
           e.frame = e.message
         }
         return { code: '', error: e, deps: [] }
