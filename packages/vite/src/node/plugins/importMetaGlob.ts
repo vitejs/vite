@@ -435,7 +435,11 @@ export async function transformGlobImport(
 
             let filePath: string
             if (options.base) {
-              filePath = relative(posix.join(root, options.base), file)
+              const resolvedBasePath = options.base[0] === '/' ? root : dir
+              filePath = relative(
+                posix.join(resolvedBasePath, options.base),
+                file,
+              )
             } else if (isRelative) {
               filePath = importPath
             } else {
