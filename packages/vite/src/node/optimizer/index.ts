@@ -798,6 +798,7 @@ async function prepareEsbuildOptimizerRun(
     metafile: true,
     plugins,
     charset: 'utf8',
+    legalComments: 'none',
     ...esbuildOptions,
     supported: {
       ...defaultEsbuildSupported,

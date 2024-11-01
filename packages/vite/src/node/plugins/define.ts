@@ -191,7 +191,7 @@ export async function replaceDefine(
 
   const result = await transform(code, {
     loader: 'js',
-    charset: esbuildOptions.charset ?? 'utf8',
+    charset: esbuildOptions.charset,
     platform: 'neutral',
     define,
     sourcefile: id,
