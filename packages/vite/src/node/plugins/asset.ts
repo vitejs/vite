@@ -269,7 +269,7 @@ export async function fileToDevUrl(
 
   // If has inline query, unconditionally inline the asset
   if (inlineRE.test(id)) {
-    const file = cleanUrl(id)
+    const file = checkPublicFile(id, config) || cleanUrl(id)
     const content = await fsp.readFile(file)
     return assetToDataURL(environment, file, content)
   }
@@ -347,8 +347,16 @@ async function fileToBuiltUrl(
 ): Promise<string> {
   const environment = pluginContext.environment
   const topLevelConfig = environment.getTopLevelConfig()
-  if (!skipPublicCheck && checkPublicFile(id, topLevelConfig)) {
-    return publicFileToBuiltUrl(id, topLevelConfig)
+  if (!skipPublicCheck) {
+    const publicFile = checkPublicFile(id, topLevelConfig)
+    if (publicFile) {
+      if (inlineRE.test(id)) {
+        // If inline via query, re-assign the id so it can be read by the fs and inlined
+        id = publicFile
+      } else {
+        return publicFileToBuiltUrl(id, topLevelConfig)
+      }
+    }
   }
 
   const cache = assetCache.get(environment)!

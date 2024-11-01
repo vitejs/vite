@@ -409,11 +409,21 @@ test('?no-inline svg import', async () => {
 })
 
 test('?inline png import', async () => {
-  expect(
-    (await page.textContent('.inline-png')).startsWith(
-      'data:image/png;base64,',
-    ),
-  ).toBe(true)
+  expect(await page.textContent('.inline-png')).toMatch(
+    /^data:image\/png;base64,/,
+  )
+})
+
+test('?inline public json import', async () => {
+  expect(await page.textContent('.inline-public-png')).toMatch(
+    /^data:image\/png;base64,/,
+  )
+})
+
+test('?inline public json import', async () => {
+  expect(await page.textContent('.inline-public-json')).toMatch(
+    /^data:application\/json;base64,/,
+  )
 })
 
 test('?url import', async () => {
@@ -448,9 +458,7 @@ describe('unicode url', () => {
 describe.runIf(isBuild)('encodeURI', () => {
   test('img src with encodeURI', async () => {
     const img = await page.$('.encodeURI')
-    expect(
-      (await img.getAttribute('src')).startsWith('data:image/png;base64'),
-    ).toBe(true)
+    expect(await img.getAttribute('src')).toMatch(/^data:image\/png;base64,/)
   })
 })
 
@@ -470,14 +478,10 @@ test('new URL("/...", import.meta.url)', async () => {
 
 test('new URL("data:...", import.meta.url)', async () => {
   const img = await page.$('.import-meta-url-data-uri-img')
-  expect(
-    (await img.getAttribute('src')).startsWith('data:image/png;base64'),
-  ).toBe(true)
-  expect(
-    (await page.textContent('.import-meta-url-data-uri')).startsWith(
-      'data:image/png;base64',
-    ),
-  ).toBe(true)
+  expect(await img.getAttribute('src')).toMatch(/^data:image\/png;base64,/)
+  expect(await page.textContent('.import-meta-url-data-uri')).toMatch(
+    /^data:image\/png;base64,/,
+  )
 })
 
 test('new URL(..., import.meta.url) without extension', async () => {
