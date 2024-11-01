@@ -65,12 +65,13 @@ jobs:
               })
 
               // Add label "trigger: preview" to the PR
-              await github.rest.issues.addLabels({
+              const { data: labels } = await github.rest.issues.addLabels({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: prData.num,
                 labels: ['trigger: preview']
               });
+              console.log('labels', labels)
 
               // Get the workflow ID for 'preview-release.yml'
               const workflowFileName = 'preview-release.yml';
@@ -80,6 +81,7 @@ jobs:
                 workflow_id: workflowFileName,
               });
               const workflowId = workflow.id;
+              console.log('workflow', workflow)
 
               // Wait for 'Preview release' workflow to complete
               const maxRetries = 60; // Wait up to 10 minutes
@@ -103,6 +105,7 @@ jobs:
                     run => run.head_sha === prData.commit
                   );
 
+                  console.log('runs', runs)
                   if (runs.length > 0) {
                     found = true;
                     const latestRun = runs[0];
