@@ -29,6 +29,8 @@ export interface JsonOptions {
 // Custom json filter for vite
 const jsonExtRE = /\.json(?:$|\?)(?!commonjs-(?:proxy|external))/
 
+const jsonObjRE = /^\s*\{/
+
 const jsonLangs = `\\.(?:json|json5)(?:$|\\?)`
 const jsonLangRE = new RegExp(jsonLangs)
 export const isJSONRequest = (request: string): boolean =>
@@ -49,28 +51,26 @@ export function jsonPlugin(
 
       try {
         if (options.stringify !== false) {
-          if (options.namedExports) {
+          if (options.namedExports && jsonObjRE.test(json)) {
             const parsed = JSON.parse(json)
-            if (typeof parsed === 'object' && parsed != null) {
-              const keys = Object.keys(parsed)
+            const keys = Object.keys(parsed)
 
-              let code = ''
-              let defaultObjectCode = '{\n'
-              for (const key of keys) {
-                if (key === makeLegalIdentifier(key)) {
-                  code += `export const ${key} = ${serializeValue(parsed[key])};\n`
-                  defaultObjectCode += `  ${key},\n`
-                } else {
-                  defaultObjectCode += `  ${JSON.stringify(key)}: ${serializeValue(parsed[key])},\n`
-                }
+            let code = ''
+            let defaultObjectCode = '{\n'
+            for (const key of keys) {
+              if (key === makeLegalIdentifier(key)) {
+                code += `export const ${key} = ${serializeValue(parsed[key])};\n`
+                defaultObjectCode += `  ${key},\n`
+              } else {
+                defaultObjectCode += `  ${JSON.stringify(key)}: ${serializeValue(parsed[key])},\n`
               }
-              defaultObjectCode += '}'
+            }
+            defaultObjectCode += '}'
 
-              code += `export default ${defaultObjectCode};\n`
-              return {
-                code,
-                map: { mappings: '' },
-              }
+            code += `export default ${defaultObjectCode};\n`
+            return {
+              code,
+              map: { mappings: '' },
             }
           }
 
