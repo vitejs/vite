@@ -113,6 +113,8 @@ jobs:
                         console.log('Preview release workflow completed successfully.')
                         completed = true;
                         break;
+                      } else if (latestRun.status === 'completed') {
+                        throw new Error('Resolving Preview Release workflow failed.')
                       }
                     }
                   }
