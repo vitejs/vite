@@ -312,6 +312,7 @@ class EnvironmentPluginContainer {
       return
     }
     this._started = true
+    const config = this.environment.getTopLevelConfig()
     this._buildStartPromise = this.handleHookPromise(
       this.hookParallel(
         'buildStart',
@@ -319,6 +320,7 @@ class EnvironmentPluginContainer {
         () => [this.options as NormalizedInputOptions],
         (plugin) =>
           this.environment.name === 'client' ||
+          config.server.perEnvironmentStartEndDuringDev ||
           plugin.perEnvironmentStartEndDuringDev === true,
       ),
     ) as Promise<void>
@@ -512,13 +514,15 @@ class EnvironmentPluginContainer {
     if (this._closed) return
     this._closed = true
     await Promise.allSettled(Array.from(this._processesing))
+    const config = this.environment.getTopLevelConfig()
     await this.hookParallel(
       'buildEnd',
       (plugin) => this._getPluginContext(plugin),
       () => [],
       (plugin) =>
         this.environment.name === 'client' ||
-        plugin.perEnvironmentStartEndDuringDev !== true,
+        config.server.perEnvironmentStartEndDuringDev ||
+        plugin.perEnvironmentStartEndDuringDev === true,
     )
     await this.hookParallel(
       'closeBundle',
