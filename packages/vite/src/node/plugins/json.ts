@@ -29,6 +29,8 @@ export interface JsonOptions {
 // Custom json filter for vite
 const jsonExtRE = /\.json(?:$|\?)(?!commonjs-(?:proxy|external))/
 
+const jsonObjRE = /^\s*\{/
+
 const jsonLangs = `\\.(?:json|json5)(?:$|\\?)`
 const jsonLangRE = new RegExp(jsonLangs)
 export const isJSONRequest = (request: string): boolean =>
@@ -49,7 +51,7 @@ export function jsonPlugin(
 
       try {
         if (options.stringify !== false) {
-          if (options.namedExports && /^\s*\{/.test(json)) {
+          if (options.namedExports && jsonObjRE.test(json)) {
             const parsed = JSON.parse(json)
             const keys = Object.keys(parsed)
 
