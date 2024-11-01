@@ -343,6 +343,7 @@ export async function resolveEnvironmentPlugins(
             Boolean,
           ) as Plugin[]),
         )
+        continue
       }
     }
     environmentPlugins.push(plugin)
