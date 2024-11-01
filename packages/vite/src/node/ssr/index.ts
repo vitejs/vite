@@ -11,7 +11,7 @@ export interface SSROptions {
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
-   * This option may be replaced by the experimental `environmentOptions.webCompatible`
+   * This option will be removed in a future major version
    * @default 'node'
    */
   target?: SSRTarget

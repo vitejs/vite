@@ -9,6 +9,7 @@ import type { Plugin } from '../plugin'
 import {
   CLIENT_ENTRY,
   DEP_VERSION_RE,
+  DEV_PROD_CONDITION,
   ENV_ENTRY,
   FS_PREFIX,
   SPECIAL_QUERY_RE,
@@ -120,7 +121,6 @@ interface ResolvePluginOptions {
   tryPrefix?: string
   preferRelative?: boolean
   isRequire?: boolean
-  webCompatible?: boolean
   // #3040
   // when the importer is a ts module,
   // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
@@ -240,7 +240,6 @@ export function resolvePlugin(
       const options: InternalResolveOptions = {
         isRequire,
         ...environmentResolveOptions,
-        webCompatible: currentEnvironmentOptions.webCompatible,
         ...resolveOptions, // plugin options + resolve options overrides
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
@@ -330,7 +329,6 @@ export function resolvePlugin(
         }
 
         if (
-          options.webCompatible &&
           options.mainFields.includes('browser') &&
           (res = tryResolveBrowserMapping(fsPath, importer, options, true))
         ) {
@@ -416,7 +414,6 @@ export function resolvePlugin(
         }
 
         if (
-          options.webCompatible &&
           options.mainFields.includes('browser') &&
           (res = tryResolveBrowserMapping(
             id,
@@ -447,7 +444,6 @@ export function resolvePlugin(
         if (isBuiltin(id)) {
           if (currentEnvironmentOptions.consumer === 'server') {
             if (
-              options.webCompatible &&
               options.noExternal === true &&
               // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
               // only if the id is explicitly listed in external, we will externalize it and skip this error.
@@ -713,18 +709,10 @@ function tryCleanFsResolve(
   }
 }
 
-export type InternalResolveOptionsWithOverrideConditions =
-  InternalResolveOptions & {
-    /**
-     * @internal
-     */
-    overrideConditions?: string[]
-  }
-
 export function tryNodeResolve(
   id: string,
   importer: string | null | undefined,
-  options: InternalResolveOptionsWithOverrideConditions,
+  options: InternalResolveOptions,
   depsOptimizer?: DepsOptimizer,
   externalize?: boolean,
   allowLinkedExternal: boolean = true,
@@ -960,11 +948,9 @@ export function resolvePackageEntry(
     if (!entryPoint) {
       for (const field of options.mainFields) {
         if (field === 'browser') {
-          if (options.webCompatible) {
-            entryPoint = tryResolveBrowserEntry(dir, data, options)
-            if (entryPoint) {
-              break
-            }
+          entryPoint = tryResolveBrowserEntry(dir, data, options)
+          if (entryPoint) {
+            break
           }
         } else if (typeof data[field] === 'string') {
           entryPoint = data[field]
@@ -992,11 +978,7 @@ export function resolvePackageEntry(
       } else {
         // resolve object browser field in package.json
         const { browser: browserField } = data
-        if (
-          options.webCompatible &&
-          options.mainFields.includes('browser') &&
-          isObject(browserField)
-        ) {
+        if (options.mainFields.includes('browser') && isObject(browserField)) {
           entry = mapWithBrowserField(entry, browserField) || entry
         }
       }
@@ -1037,35 +1019,24 @@ function packageEntryFailure(id: string, details?: string) {
 function resolveExportsOrImports(
   pkg: PackageData['data'],
   key: string,
-  options: InternalResolveOptionsWithOverrideConditions,
+  options: InternalResolveOptions,
   type: 'imports' | 'exports',
 ) {
-  const additionalConditions = new Set(
-    options.overrideConditions || [
-      'production',
-      'development',
-      'module',
-      ...options.conditions,
-    ],
-  )
-
-  const conditions = [...additionalConditions].filter((condition) => {
-    switch (condition) {
-      case 'production':
-        return options.isProduction
-      case 'development':
-        return !options.isProduction
+  const conditions = options.conditions.map((condition) => {
+    if (condition === DEV_PROD_CONDITION) {
+      return options.isProduction ? 'production' : 'development'
     }
-    return true
+    return condition
   })
+
+  if (options.isRequire) {
+    conditions.push('require')
+  } else {
+    conditions.push('import')
+  }
 
   const fn = type === 'imports' ? imports : exports
-  const result = fn(pkg, key, {
-    browser: options.webCompatible && !additionalConditions.has('node'),
-    require: options.isRequire && !additionalConditions.has('import'),
-    conditions,
-  })
-
+  const result = fn(pkg, key, { conditions, unsafe: true })
   return result ? result[0] : undefined
 }
 
@@ -1103,11 +1074,7 @@ function resolveDeepImport(
           `${path.join(dir, 'package.json')}.`,
       )
     }
-  } else if (
-    options.webCompatible &&
-    options.mainFields.includes('browser') &&
-    isObject(browserField)
-  ) {
+  } else if (options.mainFields.includes('browser') && isObject(browserField)) {
     // resolve without postfix (see #7098)
     const { file, postfix } = splitFileAndPostfix(relativeId)
     const mapped = mapWithBrowserField(file, browserField)
