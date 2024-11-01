@@ -129,8 +129,8 @@ const processNodeUrl = async (
   if (server && url[0] !== '/' && url[0] !== '.') {
     const resolved = await server.pluginContainer.resolveId(url)
     // If normalized url does not contain part of the url, we need to use the resolved alias
-    if (resolved && !normalizePath(resolved.id).includes(url)) {
-      url = resolved.id
+    if (resolved && !resolved.id.includes(url)) {
+      url = path.posix.join(FS_PREFIX, resolved.id)
     }
   }
 
