@@ -35,6 +35,33 @@ describe('transform', () => {
     return (plugin.transform! as Function)(input, 'test.json').code
   }
 
+  test("namedExports: true, stringify: 'auto' should not transformed an array input", () => {
+    const actualSmall = transform(
+      '[{"a":1,"b":2}]',
+      { namedExports: true, stringify: 'auto' },
+      false,
+    )
+    expect(actualSmall).toMatchInlineSnapshot(`
+"export default [
+	{
+		a: 1,
+		b: 2
+	}
+];"
+    `)
+  })
+
+  test('namedExports: true, stringify: true should not transformed an array input', () => {
+    const actualSmall = transform(
+      '[{"a":1,"b":2}]',
+      { namedExports: true, stringify: true },
+      false,
+    )
+    expect(actualSmall).toMatchInlineSnapshot(
+      `"export default JSON.parse("[{\\"a\\":1,\\"b\\":2}]")"`,
+    )
+  })
+
   test('namedExports: true, stringify: false', () => {
     const actual = transform(
       '{"a":1,\n"🫠": "",\n"const": false}',

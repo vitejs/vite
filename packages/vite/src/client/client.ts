@@ -98,6 +98,13 @@ const transport = normalizeModuleRunnerTransport(
   })(),
 )
 
+let willUnload = false
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    willUnload = true
+  })
+}
+
 function cleanUrl(pathname: string): string {
   const url = new URL(pathname, 'http://vite.dev')
   url.searchParams.delete('direct')
@@ -231,7 +238,7 @@ async function handleMessage(payload: HotPayload) {
     case 'custom': {
       notifyListeners(payload.event, payload.data)
       if (payload.event === 'vite:ws:disconnect') {
-        if (hasDocument) {
+        if (hasDocument && !willUnload) {
           console.log(`[vite] server connection lost. Polling for restart...`)
           const socket = payload.data.webSocket as WebSocket
           await waitForSuccessfulPing(socket.url)

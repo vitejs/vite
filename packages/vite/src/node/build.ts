@@ -44,6 +44,7 @@ import {
   copyDir,
   displayTime,
   emptyDir,
+  getPkgName,
   joinUrlSegments,
   normalizePath,
   partialEncodeURIPath,
@@ -296,6 +297,12 @@ export interface LibraryOptions {
    * format as an argument.
    */
   fileName?: string | ((format: ModuleFormat, entryName: string) => string)
+  /**
+   * The name of the CSS file output if the library imports CSS. Defaults to the
+   * same value as `build.lib.fileName` if it's set a string, otherwise it falls
+   * back to the name option of the project package.json.
+   */
+  cssFileName?: string
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' | 'system'
@@ -341,6 +348,8 @@ export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
   logger: Logger,
   consumer: 'client' | 'server' | undefined,
+  // Backward compatibility
+  isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
   const { polyfillModulePreload, ...rest } = raw
@@ -435,6 +444,19 @@ export function resolveBuildEnvironmentOptions(
 
   if (resolved.cssMinify == null) {
     resolved.cssMinify = consumer === 'server' ? 'esbuild' : !!resolved.minify
+  }
+
+  if (isSsrTargetWebworkerEnvironment) {
+    resolved.rollupOptions ??= {}
+    resolved.rollupOptions.output ??= {}
+    const output = resolved.rollupOptions.output
+    for (const out of arraify(output)) {
+      out.entryFileNames ??= `[name].js`
+      out.chunkFileNames ??= `[name]-[hash].js`
+      const input = resolved.rollupOptions.input
+      out.inlineDynamicImports ??=
+        !input || typeof input === 'string' || Object.keys(input).length === 1
+    }
   }
 
   return resolved
@@ -685,7 +707,7 @@ async function buildEnvironment(
 
       const format = output.format || 'es'
       const jsExt =
-        !environment.config.webCompatible || libOptions
+        environment.config.consumer === 'server' || libOptions
           ? resolveOutputJsExtension(
               format,
               findNearestPackageData(root, packageCache)?.data.type,
@@ -723,11 +745,7 @@ async function buildEnvironment(
           ? `[name].[ext]`
           : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
         inlineDynamicImports:
-          output.format === 'umd' ||
-          output.format === 'iife' ||
-          (environment.config.consumer === 'server' &&
-            environment.config.webCompatible &&
-            (typeof input === 'string' || Object.keys(input).length === 1)),
+          output.format === 'umd' || output.format === 'iife',
         ...output,
       }
     }
@@ -769,6 +787,7 @@ async function buildEnvironment(
         resolvedOutDirs,
         emptyOutDir,
         environment.config.cacheDir,
+        true /* isRollupChokidar3 */,
       )
 
       const { watch } = await import('rollup')
@@ -876,10 +895,6 @@ function prepareOutDir(
       copyDir(publicDir, outDir)
     }
   }
-}
-
-function getPkgName(name: string) {
-  return name?.[0] === '@' ? name.split('/')[1] : name
 }
 
 type JsExt = 'js' | 'cjs' | 'mjs'
@@ -1462,7 +1477,19 @@ export interface ViteBuilder {
 }
 
 export interface BuilderOptions {
+  /**
+   * Whether to share the config instance among environments to align with the behavior of dev server.
+   *
+   * @default false
+   * @experimental
+   */
   sharedConfigBuild?: boolean
+  /**
+   * Whether to share the plugin instances among environments to align with the behavior of dev server.
+   *
+   * @default false
+   * @experimental
+   */
   sharedPlugins?: boolean
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }

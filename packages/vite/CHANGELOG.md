@@ -1,3 +1,69 @@
+## 6.0.0-beta.8 (2024-11-01)
+
+* fix: allow nested dependency selector to be used for `optimizeDeps.include` for SSR (#18506) ([826c81a](https://github.com/vitejs/vite/commit/826c81a40bb25914d55cd2e96b548f1a2c384a19)), closes [#18506](https://github.com/vitejs/vite/issues/18506)
+* fix: asset `new URL(,import.meta.url)` match (#18194) ([5286a90](https://github.com/vitejs/vite/commit/5286a90a3c1b693384f99903582a1f70b7b44945)), closes [#18194](https://github.com/vitejs/vite/issues/18194)
+* fix: close watcher if it's disabled (#18521) ([85bd0e9](https://github.com/vitejs/vite/commit/85bd0e9b0dc637c7645f2b56f93071d6e1ec149c)), closes [#18521](https://github.com/vitejs/vite/issues/18521)
+* fix(config): write temporary vite config to node_modules (#18509) ([72eaef5](https://github.com/vitejs/vite/commit/72eaef5300d20b7163050461733c3208a4013e1e)), closes [#18509](https://github.com/vitejs/vite/issues/18509)
+* fix(css): `cssCodeSplit` uses the current environment configuration (#18486) ([eefe895](https://github.com/vitejs/vite/commit/eefe8957167681b85f0e1b07bc5feefa307cccb0)), closes [#18486](https://github.com/vitejs/vite/issues/18486)
+* fix(json): don't `json.stringify` arrays (#18541) ([fa50b03](https://github.com/vitejs/vite/commit/fa50b03390dae280293174f65f850522599b9ab7)), closes [#18541](https://github.com/vitejs/vite/issues/18541)
+* fix(less): prevent rebasing `@import url(...)` (#17857) ([aec5fdd](https://github.com/vitejs/vite/commit/aec5fdd72e3aeb2aa26796001b98f3f330be86d1)), closes [#17857](https://github.com/vitejs/vite/issues/17857)
+* fix(lib): only resolve css bundle name if have styles (#18530) ([5d6dc49](https://github.com/vitejs/vite/commit/5d6dc491b6bb78613694eaf686e2e305b71af5e1)), closes [#18530](https://github.com/vitejs/vite/issues/18530)
+* fix(scss): improve error logs (#18522) ([3194a6a](https://github.com/vitejs/vite/commit/3194a6a60714a3978f5e4b39d6223f32a8dc01ef)), closes [#18522](https://github.com/vitejs/vite/issues/18522)
+* feat(html)!: support more asset sources (#11138) ([8a7af50](https://github.com/vitejs/vite/commit/8a7af50b5ddf72f21098406e9668bc609b323899)), closes [#11138](https://github.com/vitejs/vite/issues/11138)
+* feat(resolve)!: allow removing conditions (#18395) ([d002e7d](https://github.com/vitejs/vite/commit/d002e7d05a0f23110f9185b39222819bcdfffc16)), closes [#18395](https://github.com/vitejs/vite/issues/18395)
+* refactor!: remove fs.cachedChecks option (#18493) ([94b0857](https://github.com/vitejs/vite/commit/94b085735372588d5f92c7f4a8cf68e8291f2db0)), closes [#18493](https://github.com/vitejs/vite/issues/18493)
+* refactor: client-only top-level warmup (#18524) ([a50ff60](https://github.com/vitejs/vite/commit/a50ff6000bca46a6fe429f2c3a98c486ea5ebc8e)), closes [#18524](https://github.com/vitejs/vite/issues/18524)
+
+
+
+## 6.0.0-beta.7 (2024-10-30)
+
+* chore: fix moduleSideEffects in build script on Windows (#18518) ([25fe9e3](https://github.com/vitejs/vite/commit/25fe9e3b48e29d49e90d6aed5ec3825dceafec18)), closes [#18518](https://github.com/vitejs/vite/issues/18518)
+* chore: use premove instead of rimraf (#18499) ([f97a578](https://github.com/vitejs/vite/commit/f97a57893b3a7ddf11ca4c126b6be33cd2d9283b)), closes [#18499](https://github.com/vitejs/vite/issues/18499)
+* feat!: proxy bypass with WebSocket (#18070) ([3c9836d](https://github.com/vitejs/vite/commit/3c9836d96f118ff5748916241bc3871a54247ad1)), closes [#18070](https://github.com/vitejs/vite/issues/18070)
+* feat!: support `file://` resolution (#18422) ([6a7e313](https://github.com/vitejs/vite/commit/6a7e313754dce5faa5cd7c1e2343448cd7f3a2a2)), closes [#18422](https://github.com/vitejs/vite/issues/18422)
+* feat!: update to chokidar v4 (#18453) ([192d555](https://github.com/vitejs/vite/commit/192d555f88bba7576e8a40cc027e8a11e006079c)), closes [#18453](https://github.com/vitejs/vite/issues/18453)
+* feat(lib)!: use package name for css output file name (#18488) ([61cbf6f](https://github.com/vitejs/vite/commit/61cbf6f2cfcd5afc91fe0a0ad56abfc36a32f1ab)), closes [#18488](https://github.com/vitejs/vite/issues/18488)
+* fix(css)!: remove default import in ssr dev (#17922) ([eccf663](https://github.com/vitejs/vite/commit/eccf663e35a17458425860895bb30b3b0613ea96)), closes [#17922](https://github.com/vitejs/vite/issues/17922)
+* fix: `define` in environment config was not working (#18515) ([052799e](https://github.com/vitejs/vite/commit/052799e8939cfcdd7a7ff48daf45a766bf6cc546)), closes [#18515](https://github.com/vitejs/vite/issues/18515)
+* fix: consider URLs with any protocol to be external (#17369) ([a0336bd](https://github.com/vitejs/vite/commit/a0336bd5197bb4427251be4c975e30fb596c658f)), closes [#17369](https://github.com/vitejs/vite/issues/17369)
+* fix: use picomatch to align with tinyglobby (#18503) ([437795d](https://github.com/vitejs/vite/commit/437795db8307ce4491d066bcaaa5bd9432193773)), closes [#18503](https://github.com/vitejs/vite/issues/18503)
+* fix(build): apply resolve.external/noExternal to server environments (#18495) ([5a967cb](https://github.com/vitejs/vite/commit/5a967cb596c7c4b0548be1d9025bc1e34b36169a)), closes [#18495](https://github.com/vitejs/vite/issues/18495)
+* fix(config): remove error if require resolve to esm (#18437) ([f886f75](https://github.com/vitejs/vite/commit/f886f75396cdb5a43ec5377bbbaaffc0e8ae03e9)), closes [#18437](https://github.com/vitejs/vite/issues/18437)
+* feat: log complete config in debug mode (#18289) ([04f6736](https://github.com/vitejs/vite/commit/04f6736fd7ac3da22141929c01a151f5a6fe4e45)), closes [#18289](https://github.com/vitejs/vite/issues/18289)
+* feat(html): support `vite-ignore` attribute to opt-out of processing (#18494) ([d951310](https://github.com/vitejs/vite/commit/d9513104e21175e1d23e0f614df55cd53291ab4e)), closes [#18494](https://github.com/vitejs/vite/issues/18494)
+* refactor: separate tsconfck caches per config in a weakmap (#17317) ([b9b01d5](https://github.com/vitejs/vite/commit/b9b01d57fdaf5d291c78a8156e17b534c8c51eb4)), closes [#17317](https://github.com/vitejs/vite/issues/17317)
+* docs: add jsdocs to flags in BuilderOptions (#18516) ([1507068](https://github.com/vitejs/vite/commit/1507068b6d460cf54336fe7e8d3539fdb4564bfb)), closes [#18516](https://github.com/vitejs/vite/issues/18516)
+* docs: missing changes guides (#18491) ([5da78a6](https://github.com/vitejs/vite/commit/5da78a6859f3b5c677d896144b915381e4497432)), closes [#18491](https://github.com/vitejs/vite/issues/18491)
+* docs: update fs.deny default in JSDoc (#18514) ([1fcc83d](https://github.com/vitejs/vite/commit/1fcc83dd7ade429f889e4ce19d5c67b3e5b46419)), closes [#18514](https://github.com/vitejs/vite/issues/18514)
+* build: reduce package size (#18517) ([b83f60b](https://github.com/vitejs/vite/commit/b83f60b159f3b6f4a61db180fa03cc5b20bd110f)), closes [#18517](https://github.com/vitejs/vite/issues/18517)
+
+
+
+## 6.0.0-beta.6 (2024-10-28)
+
+* fix: handle warmup glob hang (#18462) ([409fa5c](https://github.com/vitejs/vite/commit/409fa5c9dee0e394bcdc3b111f5b2e4261131ca0)), closes [#18462](https://github.com/vitejs/vite/issues/18462)
+* fix: return the same instance of ModuleNode for the same EnvironmentModuleNode (#18455) ([5ead461](https://github.com/vitejs/vite/commit/5ead461b374d76ceb134063477eaf3f97fe3da97)), closes [#18455](https://github.com/vitejs/vite/issues/18455)
+* fix: set scripts imported by HTML moduleSideEffects=true (#18411) ([2ebe4b4](https://github.com/vitejs/vite/commit/2ebe4b44430dd311028f72520ac977bb202ce50b)), closes [#18411](https://github.com/vitejs/vite/issues/18411)
+* fix: use websocket to test server liveness before client reload (#17891) ([7f9f8c6](https://github.com/vitejs/vite/commit/7f9f8c6851d1eb49a72dcb6c134873148a2e81eb)), closes [#17891](https://github.com/vitejs/vite/issues/17891)
+* fix(css): `cssCodeSplit` in `environments.xxx.build` is invalid (#18464) ([993e71c](https://github.com/vitejs/vite/commit/993e71c4cb227bd8c347b918f52ccd83f85a645a)), closes [#18464](https://github.com/vitejs/vite/issues/18464)
+* fix(css): make sass types work with sass-embedded (#18459) ([89f8303](https://github.com/vitejs/vite/commit/89f8303e727791aa7be6f35833a708b6a50e9120)), closes [#18459](https://github.com/vitejs/vite/issues/18459)
+* fix(deps): update all non-major dependencies (#18484) ([2ec12df](https://github.com/vitejs/vite/commit/2ec12df98d07eb4c986737e86a4a9f8066724658)), closes [#18484](https://github.com/vitejs/vite/issues/18484)
+* fix(manifest): non entry CSS chunk src was wrong (#18133) ([c148676](https://github.com/vitejs/vite/commit/c148676c90dc4823bc6bdeb8ba1e36386c5d9654)), closes [#18133](https://github.com/vitejs/vite/issues/18133)
+* fix(module-runner): delay function eval until module runner instantiation (#18480) ([472afbd](https://github.com/vitejs/vite/commit/472afbd010db3f1c7a59826c7bf4067191b7f48a)), closes [#18480](https://github.com/vitejs/vite/issues/18480)
+* fix(plugins): noop if config hook returns same config reference (#18467) ([bd540d5](https://github.com/vitejs/vite/commit/bd540d52eb609ca12dad8e2f3fe8011821bda878)), closes [#18467](https://github.com/vitejs/vite/issues/18467)
+* refactor: optimizeDeps back to top level (#18465) ([1ac22de](https://github.com/vitejs/vite/commit/1ac22de41cf5a8647847070eadeac3231c94c3ed)), closes [#18465](https://github.com/vitejs/vite/issues/18465)
+* refactor: top-level createEnvironment is client-only (#18475) ([6022fc2](https://github.com/vitejs/vite/commit/6022fc2c87e0f59c3e6ccfa307a352a378d8273a)), closes [#18475](https://github.com/vitejs/vite/issues/18475)
+* refactor(css): hide internal preprocessor types and expose types used for options (#18458) ([c32837c](https://github.com/vitejs/vite/commit/c32837cf868f0fdb97a22a0be8c95c433f4069c8)), closes [#18458](https://github.com/vitejs/vite/issues/18458)
+* feat: allow custom `console` in `createLogger` (#18379) ([0c497d9](https://github.com/vitejs/vite/commit/0c497d9cb63bd4a6bb8e01c0e3b843890a239d23)), closes [#18379](https://github.com/vitejs/vite/issues/18379)
+* feat: read `sec-fetch-dest` header to detect JS in transform (#9981) ([e51dc40](https://github.com/vitejs/vite/commit/e51dc40b5907cf14d7aefaaf01fb8865a852ef15)), closes [#9981](https://github.com/vitejs/vite/issues/9981)
+* feat(css): add more stricter typing of lightningcss (#18460) ([b9b925e](https://github.com/vitejs/vite/commit/b9b925eb3f911ab63972124dc8ab0455449b925d)), closes [#18460](https://github.com/vitejs/vite/issues/18460)
+* chore(deps)!: update postcss-load-config to v6 (#15235) ([3a27f62](https://github.com/vitejs/vite/commit/3a27f627df278f6c9778a55f44cb347665b65204)), closes [#15235](https://github.com/vitejs/vite/issues/15235)
+* feat(css)!: change default sass api to modern/modern-compiler (#17937) ([d4e0442](https://github.com/vitejs/vite/commit/d4e0442f9d6adc70b72ea0713dc8abb4b1f75ae4)), closes [#17937](https://github.com/vitejs/vite/issues/17937)
+* perf(css): skip style.css extraction if code-split css (#18470) ([34fdb6b](https://github.com/vitejs/vite/commit/34fdb6bef558724330d2411b9666facef669b3a0)), closes [#18470](https://github.com/vitejs/vite/issues/18470)
+
+
+
 ## 6.0.0-beta.5 (2024-10-24)
 
 * fix: add typing to `CSSOptions.preprocessorOptions` (#18001) ([7eeb6f2](https://github.com/vitejs/vite/commit/7eeb6f2f97abf5dfc71c225b9cff9779baf2ed2f)), closes [#18001](https://github.com/vitejs/vite/issues/18001)
