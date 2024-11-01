@@ -149,6 +149,7 @@ test('classic worker', async () => {
 })
 
 test('url query worker', async () => {
+  await page.reload()
   await untilUpdated(
     () => page.textContent('.simple-worker-url'),
     'Hello from simple worker!',
