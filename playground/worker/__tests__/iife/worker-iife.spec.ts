@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
+  editFile,
   expectWithRetry,
   isBuild,
   isServe,
@@ -151,6 +152,24 @@ test('url query worker', async () => {
   await untilUpdated(
     () => page.textContent('.simple-worker-url'),
     'Hello from simple worker!',
+  )
+
+  editFile('simple-worker.js', (code) =>
+    code.replace('hey there', 'hey there!'),
+  )
+
+  await untilUpdated(
+    () => page.textContent('.simple-worker-url'),
+    'Hello from simple worker (HMR message: hey there!)!',
+  )
+
+  editFile('simple-worker.js', (code) =>
+    code.replace('hey there!', 'hey there'),
+  )
+
+  await untilUpdated(
+    () => page.textContent('.simple-worker-url'),
+    'Hello from simple worker (HMR message: hey there)!',
   )
 })
 
