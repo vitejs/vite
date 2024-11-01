@@ -47,6 +47,7 @@ export default defineConfig({
   build: {
     // to make tests faster
     minify: false,
+    license: true,
     rollupOptions: {
       onwarn(msg, warn) {
         // filter `"Buffer" is not exported by "__vite-browser-external"` warning

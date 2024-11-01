@@ -73,6 +73,7 @@ import {
 } from './baseEnvironment'
 import type { MinimalPluginContext, Plugin, PluginContext } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
+import { licensePlugin } from './plugins/license'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -199,6 +200,12 @@ export interface BuildEnvironmentOptions {
    * @default true
    */
   copyPublicDir?: boolean
+  /**
+   * Whether to emit a .vite/license.md that includes all bundled dependencies'
+   * licenses. Specify a path that ends with `.json` to generate a raw JSON.entry.
+   * @default false
+   */
+  license?: boolean | string
   /**
    * Whether to emit a .vite/manifest.json under assets dir to map hash-less filenames
    * to their hashed versions. Useful when you want to generate your own HTML
@@ -383,6 +390,7 @@ export function resolveBuildEnvironmentOptions(
     write: true,
     emptyOutDir: null,
     copyPublicDir: true,
+    license: false,
     manifest: false,
     lib: false,
     ssr: consumer === 'server',
@@ -501,7 +509,12 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
       ...(config.esbuild !== false ? [buildEsbuildPlugin(config)] : []),
       terserPlugin(config),
       ...(!config.isWorker
-        ? [manifestPlugin(), ssrManifestPlugin(), buildReporterPlugin(config)]
+        ? [
+            licensePlugin(),
+            manifestPlugin(),
+            ssrManifestPlugin(),
+            buildReporterPlugin(config),
+          ]
         : []),
       buildLoadFallbackPlugin(),
     ],
