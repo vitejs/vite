@@ -235,6 +235,21 @@ function getResolveCacheKey(key: string, options: InternalResolveOptions) {
   ].join('|')
 }
 
+export function findNearestNodeModules(basedir: string): string | null {
+  while (basedir) {
+    const pkgPath = path.join(basedir, 'node_modules')
+    if (tryStatSync(pkgPath)?.isDirectory()) {
+      return pkgPath
+    }
+
+    const nextBasedir = path.dirname(basedir)
+    if (nextBasedir === basedir) break
+    basedir = nextBasedir
+  }
+
+  return null
+}
+
 export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
   // a list of files to watch before the plugin is ready
   const watchQueue = new Set<string>()
