@@ -152,17 +152,17 @@ const UnoCssPlugin = () => {
 }
 ```
 
-If a plugin isn't environment aware and has state that isn't keyed on the current environment (as it is common in Rollup build plugins like `rollup-plugin-visualizer`), the `applyToEnvironment` hook allows to easily make it per-environment.
+If a plugin isn't environment aware and has state that isn't keyed on the current environment, the `applyToEnvironment` hook allows to easily make it per-environment.
 
 ```js
-import { visualizer } from 'rollup-plugin-visualizer'
+import { nonShareablePlugin } from 'non-shareable-plugin'
 
 export default defineConfig({
   plugins: [
     {
-      name: 'per-environment-visualizer',
-      applyToEnvironment() {
-        return visualizer()
+      name: 'per-environment-plugin',
+      applyToEnvironment(environment) {
+        return nonShareablePlugin({ outputName: environment.name })
       },
     },
   ],
@@ -172,11 +172,13 @@ export default defineConfig({
 Vite exports a `perEnvironmentPlugin` helper to simplify these cases where no other hooks are required:
 
 ```js
-import { visualizer } from 'rollup-plugin-visualizer'
+import { nonShareablePlugin } from 'non-shareable-plugin'
 
 export default defineConfig({
   plugins: [
-    perEnvironmentPlugin('per-environment-visualizer', () => visualizer()),
+    perEnvironmentPlugin('per-environment-plugin', (environment) =>
+      nonShareablePlugin({ outputName: environment.name }),
+    ),
   ],
 })
 ```
