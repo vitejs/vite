@@ -3,6 +3,7 @@ name: ecosystem-ci trigger
 # on:
 #   issue_comment:
 #     types: [created]
+
 on:
   pull_request:
 
