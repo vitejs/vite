@@ -283,7 +283,7 @@ class EnvironmentPluginContainer {
     hookName: H,
     context: (plugin: Plugin) => ThisType<FunctionPluginHooks[H]>,
     args: (plugin: Plugin) => Parameters<FunctionPluginHooks[H]>,
-    condition?: (plugin: Plugin) => boolean,
+    condition?: (plugin: Plugin) => boolean | undefined,
   ): Promise<void> {
     const parallelPromises: Promise<unknown>[] = []
     for (const plugin of this.getSortedPlugins(hookName)) {
@@ -321,7 +321,7 @@ class EnvironmentPluginContainer {
         (plugin) =>
           this.environment.name === 'client' ||
           config.server.perEnvironmentStartEndDuringDev ||
-          plugin.perEnvironmentStartEndDuringDev === true,
+          plugin.perEnvironmentStartEndDuringDev,
       ),
     ) as Promise<void>
     await this._buildStartPromise
@@ -522,7 +522,7 @@ class EnvironmentPluginContainer {
       (plugin) =>
         this.environment.name === 'client' ||
         config.server.perEnvironmentStartEndDuringDev ||
-        plugin.perEnvironmentStartEndDuringDev === true,
+        plugin.perEnvironmentStartEndDuringDev,
     )
     await this.hookParallel(
       'closeBundle',
