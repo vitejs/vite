@@ -48,8 +48,8 @@ export function jsonPlugin(
       json = stripBomTag(json)
 
       try {
-        if (options.stringify !== false && /^\s*\{/.test(json)) {
-          if (options.namedExports) {
+        if (options.stringify !== false) {
+          if (options.namedExports && /^\s*\{/.test(json)) {
             const parsed = JSON.parse(json)
             if (typeof parsed === 'object' && parsed != null) {
               const keys = Object.keys(parsed)
