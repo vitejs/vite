@@ -283,7 +283,7 @@ class EnvironmentPluginContainer {
     hookName: H,
     context: (plugin: Plugin) => ThisType<FunctionPluginHooks[H]>,
     args: (plugin: Plugin) => Parameters<FunctionPluginHooks[H]>,
-    condition?: (plugin: Plugin) => boolean,
+    condition?: (plugin: Plugin) => boolean | undefined,
   ): Promise<void> {
     const parallelPromises: Promise<unknown>[] = []
     for (const plugin of this.getSortedPlugins(hookName)) {
@@ -312,6 +312,7 @@ class EnvironmentPluginContainer {
       return
     }
     this._started = true
+    const config = this.environment.getTopLevelConfig()
     this._buildStartPromise = this.handleHookPromise(
       this.hookParallel(
         'buildStart',
@@ -319,7 +320,8 @@ class EnvironmentPluginContainer {
         () => [this.options as NormalizedInputOptions],
         (plugin) =>
           this.environment.name === 'client' ||
-          plugin.perEnvironmentStartEndDuringDev === true,
+          config.server.perEnvironmentStartEndDuringDev ||
+          plugin.perEnvironmentStartEndDuringDev,
       ),
     ) as Promise<void>
     await this._buildStartPromise
@@ -512,13 +514,15 @@ class EnvironmentPluginContainer {
     if (this._closed) return
     this._closed = true
     await Promise.allSettled(Array.from(this._processesing))
+    const config = this.environment.getTopLevelConfig()
     await this.hookParallel(
       'buildEnd',
       (plugin) => this._getPluginContext(plugin),
       () => [],
       (plugin) =>
         this.environment.name === 'client' ||
-        plugin.perEnvironmentStartEndDuringDev !== true,
+        config.server.perEnvironmentStartEndDuringDev ||
+        plugin.perEnvironmentStartEndDuringDev,
     )
     await this.hookParallel(
       'closeBundle',
