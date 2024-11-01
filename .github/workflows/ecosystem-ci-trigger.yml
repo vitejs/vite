@@ -32,7 +32,7 @@ jobs:
       - uses: actions/github-script@v7
         id: check-workflow
         with:
-          github-token: ${{ steps.generate-token.outputs.token }}
+          # github-token: ${{ steps.generate-token.outputs.token }}
           script: |
             const user = context.payload.sender.login
             console.log(`Validate user: ${user}`)
