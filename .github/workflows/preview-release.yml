@@ -12,13 +12,13 @@ on:
     branches:
       - main
   pull_request:
-    types: [opened, synchronize, labeled]
+    types: [labeled]
 
 jobs:
   preview:
-    if: >
-      github.event_name == 'push' ||
-      contains(github.event.pull_request.labels.*.name, 'trigger: preview')
+    # if: >
+    #   github.event_name == 'push' ||
+    #   contains(github.event.pull_request.labels.*.name, 'trigger: preview')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
