@@ -114,8 +114,6 @@ jobs:
                         console.log('Preview release workflow completed successfully.')
                         completed = true;
                         break;
-                      } else {
-                        throw new Error(`Workflow "Preview release" failed.`);
                       }
                     }
                   }
