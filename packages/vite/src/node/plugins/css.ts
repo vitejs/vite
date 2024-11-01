@@ -888,7 +888,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       // extract as single css bundle if no codesplit
-      if (!config.build.cssCodeSplit && !hasEmitted) {
+      if (!this.environment.config.build.cssCodeSplit && !hasEmitted) {
         let extractedCss = ''
         const collected = new Set<OutputChunk>()
         // will be populated in order they are used by entry points
