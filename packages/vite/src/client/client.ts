@@ -91,9 +91,19 @@ function setupWebSocket(
     handleMessage(JSON.parse(data))
   })
 
+  let willUnload = false
+  window.addEventListener(
+    'beforeunload',
+    () => {
+      willUnload = true
+    },
+    { once: true },
+  )
+
   // ping server
-  socket.addEventListener('close', async ({ wasClean }) => {
-    if (wasClean) return
+  socket.addEventListener('close', async () => {
+    // ignore close caused by top-level navigation
+    if (willUnload) return
 
     if (!isOpened && onCloseWithoutOpen) {
       onCloseWithoutOpen()
