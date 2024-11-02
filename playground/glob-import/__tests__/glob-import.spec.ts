@@ -84,7 +84,7 @@ const relativeRawResult = {
 }
 
 const baseRawResult = {
-  'baz.json': {
+  './baz.json': {
     msg: 'baz',
   },
 }
