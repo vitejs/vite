@@ -440,6 +440,7 @@ export async function transformGlobImport(
                 posix.join(resolvedBasePath, options.base),
                 file,
               )
+              if (filePath[0] !== '.') filePath = `./${filePath}`
             } else if (isRelative) {
               filePath = importPath
             } else {

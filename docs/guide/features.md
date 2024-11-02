@@ -552,8 +552,8 @@ const moduleBase = import.meta.glob('**/*.js', {
 ```ts
 // code produced by vite:
 const moduleBase = {
-  'dir/foo.js': () => import('./dir/foo.js'),
-  'dir/bar.js': () => import('./dir/bar.js'),
+  './dir/foo.js': () => import('./dir/foo.js'),
+  './dir/bar.js': () => import('./dir/bar.js'),
 }
 ```
 
