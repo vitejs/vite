@@ -1150,14 +1150,28 @@ function isSingleDefaultExport(exports: readonly string[]) {
 }
 
 const lockfileFormats = [
+  // Prefer over package-lock.json as it will only be updated after `npm install` ran
+  {
+    name: '.package-lock.json',
+    path: 'node_modules/.package-lock.json',
+    checkPatches: true,
+    manager: 'npm',
+  },
   { name: 'package-lock.json', checkPatches: true, manager: 'npm' },
   { name: 'yarn.lock', checkPatches: true, manager: 'yarn' }, // Included in lockfile for v2+
+  // Prefer over pnpm-lock.yaml as it will only be updated after `pnpm install` ran
+  {
+    name: 'lock.yaml',
+    path: 'node_modules/.pnpm/lock.yaml',
+    checkPatches: false,
+    manager: 'pnpm',
+  }, // Included in lockfile
   { name: 'pnpm-lock.yaml', checkPatches: false, manager: 'pnpm' }, // Included in lockfile
   { name: 'bun.lockb', checkPatches: true, manager: 'bun' },
 ].sort((_, { manager }) => {
   return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
 })
-const lockfileNames = lockfileFormats.map((l) => l.name)
+const lockfilePaths = lockfileFormats.map((l) => l.path ?? l.name)
 
 function getConfigHash(environment: Environment): string {
   // Take config into account
@@ -1195,7 +1209,7 @@ function getConfigHash(environment: Environment): string {
 }
 
 function getLockfileHash(environment: Environment): string {
-  const lockfilePath = lookupFile(environment.config.root, lockfileNames)
+  const lockfilePath = lookupFile(environment.config.root, lockfilePaths)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
     const lockfileName = path.basename(lockfilePath)
