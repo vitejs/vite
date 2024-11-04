@@ -52,8 +52,8 @@ importers:
         specifier: ^3.0.6
         version: 3.0.6
       '@types/node':
-        specifier: ^20.17.1
-        version: 20.17.1
+        specifier: ^22.8.7
+        version: 22.8.7
       '@types/picomatch':
         specifier: ^3.0.1
         version: 3.0.1
@@ -131,7 +131,7 @@ importers:
         version: link:packages/vite
       vitest:
         specifier: ^2.1.3
-        version: 2.1.3(@types/node@20.17.1)
+        version: 2.1.3(@types/node@22.8.7)
 
   docs:
     devDependencies:
@@ -3060,6 +3060,9 @@ packages:
 
   '@types/node@20.17.1':
     resolution: {integrity: sha512-j2VlPv1NnwPJbaCNv69FO/1z4lId0QmGvpT41YxitRtWlg96g/j8qcv2RKsLKe2F6OJgyXhupN1Xo17b2m139Q==}
+
+  '@types/node@22.8.7':
+    resolution: {integrity: sha512-LidcG+2UeYIWcMuMUpBKOnryBWG/rnmOHQR5apjn8myTQcx3rinFRn7DcIFhMnS0PPFSC6OafdIKEad0lj6U0Q==}
 
   '@types/normalize-package-data@2.4.4':
     resolution: {integrity: sha512-37i+OaWTh9qeK4LSHPsyRC7NahnGotNuZvjLSgcPzblpHB3rrCJxAOgI5gCdKm7coonsaX1Of0ILiTcnZjbfxA==}
@@ -6775,6 +6778,9 @@ packages:
   undici-types@6.19.6:
     resolution: {integrity: sha512-e/vggGopEfTKSvj4ihnOLTsqhrKRN3LeO6qSN/GxohhuRv8qH9bNQ4B8W7e/vFL+0XTnmHPB4/kegunZGA4Org==}
 
+  undici-types@6.19.8:
+    resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
+
   undici@5.28.4:
     resolution: {integrity: sha512-72RFADWFqKmUb2hmmvNODKL3p9hcB6Gt2DOQMis1SEBaV6a4MH8soBvzg+95CYhCKPFedut2JY9bMfrDl9D23g==}
     engines: {node: '>=14.0'}
@@ -8477,17 +8483,17 @@ snapshots:
   '@types/body-parser@1.19.5':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 20.17.1
+      '@types/node': 22.8.7
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 20.17.1
+      '@types/node': 22.8.7
 
   '@types/convert-source-map@2.0.3': {}
 
   '@types/cross-spawn@6.0.6':
     dependencies:
-      '@types/node': 20.17.1
+      '@types/node': 22.8.7
 
   '@types/debug@4.1.12':
     dependencies:
@@ -8499,11 +8505,11 @@ snapshots:
 
   '@types/etag@1.8.3':
     dependencies:
-      '@types/node': 20.17.1
+      '@types/node': 22.8.7
 
   '@types/express-serve-static-core@4.17.43':
     dependencies:
-      '@types/node': 20.17.1
+      '@types/node': 22.8.7
       '@types/qs': 6.9.12
       '@types/range-parser': 1.2.7
       '@types/send': 0.17.4
@@ -8552,6 +8558,10 @@ snapshots:
     dependencies:
       undici-types: 6.19.6
 
+  '@types/node@22.8.7':
+    dependencies:
+      undici-types: 6.19.8
+
   '@types/normalize-package-data@2.4.4': {}
 
   '@types/picomatch@3.0.1': {}
@@ -8585,17 +8595,17 @@ snapshots:
   '@types/send@0.17.4':
     dependencies:
       '@types/mime': 1.3.5
-      '@types/node': 20.17.1
+      '@types/node': 22.8.7
 
   '@types/serve-static@1.15.5':
     dependencies:
       '@types/http-errors': 2.0.4
       '@types/mime': 3.0.4
-      '@types/node': 20.17.1
+      '@types/node': 22.8.7
 
   '@types/stylus@0.48.43':
     dependencies:
-      '@types/node': 20.17.1
+      '@types/node': 22.8.7
 
   '@types/unist@3.0.2': {}
 
@@ -8603,7 +8613,7 @@ snapshots:
 
   '@types/ws@8.5.12':
     dependencies:
-      '@types/node': 20.17.1
+      '@types/node': 22.8.7
 
   '@typescript-eslint/eslint-plugin@8.11.0(@typescript-eslint/parser@8.11.0(eslint@9.13.0(jiti@2.3.3))(typescript@5.6.2))(eslint@9.13.0(jiti@2.3.3))(typescript@5.6.2)':
     dependencies:
@@ -12549,6 +12559,8 @@ snapshots:
 
   undici-types@6.19.6: {}
 
+  undici-types@6.19.8: {}
+
   undici@5.28.4:
     dependencies:
       '@fastify/busboy': 2.1.0
@@ -12702,7 +12714,7 @@ snapshots:
       - typescript
       - universal-cookie
 
-  vitest@2.1.3(@types/node@20.17.1):
+  vitest@2.1.3(@types/node@22.8.7):
     dependencies:
       '@vitest/expect': 2.1.3
       '@vitest/mocker': 2.1.3(vite@packages+vite)
@@ -12724,7 +12736,7 @@ snapshots:
       vite-node: 2.1.3
       why-is-node-running: 2.3.0
     optionalDependencies:
-      '@types/node': 20.17.1
+      '@types/node': 22.8.7
     transitivePeerDependencies:
       - msw
       - supports-color
