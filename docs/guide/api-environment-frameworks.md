@@ -77,7 +77,7 @@ app.use('*', async (req, res, next) => {
   // 3. Load the server entry. import(url) automatically transforms
   //    ESM source code to be usable in Node.js! There is no bundling
   //    required, and provides full HMR support.
-  const { render } = await environment.runner.import('/src/serverEntry.js')
+  const { render } = await environment.runner.import('/src/entry-server.js')
 
   // 4. render the app HTML. This assumes entry-server.js's exported
   //     `render` function calls appropriate framework SSR APIs,
@@ -173,8 +173,6 @@ export function createHandler(input) {
 For example, to call `transformIndexHtml` on the user module, the following plugin can be used:
 
 ```ts {13-21}
-import { readFile } from 'node:fs/promises'
-
 function vitePluginVirtualIndexHtml(): Plugin {
   let server: ViteDevServer | undefined
   return {
@@ -190,10 +188,10 @@ function vitePluginVirtualIndexHtml(): Plugin {
         let html: string
         if (server) {
           this.addWatchFile('index.html')
-          html = await readFile('index.html', 'utf-8')
+          html = fs.readFileSync('index.html', 'utf-8')
           html = await server.transformIndexHtml('/', html)
         } else {
-          html = await readFile('dist/client/index.html', 'utf-8')
+          html = fs.readFileSync('dist/client/index.html', 'utf-8')
         }
         return `export default ${JSON.stringify(html)}`
       }
