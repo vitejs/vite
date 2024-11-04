@@ -104,6 +104,7 @@ export const core = [
       { icon: 'github', link: 'https://github.com/sheremet-va' },
       { icon: 'x', link: 'https://x.com/sheremet_va' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sheremet_va' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/erus.dev' },
     ],
     sponsor: 'https://github.com/sponsors/sheremet-va',
   },
