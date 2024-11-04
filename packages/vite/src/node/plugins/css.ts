@@ -3057,7 +3057,7 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
     [PreprocessLang.styl]: styl.process,
     [PreprocessLang.stylus]: styl.process,
     close,
-  } as const satisfies { [K in PreprocessLang | 'close']: unknown }
+  } as const satisfies Record<PreprocessLang | 'close', unknown>
 }
 
 const normalizeMaxWorkers = (maxWorker: number | true | undefined) => {
