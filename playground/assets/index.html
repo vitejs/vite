@@ -237,6 +237,18 @@
 <h2>?raw import</h2>
 <code class="raw"></code>
 
+<h2>?no-inline svg import</h2>
+<code class="no-inline-svg"></code>
+
+<h2>?inline png import</h2>
+<code class="inline-png"></code>
+
+<h2>?inline public png import</h2>
+<code class="inline-public-png"></code>
+
+<h2>?url&inline public json import</h2>
+<code class="inline-public-json"></code>
+
 <h2>?url import</h2>
 <code class="url"></code>
 
@@ -475,6 +487,18 @@
 
   import rawSvg from './nested/fragment.svg?raw'
   text('.raw', rawSvg)
+
+  import noInlineSvg from './nested/fragment.svg?no-inline'
+  text('.no-inline-svg', noInlineSvg)
+
+  import inlinePng from './nested/asset.png?inline'
+  text('.inline-png', inlinePng)
+
+  import inlinePublicPng from '/icon.png?inline'
+  text('.inline-public-png', inlinePublicPng)
+
+  import inlinePublicJson from '/foo.json?url&inline'
+  text('.inline-public-json', inlinePublicJson)
 
   import fooUrl from './foo.js?url'
   text('.url', fooUrl)
