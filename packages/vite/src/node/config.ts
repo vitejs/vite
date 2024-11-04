@@ -29,6 +29,7 @@ import type {
   PluginOption,
   PluginWithRequiredHook,
 } from './plugin'
+import { getHookHandler, getSortedPluginsByHook } from './plugin'
 import type {
   BuildEnvironmentOptions,
   BuilderOptions,
@@ -66,12 +67,7 @@ import {
   normalizeAlias,
   normalizePath,
 } from './utils'
-import {
-  createPluginHookUtils,
-  getHookHandler,
-  getSortedPluginsByHook,
-  resolvePlugins,
-} from './plugins'
+import { createPluginHookUtils, resolvePlugins } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
 import type {
   EnvironmentResolveOptions,

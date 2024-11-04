@@ -77,7 +77,8 @@ import {
   timeFrom,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { createPluginHookUtils, getHookHandler } from '../plugins'
+import { createPluginHookUtils } from '../plugins'
+import { getHookHandler } from '../plugin'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import type { PluginHookUtils } from '../config'
 import type { Environment } from '../environment'

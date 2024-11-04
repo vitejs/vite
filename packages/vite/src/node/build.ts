@@ -49,7 +49,11 @@ import {
   normalizePath,
   partialEncodeURIPath,
 } from './utils'
-import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
+import {
+  getHookHandler,
+  perEnvironmentPlugin,
+  resolveEnvironmentPlugins,
+} from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -66,7 +70,6 @@ import {
 import { completeSystemWrapPlugin } from './plugins/completeSystemWrap'
 import { mergeConfig } from './publicUtils'
 import { webWorkerPostPlugin } from './plugins/worker'
-import { getHookHandler } from './plugins'
 import {
   BaseEnvironment,
   getDefaultResolvedEnvironmentOptions,
