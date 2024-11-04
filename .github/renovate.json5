@@ -17,6 +17,7 @@
     "node",
     "typescript",
     "eslint-plugin-react-hooks", // prevent bumping to messy -rc-<hash>-<date>
+    "@rollup/plugin-dynamic-import-vars", // prefer version using tinyglobby
 
     // pinned
     "slash3",
