@@ -22,7 +22,8 @@ export class RunnableDevEnvironment extends DevEnvironment {
 
 class ModuleRunner {
   /**
-   * URL to execute. Accepts file path, server path, or id relative to the root.
+   * URL to execute.
+   * Accepts file path, server path, or id relative to the root.
    * Returns an instantiated module (same as in ssrLoadModule)
    */
   public async import(url: string): Promise<Record<string, any>>
@@ -52,20 +53,21 @@ const server = await createServer({
   appType: 'custom',
   environments: {
     server: {
-      // by default, the modules are run in the same process as the vite dev server during dev
+      // by default, modules are run in the same process as the vite server
     },
   },
 })
 
-// You might need to cast this to RunnableDevEnvironment in TypeScript or use
-// the "isRunnableDevEnvironment" function to guard the access to the runner
+// You might need to cast this to RunnableDevEnvironment in TypeScript or
+// use isRunnableDevEnvironment to guard the access to the runner
 const environment = server.environments.node
 
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
   // 1. Read index.html
-  let template = fs.readFileSync(path.resolve(__dirname, 'index.html'), 'utf-8')
+  const indexHtmlPath = path.resolve(__dirname, 'index.html')
+  let template = fs.readFileSync(indexHtmlPath, 'utf-8')
 
   // 2. Apply Vite HTML transforms. This injects the Vite HMR client,
   //    and also applies HTML transforms from Vite plugins, e.g. global
@@ -75,7 +77,7 @@ app.use('*', async (req, res, next) => {
   // 3. Load the server entry. import(url) automatically transforms
   //    ESM source code to be usable in Node.js! There is no bundling
   //    required, and provides full HMR support.
-  const { render } = await environment.runner.import('/src/entry-server.js')
+  const { render } = await environment.runner.import('/src/serverEntry.js')
 
   // 4. render the app HTML. This assumes entry-server.js's exported
   //     `render` function calls appropriate framework SSR APIs,
@@ -112,7 +114,7 @@ const server = createServer()
 const ssrEnvironment = server.environment.ssr
 const input = {}
 
-const { createHandler } = await ssrEnvironment.runner.import('./entrypoint.js')
+const { createHandler } = await ssrEnvironment.runner.import('./entry.js')
 const handler = createHandler(input)
 const response = handler(new Request('/'))
 
@@ -171,6 +173,8 @@ export function createHandler(input) {
 For example, to call `transformIndexHtml` on the user module, the following plugin can be used:
 
 ```ts {13-21}
+import { readFile } from 'node:fs/promises'
+
 function vitePluginVirtualIndexHtml(): Plugin {
   let server: ViteDevServer | undefined
   return {
@@ -186,10 +190,10 @@ function vitePluginVirtualIndexHtml(): Plugin {
         let html: string
         if (server) {
           this.addWatchFile('index.html')
-          html = await fs.promises.readFile('index.html', 'utf-8')
+          html = await readFile('index.html', 'utf-8')
           html = await server.transformIndexHtml('/', html)
         } else {
-          html = await fs.promises.readFile('dist/client/index.html', 'utf-8')
+          html = await readFile('dist/client/index.html', 'utf-8')
         }
         return `export default ${JSON.stringify(html)}`
       }
