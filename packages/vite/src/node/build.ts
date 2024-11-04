@@ -201,8 +201,8 @@ export interface BuildEnvironmentOptions {
    */
   copyPublicDir?: boolean
   /**
-   * Whether to emit a .vite/license.md that includes all bundled dependencies'
-   * licenses. Specify a path that ends with `.json` to generate a raw JSON.entry.
+   * Whether to emit a `.vite/license.md` file that includes all bundled dependencies'
+   * licenses. Specify a path that ends with `.json` to generate a raw JSON entry.
    * @default false
    */
   license?: boolean | string
