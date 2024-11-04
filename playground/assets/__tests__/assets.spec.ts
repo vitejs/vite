@@ -414,7 +414,7 @@ test('?inline png import', async () => {
   )
 })
 
-test('?inline public json import', async () => {
+test('?inline public png import', async () => {
   expect(await page.textContent('.inline-public-png')).toMatch(
     /^data:image\/png;base64,/,
   )
