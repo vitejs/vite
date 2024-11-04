@@ -560,8 +560,8 @@ importers:
         specifier: ^4.2.0
         version: 4.2.0
       postcss-nested:
-        specifier: ^6.2.0
-        version: 6.2.0(postcss@8.4.47)
+        specifier: ^7.0.2
+        version: 7.0.2(postcss@8.4.47)
       sass:
         specifier: ^1.80.4
         version: 1.80.4
@@ -5838,6 +5838,12 @@ packages:
     peerDependencies:
       postcss: ^8.2.14
 
+  postcss-nested@7.0.2:
+    resolution: {integrity: sha512-5osppouFc0VR9/VYzYxO03VaDa3e8F23Kfd6/9qcZTUI8P58GIYlArOET2Wq0ywSl2o2PjELhYOFI4W7l5QHKw==}
+    engines: {node: '>=18.0'}
+    peerDependencies:
+      postcss: ^8.2.14
+
   postcss-normalize-charset@7.0.0:
     resolution: {integrity: sha512-ABisNUXMeZeDNzCQxPxBCkXexvBrUHV+p7/BXOY+ulxkcjUZO0cp8ekGBwvIh2LbCwnWbyMPNJVtBSdyhM2zYQ==}
     engines: {node: ^18.12.0 || ^20.9.0 || >=22.0}
@@ -5912,6 +5918,10 @@ packages:
 
   postcss-selector-parser@6.1.2:
     resolution: {integrity: sha512-Q8qQfPiZ+THO/3ZrOrO0cJJKfpYCagtMUkXbnEfmgUjwXg6z/WBeOyS9APBBPCTSiDV+s4SwQGu8yFsiMRIudg==}
+    engines: {node: '>=4'}
+
+  postcss-selector-parser@7.0.0:
+    resolution: {integrity: sha512-9RbEr1Y7FFfptd/1eEdntyjMwLeghW1bHX9GWjXo19vx4ytPQhANltvVxDggzJl7mnWM+dX28kb6cyS/4iQjlQ==}
     engines: {node: '>=4'}
 
   postcss-svgo@7.0.1:
@@ -11566,6 +11576,11 @@ snapshots:
       postcss: 8.4.47
       postcss-selector-parser: 6.1.2
 
+  postcss-nested@7.0.2(postcss@8.4.47):
+    dependencies:
+      postcss: 8.4.47
+      postcss-selector-parser: 7.0.0
+
   postcss-normalize-charset@7.0.0(postcss@8.4.47):
     dependencies:
       postcss: 8.4.47
@@ -11629,6 +11644,11 @@ snapshots:
       postcss-value-parser: 4.2.0
 
   postcss-selector-parser@6.1.2:
+    dependencies:
+      cssesc: 3.0.0
+      util-deprecate: 1.0.2
+
+  postcss-selector-parser@7.0.0:
     dependencies:
       cssesc: 3.0.0
       util-deprecate: 1.0.2
