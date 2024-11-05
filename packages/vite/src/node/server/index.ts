@@ -1018,7 +1018,7 @@ function resolvedAllowDir(root: string, dir: string): string {
 }
 
 export const serverConfigDefaults = Object.freeze({
-  port: 5173,
+  port: DEFAULT_DEV_PORT,
   strictPort: false,
   host: 'localhost',
   https: undefined,

@@ -16,6 +16,7 @@ import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
   DEFAULT_CONFIG_FILES,
+  DEFAULT_PREVIEW_PORT,
   DEV_PROD_CONDITION,
   ENV_ENTRY,
   FS_PREFIX,
@@ -659,7 +660,7 @@ export const configDefaults = Object.freeze({
   },
   server: serverConfigDefaults,
   preview: {
-    port: 4173,
+    port: DEFAULT_PREVIEW_PORT,
     // strictPort
     // host
     // https
