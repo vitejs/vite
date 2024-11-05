@@ -86,10 +86,6 @@ export type HotChannelListener<T extends string = string> = (
   client: HotChannelClient,
 ) => void
 
-export type HotChannelInvokeHandler = (
-  payload: HotPayload,
-) => Promise<{ r: any } | { e: any }>
-
 export interface HotChannel<Api = any> {
   /**
    * Broadcast events to all clients
@@ -104,7 +100,6 @@ export interface HotChannel<Api = any> {
    * Unregister event listener
    */
   off?(event: string, listener: Function): void
-  setInvokeHandler?(invokeHandler: HotChannelInvokeHandler | undefined): void
   /**
    * Start listening for messages
    */
@@ -162,6 +157,7 @@ export interface NormalizedHotChannel<Api = any> {
   off(event: string, listener: Function): void
   /** @internal */
   setInvokeHandler(invokeHandlers: InvokeMethods | undefined): void
+  handleInvoke(payload: HotPayload): Promise<{ r: any } | { e: any }>
   /**
    * Start listening for messages
    */
@@ -178,12 +174,6 @@ export const normalizeHotChannel = (
   channel: HotChannel,
   enableHmr: boolean,
 ): NormalizedHotChannel => {
-  if (!channel.on && !channel.setInvokeHandler) {
-    throw new Error(
-      'HotChannel must implement either `on` or `setInvokeHandler`',
-    )
-  }
-
   const normalizedListenerMap = new WeakMap<
     (data: any, client: NormalizedHotChannelClient) => void | Promise<void>,
     (data: any, client: HotChannelClient) => void | Promise<void>
@@ -192,9 +182,41 @@ export const normalizeHotChannel = (
     string,
     Set<(data: any, client: HotChannelClient) => void | Promise<void>>
   >()
+
+  let invokeHandlers: InvokeMethods | undefined
   let listenerForInvokeHandler:
     | ((data: InvokeSendData, client: HotChannelClient) => void)
     | undefined
+  const handleInvoke = async <T extends keyof InvokeMethods>(
+    payload: HotPayload,
+  ) => {
+    if (!invokeHandlers) {
+      return {
+        e: {
+          name: 'TransportError',
+          message: 'invokeHandlers is not set',
+          stack: new Error().stack,
+        },
+      }
+    }
+
+    const data: InvokeSendData<T> = (payload as CustomPayload).data
+    const { name, data: args } = data
+    try {
+      const invokeHandler = invokeHandlers[name]
+      // @ts-expect-error `invokeHandler` is `InvokeMethods[T]`, so passing the args is fine
+      const result = await invokeHandler(...args)
+      return { r: result }
+    } catch (error) {
+      return {
+        e: {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        },
+      }
+    }
+  }
 
   return {
     ...channel,
@@ -248,37 +270,12 @@ export const normalizeHotChannel = (
         listenersForEvents.get(event)?.delete(normalizedListener)
       }
     },
-    setInvokeHandler(invokeHandlers) {
-      if (!invokeHandlers) {
-        channel.setInvokeHandler?.(invokeHandlers)
+    setInvokeHandler(_invokeHandlers) {
+      invokeHandlers = _invokeHandlers
+      if (!_invokeHandlers) {
         if (listenerForInvokeHandler) {
           channel.off?.('vite:invoke', listenerForInvokeHandler)
         }
-        return
-      }
-
-      const wrappedInvokeHandler = async <T extends keyof InvokeMethods>(
-        payload: HotPayload,
-      ) => {
-        const data: InvokeSendData<T> = (payload as CustomPayload).data
-        const { name, data: args } = data
-        try {
-          // @ts-expect-error `invokeHandlers[name]` is `InvokeMethods[T]`, so passing the args is fine
-          const result = await invokeHandlers[name](...args)
-          return { r: result }
-        } catch (error) {
-          return {
-            e: {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
-            },
-          }
-        }
-      }
-
-      if (channel.setInvokeHandler) {
-        channel.setInvokeHandler(wrappedInvokeHandler)
         return
       }
 
@@ -292,7 +289,7 @@ export const normalizeHotChannel = (
           data: {
             name: payload.name,
             id: responseInvoke,
-            data: (await wrappedInvokeHandler({
+            data: (await handleInvoke({
               type: 'custom',
               event: 'vite:invoke',
               data: payload,
@@ -302,6 +299,7 @@ export const normalizeHotChannel = (
       }
       channel.on?.('vite:invoke', listenerForInvokeHandler)
     },
+    handleInvoke,
     send: (...args: any[]) => {
       let payload: HotPayload
       if (typeof args[0] === 'string') {
@@ -1138,21 +1136,6 @@ export function createServerHotChannel(): ServerHotChannel {
   }
 }
 
-export function createNoopHotChannel(): NormalizedHotChannel {
-  function noop() {
-    // noop
-  }
-
-  return {
-    send: noop,
-    on: noop,
-    off: noop,
-    setInvokeHandler: noop,
-    listen: noop,
-    close: noop,
-  }
-}
-
 /** @deprecated use `environment.hot` instead */
 export interface HotBroadcaster extends NormalizedHotChannel {
   readonly channels: NormalizedHotChannel[]
@@ -1175,6 +1158,13 @@ export function createDeprecatedHotBroadcaster(
     listen: ws.listen,
     send: ws.send,
     setInvokeHandler: ws.setInvokeHandler,
+    handleInvoke: async () => ({
+      e: {
+        name: 'TransportError',
+        message: 'handleInvoke not implemented',
+        stack: new Error().stack,
+      },
+    }),
     get channels() {
       return [ws]
     },

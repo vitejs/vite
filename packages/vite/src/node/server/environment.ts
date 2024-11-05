@@ -25,12 +25,7 @@ import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
 import type { HotChannel, NormalizedHotChannel } from './hmr'
-import {
-  createNoopHotChannel,
-  getShortName,
-  normalizeHotChannel,
-  updateModules,
-} from './hmr'
+import { getShortName, normalizeHotChannel, updateModules } from './hmr'
 import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import type { EnvironmentPluginContainer } from './pluginContainer'
@@ -130,7 +125,7 @@ export class DevEnvironment extends BaseEnvironment {
       ? isWebSocketServer in context.transport
         ? context.transport
         : normalizeHotChannel(context.transport, context.hot)
-      : createNoopHotChannel()
+      : normalizeHotChannel({}, context.hot)
 
     this.hot.setInvokeHandler({
       fetchModule: (id, importer, options) => {
