@@ -33,7 +33,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
-import { configDefaults, resolveConfig } from './config'
+import { resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -46,6 +46,7 @@ import {
   emptyDir,
   getPkgName,
   joinUrlSegments,
+  mergeWithDefaults,
   normalizePath,
   partialEncodeURIPath,
 } from './utils'
@@ -344,6 +345,44 @@ export interface ResolvedBuildOptions
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
+export const buildEnvironmentOptionsDefaults = Object.freeze({
+  target: 'modules',
+  /** @deprecated */
+  polyfillModulePreload: true,
+  modulePreload: true,
+  outDir: 'dist',
+  assetsDir: 'assets',
+  assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
+  cssCodeSplit: true,
+  // cssTarget
+  // cssMinify
+  sourcemap: false,
+  minify: 'esbuild',
+  terserOptions: {},
+  rollupOptions: {},
+  commonjsOptions: {
+    include: [/node_modules/],
+    extensions: ['.js', '.cjs'],
+  },
+  dynamicImportVarsOptions: {
+    warnOnError: true,
+    exclude: [/node_modules/],
+  },
+  write: true,
+  emptyOutDir: true,
+  copyPublicDir: true,
+  manifest: false,
+  lib: false,
+  ssr: false,
+  ssrManifest: false,
+  ssrEmitAssets: false,
+  // emitAssets
+  reportCompressedSize: true,
+  chunkSizeWarningLimit: 500,
+  watch: null,
+  // createEnvironment
+})
+
 export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
   logger: Logger,
@@ -366,81 +405,49 @@ export function resolveBuildEnvironmentOptions(
     raw.modulePreload = { polyfill: false }
   }
 
-  const modulePreload = raw.modulePreload
+  const merged = mergeWithDefaults(
+    {
+      ...buildEnvironmentOptionsDefaults,
+      cssCodeSplit: !raw.lib,
+      minify: consumer === 'server' ? false : 'esbuild',
+      ssr: consumer === 'server',
+      emitAssets: consumer === 'client',
+      createEnvironment: (name, config) => new BuildEnvironment(name, config),
+    } satisfies BuildEnvironmentOptions,
+    raw,
+  )
+
+  // handle special build targets
+  if (merged.target === 'modules') {
+    merged.target = ESBUILD_MODULES_TARGET
+  }
+
+  // normalize false string into actual false
+  if ((merged.minify as string) === 'false') {
+    merged.minify = false
+  } else if (merged.minify === true) {
+    merged.minify = 'esbuild'
+  }
+
   const defaultModulePreload = {
     polyfill: true,
   }
 
-  const defaultBuildEnvironmentOptions: BuildEnvironmentOptions = {
-    outDir: 'dist',
-    assetsDir: 'assets',
-    assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
-    cssCodeSplit: !raw.lib,
-    sourcemap: false,
-    rollupOptions: {},
-    minify: consumer === 'server' ? false : 'esbuild',
-    terserOptions: {},
-    write: true,
-    emptyOutDir: null,
-    copyPublicDir: true,
-    manifest: false,
-    lib: false,
-    ssr: consumer === 'server',
-    ssrManifest: false,
-    ssrEmitAssets: false,
-    emitAssets: consumer === 'client',
-    reportCompressedSize: true,
-    chunkSizeWarningLimit: 500,
-    watch: null,
-    createEnvironment: (name, config) => new BuildEnvironment(name, config),
-  }
-
-  const userBuildEnvironmentOptions = raw
-    ? mergeConfig(defaultBuildEnvironmentOptions, raw)
-    : defaultBuildEnvironmentOptions
-
-  // @ts-expect-error Fallback options instead of merging
   const resolved: ResolvedBuildEnvironmentOptions = {
-    ...configDefaults.build,
-    ...userBuildEnvironmentOptions,
-    commonjsOptions: {
-      ...configDefaults.build.commonjsOptions,
-      ...userBuildEnvironmentOptions.commonjsOptions,
-    },
-    dynamicImportVarsOptions: {
-      ...configDefaults.build.dynamicImportVarsOptions,
-      ...userBuildEnvironmentOptions.dynamicImportVarsOptions,
-    },
+    ...merged,
+    cssTarget: merged.cssTarget ?? merged.target,
+    cssMinify:
+      merged.cssMinify ?? (consumer === 'server' ? 'esbuild' : !!merged.minify),
     // Resolve to false | object
     modulePreload:
-      modulePreload === false
+      merged.modulePreload === false
         ? false
-        : typeof modulePreload === 'object'
-          ? {
+        : merged.modulePreload === true
+          ? defaultModulePreload
+          : {
               ...defaultModulePreload,
-              ...modulePreload,
-            }
-          : defaultModulePreload,
-  }
-
-  // handle special build targets
-  if (resolved.target === 'modules') {
-    resolved.target = ESBUILD_MODULES_TARGET
-  }
-
-  if (!resolved.cssTarget) {
-    resolved.cssTarget = resolved.target
-  }
-
-  // normalize false string into actual false
-  if ((resolved.minify as string) === 'false') {
-    resolved.minify = false
-  } else if (resolved.minify === true) {
-    resolved.minify = 'esbuild'
-  }
-
-  if (resolved.cssMinify == null) {
-    resolved.cssMinify = consumer === 'server' ? 'esbuild' : !!resolved.minify
+              ...merged.modulePreload,
+            },
   }
 
   if (isSsrTargetWebworkerEnvironment) {

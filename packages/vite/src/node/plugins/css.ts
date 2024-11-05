@@ -68,6 +68,7 @@ import {
   isExternalUrl,
   isObject,
   joinUrlSegments,
+  mergeWithDefaults,
   normalizePath,
   processSrcSet,
   removeDirectQuery,
@@ -206,24 +207,14 @@ export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
 ): ResolvedCSSOptions {
-  if (options?.transformer === 'lightningcss') {
-    return {
-      ...cssConfigDefaults,
-      ...options,
-      transformer: 'lightningcss',
-      lightningcss: {
-        ...options.lightningcss,
-        targets:
-          options.lightningcss?.targets ??
-          convertTargets(ESBUILD_MODULES_TARGET),
-      },
-    }
+  const resolved = mergeWithDefaults(cssConfigDefaults, options ?? {})
+  if (resolved.transformer === 'lightningcss') {
+    resolved.lightningcss ??= {}
+    resolved.lightningcss.targets ??= convertTargets(ESBUILD_MODULES_TARGET)
+  } else {
+    resolved.lightningcss = undefined
   }
-  return {
-    ...cssConfigDefaults,
-    ...options,
-    lightningcss: undefined,
-  }
+  return resolved
 }
 
 const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
@@ -3077,7 +3068,7 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
     [PreprocessLang.styl]: styl.process,
     [PreprocessLang.stylus]: styl.process,
     close,
-  } as const satisfies { [K in PreprocessLang | 'close']: unknown }
+  } as const satisfies Record<PreprocessLang | 'close', unknown>
 }
 
 const normalizeMaxWorkers = (maxWorker: number | true | undefined) => {

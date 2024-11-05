@@ -10,6 +10,7 @@ import {
   getLocalhostAddressIfDiffersFromDNS,
   injectQuery,
   isFileReadable,
+  mergeWithDefaults,
   posToNumber,
   processSrcSetSync,
   resolveHostname,
@@ -447,5 +448,39 @@ describe('flattenId', () => {
     id += tenChars
     const result2 = flattenId(id)
     expect(result2).toHaveLength(170)
+  })
+})
+
+describe('mergeWithDefaults', () => {
+  test('merges with defaults', () => {
+    const actual = mergeWithDefaults(
+      {
+        useDefault: 1,
+        useValueIfNull: 2,
+        replaceArray: [0, 1],
+        nested: {
+          foo: 'bar',
+        },
+      },
+      {
+        useDefault: undefined,
+        useValueIfNull: null,
+        useValueIfNoDefault: 'foo',
+        replaceArray: [2, 3],
+        nested: {
+          foo2: 'bar2',
+        },
+      },
+    )
+    expect(actual).toEqual({
+      useDefault: 1,
+      useValueIfNull: null,
+      useValueIfNoDefault: 'foo',
+      replaceArray: [2, 3],
+      nested: {
+        foo: 'bar',
+        foo2: 'bar2',
+      },
+    })
   })
 })

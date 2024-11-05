@@ -34,7 +34,11 @@ import type {
   ResolvedBuildOptions,
   ResolvedBuilderOptions,
 } from './build'
-import { resolveBuildEnvironmentOptions, resolveBuilderOptions } from './build'
+import {
+  buildEnvironmentOptionsDefaults,
+  resolveBuildEnvironmentOptions,
+  resolveBuilderOptions,
+} from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions, serverConfigDefaults } from './server'
 import { DevEnvironment } from './server/environment'
@@ -61,6 +65,7 @@ import {
   isParentDirectory,
   mergeAlias,
   mergeConfig,
+  mergeWithDefaults,
   normalizeAlias,
   normalizePath,
 } from './utils'
@@ -218,7 +223,15 @@ function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
   })
 }
 
-export type ResolvedDevEnvironmentOptions = Required<DevEnvironmentOptions>
+export type ResolvedDevEnvironmentOptions = Omit<
+  Required<DevEnvironmentOptions>,
+  'sourcemapIgnoreList'
+> & {
+  sourcemapIgnoreList: Exclude<
+    DevEnvironmentOptions['sourcemapIgnoreList'],
+    false | undefined
+  >
+}
 
 type AllResolveOptions = ResolveOptions & {
   alias?: AliasOptions
@@ -534,6 +547,7 @@ export type ResolvedConfig = Readonly<
     | 'build'
     | 'dev'
     | 'environments'
+    | 'server'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -600,43 +614,7 @@ export const configDefaults = Object.freeze({
     // recoverable
     // moduleRunnerTransform
   },
-  build: {
-    target: 'modules',
-    /** @deprecated */
-    polyfillModulePreload: true,
-    modulePreload: true,
-    outDir: 'dist',
-    assetsDir: 'assets',
-    assetsInlineLimit: 4096,
-    cssCodeSplit: true,
-    // cssTarget
-    // cssMinify
-    sourcemap: false,
-    minify: 'esbuild',
-    // terserOptions
-    // rollupOptions
-    commonjsOptions: {
-      include: [/node_modules/],
-      extensions: ['.js', '.cjs'],
-    },
-    dynamicImportVarsOptions: {
-      warnOnError: true,
-      exclude: [/node_modules/],
-    },
-    write: true,
-    emptyOutDir: true,
-    copyPublicDir: true,
-    manifest: false,
-    lib: false,
-    ssr: false,
-    ssrManifest: false,
-    ssrEmitAssets: false,
-    // emitAssets
-    reportCompressedSize: true,
-    chunkSizeWarningLimit: 500,
-    watch: null,
-    // createEnvironment
-  },
+  build: buildEnvironmentOptionsDefaults,
   resolve: {
     mainFields: [
       'browser',
@@ -650,8 +628,7 @@ export const configDefaults = Object.freeze({
     dedupe: [],
     /** @experimental */
     noExternal: [],
-    /** @experimental */
-    external: [],
+    // external
     preserveSymlinks: false,
     alias: [],
   },
@@ -754,27 +731,31 @@ export function resolveDevEnvironmentOptions(
   // Backward compatibility
   skipSsrTransform?: boolean,
 ): ResolvedDevEnvironmentOptions {
+  const resolved = mergeWithDefaults(
+    {
+      ...configDefaults.dev,
+      sourcemapIgnoreList: isInNodeModules,
+      preTransformRequests: consumer === 'client',
+      createEnvironment:
+        environmentName === 'client'
+          ? defaultCreateClientDevEnvironment
+          : environmentName === 'ssr'
+            ? defaultCreateSsrDevEnvironment
+            : defaultCreateDevEnvironment,
+      recoverable: consumer === 'client',
+      moduleRunnerTransform:
+        skipSsrTransform !== undefined && consumer === 'server'
+          ? skipSsrTransform
+          : consumer === 'server',
+    },
+    dev ?? {},
+  )
   return {
-    sourcemap: dev?.sourcemap ?? configDefaults.dev.sourcemap,
+    ...resolved,
     sourcemapIgnoreList:
-      dev?.sourcemapIgnoreList === false
+      resolved.sourcemapIgnoreList === false
         ? () => false
-        : dev?.sourcemapIgnoreList || isInNodeModules,
-    preTransformRequests: dev?.preTransformRequests ?? consumer === 'client',
-    warmup: dev?.warmup ?? configDefaults.dev.warmup,
-    createEnvironment:
-      dev?.createEnvironment ??
-      (environmentName === 'client'
-        ? defaultCreateClientDevEnvironment
-        : environmentName === 'ssr'
-          ? defaultCreateSsrDevEnvironment
-          : defaultCreateDevEnvironment),
-    recoverable: dev?.recoverable ?? consumer === 'client',
-    moduleRunnerTransform:
-      dev?.moduleRunnerTransform ??
-      (skipSsrTransform !== undefined && consumer === 'server'
-        ? skipSsrTransform
-        : consumer === 'server'),
+        : resolved.sourcemapIgnoreList,
   }
 }
 
@@ -912,28 +893,22 @@ function resolveEnvironmentResolveOptions(
   // Backward compatibility
   isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedAllResolveOptions {
-  let conditions = resolve?.conditions
-  conditions ??=
-    consumer === 'client' || isSsrTargetWebworkerEnvironment
-      ? configDefaults.resolve.conditions.filter((c) => c !== 'node')
-      : configDefaults.resolve.conditions.filter((c) => c !== 'browser')
-
-  const resolvedResolve: ResolvedAllResolveOptions = {
-    mainFields: resolve?.mainFields ?? configDefaults.resolve.mainFields,
-    conditions,
-    externalConditions:
-      resolve?.externalConditions ?? configDefaults.resolve.externalConditions,
-    external:
-      resolve?.external ??
-      (consumer === 'server' && !isSsrTargetWebworkerEnvironment
-        ? builtinModules
-        : configDefaults.resolve.external),
-    noExternal: resolve?.noExternal ?? configDefaults.resolve.noExternal,
-    extensions: resolve?.extensions ?? configDefaults.resolve.extensions,
-    dedupe: resolve?.dedupe ?? configDefaults.resolve.dedupe,
-    preserveSymlinks,
-    alias,
-  }
+  const resolvedResolve: ResolvedAllResolveOptions = mergeWithDefaults(
+    {
+      ...configDefaults.resolve,
+      conditions:
+        consumer === 'client' || isSsrTargetWebworkerEnvironment
+          ? configDefaults.resolve.conditions.filter((c) => c !== 'node')
+          : configDefaults.resolve.conditions.filter((c) => c !== 'browser'),
+      external:
+        consumer === 'server' && !isSsrTargetWebworkerEnvironment
+          ? builtinModules
+          : [],
+    },
+    resolve ?? {},
+  )
+  resolvedResolve.preserveSymlinks = preserveSymlinks
+  resolvedResolve.alias = alias
 
   if (
     // @ts-expect-error removed field
@@ -976,26 +951,17 @@ function resolveDepOptimizationOptions(
   preserveSymlinks: boolean,
   consumer: 'client' | 'server' | undefined,
 ): DepOptimizationOptions {
-  optimizeDeps ??= {}
-  return {
-    include: optimizeDeps.include ?? configDefaults.optimizeDeps.include,
-    exclude: optimizeDeps.exclude ?? configDefaults.optimizeDeps.exclude,
-    needsInterop:
-      optimizeDeps.needsInterop ?? configDefaults.optimizeDeps.needsInterop,
-    extensions:
-      optimizeDeps.extensions ?? configDefaults.optimizeDeps.extensions,
-    noDiscovery: optimizeDeps.noDiscovery ?? consumer !== 'client',
-    holdUntilCrawlEnd:
-      optimizeDeps.holdUntilCrawlEnd ??
-      configDefaults.optimizeDeps.holdUntilCrawlEnd,
-    esbuildOptions: {
-      preserveSymlinks,
-      ...optimizeDeps.esbuildOptions,
+  return mergeWithDefaults(
+    {
+      ...configDefaults.optimizeDeps,
+      disabled: undefined, // do not set here to avoid deprecation warning
+      noDiscovery: consumer !== 'client',
+      esbuildOptions: {
+        preserveSymlinks,
+      },
     },
-    disabled: optimizeDeps.disabled,
-    entries: optimizeDeps.entries,
-    force: optimizeDeps.force ?? configDefaults.optimizeDeps.force,
-  }
+    optimizeDeps ?? {},
+  )
 }
 
 export async function resolveConfig(

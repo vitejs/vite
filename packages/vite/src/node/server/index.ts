@@ -30,6 +30,7 @@ import {
   isObject,
   isParentDirectory,
   mergeConfig,
+  mergeWithDefaults,
   normalizePath,
   resolveHostname,
   resolveServerUrls,
@@ -1050,20 +1051,24 @@ export function resolveServerOptions(
   raw: ServerOptions | undefined,
   logger: Logger,
 ): ResolvedServerOptions {
+  const _server = mergeWithDefaults(
+    { ...serverConfigDefaults, sourcemapIgnoreList: isInNodeModules },
+    raw ?? {},
+  )
+
   const server: ResolvedServerOptions = {
-    ...serverConfigDefaults,
-    ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
+    ..._server,
     fs: {
-      strict: raw?.fs?.strict ?? serverConfigDefaults.fs.strict,
+      ..._server.fs,
+      // run searchForWorkspaceRoot only if needed
       allow: raw?.fs?.allow ?? [searchForWorkspaceRoot(root)],
-      deny: raw?.fs?.deny ?? serverConfigDefaults.fs.deny,
     },
     sourcemapIgnoreList:
-      raw?.sourcemapIgnoreList === false
+      _server.sourcemapIgnoreList === false
         ? () => false
-        : raw?.sourcemapIgnoreList || isInNodeModules,
-    middlewareMode: raw?.middlewareMode || false,
+        : _server.sourcemapIgnoreList,
   }
+
   let allowDirs = server.fs.allow
 
   if (process.versions.pnp) {
