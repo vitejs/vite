@@ -228,7 +228,7 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 
 - **Type:** `Record<string, object>`
 
-Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessors can be found in their respective documentation:
+Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessor can be found in their respective documentation:
 
 - `sass`/`scss`:
   - Select the sass API to use with `api: "modern-compiler" | "modern" | "legacy"` (default `"modern-compiler"` if `sass-embedded` is installed, otherwise `"modern"`). For the best performance, it's recommended to use `api: "modern-compiler"` with the `sass-embedded` package. The `"legacy"` API is deprecated and will be removed in Vite 7.
