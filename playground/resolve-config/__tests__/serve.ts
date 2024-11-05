@@ -1,8 +1,8 @@
 // this is automatically detected by playground/vitestSetup.ts and will replace
 // the default e2e test serve behavior
 
+import fs from 'node:fs/promises'
 import path from 'node:path'
-import fs from 'fs-extra'
 import { isBuild, rootDir } from '~utils'
 
 const configNames = ['js', 'cjs', 'mjs', 'ts', 'mts', 'cts']
@@ -17,7 +17,9 @@ export async function serve() {
   for (const configName of configNames) {
     const pathToConf = fromTestDir(configName, `vite.config.${configName}`)
 
-    await fs.copy(fromTestDir('root'), fromTestDir(configName))
+    await fs.cp(fromTestDir('root'), fromTestDir(configName), {
+      recursive: true,
+    })
     await fs.rename(fromTestDir(configName, 'vite.config.ts'), pathToConf)
 
     if (['cjs', 'cts'].includes(configName)) {
@@ -35,9 +37,12 @@ export async function serve() {
     }
 
     // copy directory and add package.json with "type": "module"
-    await fs.copy(fromTestDir(configName), fromTestDir(`${configName}-module`))
-    await fs.writeJSON(fromTestDir(`${configName}-module`, 'package.json'), {
-      type: 'module',
+    await fs.cp(fromTestDir(configName), fromTestDir(`${configName}-module`), {
+      recursive: true,
     })
+    await fs.writeFile(
+      fromTestDir(`${configName}-module`, 'package.json'),
+      '{ "type": "module" }',
+    )
   }
 }

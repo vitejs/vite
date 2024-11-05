@@ -5,7 +5,8 @@ import { stripLiteral } from 'strip-literal'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { evalValue, injectQuery, transformStableResult } from '../utils'
-import type { ResolveFn } from '..'
+import { createBackCompatIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
 import { cleanUrl, slash } from '../../shared/utils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
@@ -82,7 +83,10 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
   }
 
   const workerOpts = parseWorkerOptions(workerOptString, commaIndex + 1)
-  if (workerOpts.type && ['classic', 'module'].includes(workerOpts.type)) {
+  if (
+    workerOpts.type &&
+    (workerOpts.type === 'module' || workerOpts.type === 'classic')
+  ) {
     return workerOpts.type
   }
 
@@ -102,7 +106,7 @@ function isIncludeWorkerImportMetaUrl(code: string): boolean {
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  let workerResolver: ResolveFn
+  let workerResolver: ResolveIdFn
 
   const fsResolveOptions: InternalResolveOptions = {
     ...config.resolve,
@@ -110,7 +114,6 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     isProduction: config.isProduction,
     isBuild: config.command === 'build',
     packageCache: config.packageCache,
-    ssrConfig: config.ssr,
     asSrc: true,
   }
 
@@ -123,8 +126,11 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(code, id, options) {
-      if (!options?.ssr && isIncludeWorkerImportMetaUrl(code)) {
+    async transform(code, id) {
+      if (
+        this.environment.config.consumer === 'client' &&
+        isIncludeWorkerImportMetaUrl(code)
+      ) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
@@ -153,12 +159,12 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             file = path.resolve(path.dirname(id), url)
             file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
-            workerResolver ??= config.createResolver({
+            workerResolver ??= createBackCompatIdResolver(config, {
               extensions: [],
               tryIndex: false,
               preferRelative: true,
             })
-            file = await workerResolver(url, id)
+            file = await workerResolver(this.environment, url, id)
             file ??=
               url[0] === '/'
                 ? slash(path.join(config.publicDir, url))
@@ -168,7 +174,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           if (
             isBuild &&
             config.isWorker &&
-            this.getModuleInfo(cleanUrl(file))?.isEntry
+            config.bundleChain.at(-1) === cleanUrl(file)
           ) {
             s.update(expStart, expEnd, 'self.location.href')
           } else {
@@ -176,7 +182,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             if (isBuild) {
               builtUrl = await workerFileToUrl(config, file)
             } else {
-              builtUrl = await fileToUrl(cleanUrl(file), config, this)
+              builtUrl = await fileToUrl(this, cleanUrl(file))
               builtUrl = injectQuery(
                 builtUrl,
                 `${WORKER_FILE_ID}&type=${workerType}`,
@@ -185,8 +191,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             s.update(
               expStart,
               expEnd,
-              // add `'' +` to skip vite:asset-import-meta-url plugin
-              `new URL('' + ${JSON.stringify(builtUrl)}, import.meta.url)`,
+              `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, import.meta.url)`,
             )
           }
         }

@@ -93,6 +93,8 @@ test('sass', async () => {
     isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
   expect(await getColor(partialImport)).toBe('orchid')
+  expect(await getColor(await page.$('.sass-file-absolute'))).toBe('orange')
+  expect(await getColor(await page.$('.sass-dir-index'))).toBe('orange')
 
   editFile('sass.scss', (code) =>
     code.replace('color: $injectedColor', 'color: red'),
@@ -114,6 +116,7 @@ test('less', async () => {
   const imported = await page.$('.less')
   const atImport = await page.$('.less-at-import')
   const atImportAlias = await page.$('.less-at-import-alias')
+  const atImportUrlOmmer = await page.$('.less-at-import-url-ommer')
   const urlStartsWithVariable = await page.$('.less-url-starts-with-variable')
 
   expect(await getColor(imported)).toBe('blue')
@@ -123,6 +126,7 @@ test('less', async () => {
   expect(await getBg(atImportAlias)).toMatch(
     isBuild ? /base64/ : '/nested/icon.png',
   )
+  expect(await getColor(atImportUrlOmmer)).toBe('darkorange')
   expect(await getBg(urlStartsWithVariable)).toMatch(
     isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
@@ -448,6 +452,16 @@ test('?raw', async () => {
   expect(await rawImportCss.textContent()).toBe(
     readFileSync(require.resolve('../raw-imported.css'), 'utf-8'),
   )
+
+  if (!isBuild) {
+    editFile('raw-imported.css', (code) =>
+      code.replace('color: yellow', 'color: blue'),
+    )
+    await untilUpdated(
+      () => page.textContent('.raw-imported-css'),
+      'color: blue',
+    )
+  }
 })
 
 test('import css in less', async () => {

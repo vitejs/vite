@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import stylus from 'stylus'
 import { defineConfig } from 'vite'
 
@@ -60,15 +61,24 @@ export default defineConfig({
     },
     preprocessorOptions: {
       scss: {
+        api: 'legacy',
         additionalData: `$injectedColor: orange;`,
         importer: [
           function (url) {
             return url === 'virtual-dep' ? { contents: '' } : null
           },
           function (url) {
+            return url === 'virtual-file-absolute'
+              ? {
+                  contents: `@use "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
+                }
+              : null
+          },
+          function (url) {
             return url.endsWith('.wxss') ? { contents: '' } : null
           },
         ],
+        silenceDeprecations: ['legacy-js-api', 'import'],
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,

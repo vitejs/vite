@@ -90,8 +90,8 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(`new Worker(""+new URL("../worker-entries/`)
     expect(content).toMatch(`new SharedWorker(""+new URL("../worker-entries/`)
     // inlined
-    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
-    expect(content).toMatch(`window.Blob`)
+    expect(content).toMatch(`(self.URL||self.webkitURL).createObjectURL`)
+    expect(content).toMatch(`self.Blob`)
   })
 
   test('worker emitted and import.meta.url in nested worker (build)', async () => {
@@ -163,13 +163,13 @@ test('import.meta.glob with eager in worker', async () => {
 })
 
 test('self reference worker', async () => {
-  expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
+  await expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
     'pong: main\npong: nested\n',
   )
 })
 
 test('self reference url worker', async () => {
-  expectWithRetry(() => page.textContent('.self-reference-url-worker')).toBe(
-    'pong: main\npong: nested\n',
-  )
+  await expectWithRetry(() =>
+    page.textContent('.self-reference-url-worker'),
+  ).toBe('pong: main\npong: nested\n')
 })

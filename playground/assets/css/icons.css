@@ -20,3 +20,7 @@ img {
 .icon-arrow-right {
   background: url(../nested/fragment-bg.svg#icon-arrow-right-view) no-repeat;
 }
+
+.icon-clock-alias {
+  background: url('fragment#icon-clock-view') no-repeat;
+}

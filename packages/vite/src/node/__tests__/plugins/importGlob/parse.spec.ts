@@ -27,7 +27,7 @@ describe('parse positives', async () => {
   it('basic', async () => {
     expect(
       await run(`
-    import.meta.glob(\'./modules/*.ts\')
+    import.meta.glob('./modules/*.ts')
     `),
     ).toMatchInlineSnapshot(`
       [
@@ -45,7 +45,7 @@ describe('parse positives', async () => {
   it('array', async () => {
     expect(
       await run(`
-    import.meta.glob([\'./modules/*.ts\', './dir/*.{js,ts}\'])
+    import.meta.glob(['./modules/*.ts', './dir/*.{js,ts}'])
     `),
     ).toMatchInlineSnapshot(`
       [
@@ -65,7 +65,7 @@ describe('parse positives', async () => {
     expect(
       await run(`
     import.meta.glob([
-      \'./modules/*.ts\',
+      './modules/*.ts',
       "!./dir/*.{js,ts}"
     ], {
       eager: true,
@@ -237,7 +237,7 @@ describe('parse positives', async () => {
 describe('parse negatives', async () => {
   it('syntax error', async () => {
     expect(await runError('import.meta.glob(')).toMatchInlineSnapshot(
-      '[SyntaxError: Unexpected token (1:17)]',
+      '[Error: Invalid glob import syntax: Close parenthesis not found]',
     )
   })
 

@@ -1,0 +1,230 @@
+/* /////////////////////// */
+/* Landing Page CSS Styles */
+/* /////////////////////// */
+
+html:has(.landing) {
+  background-color: #101010;
+
+  body {
+    background-color: #101010;
+  }
+}
+
+html.dark:has(.landing) {
+  --vp-c-bg: #101010;
+}
+
+.landing {
+  overflow-x: hidden;
+  background-color: #101010;
+
+  * {
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: optimizeLegibility !important;
+  }
+
+  /* /////////////////// */
+  /* VitePress Overrides */
+  /* /////////////////// */
+
+  .VPNavBar,
+  .VPNavBar:not(.top) {
+    background: transparent !important;
+
+    @media (min-width: 768px) {
+      backdrop-filter: blur(10px);
+      background: rgba(15, 15, 15, 0.8) !important;
+      border-bottom: 1px solid #262626 !important;
+    }
+
+    .content-body {
+      background: none !important;
+      transition: none;
+    }
+  }
+
+  .VPNavBar *:not(.wrapper *) {
+    transition: none;
+  }
+
+  .VPFooter {
+    border-top: 1px solid #262626 !important;
+    background: radial-gradient(circle at top center, #0f151a 30%, #000000 80%);
+  }
+
+  .VPHome {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* /////////////// */
+  /* Force Dark Mode */
+  /* /////////////// */
+
+  .VPNavBarAppearance {
+    display: none;
+  }
+
+  .VPMenu .translations + .group {
+    display: none;
+  }
+
+  .VPNavScreenAppearance {
+    visibility: hidden;
+  }
+
+  .social-links::before {
+    margin-left: 0 !important;
+  }
+
+  /* ////////// */
+  /* Typography */
+  /* ////////// */
+
+  h1 {
+    text-align: center;
+    font-family: 'Manrope', sans-serif;
+    font-style: normal;
+    font-weight: 600;
+    background: linear-gradient(
+      180deg,
+      #fff 0%,
+      rgba(255, 255, 255, 0.31) 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-wrap: balance;
+    cursor: default;
+    font-size: 44px;
+    line-height: 120%;
+    letter-spacing: -0.88px;
+    padding: 0 20px;
+    margin-bottom: 15px;
+
+    @media (min-width: 768px) {
+      font-size: 64px;
+      line-height: 81px;
+      letter-spacing: -1.28px;
+    }
+
+    @media (min-width: 1025px) {
+      font-size: 72px;
+      letter-spacing: -1.44px;
+      padding-bottom: 8px; /* Fix for hanging descender on "g" in "tooling" */
+    }
+  }
+
+  h2 {
+    display: block;
+    width: fit-content;
+    font-family: Manrope, sans-serif;
+    font-size: 32px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 120%;
+    letter-spacing: -0.64px;
+    cursor: default;
+    text-wrap: balance;
+    padding: 0 20px;
+
+    @media (min-width: 768px) {
+      font-size: 44px;
+      letter-spacing: -0.88px;
+    }
+  }
+
+  h3 {
+    color: #a9a9a9;
+    text-align: center;
+    font-family: Inter, sans-serif;
+    font-size: 20px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 150%;
+    letter-spacing: -0.4px;
+    max-width: 500px;
+    text-wrap: balance;
+    cursor: default;
+    margin-bottom: 25px;
+    padding: 0 20px;
+  }
+
+  /* /////// */
+  /* Buttons */
+  /* /////// */
+
+  .btn {
+    display: flex;
+    padding: 10px 18px;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px;
+    color: #fff;
+    font-family: Inter, sans-serif;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 24px;
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease-in-out;
+    width: fit-content;
+
+    &:hover {
+      transform: translate3d(0, -2px, 0);
+    }
+
+    &.btn--primary {
+      position: relative;
+      background: radial-gradient(
+          141.42% 141.42% at 100% 0%,
+          rgba(255, 255, 255, 0.4) 0%,
+          rgba(255, 255, 255, 0) 100%
+        ),
+        radial-gradient(
+          140.35% 140.35% at 100% 94.74%,
+          #bd34fe 0%,
+          rgba(189, 52, 254, 0) 100%
+        ),
+        radial-gradient(
+          89.94% 89.94% at 18.42% 15.79%,
+          #41d1ff 0%,
+          rgba(65, 209, 255, 0) 100%
+        );
+      box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.75) inset;
+
+      &:hover {
+        background: radial-gradient(
+            141.42% 141.42% at 100% 0%,
+            rgba(255, 255, 255, 0.5) 0%,
+            rgba(255, 255, 255, 0) 100%
+          ),
+          radial-gradient(
+            140.35% 140.35% at 100% 94.74%,
+            #bd34fe 0%,
+            rgba(189, 52, 254, 0) 100%
+          ),
+          radial-gradient(
+            89.94% 89.94% at 18.42% 15.79%,
+            #41d1ff 0%,
+            rgba(65, 209, 255, 0) 100%
+          );
+        box-shadow: 0 1.5px 0 0 rgba(255, 255, 255, 0.8) inset;
+      }
+    }
+
+    &.btn--outline {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        border: 1px solid rgba(255, 255, 255, 0.4);
+      }
+    }
+
+    &.btn--rounded {
+      border-radius: 100px;
+    }
+  }
+}

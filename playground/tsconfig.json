@@ -10,7 +10,7 @@
     "allowJs": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "Bundler",
     "skipLibCheck": true,
     "noUnusedLocals": true,
     "jsx": "preserve",

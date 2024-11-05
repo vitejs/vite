@@ -110,8 +110,8 @@ interface ViteDevServer {
   httpServer: http.Server | null
   /**
    * Chokidar watcher instance. If `config.server.watch` is set to `null`,
-   * returns a noop event emitter.
-   * https://github.com/paulmillr/chokidar#api
+   * it will not watch any files and calling `add` will have no effect.
+   * https://github.com/paulmillr/chokidar#getting-started
    */
   watcher: FSWatcher
   /**
@@ -128,8 +128,8 @@ interface ViteDevServer {
    */
   moduleGraph: ModuleGraph
   /**
-   * The resolved urls Vite prints on the CLI. null in middleware mode or
-   * before `server.listen` is called.
+   * The resolved urls Vite prints on the CLI (URL-encoded). Returns `null`
+   * in middleware mode or if the server is not listening on any port.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -209,7 +209,7 @@ async function build(
 
 **Example Usage:**
 
-```ts twoslash
+```ts twoslash [vite.config.js]
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { build } from 'vite'
@@ -274,8 +274,8 @@ interface PreviewServer {
    */
   httpServer: http.Server
   /**
-   * The resolved urls Vite prints on the CLI.
-   * null before server is listening.
+   * The resolved urls Vite prints on the CLI (URL-encoded). Returns `null`
+   * if the server is not listening on any port.
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
@@ -424,3 +424,30 @@ async function loadConfigFromFile(
 ```
 
 Load a Vite config file manually with esbuild.
+
+## `preprocessCSS`
+
+- **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13815)
+
+**Type Signature:**
+
+```ts
+async function preprocessCSS(
+  code: string,
+  filename: string,
+  config: ResolvedConfig,
+): Promise<PreprocessCSSResult>
+
+interface PreprocessCSSResult {
+  code: string
+  map?: SourceMapInput
+  modules?: Record<string, string>
+  deps?: Set<string>
+}
+```
+
+Pre-processes `.css`, `.scss`, `.sass`, `.less`, `.styl` and `.stylus` files to plain CSS so it can be used in browsers or parsed by other tools. Similar to the [built-in CSS pre-processing support](/guide/features#css-pre-processors), the corresponding pre-processor must be installed if used.
+
+The pre-processor used is inferred from the `filename` extension. If the `filename` ends with `.module.{ext}`, it is inferred as a [CSS module](https://github.com/css-modules/css-modules) and the returned result will include a `modules` object mapping the original class names to the transformed ones.
+
+Note that pre-processing will not resolve URLs in `url()` or `image-set()`.

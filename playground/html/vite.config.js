@@ -1,6 +1,5 @@
-import { resolve } from 'node:path'
+import { relative, resolve } from 'node:path'
 import { defineConfig } from 'vite'
-import { hasWindowsUnicodeFsBug } from '../hasWindowsUnicodeFsBug'
 
 export default defineConfig({
   base: './',
@@ -21,14 +20,10 @@ export default defineConfig({
         inline1: resolve(__dirname, 'inline/shared-1.html'),
         inline2: resolve(__dirname, 'inline/shared-2.html'),
         inline3: resolve(__dirname, 'inline/unique.html'),
-        ...(hasWindowsUnicodeFsBug
-          ? {}
-          : {
-              unicodePath: resolve(
-                __dirname,
-                'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-              ),
-            }),
+        unicodePath: resolve(
+          __dirname,
+          'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+        ),
         linkProps: resolve(__dirname, 'link-props/index.html'),
         valid: resolve(__dirname, 'valid.html'),
         importmapOrder: resolve(__dirname, 'importmapOrder.html'),
@@ -40,14 +35,15 @@ export default defineConfig({
         serveBothFile: resolve(__dirname, 'serve/both.html'),
         serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
         write: resolve(__dirname, 'write.html'),
+        relativeInput: relative(
+          process.cwd(),
+          resolve(__dirname, 'relative-input.html'),
+        ),
       },
     },
   },
 
   server: {
-    fs: {
-      cachedChecks: false,
-    },
     warmup: {
       clientFiles: ['./warmup/*'],
     },
@@ -215,5 +211,47 @@ ${
         ]
       },
     },
+    {
+      name: 'escape-html-attribute',
+      transformIndexHtml: {
+        order: 'post',
+        handler() {
+          return [
+            {
+              tag: 'link',
+              attrs: {
+                href: `"><div class=unescape-div>extra content</div>`,
+              },
+              injectTo: 'body',
+            },
+          ]
+        },
+      },
+    },
+    serveExternalPathPlugin(),
   ],
 })
+
+/** @returns {import('vite').Plugin} */
+function serveExternalPathPlugin() {
+  const handler = (req, res, next) => {
+    if (req.url === '/external-path.js') {
+      res.setHeader('Content-Type', 'application/javascript')
+      res.end('document.querySelector(".external-path").textContent = "works"')
+    } else if (req.url === '/external-path.css') {
+      res.setHeader('Content-Type', 'text/css')
+      res.end('.external-path{color:red}')
+    } else {
+      next()
+    }
+  }
+  return {
+    name: 'serve-external-path',
+    configureServer(server) {
+      server.middlewares.use(handler)
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(handler)
+    },
+  }
+}

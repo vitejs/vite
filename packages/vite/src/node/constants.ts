@@ -1,10 +1,41 @@
 import path, { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { readFileSync } from 'node:fs'
+import type { RollupPluginHooks } from './typeUtils'
 
 const { version } = JSON.parse(
   readFileSync(new URL('../../package.json', import.meta.url)).toString(),
 )
+
+export const ROLLUP_HOOKS = [
+  'options',
+  'buildStart',
+  'buildEnd',
+  'renderStart',
+  'renderError',
+  'renderChunk',
+  'writeBundle',
+  'generateBundle',
+  'banner',
+  'footer',
+  'augmentChunkHash',
+  'outputOptions',
+  'renderDynamicImport',
+  'resolveFileUrl',
+  'resolveImportMeta',
+  'intro',
+  'outro',
+  'closeBundle',
+  'closeWatcher',
+  'load',
+  'moduleParsed',
+  'watchChange',
+  'resolveDynamicImport',
+  'resolveId',
+  'shouldTransformCachedModule',
+  'transform',
+  'onLog',
+] satisfies RollupPluginHooks[]
 
 export const VERSION = version as string
 
@@ -14,6 +45,21 @@ export const DEFAULT_MAIN_FIELDS = [
   'jsnext:main', // moment still uses this...
   'jsnext',
 ]
+
+/**
+ * A special condition that would be replaced with production or development
+ * depending on NODE_ENV env variable
+ */
+export const DEV_PROD_CONDITION = `development|production` as const
+
+export const DEFAULT_CONDITIONS = [
+  'module',
+  'browser',
+  'node',
+  DEV_PROD_CONDITION,
+]
+
+export const DEFAULT_EXTERNAL_CONDITIONS = ['node']
 
 // Baseline support browserslist
 // "defaults and supports es6-module and supports es6-module-dynamic-import"
@@ -80,6 +126,7 @@ export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 export const KNOWN_ASSET_TYPES = [
   // images
   'apng',
+  'bmp',
   'png',
   'jpe?g',
   'jfif',
@@ -141,3 +188,9 @@ export const DEFAULT_PREVIEW_PORT = 4173
 export const DEFAULT_ASSETS_INLINE_LIMIT = 4096
 
 export const METADATA_FILENAME = '_metadata.json'
+
+export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
+  'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
+export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
+export const ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR =
+  'ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR'

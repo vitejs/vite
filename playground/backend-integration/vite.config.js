@@ -1,5 +1,5 @@
 import path from 'node:path'
-import glob from 'fast-glob'
+import { globSync } from 'tinyglobby'
 import { defineConfig, normalizePath } from 'vite'
 
 /**
@@ -14,14 +14,25 @@ function BackendIntegrationExample() {
       const root = path.join(sourceCodeDir, 'entrypoints')
       const outDir = path.relative(root, path.join(projectRoot, 'dist/dev'))
 
-      const entrypoints = glob
-        .sync(`${normalizePath(root)}/**/*`, { onlyFiles: true })
-        .map((filename) => [path.relative(root, filename), filename])
+      const entrypoints = globSync(`${normalizePath(root)}/**/*`, {
+        absolute: true,
+        expandDirectories: false,
+        onlyFiles: true,
+      }).map((filename) => [path.relative(root, filename), filename])
 
       entrypoints.push(['tailwindcss-colors', 'tailwindcss/colors.js'])
       entrypoints.push(['bar.css', path.resolve(__dirname, './dir/foo.css')])
 
       return {
+        server: {
+          // same port in playground/test-utils.ts
+          port: 5009,
+          strictPort: true,
+          origin: 'http://localhost:5009',
+        },
+        preview: {
+          port: 5009,
+        },
         build: {
           manifest: true,
           outDir,
