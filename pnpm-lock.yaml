@@ -1372,6 +1372,9 @@ importers:
       '@vitejs/test-module-condition':
         specifier: file:./module-condition
         version: file:playground/ssr-deps/module-condition
+      '@vitejs/test-nested-exclude':
+        specifier: file:./nested-exclude
+        version: file:playground/ssr-deps/nested-exclude
       '@vitejs/test-no-external-cjs':
         specifier: file:./no-external-cjs
         version: file:playground/ssr-deps/no-external-cjs
@@ -1442,9 +1445,17 @@ importers:
 
   playground/ssr-deps/module-condition: {}
 
+  playground/ssr-deps/nested-exclude:
+    dependencies:
+      '@vitejs/test-nested-include':
+        specifier: file:../nested-include
+        version: file:playground/ssr-deps/nested-include
+
   playground/ssr-deps/nested-external: {}
 
   playground/ssr-deps/nested-external-cjs: {}
+
+  playground/ssr-deps/nested-include: {}
 
   playground/ssr-deps/no-external-cjs: {}
 
@@ -3357,11 +3368,17 @@ packages:
   '@vitejs/test-nested-exclude@file:playground/optimize-deps/nested-exclude':
     resolution: {directory: playground/optimize-deps/nested-exclude, type: directory}
 
+  '@vitejs/test-nested-exclude@file:playground/ssr-deps/nested-exclude':
+    resolution: {directory: playground/ssr-deps/nested-exclude, type: directory}
+
   '@vitejs/test-nested-external@file:playground/ssr-deps/nested-external':
     resolution: {directory: playground/ssr-deps/nested-external, type: directory}
 
   '@vitejs/test-nested-include@file:playground/optimize-deps/nested-include':
     resolution: {directory: playground/optimize-deps/nested-include, type: directory}
+
+  '@vitejs/test-nested-include@file:playground/ssr-deps/nested-include':
+    resolution: {directory: playground/ssr-deps/nested-include, type: directory}
 
   '@vitejs/test-no-external-cjs@file:playground/ssr-deps/no-external-cjs':
     resolution: {directory: playground/ssr-deps/no-external-cjs, type: directory}
@@ -8803,9 +8820,15 @@ snapshots:
     dependencies:
       '@vitejs/test-nested-include': file:playground/optimize-deps/nested-include
 
+  '@vitejs/test-nested-exclude@file:playground/ssr-deps/nested-exclude':
+    dependencies:
+      '@vitejs/test-nested-include': file:playground/ssr-deps/nested-include
+
   '@vitejs/test-nested-external@file:playground/ssr-deps/nested-external': {}
 
   '@vitejs/test-nested-include@file:playground/optimize-deps/nested-include': {}
+
+  '@vitejs/test-nested-include@file:playground/ssr-deps/nested-include': {}
 
   '@vitejs/test-no-external-cjs@file:playground/ssr-deps/no-external-cjs': {}
 

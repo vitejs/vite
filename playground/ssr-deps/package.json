@@ -26,6 +26,7 @@
     "@vitejs/test-non-optimized-with-nested-external": "workspace:*",
     "@vitejs/test-optimized-with-nested-external": "file:./optimized-with-nested-external",
     "@vitejs/test-optimized-cjs-with-nested-external": "file:./optimized-with-nested-external",
+    "@vitejs/test-nested-exclude": "file:./nested-exclude",
     "@vitejs/test-external-using-external-entry": "file:./external-using-external-entry",
     "@vitejs/test-external-entry": "file:./external-entry",
     "@vitejs/test-linked-no-external": "link:./linked-no-external",
