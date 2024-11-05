@@ -887,6 +887,8 @@ if (!isBuild) {
   test('assets HMR', async () => {
     await setupModuleRunner('/hmr.ts')
     const el = () => hmr('#logo')
+    const initialLogoUrl = el()
+    expect(initialLogoUrl).toMatch(/^data:image\/svg\+xml/)
     await untilConsoleLogAfter(
       () =>
         editFile('logo.svg', (code) =>
@@ -894,7 +896,10 @@ if (!isBuild) {
         ),
       /Logo updated/,
     )
-    await vi.waitUntil(() => el().includes('logo.svg?t='))
+    // Should be updated with new data url
+    const updatedLogoUrl = el()
+    expect(updatedLogoUrl).toMatch(/^data:image\/svg\+xml/)
+    expect(updatedLogoUrl).not.toEqual(initialLogoUrl)
   })
 } else {
   test('this file only includes test for serve', () => {
