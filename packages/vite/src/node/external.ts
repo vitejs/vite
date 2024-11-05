@@ -88,6 +88,7 @@ export function createIsConfiguredAsExternal(
         resolveOptions,
         undefined,
         false,
+        environment.config,
       )
       if (!resolved) {
         return false
@@ -155,7 +156,9 @@ function createIsExternal(
     }
     let isExternal = false
     if (id[0] !== '.' && !path.isAbsolute(id)) {
-      isExternal = isBuiltin(id) || isConfiguredAsExternal(id, importer)
+      isExternal =
+        isBuiltin(id, environment.config) ||
+        isConfiguredAsExternal(id, importer)
     }
     processedIds.set(id, isExternal)
     return isExternal

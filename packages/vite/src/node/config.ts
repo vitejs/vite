@@ -260,6 +260,11 @@ export interface SharedEnvironmentOptions {
    * Optimize deps config
    */
   optimizeDeps?: DepOptimizationOptions
+  /**
+   * Function to specify when modules should be considered built-in for the environment.
+   * (If not provided the node built-in modules are the only ones assumed as such)
+   */
+  isBuiltin?: (id: string) => boolean
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -283,6 +288,7 @@ export type ResolvedEnvironmentOptions = {
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
+  isBuiltin?: (id: string) => boolean
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -772,6 +778,7 @@ function resolveEnvironmentOptions(
       resolve.preserveSymlinks,
       consumer,
     ),
+    isBuiltin: options.isBuiltin,
     dev: resolveDevEnvironmentOptions(
       options.dev,
       environmentName,

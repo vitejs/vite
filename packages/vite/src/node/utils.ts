@@ -46,7 +46,7 @@ import {
   findNearestPackageData,
   resolvePackageData,
 } from './packages'
-import type { CommonServerOptions } from '.'
+import type { CommonServerOptions, EnvironmentOptions } from '.'
 
 /**
  * Inlined to keep `@rollup/pluginutils` in devDependencies
@@ -102,8 +102,18 @@ const BUN_BUILTIN_NAMESPACE = 'bun:'
 // Some runtimes like Bun injects namespaced modules here, which is not a node builtin
 const nodeBuiltins = builtinModules.filter((id) => !id.includes(':'))
 
-// TODO: Use `isBuiltin` from `node:module`, but Deno doesn't support it
-export function isBuiltin(id: string): boolean {
+// TODO: For the default node implementation use `isBuiltin` from `node:module`.
+//       Note that Deno doesn't support it.
+export function isBuiltin(
+  id: string,
+  environmentOptions?: EnvironmentOptions,
+): boolean {
+  if (environmentOptions?.isBuiltin) {
+    return environmentOptions.isBuiltin(id)
+  }
+
+  // TODO: Deprecate/remove the following ifs and let the environment
+  // tell vite what builtins it has (via the `isBuiltin` option)
   if (process.versions.deno && id.startsWith(NPM_BUILTIN_NAMESPACE)) return true
   if (process.versions.bun && id.startsWith(BUN_BUILTIN_NAMESPACE)) return true
   return isNodeBuiltin(id)

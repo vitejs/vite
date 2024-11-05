@@ -35,7 +35,7 @@ import {
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
-import type { SSROptions } from '..'
+import type { EnvironmentOptions, SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import { canExternalizeFile, shouldExternalize } from '../external'
 import {
@@ -320,7 +320,13 @@ export function resolvePlugin(
 
         if (
           options.mainFields.includes('browser') &&
-          (res = tryResolveBrowserMapping(fsPath, importer, options, true))
+          (res = tryResolveBrowserMapping(
+            fsPath,
+            importer,
+            options,
+            true,
+            this.environment.config,
+          ))
         ) {
           return res
         }
@@ -410,6 +416,7 @@ export function resolvePlugin(
             importer,
             options,
             false,
+            this.environment.config,
             external,
           ))
         ) {
@@ -417,14 +424,21 @@ export function resolvePlugin(
         }
 
         if (
-          (res = tryNodeResolve(id, importer, options, depsOptimizer, external))
+          (res = tryNodeResolve(
+            id,
+            importer,
+            options,
+            depsOptimizer,
+            external,
+            this.environment.config,
+          ))
         ) {
           return res
         }
 
-        // node built-ins.
-        // externalize if building for a node compatible environment, otherwise redirect to empty module
-        if (isBuiltin(id)) {
+        // built-ins
+        // externalize if building for a server environment, otherwise redirect to an empty module
+        if (isBuiltin(id, this.environment.config)) {
           if (currentEnvironmentOptions.consumer === 'server') {
             if (
               options.enableBuiltinNoExternalCheck &&
@@ -433,7 +447,7 @@ export function resolvePlugin(
               // only if the id is explicitly listed in external, we will externalize it and skip this error.
               (options.external === true || !options.external.includes(id))
             ) {
-              let message = `Cannot bundle Node.js built-in "${id}"`
+              let message = `Cannot bundle built-in module "${id}"`
               if (importer) {
                 message += ` imported from "${path.relative(
                   process.cwd(),
@@ -697,6 +711,7 @@ export function tryNodeResolve(
   options: InternalResolveOptions,
   depsOptimizer?: DepsOptimizer,
   externalize?: boolean,
+  environmentOptions?: EnvironmentOptions,
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
@@ -721,7 +736,11 @@ export function tryNodeResolve(
   }
 
   let selfPkg = null
-  if (!isBuiltin(id) && !id.includes('\0') && bareImportRE.test(id)) {
+  if (
+    !isBuiltin(id, environmentOptions) &&
+    !id.includes('\0') &&
+    bareImportRE.test(id)
+  ) {
     // check if it's a self reference dep.
     const selfPackageData = findNearestPackageData(basedir, packageCache)
     selfPkg =
@@ -738,7 +757,7 @@ export function tryNodeResolve(
     // if so, we can resolve to a special id that errors only when imported.
     if (
       basedir !== root && // root has no peer dep
-      !isBuiltin(id) &&
+      !isBuiltin(id, environmentOptions) &&
       !id.includes('\0') &&
       bareImportRE.test(id)
     ) {
@@ -1082,6 +1101,7 @@ function tryResolveBrowserMapping(
   importer: string | undefined,
   options: InternalResolveOptions,
   isFilePath: boolean,
+  environmentOptions: EnvironmentOptions,
   externalize?: boolean,
 ) {
   let res: string | undefined
@@ -1100,6 +1120,7 @@ function tryResolveBrowserMapping(
               options,
               undefined,
               undefined,
+              environmentOptions,
             )?.id
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {

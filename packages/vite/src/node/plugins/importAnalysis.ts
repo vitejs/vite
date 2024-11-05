@@ -519,7 +519,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               if (shouldExternalize(environment, specifier, importer)) {
                 return
               }
-              if (isBuiltin(specifier)) {
+              if (isBuiltin(specifier, environment.config)) {
                 return
               }
             }
