@@ -333,24 +333,18 @@ export async function resolveEnvironmentPlugins(
   environment: PartialEnvironment,
 ): Promise<Plugin[]> {
   const environmentPlugins: Plugin[] = []
-  const topLevelConfig = environment.getTopLevelConfig()
-  for (const plugin of topLevelConfig.plugins) {
+  for (const plugin of environment.getTopLevelConfig().plugins) {
     if (plugin.applyToEnvironment) {
       const applied = await plugin.applyToEnvironment(environment)
       if (!applied) {
         continue
       }
       if (applied !== true) {
-        const newPlugins = (await asyncFlatten(arraify(applied))).filter(
-          Boolean,
-        ) as Plugin[]
-        for (const plugin of getSortedPluginsByHook(
-          'configResolved',
-          newPlugins,
-        )) {
-          getHookHandler(plugin.configResolved)(topLevelConfig)
-        }
-        environmentPlugins.push(...newPlugins)
+        environmentPlugins.push(
+          ...((await asyncFlatten(arraify(applied))).filter(
+            Boolean,
+          ) as Plugin[]),
+        )
         continue
       }
     }
@@ -372,40 +366,4 @@ export function perEnvironmentPlugin(
     name,
     applyToEnvironment,
   }
-}
-
-export function getSortedPluginsByHook<K extends keyof Plugin>(
-  hookName: K,
-  plugins: readonly Plugin[],
-): PluginWithRequiredHook<K>[] {
-  const sortedPlugins: Plugin[] = []
-  // Use indexes to track and insert the ordered plugins directly in the
-  // resulting array to avoid creating 3 extra temporary arrays per hook
-  let pre = 0,
-    normal = 0,
-    post = 0
-  for (const plugin of plugins) {
-    const hook = plugin[hookName]
-    if (hook) {
-      if (typeof hook === 'object') {
-        if (hook.order === 'pre') {
-          sortedPlugins.splice(pre++, 0, plugin)
-          continue
-        }
-        if (hook.order === 'post') {
-          sortedPlugins.splice(pre + normal + post++, 0, plugin)
-          continue
-        }
-      }
-      sortedPlugins.splice(pre + normal++, 0, plugin)
-    }
-  }
-
-  return sortedPlugins as PluginWithRequiredHook<K>[]
-}
-
-export function getHookHandler<T extends ObjectHook<Function>>(
-  hook: T,
-): HookHandler<T> {
-  return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
 }

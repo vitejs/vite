@@ -1,8 +1,8 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
+import type { ObjectHook } from 'rollup'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepOptimizationDisabled } from '../optimizer'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
-import { getHookHandler, getSortedPluginsByHook } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
@@ -136,6 +136,42 @@ export function createPluginHookUtils(
     getSortedPlugins,
     getSortedPluginHooks,
   }
+}
+
+export function getSortedPluginsByHook<K extends keyof Plugin>(
+  hookName: K,
+  plugins: readonly Plugin[],
+): PluginWithRequiredHook<K>[] {
+  const sortedPlugins: Plugin[] = []
+  // Use indexes to track and insert the ordered plugins directly in the
+  // resulting array to avoid creating 3 extra temporary arrays per hook
+  let pre = 0,
+    normal = 0,
+    post = 0
+  for (const plugin of plugins) {
+    const hook = plugin[hookName]
+    if (hook) {
+      if (typeof hook === 'object') {
+        if (hook.order === 'pre') {
+          sortedPlugins.splice(pre++, 0, plugin)
+          continue
+        }
+        if (hook.order === 'post') {
+          sortedPlugins.splice(pre + normal + post++, 0, plugin)
+          continue
+        }
+      }
+      sortedPlugins.splice(pre + normal++, 0, plugin)
+    }
+  }
+
+  return sortedPlugins as PluginWithRequiredHook<K>[]
+}
+
+export function getHookHandler<T extends ObjectHook<Function>>(
+  hook: T,
+): HookHandler<T> {
+  return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
 }
 
 // Same as `@rollup/plugin-alias` default resolver, but we attach additional meta
