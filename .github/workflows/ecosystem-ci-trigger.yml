@@ -1,11 +1,13 @@
 name: ecosystem-ci trigger
 
 on:
-  pull_request:
+  issue_comment:
+    types: [created]
 
 jobs:
   trigger:
     runs-on: ubuntu-latest
+    if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
     steps:
       - name: Get PR Data
         uses: actions/github-script@v7
@@ -49,7 +51,7 @@ jobs:
             const reaction = await github.rest.reactions.createForIssueComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              comment_id: 2449396756, // Replace with dynamic comment ID if necessary
+              comment_id: context.payload.comment.id, 
               content: 'rocket',
             })
 
@@ -121,14 +123,14 @@ jobs:
             await github.rest.reactions.listForIssueComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              comment_id: 2449396756,
+              comment_id: context.payload.comment.id, 
             }).then(async res => {
               const rocketReaction = res.data.find(r => r.content === 'rocket')
               if (rocketReaction) {
                 await github.rest.reactions.deleteForIssueComment({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
-                  comment_id: 2449396756,
+                  comment_id: context.payload.comment.id, 
                   reaction_id: rocketReaction.id,
                 })
                 console.log('Removed "rocket" reaction.')
@@ -150,8 +152,7 @@ jobs:
                 repo: context.repo.repo,
                 username: user,
               });
-              console.log(data)
-              hasTriagePermission = ['triage', 'write', 'admin'].some(p => data.permission === p);
+              hasTriagePermission = ['triage', 'write', 'admin'].some(p => data.user.permissions[p]);
             } catch (e) {
               console.warn(e)
             }
@@ -164,14 +165,13 @@ jobs:
         with:
           script: |
             const allowed = ${{ steps.check-permissions.outputs.allowed }}
-            const comment_id = 2449396756 // Replace with dynamic comment ID if necessary
 
             if (allowed) {
               console.log('User is allowed. Adding +1 reaction.')
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: comment_id,
+                comment_id: context.payload.comment.id, 
                 content: '+1',
               })
             } else {
@@ -179,7 +179,7 @@ jobs:
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                comment_id: comment_id,
+                comment_id: context.payload.comment.id, 
                 content: '-1',
               })
               throw new Error('User does not have the necessary permissions.')
