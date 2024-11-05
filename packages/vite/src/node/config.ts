@@ -754,6 +754,12 @@ function resolveEnvironmentResolveOptions(
   // Backward compatibility
   isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedAllResolveOptions {
+  let mainFields = resolve?.mainFields
+  mainFields ??=
+    consumer === 'client' || isSsrTargetWebworkerEnvironment
+      ? DEFAULT_MAIN_FIELDS
+      : DEFAULT_MAIN_FIELDS.filter((f) => f !== 'browser')
+
   let conditions = resolve?.conditions
   conditions ??=
     consumer === 'client' || isSsrTargetWebworkerEnvironment
@@ -761,7 +767,7 @@ function resolveEnvironmentResolveOptions(
       : DEFAULT_CONDITIONS.filter((c) => c !== 'browser')
 
   const resolvedResolve: ResolvedAllResolveOptions = {
-    mainFields: resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
+    mainFields,
     conditions,
     externalConditions:
       resolve?.externalConditions ?? DEFAULT_EXTERNAL_CONDITIONS,
