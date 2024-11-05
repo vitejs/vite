@@ -135,14 +135,15 @@ const UnoCssPlugin = () => {
   // shared global state
   return {
     buildStart() {
-      // init per environment state with WeakMap<Environment,Data>, this.environment
+      // init per environment state with WeakMap<Environment,Data>
+      // using this.environment
     },
     configureServer() {
       // use global hooks normally
     },
     applyToEnvironment(environment) {
       // return true if this plugin should be active in this environment
-      // if the function isn't provided, the plugin is active in all environments
+      // if the hook is not used, the plugin is active in all environments
     },
     resolveId(id, importer) {
       // only called for environments this plugin apply to

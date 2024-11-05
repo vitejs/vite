@@ -84,7 +84,11 @@ One of the goals of this feature is to provide a customizable API to process and
 ```ts
 import { DevEnvironment, RemoteEnvironmentTransport } from 'vite'
 
-function createWorkerdDevEnvironment(name: string, config: ResolvedConfig, context: DevEnvironmentContext) {
+function createWorkerdDevEnvironment(
+  name: string,
+  config: ResolvedConfig,
+  context: DevEnvironmentContext
+) {
   const hot = /* ... */
   const connection = /* ... */
   const transport = new RemoteEnvironmentTransport({
@@ -120,7 +124,8 @@ export class ModuleRunner {
     private debug?: ModuleRunnerDebugger,
   ) {}
   /**
-   * URL to execute. Accepts file path, server path, or id relative to the root.
+   * URL to execute.
+   * Accepts file path, server path, or id relative to the root.
    */
   public async import<T = any>(url: string): Promise<T>
   /**
@@ -128,12 +133,12 @@ export class ModuleRunner {
    */
   public clearCache(): void
   /**
-   * Clears all caches, removes all HMR listeners, and resets source map support.
+   * Clear all caches, remove all HMR listeners, reset sourcemap support.
    * This method doesn't stop the HMR connection.
    */
   public async close(): Promise<void>
   /**
-   * Returns `true` if the runner has been closed by calling `close()` method.
+   * Returns `true` if the runner has been closed by calling `close()`.
    */
   public isClosed(): boolean
 }
@@ -174,9 +179,12 @@ export interface ModuleRunnerOptions {
    */
   transport: RunnerTransport
   /**
-   * Configure how source maps are resolved. Prefers `node` if `process.setSourceMapsEnabled` is available.
-   * Otherwise it will use `prepareStackTrace` by default which overrides `Error.prepareStackTrace` method.
-   * You can provide an object to configure how file contents and source maps are resolved for files that were not processed by Vite.
+   * Configure how source maps are resolved.
+   * Prefers `node` if `process.setSourceMapsEnabled` is available.
+   * Otherwise it will use `prepareStackTrace` by default which overrides
+   * `Error.prepareStackTrace` method.
+   * You can provide an object to configure how file contents and
+   * source maps are resolved for files that were not processed by Vite.
    */
   sourcemapInterceptor?:
     | false
@@ -190,7 +198,7 @@ export interface ModuleRunnerOptions {
     | false
     | {
         /**
-         * Configure how HMR communicates between the client and the server.
+         * Configure how HMR communicates between client and server.
          */
         connection: ModuleRunnerHMRConnection
         /**
@@ -199,7 +207,8 @@ export interface ModuleRunnerOptions {
         logger?: false | HMRLogger
       }
   /**
-   * Custom module cache. If not provided, it creates a separate module cache for each module runner instance.
+   * Custom module cache. If not provided, it creates a separate module
+   * cache for each module runner instance.
    */
   evaluatedModules?: EvaluatedModules
 }
@@ -344,7 +353,8 @@ export interface ModuleRunnerHMRConnection {
   send(payload: HotPayload): void
   /**
    * Configure how HMR is handled when this connection triggers an update.
-   * This method expects that the connection will start listening for HMR updates and call this callback when it's received.
+   * This method expects that the connection will start listening for HMR
+   * updates and call this callback when it's received.
    */
   onUpdate(callback: (payload: HotPayload) => void): void
 }

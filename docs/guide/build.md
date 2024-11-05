@@ -337,7 +337,9 @@ experimental: {
     if (type === 'public') {
       return 'https://www.domain.com/' + filename
     } else if (path.extname(hostId) === '.js') {
-      return { runtime: `window.__assetsPath(${JSON.stringify(filename)})` }
+      return {
+        runtime: `window.__assetsPath(${JSON.stringify(filename)})`
+      }
     } else {
       return 'https://cdn.domain.com/assets/' + filename
     }

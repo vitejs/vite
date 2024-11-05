@@ -74,9 +74,9 @@ class DevEnvironment {
 
   /**
    * Register a request to be processed with low priority. This is useful
-   * to avoid waterfalls. The Vite server has information about the imported
-   * modules by other requests, so it can warmup the module graph so the
-   * modules are already processed when they are requested.
+   * to avoid waterfalls. The Vite server has information about the
+   * imported modules by other requests, so it can warmup the module graph
+   * so the modules are already processed when they are requested.
    */
   async warmupRequest(url: string): void
 }
