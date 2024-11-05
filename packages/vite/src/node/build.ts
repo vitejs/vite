@@ -33,7 +33,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
-import { resolveConfig } from './config'
+import { configDefaults, resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -1508,11 +1508,10 @@ export function resolveBuilderOptions(
   options: BuilderOptions | undefined,
 ): ResolvedBuilderOptions | undefined {
   if (!options) return
-  return {
-    sharedConfigBuild: options.sharedConfigBuild ?? false,
-    sharedPlugins: options.sharedPlugins ?? false,
-    buildApp: options.buildApp ?? defaultBuildApp,
-  }
+  return mergeWithDefaults(
+    { ...configDefaults.builder, buildApp: defaultBuildApp },
+    options,
+  )
 }
 
 export type ResolvedBuilderOptions = Required<BuilderOptions>

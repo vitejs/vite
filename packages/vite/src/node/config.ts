@@ -90,7 +90,7 @@ import type { PackageCache } from './packages'
 import { findNearestNodeModules, findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
-import { resolveSSROptions } from './ssr'
+import { resolveSSROptions, ssrConfigDefaults } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 
@@ -541,6 +541,7 @@ export type ResolvedConfig = Readonly<
     UserConfig,
     | 'plugins'
     | 'css'
+    | 'json'
     | 'assetsInclude'
     | 'optimizeDeps'
     | 'worker'
@@ -576,6 +577,7 @@ export type ResolvedConfig = Readonly<
     }
     plugins: readonly Plugin[]
     css: ResolvedCSSOptions
+    json: Required<JsonOptions>
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     dev: ResolvedDevEnvironmentOptions
@@ -710,16 +712,7 @@ export const configDefaults = Object.freeze({
     /** @experimental */
     force: false,
   },
-  ssr: {
-    noExternal: [],
-    external: [],
-    target: 'node',
-    // optimizeDeps
-    resolve: {
-      // conditions
-      externalConditions: [],
-    },
-  },
+  ssr: ssrConfigDefaults,
   environments: {},
   appType: 'spa',
 } satisfies UserConfig)
@@ -1371,6 +1364,7 @@ export async function resolveConfig(
     isProduction,
     plugins: userPlugins, // placeholder to be replaced
     css: resolveCSSOptions(config.css),
+    json: mergeWithDefaults(configDefaults.json, config.json ?? {}),
     esbuild:
       config.esbuild === false
         ? false
