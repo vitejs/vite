@@ -126,5 +126,6 @@ export const aliasBase = /* #__PURE__ */ Object.assign({"./a.ts": () => import("
 
 exports[`fixture > virtual modules 1`] = `
 "/* #__PURE__ */ Object.assign({"/modules/a.ts": () => import("/modules/a.ts"),"/modules/b.ts": () => import("/modules/b.ts"),"/modules/index.ts": () => import("/modules/index.ts")})
-/* #__PURE__ */ Object.assign({"/../fixture-b/a.ts": () => import("/../fixture-b/a.ts"),"/../fixture-b/b.ts": () => import("/../fixture-b/b.ts"),"/../fixture-b/index.ts": () => import("/../fixture-b/index.ts")})"
+/* #__PURE__ */ Object.assign({"/../fixture-b/a.ts": () => import("/../fixture-b/a.ts"),"/../fixture-b/b.ts": () => import("/../fixture-b/b.ts"),"/../fixture-b/index.ts": () => import("/../fixture-b/index.ts")})
+/* #__PURE__ */ Object.assign({"./a.ts": () => import("/modules/a.ts"),"./b.ts": () => import("/modules/b.ts"),"./index.ts": () => import("/modules/index.ts")})"
 `;
