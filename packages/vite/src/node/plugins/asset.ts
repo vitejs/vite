@@ -276,10 +276,9 @@ export async function fileToDevUrl(
     return assetToDataURL(environment, file, content)
   }
 
-  // If is svg and should be inlined, inline it directly in dev
-  // to match behaviour in build due to quote handling differences.
-  // Exclude svg fragments as a fast-path extracted from `shouldInline`.
-  if (svgExtRE.test(id) && !id.includes('#')) {
+  // If is svg and it's inlined in build, also inline it in dev to match
+  // the behaviour in build due to quote handling differences.
+  if (svgExtRE.test(id)) {
     const file = publicFile || cleanUrl(id)
     const content = await fsp.readFile(file)
     if (shouldInline(environment, file, id, content, undefined, undefined)) {
@@ -433,20 +432,23 @@ function shouldInline(
   file: string,
   id: string,
   content: Buffer,
-  /** Only used for `.getModuleInfo()` in build */
-  pluginContext: PluginContext | undefined,
+  /** Should be passed only in build */
+  buildPluginContext: PluginContext | undefined,
   forceInline: boolean | undefined,
 ): boolean {
-  const { assetsInlineLimit } = environment.config.build
   if (noInlineRE.test(id)) return false
   if (inlineRE.test(id)) return true
-  if (environment.config.build.lib) return true
-  if (pluginContext?.getModuleInfo(id)?.isEntry) return false
+  // Do build only checks if passed the plugin context during build
+  if (buildPluginContext) {
+    if (environment.config.build.lib) return true
+    if (buildPluginContext.getModuleInfo(id)?.isEntry) return false
+  }
   if (forceInline !== undefined) return forceInline
   if (file.endsWith('.html')) return false
   // Don't inline SVG with fragments, as they are meant to be reused
   if (file.endsWith('.svg') && id.includes('#')) return false
   let limit: number
+  const { assetsInlineLimit } = environment.config.build
   if (typeof assetsInlineLimit === 'function') {
     const userShouldInline = assetsInlineLimit(file, content)
     if (userShouldInline != null) return userShouldInline
