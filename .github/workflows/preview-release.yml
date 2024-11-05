@@ -16,9 +16,10 @@ on:
 
 jobs:
   preview:
-    # if: >
-    #   github.event_name == 'push' ||
-    #   contains(github.event.pull_request.labels.*.name, 'trigger: preview')
+    if: >
+      github.repository == 'vitejs/vite' &&
+      (github.event_name == 'push' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'trigger: preview')))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -34,4 +35,4 @@ jobs:
         working-directory: ./packages/vite
         run: pnpm build
 
-      - run: pnpm dlx pkg-pr-new@0.0 publish --pnpm ./packages/vite
+      - run: pnpm dlx pkg-pr-new@0.0 publish --compact --pnpm ./packages/vite
