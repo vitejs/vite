@@ -37,7 +37,7 @@ jobs:
             return { exists: response.status !== 404 }
 
       - name: Trigger Preview Release (if Package Not Found)
-        if: steps.check-package.outputs.exists == 'false'
+        if: steps.check-package.outputs.exists == false
         uses: actions/github-script@v7
         id: trigger-preview-release
         with:
