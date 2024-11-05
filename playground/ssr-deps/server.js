@@ -42,13 +42,20 @@ export async function createServer(root = process.cwd(), hmrPort) {
     },
     appType: 'custom',
     ssr: {
-      noExternal,
+      noExternal: [
+        ...noExternal,
+        '@vitejs/test-nested-exclude',
+        '@vitejs/test-nested-include',
+      ],
       external: [
         '@vitejs/test-nested-external',
         '@vitejs/test-external-entry/entry',
       ],
       optimizeDeps: {
-        include: noExternal,
+        include: [
+          ...noExternal,
+          '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
+        ],
       },
     },
     plugins: [
