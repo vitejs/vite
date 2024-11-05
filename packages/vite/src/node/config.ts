@@ -4,7 +4,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
-import { createRequire } from 'node:module'
+import { builtinModules, createRequire } from 'node:module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import { build } from 'esbuild'
@@ -15,8 +15,10 @@ import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
+  DEFAULT_CONDITIONS,
   DEFAULT_CONFIG_FILES,
   DEFAULT_EXTENSIONS,
+  DEFAULT_EXTERNAL_CONDITIONS,
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
@@ -82,7 +84,7 @@ import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
 import type { JsonOptions } from './plugins/json'
 import type { PackageCache } from './packages'
-import { findNearestPackageData } from './packages'
+import { findNearestNodeModules, findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
@@ -242,10 +244,10 @@ export interface SharedEnvironmentOptions {
    */
   consumer?: 'client' | 'server'
   /**
-   * Runtime Compatibility
-   * Temporal options, we should remove these in favor of fine-grained control
+   * If true, `process.env` referenced in code will be preserved as-is and evaluated in runtime.
+   * Otherwise, it is statically replaced as an empty object.
    */
-  webCompatible?: boolean // was ssr.target === 'webworker'
+  keepProcessEnv?: boolean
   /**
    * Optimize deps config
    */
@@ -269,7 +271,7 @@ export type ResolvedEnvironmentOptions = {
   define?: Record<string, any>
   resolve: ResolvedResolveOptions
   consumer: 'client' | 'server'
-  webCompatible: boolean
+  keepProcessEnv?: boolean
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
@@ -277,7 +279,7 @@ export type ResolvedEnvironmentOptions = {
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  'consumer' | 'webCompatible' | 'resolve'
+  'consumer' | 'resolve'
 > & {
   resolve?: AllResolveOptions
 }
@@ -626,21 +628,28 @@ function resolveEnvironmentOptions(
   environmentName: string,
   // Backward compatibility
   skipSsrTransform?: boolean,
+  ssrTargetWebworker?: boolean,
 ): ResolvedEnvironmentOptions {
+  const isClientEnvironment = environmentName === 'client'
+  const consumer =
+    options.consumer ?? (isClientEnvironment ? 'client' : 'server')
+  const isSsrTargetWebworkerEnvironment =
+    ssrTargetWebworker && environmentName === 'ssr'
   const resolve = resolveEnvironmentResolveOptions(
     options.resolve,
     alias,
     preserveSymlinks,
     logger,
+    consumer,
+    isSsrTargetWebworkerEnvironment,
   )
-  const isClientEnvironment = environmentName === 'client'
-  const consumer =
-    options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   return {
     define: options.define,
     resolve,
+    keepProcessEnv:
+      options.keepProcessEnv ??
+      (isSsrTargetWebworkerEnvironment ? false : consumer === 'server'),
     consumer,
-    webCompatible: options.webCompatible ?? consumer === 'client',
     optimizeDeps: resolveDepOptimizationOptions(
       options.optimizeDeps,
       resolve.preserveSymlinks,
@@ -656,6 +665,7 @@ function resolveEnvironmentOptions(
       options.build ?? {},
       logger,
       consumer,
+      isSsrTargetWebworkerEnvironment,
     ),
   }
 }
@@ -665,7 +675,12 @@ export function getDefaultEnvironmentOptions(
 ): EnvironmentOptions {
   return {
     define: config.define,
-    resolve: config.resolve,
+    resolve: {
+      ...config.resolve,
+      // mainFields and conditions are not inherited
+      mainFields: undefined,
+      conditions: undefined,
+    },
     dev: config.dev,
     build: config.build,
   }
@@ -735,12 +750,26 @@ function resolveEnvironmentResolveOptions(
   alias: Alias[],
   preserveSymlinks: boolean,
   logger: Logger,
+  consumer: 'client' | 'server' | undefined,
+  // Backward compatibility
+  isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedAllResolveOptions {
+  let conditions = resolve?.conditions
+  conditions ??=
+    consumer === 'client' || isSsrTargetWebworkerEnvironment
+      ? DEFAULT_CONDITIONS.filter((c) => c !== 'node')
+      : DEFAULT_CONDITIONS.filter((c) => c !== 'browser')
+
   const resolvedResolve: ResolvedAllResolveOptions = {
     mainFields: resolve?.mainFields ?? DEFAULT_MAIN_FIELDS,
-    conditions: resolve?.conditions ?? [],
-    externalConditions: resolve?.externalConditions ?? [],
-    external: resolve?.external ?? [],
+    conditions,
+    externalConditions:
+      resolve?.externalConditions ?? DEFAULT_EXTERNAL_CONDITIONS,
+    external:
+      resolve?.external ??
+      (consumer === 'server' && !isSsrTargetWebworkerEnvironment
+        ? builtinModules
+        : []),
     noExternal: resolve?.noExternal ?? [],
     extensions: resolve?.extensions ?? DEFAULT_EXTENSIONS,
     dedupe: resolve?.dedupe ?? [],
@@ -776,6 +805,7 @@ function resolveResolveOptions(
     alias,
     preserveSymlinks,
     logger,
+    undefined,
   )
 }
 
@@ -940,10 +970,6 @@ export async function resolveConfig(
       config.ssr?.resolve?.externalConditions
     configEnvironmentsSsr.resolve.external ??= config.ssr?.external
     configEnvironmentsSsr.resolve.noExternal ??= config.ssr?.noExternal
-
-    if (config.ssr?.target === 'webworker') {
-      configEnvironmentsSsr.webCompatible = true
-    }
   }
 
   if (config.build?.ssrEmitAssets !== undefined) {
@@ -968,6 +994,7 @@ export async function resolveConfig(
   // Some top level options only apply to the client environment
   const defaultClientEnvironmentOptions: UserConfig = {
     ...defaultEnvironmentOptions,
+    resolve: config.resolve, // inherit everything including mainFields and conditions
     optimizeDeps: config.optimizeDeps,
   }
   const defaultNonClientEnvironmentOptions: UserConfig = {
@@ -1005,6 +1032,7 @@ export async function resolveConfig(
       logger,
       environmentName,
       config.experimental?.skipSsrTransform,
+      config.ssr?.target === 'webworker',
     )
   }
 
@@ -1579,17 +1607,15 @@ async function bundleConfigFile(
               preferRelative: false,
               tryIndex: true,
               mainFields: [],
-              conditions: [],
+              conditions: ['node'],
               externalConditions: [],
               external: [],
               noExternal: [],
-              overrideConditions: ['node'],
               dedupe: [],
               extensions: DEFAULT_EXTENSIONS,
               preserveSymlinks: false,
               packageCache,
               isRequire,
-              webCompatible: false,
             })?.id
           }
 
@@ -1691,16 +1717,24 @@ async function loadConfigFromBundledFile(
   // with --experimental-loader themselves, we have to do a hack here:
   // write it to disk, load it with native Node ESM, then delete the file.
   if (isESM) {
-    const fileBase = `${fileName}.timestamp-${Date.now()}-${Math.random()
-      .toString(16)
-      .slice(2)}`
-    const fileNameTmp = `${fileBase}.mjs`
-    const fileUrl = `${pathToFileURL(fileBase)}.mjs`
-    await fsp.writeFile(fileNameTmp, bundledCode)
+    const nodeModulesDir = findNearestNodeModules(path.dirname(fileName))
+    if (nodeModulesDir) {
+      await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
+        recursive: true,
+      })
+    }
+    const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const tempFileName = nodeModulesDir
+      ? path.resolve(
+          nodeModulesDir,
+          `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
+        )
+      : `${fileName}.${hash}.mjs`
+    await fsp.writeFile(tempFileName, bundledCode)
     try {
-      return (await import(fileUrl)).default
+      return (await import(pathToFileURL(tempFileName).href)).default
     } finally {
-      fs.unlink(fileNameTmp, () => {}) // Ignore errors
+      fs.unlink(tempFileName, () => {}) // Ignore errors
     }
   }
   // for cjs, we can register a custom loader via `_require.extensions`

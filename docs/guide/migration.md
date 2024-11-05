@@ -12,6 +12,23 @@ The experimental Vite Runtime API evolved into the Module Runner API, released i
 
 ## General Changes
 
+### Default value for `resolve.conditions`
+
+This change does not affect users that did not configure [`resolve.conditions`](/config/shared-options#resolve-conditions) / [`ssr.resolve.conditions`](/config/ssr-options#ssr-resolve-conditions) / [`ssr.resolve.externalConditions`](/config/ssr-options#ssr-resolve-externalconditions).
+
+In Vite 5, the default value for `resolve.conditions` was `[]` and some conditions were added internally. The default value for `ssr.resolve.conditions` was the value of `resolve.conditions`.
+
+From Vite 6, some of the conditions are no longer added internally and need to be included in the config values.
+The conditions that are no longer added internally for
+
+- `resolve.conditions` are `['module', 'browser', 'development|production']`
+- `ssr.resolve.conditions` are `['module', 'node', 'development|production']`
+
+The default values for those options are updated to the corresponding values and `ssr.resolve.conditions` no longer uses `resolve.conditions` as the default value. Note that `development|production` is a special variable that is replaced with `production` or `development` depending on the value of `process.env.NODE_ENV`.
+
+If you specified a custom value for `resolve.conditions` or `ssr.resolve.conditions`, you need to update it to include the new conditions.
+For example, if you previously specified `['custom']` for `resolve.conditions`, you need to specify `['custom', 'module', 'browser', 'development|production']` instead.
+
 ### JSON stringify
 
 In Vite 5, when [`json.stringify: true`](/config/shared-options#json-stringify) is set, [`json.namedExports`](/config/shared-options#json-namedexports) was disabled.
@@ -19,6 +36,14 @@ In Vite 5, when [`json.stringify: true`](/config/shared-options#json-stringify) 
 From Vite 6, even when `json.stringify: true` is set, `json.namedExports` is not disabled and the value is respected. If you wish to achieve the previous behavior, you can set `json.namedExports: false`.
 
 Vite 6 also introduces a new default value for `json.stringify` which is `'auto'`, which will only stringify large JSON files. To disable this behavior, set `json.stringify: false`.
+
+### Extended support of asset references in HTML elements
+
+In Vite 5, only a few supported HTML elements were able to reference assets that will be processed and bundled by Vite, such as `<link href>`, `<img src>`, etc.
+
+Vite 6 extends the support to even more HTML elements. The full list can be found at the [HTML features](/guide/features.html#html) docs.
+
+To opt-out of HTML processing on certain elements, you can add the `vite-ignore` attribute on the element.
 
 ### postcss-load-config
 
