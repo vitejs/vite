@@ -10,7 +10,7 @@ While Vite is fast by default, performance issues can creep in as the project's 
 
 Some browser extensions may interfere with requests and slow down startup and reload times for large apps, especially when using browser dev tools. We recommend creating a dev-only profile without extensions, or switch to incognito mode, while using Vite's dev server in these cases. Incognito mode should also be faster than a regular profile without extensions.
 
-The Vite dev server does hard caching of pre-bundled dependencies and implements fast 304 responses for source code. Disabling the cache while the Browser Dev Tools are open can have a big impact in startup and full-page reload times. Please check that "Disable Cache" isn't enabled while you work with the Vite server.
+The Vite dev server does hard caching of pre-bundled dependencies and implements fast 304 responses for source code. Disabling the cache while the Browser Dev Tools are open can have a big impact on startup and full-page reload times. Please check that "Disable Cache" isn't enabled while you work with the Vite server.
 
 ## Audit Configured Vite Plugins
 
@@ -29,7 +29,7 @@ However, the performance of community plugins is out of Vite's control, which ma
    You can inspect the duration it takes to transform a file using `vite --debug plugin-transform` or [vite-plugin-inspect](https://github.com/antfu/vite-plugin-inspect). Note that as asynchronous operations tend to provide inaccurate timings, you should treat the numbers as a rough estimate, but it should still reveal the more expensive operations.
 
 ::: tip Profiling
-You can run `vite --profile`, visit the site, and press `p + enter` in your terminal to record a `.cpuprofile`. A tool like [speedscope](https://www.speedscope.app) can then be used to inspect the profile and identify the bottlenecks. You can also [share the profiles](https://chat.vitejs.dev) with the Vite team to help us identify performance issues.
+You can run `vite --profile`, visit the site, and press `p + enter` in your terminal to record a `.cpuprofile`. A tool like [speedscope](https://www.speedscope.app) can then be used to inspect the profile and identify the bottlenecks. You can also [share the profiles](https://chat.vite.dev) with the Vite team to help us identify performance issues.
 :::
 
 ## Reduce Resolve Operations
@@ -52,15 +52,14 @@ Hence, it's usually better to be explicit with your import paths, e.g. `import '
 If you're a plugin author, make sure to only call [`this.resolve`](https://rollupjs.org/plugin-development/#this-resolve) when needed to reduce the number of checks above.
 
 ::: tip TypeScript
-If you are using TypeScript, enable `"moduleResolution": "bundler"` and `"allowImportingTsExtensions": true` in your `tsconfig.json`'s `compilerOptions` to use `.ts` and `.tsx` extensions directly in your code.
+If you are using TypeScript, enable `"moduleResolution": "Bundler"` and `"allowImportingTsExtensions": true` in your `tsconfig.json`'s `compilerOptions` to use `.ts` and `.tsx` extensions directly in your code.
 :::
 
 ## Avoid Barrel Files
 
 Barrel files are files that re-export the APIs of other files in the same directory. For example:
 
-```js
-// src/utils/index.js
+```js [src/utils/index.js]
 export * from './color.js'
 export * from './dom.js'
 export * from './slash.js'
@@ -92,7 +91,7 @@ vite:transform 62.95ms /src/components/BigComponent.vue +1ms
 vite:transform 102.54ms /src/utils/big-utils.js +1ms
 ```
 
-```js
+```js [vite.config.js]
 export default defineConfig({
   server: {
     warmup: {

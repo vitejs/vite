@@ -33,6 +33,14 @@ export function cleanUrl(url: string): string {
   return url.replace(postfixRE, '')
 }
 
+export function splitFileAndPostfix(path: string): {
+  file: string
+  postfix: string
+} {
+  const file = cleanUrl(path)
+  return { file, postfix: path.slice(file.length) }
+}
+
 export function isPrimitive(value: unknown): boolean {
   return !value || (typeof value !== 'object' && typeof value !== 'function')
 }
@@ -48,9 +56,14 @@ export function withTrailingSlash(path: string): string {
 export const AsyncFunction = async function () {}.constructor as typeof Function
 
 // https://github.com/nodejs/node/issues/43047#issuecomment-1564068099
-export const asyncFunctionDeclarationPaddingLineCount =
-  /** #__PURE__ */ (() => {
+let asyncFunctionDeclarationPaddingLineCount: number | undefined
+
+export function getAsyncFunctionDeclarationPaddingLineCount(): number {
+  if (typeof asyncFunctionDeclarationPaddingLineCount === 'undefined') {
     const body = '/*code*/'
     const source = new AsyncFunction('a', 'b', body).toString()
-    return source.slice(0, source.indexOf(body)).split('\n').length - 1
-  })()
+    asyncFunctionDeclarationPaddingLineCount =
+      source.slice(0, source.indexOf(body)).split('\n').length - 1
+  }
+  return asyncFunctionDeclarationPaddingLineCount
+}

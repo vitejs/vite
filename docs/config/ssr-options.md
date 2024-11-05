@@ -1,5 +1,7 @@
 # SSR Options
 
+Unless noted, the options in this section are applied to both dev and build.
+
 ## ssr.external
 
 - **Type:** `string[] | true`
@@ -32,15 +34,14 @@ Build target for the SSR server.
 ## ssr.resolve.conditions
 
 - **Type:** `string[]`
+- **Default:** `['module', 'node', 'development|production']` (`['module', 'browser', 'development|production']` for `ssr.target === 'webworker'`)
 - **Related:** [Resolve Conditions](./shared-options.md#resolve-conditions)
-
-Defaults to the the root [`resolve.conditions`](./shared-options.md#resolve-conditions).
 
 These conditions are used in the plugin pipeline, and only affect non-externalized dependencies during the SSR build. Use `ssr.resolve.externalConditions` to affect externalized imports.
 
 ## ssr.resolve.externalConditions
 
 - **Type:** `string[]`
-- **Default:** `[]`
+- **Default:** `['node']`
 
 Conditions that are used during ssr import (including `ssrLoadModule`) of externalized dependencies.

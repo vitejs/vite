@@ -75,7 +75,10 @@ export interface CommonServerOptions {
 export interface CorsOptions {
   origin?:
     | CorsOrigin
-    | ((origin: string, cb: (err: Error, origins: CorsOrigin) => void) => void)
+    | ((
+        origin: string | undefined,
+        cb: (err: Error, origins: CorsOrigin) => void,
+      ) => void)
   methods?: string | string[]
   allowedHeaders?: string | string[]
   exposedHeaders?: string | string[]
@@ -185,7 +188,7 @@ export function setClientErrorHandler(
       logger.warn(
         colors.yellow(
           'Server responded with status code 431. ' +
-            'See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
+            'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
         ),
       )
     }

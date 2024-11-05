@@ -55,6 +55,17 @@ import workletURL from 'extra-scalloped-border/worklet.js?url'
 CSS.paintWorklet.addModule(workletURL)
 ```
 
+### Explicit Inline Handling
+
+Assets can be explicitly imported with inlining or no inlining using the `?inline` or `?no-inline` suffix respectively.
+
+```js twoslash
+import 'vite/client'
+// ---cut---
+import imgUrl1 from './img.svg?no-inline'
+import imgUrl2 from './img.png?inline'
+```
+
 ### Importing Asset as String
 
 Assets can be imported as strings using the `?raw` suffix.
@@ -106,10 +117,7 @@ Then you can place the asset in a special `public` directory under your project 
 
 The directory defaults to `<root>/public`, but can be configured via the [`publicDir` option](/config/shared-options.md#publicdir).
 
-Note that:
-
-- You should always reference `public` assets using root absolute path - for example, `public/icon.png` should be referenced in source code as `/icon.png`.
-- Assets in `public` cannot be imported from JavaScript.
+Note that you should always reference `public` assets using root absolute path - for example, `public/icon.png` should be referenced in source code as `/icon.png`.
 
 ## new URL(url, import.meta.url)
 

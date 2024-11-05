@@ -24,22 +24,38 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
    */
   bypass?: (
     req: http.IncomingMessage,
-    res: http.ServerResponse,
+    /** undefined for WebSocket upgrade requests */
+    res: http.ServerResponse | undefined,
     options: ProxyOptions,
   ) => void | null | undefined | false | string
+  /**
+   * rewrite the Origin header of a WebSocket request to match the target
+   *
+   * **Exercise caution as rewriting the Origin can leave the proxying open to [CSRF attacks](https://owasp.org/www-community/attacks/csrf).**
+   */
+  rewriteWsOrigin?: boolean | undefined
 }
 
-const setOriginHeader = (
+const rewriteOriginHeader = (
   proxyReq: http.ClientRequest,
-  options: HttpProxy.ServerOptions,
+  options: ProxyOptions,
+  config: ResolvedConfig,
 ) => {
   // Browsers may send Origin headers even with same-origin
   // requests. It is common for WebSocket servers to check the Origin
-  // header, so if changeOrigin is true we change the Origin to match
+  // header, so if rewriteWsOrigin is true we change the Origin to match
   // the target URL.
-  // https://github.com/http-party/node-http-proxy/issues/1669
-  if (options.changeOrigin) {
+  if (options.rewriteWsOrigin) {
     const { target } = options
+
+    if (proxyReq.headersSent) {
+      config.logger.warn(
+        colors.yellow(
+          `Unable to rewrite Origin header as headers are already sent.`,
+        ),
+      )
+      return
+    }
 
     if (proxyReq.getHeader('origin') && target) {
       const changedOrigin =
@@ -74,7 +90,7 @@ export function proxyMiddleware(
       opts.configure(proxy, opts)
     }
 
-    proxy.on('error', (err, req, originalRes) => {
+    proxy.on('error', (err, _req, originalRes) => {
       // When it is ws proxy, res is net.Socket
       // originalRes can be falsy if the proxy itself errored
       const res = originalRes as http.ServerResponse | net.Socket | undefined
@@ -112,12 +128,8 @@ export function proxyMiddleware(
       }
     })
 
-    proxy.on('proxyReq', (proxyReq, req, res, options) => {
-      setOriginHeader(proxyReq, options)
-    })
-
-    proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
-      setOriginHeader(proxyReq, options)
+    proxy.on('proxyReqWs', (proxyReq, _req, socket, options) => {
+      rewriteOriginHeader(proxyReq, options, config)
 
       socket.on('error', (err) => {
         config.logger.error(
@@ -132,7 +144,7 @@ export function proxyMiddleware(
 
     // https://github.com/http-party/node-http-proxy/issues/1520#issue-877626125
     // https://github.com/chimurai/http-proxy-middleware/blob/cd58f962aec22c925b7df5140502978da8f87d5f/src/plugins/default/debug-proxy-errors-plugin.ts#L25-L37
-    proxy.on('proxyRes', (proxyRes, req, res) => {
+    proxy.on('proxyRes', (proxyRes, _req, res) => {
       res.on('close', () => {
         if (!res.writableEnded) {
           debug?.('destroying proxyRes in proxyRes close event')
@@ -156,6 +168,19 @@ export function proxyMiddleware(
             opts.target?.toString().startsWith('ws:') ||
             opts.target?.toString().startsWith('wss:')
           ) {
+            if (opts.bypass) {
+              const bypassResult = opts.bypass(req, undefined, opts)
+              if (typeof bypassResult === 'string') {
+                req.url = bypassResult
+                debug?.(`bypass: ${req.url} -> ${bypassResult}`)
+                return
+              } else if (bypassResult === false) {
+                debug?.(`bypass: ${req.url} -> 404`)
+                socket.end('HTTP/1.1 404 Not Found\r\n\r\n', '')
+                return
+              }
+            }
+
             if (opts.rewrite) {
               req.url = opts.rewrite(url)
             }

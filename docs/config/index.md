@@ -44,7 +44,15 @@ export default defineConfig({
 })
 ```
 
-Vite also directly supports TS config files. You can use `vite.config.ts` with the `defineConfig` helper as well.
+Vite also supports TypeScript config files. You can use `vite.config.ts` with the `defineConfig` helper function above, or with the `satisfies` operator:
+
+```ts
+import type { UserConfig } from 'vite'
+
+export default {
+  // ...
+} satisfies UserConfig
+```
 
 ## Conditional Config
 
@@ -95,9 +103,10 @@ Note that Vite doesn't load `.env` files by default as the files to load can onl
 ```js twoslash
 import { defineConfig, loadEnv } from 'vite'
 
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
-  // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
+  // Set the third parameter to '' to load all env regardless of the
+  // `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '')
   return {
     // vite config

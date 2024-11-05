@@ -1,5 +1,5 @@
 import { isAbsolute, posix } from 'node:path'
-import micromatch from 'micromatch'
+import picomatch from 'picomatch'
 import { stripLiteral } from 'strip-literal'
 import colors from 'picocolors'
 import type {
@@ -12,19 +12,17 @@ import type {
 } from 'estree'
 import type { CustomPluginOptions, RollupAstNode, RollupError } from 'rollup'
 import MagicString from 'magic-string'
-import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
 import type { GeneralImportGlobOptions } from 'types/importGlob'
 import { parseAstAsync } from 'rollup/parseAst'
+import { escapePath, glob } from 'tinyglobby'
 import type { Plugin } from '../plugin'
-import type { ViteDevServer } from '../server'
-import type { ModuleNode } from '../server/moduleGraph'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { evalValue, normalizePath, transformStableResult } from '../utils'
 import type { Logger } from '../logger'
 import { slash } from '../../shared/utils'
-
-const { isMatch, scan } = micromatch
+import type { Environment } from '../environment'
 
 export interface ParsedImportGlob {
   index: number
@@ -40,38 +38,16 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
   query?: string
 }
 
-export function getAffectedGlobModules(
-  file: string,
-  server: ViteDevServer,
-): ModuleNode[] {
-  const modules: ModuleNode[] = []
-  for (const [id, allGlobs] of server._importGlobMap!) {
-    // (glob1 || glob2) && !glob3 && !glob4...
-    if (
-      allGlobs.some(
-        ({ affirmed, negated }) =>
-          (!affirmed.length || affirmed.some((glob) => isMatch(file, glob))) &&
-          (!negated.length || negated.every((glob) => isMatch(file, glob))),
-      )
-    ) {
-      const mod = server.moduleGraph.getModuleById(id)
-      if (mod) modules.push(mod)
-    }
-  }
-  modules.forEach((i) => {
-    if (i?.file) server.moduleGraph.onFileChange(i.file)
-  })
-  return modules
-}
-
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
-  let server: ViteDevServer | undefined
+  const importGlobMaps = new Map<
+    Environment,
+    Map<string, Array<(file: string) => boolean>>
+  >()
 
   return {
     name: 'vite:import-glob',
-    configureServer(_server) {
-      server = _server
-      server._importGlobMap.clear()
+    buildStart() {
+      importGlobMaps.clear()
     },
     async transform(code, id) {
       if (!code.includes('import.meta.glob')) return
@@ -85,23 +61,47 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         config.logger,
       )
       if (result) {
-        if (server) {
-          const allGlobs = result.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(
-            id,
-            allGlobs.map((globs) => {
-              const affirmed: string[] = []
-              const negated: string[] = []
-
-              for (const glob of globs) {
-                ;(glob[0] === '!' ? negated : affirmed).push(glob)
-              }
-              return { affirmed, negated }
-            }),
-          )
+        const allGlobs = result.matches.map((i) => i.globsResolved)
+        if (!importGlobMaps.has(this.environment)) {
+          importGlobMaps.set(this.environment, new Map())
         }
+
+        const globMatchers = allGlobs.map((globs) => {
+          const affirmed: string[] = []
+          const negated: string[] = []
+          for (const glob of globs) {
+            ;(glob[0] === '!' ? negated : affirmed).push(glob)
+          }
+          const affirmedMatcher = picomatch(affirmed)
+          const negatedMatcher = picomatch(negated)
+
+          return (file: string) => {
+            // (glob1 || glob2) && !(glob3 || glob4)...
+            return (
+              (affirmed.length === 0 || affirmedMatcher(file)) &&
+              !(negated.length > 0 && negatedMatcher(file))
+            )
+          }
+        })
+        importGlobMaps.get(this.environment)!.set(id, globMatchers)
+
         return transformStableResult(result.s, id, config)
       }
+    },
+    hotUpdate({ type, file, modules: oldModules }) {
+      if (type === 'update') return
+
+      const importGlobMap = importGlobMaps.get(this.environment)
+      if (!importGlobMap) return
+
+      const modules: EnvironmentModuleNode[] = []
+      for (const [id, globMatchers] of importGlobMap) {
+        if (globMatchers.some((matcher) => matcher(file))) {
+          const mod = this.environment.moduleGraph.getModuleById(id)
+          if (mod) modules.push(mod)
+        }
+      }
+      return modules.length > 0 ? [...oldModules, ...modules] : undefined
     },
   }
 }
@@ -217,7 +217,7 @@ export async function parseImportGlob(
   let cleanCode: string
   try {
     cleanCode = stripLiteral(code)
-  } catch (e) {
+  } catch {
     // skip invalid js code
     return []
   }
@@ -351,7 +351,7 @@ function findCorrespondingCloseParenthesisPosition(
 
 const importPrefix = '__vite_glob_'
 
-const { basename, dirname, relative, join } = posix
+const { basename, dirname, relative } = posix
 
 export interface TransformGlobImportResult {
   s: MagicString
@@ -393,13 +393,12 @@ export async function transformGlobImport(
         async ({ globsResolved, isRelative, options, index, start, end }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
-            await fg(globsResolved, {
-              cwd,
+            await glob(globsResolved, {
               absolute: true,
+              cwd,
               dot: !!options.exhaustive,
-              ignore: options.exhaustive
-                ? []
-                : [join(cwd, '**/node_modules/**')],
+              expandDirectories: false,
+              ignore: options.exhaustive ? [] : ['**/node_modules/**'],
             })
           )
             .filter((file) => file !== id)
@@ -512,8 +511,7 @@ type IdResolver = (
 
 function globSafePath(path: string) {
   // slash path to ensure \ is converted to / as \ could lead to a double escape scenario
-  // see https://github.com/mrmlnc/fast-glob#advanced-syntax
-  return fg.escapePath(normalizePath(path))
+  return escapePath(normalizePath(path))
 }
 
 function lastNthChar(str: string, n: number) {
@@ -563,9 +561,6 @@ export async function toAbsoluteGlob(
       custom: { 'vite:import-glob': { isSubImportsPattern } },
     })) || glob,
   )
-  if (isSubImportsPattern) {
-    return join(root, resolved)
-  }
   if (isAbsolute(resolved)) {
     return pre + globSafeResolvedPath(resolved, glob)
   }
@@ -579,7 +574,7 @@ export function getCommonBase(globsResolved: string[]): null | string {
   const bases = globsResolved
     .filter((g) => g[0] !== '!')
     .map((glob) => {
-      let { base } = scan(glob)
+      let { base } = picomatch.scan(glob)
       // `scan('a/foo.js')` returns `base: 'a/foo.js'`
       if (posix.basename(base).includes('.')) base = posix.dirname(base)
 
@@ -602,6 +597,6 @@ export function getCommonBase(globsResolved: string[]): null | string {
 }
 
 export function isVirtualModule(id: string): boolean {
-  // https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention
+  // https://vite.dev/guide/api-plugin.html#virtual-modules-convention
   return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
 }

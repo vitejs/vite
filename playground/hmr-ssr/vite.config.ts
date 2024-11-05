@@ -8,18 +8,21 @@ export default defineConfig({
   plugins: [
     {
       name: 'mock-custom',
-      async handleHotUpdate({ file, read, server }) {
+      async hotUpdate({ file, read, server }) {
         if (file.endsWith('customFile.js')) {
           const content = await read()
           const msg = content.match(/export const msg = '(\w+)'/)[1]
-          server.hot.send('custom:foo', { msg })
-          server.hot.send('custom:remove', { msg })
+          this.environment.hot.send('custom:foo', { msg })
+          this.environment.hot.send('custom:remove', { msg })
         }
       },
       configureServer(server) {
-        server.hot.on('custom:remote-add', ({ a, b }, client) => {
-          client.send('custom:remote-add-result', { result: a + b })
-        })
+        server.environments.ssr.hot.on(
+          'custom:remote-add',
+          ({ a, b }, client) => {
+            client.send('custom:remote-add-result', { result: a + b })
+          },
+        )
       },
     },
     virtualPlugin(),
@@ -45,11 +48,14 @@ export const virtual = _virtual + '${num}';`
       }
     },
     configureServer(server) {
-      server.hot.on('virtual:increment', async () => {
-        const mod = await server.moduleGraph.getModuleByUrl('\0virtual:file')
+      server.environments.ssr.hot.on('virtual:increment', async () => {
+        const mod =
+          await server.environments.ssr.moduleGraph.getModuleByUrl(
+            '\0virtual:file',
+          )
         if (mod) {
           num++
-          server.reloadModule(mod)
+          server.environments.ssr.reloadModule(mod)
         }
       })
     },

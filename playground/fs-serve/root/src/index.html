@@ -35,6 +35,8 @@
 <h2>Unsafe /@fs/ Fetch</h2>
 <pre class="unsafe-fs-fetch-status"></pre>
 <pre class="unsafe-fs-fetch"></pre>
+<pre class="unsafe-fs-fetch-raw-status"></pre>
+<pre class="unsafe-fs-fetch-raw"></pre>
 <pre class="unsafe-fs-fetch-8498-status"></pre>
 <pre class="unsafe-fs-fetch-8498"></pre>
 <pre class="unsafe-fs-fetch-8498-2-status"></pre>
@@ -183,6 +185,24 @@
     })
     .then((data) => {
       text('.unsafe-fs-fetch', JSON.stringify(data))
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  // not imported before, outside of root, treated as unsafe
+  fetch(
+    joinUrlSegments(
+      base,
+      joinUrlSegments('/@fs/', ROOT) + '/unsafe.json?import&raw',
+    ),
+  )
+    .then((r) => {
+      text('.unsafe-fs-fetch-raw-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.unsafe-fs-fetch-raw', JSON.stringify(data))
     })
     .catch((e) => {
       console.error(e)

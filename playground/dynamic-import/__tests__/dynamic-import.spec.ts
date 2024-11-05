@@ -160,6 +160,14 @@ test('should work with load ../ and contain itself directory', async () => {
   )
 })
 
+test('should work a load path that contains parentheses.', async () => {
+  await untilUpdated(
+    () => page.textContent('.dynamic-import-with-vars-contains-parenthesis'),
+    'dynamic-import-with-vars-contains-parenthesis',
+    true,
+  )
+})
+
 test.runIf(isBuild)(
   'should rollup warn when static and dynamic import a module in same chunk',
   async () => {
@@ -191,6 +199,12 @@ test('dynamic import treeshaken log', async () => {
   expect(log).toContain('treeshaken default')
 
   expect(log).not.toContain('treeshaken removed')
+})
+
+test('dynamic import syntax parsing', async () => {
+  const log = browserLogs.join('\n')
+  expect(log).toContain('treeshaken syntax foo')
+  expect(log).toContain('treeshaken syntax default')
 })
 
 test.runIf(isBuild)('dynamic import treeshaken file', async () => {
