@@ -38,14 +38,17 @@ jobs:
             console.log(`Package check URL: ${url}, Status: ${response.status}`)
 
             // Add 'rocket' reaction to the issue comment
-            const reaction = await github.rest.reactions.createForIssueComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: context.payload.comment.id, 
-              content: 'rocket',
-            })
+            if (response.status !== 404) {
+              const reaction = await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id, 
+                content: 'rocket',
+              })
+              return { exists: false, reaction: reaction.id }
+            }
 
-            return { exists: response.status !== 404 }
+            return { exists: true, reaction: null }
       - name: Generate Token
         id: generate-token
         uses: tibdex/github-app-token@v2
@@ -80,6 +83,7 @@ jobs:
         with:
           script: |
             const prData = ${{ steps.get-pr-data.outputs.result }}
+            const reaction = ${{ steps.check-package.outputs.reaction }}
             const workflowFileName = 'preview-release.yml'
             const workflow = await github.rest.actions.getWorkflow({
               owner: context.repo.owner,
@@ -129,22 +133,15 @@ jobs:
             }
 
             // Remove the 'rocket' reaction
-            await github.rest.reactions.listForIssueComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: context.payload.comment.id, 
-            }).then(async res => {
-              const rocketReaction = res.data.find(r => r.content === 'rocket')
-              if (rocketReaction) {
-                await github.rest.reactions.deleteForIssueComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: context.payload.comment.id, 
-                  reaction_id: rocketReaction.id,
-                })
-                console.log('Removed "rocket" reaction.')
-              }
-            })
+            if (reaction) {
+              await github.rest.reactions.deleteForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id, 
+                reaction_id: reaction,
+              })
+              console.log('Removed "rocket" reaction.')
+            }
 
       - name: Check User Permissions
         uses: actions/github-script@v7
