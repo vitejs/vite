@@ -441,6 +441,9 @@ export async function transformGlobImport(
                 file,
               )
               if (filePath[0] !== '.') filePath = `./${filePath}`
+              if (options.base[0] === '/') {
+                importPath = `/${relative(root, file)}`
+              }
             } else if (isRelative) {
               filePath = importPath
             } else {
@@ -570,7 +573,13 @@ export async function toAbsoluteGlob(
   }
   root = globSafePath(root)
   const dir = importer ? globSafePath(dirname(importer)) : root
-  if (base && base.startsWith('./')) return pre + posix.join(dir, base, glob)
+  if (base) {
+    if (base.startsWith('./')) return pre + posix.join(dir, base, glob)
+    if (glob[0] === '@') {
+      const withoutAlias = /\/.+$/.exec(glob)?.[0]
+      return pre + posix.join(root, base, withoutAlias || glob)
+    }
+  }
   glob = base ? posix.join(base, glob) : glob
   if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
