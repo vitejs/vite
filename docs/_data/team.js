@@ -49,9 +49,8 @@ export const core = [
     links: [
       { icon: 'github', link: 'https://github.com/bluwy' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/bluwy.me' },
-      { icon: 'x', link: 'https://x.com/bluwyoo' },
+      { icon: 'twitter', link: 'https://twitter.com/bluwyoo' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@bluwy' },
-      { icon: 'bluesky', link: 'https://bsky.app/profile/bluwy.me' },
     ],
     sponsor: 'https://bjornlu.com/sponsor',
   },
