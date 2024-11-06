@@ -1,7 +1,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { expectWithRetry, isBuild, page, testDir, untilUpdated } from '~utils'
+import {
+  editFile,
+  expectWithRetry,
+  isBuild,
+  page,
+  testDir,
+  untilUpdated,
+} from '~utils'
 
 test('normal', async () => {
   await untilUpdated(() => page.textContent('.pong'), 'pong', true)
@@ -206,10 +213,28 @@ test('emit chunk', async () => {
 })
 
 test('url query worker', async () => {
+  await page.reload()
   await untilUpdated(
     () => page.textContent('.simple-worker-url'),
     'Hello from simple worker!',
-    true,
+  )
+
+  editFile('simple-worker.js', (code) =>
+    code.replace('hey there', 'hey there!'),
+  )
+
+  await untilUpdated(
+    () => page.textContent('.simple-worker-url'),
+    'Hello from simple worker (HMR message: hey there!)!',
+  )
+
+  editFile('simple-worker.js', (code) =>
+    code.replace('hey there!', 'hey there'),
+  )
+
+  await untilUpdated(
+    () => page.textContent('.simple-worker-url'),
+    'Hello from simple worker (HMR message: hey there)!',
   )
 })
 

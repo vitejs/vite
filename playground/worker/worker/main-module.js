@@ -183,3 +183,10 @@ depSelfReferenceUrlWorker.startWorker((e) => {
   document.querySelector('.self-reference-url-worker-dep').textContent +=
     `${e.data}\n`
 })
+
+if (import.meta.hot) {
+  import.meta.hot.accept()
+  import.meta.hot.accept('../my-shared-worker?sharedworker&name=shared', () => {
+    console.log('../my-shared-worker?sharedworker&name=shared changed')
+  })
+}

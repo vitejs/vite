@@ -20,6 +20,10 @@ console.debug('[vite] connecting...')
 
 const importMetaUrl = new URL(import.meta.url)
 
+const onUi = typeof window !== 'undefined'
+const logReloadMessage =
+  '[vite] running on worker, please reload the page manually!'
+
 // use server configuration, then fallback to inference
 const serverHost = __SERVER_HOST__
 const socketProtocol =
@@ -92,13 +96,15 @@ function setupWebSocket(
   })
 
   let willUnload = false
-  window.addEventListener(
-    'beforeunload',
-    () => {
-      willUnload = true
-    },
-    { once: true },
-  )
+  if (onUi) {
+    window.addEventListener(
+      'beforeunload',
+      () => {
+        willUnload = true
+      },
+      { once: true },
+    )
+  }
 
   // ping server
   socket.addEventListener('close', async () => {
@@ -115,6 +121,11 @@ function setupWebSocket(
     if (hasDocument) {
       console.log(`[vite] server connection lost. Polling for restart...`)
       await waitForSuccessfulPing(protocol, hostAndPath)
+      if (!onUi) {
+        console.warn(logReloadMessage)
+        return
+      }
+
       location.reload()
     }
   })
@@ -222,42 +233,45 @@ async function handleMessage(payload: HotPayload) {
           // this is only sent when a css file referenced with <link> is updated
           const { path, timestamp } = update
           const searchUrl = cleanUrl(path)
-          // can't use querySelector with `[href*=]` here since the link may be
-          // using relative paths so we need to use link.href to grab the full
-          // URL for the include check.
-          const el = Array.from(
-            document.querySelectorAll<HTMLLinkElement>('link'),
-          ).find(
-            (e) =>
-              !outdatedLinkTags.has(e) && cleanUrl(e.href).includes(searchUrl),
-          )
+          if (onUi) {
+            // can't use querySelector with `[href*=]` here since the link may be
+            // using relative paths so we need to use link.href to grab the full
+            // URL for the include check.
+            const el = Array.from(
+              document.querySelectorAll<HTMLLinkElement>('link'),
+            ).find(
+              (e) =>
+                !outdatedLinkTags.has(e) &&
+                cleanUrl(e.href).includes(searchUrl),
+            )
 
-          if (!el) {
-            return
-          }
-
-          const newPath = `${base}${searchUrl.slice(1)}${
-            searchUrl.includes('?') ? '&' : '?'
-          }t=${timestamp}`
-
-          // rather than swapping the href on the existing tag, we will
-          // create a new link tag. Once the new stylesheet has loaded we
-          // will remove the existing link tag. This removes a Flash Of
-          // Unstyled Content that can occur when swapping out the tag href
-          // directly, as the new stylesheet has not yet been loaded.
-          return new Promise((resolve) => {
-            const newLinkTag = el.cloneNode() as HTMLLinkElement
-            newLinkTag.href = new URL(newPath, el.href).href
-            const removeOldEl = () => {
-              el.remove()
-              console.debug(`[vite] css hot updated: ${searchUrl}`)
-              resolve()
+            if (!el) {
+              return
             }
-            newLinkTag.addEventListener('load', removeOldEl)
-            newLinkTag.addEventListener('error', removeOldEl)
-            outdatedLinkTags.add(el)
-            el.after(newLinkTag)
-          })
+
+            const newPath = `${base}${searchUrl.slice(1)}${
+              searchUrl.includes('?') ? '&' : '?'
+            }t=${timestamp}`
+
+            // rather than swapping the href on the existing tag, we will
+            // create a new link tag. Once the new stylesheet has loaded we
+            // will remove the existing link tag. This removes a Flash Of
+            // Unstyled Content that can occur when swapping out the tag href
+            // directly, as the new stylesheet has not yet been loaded.
+            return new Promise((resolve) => {
+              const newLinkTag = el.cloneNode() as HTMLLinkElement
+              newLinkTag.href = new URL(newPath, el.href).href
+              const removeOldEl = () => {
+                el.remove()
+                console.debug(`[vite] css hot updated: ${searchUrl}`)
+                resolve()
+              }
+              newLinkTag.addEventListener('load', removeOldEl)
+              newLinkTag.addEventListener('error', removeOldEl)
+              outdatedLinkTags.add(el)
+              el.after(newLinkTag)
+            })
+          }
         }),
       )
       notifyListeners('vite:afterUpdate', payload)
@@ -279,10 +293,18 @@ async function handleMessage(payload: HotPayload) {
             payload.path === '/index.html' ||
             (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
           ) {
+            if (!onUi) {
+              console.warn(logReloadMessage)
+              return
+            }
             pageReload()
           }
           return
         } else {
+          if (!onUi) {
+            console.warn(logReloadMessage)
+            return
+          }
           pageReload()
         }
       }
@@ -325,14 +347,28 @@ const hasDocument = 'document' in globalThis
 
 function createErrorOverlay(err: ErrorPayload['err']) {
   clearErrorOverlay()
+  if (!onUi) {
+    console.log(`[vite] Internal Server Error\n${err.message}\n${err.stack}`)
+    return
+  }
+
   document.body.appendChild(new ErrorOverlay(err))
 }
 
 function clearErrorOverlay() {
-  document.querySelectorAll<ErrorOverlay>(overlayId).forEach((n) => n.close())
+  if (!onUi) {
+    // TODO: clear console?
+    // console.clear()
+    return
+  }
+
+  document
+    .querySelectorAll<typeof ErrorOverlay>(overlayId)
+    .forEach((n) => n.close())
 }
 
 function hasErrorOverlay() {
+  if (!onUi) return false
   return document.querySelectorAll(overlayId).length
 }
 
@@ -369,6 +405,8 @@ async function waitForSuccessfulPing(
     return
   }
   await wait(ms)
+
+  if (!onUi) return
 
   while (true) {
     if (document.visibilityState === 'visible') {
