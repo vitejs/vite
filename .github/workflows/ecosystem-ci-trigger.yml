@@ -163,15 +163,6 @@ jobs:
               console.warn(e)
             }
 
-            return { allowed: hasTriagePermission }
-
-      - name: React Based on Permissions
-        uses: actions/github-script@v7
-        id: react-permissions
-        with:
-          script: |
-            const allowed = ${{ steps.check-permissions.outputs.allowed }}
-
             if (allowed) {
               console.log('User is allowed. Adding +1 reaction.')
               await github.rest.reactions.createForIssueComment({
