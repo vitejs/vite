@@ -102,16 +102,16 @@ const BUN_BUILTIN_NAMESPACE = 'bun:'
 // Some runtimes like Bun injects namespaced modules here, which is not a node builtin
 const nodeBuiltins = builtinModules.filter((id) => !id.includes(':'))
 
-const isConfiguredAsExternalCache = new WeakMap<
+const isBuiltinCache = new WeakMap<
   (string | RegExp)[],
   (id: string, importer?: string) => boolean
 >()
 
 export function isBuiltin(builtins: (string | RegExp)[], id: string): boolean {
-  let isBuiltin = isConfiguredAsExternalCache.get(builtins)
+  let isBuiltin = isBuiltinCache.get(builtins)
   if (!isBuiltin) {
     isBuiltin = createIsBuiltin(builtins)
-    isConfiguredAsExternalCache.set(builtins, isBuiltin)
+    isBuiltinCache.set(builtins, isBuiltin)
   }
   return isBuiltin(id)
 }
