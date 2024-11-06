@@ -101,7 +101,7 @@ export interface EnvironmentResolveOptions {
    */
   enableBuiltinNoExternalCheck?: boolean
   /**
-   * Function to specify when modules should be considered built-in for the environment.
+   * Function to discern when a module should be considered as built-in for the environment.
    * (If not provided the node built-in modules are the only ones assumed as such)
    */
   isBuiltin?: (id: string) => boolean
