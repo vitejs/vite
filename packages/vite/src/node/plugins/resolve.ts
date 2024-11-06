@@ -220,17 +220,11 @@ export function resolvePlugin(
       const isRequire: boolean =
         resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
 
-      const environmentName = this.environment.name
       const currentEnvironmentOptions = this.environment.config
-      const environmentResolveOptions = currentEnvironmentOptions?.resolve
-      if (!environmentResolveOptions) {
-        throw new Error(
-          `Missing ResolveOptions for ${environmentName} environment`,
-        )
-      }
+
       const options: InternalResolveOptions = {
         isRequire,
-        ...environmentResolveOptions,
+        ...currentEnvironmentOptions.resolve,
         ...resolveOptions, // plugin options + resolve options overrides
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
@@ -447,7 +441,7 @@ export function resolvePlugin(
                   importer,
                 )}"`
               }
-              message += `. Consider disabling environments.${environmentName}.noExternal or remove the built-in dependency.`
+              message += `. Consider disabling environments.${this.environment.name}.noExternal or remove the built-in dependency.`
               this.error(message)
             }
 
