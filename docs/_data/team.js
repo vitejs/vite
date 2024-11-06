@@ -22,9 +22,8 @@ export const core = [
     desc: 'Core team member of Vite. Team member of Vue.',
     links: [
       { icon: 'github', link: 'https://github.com/patak-dev' },
-      { icon: 'x', link: 'https://x.com/patak_dev' },
-      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@patak' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/patak.dev' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@patak' },
     ],
     sponsor: 'https://github.com/sponsors/patak-dev',
   },
@@ -37,9 +36,8 @@ export const core = [
     desc: 'Core team member of Vite & Vue. Working at NuxtLabs.',
     links: [
       { icon: 'github', link: 'https://github.com/antfu' },
-      { icon: 'x', link: 'https://x.com/antfu7' },
-      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@antfu' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/antfu.me' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@antfu' },
     ],
     sponsor: 'https://github.com/sponsors/antfu',
   },
@@ -50,6 +48,7 @@ export const core = [
     desc: 'Astro core residency. Svelte and Vite core team member.',
     links: [
       { icon: 'github', link: 'https://github.com/bluwy' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/bluwy.me' },
       { icon: 'x', link: 'https://x.com/bluwyoo' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@bluwy' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/bluwy.me' },
@@ -63,6 +62,7 @@ export const core = [
     desc: 'Vite core team member. Call me sapphi or green or midori ;)',
     links: [
       { icon: 'github', link: 'https://github.com/sapphi-red' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/sapphi.red' },
       { icon: 'x', link: 'https://x.com/sapphi_red' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sapphi_red' },
     ],
@@ -102,9 +102,8 @@ export const core = [
     desc: 'An open source fullstack developer',
     links: [
       { icon: 'github', link: 'https://github.com/sheremet-va' },
-      { icon: 'x', link: 'https://x.com/sheremet_va' },
-      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sheremet_va' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/erus.dev' },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sheremet_va' },
     ],
     sponsor: 'https://github.com/sponsors/sheremet-va',
   },
@@ -115,7 +114,7 @@ export const core = [
     desc: 'Open source enthusiast',
     links: [
       { icon: 'github', link: 'https://github.com/hi-ogawa' },
-      { icon: 'x', link: 'https://x.com/hiroshi_18181' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/hiogawa.bsky.social' },
     ],
     sponsor: 'https://github.com/sponsors/hi-ogawa',
   },
