@@ -71,6 +71,7 @@ import {
   mergeAlias,
   mergeConfig,
   mergeWithDefaults,
+  nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
 } from './utils'
@@ -283,7 +284,6 @@ export type ResolvedEnvironmentOptions = {
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
-  isBuiltin?: (id: string) => boolean
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -773,7 +773,6 @@ function resolveEnvironmentOptions(
       resolve.preserveSymlinks,
       consumer,
     ),
-    isBuiltin: resolve.isBuiltin,
     dev: resolveDevEnvironmentOptions(
       options.dev,
       environmentName,
@@ -884,12 +883,13 @@ function resolveEnvironmentResolveOptions(
           ? DEFAULT_CLIENT_CONDITIONS
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
       enableBuiltinNoExternalCheck: !!isSsrTargetWebworkerEnvironment,
-      isBuiltin:
-        resolve?.isBuiltin ??
+      builtins:
+        resolve?.builtins ??
         (consumer === 'server'
-          ? isNodeLikeBuiltin
-          : // there are not built-in modules in the browser
-            () => false),
+          ? nodeLikeBuiltins
+          : [
+              // there are not built-in modules in the browser
+            ]),
     },
     resolve ?? {},
   )
@@ -1761,7 +1761,7 @@ async function bundleConfigFile(
               preserveSymlinks: false,
               packageCache,
               isRequire,
-              isBuiltin: isNodeLikeBuiltin,
+              builtins: nodeLikeBuiltins,
             })?.id
           }
 

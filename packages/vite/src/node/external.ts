@@ -6,6 +6,7 @@ import {
   createDebugger,
   createFilter,
   getNpmPackageName,
+  isBuiltin,
   isInNodeModules,
 } from './utils'
 import type { Environment } from './environment'
@@ -156,7 +157,7 @@ function createIsExternal(
     let isExternal = false
     if (id[0] !== '.' && !path.isAbsolute(id)) {
       isExternal =
-        environment.config.resolve.isBuiltin(id) ||
+        isBuiltin(environment.config.resolve.builtins, id) ||
         isConfiguredAsExternal(id, importer)
     }
     processedIds.set(id, isExternal)

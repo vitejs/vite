@@ -2,7 +2,7 @@ import { pathToFileURL } from 'node:url'
 import type { FetchResult } from 'vite/module-runner'
 import type { EnvironmentModuleNode, TransformResult } from '..'
 import { tryNodeResolve } from '../plugins/resolve'
-import { isExternalUrl, isFilePathESM } from '../utils'
+import { isBuiltin, isExternalUrl, isFilePathESM } from '../utils'
 import { unwrapId } from '../../shared/utils'
 import {
   MODULE_RUNNER_SOURCEMAPPING_SOURCE,
@@ -28,7 +28,10 @@ export async function fetchModule(
   importer?: string,
   options: FetchModuleOptions = {},
 ): Promise<FetchResult> {
-  if (url.startsWith('data:') || environment.config.resolve.isBuiltin(url)) {
+  if (
+    url.startsWith('data:') ||
+    isBuiltin(environment.config.resolve.builtins, url)
+  ) {
     return { externalize: url, type: 'builtin' }
   }
 
@@ -56,7 +59,7 @@ export async function fetchModule(
       isProduction,
       root,
       packageCache: environment.config.packageCache,
-      isBuiltin: environment.config.resolve.isBuiltin,
+      builtins: environment.config.resolve.builtins,
     })
     if (!resolved) {
       const err: any = new Error(

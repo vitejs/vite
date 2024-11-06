@@ -35,6 +35,7 @@ import {
   generateCodeFrame,
   getHash,
   injectQuery,
+  isBuiltin,
   isDataUrl,
   isDefined,
   isExternalUrl,
@@ -518,7 +519,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               if (shouldExternalize(environment, specifier, importer)) {
                 return
               }
-              if (environment.config.resolve.isBuiltin(specifier)) {
+              if (isBuiltin(environment.config.resolve.builtins, specifier)) {
                 return
               }
             }

@@ -21,6 +21,7 @@ import {
   fsPathFromId,
   getNpmPackageName,
   injectQuery,
+  isBuiltin,
   isDataUrl,
   isExternalUrl,
   isInNodeModules,
@@ -29,6 +30,7 @@ import {
   isObject,
   isOptimizable,
   isTsRequest,
+  nodeLikeBuiltins,
   normalizePath,
   safeRealpathSync,
   tryStatSync,
@@ -101,10 +103,9 @@ export interface EnvironmentResolveOptions {
    */
   enableBuiltinNoExternalCheck?: boolean
   /**
-   * Function to discern when a module should be considered as built-in for the environment.
-   * (If not provided the node built-in modules are the only ones assumed as such)
+   * Array of strings or regular expressions that indicate what modules are builtin for the environment.
    */
-  isBuiltin?: (id: string) => boolean
+  builtins?: (string | RegExp)[]
 }
 
 export interface ResolveOptions extends EnvironmentResolveOptions {
@@ -445,7 +446,7 @@ export function resolvePlugin(
         // externalize if building for a server environment, otherwise redirect to an empty module
         if (
           currentEnvironmentOptions.consumer === 'server' &&
-          this.environment.config.resolve.isBuiltin(id)
+          isBuiltin(this.environment.config.resolve.builtins, id)
         ) {
           if (
             options.enableBuiltinNoExternalCheck &&
@@ -742,10 +743,11 @@ export function tryNodeResolve(
     basedir = root
   }
 
-  const isBuiltin = environmentOptions?.resolve?.isBuiltin ?? isNodeLikeBuiltin
+  const isModuleBuiltin = (id: string) =>
+    isBuiltin(environmentOptions?.resolve?.builtins ?? nodeLikeBuiltins, id)
 
   let selfPkg = null
-  if (!isBuiltin(id) && !id.includes('\0') && bareImportRE.test(id)) {
+  if (!isModuleBuiltin(id) && !id.includes('\0') && bareImportRE.test(id)) {
     // check if it's a self reference dep.
     const selfPackageData = findNearestPackageData(basedir, packageCache)
     selfPkg =
@@ -762,7 +764,7 @@ export function tryNodeResolve(
     // if so, we can resolve to a special id that errors only when imported.
     if (
       basedir !== root && // root has no peer dep
-      !isBuiltin(id) &&
+      !isModuleBuiltin(id) &&
       !id.includes('\0') &&
       bareImportRE.test(id)
     ) {

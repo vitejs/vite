@@ -102,11 +102,43 @@ const BUN_BUILTIN_NAMESPACE = 'bun:'
 // Some runtimes like Bun injects namespaced modules here, which is not a node builtin
 const nodeBuiltins = builtinModules.filter((id) => !id.includes(':'))
 
-// TODO: Use `isBuiltin` from `node:module`, but Deno doesn't support it
+const isConfiguredAsExternalCache = new WeakMap<
+  (string | RegExp)[],
+  (id: string, importer?: string) => boolean
+>()
+
+export function isBuiltin(builtins: (string | RegExp)[], id: string): boolean {
+  let isBuiltin = isConfiguredAsExternalCache.get(builtins)
+  if (!isBuiltin) {
+    isBuiltin = createIsBuiltin(builtins)
+    isConfiguredAsExternalCache.set(builtins, isBuiltin)
+  }
+  return isBuiltin(id)
+}
+
+export function createIsBuiltin(
+  builtins: (string | RegExp)[],
+): (id: string) => boolean {
+  const plainBuiltinsSet = new Set(
+    builtins.filter((builtin) => typeof builtin === 'string'),
+  )
+  const regexBuiltins = builtins.filter(
+    (builtin) => typeof builtin !== 'string',
+  )
+
+  return (id) =>
+    plainBuiltinsSet.has(id) || regexBuiltins.some((regexp) => regexp.test(id))
+}
+
+export const nodeLikeBuiltins = [
+  ...nodeBuiltins,
+  new RegExp(`^${NODE_BUILTIN_NAMESPACE}`),
+  new RegExp(`^${NPM_BUILTIN_NAMESPACE}`),
+  new RegExp(`^${BUN_BUILTIN_NAMESPACE}`),
+]
+
 export function isNodeLikeBuiltin(id: string): boolean {
-  if (process.versions.deno && id.startsWith(NPM_BUILTIN_NAMESPACE)) return true
-  if (process.versions.bun && id.startsWith(BUN_BUILTIN_NAMESPACE)) return true
-  return isNodeBuiltin(id)
+  return isBuiltin(nodeLikeBuiltins, id)
 }
 
 export function isNodeBuiltin(id: string): boolean {

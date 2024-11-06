@@ -5,6 +5,7 @@ import type { PackageCache } from '../packages'
 import {
   escapeRegex,
   flattenId,
+  isBuiltin,
   isExternalUrl,
   moduleListContains,
   normalizePath,
@@ -114,7 +115,7 @@ export function esbuildDepPlugin(
         namespace: 'optional-peer-dep',
       }
     }
-    if (environment.config.resolve.isBuiltin(resolved)) {
+    if (isBuiltin(environment.config.resolve.builtins, resolved)) {
       return
     }
     if (isExternalUrl(resolved)) {
