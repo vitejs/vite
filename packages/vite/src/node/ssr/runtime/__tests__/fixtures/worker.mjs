@@ -10,7 +10,6 @@ if (!parentPort) {
 
 const runner = new ModuleRunner(
   {
-    root: fileURLToPath(new URL('./', import.meta.url)),
     transport: new RemoteRunnerTransport({
       onMessage: listener => {
         parentPort?.on('message', listener)
