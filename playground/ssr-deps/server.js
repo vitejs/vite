@@ -42,13 +42,20 @@ export async function createServer(root = process.cwd(), hmrPort) {
     },
     appType: 'custom',
     ssr: {
-      noExternal,
+      noExternal: [
+        ...noExternal,
+        '@vitejs/test-nested-exclude',
+        '@vitejs/test-nested-include',
+      ],
       external: [
         '@vitejs/test-nested-external',
         '@vitejs/test-external-entry/entry',
       ],
       optimizeDeps: {
-        include: noExternal,
+        include: [
+          ...noExternal,
+          '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
+        ],
       },
     },
     plugins: [
@@ -88,7 +95,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
 
-  app.use('*', async (req, res) => {
+  app.use('*all', async (req, res) => {
     try {
       const url = req.originalUrl
 

@@ -890,6 +890,10 @@ function resolveEnvironmentResolveOptions(
   const resolvedResolve: ResolvedAllResolveOptions = mergeWithDefaults(
     {
       ...configDefaults.resolve,
+      mainFields:
+        consumer === 'client' || isSsrTargetWebworkerEnvironment
+          ? configDefaults.resolve.mainFields
+          : configDefaults.resolve.mainFields.filter((f) => f !== 'browser'),
       conditions:
         consumer === 'client' || isSsrTargetWebworkerEnvironment
           ? configDefaults.resolve.conditions.filter((c) => c !== 'node')

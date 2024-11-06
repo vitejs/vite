@@ -101,15 +101,21 @@ In some cases, you might also want to configure the underlying dev server (e.g. 
 export default defineConfig({
   server: {
     proxy: {
-      // string shorthand: http://localhost:5173/foo -> http://localhost:4567/foo
+      // string shorthand:
+      // http://localhost:5173/foo
+      //   -> http://localhost:4567/foo
       '/foo': 'http://localhost:4567',
-      // with options: http://localhost:5173/api/bar-> http://jsonplaceholder.typicode.com/bar
+      // with options:
+      // http://localhost:5173/api/bar
+      //   -> http://jsonplaceholder.typicode.com/bar
       '/api': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      // with RegExp: http://localhost:5173/fallback/ -> http://jsonplaceholder.typicode.com/
+      // with RegExp:
+      // http://localhost:5173/fallback/
+      //   -> http://jsonplaceholder.typicode.com/
       '^/fallback/.*': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
@@ -123,8 +129,11 @@ export default defineConfig({
           // proxy will be an instance of 'http-proxy'
         },
       },
-      // Proxying websockets or socket.io: ws://localhost:5173/socket.io -> ws://localhost:5174/socket.io
-      // Exercise caution using `rewriteWsOrigin` as it can leave the proxying open to CSRF attacks.
+      // Proxying websockets or socket.io:
+      // ws://localhost:5173/socket.io
+      //   -> ws://localhost:5174/socket.io
+      // Exercise caution using `rewriteWsOrigin` as it can leave the
+      // proxying open to CSRF attacks.
       '/socket.io': {
         target: 'ws://localhost:5174',
         ws: true,
@@ -251,15 +260,16 @@ async function createServer() {
   // Create Vite server in middleware mode
   const vite = await createViteServer({
     server: { middlewareMode: true },
-    appType: 'custom', // don't include Vite's default HTML handling middlewares
+    // don't include Vite's default HTML handling middlewares
+    appType: 'custom',
   })
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
     // Since `appType` is `'custom'`, should serve response here.
-    // Note: if `appType` is `'spa'` or `'mpa'`, Vite includes middlewares to handle
-    // HTML requests and 404s so user middlewares should be added
+    // Note: if `appType` is `'spa'` or `'mpa'`, Vite includes middlewares
+    // to handle HTML requests and 404s so user middlewares should be added
     // before Vite's middlewares to take effect instead
   })
 }

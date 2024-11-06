@@ -37,7 +37,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
 
   app.use(vite.middlewares)
 
-  app.use('*', async (req, res) => {
+  app.use('*all', async (req, res) => {
     try {
       const url = req.originalUrl
 
