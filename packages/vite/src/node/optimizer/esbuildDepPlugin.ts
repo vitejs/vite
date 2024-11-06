@@ -5,7 +5,6 @@ import type { PackageCache } from '../packages'
 import {
   escapeRegex,
   flattenId,
-  isBuiltin,
   isExternalUrl,
   moduleListContains,
   normalizePath,
@@ -117,7 +116,7 @@ export function esbuildDepPlugin(
     }
     if (
       environment.config.consumer === 'server' &&
-      isBuiltin(resolved, environment.config)
+      environment.config.resolve.isBuiltin(resolved)
     ) {
       return
     }

@@ -61,11 +61,11 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
-  isBuiltin,
   isExternalUrl,
   isFilePathESM,
   isInNodeModules,
   isNodeBuiltin,
+  isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
   mergeAlias,
@@ -260,11 +260,6 @@ export interface SharedEnvironmentOptions {
    * Optimize deps config
    */
   optimizeDeps?: DepOptimizationOptions
-  /**
-   * Function to specify when modules should be considered built-in for the environment.
-   * (If not provided the node built-in modules are the only ones assumed as such)
-   */
-  isBuiltin?: (id: string) => boolean
 }
 
 export interface EnvironmentOptions extends SharedEnvironmentOptions {
@@ -778,7 +773,7 @@ function resolveEnvironmentOptions(
       resolve.preserveSymlinks,
       consumer,
     ),
-    isBuiltin: options.isBuiltin,
+    isBuiltin: resolve.isBuiltin,
     dev: resolveDevEnvironmentOptions(
       options.dev,
       environmentName,
@@ -889,6 +884,10 @@ function resolveEnvironmentResolveOptions(
           ? DEFAULT_CLIENT_CONDITIONS
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
       enableBuiltinNoExternalCheck: !!isSsrTargetWebworkerEnvironment,
+      isBuiltin:
+        // Note: even client environments get the node-like isBuiltin
+        //       utility since that is necessary for prerendering
+        resolve?.isBuiltin ?? isNodeLikeBuiltin,
     },
     resolve ?? {},
   )
@@ -1760,6 +1759,7 @@ async function bundleConfigFile(
               preserveSymlinks: false,
               packageCache,
               isRequire,
+              isBuiltin: isNodeLikeBuiltin,
             })?.id
           }
 
@@ -1778,7 +1778,7 @@ async function bundleConfigFile(
               // With the `isNodeBuiltin` check above, this check captures if the builtin is a
               // non-node built-in, which esbuild doesn't know how to handle. In that case, we
               // externalize it so the non-node runtime handles it instead.
-              if (isBuiltin(id)) {
+              if (isNodeLikeBuiltin(id)) {
                 return { external: true }
               }
 

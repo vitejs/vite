@@ -21,10 +21,10 @@ import {
   fsPathFromId,
   getNpmPackageName,
   injectQuery,
-  isBuiltin,
   isDataUrl,
   isExternalUrl,
   isInNodeModules,
+  isNodeLikeBuiltin,
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
@@ -100,6 +100,11 @@ export interface EnvironmentResolveOptions {
    * @internal
    */
   enableBuiltinNoExternalCheck?: boolean
+  /**
+   * Function to specify when modules should be considered built-in for the environment.
+   * (If not provided the node built-in modules are the only ones assumed as such)
+   */
+  isBuiltin?: (id: string) => boolean
 }
 
 export interface ResolveOptions extends EnvironmentResolveOptions {
@@ -438,7 +443,7 @@ export function resolvePlugin(
 
         // built-ins
         // externalize if building for a server environment, otherwise redirect to an empty module
-        if (isBuiltin(id, this.environment.config)) {
+        if (this.environment.config.resolve.isBuiltin(id)) {
           if (currentEnvironmentOptions.consumer === 'server') {
             if (
               options.enableBuiltinNoExternalCheck &&
@@ -735,12 +740,10 @@ export function tryNodeResolve(
     basedir = root
   }
 
+  const isBuiltin = environmentOptions?.resolve?.isBuiltin ?? isNodeLikeBuiltin
+
   let selfPkg = null
-  if (
-    !isBuiltin(id, environmentOptions) &&
-    !id.includes('\0') &&
-    bareImportRE.test(id)
-  ) {
+  if (!isBuiltin(id) && !id.includes('\0') && bareImportRE.test(id)) {
     // check if it's a self reference dep.
     const selfPackageData = findNearestPackageData(basedir, packageCache)
     selfPkg =
@@ -757,7 +760,7 @@ export function tryNodeResolve(
     // if so, we can resolve to a special id that errors only when imported.
     if (
       basedir !== root && // root has no peer dep
-      !isBuiltin(id, environmentOptions) &&
+      !isBuiltin(id) &&
       !id.includes('\0') &&
       bareImportRE.test(id)
     ) {
