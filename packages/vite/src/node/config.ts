@@ -885,9 +885,11 @@ function resolveEnvironmentResolveOptions(
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
       enableBuiltinNoExternalCheck: !!isSsrTargetWebworkerEnvironment,
       isBuiltin:
-        // Note: even client environments get the node-like isBuiltin
-        //       utility since that is necessary for prerendering
-        resolve?.isBuiltin ?? isNodeLikeBuiltin,
+        resolve?.isBuiltin ??
+        (consumer === 'server'
+          ? isNodeLikeBuiltin
+          : // there are not built-in modules in the browser
+            () => false),
     },
     resolve ?? {},
   )

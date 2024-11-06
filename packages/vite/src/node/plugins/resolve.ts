@@ -443,45 +443,47 @@ export function resolvePlugin(
 
         // built-ins
         // externalize if building for a server environment, otherwise redirect to an empty module
-        if (this.environment.config.resolve.isBuiltin(id)) {
-          if (currentEnvironmentOptions.consumer === 'server') {
-            if (
-              options.enableBuiltinNoExternalCheck &&
-              options.noExternal === true &&
-              // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
-              // only if the id is explicitly listed in external, we will externalize it and skip this error.
-              (options.external === true || !options.external.includes(id))
-            ) {
-              let message = `Cannot bundle built-in module "${id}"`
-              if (importer) {
-                message += ` imported from "${path.relative(
-                  process.cwd(),
-                  importer,
-                )}"`
-              }
-              message += `. Consider disabling environments.${this.environment.name}.noExternal or remove the built-in dependency.`
-              this.error(message)
+        if (
+          currentEnvironmentOptions.consumer === 'server' &&
+          this.environment.config.resolve.isBuiltin(id)
+        ) {
+          if (
+            options.enableBuiltinNoExternalCheck &&
+            options.noExternal === true &&
+            // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
+            // only if the id is explicitly listed in external, we will externalize it and skip this error.
+            (options.external === true || !options.external.includes(id))
+          ) {
+            let message = `Cannot bundle built-in module "${id}"`
+            if (importer) {
+              message += ` imported from "${path.relative(
+                process.cwd(),
+                importer,
+              )}"`
             }
-
-            return options.idOnly
-              ? id
-              : { id, external: true, moduleSideEffects: false }
-          } else {
-            if (!asSrc) {
-              debug?.(
-                `externalized node built-in "${id}" to empty module. ` +
-                  `(imported by: ${colors.white(colors.dim(importer))})`,
-              )
-            } else if (isProduction) {
-              this.warn(
-                `Module "${id}" has been externalized for browser compatibility, imported by "${importer}". ` +
-                  `See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
-              )
-            }
-            return isProduction
-              ? browserExternalId
-              : `${browserExternalId}:${id}`
+            message += `. Consider disabling environments.${this.environment.name}.noExternal or remove the built-in dependency.`
+            this.error(message)
           }
+
+          return options.idOnly
+            ? id
+            : { id, external: true, moduleSideEffects: false }
+        } else if (
+          currentEnvironmentOptions.consumer === 'client' &&
+          isNodeLikeBuiltin(id)
+        ) {
+          if (!asSrc) {
+            debug?.(
+              `externalized node built-in "${id}" to empty module. ` +
+                `(imported by: ${colors.white(colors.dim(importer))})`,
+            )
+          } else if (isProduction) {
+            this.warn(
+              `Module "${id}" has been externalized for browser compatibility, imported by "${importer}". ` +
+                `See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.`,
+            )
+          }
+          return isProduction ? browserExternalId : `${browserExternalId}:${id}`
         }
       }
 
