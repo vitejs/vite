@@ -103,13 +103,12 @@ jobs:
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 workflow_id: workflowId,
+                head_sha: prData.commit,
                 per_page: 100,
                 page: 1,
               })
 
-              const runs = runsData.data.workflow_runs.filter(
-                run => run.head_sha === prData.commit
-              )
+              const runs = runsData.data.workflow_runs
 
               if (runs.length > 0) {
                 const latestRun = runs[0]
