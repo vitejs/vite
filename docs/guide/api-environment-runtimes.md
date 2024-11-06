@@ -366,21 +366,17 @@ await runner.import('/entry.js')
 In this case, the `handleInvoke` method in the `NormalizedHotChannel` can be used:
 
 ```ts
-class CustomDevEnvironment extends DevEnvironment {
-  constructor(name, config, context) {
-    super(name, config, context)
+const customEnvironment = new DevEnvironment(name, config, context)
 
-    server.onRequest((request: Request) => {
-      const url = new URL(request.url)
-      if (url.pathname === '/invoke') {
-        const payload = (await request.json()) as HotPayload
-        const result = this.hot.handleInvoke(payload)
-        return new Response(JSON.stringify(result))
-      }
-      return Response.error()
-    })
+server.onRequest((request: Request) => {
+  const url = new URL(request.url)
+  if (url.pathname === '/invoke') {
+    const payload = (await request.json()) as HotPayload
+    const result = customEnvironment.hot.handleInvoke(payload)
+    return new Response(JSON.stringify(result))
   }
-}
+  return Response.error()
+})
 ```
 
 But note that for HMR support, `send` and `connect` methods are required. The `send` method is usually called when the custom event is triggered (like, `import.meta.hot.send("my-event")`).
