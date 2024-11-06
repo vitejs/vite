@@ -39,11 +39,30 @@ export const ROLLUP_HOOKS = [
 
 export const VERSION = version as string
 
+const DEFAULT_MAIN_FIELDS = [
+  'browser',
+  'module',
+  'jsnext:main', // moment still uses this...
+  'jsnext',
+]
+export const DEFAULT_CLIENT_MAIN_FIELDS = DEFAULT_MAIN_FIELDS
+export const DEFAULT_SERVER_MAIN_FIELDS = DEFAULT_MAIN_FIELDS.filter(
+  (f) => f !== 'browser',
+)
+
 /**
  * A special condition that would be replaced with production or development
  * depending on NODE_ENV env variable
  */
 export const DEV_PROD_CONDITION = `development|production` as const
+
+const DEFAULT_CONDITIONS = ['module', 'browser', 'node', DEV_PROD_CONDITION]
+export const DEFAULT_CLIENT_CONDITIONS = DEFAULT_CONDITIONS.filter(
+  (c) => c !== 'node',
+)
+export const DEFAULT_SERVER_CONDITIONS = DEFAULT_CONDITIONS.filter(
+  (c) => c !== 'browser',
+)
 
 // Baseline support browserslist
 // "defaults and supports es6-module and supports es6-module-dynamic-import"

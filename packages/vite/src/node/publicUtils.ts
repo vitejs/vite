@@ -3,7 +3,13 @@
  * This file will be bundled to ESM and CJS and redirected by ../index.cjs
  * Please control the side-effects by checking the ./dist/node-cjs/publicUtils.cjs bundle
  */
-export { VERSION as version } from './constants'
+export {
+  VERSION as version,
+  DEFAULT_CLIENT_MAIN_FIELDS,
+  DEFAULT_SERVER_MAIN_FIELDS,
+  DEFAULT_CLIENT_CONDITIONS,
+  DEFAULT_SERVER_CONDITIONS,
+} from './constants'
 export { version as esbuildVersion } from 'esbuild'
 export {
   splitVendorChunkPlugin,

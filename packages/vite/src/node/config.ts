@@ -15,9 +15,12 @@ import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
+  DEFAULT_CLIENT_CONDITIONS,
+  DEFAULT_CLIENT_MAIN_FIELDS,
   DEFAULT_CONFIG_FILES,
   DEFAULT_PREVIEW_PORT,
-  DEV_PROD_CONDITION,
+  DEFAULT_SERVER_CONDITIONS,
+  DEFAULT_SERVER_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
@@ -619,13 +622,8 @@ export const configDefaults = Object.freeze({
   },
   build: buildEnvironmentOptionsDefaults,
   resolve: {
-    mainFields: [
-      'browser',
-      'module',
-      'jsnext:main', // moment still uses this...
-      'jsnext',
-    ],
-    conditions: ['module', 'browser', 'node', DEV_PROD_CONDITION],
+    // mainFields
+    // conditions
     externalConditions: ['node'],
     extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
     dedupe: [],
@@ -892,12 +890,12 @@ function resolveEnvironmentResolveOptions(
       ...configDefaults.resolve,
       mainFields:
         consumer === 'client' || isSsrTargetWebworkerEnvironment
-          ? configDefaults.resolve.mainFields
-          : configDefaults.resolve.mainFields.filter((f) => f !== 'browser'),
+          ? DEFAULT_CLIENT_MAIN_FIELDS
+          : DEFAULT_SERVER_MAIN_FIELDS,
       conditions:
         consumer === 'client' || isSsrTargetWebworkerEnvironment
-          ? configDefaults.resolve.conditions.filter((c) => c !== 'node')
-          : configDefaults.resolve.conditions.filter((c) => c !== 'browser'),
+          ? DEFAULT_CLIENT_CONDITIONS
+          : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
       external:
         consumer === 'server' && !isSsrTargetWebworkerEnvironment
           ? builtinModules
