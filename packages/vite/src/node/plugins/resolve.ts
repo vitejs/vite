@@ -33,7 +33,6 @@ import {
   safeRealpathSync,
   tryStatSync,
 } from '../utils'
-import type { ResolvedEnvironmentOptions } from '../config'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
@@ -181,13 +180,6 @@ export interface ResolvePluginOptionsWithOverrides
 
 export function resolvePlugin(
   resolveOptions: ResolvePluginOptionsWithOverrides,
-  /**
-   * @internal
-   * config.createResolver creates a pluginContainer before environments are created.
-   * The resolve plugin is especial as it works without environments to enable this use case.
-   * It only needs access to the resolve options.
-   */
-  environmentsOptions?: Record<string, ResolvedEnvironmentOptions>,
 ): Plugin {
   const { root, isProduction, asSrc, preferRelative = false } = resolveOptions
 
@@ -228,18 +220,11 @@ export function resolvePlugin(
       const isRequire: boolean =
         resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
 
-      const environmentName = this.environment.name ?? (ssr ? 'ssr' : 'client')
-      const currentEnvironmentOptions =
-        this.environment.config || environmentsOptions?.[environmentName]
-      const environmentResolveOptions = currentEnvironmentOptions?.resolve
-      if (!environmentResolveOptions) {
-        throw new Error(
-          `Missing ResolveOptions for ${environmentName} environment`,
-        )
-      }
+      const currentEnvironmentOptions = this.environment.config
+
       const options: InternalResolveOptions = {
         isRequire,
-        ...environmentResolveOptions,
+        ...currentEnvironmentOptions.resolve,
         ...resolveOptions, // plugin options + resolve options overrides
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
@@ -456,7 +441,7 @@ export function resolvePlugin(
                   importer,
                 )}"`
               }
-              message += `. Consider disabling environments.${environmentName}.noExternal or remove the built-in dependency.`
+              message += `. Consider disabling environments.${this.environment.name}.noExternal or remove the built-in dependency.`
               this.error(message)
             }
 
