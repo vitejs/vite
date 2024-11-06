@@ -6,6 +6,7 @@ import './optional-chaining/parent'
 import './intermediate-file-delete'
 import './circular'
 import logo from './logo.svg'
+import logoNoInline from './logo-no-inline.svg'
 import { msg as softInvalidationMsg } from './soft-invalidation'
 
 export const foo = 1
@@ -14,7 +15,8 @@ text('.dep', depFoo)
 text('.nested', nestedFoo)
 text('.virtual', virtual)
 text('.soft-invalidation', softInvalidationMsg)
-setLogo(logo)
+setImgSrc('#logo', logo)
+setImgSrc('#logo-no-inline', logoNoInline)
 
 const btn = document.querySelector('.virtual-update') as HTMLButtonElement
 btn.onclick = () => {
@@ -40,8 +42,13 @@ if (import.meta.hot) {
   }
 
   import.meta.hot.accept('./logo.svg', (newUrl) => {
-    setLogo(newUrl.default)
+    setImgSrc('#logo', newUrl.default)
     console.log('Logo updated', newUrl.default)
+  })
+
+  import.meta.hot.accept('./logo-no-inline.svg', (newUrl) => {
+    setImgSrc('#logo-no-inline', newUrl.default)
+    console.log('Logo-no-inline updated', newUrl.default)
   })
 
   import.meta.hot.accept('./hmrDep', ({ foo, nestedFoo }) => {
@@ -131,8 +138,8 @@ function text(el, text) {
   document.querySelector(el).textContent = text
 }
 
-function setLogo(src) {
-  ;(document.querySelector('#logo') as HTMLImageElement).src = src
+function setImgSrc(el, src) {
+  ;(document.querySelector(el) as HTMLImageElement).src = src
 }
 
 function removeCb({ msg }) {
