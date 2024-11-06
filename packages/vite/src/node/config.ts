@@ -806,6 +806,16 @@ function resolveResolveOptions(
   // resolve alias with internal client alias
   const alias = normalizeAlias(mergeAlias(clientAlias, resolve?.alias || []))
   const preserveSymlinks = resolve?.preserveSymlinks ?? false
+
+  if (alias.some((a) => a.find === '/')) {
+    logger.warn(
+      colors.yellow(
+        `\`resolve.alias\` contains an alias that maps \`/\`. ` +
+          `This is not recommended as it can cause unexpected behavior when resolving paths.`,
+      ),
+    )
+  }
+
   return resolveEnvironmentResolveOptions(
     resolve,
     alias,
