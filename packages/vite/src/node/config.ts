@@ -811,7 +811,7 @@ function resolveResolveOptions(
     logger.warn(
       colors.yellow(
         `\`resolve.alias\` contains an alias that maps \`/\`. ` +
-          `This is not recommended as it can cause unexpected behavior.`,
+          `This is not recommended as it can cause unexpected behavior when resolving paths.`,
       ),
     )
   }
