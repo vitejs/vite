@@ -884,7 +884,20 @@ if (!isBuild) {
     )
   })
 
-  test('assets HMR', async () => {
+  test('not inlined assets HMR', async () => {
+    await setupModuleRunner('/hmr.ts')
+    const el = () => hmr('#logo-no-inline')
+    await untilConsoleLogAfter(
+      () =>
+        editFile('logo-no-inline.svg', (code) =>
+          code.replace('height="30px"', 'height="40px"'),
+        ),
+      /Logo-no-inline updated/,
+    )
+    await vi.waitUntil(() => el().includes('logo-no-inline.svg?t='))
+  })
+
+  test('inlined assets HMR', async () => {
     await setupModuleRunner('/hmr.ts')
     const el = () => hmr('#logo')
     const initialLogoUrl = el()
