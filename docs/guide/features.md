@@ -544,7 +544,7 @@ You can also use the `base` option to provide base path for the imports:
 ```ts twoslash
 import 'vite/client'
 // ---cut---
-const moduleBase = import.meta.glob('**/*.js', {
+const moduleBase = import.meta.glob('./**/*.js', {
   base: './base',
 })
 ```
