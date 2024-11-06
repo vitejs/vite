@@ -203,8 +203,6 @@ export function resolvePlugin(
         return
       }
 
-      const ssr = resolveOpts?.ssr === true
-
       // The resolve plugin is used for createIdResolver and the depsOptimizer should be
       // disabled in that case, so deps optimization is opt-in when creating the plugin.
       const depsOptimizer =
