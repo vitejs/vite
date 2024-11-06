@@ -144,7 +144,7 @@ describe('parse positives', async () => {
   it('options with base', async () => {
     expect(
       await run(`
-    import.meta.glob('**/dir/*.md', {
+    import.meta.glob('./**/dir/*.md', {
       base: './path/to/base'
     })
     `),
@@ -152,7 +152,7 @@ describe('parse positives', async () => {
       [
         {
           "globs": [
-            "**/dir/*.md",
+            "./**/dir/*.md",
           ],
           "options": {
             "base": "./path/to/base",
