@@ -7,6 +7,13 @@ export default defineConfig({
   experimental: {
     hmrPartialAccept: true,
   },
+  build: {
+    assetsInlineLimit(filePath) {
+      if (filePath.endsWith('logo-no-inline.svg')) {
+        return false
+      }
+    },
+  },
   plugins: [
     {
       name: 'mock-custom',

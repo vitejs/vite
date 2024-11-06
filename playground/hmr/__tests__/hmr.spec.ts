@@ -998,7 +998,20 @@ if (!isBuild) {
     )
   })
 
-  test('assets HMR', async () => {
+  test('not inlined assets HMR', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('#logo-no-inline')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('logo-no-inline.svg', (code) =>
+          code.replace('height="30px"', 'height="40px"'),
+        ),
+      /Logo-no-inline updated/,
+    )
+    await untilUpdated(() => el.evaluate((it) => `${it.clientHeight}`), '40')
+  })
+
+  test('inlined assets HMR', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('#logo')
     await untilBrowserLogAfter(

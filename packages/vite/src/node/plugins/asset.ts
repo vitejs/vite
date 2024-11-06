@@ -38,6 +38,7 @@ const jsSourceMapRE = /\.[cm]?js\.map$/
 
 const noInlineRE = /[?&]no-inline\b/
 const inlineRE = /[?&]inline\b/
+const svgExtRE = /\.svg(?:$|\?)/
 
 const assetCache = new WeakMap<Environment, Map<string, string>>()
 
@@ -180,11 +181,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       let url = await fileToUrl(this, id)
 
       // Inherit HMR timestamp if this asset was invalidated
-      const environment = this.environment
-      const mod =
-        environment.mode === 'dev' && environment.moduleGraph.getModuleById(id)
-      if (mod && mod.lastHMRTimestamp > 0) {
-        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+      if (!url.startsWith('data:') && this.environment.mode === 'dev') {
+        const mod = this.environment.moduleGraph.getModuleById(id)
+        if (mod && mod.lastHMRTimestamp > 0) {
+          url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+        }
       }
 
       return {
@@ -266,16 +267,27 @@ export async function fileToDevUrl(
   skipBase = false,
 ): Promise<string> {
   const config = environment.getTopLevelConfig()
+  const publicFile = checkPublicFile(id, config)
 
   // If has inline query, unconditionally inline the asset
   if (inlineRE.test(id)) {
-    const file = checkPublicFile(id, config) || cleanUrl(id)
+    const file = publicFile || cleanUrl(id)
     const content = await fsp.readFile(file)
     return assetToDataURL(environment, file, content)
   }
 
+  // If is svg and it's inlined in build, also inline it in dev to match
+  // the behaviour in build due to quote handling differences.
+  if (svgExtRE.test(id)) {
+    const file = publicFile || cleanUrl(id)
+    const content = await fsp.readFile(file)
+    if (shouldInline(environment, file, id, content, undefined, undefined)) {
+      return assetToDataURL(environment, file, content)
+    }
+  }
+
   let rtn: string
-  if (checkPublicFile(id, config)) {
+  if (publicFile) {
     // in public dir during dev, keep the url as-is
     rtn = id
   } else if (id.startsWith(withTrailingSlash(config.root))) {
@@ -369,7 +381,9 @@ async function fileToBuiltUrl(
   const content = await fsp.readFile(file)
 
   let url: string
-  if (shouldInline(pluginContext, file, id, content, forceInline)) {
+  if (
+    shouldInline(environment, file, id, content, pluginContext, forceInline)
+  ) {
     url = assetToDataURL(environment, file, content)
   } else {
     // emit as asset
@@ -413,21 +427,28 @@ export async function urlToBuiltUrl(
   )
 }
 
-const shouldInline = (
-  pluginContext: PluginContext,
+function shouldInline(
+  environment: Environment,
   file: string,
   id: string,
   content: Buffer,
+  /** Should be passed only in build */
+  buildPluginContext: PluginContext | undefined,
   forceInline: boolean | undefined,
-): boolean => {
-  const environment = pluginContext.environment
-  const { assetsInlineLimit } = environment.config.build
+): boolean {
   if (noInlineRE.test(id)) return false
   if (inlineRE.test(id)) return true
-  if (environment.config.build.lib) return true
-  if (pluginContext.getModuleInfo(id)?.isEntry) return false
+  // Do build only checks if passed the plugin context during build
+  if (buildPluginContext) {
+    if (environment.config.build.lib) return true
+    if (buildPluginContext.getModuleInfo(id)?.isEntry) return false
+  }
   if (forceInline !== undefined) return forceInline
+  if (file.endsWith('.html')) return false
+  // Don't inline SVG with fragments, as they are meant to be reused
+  if (file.endsWith('.svg') && id.includes('#')) return false
   let limit: number
+  const { assetsInlineLimit } = environment.config.build
   if (typeof assetsInlineLimit === 'function') {
     const userShouldInline = assetsInlineLimit(file, content)
     if (userShouldInline != null) return userShouldInline
@@ -435,9 +456,6 @@ const shouldInline = (
   } else {
     limit = Number(assetsInlineLimit)
   }
-  if (file.endsWith('.html')) return false
-  // Don't inline SVG with fragments, as they are meant to be reused
-  if (file.endsWith('.svg') && id.includes('#')) return false
   return content.length < limit && !isGitLfsPlaceholder(content)
 }
 

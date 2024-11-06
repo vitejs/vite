@@ -282,15 +282,11 @@ describe('css url() references', () => {
   })
 
   test('url() with svg', async () => {
-    expect(await getBg('.css-url-svg')).toMatch(
-      isBuild ? /data:image\/svg\+xml,.+/ : '/foo/bar/nested/fragment-bg.svg',
-    )
+    expect(await getBg('.css-url-svg')).toMatch(/data:image\/svg\+xml,.+/)
   })
 
   test('image-set() with svg', async () => {
-    expect(await getBg('.css-image-set-svg')).toMatch(
-      isBuild ? /data:image\/svg\+xml,.+/ : '/foo/bar/nested/fragment-bg.svg',
-    )
+    expect(await getBg('.css-image-set-svg')).toMatch(/data:image\/svg\+xml,.+/)
   })
 })
 
@@ -376,10 +372,8 @@ describe('svg fragments', () => {
   test('from js import', async () => {
     const img = await page.$('.svg-frag-import')
     expect(await img.getAttribute('src')).toMatch(
-      isBuild
-        ? // Assert trimmed (data URI starts with < and ends with >)
-          /^data:image\/svg\+xml,%3c.*%3e#icon-heart-view$/
-        : /svg#icon-heart-view$/,
+      // Assert trimmed (data URI starts with < and ends with >)
+      /^data:image\/svg\+xml,%3c.*%3e#icon-heart-view$/,
     )
   })
 

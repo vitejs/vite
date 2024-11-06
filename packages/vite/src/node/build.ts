@@ -120,7 +120,10 @@ export interface BuildEnvironmentOptions {
   assetsDir?: string
   /**
    * Static asset files smaller than this number (in bytes) will be inlined as
-   * base64 strings. Default limit is `4096` (4 KiB). Set to `0` to disable.
+   * base64 strings. If a callback is passed, a boolean can be returned to opt-in
+   * or opt-out of inlining. If nothing is returned the default logic applies.
+   *
+   * Default limit is `4096` (4 KiB). Set to `0` to disable.
    * @default 4096
    */
   assetsInlineLimit?:
