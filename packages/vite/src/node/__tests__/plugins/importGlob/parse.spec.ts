@@ -408,7 +408,7 @@ describe('parse negatives', async () => {
     expect(
       await runError('import.meta.glob("./*.js", { base: "foo" })'),
     ).toMatchInlineSnapshot(
-      '[Error: Invalid glob: "foo/*.js" (resolved: "foo/*.js"). It must start with \'/\' or \'./\']',
+      "[Error: Option \"base\" must start with '/', './' or '../', but got \"foo\"]",
     )
     expect(
       await runError('import.meta.glob("./*.js", { base: "!/foo" })'),

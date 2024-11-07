@@ -163,8 +163,19 @@ function parseGlobOptions(
     }
   }
 
-  if (opts.base && opts.base[0] === '!') {
-    throw err('Option "base" cannot start with "!"', optsStartIndex)
+  if (opts.base) {
+    if (opts.base[0] === '!') {
+      throw err('Option "base" cannot start with "!"', optsStartIndex)
+    } else if (
+      opts.base[0] !== '/' &&
+      !opts.base.startsWith('./') &&
+      !opts.base.startsWith('../')
+    ) {
+      throw err(
+        `Option "base" must start with '/', './' or '../', but got "${opts.base}"`,
+        optsStartIndex,
+      )
+    }
   }
 
   if (typeof opts.query === 'object') {
@@ -575,15 +586,24 @@ export async function toAbsoluteGlob(
     glob = glob.slice(1)
   }
   root = globSafePath(root)
-  const dir = importer ? globSafePath(dirname(importer)) : root
+  let dir
   if (base) {
-    if (base.startsWith('./')) return pre + posix.join(dir, base, glob)
-    if (glob[0] === '@') {
-      const withoutAlias = /\/.+$/.exec(glob)?.[0]
-      return pre + posix.join(root, base, withoutAlias || glob)
+    if (base.startsWith('/')) {
+      dir = posix.join(root, base)
+    } else {
+      dir = posix.resolve(
+        importer ? globSafePath(dirname(importer)) : root,
+        base,
+      )
     }
+  } else {
+    dir = importer ? globSafePath(dirname(importer)) : root
   }
-  glob = base ? posix.join(base, glob) : glob
+
+  if (base && glob[0] === '@') {
+    const withoutAlias = /\/.+$/.exec(glob)?.[0]
+    return pre + posix.join(root, base, withoutAlias || glob)
+  }
   if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
