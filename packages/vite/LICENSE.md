@@ -1026,7 +1026,7 @@ Repository: pillarjs/finalhandler
 ## follow-redirects
 License: MIT
 By: Ruben Verborgh, Olivier Lalonde, James Talmage
-Repository: git@github.com:follow-redirects/follow-redirects.git
+Repository: git+ssh://git@github.com/follow-redirects/follow-redirects.git
 
 > Copyright 2014–present Olivier Lalonde <olalonde@gmail.com>, James Talmage <james@talmage.io>, Ruben Verborgh
 > 
