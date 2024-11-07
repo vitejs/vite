@@ -74,12 +74,11 @@ export const core = [
     desc: 'Passionate by tooling around TypeScript and React.',
     links: [
       { icon: 'github', link: 'https://github.com/ArnaudBarre' },
-      { icon: 'x', link: 'https://x.com/_ArnaudBarre' },
-      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@ArnaudBarre' },
       {
         icon: 'bluesky',
         link: 'https://bsky.app/profile/arnaud-barre.bsky.social',
       },
+      { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@ArnaudBarre' },
     ],
     sponsor: 'https://github.com/sponsors/ArnaudBarre',
   },
