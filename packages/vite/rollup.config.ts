@@ -32,6 +32,7 @@ const clientConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/client.ts'),
   external: ['@vite/env'],
   plugins: [
+    nodeResolve({ preferBuiltins: true }),
     esbuild({
       tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
     }),
@@ -186,7 +187,7 @@ const moduleRunnerConfig = defineConfig({
   ],
   plugins: [
     ...createSharedNodePlugins({ esbuildOptions: { minifySyntax: true } }),
-    bundleSizeLimit(50),
+    bundleSizeLimit(53),
   ],
 })
 

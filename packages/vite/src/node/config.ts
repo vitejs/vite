@@ -203,21 +203,13 @@ function defaultCreateClientDevEnvironment(
   context: CreateDevEnvironmentContext,
 ) {
   return new DevEnvironment(name, config, {
-    hot: context.ws,
+    hot: true,
+    transport: context.ws,
   })
-}
-
-function defaultCreateSsrDevEnvironment(
-  name: string,
-  config: ResolvedConfig,
-): DevEnvironment {
-  return createRunnableDevEnvironment(name, config)
 }
 
 function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
-  return new DevEnvironment(name, config, {
-    hot: false,
-  })
+  return createRunnableDevEnvironment(name, config)
 }
 
 export type ResolvedDevEnvironmentOptions = Required<DevEnvironmentOptions>
@@ -608,9 +600,7 @@ export function resolveDevEnvironmentOptions(
       dev?.createEnvironment ??
       (environmentName === 'client'
         ? defaultCreateClientDevEnvironment
-        : environmentName === 'ssr'
-          ? defaultCreateSsrDevEnvironment
-          : defaultCreateDevEnvironment),
+        : defaultCreateDevEnvironment),
     recoverable: dev?.recoverable ?? consumer === 'client',
     moduleRunnerTransform:
       dev?.moduleRunnerTransform ??
