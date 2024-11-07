@@ -1052,7 +1052,11 @@ export function resolveServerOptions(
   logger: Logger,
 ): ResolvedServerOptions {
   const _server = mergeWithDefaults(
-    { ...serverConfigDefaults, sourcemapIgnoreList: isInNodeModules },
+    {
+      ...serverConfigDefaults,
+      host: undefined, // do not set here to detect whether host is set or not
+      sourcemapIgnoreList: isInNodeModules,
+    },
     raw ?? {},
   )
 
