@@ -7,7 +7,6 @@ export {
   loadConfigFromFile,
   resolveConfig,
   sortUserPlugins,
-  configDefaults,
 } from './config'
 export { createServer } from './server'
 export { preview } from './preview'
