@@ -545,6 +545,7 @@ export type ResolvedConfig = Readonly<
     | 'dev'
     | 'environments'
     | 'server'
+    | 'preview'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
