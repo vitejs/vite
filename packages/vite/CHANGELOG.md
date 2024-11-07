@@ -1,3 +1,20 @@
+## 6.0.0-beta.9 (2024-11-07)
+
+* feat: use a single transport for fetchModule and HMR support (#18362) ([78dc490](https://github.com/vitejs/vite/commit/78dc4902ffef7f316e84d21648b04dc62dd0ae0a)), closes [#18362](https://github.com/vitejs/vite/issues/18362)
+* feat(asset): add `?inline` and `?no-inline` queries to control inlining (#15454) ([9162172](https://github.com/vitejs/vite/commit/9162172e039ae67ad4ee8dce18f04b7444f7d9de)), closes [#15454](https://github.com/vitejs/vite/issues/15454)
+* feat(asset): inline svg in dev if within limit (#18581) ([f08b146](https://github.com/vitejs/vite/commit/f08b1463db50f39b571faa871d05c92b10f3434c)), closes [#18581](https://github.com/vitejs/vite/issues/18581)
+* chore: add warning for `/` mapping in `resolve.alias` (#18588) ([a51c254](https://github.com/vitejs/vite/commit/a51c254265bbfe3d77f834fe81a503ce27c05b32)), closes [#18588](https://github.com/vitejs/vite/issues/18588)
+* chore: remove unused `ssr` variable (#18594) ([23c39fc](https://github.com/vitejs/vite/commit/23c39fc994a6164bc68d69e56f39735a6bb7a71d)), closes [#18594](https://github.com/vitejs/vite/issues/18594)
+* chore(deps): update all non-major dependencies (#18562) ([fb227ec](https://github.com/vitejs/vite/commit/fb227ec4402246b5a13e274c881d9de6dd8082dd)), closes [#18562](https://github.com/vitejs/vite/issues/18562)
+* fix: browser field should not be included by default for `consumer: 'server'` (#18575) ([87b2347](https://github.com/vitejs/vite/commit/87b2347a13ea8ae8282f0f1e2233212c040bfed8)), closes [#18575](https://github.com/vitejs/vite/issues/18575)
+* fix: use `server.perEnvironmentStartEndDuringDev` (#18549) ([fe30349](https://github.com/vitejs/vite/commit/fe30349d350ef08bccd56404ccc3e6d6e0a2e156)), closes [#18549](https://github.com/vitejs/vite/issues/18549)
+* fix(client): detect ws close correctly (#18548) ([637d31b](https://github.com/vitejs/vite/commit/637d31bcc59d964e51f7969093cc369deee88ca1)), closes [#18548](https://github.com/vitejs/vite/issues/18548)
+* fix(resolve): run ensureVersionQuery for SSR (#18591) ([63207e5](https://github.com/vitejs/vite/commit/63207e5d0fbedc8ddddb7d1faaa8ea9a45a118d4)), closes [#18591](https://github.com/vitejs/vite/issues/18591)
+* refactor(resolve): remove `environmentsOptions` parameter (#18590) ([3ef0bf1](https://github.com/vitejs/vite/commit/3ef0bf19a3457c46395bdcb2201bbf32807d7231)), closes [#18590](https://github.com/vitejs/vite/issues/18590)
+* test: update filename regex (#18593) ([dd25c1a](https://github.com/vitejs/vite/commit/dd25c1ab5d5510b955fa24830bc223cacc855560)), closes [#18593](https://github.com/vitejs/vite/issues/18593)
+
+
+
 ## 6.0.0-beta.8 (2024-11-01)
 
 * fix: allow nested dependency selector to be used for `optimizeDeps.include` for SSR (#18506) ([826c81a](https://github.com/vitejs/vite/commit/826c81a40bb25914d55cd2e96b548f1a2c384a19)), closes [#18506](https://github.com/vitejs/vite/issues/18506)
