@@ -16,7 +16,7 @@ Please share with us your feedback as you test the proposal.
 Environments factories are intended to be implemented by Environment providers like Cloudflare, and not by end users. Environment factories return a `EnvironmentOptions` for the most common case of using the target runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
 
 ```ts
-function createWorkedEnvironment(
+function createWorkerdEnvironment(
   userConfig: EnvironmentOptions,
 ): EnvironmentOptions {
   return mergeConfig(
