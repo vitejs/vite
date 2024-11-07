@@ -62,7 +62,7 @@ export const core = [
     links: [
       { icon: 'github', link: 'https://github.com/sapphi-red' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/sapphi.red' },
-      { icon: 'x', link: 'https://x.com/sapphi_red' },
+      { icon: 'twitter', link: 'https://twitter.com/sapphi_red' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sapphi_red' },
     ],
     sponsor: 'https://github.com/sponsors/sapphi-red',
