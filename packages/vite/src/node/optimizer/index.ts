@@ -102,8 +102,7 @@ export interface DepOptimizationConfig {
     | 'outbase'
     | 'outExtension'
     | 'metafile'
-    | 'platform'
-  > & { platform?: 'browser' | 'node' }
+  >
   /**
    * List of file extensions that can be optimized. A corresponding esbuild
    * plugin must exist to handle the specific extension.
@@ -764,6 +763,9 @@ async function prepareEsbuildOptimizerRun(
 
   const platform =
     environment.config.optimizeDeps.esbuildOptions?.platform ??
+    // We generally don't want to use platform 'neutral', as esbuild has custom handling
+    // when the platform is 'node' or 'browser' that can't be emulated by using mainFields
+    // and conditions
     (environment.config.consumer === 'client' ? 'browser' : 'node')
 
   const external = [...(optimizeDeps?.exclude ?? [])]
@@ -778,9 +780,6 @@ async function prepareEsbuildOptimizerRun(
     absWorkingDir: process.cwd(),
     entryPoints: Object.keys(flatIdDeps),
     bundle: true,
-    // We can't use platform 'neutral', as esbuild has custom handling
-    // when the platform is 'node' or 'browser' that can't be emulated
-    // by using mainFields and conditions
     platform,
     define,
     format: 'esm',
