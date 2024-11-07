@@ -210,21 +210,13 @@ function defaultCreateClientDevEnvironment(
   context: CreateDevEnvironmentContext,
 ) {
   return new DevEnvironment(name, config, {
-    hot: context.ws,
+    hot: true,
+    transport: context.ws,
   })
-}
-
-function defaultCreateSsrDevEnvironment(
-  name: string,
-  config: ResolvedConfig,
-): DevEnvironment {
-  return createRunnableDevEnvironment(name, config)
 }
 
 function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
-  return new DevEnvironment(name, config, {
-    hot: false,
-  })
+  return createRunnableDevEnvironment(name, config)
 }
 
 export type ResolvedDevEnvironmentOptions = Omit<
@@ -731,9 +723,7 @@ export function resolveDevEnvironmentOptions(
       createEnvironment:
         environmentName === 'client'
           ? defaultCreateClientDevEnvironment
-          : environmentName === 'ssr'
-            ? defaultCreateSsrDevEnvironment
-            : defaultCreateDevEnvironment,
+          : defaultCreateDevEnvironment,
       recoverable: consumer === 'client',
       moduleRunnerTransform:
         skipSsrTransform !== undefined && consumer === 'server'
@@ -932,6 +922,16 @@ function resolveResolveOptions(
   )
   const preserveSymlinks =
     resolve?.preserveSymlinks ?? configDefaults.resolve.preserveSymlinks
+
+  if (alias.some((a) => a.find === '/')) {
+    logger.warn(
+      colors.yellow(
+        `\`resolve.alias\` contains an alias that maps \`/\`. ` +
+          `This is not recommended as it can cause unexpected behavior when resolving paths.`,
+      ),
+    )
+  }
+
   return resolveEnvironmentResolveOptions(
     resolve,
     alias,

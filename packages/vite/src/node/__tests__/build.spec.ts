@@ -602,7 +602,7 @@ describe('resolveBuildOutputs', () => {
           fileName: 'index.mjs',
         },
         {
-          fileName: expect.stringMatching(/assets\/index-\w*\.css/),
+          fileName: expect.stringMatching(/assets\/index-[-\w]{8}\.css/),
         },
       ],
     })
@@ -633,7 +633,7 @@ describe('resolveBuildOutputs', () => {
           fileName: 'index.mjs',
         },
         {
-          fileName: expect.stringMatching(/assets\/index-\w*\.css/),
+          fileName: expect.stringMatching(/assets\/index-[-\w]{8}\.css/),
         },
       ],
     })

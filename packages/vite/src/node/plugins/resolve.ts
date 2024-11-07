@@ -33,7 +33,6 @@ import {
   safeRealpathSync,
   tryStatSync,
 } from '../utils'
-import type { ResolvedEnvironmentOptions } from '../config'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
@@ -181,13 +180,6 @@ export interface ResolvePluginOptionsWithOverrides
 
 export function resolvePlugin(
   resolveOptions: ResolvePluginOptionsWithOverrides,
-  /**
-   * @internal
-   * config.createResolver creates a pluginContainer before environments are created.
-   * The resolve plugin is especial as it works without environments to enable this use case.
-   * It only needs access to the resolve options.
-   */
-  environmentsOptions?: Record<string, ResolvedEnvironmentOptions>,
 ): Plugin {
   const { root, isProduction, asSrc, preferRelative = false } = resolveOptions
 
@@ -211,8 +203,6 @@ export function resolvePlugin(
         return
       }
 
-      const ssr = resolveOpts?.ssr === true
-
       // The resolve plugin is used for createIdResolver and the depsOptimizer should be
       // disabled in that case, so deps optimization is opt-in when creating the plugin.
       const depsOptimizer =
@@ -228,18 +218,11 @@ export function resolvePlugin(
       const isRequire: boolean =
         resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
 
-      const environmentName = this.environment.name ?? (ssr ? 'ssr' : 'client')
-      const currentEnvironmentOptions =
-        this.environment.config || environmentsOptions?.[environmentName]
-      const environmentResolveOptions = currentEnvironmentOptions?.resolve
-      if (!environmentResolveOptions) {
-        throw new Error(
-          `Missing ResolveOptions for ${environmentName} environment`,
-        )
-      }
+      const currentEnvironmentOptions = this.environment.config
+
       const options: InternalResolveOptions = {
         isRequire,
-        ...environmentResolveOptions,
+        ...currentEnvironmentOptions.resolve,
         ...resolveOptions, // plugin options + resolve options overrides
         scan: resolveOpts?.scan ?? resolveOptions.scan,
       }
@@ -284,7 +267,7 @@ export function resolvePlugin(
         // always return here even if res doesn't exist since /@fs/ is explicit
         // if the file doesn't exist it should be a 404.
         debug?.(`[@fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        return ensureVersionQuery(res, id, options, ssr, depsOptimizer)
+        return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
       // URL
@@ -297,7 +280,7 @@ export function resolvePlugin(
         const fsPath = path.resolve(root, id.slice(1))
         if ((res = tryFsResolve(fsPath, options))) {
           debug?.(`[url] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res, id, options, ssr, depsOptimizer)
+          return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
 
@@ -336,7 +319,7 @@ export function resolvePlugin(
         }
 
         if ((res = tryFsResolve(fsPath, options))) {
-          res = ensureVersionQuery(res, id, options, ssr, depsOptimizer)
+          res = ensureVersionQuery(res, id, options, depsOptimizer)
           debug?.(`[relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
 
           if (!options.idOnly && !options.scan && options.isBuild) {
@@ -366,7 +349,7 @@ export function resolvePlugin(
         const fsPath = path.resolve(basedir, id)
         if ((res = tryFsResolve(fsPath, options))) {
           debug?.(`[drive-relative] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-          return ensureVersionQuery(res, id, options, ssr, depsOptimizer)
+          return ensureVersionQuery(res, id, options, depsOptimizer)
         }
       }
 
@@ -376,7 +359,7 @@ export function resolvePlugin(
         (res = tryFsResolve(id, options))
       ) {
         debug?.(`[fs] ${colors.cyan(id)} -> ${colors.dim(res)}`)
-        return ensureVersionQuery(res, id, options, ssr, depsOptimizer)
+        return ensureVersionQuery(res, id, options, depsOptimizer)
       }
 
       // external
@@ -456,7 +439,7 @@ export function resolvePlugin(
                   importer,
                 )}"`
               }
-              message += `. Consider disabling environments.${environmentName}.noExternal or remove the built-in dependency.`
+              message += `. Consider disabling environments.${this.environment.name}.noExternal or remove the built-in dependency.`
               this.error(message)
             }
 
@@ -546,11 +529,9 @@ function ensureVersionQuery(
   resolved: string,
   id: string,
   options: InternalResolveOptions,
-  ssr: boolean,
   depsOptimizer?: DepsOptimizer,
 ): string {
   if (
-    !ssr &&
     !options.isBuild &&
     !options.scan &&
     depsOptimizer &&
