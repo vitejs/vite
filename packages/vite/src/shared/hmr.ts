@@ -1,6 +1,7 @@
 import type { HotPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
+import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
 
 type CustomListenersMap = Map<string, ((data: any) => void)[]>
 
@@ -18,17 +19,6 @@ interface HotCallback {
 export interface HMRLogger {
   error(msg: string | Error): void
   debug(...msg: unknown[]): void
-}
-
-export interface HMRConnection {
-  /**
-   * Checked before sending messages to the client.
-   */
-  isReady(): boolean
-  /**
-   * Send message to the client.
-   */
-  send(messages: HotPayload): void
 }
 
 export class HMRContext implements ViteHotContext {
@@ -154,7 +144,7 @@ export class HMRContext implements ViteHotContext {
   }
 
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
-    this.hmrClient.messenger.send({ type: 'custom', event, data })
+    this.hmrClient.send({ type: 'custom', event, data })
   }
 
   private acceptDeps(
@@ -173,24 +163,6 @@ export class HMRContext implements ViteHotContext {
   }
 }
 
-class HMRMessenger {
-  constructor(private connection: HMRConnection) {}
-
-  private queue: HotPayload[] = []
-
-  public send(payload: HotPayload): void {
-    this.queue.push(payload)
-    this.flush()
-  }
-
-  public flush(): void {
-    if (this.connection.isReady()) {
-      this.queue.forEach((msg) => this.connection.send(msg))
-      this.queue = []
-    }
-  }
-}
-
 export class HMRClient {
   public hotModulesMap = new Map<string, HotModule>()
   public disposeMap = new Map<string, (data: any) => void | Promise<void>>()
@@ -199,16 +171,12 @@ export class HMRClient {
   public customListenersMap: CustomListenersMap = new Map()
   public ctxToListenersMap = new Map<string, CustomListenersMap>()
 
-  public messenger: HMRMessenger
-
   constructor(
     public logger: HMRLogger,
-    connection: HMRConnection,
+    private transport: NormalizedModuleRunnerTransport,
     // This allows implementing reloading via different methods depending on the environment
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
-  ) {
-    this.messenger = new HMRMessenger(connection)
-  }
+  ) {}
 
   public async notifyListeners<T extends string>(
     event: T,
@@ -219,6 +187,10 @@ export class HMRClient {
     if (cbs) {
       await Promise.allSettled(cbs.map((cb) => cb(data)))
     }
+  }
+
+  public send(payload: HotPayload): void {
+    this.transport.send(payload)
   }
 
   public clear(): void {

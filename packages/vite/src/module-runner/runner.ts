@@ -1,7 +1,11 @@
 import type { ViteHotContext } from 'types/hot'
-import { HMRClient, HMRContext } from '../shared/hmr'
+import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
 import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
+import {
+  type NormalizedModuleRunnerTransport,
+  normalizeModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
 import type {
@@ -29,7 +33,6 @@ import {
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
-import type { RunnerTransport } from './runnerTransport'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -46,7 +49,7 @@ export class ModuleRunner {
       )
     },
   })
-  private readonly transport: RunnerTransport
+  private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
   private readonly root: string
   private readonly concurrentModuleNodePromises = new Map<
@@ -64,16 +67,27 @@ export class ModuleRunner {
     const root = this.options.root
     this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
-    this.transport = options.transport
-    if (typeof options.hmr === 'object') {
+    this.transport = normalizeModuleRunnerTransport(options.transport)
+    if (options.hmr) {
+      const resolvedHmrLogger: HMRLogger =
+        options.hmr === true || options.hmr.logger === undefined
+          ? hmrLogger
+          : options.hmr.logger === false
+            ? silentConsole
+            : options.hmr.logger
       this.hmrClient = new HMRClient(
-        options.hmr.logger === false
-          ? silentConsole
-          : options.hmr.logger || hmrLogger,
-        options.hmr.connection,
+        resolvedHmrLogger,
+        this.transport,
         ({ acceptedPath }) => this.import(acceptedPath),
       )
-      options.hmr.connection.onUpdate(createHMRHandler(this))
+      if (!this.transport.connect) {
+        throw new Error(
+          'HMR is not supported by this runner transport, but `hmr` option was set to true',
+        )
+      }
+      this.transport.connect(createHMRHandler(this))
+    } else {
+      this.transport.connect?.()
     }
     if (options.sourcemapInterceptor !== false) {
       this.resetSourceMapSupport = enableSourceMapSupport(this)
@@ -105,6 +119,7 @@ export class ModuleRunner {
     this.clearCache()
     this.hmrClient = undefined
     this.closed = true
+    await this.transport.disconnect?.()
   }
 
   /**
@@ -255,10 +270,14 @@ export class ModuleRunner {
       (
         url.startsWith('data:')
           ? { externalize: url, type: 'builtin' }
-          : await this.transport.fetchModule(url, importer, {
-              cached: isCached,
-              startOffset: this.evaluator.startOffset,
-            })
+          : await this.transport.invoke('fetchModule', [
+              url,
+              importer,
+              {
+                cached: isCached,
+                startOffset: this.evaluator.startOffset,
+              },
+            ])
       ) as ResolvedResult
 
     if ('cache' in fetchedModule) {

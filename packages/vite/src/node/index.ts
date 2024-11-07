@@ -19,7 +19,6 @@ export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
 
-export { RemoteEnvironmentTransport } from './server/environmentTransport'
 export {
   createRunnableDevEnvironment,
   isRunnableDevEnvironment,
@@ -35,7 +34,6 @@ export { BuildEnvironment } from './build'
 export { fetchModule, type FetchModuleOptions } from './ssr/fetchModule'
 export { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
 export { createServerHotChannel } from './server/hmr'
-export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
 export { ssrTransform as moduleRunnerTransform } from './ssr/ssrTransform'
 export type { ModuleRunnerTransformOptions } from './ssr/ssrTransform'
 
@@ -165,6 +163,7 @@ export type {
   HMRBroadcasterClient,
   ServerHMRChannel,
   HMRChannel,
+  HotChannelListener,
   HotChannel,
   ServerHotChannel,
   HotChannelClient,

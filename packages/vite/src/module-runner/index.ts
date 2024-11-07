@@ -3,19 +3,21 @@
 export { EvaluatedModules, type EvaluatedModuleNode } from './evaluatedModules'
 export { ModuleRunner } from './runner'
 export { ESModulesEvaluator } from './esmEvaluator'
-export { RemoteRunnerTransport } from './runnerTransport'
 
-export type { RunnerTransport } from './runnerTransport'
-export type { HMRLogger, HMRConnection } from '../shared/hmr'
+export { createWebSocketModuleRunnerTransport } from '../shared/moduleRunnerTransport'
+
+export type { FetchFunctionOptions, FetchResult } from '../shared/invokeMethods'
+export type {
+  ModuleRunnerTransportHandlers,
+  ModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
+export type { HMRLogger } from '../shared/hmr'
 export type {
   ModuleEvaluator,
   ModuleRunnerContext,
-  FetchResult,
   FetchFunction,
-  FetchFunctionOptions,
   ResolvedResult,
   SSRImportMetadata,
-  ModuleRunnerHMRConnection,
   ModuleRunnerImportMeta,
   ModuleRunnerOptions,
   ModuleRunnerHmr,
