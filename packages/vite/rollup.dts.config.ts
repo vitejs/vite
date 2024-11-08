@@ -18,8 +18,8 @@ const external = [
   /^vite\//,
   'rollup/parseAst',
   ...Object.keys(pkg.dependencies),
-  // lightningcss types are bundled
-  ...Object.keys(pkg.devDependencies).filter((d) => d !== 'lightningcss'),
+  ...Object.keys(pkg.peerDependencies),
+  ...Object.keys(pkg.devDependencies),
 ]
 
 export default defineConfig({
