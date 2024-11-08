@@ -94,6 +94,7 @@ function createSharedNodePlugins({
       // Since ws is not that perf critical for us, just ignore these deps.
       ignore: ['bufferutil', 'utf-8-validate'],
       sourceMap: false,
+      strictRequires: 'auto',
     }),
     json(),
   ]
@@ -108,13 +109,10 @@ const nodeConfig = defineConfig({
   },
   external: [
     /^vite\//,
-    'lightningcss',
     'rollup/parseAst',
-    // postcss-load-config
-    'yaml',
-    'jiti',
-    /^tsx(\/|$)/,
+    /^tsx\//,
     ...Object.keys(pkg.dependencies),
+    ...Object.keys(pkg.peerDependencies),
   ],
   plugins: [
     // Some deps have try...catch require of optional deps, but rollup will
@@ -197,14 +195,10 @@ const cjsConfig = defineConfig({
     publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts'),
   },
   output: {
-    dir: './dist',
+    ...sharedNodeOptions.output,
     entryFileNames: `node-cjs/[name].cjs`,
     chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
-    exports: 'named',
     format: 'cjs',
-    externalLiveBindings: false,
-    freeze: false,
-    sourcemap: false,
   },
   external: Object.keys(pkg.dependencies),
   plugins: [...createSharedNodePlugins({}), bundleSizeLimit(175)],
@@ -297,14 +291,15 @@ function cjsPatchPlugin(): Plugin {
   const cjsPatch = `
 import { createRequire as __cjs_createRequire } from 'node:module';
 
-const require = __cjs_createRequire(import.meta.url);
-const __require = require;
+const __require = __cjs_createRequire(import.meta.url);
 `.trimStart()
 
   return {
     name: 'cjs-chunk-patch',
     renderChunk(code, chunk) {
       if (!chunk.fileName.includes('chunks/dep-')) return
+      if (!code.includes('__require')) return
+
       const match = /^(?:import[\s\S]*?;\s*)+/.exec(code)
       const index = match ? match.index! + match[0].length : 0
       const s = new MagicString(code)
