@@ -348,43 +348,48 @@ export interface ResolvedBuildOptions
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
-export const buildEnvironmentOptionsDefaults = Object.freeze({
-  target: 'modules',
-  /** @deprecated */
-  polyfillModulePreload: true,
-  modulePreload: true,
-  outDir: 'dist',
-  assetsDir: 'assets',
-  assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
-  cssCodeSplit: true,
-  // cssTarget
-  // cssMinify
-  sourcemap: false,
-  minify: 'esbuild',
-  terserOptions: {},
-  rollupOptions: {},
-  commonjsOptions: {
-    include: [/node_modules/],
-    extensions: ['.js', '.cjs'],
-  },
-  dynamicImportVarsOptions: {
-    warnOnError: true,
-    exclude: [/node_modules/],
-  },
-  write: true,
-  emptyOutDir: true,
-  copyPublicDir: true,
-  manifest: false,
-  lib: false,
-  ssr: false,
-  ssrManifest: false,
-  ssrEmitAssets: false,
-  // emitAssets
-  reportCompressedSize: true,
-  chunkSizeWarningLimit: 500,
-  watch: null,
-  // createEnvironment
-})
+const getBuildEnvironmentOptionsDefaults = () =>
+  ({
+    target: 'modules',
+    /** @deprecated */
+    polyfillModulePreload: true,
+    modulePreload: true,
+    outDir: 'dist',
+    assetsDir: 'assets',
+    assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
+    cssCodeSplit: true,
+    // cssTarget
+    // cssMinify
+    sourcemap: false,
+    minify: 'esbuild',
+    terserOptions: {},
+    rollupOptions: {},
+    commonjsOptions: {
+      include: [/node_modules/],
+      extensions: ['.js', '.cjs'],
+    },
+    dynamicImportVarsOptions: {
+      warnOnError: true,
+      exclude: [/node_modules/],
+    },
+    write: true,
+    emptyOutDir: true,
+    copyPublicDir: true,
+    manifest: false,
+    lib: false,
+    ssr: false,
+    ssrManifest: false,
+    ssrEmitAssets: false,
+    // emitAssets
+    reportCompressedSize: true,
+    chunkSizeWarningLimit: 500,
+    watch: null,
+    // createEnvironment
+  }) satisfies BuildEnvironmentOptions
+
+export const buildEnvironmentOptionsDefaults = Object.freeze(
+  getBuildEnvironmentOptionsDefaults(),
+)
 
 export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
@@ -410,7 +415,8 @@ export function resolveBuildEnvironmentOptions(
 
   const merged = mergeWithDefaults(
     {
-      ...buildEnvironmentOptionsDefaults,
+      // NOTE: we need to clone the value here to avoid mutating the defaults
+      ...getBuildEnvironmentOptionsDefaults(),
       cssCodeSplit: !raw.lib,
       minify: consumer === 'server' ? false : 'esbuild',
       ssr: consumer === 'server',
