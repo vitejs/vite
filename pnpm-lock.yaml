@@ -5988,20 +5988,20 @@ packages:
       ts-node:
         optional: true
 
-  postcss-modules-extract-imports@3.0.0:
-    resolution: {integrity: sha512-bdHleFnP3kZ4NYDhuGlVK+CMrQ/pqUm8bx/oGL93K6gVwiclvX5x0n76fYMKuIGKzlABOy13zsvqjb0f92TEXw==}
+  postcss-modules-extract-imports@3.1.0:
+    resolution: {integrity: sha512-k3kNe0aNFQDAZGbin48pL2VNidTF0w4/eASDsxlyspobzU3wZQLOGj7L9gfRe0Jo9/4uud09DsjFNH7winGv8Q==}
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
       postcss: ^8.1.0
 
-  postcss-modules-local-by-default@4.0.0:
-    resolution: {integrity: sha512-sT7ihtmGSF9yhm6ggikHdV0hlziDTX7oFoXtuVWeDd3hHObNkcHRo9V3yg7vCAY7cONyxJC/XXCmmiHHcvX7bQ==}
+  postcss-modules-local-by-default@4.0.5:
+    resolution: {integrity: sha512-6MieY7sIfTK0hYfafw1OMEG+2bg8Q1ocHCpoWLqOKj3JXlKu4G7btkmM/B7lFubYkYWmRSPLZi5chid63ZaZYw==}
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
       postcss: ^8.1.0
 
-  postcss-modules-scope@3.0.0:
-    resolution: {integrity: sha512-hncihwFA2yPath8oZ15PZqvWGkWf+XUfQgUGamS4LqoP1anQLOsOJw0vr7J7IwLpoY9fatA2qiGUGmuZL0Iqlg==}
+  postcss-modules-scope@3.2.0:
+    resolution: {integrity: sha512-oq+g1ssrsZOsx9M96c5w8laRmvEu9C3adDSjI8oTcbfkrTE8hx/zfyobUoWIxaKPO8bt6S62kxpw5GqypEw1QQ==}
     engines: {node: ^10 || ^12 || >= 14}
     peerDependencies:
       postcss: ^8.1.0
@@ -11850,18 +11850,18 @@ snapshots:
       postcss: 8.4.43
       ts-node: 10.9.2(@types/node@20.16.3)(typescript@5.5.3)
 
-  postcss-modules-extract-imports@3.0.0(postcss@8.4.43):
+  postcss-modules-extract-imports@3.1.0(postcss@8.4.43):
     dependencies:
       postcss: 8.4.43
 
-  postcss-modules-local-by-default@4.0.0(postcss@8.4.43):
+  postcss-modules-local-by-default@4.0.5(postcss@8.4.43):
     dependencies:
       icss-utils: 5.1.0(postcss@8.4.43)
       postcss: 8.4.43
       postcss-selector-parser: 6.1.1
       postcss-value-parser: 4.2.0
 
-  postcss-modules-scope@3.0.0(postcss@8.4.43):
+  postcss-modules-scope@3.2.0(postcss@8.4.43):
     dependencies:
       postcss: 8.4.43
       postcss-selector-parser: 6.1.1
@@ -11877,9 +11877,9 @@ snapshots:
       icss-utils: 5.1.0(postcss@8.4.43)
       lodash.camelcase: 4.3.0
       postcss: 8.4.43
-      postcss-modules-extract-imports: 3.0.0(postcss@8.4.43)
-      postcss-modules-local-by-default: 4.0.0(postcss@8.4.43)
-      postcss-modules-scope: 3.0.0(postcss@8.4.43)
+      postcss-modules-extract-imports: 3.1.0(postcss@8.4.43)
+      postcss-modules-local-by-default: 4.0.5(postcss@8.4.43)
+      postcss-modules-scope: 3.2.0(postcss@8.4.43)
       postcss-modules-values: 4.0.0(postcss@8.4.43)
       string-hash: 1.1.3
 
