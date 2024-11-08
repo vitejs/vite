@@ -1070,6 +1070,23 @@ function backwardCompatibleWorkerPlugins(plugins: any) {
   return []
 }
 
+function deepClone<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((v) => deepClone(v)) as T
+  }
+  if (isObject(value)) {
+    const cloned: Record<string, any> = {}
+    for (const key in value) {
+      cloned[key] = deepClone(value[key])
+    }
+    return cloned as T
+  }
+  if (typeof value === 'function') {
+    return value as T
+  }
+  return structuredClone(value)
+}
+
 type MaybeFallback<D, V> = undefined extends V ? Exclude<V, undefined> | D : V
 
 type MergeWithDefaultsResult<D, V> =
@@ -1097,7 +1114,8 @@ export function mergeWithDefaults<
   D extends Record<string, any>,
   V extends Record<string, any>,
 >(defaults: D, values: V): MergeWithDefaultsResult<D, V> {
-  const merged: Record<string, any> = { ...defaults }
+  // NOTE: we need to clone the value here to avoid mutating the defaults
+  const merged: Record<string, any> = deepClone(defaults)
   for (const key in values) {
     const value = values[key]
     // let null to set the value (e.g. `server.watch: null`)

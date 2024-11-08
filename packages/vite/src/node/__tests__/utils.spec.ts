@@ -482,5 +482,20 @@ describe('mergeWithDefaults', () => {
         foo2: 'bar2',
       },
     })
+
+    const defaults = {
+      object: {},
+      array: [],
+      regex: /foo/,
+      function: () => {},
+    }
+    const actual2 = mergeWithDefaults(defaults, {})
+    expect(actual2.object).toStrictEqual({})
+    expect(actual2.array).toStrictEqual([])
+    expect(actual2.regex).toStrictEqual(/foo/)
+    expect(actual2.function).toStrictEqual(expect.any(Function))
+    // cloned
+    expect(actual2.object).not.toBe(defaults.object)
+    expect(actual2.array).not.toBe(defaults.array)
   })
 })
