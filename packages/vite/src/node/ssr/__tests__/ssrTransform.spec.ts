@@ -1205,3 +1205,25 @@ console.log(bar)
       "
   `)
 })
+
+test('parse error', async () => {
+  try {
+    await ssrTransform(`some bad code`, null, '/file.js', '')
+    expect.unreachable()
+  } catch (e) {
+    expect(e).toMatchInlineSnapshot(`[RollupError: Expected ';', '}' or <eof>]`)
+    expect({ ...e }).toMatchInlineSnapshot(`
+      {
+        "code": "PARSE_ERROR",
+        "frame": "1  |  some bad code
+         |       ^",
+        "loc": {
+          "column": 6,
+          "file": "/file.js",
+          "line": 1,
+        },
+        "pos": 5,
+      }
+    `)
+  }
+})
