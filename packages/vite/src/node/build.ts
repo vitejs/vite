@@ -356,11 +356,11 @@ export const buildEnvironmentOptionsDefaults = Object.freeze({
   outDir: 'dist',
   assetsDir: 'assets',
   assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
-  cssCodeSplit: true,
+  // cssCodeSplit
   // cssTarget
   // cssMinify
   sourcemap: false,
-  minify: 'esbuild',
+  // minify
   terserOptions: {},
   rollupOptions: {},
   commonjsOptions: {
@@ -376,7 +376,7 @@ export const buildEnvironmentOptionsDefaults = Object.freeze({
   copyPublicDir: true,
   manifest: false,
   lib: false,
-  ssr: false,
+  // ssr
   ssrManifest: false,
   ssrEmitAssets: false,
   // emitAssets
