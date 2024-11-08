@@ -19,7 +19,12 @@ import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { parseAstAsync as rollupParseAstAsync } from 'rollup/parseAst'
 import type { TransformResult } from '../server/transformRequest'
-import { combineSourcemaps, isDefined } from '../utils'
+import {
+  combineSourcemaps,
+  generateCodeFrame,
+  isDefined,
+  numberToPos,
+} from '../utils'
 import { isJSONRequest } from '../plugins/json'
 import type { DefineImportMetadata } from '../../shared/ssrTransform'
 
@@ -81,15 +86,12 @@ async function ssrTransformScript(
   try {
     ast = await rollupParseAstAsync(code)
   } catch (err) {
-    if (!err.loc || !err.loc.line) throw err
-    const line = err.loc.line
-    throw new Error(
-      `Parse failure: ${
-        err.message
-      }\nAt file: ${url}\nContents of line ${line}: ${
-        code.split('\n')[line - 1]
-      }`,
-    )
+    if (err.code === 'PARSE_ERROR' && typeof err.pos === 'number') {
+      err.loc = numberToPos(code, err.pos)
+      err.loc.file = url
+      err.frame = generateCodeFrame(code, err.pos)
+    }
+    throw err
   }
 
   let uid = 0
