@@ -472,7 +472,7 @@ describe('mergeWithDefaults', () => {
         },
       },
     )
-    expect(actual).toEqual({
+    expect(actual).toStrictEqual({
       useDefault: 1,
       useValueIfNull: null,
       useValueIfNoDefault: 'foo',
