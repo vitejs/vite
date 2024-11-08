@@ -372,7 +372,7 @@ export const buildEnvironmentOptionsDefaults = Object.freeze({
     exclude: [/node_modules/],
   },
   write: true,
-  emptyOutDir: true,
+  // emptyOutDir
   copyPublicDir: true,
   manifest: false,
   lib: false,
@@ -438,6 +438,7 @@ export function resolveBuildEnvironmentOptions(
 
   const resolved: ResolvedBuildEnvironmentOptions = {
     ...merged,
+    emptyOutDir: null, // set later depending on rollupOptions.output
     cssTarget: merged.cssTarget ?? merged.target,
     cssMinify:
       merged.cssMinify ?? (consumer === 'server' ? 'esbuild' : !!merged.minify),
