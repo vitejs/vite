@@ -33,7 +33,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from './config'
-import { configDefaults, resolveConfig } from './config'
+import { resolveConfig } from './config'
 import type { PartialEnvironment } from './baseEnvironment'
 import { buildReporterPlugin } from './plugins/reporter'
 import { buildEsbuildPlugin } from './plugins/esbuild'
@@ -1513,12 +1513,18 @@ async function defaultBuildApp(builder: ViteBuilder): Promise<void> {
   }
 }
 
+export const builderOptionsDefaults = Object.freeze({
+  sharedConfigBuild: false,
+  sharedPlugins: false,
+  // buildApp
+})
+
 export function resolveBuilderOptions(
   options: BuilderOptions | undefined,
 ): ResolvedBuilderOptions | undefined {
   if (!options) return
   return mergeWithDefaults(
-    { ...configDefaults.builder, buildApp: defaultBuildApp },
+    { ...builderOptionsDefaults, buildApp: defaultBuildApp },
     options,
   )
 }

@@ -40,6 +40,7 @@ import type {
 } from './build'
 import {
   buildEnvironmentOptionsDefaults,
+  builderOptionsDefaults,
   resolveBuildEnvironmentOptions,
   resolveBuilderOptions,
 } from './build'
@@ -644,11 +645,7 @@ export const configDefaults = Object.freeze({
   // esbuild
   assetsInclude: undefined,
   /** @experimental */
-  builder: {
-    sharedConfigBuild: false,
-    sharedPlugins: false,
-    // buildApp
-  },
+  builder: builderOptionsDefaults,
   server: serverConfigDefaults,
   preview: {
     port: DEFAULT_PREVIEW_PORT,
