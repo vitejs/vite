@@ -40,6 +40,7 @@ export default defineConfig({
           resolve(__dirname, 'relative-input.html'),
         ),
       },
+      external: ['/external-path-by-rollup-options.js'],
     },
   },
 
@@ -228,6 +229,26 @@ ${
         },
       },
     },
+    {
+      name: 'append-external-path-by-rollup-options',
+      apply: 'build', // this does not work in serve
+      transformIndexHtml: {
+        order: 'pre',
+        handler(_, ctx) {
+          if (!ctx.filename.endsWith('html/index.html')) return
+          return [
+            {
+              tag: 'script',
+              attrs: {
+                type: 'module',
+                src: '/external-path-by-rollup-options.js',
+              },
+              injectTo: 'body',
+            },
+          ]
+        },
+      },
+    },
     serveExternalPathPlugin(),
   ],
 })
@@ -241,6 +262,11 @@ function serveExternalPathPlugin() {
     } else if (req.url === '/external-path.css') {
       res.setHeader('Content-Type', 'text/css')
       res.end('.external-path{color:red}')
+    } else if (req.url === '/external-path-by-rollup-options.js') {
+      res.setHeader('Content-Type', 'application/javascript')
+      res.end(
+        'document.querySelector(".external-path-by-rollup-options").textContent = "works"',
+      )
     } else {
       next()
     }

@@ -466,17 +466,22 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 inlineModuleIndex++
                 if (url && !isExcludedUrl(url) && !isPublicFile) {
                   setModuleSideEffectPromises.push(
-                    this.resolve(url, id)
-                      .then((resolved) => {
-                        if (!resolved) {
-                          return Promise.reject()
-                        }
-                        return this.load(resolved)
-                      })
-                      .then((mod) => {
-                        // set this to keep the module even if `treeshake.moduleSideEffects=false` is set
-                        mod.moduleSideEffects = true
-                      }),
+                    this.resolve(url, id).then((resolved) => {
+                      if (!resolved) {
+                        return Promise.reject(
+                          new Error(`Failed to resolve ${url} from ${id}`),
+                        )
+                      }
+                      // set moduleSideEffects to keep the module even if `treeshake.moduleSideEffects=false` is set
+                      const moduleInfo = this.getModuleInfo(resolved.id)
+                      if (moduleInfo) {
+                        moduleInfo.moduleSideEffects = true
+                      } else if (!resolved.external) {
+                        return this.load(resolved).then((mod) => {
+                          mod.moduleSideEffects = true
+                        })
+                      }
+                    }),
                   )
                   // <script type="module" src="..."/>
                   // add it as an import
@@ -715,23 +720,28 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
       const getImportedChunks = (
         chunk: OutputChunk,
         seen: Set<string> = new Set(),
-      ): OutputChunk[] => {
-        const chunks: OutputChunk[] = []
+      ): (OutputChunk | string)[] => {
+        const chunks: (OutputChunk | string)[] = []
         chunk.imports.forEach((file) => {
           const importee = bundle[file]
-          if (importee?.type === 'chunk' && !seen.has(file)) {
-            seen.add(file)
+          if (importee) {
+            if (importee.type === 'chunk' && !seen.has(file)) {
+              seen.add(file)
 
-            // post-order traversal
-            chunks.push(...getImportedChunks(importee, seen))
-            chunks.push(importee)
+              // post-order traversal
+              chunks.push(...getImportedChunks(importee, seen))
+              chunks.push(importee)
+            }
+          } else {
+            // external imports
+            chunks.push(file)
           }
         })
         return chunks
       }
 
       const toScriptTag = (
-        chunk: OutputChunk,
+        chunkOrUrl: OutputChunk | string,
         toOutputPath: (filename: string) => string,
         isAsync: boolean,
       ): HtmlTagDescriptor => ({
@@ -746,7 +756,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
           // https://developer.chrome.com/blog/modulepreload/#ok-so-why-doesnt-link-relpreload-work-for-modules:~:text=For%20%3Cscript%3E,of%20other%20modules.
           // Now `<script type="module">` uses `same origin`: https://github.com/whatwg/html/pull/3656#:~:text=Module%20scripts%20are%20always%20fetched%20with%20credentials%20mode%20%22same%2Dorigin%22%20by%20default%20and%20can%20no%20longer%0Ause%20%22omit%22
           crossorigin: true,
-          src: toOutputPath(chunk.fileName),
+          src:
+            typeof chunkOrUrl === 'string'
+              ? chunkOrUrl
+              : toOutputPath(chunkOrUrl.fileName),
         },
       })
 
@@ -863,7 +876,9 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
               const resolveDependencies =
                 typeof modulePreload === 'object' &&
                 modulePreload.resolveDependencies
-              const importsFileNames = imports.map((chunk) => chunk.fileName)
+              const importsFileNames = imports
+                .filter((chunkOrUrl) => typeof chunkOrUrl !== 'string')
+                .map((chunk) => chunk.fileName)
               const resolvedDeps = resolveDependencies
                 ? resolveDependencies(chunk.fileName, importsFileNames, {
                     hostId: relativeUrlPath,
