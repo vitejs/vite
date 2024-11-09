@@ -22,6 +22,7 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             })
+            console.log(pr.head.sha)
             return {
               num: context.issue.number,
               branchName: pr.head.ref,
@@ -209,7 +210,6 @@ jobs:
         with:
           # github-token: ${{ steps.generate-token.outputs.token }}
           script: |
-            console.log(typeof process.env.COLLISION)
             const comment = process.env.COMMENT.trim()
             const prData = ${{ steps.get-pr-data.outputs.result }}
 
