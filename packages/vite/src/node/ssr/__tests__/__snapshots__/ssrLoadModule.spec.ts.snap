@@ -24,7 +24,7 @@ exports[`parse error 2`] = `
   "frame": "1  |  invalid code
    |          ^
 2  |  ",
-  "id": "",
+  "id": "/fixtures/errors/syntax-error.js",
   "loc": {
     "column": 9,
     "file": "/fixtures/errors/syntax-error.js",
@@ -58,7 +58,7 @@ exports[`parse error 4`] = `
   "frame": "1  |  invalid code
    |          ^
 2  |  ",
-  "id": "",
+  "id": "/fixtures/errors/syntax-error.js",
   "loc": {
     "column": 9,
     "file": "/fixtures/errors/syntax-error.js",
