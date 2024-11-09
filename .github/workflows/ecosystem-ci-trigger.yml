@@ -205,11 +205,10 @@ jobs:
         id: trigger
         env:
           COMMENT: ${{ github.event.comment.body }}
-          COLLISION: ${{ env.COLLISION }}
         with:
           # github-token: ${{ steps.generate-token.outputs.token }}
           script: |
-            console.log(process.env.COLLISION)
+            console.log(typeof process.env.COLLISION)
             const comment = process.env.COMMENT.trim()
             const prData = ${{ steps.get-pr-data.outputs.result }}
 
@@ -224,7 +223,7 @@ jobs:
                 prNumber: '' + prData.num,
                 branchName: prData.branchName,
                 repo: prData.repo,
-                commit: process.env.COLLISION !== 'false' ? prData.commit : '',
+                commit: process.env.COLLISION === 'false' ? prData.commit : '',
                 suite: suite === '' ? '-' : suite
               }
             })
