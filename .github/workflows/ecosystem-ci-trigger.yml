@@ -22,7 +22,7 @@ jobs:
               repo: context.repo.repo,
               pull_number: context.issue.number
             })
-            console.log(pr.head.sha)
+            core.setOutput('head_sha', pr.head.sha)
             return {
               num: context.issue.number,
               branchName: pr.head.ref,
@@ -193,7 +193,8 @@ jobs:
       - name: Check Commit Hash Ambiguity
         id: check_ambiguity
         run: |
-          COMMIT_SHORT=${GITHUB_SHA:0:7}
+          HEAD_SHA=${{ steps.get-pr-data.outputs.head_sha }}
+          COMMIT_SHORT=${HEAD_SHA:0:7}
 
           echo $COMMIT_SHORT
           if git show "$COMMIT_SHORT"; then
