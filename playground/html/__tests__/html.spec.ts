@@ -117,12 +117,24 @@ describe('main', () => {
       expect(serverLogs).not.toEqual(
         expect.arrayContaining([
           expect.stringMatching(
-            'can\'t be bundled without type="module" attribute',
+            /"\/external-path\.js".*can't be bundled without type="module" attribute/,
           ),
         ]),
       )
     }
   })
+
+  test.runIf(isBuild)(
+    'external paths by rollupOptions.external works',
+    async () => {
+      expect(await page.textContent('.external-path-by-rollup-options')).toBe(
+        'works',
+      )
+      expect(serverLogs).not.toEqual(
+        expect.arrayContaining([expect.stringContaining('Could not load')]),
+      )
+    },
+  )
 })
 
 describe('nested', () => {
