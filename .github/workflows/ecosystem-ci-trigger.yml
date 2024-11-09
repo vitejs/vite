@@ -194,6 +194,7 @@ jobs:
         run: |
           COMMIT_SHORT=${GITHUB_SHA:0:7}
 
+          echo $COMMIT_SHORT
           if git show "$COMMIT_SHORT"; then
             echo "COLLISION=false" >> $GITHUB_ENV
           else
