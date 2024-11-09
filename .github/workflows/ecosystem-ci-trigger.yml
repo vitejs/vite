@@ -9,7 +9,7 @@ on:
 jobs:
   trigger:
     runs-on: ubuntu-latest
-    if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
+    # if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
     steps:
       - name: Get PR Data
         uses: actions/github-script@v7
