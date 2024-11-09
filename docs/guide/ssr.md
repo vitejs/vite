@@ -152,7 +152,7 @@ app.use('*', async (req, res, next) => {
     //
     //   NB: It's better to resort to using a function as a replacement
     //   parameter because if it was just a bare string it will potentially
-    //   mess up the html output because it treats dollar as a replacement 
+    //   mess up the html output because it treats dollar as a replacement
     //   pattern and specifying a function makes `replace` ignore them
     const html = template.replace(`<!--ssr-outlet-->`, () => appHtml)
 
