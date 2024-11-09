@@ -149,7 +149,12 @@ app.use('*', async (req, res, next) => {
     const appHtml = await render(url)
 
     // 5. Inject the app-rendered HTML into the template.
-    const html = template.replace(`<!--ssr-outlet-->`, appHtml)
+    //
+    //   NB: It's better to resort to using a function as a replacement
+    //   parameter because if it was just a bare string it will potentially
+    //   mess up the html output because it treats dollar as a replacement 
+    //   pattern and specifying a function makes `replace` ignore them
+    const html = template.replace(`<!--ssr-outlet-->`, () => appHtml)
 
     // 6. Send the rendered HTML back.
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
