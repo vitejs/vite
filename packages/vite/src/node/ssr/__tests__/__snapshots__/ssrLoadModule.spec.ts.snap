@@ -21,9 +21,15 @@ Expected ";" but found "code"
 
 exports[`parse error 2`] = `
 {
-  "frame": "",
+  "frame": "1  |  invalid code
+   |          ^
+2  |  ",
   "id": "",
-  "loc": undefined,
+  "loc": {
+    "column": 9,
+    "file": "/fixtures/errors/syntax-error.js",
+    "line": 1,
+  },
   "message": "Expected ';', '}' or <eof>",
 }
 `;
@@ -49,9 +55,15 @@ Expected ";" but found "code"
 
 exports[`parse error 4`] = `
 {
-  "frame": "",
+  "frame": "1  |  invalid code
+   |          ^
+2  |  ",
   "id": "",
-  "loc": undefined,
+  "loc": {
+    "column": 9,
+    "file": "/fixtures/errors/syntax-error.js",
+    "line": 1,
+  },
   "message": "Expected ';', '}' or <eof>",
 }
 `;
