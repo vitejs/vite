@@ -195,9 +195,9 @@ jobs:
           COMMIT_SHORT=${GITHUB_SHA:0:7}
 
           if git show "$COMMIT_SHORT"; then
-            echo "COMMIT=$GITHUB_SHA" >> $GITHUB_ENV
+            echo "COLLISION=false" >> $GITHUB_ENV
           else
-            echo "COMMIT=" >> $GITHUB_ENV
+            echo "COLLISION=true" >> $GITHUB_ENV
           fi
 
       - name: Trigger Downstream Workflow
@@ -205,10 +205,11 @@ jobs:
         id: trigger
         env:
           COMMENT: ${{ github.event.comment.body }}
-          COMMIT: ${{ env.COMMIT }}
+          COLLISION: ${{ env.COLLISION }}
         with:
           # github-token: ${{ steps.generate-token.outputs.token }}
           script: |
+            console.log(process.env.COLLISION)
             const comment = process.env.COMMENT.trim()
             const prData = ${{ steps.get-pr-data.outputs.result }}
 
@@ -223,7 +224,7 @@ jobs:
                 prNumber: '' + prData.num,
                 branchName: prData.branchName,
                 repo: prData.repo,
-                commit: process.env.COMMIT,
+                commit: process.env.COLLISION !== 'false' ? prData.commit : '',
                 suite: suite === '' ? '-' : suite
               }
             })
