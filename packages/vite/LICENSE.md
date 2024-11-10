@@ -401,10 +401,10 @@ Repository: rollup/plugins
 
 ---------------------------------------
 
-## ansi-regex, bundle-name, default-browser, default-browser-id, define-lazy-prop, is-docker, is-inside-container, is-wsl, open, run-applescript, strip-ansi
+## ansi-regex, bundle-name, default-browser, default-browser-id, define-lazy-prop, is-docker, is-inside-container, is-wsl, open, run-applescript
 License: MIT
 By: Sindre Sorhus
-Repositories: chalk/ansi-regex, sindresorhus/bundle-name, sindresorhus/default-browser, sindresorhus/default-browser-id, sindresorhus/define-lazy-prop, sindresorhus/is-docker, sindresorhus/is-inside-container, sindresorhus/is-wsl, sindresorhus/open, sindresorhus/run-applescript, chalk/strip-ansi
+Repositories: chalk/ansi-regex, sindresorhus/bundle-name, sindresorhus/default-browser, sindresorhus/default-browser-id, sindresorhus/define-lazy-prop, sindresorhus/is-docker, sindresorhus/is-inside-container, sindresorhus/is-wsl, sindresorhus/open, sindresorhus/run-applescript
 
 > MIT License
 > 
