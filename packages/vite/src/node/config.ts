@@ -1689,6 +1689,7 @@ export async function loadConfigFromFile(
     return {
       path: normalizePath(resolvedPath),
       config,
+      // TODO: use hot to reload the config instead?
       dependencies: [],
     }
   } catch (e) {
