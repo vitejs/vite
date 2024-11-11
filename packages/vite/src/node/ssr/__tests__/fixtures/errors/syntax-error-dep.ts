@@ -1,0 +1,1 @@
+import './syntax-error.ts'

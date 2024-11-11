@@ -213,6 +213,7 @@ export const normalizeHotChannel = (
           name: error.name,
           message: error.message,
           stack: error.stack,
+          ...error, // preserve enumerable properties such as RollupError.loc, frame, plugin
         },
       }
     }

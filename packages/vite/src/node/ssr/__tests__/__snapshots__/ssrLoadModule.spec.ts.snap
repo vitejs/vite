@@ -1,0 +1,57 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`parse error 1`] = `
+{
+  "frame": "
+Expected ";" but found "code"
+1  |  invalid code
+   |          ^
+2  |  
+",
+  "id": "<root>/fixtures/errors/syntax-error.ts",
+  "loc": {
+    "column": 8,
+    "file": "<root>/fixtures/errors/syntax-error.ts",
+    "line": 1,
+  },
+  "message": "Transform failed with 1 error:
+<root>/fixtures/errors/syntax-error.ts:1:8: ERROR: Expected ";" but found "code"",
+}
+`;
+
+exports[`parse error 2`] = `
+{
+  "frame": "",
+  "id": "",
+  "loc": undefined,
+  "message": "Expected ';', '}' or <eof>",
+}
+`;
+
+exports[`parse error 3`] = `
+{
+  "frame": "
+Expected ";" but found "code"
+1  |  invalid code
+   |          ^
+2  |  
+",
+  "id": "<root>/fixtures/errors/syntax-error.ts",
+  "loc": {
+    "column": 8,
+    "file": "<root>/fixtures/errors/syntax-error.ts",
+    "line": 1,
+  },
+  "message": "Transform failed with 1 error:
+<root>/fixtures/errors/syntax-error.ts:1:8: ERROR: Expected ";" but found "code"",
+}
+`;
+
+exports[`parse error 4`] = `
+{
+  "frame": "",
+  "id": "",
+  "loc": undefined,
+  "message": "Expected ';', '}' or <eof>",
+}
+`;
