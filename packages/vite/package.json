@@ -87,7 +87,7 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.24.0",
-    "postcss": "^8.4.47",
+    "postcss": "^8.4.48",
     "rollup": "^4.23.0"
   },
   "devDependencies": {
@@ -109,7 +109,7 @@
     "connect": "^3.7.0",
     "convert-source-map": "^2.0.0",
     "cors": "^2.8.5",
-    "cross-spawn": "^7.0.3",
+    "cross-spawn": "^7.0.5",
     "debug": "^4.3.7",
     "dep-types": "link:./src/types",
     "dotenv": "^16.4.5",
