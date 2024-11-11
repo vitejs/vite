@@ -1,13 +1,9 @@
 import fs from 'node:fs'
-import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { pathToFileURL } from 'node:url'
-import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
-import { builtinModules, createRequire } from 'node:module'
+import { builtinModules } from 'node:module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
-import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
 import type { AnymatchFn } from '../types/anymatch'
@@ -61,11 +57,8 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
-  isBuiltin,
   isExternalUrl,
-  isFilePathESM,
   isInNodeModules,
-  isNodeBuiltin,
   isObject,
   isParentDirectory,
   mergeAlias,
@@ -86,7 +79,6 @@ import type {
   InternalResolveOptions,
   ResolveOptions,
 } from './plugins/resolve'
-import { tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
@@ -98,9 +90,9 @@ import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
+import { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
 
 const debug = createDebugger('vite:config', { depth: 10 })
-const promisifiedRealpath = promisify(fs.realpath)
 
 export interface ConfigEnv {
   /**
@@ -1666,17 +1658,27 @@ export async function loadConfigFromFile(
     return null
   }
 
-  const isESM =
-    typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
-
   try {
-    const bundled = await bundleConfigFile(resolvedPath, isESM)
-    const userConfig = await loadConfigFromBundledFile(
-      resolvedPath,
-      bundled.code,
-      isESM,
+    // console.time('config')
+    const environment = new DevEnvironment(
+      'config',
+      await resolveConfig({ configFile: false }, 'serve'),
+      {
+        options: {
+          consumer: 'server',
+          dev: {
+            moduleRunnerTransform: true,
+          },
+        },
+        hot: false,
+      },
     )
-    debug?.(`bundled config file loaded in ${getTime()}`)
+    await environment.init()
+    const runner = createServerModuleRunner(environment)
+    const { default: userConfig } = (await runner.import(resolvedPath)) as {
+      default: UserConfigExport
+    }
+    debug?.(`config file loaded in ${getTime()}`)
 
     const config = await (typeof userConfig === 'function'
       ? userConfig(configEnv)
@@ -1687,7 +1689,7 @@ export async function loadConfigFromFile(
     return {
       path: normalizePath(resolvedPath),
       config,
-      dependencies: bundled.dependencies,
+      dependencies: [],
     }
   } catch (e) {
     createLogger(logLevel, { customLogger }).error(
@@ -1697,209 +1699,8 @@ export async function loadConfigFromFile(
       },
     )
     throw e
-  }
-}
-
-async function bundleConfigFile(
-  fileName: string,
-  isESM: boolean,
-): Promise<{ code: string; dependencies: string[] }> {
-  const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
-    .default
-
-  const dirnameVarName = '__vite_injected_original_dirname'
-  const filenameVarName = '__vite_injected_original_filename'
-  const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
-  const result = await build({
-    absWorkingDir: process.cwd(),
-    entryPoints: [fileName],
-    write: false,
-    target: [`node${process.versions.node}`],
-    platform: 'node',
-    bundle: true,
-    format: isESM ? 'esm' : 'cjs',
-    mainFields: ['main'],
-    sourcemap: 'inline',
-    metafile: true,
-    define: {
-      __dirname: dirnameVarName,
-      __filename: filenameVarName,
-      'import.meta.url': importMetaUrlVarName,
-      'import.meta.dirname': dirnameVarName,
-      'import.meta.filename': filenameVarName,
-    },
-    plugins: [
-      {
-        name: 'externalize-deps',
-        setup(build) {
-          const packageCache = new Map()
-          const resolveByViteResolver = (
-            id: string,
-            importer: string,
-            isRequire: boolean,
-          ) => {
-            return tryNodeResolve(id, importer, {
-              root: path.dirname(fileName),
-              isBuild: true,
-              isProduction: true,
-              preferRelative: false,
-              tryIndex: true,
-              mainFields: [],
-              conditions: [
-                'node',
-                ...(isModuleSyncConditionEnabled ? ['module-sync'] : []),
-              ],
-              externalConditions: [],
-              external: [],
-              noExternal: [],
-              dedupe: [],
-              extensions: configDefaults.resolve.extensions,
-              preserveSymlinks: false,
-              packageCache,
-              isRequire,
-            })?.id
-          }
-
-          // externalize bare imports
-          build.onResolve(
-            { filter: /^[^.].*/ },
-            async ({ path: id, importer, kind }) => {
-              if (
-                kind === 'entry-point' ||
-                path.isAbsolute(id) ||
-                isNodeBuiltin(id)
-              ) {
-                return
-              }
-
-              // With the `isNodeBuiltin` check above, this check captures if the builtin is a
-              // non-node built-in, which esbuild doesn't know how to handle. In that case, we
-              // externalize it so the non-node runtime handles it instead.
-              if (isBuiltin(id)) {
-                return { external: true }
-              }
-
-              const isImport = isESM || kind === 'dynamic-import'
-              let idFsPath: string | undefined
-              try {
-                idFsPath = resolveByViteResolver(id, importer, !isImport)
-              } catch (e) {
-                if (!isImport) {
-                  let canResolveWithImport = false
-                  try {
-                    canResolveWithImport = !!resolveByViteResolver(
-                      id,
-                      importer,
-                      false,
-                    )
-                  } catch {}
-                  if (canResolveWithImport) {
-                    throw new Error(
-                      `Failed to resolve ${JSON.stringify(
-                        id,
-                      )}. This package is ESM only but it was tried to load by \`require\`. See https://vite.dev/guide/troubleshooting.html#this-package-is-esm-only for more details.`,
-                    )
-                  }
-                }
-                throw e
-              }
-              if (idFsPath && isImport) {
-                idFsPath = pathToFileURL(idFsPath).href
-              }
-              return {
-                path: idFsPath,
-                external: true,
-              }
-            },
-          )
-        },
-      },
-      {
-        name: 'inject-file-scope-variables',
-        setup(build) {
-          build.onLoad({ filter: /\.[cm]?[jt]s$/ }, async (args) => {
-            const contents = await fsp.readFile(args.path, 'utf-8')
-            const injectValues =
-              `const ${dirnameVarName} = ${JSON.stringify(
-                path.dirname(args.path),
-              )};` +
-              `const ${filenameVarName} = ${JSON.stringify(args.path)};` +
-              `const ${importMetaUrlVarName} = ${JSON.stringify(
-                pathToFileURL(args.path).href,
-              )};`
-
-            return {
-              loader: args.path.endsWith('ts') ? 'ts' : 'js',
-              contents: injectValues + contents,
-            }
-          })
-        },
-      },
-    ],
-  })
-  const { text } = result.outputFiles[0]
-  return {
-    code: text,
-    dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
-  }
-}
-
-interface NodeModuleWithCompile extends NodeModule {
-  _compile(code: string, filename: string): any
-}
-
-const _require = createRequire(import.meta.url)
-async function loadConfigFromBundledFile(
-  fileName: string,
-  bundledCode: string,
-  isESM: boolean,
-): Promise<UserConfigExport> {
-  // for esm, before we can register loaders without requiring users to run node
-  // with --experimental-loader themselves, we have to do a hack here:
-  // write it to disk, load it with native Node ESM, then delete the file.
-  if (isESM) {
-    const nodeModulesDir = findNearestNodeModules(path.dirname(fileName))
-    if (nodeModulesDir) {
-      await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
-        recursive: true,
-      })
-    }
-    const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
-    const tempFileName = nodeModulesDir
-      ? path.resolve(
-          nodeModulesDir,
-          `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
-        )
-      : `${fileName}.${hash}.mjs`
-    await fsp.writeFile(tempFileName, bundledCode)
-    try {
-      return (await import(pathToFileURL(tempFileName).href)).default
-    } finally {
-      fs.unlink(tempFileName, () => {}) // Ignore errors
-    }
-  }
-  // for cjs, we can register a custom loader via `_require.extensions`
-  else {
-    const extension = path.extname(fileName)
-    // We don't use fsp.realpath() here because it has the same behaviour as
-    // fs.realpath.native. On some Windows systems, it returns uppercase volume
-    // letters (e.g. "C:\") while the Node.js loader uses lowercase volume letters.
-    // See https://github.com/vitejs/vite/issues/12923
-    const realFileName = await promisifiedRealpath(fileName)
-    const loaderExt = extension in _require.extensions ? extension : '.js'
-    const defaultLoader = _require.extensions[loaderExt]!
-    _require.extensions[loaderExt] = (module: NodeModule, filename: string) => {
-      if (filename === realFileName) {
-        ;(module as NodeModuleWithCompile)._compile(bundledCode, filename)
-      } else {
-        defaultLoader(module, filename)
-      }
-    }
-    // clear cache in case of server restart
-    delete _require.cache[_require.resolve(fileName)]
-    const raw = _require(fileName)
-    _require.extensions[loaderExt] = defaultLoader
-    return raw.__esModule ? raw.default : raw
+  } finally {
+    // console.timeEnd('config')
   }
 }
 
