@@ -3,15 +3,13 @@
 /* /////////////////////// */
 
 html:has(.landing) {
+  --vp-c-bg: #101010;
+
   background-color: #101010;
 
   body {
     background-color: #101010;
   }
-}
-
-html.dark:has(.landing) {
-  --vp-c-bg: #101010;
 }
 
 .landing {
