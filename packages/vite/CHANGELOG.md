@@ -1,3 +1,8 @@
+## <small>5.4.11 (2024-11-11)</small>
+
+
+
+
 ## <small>5.4.10 (2024-10-23)</small>
 
 * fix: backport #18367,augment hash for CSS files to prevent chromium erroring by loading previous fil ([7d1a3bc](https://github.com/vitejs/vite/commit/7d1a3bcc436e1697b314bdc9d24c948664a1afb7)), closes [#18367](https://github.com/vitejs/vite/issues/18367) [#18412](https://github.com/vitejs/vite/issues/18412)
