@@ -22,6 +22,7 @@ import {
   DEFAULT_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
+  VITE_PACKAGE_DIR,
 } from './constants'
 import type {
   HookHandler,
@@ -1628,7 +1629,7 @@ async function bundleConfigFile(
           // externalize bare imports
           build.onResolve(
             { filter: /^[^.].*/ },
-            async ({ path: id, importer, kind }) => {
+            ({ path: id, importer, kind }) => {
               if (
                 kind === 'entry-point' ||
                 path.isAbsolute(id) ||
@@ -1668,12 +1669,16 @@ async function bundleConfigFile(
                 }
                 throw e
               }
-              if (idFsPath && isImport) {
+              const isExternal =
+                !idFsPath ||
+                idFsPath.includes('node_modules') ||
+                idFsPath.startsWith(VITE_PACKAGE_DIR)
+              if (idFsPath && isImport && isExternal) {
                 idFsPath = pathToFileURL(idFsPath).href
               }
               return {
                 path: idFsPath,
-                external: true,
+                external: isExternal,
               }
             },
           )
