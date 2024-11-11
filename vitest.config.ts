@@ -13,6 +13,9 @@ export default defineConfig({
       './playground/**/*.*',
       './playground-temp/**/*.*',
     ],
+    deps: {
+      moduleDirectories: ['node_modules', 'packages'],
+    },
     testTimeout: 20000,
     isolate: false,
   },

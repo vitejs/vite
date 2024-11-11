@@ -1661,17 +1661,36 @@ export async function loadConfigFromFile(
   let environment: RunnableDevEnvironment | undefined
 
   try {
-    // console.time('config')
     environment = createRunnableDevEnvironment(
       'config',
-      await resolveConfig({ configFile: false }, 'serve'),
-      {
-        options: {
-          consumer: 'server',
-          dev: {
-            moduleRunnerTransform: true,
+      await resolveConfig(
+        {
+          configFile: false,
+          environments: {
+            config: {
+              consumer: 'server',
+              dev: {
+                moduleRunnerTransform: true,
+              },
+              resolve: {
+                external: true,
+              },
+            },
           },
         },
+        'serve',
+      ),
+      {
+        // options: {
+        //   consumer: 'server',
+        //   dev: {
+        //     moduleRunnerTransform: true,
+        //   },
+        // TODO for some reason this doesn't work, only setting it the config works
+        // resolve: {
+        //   external: true,
+        // },
+        // },
         runnerOptions: {
           hmr: {
             logger: false,
@@ -1694,12 +1713,22 @@ export async function loadConfigFromFile(
     if (!isObject(config)) {
       throw new Error(`config must export or return an object.`)
     }
+    const modules = [
+      ...environment.runner.evaluatedModules.fileToModulesMap.entries(),
+    ]
     await environment.runner.close()
+    const dependencies = modules
+      .filter(([file, modules]) => {
+        const isExternal = [...modules].some(
+          (m) => !m.meta || 'externalize' in m.meta,
+        )
+        return !isExternal && file !== resolvedPath
+      })
+      .map(([file]) => file)
     return {
       path: normalizePath(resolvedPath),
       config,
-      // TODO: use hot to reload the config instead?
-      dependencies: [],
+      dependencies,
     }
   } catch (e) {
     await environment?.runner.close()
@@ -1710,8 +1739,6 @@ export async function loadConfigFromFile(
       },
     )
     throw e
-  } finally {
-    // console.timeEnd('config')
   }
 }
 
