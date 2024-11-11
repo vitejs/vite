@@ -18,7 +18,7 @@ export function loadEnv(
   mode: string,
   envDir: string,
   prefixes: string | string[] = 'VITE_',
-): Record<string, string> {
+): Record<string, string | undefined> {
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
@@ -26,7 +26,7 @@ export function loadEnv(
     )
   }
   prefixes = arraify(prefixes)
-  const env: Record<string, string> = {}
+  const env: Record<string, string | undefined> = {}
   const envFiles = getEnvFilesForMode(mode, envDir)
 
   const parsed = Object.fromEntries(
