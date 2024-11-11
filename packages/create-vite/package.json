@@ -35,7 +35,7 @@
   "devDependencies": {
     "@types/minimist": "^1.2.5",
     "@types/prompts": "^2.4.9",
-    "cross-spawn": "^7.0.3",
+    "cross-spawn": "^7.0.5",
     "minimist": "^1.2.8",
     "picocolors": "^1.1.1",
     "prompts": "^2.4.2",
