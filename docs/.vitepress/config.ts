@@ -124,6 +124,7 @@ export default defineConfig({
 
   locales: {
     root: { label: 'English' },
+    uk: { label: 'Українська', link: 'https://uk.vite.dev' },
     zh: { label: '简体中文', link: 'https://cn.vite.dev' },
     ja: { label: '日本語', link: 'https://ja.vite.dev' },
     es: { label: 'Español', link: 'https://es.vite.dev' },
