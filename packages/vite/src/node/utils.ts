@@ -1084,7 +1084,10 @@ function deepClone<T>(value: T): T {
   if (typeof value === 'function') {
     return value as T
   }
-  return structuredClone(value)
+  if (typeof value === 'object') {
+    throw new Error('Cannot deep clone non-plain object')
+  }
+  return value
 }
 
 type MaybeFallback<D, V> = undefined extends V ? Exclude<V, undefined> | D : V
