@@ -87,6 +87,7 @@ async function ssrTransformScript(
     ast = await rollupParseAstAsync(code)
   } catch (err) {
     if (err.code === 'PARSE_ERROR' && typeof err.pos === 'number') {
+      err.message = `Parse Failure: ${err.message}`
       err.id = url
       err.loc = numberToPos(code, err.pos)
       err.loc.file = url
