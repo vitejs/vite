@@ -2,7 +2,10 @@
 
 export { EvaluatedModules, type EvaluatedModuleNode } from './evaluatedModules'
 export { ModuleRunner } from './runner'
-export { ESModulesEvaluator } from './esmEvaluator'
+export {
+  ESModulesEvaluator,
+  type ESModulesEvaluatorOptions,
+} from './esmEvaluator'
 
 export { createWebSocketModuleRunnerTransport } from '../shared/moduleRunnerTransport'
 

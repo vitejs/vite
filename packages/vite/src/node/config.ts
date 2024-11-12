@@ -6,6 +6,7 @@ import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import type { RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
+import { ESModulesEvaluator } from 'vite/module-runner'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
 import {
@@ -43,7 +44,6 @@ import {
 import type { ResolvedServerOptions, ServerOptions } from './server'
 import { resolveServerOptions, serverConfigDefaults } from './server'
 import { DevEnvironment } from './server/environment'
-import type { RunnableDevEnvironment } from './server/environments/runnableEnvironment'
 import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
 import type { WebSocketServer } from './server/ws'
 import type { PreviewOptions, ResolvedPreviewOptions } from './preview'
@@ -1658,53 +1658,8 @@ export async function loadConfigFromFile(
     return null
   }
 
-  let environment: RunnableDevEnvironment | undefined
-
   try {
-    environment = createRunnableDevEnvironment(
-      'config',
-      await resolveConfig(
-        {
-          configFile: false,
-          environments: {
-            config: {
-              consumer: 'server',
-              dev: {
-                moduleRunnerTransform: true,
-              },
-              resolve: {
-                external: true,
-              },
-            },
-          },
-        },
-        'serve',
-      ),
-      {
-        // options: {
-        //   consumer: 'server',
-        //   dev: {
-        //     moduleRunnerTransform: true,
-        //   },
-        // TODO for some reason this doesn't work, only setting it the config works
-        // resolve: {
-        //   external: true,
-        // },
-        // },
-        runnerOptions: {
-          hmr: {
-            logger: false,
-          },
-        },
-        hot: false,
-      },
-    )
-    await environment.init()
-    const { default: userConfig } = (await environment.runner.import(
-      resolvedPath,
-    )) as {
-      default: UserConfigExport
-    }
+    const { userConfig, dependencies } = await importConfig(resolvedPath)
     debug?.(`config file loaded in ${getTime()}`)
 
     const config = await (typeof userConfig === 'function'
@@ -1713,25 +1668,12 @@ export async function loadConfigFromFile(
     if (!isObject(config)) {
       throw new Error(`config must export or return an object.`)
     }
-    const modules = [
-      ...environment.runner.evaluatedModules.fileToModulesMap.entries(),
-    ]
-    await environment.runner.close()
-    const dependencies = modules
-      .filter(([file, modules]) => {
-        const isExternal = [...modules].some(
-          (m) => !m.meta || 'externalize' in m.meta,
-        )
-        return !isExternal && file !== resolvedPath
-      })
-      .map(([file]) => file)
     return {
       path: normalizePath(resolvedPath),
       config,
       dependencies,
     }
   } catch (e) {
-    await environment?.runner.close()
     createLogger(logLevel, { customLogger }).error(
       colors.red(`failed to load config from ${resolvedPath}`),
       {
@@ -1739,6 +1681,77 @@ export async function loadConfigFromFile(
       },
     )
     throw e
+  }
+}
+
+async function importConfig(resolvedPath: string) {
+  const environment = createRunnableDevEnvironment(
+    'config',
+    // TODO: provide a dummy config?
+    await resolveConfig(
+      {
+        configFile: false,
+        environments: {
+          config: {
+            consumer: 'server',
+            dev: {
+              moduleRunnerTransform: true,
+            },
+            resolve: {
+              external: true,
+            },
+          },
+        },
+      },
+      'serve',
+    ),
+    {
+      // options: {
+      //   consumer: 'server',
+      //   dev: {
+      //     moduleRunnerTransform: true,
+      //   },
+      // TODO for some reason this doesn't work, only setting it the config works
+      // resolve: {
+      //   external: true,
+      // },
+      // },
+      runnerOptions: {
+        hmr: {
+          logger: false,
+        },
+        evaluator: new ESModulesEvaluator({
+          cjsGlobals: true,
+        }),
+      },
+      hot: false,
+    },
+  )
+  await environment.init()
+  try {
+    const { default: userConfig } = (await environment.runner.import(
+      resolvedPath,
+    )) as {
+      default: UserConfigExport
+    }
+    const modules = [
+      ...environment.runner.evaluatedModules.fileToModulesMap.entries(),
+    ]
+    const dependencies = modules
+      .filter(([file, modules]) => {
+        const isExternal = [...modules].every(
+          (m) => !m.meta || 'externalize' in m.meta,
+        )
+        return !isExternal && file !== resolvedPath
+      })
+      .map(([file]) => file)
+    return {
+      userConfig,
+      dependencies,
+    }
+  } catch (err) {
+    await environment.close()
+    throw err
   }
 }
 
