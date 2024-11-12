@@ -1110,12 +1110,11 @@ type MergeWithDefaultsResult<D, V> =
             : MaybeFallback<D, V>
           : MaybeFallback<D, V>
 
-export function mergeWithDefaults<
+function mergeWithDefaultsRecursively<
   D extends Record<string, any>,
   V extends Record<string, any>,
 >(defaults: D, values: V): MergeWithDefaultsResult<D, V> {
-  // NOTE: we need to clone the value here to avoid mutating the defaults
-  const merged: Record<string, any> = deepClone(defaults)
+  const merged: Record<string, any> = defaults
   for (const key in values) {
     const value = values[key]
     // let null to set the value (e.g. `server.watch: null`)
@@ -1136,6 +1135,15 @@ export function mergeWithDefaults<
     merged[key] = value
   }
   return merged as MergeWithDefaultsResult<D, V>
+}
+
+export function mergeWithDefaults<
+  D extends Record<string, any>,
+  V extends Record<string, any>,
+>(defaults: D, values: V): MergeWithDefaultsResult<D, V> {
+  // NOTE: we need to clone the value here to avoid mutating the defaults
+  const clonedDefaults = deepClone(defaults)
+  return mergeWithDefaultsRecursively(clonedDefaults, values)
 }
 
 function mergeConfigRecursively(
