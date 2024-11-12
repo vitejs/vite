@@ -30,6 +30,7 @@ import {
   isObject,
   isParentDirectory,
   mergeConfig,
+  mergeWithDefaults,
   normalizePath,
   resolveHostname,
   resolveServerUrls,
@@ -1016,32 +1017,63 @@ function resolvedAllowDir(root: string, dir: string): string {
   return normalizePath(path.resolve(root, dir))
 }
 
+export const serverConfigDefaults = Object.freeze({
+  port: DEFAULT_DEV_PORT,
+  strictPort: false,
+  host: 'localhost',
+  https: undefined,
+  open: false,
+  proxy: {},
+  cors: true,
+  headers: {},
+  // hmr
+  // ws
+  warmup: {
+    clientFiles: [],
+    ssrFiles: [],
+  },
+  // watch
+  middlewareMode: false,
+  fs: {
+    strict: true,
+    // allow
+    deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**'],
+  },
+  // origin
+  preTransformRequests: true,
+  // sourcemapIgnoreList
+  perEnvironmentStartEndDuringDev: false,
+  // hotUpdateEnvironments
+} satisfies ServerOptions)
+
 export function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
 ): ResolvedServerOptions {
-  const server: ResolvedServerOptions = {
-    preTransformRequests: true,
-    perEnvironmentStartEndDuringDev: false,
-    ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
-    sourcemapIgnoreList:
-      raw?.sourcemapIgnoreList === false
-        ? () => false
-        : raw?.sourcemapIgnoreList || isInNodeModules,
-    middlewareMode: raw?.middlewareMode || false,
-  }
-  let allowDirs = server.fs?.allow
-  const deny = server.fs?.deny || [
-    '.env',
-    '.env.*',
-    '*.{crt,pem}',
-    '**/.git/**',
-  ]
+  const _server = mergeWithDefaults(
+    {
+      ...serverConfigDefaults,
+      host: undefined, // do not set here to detect whether host is set or not
+      sourcemapIgnoreList: isInNodeModules,
+    },
+    raw ?? {},
+  )
 
-  if (!allowDirs) {
-    allowDirs = [searchForWorkspaceRoot(root)]
+  const server: ResolvedServerOptions = {
+    ..._server,
+    fs: {
+      ..._server.fs,
+      // run searchForWorkspaceRoot only if needed
+      allow: raw?.fs?.allow ?? [searchForWorkspaceRoot(root)],
+    },
+    sourcemapIgnoreList:
+      _server.sourcemapIgnoreList === false
+        ? () => false
+        : _server.sourcemapIgnoreList,
   }
+
+  let allowDirs = server.fs.allow
 
   if (process.versions.pnp) {
     // running a command fails if cwd doesn't exist and root may not exist
@@ -1074,11 +1106,7 @@ export function resolveServerOptions(
     allowDirs.push(resolvedClientDir)
   }
 
-  server.fs = {
-    strict: server.fs?.strict ?? true,
-    allow: allowDirs,
-    deny,
-  }
+  server.fs.allow = allowDirs
 
   if (server.origin?.endsWith('/')) {
     server.origin = server.origin.slice(0, -1)

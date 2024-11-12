@@ -37,7 +37,7 @@ export const isJSONRequest = (request: string): boolean =>
   jsonLangRE.test(request)
 
 export function jsonPlugin(
-  options: JsonOptions = {},
+  options: Required<JsonOptions>,
   isBuild: boolean,
 ): Plugin {
   return {

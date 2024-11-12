@@ -1,4 +1,5 @@
 import type { DepOptimizationConfig } from '../optimizer'
+import { mergeWithDefaults } from '../utils'
 
 export type SSRTarget = 'node' | 'webworker'
 
@@ -50,22 +51,20 @@ export interface ResolvedSSROptions extends SSROptions {
   optimizeDeps: SsrDepOptimizationConfig
 }
 
+export const ssrConfigDefaults = Object.freeze({
+  // noExternal
+  // external
+  target: 'node',
+  optimizeDeps: {},
+  // resolve
+} satisfies SSROptions)
+
 export function resolveSSROptions(
   ssr: SSROptions | undefined,
   preserveSymlinks: boolean,
 ): ResolvedSSROptions {
-  ssr ??= {}
-  const optimizeDeps = ssr.optimizeDeps ?? {}
-  const target: SSRTarget = 'node'
-  return {
-    target,
-    ...ssr,
-    optimizeDeps: {
-      ...optimizeDeps,
-      esbuildOptions: {
-        preserveSymlinks,
-        ...optimizeDeps.esbuildOptions,
-      },
-    },
-  }
+  const defaults = mergeWithDefaults(ssrConfigDefaults, {
+    optimizeDeps: { esbuildOptions: { preserveSymlinks } },
+  } satisfies SSROptions)
+  return mergeWithDefaults(defaults, ssr ?? {})
 }

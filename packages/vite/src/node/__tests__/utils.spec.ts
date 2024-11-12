@@ -10,6 +10,7 @@ import {
   getLocalhostAddressIfDiffersFromDNS,
   injectQuery,
   isFileReadable,
+  mergeWithDefaults,
   posToNumber,
   processSrcSetSync,
   resolveHostname,
@@ -447,5 +448,54 @@ describe('flattenId', () => {
     id += tenChars
     const result2 = flattenId(id)
     expect(result2).toHaveLength(170)
+  })
+})
+
+describe('mergeWithDefaults', () => {
+  test('merges with defaults', () => {
+    const actual = mergeWithDefaults(
+      {
+        useDefault: 1,
+        useValueIfNull: 2,
+        replaceArray: [0, 1],
+        nested: {
+          foo: 'bar',
+        },
+      },
+      {
+        useDefault: undefined,
+        useValueIfNull: null,
+        useValueIfNoDefault: 'foo',
+        replaceArray: [2, 3],
+        nested: {
+          foo2: 'bar2',
+        },
+      },
+    )
+    expect(actual).toStrictEqual({
+      useDefault: 1,
+      useValueIfNull: null,
+      useValueIfNoDefault: 'foo',
+      replaceArray: [2, 3],
+      nested: {
+        foo: 'bar',
+        foo2: 'bar2',
+      },
+    })
+
+    const defaults = {
+      object: {},
+      array: [],
+      regex: /foo/,
+      function: () => {},
+    }
+    const actual2 = mergeWithDefaults(defaults, {})
+    expect(actual2.object).toStrictEqual({})
+    expect(actual2.array).toStrictEqual([])
+    expect(actual2.regex).toStrictEqual(/foo/)
+    expect(actual2.function).toStrictEqual(expect.any(Function))
+    // cloned
+    expect(actual2.object).not.toBe(defaults.object)
+    expect(actual2.array).not.toBe(defaults.array)
   })
 })

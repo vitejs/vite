@@ -68,6 +68,7 @@ import {
   isExternalUrl,
   isObject,
   joinUrlSegments,
+  mergeWithDefaults,
   normalizePath,
   processSrcSet,
   removeDirectQuery,
@@ -185,25 +186,35 @@ export interface CSSModulesOptions {
       ) => string)
 }
 
-export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
-  lightningcss?: LightningCSSOptions
-}
+export const cssConfigDefaults = Object.freeze({
+  /** @experimental */
+  transformer: 'postcss',
+  // modules
+  // preprocessorOptions
+  /** @experimental */
+  preprocessorMaxWorkers: 0,
+  // postcss
+  /** @experimental */
+  devSourcemap: false,
+  // lightningcss
+} satisfies CSSOptions)
+
+export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
+  Required<Pick<CSSOptions, 'transformer'>> & {
+    lightningcss?: LightningCSSOptions
+  }
 
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
 ): ResolvedCSSOptions {
-  if (options?.transformer === 'lightningcss') {
-    return {
-      ...options,
-      lightningcss: {
-        ...options.lightningcss,
-        targets:
-          options.lightningcss?.targets ??
-          convertTargets(ESBUILD_MODULES_TARGET),
-      },
-    }
+  const resolved = mergeWithDefaults(cssConfigDefaults, options ?? {})
+  if (resolved.transformer === 'lightningcss') {
+    resolved.lightningcss ??= {}
+    resolved.lightningcss.targets ??= convertTargets(ESBUILD_MODULES_TARGET)
+  } else {
+    resolved.lightningcss = undefined
   }
-  return { ...options, lightningcss: undefined }
+  return resolved
 }
 
 const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
