@@ -295,3 +295,16 @@ const { customElements } = globalThis // Ensure `customElements` is defined befo
 if (customElements && !customElements.get(overlayId)) {
   customElements.define(overlayId, ErrorOverlay)
 }
+
+type Constructor<T, Args extends unknown[] = any[]> = new (...args: Args) => T
+
+export function getErrorOverlayConstructor(): Constructor<ErrorOverlay> {
+  const { customElements } = globalThis
+  if (customElements) {
+    const ElementConstructor = customElements.get(overlayId)
+    if (ElementConstructor) {
+      return ElementConstructor as Constructor<ErrorOverlay>
+    }
+  }
+  return ErrorOverlay
+}

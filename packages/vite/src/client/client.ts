@@ -6,7 +6,11 @@ import {
   createWebSocketModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
-import { ErrorOverlay, overlayId } from './overlay'
+import {
+  type ErrorOverlay,
+  getErrorOverlayConstructor,
+  overlayId,
+} from './overlay'
 import '@vite/env'
 
 // injected by the hmr plugin when served
@@ -307,8 +311,9 @@ const enableOverlay = __HMR_ENABLE_OVERLAY__
 const hasDocument = 'document' in globalThis
 
 function createErrorOverlay(err: ErrorPayload['err']) {
+  const ErrorOverlayConstructor = getErrorOverlayConstructor()
   clearErrorOverlay()
-  document.body.appendChild(new ErrorOverlay(err))
+  document.body.appendChild(new ErrorOverlayConstructor(err))
 }
 
 function clearErrorOverlay() {
