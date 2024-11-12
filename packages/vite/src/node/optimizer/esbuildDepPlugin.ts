@@ -304,7 +304,7 @@ const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
 // https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
 export function esbuildCjsExternalPlugin(
   externals: string[],
-  platform: 'node' | 'browser',
+  platform: 'node' | 'browser' | 'neutral',
 ): Plugin {
   return {
     name: 'cjs-external',
