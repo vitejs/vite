@@ -1084,7 +1084,10 @@ function deepClone<T>(value: T): T {
   if (typeof value === 'function') {
     return value as T
   }
-  if (typeof value === 'object') {
+  if (value instanceof RegExp) {
+    return structuredClone(value)
+  }
+  if (typeof value === 'object' && value != null) {
     throw new Error('Cannot deep clone non-plain object')
   }
   return value
