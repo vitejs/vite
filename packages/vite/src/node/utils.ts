@@ -1127,7 +1127,7 @@ function mergeWithDefaultsRecursively<
     }
 
     if (isObject(existing) && isObject(value)) {
-      merged[key] = mergeWithDefaults(existing, value)
+      merged[key] = mergeWithDefaultsRecursively(existing, value)
       continue
     }
 
