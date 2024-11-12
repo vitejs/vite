@@ -1,5 +1,6 @@
 ## <small>5.4.11 (2024-11-11)</small>
 
+* fix(deps): update dependencies of postcss-modules ([ceb15db](https://github.com/vitejs/vite/commit/ceb15db613d107e29f7cc1d441364f7b5c831ed3)), closes [#18617](https://github.com/vitejs/vite/issues/18617)
 
 
 
