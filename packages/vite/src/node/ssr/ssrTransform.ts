@@ -89,7 +89,7 @@ async function ssrTransformScript(
     // enhance known rollup errors
     // https://github.com/rollup/rollup/blob/42e587e0e37bc0661aa39fe7ad6f1d7fd33f825c/src/utils/bufferToAst.ts#L17-L22
     if (err.code === 'PARSE_ERROR') {
-      err.message = `Parse Failure: ${err.message}\n`
+      err.message = `Parse failure: ${err.message}\n`
       err.id = url
       if (typeof err.pos === 'number') {
         err.loc = numberToPos(code, err.pos)
