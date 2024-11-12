@@ -5,7 +5,6 @@ import compression from '@polka/compression'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
-import { DEFAULT_PREVIEW_PORT } from './constants'
 import type {
   HttpServer,
   ResolvedServerOptions,
@@ -35,7 +34,7 @@ import {
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
-import { resolveConfig } from './config'
+import { configDefaults, resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 
 export interface PreviewOptions extends CommonServerOptions {}
@@ -243,7 +242,7 @@ export async function preview(
   }
 
   const hostname = await resolveHostname(options.host)
-  const port = options.port ?? DEFAULT_PREVIEW_PORT
+  const port = options.port ?? configDefaults.preview.port
 
   await httpServerStart(httpServer, {
     port,

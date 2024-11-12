@@ -15,11 +15,12 @@ import { withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
-  DEFAULT_CONDITIONS,
+  DEFAULT_CLIENT_CONDITIONS,
+  DEFAULT_CLIENT_MAIN_FIELDS,
   DEFAULT_CONFIG_FILES,
-  DEFAULT_EXTENSIONS,
-  DEFAULT_EXTERNAL_CONDITIONS,
-  DEFAULT_MAIN_FIELDS,
+  DEFAULT_PREVIEW_PORT,
+  DEFAULT_SERVER_CONDITIONS,
+  DEFAULT_SERVER_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
 } from './constants'
@@ -37,9 +38,14 @@ import type {
   ResolvedBuildOptions,
   ResolvedBuilderOptions,
 } from './build'
-import { resolveBuildEnvironmentOptions, resolveBuilderOptions } from './build'
+import {
+  buildEnvironmentOptionsDefaults,
+  builderOptionsDefaults,
+  resolveBuildEnvironmentOptions,
+  resolveBuilderOptions,
+} from './build'
 import type { ResolvedServerOptions, ServerOptions } from './server'
-import { resolveServerOptions } from './server'
+import { resolveServerOptions, serverConfigDefaults } from './server'
 import { DevEnvironment } from './server/environment'
 import { createRunnableDevEnvironment } from './server/environments/runnableEnvironment'
 import type { WebSocketServer } from './server/ws'
@@ -48,6 +54,7 @@ import { resolvePreviewOptions } from './preview'
 import {
   type CSSOptions,
   type ResolvedCSSOptions,
+  cssConfigDefaults,
   resolveCSSOptions,
 } from './plugins/css'
 import {
@@ -63,6 +70,7 @@ import {
   isParentDirectory,
   mergeAlias,
   mergeConfig,
+  mergeWithDefaults,
   normalizeAlias,
   normalizePath,
 } from './utils'
@@ -87,7 +95,7 @@ import type { PackageCache } from './packages'
 import { findNearestNodeModules, findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
-import { resolveSSROptions } from './ssr'
+import { resolveSSROptions, ssrConfigDefaults } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 
@@ -212,7 +220,15 @@ function defaultCreateDevEnvironment(name: string, config: ResolvedConfig) {
   return createRunnableDevEnvironment(name, config)
 }
 
-export type ResolvedDevEnvironmentOptions = Required<DevEnvironmentOptions>
+export type ResolvedDevEnvironmentOptions = Omit<
+  Required<DevEnvironmentOptions>,
+  'sourcemapIgnoreList'
+> & {
+  sourcemapIgnoreList: Exclude<
+    DevEnvironmentOptions['sourcemapIgnoreList'],
+    false | undefined
+  >
+}
 
 type AllResolveOptions = ResolveOptions & {
   alias?: AliasOptions
@@ -522,12 +538,15 @@ export type ResolvedConfig = Readonly<
     UserConfig,
     | 'plugins'
     | 'css'
+    | 'json'
     | 'assetsInclude'
     | 'optimizeDeps'
     | 'worker'
     | 'build'
     | 'dev'
     | 'environments'
+    | 'server'
+    | 'preview'
   > & {
     configFile: string | undefined
     configFileDependencies: string[]
@@ -556,6 +575,7 @@ export type ResolvedConfig = Readonly<
     }
     plugins: readonly Plugin[]
     css: ResolvedCSSOptions
+    json: Required<JsonOptions>
     esbuild: ESBuildOptions | false
     server: ResolvedServerOptions
     dev: ResolvedDevEnvironmentOptions
@@ -581,6 +601,111 @@ export type ResolvedConfig = Readonly<
   } & PluginHookUtils
 >
 
+// inferred ones are omitted
+export const configDefaults = Object.freeze({
+  define: {},
+  dev: {
+    warmup: [],
+    // preTransformRequests
+    /** @experimental */
+    sourcemap: { js: true },
+    sourcemapIgnoreList: undefined,
+    // createEnvironment
+    // recoverable
+    // moduleRunnerTransform
+  },
+  build: buildEnvironmentOptionsDefaults,
+  resolve: {
+    // mainFields
+    // conditions
+    externalConditions: ['node'],
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
+    dedupe: [],
+    /** @experimental */
+    noExternal: [],
+    // external
+    preserveSymlinks: false,
+    alias: [],
+  },
+
+  // root
+  base: '/',
+  publicDir: 'public',
+  // cacheDir
+  // mode
+  plugins: [],
+  html: {
+    cspNonce: undefined,
+  },
+  css: cssConfigDefaults,
+  json: {
+    namedExports: true,
+    stringify: 'auto',
+  },
+  // esbuild
+  assetsInclude: undefined,
+  /** @experimental */
+  builder: builderOptionsDefaults,
+  server: serverConfigDefaults,
+  preview: {
+    port: DEFAULT_PREVIEW_PORT,
+    // strictPort
+    // host
+    // https
+    // open
+    // proxy
+    // cors
+    // headers
+  },
+  /** @experimental */
+  experimental: {
+    importGlobRestoreExtension: false,
+    renderBuiltUrl: undefined,
+    hmrPartialAccept: false,
+    skipSsrTransform: false,
+  },
+  future: {
+    removePluginHookHandleHotUpdate: undefined,
+    removePluginHookSsrArgument: undefined,
+    removeServerModuleGraph: undefined,
+    removeServerHot: undefined,
+    removeServerTransformRequest: undefined,
+    removeSsrLoadModule: undefined,
+  },
+  legacy: {
+    proxySsrExternalModules: false,
+  },
+  logLevel: 'info',
+  customLogger: undefined,
+  clearScreen: true,
+  envDir: undefined,
+  envPrefix: 'VITE_',
+  worker: {
+    format: 'iife',
+    plugins: () => [],
+    // rollupOptions
+  },
+  optimizeDeps: {
+    include: [],
+    exclude: [],
+    needsInterop: [],
+    // esbuildOptions
+    /** @experimental */
+    extensions: [],
+    /** @deprecated @experimental */
+    disabled: 'build',
+    // noDiscovery
+    /** @experimental */
+    holdUntilCrawlEnd: true,
+    // entries
+    /** @experimental */
+    force: false,
+  },
+  ssr: ssrConfigDefaults,
+  environments: {},
+  appType: 'spa',
+} satisfies UserConfig)
+
 export function resolveDevEnvironmentOptions(
   dev: DevEnvironmentOptions | undefined,
   environmentName: string | undefined,
@@ -588,25 +713,29 @@ export function resolveDevEnvironmentOptions(
   // Backward compatibility
   skipSsrTransform?: boolean,
 ): ResolvedDevEnvironmentOptions {
+  const resolved = mergeWithDefaults(
+    {
+      ...configDefaults.dev,
+      sourcemapIgnoreList: isInNodeModules,
+      preTransformRequests: consumer === 'client',
+      createEnvironment:
+        environmentName === 'client'
+          ? defaultCreateClientDevEnvironment
+          : defaultCreateDevEnvironment,
+      recoverable: consumer === 'client',
+      moduleRunnerTransform:
+        skipSsrTransform !== undefined && consumer === 'server'
+          ? skipSsrTransform
+          : consumer === 'server',
+    },
+    dev ?? {},
+  )
   return {
-    sourcemap: dev?.sourcemap ?? { js: true },
+    ...resolved,
     sourcemapIgnoreList:
-      dev?.sourcemapIgnoreList === false
+      resolved.sourcemapIgnoreList === false
         ? () => false
-        : dev?.sourcemapIgnoreList || isInNodeModules,
-    preTransformRequests: dev?.preTransformRequests ?? consumer === 'client',
-    warmup: dev?.warmup ?? [],
-    createEnvironment:
-      dev?.createEnvironment ??
-      (environmentName === 'client'
-        ? defaultCreateClientDevEnvironment
-        : defaultCreateDevEnvironment),
-    recoverable: dev?.recoverable ?? consumer === 'client',
-    moduleRunnerTransform:
-      dev?.moduleRunnerTransform ??
-      (skipSsrTransform !== undefined && consumer === 'server'
-        ? skipSsrTransform
-        : consumer === 'server'),
+        : resolved.sourcemapIgnoreList,
   }
 }
 
@@ -744,34 +873,26 @@ function resolveEnvironmentResolveOptions(
   // Backward compatibility
   isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedAllResolveOptions {
-  let mainFields = resolve?.mainFields
-  mainFields ??=
-    consumer === 'client' || isSsrTargetWebworkerEnvironment
-      ? DEFAULT_MAIN_FIELDS
-      : DEFAULT_MAIN_FIELDS.filter((f) => f !== 'browser')
-
-  let conditions = resolve?.conditions
-  conditions ??=
-    consumer === 'client' || isSsrTargetWebworkerEnvironment
-      ? DEFAULT_CONDITIONS.filter((c) => c !== 'node')
-      : DEFAULT_CONDITIONS.filter((c) => c !== 'browser')
-
-  const resolvedResolve: ResolvedAllResolveOptions = {
-    mainFields,
-    conditions,
-    externalConditions:
-      resolve?.externalConditions ?? DEFAULT_EXTERNAL_CONDITIONS,
-    external:
-      resolve?.external ??
-      (consumer === 'server' && !isSsrTargetWebworkerEnvironment
-        ? builtinModules
-        : []),
-    noExternal: resolve?.noExternal ?? [],
-    extensions: resolve?.extensions ?? DEFAULT_EXTENSIONS,
-    dedupe: resolve?.dedupe ?? [],
-    preserveSymlinks,
-    alias,
-  }
+  const resolvedResolve: ResolvedAllResolveOptions = mergeWithDefaults(
+    {
+      ...configDefaults.resolve,
+      mainFields:
+        consumer === 'client' || isSsrTargetWebworkerEnvironment
+          ? DEFAULT_CLIENT_MAIN_FIELDS
+          : DEFAULT_SERVER_MAIN_FIELDS,
+      conditions:
+        consumer === 'client' || isSsrTargetWebworkerEnvironment
+          ? DEFAULT_CLIENT_CONDITIONS
+          : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
+      external:
+        consumer === 'server' && !isSsrTargetWebworkerEnvironment
+          ? builtinModules
+          : [],
+    },
+    resolve ?? {},
+  )
+  resolvedResolve.preserveSymlinks = preserveSymlinks
+  resolvedResolve.alias = alias
 
   if (
     // @ts-expect-error removed field
@@ -794,8 +915,11 @@ function resolveResolveOptions(
   logger: Logger,
 ): ResolvedAllResolveOptions {
   // resolve alias with internal client alias
-  const alias = normalizeAlias(mergeAlias(clientAlias, resolve?.alias || []))
-  const preserveSymlinks = resolve?.preserveSymlinks ?? false
+  const alias = normalizeAlias(
+    mergeAlias(clientAlias, resolve?.alias || configDefaults.resolve.alias),
+  )
+  const preserveSymlinks =
+    resolve?.preserveSymlinks ?? configDefaults.resolve.preserveSymlinks
 
   if (alias.some((a) => a.find === '/')) {
     logger.warn(
@@ -821,22 +945,17 @@ function resolveDepOptimizationOptions(
   preserveSymlinks: boolean,
   consumer: 'client' | 'server' | undefined,
 ): DepOptimizationOptions {
-  optimizeDeps ??= {}
-  return {
-    include: optimizeDeps.include ?? [],
-    exclude: optimizeDeps.exclude ?? [],
-    needsInterop: optimizeDeps.needsInterop ?? [],
-    extensions: optimizeDeps.extensions ?? [],
-    noDiscovery: optimizeDeps.noDiscovery ?? consumer !== 'client',
-    holdUntilCrawlEnd: optimizeDeps.holdUntilCrawlEnd ?? true,
-    esbuildOptions: {
-      preserveSymlinks,
-      ...optimizeDeps.esbuildOptions,
+  return mergeWithDefaults(
+    {
+      ...configDefaults.optimizeDeps,
+      disabled: undefined, // do not set here to avoid deprecation warning
+      noDiscovery: consumer !== 'client',
+      esbuildOptions: {
+        preserveSymlinks,
+      },
     },
-    disabled: optimizeDeps.disabled,
-    entries: optimizeDeps.entries,
-    force: optimizeDeps.force ?? false,
-  }
+    optimizeDeps ?? {},
+  )
 }
 
 export async function resolveConfig(
@@ -1117,7 +1236,7 @@ export async function resolveConfig(
     ? !isBuild || config.build?.ssr
       ? '/'
       : './'
-    : (resolveBaseUrl(config.base, isBuild, logger) ?? '/')
+    : (resolveBaseUrl(config.base, isBuild, logger) ?? configDefaults.base)
 
   // resolve cache directory
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
@@ -1141,7 +1260,9 @@ export async function resolveConfig(
       ? normalizePath(
           path.resolve(
             resolvedRoot,
-            typeof publicDir === 'string' ? publicDir : 'public',
+            typeof publicDir === 'string'
+              ? publicDir
+              : configDefaults.publicDir,
           ),
         )
       : ''
@@ -1244,6 +1365,7 @@ export async function resolveConfig(
     isProduction,
     plugins: userPlugins, // placeholder to be replaced
     css: resolveCSSOptions(config.css),
+    json: mergeWithDefaults(configDefaults.json, config.json ?? {}),
     esbuild:
       config.esbuild === false
         ? false
@@ -1618,7 +1740,7 @@ async function bundleConfigFile(
               external: [],
               noExternal: [],
               dedupe: [],
-              extensions: DEFAULT_EXTENSIONS,
+              extensions: configDefaults.resolve.extensions,
               preserveSymlinks: false,
               packageCache,
               isRequire,
