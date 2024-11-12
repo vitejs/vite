@@ -31,8 +31,7 @@ exports[`parse error 2`] = `
     "line": 1,
   },
   "message": "Parse Failure: Expected ';', '}' or <eof>
-At file: /fixtures/errors/syntax-error.js:1:9
-Contents of line: invalid code",
+At file: /fixtures/errors/syntax-error.js:1:9",
 }
 `;
 
@@ -67,7 +66,6 @@ exports[`parse error 4`] = `
     "line": 1,
   },
   "message": "Parse Failure: Expected ';', '}' or <eof>
-At file: /fixtures/errors/syntax-error.js:1:9
-Contents of line: invalid code",
+At file: /fixtures/errors/syntax-error.js:1:9",
 }
 `;

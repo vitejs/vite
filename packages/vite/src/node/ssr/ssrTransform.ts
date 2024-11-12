@@ -95,8 +95,7 @@ async function ssrTransformScript(
         err.loc = numberToPos(code, err.pos)
         err.loc.file = url
         err.frame = generateCodeFrame(code, err.pos)
-        const { line, column } = err.loc
-        err.message += `At file: ${url}:${line}:${column}\nContents of line: ${code.split('\n')[line - 1]}`
+        err.message += `At file: ${url}:${err.loc.line}:${err.loc.column}`
       } else {
         err.message += `At file: ${url}`
       }
