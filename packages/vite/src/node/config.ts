@@ -974,6 +974,7 @@ export async function resolveConfig(
     configEnvironmentsSsr.resolve.conditions ??= config.ssr?.resolve?.conditions
     configEnvironmentsSsr.resolve.externalConditions ??=
       config.ssr?.resolve?.externalConditions
+    configEnvironmentsSsr.resolve.mainFields ??= config.ssr?.resolve?.mainFields
     configEnvironmentsSsr.resolve.external ??= config.ssr?.external
     configEnvironmentsSsr.resolve.noExternal ??= config.ssr?.noExternal
   }

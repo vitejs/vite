@@ -42,6 +42,8 @@ export interface SSROptions {
      * @default []
      */
     externalConditions?: string[]
+
+    mainFields?: string[]
   }
 }
 
