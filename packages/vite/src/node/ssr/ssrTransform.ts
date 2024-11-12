@@ -86,12 +86,20 @@ async function ssrTransformScript(
   try {
     ast = await rollupParseAstAsync(code)
   } catch (err) {
-    if (err.code === 'PARSE_ERROR' && typeof err.pos === 'number') {
-      err.message = `Parse Failure: ${err.message}`
+    // enhance known rollup errors
+    // https://github.com/rollup/rollup/blob/42e587e0e37bc0661aa39fe7ad6f1d7fd33f825c/src/utils/bufferToAst.ts#L17-L22
+    if (err.code === 'PARSE_ERROR') {
+      err.message = `Parse Failure: ${err.message}\n`
       err.id = url
-      err.loc = numberToPos(code, err.pos)
-      err.loc.file = url
-      err.frame = generateCodeFrame(code, err.pos)
+      if (typeof err.pos === 'number') {
+        err.loc = numberToPos(code, err.pos)
+        err.loc.file = url
+        err.frame = generateCodeFrame(code, err.pos)
+        const { line, column } = err.loc
+        err.message += `At file: ${url}:${line}:${column}\nContents of line: ${code.split('\n')[line - 1]}`
+      } else {
+        err.message += `At file: ${url}`
+      }
     }
     throw err
   }

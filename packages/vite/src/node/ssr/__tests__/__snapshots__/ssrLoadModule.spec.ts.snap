@@ -30,7 +30,9 @@ exports[`parse error 2`] = `
     "file": "/fixtures/errors/syntax-error.js",
     "line": 1,
   },
-  "message": "Parse Failure: Expected ';', '}' or <eof>",
+  "message": "Parse Failure: Expected ';', '}' or <eof>
+At file: /fixtures/errors/syntax-error.js:1:9
+Contents of line: invalid code",
 }
 `;
 
@@ -64,6 +66,8 @@ exports[`parse error 4`] = `
     "file": "/fixtures/errors/syntax-error.js",
     "line": 1,
   },
-  "message": "Parse Failure: Expected ';', '}' or <eof>",
+  "message": "Parse Failure: Expected ';', '}' or <eof>
+At file: /fixtures/errors/syntax-error.js:1:9
+Contents of line: invalid code",
 }
 `;
