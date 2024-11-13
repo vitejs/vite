@@ -142,7 +142,8 @@ const UnoCssPlugin = () => {
       // use global hooks normally
     },
     applyToEnvironment(environment) {
-      // return true if this plugin should be active in this environment
+      // return true if this plugin should be active in this environment,
+      // or return a new plugin to replace it.
       // if the hook is not used, the plugin is active in all environments
     },
     resolveId(id, importer) {
@@ -150,6 +151,37 @@ const UnoCssPlugin = () => {
     },
   }
 }
+```
+
+If a plugin isn't environment aware and has state that isn't keyed on the current environment, the `applyToEnvironment` hook allows to easily make it per-environment.
+
+```js
+import { nonShareablePlugin } from 'non-shareable-plugin'
+
+export default defineConfig({
+  plugins: [
+    {
+      name: 'per-environment-plugin',
+      applyToEnvironment(environment) {
+        return nonShareablePlugin({ outputName: environment.name })
+      },
+    },
+  ],
+})
+```
+
+Vite exports a `perEnvironmentPlugin` helper to simplify these cases where no other hooks are required:
+
+```js
+import { nonShareablePlugin } from 'non-shareable-plugin'
+
+export default defineConfig({
+  plugins: [
+    perEnvironmentPlugin('per-environment-plugin', (environment) =>
+      nonShareablePlugin({ outputName: environment.name }),
+    ),
+  ],
+})
 ```
 
 ## Environment in build hooks
