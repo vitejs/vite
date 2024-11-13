@@ -512,6 +512,11 @@ async function init() {
 
   pkg.name = packageName || getProjectName()
 
+  if(template.endsWith('-ts')){
+    if(!pkg.devDependencies) pkg.devDependencies = {}
+    pkg.devDependencies["@types/node"] = `^${process.versions.node}`
+  }
+
   write('package.json', JSON.stringify(pkg, null, 2) + '\n')
 
   if (isReactSwc) {
