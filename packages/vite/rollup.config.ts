@@ -201,7 +201,11 @@ const cjsConfig = defineConfig({
     format: 'cjs',
   },
   external: Object.keys(pkg.dependencies),
-  plugins: [...createSharedNodePlugins({}), bundleSizeLimit(175)],
+  plugins: [
+    ...createSharedNodePlugins({}),
+    bundleSizeLimit(175),
+    exportCheck(),
+  ],
 })
 
 export default defineConfig([
@@ -336,6 +340,31 @@ function bundleSizeLimit(limit: number): Plugin {
           `Bundle size exceeded ${limit} kB, current size is ${kb.toFixed(
             2,
           )}kb.`,
+        )
+      }
+    },
+  }
+}
+
+function exportCheck(): Plugin {
+  return {
+    name: 'export-check',
+    async writeBundle() {
+      // escape import so that it's not bundled while config load
+      const dynImport = (id: string) => import(id)
+
+      const esmNamespace = await dynImport('./dist/node/index.js')
+      const cjsModuleExports = (await dynImport('./index.cjs')).default
+      const cjsModuleExportsKeys = new Set(
+        Object.getOwnPropertyNames(cjsModuleExports),
+      )
+      const lackingExports = Object.keys(esmNamespace).filter(
+        (key) => !cjsModuleExportsKeys.has(key),
+      )
+      if (lackingExports.length > 0) {
+        this.error(
+          `Exports missing from cjs build: ${lackingExports.join(', ')}.` +
+            ` Please update index.cjs or src/publicUtils.ts.`,
         )
       }
     },

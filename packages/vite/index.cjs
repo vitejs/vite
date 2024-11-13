@@ -1,3 +1,6 @@
+const description =
+  ' See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.'
+
 warnCjsUsage()
 
 // type utils
@@ -17,10 +20,41 @@ const asyncFunctions = [
   'formatPostcssSourceMap',
   'loadConfigFromFile',
   'preprocessCSS',
+  'createBuilder',
 ]
 asyncFunctions.forEach((name) => {
   module.exports[name] = (...args) =>
     import('./dist/node/index.js').then((i) => i[name](...args))
+})
+
+// variables and sync functions that cannot be used from cjs build
+const disallowedVariables = [
+  // was not exposed in cjs from the beginning
+  'parseAst',
+  'parseAstAsync',
+  'buildErrorMessage',
+  'sortUserPlugins',
+  // Environment API related variables that are too big to include in the cjs build
+  'DevEnvironment',
+  'BuildEnvironment',
+  'createIdResolver',
+  'createRunnableDevEnvironment',
+  // can be redirected from ESM, but doesn't make sense as it's Environment API related
+  'fetchModule',
+  'moduleRunnerTransform',
+  // can be exposed, but doesn't make sense as it's Environment API related
+  'createServerHotChannel',
+  'createServerModuleRunner',
+  'isRunnableDevEnvironment',
+]
+disallowedVariables.forEach((name) => {
+  Object.defineProperty(module.exports, name, {
+    get() {
+      throw new Error(
+        `${name} is not available in the CJS build of Vite.` + description,
+      )
+    },
+  })
 })
 
 function warnCjsUsage() {
@@ -39,9 +73,7 @@ function warnCjsUsage() {
   }
   const yellow = (str) => `\u001b[33m${str}\u001b[39m`
   console.warn(
-    yellow(
-      `The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.`,
-    ),
+    yellow("The CJS build of Vite's Node API is deprecated." + description),
   )
   if (process.env.VITE_CJS_TRACE) {
     const e = {}
