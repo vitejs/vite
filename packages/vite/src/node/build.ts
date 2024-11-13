@@ -50,7 +50,7 @@ import {
   normalizePath,
   partialEncodeURIPath,
 } from './utils'
-import { resolveEnvironmentPlugins } from './plugin'
+import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -473,34 +473,26 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   pre: Plugin[]
   post: Plugin[]
 }> {
-  const { commonjsOptions } = config.build
-  const usePluginCommonjs =
-    !Array.isArray(commonjsOptions.include) ||
-    commonjsOptions.include.length !== 0
   return {
     pre: [
       completeSystemWrapPlugin(),
-      /**
-       * environment.config.build.commonjsOptions isn't currently supported
-       * when builder.sharedConfigBuild or builder.sharedPlugins enabled.
-       * To do it, we could inject one commonjs plugin per environment with
-       * an applyToEnvironment hook.
-       */
-      ...(usePluginCommonjs ? [commonjsPlugin(commonjsOptions)] : []),
+      perEnvironmentPlugin('commonjs', (environment) => {
+        const { commonjsOptions } = environment.config.build
+        const usePluginCommonjs =
+          !Array.isArray(commonjsOptions.include) ||
+          commonjsOptions.include.length !== 0
+        return usePluginCommonjs ? commonjsPlugin(commonjsOptions) : false
+      }),
       dataURIPlugin(),
-      /**
-       * environment.config.build.rollupOptions.plugins isn't supported
-       * when builder.sharedConfigBuild or builder.sharedPlugins is enabled.
-       * To do it, we should add all these plugins to the global pipeline, each with
-       * an applyToEnvironment hook. It is similar to letting the user add per
-       * environment plugins giving them a environment.config.plugins option that
-       * we decided against.
-       * For backward compatibility, we are still injecting the rollup plugins
-       * defined in the default root build options.
-       */
-      ...((
-        await asyncFlatten(arraify(config.build.rollupOptions.plugins))
-      ).filter(Boolean) as Plugin[]),
+      perEnvironmentPlugin(
+        'vite:rollup-options-plugins',
+        async (environment) =>
+          (
+            await asyncFlatten(
+              arraify(environment.config.build.rollupOptions.plugins),
+            )
+          ).filter(Boolean) as Plugin[],
+      ),
       ...(config.isWorker ? [webWorkerPostPlugin()] : []),
     ],
     post: [
@@ -1464,13 +1456,12 @@ export class BuildEnvironment extends BaseEnvironment {
     super(name, config, options)
   }
 
-  // TODO: This could be sync, discuss if applyToEnvironment should support async
   async init(): Promise<void> {
     if (this._initiated) {
       return
     }
     this._initiated = true
-    this._plugins = resolveEnvironmentPlugins(this)
+    this._plugins = await resolveEnvironmentPlugins(this)
   }
 }
 

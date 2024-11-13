@@ -7,7 +7,7 @@ import type {
 } from 'rollup'
 import type { Plugin } from '../plugin'
 import { normalizePath, sortObjectKeys } from '../utils'
-import { usePerEnvironmentState } from '../environment'
+import { perEnvironmentState } from '../environment'
 import { cssEntriesMap } from './asset'
 
 const endsWithJSRE = /\.[cm]?js$/
@@ -27,7 +27,7 @@ export interface ManifestChunk {
 }
 
 export function manifestPlugin(): Plugin {
-  const getState = usePerEnvironmentState(() => {
+  const getState = perEnvironmentState(() => {
     return {
       manifest: {} as Manifest,
       outputCount: 0,

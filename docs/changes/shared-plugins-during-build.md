@@ -59,11 +59,11 @@ function PerEnvironmentCountTransformedModulesPlugin() {
 }
 ```
 
-To simplify this pattern, internally in Vite, we use a `usePerEnvironmentState` helper:
+To simplify this pattern, Vite exports a `perEnvironmentState` helper:
 
 ```js
 function PerEnvironmentCountTransformedModulesPlugin() {
-  const state = usePerEnvironmentState<{ count: number }>(() => ({ count: 0 }))
+  const state = perEnvironmentState<{ count: number }>(() => ({ count: 0 }))
   return {
     name: 'count-transformed-modules',
     perEnvironmentStartEndDuringDev: true,
