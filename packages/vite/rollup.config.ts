@@ -352,6 +352,8 @@ function exportCheck(): Plugin {
     async writeBundle() {
       // escape import so that it's not bundled while config load
       const dynImport = (id: string) => import(id)
+      // ignore warning from CJS entrypoint to avoid misleading logs
+      process.env.VITE_CJS_IGNORE_WARNING = 'true'
 
       const esmNamespace = await dynImport('./dist/node/index.js')
       const cjsModuleExports = (await dynImport('./index.cjs')).default
