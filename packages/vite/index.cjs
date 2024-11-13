@@ -50,7 +50,7 @@ disallowedVariables.forEach((name) => {
   Object.defineProperty(module.exports, name, {
     get() {
       throw new Error(
-        `${name} is not available in the CJS build. ` + description,
+        `${name} is not available in the CJS build of Vite.` + description,
       )
     },
   })
