@@ -207,7 +207,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * By default, the plugin is active in all environments
    * @experimental
    */
-  applyToEnvironment?: (
+  perEnvironment?: (
     environment: PartialEnvironment,
   ) => boolean | Promise<boolean> | PluginOption
   /**
@@ -334,8 +334,8 @@ export async function resolveEnvironmentPlugins(
 ): Promise<Plugin[]> {
   const environmentPlugins: Plugin[] = []
   for (const plugin of environment.getTopLevelConfig().plugins) {
-    if (plugin.applyToEnvironment) {
-      const applied = await plugin.applyToEnvironment(environment)
+    if (plugin.perEnvironment) {
+      const applied = await plugin.perEnvironment(environment)
       if (!applied) {
         continue
       }
@@ -358,12 +358,12 @@ export async function resolveEnvironmentPlugins(
  */
 export function perEnvironmentPlugin(
   name: string,
-  applyToEnvironment: (
+  perEnvironment: (
     environment: PartialEnvironment,
   ) => boolean | Promise<boolean> | PluginOption,
 ): Plugin {
   return {
     name,
-    applyToEnvironment,
+    perEnvironment,
   }
 }

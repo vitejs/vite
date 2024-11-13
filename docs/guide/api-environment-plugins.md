@@ -128,7 +128,7 @@ The hook can choose to:
 
 ## Per-environment Plugins
 
-A plugin can define what are the environments it should apply to with the `applyToEnvironment` function.
+A plugin can define what are the environments it should apply to with the `perEnvironment` function.
 
 ```js
 const UnoCssPlugin = () => {
@@ -141,7 +141,7 @@ const UnoCssPlugin = () => {
     configureServer() {
       // use global hooks normally
     },
-    applyToEnvironment(environment) {
+    perEnvironment(environment) {
       // return true if this plugin should be active in this environment,
       // or return a new plugin to replace it.
       // if the hook is not used, the plugin is active in all environments
@@ -153,7 +153,7 @@ const UnoCssPlugin = () => {
 }
 ```
 
-If a plugin isn't environment aware and has state that isn't keyed on the current environment, the `applyToEnvironment` hook allows to easily make it per-environment.
+If a plugin isn't environment aware and has state that isn't keyed on the current environment, the `perEnvironment` hook allows to easily make it per-environment.
 
 ```js
 import { nonShareablePlugin } from 'non-shareable-plugin'
@@ -162,7 +162,7 @@ export default defineConfig({
   plugins: [
     {
       name: 'per-environment-plugin',
-      applyToEnvironment(environment) {
+      perEnvironment(environment) {
         return nonShareablePlugin({ outputName: environment.name })
       },
     },

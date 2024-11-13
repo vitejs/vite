@@ -42,7 +42,7 @@ export function manifestPlugin(): Plugin {
 
     perEnvironmentStartEndDuringDev: true,
 
-    applyToEnvironment(environment) {
+    perEnvironment(environment) {
       return !!environment.config.build.manifest
     },
 

@@ -25,7 +25,7 @@ export function ssrManifestPlugin(): Plugin {
   return {
     name: 'vite:ssr-manifest',
 
-    applyToEnvironment(environment) {
+    perEnvironment(environment) {
       return !!environment.config.build.ssrManifest
     },
 

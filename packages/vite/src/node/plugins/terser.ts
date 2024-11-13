@@ -59,7 +59,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:terser',
 
-    applyToEnvironment(environment) {
+    perEnvironment(environment) {
       // We also need the plugin even if minify isn't 'terser' as we force
       // terser in plugin-legacy
       return !!environment.config.build.minify
