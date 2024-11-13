@@ -29,7 +29,7 @@ asyncFunctions.forEach((name) => {
 
 // variables and sync functions that cannot be used from cjs build
 const disallowedVariables = [
-  // was not exposed in cjs from the beggining
+  // was not exposed in cjs from the beginning
   'parseAst',
   'buildErrorMessage',
   'sortUserPlugins',
