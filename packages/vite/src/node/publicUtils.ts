@@ -17,6 +17,8 @@ export {
   createFilter,
   rollupVersion,
 } from './utils'
+export { perEnvironmentPlugin } from './plugin'
+export { perEnvironmentState } from './environment'
 export { send } from './server/send'
 export { createLogger } from './logger'
 export { searchForWorkspaceRoot } from './server/searchRoot'
