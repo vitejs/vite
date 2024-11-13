@@ -35,14 +35,14 @@ export interface SSROptions {
      *
      * @default rootConfig.resolve.conditions
      */
-    conditions?: readonly string[]
+    conditions?: string[]
 
     /**
      * Conditions that are used during ssr import (including `ssrLoadModule`) of externalized dependencies.
      *
      * @default []
      */
-    externalConditions?: readonly string[]
+    externalConditions?: string[]
   }
 }
 
