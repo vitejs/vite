@@ -381,8 +381,8 @@ async function init() {
           message:
             typeof argTemplate === 'string' && !TEMPLATES.includes(argTemplate)
               ? reset(
-                  `"${argTemplate}" isn't a valid template. Please choose from below: `,
-                )
+                `"${argTemplate}" isn't a valid template. Please choose from below: `,
+              )
               : reset('Select a framework:'),
           initial: 0,
           choices: FRAMEWORKS.map((framework) => {
@@ -443,7 +443,7 @@ async function init() {
   const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
   const { customCommand } =
-    FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
+  FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
 
   if (customCommand) {
     const fullCustomCommand = customCommand
@@ -512,12 +512,12 @@ async function init() {
 
   pkg.name = packageName || getProjectName()
 
-  if(template.endsWith('-ts')){
-    if(!pkg.devDependencies) pkg.devDependencies = {}
-    pkg.devDependencies["@types/node"] = `^${process.versions.node}`
+  if (template.endsWith('-ts')) {
+    if (!pkg.devDependencies) pkg.devDependencies = {}
+    pkg.devDependencies['@types/node'] = `^${process.versions.node}`
   }
 
-  write('package.json', JSON.stringify(pkg, null, 2) + '\n')
+  write('package.json', JSON.stringify(pkg, sortKeys, 2) + '\n')
 
   if (isReactSwc) {
     setupReactSwc(root, template.endsWith('-ts'))
@@ -628,6 +628,24 @@ function editFile(file: string, callback: (content: string) => string) {
   const content = fs.readFileSync(file, 'utf-8')
   fs.writeFileSync(file, callback(content), 'utf-8')
 }
+
+function sortKeys(key: string, value: any) {
+  if (
+    (key === 'dependencies' || key === 'devDependencies') &&
+    typeof value === 'object' &&
+    value != null
+  ) {
+    const sortedObject: { [key: string]: any } = {}
+    Object.keys(value)
+      .sort()
+      .forEach((it) => {
+        sortedObject[it] = value[it]
+      })
+    return sortedObject
+  }
+  return value
+}
+
 
 init().catch((e) => {
   console.error(e)
