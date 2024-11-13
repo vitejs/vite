@@ -31,6 +31,7 @@ asyncFunctions.forEach((name) => {
 const disallowedVariables = [
   // was not exposed in cjs from the beginning
   'parseAst',
+  'parseAstAsync',
   'buildErrorMessage',
   'sortUserPlugins',
   // Environment API related variables that are too big to include in the cjs build
