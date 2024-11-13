@@ -1697,7 +1697,8 @@ async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
 ): Promise<{ code: string; dependencies: string[] }> {
-  const isModuleSyncConditionEnabled = await import('#module-sync-enabled')
+  const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
+    .default
 
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'

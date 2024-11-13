@@ -111,6 +111,7 @@ const nodeConfig = defineConfig({
     /^vite\//,
     'rollup/parseAst',
     /^tsx\//,
+    /^#/,
     ...Object.keys(pkg.dependencies),
     ...Object.keys(pkg.peerDependencies),
   ],
