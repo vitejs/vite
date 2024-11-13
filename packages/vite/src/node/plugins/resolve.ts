@@ -75,9 +75,9 @@ export interface EnvironmentResolveOptions {
   /**
    * @default ['browser', 'module', 'jsnext:main', 'jsnext']
    */
-  mainFields?: string[]
-  conditions?: string[]
-  externalConditions?: string[]
+  mainFields?: readonly string[]
+  conditions?: readonly string[]
+  externalConditions?: readonly string[]
   /**
    * @default ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
    */
