@@ -635,7 +635,7 @@ function sortKeys(key: string, value: any) {
     typeof value === 'object' &&
     value != null
   ) {
-    const sortedObject: { [key: string]: any } = {}
+    const sortedObject: Record<string, any> = {}
     Object.keys(value)
       .sort()
       .forEach((it) => {
