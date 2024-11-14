@@ -16,14 +16,14 @@ const debug = createDebugger('vite:external')
 
 const isExternalCache = new WeakMap<
   Environment,
-  (id: string, importer?: string) => boolean | undefined
+  (id: string, importer?: string) => boolean
 >()
 
 export function shouldExternalize(
   environment: Environment,
   id: string,
   importer: string | undefined,
-): boolean | undefined {
+): boolean {
   let isExternal = isExternalCache.get(environment)
   if (!isExternal) {
     isExternal = createIsExternal(environment)
@@ -73,8 +73,8 @@ export function createIsConfiguredAsExternal(
 
   const isExternalizable = (
     id: string,
-    importer?: string,
-    configuredAsExternal?: boolean,
+    importer: string | undefined,
+    configuredAsExternal: boolean,
   ): boolean => {
     if (!bareImportRE.test(id) || id.includes('\0')) {
       return false
@@ -122,7 +122,7 @@ export function createIsConfiguredAsExternal(
     }
     const pkgName = getNpmPackageName(id)
     if (!pkgName) {
-      return isExternalizable(id, importer)
+      return isExternalizable(id, importer, false)
     }
     if (
       // A package name in ssr.external externalizes every
@@ -146,14 +146,14 @@ export function createIsConfiguredAsExternal(
 
 function createIsExternal(
   environment: Environment,
-): (id: string, importer?: string) => boolean | undefined {
-  const processedIds = new Map<string, boolean | undefined>()
+): (id: string, importer?: string) => boolean {
+  const processedIds = new Map<string, boolean>()
 
   const isConfiguredAsExternal = createIsConfiguredAsExternal(environment)
 
   return (id: string, importer?: string) => {
     if (processedIds.has(id)) {
-      return processedIds.get(id)
+      return processedIds.get(id)!
     }
     let isExternal = false
     if (id[0] !== '.' && !path.isAbsolute(id)) {
