@@ -21,6 +21,7 @@ const asyncFunctions = [
   'loadConfigFromFile',
   'preprocessCSS',
   'createBuilder',
+  'inlineImport',
 ]
 asyncFunctions.forEach((name) => {
   module.exports[name] = (...args) =>
