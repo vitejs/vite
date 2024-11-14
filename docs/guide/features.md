@@ -594,8 +594,8 @@ const modules = import.meta.glob('./dir/*.js', {
 ```ts
 // code produced by vite:
 const modules = {
-  './dir/foo.svg': '',
-  './dir/bar.svg': '',
+  './dir/foo.js': '',
+  './dir/bar.js': '',
 }
 ```
 
