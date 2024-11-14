@@ -45,9 +45,9 @@ const DEFAULT_MAIN_FIELDS = [
   'jsnext:main', // moment still uses this...
   'jsnext',
 ]
-export const DEFAULT_CLIENT_MAIN_FIELDS = DEFAULT_MAIN_FIELDS
-export const DEFAULT_SERVER_MAIN_FIELDS = DEFAULT_MAIN_FIELDS.filter(
-  (f) => f !== 'browser',
+export const DEFAULT_CLIENT_MAIN_FIELDS = Object.freeze(DEFAULT_MAIN_FIELDS)
+export const DEFAULT_SERVER_MAIN_FIELDS = Object.freeze(
+  DEFAULT_MAIN_FIELDS.filter((f) => f !== 'browser'),
 )
 
 /**
@@ -57,11 +57,11 @@ export const DEFAULT_SERVER_MAIN_FIELDS = DEFAULT_MAIN_FIELDS.filter(
 export const DEV_PROD_CONDITION = `development|production` as const
 
 const DEFAULT_CONDITIONS = ['module', 'browser', 'node', DEV_PROD_CONDITION]
-export const DEFAULT_CLIENT_CONDITIONS = DEFAULT_CONDITIONS.filter(
-  (c) => c !== 'node',
+export const DEFAULT_CLIENT_CONDITIONS = Object.freeze(
+  DEFAULT_CONDITIONS.filter((c) => c !== 'node'),
 )
-export const DEFAULT_SERVER_CONDITIONS = DEFAULT_CONDITIONS.filter(
-  (c) => c !== 'browser',
+export const DEFAULT_SERVER_CONDITIONS = Object.freeze(
+  DEFAULT_CONDITIONS.filter((c) => c !== 'browser'),
 )
 
 // Baseline support browserslist

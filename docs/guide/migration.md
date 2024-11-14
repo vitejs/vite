@@ -24,10 +24,10 @@ The conditions that are no longer added internally for
 - `resolve.conditions` are `['module', 'browser', 'development|production']`
 - `ssr.resolve.conditions` are `['module', 'node', 'development|production']`
 
-The default values for those options are updated to the corresponding values and `ssr.resolve.conditions` no longer uses `resolve.conditions` as the default value. Note that `development|production` is a special variable that is replaced with `production` or `development` depending on the value of `process.env.NODE_ENV`.
+The default values for those options are updated to the corresponding values and `ssr.resolve.conditions` no longer uses `resolve.conditions` as the default value. Note that `development|production` is a special variable that is replaced with `production` or `development` depending on the value of `process.env.NODE_ENV`. These default values are exported from `vite` as `defaultClientConditions` and `defaultServerConditions`.
 
 If you specified a custom value for `resolve.conditions` or `ssr.resolve.conditions`, you need to update it to include the new conditions.
-For example, if you previously specified `['custom']` for `resolve.conditions`, you need to specify `['custom', 'module', 'browser', 'development|production']` instead.
+For example, if you previously specified `['custom']` for `resolve.conditions`, you need to specify `['custom', ...defaultClientConditions]` instead.
 
 ### JSON stringify
 

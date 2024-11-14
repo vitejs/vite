@@ -117,7 +117,7 @@ For SSR builds, deduplication does not work for ESM build outputs configured fro
 ## resolve.conditions
 
 - **Type:** `string[]`
-- **Default:** `['module', 'browser', 'development|production']`
+- **Default:** `['module', 'browser', 'development|production']` (`defaultClientConditions`)
 
 Additional allowed conditions when resolving [Conditional Exports](https://nodejs.org/api/packages.html#packages_conditional_exports) from a package.
 
@@ -147,7 +147,7 @@ Export keys ending with "/" is deprecated by Node and may not work well. Please 
 ## resolve.mainFields
 
 - **Type:** `string[]`
-- **Default:** `['browser', 'module', 'jsnext:main', 'jsnext']`
+- **Default:** `['browser', 'module', 'jsnext:main', 'jsnext']` (`defaultClientMainFields`)
 
 List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
 

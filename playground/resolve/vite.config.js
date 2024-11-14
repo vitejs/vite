@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { defineConfig, normalizePath } from 'vite'
+import { defaultClientConditions, defineConfig, normalizePath } from 'vite'
 import { a } from './config-dep.cjs'
 
 const virtualFile = '@virtual-file'
@@ -32,7 +32,7 @@ export default defineConfig({
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
     mainFields: ['browser', 'custom', 'module'],
-    conditions: ['module', 'browser', 'development|production', 'custom'],
+    conditions: [...defaultClientConditions, 'custom'],
   },
   define: {
     VITE_CONFIG_DEP_TEST: a,
