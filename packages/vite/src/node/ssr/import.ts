@@ -10,13 +10,13 @@ export async function inlineImport(
   moduleId: string,
 ): Promise<InlineImportResult> {
   const environment = createRunnableDevEnvironment(
-    'config',
+    'inline',
     // TODO: provide a dummy config?
     await resolveConfig(
       {
         configFile: false,
         environments: {
-          config: {
+          inline: {
             consumer: 'server',
             dev: {
               moduleRunnerTransform: true,
@@ -30,16 +30,6 @@ export async function inlineImport(
       'serve',
     ),
     {
-      // options: {
-      //   consumer: 'server',
-      //   dev: {
-      //     moduleRunnerTransform: true,
-      //   },
-      // TODO for some reason this doesn't work, only setting it the config works
-      // resolve: {
-      //   external: true,
-      // },
-      // },
       runnerOptions: {
         hmr: {
           logger: false,

@@ -88,6 +88,7 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   delete ret.l
   delete ret.logLevel
   delete ret.clearScreen
+  delete ret.bundleConfig
   delete ret.d
   delete ret.debug
   delete ret.f
