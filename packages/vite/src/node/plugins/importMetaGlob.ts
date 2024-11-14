@@ -437,7 +437,7 @@ export async function transformGlobImport(
             let importPath = paths.importPath
             let importQuery = options.query ?? ''
 
-            if (importQuery && importQuery === '?nocontnet') {
+            if (importQuery && importQuery === '?nocontent') {
               objectProps.push(`${JSON.stringify(filePath)}: ''`)
               return
             }
