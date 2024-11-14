@@ -513,8 +513,11 @@ async function init() {
   pkg.name = packageName || getProjectName()
 
   if (template.endsWith('-ts')) {
-    if (!pkg.devDependencies) pkg.devDependencies = {}
-    pkg.devDependencies['@types/node'] = `^${process.versions.node}`
+    const major = parseInt(process.versions.node.split('.')[0])
+    if ((major === 18 || major >= 20) && (major & 1) === 0) {
+      if (!pkg.devDependencies) pkg.devDependencies = {}
+      pkg.devDependencies['@types/node'] = `^${process.versions.node}`
+    }
   }
 
   write('package.json', JSON.stringify(pkg, sortKeys, 2) + '\n')
