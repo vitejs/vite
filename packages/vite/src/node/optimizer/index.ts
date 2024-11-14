@@ -677,7 +677,7 @@ export function runOptimizeDeps(
             // workaround Firefox warning by removing blank source map reference
             // https://github.com/evanw/esbuild/issues/3945
             const output = meta.outputs[o]
-            // filter by exact bytes
+            // filter by exact bytes of an empty source map
             if (output.bytes === 93) {
               const jsMapPath = path.resolve(
                 processingCacheDirOutputPath,
