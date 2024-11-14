@@ -52,6 +52,7 @@ import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { warnFutureDeprecation } from '../deprecations'
 import {
+  createNoopWatcher,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
@@ -121,7 +122,7 @@ export interface ServerOptions extends CommonServerOptions {
   }
   /**
    * chokidar watch options or null to disable FS watching
-   * https://github.com/paulmillr/chokidar#getting-started
+   * https://github.com/paulmillr/chokidar/tree/3.6.0#api
    */
   watch?: WatchOptions | null
   /**
@@ -248,8 +249,8 @@ export interface ViteDevServer {
   httpServer: HttpServer | null
   /**
    * Chokidar watcher instance. If `config.server.watch` is set to `null`,
-   * it will not watch any files and calling `add` will have no effect.
-   * https://github.com/paulmillr/chokidar#getting-started
+   * it will not watch any files and calling `add` or `unwatch` will have no effect.
+   * https://github.com/paulmillr/chokidar/tree/3.6.0#api
    */
   watcher: FSWatcher
   /**
@@ -439,7 +440,10 @@ export async function _createServer(
     resolvedOutDirs,
   )
   const resolvedWatchOptions = resolveChokidarOptions(
-    serverConfig.watch,
+    {
+      disableGlobbing: true,
+      ...serverConfig.watch,
+    },
     resolvedOutDirs,
     emptyOutDir,
     config.cacheDir,
@@ -459,12 +463,12 @@ export async function _createServer(
     setClientErrorHandler(httpServer, config.logger)
   }
 
-  const watcher = chokidar.watch(
-    // config file dependencies and env file might be outside of root
-    // eslint-disable-next-line eqeqeq -- null means disabled
-    serverConfig.watch === null
-      ? []
-      : [
+  // eslint-disable-next-line eqeqeq
+  const watchEnabled = serverConfig.watch !== null
+  const watcher = watchEnabled
+    ? (chokidar.watch(
+        // config file dependencies and env file might be outside of root
+        [
           root,
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
@@ -472,17 +476,10 @@ export async function _createServer(
           // of the root directory.
           ...(publicDir && publicFiles ? [publicDir] : []),
         ],
-    resolvedWatchOptions,
-  )
-  // If watch is turned off, patch `.add()` as a noop to prevent programmatically
-  // watching additional files and to keep it fast.
-  // eslint-disable-next-line eqeqeq -- null means disabled
-  if (serverConfig.watch === null) {
-    watcher.add = function () {
-      return this
-    }
-    await watcher.close()
-  }
+
+        resolvedWatchOptions,
+      ) as FSWatcher)
+    : createNoopWatcher(resolvedWatchOptions)
 
   const environments: Record<string, DevEnvironment> = {}
 

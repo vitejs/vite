@@ -841,10 +841,6 @@ if (!isBuild) {
         () => page.textContent('.file-delete-restore'),
         'parent:not-child',
       ),
-      // chokidar sometimes detect a file delete and create immediately after as a single
-      // `change` event, which isn't expected in this test, so we create an artificial delay
-      // here to ensure there's ample time to dtect the difference
-      new Promise((r) => setTimeout(r, 200)),
     ])
 
     await untilBrowserLogAfter(async () => {
