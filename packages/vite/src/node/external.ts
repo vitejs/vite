@@ -92,9 +92,12 @@ export function createIsConfiguredAsExternal(
       if (!resolved) {
         return false
       }
-      // Allow linked packages to be externalized if they are explicitly
-      // configured as external
-      return canExternalizeFile(resolved.id, !!configuredAsExternal)
+      // Only allow linked packages to be externalized
+      // if they are explicitly configured as external
+      if (!configuredAsExternal && !isInNodeModules(resolved.id)) {
+        return false
+      }
+      return canExternalizeFile(resolved.id)
     } catch {
       debug?.(
         `Failed to node resolve "${id}". Skipping externalizing it by default.`,
@@ -159,14 +162,7 @@ function createIsExternal(
   }
 }
 
-export function canExternalizeFile(
-  filePath: string,
-  allowLinkedExternal: boolean,
-): boolean {
-  // don't external symlink packages
-  if (!allowLinkedExternal && !isInNodeModules(filePath)) {
-    return false
-  }
+export function canExternalizeFile(filePath: string): boolean {
   const ext = path.extname(filePath)
   // only external js imports
   return !ext || ext === '.js' || ext === '.mjs' || ext === '.cjs'

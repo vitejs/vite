@@ -763,7 +763,7 @@ export function tryNodeResolve(
     if (!externalize) {
       return resolved
     }
-    if (!canExternalizeFile(resolved.id, true)) {
+    if (!canExternalizeFile(resolved.id)) {
       return resolved
     }
 
