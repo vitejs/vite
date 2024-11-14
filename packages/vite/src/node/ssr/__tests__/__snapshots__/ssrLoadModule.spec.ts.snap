@@ -21,10 +21,17 @@ Expected ";" but found "code"
 
 exports[`parse error 2`] = `
 {
-  "frame": "",
-  "id": "",
-  "loc": undefined,
-  "message": "Expected ';', '}' or <eof>",
+  "frame": "1  |  invalid code
+   |          ^
+2  |  ",
+  "id": "/fixtures/errors/syntax-error.js",
+  "loc": {
+    "column": 9,
+    "file": "/fixtures/errors/syntax-error.js",
+    "line": 1,
+  },
+  "message": "Parse failure: Expected ';', '}' or <eof>
+At file: /fixtures/errors/syntax-error.js:1:9",
 }
 `;
 
@@ -49,9 +56,16 @@ Expected ";" but found "code"
 
 exports[`parse error 4`] = `
 {
-  "frame": "",
-  "id": "",
-  "loc": undefined,
-  "message": "Expected ';', '}' or <eof>",
+  "frame": "1  |  invalid code
+   |          ^
+2  |  ",
+  "id": "/fixtures/errors/syntax-error.js",
+  "loc": {
+    "column": 9,
+    "file": "/fixtures/errors/syntax-error.js",
+    "line": 1,
+  },
+  "message": "Parse failure: Expected ';', '}' or <eof>
+At file: /fixtures/errors/syntax-error.js:1:9",
 }
 `;

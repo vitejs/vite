@@ -19,7 +19,12 @@ import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { parseAstAsync as rollupParseAstAsync } from 'rollup/parseAst'
 import type { TransformResult } from '../server/transformRequest'
-import { combineSourcemaps, isDefined } from '../utils'
+import {
+  combineSourcemaps,
+  generateCodeFrame,
+  isDefined,
+  numberToPos,
+} from '../utils'
 import { isJSONRequest } from '../plugins/json'
 import type { DefineImportMetadata } from '../../shared/ssrTransform'
 
@@ -81,15 +86,21 @@ async function ssrTransformScript(
   try {
     ast = await rollupParseAstAsync(code)
   } catch (err) {
-    if (!err.loc || !err.loc.line) throw err
-    const line = err.loc.line
-    throw new Error(
-      `Parse failure: ${
-        err.message
-      }\nAt file: ${url}\nContents of line ${line}: ${
-        code.split('\n')[line - 1]
-      }`,
-    )
+    // enhance known rollup errors
+    // https://github.com/rollup/rollup/blob/42e587e0e37bc0661aa39fe7ad6f1d7fd33f825c/src/utils/bufferToAst.ts#L17-L22
+    if (err.code === 'PARSE_ERROR') {
+      err.message = `Parse failure: ${err.message}\n`
+      err.id = url
+      if (typeof err.pos === 'number') {
+        err.loc = numberToPos(code, err.pos)
+        err.loc.file = url
+        err.frame = generateCodeFrame(code, err.pos)
+        err.message += `At file: ${url}:${err.loc.line}:${err.loc.column}`
+      } else {
+        err.message += `At file: ${url}`
+      }
+    }
+    throw err
   }
 
   let uid = 0
