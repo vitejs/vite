@@ -410,14 +410,7 @@ export function resolvePlugin(
         }
 
         if (
-          (res = tryNodeResolve(
-            id,
-            importer,
-            options,
-            depsOptimizer,
-            external,
-            undefined,
-          ))
+          (res = tryNodeResolve(id, importer, options, depsOptimizer, external))
         ) {
           return res
         }
@@ -696,7 +689,6 @@ export function tryNodeResolve(
   options: InternalResolveOptions,
   depsOptimizer?: DepsOptimizer,
   externalize?: boolean,
-  allowLinkedExternal: boolean = true,
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
@@ -771,7 +763,7 @@ export function tryNodeResolve(
     if (!externalize) {
       return resolved
     }
-    if (!canExternalizeFile(resolved.id, allowLinkedExternal)) {
+    if (!canExternalizeFile(resolved.id, true)) {
       return resolved
     }
 
@@ -1098,7 +1090,6 @@ function tryResolveBrowserMapping(
               browserMappedPath,
               importer,
               options,
-              undefined,
               undefined,
               undefined,
             )?.id

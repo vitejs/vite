@@ -88,13 +88,12 @@ export function createIsConfiguredAsExternal(
         resolveOptions,
         undefined,
         false,
-        // Allow linked packages to be externalized if they are explicitly
-        // configured as external
-        !!configuredAsExternal,
       )
       if (!resolved) {
         return false
       }
+      // Allow linked packages to be externalized if they are explicitly
+      // configured as external
       return canExternalizeFile(resolved.id, !!configuredAsExternal)
     } catch {
       debug?.(
