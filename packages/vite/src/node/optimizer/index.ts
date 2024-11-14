@@ -679,10 +679,7 @@ export function runOptimizeDeps(
             const output = meta.outputs[o]
             // filter by exact bytes of an empty source map
             if (output.bytes === 93) {
-              const jsMapPath = path.resolve(
-                processingCacheDirOutputPath,
-                path.relative(processingCacheDirOutputPath, o),
-              )
+              const jsMapPath = path.resolve(o)
               const jsPath = jsMapPath.slice(0, -4)
               if (fs.existsSync(jsPath) && fs.existsSync(jsMapPath)) {
                 const map = JSON.parse(fs.readFileSync(jsMapPath, 'utf-8'))
