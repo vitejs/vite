@@ -7,6 +7,7 @@ import {
   createFilter,
   getNpmPackageName,
   isBuiltin,
+  isInNodeModules,
 } from './utils'
 import type { Environment } from './environment'
 import type { PartialEnvironment } from './baseEnvironment'
@@ -79,20 +80,22 @@ export function createIsConfiguredAsExternal(
       return false
     }
     try {
-      return !!tryNodeResolve(
+      const resolved = tryNodeResolve(
         id,
         // Skip passing importer in build to avoid externalizing non-hoisted dependencies
         // unresolvable from root (which would be unresolvable from output bundles also)
         config.command === 'build' ? undefined : importer,
         resolveOptions,
         undefined,
-        // try to externalize, will return undefined or an object without
-        // a external flag if it isn't externalizable
-        true,
+        false,
         // Allow linked packages to be externalized if they are explicitly
         // configured as external
         !!configuredAsExternal,
-      )?.external
+      )
+      if (!resolved) {
+        return false
+      }
+      return canExternalizeFile(resolved.id, !!configuredAsExternal)
     } catch {
       debug?.(
         `Failed to node resolve "${id}". Skipping externalizing it by default.`,
@@ -155,4 +158,17 @@ function createIsExternal(
     processedIds.set(id, isExternal)
     return isExternal
   }
+}
+
+export function canExternalizeFile(
+  filePath: string,
+  allowLinkedExternal: boolean,
+): boolean {
+  // don't external symlink packages
+  if (!allowLinkedExternal && !isInNodeModules(filePath)) {
+    return false
+  }
+  const ext = path.extname(filePath)
+  // only external js imports
+  return !ext || ext === '.js' || ext === '.mjs' || ext === '.cjs'
 }

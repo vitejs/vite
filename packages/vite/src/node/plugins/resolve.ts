@@ -37,7 +37,7 @@ import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
 import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
-import { shouldExternalize } from '../external'
+import { canExternalizeFile, shouldExternalize } from '../external'
 import {
   findNearestMainPackageData,
   findNearestPackageData,
@@ -771,22 +771,16 @@ export function tryNodeResolve(
     if (!externalize) {
       return resolved
     }
-    // don't external symlink packages
-    if (!allowLinkedExternal && !isInNodeModules(resolved.id)) {
+    if (!canExternalizeFile(resolved.id, allowLinkedExternal)) {
       return resolved
     }
-    const resolvedExt = path.extname(resolved.id)
-    // don't external non-js imports
-    if (
-      resolvedExt &&
-      resolvedExt !== '.js' &&
-      resolvedExt !== '.mjs' &&
-      resolvedExt !== '.cjs'
-    ) {
-      return resolved
-    }
+
     let resolvedId = id
-    if (deepMatch && !pkg?.data.exports && path.extname(id) !== resolvedExt) {
+    if (
+      deepMatch &&
+      !pkg?.data.exports &&
+      path.extname(id) !== path.extname(resolved.id)
+    ) {
       // id date-fns/locale
       // resolve.id ...date-fns/esm/locale/index.js
       const index = resolved.id.indexOf(id)
