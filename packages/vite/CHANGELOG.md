@@ -1,3 +1,27 @@
+## 6.0.0-beta.10 (2024-11-14)
+
+* feat: add `isSsrTargetWebWorker` flag to `configEnvironment` hook (#18620) ([3f5fab0](https://github.com/vitejs/vite/commit/3f5fab04aa64c0e9b45068e842f033583b365de0)), closes [#18620](https://github.com/vitejs/vite/issues/18620)
+* feat: add `ssr.resolve.mainFields` option (#18646) ([a6f5f5b](https://github.com/vitejs/vite/commit/a6f5f5baca7a5d2064f5f4cb689764ad939fab4b)), closes [#18646](https://github.com/vitejs/vite/issues/18646)
+* feat: expose default mainFields/conditions (#18648) ([c12c653](https://github.com/vitejs/vite/commit/c12c653ca5fab354e0f71394e2fbe636dccf6b2f)), closes [#18648](https://github.com/vitejs/vite/issues/18648)
+* feat: extended applyToEnvironment and perEnvironmentPlugin (#18544) ([8fa70cd](https://github.com/vitejs/vite/commit/8fa70cdfa65ce8254ab8da8be0d92614126764c0)), closes [#18544](https://github.com/vitejs/vite/issues/18544)
+* feat: show error when accessing variables not exposed in CJS build (#18649) ([87c5502](https://github.com/vitejs/vite/commit/87c55022490d4710934c482abf5fbd4fcda9c3c9)), closes [#18649](https://github.com/vitejs/vite/issues/18649)
+* feat(optimizer): allow users to specify their esbuild `platform` option (#18611) ([0924879](https://github.com/vitejs/vite/commit/09248795ca79a7053b803af8977c3422f5cd5824)), closes [#18611](https://github.com/vitejs/vite/issues/18611)
+* revert: use chokidar v3 (#18659) ([49783da](https://github.com/vitejs/vite/commit/49783da298bc45f3f3c5ad4ce2fb1260ee8856bb)), closes [#18659](https://github.com/vitejs/vite/issues/18659)
+* fix: cjs build for perEnvironmentState et al (#18656) ([95c4b3c](https://github.com/vitejs/vite/commit/95c4b3c371dc7fb12c28cb1307f6f389887eb1e1)), closes [#18656](https://github.com/vitejs/vite/issues/18656)
+* fix: include more modules to prefix-only module list (#18667) ([5a2103f](https://github.com/vitejs/vite/commit/5a2103f0d486a7725c23c70710b11559c00e9b93)), closes [#18667](https://github.com/vitejs/vite/issues/18667)
+* fix(html): externalize `rollup.external` scripts correctly (#18618) ([55461b4](https://github.com/vitejs/vite/commit/55461b43329db6a5e737eab591163a8681ba9230)), closes [#18618](https://github.com/vitejs/vite/issues/18618)
+* fix(ssr): format `ssrTransform` parse error  (#18644) ([d9be921](https://github.com/vitejs/vite/commit/d9be92187cb17d740856af27d0ab60c84e04d58c)), closes [#18644](https://github.com/vitejs/vite/issues/18644)
+* fix(ssr): preserve fetchModule error details (#18626) ([866a433](https://github.com/vitejs/vite/commit/866a433a34ab2f6d2910506e781b346091de1b9e)), closes [#18626](https://github.com/vitejs/vite/issues/18626)
+* refactor: introduce `mergeWithDefaults` and organize how default values for config options are set ( ([0e1f437](https://github.com/vitejs/vite/commit/0e1f437d53683b57f0157ce3ff0b0f02acabb408)), closes [#18550](https://github.com/vitejs/vite/issues/18550)
+* refactor(resolve): remove `allowLinkedExternal` parameter from `tryNodeResolve` (#18670) ([b74d363](https://github.com/vitejs/vite/commit/b74d3632693b6a829b4d1cdc2a9d4ba8234c093b)), closes [#18670](https://github.com/vitejs/vite/issues/18670)
+* build: ignore cjs warning (#18660) ([33b0d5a](https://github.com/vitejs/vite/commit/33b0d5a6ca18e9f7c27b0159decd84fee3859e09)), closes [#18660](https://github.com/vitejs/vite/issues/18660)
+* perf: remove strip-ansi for a node built-in (#18630) ([5182272](https://github.com/vitejs/vite/commit/5182272d52fc092a6219c8efe73ecb3f8e65a0b5)), closes [#18630](https://github.com/vitejs/vite/issues/18630)
+* chore: tweak build config (#18622) ([2a88f71](https://github.com/vitejs/vite/commit/2a88f71aef87ed23b155af26f8aca6bb7f65e899)), closes [#18622](https://github.com/vitejs/vite/issues/18622)
+* chore(deps): update all non-major dependencies (#18634) ([e2231a9](https://github.com/vitejs/vite/commit/e2231a92af46db144b9c94fb57918ac683dc93cb)), closes [#18634](https://github.com/vitejs/vite/issues/18634)
+* chore(deps): update transitive deps (#18602) ([0c8b152](https://github.com/vitejs/vite/commit/0c8b15238b669b8ab0a3f90bcf2f690d4450e18f)), closes [#18602](https://github.com/vitejs/vite/issues/18602)
+
+
+
 ## 6.0.0-beta.9 (2024-11-07)
 
 * feat: use a single transport for fetchModule and HMR support (#18362) ([78dc490](https://github.com/vitejs/vite/commit/78dc4902ffef7f316e84d21648b04dc62dd0ae0a)), closes [#18362](https://github.com/vitejs/vite/issues/18362)
