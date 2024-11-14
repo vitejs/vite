@@ -381,8 +381,8 @@ async function init() {
           message:
             typeof argTemplate === 'string' && !TEMPLATES.includes(argTemplate)
               ? reset(
-                `"${argTemplate}" isn't a valid template. Please choose from below: `,
-              )
+                  `"${argTemplate}" isn't a valid template. Please choose from below: `,
+                )
               : reset('Select a framework:'),
           initial: 0,
           choices: FRAMEWORKS.map((framework) => {
@@ -443,7 +443,7 @@ async function init() {
   const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
   const { customCommand } =
-  FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
+    FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
 
   if (customCommand) {
     const fullCustomCommand = customCommand
@@ -645,7 +645,6 @@ function sortKeys(key: string, value: any) {
   }
   return value
 }
-
 
 init().catch((e) => {
   console.error(e)
