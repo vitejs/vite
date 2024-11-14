@@ -7,6 +7,7 @@ import {
   createFilter,
   getNpmPackageName,
   isBuiltin,
+  isInNodeModules,
 } from './utils'
 import type { Environment } from './environment'
 import type { PartialEnvironment } from './baseEnvironment'
@@ -79,7 +80,7 @@ export function createIsConfiguredAsExternal(
       return false
     }
     try {
-      return !!tryNodeResolve(
+      const resolved = tryNodeResolve(
         id,
         // Skip passing importer in build to avoid externalizing non-hoisted dependencies
         // unresolvable from root (which would be unresolvable from output bundles also)
@@ -89,10 +90,16 @@ export function createIsConfiguredAsExternal(
         // try to externalize, will return undefined or an object without
         // a external flag if it isn't externalizable
         true,
-        // Allow linked packages to be externalized if they are explicitly
-        // configured as external
-        !!configuredAsExternal,
-      )?.external
+      )
+      if (!resolved) {
+        return false
+      }
+      // Allow linked packages to be externalized only if they are explicitly
+      // configured as external
+      if (!configuredAsExternal && !isInNodeModules(resolved.id)) {
+        return false
+      }
+      return !!resolved?.external
     } catch {
       debug?.(
         `Failed to node resolve "${id}". Skipping externalizing it by default.`,

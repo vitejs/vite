@@ -410,14 +410,7 @@ export function resolvePlugin(
         }
 
         if (
-          (res = tryNodeResolve(
-            id,
-            importer,
-            options,
-            depsOptimizer,
-            external,
-            undefined,
-          ))
+          (res = tryNodeResolve(id, importer, options, depsOptimizer, external))
         ) {
           return res
         }
@@ -696,7 +689,6 @@ export function tryNodeResolve(
   options: InternalResolveOptions,
   depsOptimizer?: DepsOptimizer,
   externalize?: boolean,
-  allowLinkedExternal: boolean = true,
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
@@ -769,10 +761,6 @@ export function tryNodeResolve(
 
   const processResult = (resolved: PartialResolvedId) => {
     if (!externalize) {
-      return resolved
-    }
-    // don't external symlink packages
-    if (!allowLinkedExternal && !isInNodeModules(resolved.id)) {
       return resolved
     }
     const resolvedExt = path.extname(resolved.id)
@@ -1104,7 +1092,6 @@ function tryResolveBrowserMapping(
               browserMappedPath,
               importer,
               options,
-              undefined,
               undefined,
               undefined,
             )?.id
