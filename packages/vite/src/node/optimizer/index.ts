@@ -673,6 +673,28 @@ export function runOptimizeDeps(
                 browserHash: metadata.browserHash,
               })
             }
+          } else {
+            // workaround Firefox warning by removing blank source map reference
+            // https://github.com/evanw/esbuild/issues/3945
+            const output = meta.outputs[o]
+            // filter by exact bytes
+            if (output.bytes === 93) {
+              const jsMapPath = path.resolve(
+                processingCacheDirOutputPath,
+                path.relative(processingCacheDirOutputPath, o),
+              )
+              const jsPath = jsMapPath.slice(0, -4)
+              if (fs.existsSync(jsPath) && fs.existsSync(jsMapPath)) {
+                const map = JSON.parse(fs.readFileSync(jsMapPath, 'utf-8'))
+                if (map.sources.length === 0) {
+                  const js = fs.readFileSync(jsPath, 'utf-8')
+                  fs.writeFileSync(
+                    jsPath,
+                    js.slice(0, js.lastIndexOf('//# sourceMappingURL=')),
+                  )
+                }
+              }
+            }
           }
         }
 
