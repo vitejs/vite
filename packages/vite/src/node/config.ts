@@ -98,7 +98,7 @@ import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
-import { inlineImport } from './ssr/import'
+import { inlineImport } from './ssr/inlineImport'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -1698,7 +1698,9 @@ export async function loadConfigFromFile(
 }
 
 async function importConfigFile(resolvedPath: string) {
-  const { module, dependencies } = await inlineImport(resolvedPath)
+  const { module, dependencies } = await inlineImport<{
+    default: UserConfigExport
+  }>(resolvedPath, { configFile: false })
   return {
     configExport: module.default,
     dependencies,

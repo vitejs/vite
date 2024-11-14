@@ -1,20 +1,26 @@
+import type { InlineConfig } from '../config'
 import { resolveConfig } from '../config'
 import { createRunnableDevEnvironment } from '../server/environments/runnableEnvironment'
+import { mergeConfig } from '../utils'
 
-interface InlineImportResult {
-  module: any
+interface InlineImportResult<T> {
+  module: T
   dependencies: string[]
 }
 
-export async function inlineImport(
+/**
+ * Import any file using the default Vite environment.
+ * @experimental
+ */
+export async function inlineImport<T>(
   moduleId: string,
-): Promise<InlineImportResult> {
+  inlineConfig?: InlineConfig,
+): Promise<InlineImportResult<T>> {
   const environment = createRunnableDevEnvironment(
     'inline',
     // TODO: provide a dummy config?
     await resolveConfig(
-      {
-        configFile: false,
+      mergeConfig(inlineConfig || {}, {
         environments: {
           inline: {
             consumer: 'server',
@@ -26,7 +32,7 @@ export async function inlineImport(
             },
           },
         },
-      },
+      }),
       'serve',
     ),
     {
@@ -42,16 +48,18 @@ export async function inlineImport(
   try {
     const module = await environment.runner.import(moduleId)
     const modules = [
-      ...environment.runner.evaluatedModules.fileToModulesMap.entries(),
+      ...environment.runner.evaluatedModules.urlToIdModuleMap.values(),
     ]
     const dependencies = modules
-      .filter(([file, modules]) => {
-        const isExternal = [...modules].every(
-          (m) => !m.meta || 'externalize' in m.meta,
-        )
-        return !isExternal && file !== moduleId
+      .filter((m) => {
+        // ignore all externalized modules
+        if (!m.meta || 'externalize' in m.meta) {
+          return false
+        }
+        // ignore the current module
+        return m.exports !== module
       })
-      .map(([file]) => file)
+      .map((m) => m.file)
     return {
       module,
       dependencies,
