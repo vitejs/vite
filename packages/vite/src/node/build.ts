@@ -786,7 +786,6 @@ async function buildEnvironment(
         resolvedOutDirs,
         emptyOutDir,
         environment.config.cacheDir,
-        true /* isRollupChokidar3 */,
       )
 
       const { watch } = await import('rollup')

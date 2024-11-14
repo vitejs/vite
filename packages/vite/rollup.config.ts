@@ -109,6 +109,7 @@ const nodeConfig = defineConfig({
   },
   external: [
     /^vite\//,
+    'fsevents',
     'rollup/parseAst',
     /^tsx\//,
     ...Object.keys(pkg.dependencies),
@@ -119,6 +120,13 @@ const nodeConfig = defineConfig({
     // generate code that force require them upfront for side effects.
     // Shim them with eval() so rollup can skip these calls.
     shimDepsPlugin({
+      // chokidar -> fsevents
+      'fsevents-handler.js': [
+        {
+          src: `require('fsevents')`,
+          replacement: `__require('fsevents')`,
+        },
+      ],
       // postcss-import -> sugarss
       'process-content.js': [
         {
@@ -179,6 +187,7 @@ const moduleRunnerConfig = defineConfig({
     'module-runner': path.resolve(__dirname, 'src/module-runner/index.ts'),
   },
   external: [
+    'fsevents',
     'lightningcss',
     'rollup/parseAst',
     ...Object.keys(pkg.dependencies),
@@ -200,7 +209,7 @@ const cjsConfig = defineConfig({
     chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
     format: 'cjs',
   },
-  external: Object.keys(pkg.dependencies),
+  external: ['fsevents', ...Object.keys(pkg.dependencies)],
   plugins: [
     ...createSharedNodePlugins({}),
     bundleSizeLimit(175),

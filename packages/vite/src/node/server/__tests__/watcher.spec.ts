@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { type ViteDevServer, createServer } from '../index'
 
-const stubGetWatchedCode = /function\(\)\s*\{\s*return this;\s*\}/
+const stubGetWatchedCode = /\(\)\s*\{\s*return this;\s*\}/
 
 describe('watcher configuration', () => {
   let server: ViteDevServer | undefined
