@@ -23,6 +23,7 @@ interface GlobalCLIOptions {
   l?: LogLevel
   logLevel?: LogLevel
   clearScreen?: boolean
+  bundleConfig?: boolean
   d?: boolean | string
   debug?: boolean | string
   f?: string
@@ -151,6 +152,10 @@ cli
   })
   .option('-l, --logLevel <level>', `[string] info | warn | error | silent`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
+  .option(
+    '--bundleConfig',
+    `[boolean] should the config be bundled or evaluated with a module runner when importing`,
+  )
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
   .option('-m, --mode <mode>', `[string] set env mode`)
@@ -180,6 +185,7 @@ cli
         base: options.base,
         mode: options.mode,
         configFile: options.config,
+        bundleConfig: options.bundleConfig,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         optimizeDeps: { force: options.force },
@@ -304,6 +310,7 @@ cli
           base: options.base,
           mode: options.mode,
           configFile: options.config,
+          bundleConfig: options.bundleConfig,
           logLevel: options.logLevel,
           clearScreen: options.clearScreen,
           build: buildOptions,
@@ -340,6 +347,7 @@ cli
             root,
             base: options.base,
             configFile: options.config,
+            bundleConfig: options.bundleConfig,
             logLevel: options.logLevel,
             mode: options.mode,
           },
@@ -382,6 +390,7 @@ cli
           root,
           base: options.base,
           configFile: options.config,
+          bundleConfig: options.bundleConfig,
           logLevel: options.logLevel,
           mode: options.mode,
           build: {
