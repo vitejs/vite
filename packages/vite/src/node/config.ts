@@ -747,13 +747,13 @@ function resolveEnvironmentOptions(
   environmentName: string,
   // Backward compatibility
   skipSsrTransform?: boolean,
-  ssrTargetWebworker?: boolean,
+  isSsrTargetWebworkerSet?: boolean,
 ): ResolvedEnvironmentOptions {
   const isClientEnvironment = environmentName === 'client'
   const consumer =
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   const isSsrTargetWebworkerEnvironment =
-    ssrTargetWebworker && environmentName === 'ssr'
+    isSsrTargetWebworkerSet && environmentName === 'ssr'
   const resolve = resolveEnvironmentResolveOptions(
     options.resolve,
     alias,
@@ -1145,7 +1145,12 @@ export async function resolveConfig(
     )
   }
 
-  await runConfigEnvironmentHook(config.environments, userPlugins, configEnv)
+  await runConfigEnvironmentHook(
+    config.environments,
+    userPlugins,
+    configEnv,
+    config.ssr?.target === 'webworker',
+  )
 
   const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
 
@@ -1916,6 +1921,7 @@ async function runConfigEnvironmentHook(
   environments: Record<string, EnvironmentOptions>,
   plugins: Plugin[],
   configEnv: ConfigEnv,
+  isSsrTargetWebworkerSet: boolean,
 ): Promise<void> {
   const environmentNames = Object.keys(environments)
   for (const p of getSortedPluginsByHook('configEnvironment', plugins)) {
@@ -1923,7 +1929,10 @@ async function runConfigEnvironmentHook(
     const handler = getHookHandler(hook)
     if (handler) {
       for (const name of environmentNames) {
-        const res = await handler(name, environments[name], configEnv)
+        const res = await handler(name, environments[name], {
+          ...configEnv,
+          isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
+        })
         if (res) {
           environments[name] = mergeConfig(environments[name], res)
         }

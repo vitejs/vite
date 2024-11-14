@@ -244,7 +244,13 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: void,
       name: string,
       config: EnvironmentOptions,
-      env: ConfigEnv,
+      env: ConfigEnv & {
+        /**
+         * Whether this environment is SSR environment and `ssr.target` is set to `'webworker'`.
+         * Only intended to be used for backward compatibility.
+         */
+        isSsrTargetWebworker?: boolean
+      },
     ) =>
       | EnvironmentOptions
       | null
