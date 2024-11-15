@@ -529,7 +529,7 @@ export interface ResolvedWorkerOptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
-  bundleConfig?: boolean
+  configLoader?: 'bundle' | 'runner'
   envFile?: false
 }
 
@@ -996,6 +996,7 @@ export async function resolveConfig(
       config.root,
       config.logLevel,
       config.customLogger,
+      config.configLoader,
     )
     if (loadResult) {
       config = mergeConfig(loadResult.config, config)
@@ -1638,7 +1639,7 @@ export async function loadConfigFromFile(
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
-  bundleConfig = true,
+  configLoader = 'bundle',
 ): Promise<{
   path: string
   config: UserConfig
@@ -1669,8 +1670,15 @@ export async function loadConfigFromFile(
     return null
   }
 
+  if (configLoader !== 'bundle' && configLoader !== 'runner') {
+    throw new Error(
+      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle' and 'runner'.`,
+    )
+  }
+
   try {
-    const resolver = bundleConfig ? bundleAndLoadConfigFile : importConfigFile
+    const resolver =
+      configLoader === 'bundle' ? bundleAndLoadConfigFile : importConfigFile
     const { configExport, dependencies } = await resolver(resolvedPath)
     debug?.(`config file loaded in ${getTime()}`)
 

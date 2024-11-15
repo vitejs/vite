@@ -23,7 +23,7 @@ interface GlobalCLIOptions {
   l?: LogLevel
   logLevel?: LogLevel
   clearScreen?: boolean
-  bundleConfig?: boolean
+  configLoader?: string
   d?: boolean | string
   debug?: boolean | string
   f?: string
@@ -88,7 +88,7 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   delete ret.l
   delete ret.logLevel
   delete ret.clearScreen
-  delete ret.bundleConfig
+  delete ret.configLoader
   delete ret.d
   delete ret.debug
   delete ret.f
@@ -186,7 +186,7 @@ cli
         base: options.base,
         mode: options.mode,
         configFile: options.config,
-        bundleConfig: options.bundleConfig,
+        configLoader: options.configLoader as undefined,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         optimizeDeps: { force: options.force },
@@ -311,7 +311,7 @@ cli
           base: options.base,
           mode: options.mode,
           configFile: options.config,
-          bundleConfig: options.bundleConfig,
+          configLoader: options.configLoader as undefined,
           logLevel: options.logLevel,
           clearScreen: options.clearScreen,
           build: buildOptions,
@@ -348,7 +348,7 @@ cli
             root,
             base: options.base,
             configFile: options.config,
-            bundleConfig: options.bundleConfig,
+            configLoader: options.configLoader as undefined,
             logLevel: options.logLevel,
             mode: options.mode,
           },
@@ -391,7 +391,7 @@ cli
           root,
           base: options.base,
           configFile: options.config,
-          bundleConfig: options.bundleConfig,
+          configLoader: options.configLoader as undefined,
           logLevel: options.logLevel,
           mode: options.mode,
           build: {
