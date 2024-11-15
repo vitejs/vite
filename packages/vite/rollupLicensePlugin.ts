@@ -127,7 +127,7 @@ function sortLicenses(licenses: Set<string>) {
   let withParenthesis: string[] = []
   let noParenthesis: string[] = []
   licenses.forEach((license) => {
-    if (/^\(/.test(license)) {
+    if (license[0] === '(') {
       withParenthesis.push(license)
     } else {
       noParenthesis.push(license)
