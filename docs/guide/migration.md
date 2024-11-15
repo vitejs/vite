@@ -81,6 +81,8 @@ If you prefer to stick with `style.css` like in Vite 5, you can set `build.lib.c
 
 There are other breaking changes which only affect few users.
 
+- [[#17922] fix(css)!: remove default import in ssr dev](https://github.com/vitejs/vite/pull/17922)
+  - Support for default import of CSS files was [deprecated in Vite 4](https://v4.vite.dev/guide/migration.html#importing-css-as-a-string) and removed in Vite 5, but it was still unintentionally supported in SSR dev mode. This support is now removed.
 - [[#15637] fix!: default `build.cssMinify` to `'esbuild'` for SSR](https://github.com/vitejs/vite/pull/15637)
   - [`build.cssMinify`](/config/build-options#build-cssminify) is now enabled by default even for SSR builds.
 - [[#18070] feat!: proxy bypass with WebSocket](https://github.com/vitejs/vite/pull/18070)
