@@ -191,6 +191,10 @@ async function handleMessage(payload: HotPayload) {
             return hmrClient.queueUpdate(update)
           }
 
+          if (!hasDocument) {
+            return
+          }
+
           // css-update
           // this is only sent when a css file referenced with <link> is updated
           const { path, timestamp } = update
@@ -307,16 +311,20 @@ const enableOverlay = __HMR_ENABLE_OVERLAY__
 const hasDocument = 'document' in globalThis
 
 function createErrorOverlay(err: ErrorPayload['err']) {
-  clearErrorOverlay()
-  document.body.appendChild(new ErrorOverlay(err))
+  if (hasDocument) {
+    clearErrorOverlay()
+    document.body.appendChild(new ErrorOverlay(err))
+  }
 }
 
 function clearErrorOverlay() {
-  document.querySelectorAll<ErrorOverlay>(overlayId).forEach((n) => n.close())
+  if (hasDocument) {
+    document.querySelectorAll<ErrorOverlay>(overlayId).forEach((n) => n.close())
+  }
 }
 
 function hasErrorOverlay() {
-  return document.querySelectorAll(overlayId).length
+  return hasDocument ? document.querySelectorAll(overlayId).length : 0
 }
 
 async function waitForSuccessfulPing(socketUrl: string, ms = 1000) {
@@ -347,7 +355,7 @@ async function waitForSuccessfulPing(socketUrl: string, ms = 1000) {
   await wait(ms)
 
   while (true) {
-    if (document.visibilityState === 'visible') {
+    if (hasDocument && document.visibilityState === 'visible') {
       if (await ping()) {
         break
       }
@@ -364,6 +372,9 @@ function wait(ms: number) {
 
 function waitForWindowShow() {
   return new Promise<void>((resolve) => {
+    if (!hasDocument) {
+      return
+    }
     const onChange = async () => {
       if (document.visibilityState === 'visible') {
         resolve()
@@ -378,7 +389,7 @@ const sheetsMap = new Map<string, HTMLStyleElement>()
 
 // collect existing style elements that may have been inserted during SSR
 // to avoid FOUC or duplicate styles
-if ('document' in globalThis) {
+if (hasDocument) {
   document
     .querySelectorAll<HTMLStyleElement>('style[data-vite-dev-id]')
     .forEach((el) => {
@@ -386,16 +397,19 @@ if ('document' in globalThis) {
     })
 }
 
-const cspNonce =
-  'document' in globalThis
-    ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
-    : undefined
+const cspNonce = hasDocument
+  ? document.querySelector<HTMLMetaElement>('meta[property=csp-nonce]')?.nonce
+  : undefined
 
 // all css imports should be inserted at the same position
 // because after build it will be a single css file
 let lastInsertedStyle: HTMLStyleElement | undefined
 
 export function updateStyle(id: string, content: string): void {
+  if (!hasDocument) {
+    return
+  }
+
   let style = sheetsMap.get(id)
   if (!style) {
     style = document.createElement('style')
@@ -425,6 +439,9 @@ export function updateStyle(id: string, content: string): void {
 }
 
 export function removeStyle(id: string): void {
+  if (!hasDocument) {
+    return
+  }
   const style = sheetsMap.get(id)
   if (style) {
     document.head.removeChild(style)
