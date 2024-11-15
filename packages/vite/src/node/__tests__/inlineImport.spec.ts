@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 import { describe, expect, test } from 'vitest'
 import { inlineImport } from '../ssr/inlineImport'
+import { slash } from '../../shared/utils'
 
 describe('importing files using inlined environment', () => {
   const fixture = (name: string) =>
@@ -35,6 +36,6 @@ describe('importing files using inlined environment', () => {
         },
       ],
     })
-    expect(dependencies).toEqual([fixture('plugin.ts')])
+    expect(dependencies).toEqual([slash(fixture('plugin.ts'))])
   })
 })
