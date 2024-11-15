@@ -11,7 +11,7 @@ export function createRunnableDevEnvironment(
   name: string,
   config: ResolvedConfig,
   context: RunnableDevEnvironmentContext = {},
-): DevEnvironment {
+): RunnableDevEnvironment {
   if (context.transport == null) {
     context.transport = createServerHotChannel()
   }
