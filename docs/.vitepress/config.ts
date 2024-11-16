@@ -130,6 +130,7 @@ export default defineConfig({
     pt: { label: 'Português', link: 'https://pt.vite.dev' },
     ko: { label: '한국어', link: 'https://ko.vite.dev' },
     de: { label: 'Deutsch', link: 'https://de.vite.dev' },
+    ru: { label: 'Русский', link: 'https://ru.vite.dev' },
   },
 
   themeConfig: {
