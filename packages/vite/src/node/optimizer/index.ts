@@ -1151,34 +1151,29 @@ function isSingleDefaultExport(exports: readonly string[]) {
 
 const lockfileFormats = [
   {
-    name: '.package-lock.json',
     path: 'node_modules/.package-lock.json',
     checkPatches: true,
     manager: 'npm',
   },
   {
     // Yarn non-PnP
-    name: '.yarn-state.yml',
     path: 'node_modules/.yarn-state.yml',
     checkPatches: false,
     manager: 'yarn',
   },
   {
     // Yarn PnP
-    name: 'install-state',
     path: '.yarn/install-state',
     checkPatches: false,
     manager: 'yarn',
   },
   {
     // yarn 1
-    name: '.yarn-integrity',
     path: 'node_modules/.yarn-integrity',
     checkPatches: true,
     manager: 'yarn',
   },
   {
-    name: 'lock.yaml',
     path: 'node_modules/.pnpm/lock.yaml',
     // Included in lockfile
     checkPatches: false,
@@ -1229,13 +1224,14 @@ function getLockfileHash(environment: Environment): string {
   const lockfilePath = lookupFile(environment.config.root, lockfilePaths)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
-    const lockfileName = path.basename(lockfilePath)
-    const { checkPatches } = lockfileFormats.find(
-      (f) => f.name === lockfileName,
+    const normalizedLockfilePath = lockfilePath.replaceAll('\\', '/')
+    const lockfileFormat = lockfileFormats.find((f) =>
+      normalizedLockfilePath.endsWith(f.path),
     )!
-    if (checkPatches) {
+    if (lockfileFormat.checkPatches) {
       // Default of https://github.com/ds300/patch-package
-      const fullPath = path.join(path.dirname(lockfilePath), 'patches')
+      const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
+      const fullPath = path.join(baseDir, 'patches')
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
         content += stat.mtimeMs.toString()
