@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import fs from 'node:fs'
 import { stripVTControlCharacters } from 'node:util'
 import { expect, test } from 'vitest'
 import { createServer } from '../../server'
@@ -211,4 +212,28 @@ test('parse error', async () => {
     }
     expect.unreachable()
   }
+})
+
+test('json', async () => {
+  const server = await createDevServer()
+  const mod = await server.ssrLoadModule('/fixtures/json/test.json')
+  expect(mod).toMatchInlineSnapshot(`
+    {
+      "default": {
+        "hello": "this is json",
+      },
+      "hello": "this is json",
+    }
+  `)
+
+  const source = fs.readFileSync(
+    path.join(root, 'fixtures/json/test.json'),
+    'utf-8',
+  )
+  const json = await server.ssrTransform(
+    `export default ${source}`,
+    null,
+    '/test.json',
+  )
+  expect(json?.code.length).toMatchInlineSnapshot(`61`)
 })
