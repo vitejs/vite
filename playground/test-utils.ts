@@ -15,7 +15,7 @@ import { fromComment } from 'convert-source-map'
 import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
 import type { ResultPromise as ExecaResultPromise } from 'execa'
-import { isBuild, isWindows, page, testDir } from './vitestSetup'
+import { isWindows, page, testDir } from './vitestSetup'
 
 export * from './vitestSetup'
 
