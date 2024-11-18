@@ -137,9 +137,7 @@ export function readFile(filename: string): string {
 export function editFile(
   filename: string,
   replacer: (str: string) => string,
-  runInBuild: boolean = false,
 ): void {
-  if (isBuild && !runInBuild) return
   filename = path.resolve(testDir, filename)
   const content = fs.readFileSync(filename, 'utf-8')
   const modified = replacer(content)
@@ -218,9 +216,7 @@ export function readDepOptimizationMetadata(): DepOptimizationMetadata {
 export async function untilUpdated(
   poll: () => string | Promise<string>,
   expected: string | RegExp,
-  runInBuild = false,
 ): Promise<void> {
-  if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) ?? ''

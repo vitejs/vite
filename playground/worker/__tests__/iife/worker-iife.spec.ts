@@ -22,12 +22,11 @@ test('normal', async () => {
   await untilUpdated(
     () => page.textContent('.asset-url'),
     isBuild ? '/iife/assets/worker_asset-vite.svg' : '/iife/vite.svg',
-    true,
   )
 })
 
 test('named', async () => {
-  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker', true)
+  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker')
 })
 
 test('TS output', async () => {
@@ -42,7 +41,6 @@ test('named inlined', async () => {
   await untilUpdated(
     () => page.textContent('.pong-inline-named'),
     'namedInlineWorker',
-    true,
   )
 })
 
@@ -51,7 +49,7 @@ test('shared worker', async () => {
 })
 
 test('named shared worker', async () => {
-  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong', true)
+  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong')
 })
 
 test('inline shared worker', async () => {
@@ -116,22 +114,18 @@ test('module worker', async () => {
   await untilUpdated(
     async () => page.textContent('.worker-import-meta-url'),
     /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
-    true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-resolve'),
     /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
-    true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-without-extension'),
     /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
-    true,
   )
   await untilUpdated(
     () => page.textContent('.shared-worker-import-meta-url'),
     'A string',
-    true,
   )
 })
 
