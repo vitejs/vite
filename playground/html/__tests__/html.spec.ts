@@ -510,3 +510,12 @@ test('escape html attribute', async () => {
   const el = await page.$('.unescape-div')
   expect(el).toBeNull()
 })
+
+test('invalidate inline proxy module on reload', async () => {
+  await page.goto(`${viteTestUrl}/transform-inline-js`)
+  expect(await page.textContent('.test')).toContain('ok')
+  await page.reload()
+  expect(await page.textContent('.test')).toContain('ok')
+  await page.reload()
+  expect(await page.textContent('.test')).toContain('ok')
+})

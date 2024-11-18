@@ -218,6 +218,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   )
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
+  const inlineModulePaths: string[] = []
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -246,13 +247,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
     // inline js module. convert to src="proxy" (dev only, base is never relative)
     const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
+    inlineModulePaths.push(modulePath)
 
-    // invalidate the module so the newly cached contents will be served
-    const clientModuleGraph = server?.environments.client.moduleGraph
-    const module = clientModuleGraph?.getModuleById(modulePath)
-    if (module) {
-      clientModuleGraph!.invalidateModule(module)
-    }
     s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
@@ -349,6 +345,19 @@ const devHtmlHook: IndexHtmlTransformHook = async (
       }
     }
   })
+
+  // invalidate the module so the newly cached contents will be served
+  const clientModuelGraph = server?.environments.client.moduleGraph
+  if (clientModuelGraph) {
+    await Promise.all(
+      inlineModulePaths.map(async (url) => {
+        const module = await clientModuelGraph.getModuleByUrl(url)
+        if (module) {
+          clientModuelGraph.invalidateModule(module)
+        }
+      }),
+    )
+  }
 
   await Promise.all([
     ...styleUrl.map(async ({ start, end, code }, index) => {
