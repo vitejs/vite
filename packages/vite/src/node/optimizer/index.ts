@@ -1150,14 +1150,40 @@ function isSingleDefaultExport(exports: readonly string[]) {
 }
 
 const lockfileFormats = [
-  { name: 'package-lock.json', checkPatches: true, manager: 'npm' },
-  { name: 'yarn.lock', checkPatches: true, manager: 'yarn' }, // Included in lockfile for v2+
-  { name: 'pnpm-lock.yaml', checkPatches: false, manager: 'pnpm' }, // Included in lockfile
-  { name: 'bun.lockb', checkPatches: true, manager: 'bun' },
+  {
+    path: 'node_modules/.package-lock.json',
+    checkPatches: true,
+    manager: 'npm',
+  },
+  {
+    // Yarn non-PnP
+    path: 'node_modules/.yarn-state.yml',
+    checkPatches: false,
+    manager: 'yarn',
+  },
+  {
+    // Yarn PnP
+    path: '.yarn/install-state',
+    checkPatches: false,
+    manager: 'yarn',
+  },
+  {
+    // yarn 1
+    path: 'node_modules/.yarn-integrity',
+    checkPatches: true,
+    manager: 'yarn',
+  },
+  {
+    path: 'node_modules/.pnpm/lock.yaml',
+    // Included in lockfile
+    checkPatches: false,
+    manager: 'pnpm',
+  },
+  { name: 'bun.lockb', path: 'bun.lockb', checkPatches: true, manager: 'bun' },
 ].sort((_, { manager }) => {
   return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
 })
-const lockfileNames = lockfileFormats.map((l) => l.name)
+const lockfilePaths = lockfileFormats.map((l) => l.path)
 
 function getConfigHash(environment: Environment): string {
   // Take config into account
@@ -1195,16 +1221,17 @@ function getConfigHash(environment: Environment): string {
 }
 
 function getLockfileHash(environment: Environment): string {
-  const lockfilePath = lookupFile(environment.config.root, lockfileNames)
+  const lockfilePath = lookupFile(environment.config.root, lockfilePaths)
   let content = lockfilePath ? fs.readFileSync(lockfilePath, 'utf-8') : ''
   if (lockfilePath) {
-    const lockfileName = path.basename(lockfilePath)
-    const { checkPatches } = lockfileFormats.find(
-      (f) => f.name === lockfileName,
+    const normalizedLockfilePath = lockfilePath.replaceAll('\\', '/')
+    const lockfileFormat = lockfileFormats.find((f) =>
+      normalizedLockfilePath.endsWith(f.path),
     )!
-    if (checkPatches) {
+    if (lockfileFormat.checkPatches) {
       // Default of https://github.com/ds300/patch-package
-      const fullPath = path.join(path.dirname(lockfilePath), 'patches')
+      const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
+      const fullPath = path.join(baseDir, 'patches')
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
         content += stat.mtimeMs.toString()
