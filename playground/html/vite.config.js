@@ -35,6 +35,7 @@ export default defineConfig({
         serveBothFile: resolve(__dirname, 'serve/both.html'),
         serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
         write: resolve(__dirname, 'write.html'),
+        'transform-inline-js': resolve(__dirname, 'transform-inline-js.html'),
         relativeInput: relative(
           process.cwd(),
           resolve(__dirname, 'relative-input.html'),
@@ -246,6 +247,19 @@ ${
               injectTo: 'body',
             },
           ]
+        },
+      },
+    },
+    {
+      name: 'transform-inline-js',
+      transformIndexHtml: {
+        order: 'pre',
+        handler(html, ctx) {
+          if (!ctx.filename.endsWith('html/transform-inline-js.html')) return
+          return html.replaceAll(
+            '{{ id }}',
+            Math.random().toString(36).slice(2),
+          )
         },
       },
     },

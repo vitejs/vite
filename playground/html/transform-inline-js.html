@@ -1,0 +1,5 @@
+<div>id: {{ id }}</div>
+<div class="test">test: <span id="{{ id }}">???</span></div>
+<script type="module">
+  document.getElementById('{{ id }}').textContent = 'ok'
+</script>
