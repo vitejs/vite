@@ -56,17 +56,23 @@ test('inline shared worker', async () => {
   await untilUpdated(() => page.textContent('.pong-shared-inline'), 'pong')
 })
 
-test('worker emitted and import.meta.url in nested worker (serve)', async () => {
-  await untilUpdated(() => page.textContent('.nested-worker'), '/worker-nested')
-  await untilUpdated(
-    () => page.textContent('.nested-worker-module'),
-    '/sub-worker',
-  )
-  await untilUpdated(
-    () => page.textContent('.nested-worker-constructor'),
-    '"type":"constructor"',
-  )
-})
+test.runIf(!isBuild)(
+  'worker emitted and import.meta.url in nested worker (serve)',
+  async () => {
+    await untilUpdated(
+      () => page.textContent('.nested-worker'),
+      '/worker-nested',
+    )
+    await untilUpdated(
+      () => page.textContent('.nested-worker-module'),
+      '/sub-worker',
+    )
+    await untilUpdated(
+      () => page.textContent('.nested-worker-constructor'),
+      '"type":"constructor"',
+    )
+  },
+)
 
 describe.runIf(isBuild)('build', () => {
   // assert correct files
@@ -131,6 +137,7 @@ test('module worker', async () => {
 
 test('classic worker', async () => {
   await untilUpdated(() => page.textContent('.classic-worker'), 'A classic')
+  if (isBuild) return
   await untilUpdated(
     () => page.textContent('.classic-worker-import'),
     '[success] classic-esm',

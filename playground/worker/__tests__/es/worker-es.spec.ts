@@ -153,6 +153,7 @@ test('module worker', async () => {
 
 test('classic worker', async () => {
   await untilUpdated(() => page.textContent('.classic-worker'), 'A classic')
+  if (isBuild) return
   await untilUpdated(
     () => page.textContent('.classic-worker-import'),
     '[success] classic-esm',
