@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node server",
+    "build": "vite build --ssr src/app.js",
     "serve": "NODE_ENV=production node server",
     "debug": "node --inspect-brk server"
   },
