@@ -581,24 +581,6 @@ const modules = import.meta.glob('./dir/*.js', {
 })
 ```
 
-If you just want to get the filename, You can provide query `?nocontent`:
-
-```ts twoslash
-import 'vite/client'
-// ---cut---
-const modules = import.meta.glob('./dir/*.js', {
-  query: '?nocontent',
-})
-```
-
-```ts
-// code produced by vite:
-const modules = {
-  './dir/foo.js': '',
-  './dir/bar.js': '',
-}
-```
-
 ### Glob Import Caveats
 
 Note that:

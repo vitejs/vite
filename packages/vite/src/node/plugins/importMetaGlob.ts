@@ -32,6 +32,7 @@ export interface ParsedImportGlob {
   options: ParsedGeneralImportGlobOptions
   start: number
   end: number
+  onlyKeys: boolean
 }
 
 interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
@@ -107,6 +108,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
 }
 
 const importGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(/g
+const objectKeysRE = /Object\.keys\(\s*$/
 
 const knownOptions = {
   as: ['string'],
@@ -306,6 +308,7 @@ export async function parseImportGlob(
       globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
+    const onlyKeys = objectKeysRE.test(cleanCode.slice(0, start))
 
     return {
       index,
@@ -315,6 +318,7 @@ export async function parseImportGlob(
       options,
       start,
       end,
+      onlyKeys,
     }
   })
 
@@ -390,7 +394,15 @@ export async function transformGlobImport(
   const staticImports = (
     await Promise.all(
       matches.map(
-        async ({ globsResolved, isRelative, options, index, start, end }) => {
+        async ({
+          globsResolved,
+          isRelative,
+          options,
+          index,
+          start,
+          end,
+          onlyKeys,
+        }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await glob(globsResolved, {
@@ -437,7 +449,7 @@ export async function transformGlobImport(
             let importPath = paths.importPath
             let importQuery = options.query ?? ''
 
-            if (importQuery && importQuery === '?nocontent') {
+            if (onlyKeys) {
               objectProps.push(`${JSON.stringify(filePath)}: ''`)
               return
             }
