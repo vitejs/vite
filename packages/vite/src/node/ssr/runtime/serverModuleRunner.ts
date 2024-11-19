@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+import { ModuleRunner } from 'vite/module-runner'
 import type {
   ModuleEvaluator,
   ModuleRunnerHmr,
@@ -133,6 +133,6 @@ export function createServerModuleRunner(
       hmr,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },
-    options.evaluator || new ESModulesEvaluator(),
+    options.evaluator,
   )
 }
