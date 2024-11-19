@@ -3,15 +3,42 @@
 
 import path from 'node:path'
 import kill from 'kill-port'
-import { hmrPorts, ports, rootDir } from '~utils'
+import { hmrPorts, isBuild, ports, rootDir } from '~utils'
 
 export const port = ports['ssr-conditions']
 
 export async function serve(): Promise<{ close(): Promise<void> }> {
+  if (isBuild) {
+    // build first
+    const { build } = await import('vite')
+    // client build
+    await build({
+      root: rootDir,
+      logLevel: 'silent', // exceptions are logged by Vitest
+      build: {
+        minify: false,
+        outDir: 'dist/client',
+      },
+    })
+    // server build
+    await build({
+      root: rootDir,
+      logLevel: 'silent',
+      build: {
+        ssr: 'src/app.js',
+        outDir: 'dist/server',
+      },
+    })
+  }
+
   await kill(port)
 
   const { createServer } = await import(path.resolve(rootDir, 'server.js'))
-  const { app, vite } = await createServer(rootDir, hmrPorts['ssr-conditions'])
+  const { app, vite } = await createServer(
+    rootDir,
+    isBuild,
+    hmrPorts['ssr-conditions'],
+  )
 
   return new Promise((resolve, reject) => {
     try {

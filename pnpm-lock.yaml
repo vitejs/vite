@@ -1347,6 +1347,9 @@ importers:
       express:
         specifier: ^5.0.1
         version: 5.0.1
+      sirv:
+        specifier: ^3.0.0
+        version: 3.0.0(patch_hash=plxlsciwiebyhal5sm4vtpekka)
 
   playground/ssr-conditions/external: {}
 
