@@ -49,6 +49,7 @@ export const cssEntriesMap = new WeakMap<Environment, Set<string>>()
 export function registerCustomMime(): void {
   // https://github.com/lukeed/mrmime/issues/3
   mrmime.mimes['ico'] = 'image/x-icon'
+  mrmime.mimes['cur'] = 'image/x-icon'
   // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers#flac
   mrmime.mimes['flac'] = 'audio/flac'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
