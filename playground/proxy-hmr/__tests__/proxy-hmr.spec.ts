@@ -1,13 +1,14 @@
 import { test } from 'vitest'
 import {
   editFile,
+  isBuild,
   page,
   untilBrowserLogAfter,
   untilUpdated,
   viteTestUrl,
 } from '~utils'
 
-test('proxy-hmr', async () => {
+test.runIf(!isBuild)('proxy-hmr', async () => {
   await untilBrowserLogAfter(
     () => page.goto(viteTestUrl),
     // wait for both main and sub app HMR connection

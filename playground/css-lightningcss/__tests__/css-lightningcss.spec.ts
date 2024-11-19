@@ -19,6 +19,7 @@ test('linked css', async () => {
   expect(await getColor(linked)).toBe('blue')
   expect(await getColor(atImport)).toBe('red')
 
+  if (isBuild) return
   editFile('linked.css', (code) => code.replace('color: blue', 'color: red'))
   await untilUpdated(() => getColor(linked), 'red')
 
@@ -35,6 +36,7 @@ test('css import from js', async () => {
   expect(await getColor(imported)).toBe('green')
   expect(await getColor(atImport)).toBe('purple')
 
+  if (isBuild) return
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
   await untilUpdated(() => getColor(imported), 'red')
 
@@ -50,6 +52,7 @@ test('css modules', async () => {
 
   expect(await imported.getAttribute('class')).toMatch(/\w{6}_apply-color/)
 
+  if (isBuild) return
   editFile('mod.module.css', (code) =>
     code.replace('color: turquoise', 'color: red'),
   )

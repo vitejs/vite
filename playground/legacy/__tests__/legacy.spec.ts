@@ -10,40 +10,31 @@ import {
 } from '~utils'
 
 test('should load the worker', async () => {
-  await untilUpdated(() => page.textContent('.worker-message'), 'module', true)
+  await untilUpdated(() => page.textContent('.worker-message'), 'module')
 })
 
 test('should work', async () => {
-  await untilUpdated(() => page.textContent('#app'), 'Hello', true)
+  await untilUpdated(() => page.textContent('#app'), 'Hello')
 })
 
 test('import.meta.env.LEGACY', async () => {
-  await untilUpdated(
-    () => page.textContent('#env'),
-    isBuild ? 'true' : 'false',
-    true,
-  )
-  await untilUpdated(() => page.textContent('#env-equal'), 'true', true)
+  await untilUpdated(() => page.textContent('#env'), isBuild ? 'true' : 'false')
+  await untilUpdated(() => page.textContent('#env-equal'), 'true')
 })
 
 // https://github.com/vitejs/vite/issues/3400
 test('transpiles down iterators correctly', async () => {
-  await untilUpdated(() => page.textContent('#iterators'), 'hello', true)
+  await untilUpdated(() => page.textContent('#iterators'), 'hello')
 })
 
 test('async generator', async () => {
-  await untilUpdated(
-    () => page.textContent('#async-generator'),
-    '[0,1,2]',
-    true,
-  )
+  await untilUpdated(() => page.textContent('#async-generator'), '[0,1,2]')
 })
 
 test('wraps with iife', async () => {
   await untilUpdated(
     () => page.textContent('#babel-helpers'),
     'exposed babel helpers: false',
-    true,
   )
 })
 
@@ -69,7 +60,6 @@ test('generates assets', async () => {
           'immutable-chunk-legacy: text/html',
           'polyfills-legacy: text/html',
         ].join('\n'),
-    true,
   )
 })
 
@@ -80,7 +70,7 @@ test('correctly emits styles', async () => {
 // dynamic import css
 test('should load dynamic import with css', async () => {
   await page.click('#dynamic-css-button')
-  await untilUpdated(() => getColor('#dynamic-css'), 'red', true)
+  await untilUpdated(() => getColor('#dynamic-css'), 'red')
 })
 
 test('asset url', async () => {
