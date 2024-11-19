@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 import { port, streams } from './serve'
-import { editFile, page, withRetry } from '~utils'
+import { editFile, isServe, page, withRetry } from '~utils'
 
 test('cli should work', async () => {
   // this test uses a custom serve implementation, so regular helpers for browserLogs and goto don't work
@@ -20,7 +20,7 @@ test('cli should work', async () => {
   }
 })
 
-test('should restart', async () => {
+test.runIf(isServe)('should restart', async () => {
   const logsLengthBeforeEdit = streams.server.out.length
   editFile('./vite.config.js', (content) => content)
   await withRetry(async () => {

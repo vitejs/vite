@@ -528,13 +528,13 @@ test('async css order', async () => {
   await withRetry(async () => {
     expect(await getColor('.async-green')).toMatchInlineSnapshot('"green"')
     expect(await getColor('.async-blue')).toMatchInlineSnapshot('"blue"')
-  }, true)
+  })
 })
 
 test('async css order with css modules', async () => {
   await withRetry(async () => {
     expect(await getColor('.modules-pink')).toMatchInlineSnapshot('"pink"')
-  }, true)
+  })
 })
 
 test('@import scss', async () => {

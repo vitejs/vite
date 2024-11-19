@@ -241,11 +241,7 @@ export async function untilUpdated(
 /**
  * Retry `func` until it does not throw error.
  */
-export async function withRetry(
-  func: () => Promise<void>,
-  runInBuild = false,
-): Promise<void> {
-  if (isBuild && !runInBuild) return
+export async function withRetry(func: () => Promise<void>): Promise<void> {
   const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     try {
@@ -263,10 +259,7 @@ export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
     {
       get(_target, key) {
         return async (...args) => {
-          await withRetry(
-            async () => expect(await getActual())[key](...args),
-            true,
-          )
+          await withRetry(async () => expect(await getActual())[key](...args))
         }
       },
     },
