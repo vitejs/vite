@@ -132,6 +132,7 @@ export const KNOWN_ASSET_TYPES = [
   'ico',
   'webp',
   'avif',
+  'cur',
 
   // media
   'mp4',
