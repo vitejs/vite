@@ -967,6 +967,9 @@ importers:
       '@vitejs/test-dep-relative-to-main':
         specifier: file:./dep-relative-to-main
         version: file:playground/optimize-deps/dep-relative-to-main
+      '@vitejs/test-dep-source-map-no-sources':
+        specifier: file:./dep-source-map-no-sources
+        version: file:playground/optimize-deps/dep-source-map-no-sources
       '@vitejs/test-dep-with-asset-ext1.pdf':
         specifier: file:./dep-with-asset-ext/dep1
         version: file:playground/optimize-deps/dep-with-asset-ext/dep1
@@ -1091,6 +1094,8 @@ importers:
   playground/optimize-deps/dep-optimize-with-glob: {}
 
   playground/optimize-deps/dep-relative-to-main: {}
+
+  playground/optimize-deps/dep-source-map-no-sources: {}
 
   playground/optimize-deps/dep-with-asset-ext/dep1: {}
 
@@ -3343,6 +3348,9 @@ packages:
 
   '@vitejs/test-dep-self-reference-url-worker@file:playground/worker/dep-self-reference-url-worker':
     resolution: {directory: playground/worker/dep-self-reference-url-worker, type: directory}
+
+  '@vitejs/test-dep-source-map-no-sources@file:playground/optimize-deps/dep-source-map-no-sources':
+    resolution: {directory: playground/optimize-deps/dep-source-map-no-sources, type: directory}
 
   '@vitejs/test-dep-that-imports@file:playground/external/dep-that-imports':
     resolution: {directory: playground/external/dep-that-imports, type: directory}
@@ -9004,6 +9012,8 @@ snapshots:
   '@vitejs/test-dep-relative-to-main@file:playground/optimize-deps/dep-relative-to-main': {}
 
   '@vitejs/test-dep-self-reference-url-worker@file:playground/worker/dep-self-reference-url-worker': {}
+
+  '@vitejs/test-dep-source-map-no-sources@file:playground/optimize-deps/dep-source-map-no-sources': {}
 
   '@vitejs/test-dep-that-imports@file:playground/external/dep-that-imports(typescript@5.6.3)':
     dependencies:

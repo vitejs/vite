@@ -29,6 +29,7 @@
     "@vitejs/test-dep-optimize-exports-with-root-glob": "file:./dep-optimize-exports-with-root-glob",
     "@vitejs/test-dep-optimize-with-glob": "file:./dep-optimize-with-glob",
     "@vitejs/test-dep-relative-to-main": "file:./dep-relative-to-main",
+    "@vitejs/test-dep-source-map-no-sources": "file:./dep-source-map-no-sources",
     "@vitejs/test-dep-with-asset-ext1.pdf": "file:./dep-with-asset-ext/dep1",
     "@vitejs/test-dep-with-asset-ext2.pdf": "file:./dep-with-asset-ext/dep2",
     "@vitejs/test-dep-with-builtin-module-cjs": "file:./dep-with-builtin-module-cjs",
