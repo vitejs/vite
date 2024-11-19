@@ -22,12 +22,11 @@ test('normal', async () => {
   await untilUpdated(
     () => page.textContent('.asset-url'),
     isBuild ? '/iife/assets/worker_asset-vite.svg' : '/iife/vite.svg',
-    true,
   )
 })
 
 test('named', async () => {
-  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker', true)
+  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker')
 })
 
 test('TS output', async () => {
@@ -42,7 +41,6 @@ test('named inlined', async () => {
   await untilUpdated(
     () => page.textContent('.pong-inline-named'),
     'namedInlineWorker',
-    true,
   )
 })
 
@@ -51,24 +49,30 @@ test('shared worker', async () => {
 })
 
 test('named shared worker', async () => {
-  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong', true)
+  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong')
 })
 
 test('inline shared worker', async () => {
   await untilUpdated(() => page.textContent('.pong-shared-inline'), 'pong')
 })
 
-test('worker emitted and import.meta.url in nested worker (serve)', async () => {
-  await untilUpdated(() => page.textContent('.nested-worker'), '/worker-nested')
-  await untilUpdated(
-    () => page.textContent('.nested-worker-module'),
-    '/sub-worker',
-  )
-  await untilUpdated(
-    () => page.textContent('.nested-worker-constructor'),
-    '"type":"constructor"',
-  )
-})
+test.runIf(!isBuild)(
+  'worker emitted and import.meta.url in nested worker (serve)',
+  async () => {
+    await untilUpdated(
+      () => page.textContent('.nested-worker'),
+      '/worker-nested',
+    )
+    await untilUpdated(
+      () => page.textContent('.nested-worker-module'),
+      '/sub-worker',
+    )
+    await untilUpdated(
+      () => page.textContent('.nested-worker-constructor'),
+      '"type":"constructor"',
+    )
+  },
+)
 
 describe.runIf(isBuild)('build', () => {
   // assert correct files
@@ -116,31 +120,29 @@ test('module worker', async () => {
   await untilUpdated(
     async () => page.textContent('.worker-import-meta-url'),
     /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
-    true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-resolve'),
     /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
-    true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-without-extension'),
     /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
-    true,
   )
   await untilUpdated(
     () => page.textContent('.shared-worker-import-meta-url'),
     'A string',
-    true,
   )
 })
 
 test('classic worker', async () => {
   await untilUpdated(() => page.textContent('.classic-worker'), 'A classic')
-  await untilUpdated(
-    () => page.textContent('.classic-worker-import'),
-    '[success] classic-esm',
-  )
+  if (!isBuild) {
+    await untilUpdated(
+      () => page.textContent('.classic-worker-import'),
+      '[success] classic-esm',
+    )
+  }
   await untilUpdated(
     () => page.textContent('.classic-shared-worker'),
     'A classic',

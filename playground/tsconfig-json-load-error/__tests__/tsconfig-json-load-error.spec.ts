@@ -50,7 +50,7 @@ describe.runIf(isServe)('server', () => {
   })
 
   test('should reload when tsconfig is changed', async () => {
-    await editFile('has-error/tsconfig.json', (content) => {
+    editFile('has-error/tsconfig.json', (content) => {
       return content.replace('"compilerOptions":', '"compilerOptions":{}')
     })
     await untilUpdated(() => {
