@@ -11,12 +11,22 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
   if (isBuild) {
     // build first
     const { build } = await import('vite')
+    // client build
+    await build({
+      root: rootDir,
+      logLevel: 'silent', // exceptions are logged by Vitest
+      build: {
+        minify: false,
+        outDir: 'dist/client',
+      },
+    })
     // server build
     await build({
       root: rootDir,
       logLevel: 'silent',
       build: {
         ssr: 'src/app.js',
+        outDir: 'dist/server',
       },
     })
   }

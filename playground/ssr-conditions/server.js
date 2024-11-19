@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import express from 'express'
+import sirv from 'sirv'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -15,7 +16,7 @@ export async function createServer(
   const resolve = (p) => path.resolve(__dirname, p)
 
   const indexProd = isProd
-    ? fs.readFileSync(resolve('index.html'), 'utf-8')
+    ? fs.readFileSync(resolve('dist/client/index.html'), 'utf-8')
     : ''
 
   const app = express()
@@ -45,6 +46,8 @@ export async function createServer(
       appType: 'custom',
     })
     app.use(vite.middlewares)
+  } else {
+    app.use(sirv(resolve('dist/client'), { extensions: [] }))
   }
 
   app.use('*all', async (req, res) => {
@@ -58,7 +61,7 @@ export async function createServer(
         render = (await vite.ssrLoadModule('/src/app.js')).render
       } else {
         template = indexProd
-        render = (await import('./dist/app.js')).render
+        render = (await import('./dist/server/app.js')).render
       }
 
       const appHtml = await render(url, __dirname)
