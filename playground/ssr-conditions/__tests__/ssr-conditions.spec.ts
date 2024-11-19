@@ -26,10 +26,10 @@ test('ssr.resolve settings do not affect non-ssr imports', async () => {
     expect(await page.textContent('.browser-no-external-react-server')).toMatch(
       'default.js',
     )
-  }, true)
+  })
   await withRetry(async () => {
     expect(await page.textContent('.browser-external-react-server')).toMatch(
       'default.js',
     )
-  }, true)
+  })
 })
