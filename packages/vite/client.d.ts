@@ -102,6 +102,10 @@ declare module '*.avif' {
   const src: string
   export default src
 }
+declare module '*.cur' {
+  const src: string
+  export default src
+}
 
 // media
 declare module '*.mp4' {
