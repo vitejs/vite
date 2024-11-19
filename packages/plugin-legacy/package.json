@@ -47,7 +47,7 @@
     "browserslist": "^4.24.2",
     "browserslist-to-esbuild": "^2.1.1",
     "core-js": "^3.39.0",
-    "magic-string": "^0.30.12",
+    "magic-string": "^0.30.13",
     "regenerator-runtime": "^0.14.1",
     "systemjs": "^6.15.1"
   },
