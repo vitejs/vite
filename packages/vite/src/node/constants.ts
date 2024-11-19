@@ -116,6 +116,8 @@ export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 //   add a mime type to the `registerCustomMime` in
 //   `packages/vite/src/node/plugin/assets.ts` if mime type cannot be
 //   looked up by mrmime.
+//   You can check if the mime type can be looked up by mrmime by running
+//   `node --print "require('mrmime').lookup('foo.png')"`
 export const KNOWN_ASSET_TYPES = [
   // images
   'apng',
