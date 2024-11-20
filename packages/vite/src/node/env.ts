@@ -20,7 +20,10 @@ export function getEnvFilesForMode(mode: string, envDir: string): string[] {
   )
 }
 
-export function getLoadedEnvFiles(mode: string, envDir: string): string[] {
+export function getLoadedEnvFileNamesForMode(
+  mode: string,
+  envDir: string,
+): string[] {
   return getEnvFileNamesForMode(mode).filter((fileName) =>
     tryStatSync(normalizePath(path.join(envDir, fileName)))?.isFile(),
   )

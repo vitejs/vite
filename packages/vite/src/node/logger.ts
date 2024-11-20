@@ -4,7 +4,7 @@ import readline from 'node:readline'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
 import type { ResolvedServerUrls } from './server'
-import { getLoadedEnvFiles } from './env'
+import { getLoadedEnvFileNamesForMode } from './env'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -180,7 +180,7 @@ export function printServerInfo(
     )
   }
   info(`  ${colors.green('➜')}  ${colors.bold('Mode')}:    ${mode}`)
-  const envFiles = getLoadedEnvFiles(mode, envDir)
+  const envFiles = getLoadedEnvFileNamesForMode(mode, envDir)
   info(
     `  ${colors.green('➜')}  ${colors.bold('Env')}:     ${envFiles.length ? envFiles.join(' ') : 'no env files loaded'}`,
   )
