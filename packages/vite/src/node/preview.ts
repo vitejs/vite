@@ -89,6 +89,11 @@ export interface PreviewServer {
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
+   * Print server urls
+   * @deprecated use `printInfo` instead
+   */
+  printUrls(): void
+  /**
    * Print server info
    */
   printInfo(): void
@@ -154,6 +159,9 @@ export async function preview(
       await closeHttpServer()
     },
     resolvedUrls: null,
+    printUrls() {
+      return this.printInfo()
+    },
     printInfo() {
       if (server.resolvedUrls) {
         printServerInfo(

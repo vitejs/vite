@@ -338,6 +338,11 @@ export interface ViteDevServer {
    */
   close(): Promise<void>
   /**
+   * Print server urls
+   * @deprecated use `printInfo` instead
+   */
+  printUrls(): void
+  /**
    * Print server info
    */
   printInfo(): void
@@ -663,6 +668,9 @@ export async function _createServer(
         )
       }
       server.resolvedUrls = null
+    },
+    printUrls() {
+      return this.printInfo()
     },
     printInfo() {
       if (server.resolvedUrls) {
