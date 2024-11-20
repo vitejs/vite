@@ -45,7 +45,7 @@ const { isCardActive, startAnimation } = useCardAnimation(
             >listen</span
           >()<br />
           <span class="code--extra"
-            >server.<span class="code--purple">printUrls</span>()</span
+            >server.<span class="code--purple">printInfo</span>()</span
           >
         </span>
       </div>
