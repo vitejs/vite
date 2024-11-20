@@ -308,7 +308,7 @@ export class ModuleGraph {
     if (ssrModules) {
       for (const mod of ssrModules) {
         if (mod.id == null || !this._client.getModuleById(mod.id)) {
-          result.add(this.getBackwardCompatibleBrowserModuleNode(mod)!)
+          result.add(this.getBackwardCompatibleServerModuleNode(mod)!)
         }
       }
     }
