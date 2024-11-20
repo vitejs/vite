@@ -108,7 +108,7 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
 }
 
 const importGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(/g
-const objectKeysRE = /Object\.keys\(\s*$/
+const objectKeysRE = /\bObject\.keys\(\s*$/
 
 const knownOptions = {
   as: ['string'],
@@ -494,10 +494,11 @@ export async function transformGlobImport(
             originalLineBreakCount > 0
               ? '\n'.repeat(originalLineBreakCount)
               : ''
-
-          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-            ',',
-          )}${lineBreaks}})`
+          const replacement = onlyKeys
+            ? `{${objectProps.join(',')}${lineBreaks}}`
+            : `/* #__PURE__ */ Object.assign({${objectProps.join(
+                ',',
+              )}${lineBreaks}})`
           s.overwrite(start, end, replacement)
 
           return staticImports
