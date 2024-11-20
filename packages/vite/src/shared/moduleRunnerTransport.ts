@@ -33,7 +33,15 @@ type InvokeableModuleRunnerTransport = Omit<ModuleRunnerTransport, 'invoke'> & {
 }
 
 function reviveInvokeError(e: any) {
-  return Object.assign(new Error(e.message || 'Unknown invoke error'), e)
+  const innerError = new Error('received error stacktrace')
+  innerError.stack = e.stack
+
+  // set properties to wrapped error, but use the current stacktrace
+  const wrappedError = new Error(e.message || 'Unknown invoke error', {
+    cause: innerError,
+  })
+  Object.assign(wrappedError, { ...e, stack: wrappedError.stack })
+  return wrappedError
 }
 
 const createInvokeableTransport = (
@@ -94,7 +102,7 @@ const createInvokeableTransport = (
 
               const { e, r } = data.data
               if (e) {
-                promise.reject(reviveInvokeError(e))
+                promise.reject(e)
               } else {
                 promise.resolve(r)
               }
@@ -161,7 +169,11 @@ const createInvokeableTransport = (
         })
       }
 
-      return await promise
+      try {
+        return await promise
+      } catch (err) {
+        throw reviveInvokeError(err)
+      }
     },
   }
 }
