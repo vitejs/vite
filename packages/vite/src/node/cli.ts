@@ -192,7 +192,7 @@ cli
         },
       )
 
-      server.printUrls()
+      server.printInfo()
       const customShortcuts: CLIShortcut<typeof server>[] = []
       if (profileSession) {
         customShortcuts.push({
@@ -360,7 +360,7 @@ cli
             open: options.open,
           },
         })
-        server.printUrls()
+        server.printInfo()
         server.bindCLIShortcuts({ print: true })
       } catch (e) {
         createLogger(options.logLevel).error(

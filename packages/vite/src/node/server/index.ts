@@ -48,7 +48,7 @@ import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
-import { printServerUrls } from '../logger'
+import { printServerInfo } from '../logger'
 import {
   createNoopWatcher,
   getResolvedOutDirs,
@@ -338,9 +338,9 @@ export interface ViteDevServer {
    */
   close(): Promise<void>
   /**
-   * Print server urls
+   * Print server info
    */
-  printUrls(): void
+  printInfo(): void
   /**
    * Bind CLI shortcuts
    */
@@ -664,18 +664,20 @@ export async function _createServer(
       }
       server.resolvedUrls = null
     },
-    printUrls() {
+    printInfo() {
       if (server.resolvedUrls) {
-        printServerUrls(
+        printServerInfo(
           server.resolvedUrls,
           serverConfig.host,
+          config.mode,
+          config.envDir,
           config.logger.info,
         )
       } else if (middlewareMode) {
-        throw new Error('cannot print server URLs in middleware mode.')
+        throw new Error('cannot print server info in middleware mode.')
       } else {
         throw new Error(
-          'cannot print server URLs before server.listen is called.',
+          'cannot print server info before server.listen is called.',
         )
       }
     },
@@ -1201,7 +1203,7 @@ export async function restartServerWithUrls(
     diffDnsOrderChange(prevUrls, server.resolvedUrls)
   ) {
     logger.info('')
-    server.printUrls()
+    server.printInfo()
   }
 }
 

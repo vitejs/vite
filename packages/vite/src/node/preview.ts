@@ -32,7 +32,7 @@ import {
   shouldServeFile,
   teardownSIGTERMListener,
 } from './utils'
-import { printServerUrls } from './logger'
+import { printServerInfo } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
 import { resolveConfig } from './config'
@@ -89,9 +89,9 @@ export interface PreviewServer {
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
-   * Print server urls
+   * Print server info
    */
-  printUrls(): void
+  printInfo(): void
   /**
    * Bind CLI shortcuts
    */
@@ -154,11 +154,17 @@ export async function preview(
       await closeHttpServer()
     },
     resolvedUrls: null,
-    printUrls() {
+    printInfo() {
       if (server.resolvedUrls) {
-        printServerUrls(server.resolvedUrls, options.host, logger.info)
+        printServerInfo(
+          server.resolvedUrls,
+          options.host,
+          config.mode,
+          config.envDir,
+          logger.info,
+        )
       } else {
-        throw new Error('cannot print server URLs before server is listening.')
+        throw new Error('cannot print server info before server is listening.')
       }
     },
     bindCLIShortcuts(options) {

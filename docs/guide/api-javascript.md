@@ -279,9 +279,9 @@ interface PreviewServer {
    */
   resolvedUrls: ResolvedServerUrls | null
   /**
-   * Print server urls
+   * Print server info
    */
-  printUrls(): void
+  printInfo(): void
   /**
    * Bind CLI shortcuts
    */
