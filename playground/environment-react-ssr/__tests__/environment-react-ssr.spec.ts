@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { stripVTControlCharacters } from 'node:util'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import type { DepOptimizationMetadata } from 'vite'
 import {
@@ -74,10 +75,9 @@ describe.runIf(!isBuild)('pre-bundling', () => {
         serverLogs
           .map(
             (log) =>
-              log
-                // eslint-disable-next-line no-control-regex
-                .replace(/\x1B\[\d+m/g, '')
-                .match(/new dependencies optimized: (react-fake-.*)/)?.[1],
+              stripVTControlCharacters(log).match(
+                /new dependencies optimized: (react-fake-.*)/,
+              )?.[1],
           )
           .filter(Boolean)
           .join(', '),

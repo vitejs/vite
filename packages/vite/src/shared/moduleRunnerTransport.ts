@@ -33,7 +33,13 @@ type InvokeableModuleRunnerTransport = Omit<ModuleRunnerTransport, 'invoke'> & {
 }
 
 function reviveInvokeError(e: any) {
-  return Object.assign(new Error(e.message || 'Unknown invoke error'), e)
+  const error = new Error(e.message || 'Unknown invoke error')
+  Object.assign(error, e, {
+    // pass the whole error instead of just the stacktrace
+    // so that it gets formatted nicely with console.log
+    runnerError: new Error('RunnerError'),
+  })
+  return error
 }
 
 const createInvokeableTransport = (
@@ -94,7 +100,7 @@ const createInvokeableTransport = (
 
               const { e, r } = data.data
               if (e) {
-                promise.reject(reviveInvokeError(e))
+                promise.reject(e)
               } else {
                 promise.resolve(r)
               }
@@ -161,7 +167,11 @@ const createInvokeableTransport = (
         })
       }
 
-      return await promise
+      try {
+        return await promise
+      } catch (err) {
+        throw reviveInvokeError(err)
+      }
     },
   }
 }
