@@ -25,7 +25,6 @@ import {
   DEP_VERSION_RE,
   ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  ERR_OUTDATED_OPTIMIZED_DEP,
   FS_PREFIX,
 } from '../../constants'
 import {
@@ -35,7 +34,10 @@ import {
 } from '../../plugins/css'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { cleanUrl, unwrapId, withTrailingSlash } from '../../../shared/utils'
-import { NULL_BYTE_PLACEHOLDER } from '../../../shared/constants'
+import {
+  ERR_OUTDATED_OPTIMIZED_DEP,
+  NULL_BYTE_PLACEHOLDER,
+} from '../../../shared/constants'
 import { ensureServingAccess } from './static'
 
 const debugCache = createDebugger('vite:cache')

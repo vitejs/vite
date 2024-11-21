@@ -75,9 +75,23 @@ export function vitePluginSsrMiddleware({
       const runner = createServerModuleRunner(server.environments.ssr, {
         hmr: { logger: false },
       })
+      const importWithRetry = async () => {
+        try {
+          return await runner.import(entry)
+        } catch (e) {
+          if (
+            e instanceof Error &&
+            (e as any).code === 'ERR_OUTDATED_OPTIMIZED_DEP'
+          ) {
+            runner.clearCache()
+            return await importWithRetry()
+          }
+          throw e
+        }
+      }
       const handler: Connect.NextHandleFunction = async (req, res, next) => {
         try {
-          const mod = await runner.import(entry)
+          const mod = await importWithRetry()
           await mod['default'](req, res, next)
         } catch (e) {
           next(e)

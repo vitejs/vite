@@ -19,7 +19,7 @@ import {
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
 import { resolveEnvironmentPlugins } from '../plugin'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
 import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
