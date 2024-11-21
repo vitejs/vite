@@ -344,12 +344,12 @@ async function init() {
           initial: 0,
           choices: [
             {
-              title: 'Remove existing files and continue',
-              value: 'yes',
-            },
-            {
               title: 'Cancel operation',
               value: 'no',
+            },
+            {
+              title: 'Remove existing files and continue',
+              value: 'yes',
             },
             {
               title: 'Ignore files and continue',
