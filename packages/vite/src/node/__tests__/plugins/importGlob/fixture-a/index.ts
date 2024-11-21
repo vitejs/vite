@@ -7,6 +7,8 @@ export interface ModuleType {
 export const basic = import.meta.glob<ModuleType>('./modules/*.ts')
 // prettier-ignore
 export const basicWithObjectKeys = Object.keys(import.meta.glob<ModuleType>('./modules/*.ts'))
+// prettier-ignore
+export const basicWithObjectValues = Object.values(import.meta.glob<ModuleType>('./modules/*.ts'))
 
 export const basicEager = import.meta.glob<ModuleType>('./modules/*.ts', {
   eager: true,
@@ -16,9 +18,17 @@ export const basicEagerWithObjectKeys = Object.keys(
     eager: true,
   }),
 )
+export const basicEagerWithObjectValues = Object.values(
+  import.meta.glob<ModuleType>('./modules/*.ts', {
+    eager: true,
+  }),
+)
 
 export const ignore = import.meta.glob(['./modules/*.ts', '!**/index.ts'])
 export const ignoreWithObjectKeys = Object.keys(
+  import.meta.glob(['./modules/*.ts', '!**/index.ts']),
+)
+export const ignoreWithObjectValues = Object.values(
   import.meta.glob(['./modules/*.ts', '!**/index.ts']),
 )
 
@@ -32,11 +42,22 @@ export const namedEagerWithObjectKeys = Object.keys(
     import: 'name',
   }),
 )
+export const namedEagerWithObjectValues = Object.values(
+  import.meta.glob<string>('./modules/*.ts', {
+    eager: true,
+    import: 'name',
+  }),
+)
 
 export const namedDefault = import.meta.glob<string>('./modules/*.ts', {
   import: 'default',
 })
 export const namedDefaultWithObjectKeys = Object.keys(
+  import.meta.glob<string>('./modules/*.ts', {
+    import: 'default',
+  }),
+)
+export const namedDefaultWithObjectValues = Object.values(
   import.meta.glob<string>('./modules/*.ts', {
     import: 'default',
   }),
