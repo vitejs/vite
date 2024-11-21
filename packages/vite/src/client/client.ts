@@ -307,16 +307,12 @@ const enableOverlay = __HMR_ENABLE_OVERLAY__
 const hasDocument = 'document' in globalThis
 
 function createErrorOverlay(err: ErrorPayload['err']) {
-  const { customElements } = globalThis
-  let ErrorOverlayConstructor
-  if (customElements) {
-    ErrorOverlayConstructor = customElements.get(overlayId)
-  }
-  if (!ErrorOverlayConstructor) {
-    ErrorOverlayConstructor = ErrorOverlay
-  }
   clearErrorOverlay()
-  document.body.appendChild(new ErrorOverlayConstructor(err))
+  const { customElements } = globalThis
+  if (customElements) {
+    const ErrorOverlayConstructor = customElements.get(overlayId)!
+    document.body.appendChild(new ErrorOverlayConstructor(err))
+  }
 }
 
 function clearErrorOverlay() {
