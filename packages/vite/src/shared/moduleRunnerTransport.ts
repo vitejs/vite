@@ -33,15 +33,13 @@ type InvokeableModuleRunnerTransport = Omit<ModuleRunnerTransport, 'invoke'> & {
 }
 
 function reviveInvokeError(e: any) {
-  const innerError = new Error('received error stacktrace')
-  innerError.stack = e.stack
-
-  // set properties to wrapped error, but use the current stacktrace
-  const wrappedError = new Error(e.message || 'Unknown invoke error', {
-    cause: innerError,
+  const error = new Error(e.message || 'Unknown invoke error')
+  Object.assign(error, e, {
+    // pass the whole error instead of just the stacktrace
+    // so that it gets formatted nicely with console.log
+    runnerError: new Error('RunnerError'),
   })
-  Object.assign(wrappedError, { ...e, stack: wrappedError.stack })
-  return wrappedError
+  return error
 }
 
 const createInvokeableTransport = (
