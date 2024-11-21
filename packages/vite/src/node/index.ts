@@ -34,7 +34,10 @@ export {
 export { BuildEnvironment } from './build'
 
 export { fetchModule, type FetchModuleOptions } from './ssr/fetchModule'
-export { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
+export {
+  createServerModuleRunner,
+  createServerModuleRunnerTransport,
+} from './ssr/runtime/serverModuleRunner'
 export { createServerHotChannel } from './server/hmr'
 export { ssrTransform as moduleRunnerTransform } from './ssr/ssrTransform'
 export type { ModuleRunnerTransformOptions } from './ssr/ssrTransform'
