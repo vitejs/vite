@@ -230,7 +230,7 @@ During the SSR build, static assets aren't emitted as it is assumed they would b
 
 Set to `false` to disable minification, or specify the minifier to use. The default is [esbuild](https://github.com/evanw/esbuild) which is 20 ~ 40x faster than terser and only 1 ~ 2% worse compression. [Benchmarks](https://github.com/privatenumber/minification-benchmarks)
 
-Note the `build.minify` option does not minify whitespaces when using the `'es'` format in lib mode, as it removes pure annotations and breaks tree-shaking.
+Note the `build.minify` option does not minify whitespaces when using the `'es'` format in lib mode, as it removes pure annotations and breaks tree-shaking. To force whitespace minification for `'es'` format in lib mode, explicitly set `esbuild.minifyWhitespace` to `true`.
 
 Terser must be installed when it is set to `'terser'`.
 
