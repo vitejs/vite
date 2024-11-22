@@ -459,7 +459,7 @@ export async function transformGlobImport(
             let importQuery = options.query ?? ''
 
             if (onlyKeys) {
-              objectProps.push(`${JSON.stringify(filePath)}: ''`)
+              objectProps.push(`${JSON.stringify(filePath)}: 0`)
               return
             }
 
