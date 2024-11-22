@@ -162,7 +162,6 @@ export function createDepsOptimizer(
       cachedMetadata || initDepsOptimizerMetadata(environment, sessionTimestamp)
 
     if (!cachedMetadata) {
-      environment.waitForRequestsIdle().then(onCrawlEnd)
       waitingForCrawlEnd = true
 
       // Enter processing state until crawl of static imports ends
@@ -186,6 +185,8 @@ export function createDepsOptimizer(
         })
         newDepsDiscovered = true
       }
+
+      environment.waitForRequestsIdle().then(onCrawlEnd)
 
       if (noDiscovery) {
         // We don't need to scan for dependencies or wait for the static crawl to end
