@@ -1,20 +1,60 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`fixture > transform 1`] = `
-"import * as __vite_glob_1_0 from "./modules/a.ts";import * as __vite_glob_1_1 from "./modules/b.ts";import * as __vite_glob_1_2 from "./modules/index.ts";import { name as __vite_glob_3_0 } from "./modules/a.ts";import { name as __vite_glob_3_1 } from "./modules/b.ts";import { name as __vite_glob_3_2 } from "./modules/index.ts";import { default as __vite_glob_5_0 } from "./modules/a.ts?raw";import { default as __vite_glob_5_1 } from "./modules/b.ts?raw";import "types/importMeta";
+"import * as __vite_glob_3_0 from "./modules/a.ts";import * as __vite_glob_3_1 from "./modules/b.ts";import * as __vite_glob_3_2 from "./modules/index.ts";import * as __vite_glob_5_0 from "./modules/a.ts";import * as __vite_glob_5_1 from "./modules/b.ts";import * as __vite_glob_5_2 from "./modules/index.ts";import { name as __vite_glob_9_0 } from "./modules/a.ts";import { name as __vite_glob_9_1 } from "./modules/b.ts";import { name as __vite_glob_9_2 } from "./modules/index.ts";import { name as __vite_glob_11_0 } from "./modules/a.ts";import { name as __vite_glob_11_1 } from "./modules/b.ts";import { name as __vite_glob_11_2 } from "./modules/index.ts";import { default as __vite_glob_15_0 } from "./modules/a.ts?raw";import { default as __vite_glob_15_1 } from "./modules/b.ts?raw";import "types/importMeta";
 export const basic = /* #__PURE__ */ Object.assign({"./modules/a.ts": () => import("./modules/a.ts"),"./modules/b.ts": () => import("./modules/b.ts"),"./modules/index.ts": () => import("./modules/index.ts")});
-export const basicEager = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_1_0,"./modules/b.ts": __vite_glob_1_1,"./modules/index.ts": __vite_glob_1_2
+export const basicWithObjectKeys = Object.keys({"./modules/a.ts": 0,"./modules/b.ts": 0,"./modules/index.ts": 0});
+export const basicWithObjectValues = Object.values([() => import("./modules/a.ts"),() => import("./modules/b.ts"),() => import("./modules/index.ts")]);
+export const basicEager = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_3_0,"./modules/b.ts": __vite_glob_3_1,"./modules/index.ts": __vite_glob_3_2
 
 });
+export const basicEagerWithObjectKeys = Object.keys(
+  {"./modules/a.ts": 0,"./modules/b.ts": 0,"./modules/index.ts": 0
+
+}
+);
+export const basicEagerWithObjectValues = Object.values(
+  [__vite_glob_5_0,__vite_glob_5_1,__vite_glob_5_2
+
+]
+);
 export const ignore = /* #__PURE__ */ Object.assign({"./modules/a.ts": () => import("./modules/a.ts"),"./modules/b.ts": () => import("./modules/b.ts")});
-export const namedEager = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_3_0,"./modules/b.ts": __vite_glob_3_1,"./modules/index.ts": __vite_glob_3_2
+export const ignoreWithObjectKeys = Object.keys(
+  {"./modules/a.ts": 0,"./modules/b.ts": 0}
+);
+export const ignoreWithObjectValues = Object.values(
+  [() => import("./modules/a.ts"),() => import("./modules/b.ts")]
+);
+export const namedEager = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_9_0,"./modules/b.ts": __vite_glob_9_1,"./modules/index.ts": __vite_glob_9_2
 
 
 });
+export const namedEagerWithObjectKeys = Object.keys(
+  {"./modules/a.ts": 0,"./modules/b.ts": 0,"./modules/index.ts": 0
+
+
+}
+);
+export const namedEagerWithObjectValues = Object.values(
+  [__vite_glob_11_0,__vite_glob_11_1,__vite_glob_11_2
+
+
+]
+);
 export const namedDefault = /* #__PURE__ */ Object.assign({"./modules/a.ts": () => import("./modules/a.ts").then(m => m["default"]),"./modules/b.ts": () => import("./modules/b.ts").then(m => m["default"]),"./modules/index.ts": () => import("./modules/index.ts").then(m => m["default"])
 
 });
-export const eagerAs = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_5_0,"./modules/b.ts": __vite_glob_5_1
+export const namedDefaultWithObjectKeys = Object.keys(
+  {"./modules/a.ts": 0,"./modules/b.ts": 0,"./modules/index.ts": 0
+
+}
+);
+export const namedDefaultWithObjectValues = Object.values(
+  [() => import("./modules/a.ts").then(m => m["default"]),() => import("./modules/b.ts").then(m => m["default"]),() => import("./modules/index.ts").then(m => m["default"])
+
+]
+);
+export const eagerAs = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_15_0,"./modules/b.ts": __vite_glob_15_1
 
 
 });
@@ -56,20 +96,60 @@ export const cleverCwd2 = /* #__PURE__ */ Object.assign({"./modules/a.ts": () =>
 `;
 
 exports[`fixture > transform with restoreQueryExtension 1`] = `
-"import * as __vite_glob_1_0 from "./modules/a.ts";import * as __vite_glob_1_1 from "./modules/b.ts";import * as __vite_glob_1_2 from "./modules/index.ts";import { name as __vite_glob_3_0 } from "./modules/a.ts";import { name as __vite_glob_3_1 } from "./modules/b.ts";import { name as __vite_glob_3_2 } from "./modules/index.ts";import { default as __vite_glob_5_0 } from "./modules/a.ts?raw";import { default as __vite_glob_5_1 } from "./modules/b.ts?raw";import "types/importMeta";
+"import * as __vite_glob_3_0 from "./modules/a.ts";import * as __vite_glob_3_1 from "./modules/b.ts";import * as __vite_glob_3_2 from "./modules/index.ts";import * as __vite_glob_5_0 from "./modules/a.ts";import * as __vite_glob_5_1 from "./modules/b.ts";import * as __vite_glob_5_2 from "./modules/index.ts";import { name as __vite_glob_9_0 } from "./modules/a.ts";import { name as __vite_glob_9_1 } from "./modules/b.ts";import { name as __vite_glob_9_2 } from "./modules/index.ts";import { name as __vite_glob_11_0 } from "./modules/a.ts";import { name as __vite_glob_11_1 } from "./modules/b.ts";import { name as __vite_glob_11_2 } from "./modules/index.ts";import { default as __vite_glob_15_0 } from "./modules/a.ts?raw";import { default as __vite_glob_15_1 } from "./modules/b.ts?raw";import "types/importMeta";
 export const basic = /* #__PURE__ */ Object.assign({"./modules/a.ts": () => import("./modules/a.ts"),"./modules/b.ts": () => import("./modules/b.ts"),"./modules/index.ts": () => import("./modules/index.ts")});
-export const basicEager = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_1_0,"./modules/b.ts": __vite_glob_1_1,"./modules/index.ts": __vite_glob_1_2
+export const basicWithObjectKeys = Object.keys({"./modules/a.ts": 0,"./modules/b.ts": 0,"./modules/index.ts": 0});
+export const basicWithObjectValues = Object.values([() => import("./modules/a.ts"),() => import("./modules/b.ts"),() => import("./modules/index.ts")]);
+export const basicEager = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_3_0,"./modules/b.ts": __vite_glob_3_1,"./modules/index.ts": __vite_glob_3_2
 
 });
+export const basicEagerWithObjectKeys = Object.keys(
+  {"./modules/a.ts": 0,"./modules/b.ts": 0,"./modules/index.ts": 0
+
+}
+);
+export const basicEagerWithObjectValues = Object.values(
+  [__vite_glob_5_0,__vite_glob_5_1,__vite_glob_5_2
+
+]
+);
 export const ignore = /* #__PURE__ */ Object.assign({"./modules/a.ts": () => import("./modules/a.ts"),"./modules/b.ts": () => import("./modules/b.ts")});
-export const namedEager = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_3_0,"./modules/b.ts": __vite_glob_3_1,"./modules/index.ts": __vite_glob_3_2
+export const ignoreWithObjectKeys = Object.keys(
+  {"./modules/a.ts": 0,"./modules/b.ts": 0}
+);
+export const ignoreWithObjectValues = Object.values(
+  [() => import("./modules/a.ts"),() => import("./modules/b.ts")]
+);
+export const namedEager = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_9_0,"./modules/b.ts": __vite_glob_9_1,"./modules/index.ts": __vite_glob_9_2
 
 
 });
+export const namedEagerWithObjectKeys = Object.keys(
+  {"./modules/a.ts": 0,"./modules/b.ts": 0,"./modules/index.ts": 0
+
+
+}
+);
+export const namedEagerWithObjectValues = Object.values(
+  [__vite_glob_11_0,__vite_glob_11_1,__vite_glob_11_2
+
+
+]
+);
 export const namedDefault = /* #__PURE__ */ Object.assign({"./modules/a.ts": () => import("./modules/a.ts").then(m => m["default"]),"./modules/b.ts": () => import("./modules/b.ts").then(m => m["default"]),"./modules/index.ts": () => import("./modules/index.ts").then(m => m["default"])
 
 });
-export const eagerAs = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_5_0,"./modules/b.ts": __vite_glob_5_1
+export const namedDefaultWithObjectKeys = Object.keys(
+  {"./modules/a.ts": 0,"./modules/b.ts": 0,"./modules/index.ts": 0
+
+}
+);
+export const namedDefaultWithObjectValues = Object.values(
+  [() => import("./modules/a.ts").then(m => m["default"]),() => import("./modules/b.ts").then(m => m["default"]),() => import("./modules/index.ts").then(m => m["default"])
+
+]
+);
+export const eagerAs = /* #__PURE__ */ Object.assign({"./modules/a.ts": __vite_glob_15_0,"./modules/b.ts": __vite_glob_15_1
 
 
 });

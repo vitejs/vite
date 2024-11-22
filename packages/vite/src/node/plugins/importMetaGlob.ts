@@ -32,6 +32,8 @@ export interface ParsedImportGlob {
   options: ParsedGeneralImportGlobOptions
   start: number
   end: number
+  onlyKeys: boolean
+  onlyValues: boolean
 }
 
 interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
@@ -107,6 +109,8 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
 }
 
 const importGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(/g
+const objectKeysRE = /\bObject\.keys\(\s*$/
+const objectValuesRE = /\bObject\.values\(\s*$/
 
 const knownOptions = {
   as: ['string'],
@@ -306,6 +310,12 @@ export async function parseImportGlob(
       globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
+    const sliceCode = cleanCode.slice(0, start)
+    const onlyKeys = objectKeysRE.test(sliceCode)
+    let onlyValues = false
+    if (!onlyKeys) {
+      onlyValues = objectValuesRE.test(sliceCode)
+    }
 
     return {
       index,
@@ -315,6 +325,8 @@ export async function parseImportGlob(
       options,
       start,
       end,
+      onlyKeys,
+      onlyValues,
     }
   })
 
@@ -390,7 +402,16 @@ export async function transformGlobImport(
   const staticImports = (
     await Promise.all(
       matches.map(
-        async ({ globsResolved, isRelative, options, index, start, end }) => {
+        async ({
+          globsResolved,
+          isRelative,
+          options,
+          index,
+          start,
+          end,
+          onlyKeys,
+          onlyValues,
+        }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await glob(globsResolved, {
@@ -437,6 +458,11 @@ export async function transformGlobImport(
             let importPath = paths.importPath
             let importQuery = options.query ?? ''
 
+            if (onlyKeys) {
+              objectProps.push(`${JSON.stringify(filePath)}: 0`)
+              return
+            }
+
             if (importQuery && importQuery !== '?raw') {
               const fileExtension = basename(file).split('.').slice(-1)[0]
               if (fileExtension && restoreQueryExtension)
@@ -458,13 +484,19 @@ export async function transformGlobImport(
               staticImports.push(
                 `import ${expression} from ${JSON.stringify(importPath)}`,
               )
-              objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
+              objectProps.push(
+                onlyValues
+                  ? `${variableName}`
+                  : `${JSON.stringify(filePath)}: ${variableName}`,
+              )
             } else {
               let importStatement = `import(${JSON.stringify(importPath)})`
               if (importKey)
                 importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
               objectProps.push(
-                `${JSON.stringify(filePath)}: () => ${importStatement}`,
+                onlyValues
+                  ? `() => ${importStatement}`
+                  : `${JSON.stringify(filePath)}: () => ${importStatement}`,
               )
             }
           })
@@ -477,10 +509,17 @@ export async function transformGlobImport(
             originalLineBreakCount > 0
               ? '\n'.repeat(originalLineBreakCount)
               : ''
+          let replacement = ''
+          if (onlyKeys) {
+            replacement = `{${objectProps.join(',')}${lineBreaks}}`
+          } else if (onlyValues) {
+            replacement = `[${objectProps.join(',')}${lineBreaks}]`
+          } else {
+            replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+              ',',
+            )}${lineBreaks}})`
+          }
 
-          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-            ',',
-          )}${lineBreaks}})`
           s.overwrite(start, end, replacement)
 
           return staticImports
