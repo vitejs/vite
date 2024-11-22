@@ -172,6 +172,9 @@ export type {
   HotChannel,
   ServerHotChannel,
   HotChannelClient,
+  NormalizedHotChannel,
+  NormalizedHotChannelClient,
+  NormalizedServerHotChannel,
 } from './server/hmr'
 
 export type { FetchFunction, FetchResult } from 'vite/module-runner'
