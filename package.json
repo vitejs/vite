@@ -49,16 +49,16 @@
     "@types/debug": "^4.1.12",
     "@types/estree": "^1.0.6",
     "@types/etag": "^1.8.3",
-    "@types/less": "^3.0.6",
-    "@types/node": "^22.9.0",
+    "@types/less": "^3.0.7",
+    "@types/node": "^22.9.3",
     "@types/picomatch": "^3.0.1",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.5.13",
     "@vitejs/release-scripts": "^1.3.2",
     "conventional-changelog-cli": "^5.0.0",
     "eslint": "^9.15.0",
-    "eslint-plugin-import-x": "^4.4.2",
-    "eslint-plugin-n": "^17.13.2",
+    "eslint-plugin-import-x": "^4.4.3",
+    "eslint-plugin-n": "^17.14.0",
     "eslint-plugin-regexp": "^2.7.0",
     "execa": "^9.5.1",
     "globals": "^15.12.0",
@@ -95,7 +95,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@9.13.2",
+  "packageManager": "pnpm@9.14.2",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
