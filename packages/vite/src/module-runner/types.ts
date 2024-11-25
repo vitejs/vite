@@ -103,6 +103,8 @@ export interface ModuleRunnerOptions {
     | InterceptorOptions
   /**
    * Disable HMR or configure HMR options.
+   *
+   * @default true
    */
   hmr?: boolean | ModuleRunnerHmr
   /**
