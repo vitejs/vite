@@ -95,7 +95,7 @@ describe.runIf(isBuild)('build', () => {
 
     // chunk
     expect(content).toMatch(`new Worker("/iife-sourcemap/assets/my-worker`)
-    expect(content).toMatch(`new Worker("data:text/javascript;base64`)
+    expect(content).toMatch(`new Worker("data:text/javascript;charset=utf-8,"+`)
     expect(content).toMatch(
       `new Worker("/iife-sourcemap/assets/possible-ts-output-worker`,
     )
@@ -117,8 +117,9 @@ describe.runIf(isBuild)('build', () => {
 })
 
 function getSourceMapUrl(code: string): string {
-  const regex = /\/\/[#@]\ssource(?:Mapping)?URL=\s*(\S+)/
-  const results = regex.exec(code)
+  const regex = /\/\/[#@]\ssource(?:Mapping)?URL=\s*(\S+)/g
+  const matches = [...code.matchAll(regex)]
+  const results = matches.at(-1)
 
   if (results && results.length >= 2) {
     return results[1]
