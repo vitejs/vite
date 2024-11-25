@@ -507,7 +507,11 @@ function walk(
         return this.skip()
       }
 
-      if (node.type === 'Program' || node.type === 'BlockStatement') {
+      if (
+        node.type === 'Program' ||
+        node.type === 'BlockStatement' ||
+        node.type === 'StaticBlock'
+      ) {
         onStatements(node.body as Node[])
       }
 
