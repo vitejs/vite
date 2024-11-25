@@ -27,9 +27,7 @@
     "./client": {
       "types": "./client.d.ts"
     },
-    "./module-runner": {
-      "import": "./dist/node/module-runner.js"
-    },
+    "./module-runner": "./dist/node/module-runner.js",
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
       "types": "./types/*"
