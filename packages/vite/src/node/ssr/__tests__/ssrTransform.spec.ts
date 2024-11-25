@@ -1191,3 +1191,60 @@ console.log(bar)
       "
   `)
 })
+
+test('inject semicolon for (0, ...) wrapper', async () => {
+  expect(
+    await ssrTransformSimpleCode(`
+import { f } from './f'
+
+let x = 0;
+
+x
+f()
+
+if (1)
+  x
+f()
+
+if (1)
+  x
+else
+  x
+f()
+
+
+let y = x
+f()
+
+x /*;;*/ /*;;*/
+f()
+`),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("./f", {"importedNames":["f"]});
+
+    ;
+
+    let x = 0;
+
+    x;
+    (0,__vite_ssr_import_0__.f)();
+
+    if (1)
+      x;
+    (0,__vite_ssr_import_0__.f)();
+
+    if (1)
+      x
+    else
+      x;
+    (0,__vite_ssr_import_0__.f)();
+
+
+    let y = x;
+    (0,__vite_ssr_import_0__.f)();
+
+    x; /*;;*/ /*;;*/
+    (0,__vite_ssr_import_0__.f)()
+    "
+  `)
+})
