@@ -40,7 +40,10 @@ interface ViteHotContext {
     event: T,
     cb: (payload: InferCustomEventPayload<T>) => void,
   ): void
-  send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void
+  send<T extends string>(
+    event: T,
+    data?: InferCustomEventPayload<T>,
+  ): Promise<void>
 }
 ```
 

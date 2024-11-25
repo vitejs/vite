@@ -143,8 +143,11 @@ export class HMRContext implements ViteHotContext {
     removeFromMap(this.newListeners)
   }
 
-  send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
-    this.hmrClient.send({ type: 'custom', event, data })
+  async send<T extends string>(
+    event: T,
+    data?: InferCustomEventPayload<T>,
+  ): Promise<void> {
+    await this.hmrClient.send({ type: 'custom', event, data })
   }
 
   private acceptDeps(
@@ -189,8 +192,8 @@ export class HMRClient {
     }
   }
 
-  public send(payload: HotPayload): void {
-    this.transport.send(payload)
+  public async send(payload: HotPayload): Promise<void> {
+    await this.transport.send(payload)
   }
 
   public clear(): void {
