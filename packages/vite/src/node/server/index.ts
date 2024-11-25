@@ -729,10 +729,11 @@ export async function _createServer(
     },
   })
 
-  const closeServerAndExit = async () => {
+  const closeServerAndExit = async (_: unknown, exitCode?: number) => {
     try {
       await server.close()
     } finally {
+      process.exitCode ??= exitCode ? 128 + exitCode : undefined
       process.exit()
     }
   }

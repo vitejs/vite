@@ -1524,7 +1524,9 @@ export function partialEncodeURIPath(uri: string): string {
   return filePath.replaceAll('%', '%25') + postfix
 }
 
-export const setupSIGTERMListener = (callback: () => Promise<void>): void => {
+export const setupSIGTERMListener = (
+  callback: (signal?: 'SIGTERM', exitCode?: number) => Promise<void>,
+): void => {
   process.once('SIGTERM', callback)
   if (process.env.CI !== 'true') {
     process.stdin.on('end', callback)
@@ -1532,7 +1534,7 @@ export const setupSIGTERMListener = (callback: () => Promise<void>): void => {
 }
 
 export const teardownSIGTERMListener = (
-  callback: () => Promise<void>,
+  callback: Parameters<typeof setupSIGTERMListener>[0],
 ): void => {
   process.off('SIGTERM', callback)
   if (process.env.CI !== 'true') {
