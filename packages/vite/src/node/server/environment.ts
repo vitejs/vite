@@ -19,7 +19,7 @@ import {
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
 import { resolveEnvironmentPlugins } from '../plugin'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
 import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
@@ -167,7 +167,7 @@ export class DevEnvironment extends BaseEnvironment {
       return
     }
     this._initiated = true
-    this._plugins = resolveEnvironmentPlugins(this)
+    this._plugins = await resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this._plugins,

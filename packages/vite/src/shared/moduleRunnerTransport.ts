@@ -32,6 +32,16 @@ type InvokeableModuleRunnerTransport = Omit<ModuleRunnerTransport, 'invoke'> & {
   ): Promise<ReturnType<Awaited<InvokeMethods[T]>>>
 }
 
+function reviveInvokeError(e: any) {
+  const error = new Error(e.message || 'Unknown invoke error')
+  Object.assign(error, e, {
+    // pass the whole error instead of just the stacktrace
+    // so that it gets formatted nicely with console.log
+    runnerError: new Error('RunnerError'),
+  })
+  return error
+}
+
 const createInvokeableTransport = (
   transport: ModuleRunnerTransport,
 ): InvokeableModuleRunnerTransport => {
@@ -49,7 +59,7 @@ const createInvokeableTransport = (
           } satisfies InvokeSendData,
         } satisfies CustomPayload)
         if ('e' in result) {
-          throw result.e
+          throw reviveInvokeError(result.e)
         }
         return result.r
       },
@@ -157,7 +167,11 @@ const createInvokeableTransport = (
         })
       }
 
-      return await promise
+      try {
+        return await promise
+      } catch (err) {
+        throw reviveInvokeError(err)
+      }
     },
   }
 }
@@ -165,7 +179,7 @@ const createInvokeableTransport = (
 export interface NormalizedModuleRunnerTransport {
   connect?(onMessage?: (data: HotPayload) => void): Promise<void> | void
   disconnect?(): Promise<void> | void
-  send(data: HotPayload): void
+  send(data: HotPayload): Promise<void>
   invoke<T extends keyof InvokeMethods>(
     name: T,
     data: Parameters<InvokeMethods[T]>,

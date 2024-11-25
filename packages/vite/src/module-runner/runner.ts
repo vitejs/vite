@@ -33,6 +33,7 @@ import {
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
+import { ESModulesEvaluator } from './esmEvaluator'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -61,20 +62,21 @@ export class ModuleRunner {
 
   constructor(
     public options: ModuleRunnerOptions,
-    public evaluator: ModuleEvaluator,
+    public evaluator: ModuleEvaluator = new ESModulesEvaluator(),
     private debug?: ModuleRunnerDebugger,
   ) {
     const root = this.options.root
     this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
-    if (options.hmr) {
+    if (options.hmr !== false) {
+      const optionsHmr = options.hmr ?? true
       const resolvedHmrLogger: HMRLogger =
-        options.hmr === true || options.hmr.logger === undefined
+        optionsHmr === true || optionsHmr.logger === undefined
           ? hmrLogger
-          : options.hmr.logger === false
+          : optionsHmr.logger === false
             ? silentConsole
-            : options.hmr.logger
+            : optionsHmr.logger
       this.hmrClient = new HMRClient(
         resolvedHmrLogger,
         this.transport,

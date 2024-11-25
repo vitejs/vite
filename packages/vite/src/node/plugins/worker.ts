@@ -322,21 +322,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           urlCode = 'self.location.href'
         } else if (inlineRE.test(id)) {
           const chunk = await bundleWorkerEntry(config, id)
-          const encodedJs = `const encodedJs = "${Buffer.from(
-            chunk.code,
-          ).toString('base64')}";`
+          const jsContent = `const jsContent = ${JSON.stringify(chunk.code)};`
 
           const code =
             // Using blob URL for SharedWorker results in multiple instances of a same worker
             workerConstructor === 'Worker'
-              ? `${encodedJs}
-          const decodeBase64 = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+              ? `${jsContent}
           const blob = typeof self !== "undefined" && self.Blob && new Blob([${
             workerType === 'classic'
               ? ''
               : // `URL` is always available, in `Worker[type="module"]`
                 `'URL.revokeObjectURL(import.meta.url);',`
-          }decodeBase64(encodedJs)], { type: "text/javascript;charset=utf-8" });
+          }jsContent], { type: "text/javascript;charset=utf-8" });
           export default function WorkerWrapper(options) {
             let objURL;
             try {
@@ -349,7 +346,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               return worker;
             } catch(e) {
               return new ${workerConstructor}(
-                "data:text/javascript;base64," + encodedJs,
+                'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
                 ${workerTypeOption}
               );
             }${
@@ -362,10 +359,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 : ''
             }
           }`
-              : `${encodedJs}
+              : `${jsContent}
           export default function WorkerWrapper(options) {
             return new ${workerConstructor}(
-              "data:text/javascript;base64," + encodedJs,
+              'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
               ${workerTypeOption}
             );
           }

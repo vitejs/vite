@@ -18,14 +18,14 @@ const external = [
   /^vite\//,
   'rollup/parseAst',
   ...Object.keys(pkg.dependencies),
-  // lightningcss types are bundled
-  ...Object.keys(pkg.devDependencies).filter((d) => d !== 'lightningcss'),
+  ...Object.keys(pkg.peerDependencies),
+  ...Object.keys(pkg.devDependencies),
 ]
 
 export default defineConfig({
   input: {
-    index: './temp/node/index.d.ts',
-    'module-runner': './temp/module-runner/index.d.ts',
+    index: './temp/src/node/index.d.ts',
+    'module-runner': './temp/src/module-runner/index.d.ts',
   },
   output: {
     dir: './dist/node',

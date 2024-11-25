@@ -16,6 +16,7 @@ import colors from 'picocolors'
 import debug from 'debug'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import type MagicString from 'magic-string'
+import type { Equal } from '@type-challenges/utils'
 
 import type { TransformResult } from 'rollup'
 import { createFilter as _createFilter } from '@rollup/pluginutils'
@@ -1069,6 +1070,97 @@ function backwardCompatibleWorkerPlugins(plugins: any) {
   return []
 }
 
+type DeepWritable<T> =
+  T extends ReadonlyArray<unknown>
+    ? { -readonly [P in keyof T]: DeepWritable<T[P]> }
+    : T extends RegExp
+      ? RegExp
+      : T[keyof T] extends Function
+        ? T
+        : { -readonly [P in keyof T]: DeepWritable<T[P]> }
+
+function deepClone<T>(value: T): DeepWritable<T> {
+  if (Array.isArray(value)) {
+    return value.map((v) => deepClone(v)) as DeepWritable<T>
+  }
+  if (isObject(value)) {
+    const cloned: Record<string, any> = {}
+    for (const key in value) {
+      cloned[key] = deepClone(value[key])
+    }
+    return cloned as DeepWritable<T>
+  }
+  if (typeof value === 'function') {
+    return value as DeepWritable<T>
+  }
+  if (value instanceof RegExp) {
+    return structuredClone(value) as DeepWritable<T>
+  }
+  if (typeof value === 'object' && value != null) {
+    throw new Error('Cannot deep clone non-plain object')
+  }
+  return value as DeepWritable<T>
+}
+
+type MaybeFallback<D, V> = undefined extends V ? Exclude<V, undefined> | D : V
+
+type MergeWithDefaultsResult<D, V> =
+  Equal<D, undefined> extends true
+    ? V
+    : D extends Function | Array<any>
+      ? MaybeFallback<D, V>
+      : V extends Function | Array<any>
+        ? MaybeFallback<D, V>
+        : D extends Record<string, any>
+          ? V extends Record<string, any>
+            ? {
+                [K in keyof D | keyof V]: K extends keyof D
+                  ? K extends keyof V
+                    ? MergeWithDefaultsResult<D[K], V[K]>
+                    : D[K]
+                  : K extends keyof V
+                    ? V[K]
+                    : never
+              }
+            : MaybeFallback<D, V>
+          : MaybeFallback<D, V>
+
+function mergeWithDefaultsRecursively<
+  D extends Record<string, any>,
+  V extends Record<string, any>,
+>(defaults: D, values: V): MergeWithDefaultsResult<D, V> {
+  const merged: Record<string, any> = defaults
+  for (const key in values) {
+    const value = values[key]
+    // let null to set the value (e.g. `server.watch: null`)
+    if (value === undefined) continue
+
+    const existing = merged[key]
+    if (existing === undefined) {
+      merged[key] = value
+      continue
+    }
+
+    if (isObject(existing) && isObject(value)) {
+      merged[key] = mergeWithDefaultsRecursively(existing, value)
+      continue
+    }
+
+    // use replace even for arrays
+    merged[key] = value
+  }
+  return merged as MergeWithDefaultsResult<D, V>
+}
+
+export function mergeWithDefaults<
+  D extends Record<string, any>,
+  V extends Record<string, any>,
+>(defaults: D, values: V): MergeWithDefaultsResult<DeepWritable<D>, V> {
+  // NOTE: we need to clone the value here to avoid mutating the defaults
+  const clonedDefaults = deepClone(defaults)
+  return mergeWithDefaultsRecursively(clonedDefaults, values)
+}
+
 function mergeConfigRecursively(
   defaults: Record<string, any>,
   overrides: Record<string, any>,
@@ -1432,7 +1524,9 @@ export function partialEncodeURIPath(uri: string): string {
   return filePath.replaceAll('%', '%25') + postfix
 }
 
-export const setupSIGTERMListener = (callback: () => Promise<void>): void => {
+export const setupSIGTERMListener = (
+  callback: (signal?: 'SIGTERM', exitCode?: number) => Promise<void>,
+): void => {
   process.once('SIGTERM', callback)
   if (process.env.CI !== 'true') {
     process.stdin.on('end', callback)
@@ -1440,7 +1534,7 @@ export const setupSIGTERMListener = (callback: () => Promise<void>): void => {
 }
 
 export const teardownSIGTERMListener = (
-  callback: () => Promise<void>,
+  callback: Parameters<typeof setupSIGTERMListener>[0],
 ): void => {
   process.off('SIGTERM', callback)
   if (process.env.CI !== 'true') {

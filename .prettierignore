@@ -1,5 +1,6 @@
 packages/*/CHANGELOG.md
 packages/vite/src/node/ssr/runtime/__tests__/fixtures
+packages/vite/src/node/ssr/__tests__/fixtures/errors
 playground-temp/
 dist/
 temp/

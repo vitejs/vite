@@ -30,6 +30,7 @@ import {
   isObject,
   isParentDirectory,
   mergeConfig,
+  mergeWithDefaults,
   normalizePath,
   resolveHostname,
   resolveServerUrls,
@@ -42,15 +43,13 @@ import { ssrTransform } from '../ssr/ssrTransform'
 import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
-import {
-  CLIENT_DIR,
-  DEFAULT_DEV_PORT,
-  ERR_OUTDATED_OPTIMIZED_DEP,
-} from '../constants'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
+import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { warnFutureDeprecation } from '../deprecations'
 import {
+  createNoopWatcher,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
@@ -120,7 +119,7 @@ export interface ServerOptions extends CommonServerOptions {
   }
   /**
    * chokidar watch options or null to disable FS watching
-   * https://github.com/paulmillr/chokidar#getting-started
+   * https://github.com/paulmillr/chokidar/tree/3.6.0#api
    */
   watch?: WatchOptions | null
   /**
@@ -247,8 +246,8 @@ export interface ViteDevServer {
   httpServer: HttpServer | null
   /**
    * Chokidar watcher instance. If `config.server.watch` is set to `null`,
-   * it will not watch any files and calling `add` will have no effect.
-   * https://github.com/paulmillr/chokidar#getting-started
+   * it will not watch any files and calling `add` or `unwatch` will have no effect.
+   * https://github.com/paulmillr/chokidar/tree/3.6.0#api
    */
   watcher: FSWatcher
   /**
@@ -438,7 +437,10 @@ export async function _createServer(
     resolvedOutDirs,
   )
   const resolvedWatchOptions = resolveChokidarOptions(
-    serverConfig.watch,
+    {
+      disableGlobbing: true,
+      ...serverConfig.watch,
+    },
     resolvedOutDirs,
     emptyOutDir,
     config.cacheDir,
@@ -458,12 +460,12 @@ export async function _createServer(
     setClientErrorHandler(httpServer, config.logger)
   }
 
-  const watcher = chokidar.watch(
-    // config file dependencies and env file might be outside of root
-    // eslint-disable-next-line eqeqeq -- null means disabled
-    serverConfig.watch === null
-      ? []
-      : [
+  // eslint-disable-next-line eqeqeq
+  const watchEnabled = serverConfig.watch !== null
+  const watcher = watchEnabled
+    ? (chokidar.watch(
+        // config file dependencies and env file might be outside of root
+        [
           root,
           ...config.configFileDependencies,
           ...getEnvFilesForMode(config.mode, config.envDir),
@@ -471,17 +473,10 @@ export async function _createServer(
           // of the root directory.
           ...(publicDir && publicFiles ? [publicDir] : []),
         ],
-    resolvedWatchOptions,
-  )
-  // If watch is turned off, patch `.add()` as a noop to prevent programmatically
-  // watching additional files and to keep it fast.
-  // eslint-disable-next-line eqeqeq -- null means disabled
-  if (serverConfig.watch === null) {
-    watcher.add = function () {
-      return this
-    }
-    await watcher.close()
-  }
+
+        resolvedWatchOptions,
+      ) as FSWatcher)
+    : createNoopWatcher(resolvedWatchOptions)
 
   const environments: Record<string, DevEnvironment> = {}
 
@@ -734,10 +729,11 @@ export async function _createServer(
     },
   })
 
-  const closeServerAndExit = async () => {
+  const closeServerAndExit = async (_: unknown, exitCode?: number) => {
     try {
       await server.close()
     } finally {
+      process.exitCode ??= exitCode ? 128 + exitCode : undefined
       process.exit()
     }
   }
@@ -1016,32 +1012,63 @@ function resolvedAllowDir(root: string, dir: string): string {
   return normalizePath(path.resolve(root, dir))
 }
 
+export const serverConfigDefaults = Object.freeze({
+  port: DEFAULT_DEV_PORT,
+  strictPort: false,
+  host: 'localhost',
+  https: undefined,
+  open: false,
+  proxy: {},
+  cors: true,
+  headers: {},
+  // hmr
+  // ws
+  warmup: {
+    clientFiles: [],
+    ssrFiles: [],
+  },
+  // watch
+  middlewareMode: false,
+  fs: {
+    strict: true,
+    // allow
+    deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**'],
+  },
+  // origin
+  preTransformRequests: true,
+  // sourcemapIgnoreList
+  perEnvironmentStartEndDuringDev: false,
+  // hotUpdateEnvironments
+} satisfies ServerOptions)
+
 export function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
 ): ResolvedServerOptions {
-  const server: ResolvedServerOptions = {
-    preTransformRequests: true,
-    perEnvironmentStartEndDuringDev: false,
-    ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
-    sourcemapIgnoreList:
-      raw?.sourcemapIgnoreList === false
-        ? () => false
-        : raw?.sourcemapIgnoreList || isInNodeModules,
-    middlewareMode: raw?.middlewareMode || false,
-  }
-  let allowDirs = server.fs?.allow
-  const deny = server.fs?.deny || [
-    '.env',
-    '.env.*',
-    '*.{crt,pem}',
-    '**/.git/**',
-  ]
+  const _server = mergeWithDefaults(
+    {
+      ...serverConfigDefaults,
+      host: undefined, // do not set here to detect whether host is set or not
+      sourcemapIgnoreList: isInNodeModules,
+    },
+    raw ?? {},
+  )
 
-  if (!allowDirs) {
-    allowDirs = [searchForWorkspaceRoot(root)]
+  const server: ResolvedServerOptions = {
+    ..._server,
+    fs: {
+      ..._server.fs,
+      // run searchForWorkspaceRoot only if needed
+      allow: raw?.fs?.allow ?? [searchForWorkspaceRoot(root)],
+    },
+    sourcemapIgnoreList:
+      _server.sourcemapIgnoreList === false
+        ? () => false
+        : _server.sourcemapIgnoreList,
   }
+
+  let allowDirs = server.fs.allow
 
   if (process.versions.pnp) {
     // running a command fails if cwd doesn't exist and root may not exist
@@ -1074,11 +1101,7 @@ export function resolveServerOptions(
     allowDirs.push(resolvedClientDir)
   }
 
-  server.fs = {
-    strict: server.fs?.strict ?? true,
-    allow: allowDirs,
-    deny,
-  }
+  server.fs.allow = allowDirs
 
   if (server.origin?.endsWith('/')) {
     server.origin = server.origin.slice(0, -1)

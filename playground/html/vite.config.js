@@ -35,11 +35,13 @@ export default defineConfig({
         serveBothFile: resolve(__dirname, 'serve/both.html'),
         serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
         write: resolve(__dirname, 'write.html'),
+        'transform-inline-js': resolve(__dirname, 'transform-inline-js.html'),
         relativeInput: relative(
           process.cwd(),
           resolve(__dirname, 'relative-input.html'),
         ),
       },
+      external: ['/external-path-by-rollup-options.js'],
     },
   },
 
@@ -202,7 +204,7 @@ ${
             children: `
               {
                 "imports": {
-                  "vue": "https://unpkg.com/vue@3.2.0/dist/vue.runtime.esm-browser.js"
+                  "vue": "https://unpkg.com/vue@3.2.47/dist/vue.runtime.esm-browser.js"
                 }
               }
             `,
@@ -228,6 +230,39 @@ ${
         },
       },
     },
+    {
+      name: 'append-external-path-by-rollup-options',
+      apply: 'build', // this does not work in serve
+      transformIndexHtml: {
+        order: 'pre',
+        handler(_, ctx) {
+          if (!ctx.filename.endsWith('html/index.html')) return
+          return [
+            {
+              tag: 'script',
+              attrs: {
+                type: 'module',
+                src: '/external-path-by-rollup-options.js',
+              },
+              injectTo: 'body',
+            },
+          ]
+        },
+      },
+    },
+    {
+      name: 'transform-inline-js',
+      transformIndexHtml: {
+        order: 'pre',
+        handler(html, ctx) {
+          if (!ctx.filename.endsWith('html/transform-inline-js.html')) return
+          return html.replaceAll(
+            '{{ id }}',
+            Math.random().toString(36).slice(2),
+          )
+        },
+      },
+    },
     serveExternalPathPlugin(),
   ],
 })
@@ -241,6 +276,11 @@ function serveExternalPathPlugin() {
     } else if (req.url === '/external-path.css') {
       res.setHeader('Content-Type', 'text/css')
       res.end('.external-path{color:red}')
+    } else if (req.url === '/external-path-by-rollup-options.js') {
+      res.setHeader('Content-Type', 'application/javascript')
+      res.end(
+        'document.querySelector(".external-path-by-rollup-options").textContent = "works"',
+      )
     } else {
       next()
     }

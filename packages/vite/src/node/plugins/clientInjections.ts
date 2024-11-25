@@ -3,7 +3,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
 import { isObject, normalizePath, resolveHostname } from '../utils'
-import { usePerEnvironmentState } from '../environment'
+import { perEnvironmentState } from '../environment'
 import { replaceDefine, serializeDefine } from './define'
 
 // ids in transform are normalized to unix style
@@ -17,7 +17,7 @@ const normalizedEnvEntry = normalizePath(ENV_ENTRY)
 export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
   let injectConfigValues: (code: string) => string
 
-  const getDefineReplacer = usePerEnvironmentState((environment) => {
+  const getDefineReplacer = perEnvironmentState((environment) => {
     const userDefine: Record<string, any> = {}
     for (const key in environment.config.define) {
       // import.meta.env.* is handled in `importAnalysis` plugin

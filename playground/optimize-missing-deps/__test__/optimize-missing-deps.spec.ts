@@ -1,11 +1,11 @@
 import fetch from 'node-fetch'
 import { expect, test } from 'vitest'
 import { port } from './serve'
-import { page, untilUpdated } from '~utils'
+import { isBuild, page, untilUpdated } from '~utils'
 
 const url = `http://localhost:${port}/`
 
-test('optimize', async () => {
+test.runIf(!isBuild)('optimize', async () => {
   await page.goto(url)
   // reload page to get optimized missing deps
   await page.reload()

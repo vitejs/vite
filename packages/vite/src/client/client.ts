@@ -308,7 +308,11 @@ const hasDocument = 'document' in globalThis
 
 function createErrorOverlay(err: ErrorPayload['err']) {
   clearErrorOverlay()
-  document.body.appendChild(new ErrorOverlay(err))
+  const { customElements } = globalThis
+  if (customElements) {
+    const ErrorOverlayConstructor = customElements.get(overlayId)!
+    document.body.appendChild(new ErrorOverlayConstructor(err))
+  }
 }
 
 function clearErrorOverlay() {

@@ -213,6 +213,7 @@ export const normalizeHotChannel = (
           name: error.name,
           message: error.message,
           stack: error.stack,
+          ...error, // preserve enumerable properties such as RollupError.loc, frame, plugin
         },
       }
     }
@@ -445,7 +446,7 @@ export async function handleHMRUpdate(
     const options = {
       ...contextMeta,
       modules: [...mods],
-      // later on hotUpdate will be called for each runtime with a new HotUpdateContext
+      // later on hotUpdate will be called for each runtime with a new HotUpdateOptions
       environment,
     }
     hotMap.set(environment, { options })

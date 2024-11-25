@@ -48,7 +48,11 @@ export const cssEntriesMap = new WeakMap<Environment, Set<string>>()
 // add own dictionary entry by directly assigning mrmime
 export function registerCustomMime(): void {
   // https://github.com/lukeed/mrmime/issues/3
+  // instead of `image/vnd.microsoft.icon` which is registered on IANA Media Types DB
+  // image/x-icon should be used instead for better compatibility (https://github.com/h5bp/html5-boilerplate/issues/219)
   mrmime.mimes['ico'] = 'image/x-icon'
+  // https://mimesniff.spec.whatwg.org/#matching-an-image-type-pattern
+  mrmime.mimes['cur'] = 'image/x-icon'
   // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers#flac
   mrmime.mimes['flac'] = 'audio/flac'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types

@@ -299,3 +299,9 @@
   text('.dep-with-asset-ext-prebundled', isPreBundled)
   text('.dep-with-asset-ext-no-dual-package', original === reexport)
 </script>
+
+<script type="module">
+  // manually check Firefox doesn't show warning in devtool debugger
+  import * as sub from '@vitejs/test-dep-source-map-no-sources/sub.js'
+  import * as all from '@vitejs/test-dep-source-map-no-sources/all.js'
+</script>

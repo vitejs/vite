@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "6.0.0-beta.9",
+  "version": "6.0.0-beta.10",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -20,22 +20,14 @@
   "types": "./dist/node/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/node/index.d.ts",
-        "default": "./dist/node/index.js"
-      },
-      "require": {
-        "types": "./index.d.cts",
-        "default": "./index.cjs"
-      }
+      "module-sync": "./dist/node/index.js",
+      "import": "./dist/node/index.js",
+      "require": "./index.cjs"
     },
     "./client": {
       "types": "./client.d.ts"
     },
-    "./module-runner": {
-      "types": "./dist/node/module-runner.d.ts",
-      "import": "./dist/node/module-runner.js"
-    },
+    "./module-runner": "./dist/node/module-runner.js",
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
       "types": "./types/*"
@@ -50,16 +42,23 @@
       ]
     }
   },
+  "imports": {
+    "#module-sync-enabled": {
+      "module-sync": "./misc/true.js",
+      "default": "./misc/false.js"
+    }
+  },
   "files": [
     "bin",
     "dist",
+    "misc/**/*.js",
     "client.d.ts",
     "index.cjs",
     "index.d.cts",
     "types"
   ],
   "engines": {
-    "node": "^18.0.0 || >=20.0.0"
+    "node": "^18.0.0 || ^20.0.0 || >=22.0.0"
   },
   "repository": {
     "type": "git",
@@ -87,8 +86,11 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.24.0",
-    "postcss": "^8.4.47",
+    "postcss": "^8.4.49",
     "rollup": "^4.23.0"
+  },
+  "optionalDependencies": {
+    "fsevents": "~2.3.3"
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.3.0",
@@ -105,15 +107,15 @@
     "@types/pnpapi": "^0.0.5",
     "artichokie": "^0.2.1",
     "cac": "^6.7.14",
-    "chokidar": "^4.0.1",
+    "chokidar": "^3.6.0",
     "connect": "^3.7.0",
     "convert-source-map": "^2.0.0",
     "cors": "^2.8.5",
-    "cross-spawn": "^7.0.3",
+    "cross-spawn": "^7.0.6",
     "debug": "^4.3.7",
     "dep-types": "link:./src/types",
     "dotenv": "^16.4.5",
-    "dotenv-expand": "^11.0.6",
+    "dotenv-expand": "^12.0.1",
     "es-module-lexer": "^1.5.4",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
@@ -121,8 +123,8 @@
     "http-proxy": "^1.18.1",
     "launch-editor-middleware": "^2.9.1",
     "lightningcss": "^1.28.1",
-    "magic-string": "^0.30.12",
-    "mlly": "^1.7.2",
+    "magic-string": "^0.30.13",
+    "mlly": "^1.7.3",
     "mrmime": "^2.0.0",
     "nanoid": "^5.0.8",
     "open": "^10.1.0",
@@ -133,17 +135,16 @@
     "picomatch": "^4.0.2",
     "postcss-import": "^16.1.0",
     "postcss-load-config": "^6.0.1",
-    "postcss-modules": "^6.0.0",
+    "postcss-modules": "^6.0.1",
     "resolve.exports": "^2.0.2",
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-esbuild": "^6.1.1",
     "rollup-plugin-license": "^3.5.3",
-    "sass": "^1.80.6",
-    "sass-embedded": "^1.80.6",
+    "sass": "^1.81.0",
+    "sass-embedded": "^1.81.0",
     "sirv": "^3.0.0",
     "source-map-support": "^0.5.21",
-    "strip-ansi": "^7.1.0",
-    "strip-literal": "^2.1.0",
+    "strip-literal": "^2.1.1",
     "tinyglobby": "^0.2.10",
     "tsconfck": "^3.1.4",
     "tslib": "^2.8.1",
@@ -152,7 +153,7 @@
     "ws": "^8.18.0"
   },
   "peerDependencies": {
-    "@types/node": "^18.0.0 || >=20.0.0",
+    "@types/node": "^18.0.0 || ^20.0.0 || >=22.0.0",
     "jiti": ">=1.21.0",
     "less": "*",
     "lightningcss": "^1.21.0",

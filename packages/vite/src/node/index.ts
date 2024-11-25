@@ -8,6 +8,8 @@ export {
   resolveConfig,
   sortUserPlugins,
 } from './config'
+export { perEnvironmentPlugin } from './plugin'
+export { perEnvironmentState } from './environment'
 export { createServer } from './server'
 export { preview } from './preview'
 export { build, createBuilder } from './build'

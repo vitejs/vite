@@ -69,14 +69,7 @@ export async function resolvePlugins(
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config) : null,
-    jsonPlugin(
-      {
-        namedExports: true,
-        stringify: 'auto',
-        ...config.json,
-      },
-      isBuild,
-    ),
+    jsonPlugin(config.json, isBuild),
     wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),

@@ -14,11 +14,11 @@ import {
   numberToPos,
   sortObjectKeys,
 } from '../utils'
-import { usePerEnvironmentState } from '../environment'
+import { perEnvironmentState } from '../environment'
 
 export function ssrManifestPlugin(): Plugin {
   // module id => preload assets mapping
-  const getSsrManifest = usePerEnvironmentState(() => {
+  const getSsrManifest = perEnvironmentState(() => {
     return {} as Record<string, string[]>
   })
 

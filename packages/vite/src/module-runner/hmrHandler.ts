@@ -1,5 +1,6 @@
 import type { HotPayload } from 'types/hmrPayload'
 import { slash, unwrapId } from '../shared/utils'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../shared/constants'
 import type { ModuleRunner } from './runner'
 
 // updates to HMR should go one after another. It is possible to trigger another update during the invalidation for example.
@@ -56,7 +57,15 @@ export async function handleHotPayload(
       runner.evaluatedModules.clear()
 
       for (const url of clearEntrypointUrls) {
-        await runner.import(url)
+        try {
+          await runner.import(url)
+        } catch (err) {
+          if (err.code !== ERR_OUTDATED_OPTIMIZED_DEP) {
+            hmrClient.logger.error(
+              `An error happened during full reload\n${err.message}\n${err.stack}`,
+            )
+          }
+        }
       }
       break
     }

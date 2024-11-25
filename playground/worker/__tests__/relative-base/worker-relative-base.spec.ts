@@ -4,43 +4,37 @@ import { describe, expect, test } from 'vitest'
 import { expectWithRetry, isBuild, page, testDir, untilUpdated } from '~utils'
 
 test('normal', async () => {
-  await untilUpdated(() => page.textContent('.pong'), 'pong', true)
-  await untilUpdated(
-    () => page.textContent('.mode'),
-    process.env.NODE_ENV,
-    true,
-  )
+  await untilUpdated(() => page.textContent('.pong'), 'pong')
+  await untilUpdated(() => page.textContent('.mode'), process.env.NODE_ENV)
   await untilUpdated(
     () => page.textContent('.bundle-with-plugin'),
     'worker bundle with plugin success!',
-    true,
   )
   await untilUpdated(
     () => page.textContent('.asset-url'),
     isBuild ? '/worker-assets/worker_asset-vite' : '/vite.svg',
-    true,
   )
 })
 
 test('named', async () => {
-  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker', true)
+  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker')
 })
 
 test('TS output', async () => {
-  await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong', true)
+  await untilUpdated(() => page.textContent('.pong-ts-output'), 'pong')
 })
 
 // TODO: inline worker should inline assets
 test.skip('inlined', async () => {
-  await untilUpdated(() => page.textContent('.pong-inline'), 'pong', true)
+  await untilUpdated(() => page.textContent('.pong-inline'), 'pong')
 })
 
 test('shared worker', async () => {
-  await untilUpdated(() => page.textContent('.tick-count'), 'pong', true)
+  await untilUpdated(() => page.textContent('.tick-count'), 'pong')
 })
 
 test('named shared worker', async () => {
-  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong', true)
+  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong')
 })
 
 test('inline shared worker', async () => {
@@ -51,17 +45,14 @@ test('worker emitted and import.meta.url in nested worker (serve)', async () => 
   await untilUpdated(
     () => page.textContent('.nested-worker'),
     'worker-nested-worker',
-    true,
   )
   await untilUpdated(
     () => page.textContent('.nested-worker-module'),
     'sub-worker',
-    true,
   )
   await untilUpdated(
     () => page.textContent('.nested-worker-constructor'),
     '"type":"constructor"',
-    true,
   )
 })
 
@@ -98,12 +89,10 @@ describe.runIf(isBuild)('build', () => {
     await untilUpdated(
       () => page.textContent('.nested-worker-module'),
       '"type":"module"',
-      true,
     )
     await untilUpdated(
       () => page.textContent('.nested-worker-constructor'),
       '"type":"constructor"',
-      true,
     )
   })
 })
@@ -112,24 +101,20 @@ test('module worker', async () => {
   await untilUpdated(
     () => page.textContent('.shared-worker-import-meta-url'),
     'A string',
-    true,
   )
 })
 
-test.runIf(isBuild)('classic worker', async () => {
-  await untilUpdated(
-    () => page.textContent('.classic-worker'),
-    'A classic',
-    true,
-  )
-  await untilUpdated(
-    () => page.textContent('.classic-worker-import'),
-    '[success] classic-esm',
-  )
+test('classic worker', async () => {
+  await untilUpdated(() => page.textContent('.classic-worker'), 'A classic')
+  if (!isBuild) {
+    await untilUpdated(
+      () => page.textContent('.classic-worker-import'),
+      '[success] classic-esm',
+    )
+  }
   await untilUpdated(
     () => page.textContent('.classic-shared-worker'),
     'A classic',
-    true,
   )
 })
 
@@ -137,28 +122,21 @@ test.runIf(isBuild)('emit chunk', async () => {
   await untilUpdated(
     () => page.textContent('.emit-chunk-worker'),
     '["A string",{"type":"emit-chunk-sub-worker","data":"A string"},{"type":"module-and-worker:worker","data":"A string"},{"type":"module-and-worker:module","data":"module and worker"},{"type":"emit-chunk-sub-worker","data":{"module":"module and worker","msg1":"module1","msg2":"module2","msg3":"module3"}}]',
-    true,
   )
   await untilUpdated(
     () => page.textContent('.emit-chunk-dynamic-import-worker'),
     '"A stringmodule1./"',
-    true,
   )
 })
 
 test('import.meta.glob in worker', async () => {
-  await untilUpdated(
-    () => page.textContent('.importMetaGlob-worker'),
-    '["',
-    true,
-  )
+  await untilUpdated(() => page.textContent('.importMetaGlob-worker'), '["')
 })
 
 test('import.meta.glob with eager in worker', async () => {
   await untilUpdated(
     () => page.textContent('.importMetaGlobEager-worker'),
     '["',
-    true,
   )
 })
 
