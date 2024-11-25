@@ -20,22 +20,14 @@
   "types": "./dist/node/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/node/index.d.ts",
-        "default": "./dist/node/index.js"
-      },
-      "require": {
-        "types": "./index.d.cts",
-        "default": "./index.cjs"
-      }
+      "module-sync": "./dist/node/index.js",
+      "import": "./dist/node/index.js",
+      "require": "./index.cjs"
     },
     "./client": {
       "types": "./client.d.ts"
     },
-    "./module-runner": {
-      "types": "./dist/node/module-runner.d.ts",
-      "import": "./dist/node/module-runner.js"
-    },
+    "./module-runner": "./dist/node/module-runner.js",
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
       "types": "./types/*"
@@ -50,9 +42,16 @@
       ]
     }
   },
+  "imports": {
+    "#module-sync-enabled": {
+      "module-sync": "./misc/true.js",
+      "default": "./misc/false.js"
+    }
+  },
   "files": [
     "bin",
     "dist",
+    "misc/**/*.js",
     "client.d.ts",
     "index.cjs",
     "index.d.cts",
