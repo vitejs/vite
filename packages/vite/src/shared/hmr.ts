@@ -190,7 +190,9 @@ export class HMRClient {
   }
 
   public send(payload: HotPayload): void {
-    this.transport.send(payload)
+    this.transport.send(payload).catch((err) => {
+      this.logger.error(err)
+    })
   }
 
   public clear(): void {
