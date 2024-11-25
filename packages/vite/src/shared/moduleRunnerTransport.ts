@@ -18,7 +18,7 @@ export type ModuleRunnerTransportHandlers = {
 export interface ModuleRunnerTransport {
   connect?(handlers: ModuleRunnerTransportHandlers): Promise<void> | void
   disconnect?(): Promise<void> | void
-  send?(data: HotPayload): Promise<void> | void
+  send?(data: HotPayload): void
   invoke?(
     data: HotPayload,
   ): Promise<{ /** result */ r: any } | { /** error */ e: any }>
@@ -140,7 +140,7 @@ const createInvokeableTransport = (
           data,
         } satisfies InvokeSendData,
       }
-      const sendPromise = transport.send!(wrappedData)
+      transport.send!(wrappedData)
 
       const { promise, resolve, reject } =
         promiseWithResolvers<ReturnType<Awaited<InvokeMethods[T]>>>()
@@ -158,14 +158,6 @@ const createInvokeableTransport = (
         timeoutId?.unref?.()
       }
       rpcPromises.set(promiseId, { resolve, reject, name, timeoutId })
-
-      if (sendPromise) {
-        sendPromise.catch((err) => {
-          clearTimeout(timeoutId)
-          rpcPromises.delete(promiseId)
-          reject(err)
-        })
-      }
 
       try {
         return await promise
@@ -232,17 +224,18 @@ export const normalizeModuleRunnerTransport = (
           },
         }
       : {}),
-    async send(data) {
+    send(data) {
       if (!invokeableTransport.send) return
 
       if (!isConnected) {
-        if (connectingPromise) {
-          await connectingPromise
-        } else {
+        if (!connectingPromise) {
           throw new Error('send was called before connect')
         }
+        connectingPromise.then(() => {
+          invokeableTransport.send!(data)
+        })
       }
-      await invokeableTransport.send(data)
+      invokeableTransport.send(data)
     },
     async invoke(name, data) {
       if (!isConnected) {
