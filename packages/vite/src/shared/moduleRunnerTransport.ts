@@ -179,7 +179,7 @@ const createInvokeableTransport = (
 export interface NormalizedModuleRunnerTransport {
   connect?(onMessage?: (data: HotPayload) => void): Promise<void> | void
   disconnect?(): Promise<void> | void
-  send(data: HotPayload): void
+  send(data: HotPayload): Promise<void>
   invoke<T extends keyof InvokeMethods>(
     name: T,
     data: Parameters<InvokeMethods[T]>,
