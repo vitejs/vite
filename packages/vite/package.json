@@ -145,7 +145,7 @@
     "sass-embedded": "^1.81.0",
     "sirv": "^3.0.0",
     "source-map-support": "^0.5.21",
-    "strip-literal": "^2.1.0",
+    "strip-literal": "^2.1.1",
     "tinyglobby": "^0.2.10",
     "tsconfck": "^3.1.4",
     "tslib": "^2.8.1",
