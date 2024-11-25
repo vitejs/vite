@@ -69,13 +69,14 @@ export class ModuleRunner {
     this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
-    if (options.hmr) {
+    if (options.hmr !== false) {
+      const optionsHmr = options.hmr ?? true
       const resolvedHmrLogger: HMRLogger =
-        options.hmr === true || options.hmr.logger === undefined
+        optionsHmr === true || optionsHmr.logger === undefined
           ? hmrLogger
-          : options.hmr.logger === false
+          : optionsHmr.logger === false
             ? silentConsole
-            : options.hmr.logger
+            : optionsHmr.logger
       this.hmrClient = new HMRClient(
         resolvedHmrLogger,
         this.transport,
