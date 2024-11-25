@@ -330,22 +330,17 @@ async function ssrTransformScript(
     }
   }
 
-  // ensure ";" between statements
-  ;(eswalk as any)(ast, {
-    enter(node: Node) {
-      if (node.type === 'Program' || node.type === 'BlockStatement') {
-        for (let i = 0; i < node.body.length - 1; i++) {
-          const stmt = node.body[i] as Node
-          if (code[stmt.end - 1] !== ';' && code[stmt.end - 1] !== '}') {
-            s.appendRight(stmt.end, ';')
-          }
+  // 3. convert references to import bindings & import.meta references
+  walk(ast, {
+    onStatements(statements) {
+      // ensure ";" between statements
+      for (let i = 0; i < statements.length - 1; i++) {
+        const stmt = statements[i] as Node
+        if (code[stmt.end - 1] !== ';' && code[stmt.end - 1] !== '}') {
+          s.appendRight(stmt.end, ';')
         }
       }
     },
-  })
-
-  // 3. convert references to import bindings & import.meta references
-  walk(ast, {
     onIdentifier(id, parent, parentStack) {
       const grandparent = parentStack[1]
       const binding = idToImportMap.get(id.name)
@@ -438,6 +433,7 @@ interface Visitors {
   ) => void
   onImportMeta: (node: Node) => void
   onDynamicImport: (node: Node) => void
+  onStatements: (statements: Node[]) => void
 }
 
 const isNodeInPatternWeakSet = new WeakSet<_Node>()
@@ -451,7 +447,7 @@ const isNodeInPattern = (node: _Node): node is Property =>
  */
 function walk(
   root: Node,
-  { onIdentifier, onImportMeta, onDynamicImport }: Visitors,
+  { onIdentifier, onImportMeta, onDynamicImport, onStatements }: Visitors,
 ) {
   const parentStack: Node[] = []
   const varKindStack: VariableDeclaration['kind'][] = []
@@ -503,6 +499,10 @@ function walk(
     enter(node: Node, parent: Node | null) {
       if (node.type === 'ImportDeclaration') {
         return this.skip()
+      }
+
+      if (node.type === 'Program' || node.type === 'BlockStatement') {
+        onStatements(node.body as Node[])
       }
 
       // track parent stack, skip for "else-if"/"else" branches as acorn nests
