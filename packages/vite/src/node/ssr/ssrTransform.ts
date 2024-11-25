@@ -345,7 +345,7 @@ async function ssrTransformScript(
     },
   })
 
-  let injectIdentityFunction = false
+  const injectIdentityFunction = false
   // 3. convert references to import bindings & import.meta references
   walk(ast, {
     onIdentifier(id, parent, parentStack) {
@@ -379,9 +379,8 @@ async function ssrTransformScript(
         s.update(id.start, id.end, binding)
         // wrap with identity function to avoid method binding `this`
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors#method_binding
-        s.prependRight(id.start, `${ssrIdentityFunction}(`)
+        s.prependRight(id.start, `(0,`)
         s.appendLeft(id.end, `)`)
-        injectIdentityFunction = true
       } else if (
         // don't transform class name identifier
         !(parent.type === 'ClassExpression' && id === parent.id)
