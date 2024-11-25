@@ -573,8 +573,8 @@ importers:
         specifier: ^0.64.0
         version: 0.64.0
       sugarss:
-        specifier: ^4.0.1
-        version: 4.0.1(postcss@8.4.49)
+        specifier: ^5.0.0
+        version: 5.0.0(postcss@8.4.49)
       tinyglobby:
         specifier: ^0.2.10
         version: 0.2.10
@@ -623,8 +623,8 @@ importers:
         specifier: ^0.64.0
         version: 0.64.0
       sugarss:
-        specifier: ^4.0.1
-        version: 4.0.1(postcss@8.4.49)
+        specifier: ^5.0.0
+        version: 5.0.0(postcss@8.4.49)
 
   playground/css/css-dep: {}
 
@@ -6723,9 +6723,9 @@ packages:
     engines: {node: '>=16 || 14 >=14.17'}
     hasBin: true
 
-  sugarss@4.0.1:
-    resolution: {integrity: sha512-WCjS5NfuVJjkQzK10s8WOBY+hhDxxNt/N6ZaGwxFZ+wN3/lKKFSaaKUNecULcTTvE4urLcKaZFQD8vO0mOZujw==}
-    engines: {node: '>=12.0'}
+  sugarss@5.0.0:
+    resolution: {integrity: sha512-3//knMoF9btXcxHTbMRckIYjkEzSZ6pZjiaZ3wM6OIpUtQ06Uwqc0XgAr6jf+U74cLLTV/BEgmHWoeXPC+NhdQ==}
+    engines: {node: '>=18.0'}
     peerDependencies:
       postcss: ^8.3.3
 
@@ -12616,7 +12616,7 @@ snapshots:
       pirates: 4.0.6
       ts-interface-checker: 0.1.13
 
-  sugarss@4.0.1(postcss@8.4.49):
+  sugarss@5.0.0(postcss@8.4.49):
     dependencies:
       postcss: 8.4.49
 
