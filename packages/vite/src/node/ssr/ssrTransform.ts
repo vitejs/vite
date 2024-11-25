@@ -44,7 +44,6 @@ export const ssrImportKey = `__vite_ssr_import__`
 export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
-const ssrIdentityFunction = `__vite_ssr_identity__`
 
 const hashbangRE = /^#!.*\n/
 
@@ -345,7 +344,6 @@ async function ssrTransformScript(
     },
   })
 
-  const injectIdentityFunction = false
   // 3. convert references to import bindings & import.meta references
   walk(ast, {
     onIdentifier(id, parent, parentStack) {
@@ -377,7 +375,7 @@ async function ssrTransformScript(
         }
       } else if (parent.type === 'CallExpression') {
         s.update(id.start, id.end, binding)
-        // wrap with identity function to avoid method binding `this`
+        // wrap with (0, ...) to avoid method binding `this`
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors#method_binding
         s.prependRight(id.start, `(0,`)
         s.appendLeft(id.end, `)`)
@@ -398,10 +396,6 @@ async function ssrTransformScript(
       }
     },
   })
-
-  if (injectIdentityFunction) {
-    s.prependLeft(fileStartIndex, `const ${ssrIdentityFunction} = v => v;\n`)
-  }
 
   let map = s.generateMap({ hires: 'boundary' })
   map.sources = [path.basename(url)]

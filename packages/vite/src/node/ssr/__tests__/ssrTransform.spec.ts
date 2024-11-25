@@ -1218,6 +1218,16 @@ f()
 
 x /*;;*/ /*;;*/
 f()
+
+function z() {
+  x
+  f()
+
+  if (1) {
+    x
+    f()
+  }
+}
 `),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__("./f", {"importedNames":["f"]});
@@ -1244,7 +1254,17 @@ f()
     (0,__vite_ssr_import_0__.f)();
 
     x; /*;;*/ /*;;*/
-    (0,__vite_ssr_import_0__.f)()
+    (0,__vite_ssr_import_0__.f)();
+
+    function z() {
+      x;
+      (0,__vite_ssr_import_0__.f)();
+
+      if (1) {
+        x;
+        (0,__vite_ssr_import_0__.f)()
+      }
+    }
     "
   `)
 })
