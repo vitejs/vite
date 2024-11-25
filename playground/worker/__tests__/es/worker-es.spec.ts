@@ -116,7 +116,7 @@ describe.runIf(isBuild)('build', () => {
     )
     // inlined shared worker
     expect(content).toMatch(
-      `return new SharedWorker("data:text/javascript;base64,"+`,
+      `return new SharedWorker("data:text/javascript;charset=utf-8,"+`,
     )
   })
 
