@@ -31,9 +31,11 @@ _November 26, 2024_
 
 ![Vite 6 Announcement Cover Image](/og-image-announcing-vite6.png)
 
-It has been an eventful year. Vite adoption keeps growing, with npm downloads per week jumping from 7.5 million to 16 million since the release of Vite 5 a year ago. [Vitest](https://vitest.dev) is not only being favored more by users but is also starting to form an ecosystem of its own. For example, [Storybook](https://storybook.js.org) has new testing capabilities powered by Vitest.
+It has been an eventful year. Vite adoption keeps growing, with npm downloads per week jumping from 7.5 million to 17 million since the release of Vite 5 a year ago. [Vitest](https://vitest.dev) is not only being favored more by users but is also starting to form an ecosystem of its own. For example, [Storybook](https://storybook.js.org) has new testing capabilities powered by Vitest.
 
 New frameworks have also joined the Vite ecosystem, including [TanStack Start](https://tanstack.com/start), [One](https://onestack.dev/), [Ember](https://emberjs.com/), and others. Web frameworks are innovating at an increasingly faster pace. You can check out the improvements folks have been doing at [Astro](https://astro.build/), [Nuxt](https://nuxt.com/), [SvelteKit](https://kit.svelte.dev/), [Solid Start](https://www.solidjs.com/blog/introducing-solidstart), [Qwik City](https://qwik.builder.io/qwikcity/overview/), [RedwoodJS](https://redwoodjs.com/), [React Router](https://reactrouter.com/), and the list goes on.
+
+![Vite weekly npm downloads](/vite6-npm-weekly-downloads.png)
 
 ## Speeding up the Vite ecosystem
 
@@ -76,15 +78,15 @@ Vite 6 supports Node.js 18, 20, and 22+, similar to Vite 5. Node.js 21 support h
 
 ## Experimental Environment API
 
-Vite is getting more flexible with the new Environment API. These new APIs will allow framework authors to offer a dev experience closer to production, and for the ecosystem to share new. If you're building an SPA, nothing changes, when you use Vite with a single client environment, everything works as before. And even for custom SSR apps, Vite 6 is backward compatible. The main target audience for Environment API are framework authors.
+Vite is getting more flexible with the new Environment API. These new APIs will allow framework authors to offer a dev experience closer to production and for the Ecosystem to share new. Nothing changes if you're building a SPA; when you use Vite with a single client environment, everything works as before. And even for custom SSR apps, Vite 6 is backward compatible. The primary target audience for Environment API is framework authors.
 
-For end users, if you are curious, Sapphi wrote a great [Introduction to Environment API](https://green.sapphi.red/blog/increasing-vites-potential-with-the-environment-api) guide. It is a great place to start and understand why we're trying to make Vite even more flexible.
+For end users who are curious, Sapphi wrote a great [Introduction to Environment API](https://green.sapphi.red/blog/increasing-vites-potential-with-the-environment-api) guide. It is a great place to start and understand why we're trying to make Vite even more flexible.
 
-If you are a framework authors or Vite plugin maintainer, and you'd like to actually leverage the new APIs, you can learn more at the [Environment API Guides](https://main.vite.dev/guide/api-environment).
+If you are a framework author or Vite plugin maintainer and would like to leverage the new APIs, you can learn more at the [Environment API Guides](https://main.vite.dev/guide/api-environment).
 
-We'd like to thank everyone involved in defining and implementing the new APIs. Anthony Fu and Pooya Parsa made vite-node to improve [Nuxt's Dev SSR story](https://antfu.me/posts/dev-ssr-on-nuxt) with Vite. Then Anthony used vite-node to power Vitest, and Vladimir Sheremet kept improving it. At the beginning of 2023, Vladimir started working to upstream vite-node to Vite Core, and it was released as Runtime API in Vite 5.1 a year later. Feedback from ecosystem partners (special shout-out to the Cloudflare team) pushed us to do a more ambitious rework of Vite's environments. You can learn more about the story at [Patak's ViteConf 24 talk](https://www.youtube.com/watch?v=WImor3HDyqU?si=EZ-rFJn4pDW3tUvp).
+We want to thank everyone involved in defining and implementing the new APIs. Anthony Fu and Pooya Parsa made vite-node to improve [Nuxt's Dev SSR story](https://antfu.me/posts/dev-ssr-on-nuxt) with Vite. Then Anthony used vite-node to power Vitest, and Vladimir Sheremet kept improving it. At the beginning of 2023, Vladimir started working to upstream vite-node to Vite Core, and we released it as Runtime API in Vite 5.1 a year later. Feedback from ecosystem partners (special shout-out to the Cloudflare team) pushed us to do a more ambitious rework of Vite's environments. You can learn more about the story at [Patak's ViteConf 24 talk](https://www.youtube.com/watch?v=WImor3HDyqU?si=EZ-rFJn4pDW3tUvp).
 
-Everyone on the Vite team participated in defining the new API, which was co-designed with feedback from many projects in the Ecosystem. Thanks to everyone involved! We encourage you to get involved if you're building a framework, plugin, or tool on top of Vite. The new APIs are experimental. We will work with the ecosystem to review their usage and stabilize them for the next major. If you'd like to ask questions or give feedback, there is an [open GitHub discussion here](https://github.com/vitejs/vite/discussions/16358).
+Everyone on the Vite team participated in defining the new API, which was co-designed with feedback from many projects in the Ecosystem. Thanks to everyone involved! We encourage you to get involved if you're building a framework, plugin, or tool on top of Vite. The new APIs are experimental. We will work with the Ecosystem to review how the new APIs will be used and stabilize them for the next major. If you'd like to ask questions or give feedback, there is an [open GitHub discussion here](https://github.com/vitejs/vite/discussions/16358).
 
 ## Main Changes
 
