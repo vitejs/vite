@@ -331,6 +331,20 @@ async function ssrTransformScript(
     }
   }
 
+  // ensure ";" between statements
+  ;(eswalk as any)(ast, {
+    enter(node: Node) {
+      if (node.type === 'Program' || node.type === 'BlockStatement') {
+        for (let i = 0; i < node.body.length - 1; i++) {
+          const stmt = node.body[i] as Node
+          if (code[stmt.end - 1] !== ';' && code[stmt.end - 1] !== '}') {
+            s.appendRight(stmt.end, ';')
+          }
+        }
+      }
+    },
+  })
+
   let injectIdentityFunction = false
   // 3. convert references to import bindings & import.meta references
   walk(ast, {
