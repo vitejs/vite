@@ -229,7 +229,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AAAA;EACE;AADc",
+        "mappings": "AAAA;EACE;AADe",
         "sources": [
           "/root/imported.sss",
         ],

@@ -25,7 +25,7 @@
     "postcss-nested": "^7.0.2",
     "sass": "^1.81.0",
     "stylus": "^0.64.0",
-    "sugarss": "^4.0.1",
+    "sugarss": "^5.0.0",
     "tinyglobby": "^0.2.10"
   },
   "imports": {
