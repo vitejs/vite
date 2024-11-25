@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import { bench } from 'vitest'
 import { ssrTransform } from '../ssrTransform'
 
@@ -6,8 +7,10 @@ const ssrTransformSimple = async (code: string, url = '') =>
 const ssrTransformSimpleCode = async (code: string, url?: string) =>
   (await ssrTransformSimple(code, url))?.code
 
-bench('basic', async () => {
-  await ssrTransformSimpleCode(`
+bench(
+  'basic',
+  async () => {
+    await ssrTransformSimpleCode(`
 import { f } from './f'
 
 let x = 0;
@@ -61,4 +64,18 @@ f()
 }
 f()
 `)
-})
+  },
+  { time: 5000 },
+)
+
+const file =
+  'packages/vite/src/node/ssr/__tests__/node_modules/.cache/_chunk-YE4AM67Y.js'
+const js = fs.readFileSync(file, 'utf-8')
+
+bench(
+  'large',
+  async () => {
+    await ssrTransformSimpleCode(js)
+  },
+  { time: 5000 },
+)
