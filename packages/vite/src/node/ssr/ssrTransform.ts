@@ -336,7 +336,13 @@ async function ssrTransformScript(
       // ensure ";" between statements
       for (let i = 0; i < statements.length - 1; i++) {
         const stmt = statements[i] as Node
-        if (code[stmt.end - 1] !== ';' && code[stmt.end - 1] !== '}') {
+        if (
+          code[stmt.end - 1] !== ';' &&
+          stmt.type !== 'FunctionDeclaration' &&
+          stmt.type !== 'ClassDeclaration' &&
+          stmt.type !== 'BlockStatement' &&
+          stmt.type !== 'ImportDeclaration'
+        ) {
           s.appendRight(stmt.end, ';')
         }
       }
