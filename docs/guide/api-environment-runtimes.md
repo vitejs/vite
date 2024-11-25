@@ -190,15 +190,10 @@ export interface ModuleRunnerOptions {
     | InterceptorOptions
   /**
    * Disable HMR or configure HMR options.
+   *
+   * @default true
    */
-  hmr?:
-    | false
-    | {
-        /**
-         * Configure HMR logger.
-         */
-        logger?: false | HMRLogger
-      }
+  hmr?: boolean | ModuleRunnerHmr
   /**
    * Custom module cache. If not provided, it creates a separate module
    * cache for each module runner instance.
@@ -356,6 +351,7 @@ export const runner = new ModuleRunner(
         return response.json()
       },
     },
+    hmr: false, // disable HMR as HMR requires transport.connect
   },
   new ESModulesEvaluator(),
 )
