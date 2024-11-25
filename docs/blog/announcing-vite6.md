@@ -35,6 +35,8 @@ It has been an eventful year. Vite adoption keeps growing, with npm downloads pe
 
 New frameworks have also joined the Vite ecosystem, including [TanStack Start](https://tanstack.com/start), [One](https://onestack.dev/), [Ember](https://emberjs.com/), and others. Web frameworks are innovating at an increasingly faster pace. You can check out the improvements folks have been doing at [Astro](https://astro.build/), [Nuxt](https://nuxt.com/), [SvelteKit](https://kit.svelte.dev/), [Solid Start](https://www.solidjs.com/blog/introducing-solidstart), [Qwik City](https://qwik.builder.io/qwikcity/overview/), [RedwoodJS](https://redwoodjs.com/), [React Router](https://reactrouter.com/), and the list goes on.
 
+Vite is used by OpenAI, Google, Apple, Microsoft, NASA, Shopify, Cloudflare, GitLab, Reddit, Linear, among many others. Two months ago, we started a list of [companies using Vite](https://github.com/vitejs/companies-using-vite). We're happy to see many developers sending us a PR to add their companies to the list. It's hard to believe how much the ecosystem we built together has grown since Vite gave its first steps.
+
 ![Vite weekly npm downloads](/vite6-npm-weekly-downloads.png)
 
 ## Speeding up the Vite ecosystem
