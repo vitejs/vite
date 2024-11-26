@@ -255,6 +255,66 @@
 
 
 
+## <small>5.4.11 (2024-11-11)</small>
+
+* fix(deps): update dependencies of postcss-modules ([ceb15db](https://github.com/vitejs/vite/commit/ceb15db613d107e29f7cc1d441364f7b5c831ed3)), closes [#18617](https://github.com/vitejs/vite/issues/18617)
+
+
+
+## <small>5.4.10 (2024-10-23)</small>
+
+* fix: backport #18367,augment hash for CSS files to prevent chromium erroring by loading previous fil ([7d1a3bc](https://github.com/vitejs/vite/commit/7d1a3bcc436e1697b314bdc9d24c948664a1afb7)), closes [#18367](https://github.com/vitejs/vite/issues/18367) [#18412](https://github.com/vitejs/vite/issues/18412)
+
+
+
+## <small>5.4.9 (2024-10-14)</small>
+
+* fix: bump launch-editor-middleware to v2.9.1 (#18348) ([508d9ab](https://github.com/vitejs/vite/commit/508d9ab83412c36e33f4c4ca57b891171429cdd3)), closes [#18348](https://github.com/vitejs/vite/issues/18348)
+* fix(css): fix lightningcss dep url resolution with custom root (#18125) ([eae00b5](https://github.com/vitejs/vite/commit/eae00b561e04f1fe1679d3acf4f88b3c42019e4d)), closes [#18125](https://github.com/vitejs/vite/issues/18125)
+* fix(data-uri): only match ids starting with `data:` (#18241) ([96084d6](https://github.com/vitejs/vite/commit/96084d6e752c03332d101a50bce161a8e3f311cc)), closes [#18241](https://github.com/vitejs/vite/issues/18241)
+* fix(deps): bump tsconfck (#18322) ([dc5434c](https://github.com/vitejs/vite/commit/dc5434ce8781d206bcc4b55e90201691125e662c)), closes [#18322](https://github.com/vitejs/vite/issues/18322)
+* fix(hmr): don't try to rewrite imports for direct CSS soft invalidation (#18252) ([851b258](https://github.com/vitejs/vite/commit/851b258c346fdddd4467a12f41189b7855df8c43)), closes [#18252](https://github.com/vitejs/vite/issues/18252)
+* fix(ssr): (backport #18150) fix source map remapping with multiple sources (#18204) ([262a879](https://github.com/vitejs/vite/commit/262a8796d4be2c4b9c812f203ea9177f42360b13)), closes [#18204](https://github.com/vitejs/vite/issues/18204)
+* chore: update all url references of vitejs.dev to vite.dev (#18276) ([c23558a](https://github.com/vitejs/vite/commit/c23558a7af341d13f0c9da691047713965bc7e7d)), closes [#18276](https://github.com/vitejs/vite/issues/18276)
+* chore: update license copyright (#18278) ([1864eb1](https://github.com/vitejs/vite/commit/1864eb17b21ef21564bd66c6f6a30c2c495e2d4e)), closes [#18278](https://github.com/vitejs/vite/issues/18278)
+* docs: update homepage (#18274) ([ae44163](https://github.com/vitejs/vite/commit/ae4416349e1a373023d0e9e05955d96ae5fa9ab2)), closes [#18274](https://github.com/vitejs/vite/issues/18274)
+
+
+
+## <small>5.4.8 (2024-09-25)</small>
+
+* fix(css): backport #18113, fix missing source file warning with sass modern api custom importer (#18 ([7d47fc1](https://github.com/vitejs/vite/commit/7d47fc1c749053095a3345ca1d47406a5f31792a)), closes [#18183](https://github.com/vitejs/vite/issues/18183)
+* fix(css): backport #18128, ensure sass compiler initialized only once (#18184) ([8464d97](https://github.com/vitejs/vite/commit/8464d976b1d9280ed915622c0e7477b36bdb7d8c)), closes [#18128](https://github.com/vitejs/vite/issues/18128) [#18184](https://github.com/vitejs/vite/issues/18184)
+
+
+
+## <small>5.4.7 (2024-09-20)</small>
+
+* fix: treat config file as ESM in Deno (#18158) ([b5908a2](https://github.com/vitejs/vite/commit/b5908a24ba0808380e3c8ec415624b108c65e08d)), closes [#18158](https://github.com/vitejs/vite/issues/18158)
+
+
+
+## <small>5.4.6 (2024-09-16)</small>
+
+* fix: avoid DOM Clobbering gadget in `getRelativeUrlFromDocument` (#18115) ([179b177](https://github.com/vitejs/vite/commit/179b17773cf35c73ddb041f9e6c703fd9f3126af)), closes [#18115](https://github.com/vitejs/vite/issues/18115)
+* fix: fs raw query (#18112) ([6820bb3](https://github.com/vitejs/vite/commit/6820bb3b9a54334f3268fc5ee1e967d2e1c0db34)), closes [#18112](https://github.com/vitejs/vite/issues/18112)
+
+
+
+## <small>5.4.5 (2024-09-13)</small>
+
+* fix(preload): backport #18098, throw error preloading module as well (#18099) ([faa2405](https://github.com/vitejs/vite/commit/faa2405e5d1da07a7c7fb6d48e887bf97a2f3dba)), closes [#18098](https://github.com/vitejs/vite/issues/18098) [#18099](https://github.com/vitejs/vite/issues/18099)
+
+
+
+## <small>5.4.4 (2024-09-11)</small>
+
+* fix: backport #17997, ensure req.url matches moduleByEtag URL to avoid incorrect 304 (#18078) ([74a79c5](https://github.com/vitejs/vite/commit/74a79c53b2286c91739d1473945012b5d206eddf)), closes [#17997](https://github.com/vitejs/vite/issues/17997) [#18078](https://github.com/vitejs/vite/issues/18078)
+* fix: backport #18063, allow scanning exports from `script module` in svelte (#18077) ([d90ba40](https://github.com/vitejs/vite/commit/d90ba40474aa1da8e722e1660ba739621238e5ac)), closes [#18063](https://github.com/vitejs/vite/issues/18063) [#18077](https://github.com/vitejs/vite/issues/18077)
+* fix(preload): backport #18046, allow ignoring dep errors (#18076) ([8760293](https://github.com/vitejs/vite/commit/8760293d6836dac554d1d6f214b8b09ed97cccd4)), closes [#18046](https://github.com/vitejs/vite/issues/18046) [#18076](https://github.com/vitejs/vite/issues/18076)
+
+
+
 ## <small>5.4.3 (2024-09-03)</small>
 
 * fix: allow getting URL of JS files in publicDir (#17915) ([943ece1](https://github.com/vitejs/vite/commit/943ece177e7709b3ba574e810afce347c51d4442)), closes [#17915](https://github.com/vitejs/vite/issues/17915)
