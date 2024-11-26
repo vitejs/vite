@@ -80,7 +80,7 @@ import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
-import { errorMiddleware } from './middlewares/error'
+import { buildErrorMessage, errorMiddleware } from './middlewares/error'
 import type { HmrOptions, HotBroadcaster } from './hmr'
 import {
   createDeprecatedHotBroadcaster,
@@ -569,10 +569,13 @@ export async function _createServer(
           return
         }
         // Unexpected error, log the issue but avoid an unhandled exception
-        server.config.logger.error(`Pre-transform error: ${e.message}`, {
-          error: e,
-          timestamp: true,
-        })
+        server.config.logger.error(
+          buildErrorMessage(e, [`Pre-transform error: ${e.message}`], false),
+          {
+            error: e,
+            timestamp: true,
+          },
+        )
       }
     },
     transformIndexHtml(url, html, originalUrl) {

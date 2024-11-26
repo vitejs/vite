@@ -35,6 +35,7 @@ import {
 } from './pluginContainer'
 import { type WebSocketServer, isWebSocketServer } from './ws'
 import { warmupFiles } from './warmup'
+import { buildErrorMessage } from './middlewares/error'
 
 export interface DevEnvironmentContext {
   hot: boolean
@@ -220,10 +221,13 @@ export class DevEnvironment extends BaseEnvironment {
         return
       }
       // Unexpected error, log the issue but avoid an unhandled exception
-      this.logger.error(`Pre-transform error: ${e.message}`, {
-        error: e,
-        timestamp: true,
-      })
+      this.logger.error(
+        buildErrorMessage(e, [`Pre-transform error: ${e.message}`], false),
+        {
+          error: e,
+          timestamp: true,
+        },
+      )
     }
   }
 
