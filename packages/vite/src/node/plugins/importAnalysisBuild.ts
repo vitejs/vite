@@ -697,6 +697,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 chunk.map as RawSourceMap,
               ]) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)
+
+              const originalDebugId = (chunk.map as any).debugId
               chunk.map = map
 
               if (buildSourcemap === 'inline') {
@@ -706,6 +708,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 )
                 chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
               } else if (buildSourcemap) {
+                if (originalDebugId) {
+                  // if the original source map had a debugId, we need to preserve it
+                  ;(map as any).debugId = originalDebugId
+                }
                 const mapAsset = bundle[chunk.fileName + '.map']
                 if (mapAsset && mapAsset.type === 'asset') {
                   mapAsset.source = map.toString()
