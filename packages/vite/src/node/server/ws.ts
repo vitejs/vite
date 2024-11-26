@@ -9,9 +9,9 @@ import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
-import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
+import type { CustomPayload, ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
-import type { ResolvedConfig } from '..'
+import type { HotChannelClient, ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import { type NormalizedHotChannel, normalizeHotChannel } from './hmr'
 import type { HttpServer } from '.'
@@ -66,7 +66,16 @@ export interface WebSocketServer extends NormalizedHotChannel {
   clients: Set<WebSocketClient>
 }
 
-export interface WebSocketClient extends NormalizedHotChannel {
+export interface WebSocketClient extends HotChannelClient {
+  /**
+   * Send event to the client
+   */
+  send(payload: HotPayload): void
+  // support this signature for backward compatibility
+  /**
+   * Send custom event
+   */
+  send(event: string, payload?: CustomPayload['data']): void
   /**
    * The raw WebSocket instance
    * @advanced
@@ -269,7 +278,7 @@ export function createWebSocketServer(
           socket.send(JSON.stringify(payload))
         },
         socket,
-      } as WebSocketClient)
+      })
     }
     return clientsMap.get(socket)!
   }
