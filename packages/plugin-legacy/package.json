@@ -52,7 +52,7 @@
     "systemjs": "^6.15.1"
   },
   "peerDependencies": {
-    "terser": "^5.4.0",
+    "terser": "^5.16.0",
     "vite": "^6.0.0"
   },
   "devDependencies": {
