@@ -5,7 +5,7 @@
     "outDir": "dist",
     "target": "ES2020",
     "module": "ES2020",
-    "moduleResolution": "Node",
+    "moduleResolution": "node",
     "strict": true,
     "declaration": true,
     "sourceMap": true,

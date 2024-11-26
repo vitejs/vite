@@ -4,7 +4,7 @@
   "compilerOptions": {
     "module": "ES2022",
     "target": "ES2020",
-    "moduleResolution": "Node",
+    "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
