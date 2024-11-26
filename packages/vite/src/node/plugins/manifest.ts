@@ -166,7 +166,10 @@ export function manifestPlugin(): Plugin {
           }
 
           for (const originalFileName of chunk.originalFileNames.slice(1)) {
-            manifest[originalFileName] = asset
+            const file = manifest[originalFileName]?.file
+            if (!(file && endsWithJSRE.test(file))) {
+              manifest[originalFileName] = asset
+            }
           }
         }
       }
