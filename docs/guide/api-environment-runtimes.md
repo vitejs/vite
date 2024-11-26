@@ -118,7 +118,7 @@ A module runner is instantiated in the target runtime. All APIs in the next sect
 export class ModuleRunner {
   constructor(
     public options: ModuleRunnerOptions,
-    public evaluator: ModuleEvaluator,
+    public evaluator: ModuleEvaluator = new ESModulesEvaluator(),
     private debug?: ModuleRunnerDebugger,
   ) {}
   /**
@@ -165,8 +165,21 @@ await moduleRunner.import('/src/entry-point.js')
 
 ## `ModuleRunnerOptions`
 
-```ts
-export interface ModuleRunnerOptions {
+```ts twoslash
+import type {
+  InterceptorOptions as InterceptorOptionsRaw,
+  ModuleRunnerHmr as ModuleRunnerHmrRaw,
+  EvaluatedModules,
+} from 'vite/module-runner'
+import type { Debug } from '@type-challenges/utils'
+
+type InterceptorOptions = Debug<InterceptorOptionsRaw>
+type ModuleRunnerHmr = Debug<ModuleRunnerHmrRaw>
+/** see below */
+type ModuleRunnerTransport = unknown
+
+// ---cut---
+interface ModuleRunnerOptions {
   /**
    * Root of the project
    */
@@ -206,7 +219,13 @@ export interface ModuleRunnerOptions {
 
 **Type Signature:**
 
-```ts
+```ts twoslash
+import type { ModuleRunnerContext as ModuleRunnerContextRaw } from 'vite/module-runner'
+import type { Debug } from '@type-challenges/utils'
+
+type ModuleRunnerContext = Debug<ModuleRunnerContextRaw>
+
+// ---cut---
 export interface ModuleEvaluator {
   /**
    * Number of prefixed lines in the transformed code.
@@ -237,7 +256,11 @@ Vite exports `ESModulesEvaluator` that implements this interface by default. It 
 
 **Type Signature:**
 
-```ts
+```ts twoslash
+import type { ModuleRunnerTransportHandlers } from 'vite/module-runner'
+/** an object */
+type HotPayload = unknown
+// ---cut---
 interface ModuleRunnerTransport {
   connect?(handlers: ModuleRunnerTransportHandlers): Promise<void> | void
   disconnect?(): Promise<void> | void
