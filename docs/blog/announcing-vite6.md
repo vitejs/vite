@@ -60,7 +60,7 @@ Quick links:
 - [Docs](/)
 - Translations: [简体中文](https://cn.vite.dev/), [日本語](https://ja.vite.dev/), [Español](https://es.vite.dev/), [Português](https://pt.vite.dev/), [한국어](https://ko.vite.dev/), [Deutsch](https://de.vite.dev/)
 - [Migration Guide](/guide/migration)
-- [GitHub Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#500-2024-11-26)
+- [GitHub Changelog](https://github.com/vitejs/vite/blob/main/packages/vite/CHANGELOG.md#600-2024-11-26)
 
 If you're new to Vite, we suggest reading the [Getting Started](/guide/) and [Features](/guide/features) guides first.
 
