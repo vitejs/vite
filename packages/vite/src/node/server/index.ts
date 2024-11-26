@@ -674,6 +674,7 @@ export async function _createServer(
           ),
         ),
         closeHttpServer(),
+        server._ssrCompatModuleRunner?.close(),
       ])
       server.resolvedUrls = null
     },
