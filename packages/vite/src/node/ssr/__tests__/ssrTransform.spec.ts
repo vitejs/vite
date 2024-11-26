@@ -1247,6 +1247,13 @@ f()
   x
 }
 f()
+
+switch (1) {
+  case 1:
+    x
+    f()
+    break
+}
 `),
   ).toMatchInlineSnapshot(`
     "const __vite_ssr_import_0__ = await __vite_ssr_import__("./f", {"importedNames":["f"]});
@@ -1302,7 +1309,14 @@ f()
     {
       x
     }
-    (0,__vite_ssr_import_0__.f)()
+    (0,__vite_ssr_import_0__.f)();
+
+    switch (1) {
+      case 1:
+        x;
+        (0,__vite_ssr_import_0__.f)();
+        break
+    }
     "
   `)
 })

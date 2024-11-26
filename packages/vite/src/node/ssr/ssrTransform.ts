@@ -335,7 +335,7 @@ async function ssrTransformScript(
     onStatements(statements) {
       // ensure ";" between statements
       for (let i = 0; i < statements.length - 1; i++) {
-        const stmt = statements[i] as Node
+        const stmt = statements[i]
         if (
           code[stmt.end - 1] !== ';' &&
           stmt.type !== 'FunctionDeclaration' &&
@@ -507,12 +507,15 @@ function walk(
         return this.skip()
       }
 
+      // for nodes that can contain multiple statements
       if (
         node.type === 'Program' ||
         node.type === 'BlockStatement' ||
         node.type === 'StaticBlock'
       ) {
         onStatements(node.body as Node[])
+      } else if (node.type === 'SwitchCase') {
+        onStatements(node.consequent as Node[])
       }
 
       // track parent stack, skip for "else-if"/"else" branches as acorn nests
