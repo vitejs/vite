@@ -58,7 +58,8 @@ jobs:
             return {
               num: context.issue.number,
               branchName: pr.head.ref,
-              repo: pr.head.repo.full_name
+              repo: pr.head.repo.full_name,
+              commit: pr.head.sha
             }
       - id: generate-token
         uses: tibdex/github-app-token@v2
@@ -88,6 +89,7 @@ jobs:
                 prNumber: '' + prData.num,
                 branchName: prData.branchName,
                 repo: prData.repo,
+                commit: prData.commit,
                 suite: suite === '' ? '-' : suite
               }
             })
