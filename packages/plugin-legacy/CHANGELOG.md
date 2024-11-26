@@ -1,3 +1,16 @@
+## 6.0.0 (2024-11-26)
+
+* chore: upgrade to unbuild v3 rc (#18502) ([ddd5c5d](https://github.com/vitejs/vite/commit/ddd5c5d00ff7894462a608841560883f9c771f22)), closes [#18502](https://github.com/vitejs/vite/issues/18502)
+* chore(deps): update all non-major dependencies (#18562) ([fb227ec](https://github.com/vitejs/vite/commit/fb227ec4402246b5a13e274c881d9de6dd8082dd)), closes [#18562](https://github.com/vitejs/vite/issues/18562)
+* chore(legacy): bump terser peer dep to ^5.16 (#18772) ([3f6d5fe](https://github.com/vitejs/vite/commit/3f6d5fed8739f30cddb821a680576d93b3a60bba)), closes [#18772](https://github.com/vitejs/vite/issues/18772)
+* chore(legacy): update peer dep Vite to 6 (#18771) ([63c62b3](https://github.com/vitejs/vite/commit/63c62b3059b589a51d1673bfdcefdb0b4e87c089)), closes [#18771](https://github.com/vitejs/vite/issues/18771)
+* chore(plugin-legacy): add type module in package.json (#18535) ([28cefca](https://github.com/vitejs/vite/commit/28cefcaf2861b72901abe1f047d9ec6298b745f8)), closes [#18535](https://github.com/vitejs/vite/issues/18535)
+* feat!: drop node 21 support in version ranges (#18729) ([a384d8f](https://github.com/vitejs/vite/commit/a384d8fd39162190675abcfea31ba657383a3d03)), closes [#18729](https://github.com/vitejs/vite/issues/18729)
+* fix(deps): update all non-major dependencies (#18484) ([2ec12df](https://github.com/vitejs/vite/commit/2ec12df98d07eb4c986737e86a4a9f8066724658)), closes [#18484](https://github.com/vitejs/vite/issues/18484)
+* fix(deps): update all non-major dependencies (#18691) ([f005461](https://github.com/vitejs/vite/commit/f005461ecce89ada21cb0c021f7af460b5479736)), closes [#18691](https://github.com/vitejs/vite/issues/18691)
+
+
+
 ## <small>5.4.3 (2024-10-25)</small>
 
 * chore: enable some eslint rules (#18084) ([e9a2746](https://github.com/vitejs/vite/commit/e9a2746ca77473b1814fd05db3d299c074135fe5)), closes [#18084](https://github.com/vitejs/vite/issues/18084)
