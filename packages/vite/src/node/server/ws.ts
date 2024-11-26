@@ -9,9 +9,9 @@ import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
-import type { ErrorPayload } from 'types/hmrPayload'
+import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
-import type { HotChannelClient, ResolvedConfig } from '..'
+import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import { type NormalizedHotChannel, normalizeHotChannel } from './hmr'
 import type { HttpServer } from '.'
@@ -66,7 +66,7 @@ export interface WebSocketServer extends NormalizedHotChannel {
   clients: Set<WebSocketClient>
 }
 
-export interface WebSocketClient extends HotChannelClient {
+export interface WebSocketClient extends NormalizedHotChannel {
   /**
    * The raw WebSocket instance
    * @advanced
@@ -255,11 +255,21 @@ export function createWebSocketServer(
   function getSocketClient(socket: WebSocketRaw) {
     if (!clientsMap.has(socket)) {
       clientsMap.set(socket, {
-        send: (payload) => {
+        send: (...args: any[]) => {
+          let payload: HotPayload
+          if (typeof args[0] === 'string') {
+            payload = {
+              type: 'custom',
+              event: args[0],
+              data: args[1],
+            }
+          } else {
+            payload = args[0]
+          }
           socket.send(JSON.stringify(payload))
         },
         socket,
-      })
+      } as WebSocketClient)
     }
     return clientsMap.get(socket)!
   }
