@@ -167,12 +167,17 @@ await moduleRunner.import('/src/entry-point.js')
 
 ```ts twoslash
 import type {
-  InterceptorOptions,
-  ModuleRunnerHmr,
+  InterceptorOptions as InterceptorOptionsRaw,
+  ModuleRunnerHmr as ModuleRunnerHmrRaw,
   EvaluatedModules,
 } from 'vite/module-runner'
+import type { Debug } from '@type-challenges/utils'
+
+type InterceptorOptions = Debug<InterceptorOptionsRaw>
+type ModuleRunnerHmr = Debug<ModuleRunnerHmrRaw>
 /** see below */
 type ModuleRunnerTransport = unknown
+
 // ---cut---
 interface ModuleRunnerOptions {
   /**
@@ -215,7 +220,11 @@ interface ModuleRunnerOptions {
 **Type Signature:**
 
 ```ts twoslash
-import type { ModuleRunnerContext } from 'vite/module-runner'
+import type { ModuleRunnerContext as ModuleRunnerContextRaw } from 'vite/module-runner'
+import type { Debug } from '@type-challenges/utils'
+
+type ModuleRunnerContext = Debug<ModuleRunnerContextRaw>
+
 // ---cut---
 export interface ModuleEvaluator {
   /**
