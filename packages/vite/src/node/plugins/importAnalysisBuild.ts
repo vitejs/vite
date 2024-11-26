@@ -710,7 +710,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               } else if (buildSourcemap) {
                 if (originalDebugId) {
                   // if the original source map had a debugId, we need to preserve it
-                  ;(map as any).debugId = originalDebugId
+                  (map as any).debugId = originalDebugId;
                 }
                 const mapAsset = bundle[chunk.fileName + '.map']
                 if (mapAsset && mapAsset.type === 'asset') {
