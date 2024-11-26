@@ -1,3 +1,17 @@
+## 6.0.0 (2024-11-26)
+
+* chore(create-vite): change directory structure of `template-vanilla` for consistency (#18716) ([56a86ae](https://github.com/vitejs/vite/commit/56a86ae479b6aaf1c0a15bfedb0ee435e8ffcf3a)), closes [#18716](https://github.com/vitejs/vite/issues/18716)
+* chore(create-vite): update to vite 6 (#18770) ([80bf954](https://github.com/vitejs/vite/commit/80bf9549b48c66a47e5cc76a7540ce3e62e2f2da)), closes [#18770](https://github.com/vitejs/vite/issues/18770)
+* chore(deps): update all non-major dependencies (#18562) ([fb227ec](https://github.com/vitejs/vite/commit/fb227ec4402246b5a13e274c881d9de6dd8082dd)), closes [#18562](https://github.com/vitejs/vite/issues/18562)
+* chore(deps): update all non-major dependencies (#18634) ([e2231a9](https://github.com/vitejs/vite/commit/e2231a92af46db144b9c94fb57918ac683dc93cb)), closes [#18634](https://github.com/vitejs/vite/issues/18634)
+* chore(deps): update all non-major dependencies (#18746) ([0ad16e9](https://github.com/vitejs/vite/commit/0ad16e92d57453d9e5392c90fd06bda947be9de6)), closes [#18746](https://github.com/vitejs/vite/issues/18746)
+* feat!: drop node 21 support in version ranges (#18729) ([a384d8f](https://github.com/vitejs/vite/commit/a384d8fd39162190675abcfea31ba657383a3d03)), closes [#18729](https://github.com/vitejs/vite/issues/18729)
+* fix(create-vite): change create-app prompt to not remove existing files by default (#18710) ([c2b7529](https://github.com/vitejs/vite/commit/c2b75292f48be0371e337193c3b37a67b8212f97)), closes [#18710](https://github.com/vitejs/vite/issues/18710)
+* fix(create-vite): improve project name inference from path (#16490) ([8518113](https://github.com/vitejs/vite/commit/8518113dee2554401d23b2fba62ecab31d2b0541)), closes [#16490](https://github.com/vitejs/vite/issues/16490)
+* fix(deps): update all non-major dependencies (#18691) ([f005461](https://github.com/vitejs/vite/commit/f005461ecce89ada21cb0c021f7af460b5479736)), closes [#18691](https://github.com/vitejs/vite/issues/18691)
+
+
+
 ## <small>5.5.5 (2024-10-30)</small>
 
 * chore: upgrade to unbuild v3 rc (#18502) ([ddd5c5d](https://github.com/vitejs/vite/commit/ddd5c5d00ff7894462a608841560883f9c771f22)), closes [#18502](https://github.com/vitejs/vite/issues/18502)
