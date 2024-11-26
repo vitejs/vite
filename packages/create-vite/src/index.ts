@@ -139,10 +139,10 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
-        name: 'custom-remix',
-        display: 'Remix ↗',
+        name: 'custom-react-router',
+        display: 'React Router v7 ↗',
         color: cyan,
-        customCommand: 'npm create remix@latest TARGET_DIR',
+        customCommand: 'npm create react-router@latest TARGET_DIR',
       },
     ],
   },
