@@ -44,7 +44,6 @@ export const ssrImportKey = `__vite_ssr_import__`
 export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
-const ssrIdentityFunction = `__vite_ssr_identity__`
 
 const hashbangRE = /^#!.*\n/
 
@@ -331,9 +330,23 @@ async function ssrTransformScript(
     }
   }
 
-  let injectIdentityFunction = false
   // 3. convert references to import bindings & import.meta references
   walk(ast, {
+    onStatements(statements) {
+      // ensure ";" between statements
+      for (let i = 0; i < statements.length - 1; i++) {
+        const stmt = statements[i]
+        if (
+          code[stmt.end - 1] !== ';' &&
+          stmt.type !== 'FunctionDeclaration' &&
+          stmt.type !== 'ClassDeclaration' &&
+          stmt.type !== 'BlockStatement' &&
+          stmt.type !== 'ImportDeclaration'
+        ) {
+          s.appendRight(stmt.end, ';')
+        }
+      }
+    },
     onIdentifier(id, parent, parentStack) {
       const grandparent = parentStack[1]
       const binding = idToImportMap.get(id.name)
@@ -363,11 +376,10 @@ async function ssrTransformScript(
         }
       } else if (parent.type === 'CallExpression') {
         s.update(id.start, id.end, binding)
-        // wrap with identity function to avoid method binding `this`
+        // wrap with (0, ...) to avoid method binding `this`
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors#method_binding
-        s.prependRight(id.start, `${ssrIdentityFunction}(`)
+        s.prependRight(id.start, `(0,`)
         s.appendLeft(id.end, `)`)
-        injectIdentityFunction = true
       } else if (
         // don't transform class name identifier
         !(parent.type === 'ClassExpression' && id === parent.id)
@@ -385,10 +397,6 @@ async function ssrTransformScript(
       }
     },
   })
-
-  if (injectIdentityFunction) {
-    s.prependLeft(fileStartIndex, `const ${ssrIdentityFunction} = v => v;\n`)
-  }
 
   let map = s.generateMap({ hires: 'boundary' })
   map.sources = [path.basename(url)]
@@ -431,6 +439,7 @@ interface Visitors {
   ) => void
   onImportMeta: (node: Node) => void
   onDynamicImport: (node: Node) => void
+  onStatements: (statements: Node[]) => void
 }
 
 const isNodeInPatternWeakSet = new WeakSet<_Node>()
@@ -444,7 +453,7 @@ const isNodeInPattern = (node: _Node): node is Property =>
  */
 function walk(
   root: Node,
-  { onIdentifier, onImportMeta, onDynamicImport }: Visitors,
+  { onIdentifier, onImportMeta, onDynamicImport, onStatements }: Visitors,
 ) {
   const parentStack: Node[] = []
   const varKindStack: VariableDeclaration['kind'][] = []
@@ -496,6 +505,17 @@ function walk(
     enter(node: Node, parent: Node | null) {
       if (node.type === 'ImportDeclaration') {
         return this.skip()
+      }
+
+      // for nodes that can contain multiple statements
+      if (
+        node.type === 'Program' ||
+        node.type === 'BlockStatement' ||
+        node.type === 'StaticBlock'
+      ) {
+        onStatements(node.body as Node[])
+      } else if (node.type === 'SwitchCase') {
+        onStatements(node.consequent as Node[])
       }
 
       // track parent stack, skip for "else-if"/"else" branches as acorn nests
