@@ -188,7 +188,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # This step can be removed on May 26 2025 
+      # This step can be removed on May 26 2025
       - name: Check Commit Hash Ambiguity
         id: check_ambiguity
         run: |
