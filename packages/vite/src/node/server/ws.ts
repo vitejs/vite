@@ -9,11 +9,12 @@ import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
 import type { WebSocket as WebSocketTypes } from 'dep-types/ws'
-import type { CustomPayload, ErrorPayload, HotPayload } from 'types/hmrPayload'
+import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
-import type { HotChannelClient, ResolvedConfig } from '..'
+import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
-import { type NormalizedHotChannel, normalizeHotChannel } from './hmr'
+import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
+import { normalizeHotChannel } from './hmr'
 import type { HttpServer } from '.'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
@@ -66,16 +67,7 @@ export interface WebSocketServer extends NormalizedHotChannel {
   clients: Set<WebSocketClient>
 }
 
-export interface WebSocketClient extends HotChannelClient {
-  /**
-   * Send event to the client
-   */
-  send(payload: HotPayload): void
-  // support this signature for backward compatibility
-  /**
-   * Send custom event
-   */
-  send(event: string, payload?: CustomPayload['data']): void
+export interface WebSocketClient extends NormalizedHotChannelClient {
   /**
    * The raw WebSocket instance
    * @advanced
@@ -348,6 +340,8 @@ export function createWebSocketServer(
       },
     },
     config.server.hmr !== false,
+    // Don't normalize client as we already handles the send, and to keep `.socket`
+    false,
   )
   return {
     ...normalizedHotChannel,
