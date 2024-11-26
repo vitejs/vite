@@ -1,5 +1,19 @@
 ## 6.0.0 (2024-11-26)
 
+![Vite 6 is out!](../../docs/public/og-image-announcing-vite6.png)
+
+Today, we're taking another big step in Vite's story. The Vite [team](/team), [contributors](https://github.com/vitejs/vite/graphs/contributors), and ecosystem partners are excited to announce the release of the next Vite major:
+
+- **[Vite 6.0 announcement blog post](https://vite.dev/blog/announcing-vite6.html)**
+- [Docs](/)
+- Translations: [简体中文](https://cn.vite.dev/), [日本語](https://ja.vite.dev/), [Español](https://es.vite.dev/), [Português](https://pt.vite.dev/), [한국어](https://ko.vite.dev/), [Deutsch](https://de.vite.dev/)
+- [Migration Guide](/guide/migration)
+
+We want to thank the more than [1K contributors to Vite Core](https://github.com/vitejs/vite/graphs/contributors) and the maintainers and contributors of Vite plugins, integrations, tools, and translations that have helped us craft this new major. We invite you to get involved and help us improve Vite for the whole ecosystem. Learn more at our [Contributing Guide](https://github.com/vitejs/vite/blob/main/CONTRIBUTING.md).
+
+
+### Changes
+
 * fix: `createRunnableDevEnvironment` returns `RunnableDevEnvironment`, not `DevEnvironment` (#18673) ([74221c3](https://github.com/vitejs/vite/commit/74221c391bffd61b9ef39b7c0f9ea2e405913a6f)), closes [#18673](https://github.com/vitejs/vite/issues/18673)
 * fix: `getModulesByFile` should return a `serverModule` (#18715) ([b80d5ec](https://github.com/vitejs/vite/commit/b80d5ecbbcc374bd8f32b2ed5ceb3cbfffaae77b)), closes [#18715](https://github.com/vitejs/vite/issues/18715)
 * fix: catch error in full reload handler (#18713) ([a10e741](https://github.com/vitejs/vite/commit/a10e7410656d3614cbfd07ba772776ff334a8d60)), closes [#18713](https://github.com/vitejs/vite/issues/18713)
