@@ -173,6 +173,7 @@ export interface NormalizedHotChannel<Api = any> {
 export const normalizeHotChannel = (
   channel: HotChannel,
   enableHmr: boolean,
+  normalizeClient = true,
 ): NormalizedHotChannel => {
   const normalizedListenerMap = new WeakMap<
     (data: any, client: NormalizedHotChannelClient) => void | Promise<void>,
@@ -225,7 +226,7 @@ export const normalizeHotChannel = (
       event: string,
       fn: (data: any, client: NormalizedHotChannelClient) => void,
     ) => {
-      if (event === 'connection') {
+      if (event === 'connection' || !normalizeClient) {
         channel.on?.(event, fn as () => void)
         return
       }
@@ -260,7 +261,7 @@ export const normalizeHotChannel = (
       listenersForEvents.get(event)!.add(listenerWithNormalizedClient)
     },
     off: (event: string, fn: () => void) => {
-      if (event === 'connection') {
+      if (event === 'connection' || !normalizeClient) {
         channel.off?.(event, fn as () => void)
         return
       }
