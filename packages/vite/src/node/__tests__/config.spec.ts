@@ -259,7 +259,7 @@ describe('preview config', () => {
     expect(await resolveConfig(config, 'serve')).toMatchObject({
       preview: {
         ...serverConfig(),
-        port: undefined,
+        port: 4173,
       },
     })
   })
