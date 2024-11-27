@@ -19,7 +19,7 @@
 Today, we're taking another big step in Vite's story. The Vite [team](/team), [contributors](https://github.com/vitejs/vite/graphs/contributors), and ecosystem partners are excited to announce the release of the next Vite major:
 
 - **[Vite 6.0 announcement blog post](https://vite.dev/blog/announcing-vite6.html)**
-- [Docs](/)
+- [Docs](https://vite.dev/)
 - Translations: [简体中文](https://cn.vite.dev/), [日本語](https://ja.vite.dev/), [Español](https://es.vite.dev/), [Português](https://pt.vite.dev/), [한국어](https://ko.vite.dev/), [Deutsch](https://de.vite.dev/)
 - [Migration Guide](https://vite.dev/guide/migration.html#migration-from-v4)
 
