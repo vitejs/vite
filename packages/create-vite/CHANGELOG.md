@@ -1,3 +1,11 @@
+## <small>6.0.1 (2024-11-27)</small>
+
+* feat(create-vite): bump vite-plugin-solid to `2.11.0` (#18792) ([32ac96f](https://github.com/vitejs/vite/commit/32ac96f54ca459d1a4c7ff7f4dbb4111eaea00f1)), closes [#18792](https://github.com/vitejs/vite/issues/18792)
+* feat(create-vite): change Remix to React Router v7 (#18785) ([31cc61b](https://github.com/vitejs/vite/commit/31cc61b7404b2b22d956856f97eeebd0a62f3b4d)), closes [#18785](https://github.com/vitejs/vite/issues/18785)
+* revert: update moduleResolution value casing (#18409) (#18774) ([b0fc6e3](https://github.com/vitejs/vite/commit/b0fc6e3c2591a30360d3714263cf7cc0e2acbfdf)), closes [#18409](https://github.com/vitejs/vite/issues/18409) [#18774](https://github.com/vitejs/vite/issues/18774)
+
+
+
 ## 6.0.0 (2024-11-26)
 
 * chore(create-vite): change directory structure of `template-vanilla` for consistency (#18716) ([56a86ae](https://github.com/vitejs/vite/commit/56a86ae479b6aaf1c0a15bfedb0ee435e8ffcf3a)), closes [#18716](https://github.com/vitejs/vite/issues/18716)
