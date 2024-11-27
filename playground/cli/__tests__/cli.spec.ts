@@ -28,7 +28,7 @@ test.runIf(isServe)('should restart', async () => {
     expect(logs).toEqual(
       expect.arrayContaining([expect.stringMatching('server restarted')]),
     )
-    // Don't reprint the server URLs as they are the same
+    // Don't reprint the server info as they are the same
     expect(logs).not.toEqual(
       expect.arrayContaining([expect.stringMatching('http://localhost')]),
     )

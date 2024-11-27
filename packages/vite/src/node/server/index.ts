@@ -46,7 +46,7 @@ import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
 import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
-import { printServerUrls } from '../logger'
+import { printServerInfo } from '../logger'
 import { warnFutureDeprecation } from '../deprecations'
 import {
   createNoopWatcher,
@@ -340,8 +340,13 @@ export interface ViteDevServer {
   close(): Promise<void>
   /**
    * Print server urls
+   * @deprecated use `printInfo` instead
    */
   printUrls(): void
+  /**
+   * Print server info
+   */
+  printInfo(): void
   /**
    * Bind CLI shortcuts
    */
@@ -679,10 +684,15 @@ export async function _createServer(
       server.resolvedUrls = null
     },
     printUrls() {
+      return this.printInfo()
+    },
+    printInfo() {
       if (server.resolvedUrls) {
-        printServerUrls(
+        printServerInfo(
           server.resolvedUrls,
           serverConfig.host,
+          config.mode,
+          config.envDir,
           config.logger.info,
         )
       } else if (middlewareMode) {
@@ -1217,6 +1227,6 @@ export async function restartServerWithUrls(
     diffDnsOrderChange(prevUrls, server.resolvedUrls)
   ) {
     logger.info('')
-    server.printUrls()
+    server.printInfo()
   }
 }

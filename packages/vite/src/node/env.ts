@@ -5,13 +5,28 @@ import { type DotenvPopulateInput, expand } from 'dotenv-expand'
 import { arraify, normalizePath, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
-export function getEnvFilesForMode(mode: string, envDir: string): string[] {
+function getEnvFileNamesForMode(mode: string): string[] {
   return [
     /** default file */ `.env`,
     /** local file */ `.env.local`,
     /** mode file */ `.env.${mode}`,
     /** mode local file */ `.env.${mode}.local`,
-  ].map((file) => normalizePath(path.join(envDir, file)))
+  ]
+}
+
+export function getEnvFilesForMode(mode: string, envDir: string): string[] {
+  return getEnvFileNamesForMode(mode).map((fileName) =>
+    normalizePath(path.join(envDir, fileName)),
+  )
+}
+
+export function getLoadedEnvFileNamesForMode(
+  mode: string,
+  envDir: string,
+): string[] {
+  return getEnvFileNamesForMode(mode).filter((fileName) =>
+    tryStatSync(normalizePath(path.join(envDir, fileName)))?.isFile(),
+  )
 }
 
 export function loadEnv(
