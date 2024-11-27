@@ -14,6 +14,7 @@ test('normal', async () => {
     () => page.textContent('.asset-url'),
     isBuild ? '/es/assets/worker_asset-vite.svg' : '/es/vite.svg',
   )
+  await untilUpdated(() => page.textContent('.dep-cjs'), '[cjs ok]')
 })
 
 test('named', async () => {

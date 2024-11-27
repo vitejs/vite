@@ -1340,7 +1340,13 @@ export async function resolveConfig(
         .map((hook) => hook(workerResolved)),
     )
 
-    return { plugins: resolvedWorkerPlugins, config: workerResolved }
+    return {
+      plugins: resolvedWorkerPlugins,
+      config: {
+        ...workerResolved,
+        plugins: resolvedWorkerPlugins,
+      },
+    }
   }
 
   const resolvedWorkerOptions: ResolvedWorkerOptions = {
