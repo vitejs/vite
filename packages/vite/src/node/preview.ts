@@ -36,10 +36,13 @@ import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
 import { configDefaults, resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
+import { DEFAULT_PREVIEW_PORT } from './constants'
+import type { RequiredExceptFor } from './typeUtils'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
-export interface ResolvedPreviewOptions extends PreviewOptions {}
+export interface ResolvedPreviewOptions
+  extends RequiredExceptFor<PreviewOptions, 'host' | 'https' | 'proxy'> {}
 
 export function resolvePreviewOptions(
   preview: PreviewOptions | undefined,
@@ -49,7 +52,7 @@ export function resolvePreviewOptions(
   // except for the port to enable having both the dev and preview servers running
   // at the same time without extra configuration
   return {
-    port: preview?.port,
+    port: preview?.port ?? DEFAULT_PREVIEW_PORT,
     strictPort: preview?.strictPort ?? server.strictPort,
     host: preview?.host ?? server.host,
     https: preview?.https ?? server.https,
