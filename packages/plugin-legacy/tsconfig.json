@@ -11,6 +11,7 @@
     "sourceMap": true,
     "noUnusedLocals": true,
     "esModuleInterop": true,
+    "noUncheckedIndexedAccess": true,
     "paths": {
       "vite": ["../vite/src/node/index.js"]
     }

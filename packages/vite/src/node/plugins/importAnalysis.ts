@@ -66,6 +66,7 @@ import {
   wrapId,
 } from '../../shared/utils'
 import type { TransformPluginContext } from '../server/pluginContainer'
+import type { StrictRegExpExecArrayFromLen } from '../../shared/typeUtils'
 import { throwOutdatedRequest } from './optimizedDeps'
 import { isCSSRequest, isDirectCSSRequest } from './css'
 import { browserExternalId } from './resolve'
@@ -171,8 +172,8 @@ function extractImportedBindings(
     code: match[0],
     start: match.index,
     end: match.index + match[0].length,
-    imports: match.groups!.imports,
-    specifier: match.groups!.specifier,
+    imports: match.groups!.imports ?? '',
+    specifier: match.groups!.specifier!,
   }
   const parsed = parseStaticImport(staticImport)
   if (!parsed) {
@@ -393,7 +394,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             // (e.g. vue blocks), inherit importer's version query
             // do not do this for unknown type imports, otherwise the appended
             // query can break 3rd party plugin's extension checks.
-            const versionMatch = DEP_VERSION_RE.exec(importer)
+            const versionMatch = DEP_VERSION_RE.exec(
+              importer,
+            ) as StrictRegExpExecArrayFromLen<1> | null
             if (versionMatch) {
               url = injectQuery(url, versionMatch[1])
             }
@@ -948,7 +951,7 @@ export function transformCjsImport(
   importer: string,
   config: ResolvedConfig,
 ): string | undefined {
-  const node = parseAst(importExp).body[0]
+  const node = parseAst(importExp).body[0]!
 
   // `export * from '...'` may cause unexpected problem, so give it a warning
   if (

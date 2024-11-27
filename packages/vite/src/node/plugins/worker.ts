@@ -19,6 +19,7 @@ import {
   toOutputFilePathInJS,
 } from '../build'
 import { cleanUrl } from '../../shared/utils'
+import type { StrictRegExpExecArrayFromLen } from '../../shared/typeUtils'
 import { fileToUrl } from './asset'
 
 type WorkerBundleAsset = {
@@ -429,7 +430,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         const { fileNameHash } = workerMap
 
         while ((match = workerAssetUrlRE.exec(code))) {
-          const [full, hash] = match
+          const [full, hash] = match as StrictRegExpExecArrayFromLen<1>
           const filename = fileNameHash.get(hash)!
           const replacement = toOutputFilePathInJS(
             this.environment,

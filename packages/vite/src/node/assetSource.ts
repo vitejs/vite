@@ -128,7 +128,7 @@ export function getNodeAssetAttributes(
         key: 'vite-ignore',
         value: '',
         attributes,
-        location: node.sourceCodeLocation!.attrs!['vite-ignore'],
+        location: node.sourceCodeLocation!.attrs!['vite-ignore']!,
       },
     ]
   }
@@ -137,8 +137,8 @@ export function getNodeAssetAttributes(
   function handleAttributeKey(key: string, type: 'src' | 'srcset') {
     const value = attributes[key]
     if (!value) return
-    if (matched.filter && !matched.filter({ key, value, attributes })) return
-    const location = node.sourceCodeLocation!.attrs![key]
+    if (matched!.filter && !matched!.filter({ key, value, attributes })) return
+    const location = node.sourceCodeLocation!.attrs![key]!
     actions.push({ type, key, value, attributes, location })
   }
   matched.srcAttributes?.forEach((key) => handleAttributeKey(key, 'src'))

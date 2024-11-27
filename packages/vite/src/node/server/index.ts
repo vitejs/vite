@@ -500,8 +500,8 @@ export async function _createServer(
   // Backward compatibility
 
   let moduleGraph = new ModuleGraph({
-    client: () => environments.client.moduleGraph,
-    ssr: () => environments.ssr.moduleGraph,
+    client: () => environments.client!.moduleGraph,
+    ssr: () => environments.ssr!.moduleGraph,
   })
   const pluginContainer = createPluginContainer(environments)
 
@@ -708,7 +708,7 @@ export async function _createServer(
     },
 
     waitForRequestsIdle(ignoredId?: string): Promise<void> {
-      return environments.client.waitForRequestsIdle(ignoredId)
+      return environments.client!.waitForRequestsIdle(ignoredId)
     },
 
     _setInternalServer(_server: ViteDevServer) {
@@ -910,7 +910,7 @@ export async function _createServer(
       // For backward compatibility, we call buildStart for the client
       // environment when initing the server. For other environments
       // buildStart will be called when the first request is transformed
-      await environments.client.pluginContainer.buildStart()
+      await environments.client!.pluginContainer.buildStart()
 
       // ensure ws server started
       if (onListen || options.listen) {

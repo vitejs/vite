@@ -81,8 +81,11 @@ function parseDynamicImportPattern(
     // ? is escaped on posix OS
     requestQueryMaybeEscapedSplitRE,
     2,
-  )
-  let [rawPattern, search] = filename.split(requestQuerySplitRE, 2)
+  ) as [string, string | undefined]
+  let [rawPattern, search] = filename.split(requestQuerySplitRE, 2) as [
+    string,
+    string | undefined,
+  ]
   let globParams: DynamicImportRequest | null = null
   if (search) {
     search = '?' + search
@@ -226,7 +229,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           ss: expStart,
           se: expEnd,
           d: dynamicIndex,
-        } = imports[index]
+        } = imports[index]!
 
         if (dynamicIndex === -1 || source[start] !== '`') {
           continue

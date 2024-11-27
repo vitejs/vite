@@ -114,7 +114,7 @@ function shouldPreTransform(url: string, config: ResolvedConfig) {
 const wordCharRE = /\w/
 
 function isBareRelative(url: string) {
-  return wordCharRE.test(url[0]) && !url.includes(':')
+  return url[0] && wordCharRE.test(url[0]) && !url.includes(':')
 }
 
 const processNodeUrl = (

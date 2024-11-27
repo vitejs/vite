@@ -438,7 +438,7 @@ export function toDiscoveredDependencies(
   )
   const discovered: Record<string, OptimizedDepInfo> = {}
   for (const id in deps) {
-    const src = deps[id]
+    const src = deps[id]!
     discovered[id] = {
       id,
       file: getOptimizedDepPath(environment, id),
@@ -632,15 +632,13 @@ export function runOptimizeDeps(
             processingCacheDir,
           )
 
-          const { exportsData, ...info } = depsInfo[id]
+          const { exportsData, ...info } = depsInfo[id]!
           addOptimizedDepInfo(metadata, 'optimized', {
             ...info,
             // We only need to hash the output.imports in to check for stability, but adding the hash
             // and file path gives us a unique hash that may be useful for other things in the future
             fileHash: getHash(
-              metadata.hash +
-                depsInfo[id].file +
-                JSON.stringify(output.imports),
+              metadata.hash + info.file + JSON.stringify(output.imports),
             ),
             browserHash: metadata.browserHash,
             // After bundling we have more information and can warn the user about legacy packages
@@ -648,7 +646,7 @@ export function runOptimizeDeps(
             needsInterop: needsInterop(
               environment,
               id,
-              idToExports[id],
+              idToExports[id]!,
               output,
             ),
           })
@@ -676,7 +674,7 @@ export function runOptimizeDeps(
           } else {
             // workaround Firefox warning by removing blank source map reference
             // https://github.com/evanw/esbuild/issues/3945
-            const output = meta.outputs[o]
+            const output = meta.outputs[o]!
             // filter by exact bytes of an empty source map
             if (output.bytes === 93) {
               const jsMapPath = path.resolve(o)
@@ -754,9 +752,9 @@ async function prepareEsbuildOptimizerRun(
     optimizeDeps?.esbuildOptions ?? {}
 
   await Promise.all(
-    Object.keys(depsInfo).map(async (id) => {
-      const src = depsInfo[id].src!
-      const exportsData = await (depsInfo[id].exportsData ??
+    Object.entries(depsInfo).map(async ([id, info]) => {
+      const src = info.src!
+      const exportsData = await (info.exportsData ??
         extractExportsData(environment, src))
       if (exportsData.jsxLoader && !esbuildOptions.loader?.['.js']) {
         // Ensure that optimization won't fail by defaulting '.js' to the JSX parser.
@@ -849,7 +847,7 @@ export async function addManuallyIncludedOptimizeDeps(
 
     const includes = [...optimizeDepsInclude]
     for (let i = 0; i < includes.length; i++) {
-      const id = includes[i]
+      const id = includes[i]!
       if (isDynamicPattern(id)) {
         const globIds = expandGlobIds(id, environment.getTopLevelConfig())
         includes.splice(i, 1, ...globIds)
@@ -884,7 +882,7 @@ export function depsFromOptimizedDepInfo(
 ): Record<string, string> {
   const obj: Record<string, string> = {}
   for (const key in depsInfo) {
-    obj[key] = depsInfo[key].src!
+    obj[key] = depsInfo[key]!.src!
   }
   return obj
 }
@@ -1094,7 +1092,7 @@ export async function extractExportsData(
       write: false,
       format: 'esm',
     })
-    const [, exports, , hasModuleSyntax] = parse(result.outputFiles[0].text)
+    const [, exports, , hasModuleSyntax] = parse(result.outputFiles[0]!.text)
     return {
       hasModuleSyntax,
       exports: exports.map((e) => e.n),
@@ -1304,7 +1302,7 @@ function findOptimizedDepInfoInRecord(
   callbackFn: (depInfo: OptimizedDepInfo, id: string) => any,
 ): OptimizedDepInfo | undefined {
   for (const o of Object.keys(dependenciesInfo)) {
-    const info = dependenciesInfo[o]
+    const info = dependenciesInfo[o]!
     if (callbackFn(info, o)) {
       return info
     }

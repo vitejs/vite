@@ -145,14 +145,14 @@ export function manifestPlugin(): Plugin {
       const fileNameToAsset = new Map<string, ManifestChunk>()
 
       for (const file in bundle) {
-        const chunk = bundle[file]
+        const chunk = bundle[file]!
         if (chunk.type === 'chunk') {
           manifest[getChunkName(chunk)] = createChunk(chunk)
         } else if (chunk.type === 'asset' && chunk.names.length > 0) {
           // Add every unique asset to the manifest, keyed by its original name
           const src =
             chunk.originalFileNames.length > 0
-              ? chunk.originalFileNames[0]
+              ? chunk.originalFileNames[0]!
               : '_' + path.basename(chunk.fileName)
           const isEntry = entryCssAssetFileNames.has(chunk.fileName)
           const asset = createAsset(chunk, src, isEntry)

@@ -1139,7 +1139,7 @@ export async function resolveConfig(
       name === 'client'
         ? defaultClientEnvironmentOptions
         : defaultNonClientEnvironmentOptions,
-      config.environments[name],
+      config.environments[name]!,
     )
   }
 
@@ -1155,7 +1155,7 @@ export async function resolveConfig(
   const resolvedEnvironments: Record<string, ResolvedEnvironmentOptions> = {}
   for (const environmentName of Object.keys(config.environments)) {
     resolvedEnvironments[environmentName] = resolveEnvironmentOptions(
-      config.environments[environmentName],
+      config.environments[environmentName]!,
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
       logger,
@@ -1170,7 +1170,7 @@ export async function resolveConfig(
   // optimizeDeps in the ResolvedConfig hook, so these changes will be reflected on the
   // client environment.
   const backwardCompatibleOptimizeDeps =
-    resolvedEnvironments.client.optimizeDeps
+    resolvedEnvironments.client!.optimizeDeps
 
   const resolvedDevEnvironmentOptions = resolveDevEnvironmentOptions(
     config.dev,
@@ -1837,7 +1837,7 @@ async function bundleConfigFile(
       },
     ],
   })
-  const { text } = result.outputFiles[0]
+  const { text } = result.outputFiles[0]!
   return {
     code: text,
     dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
@@ -1936,12 +1936,12 @@ async function runConfigEnvironmentHook(
     const handler = getHookHandler(hook)
     if (handler) {
       for (const name of environmentNames) {
-        const res = await handler(name, environments[name], {
+        const res = await handler(name, environments[name]!, {
           ...configEnv,
           isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
         })
         if (res) {
-          environments[name] = mergeConfig(environments[name], res)
+          environments[name] = mergeConfig(environments[name]!, res)
         }
       }
     }

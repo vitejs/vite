@@ -87,6 +87,7 @@ import { searchForWorkspaceRoot } from '../server/searchRoot'
 import { type DevEnvironment } from '..'
 import type { PackageCache } from '../packages'
 import { findNearestPackageData } from '../packages'
+import type { StrictRegExpExecArrayFromLen } from '../../shared/typeUtils'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -376,7 +377,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             return joinUrlSegments(config.base, decodedUrl)
           }
         }
-        const [id, fragment] = decodedUrl.split('#')
+        const [id, fragment] = decodedUrl.split('#') as [string, ...string[]]
         let resolved = await resolveUrl(id, importer)
         if (resolved) {
           if (fragment) resolved += '#' + fragment
@@ -712,7 +713,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         let match: RegExpExecArray | null
         cssUrlAssetRE.lastIndex = 0
         while ((match = cssUrlAssetRE.exec(code))) {
-          const [full, idHex] = match
+          const [full, idHex] = match as StrictRegExpExecArrayFromLen<1>
           const id = Buffer.from(idHex, 'hex').toString()
           const originalFileName = cleanUrl(id)
           const cssAssetName = ensureFileExt(
@@ -910,7 +911,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           collected.add(chunk)
 
           // First collect all styles from the synchronous imports (lowest priority)
-          chunk.imports.forEach((importName) => collect(bundle[importName]))
+          chunk.imports.forEach((importName) => collect(bundle[importName]!))
           // Save dynamic imports in deterministic order to add the styles later (to have the highest priority)
           chunk.dynamicImports.forEach((importName) =>
             dynamicImports.add(importName),
@@ -928,7 +929,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
         // Now collect the dynamic chunks, this is done last to have the styles overwrite the previous ones
         for (const chunkName of dynamicImports) {
-          collect(bundle[chunkName])
+          collect(bundle[chunkName]!)
         }
 
         // Finally, if there's any extracted CSS, we emit the asset
@@ -959,7 +960,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // but they are still in `pureCssChunks`.
         // So we need to filter the names and only use those who are defined
         const pureCssChunkNames = [...pureCssChunks]
-          .map((pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName])
+          .map(
+            (pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName]!,
+          )
           .filter(Boolean)
 
         const replaceEmptyChunk = getEmptyChunkReplacer(
@@ -968,7 +971,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         )
 
         for (const file in bundle) {
-          const chunk = bundle[file]
+          const chunk = bundle[file]!
           if (chunk.type === 'chunk') {
             let chunkImportsPureCssChunk = false
             // remove pure css chunk from other chunk's imports,
@@ -1455,7 +1458,7 @@ async function compileCSS(
           ignore: ['**/node_modules/**'],
         })
         for (let i = 0; i < files.length; i++) {
-          deps.add(files[i])
+          deps.add(files[i]!)
         }
       } else if (message.type === 'warning') {
         const warning = message as PostCSS.Warning
@@ -1766,7 +1769,7 @@ function rewriteCssUrls(
   replacer: CssUrlReplacer,
 ): Promise<string> {
   return asyncReplace(css, cssUrlRE, async (match) => {
-    const [matched, rawUrl] = match
+    const [matched, rawUrl] = match as StrictRegExpExecArrayFromLen<2>
     return await doUrlReplace(rawUrl.trim(), matched, replacer)
   })
 }
@@ -1776,7 +1779,7 @@ function rewriteCssDataUris(
   replacer: CssUrlReplacer,
 ): Promise<string> {
   return asyncReplace(css, cssDataUriRE, async (match) => {
-    const [matched, rawUrl] = match
+    const [matched, rawUrl] = match as StrictRegExpExecArrayFromLen<2>
     return await doUrlReplace(rawUrl.trim(), matched, replacer, 'data-uri')
   })
 }
@@ -1786,7 +1789,7 @@ function rewriteImportCss(
   replacer: CssUrlReplacer,
 ): Promise<string> {
   return asyncReplace(css, importCssRE, async (match) => {
-    const [matched, rawUrl] = match
+    const [matched, rawUrl] = match as StrictRegExpExecArrayFromLen<1>
     return await doImportCSSReplace(rawUrl, matched, replacer)
   })
 }
@@ -1801,7 +1804,7 @@ async function rewriteCssImageSet(
   replacer: CssUrlReplacer,
 ): Promise<string> {
   return await asyncReplace(css, cssImageSetRE, async (match) => {
-    const [, rawUrl] = match
+    const [, rawUrl] = match as StrictRegExpExecArrayFromLen<1>
     const url = await processSrcSet(rawUrl, async ({ url }) => {
       // the url maybe url(...)
       if (cssUrlRE.test(url)) {
@@ -3290,7 +3293,7 @@ export const convertTargets = (
         const [major, minor = 0] = entry
           .slice(index)
           .split('.')
-          .map((v) => parseInt(v, 10))
+          .map((v) => parseInt(v, 10)) as [number, ...number[]]
         if (!isNaN(major) && !isNaN(minor)) {
           const version = (major << 16) | (minor << 8)
           if (!targets[browser] || version < targets[browser]!) {

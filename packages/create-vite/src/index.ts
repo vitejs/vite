@@ -478,7 +478,7 @@ async function init() {
     const replacedArgs = args.map((arg) =>
       arg.replace('TARGET_DIR', () => targetDir),
     )
-    const { status } = spawn.sync(command, replacedArgs, {
+    const { status } = spawn.sync(command!, replacedArgs, {
       stdio: 'inherit',
     })
     process.exit(status ?? 0)
@@ -596,11 +596,11 @@ function emptyDir(dir: string) {
 
 function pkgFromUserAgent(userAgent: string | undefined) {
   if (!userAgent) return undefined
-  const pkgSpec = userAgent.split(' ')[0]
+  const pkgSpec = userAgent.split(' ')[0]!
   const pkgSpecArr = pkgSpec.split('/')
   return {
-    name: pkgSpecArr[0],
-    version: pkgSpecArr[1],
+    name: pkgSpecArr[0]!,
+    version: pkgSpecArr[1] ?? '',
   }
 }
 

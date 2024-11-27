@@ -28,6 +28,7 @@ import {
   withTrailingSlash,
 } from '../shared/utils'
 import { VALID_ID_PREFIX } from '../shared/constants'
+import type { StrictRegExpExecArray } from '../shared/typeUtils'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -459,7 +460,7 @@ export function posToNumber(source: string, pos: number | Pos): number {
   const { line, column } = pos
   let start = 0
   for (let i = 0; i < line - 1 && i < lines.length; i++) {
-    start += lines[i].length + 1
+    start += lines[i]!.length + 1
   }
   return start + column
 }
@@ -476,7 +477,7 @@ export function numberToPos(source: string, offset: number | Pos): Pos {
   let line = 0
   let column = 0
   for (; line < lines.length; line++) {
-    const lineLength = lines[line].length + 1
+    const lineLength = lines[line]!.length + 1
     if (counted + lineLength >= offset) {
       column = offset - counted + 1
       break
@@ -500,7 +501,7 @@ export function generateCodeFrame(
   let count = 0
   const res: string[] = []
   for (let i = 0; i < lines.length; i++) {
-    count += lines[i].length
+    count += lines[i]!.length
     if (count >= start) {
       for (let j = i - range; j <= i + range || end > count; j++) {
         if (j < 0 || j >= lines.length) continue
@@ -510,7 +511,7 @@ export function generateCodeFrame(
             lines[j]
           }`,
         )
-        const lineLength = lines[j].length
+        const lineLength = lines[j]!.length
         if (j === i) {
           // push underline
           const pad = Math.max(start - (count - lineLength), 0)
@@ -564,7 +565,9 @@ export function emptyDir(dir: string, skip?: string[]): void {
         const matched = splitFirstDirRE.exec(file)
         if (matched) {
           nested ??= new Map()
-          const [, nestedDir, skipPath] = matched
+          const [, nestedDir, skipPath] = matched as StrictRegExpExecArray<
+            [true, true]
+          >
           let nestedSkip = nested.get(nestedDir)
           if (!nestedSkip) {
             nestedSkip = []
@@ -673,7 +676,7 @@ function windowsSafeRealPathSync(path: string): string {
 function optimizeSafeRealPathSync() {
   // Skip if using Node <18.10 due to MAX_PATH issue: https://github.com/vitejs/vite/issues/12931
   const nodeVersion = process.versions.node.split('.').map(Number)
-  if (nodeVersion[0] < 18 || (nodeVersion[0] === 18 && nodeVersion[1] < 10)) {
+  if (nodeVersion[0]! < 18 || (nodeVersion[0] === 18 && nodeVersion[1]! < 10)) {
     safeRealpathSync = fs.realpathSync
     return
   }
@@ -853,7 +856,7 @@ export function combineSourcemaps(
   if (useArrayInterface) {
     map = remapping(sourcemapList, () => null)
   } else {
-    map = remapping(sourcemapList[0], function loader(sourcefile) {
+    map = remapping(sourcemapList[0]!, function loader(sourcefile) {
       const mapForSources = sourcemapList
         .slice(mapIndex)
         .find((s) => s.sources.includes(sourcefile))
@@ -1405,11 +1408,11 @@ export function evalValue<T = any>(rawValue: string): T {
 
 export function getNpmPackageName(importPath: string): string | null {
   const parts = importPath.split('/')
-  if (parts[0][0] === '@') {
+  if (parts[0]![0] === '@') {
     if (!parts[1]) return null
     return `${parts[0]}/${parts[1]}`
   } else {
-    return parts[0]
+    return parts[0]!
   }
 }
 
@@ -1427,7 +1430,7 @@ export function getPackageManagerCommand(
   type: CommandType = 'install',
 ): string {
   const packageManager =
-    process.env.npm_config_user_agent?.split(' ')[0].split('/')[0] || 'npm'
+    process.env.npm_config_user_agent?.split(' ')[0]!.split('/')[0] || 'npm'
   switch (type) {
     case 'install':
       return packageManager === 'npm' ? 'npm install' : `${packageManager} add`

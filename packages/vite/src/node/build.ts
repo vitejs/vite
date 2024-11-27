@@ -831,7 +831,7 @@ async function buildEnvironment(
     logger.info(
       `${colors.green(`✓ built in ${displayTime(Date.now() - startTime)}`)}`,
     )
-    return Array.isArray(outputs) ? res : res[0]
+    return Array.isArray(outputs) ? res : res[0]!
   } catch (e) {
     enhanceRollupError(e)
     clearLine()
@@ -1532,7 +1532,8 @@ export async function createBuilder(
     // remove the default values that shouldn't be used at all once the config is resolved
     const environmentName = resolved.build.ssr ? 'ssr' : 'client'
     ;(resolved.build as ResolvedBuildOptions) = {
-      ...resolved.environments[environmentName].build,
+      // both resolved.environments.client and resolved.environments.ssr exists
+      ...resolved.environments[environmentName]!.build,
     }
   }
   const config = await resolveConfigToBuild(inlineConfig, patchConfig)
@@ -1575,21 +1576,21 @@ export async function createBuilder(
           // We can deprecate `config.build` in ResolvedConfig and push everyone to upgrade, and later
           // remove the default values that shouldn't be used at all once the config is resolved
           ;(resolved.build as ResolvedBuildOptions) = {
-            ...resolved.environments[environmentName].build,
+            ...resolved.environments[environmentName]!.build,
           }
         }
         const patchPlugins = (resolvedPlugins: Plugin[]) => {
           // Force opt-in shared plugins
           let j = 0
           for (let i = 0; i < resolvedPlugins.length; i++) {
-            const environmentPlugin = resolvedPlugins[i]
+            const environmentPlugin = resolvedPlugins[i]!
             if (
               configBuilder.sharedPlugins ||
               environmentPlugin.sharedDuringBuild
             ) {
               for (let k = j; k < config.plugins.length; k++) {
-                if (environmentPlugin.name === config.plugins[k].name) {
-                  resolvedPlugins[i] = config.plugins[k]
+                if (environmentPlugin.name === config.plugins[k]!.name) {
+                  resolvedPlugins[i] = config.plugins[k]!
                   j = k + 1
                   break
                 }

@@ -162,7 +162,7 @@ export function proxyMiddleware(
       const url = req.url!
       for (const context in proxies) {
         if (doesProxyContextMatchUrl(context, url)) {
-          const [proxy, opts] = proxies[context]
+          const [proxy, opts] = proxies[context]!
           if (
             opts.ws ||
             opts.target?.toString().startsWith('ws:') ||
@@ -198,7 +198,7 @@ export function proxyMiddleware(
     const url = req.url!
     for (const context in proxies) {
       if (doesProxyContextMatchUrl(context, url)) {
-        const [proxy, opts] = proxies[context]
+        const [proxy, opts] = proxies[context]!
         const options: HttpProxy.ServerOptions = {}
 
         if (opts.bypass) {

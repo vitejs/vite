@@ -34,7 +34,7 @@ export function ssrManifestPlugin(): Plugin {
       const ssrManifest = getSsrManifest(this)
       const { base } = config
       for (const file in bundle) {
-        const chunk = bundle[file]
+        const chunk = bundle[file]!
         if (chunk.type === 'chunk') {
           for (const id in chunk.modules) {
             const normalizedId = normalizePath(relative(config.root, id))
@@ -73,7 +73,7 @@ export function ssrManifestPlugin(): Plugin {
             }
             if (imports.length) {
               for (let index = 0; index < imports.length; index++) {
-                const { s: start, e: end, n: name } = imports[index]
+                const { s: start, e: end, n: name } = imports[index]!
                 // check the chunk being imported
                 const url = code.slice(start, end)
                 const deps: string[] = []

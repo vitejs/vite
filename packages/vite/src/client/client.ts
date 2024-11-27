@@ -140,7 +140,10 @@ const hmrClient = new HMRClient(
     explicitImportRequired,
     isWithinCircularImport,
   }) {
-    const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`)
+    const [acceptedPathWithoutQuery, query] = acceptedPath.split(`?`) as [
+      string,
+      ...string[],
+    ]
     const importPromise = import(
       /* @vite-ignore */
       base +

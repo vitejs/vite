@@ -335,7 +335,7 @@ async function ssrTransformScript(
     onStatements(statements) {
       // ensure ";" between statements
       for (let i = 0; i < statements.length - 1; i++) {
-        const stmt = statements[i]
+        const stmt = statements[i]!
         if (
           code[stmt.end - 1] !== ';' &&
           stmt.type !== 'FunctionDeclaration' &&
@@ -371,7 +371,7 @@ async function ssrTransformScript(
         if (!declaredConst.has(id.name)) {
           declaredConst.add(id.name)
           // locate the top-most node containing the class declaration
-          const topNode = parentStack[parentStack.length - 2]
+          const topNode = parentStack[parentStack.length - 2]!
           s.prependRight(topNode.start, `const ${id.name} = ${binding};\n`)
         }
       } else if (parent.type === 'CallExpression') {
@@ -635,7 +635,7 @@ function walk(
   // emit the identifier events in BFS so the hoisted declarations
   // can be captured correctly
   identifiers.forEach(([node, stack]) => {
-    if (!isInScope(node.name, stack)) onIdentifier(node, stack[0], stack)
+    if (!isInScope(node.name, stack)) onIdentifier(node, stack[0]!, stack)
   })
 }
 

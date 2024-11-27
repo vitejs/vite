@@ -52,7 +52,7 @@ export class PartialEnvironment {
   constructor(
     name: string,
     topLevelConfig: ResolvedConfig,
-    options: ResolvedEnvironmentOptions = topLevelConfig.environments[name],
+    options?: ResolvedEnvironmentOptions,
   ) {
     // only allow some characters so that we can use name without escaping for directory names
     // and make users easier to access with `environments.*`
@@ -60,6 +60,13 @@ export class PartialEnvironment {
       throw new Error(
         `Invalid environment name "${name}". Environment names must only contain alphanumeric characters and "$", "_".`,
       )
+    }
+    if (!options) {
+      const resolvedOptions = topLevelConfig.environments[name]
+      if (!resolvedOptions) {
+        throw new Error(`Environment "${name}" is not defined in config.`)
+      }
+      options = resolvedOptions
     }
     this.name = name
     this._topLevelConfig = topLevelConfig
@@ -82,7 +89,7 @@ export class PartialEnvironment {
     const colorIndex =
       [...this.name].reduce((acc, c) => acc + c.charCodeAt(0), 0) %
       environmentColors.length
-    const infoColor = environmentColors[colorIndex || 0]
+    const infoColor = environmentColors[colorIndex || 0]!
     this.logger = {
       get hasWarned() {
         return topLevelConfig.logger.hasWarned
@@ -142,7 +149,7 @@ export class BaseEnvironment extends PartialEnvironment {
   constructor(
     name: string,
     config: ResolvedConfig,
-    options: ResolvedEnvironmentOptions = config.environments[name],
+    options?: ResolvedEnvironmentOptions,
   ) {
     super(name, config, options)
   }

@@ -3,6 +3,7 @@ import type { ModuleRunner } from '../runner'
 import { posixDirname, posixResolve } from '../utils'
 import type { EvaluatedModules } from '../evaluatedModules'
 import { slash } from '../../shared/utils'
+import type { StrictRegExpExecArrayFromLen } from '../../shared/typeUtils'
 import { DecodedMap, getOriginalPosition } from './decoder'
 
 interface RetrieveFileHandler {
@@ -172,7 +173,8 @@ function retrieveSourceMap(source: string) {
 
 function mapSourcePosition(position: OriginalMapping) {
   if (!position.source) return position
-  let sourceMap = getRunnerSourceMap(position)
+  let sourceMap: CachedMapEntry | null | undefined =
+    getRunnerSourceMap(position)
   if (!sourceMap) sourceMap = sourceMapCache[position.source]
   if (!sourceMap) {
     // Call the (overrideable) retrieveSourceMap function to get the source map.
@@ -238,7 +240,9 @@ function mapSourcePosition(position: OriginalMapping) {
 // https://code.google.com/p/v8/source/browse/trunk/src/messages.js
 function mapEvalOrigin(origin: string): string {
   // Most eval() calls are in this format
-  let match = /^eval at ([^(]+) \((.+):(\d+):(\d+)\)$/.exec(origin)
+  const match = /^eval at ([^(]+) \((.+):(\d+):(\d+)\)$/.exec(
+    origin,
+  ) as StrictRegExpExecArrayFromLen<4> | null
   if (match) {
     const position = mapSourcePosition({
       name: null,
@@ -250,8 +254,10 @@ function mapEvalOrigin(origin: string): string {
   }
 
   // Parse nested eval() calls using recursion
-  match = /^eval at ([^(]+) \((.+)\)$/.exec(origin)
-  if (match) return `eval at ${match[1]} (${mapEvalOrigin(match[2])})`
+  const match2 = /^eval at ([^(]+) \((.+)\)$/.exec(
+    origin,
+  ) as StrictRegExpExecArrayFromLen<2> | null
+  if (match2) return `eval at ${match2[1]} (${mapEvalOrigin(match2[2])})`
 
   // Make sure we still return useful information if we didn't find anything
   return origin
@@ -425,7 +431,7 @@ function prepareStackTrace(error: Error, stack: CallSite[]) {
   const state = { nextPosition: null, curPosition: null }
   const processedStack = []
   for (let i = stack.length - 1; i >= 0; i--) {
-    processedStack.push(`\n    at ${wrapCallSite(stack[i], state)}`)
+    processedStack.push(`\n    at ${wrapCallSite(stack[i]!, state)}`)
     state.nextPosition = state.curPosition
   }
   state.curPosition = state.nextPosition = null

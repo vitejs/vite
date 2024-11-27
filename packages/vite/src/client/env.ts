@@ -18,7 +18,7 @@ Object.keys(defines).forEach((key) => {
   const segments = key.split('.')
   let target = context
   for (let i = 0; i < segments.length; i++) {
-    const segment = segments[i]
+    const segment = segments[i]!
     if (i === segments.length - 1) {
       target[segment] = defines[key]
     } else {

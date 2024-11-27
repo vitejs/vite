@@ -28,11 +28,11 @@ export default function licensePlugin(
       let dependencyLicenseTexts = ''
       for (let i = 0; i < deps.length; i++) {
         // Find dependencies with the same license text so it can be shared
-        const licenseText = deps[i].licenseText
-        const sameDeps = [deps[i]]
+        const licenseText = deps[i]!.licenseText
+        const sameDeps = [deps[i]!]
         if (licenseText) {
           for (let j = i + 1; j < deps.length; j++) {
-            if (licenseText === deps[j].licenseText) {
+            if (licenseText === deps[j]!.licenseText) {
               sameDeps.push(...deps.splice(j, 1))
               j--
             }
@@ -47,11 +47,11 @@ export default function licensePlugin(
           depInfos.length > 1 &&
           depInfos.every(
             (info) =>
-              info.license === depInfos[0].license &&
-              info.names === depInfos[0].names,
+              info.license === depInfos[0]!.license &&
+              info.names === depInfos[0]!.names,
           )
         ) {
-          const { license, names } = depInfos[0]
+          const { license, names } = depInfos[0]!
           const repositoryText = depInfos
             .map((info) => info.repository)
             .filter(Boolean)
@@ -64,7 +64,7 @@ export default function licensePlugin(
         // Else show each dependency separately
         else {
           for (let j = 0; j < depInfos.length; j++) {
-            const { license, names, repository } = depInfos[j]
+            const { license, names, repository } = depInfos[j]!
 
             if (license) text += `License: ${license}\n`
             if (names) text += `By: ${names}\n`

@@ -19,6 +19,7 @@ import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { Environment } from '../environment'
+import type { StrictRegExpExecArray } from '../../shared/typeUtils'
 import { removedPureCssFilesCache } from './css'
 import { createParseErrorInfo } from './importAnalysis'
 
@@ -46,6 +47,12 @@ const dynamicImportPrefixRE = /import\s*\(/
 
 const dynamicImportTreeshakenRE =
   /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
+
+type DynamicImportTreeshakenMatch = StrictRegExpExecArray<
+  | [true, true, false, false, false, false] // const { foo } = await import()
+  | [false, false, true, true, false, false] // (await import()).foo
+  | [false, false, false, false, true, true] // import().then(({ foo }) => {})
+>
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
@@ -110,7 +117,7 @@ function preload(
           // When isBaseRelative is true then we have `importerUrl` and `dep` is
           // already converted to an absolute URL by the `assetsURL` function
           for (let i = links.length - 1; i >= 0; i--) {
-            const link = links[i]
+            const link = links[i]!
             // The `links[i].href` is an absolute URL thanks to browser doing the work
             // for us. See https://html.spec.whatwg.org/multipage/common-dom-interfaces.html#reflecting-content-attributes-in-idl-attributes:idl-domstring-5
             if (link.href === dep && (!isCss || link.rel === 'stylesheet')) {
@@ -250,7 +257,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       if (insertPreload) {
         let match
-        while ((match = dynamicImportTreeshakenRE.exec(source))) {
+        while (
+          (match = dynamicImportTreeshakenRE.exec(
+            source,
+          ) as DynamicImportTreeshakenMatch | null)
+        ) {
           /* handle `const {foo} = await import('foo')`
            *
            * match[1]: `const {foo} = await import('foo')`
@@ -261,7 +272,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           if (match[1]) {
             dynamicImports[dynamicImportTreeshakenRE.lastIndex] = {
               declaration: `const ${match[2]}`,
-              names: match[2]?.trim(),
+              names: match[2].trim(),
             }
             continue
           }
@@ -280,7 +291,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               names = 'default: __vite_default__'
             }
             dynamicImports[
-              dynamicImportTreeshakenRE.lastIndex - match[4]?.length - 1
+              dynamicImportTreeshakenRE.lastIndex - match[4].length - 1
             ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
             continue
           }
@@ -292,9 +303,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
            * import end: `import('foo').`
            *                           ^
            */
-          const names = match[6]?.trim()
+          const names = match[6]!.trim()
           dynamicImports[
-            dynamicImportTreeshakenRE.lastIndex - match[5]?.length
+            dynamicImportTreeshakenRE.lastIndex - match[5]!.length
           ] = { declaration: `const {${names}}`, names: `{ ${names} }` }
         }
       }
@@ -311,7 +322,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           se: expEnd,
           d: dynamicIndex,
           a: attributeIndex,
-        } = imports[index]
+        } = imports[index]!
 
         const isDynamicImport = dynamicIndex > -1
 
@@ -409,7 +420,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
         const removedPureCssFiles = removedPureCssFilesCache.get(config)
         if (removedPureCssFiles && removedPureCssFiles.size > 0) {
           for (const file in bundle) {
-            const chunk = bundle[file]
+            const chunk = bundle[file]!
             if (chunk.type === 'chunk' && chunk.code.includes('import')) {
               const code = chunk.code
               let imports!: ImportSpecifier[]
@@ -465,7 +476,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       const { modulePreload } = this.environment.config.build
 
       for (const file in bundle) {
-        const chunk = bundle[file]
+        const chunk = bundle[file]!
         // can't use chunk.dynamicImports.length here since some modules e.g.
         // dynamic import to constant json may get inlined.
         if (chunk.type === 'chunk' && chunk.code.indexOf(preloadMarker) > -1) {
@@ -511,7 +522,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 e: end,
                 ss: expStart,
                 se: expEnd,
-              } = imports[index]
+              } = imports[index]!
               // check the chunk being imported
               let url = name
               if (!url) {

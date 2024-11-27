@@ -717,7 +717,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       if (isLegacyBundle(bundle, opts) && genModern) {
         // avoid emitting duplicate assets
         for (const name in bundle) {
-          if (bundle[name].type === 'asset' && !/.+\.map$/.test(name)) {
+          if (bundle[name]!.type === 'asset' && !/.+\.map$/.test(name)) {
             delete bundle[name]
           }
         }
@@ -831,7 +831,7 @@ async function buildPolyfillChunk(
       },
     },
   })
-  const _polyfillChunk = Array.isArray(res) ? res[0] : res
+  const _polyfillChunk = Array.isArray(res) ? res[0]! : res
   if (!('output' in _polyfillChunk)) return
   const polyfillChunk = _polyfillChunk.output.find(
     (chunk) => chunk.type === 'chunk' && chunk.isEntry,
@@ -840,7 +840,7 @@ async function buildPolyfillChunk(
   // associate the polyfill chunk to every entry chunk so that we can retrieve
   // the polyfill filename in index html transform
   for (const key in bundle) {
-    const chunk = bundle[key]
+    const chunk = bundle[key]!
     if (chunk.type === 'chunk' && chunk.facadeModuleId) {
       facadeToChunkMap.set(chunk.facadeModuleId, polyfillChunk.fileName)
     }

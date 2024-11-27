@@ -30,6 +30,10 @@ import {
   withTrailingSlash,
 } from '../../shared/utils'
 import type { Environment } from '../environment'
+import type {
+  StrictRegExpExecArray,
+  StrictRegExpExecArrayFromLen,
+} from '../../shared/typeUtils'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
@@ -85,7 +89,9 @@ export function renderAssetUrlInJS(
   assetUrlRE.lastIndex = 0
   while ((match = assetUrlRE.exec(code))) {
     s ||= new MagicString(code)
-    const [full, referenceId, postfix = ''] = match
+    const [full, referenceId, postfix = ''] = match as StrictRegExpExecArray<
+      [true, boolean]
+    >
     const file = pluginContext.getFileName(referenceId)
     chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
@@ -112,7 +118,7 @@ export function renderAssetUrlInJS(
   publicAssetUrlRE.lastIndex = 0
   while ((match = publicAssetUrlRE.exec(code))) {
     s ||= new MagicString(code)
-    const [full, hash] = match
+    const [full, hash] = match as StrictRegExpExecArrayFromLen<1>
     const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
     const replacement = toOutputFilePathInJS(
       environment,
@@ -222,13 +228,13 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     generateBundle(_, bundle) {
       // Remove empty entry point file
       for (const file in bundle) {
-        const chunk = bundle[file]
+        const chunk = bundle[file]!
         if (
           chunk.type === 'chunk' &&
           chunk.isEntry &&
           chunk.moduleIds.length === 1 &&
-          config.assetsInclude(chunk.moduleIds[0]) &&
-          this.getModuleInfo(chunk.moduleIds[0])?.meta['vite:asset']
+          config.assetsInclude(chunk.moduleIds[0]!) &&
+          this.getModuleInfo(chunk.moduleIds[0]!)?.meta['vite:asset']
         ) {
           delete bundle[file]
         }
@@ -241,7 +247,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       ) {
         for (const file in bundle) {
           if (
-            bundle[file].type === 'asset' &&
+            bundle[file]!.type === 'asset' &&
             !file.endsWith('ssr-manifest.json') &&
             !jsSourceMapRE.test(file)
           ) {

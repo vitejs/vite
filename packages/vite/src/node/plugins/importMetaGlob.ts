@@ -247,7 +247,7 @@ export async function parseImportGlob(
 
     const statementCode = code.slice(start, end)
 
-    const rootAst = (await parseAstAsync(statementCode)).body[0]
+    const rootAst = (await parseAstAsync(statementCode)).body[0]!
     if (rootAst.type !== 'ExpressionStatement') {
       throw err(`Expect CallExpression, got ${rootAst.type}`)
     }
@@ -277,7 +277,7 @@ export async function parseImportGlob(
             `Expected glob to be a string, but got dynamic template literal`,
           )
         }
-        globs.push(element.quasis[0].value.raw)
+        globs.push(element.quasis[0]!.value.raw)
       } else {
         throw err('Could only use literals')
       }
@@ -309,7 +309,9 @@ export async function parseImportGlob(
     const globsResolved = await Promise.all(
       globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
     )
-    const isRelative = globs.every((i) => '.!'.includes(i[0]))
+    const isRelative = globs.every((i) =>
+      '.!'.includes(/* glob is not empty */ i[0]!),
+    )
     const sliceCode = cleanCode.slice(0, start)
     const onlyKeys = objectKeysRE.test(sliceCode)
     let onlyValues = false
@@ -623,7 +625,7 @@ export function getCommonBase(globsResolved: string[]): null | string {
   if (!bases.length) return null
 
   let commonAncestor = ''
-  const dirS = bases[0].split('/')
+  const dirS = bases[0]!.split('/')
   for (let i = 0; i < dirS.length; i++) {
     const candidate = dirS.slice(0, i + 1).join('/')
     if (bases.every((base) => base.startsWith(candidate)))

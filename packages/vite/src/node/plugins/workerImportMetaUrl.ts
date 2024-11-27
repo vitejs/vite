@@ -8,6 +8,7 @@ import { evalValue, injectQuery, transformStableResult } from '../utils'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { cleanUrl, slash } from '../../shared/utils'
+import type { StrictRegExpIndicesArrayFromLen } from '../../shared/typeUtils'
 import type { WorkerType } from './worker'
 import { WORKER_FILE_ID, workerFileToUrl } from './worker'
 import { fileToUrl } from './asset'
@@ -139,7 +140,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         let match: RegExpExecArray | null
         while ((match = workerImportMetaUrlRE.exec(cleanString))) {
           const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
-            match.indices!
+            match.indices! as StrictRegExpIndicesArrayFromLen<2>
 
           const rawUrl = code.slice(urlStart, urlEnd)
 

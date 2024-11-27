@@ -242,7 +242,7 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
     transform(code, id) {
       for (const file in deps) {
         if (id.replace(/\\/g, '/').endsWith(file)) {
-          for (const { src, replacement, pattern } of deps[file]) {
+          for (const { src, replacement, pattern } of deps[file]!) {
             const magicString = new MagicString(code)
 
             if (src) {

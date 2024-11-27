@@ -218,7 +218,7 @@ export function createDepsOptimizer(
               // This is also used by the CJS externalization heuristics in legacy mode
               for (const id of Object.keys(deps)) {
                 if (!metadata.discovered[id]) {
-                  addMissingDep(id, deps[id])
+                  addMissingDep(id, deps[id]!)
                 }
               }
 
@@ -277,11 +277,11 @@ export function createDepsOptimizer(
     // Clone optimized info objects, fileHash, browserHash may be changed for them
     const metadata = depsOptimizer.metadata!
     for (const dep of Object.keys(metadata.optimized)) {
-      knownDeps[dep] = { ...metadata.optimized[dep] }
+      knownDeps[dep] = { ...metadata.optimized[dep]! }
     }
     for (const dep of Object.keys(metadata.discovered)) {
       // Clone the discovered info discarding its processing promise
-      const { processing, ...info } = metadata.discovered[dep]
+      const { processing, ...info } = metadata.discovered[dep]!
       knownDeps[dep] = info
     }
     return knownDeps
@@ -352,7 +352,8 @@ export function createDepsOptimizer(
         metadata.hash !== newData.hash ||
         Object.keys(metadata.optimized).some((dep) => {
           return (
-            metadata.optimized[dep].fileHash !== newData.optimized[dep].fileHash
+            metadata.optimized[dep]!.fileHash !==
+            newData.optimized[dep]?.fileHash
           )
         })
 
@@ -363,7 +364,7 @@ export function createDepsOptimizer(
         // in which case they will keep being added to metadata.discovered
         for (const id in metadata.discovered) {
           if (!newData.optimized[id]) {
-            addOptimizedDepInfo(newData, 'discovered', metadata.discovered[id])
+            addOptimizedDepInfo(newData, 'discovered', metadata.discovered[id]!)
           }
         }
 
@@ -371,12 +372,11 @@ export function createDepsOptimizer(
         if (!needsReload) {
           newData.browserHash = metadata.browserHash
           for (const dep in newData.chunks) {
-            newData.chunks[dep].browserHash = metadata.browserHash
+            newData.chunks[dep]!.browserHash = metadata.browserHash
           }
           for (const dep in newData.optimized) {
-            newData.optimized[dep].browserHash = (
-              metadata.optimized[dep] || metadata.discovered[dep]
-            ).browserHash
+            newData.optimized[dep]!.browserHash = (metadata.optimized[dep] ||
+              metadata.discovered[dep])!.browserHash
           }
         }
 
@@ -386,7 +386,7 @@ export function createDepsOptimizer(
         for (const o in newData.optimized) {
           const discovered = metadata.discovered[o]
           if (discovered) {
-            const optimized = newData.optimized[o]
+            const optimized = newData.optimized[o]!
             discovered.browserHash = optimized.browserHash
             discovered.fileHash = optimized.fileHash
             discovered.needsInterop = optimized.needsInterop
@@ -675,7 +675,7 @@ export function createDepsOptimizer(
         // Add deps found by the scanner to the discovered deps while crawling
         for (const dep of scanDeps) {
           if (!crawlDeps.includes(dep)) {
-            addMissingDep(dep, result.metadata.optimized[dep].src!)
+            addMissingDep(dep, result.metadata.optimized[dep]!.src!)
           }
         }
         if (scannerMissedDeps) {
@@ -772,7 +772,7 @@ function findInteropMismatches(
 ) {
   const needsInteropMismatch = []
   for (const dep in discovered) {
-    const discoveredDepInfo = discovered[dep]
+    const discoveredDepInfo = discovered[dep]!
     if (discoveredDepInfo.needsInterop === undefined) continue
 
     const depInfo = optimized[dep]

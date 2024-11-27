@@ -34,6 +34,10 @@ import type { Logger } from '../logger'
 import { cleanUrl } from '../../shared/utils'
 import { perEnvironmentState } from '../environment'
 import { getNodeAssetAttributes } from '../assetSource'
+import type {
+  StrictRegExpExecArrayFromLen,
+  StrictRegExpIndicesArrayFromLen,
+} from '../../shared/typeUtils'
 import {
   assetUrlRE,
   getPublicAssetFilename,
@@ -926,7 +930,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         inlineCSSRE.lastIndex = 0
         while ((match = inlineCSSRE.exec(result))) {
           s ||= new MagicString(result)
-          const { 0: full, 1: scopedName } = match
+          const [full, scopedName] = match as StrictRegExpExecArrayFromLen<1>
           const cssTransformedCode = htmlProxyResult.get(scopedName)!
           s.update(match.index, match.index + full.length, cssTransformedCode)
         }
@@ -1018,7 +1022,8 @@ export function extractImportExpressionFromClassicScript(
   let match: RegExpExecArray | null
   inlineImportRE.lastIndex = 0
   while ((match = inlineImportRE.exec(cleanCode))) {
-    const [, [urlStart, urlEnd]] = match.indices!
+    const [, [urlStart, urlEnd]] =
+      match.indices as StrictRegExpIndicesArrayFromLen<1>
     const start = urlStart + 1
     const end = urlEnd - 1
     scriptUrls.push({

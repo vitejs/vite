@@ -96,7 +96,7 @@ export function esbuildDepPlugin(
       _importer = normalizePath(path.join(resolveDir, '*'))
     } else {
       // map importer ids to file paths for correct resolution
-      _importer = importer in qualified ? qualified[importer] : importer
+      _importer = importer in qualified ? qualified[importer]! : importer
     }
     const resolver = kind.startsWith('require') ? _resolveRequire : _resolve
     return resolver(environment, id, _importer)
@@ -192,7 +192,7 @@ export function esbuildDepPlugin(
                 ? `import ${modulePath};`
                 : `export { default } from ${modulePath};` +
                   `export * from ${modulePath};`,
-            loader: 'js',
+            loader: 'js' as const,
           }
         },
       )
@@ -201,7 +201,7 @@ export function esbuildDepPlugin(
         const flatId = flattenId(id)
         if (flatId in qualified) {
           return {
-            path: qualified[flatId],
+            path: qualified[flatId]!,
           }
         }
       }

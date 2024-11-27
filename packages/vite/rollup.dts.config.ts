@@ -182,7 +182,7 @@ function replaceConfusingTypeNames(
         continue
       }
 
-      const betterId = replacements[id]
+      const betterId = replacements[id]!
       const regexEscapedId = escapeRegex(id)
       // If the better id accesses a namespace, the existing `Foo as Foo$1`
       // named import cannot be replaced with `Foo as Namespace.Foo`, so we

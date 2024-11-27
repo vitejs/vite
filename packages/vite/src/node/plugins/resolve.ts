@@ -51,6 +51,7 @@ import {
   splitFileAndPostfix,
   withTrailingSlash,
 } from '../../shared/utils'
+import type { StrictRegExpExecArray } from '../../shared/typeUtils'
 
 const normalizedClientEntry = normalizePath(CLIENT_ENTRY)
 const normalizedEnvEntry = normalizePath(ENV_ENTRY)
@@ -693,10 +694,12 @@ export function tryNodeResolve(
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
   // check for deep import, e.g. "my-lib/foo"
-  const deepMatch = deepImportRE.exec(id)
+  const deepMatch = deepImportRE.exec(id) as StrictRegExpExecArray<
+    [true, false] | [false, true]
+  > | null
   // package name doesn't include postfixes
   // trim them to support importing package with queries (e.g. `import css from 'normalize.css?inline'`)
-  const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : cleanUrl(id)
+  const pkgId = deepMatch ? (deepMatch[1] || deepMatch[2])! : cleanUrl(id)
 
   let basedir: string
   if (dedupe?.includes(pkgId)) {
