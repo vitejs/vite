@@ -265,7 +265,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     },
   }
 
-  let server: ViteDevServer
+  let server: ViteDevServer | undefined
 
   return {
     name: 'vite:esbuild',
@@ -280,7 +280,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
           transformOptions,
           undefined,
           config,
-          server.watcher,
+          server?.watcher,
         )
         if (result.warnings.length) {
           result.warnings.forEach((m) => {

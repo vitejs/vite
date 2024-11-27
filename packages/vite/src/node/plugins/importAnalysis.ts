@@ -353,7 +353,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           throw e
         })
 
-        if (!resolved || resolved.meta['vite:alias']?.noResolved) {
+        // resolved.meta does not exist in dev
+        if (!resolved || resolved.meta?.['vite:alias']?.noResolved) {
           // in ssr, we should let node handle the missing modules
           if (ssr) {
             return [url, url]

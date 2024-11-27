@@ -568,10 +568,10 @@ function walk(
             return
           }
           ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
-            enter(child: Node, parent: Node) {
+            enter(child: Node, parent: Node | undefined) {
               // skip params default value of destructure
               if (
-                parent.type === 'AssignmentPattern' &&
+                parent?.type === 'AssignmentPattern' &&
                 parent.right === child
               ) {
                 return this.skip()
@@ -582,9 +582,9 @@ function walk(
               // do not record if this is a default value
               // assignment of a destructuring variable
               if (
-                (parent.type === 'TemplateLiteral' &&
+                (parent?.type === 'TemplateLiteral' &&
                   parent.expressions.includes(child)) ||
-                (parent.type === 'CallExpression' && parent.callee === child)
+                (parent?.type === 'CallExpression' && parent.callee === child)
               ) {
                 return
               }
@@ -708,8 +708,8 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
 const isStaticProperty = (node: _Node): node is Property =>
   node.type === 'Property' && !node.computed
 
-const isStaticPropertyKey = (node: _Node, parent: _Node) =>
-  isStaticProperty(parent) && parent.key === node
+const isStaticPropertyKey = (node: _Node, parent: _Node | undefined) =>
+  parent && isStaticProperty(parent) && parent.key === node
 
 const functionNodeTypeRE = /Function(?:Expression|Declaration)$|Method$/
 function isFunction(node: _Node): node is FunctionNode {

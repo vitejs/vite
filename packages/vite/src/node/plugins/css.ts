@@ -906,12 +906,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // will be populated in order they are used by entry points
         const dynamicImports = new Set<string>()
 
-        function collect(chunk: OutputChunk | OutputAsset) {
-          if (chunk.type !== 'chunk' || collected.has(chunk)) return
+        function collect(chunk: OutputChunk | OutputAsset | undefined) {
+          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
           collected.add(chunk)
 
           // First collect all styles from the synchronous imports (lowest priority)
-          chunk.imports.forEach((importName) => collect(bundle[importName]!))
+          chunk.imports.forEach((importName) => collect(bundle[importName]))
           // Save dynamic imports in deterministic order to add the styles later (to have the highest priority)
           chunk.dynamicImports.forEach((importName) =>
             dynamicImports.add(importName),
@@ -929,7 +929,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
         // Now collect the dynamic chunks, this is done last to have the styles overwrite the previous ones
         for (const chunkName of dynamicImports) {
-          collect(bundle[chunkName]!)
+          collect(bundle[chunkName])
         }
 
         // Finally, if there's any extracted CSS, we emit the asset

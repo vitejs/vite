@@ -739,7 +739,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
         typeof err.loc.column === 'number'
       ) {
         const rawSourceMap = this._getCombinedSourcemap()
-        if ('version' in rawSourceMap) {
+        if (rawSourceMap && 'version' in rawSourceMap) {
           const traced = new TraceMap(rawSourceMap as any)
           const { source, line, column } = originalPositionFor(traced, {
             line: Number(err.loc.line),
@@ -847,7 +847,7 @@ class TransformPluginContext
     }
   }
 
-  _getCombinedSourcemap(): SourceMap | { mappings: '' } {
+  _getCombinedSourcemap(): SourceMap | { mappings: '' } | null {
     if (
       debugSourcemapCombine &&
       debugSourcemapCombineFilter &&
@@ -909,20 +909,20 @@ class TransformPluginContext
       this.combinedMap = combinedMap
       this.sourcemapChain.length = 0
     }
-    return this.combinedMap!
+    return this.combinedMap
   }
 
   getCombinedSourcemap(): SourceMap {
     const map = this._getCombinedSourcemap()
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- extra check for safety
-    if (!('version' in map) && map.mappings === '') {
+    if (!map || (!('version' in map) && map.mappings === '')) {
       return new MagicString(this.originalCode).generateMap({
         includeContent: true,
         hires: 'boundary',
         source: cleanUrl(this.filename),
       })
     }
-    return map
+    return map as SourceMap
   }
 
   _updateActiveInfo(plugin: Plugin, id: string, code: string): void {
