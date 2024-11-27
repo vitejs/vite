@@ -298,6 +298,13 @@ test('layers', async () => {
   expect(await getColor('.layers-green')).toMatch('green')
 })
 
+test('@import external css', async () => {
+  const icon = page.locator('.icon--mdi-light--help-circle')
+  expect(
+    await icon.evaluate((span) => getComputedStyle(span).maskImage),
+  ).toContain('data:image/svg+xml,')
+})
+
 test('@import dependency w/ style entry', async () => {
   expect(await getColor('.css-dep')).toBe('purple')
 })

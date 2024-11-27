@@ -1,5 +1,6 @@
 import './minify.css'
 import './imported.css'
+import './external.css'
 import mod from './mod.module.css'
 import './external-url.css'
 
