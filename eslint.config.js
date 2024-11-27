@@ -30,7 +30,7 @@ export default tseslint.config(
   },
   {
     linterOptions: {
-      reportUnusedDisableDirectives: !shouldTypeCheck,
+      reportUnusedDisableDirectives: shouldTypeCheck ? 'warn' : 'off',
     },
   },
   eslint.configs.recommended,
