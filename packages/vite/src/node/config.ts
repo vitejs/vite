@@ -522,9 +522,7 @@ export interface LegacyOptions {
 
 export interface ResolvedWorkerOptions {
   format: 'es' | 'iife'
-  plugins: (
-    bundleChain: string[],
-  ) => Promise<{ plugins: Plugin[]; config: ResolvedConfig }>
+  plugins: (bundleChain: string[]) => Promise<ResolvedConfig>
   rollupOptions: RollupOptions
 }
 
@@ -1341,11 +1339,8 @@ export async function resolveConfig(
     )
 
     return {
+      ...workerResolved,
       plugins: resolvedWorkerPlugins,
-      config: {
-        ...workerResolved,
-        plugins: resolvedWorkerPlugins,
-      },
     }
   }
 
