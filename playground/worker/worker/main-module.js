@@ -21,6 +21,7 @@ worker.addEventListener('message', (e) => {
   text('.mode', e.data.mode)
   text('.bundle-with-plugin', e.data.bundleWithPlugin)
   text('.asset-url', e.data.viteSvg)
+  text('.dep-cjs', e.data.depCjs.test)
 })
 
 const namedWorker = new myWorker({ name: 'namedWorker' })

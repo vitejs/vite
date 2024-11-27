@@ -1629,6 +1629,11 @@ importers:
       '@vitejs/test-dep-to-optimize':
         specifier: file:./dep-to-optimize
         version: file:playground/worker/dep-to-optimize
+      '@vitejs/test-worker-dep-cjs':
+        specifier: file:./dep-cjs
+        version: file:playground/worker/dep-cjs
+
+  playground/worker/dep-cjs: {}
 
   playground/worker/dep-self-reference-url-worker: {}
 
@@ -3478,6 +3483,9 @@ packages:
 
   '@vitejs/test-ts-transpiled-exports@file:playground/ssr-deps/ts-transpiled-exports':
     resolution: {directory: playground/ssr-deps/ts-transpiled-exports, type: directory}
+
+  '@vitejs/test-worker-dep-cjs@file:playground/worker/dep-cjs':
+    resolution: {directory: playground/worker/dep-cjs, type: directory}
 
   '@vitejs/test-worker-exports@file:playground/ssr-webworker/worker-exports':
     resolution: {directory: playground/ssr-webworker/worker-exports, type: directory}
@@ -9081,6 +9089,8 @@ snapshots:
   '@vitejs/test-ssr-conditions-no-external@file:playground/ssr-conditions/no-external': {}
 
   '@vitejs/test-ts-transpiled-exports@file:playground/ssr-deps/ts-transpiled-exports': {}
+
+  '@vitejs/test-worker-dep-cjs@file:playground/worker/dep-cjs': {}
 
   '@vitejs/test-worker-exports@file:playground/ssr-webworker/worker-exports': {}
 
