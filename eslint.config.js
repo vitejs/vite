@@ -18,9 +18,6 @@ const shouldTypeCheck = typeof process.env.VSCODE_PID === 'string'
 
 export default tseslint.config(
   {
-    linterOptions: {
-      reportUnusedDisableDirectives: !shouldTypeCheck,
-    },
     ignores: [
       'packages/create-vite/template-*',
       '**/dist/**',
@@ -30,6 +27,11 @@ export default tseslint.config(
       '**/.vitepress/cache/**',
       '**/*.snap',
     ],
+  },
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: !shouldTypeCheck,
+    },
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
