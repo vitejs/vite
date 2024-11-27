@@ -154,8 +154,8 @@ cli
   .option('-l, --logLevel <level>', `[string] info | warn | error | silent`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option(
-    '--bundleConfig',
-    `[boolean] should the config be bundled or evaluated with a module runner when importing`,
+    '--configLoader <loader>',
+    `[string] use 'bundle' to bundle the config with esbuild or 'runner' to process it on the fly (default: bundle)`,
   )
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
