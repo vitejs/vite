@@ -3,6 +3,7 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "declaration": false,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "noUncheckedIndexedAccess": false
   }
 }
