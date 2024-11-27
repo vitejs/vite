@@ -207,7 +207,7 @@ function testCaseInsensitiveFS() {
 }
 
 export const urlCanParse =
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins, @typescript-eslint/no-unnecessary-condition
   URL.canParse ??
   // URL.canParse is supported from Node.js 18.17.0+, 20.0.0+
   ((path: string, base?: string | undefined): boolean => {
@@ -990,10 +990,10 @@ export async function resolveServerUrls(
       .flatMap((nInterface) => nInterface ?? [])
       .filter(
         (detail) =>
-          detail &&
           detail.address &&
           (detail.family === 'IPv4' ||
             // @ts-expect-error Node 18.0 - 18.3 returns number
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             detail.family === 4),
       )
       .forEach((detail) => {
@@ -1026,7 +1026,7 @@ export const requestQueryMaybeEscapedSplitRE = /\\?\?(?!.*[/|}])/
 export const blankReplacer = (match: string): string => ' '.repeat(match.length)
 
 const hash =
-  // eslint-disable-next-line n/no-unsupported-features/node-builtins -- crypto.hash is supported in Node 21.7.0+, 20.12.0+
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins, @typescript-eslint/no-unnecessary-condition -- crypto.hash is supported in Node 21.7.0+, 20.12.0+
   crypto.hash ??
   ((
     algorithm: string,
@@ -1417,7 +1417,7 @@ export function getNpmPackageName(importPath: string): string | null {
 }
 
 export function getPkgName(name: string): string | undefined {
-  return name?.[0] === '@' ? name.split('/')[1] : name
+  return name[0] === '@' ? name.split('/')[1] : name
 }
 
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g

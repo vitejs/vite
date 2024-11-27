@@ -347,6 +347,7 @@ export class ModuleRunner {
 
     const { code, file } = fetchResult
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- is this needed?
     if (code == null) {
       const importer = callstack[callstack.length - 2]
       throw new Error(

@@ -3,11 +3,11 @@ import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import type { EnvironmentModuleGraph } from '..'
 import type { StrictRegExpExecArrayFromLen } from '../../shared/typeUtils'
 
-let offset: number
+let offsetCache: number | undefined
 
-function calculateOffsetOnce() {
-  if (offset !== undefined) {
-    return
+function calculateOffsetOnce(): number {
+  if (offsetCache !== undefined) {
+    return offsetCache
   }
 
   try {
@@ -19,15 +19,17 @@ function calculateOffsetOnce() {
     const match = /:(\d+):\d+\)$/.exec(
       e.stack.split('\n')[1],
     ) as StrictRegExpExecArrayFromLen<1> | null
-    offset = match ? +match[1] - 1 : 0
+    offsetCache = match ? +match[1] - 1 : 0
+    return offsetCache
   }
+  throw new Error('catch above always happens')
 }
 
 export function ssrRewriteStacktrace(
   stack: string,
   moduleGraph: EnvironmentModuleGraph,
 ): string {
-  calculateOffsetOnce()
+  const offset = calculateOffsetOnce()
   return stack
     .split('\n')
     .map((line) => {
@@ -51,7 +53,7 @@ export function ssrRewriteStacktrace(
             column: Number(column) - 1,
           })
 
-          if (!pos.source || pos.line == null || pos.column == null) {
+          if (!pos.source) {
             return input
           }
 

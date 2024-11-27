@@ -312,6 +312,7 @@ const hasDocument = 'document' in globalThis
 function createErrorOverlay(err: ErrorPayload['err']) {
   clearErrorOverlay()
   const { customElements } = globalThis
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (customElements) {
     const ErrorOverlayConstructor = customElements.get(overlayId)!
     document.body.appendChild(new ErrorOverlayConstructor(err))

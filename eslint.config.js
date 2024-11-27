@@ -145,6 +145,16 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-definitions': 'off',
       '@typescript-eslint/prefer-for-of': 'off',
       '@typescript-eslint/prefer-function-type': 'off',
+      ...(shouldTypeCheck
+        ? {
+            '@typescript-eslint/no-unnecessary-condition': [
+              'error',
+              {
+                allowConstantLoopConditions: true,
+              },
+            ],
+          }
+        : {}),
 
       'import-x/no-nodejs-modules': [
         'error',
@@ -345,6 +355,9 @@ export default tseslint.config(
       parserOptions: {
         project: false,
       },
+    },
+    rules: {
+      '@typescript-eslint/no-unnecessary-condition': 'off',
     },
   },
 )

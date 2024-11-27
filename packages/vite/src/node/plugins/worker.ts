@@ -122,7 +122,7 @@ async function bundleWorkerEntry(
     outputChunks.forEach((outputChunk) => {
       if (outputChunk.type === 'asset') {
         saveEmitWorkerAsset(config, outputChunk)
-      } else if (outputChunk.type === 'chunk') {
+      } else {
         saveEmitWorkerAsset(config, {
           fileName: outputChunk.fileName,
           originalFileName: null,
@@ -278,7 +278,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           injectEnv = `importScripts(${scriptPath})\n`
         } else if (workerType === 'module') {
           injectEnv = `import ${scriptPath}\n`
-        } else if (workerType === 'ignore') {
+        } else {
           if (isBuild) {
             injectEnv = ''
           } else {
@@ -403,7 +403,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, chunk, outputOptions) {
-      let s: MagicString
+      let s: MagicString | undefined
       const result = () => {
         return (
           s && {

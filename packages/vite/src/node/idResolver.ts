@@ -25,7 +25,7 @@ export function createBackCompatIdResolver(
   options?: Partial<InternalResolveOptions>,
 ): ResolveIdFn {
   const compatResolve = config.createResolver(options)
-  let resolve: ResolveIdFn
+  let resolve: ResolveIdFn | undefined
   return async (environment, id, importer, aliasOnly) => {
     if (environment.name === 'client' || environment.name === 'ssr') {
       return compatResolve(id, importer, aliasOnly, environment.name === 'ssr')

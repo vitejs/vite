@@ -155,6 +155,7 @@ const createInvokeableTransport = (
             ),
           )
         }, timeout)
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- we cannot assume that timeoutId is NodeJS.Timeout
         timeoutId?.unref?.()
       }
       rpcPromises.set(promiseId, { resolve, reject, name, timeoutId })

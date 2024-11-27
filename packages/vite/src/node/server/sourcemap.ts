@@ -37,7 +37,7 @@ export async function injectSourcesContent(
   file: string,
   logger: Logger,
 ): Promise<void> {
-  let sourceRootPromise: Promise<string | undefined>
+  let sourceRootPromise: Promise<string | undefined> | undefined
 
   const missingSources: string[] = []
   const sourcesContent = map.sourcesContent || []
@@ -101,7 +101,7 @@ export function getCodeWithSourcemap(
 
   if (type === 'js') {
     code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
-  } else if (type === 'css') {
+  } else {
     code += `\n/*# sourceMappingURL=${genSourceMapUrl(map)} */`
   }
 

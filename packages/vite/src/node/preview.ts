@@ -116,8 +116,7 @@ export async function preview(
     true,
   )
 
-  const clientOutDir =
-    config.environments.client!.build.outDir ?? config.build.outDir
+  const clientOutDir = config.environments.client!.build.outDir
   const distDir = path.resolve(config.root, clientOutDir)
   if (
     !fs.existsSync(distDir) &&
@@ -137,7 +136,7 @@ export async function preview(
   const httpServer = await resolveHttpServer(
     config.preview,
     app,
-    await resolveHttpsConfig(config.preview?.https),
+    await resolveHttpsConfig(config.preview.https),
   )
   setClientErrorHandler(httpServer, config.logger)
 
@@ -259,7 +258,7 @@ export async function preview(
   )
 
   if (options.open) {
-    const url = server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+    const url = server.resolvedUrls.local[0] ?? server.resolvedUrls.network[0]
     if (url) {
       const path =
         typeof options.open === 'string' ? new URL(options.open, url).href : url

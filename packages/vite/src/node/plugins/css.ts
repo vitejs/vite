@@ -303,7 +303,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   let preprocessorWorkerController: PreprocessorWorkerController | undefined
 
   // warm up cache for resolved postcss config
-  if (config.css?.transformer !== 'lightningcss') {
+  if (config.css.transformer !== 'lightningcss') {
     resolvePostcssConfig(config)
   }
 
@@ -545,7 +545,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       if (config.command === 'serve') {
         const getContentWithSourcemap = async (content: string) => {
-          if (config.css?.devSourcemap) {
+          if (config.css.devSourcemap) {
             const sourcemap = this.getCombinedSourcemap()
             if (sourcemap.mappings) {
               await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
@@ -907,7 +907,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const dynamicImports = new Set<string>()
 
         function collect(chunk: OutputChunk | OutputAsset) {
-          if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
+          if (chunk.type !== 'chunk' || collected.has(chunk)) return
           collected.add(chunk)
 
           // First collect all styles from the synchronous imports (lowest priority)
@@ -993,7 +993,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               }
               return true
             })
-            if (chunkImportsPureCssChunk) {
+            // `chunkImportsPureCssChunk` might be set om the filter above
+            if (chunkImportsPureCssChunk as boolean) {
               chunk.code = replaceEmptyChunk(chunk.code)
             }
           }
@@ -1184,7 +1185,7 @@ async function compileCSSPreprocessors(
   workerController: PreprocessorWorkerController,
 ): Promise<{ code: string; map?: ExistingRawSourceMap; deps?: Set<string> }> {
   const { config } = environment
-  const { preprocessorOptions, devSourcemap } = config.css ?? {}
+  const { preprocessorOptions, devSourcemap } = config.css
   const atImportResolvers = getAtImportResolvers(
     environment.getTopLevelConfig(),
   )
@@ -1209,7 +1210,7 @@ async function compileCSSPreprocessors(
   }
 
   let deps: Set<string> | undefined
-  if (preprocessResult.deps) {
+  if (preprocessResult.deps.length > 0) {
     const normalizedFilename = normalizePath(opts.filename)
     // sometimes sass registers the file itself as a dep
     deps = new Set(
@@ -1257,11 +1258,11 @@ async function compileCSS(
   deps?: Set<string>
 }> {
   const { config } = environment
-  if (config.css?.transformer === 'lightningcss') {
+  if (config.css.transformer === 'lightningcss') {
     return compileLightningCSS(id, code, environment, urlReplacer)
   }
 
-  const { modules: modulesOptions, devSourcemap } = config.css || {}
+  const { modules: modulesOptions, devSourcemap } = config.css
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -1305,10 +1306,8 @@ async function compileCSS(
   const atImportResolvers = getAtImportResolvers(
     environment.getTopLevelConfig(),
   )
-  const postcssOptions = (postcssConfig && postcssConfig.options) || {}
-
-  const postcssPlugins =
-    postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
+  const postcssOptions = postcssConfig?.options ?? {}
+  const postcssPlugins = postcssConfig?.plugins.slice() ?? []
 
   if (needInlineImport) {
     postcssPlugins.unshift(
@@ -1664,7 +1663,7 @@ async function resolvePostcssConfig(
   }
 
   // inline postcss config via vite config
-  const inlineOptions = config.css?.postcss
+  const inlineOptions = config.css.postcss
   if (isObject(inlineOptions)) {
     const options = { ...inlineOptions }
 
@@ -1890,7 +1889,7 @@ async function minifyCSS(
 
   if (config.build.cssMinify === 'lightningcss') {
     const { code, warnings } = (await importLightningCSS()).transform({
-      ...config.css?.lightningcss,
+      ...config.css.lightningcss,
       targets: convertTargets(config.build.cssTarget),
       cssModules: undefined,
       // TODO: Pass actual filename here, which can also be passed to esbuild's
@@ -2136,7 +2135,7 @@ function cleanScssBugUrl(url: string) {
     // check bug via `window` and `location` global
     typeof window !== 'undefined' &&
     typeof location !== 'undefined' &&
-    typeof location?.href === 'string'
+    typeof location.href === 'string'
   ) {
     const prefix = location.href.replace(/\/$/, '')
     return url.replace(prefix, '')
@@ -2226,7 +2225,7 @@ const makeScssWorker = (
           done,
         ) => {
           internalImporter(url, importer, options.filename).then((data) =>
-            done?.(data),
+            done(data),
           )
         }
         const importer = [_internalImporter]
@@ -2698,13 +2697,10 @@ const makeLessWorker = (
       '@',
       resolvers.less,
     )
-    if (result) {
-      return {
-        resolved,
-        contents: 'contents' in result ? result.contents : undefined,
-      }
+    return {
+      resolved,
+      contents: 'contents' in result ? result.contents : undefined,
     }
-    return result
   }
 
   const worker = new WorkerWithFallback(
@@ -2858,7 +2854,8 @@ const lessProcessor = (
         return { code: '', error: normalizedError, deps: [] }
       }
 
-      const map: ExistingRawSourceMap = result.map && JSON.parse(result.map)
+      const map: ExistingRawSourceMap | undefined =
+        result.map && JSON.parse(result.map)
       if (map) {
         delete map.sourcesContent
       }
@@ -3118,14 +3115,14 @@ async function compileLightningCSS(
     ? (await importLightningCSS()).transformStyleAttribute({
         filename,
         code: Buffer.from(src),
-        targets: config.css?.lightningcss?.targets,
+        targets: config.css.lightningcss?.targets,
         minify: config.isProduction && !!config.build.cssMinify,
         analyzeDependencies: true,
       })
     : await (
         await importLightningCSS()
       ).bundleAsync({
-        ...config.css?.lightningcss,
+        ...config.css.lightningcss,
         filename,
         resolver: {
           read(filePath) {
@@ -3162,10 +3159,10 @@ async function compileLightningCSS(
         sourceMap:
           config.command === 'build'
             ? !!config.build.sourcemap
-            : config.css?.devSourcemap,
+            : config.css.devSourcemap,
         analyzeDependencies: true,
         cssModules: cssModuleRE.test(id)
-          ? (config.css?.lightningcss?.cssModules ?? true)
+          ? (config.css.lightningcss?.cssModules ?? true)
           : undefined,
       })
 

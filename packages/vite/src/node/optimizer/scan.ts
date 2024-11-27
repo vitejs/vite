@@ -184,7 +184,7 @@ export function scanImports(environment: ScanEnvironment): {
           })
         })
       }
-      if (!context || scanContext?.cancelled) {
+      if (!context || scanContext.cancelled) {
         disposeContext()
         return { deps: {}, missing: {} }
       }
@@ -249,7 +249,7 @@ async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
   const explicitEntryPatterns = environment.config.optimizeDeps.entries
-  const buildInput = environment.config.build.rollupOptions?.input
+  const buildInput = environment.config.build.rollupOptions.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)

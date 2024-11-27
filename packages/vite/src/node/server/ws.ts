@@ -125,11 +125,13 @@ export function createWebSocketServer(
   // TODO: the main server port may not have been chosen yet as it may use the next available
   const portsAreCompatible = !hmrPort || hmrPort === config.server.port
   const wsServer = hmrServer || (portsAreCompatible && server)
-  let hmrServerWsListener: (
-    req: InstanceType<typeof IncomingMessage>,
-    socket: Duplex,
-    head: Buffer,
-  ) => void
+  let hmrServerWsListener:
+    | ((
+        req: InstanceType<typeof IncomingMessage>,
+        socket: Duplex,
+        head: Buffer,
+      ) => void)
+    | undefined
   const customListeners = new Map<string, Set<WebSocketCustomListener<any>>>()
   const clientsMap = new WeakMap<WebSocketRaw, WebSocketClient>()
   const port = hmrPort || 24678

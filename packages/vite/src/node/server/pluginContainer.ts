@@ -288,10 +288,9 @@ class EnvironmentPluginContainer {
     const parallelPromises: Promise<unknown>[] = []
     for (const plugin of this.getSortedPlugins(hookName)) {
       // Don't throw here if closed, so buildEnd and closeBundle hooks can finish running
-      const hook = plugin[hookName]
-      if (!hook) continue
       if (condition && !condition(plugin)) continue
 
+      const hook = plugin[hookName]
       const handler: Function = getHookHandler(hook)
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
@@ -360,7 +359,6 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('resolveId')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
-      if (!plugin.resolveId) continue
       if (skip?.has(plugin)) continue
 
       ctx._plugin = plugin
@@ -423,7 +421,6 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('load')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
-      if (!plugin.load) continue
       ctx._plugin = plugin
       const handler = getHookHandler(plugin.load)
       const result = await this.handleHookPromise(
@@ -458,7 +455,6 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('transform')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
-      if (!plugin.transform) continue
 
       ctx._updateActiveInfo(plugin, id, code)
       const start = debugPluginTransform ? performance.now() : 0
@@ -564,7 +560,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     },
   ) {
     let skip: Set<Plugin> | undefined
-    if (options?.skipSelf !== false && this._plugin) {
+    if (options?.skipSelf !== false) {
       skip = new Set(this._resolveSkips)
       skip.add(this._plugin)
     }
@@ -688,7 +684,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     if (err.pluginCode) {
       return err // The plugin likely called `this.error`
     }
-    if (this._plugin) err.plugin = this._plugin.name
+    err.plugin = this._plugin.name
     if (this._activeId && !err.id) err.id = this._activeId
     if (this._activeCode) {
       err.pluginCode = this._activeCode
@@ -740,16 +736,16 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       if (
         this instanceof TransformPluginContext &&
         typeof err.loc?.line === 'number' &&
-        typeof err.loc?.column === 'number'
+        typeof err.loc.column === 'number'
       ) {
         const rawSourceMap = this._getCombinedSourcemap()
-        if (rawSourceMap && 'version' in rawSourceMap) {
+        if ('version' in rawSourceMap) {
           const traced = new TraceMap(rawSourceMap as any)
           const { source, line, column } = originalPositionFor(traced, {
             line: Number(err.loc.line),
             column: Number(err.loc.column),
           })
-          if (source && line != null && column != null) {
+          if (source) {
             err.loc = { file: source, line, column }
           }
         }
@@ -851,7 +847,7 @@ class TransformPluginContext
     }
   }
 
-  _getCombinedSourcemap(): SourceMap {
+  _getCombinedSourcemap(): SourceMap | { mappings: '' } {
     if (
       debugSourcemapCombine &&
       debugSourcemapCombineFilter &&
@@ -868,10 +864,11 @@ class TransformPluginContext
     if (
       combinedMap &&
       !('version' in combinedMap) &&
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- extra check for safety
       combinedMap.mappings === ''
     ) {
       this.sourcemapChain.length = 0
-      return combinedMap as SourceMap
+      return combinedMap
     }
 
     for (let m of this.sourcemapChain) {
@@ -912,12 +909,13 @@ class TransformPluginContext
       this.combinedMap = combinedMap
       this.sourcemapChain.length = 0
     }
-    return this.combinedMap as SourceMap
+    return this.combinedMap!
   }
 
   getCombinedSourcemap(): SourceMap {
-    const map = this._getCombinedSourcemap() as SourceMap | { mappings: '' }
-    if (!map || (!('version' in map) && map.mappings === '')) {
+    const map = this._getCombinedSourcemap()
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- extra check for safety
+    if (!('version' in map) && map.mappings === '') {
       return new MagicString(this.originalCode).generateMap({
         includeContent: true,
         hires: 'boundary',
@@ -953,7 +951,7 @@ class PluginContainer {
   }) {
     return options?.environment
       ? options.environment
-      : this.environments?.[options?.ssr ? 'ssr' : 'client']
+      : this.environments[options?.ssr ? 'ssr' : 'client']
   }
 
   private _getPluginContainer(options?: {

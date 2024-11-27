@@ -25,6 +25,7 @@ import {
   FS_PREFIX,
 } from './constants'
 import type {
+  FalsyPlugin,
   HookHandler,
   Plugin,
   PluginOption,
@@ -1006,7 +1007,7 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
-  const filterPlugin = (p: Plugin) => {
+  const filterPlugin = (p: Plugin | FalsyPlugin): p is Plugin => {
     if (!p) {
       return false
     } else if (!p.apply) {
@@ -1020,7 +1021,7 @@ export async function resolveConfig(
 
   // resolve plugins
   const rawPlugins = (
-    (await asyncFlatten(config.plugins || [])) as Plugin[]
+    (await asyncFlatten(config.plugins || [])) as Array<Plugin | FalsyPlugin>
   ).filter(filterPlugin)
 
   const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(rawPlugins)
@@ -1072,12 +1073,12 @@ export async function resolveConfig(
   // Backward compatibility: server.warmup.clientFiles/ssrFiles -> environment.dev.warmup
   const warmupOptions = config.server?.warmup
   if (warmupOptions?.clientFiles) {
-    configEnvironmentsClient.dev.warmup = warmupOptions?.clientFiles
+    configEnvironmentsClient.dev.warmup = warmupOptions.clientFiles
   }
   if (warmupOptions?.ssrFiles) {
     configEnvironmentsSsr ??= {}
     configEnvironmentsSsr.dev ??= {}
-    configEnvironmentsSsr.dev.warmup = warmupOptions?.ssrFiles
+    configEnvironmentsSsr.dev.warmup = warmupOptions.ssrFiles
   }
 
   // Backward compatibility: merge ssr into environments.ssr.config as defaults
@@ -1103,11 +1104,7 @@ export async function resolveConfig(
   }
 
   // The client and ssr environment configs can't be removed by the user in the config hook
-  if (
-    !config.environments ||
-    !config.environments.client ||
-    (!config.environments.ssr && !isBuild)
-  ) {
+  if (!config.environments.client || (!config.environments.ssr && !isBuild)) {
     throw new Error(
       'Required environments configuration were stripped out in the config hook',
     )
@@ -1240,7 +1237,7 @@ export async function resolveConfig(
     ? !isBuild || config.build?.ssr
       ? '/'
       : './'
-    : (resolveBaseUrl(config.base, isBuild, logger) ?? configDefaults.base)
+    : resolveBaseUrl(config.base, isBuild, logger)
 
   // resolve cache directory
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
@@ -1573,7 +1570,7 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
  * electron or expects to deploy
  */
 export function resolveBaseUrl(
-  base: UserConfig['base'] = '/',
+  base: UserConfig['base'] = configDefaults.base,
   isBuild: boolean,
   logger: Logger,
 ): string {
@@ -1840,7 +1837,7 @@ async function bundleConfigFile(
   const { text } = result.outputFiles[0]!
   return {
     code: text,
-    dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
+    dependencies: Object.keys(result.metafile.inputs),
   }
 }
 
@@ -1913,11 +1910,9 @@ async function runConfigHook(
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
     const handler = getHookHandler(hook)
-    if (handler) {
-      const res = await handler(conf, configEnv)
-      if (res && res !== conf) {
-        conf = mergeConfig(conf, res)
-      }
+    const res = await handler(conf, configEnv)
+    if (res && res !== conf) {
+      conf = mergeConfig(conf, res)
     }
   }
 
@@ -1934,15 +1929,13 @@ async function runConfigEnvironmentHook(
   for (const p of getSortedPluginsByHook('configEnvironment', plugins)) {
     const hook = p.configEnvironment
     const handler = getHookHandler(hook)
-    if (handler) {
-      for (const name of environmentNames) {
-        const res = await handler(name, environments[name]!, {
-          ...configEnv,
-          isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
-        })
-        if (res) {
-          environments[name] = mergeConfig(environments[name]!, res)
-        }
+    for (const name of environmentNames) {
+      const res = await handler(name, environments[name]!, {
+        ...configEnv,
+        isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
+      })
+      if (res) {
+        environments[name] = mergeConfig(environments[name]!, res)
       }
     }
   }
@@ -1956,7 +1949,7 @@ function optimizeDepsDisabledBackwardCompatibility(
   const optimizeDepsDisabled = optimizeDeps.disabled
   if (optimizeDepsDisabled !== undefined) {
     if (optimizeDepsDisabled === true || optimizeDepsDisabled === 'dev') {
-      const commonjsOptionsInclude = resolved.build?.commonjsOptions?.include
+      const commonjsOptionsInclude = resolved.build.commonjsOptions.include
       const commonjsPluginDisabled =
         Array.isArray(commonjsOptionsInclude) &&
         commonjsOptionsInclude.length === 0
@@ -1976,10 +1969,7 @@ function optimizeDepsDisabledBackwardCompatibility(
     }
   `),
       )
-    } else if (
-      optimizeDepsDisabled === false ||
-      optimizeDepsDisabled === 'build'
-    ) {
+    } else {
       resolved.logger.warn(
         colors.yellow(`(!) Experimental ${optimizeDepsPath}optimizeDeps.disabled and deps pre-bundling during build were removed in Vite 5.1.
     Setting it to ${optimizeDepsDisabled} now has no effect.

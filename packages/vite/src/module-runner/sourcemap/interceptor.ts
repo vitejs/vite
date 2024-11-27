@@ -212,7 +212,7 @@ function mapSourcePosition(position: OriginalMapping) {
   }
 
   // Resolve the source URL relative to the URL of the source map
-  if (sourceMap && sourceMap.map && sourceMap.url) {
+  if (sourceMap.map && sourceMap.url) {
     const originalPosition = getOriginalPosition(sourceMap.map, position)
 
     // Only return the original position if a matching line was found. If no
@@ -351,7 +351,7 @@ function cloneCallSite(frame: CallSite) {
 }
 
 function wrapCallSite(frame: CallSite, state: State) {
-  // provides interface backward compatibility
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- provides interface backward compatibility
   if (state === undefined) state = { nextPosition: null, curPosition: null }
 
   if (frame.isNative()) {

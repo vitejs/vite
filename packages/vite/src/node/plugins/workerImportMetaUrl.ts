@@ -30,9 +30,9 @@ function parseWorkerOptions(
   rawOpts: string,
   optsStartIndex: number,
 ): WorkerOptions {
-  let opts: WorkerOptions = {}
+  let opts: unknown
   try {
-    opts = evalValue<WorkerOptions>(rawOpts)
+    opts = evalValue(rawOpts)
   } catch {
     throw err(
       'Vite is unable to parse the worker options as the value is not static.' +
@@ -52,7 +52,7 @@ function parseWorkerOptions(
     )
   }
 
-  return opts
+  return opts as WorkerOptions
 }
 
 function getWorkerType(raw: string, clean: string, i: number): WorkerType {
@@ -107,7 +107,7 @@ function isIncludeWorkerImportMetaUrl(code: string): boolean {
 
 export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
-  let workerResolver: ResolveIdFn
+  let workerResolver: ResolveIdFn | undefined
 
   const fsResolveOptions: InternalResolveOptions = {
     ...config.resolve,

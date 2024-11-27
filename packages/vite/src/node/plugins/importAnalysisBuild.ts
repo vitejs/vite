@@ -77,6 +77,7 @@ function indexOfMatchInSlice(
 function detectScriptRel() {
   const relList =
     typeof document !== 'undefined' && document.createElement('link').relList
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- `relList` can be not supported
   return relList && relList.supports && relList.supports('modulepreload')
     ? 'modulepreload'
     : 'preload'
@@ -593,7 +594,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 let depsArray =
                   deps.size > 1 ||
                   // main chunk is removed
-                  (hasRemovedPureCssChunk && deps.size > 0)
+                  // `hasRemovedPureCssChunk` can be true
+                  ((hasRemovedPureCssChunk as boolean) && deps.size > 0)
                     ? modulePreload === false
                       ? // CSS deps use the same mechanism as module preloads, so even if disabled,
                         // we still need to pass these deps to the preload helper in dynamic imports.
@@ -716,7 +718,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   '',
                 )
                 chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
-              } else if (buildSourcemap) {
+              } else {
                 const mapAsset = bundle[chunk.fileName + '.map']
                 if (mapAsset && mapAsset.type === 'asset') {
                   mapAsset.source = map.toString()

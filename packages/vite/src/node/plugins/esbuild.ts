@@ -280,7 +280,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
           transformOptions,
           undefined,
           config,
-          server?.watcher,
+          server.watcher,
         )
         if (result.warnings.length) {
           result.warnings.forEach((m) => {

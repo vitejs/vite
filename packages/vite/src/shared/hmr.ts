@@ -81,7 +81,7 @@ export class HMRContext implements ViteHotContext {
     _: string | readonly string[],
     callback: (data: any) => void,
   ): void {
-    this.acceptDeps([this.ownerPath], ([mod]) => callback?.(mod))
+    this.acceptDeps([this.ownerPath], ([mod]) => callback(mod))
   }
 
   dispose(cb: (data: any) => void): void {

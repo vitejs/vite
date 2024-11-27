@@ -55,7 +55,7 @@ export interface LoggerOptions {
 
 // Only initialize the timeFormatter when the timestamp option is used, and
 // reuse it across all loggers
-let timeFormatter: Intl.DateTimeFormat
+let timeFormatter: Intl.DateTimeFormat | undefined
 function getTimeFormatter() {
   timeFormatter ??= new Intl.DateTimeFormat(undefined, {
     hour: 'numeric',

@@ -151,11 +151,11 @@ function getModulesEntrypoints(
     if (!module) {
       continue
     }
-    if (module.importers && !module.importers.size) {
+    if (!module.importers.size) {
       entrypoints.add(module.url)
       continue
     }
-    for (const importer of module.importers || []) {
+    for (const importer of module.importers) {
       getModulesEntrypoints(runner, [importer], visited, entrypoints)
     }
   }
@@ -167,7 +167,7 @@ function findAllEntrypoints(
   entrypoints = new Set<string>(),
 ): Set<string> {
   for (const mod of runner.evaluatedModules.idToModuleMap.values()) {
-    if (mod.importers && !mod.importers.size) {
+    if (!mod.importers.size) {
       entrypoints.add(mod.url)
     }
   }

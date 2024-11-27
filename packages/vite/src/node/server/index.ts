@@ -429,7 +429,7 @@ export async function _createServer(
   const resolvedOutDirs = getResolvedOutDirs(
     config.root,
     config.build.outDir,
-    config.build.rollupOptions?.output,
+    config.build.rollupOptions.output,
   )
   const emptyOutDir = resolveEmptyOutDir(
     config.build.emptyOutDir,
@@ -537,8 +537,7 @@ export async function _createServer(
       return ssrTransform(code, inMap, url, originalCode, {
         json: {
           stringify:
-            config.json?.stringify === true &&
-            config.json.namedExports !== true,
+            config.json.stringify === true && config.json.namedExports !== true,
         },
       })
     },

@@ -133,9 +133,9 @@ function parseGlobOptions(
   optsStartIndex: number,
   logger?: Logger,
 ): ParsedGeneralImportGlobOptions {
-  let opts: GeneralImportGlobOptions = {}
+  let evaledOpts: unknown
   try {
-    opts = evalValue(rawOpts)
+    evaledOpts = evalValue(rawOpts)
   } catch {
     throw err(
       'Vite is unable to parse the glob options as the value is not static',
@@ -143,9 +143,10 @@ function parseGlobOptions(
     )
   }
 
-  if (opts == null) {
+  if (evaledOpts == null) {
     return {}
   }
+  const opts = evaledOpts as GeneralImportGlobOptions
 
   for (const key in opts) {
     if (!(key in knownOptions)) {

@@ -329,7 +329,8 @@ export function createDepsOptimizer(
         optimizationResult = undefined
       }
 
-      if (closed) {
+      // `closed` can be true because of the await optimizationResult.result above
+      if (closed as boolean) {
         currentlyProcessing = false
         processingResult.cancel()
         resolveEnqueuedProcessingPromises()

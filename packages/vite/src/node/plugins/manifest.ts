@@ -148,7 +148,7 @@ export function manifestPlugin(): Plugin {
         const chunk = bundle[file]!
         if (chunk.type === 'chunk') {
           manifest[getChunkName(chunk)] = createChunk(chunk)
-        } else if (chunk.type === 'asset' && chunk.names.length > 0) {
+        } else if (chunk.names.length > 0) {
           // Add every unique asset to the manifest, keyed by its original name
           const src =
             chunk.originalFileNames.length > 0
@@ -175,7 +175,7 @@ export function manifestPlugin(): Plugin {
       }
 
       state.outputCount++
-      const output = buildOptions.rollupOptions?.output
+      const output = buildOptions.rollupOptions.output
       const outputLength = Array.isArray(output) ? output.length : 1
       if (state.outputCount >= outputLength) {
         this.emitFile({

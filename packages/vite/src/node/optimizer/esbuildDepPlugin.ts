@@ -57,7 +57,7 @@ export function esbuildDepPlugin(
 
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = extensions
-    ? externalTypes.filter((type) => !extensions?.includes('.' + type))
+    ? externalTypes.filter((type) => !extensions.includes('.' + type))
     : externalTypes
 
   // use separate package cache for optimizer as it caches paths around node_modules

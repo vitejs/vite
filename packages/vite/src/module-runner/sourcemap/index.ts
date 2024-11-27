@@ -14,6 +14,7 @@ export function enableSourceMapSupport(runner: ModuleRunner): () => void {
         `Cannot use "sourcemapInterceptor: 'node'" because "process.setSourceMapsEnabled" function is not available. Please use Node >= 16.6.0.`,
       )
     }
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- process.sourceMapsEnabled is not available in Node < 20.7.0
     const isEnabledAlready = process.sourceMapsEnabled ?? false
     process.setSourceMapsEnabled(true)
     return () => !isEnabledAlready && process.setSourceMapsEnabled(false)

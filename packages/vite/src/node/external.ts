@@ -61,7 +61,7 @@ export function createIsConfiguredAsExternal(
     !(Array.isArray(noExternal) && noExternal.length === 0) &&
     createFilter(undefined, noExternal, { resolve: false })
 
-  const targetConditions = resolve.externalConditions || []
+  const targetConditions = resolve.externalConditions
 
   const resolveOptions: InternalResolveOptions = {
     ...resolve,

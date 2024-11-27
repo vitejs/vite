@@ -176,9 +176,6 @@ function extractImportedBindings(
     specifier: match.groups!.specifier!,
   }
   const parsed = parseStaticImport(staticImport)
-  if (!parsed) {
-    return
-  }
   if (parsed.namespacedImport) {
     bindings.add('*')
   }
@@ -224,7 +221,7 @@ function extractImportedBindings(
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
-  const enablePartialAccept = config.experimental?.hmrPartialAccept
+  const enablePartialAccept = config.experimental.hmrPartialAccept
   const matchAlias = getAliasPatternMatcher(config.resolve.alias)
 
   let _env: string | undefined
@@ -308,6 +305,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         return source
       }
 
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- there's many false positives */
       let hasHMR = false
       let isSelfAccepting = false
       let hasEnv = false
@@ -355,7 +353,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           throw e
         })
 
-        if (!resolved || resolved.meta?.['vite:alias']?.noResolved) {
+        if (!resolved || resolved.meta['vite:alias']?.noResolved) {
           // in ssr, we should let node handle the missing modules
           if (ssr) {
             return [url, url]
@@ -817,6 +815,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )}`,
       )
 
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
       if (s) {
         return transformStableResult(s, importer, config)
       } else {
@@ -989,7 +988,7 @@ export function transformCjsImport(
         })
       } else if (spec.type === 'ImportNamespaceSpecifier') {
         importNames.push({ importedName: '*', localName: spec.local.name })
-      } else if (spec.type === 'ExportSpecifier') {
+      } else {
         // for ExportSpecifier, local name is same as imported name
         // prefix the variable name to avoid clashing with other local variables
         const importedName = getIdentifierNameOrLiteralValue(

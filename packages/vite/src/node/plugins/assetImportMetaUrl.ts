@@ -32,7 +32,7 @@ import { hasViteIgnoreRE } from './importAnalysis'
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const { publicDir } = config
-  let assetResolver: ResolveIdFn
+  let assetResolver: ResolveIdFn | undefined
 
   const fsResolveOptions: InternalResolveOptions = {
     ...config.resolve,

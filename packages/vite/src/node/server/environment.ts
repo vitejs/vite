@@ -234,12 +234,12 @@ export class DevEnvironment extends BaseEnvironment {
   async close(): Promise<void> {
     this._closing = true
 
-    this._crawlEndFinder?.cancel()
+    this._crawlEndFinder.cancel()
     await Promise.allSettled([
       this.pluginContainer.close(),
       this.depsOptimizer?.close(),
       // WebSocketServer is independent of HotChannel and should not be closed on environment close
-      isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close?.(),
+      isWebSocketServer in this.hot ? Promise.resolve() : this.hot.close(),
       (async () => {
         while (this._pendingRequests.size > 0) {
           await Promise.allSettled(

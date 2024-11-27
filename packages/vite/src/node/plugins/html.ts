@@ -419,9 +419,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location, ignoring empty attributes and
         // attributes that directly reference named output.
-        const namedOutput = Object.keys(
-          config?.build?.rollupOptions?.input || {},
-        )
+        const namedOutput = Object.keys(config.build.rollupOptions.input || {})
         const processAssetUrl = async (url: string, shouldInline?: boolean) => {
           if (
             url !== '' && // Empty attribute
@@ -551,7 +549,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   }
                 })(),
               )
-            } else if (attr.type === 'src') {
+            } else {
               const url = decodeURI(attr.value)
               if (checkPublicFile(url, config)) {
                 overwriteAttrValue(
@@ -654,7 +652,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
         isAsyncScriptMap.get(config)!.set(id, everyScriptIsAsync)
 
-        if (someScriptsAreAsync && someScriptsAreDefer) {
+        // `someScriptsAreAsync` and `someScriptsAreDefer` can be true
+        if (
+          (someScriptsAreAsync as boolean) &&
+          (someScriptsAreDefer as boolean)
+        ) {
           config.logger.warn(
             `\nMixed async and defer script modules in ${id}, output script will fallback to defer. Every script, including inline ones, need to be marked as async for your output script to be async.`,
           )
@@ -705,7 +707,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         if (
           modulePreload !== false &&
           modulePreload.polyfill &&
-          (someScriptsAreAsync || someScriptsAreDefer)
+          // `someScriptsAreAsync` and `someScriptsAreDefer` can be true
+          ((someScriptsAreAsync as boolean) || (someScriptsAreDefer as boolean))
         ) {
           js = `import "${modulePreloadPolyfillId}";\n${js}`
         }
