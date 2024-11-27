@@ -16,7 +16,7 @@
 
 ![Vite 6 is out!](../../docs/public/og-image-announcing-vite6.png)
 
-Today, we're taking another big step in Vite's story. The Vite [team](/team), [contributors](https://github.com/vitejs/vite/graphs/contributors), and ecosystem partners are excited to announce the release of the next Vite major:
+Today, we're taking another big step in Vite's story. The Vite [team](https://vite.dev/team), [contributors](https://github.com/vitejs/vite/graphs/contributors), and ecosystem partners are excited to announce the release of the next Vite major:
 
 - **[Vite 6.0 announcement blog post](https://vite.dev/blog/announcing-vite6.html)**
 - [Docs](https://vite.dev/)
