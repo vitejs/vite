@@ -253,11 +253,14 @@ async function handleMessage(payload: HotPayload) {
         if (payload.path && payload.path.endsWith('.html')) {
           // if html file is edited, only reload the page if the browser is
           // currently on that page.
+          if (payload.path === '/index.html') {
+            pageReload()
+            return
+          }
           const pagePath = decodeURI(location.pathname)
           const payloadPath = base + payload.path.slice(1)
           if (
             pagePath === payloadPath ||
-            payload.path === '/index.html' ||
             (pagePath.endsWith('/') && pagePath + 'index.html' === payloadPath)
           ) {
             pageReload()
