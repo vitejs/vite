@@ -395,7 +395,8 @@ async function init() {
           }),
         },
         {
-          type: 'select',
+          type: (framework: Framework | /* package name */ string) =>
+            typeof framework === 'object' ? 'select' : null,
           name: 'variant',
           message: reset('Select a variant:'),
           choices: (framework: Framework) =>
