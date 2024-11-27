@@ -61,7 +61,7 @@ const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
     case 'local':
       return [
         {
-          text: 'Vite 5 Docs (release)',
+          text: 'Vite 6 Docs (release)',
           link: 'https://vite.dev',
         },
         ...oldVersions,
