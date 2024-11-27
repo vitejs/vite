@@ -1022,7 +1022,7 @@ export const serverConfigDefaults = Object.freeze({
   host: 'localhost',
   https: undefined,
   open: false,
-  proxy: {},
+  proxy: undefined,
   cors: true,
   headers: {},
   // hmr
