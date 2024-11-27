@@ -1,3 +1,17 @@
+## <small>6.0.1 (2024-11-27)</small>
+
+* fix: default empty server `proxy` prevents starting http2 server (#18788) ([bbaf514](https://github.com/vitejs/vite/commit/bbaf514fb718952e0f17a15545c593125f1d1b9c)), closes [#18788](https://github.com/vitejs/vite/issues/18788)
+* fix(manifest): do not override existing js manifest entry  (#18776) ([3b0837e](https://github.com/vitejs/vite/commit/3b0837e0b997e14dacc347719353b8b0cea35bda)), closes [#18776](https://github.com/vitejs/vite/issues/18776)
+* fix(server): close _ssrCompatModuleRunner on server close (#18784) ([9b4c410](https://github.com/vitejs/vite/commit/9b4c410dddb80c8858549355e175735976a82134)), closes [#18784](https://github.com/vitejs/vite/issues/18784)
+* fix(server): skip hot channel client normalization for wsServer  (#18782) ([cc7670a](https://github.com/vitejs/vite/commit/cc7670abaffeda1338cf3acfef2bc41a38c223a0)), closes [#18782](https://github.com/vitejs/vite/issues/18782)
+* fix(worker): fix `applyToEnvironment` hooks on worker build (#18793) ([0c6cdb0](https://github.com/vitejs/vite/commit/0c6cdb0f88d32ce041272977e786006008223f44)), closes [#18793](https://github.com/vitejs/vite/issues/18793)
+* chore: flat v6 config file (#18777) ([c7b3308](https://github.com/vitejs/vite/commit/c7b330832675ee6385ee1a8750762e496c8e18e6)), closes [#18777](https://github.com/vitejs/vite/issues/18777)
+* chore: split changelog (#18787) ([8542632](https://github.com/vitejs/vite/commit/8542632b3b205b61999b6d998928d5fb17ba90c4)), closes [#18787](https://github.com/vitejs/vite/issues/18787)
+* chore: update changelog for v6 (#18773) ([b254fac](https://github.com/vitejs/vite/commit/b254fac4aa35a3522aeafb3259e60acd050aeb51)), closes [#18773](https://github.com/vitejs/vite/issues/18773)
+* revert: update moduleResolution value casing (#18409) (#18774) ([b0fc6e3](https://github.com/vitejs/vite/commit/b0fc6e3c2591a30360d3714263cf7cc0e2acbfdf)), closes [#18409](https://github.com/vitejs/vite/issues/18409) [#18774](https://github.com/vitejs/vite/issues/18774)
+
+
+
 ## 6.0.0 (2024-11-26)
 
 ![Vite 6 is out!](../../docs/public/og-image-announcing-vite6.png)
