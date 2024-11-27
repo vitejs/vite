@@ -34,7 +34,7 @@ import {
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
-import { configDefaults, resolveConfig } from './config'
+import { resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { DEFAULT_PREVIEW_PORT } from './constants'
 import type { RequiredExceptFor } from './typeUtils'
@@ -246,10 +246,9 @@ export async function preview(
   }
 
   const hostname = await resolveHostname(options.host)
-  const port = options.port ?? configDefaults.preview.port
 
   await httpServerStart(httpServer, {
-    port,
+    port: options.port,
     strictPort: options.strictPort,
     host: hostname.host,
     logger,
