@@ -13,7 +13,11 @@ import { parseAst } from 'rollup/parseAst'
 import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import type { PartialResolvedId, RollupError } from 'rollup'
+import type {
+  CustomPluginOptions,
+  PartialResolvedId,
+  RollupError,
+} from 'rollup'
 import type { Identifier, Literal } from 'estree'
 import {
   CLIENT_DIR,
@@ -305,7 +309,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         return source
       }
 
-      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- there's many false positives */
       let hasHMR = false
       let isSelfAccepting = false
       let hasEnv = false
@@ -353,8 +356,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           throw e
         })
 
-        // resolved.meta does not exist in dev
-        if (!resolved || resolved.meta?.['vite:alias']?.noResolved) {
+        if (
+          !resolved ||
+          // resolved.meta does not exist in dev
+          (resolved.meta as CustomPluginOptions | undefined)?.['vite:alias']
+            ?.noResolved
+        ) {
           // in ssr, we should let node handle the missing modules
           if (ssr) {
             return [url, url]
@@ -716,6 +723,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const isClassicWorker =
         importer.includes(WORKER_FILE_ID) && importer.includes('type=classic')
 
+      /* eslint-disable @typescript-eslint/no-unnecessary-condition -- there's many false positives */
       if (hasEnv && !isClassicWorker) {
         // inject import.meta.env
         str().prepend(getEnv(ssr))
@@ -806,6 +814,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           handlePrunedModules(prunedImports, environment)
         }
       }
+      /* eslint-enable @typescript-eslint/no-unnecessary-condition -- there's many false positives */
 
       debug?.(
         `${timeFrom(msAtStart)} ${colors.dim(
@@ -816,7 +825,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         )}`,
       )
 
-      /* eslint-enable @typescript-eslint/no-unnecessary-condition */
       if (s) {
         return transformStableResult(s, importer, config)
       } else {
@@ -990,6 +998,8 @@ export function transformCjsImport(
       } else if (spec.type === 'ImportNamespaceSpecifier') {
         importNames.push({ importedName: '*', localName: spec.local.name })
       } else {
+        spec.type satisfies 'ExportSpecifier' // exhaustiveness check
+
         // for ExportSpecifier, local name is same as imported name
         // prefix the variable name to avoid clashing with other local variables
         const importedName = getIdentifierNameOrLiteralValue(

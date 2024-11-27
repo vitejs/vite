@@ -123,6 +123,8 @@ async function bundleWorkerEntry(
       if (outputChunk.type === 'asset') {
         saveEmitWorkerAsset(config, outputChunk)
       } else {
+        outputChunk.type satisfies 'chunk' // exhaustiveness check
+
         saveEmitWorkerAsset(config, {
           fileName: outputChunk.fileName,
           originalFileName: null,
@@ -279,6 +281,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         } else if (workerType === 'module') {
           injectEnv = `import ${scriptPath}\n`
         } else {
+          workerType satisfies 'ignore' // exhaustiveness check
+
           if (isBuild) {
             injectEnv = ''
           } else {

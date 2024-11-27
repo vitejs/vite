@@ -102,6 +102,7 @@ export function getCodeWithSourcemap(
   if (type === 'js') {
     code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
   } else {
+    ;(type) satisfies 'css' // exhaustiveness check
     code += `\n/*# sourceMappingURL=${genSourceMapUrl(map)} */`
   }
 

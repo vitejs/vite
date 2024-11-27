@@ -1970,6 +1970,8 @@ function optimizeDepsDisabledBackwardCompatibility(
   `),
       )
     } else {
+      optimizeDepsDisabled satisfies false | 'build' // exhaustiveness check
+
       resolved.logger.warn(
         colors.yellow(`(!) Experimental ${optimizeDepsPath}optimizeDeps.disabled and deps pre-bundling during build were removed in Vite 5.1.
     Setting it to ${optimizeDepsDisabled} now has no effect.

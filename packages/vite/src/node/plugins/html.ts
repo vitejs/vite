@@ -550,6 +550,8 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 })(),
               )
             } else {
+              attr.type satisfies 'src' // exhaustiveness check
+
               const url = decodeURI(attr.value)
               if (checkPublicFile(url, config)) {
                 overwriteAttrValue(

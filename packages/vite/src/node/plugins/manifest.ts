@@ -149,6 +149,8 @@ export function manifestPlugin(): Plugin {
         if (chunk.type === 'chunk') {
           manifest[getChunkName(chunk)] = createChunk(chunk)
         } else if (chunk.names.length > 0) {
+          chunk.type satisfies 'asset' // exhaustiveness check
+
           // Add every unique asset to the manifest, keyed by its original name
           const src =
             chunk.originalFileNames.length > 0
