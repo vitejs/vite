@@ -1859,18 +1859,20 @@ async function loadConfigFromBundledFile(
   // write it to disk, load it with native Node ESM, then delete the file.
   if (isESM) {
     const nodeModulesDir = findNearestNodeModules(path.dirname(fileName))
-    if (nodeModulesDir) {
+    const isDeno = !!(globalThis as any).Deno
+    if (nodeModulesDir && !isDeno) {
       await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
         recursive: true,
       })
     }
     const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
-    const tempFileName = nodeModulesDir
-      ? path.resolve(
-          nodeModulesDir,
-          `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
-        )
-      : `${fileName}.${hash}.mjs`
+    const tempFileName =
+      nodeModulesDir && !isDeno
+        ? path.resolve(
+            nodeModulesDir,
+            `.vite-temp/${path.basename(fileName)}.${hash}.mjs`,
+          )
+        : `${fileName}.${hash}.mjs`
     await fsp.writeFile(tempFileName, bundledCode)
     try {
       return (await import(pathToFileURL(tempFileName).href)).default
