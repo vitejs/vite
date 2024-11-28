@@ -882,6 +882,7 @@ function resolveEnvironmentResolveOptions(
         consumer === 'client' || isSsrTargetWebworkerEnvironment
           ? DEFAULT_CLIENT_CONDITIONS
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
+      enableBuiltinNoExternalCheck: !!isSsrTargetWebworkerEnvironment,
     },
     resolve ?? {},
   )

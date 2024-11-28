@@ -96,6 +96,10 @@ export interface EnvironmentResolveOptions {
    * @experimental
    */
   external?: string[] | true
+  /**
+   * @internal
+   */
+  enableBuiltinNoExternalCheck?: boolean
 }
 
 export interface ResolveOptions extends EnvironmentResolveOptions {
@@ -420,6 +424,7 @@ export function resolvePlugin(
         if (isBuiltin(id)) {
           if (currentEnvironmentOptions.consumer === 'server') {
             if (
+              options.enableBuiltinNoExternalCheck &&
               options.noExternal === true &&
               // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
               // only if the id is explicitly listed in external, we will externalize it and skip this error.
