@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
 import { describe, expect, test } from 'vitest'
+import { loadConfigFromFile } from 'vite'
 import { inlineImport } from '../ssr/inlineImport'
 import { slash } from '../../shared/utils'
 
@@ -37,5 +38,27 @@ describe('importing files using inlined environment', () => {
       ],
     })
     expect(dependencies).toEqual([slash(fixture('plugin.ts'))])
+  })
+
+  test('can import vite config that imports a TS external module', async () => {
+    const { module, dependencies } = await inlineImport<
+      typeof import('./fixtures/inline-import/vite.config.outside-pkg-import.mjs')
+    >(fixture('vite.config.outside-pkg-import.mts'))
+
+    expect(module.default.__injected).toBe(true)
+    expect(dependencies).toEqual([
+      slash(resolve(import.meta.dirname, './packages/parent/index.ts')),
+    ])
+
+    // confirm that it fails with a bundle approach
+    await expect(async () => {
+      const root = resolve(import.meta.dirname, './fixtures/inline-import')
+      await loadConfigFromFile(
+        { mode: 'production', command: 'serve' },
+        resolve(root, './vite.config.outside-pkg-import.mts'),
+        root,
+        'silent',
+      )
+    }).rejects.toThrow('Unknown file extension ".ts"')
   })
 })

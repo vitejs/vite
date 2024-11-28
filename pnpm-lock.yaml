@@ -420,6 +420,9 @@ importers:
       '@vitejs/test-dep-conditions':
         specifier: file:./fixtures/test-dep-conditions
         version: file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions
+      parent:
+        specifier: link:./packages/parent
+        version: link:packages/parent
 
   packages/vite/src/node/__tests__/fixtures/cjs-ssr-dep: {}
 
@@ -427,11 +430,19 @@ importers:
 
   packages/vite/src/node/__tests__/fixtures/test-dep-conditions: {}
 
+  packages/vite/src/node/__tests__/packages/child: {}
+
   packages/vite/src/node/__tests__/packages/module: {}
 
   packages/vite/src/node/__tests__/packages/name: {}
 
   packages/vite/src/node/__tests__/packages/noname: {}
+
+  packages/vite/src/node/__tests__/packages/parent:
+    dependencies:
+      child:
+        specifier: link:../child
+        version: link:../child
 
   packages/vite/src/node/server/__tests__/fixtures/lerna/nested: {}
 

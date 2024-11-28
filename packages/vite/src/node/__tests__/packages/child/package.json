@@ -1,0 +1,5 @@
+{
+  "name": "child",
+  "type": "module",
+  "main": "./index.js"
+}
