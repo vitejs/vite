@@ -173,8 +173,11 @@ interface ResolvePluginOptions {
 }
 
 export interface InternalResolveOptions
-  extends Required<ResolveOptions>,
-    ResolvePluginOptions {}
+  extends Required<Omit<ResolveOptions, 'enableBuiltinNoExternalCheck'>>,
+    ResolvePluginOptions {
+  /** @internal this is always optional for backward compat */
+  enableBuiltinNoExternalCheck?: boolean
+}
 
 // Defined ResolveOptions are used to overwrite the values for all environments
 // It is used when creating custom resolvers (for CSS, scanning, etc)
