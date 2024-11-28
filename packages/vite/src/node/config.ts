@@ -1639,7 +1639,7 @@ export async function loadConfigFromFile(
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
-  configLoader = 'bundle',
+  configLoader: 'bundle' | 'runner' = 'bundle',
 ): Promise<{
   path: string
   config: UserConfig
@@ -1736,6 +1736,8 @@ async function bundleConfigFile(
   fileName: string,
   isESM: boolean,
 ): Promise<{ code: string; dependencies: string[] }> {
+  const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
+    .default
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
@@ -1774,7 +1776,10 @@ async function bundleConfigFile(
               preferRelative: false,
               tryIndex: true,
               mainFields: [],
-              conditions: ['node'],
+              conditions: [
+                'node',
+                ...(isModuleSyncConditionEnabled ? ['module-sync'] : []),
+              ],
               externalConditions: [],
               external: [],
               noExternal: [],

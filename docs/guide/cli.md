@@ -65,6 +65,7 @@ vite build [root]
 | `--base <path>`                | Public base path (default: `/`) (`string`)                                                                          |
 | `-l, --logLevel <level>`       | Info \| warn \| error \| silent (`string`)                                                                          |
 | `--clearScreen`                | Allow/disable clear screen when logging (`boolean`)                                                                 |
+| `--configLoader <loader>`      | Use `bundle` to bundle the config with esbuild or `runner` to process it on the fly (default: `bundle`)             |
 | `--profile`                    | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks))  |
 | `-d, --debug [feat]`           | Show debug logs (`string \| boolean`)                                                                               |
 | `-f, --filter <filter>`        | Filter debug logs (`string`)                                                                                        |
@@ -86,17 +87,18 @@ vite optimize [root]
 
 #### Options
 
-| Options                  |                                                                   |
-| ------------------------ | ----------------------------------------------------------------- |
-| `--force`                | Force the optimizer to ignore the cache and re-bundle (`boolean`) |
-| `-c, --config <file>`    | Use specified config file (`string`)                              |
-| `--base <path>`          | Public base path (default: `/`) (`string`)                        |
-| `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)                        |
-| `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)               |
-| `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                             |
-| `-f, --filter <filter>`  | Filter debug logs (`string`)                                      |
-| `-m, --mode <mode>`      | Set env mode (`string`)                                           |
-| `-h, --help`             | Display available CLI options                                     |
+| Options                   |                                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `--force`                 | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                       |
+| `-c, --config <file>`     | Use specified config file (`string`)                                                                    |
+| `--base <path>`           | Public base path (default: `/`) (`string`)                                                              |
+| `-l, --logLevel <level>`  | Info \| warn \| error \| silent (`string`)                                                              |
+| `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                     |
+| `--configLoader <loader>` | Use `bundle` to bundle the config with esbuild or `runner` to process it on the fly (default: `bundle`) |
+| `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                   |
+| `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                            |
+| `-m, --mode <mode>`       | Set env mode (`string`)                                                                                 |
+| `-h, --help`              | Display available CLI options                                                                           |
 
 ### `vite preview`
 
@@ -110,18 +112,19 @@ vite preview [root]
 
 #### Options
 
-| Options                  |                                                      |
-| ------------------------ | ---------------------------------------------------- |
-| `--host [host]`          | Specify hostname (`string`)                          |
-| `--port <port>`          | Specify port (`number`)                              |
-| `--strictPort`           | Exit if specified port is already in use (`boolean`) |
-| `--open [path]`          | Open browser on startup (`boolean \| string`)        |
-| `--outDir <dir>`         | Output directory (default: `dist`)(`string`)         |
-| `-c, --config <file>`    | Use specified config file (`string`)                 |
-| `--base <path>`          | Public base path (default: `/`) (`string`)           |
-| `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)           |
-| `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)  |
-| `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                |
-| `-f, --filter <filter>`  | Filter debug logs (`string`)                         |
-| `-m, --mode <mode>`      | Set env mode (`string`)                              |
-| `-h, --help`             | Display available CLI options                        |
+| Options                   |                                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `--host [host]`           | Specify hostname (`string`)                                                                             |
+| `--port <port>`           | Specify port (`number`)                                                                                 |
+| `--strictPort`            | Exit if specified port is already in use (`boolean`)                                                    |
+| `--open [path]`           | Open browser on startup (`boolean \| string`)                                                           |
+| `--outDir <dir>`          | Output directory (default: `dist`)(`string`)                                                            |
+| `-c, --config <file>`     | Use specified config file (`string`)                                                                    |
+| `--base <path>`           | Public base path (default: `/`) (`string`)                                                              |
+| `-l, --logLevel <level>`  | Info \| warn \| error \| silent (`string`)                                                              |
+| `--clearScreen`           | Allow/disable clear screen when logging (`boolean`)                                                     |
+| `--configLoader <loader>` | Use `bundle` to bundle the config with esbuild or `runner` to process it on the fly (default: `bundle`) |
+| `-d, --debug [feat]`      | Show debug logs (`string \| boolean`)                                                                   |
+| `-f, --filter <filter>`   | Filter debug logs (`string`)                                                                            |
+| `-m, --mode <mode>`       | Set env mode (`string`)                                                                                 |
+| `-h, --help`              | Display available CLI options                                                                           |

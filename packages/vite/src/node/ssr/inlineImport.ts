@@ -16,6 +16,8 @@ export async function inlineImport<T>(
   moduleId: string,
   inlineConfig?: InlineConfig,
 ): Promise<InlineImportResult<T>> {
+  const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
+    .default
   const environment = createRunnableDevEnvironment(
     'inline',
     // TODO: provide a dummy config?
@@ -29,10 +31,15 @@ export async function inlineImport<T>(
             },
             resolve: {
               external: true,
+              mainFields: [],
+              conditions: [
+                'node',
+                ...(isModuleSyncConditionEnabled ? ['module-sync'] : []),
+              ],
             },
           },
         },
-      }),
+      } satisfies InlineConfig),
       'serve',
     ),
     {

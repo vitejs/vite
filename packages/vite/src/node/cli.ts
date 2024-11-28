@@ -23,7 +23,7 @@ interface GlobalCLIOptions {
   l?: LogLevel
   logLevel?: LogLevel
   clearScreen?: boolean
-  configLoader?: string
+  configLoader?: 'bundle' | 'runner'
   d?: boolean | string
   debug?: boolean | string
   f?: string
@@ -186,7 +186,7 @@ cli
         base: options.base,
         mode: options.mode,
         configFile: options.config,
-        configLoader: options.configLoader as undefined,
+        configLoader: options.configLoader,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         optimizeDeps: { force: options.force },
@@ -311,7 +311,7 @@ cli
           base: options.base,
           mode: options.mode,
           configFile: options.config,
-          configLoader: options.configLoader as undefined,
+          configLoader: options.configLoader,
           logLevel: options.logLevel,
           clearScreen: options.clearScreen,
           build: buildOptions,
@@ -348,7 +348,7 @@ cli
             root,
             base: options.base,
             configFile: options.config,
-            configLoader: options.configLoader as undefined,
+            configLoader: options.configLoader,
             logLevel: options.logLevel,
             mode: options.mode,
           },
@@ -391,7 +391,7 @@ cli
           root,
           base: options.base,
           configFile: options.config,
-          configLoader: options.configLoader as undefined,
+          configLoader: options.configLoader,
           logLevel: options.logLevel,
           mode: options.mode,
           build: {
