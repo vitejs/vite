@@ -82,3 +82,8 @@ test('nested css with relative asset', async () => {
     isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
 })
+
+test('aliased asset', async () => {
+  const bg = await getBg('.css-url-aliased')
+  expect(bg).toMatch('data:image/svg+xml,')
+})
