@@ -1,11 +1,9 @@
 <template>
   <div class="old-document">
     <p>
-      This documentation covers Vite 5 <strong>(old version)</strong>. For the latest
-      version, see
-      <a href="https://vite.dev" class="new-document-link"
-        >https://vite.dev</a
-      >.
+      This documentation covers Vite 5 <strong>(old version)</strong>. For the
+      latest version, see
+      <a href="https://vite.dev" class="new-document-link">https://vite.dev</a>.
     </p>
   </div>
 </template>
@@ -30,7 +28,7 @@
   justify-content: center;
   align-items: center;
   color: var(--vp-c-text-1);
-  background: var(--vp-c-danger-3);
+  background: var(--vp-c-brand-lightest);
   z-index: var(--vp-z-index-nav);
 
   .new-document-link {
@@ -39,6 +37,11 @@
     &:hover {
       color: var(--vp-c-text-2);
     }
+  }
+}
+.dark {
+  .old-document {
+    background: var(--vp-c-brand-darker);
   }
 }
 </style>
