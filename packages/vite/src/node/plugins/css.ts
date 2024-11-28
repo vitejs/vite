@@ -939,6 +939,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             name: getCssBundleName(),
             type: 'asset',
             source: extractedCss,
+            // this file is an implicit entry point, use `style.css` as the original file name
+            // this name is also used as a key in the manifest
+            originalFileName: 'style.css',
           })
         }
       }
