@@ -29,7 +29,7 @@ Vite uses [dotenv](https://github.com/motdotla/dotenv) to load additional enviro
 
 An env file for a specific mode (e.g. `.env.production`) will take higher priority than a generic one (e.g. `.env`).
 
-⚠️ When running with a mode specified, Vite will load _both_ `.env` and `.env.[mode]` files. If the same variable is defined in both files, the value in `.env.[mode]` will take precedence. Variables defined only in `.env` will also be passed into the environment unless explicitly overridden in `.env.[mode]`.
+Vite will always load `.env` and `.env.local` in addition to the mode-specific `.env.[mode]` file. Variables declared in mode-specific files will take precedence over those in generic files, but variables defined only in `.env` or `.env.local` will still be available in the environment.
 
 In addition, environment variables that already exist when Vite is executed have the highest priority and will not be overwritten by `.env` files. For example, when running `VITE_SOME_KEY=123 vite build`.
 
