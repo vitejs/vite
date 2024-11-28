@@ -29,7 +29,7 @@
   align-items: center;
   color: var(--vp-c-text-1);
   background: var(--vp-c-brand-lightest);
-  z-index: var(--vp-z-index-nav);
+  z-index: var(--vp-z-index-layout-top);
 
   .new-document-link {
     text-decoration: underline;
