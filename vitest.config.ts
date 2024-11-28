@@ -14,6 +14,7 @@ export default defineConfig({
       './playground-temp/**/*.*',
     ],
     deps: {
+      // we specify 'packages' so Vitest doesn't inline the files
       moduleDirectories: ['node_modules', 'packages'],
     },
     testTimeout: 20000,
