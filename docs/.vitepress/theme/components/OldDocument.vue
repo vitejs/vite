@@ -1,10 +1,10 @@
 <template>
   <div class="old-document">
     <p>
-      This documentation describes <b>the old</b> Vite version. For the latest
+      This documentation covers Vite 5 <strong>(old version)</strong>. For the latest
       version, see
-      <a href="https://vite.dev/" class="new-document-link"
-        >the latest document</a
+      <a href="https://vite.dev" class="new-document-link"
+        >https://vite.dev</a
       >.
     </p>
   </div>
