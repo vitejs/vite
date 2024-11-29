@@ -4,7 +4,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
-import { builtinModules, createRequire } from 'node:module'
+import { createRequire } from 'node:module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import { build } from 'esbuild'
@@ -621,7 +621,7 @@ export const configDefaults = Object.freeze({
     dedupe: [],
     /** @experimental */
     noExternal: [],
-    // external
+    external: [],
     preserveSymlinks: false,
     alias: [],
   },
@@ -882,10 +882,7 @@ function resolveEnvironmentResolveOptions(
         consumer === 'client' || isSsrTargetWebworkerEnvironment
           ? DEFAULT_CLIENT_CONDITIONS
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
-      external:
-        consumer === 'server' && !isSsrTargetWebworkerEnvironment
-          ? builtinModules
-          : [],
+      enableBuiltinNoExternalCheck: !!isSsrTargetWebworkerEnvironment,
     },
     resolve ?? {},
   )
