@@ -20,3 +20,6 @@ export type GetHookContextMap<Plugin> = {
 
 type RollupPluginHooksContext = GetHookContextMap<RollupPlugin>
 export type RollupPluginHooks = NonNeverKeys<RollupPluginHooksContext>
+
+export type RequiredExceptFor<T, K extends keyof T> = Pick<T, K> &
+  Required<Omit<T, K>>

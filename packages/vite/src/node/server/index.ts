@@ -56,6 +56,7 @@ import {
 } from '../watch'
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
+import type { RequiredExceptFor } from '../typeUtils'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -180,7 +181,20 @@ export interface ServerOptions extends CommonServerOptions {
 }
 
 export interface ResolvedServerOptions
-  extends Omit<ServerOptions, 'fs' | 'middlewareMode' | 'sourcemapIgnoreList'> {
+  extends Omit<
+    RequiredExceptFor<
+      ServerOptions,
+      | 'host'
+      | 'https'
+      | 'proxy'
+      | 'hmr'
+      | 'ws'
+      | 'watch'
+      | 'origin'
+      | 'hotUpdateEnvironments'
+    >,
+    'fs' | 'middlewareMode' | 'sourcemapIgnoreList'
+  > {
   fs: Required<FileSystemServeOptions>
   middlewareMode: NonNullable<ServerOptions['middlewareMode']>
   sourcemapIgnoreList: Exclude<

@@ -33,6 +33,10 @@ import type {
   SassModernPreprocessBaseOptions,
   StylusPreprocessorBaseOptions,
 } from 'types/internal/cssPreprocessorOptions'
+import type {
+  TransformAttributeResult as LightningCssTransformAttributeResult,
+  TransformResult as LightningCssTransformResult,
+} from 'lightningcss'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -939,6 +943,9 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             name: getCssBundleName(),
             type: 'asset',
             source: extractedCss,
+            // this file is an implicit entry point, use `style.css` as the original file name
+            // this name is also used as a key in the manifest
+            originalFileName: 'style.css',
           })
         }
       }
@@ -3111,60 +3118,71 @@ async function compileLightningCSS(
   const toAbsolute = (filePath: string) =>
     path.isAbsolute(filePath) ? filePath : path.join(config.root, filePath)
 
-  const res = styleAttrRE.test(id)
-    ? (await importLightningCSS()).transformStyleAttribute({
-        filename,
-        code: Buffer.from(src),
-        targets: config.css?.lightningcss?.targets,
-        minify: config.isProduction && !!config.build.cssMinify,
-        analyzeDependencies: true,
-      })
-    : await (
-        await importLightningCSS()
-      ).bundleAsync({
-        ...config.css?.lightningcss,
-        filename,
-        resolver: {
-          read(filePath) {
-            if (filePath === filename) {
-              return src
-            }
-            // This happens with html-proxy (#13776)
-            if (!filePath.endsWith('.css')) {
-              return src
-            }
-            return fs.readFileSync(toAbsolute(filePath), 'utf-8')
-          },
-          async resolve(id, from) {
-            const publicFile = checkPublicFile(
-              id,
-              environment.getTopLevelConfig(),
-            )
-            if (publicFile) {
-              return publicFile
-            }
+  let res: LightningCssTransformAttributeResult | LightningCssTransformResult
+  try {
+    res = styleAttrRE.test(id)
+      ? (await importLightningCSS()).transformStyleAttribute({
+          filename,
+          code: Buffer.from(src),
+          targets: config.css?.lightningcss?.targets,
+          minify: config.isProduction && !!config.build.cssMinify,
+          analyzeDependencies: true,
+        })
+      : await (
+          await importLightningCSS()
+        ).bundleAsync({
+          ...config.css?.lightningcss,
+          filename,
+          resolver: {
+            read(filePath) {
+              if (filePath === filename) {
+                return src
+              }
+              // This happens with html-proxy (#13776)
+              if (!filePath.endsWith('.css')) {
+                return src
+              }
+              return fs.readFileSync(toAbsolute(filePath), 'utf-8')
+            },
+            async resolve(id, from) {
+              const publicFile = checkPublicFile(
+                id,
+                environment.getTopLevelConfig(),
+              )
+              if (publicFile) {
+                return publicFile
+              }
 
-            const resolved = await getAtImportResolvers(
-              environment.getTopLevelConfig(),
-            ).css(environment, id, toAbsolute(from))
+              const resolved = await getAtImportResolvers(
+                environment.getTopLevelConfig(),
+              ).css(environment, id, toAbsolute(from))
 
-            if (resolved) {
-              deps.add(resolved)
-              return resolved
-            }
-            return id
+              if (resolved) {
+                deps.add(resolved)
+                return resolved
+              }
+              return id
+            },
           },
-        },
-        minify: config.isProduction && !!config.build.cssMinify,
-        sourceMap:
-          config.command === 'build'
-            ? !!config.build.sourcemap
-            : config.css?.devSourcemap,
-        analyzeDependencies: true,
-        cssModules: cssModuleRE.test(id)
-          ? (config.css?.lightningcss?.cssModules ?? true)
-          : undefined,
-      })
+          minify: config.isProduction && !!config.build.cssMinify,
+          sourceMap:
+            config.command === 'build'
+              ? !!config.build.sourcemap
+              : config.css?.devSourcemap,
+          analyzeDependencies: true,
+          cssModules: cssModuleRE.test(id)
+            ? (config.css?.lightningcss?.cssModules ?? true)
+            : undefined,
+        })
+  } catch (e) {
+    e.message = `[lightningcss] ${e.message}`
+    e.loc = {
+      file: toAbsolute(e.fileName),
+      line: e.loc.line,
+      column: e.loc.column - 1, // 1-based
+    }
+    throw e
+  }
 
   // NodeJS res.code = Buffer
   // Deno res.code = Uint8Array
@@ -3177,7 +3195,6 @@ async function compileLightningCSS(
           css = css.replace(dep.placeholder, () => dep.url)
           break
         }
-        deps.add(dep.url)
         if (urlReplacer) {
           const replaceUrl = await urlReplacer(
             dep.url,
