@@ -96,6 +96,10 @@ export interface EnvironmentResolveOptions {
    * @experimental
    */
   external?: string[] | true
+  /**
+   * @internal
+   */
+  enableBuiltinNoExternalCheck?: boolean
 }
 
 export interface ResolveOptions extends EnvironmentResolveOptions {
@@ -169,8 +173,11 @@ interface ResolvePluginOptions {
 }
 
 export interface InternalResolveOptions
-  extends Required<ResolveOptions>,
-    ResolvePluginOptions {}
+  extends Required<Omit<ResolveOptions, 'enableBuiltinNoExternalCheck'>>,
+    ResolvePluginOptions {
+  /** @internal this is always optional for backward compat */
+  enableBuiltinNoExternalCheck?: boolean
+}
 
 // Defined ResolveOptions are used to overwrite the values for all environments
 // It is used when creating custom resolvers (for CSS, scanning, etc)
@@ -420,6 +427,7 @@ export function resolvePlugin(
         if (isBuiltin(id)) {
           if (currentEnvironmentOptions.consumer === 'server') {
             if (
+              options.enableBuiltinNoExternalCheck &&
               options.noExternal === true &&
               // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
               // only if the id is explicitly listed in external, we will externalize it and skip this error.
