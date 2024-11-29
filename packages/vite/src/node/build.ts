@@ -390,8 +390,6 @@ export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
   logger: Logger,
   consumer: 'client' | 'server' | undefined,
-  // Backward compatibility
-  isSsrTargetWebworkerEnvironment?: boolean,
 ): ResolvedBuildEnvironmentOptions {
   const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
   const { polyfillModulePreload, ...rest } = raw
@@ -451,19 +449,6 @@ export function resolveBuildEnvironmentOptions(
               ...defaultModulePreload,
               ...merged.modulePreload,
             },
-  }
-
-  if (isSsrTargetWebworkerEnvironment) {
-    resolved.rollupOptions ??= {}
-    resolved.rollupOptions.output ??= {}
-    const output = resolved.rollupOptions.output
-    for (const out of arraify(output)) {
-      out.entryFileNames ??= `[name].js`
-      out.chunkFileNames ??= `[name]-[hash].js`
-      const input = resolved.rollupOptions.input
-      out.inlineDynamicImports ??=
-        !input || typeof input === 'string' || Object.keys(input).length === 1
-    }
   }
 
   return resolved
@@ -677,6 +662,10 @@ async function buildEnvironment(
     logger.error(e.message, { error: e })
   }
 
+  const isSsrTargetWebworkerEnvironment =
+    environment.name === 'ssr' &&
+    environment.getTopLevelConfig().ssr?.target === 'webworker'
+
   let bundle: RollupBuild | undefined
   let startTime: number | undefined
   try {
@@ -706,7 +695,7 @@ async function buildEnvironment(
 
       const format = output.format || 'es'
       const jsExt =
-        environment.config.consumer === 'server' || libOptions
+        (ssr && !isSsrTargetWebworkerEnvironment) || libOptions
           ? resolveOutputJsExtension(
               format,
               findNearestPackageData(root, packageCache)?.data.type,
@@ -744,7 +733,10 @@ async function buildEnvironment(
           ? `[name].[ext]`
           : path.posix.join(options.assetsDir, `[name]-[hash].[ext]`),
         inlineDynamicImports:
-          output.format === 'umd' || output.format === 'iife',
+          output.format === 'umd' ||
+          output.format === 'iife' ||
+          (isSsrTargetWebworkerEnvironment &&
+            (typeof input === 'string' || Object.keys(input).length === 1)),
         ...output,
       }
     }

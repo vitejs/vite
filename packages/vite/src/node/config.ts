@@ -782,7 +782,6 @@ function resolveEnvironmentOptions(
       options.build ?? {},
       logger,
       consumer,
-      isSsrTargetWebworkerEnvironment,
     ),
   }
 }
