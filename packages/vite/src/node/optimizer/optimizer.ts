@@ -311,6 +311,8 @@ export function createDepsOptimizer(
 
     if (closed) {
       currentlyProcessing = false
+      depOptimizationProcessing.resolve()
+      resolveEnqueuedProcessingPromises()
       return
     }
 
