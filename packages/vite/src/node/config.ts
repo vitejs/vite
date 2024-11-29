@@ -1858,7 +1858,13 @@ async function loadConfigFromBundledFile(
   // with --experimental-loader themselves, we have to do a hack here:
   // write it to disk, load it with native Node ESM, then delete the file.
   if (isESM) {
-    const nodeModulesDir = findNearestNodeModules(path.dirname(fileName))
+    // Storing the bundled file in node_modules/ is avoided for Deno
+    // because Deno only supports Node.js style modules under node_modules/
+    // and configs with `npm:` import statements will fail when executed.
+    const nodeModulesDir =
+      typeof process.versions.deno === 'string'
+        ? undefined
+        : findNearestNodeModules(path.dirname(fileName))
     if (nodeModulesDir) {
       await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
         recursive: true,
