@@ -753,9 +753,20 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
-        const [normalized] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
+        let normalized
+        if (url.startsWith('.')) {
+          const [resolved] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
+          normalized = resolved
+        } else {
+          const resolved = await this.resolve(
+            url,
+            importerModule.id || undefined,
+          )
+          normalized = resolved?.id || url
+        }
         normalizedAcceptedUrls.add(normalized)
-        str().overwrite(start, end, JSON.stringify(normalized), {
+        const hmrAccept = normalizeHmrUrl(normalized)
+        str().overwrite(start, end, JSON.stringify(hmrAccept), {
           contentOnly: true,
         })
       }
