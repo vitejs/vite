@@ -39,7 +39,7 @@
   opacity: 0.8;
 }
 
-// old document warning
+/* old document warning */
 :root {
   --vp-layout-top-height: 96px;
   @media (min-width: 455px) {

@@ -4,10 +4,10 @@ import OldDocument from './OldDocument.vue'
 </script>
 
 <template>
+  <OldDocument />
   <Theme.Layout>
     <template #sidebar-bottom>
       <slot name="sidebar-bottom"></slot>
     </template>
   </Theme.Layout>
-  <OldDocument />
 </template>

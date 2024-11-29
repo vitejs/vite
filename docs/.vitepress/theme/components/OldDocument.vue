@@ -11,6 +11,8 @@
 <style>
 .old-document {
   position: fixed;
+  top: 0;
+  left: 0;
   display: flex;
   height: var(--vp-layout-top-height);
   width: 100%;
