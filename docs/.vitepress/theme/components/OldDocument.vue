@@ -9,16 +9,6 @@
 </template>
 
 <style>
-:root {
-  --vp-layout-top-height: 96px;
-  @media (min-width: 455px) {
-    --vp-layout-top-height: 64px;
-  }
-  @media (min-width: 960px) {
-    --vp-layout-top-height: 32px;
-  }
-}
-
 .old-document {
   position: fixed;
   display: flex;

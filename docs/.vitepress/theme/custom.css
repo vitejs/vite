@@ -38,3 +38,23 @@
 #play-vite-audio img {
   opacity: 0.8;
 }
+
+// old document warning
+:root {
+  --vp-layout-top-height: 96px;
+  @media (min-width: 455px) {
+    --vp-layout-top-height: 64px;
+  }
+  @media (min-width: 960px) {
+    --vp-layout-top-height: 32px;
+  }
+
+  --header-height: calc(3.6rem + var(--vp-layout-top-height));
+}
+
+.nav-bar {
+  padding-top: var(--vp-layout-top-height);
+}
+.sidebar-button {
+  top: calc(0.6rem + var(--vp-layout-top-height));
+}
