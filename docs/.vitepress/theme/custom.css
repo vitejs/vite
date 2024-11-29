@@ -19,6 +19,7 @@
 :root {
   --c-brand: #646cff;
   --c-brand-light: #747bff;
+  --c-brand-lightest: #bcc0ff;
 }
 
 .custom-block.tip {
@@ -45,7 +46,7 @@
   @media (min-width: 455px) {
     --vp-layout-top-height: 64px;
   }
-  @media (min-width: 960px) {
+  @media (min-width: 768px) {
     --vp-layout-top-height: 32px;
   }
 
@@ -53,7 +54,7 @@
 }
 
 .nav-bar {
-  padding-top: var(--vp-layout-top-height);
+  padding-top: calc(0.7rem + var(--vp-layout-top-height)) !important;
 }
 .sidebar-button {
   top: calc(0.6rem + var(--vp-layout-top-height));
