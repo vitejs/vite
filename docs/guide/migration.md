@@ -82,7 +82,7 @@ If you prefer to stick with `style.css` like in Vite 5, you can set `build.lib.c
 There are other breaking changes which only affect few users.
 
 - [[#18240] refactor: use `originalFileNames/names`](https://github.com/vitejs/vite/pull/18240):
-  - any plugin that emits assets with type `asset` must include the `names` array in the asset to avoid breaking the build when the manifest is enabled. Older versions of Vite use the `name` file to check whether the asset should be included in the manifest.
+  - any plugin that emits assets with type `asset` must include the `names` array in the asset to avoid breaking the build when the manifest is enabled. Older versions of Vite use the `name` field to check whether the asset should be included in the manifest.
 - [[#17922] fix(css)!: remove default import in ssr dev](https://github.com/vitejs/vite/pull/17922)
   - Support for default import of CSS files was [deprecated in Vite 4](https://v4.vite.dev/guide/migration.html#importing-css-as-a-string) and removed in Vite 5, but it was still unintentionally supported in SSR dev mode. This support is now removed.
 - [[#15637] fix!: default `build.cssMinify` to `'esbuild'` for SSR](https://github.com/vitejs/vite/pull/15637)
