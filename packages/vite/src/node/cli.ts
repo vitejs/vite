@@ -155,7 +155,7 @@ cli
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
   .option(
     '--configLoader <loader>',
-    `[string] use 'bundle' to bundle the config with esbuild or 'runner' to process it on the fly (default: bundle)`,
+    `[string] use 'bundle' to bundle the config with esbuild or 'runner' (experimental) to process it on the fly (default: bundle)`,
   )
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)

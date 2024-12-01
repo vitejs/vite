@@ -529,6 +529,7 @@ export interface ResolvedWorkerOptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
+  /** @experimental */
   configLoader?: 'bundle' | 'runner'
   envFile?: false
 }
@@ -1738,6 +1739,7 @@ async function bundleConfigFile(
 ): Promise<{ code: string; dependencies: string[] }> {
   const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
     .default
+
   const dirnameVarName = '__vite_injected_original_dirname'
   const filenameVarName = '__vite_injected_original_filename'
   const importMetaUrlVarName = '__vite_injected_original_import_meta_url'
