@@ -359,3 +359,37 @@ describe('resolveConfig', () => {
     await resolveConfig({ root: './inc?ud#s', customLogger: logger }, 'build')
   })
 })
+
+test('ssr config compat', async () => {
+  const config = await resolveConfig(
+    {
+      ssr: {
+        resolve: {
+          conditions: ['test1'],
+        },
+      },
+      plugins: [
+        {
+          name: 'test',
+          config() {
+            return {
+              environments: {
+                ssr: {
+                  resolve: {
+                    conditions: ['test2'],
+                  },
+                },
+              },
+            }
+          },
+        },
+      ],
+    },
+    'serve',
+  )
+  expect(config.ssr.resolve?.conditions).toEqual(['test1', 'test2'])
+  expect(config.environments.ssr.resolve?.conditions).toEqual([
+    'test1',
+    'test2',
+  ])
+})
