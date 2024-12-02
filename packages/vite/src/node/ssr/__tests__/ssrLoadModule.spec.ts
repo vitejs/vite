@@ -237,3 +237,17 @@ test('json', async () => {
   )
   expect(json?.code.length).toMatchInlineSnapshot(`61`)
 })
+
+test('file url', async () => {
+  const server = await createDevServer()
+
+  const mod = await server.ssrLoadModule(
+    new URL('./fixtures/file-url/test.js', import.meta.url).href,
+  )
+  expect(mod.msg).toBe('works')
+
+  const modWithSpace = await server.ssrLoadModule(
+    new URL('./fixtures/file-url/test space.js', import.meta.url).href,
+  )
+  expect(modWithSpace.msg).toBe('works')
+})
