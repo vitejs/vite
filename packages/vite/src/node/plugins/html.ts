@@ -302,7 +302,7 @@ function handleParseError(
       // Accept elements without closing tag in <head>
       return
     case 'duplicate-attribute':
-      // Accept duplicate attributes #9566
+      // Accept duplicate attributes #5966
       // The first attribute is used, browsers silently ignore duplicates
       return
     case 'non-void-html-element-start-tag-with-trailing-solidus':
