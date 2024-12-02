@@ -1721,7 +1721,7 @@ async function bundleConfigFile(
     mainFields: ['main'],
     sourcemap: 'inline',
     // the last slash is needed to make the path correct
-    sourceRoot: pathToFileURL(path.dirname(fileName)).href + '/',
+    sourceRoot: path.dirname(fileName) + '/',
     metafile: true,
     define: {
       __dirname: dirnameVarName,
