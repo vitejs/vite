@@ -363,9 +363,12 @@ describe('resolveConfig', () => {
 test('ssr config compat', async () => {
   const config = await resolveConfig(
     {
+      resolve: {
+        conditions: ['client1'],
+      },
       ssr: {
         resolve: {
-          conditions: ['test1'],
+          conditions: ['ssr1'],
         },
       },
       plugins: [
@@ -374,9 +377,14 @@ test('ssr config compat', async () => {
           config() {
             return {
               environments: {
+                client: {
+                  resolve: {
+                    conditions: ['client2'],
+                  },
+                },
                 ssr: {
                   resolve: {
-                    conditions: ['test2'],
+                    conditions: ['ssr2'],
                   },
                 },
               },
@@ -387,9 +395,27 @@ test('ssr config compat', async () => {
     },
     'serve',
   )
-  expect(config.ssr.resolve?.conditions).toEqual(['test1', 'test2'])
-  expect(config.environments.ssr.resolve?.conditions).toEqual([
-    'test1',
-    'test2',
-  ])
+  expect(config.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client1",
+    ]
+  `)
+  expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client1",
+      "client2",
+    ]
+  `)
+  expect(config.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr1",
+      "ssr2",
+    ]
+  `)
+  expect(config.environments.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr1",
+      "ssr2",
+    ]
+  `)
 })
