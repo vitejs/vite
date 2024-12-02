@@ -1,3 +1,19 @@
+## <small>6.0.2 (2024-12-02)</small>
+
+* chore: run typecheck in unit tests (#18858) ([49f20bb](https://github.com/vitejs/vite/commit/49f20bb77749ec7b44344fd9c42d593ae20c78f0)), closes [#18858](https://github.com/vitejs/vite/issues/18858)
+* chore: update broken links in changelog (#18802) ([cb754f8](https://github.com/vitejs/vite/commit/cb754f8acc1b579dae9fe70a08e3ef53984402cc)), closes [#18802](https://github.com/vitejs/vite/issues/18802)
+* chore: update broken links in changelog (#18804) ([47ec49f](https://github.com/vitejs/vite/commit/47ec49ffa170cac5d04cf2eef01f45e0b5ccde03)), closes [#18804](https://github.com/vitejs/vite/issues/18804)
+* fix: don't store temporary vite config file in `node_modules` if deno (#18823) ([a20267b](https://github.com/vitejs/vite/commit/a20267bb93118468a2e20f0f77b77ed7bfa94165)), closes [#18823](https://github.com/vitejs/vite/issues/18823)
+* fix(css): referencing aliased svg asset with lightningcss enabled errored (#18819) ([ae68958](https://github.com/vitejs/vite/commit/ae6895869157e48b32088f0a1f85d2fddb2d713f)), closes [#18819](https://github.com/vitejs/vite/issues/18819)
+* fix(manifest): use `style.css` as a key for the style file for `cssCodesplit: false` (#18820) ([ec51115](https://github.com/vitejs/vite/commit/ec511152558cb573acf55e88e5244bdead1b5a17)), closes [#18820](https://github.com/vitejs/vite/issues/18820)
+* fix(optimizer): resolve all promises when cancelled (#18826) ([d6e6194](https://github.com/vitejs/vite/commit/d6e6194706f0e3a889caa9303de2293cc0f131b2)), closes [#18826](https://github.com/vitejs/vite/issues/18826)
+* fix(resolve): don't set builtinModules to `external` by default (#18821) ([2250ffa](https://github.com/vitejs/vite/commit/2250ffac62e55c89232d745d2f99ece539be9195)), closes [#18821](https://github.com/vitejs/vite/issues/18821)
+* fix(ssr): set `ssr.target: 'webworker'` defaults as fallback (#18827) ([b39e696](https://github.com/vitejs/vite/commit/b39e69638b3e2e658ff6712be83b549b28103c3d)), closes [#18827](https://github.com/vitejs/vite/issues/18827)
+* feat(css): format lightningcss error (#18818) ([dac7992](https://github.com/vitejs/vite/commit/dac7992e8725234007c7515f86f543992874c7b8)), closes [#18818](https://github.com/vitejs/vite/issues/18818)
+* refactor: make properties of ResolvedServerOptions and ResolvedPreviewOptions required (#18796) ([51a5569](https://github.com/vitejs/vite/commit/51a5569e66bd7f0de79ac14b9e902d1382ccd0aa)), closes [#18796](https://github.com/vitejs/vite/issues/18796)
+
+
+
 ## <small>6.0.1 (2024-11-27)</small>
 
 * fix: default empty server `proxy` prevents starting http2 server (#18788) ([bbaf514](https://github.com/vitejs/vite/commit/bbaf514fb718952e0f17a15545c593125f1d1b9c)), closes [#18788](https://github.com/vitejs/vite/issues/18788)
