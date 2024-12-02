@@ -398,6 +398,7 @@ test('ssr config compat', async () => {
   expect(config.resolve.conditions).toMatchInlineSnapshot(`
     [
       "client1",
+      "client2",
     ]
   `)
   expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
