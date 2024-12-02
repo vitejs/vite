@@ -95,6 +95,8 @@ Extends [`http-proxy`](https://github.com/http-party/node-http-proxy#options). A
 
 In some cases, you might also want to configure the underlying dev server (e.g. to add custom middlewares to the internal [connect](https://github.com/senchalabs/connect) app). In order to do that, you need to write your own [plugin](/guide/using-plugins.html) and use [configureServer](/guide/api-plugin.html#configureserver) function.
 
+The `rewrite: (path, req)` method takes two parameters. The `path` parameter is the relative path of the processed URL, including GET parameters. (e.g. /api/v2/news or /api/v2/search?query=something). `req` (optional) allows access to additional request data such as `req.query`, `req.method`, `req.headers.host` (which contains the host including subdomain and port, e.g. `subdomain.localhost:5173`), and more. See the "Rewrite req parameter" documentation below for more details.
+
 **Example:**
 
 ```js
@@ -121,6 +123,15 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/fallback/, ''),
       },
+      // with req data: http://subdomain.localhost:5173/api/v1/ -> http://localhost:4567/subdomain/api/v1/
+      '^/api/.*': {
+        target: 'http://localhost:4567/',
+        changeOrigin: true,
+        rewrite: (path, req) => {
+          const subdomain = req.headers.host.split('.')[0]
+          return path.replace(/^\/api/, `/${subdomain}/api`)
+        },
+      },
       // Using the proxy instance
       '/api': {
         target: 'http://jsonplaceholder.typicode.com',
@@ -142,6 +153,26 @@ export default defineConfig({
     },
   },
 })
+```
+
+**Rewrite req parameter**
+
+`rewrite: (path, req)` gives you access to the `req` object. It contains data about the request being handled, such as `req.query`, `req.method`, `req.headers.host`, and more. The object is read-only. The contained keys/contents of the `req.headers` object may vary depending on the client's request.
+
+Example URL: `https://subdomain.localhost:5173/api?query=something&order=desc`
+
+```js
+{
+  'pathname': '/api',
+  'query': 'query=something&order=desc',
+  'method': 'GET',
+  'headers': {
+    'host': 'subdomain.localhost:5173',
+    'user-agent': 'Mozilla/5.0 ...',
+    'accept-encoding': 'gzip, deflate, br',
+    // ...
+  }
+}
 ```
 
 ## server.cors
