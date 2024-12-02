@@ -1870,6 +1870,8 @@ async function loadConfigFromBundledFile(
         if (e.code === 'EACCES') {
           // If there is no access permission, a temporary configuration file is created by default.
           nodeModulesDir = undefined
+        } else {
+          throw e
         }
       }
     }
