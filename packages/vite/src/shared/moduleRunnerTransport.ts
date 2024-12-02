@@ -19,9 +19,7 @@ export interface ModuleRunnerTransport {
   connect?(handlers: ModuleRunnerTransportHandlers): Promise<void> | void
   disconnect?(): Promise<void> | void
   send?(data: HotPayload): Promise<void> | void
-  invoke?(
-    data: HotPayload,
-  ): Promise<{ /** result */ r: any } | { /** error */ e: any }>
+  invoke?(data: HotPayload): Promise<{ result: any } | { error: any }>
   timeout?: number
 }
 
@@ -58,10 +56,10 @@ const createInvokeableTransport = (
             data,
           } satisfies InvokeSendData,
         } satisfies CustomPayload)
-        if ('e' in result) {
-          throw reviveInvokeError(result.e)
+        if ('error' in result) {
+          throw reviveInvokeError(result.error)
         }
-        return result.r
+        return result.result
       },
     }
   }
