@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": ["./", "../module-runner", "../types"],
-  "exclude": ["../**/__tests__"],
+  "exclude": ["**/fixtures"],
   "compilerOptions": {
     // https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping#node-18
     "lib": ["ES2023", "DOM"], // DOM because we have client code that gets inlined via function.toString()
