@@ -18,39 +18,38 @@ export async function inlineImport<T>(
 ): Promise<InlineImportResult<T>> {
   const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
     .default
-  const environment = createRunnableDevEnvironment(
-    'inline',
-    // TODO: provide a dummy config?
-    await resolveConfig(
-      mergeConfig(inlineConfig || {}, {
-        environments: {
-          inline: {
-            consumer: 'server',
-            dev: {
-              moduleRunnerTransform: true,
-            },
-            resolve: {
-              external: true,
-              mainFields: [],
-              conditions: [
-                'node',
-                ...(isModuleSyncConditionEnabled ? ['module-sync'] : []),
-              ],
-            },
+  const config = await resolveConfig(
+    mergeConfig(inlineConfig || {}, {
+      configFile: false,
+      envFile: false,
+      cacheDir: process.cwd(),
+      environments: {
+        inline: {
+          consumer: 'server',
+          dev: {
+            moduleRunnerTransform: true,
+          },
+          resolve: {
+            external: true,
+            mainFields: [],
+            conditions: [
+              'node',
+              ...(isModuleSyncConditionEnabled ? ['module-sync'] : []),
+            ],
           },
         },
-      } satisfies InlineConfig),
-      'serve',
-    ),
-    {
-      runnerOptions: {
-        hmr: {
-          logger: false,
-        },
       },
-      hot: false,
-    },
+    } satisfies InlineConfig),
+    'serve',
   )
+  const environment = createRunnableDevEnvironment('inline', config, {
+    runnerOptions: {
+      hmr: {
+        logger: false,
+      },
+    },
+    hot: false,
+  })
   await environment.init()
   try {
     const module = await environment.runner.import(moduleId)

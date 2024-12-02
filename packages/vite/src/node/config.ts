@@ -1709,7 +1709,7 @@ export async function loadConfigFromFile(
 async function importConfigFile(resolvedPath: string) {
   const { module, dependencies } = await inlineImport<{
     default: UserConfigExport
-  }>(resolvedPath, { configFile: false })
+  }>(resolvedPath)
   return {
     configExport: module.default,
     dependencies,
