@@ -1857,14 +1857,23 @@ async function loadConfigFromBundledFile(
     // Storing the bundled file in node_modules/ is avoided for Deno
     // because Deno only supports Node.js style modules under node_modules/
     // and configs with `npm:` import statements will fail when executed.
-    const nodeModulesDir =
+    let nodeModulesDir =
       typeof process.versions.deno === 'string'
         ? undefined
         : findNearestNodeModules(path.dirname(fileName))
     if (nodeModulesDir) {
-      await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
-        recursive: true,
-      })
+      try {
+        await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
+          recursive: true,
+        })
+      } catch (e) {
+        if (e.code === 'EACCES') {
+          // If there is no access permission, a temporary configuration file is created by default.
+          nodeModulesDir = undefined
+        } else {
+          throw e
+        }
+      }
     }
     const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
     const tempFileName = nodeModulesDir
