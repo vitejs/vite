@@ -1083,13 +1083,16 @@ export async function resolveConfig(
       configEnvironmentsSsr.optimizeDeps ?? {},
     )
 
-    configEnvironmentsSsr.resolve ??= {}
-    configEnvironmentsSsr.resolve.conditions ??= config.ssr?.resolve?.conditions
-    configEnvironmentsSsr.resolve.externalConditions ??=
-      config.ssr?.resolve?.externalConditions
-    configEnvironmentsSsr.resolve.mainFields ??= config.ssr?.resolve?.mainFields
-    configEnvironmentsSsr.resolve.external ??= config.ssr?.external
-    configEnvironmentsSsr.resolve.noExternal ??= config.ssr?.noExternal
+    configEnvironmentsSsr.resolve = mergeConfig(
+      {
+        conditions: config.ssr?.resolve?.conditions,
+        externalConditions: config.ssr?.resolve?.externalConditions,
+        mainFields: config.ssr?.resolve?.mainFields,
+        external: config.ssr?.external,
+        noExternal: config.ssr?.noExternal,
+      } satisfies EnvironmentResolveOptions,
+      configEnvironmentsSsr.resolve ?? {},
+    )
   }
 
   if (config.build?.ssrEmitAssets !== undefined) {
@@ -1145,6 +1148,11 @@ export async function resolveConfig(
     configEnv,
     config.ssr?.target === 'webworker',
   )
+
+  // Backward compatibility: merge config.environments.client.resolve back into config.resolve
+  config.resolve ??= {}
+  config.resolve.conditions = config.environments.client.resolve?.conditions
+  config.resolve.mainFields = config.environments.client.resolve?.mainFields
 
   const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
 
