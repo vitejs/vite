@@ -95,69 +95,51 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
     rpc.$close()
   })
 
+  async function triggerModuleRunnerInvoke(
+    invokeReturn: { result: any } | { error: any },
+  ) {
+    await rpc.setInvokeReturn(invokeReturn)
+    const channel = new BroadcastChannel('vite-worker:invoke')
+    return new Promise<any>((resolve, reject) => {
+      channel.onmessage = (event) => {
+        try {
+          resolve((event as MessageEvent).data)
+        } catch (e) {
+          reject(e)
+        } finally {
+          resolve(null)
+        }
+      }
+      channel.postMessage({ id: 'test' })
+    })
+  }
+
   it('correctly runs ssr code', async () => {
-    await rpc.setInvokeReturn({
+    const output = await triggerModuleRunnerInvoke({
       result: {
         code: "__vite_ssr_exports__.default = 'hello invoke world'",
         id: '\0virtual:invoke-default-string',
       },
     })
-    const channel = new BroadcastChannel('vite-worker:invoke')
-    return new Promise<void>((resolve, reject) => {
-      channel.onmessage = (event) => {
-        try {
-          expect((event as MessageEvent).data).toEqual({
-            result: 'hello invoke world',
-          })
-        } catch (e) {
-          reject(e)
-        } finally {
-          resolve()
-        }
-      }
-      channel.postMessage({ id: 'virtual:invoke-default-string' })
+    expect(output).not.toHaveProperty('error')
+    expect(output).toEqual({
+      result: 'hello invoke world',
     })
   })
 
   it('triggers an error', async () => {
-    await rpc.setInvokeReturn({
+    const output = await triggerModuleRunnerInvoke({
       error: new Error('This is an Invoke Error'),
     })
-    const channel = new BroadcastChannel('vite-worker:invoke')
-    return new Promise<void>((resolve, reject) => {
-      channel.onmessage = (event) => {
-        try {
-          expect((event as MessageEvent).data.error).toContain(
-            'Error: This is an Invoke Error',
-          )
-        } catch (e) {
-          reject(e)
-        } finally {
-          resolve()
-        }
-      }
-      channel.postMessage({ id: 'test_error' })
-    })
+    expect(output).not.toHaveProperty('result')
+    expect(output.error).toContain('Error: This is an Invoke Error')
   })
 
   it('triggers an unknown error', async () => {
-    await rpc.setInvokeReturn({
+    const output = await triggerModuleRunnerInvoke({
       error: 'a string instead of an error',
     })
-    const channel = new BroadcastChannel('vite-worker:invoke')
-    return new Promise<void>((resolve, reject) => {
-      channel.onmessage = (event) => {
-        try {
-          expect((event as MessageEvent).data.error).toContain(
-            'Error: Unknown invoke error',
-          )
-        } catch (e) {
-          reject(e)
-        } finally {
-          resolve()
-        }
-      }
-      channel.postMessage({ id: 'test_invalid_error' })
-    })
+    expect(output).not.toHaveProperty('result')
+    expect(output.error).toContain('Error: Unknown invoke error')
   })
 })
