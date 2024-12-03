@@ -37,7 +37,7 @@ import {
 } from '../utils'
 import { optimizedDepInfoFromFile, optimizedDepInfoFromId } from '../optimizer'
 import type { DepsOptimizer } from '../optimizer'
-import type { EnvironmentOptions, SSROptions } from '..'
+import type { SSROptions } from '..'
 import type { PackageCache, PackageData } from '../packages'
 import { canExternalizeFile, shouldExternalize } from '../external'
 import {
@@ -326,13 +326,7 @@ export function resolvePlugin(
 
         if (
           options.mainFields.includes('browser') &&
-          (res = tryResolveBrowserMapping(
-            fsPath,
-            importer,
-            options,
-            true,
-            this.environment.config,
-          ))
+          (res = tryResolveBrowserMapping(fsPath, importer, options, true))
         ) {
           return res
         }
@@ -422,7 +416,6 @@ export function resolvePlugin(
             importer,
             options,
             false,
-            this.environment.config,
             external,
           ))
         ) {
@@ -430,14 +423,7 @@ export function resolvePlugin(
         }
 
         if (
-          (res = tryNodeResolve(
-            id,
-            importer,
-            options,
-            depsOptimizer,
-            external,
-            this.environment.config,
-          ))
+          (res = tryNodeResolve(id, importer, options, depsOptimizer, external))
         ) {
           return res
         }
@@ -446,7 +432,7 @@ export function resolvePlugin(
         // externalize if building for a server environment, otherwise redirect to an empty module
         if (
           currentEnvironmentOptions.consumer === 'server' &&
-          isBuiltin(this.environment.config.resolve.builtins, id)
+          isBuiltin(options.builtins, id)
         ) {
           if (
             options.enableBuiltinNoExternalCheck &&
@@ -719,7 +705,6 @@ export function tryNodeResolve(
   options: InternalResolveOptions,
   depsOptimizer?: DepsOptimizer,
   externalize?: boolean,
-  environmentOptions?: EnvironmentOptions,
 ): PartialResolvedId | undefined {
   const { root, dedupe, isBuild, preserveSymlinks, packageCache } = options
 
@@ -744,7 +729,7 @@ export function tryNodeResolve(
   }
 
   const isModuleBuiltin = (id: string) =>
-    isBuiltin(environmentOptions?.resolve?.builtins ?? nodeLikeBuiltins, id)
+    isBuiltin(options?.builtins ?? nodeLikeBuiltins, id)
 
   let selfPkg = null
   if (!isModuleBuiltin(id) && !id.includes('\0') && bareImportRE.test(id)) {
@@ -1108,7 +1093,6 @@ function tryResolveBrowserMapping(
   importer: string | undefined,
   options: InternalResolveOptions,
   isFilePath: boolean,
-  environmentOptions: EnvironmentOptions,
   externalize?: boolean,
 ) {
   let res: string | undefined
@@ -1127,7 +1111,6 @@ function tryResolveBrowserMapping(
               options,
               undefined,
               undefined,
-              environmentOptions,
             )?.id
           : tryFsResolve(path.join(pkg.dir, browserMappedPath), options))
       ) {
