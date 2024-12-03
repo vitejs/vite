@@ -106,8 +106,6 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
           resolve((event as MessageEvent).data)
         } catch (e) {
           reject(e)
-        } finally {
-          resolve(null)
         }
       }
       channel.postMessage({ id: 'test' })
