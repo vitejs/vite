@@ -45,7 +45,7 @@ const runner = new ModuleRunner(
   new ESModulesEvaluator(),
 )
 
-const channel = new BroadcastChannel('vite-worker')
+const channel = new BroadcastChannel('vite-worker:invoke')
 channel.onmessage = async (message) => {
   try {
     const mod = await runner.import(message.data.id)

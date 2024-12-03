@@ -85,7 +85,7 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
   })
 
   it('correctly runs ssr code', async () => {
-    const channel = new BroadcastChannel('vite-worker')
+    const channel = new BroadcastChannel('vite-worker:invoke')
     return new Promise<void>((resolve, reject) => {
       channel.onmessage = (event) => {
         try {
@@ -103,7 +103,7 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
   })
 
   it('triggers an error', async () => {
-    const channel = new BroadcastChannel('vite-worker')
+    const channel = new BroadcastChannel('vite-worker:invoke')
     return new Promise<void>((resolve, reject) => {
       channel.onmessage = (event) => {
         try {
@@ -121,7 +121,7 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
   })
 
   it('triggers an unknown error', async () => {
-    const channel = new BroadcastChannel('vite-worker')
+    const channel = new BroadcastChannel('vite-worker:invoke')
     return new Promise<void>((resolve, reject) => {
       channel.onmessage = (event) => {
         try {
