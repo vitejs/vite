@@ -1,6 +1,8 @@
 import { BroadcastChannel, Worker } from 'node:worker_threads'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { HotChannel, HotChannelListener, HotPayload } from 'vite'
+import type { BirpcReturn } from 'birpc'
+import { createBirpc } from 'birpc'
 import { DevEnvironment } from '../../..'
 import { type ViteDevServer, createServer } from '../../../server'
 
@@ -42,6 +44,7 @@ const createWorkerTransport = (w: Worker): HotChannel => {
 describe('running module runner inside a worker and using the ModuleRunnerTransport#invoke API', () => {
   let worker: Worker
   let server: ViteDevServer
+  let rpc: BirpcReturn<{ setInvokeReturn: (res: unknown) => void }>
 
   beforeAll(async () => {
     worker = new Worker(
@@ -77,14 +80,28 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
         },
       },
     })
+    rpc = createBirpc<{ setInvokeReturn: (res: unknown) => void }>(
+      {},
+      {
+        post: (data) => worker.postMessage(data),
+        on: (data) => worker.on('message', data),
+      },
+    )
   })
 
   afterAll(() => {
     server.close()
     worker.terminate()
+    rpc.$close()
   })
 
   it('correctly runs ssr code', async () => {
+    await rpc.setInvokeReturn({
+      result: {
+        code: "__vite_ssr_exports__.default = 'hello invoke world'",
+        id: '\0virtual:invoke-default-string',
+      },
+    })
     const channel = new BroadcastChannel('vite-worker:invoke')
     return new Promise<void>((resolve, reject) => {
       channel.onmessage = (event) => {
@@ -103,12 +120,15 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
   })
 
   it('triggers an error', async () => {
+    await rpc.setInvokeReturn({
+      error: new Error('This is an Invoke Error'),
+    })
     const channel = new BroadcastChannel('vite-worker:invoke')
     return new Promise<void>((resolve, reject) => {
       channel.onmessage = (event) => {
         try {
           expect((event as MessageEvent).data.error).toContain(
-            'Error: error, module not found: test_error',
+            'Error: This is an Invoke Error',
           )
         } catch (e) {
           reject(e)
@@ -121,6 +141,9 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
   })
 
   it('triggers an unknown error', async () => {
+    await rpc.setInvokeReturn({
+      error: 'a string instead of an error',
+    })
     const channel = new BroadcastChannel('vite-worker:invoke')
     return new Promise<void>((resolve, reject) => {
       channel.onmessage = (event) => {

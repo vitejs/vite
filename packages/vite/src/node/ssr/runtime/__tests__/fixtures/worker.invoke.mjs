@@ -3,36 +3,29 @@
 import { BroadcastChannel, parentPort } from 'node:worker_threads'
 import { fileURLToPath } from 'node:url'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+import { createBirpc } from 'birpc'
 
 if (!parentPort) {
   throw new Error('File "worker.js" must be run in a worker thread')
 }
 
+let invokeReturn;
+
+/** @type {import('worker_threads').MessagePort} */
+const pPort = parentPort
+
+createBirpc({
+  // @ts-ignore
+  setInvokeReturn(returnValue) { invokeReturn = returnValue }
+}, {
+  post: (data) => pPort.postMessage(data),
+  on: (data) => pPort.on('message', data),
+})
+
 /** @type {import('vite/module-runner').ModuleRunnerTransport} */
 const transport = {
-  async invoke(/** @type {import('vite').HotPayload} */ event) {
-    const hotPayloadData = event['data']
-
-    const id = hotPayloadData['data'][0]
-
-    if (id === 'test_invalid_error') {
-      return {
-        error: 'a string instead of an error'
-      }
-    }
-
-    if (id !== 'virtual:invoke-default-string') {
-      return {
-        error: new Error(`error, module not found: ${id}`)
-      }
-    }
-
-    return {
-      result: {
-        "code": "__vite_ssr_exports__.default = 'hello invoke world'",
-        "id": "\0virtual:invoke-default-string",
-      }
-    };
+  async invoke() {
+    return invokeReturn;
   },
 }
 

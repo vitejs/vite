@@ -455,6 +455,9 @@ importers:
       '@vitejs/esm-external':
         specifier: link:./fixtures/esm-external
         version: link:fixtures/esm-external
+      birpc:
+        specifier: ^0.2.19
+        version: 0.2.19
       tinyspy:
         specifier: 2.2.0
         version: 2.2.0
