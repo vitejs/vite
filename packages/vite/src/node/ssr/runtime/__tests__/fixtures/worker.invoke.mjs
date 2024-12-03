@@ -22,17 +22,12 @@ createBirpc({
   on: (data) => pPort.on('message', data),
 })
 
-/** @type {import('vite/module-runner').ModuleRunnerTransport} */
-const transport = {
-  async invoke() {
-    return invokeReturn;
-  },
-}
-
 const runner = new ModuleRunner(
   {
     root: fileURLToPath(new URL('./', import.meta.url)),
-    transport,
+    transport: {
+      invoke() { return invokeReturn }
+    },
     hmr: false,
   },
   new ESModulesEvaluator(),
