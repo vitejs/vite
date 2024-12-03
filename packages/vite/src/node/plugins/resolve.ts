@@ -99,10 +99,6 @@ export interface EnvironmentResolveOptions {
    */
   external?: string[] | true
   /**
-   * @internal
-   */
-  enableBuiltinNoExternalCheck?: boolean
-  /**
    * Array of strings or regular expressions that indicate what modules are builtin for the environment.
    */
   builtins?: (string | RegExp)[]
@@ -179,11 +175,8 @@ interface ResolvePluginOptions {
 }
 
 export interface InternalResolveOptions
-  extends Required<Omit<ResolveOptions, 'enableBuiltinNoExternalCheck'>>,
-    ResolvePluginOptions {
-  /** @internal this is always optional for backward compat */
-  enableBuiltinNoExternalCheck?: boolean
-}
+  extends Required<ResolveOptions>,
+    ResolvePluginOptions {}
 
 // Defined ResolveOptions are used to overwrite the values for all environments
 // It is used when creating custom resolvers (for CSS, scanning, etc)
@@ -434,24 +427,6 @@ export function resolvePlugin(
           currentEnvironmentOptions.consumer === 'server' &&
           isBuiltin(options.builtins, id)
         ) {
-          if (
-            options.enableBuiltinNoExternalCheck &&
-            options.noExternal === true &&
-            // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
-            // only if the id is explicitly listed in external, we will externalize it and skip this error.
-            (options.external === true || !options.external.includes(id))
-          ) {
-            let message = `Cannot bundle built-in module "${id}"`
-            if (importer) {
-              message += ` imported from "${path.relative(
-                process.cwd(),
-                importer,
-              )}"`
-            }
-            message += `. Consider disabling environments.${this.environment.name}.noExternal or remove the built-in dependency.`
-            this.error(message)
-          }
-
           return options.idOnly
             ? id
             : { id, external: true, moduleSideEffects: false }
@@ -479,6 +454,23 @@ export function resolvePlugin(
           currentEnvironmentOptions.consumer === 'client' &&
           isNodeLikeBuiltin(id)
         ) {
+          if (
+            options.noExternal === true &&
+            // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
+            // only if the id is explicitly listed in external, we will externalize it and skip this error.
+            (options.external === true || !options.external.includes(id))
+          ) {
+            let message = `Cannot bundle built-in module "${id}"`
+            if (importer) {
+              message += ` imported from "${path.relative(
+                process.cwd(),
+                importer,
+              )}"`
+            }
+            message += `. Consider disabling environments.${this.environment.name}.noExternal or remove the built-in dependency.`
+            this.error(message)
+          }
+
           if (!asSrc) {
             debug?.(
               `externalized node built-in "${id}" to empty module. ` +

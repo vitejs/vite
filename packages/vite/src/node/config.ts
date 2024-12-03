@@ -882,14 +882,11 @@ function resolveEnvironmentResolveOptions(
         consumer === 'client' || isSsrTargetWebworkerEnvironment
           ? DEFAULT_CLIENT_CONDITIONS
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
-      enableBuiltinNoExternalCheck: !!isSsrTargetWebworkerEnvironment,
       builtins:
         resolve?.builtins ??
-        (consumer === 'server'
+        (consumer === 'server' && !isSsrTargetWebworkerEnvironment
           ? nodeLikeBuiltins
-          : [
-              // there are not built-in modules in the browser
-            ]),
+          : []),
     },
     resolve ?? {},
   )
