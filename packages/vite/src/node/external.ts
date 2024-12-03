@@ -88,7 +88,6 @@ export function createIsConfiguredAsExternal(
         resolveOptions,
         undefined,
         false,
-        environment.config,
       )
       if (!resolved) {
         return false
