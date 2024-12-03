@@ -121,7 +121,6 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
         id: '\0virtual:invoke-default-string',
       },
     })
-    expect(output).not.toHaveProperty('error')
     expect(output).toEqual({
       result: 'hello invoke world',
     })
