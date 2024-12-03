@@ -475,7 +475,7 @@ export function resolvePlugin(
             message += `. Consider disabling environments.${this.environment.name}.noExternal or remove the built-in dependency.`
             this.error(message)
           }
-        } if (
+        } else if (
           currentEnvironmentOptions.consumer === 'client' &&
           isNodeLikeBuiltin(id)
         ) {
