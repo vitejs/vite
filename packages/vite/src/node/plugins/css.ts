@@ -1748,16 +1748,26 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
           const replacerForDeclaration = (rawUrl: string) => {
             return opts.replacer(rawUrl, importer)
           }
-          const rewriterToUse = isCssImageSet
-            ? rewriteCssImageSet
-            : rewriteCssUrls
-          promises.push(
-            rewriterToUse(declaration.value, replacerForDeclaration).then(
-              (url) => {
-                declaration.value = url
-              },
-            ),
-          )
+          if (isCssUrl && isCssImageSet) {
+            promises.push(
+              rewriteCssUrls(declaration.value, replacerForDeclaration)
+                .then((url) => rewriteCssImageSet(url, replacerForDeclaration))
+                .then((url) => {
+                  declaration.value = url
+                }),
+            )
+          } else {
+            const rewriterToUse = isCssImageSet
+              ? rewriteCssImageSet
+              : rewriteCssUrls
+            promises.push(
+              rewriterToUse(declaration.value, replacerForDeclaration).then(
+                (url) => {
+                  declaration.value = url
+                },
+              ),
+            )
+          }
         }
       })
       if (promises.length) {
