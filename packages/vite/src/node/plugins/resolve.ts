@@ -450,6 +450,21 @@ export function resolvePlugin(
             message += `. Consider disabling environments.${this.environment.name}.noExternal or remove the built-in dependency.`
             this.error(message)
           }
+          if (!(options.external === true || options.external.includes(id))) {
+            let message = `Automatically externalized node built-in module "${id}"`
+            if (importer) {
+              message += ` imported from "${path.relative(
+                process.cwd(),
+                importer,
+              )}"`
+            }
+            message += `. Consider adding it to environments.${this.environment.name}.external if it is intended.`
+            this.error(message)
+          }
+          
+          return options.idOnly
+            ? id
+            : { id, external: true, moduleSideEffects: false }
         } else if (
           currentEnvironmentOptions.consumer === 'client' &&
           isNodeLikeBuiltin(id)
