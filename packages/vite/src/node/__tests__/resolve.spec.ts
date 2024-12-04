@@ -140,7 +140,7 @@ describe('file url', () => {
     async function run(
       customEnvBuiltins: NonNullable<EnvironmentOptions['resolve']>['builtins'],
       idToResolve: string,
-      envName = 'custom',
+      envName: 'client' | 'ssr' | string = 'custom',
     ) {
       const server = await createServer(getConfig(customEnvBuiltins))
       onTestFinished(() => server.close())
@@ -177,6 +177,16 @@ describe('file url', () => {
     test('default to node-like builtins', async () => {
       const resolved = await run(undefined, 'node:fs')
       expect(resolved?.external).toBe(true)
+    })
+
+    test('default to node-like builtins for ssr environment', async () => {
+      const resolved = await run(undefined, 'node:fs', 'ssr')
+      expect(resolved?.external).toBe(true)
+    })
+
+    test('no default to node-like builtins for client environment', async () => {
+      const resolved = await run(undefined, 'node:fs', 'client')
+      expect(resolved?.id).toEqual('__vite-browser-external:node:fs')
     })
 
     test('declared node builtin', async () => {
