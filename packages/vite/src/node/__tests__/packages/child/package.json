@@ -1,5 +1,5 @@
 {
-  "name": "child",
+  "name": "@vitejs/child",
   "type": "module",
   "main": "./index.js"
 }

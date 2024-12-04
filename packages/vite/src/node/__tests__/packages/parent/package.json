@@ -1,8 +1,8 @@
 {
-  "name": "parent",
+  "name": "@vitejs/parent",
   "type": "module",
   "main": "./index.ts",
   "dependencies": {
-    "child": "link:../child"
+    "@vitejs/child": "link:../child"
   }
 }

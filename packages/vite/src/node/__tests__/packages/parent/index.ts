@@ -1,5 +1,5 @@
 // @ts-expect-error not typed
-import child from 'child'
+import child from '@vitejs/child'
 
 export default {
   child,

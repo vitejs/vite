@@ -12,7 +12,7 @@ interface InlineImportResult<T> {
  * Import any file using the default Vite environment.
  * @experimental
  */
-export async function inlineImport<T>(
+export async function runnerImport<T>(
   moduleId: string,
   inlineConfig?: InlineConfig,
 ): Promise<InlineImportResult<T>> {

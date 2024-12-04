@@ -417,12 +417,12 @@ importers:
       '@vitejs/cjs-ssr-dep':
         specifier: link:./fixtures/cjs-ssr-dep
         version: link:fixtures/cjs-ssr-dep
+      '@vitejs/parent':
+        specifier: link:./packages/parent
+        version: link:packages/parent
       '@vitejs/test-dep-conditions':
         specifier: file:./fixtures/test-dep-conditions
         version: file:packages/vite/src/node/__tests__/fixtures/test-dep-conditions
-      parent:
-        specifier: link:./packages/parent
-        version: link:packages/parent
 
   packages/vite/src/node/__tests__/fixtures/cjs-ssr-dep: {}
 
@@ -440,7 +440,7 @@ importers:
 
   packages/vite/src/node/__tests__/packages/parent:
     dependencies:
-      child:
+      '@vitejs/child':
         specifier: link:../child
         version: link:../child
 
