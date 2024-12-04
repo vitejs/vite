@@ -433,22 +433,6 @@ export function resolvePlugin(
           currentEnvironmentOptions.consumer === 'server' &&
           isNodeLikeBuiltin(id)
         ) {
-          if (
-            options.noExternal === true &&
-            // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
-            // only if the id is explicitly listed in external, we will externalize it and skip this error.
-            (options.external === true || !options.external.includes(id))
-          ) {
-            let message = `Cannot bundle node built-in module "${id}"`
-            if (importer) {
-              message += ` imported from "${path.relative(
-                process.cwd(),
-                importer,
-              )}"`
-            }
-            message += `. Consider disabling environments.${this.environment.name}.noExternal or remove the built-in dependency.`
-            this.error(message)
-          }
           if (!(options.external === true || options.external.includes(id))) {
             let message = `Automatically externalized node built-in module "${id}"`
             if (importer) {
