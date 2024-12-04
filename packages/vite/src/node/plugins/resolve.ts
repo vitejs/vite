@@ -30,7 +30,6 @@ import {
   isObject,
   isOptimizable,
   isTsRequest,
-  nodeLikeBuiltins,
   normalizePath,
   safeRealpathSync,
   tryStatSync,
@@ -461,7 +460,7 @@ export function resolvePlugin(
             message += `. Consider adding it to environments.${this.environment.name}.external if it is intended.`
             this.error(message)
           }
-          
+
           return options.idOnly
             ? id
             : { id, external: true, moduleSideEffects: false }
@@ -755,8 +754,7 @@ export function tryNodeResolve(
     basedir = root
   }
 
-  const isModuleBuiltin = (id: string) =>
-    isBuiltin(options.builtins, id)
+  const isModuleBuiltin = (id: string) => isBuiltin(options.builtins, id)
 
   let selfPkg = null
   if (!isModuleBuiltin(id) && !id.includes('\0') && bareImportRE.test(id)) {
