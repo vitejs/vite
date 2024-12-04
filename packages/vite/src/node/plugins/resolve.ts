@@ -756,7 +756,7 @@ export function tryNodeResolve(
   }
 
   const isModuleBuiltin = (id: string) =>
-    isBuiltin(options?.builtins ?? nodeLikeBuiltins, id)
+    isBuiltin(options.builtins, id)
 
   let selfPkg = null
   if (!isModuleBuiltin(id) && !id.includes('\0') && bareImportRE.test(id)) {
