@@ -1748,32 +1748,26 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
           const replacerForDeclaration = (rawUrl: string) => {
             return opts.replacer(rawUrl, importer)
           }
-          let rewriterToUse = isCssImageSet
-            ? rewriteCssImageSet
-            : rewriteCssUrls
-          promises.push(
-            rewriterToUse(declaration.value, replacerForDeclaration)
-              .then((url) => {
-                declaration.value = url
-              })
-              .then(() => {
-                const hasRewriteImageSet = rewriterToUse === rewriteCssImageSet
-                if (
-                  (hasRewriteImageSet && isCssUrl) ||
-                  (!hasRewriteImageSet && isCssImageSet)
-                ) {
-                  rewriterToUse = hasRewriteImageSet
-                    ? rewriteCssUrls
-                    : rewriteCssImageSet
-                  return rewriterToUse(
-                    declaration.value,
-                    replacerForDeclaration,
-                  ).then((url) => {
-                    declaration.value = url
-                  })
-                }
-              }),
-          )
+          if (isCssUrl && isCssImageSet) {
+            promises.push(
+              rewriteCssUrls(declaration.value, replacerForDeclaration)
+                .then((url) => rewriteCssImageSet(url, replacerForDeclaration))
+                .then((url) => {
+                  declaration.value = url
+                }),
+            )
+          } else {
+            const rewriterToUse = isCssImageSet
+              ? rewriteCssImageSet
+              : rewriteCssUrls
+            promises.push(
+              rewriterToUse(declaration.value, replacerForDeclaration).then(
+                (url) => {
+                  declaration.value = url
+                },
+              ),
+            )
+          }
         }
       })
       if (promises.length) {
