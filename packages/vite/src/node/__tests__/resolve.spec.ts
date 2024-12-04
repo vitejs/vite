@@ -2,7 +2,7 @@ import { join } from 'node:path'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
-import type { InlineConfig } from '../config'
+import type { EnvironmentOptions, InlineConfig } from '../config'
 import { build } from '../build'
 
 describe('import and resolveId', () => {
@@ -114,6 +114,84 @@ describe('file url', () => {
 
     const mod4 = await runner.import('virtual:test-dep/non-static')
     expect(mod4.default).toBe(mod)
+  })
+
+  describe('environment builtins', () => {
+    function getConfig(
+      customEnvBuiltins: NonNullable<EnvironmentOptions['resolve']>['builtins'],
+    ): InlineConfig {
+      return {
+        configFile: false,
+        root: join(import.meta.dirname, 'fixtures/file-url'),
+        logLevel: 'error',
+        server: {
+          middlewareMode: true,
+        },
+        environments: {
+          custom: {
+            resolve: {
+              builtins: customEnvBuiltins,
+            },
+          },
+        },
+      }
+    }
+
+    async function run(
+      customEnvBuiltins: NonNullable<EnvironmentOptions['resolve']>['builtins'],
+      idToResolve: string,
+      envName = 'custom',
+    ) {
+      const server = await createServer(getConfig(customEnvBuiltins))
+      onTestFinished(() => server.close())
+
+      return server.environments[envName]?.pluginContainer.resolveId(
+        idToResolve,
+      )
+    }
+
+    test('declared builtin string', async () => {
+      const resolved = await run(
+        ['my-env:custom-builtin'],
+        'my-env:custom-builtin',
+      )
+      expect(resolved?.external).toBe(true)
+    })
+
+    test('declared builtin regexp', async () => {
+      const resolved = await run([/^my-env:\w/], 'my-env:custom-builtin')
+      expect(resolved?.external).toBe(true)
+    })
+
+    test('non declared builtin', async () => {
+      const resolved = await run([], 'my-env:custom-builtin')
+      expect(resolved).toBeNull()
+    })
+
+    test('non declared node builtin', async () => {
+      await expect(run([], 'node:fs')).rejects.toThrowError(
+        /Automatically externalized node built-in module "node:fs"/,
+      )
+    })
+
+    test('default to node-like builtins', async () => {
+      const resolved = await run(undefined, 'node:fs')
+      expect(resolved?.external).toBe(true)
+    })
+
+    test('declared node builtin', async () => {
+      const resolved = await run([/^node:/], 'node:fs')
+      expect(resolved?.external).toBe(true)
+    })
+
+    test('declared builtin string in different environment', async () => {
+      const resolved = await run(
+        ['my-env:custom-builtin'],
+        'my-env:custom-builtin',
+        'ssr',
+      )
+      expect(resolved).toBe(null)
+    })
   })
 
   test('build', async () => {
