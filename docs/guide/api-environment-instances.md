@@ -26,7 +26,7 @@ console.log(server.environments.ssr.moduleGraph)
 
 You can also access the current environment from plugins. See the [Environment API for Plugins](./api-environment-plugins.md#accessing-the-current-environment-in-hooks) for more details.
 
-## `DevEnvironment` Class
+## `DevEnvironment` class
 
 During dev, each environment is an instance of the `DevEnvironment` class:
 
