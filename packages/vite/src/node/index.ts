@@ -31,7 +31,7 @@ export {
   DevEnvironment,
   type DevEnvironmentContext,
 } from './server/environment'
-export { runnerImport as inlineImport } from './ssr/runnerImport'
+export { runnerImport } from './ssr/runnerImport'
 export { BuildEnvironment } from './build'
 
 export { fetchModule, type FetchModuleOptions } from './ssr/fetchModule'

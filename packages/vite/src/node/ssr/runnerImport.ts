@@ -3,7 +3,7 @@ import { resolveConfig } from '../config'
 import { createRunnableDevEnvironment } from '../server/environments/runnableEnvironment'
 import { mergeConfig } from '../utils'
 
-interface InlineImportResult<T> {
+interface RunnerImportResult<T> {
   module: T
   dependencies: string[]
 }
@@ -15,7 +15,7 @@ interface InlineImportResult<T> {
 export async function runnerImport<T>(
   moduleId: string,
   inlineConfig?: InlineConfig,
-): Promise<InlineImportResult<T>> {
+): Promise<RunnerImportResult<T>> {
   const isModuleSyncConditionEnabled = (await import('#module-sync-enabled'))
     .default
   const config = await resolveConfig(

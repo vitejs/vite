@@ -17,7 +17,7 @@ describe('importing files using inlined environment', () => {
     })
   })
 
-  test("cannot import cjs, 'inlineImport' doesn't support CJS syntax at all", async () => {
+  test("cannot import cjs, 'runnerImport' doesn't support CJS syntax at all", async () => {
     await expect(() =>
       runnerImport<typeof import('./fixtures/runner-import/basic')>(
         fixture('cjs.js'),
