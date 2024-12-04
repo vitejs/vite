@@ -15,7 +15,7 @@ Please share your feedback with us.
 
 Vite 6 formalizes the concept of Environments. Until Vite 5, there were two implicit Environments (`client`, and optionally `ssr`). The new Environment API allows users and framework authors to create as many environments as needed to map the way their apps work in production. This new capability required a big internal refactoring, but a lot of effort has been placed on backward compatibility. The initial goal of Vite 6 is to move the ecosystem to the new major as smoothly as possible, delaying the adoption of these new experimental APIs until enough users have migrated and frameworks and plugin authors have validated the new design.
 
-## Closing the gap between build and dev
+## Closing the Gap Between Build and Dev
 
 For a simple SPA/MPA, no new APIs around environments are exposed to the config. Internally, Vite will apply the options to a `client` environment, but it's not necessary to know of this concept when configuring Vite. The config and behavior from Vite 5 should work seamlessly here.
 
@@ -94,7 +94,7 @@ interface UserConfig extends EnvironmentOptions {
 
 Note that the `ssr` top-level property is going to be deprecated once the Environment API is stable. This option has the same role as `environments`, but for the default `ssr` environment and only allowed configuring of a small set of options.
 
-## Custom environment instances
+## Custom Environment Instances
 
 Low level configuration APIs are available so runtime providers can provide environments with proper defaults for their runtimes. These environments can also spawn other processes or threads to run the modules during dev in a closer runtime to the production environment.
 
@@ -129,7 +129,7 @@ We don't recommend switching to Environment API yet. We are aiming for a good po
 - [SSR using `ModuleRunner` API](/changes/ssr-using-modulerunner)
 - [Shared plugins during build](/changes/shared-plugins-during-build)
 
-## Target users
+## Target Users
 
 This guide provides the basic concepts about environments for end users.
 
