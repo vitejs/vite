@@ -119,7 +119,7 @@ describe('file url', () => {
   describe('environment builtins', () => {
     function getConfig(
       targetEnv: 'client' | 'ssr' | string,
-      customEnvBuiltins: NonNullable<EnvironmentOptions['resolve']>['builtins'],
+      builtins: NonNullable<EnvironmentOptions['resolve']>['builtins'],
     ): InlineConfig {
       return {
         configFile: false,
@@ -131,7 +131,7 @@ describe('file url', () => {
         environments: {
           [targetEnv]: {
             resolve: {
-              builtins: customEnvBuiltins,
+              builtins,
             },
           },
         },
