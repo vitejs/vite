@@ -44,7 +44,11 @@ const createWorkerTransport = (w: Worker): HotChannel => {
 describe('running module runner inside a worker and using the ModuleRunnerTransport#invoke API', () => {
   let worker: Worker
   let server: ViteDevServer
-  let rpc: BirpcReturn<{ setInvokeReturn: (res: unknown) => void }>
+  let rpc: BirpcReturn<
+    unknown,
+    { invoke: (data: any) => Promise<{ result: any } | { error: any }> }
+  >
+  let handleInvoke: (data: any) => Promise<{ result: any } | { error: any }>
 
   beforeAll(async () => {
     worker = new Worker(
@@ -80,8 +84,11 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
         },
       },
     })
-    rpc = createBirpc<{ setInvokeReturn: (res: unknown) => void }>(
-      {},
+    handleInvoke = (data: any) => server.environments.ssr.hot.handleInvoke(data)
+    rpc = createBirpc(
+      {
+        invoke: (data: any) => handleInvoke(data),
+      },
       {
         post: (data) => worker.postMessage(data),
         on: (data) => worker.on('message', data),
@@ -95,10 +102,7 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
     rpc.$close()
   })
 
-  async function triggerModuleRunnerInvoke(
-    invokeReturn: { result: any } | { error: any },
-  ) {
-    await rpc.setInvokeReturn(invokeReturn)
+  async function run(id: string) {
     const channel = new BroadcastChannel('vite-worker:invoke')
     return new Promise<any>((resolve, reject) => {
       channel.onmessage = (event) => {
@@ -108,34 +112,27 @@ describe('running module runner inside a worker and using the ModuleRunnerTransp
           reject(e)
         }
       }
-      channel.postMessage({ id: 'test' })
+      channel.postMessage({ id })
     })
   }
 
   it('correctly runs ssr code', async () => {
-    const output = await triggerModuleRunnerInvoke({
-      result: {
-        code: "__vite_ssr_exports__.default = 'hello invoke world'",
-        id: '\0virtual:invoke-default-string',
-      },
-    })
-    expect(output).toEqual({
-      result: 'hello invoke world',
+    const output = await run('./fixtures/default-string.ts')
+    expect(output).toStrictEqual({
+      result: 'hello world',
     })
   })
 
   it('triggers an error', async () => {
-    const output = await triggerModuleRunnerInvoke({
-      error: new Error('This is an Invoke Error'),
-    })
+    handleInvoke = async () => ({ error: new Error('This is an Invoke Error') })
+    const output = await run('dummy')
     expect(output).not.toHaveProperty('result')
     expect(output.error).toContain('Error: This is an Invoke Error')
   })
 
   it('triggers an unknown error', async () => {
-    const output = await triggerModuleRunnerInvoke({
-      error: 'a string instead of an error',
-    })
+    handleInvoke = async () => ({ error: 'a string instead of an error' })
+    const output = await run('dummy')
     expect(output).not.toHaveProperty('result')
     expect(output.error).toContain('Error: Unknown invoke error')
   })

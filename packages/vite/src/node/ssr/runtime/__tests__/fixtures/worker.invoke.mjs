@@ -9,15 +9,11 @@ if (!parentPort) {
   throw new Error('File "worker.js" must be run in a worker thread')
 }
 
-let invokeReturn;
-
 /** @type {import('worker_threads').MessagePort} */
 const pPort = parentPort
 
-createBirpc({
-  // @ts-ignore
-  setInvokeReturn(returnValue) { invokeReturn = returnValue }
-}, {
+/** @type {import('birpc').BirpcReturn<{ invoke: (data: any) => any }>} */
+const rpc = createBirpc({}, {
   post: (data) => pPort.postMessage(data),
   on: (data) => pPort.on('message', data),
 })
@@ -26,7 +22,7 @@ const runner = new ModuleRunner(
   {
     root: fileURLToPath(new URL('./', import.meta.url)),
     transport: {
-      invoke() { return invokeReturn }
+      invoke(data) { return rpc.invoke(data) }
     },
     hmr: false,
   },
