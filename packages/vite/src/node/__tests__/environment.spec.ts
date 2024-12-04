@@ -59,6 +59,7 @@ describe('custom environment conditions', () => {
             noExternal,
             conditions: ['custom1'],
             externalConditions: ['custom1'],
+            builtins: ['my-env:custom-builtin'],
           },
           build: {
             outDir: path.join(
@@ -76,6 +77,7 @@ describe('custom environment conditions', () => {
             noExternal,
             conditions: ['custom1'],
             externalConditions: ['custom1'],
+            builtins: ['my-env:custom-builtin'],
           },
           build: {
             outDir: path.join(
@@ -139,6 +141,27 @@ describe('custom environment conditions', () => {
         "custom1_2": "index.custom1.js",
         "ssr": "index.default.js",
         "worker": "index.worker.js",
+      }
+    `)
+  })
+
+  test('dev builtins', async () => {
+    const server = await createServer(getConfig({ noExternal: true }))
+    onTestFinished(() => server.close())
+
+    const results: Record<string, unknown> = {}
+    for (const key of ['ssr', 'worker', 'custom1', 'custom1_2']) {
+      const resolved = await server.environments[key].pluginContainer.resolveId(
+        'my-env:custom-builtin',
+      )
+      results[key] = JSON.stringify(resolved)
+    }
+    expect(results).toMatchInlineSnapshot(`
+      {
+        "custom1": "{"id":"my-env:custom-builtin","external":true,"moduleSideEffects":false}",
+        "custom1_2": "{"id":"my-env:custom-builtin","external":true,"moduleSideEffects":false}",
+        "ssr": "null",
+        "worker": "null",
       }
     `)
   })
