@@ -48,7 +48,7 @@ export function ssrRewriteStacktrace(
             column: Number(column) - 1,
           })
 
-          if (!pos.source || pos.line == null || pos.column == null) {
+          if (!pos.source) {
             return input
           }
 

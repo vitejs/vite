@@ -705,7 +705,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   '',
                 )
                 chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
-              } else if (buildSourcemap) {
+              } else {
                 const mapAsset = bundle[chunk.fileName + '.map']
                 if (mapAsset && mapAsset.type === 'asset') {
                   mapAsset.source = map.toString()

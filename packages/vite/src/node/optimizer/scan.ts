@@ -183,7 +183,7 @@ export function scanImports(environment: ScanEnvironment): {
           })
         })
       }
-      if (!context || scanContext?.cancelled) {
+      if (!context || scanContext.cancelled) {
         disposeContext()
         return { deps: {}, missing: {} }
       }
@@ -248,7 +248,7 @@ async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
   const explicitEntryPatterns = environment.config.optimizeDeps.entries
-  const buildInput = environment.config.build.rollupOptions?.input
+  const buildInput = environment.config.build.rollupOptions.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
@@ -295,9 +295,9 @@ async function prepareEsbuildScanner(
   entries: string[],
   deps: Record<string, string>,
   missing: Record<string, string>,
-  scanContext?: { cancelled: boolean },
+  scanContext: { cancelled: boolean },
 ): Promise<BuildContext | undefined> {
-  if (scanContext?.cancelled) return
+  if (scanContext.cancelled) return
 
   const plugin = esbuildScanPlugin(environment, deps, missing, entries)
 

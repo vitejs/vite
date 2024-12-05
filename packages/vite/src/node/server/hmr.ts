@@ -364,7 +364,7 @@ export function getSortedPluginsByHotUpdateHook(
 
 const sortedHotUpdatePluginsCache = new WeakMap<Environment, Plugin[]>()
 function getSortedHotUpdatePlugins(environment: Environment): Plugin[] {
-  let sortedPlugins = sortedHotUpdatePluginsCache.get(environment) as Plugin[]
+  let sortedPlugins = sortedHotUpdatePluginsCache.get(environment)
   if (!sortedPlugins) {
     sortedPlugins = getSortedPluginsByHotUpdateHook(environment.plugins)
     sortedHotUpdatePluginsCache.set(environment, sortedPlugins)
@@ -989,7 +989,7 @@ export function lexAcceptedHmrDeps(
               // in both case this indicates a self-accepting module
               return true // done
             }
-          } else if (state === LexerState.inArray) {
+          } else {
             if (char === `]`) {
               return false // done
             } else if (char === ',') {
@@ -1174,9 +1174,7 @@ export function createDeprecatedHotBroadcaster(
       return broadcaster
     },
     close() {
-      return Promise.all(
-        broadcaster.channels.map((channel) => channel.close?.()),
-      )
+      return Promise.all(broadcaster.channels.map((channel) => channel.close()))
     },
   }
   return broadcaster

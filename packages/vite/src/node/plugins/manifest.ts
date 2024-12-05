@@ -175,7 +175,7 @@ export function manifestPlugin(): Plugin {
       }
 
       state.outputCount++
-      const output = buildOptions.rollupOptions?.output
+      const output = buildOptions.rollupOptions.output
       const outputLength = Array.isArray(output) ? output.length : 1
       if (state.outputCount >= outputLength) {
         this.emitFile({

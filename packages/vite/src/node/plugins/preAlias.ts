@@ -34,7 +34,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
         importer &&
         depsOptimizer &&
         bareImportRE.test(id) &&
-        !options?.scan &&
+        !options.scan &&
         id !== '@vite/client' &&
         id !== '@vite/env'
       ) {
@@ -120,9 +120,6 @@ function matches(pattern: string | RegExp, importee: string) {
 function getAliasPatterns(
   entries: (AliasOptions | undefined) & Alias[],
 ): (string | RegExp)[] {
-  if (!entries) {
-    return []
-  }
   if (Array.isArray(entries)) {
     return entries.map((entry) => entry.find)
   }

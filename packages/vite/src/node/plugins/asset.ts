@@ -305,7 +305,7 @@ export async function fileToDevUrl(
   if (skipBase) {
     return rtn
   }
-  const base = joinUrlSegments(config.server?.origin ?? '', config.decodedBase)
+  const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
   return joinUrlSegments(base, removeLeadingSlash(rtn))
 }
 

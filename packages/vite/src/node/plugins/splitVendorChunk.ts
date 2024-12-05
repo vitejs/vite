@@ -102,7 +102,7 @@ export function splitVendorChunkPlugin(): Plugin {
     const cache = new SplitVendorChunkCache()
     caches.push(cache)
     const build = config.build ?? {}
-    const format = output?.format
+    const format = output.format
     if (!build.ssr && !build.lib && format !== 'umd' && format !== 'iife') {
       return splitVendorChunk({ cache })
     }
@@ -110,7 +110,7 @@ export function splitVendorChunkPlugin(): Plugin {
   return {
     name: 'vite:split-vendor-chunk',
     config(config) {
-      let outputs = config?.build?.rollupOptions?.output
+      let outputs = config.build?.rollupOptions?.output
       if (outputs) {
         outputs = arraify(outputs)
         for (const output of outputs) {

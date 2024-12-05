@@ -391,7 +391,7 @@ export function resolveBuildEnvironmentOptions(
   logger: Logger,
   consumer: 'client' | 'server' | undefined,
 ): ResolvedBuildEnvironmentOptions {
-  const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
+  const deprecatedPolyfillModulePreload = raw.polyfillModulePreload
   const { polyfillModulePreload, ...rest } = raw
   raw = rest
   if (deprecatedPolyfillModulePreload !== undefined) {
@@ -543,7 +543,7 @@ async function buildEnvironment(
 
   const resolve = (p: string) => path.resolve(root, p)
   const input = libOptions
-    ? options.rollupOptions?.input ||
+    ? options.rollupOptions.input ||
       (typeof libOptions.entry === 'string'
         ? resolve(libOptions.entry)
         : Array.isArray(libOptions.entry)
@@ -556,7 +556,7 @@ async function buildEnvironment(
             ))
     : typeof options.ssr === 'string'
       ? resolve(options.ssr)
-      : options.rollupOptions?.input || resolve('index.html')
+      : options.rollupOptions.input || resolve('index.html')
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
@@ -596,7 +596,7 @@ async function buildEnvironment(
     output: options.rollupOptions.output,
     input,
     plugins,
-    external: options.rollupOptions?.external,
+    external: options.rollupOptions.external,
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, environment)
     },
@@ -743,7 +743,7 @@ async function buildEnvironment(
 
     // resolve lib mode outputs
     const outputs = resolveBuildOutputs(
-      options.rollupOptions?.output,
+      options.rollupOptions.output,
       libOptions,
       logger,
     )
@@ -760,7 +760,7 @@ async function buildEnvironment(
     const resolvedOutDirs = getResolvedOutDirs(
       root,
       options.outDir,
-      options.rollupOptions?.output,
+      options.rollupOptions.output,
     )
     const emptyOutDir = resolveEmptyOutDir(
       options.emptyOutDir,
@@ -1058,7 +1058,7 @@ export function onRollupWarning(
   }
 
   clearLine()
-  const userOnWarn = environment.config.build.rollupOptions?.onwarn
+  const userOnWarn = environment.config.build.rollupOptions.onwarn
   if (userOnWarn) {
     userOnWarn(warning, viteWarn)
   } else {
@@ -1441,7 +1441,7 @@ export class BuildEnvironment extends BaseEnvironment {
     if (setup?.options) {
       options = mergeConfig(
         options,
-        setup?.options,
+        setup.options,
       ) as ResolvedEnvironmentOptions
     }
     super(name, config, options)

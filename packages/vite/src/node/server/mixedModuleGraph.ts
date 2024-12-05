@@ -659,7 +659,7 @@ function createBackwardCompatibleFileToModulesMap(
               }
             }
             if (!found) {
-              modules?.add(ssrModule)
+              modules.add(ssrModule)
             }
           }
         }

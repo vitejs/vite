@@ -79,7 +79,7 @@ export class HMRContext implements ViteHotContext {
   // extracted in the server for propagation
   acceptExports(
     _: string | readonly string[],
-    callback: (data: any) => void,
+    callback?: (data: any) => void,
   ): void {
     this.acceptDeps([this.ownerPath], ([mod]) => callback?.(mod))
   }

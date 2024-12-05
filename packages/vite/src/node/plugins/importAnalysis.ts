@@ -175,9 +175,6 @@ function extractImportedBindings(
     specifier: match.groups!.specifier,
   }
   const parsed = parseStaticImport(staticImport)
-  if (!parsed) {
-    return
-  }
   if (parsed.namespacedImport) {
     bindings.add('*')
   }
@@ -223,7 +220,7 @@ function extractImportedBindings(
 export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const { root, base } = config
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
-  const enablePartialAccept = config.experimental?.hmrPartialAccept
+  const enablePartialAccept = config.experimental.hmrPartialAccept
   const matchAlias = getAliasPatternMatcher(config.resolve.alias)
 
   let _env: string | undefined
@@ -354,6 +351,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           throw e
         })
 
+        // NOTE: resolved.meta is undefined in dev
         if (!resolved || resolved.meta?.['vite:alias']?.noResolved) {
           // in ssr, we should let node handle the missing modules
           if (ssr) {
