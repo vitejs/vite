@@ -375,19 +375,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         environment: server!.environments.client,
       })
       let content = ''
-      if (result) {
-        if (result.map && 'version' in result.map) {
-          if (result.map.mappings) {
-            await injectSourcesContent(
-              result.map,
-              proxyModulePath,
-              config.logger,
-            )
-          }
-          content = getCodeWithSourcemap('css', result.code, result.map)
-        } else {
-          content = result.code
+      if (result.map && 'version' in result.map) {
+        if (result.map.mappings) {
+          await injectSourcesContent(result.map, proxyModulePath, config.logger)
         }
+        content = getCodeWithSourcemap('css', result.code, result.map)
+      } else {
+        content = result.code
       }
       s.overwrite(start, end, content)
     }),
