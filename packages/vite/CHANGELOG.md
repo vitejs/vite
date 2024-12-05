@@ -1,3 +1,22 @@
+## <small>6.0.3 (2024-12-05)</small>
+
+* fix: handle postcss load unhandled rejections (#18886) ([d5fb653](https://github.com/vitejs/vite/commit/d5fb653c15903ccf84a093f212da86f0327a9a6f)), closes [#18886](https://github.com/vitejs/vite/issues/18886)
+* fix: make handleInvoke interface compatible with invoke (#18876) ([a1dd396](https://github.com/vitejs/vite/commit/a1dd396da856401a12c921d0cd2c4e97cb63f1b5)), closes [#18876](https://github.com/vitejs/vite/issues/18876)
+* fix: make result interfaces for `ModuleRunnerTransport#invoke` more explicit (#18851) ([a75fc31](https://github.com/vitejs/vite/commit/a75fc3193d5e8d8756dfb3a046873e9c222bb6c8)), closes [#18851](https://github.com/vitejs/vite/issues/18851)
+* fix: merge `environments.ssr.resolve` with root `ssr` config (#18857) ([3104331](https://github.com/vitejs/vite/commit/310433106e1e8a0c39dc397e3eace8a71a2416c2)), closes [#18857](https://github.com/vitejs/vite/issues/18857)
+* fix: no permission to create vite config file (#18844) ([ff47778](https://github.com/vitejs/vite/commit/ff47778004d609dbeef7f192783e6f253dd66237)), closes [#18844](https://github.com/vitejs/vite/issues/18844)
+* fix: remove CSS import in CJS correctly in some cases (#18885) ([690a36f](https://github.com/vitejs/vite/commit/690a36ffdb7d6f6568f35a304b4904e7aa475f17)), closes [#18885](https://github.com/vitejs/vite/issues/18885)
+* fix(config): bundle files referenced with imports field (#18887) ([2b5926a](https://github.com/vitejs/vite/commit/2b5926a0e79ce47d22536d38eed2629d326caca0)), closes [#18887](https://github.com/vitejs/vite/issues/18887)
+* fix(config): make stacktrace path correct when sourcemap is enabled (#18833) ([20fdf21](https://github.com/vitejs/vite/commit/20fdf210ee0ac0824b2db74876527cb7f378a9e8)), closes [#18833](https://github.com/vitejs/vite/issues/18833)
+* fix(css): rewrite url when image-set and url exist at the same time (#18868) ([d59efd8](https://github.com/vitejs/vite/commit/d59efd8dfd1c5bf2e7c45c7cdb1c0abc2a05ba02)), closes [#18868](https://github.com/vitejs/vite/issues/18868)
+* fix(deps): update all non-major dependencies (#18853) ([5c02236](https://github.com/vitejs/vite/commit/5c0223636fa277d5daeb4d93c3f32d9f3cd69fc5)), closes [#18853](https://github.com/vitejs/vite/issues/18853)
+* fix(html): allow unexpected question mark in tag name (#18852) ([1b54e50](https://github.com/vitejs/vite/commit/1b54e506a44420d0c8a9e000cf45b1c4f5e33026)), closes [#18852](https://github.com/vitejs/vite/issues/18852)
+* fix(module-runner): decode uri for file url passed to import (#18837) ([88e49aa](https://github.com/vitejs/vite/commit/88e49aa0418cb3f6b579b744ba59daeda68432f3)), closes [#18837](https://github.com/vitejs/vite/issues/18837)
+* refactor: fix logic errors found by no-unnecessary-condition rule (#18891) ([ea802f8](https://github.com/vitejs/vite/commit/ea802f8f8bcf3771a35c1eaf687378613fbabb24)), closes [#18891](https://github.com/vitejs/vite/issues/18891)
+* chore: fix duplicate attributes issue number in comment (#18860) ([ffee618](https://github.com/vitejs/vite/commit/ffee61893cfe9f2b0db4aecf9ddb62ca79c80458)), closes [#18860](https://github.com/vitejs/vite/issues/18860)
+
+
+
 ## <small>6.0.2 (2024-12-02)</small>
 
 * chore: run typecheck in unit tests (#18858) ([49f20bb](https://github.com/vitejs/vite/commit/49f20bb77749ec7b44344fd9c42d593ae20c78f0)), closes [#18858](https://github.com/vitejs/vite/issues/18858)
