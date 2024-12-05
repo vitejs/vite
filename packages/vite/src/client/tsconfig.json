@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./", "../types"],
+  "include": ["./", "../types", "../shared/strict.d.ts"],
   "compilerOptions": {
     "types": [],
     "target": "ES2020",

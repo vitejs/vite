@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["./", "../module-runner", "../types"],
+  "include": ["./", "../module-runner", "../types", "../shared/strict.d.ts"],
   "exclude": ["../**/__tests__"],
   "compilerOptions": {
     // https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping#node-18

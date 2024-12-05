@@ -30,10 +30,6 @@ import {
   withTrailingSlash,
 } from '../../shared/utils'
 import type { Environment } from '../environment'
-import type {
-  StrictRegExpExecArray,
-  StrictRegExpExecArrayFromLen,
-} from '../../shared/typeUtils'
 
 // referenceId is base64url but replaces - with $
 export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
@@ -75,7 +71,7 @@ export function renderAssetUrlInJS(
     environment.config.isWorker,
   )
 
-  let match: RegExpExecArray | null
+  let match
   let s: MagicString | undefined
 
   // Urls added with JS using e.g.
@@ -87,11 +83,9 @@ export function renderAssetUrlInJS(
   // In both cases, the wrapping should already be fine
 
   assetUrlRE.lastIndex = 0
-  while ((match = assetUrlRE.exec(code))) {
+  while ((match = assetUrlRE.exec<[true, boolean]>(code))) {
     s ||= new MagicString(code)
-    const [full, referenceId, postfix = ''] = match as StrictRegExpExecArray<
-      [true, boolean]
-    >
+    const [full, referenceId, postfix = ''] = match
     const file = pluginContext.getFileName(referenceId)
     chunk.viteMetadata!.importedAssets.add(cleanUrl(file))
     const filename = file + postfix
@@ -116,9 +110,9 @@ export function renderAssetUrlInJS(
     environment.getTopLevelConfig(),
   )!
   publicAssetUrlRE.lastIndex = 0
-  while ((match = publicAssetUrlRE.exec(code))) {
+  while ((match = publicAssetUrlRE.exec<1>(code))) {
     s ||= new MagicString(code)
-    const [full, hash] = match as StrictRegExpExecArrayFromLen<1>
+    const [full, hash] = match
     const publicUrl = publicAssetUrlMap.get(hash)!.slice(1)
     const replacement = toOutputFilePathInJS(
       environment,

@@ -81,11 +81,8 @@ function parseDynamicImportPattern(
     // ? is escaped on posix OS
     requestQueryMaybeEscapedSplitRE,
     2,
-  ) as [string, string | undefined]
-  let [rawPattern, search] = filename.split(requestQuerySplitRE, 2) as [
-    string,
-    string | undefined,
-  ]
+  )
+  let [rawPattern, search] = filename.split(requestQuerySplitRE, 2)
   let globParams: DynamicImportRequest | null = null
   if (search) {
     search = '?' + search

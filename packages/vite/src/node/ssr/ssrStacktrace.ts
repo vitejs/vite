@@ -1,7 +1,6 @@
 import path from 'node:path'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import type { EnvironmentModuleGraph } from '..'
-import type { StrictRegExpExecArrayFromLen } from '../../shared/typeUtils'
 
 let offset: number
 
@@ -16,9 +15,7 @@ function calculateOffsetOnce() {
     // in Node 12, stack traces account for the function wrapper.
     // in Node 13 and later, the function wrapper adds two lines,
     // which must be subtracted to generate a valid mapping
-    const match = /:(\d+):\d+\)$/.exec(
-      e.stack.split('\n')[1],
-    ) as StrictRegExpExecArrayFromLen<1> | null
+    const match = /:(\d+):\d+\)$/.exec<1>(e.stack.split('\n')[1])
     offset = match ? +match[1] - 1 : 0
   }
 }

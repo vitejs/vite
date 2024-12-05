@@ -42,7 +42,6 @@ import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
 import { cleanUrl } from '../../shared/utils'
 import { loadTsconfigJsonForFile } from '../plugins/esbuild'
-import type { StrictRegExpExecArrayFromLen } from '../../shared/typeUtils'
 
 export class ScanEnvironment extends BaseEnvironment {
   mode = 'scan' as const
@@ -505,9 +504,7 @@ function esbuildScanPlugin(
         const isHtml = p.endsWith('.html')
         let js = ''
         let scriptId = 0
-        const matches = raw.matchAll(scriptRE) as RegExpStringIterator<
-          StrictRegExpExecArrayFromLen<2>
-        >
+        const matches = raw.matchAll<2>(scriptRE)
         for (const [, openTag, content] of matches) {
           const typeMatch = typeRE.exec(openTag)
           const type =

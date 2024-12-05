@@ -3,7 +3,6 @@ import type { ModuleRunner } from '../runner'
 import { posixDirname, posixResolve } from '../utils'
 import type { EvaluatedModules } from '../evaluatedModules'
 import { slash } from '../../shared/utils'
-import type { StrictRegExpExecArrayFromLen } from '../../shared/typeUtils'
 import { DecodedMap, getOriginalPosition } from './decoder'
 
 interface RetrieveFileHandler {
@@ -240,9 +239,7 @@ function mapSourcePosition(position: OriginalMapping) {
 // https://code.google.com/p/v8/source/browse/trunk/src/messages.js
 function mapEvalOrigin(origin: string): string {
   // Most eval() calls are in this format
-  const match = /^eval at ([^(]+) \((.+):(\d+):(\d+)\)$/.exec(
-    origin,
-  ) as StrictRegExpExecArrayFromLen<4> | null
+  const match = /^eval at ([^(]+) \((.+):(\d+):(\d+)\)$/.exec<4>(origin)
   if (match) {
     const position = mapSourcePosition({
       name: null,
@@ -254,9 +251,7 @@ function mapEvalOrigin(origin: string): string {
   }
 
   // Parse nested eval() calls using recursion
-  const match2 = /^eval at ([^(]+) \((.+)\)$/.exec(
-    origin,
-  ) as StrictRegExpExecArrayFromLen<2> | null
+  const match2 = /^eval at ([^(]+) \((.+)\)$/.exec<2>(origin)
   if (match2) return `eval at ${match2[1]} (${mapEvalOrigin(match2[2])})`
 
   // Make sure we still return useful information if we didn't find anything

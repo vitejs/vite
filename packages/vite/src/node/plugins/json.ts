@@ -10,7 +10,6 @@ import { dataToEsm, makeLegalIdentifier } from '@rollup/pluginutils'
 import { SPECIAL_QUERY_RE } from '../constants'
 import type { Plugin } from '../plugin'
 import { stripBomTag } from '../utils'
-import type { StrictRegExpExecArrayFromLen } from '../../shared/typeUtils'
 
 export interface JsonOptions {
   /**
@@ -134,9 +133,7 @@ export function extractJsonErrorPosition(
     return inputLength - 1
   }
 
-  const errorMessageList = /at position (\d+)/.exec(
-    errorMessage,
-  ) as StrictRegExpExecArrayFromLen<1> | null
+  const errorMessageList = /at position (\d+)/.exec<1>(errorMessage)
   return errorMessageList
     ? Math.max(parseInt(errorMessageList[1], 10) - 1, 0)
     : undefined

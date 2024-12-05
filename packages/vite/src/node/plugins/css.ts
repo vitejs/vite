@@ -87,7 +87,6 @@ import { searchForWorkspaceRoot } from '../server/searchRoot'
 import { type DevEnvironment } from '..'
 import type { PackageCache } from '../packages'
 import { findNearestPackageData } from '../packages'
-import type { StrictRegExpExecArrayFromLen } from '../../shared/typeUtils'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -377,7 +376,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             return joinUrlSegments(config.base, decodedUrl)
           }
         }
-        const [id, fragment] = decodedUrl.split('#') as [string, ...string[]]
+        const [id, fragment] = decodedUrl.split('#')
         let resolved = await resolveUrl(id, importer)
         if (resolved) {
           if (fragment) resolved += '#' + fragment
@@ -710,10 +709,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }> = []
 
       if (code.includes('__VITE_CSS_URL__')) {
-        let match: RegExpExecArray | null
+        let match
         cssUrlAssetRE.lastIndex = 0
-        while ((match = cssUrlAssetRE.exec(code))) {
-          const [full, idHex] = match as StrictRegExpExecArrayFromLen<1>
+        while ((match = cssUrlAssetRE.exec<1>(code))) {
+          const [full, idHex] = match
           const id = Buffer.from(idHex, 'hex').toString()
           const originalFileName = cleanUrl(id)
           const cssAssetName = ensureFileExt(
@@ -1768,8 +1767,8 @@ function rewriteCssUrls(
   css: string,
   replacer: CssUrlReplacer,
 ): Promise<string> {
-  return asyncReplace(css, cssUrlRE, async (match) => {
-    const [matched, rawUrl] = match as StrictRegExpExecArrayFromLen<2>
+  return asyncReplace<2>(css, cssUrlRE, async (match) => {
+    const [matched, rawUrl] = match
     return await doUrlReplace(rawUrl.trim(), matched, replacer)
   })
 }
@@ -1778,8 +1777,8 @@ function rewriteCssDataUris(
   css: string,
   replacer: CssUrlReplacer,
 ): Promise<string> {
-  return asyncReplace(css, cssDataUriRE, async (match) => {
-    const [matched, rawUrl] = match as StrictRegExpExecArrayFromLen<2>
+  return asyncReplace<2>(css, cssDataUriRE, async (match) => {
+    const [matched, rawUrl] = match
     return await doUrlReplace(rawUrl.trim(), matched, replacer, 'data-uri')
   })
 }
@@ -1788,8 +1787,8 @@ function rewriteImportCss(
   css: string,
   replacer: CssUrlReplacer,
 ): Promise<string> {
-  return asyncReplace(css, importCssRE, async (match) => {
-    const [matched, rawUrl] = match as StrictRegExpExecArrayFromLen<1>
+  return asyncReplace<1>(css, importCssRE, async (match) => {
+    const [matched, rawUrl] = match
     return await doImportCSSReplace(rawUrl, matched, replacer)
   })
 }
@@ -1803,8 +1802,8 @@ async function rewriteCssImageSet(
   css: string,
   replacer: CssUrlReplacer,
 ): Promise<string> {
-  return await asyncReplace(css, cssImageSetRE, async (match) => {
-    const [, rawUrl] = match as StrictRegExpExecArrayFromLen<1>
+  return await asyncReplace<1>(css, cssImageSetRE, async (match) => {
+    const [, rawUrl] = match
     const url = await processSrcSet(rawUrl, async ({ url }) => {
       // the url maybe url(...)
       if (cssUrlRE.test(url)) {

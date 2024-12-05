@@ -19,7 +19,6 @@ import type { ResolvedConfig } from '../config'
 import { toOutputFilePathInJS } from '../build'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { Environment } from '../environment'
-import type { StrictRegExpExecArray } from '../../shared/typeUtils'
 import { removedPureCssFilesCache } from './css'
 import { createParseErrorInfo } from './importAnalysis'
 
@@ -48,11 +47,10 @@ const dynamicImportPrefixRE = /import\s*\(/
 const dynamicImportTreeshakenRE =
   /((?:\bconst\s+|\blet\s+|\bvar\s+|,\s*)(\{[^{}.=]+\})\s*=\s*await\s+import\([^)]+\))|(\(\s*await\s+import\([^)]+\)\s*\)(\??\.[\w$]+))|\bimport\([^)]+\)(\s*\.then\(\s*(?:function\s*)?\(\s*\{([^{}.=]+)\}\))/g
 
-type DynamicImportTreeshakenMatch = StrictRegExpExecArray<
+type DynamicImportTreeshakenMatch =
   | [true, true, false, false, false, false] // const { foo } = await import()
   | [false, false, true, true, false, false] // (await import()).foo
   | [false, false, false, false, true, true] // import().then(({ foo }) => {})
->
 
 function toRelativePath(filename: string, importer: string) {
   const relPath = path.posix.relative(path.posix.dirname(importer), filename)
@@ -258,9 +256,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (insertPreload) {
         let match
         while (
-          (match = dynamicImportTreeshakenRE.exec(
-            source,
-          ) as DynamicImportTreeshakenMatch | null)
+          (match =
+            dynamicImportTreeshakenRE.exec<DynamicImportTreeshakenMatch>(
+              source,
+            ))
         ) {
           /* handle `const {foo} = await import('foo')`
            *

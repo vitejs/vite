@@ -13,7 +13,6 @@ import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
-import type { StrictRegExpIndicesArrayFromLen } from '../../shared/typeUtils'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
@@ -59,10 +58,9 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           /\bnew\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*(?:,\s*)?\)/dg
         const cleanString = stripLiteral(code)
 
-        let match: RegExpExecArray | null
-        while ((match = assetImportMetaUrlRE.exec(cleanString))) {
-          const [[startIndex, endIndex], [urlStart, urlEnd]] =
-            match.indices! as StrictRegExpIndicesArrayFromLen<1>
+        let match
+        while ((match = assetImportMetaUrlRE.exec<1>(cleanString))) {
+          const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
           if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
 
           const rawUrl = code.slice(urlStart, urlEnd)

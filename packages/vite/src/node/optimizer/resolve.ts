@@ -7,7 +7,6 @@ import { resolvePackageData } from '../packages'
 import { slash } from '../../shared/utils'
 import type { Environment } from '../environment'
 import { createBackCompatIdResolver } from '../idResolver'
-import type { StrictRegExpExecArray } from '../../shared/typeUtils'
 
 export function createOptimizeDepsIncludeResolver(
   environment: Environment,
@@ -107,9 +106,9 @@ export function expandGlobIds(id: string, config: ResolvedConfig): string[] {
                 // `filePath`: "./dist/glob/foo-browser/foo.js"
                 // we need to revert the file path back to the export key by
                 // matching value regex and replacing the capture groups to the key
-                const matched = exportsValueGlobRe.exec(
+                const matched = exportsValueGlobRe.exec<[true, ...true[]]>(
                   slash(filePath),
-                ) as StrictRegExpExecArray<[true, ...true[]]> | null
+                )
                 // `matched`: [..., 'foo', 'foo']
                 if (matched) {
                   let allGlobSame = matched.length === 2

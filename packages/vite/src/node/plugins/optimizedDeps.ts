@@ -11,7 +11,6 @@ import { createDebugger } from '../utils'
 import { optimizedDepInfoFromFile } from '../optimizer'
 import { cleanUrl } from '../../shared/utils'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
-import type { StrictRegExpExecArrayFromLen } from '../../shared/typeUtils'
 
 const debug = createDebugger('vite:optimize-deps')
 
@@ -36,9 +35,7 @@ export function optimizedDepsPlugin(): Plugin {
       if (depsOptimizer?.isOptimizedDepFile(id)) {
         const metadata = depsOptimizer.metadata
         const file = cleanUrl(id)
-        const versionMatch = DEP_VERSION_RE.exec(
-          file,
-        ) as StrictRegExpExecArrayFromLen<1> | null
+        const versionMatch = DEP_VERSION_RE.exec<1>(file)
         const browserHash = versionMatch
           ? versionMatch[1].split('=')[1]
           : undefined

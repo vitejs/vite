@@ -28,7 +28,7 @@ import {
   withTrailingSlash,
 } from '../shared/utils'
 import { VALID_ID_PREFIX } from '../shared/constants'
-import type { StrictRegExpExecArray } from '../shared/typeUtils'
+import type { StrictRegExpExecArray } from '../shared/strict'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
@@ -340,15 +340,19 @@ export function removeTimestampQuery(url: string): string {
   return url.replace(timestampRE, '').replace(trailingSeparatorRE, '')
 }
 
-export async function asyncReplace(
+export async function asyncReplace<
+  ValuesOrLen extends readonly boolean[] | number | null = null,
+>(
   input: string,
   re: RegExp,
-  replacer: (match: RegExpExecArray) => string | Promise<string>,
+  replacer: (
+    match: StrictRegExpExecArray<ValuesOrLen>,
+  ) => string | Promise<string>,
 ): Promise<string> {
-  let match: RegExpExecArray | null
+  let match
   let remaining = input
   let rewritten = ''
-  while ((match = re.exec(remaining))) {
+  while ((match = re.exec<ValuesOrLen>(remaining))) {
     rewritten += remaining.slice(0, match.index)
     rewritten += await replacer(match)
     remaining = remaining.slice(match.index + match[0].length)
@@ -562,12 +566,10 @@ export function emptyDir(dir: string, skip?: string[]): void {
   if (skip?.length) {
     for (const file of skip) {
       if (path.dirname(file) !== '.') {
-        const matched = splitFirstDirRE.exec(file)
+        const matched = splitFirstDirRE.exec<2>(file)
         if (matched) {
           nested ??= new Map()
-          const [, nestedDir, skipPath] = matched as StrictRegExpExecArray<
-            [true, true]
-          >
+          const [, nestedDir, skipPath] = matched
           let nestedSkip = nested.get(nestedDir)
           if (!nestedSkip) {
             nestedSkip = []
