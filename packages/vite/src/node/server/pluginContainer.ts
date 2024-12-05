@@ -971,8 +971,8 @@ class PluginContainer {
 
     return new Proxy({} as any, {
       get: (_, key: string) => {
-        // `meta` refers to `ModuleInfo.meta` so we refer to `this.meta` to
-        // handle the object union between client and ssr
+        // `meta` refers to `ModuleInfo.meta` of both environments, so we also
+        // need to merge it here
         if (key === 'meta') {
           const meta: Record<string, any> = {}
           if (ssrModuleInfo) {
