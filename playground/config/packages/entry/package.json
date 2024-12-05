@@ -3,5 +3,8 @@
   "type": "module",
   "dependencies": {
     "@vite/test-config-plugin-module-condition": "link:../plugin-module-condition"
+  },
+  "imports": {
+    "#imports-field": "./imports-field.ts"
   }
 }

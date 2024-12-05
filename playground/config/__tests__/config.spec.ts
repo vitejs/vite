@@ -27,6 +27,7 @@ it('loadConfigFromFile', async () => {
           4,
         ],
       ],
+      "importsField": "imports-field",
       "moduleCondition": "import condition",
     }
   `)
