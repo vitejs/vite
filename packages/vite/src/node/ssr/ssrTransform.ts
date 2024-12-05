@@ -473,7 +473,7 @@ function walk(
   }
 
   function isInScope(name: string, parents: Node[]) {
-    return parents.some((node) => node && scopeMap.get(node)?.has(name))
+    return parents.some((node) => scopeMap.get(node)?.has(name))
   }
   function handlePattern(p: Pattern, parentScope: _Node) {
     if (p.type === 'Identifier') {
@@ -568,11 +568,11 @@ function walk(
             return
           }
           ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
-            enter(child: Node, parent: Node) {
+            enter(child: Node, parent: Node | undefined) {
               // skip params default value of destructure
               if (
                 parent?.type === 'AssignmentPattern' &&
-                parent?.right === child
+                parent.right === child
               ) {
                 return this.skip()
               }
@@ -583,8 +583,8 @@ function walk(
               // assignment of a destructuring variable
               if (
                 (parent?.type === 'TemplateLiteral' &&
-                  parent?.expressions.includes(child)) ||
-                (parent?.type === 'CallExpression' && parent?.callee === child)
+                  parent.expressions.includes(child)) ||
+                (parent?.type === 'CallExpression' && parent.callee === child)
               ) {
                 return
               }
@@ -706,10 +706,10 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
 }
 
 const isStaticProperty = (node: _Node): node is Property =>
-  node && node.type === 'Property' && !node.computed
+  node.type === 'Property' && !node.computed
 
-const isStaticPropertyKey = (node: _Node, parent: _Node) =>
-  isStaticProperty(parent) && parent.key === node
+const isStaticPropertyKey = (node: _Node, parent: _Node | undefined) =>
+  parent && isStaticProperty(parent) && parent.key === node
 
 const functionNodeTypeRE = /Function(?:Expression|Declaration)$|Method$/
 function isFunction(node: _Node): node is FunctionNode {
@@ -732,10 +732,7 @@ function isInDestructuringAssignment(
   parent: _Node,
   parentStack: _Node[],
 ): boolean {
-  if (
-    parent &&
-    (parent.type === 'Property' || parent.type === 'ArrayPattern')
-  ) {
+  if (parent.type === 'Property' || parent.type === 'ArrayPattern') {
     return parentStack.some((i) => i.type === 'AssignmentExpression')
   }
   return false

@@ -70,7 +70,7 @@ export function transformRequest(
   options: TransformOptions = {},
 ): Promise<TransformResult | null> {
   // Backward compatibility when only `ssr` is passed
-  if (!options?.ssr) {
+  if (!options.ssr) {
     // Backward compatibility
     options = { ...options, ssr: environment.config.consumer === 'server' }
   }
@@ -215,16 +215,18 @@ async function getCachedTransformResult(
 
   // tries to handle soft invalidation of the module if available,
   // returns a boolean true is successful, or false if no handling is needed
-  const softInvalidatedTransformResult =
-    module &&
-    (await handleModuleSoftInvalidation(environment, module, timestamp))
+  const softInvalidatedTransformResult = await handleModuleSoftInvalidation(
+    environment,
+    module,
+    timestamp,
+  )
   if (softInvalidatedTransformResult) {
     debugCache?.(`[memory-hmr] ${prettyUrl}`)
     return softInvalidatedTransformResult
   }
 
   // check if we have a fresh cache
-  const cached = module?.transformResult
+  const cached = module.transformResult
   if (cached) {
     debugCache?.(`[memory] ${prettyUrl}`)
     return cached
@@ -345,10 +347,7 @@ async function loadAndTransform(
     inMap: map,
   })
   const originalCode = code
-  if (
-    transformResult == null ||
-    (isObject(transformResult) && transformResult.code == null)
-  ) {
+  if (transformResult.code === originalCode) {
     // no transform applied, keep code as-is
     debugTransform?.(
       timeFrom(transformStart) + colors.dim(` [skipped] ${prettyUrl}`),
@@ -413,7 +412,7 @@ async function loadAndTransform(
     ? await ssrTransform(code, normalizedMap, url, originalCode, {
         json: {
           stringify:
-            topLevelConfig.json?.stringify === true &&
+            topLevelConfig.json.stringify === true &&
             topLevelConfig.json.namedExports !== true,
         },
       })
