@@ -92,7 +92,7 @@ app.use('*', async (req, res, next) => {
 })
 ```
 
-## Runtime agnostic SSR
+## Runtime Agnostic SSR
 
 Since the `RunnableDevEnvironment` can only be used to run the code in the same runtime as the Vite server, it requires a runtime that can run the Vite Server (a runtime that is compatible with Node.js). This means that you will need to use the raw `DevEnvironment` to make it runtime agnostic.
 
@@ -264,7 +264,7 @@ export function createHandler(input) {
 }
 ```
 
-## Environments during build
+## Environments During Build
 
 In the CLI, calling `vite build` and `vite build --ssr` will still build the client only and ssr only environments for backward compatibility.
 
@@ -283,6 +283,6 @@ export default {
 }
 ```
 
-## Environment agnostic code
+## Environment Agnostic Code
 
 Most of the time, the current `environment` instance will be available as part of the context of the code being run so the need to access them through `server.environments` should be rare. For example, inside plugin hooks the environment is exposed as part of the `PluginContext`, so it can be accessed using `this.environment`. See [Environment API for Plugins](./api-environment-plugins.md) to learn about how to build environment aware plugins.
