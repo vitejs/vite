@@ -331,7 +331,7 @@ export type PluginWithRequiredHook<K extends keyof Plugin> = Plugin & {
 
 type Thenable<T> = T | Promise<T>
 
-type FalsyPlugin = false | null | undefined
+export type FalsyPlugin = false | null | undefined
 
 export type PluginOption = Thenable<Plugin | FalsyPlugin | PluginOption[]>
 
