@@ -157,7 +157,7 @@ export interface NormalizedHotChannel<Api = any> {
   off(event: string, listener: Function): void
   /** @internal */
   setInvokeHandler(invokeHandlers: InvokeMethods | undefined): void
-  handleInvoke(payload: HotPayload): Promise<{ r: any } | { e: any }>
+  handleInvoke(payload: HotPayload): Promise<{ result: any } | { error: any }>
   /**
    * Start listening for messages
    */
@@ -301,7 +301,13 @@ export const normalizeHotChannel = (
       }
       channel.on?.('vite:invoke', listenerForInvokeHandler)
     },
-    handleInvoke,
+    handleInvoke: async (payload) => {
+      const data = await handleInvoke(payload)
+      if (data.e) {
+        return { error: data.e }
+      }
+      return { result: data.r }
+    },
     send: (...args: any[]) => {
       let payload: HotPayload
       if (typeof args[0] === 'string') {
@@ -1161,7 +1167,7 @@ export function createDeprecatedHotBroadcaster(
     send: ws.send,
     setInvokeHandler: ws.setInvokeHandler,
     handleInvoke: async () => ({
-      e: {
+      error: {
         name: 'TransportError',
         message: 'handleInvoke not implemented',
         stack: new Error().stack,

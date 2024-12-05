@@ -105,7 +105,7 @@ export function createWebSocketServer(
       off: noop as any as WebSocketServer['off'],
       setInvokeHandler: noop,
       handleInvoke: async () => ({
-        e: {
+        error: {
           name: 'TransportError',
           message: 'handleInvoke not implemented',
           stack: new Error().stack,
