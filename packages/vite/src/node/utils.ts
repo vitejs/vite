@@ -28,7 +28,7 @@ import {
   withTrailingSlash,
 } from '../shared/utils'
 import { VALID_ID_PREFIX } from '../shared/constants'
-import type { StrictRegExpExecArray } from '../shared/strict'
+import type { StrictRegExpExecArray } from '../shared/typeUtils'
 import {
   CLIENT_ENTRY,
   CLIENT_PUBLIC_PATH,
