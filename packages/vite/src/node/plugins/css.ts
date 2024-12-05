@@ -307,7 +307,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
   // warm up cache for resolved postcss config
   if (config.css?.transformer !== 'lightningcss') {
-    resolvePostcssConfig(config)
+    resolvePostcssConfig(config).catch(() => {
+      /* will be handled later */
+    })
   }
 
   return {
@@ -1696,9 +1698,14 @@ async function resolvePostcssConfig(
       return null
     })
     // replace cached promise to result object when finished
-    result.then((resolved) => {
-      postcssConfigCache.set(config, resolved)
-    })
+    result.then(
+      (resolved) => {
+        postcssConfigCache.set(config, resolved)
+      },
+      () => {
+        /* keep as rejected promise, will be handled later */
+      },
+    )
   }
 
   postcssConfigCache.set(config, result)
