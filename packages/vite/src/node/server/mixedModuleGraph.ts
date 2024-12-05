@@ -13,6 +13,9 @@ import type {
  * We are going to deprecate these types and we can try to use them back in the future.
  */
 
+// same default value of "moduleInfo.meta" as in Rollup
+const EMPTY_OBJECT = Object.freeze({})
+
 export class ModuleNode {
   _moduleGraph: ModuleGraph
   _clientModule: EnvironmentModuleNode | undefined
@@ -76,6 +79,48 @@ export class ModuleNode {
     }
     return importedModules
   }
+  _getModuleInfoUnion(prop: 'info'): ModuleInfo | undefined {
+    const _clientValue = this._clientModule?.[prop]
+    const _ssrValue = this._ssrModule?.[prop]
+
+    if (_clientValue == null && _ssrValue == null) return undefined
+
+    return new Proxy({} as any, {
+      get: (_, key: string) => {
+        // `meta` refers to `ModuleInfo.meta` so we refer to `this.meta` to
+        // handle the object union between client and ssr
+        if (key === 'meta') {
+          return this.meta || EMPTY_OBJECT
+        }
+        if (_clientValue) {
+          if (key in _clientValue) {
+            return _clientValue[key as keyof ModuleInfo]
+          }
+        }
+        if (_ssrValue) {
+          if (key in _ssrValue) {
+            return _ssrValue[key as keyof ModuleInfo]
+          }
+        }
+      },
+    })
+  }
+  _getModuleObjectUnion(prop: 'meta'): Record<string, any> | undefined {
+    const _clientValue = this._clientModule?.[prop]
+    const _ssrValue = this._ssrModule?.[prop]
+
+    if (_clientValue == null && _ssrValue == null) return undefined
+
+    const info: Record<string, any> = {}
+    if (_ssrValue) {
+      Object.assign(info, _ssrValue)
+    }
+    if (_clientValue) {
+      Object.assign(info, _clientValue)
+    }
+    return info
+  }
+
   get url(): string {
     return this._get('url')
   }
@@ -97,11 +142,13 @@ export class ModuleNode {
   get type(): 'js' | 'css' {
     return this._get('type')
   }
+  // `info` needs special care as it's defined as a proxy in `pluginContainer`,
+  // so we also merge it as a proxy too
   get info(): ModuleInfo | undefined {
-    return this._get('info')
+    return this._getModuleInfoUnion('info')
   }
   get meta(): Record<string, any> | undefined {
-    return this._get('meta')
+    return this._getModuleObjectUnion('meta')
   }
   get importers(): Set<ModuleNode> {
     return this._getModuleSetUnion('importers')
