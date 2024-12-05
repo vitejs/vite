@@ -59,10 +59,10 @@ export type strictRegExpIndicesArrayFromValuesCases = [
       StrictRegExpIndicesArrayFromValues<[true, false, boolean]>,
       RegExpIndicesArray &
         [
-          [number, number],
-          [number, number],
+          RegExpIndexValue,
+          RegExpIndexValue,
           undefined,
-          [number, number] | undefined,
+          RegExpIndexValue | undefined,
         ]
     >
   >,
@@ -71,8 +71,8 @@ export type strictRegExpIndicesArrayFromValuesCases = [
       StrictRegExpIndicesArrayFromValues<[true, false] | [false, true]>,
       RegExpIndicesArray &
         (
-          | [[number, number], [number, number], undefined]
-          | [[number, number], undefined, [number, number]]
+          | [RegExpIndexValue, RegExpIndexValue, undefined]
+          | [RegExpIndexValue, undefined, RegExpIndexValue]
         )
     >
   >,
