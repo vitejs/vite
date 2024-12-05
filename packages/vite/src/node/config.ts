@@ -1766,7 +1766,7 @@ async function bundleConfigFile(
 
           // externalize bare imports
           build.onResolve(
-            { filter: /^[^.].*/ },
+            { filter: /^[^.#].*/ },
             async ({ path: id, importer, kind }) => {
               if (
                 kind === 'entry-point' ||
