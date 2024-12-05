@@ -308,6 +308,10 @@ function handleParseError(
     case 'non-void-html-element-start-tag-with-trailing-solidus':
       // Allow self closing on non-void elements #10439
       return
+    case 'unexpected-question-mark-instead-of-tag-name':
+      // Allow <?xml> declaration and <?> empty elements
+      // lit generates <?>: https://github.com/lit/lit/issues/2470
+      return
   }
   const parseError = formatParseError(parserError, filePath, html)
   throw new Error(
