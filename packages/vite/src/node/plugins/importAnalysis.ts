@@ -754,15 +754,14 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
         let normalized
-        if (url.startsWith('.')) {
+        const resolved = await this.resolve(url, importerModule.id || undefined)
+        if (resolved?.id) {
+          const mod = moduleGraph.getModuleById(resolved.id)
+          normalized = mod?.url
+        }
+        if (!normalized) {
           const [resolved] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
           normalized = resolved
-        } else {
-          const resolved = await this.resolve(
-            url,
-            importerModule.id || undefined,
-          )
-          normalized = resolved?.id || url
         }
         normalizedAcceptedUrls.add(normalized)
         const hmrAccept = normalizeHmrUrl(normalized)
