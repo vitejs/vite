@@ -57,6 +57,17 @@ describe('build', () => {
       buildProject('red'),
       buildProject('blue'),
     ])
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "index",
+          "_subentry.css",
+        ],
+        "unchanged": [
+          "undefined",
+        ],
+      }
+    `)
     assertOutputHashContentChange(result[0], result[1])
   })
 
@@ -105,6 +116,21 @@ describe('build', () => {
       buildProject('yellow'),
       buildProject('blue'),
     ])
+    expect(getOutputHashChanges(result[0], result[1])).toMatchInlineSnapshot(`
+      {
+        "changed": [
+          "index",
+          "_foo",
+          "_bar",
+          "_baz.css",
+        ],
+        "unchanged": [
+          "_foo.css",
+          "_bar.css",
+          "undefined",
+        ],
+      }
+    `)
     assertOutputHashContentChange(result[0], result[1])
   })
 
@@ -748,5 +774,19 @@ function assertOutputHashContentChange(
         ).toEqual(chunk2.code)
       }
     }
+  }
+}
+
+function getOutputHashChanges(output1: RollupOutput, output2: RollupOutput) {
+  const map1 = Object.fromEntries(
+    output1.output.map((o) => [o.name, o.fileName]),
+  )
+  const map2 = Object.fromEntries(
+    output2.output.map((o) => [o.name, o.fileName]),
+  )
+  const names = Object.keys(map1).filter(Boolean)
+  return {
+    changed: names.filter((name) => map1[name] !== map2[name]),
+    unchanged: names.filter((name) => map1[name] === map2[name]),
   }
 }
