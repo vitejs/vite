@@ -6,7 +6,7 @@ import type { OutputBundle } from 'rollup'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import type { Environment } from '../environment'
-import { usePerEnvironmentState } from '../environment'
+import { perEnvironmentState } from '../environment'
 import { isDefined, isInNodeModules, normalizePath } from '../utils'
 import { LogLevels } from '../logger'
 import { withTrailingSlash } from '../../shared/utils'
@@ -40,7 +40,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
 
-  const modulesReporter = usePerEnvironmentState((environment: Environment) => {
+  const modulesReporter = perEnvironmentState((environment: Environment) => {
     let hasTransformed = false
     let transformedCount = 0
 
@@ -83,7 +83,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     }
   })
 
-  const chunksReporter = usePerEnvironmentState((environment: Environment) => {
+  const chunksReporter = perEnvironmentState((environment: Environment) => {
     let hasRenderedChunk = false
     let hasCompressChunk = false
     let chunkCount = 0

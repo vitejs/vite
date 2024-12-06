@@ -8,7 +8,8 @@ export const core = [
     desc: 'Independent open source developer, creator of Vue.js and Vite.',
     links: [
       { icon: 'github', link: 'https://github.com/yyx990803' },
-      { icon: 'twitter', link: 'https://twitter.com/youyuxi' },
+      { icon: 'x', link: 'https://x.com/youyuxi' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/evanyou.me' },
     ],
     sponsor: 'https://github.com/sponsors/yyx990803',
   },
@@ -21,7 +22,7 @@ export const core = [
     desc: 'Core team member of Vite. Team member of Vue.',
     links: [
       { icon: 'github', link: 'https://github.com/patak-dev' },
-      { icon: 'twitter', link: 'https://twitter.com/patak_dev' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/patak.dev' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@patak' },
     ],
     sponsor: 'https://github.com/sponsors/patak-dev',
@@ -35,7 +36,7 @@ export const core = [
     desc: 'Core team member of Vite & Vue. Working at NuxtLabs.',
     links: [
       { icon: 'github', link: 'https://github.com/antfu' },
-      { icon: 'twitter', link: 'https://twitter.com/antfu7' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/antfu.me' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@antfu' },
     ],
     sponsor: 'https://github.com/sponsors/antfu',
@@ -44,9 +45,10 @@ export const core = [
     avatar: 'https://github.com/bluwy.png',
     name: 'Bjorn Lu',
     title: 'Open Source Developer',
-    desc: 'Astro core residency. Svelte and Vite core team member.',
+    desc: 'Vite, Astro, and Svelte core team member.',
     links: [
       { icon: 'github', link: 'https://github.com/bluwy' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/bluwy.me' },
       { icon: 'twitter', link: 'https://twitter.com/bluwyoo' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@bluwy' },
     ],
@@ -59,6 +61,7 @@ export const core = [
     desc: 'Vite core team member. Call me sapphi or green or midori ;)',
     links: [
       { icon: 'github', link: 'https://github.com/sapphi-red' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/sapphi.red' },
       { icon: 'twitter', link: 'https://twitter.com/sapphi_red' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sapphi_red' },
     ],
@@ -71,7 +74,10 @@ export const core = [
     desc: 'Passionate by tooling around TypeScript and React.',
     links: [
       { icon: 'github', link: 'https://github.com/ArnaudBarre' },
-      { icon: 'twitter', link: 'https://twitter.com/_ArnaudBarre' },
+      {
+        icon: 'bluesky',
+        link: 'https://bsky.app/profile/arnaud-barre.bsky.social',
+      },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@ArnaudBarre' },
     ],
     sponsor: 'https://github.com/sponsors/ArnaudBarre',
@@ -94,8 +100,8 @@ export const core = [
     desc: 'An open source fullstack developer',
     links: [
       { icon: 'github', link: 'https://github.com/sheremet-va' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/erus.dev' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@sheremet_va' },
-      { icon: 'twitter', link: 'https://twitter.com/sheremet_va' },
     ],
     sponsor: 'https://github.com/sponsors/sheremet-va',
   },
@@ -106,7 +112,7 @@ export const core = [
     desc: 'Open source enthusiast',
     links: [
       { icon: 'github', link: 'https://github.com/hi-ogawa' },
-      { icon: 'twitter', link: 'https://twitter.com/hiroshi_18181' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/hiogawa.bsky.social' },
     ],
     sponsor: 'https://github.com/sponsors/hi-ogawa',
   },
@@ -120,7 +126,11 @@ export const emeriti = [
     desc: 'Dabbling in social ecommerce, meta frameworks, and board games',
     links: [
       { icon: 'github', link: 'https://github.com/aleclarson' },
-      { icon: 'twitter', link: 'https://twitter.com/retropragma' },
+      { icon: 'x', link: 'https://x.com/retropragma' },
+      {
+        icon: 'bluesky',
+        link: 'https://bsky.app/profile/retropragma.bsky.social',
+      },
     ],
   },
   {
@@ -130,7 +140,7 @@ export const emeriti = [
     desc: 'Frontend. Vite team member.',
     links: [
       { icon: 'github', link: 'https://github.com/poyoho' },
-      { icon: 'twitter', link: 'https://twitter.com/yoho_po' },
+      { icon: 'x', link: 'https://x.com/yoho_po' },
     ],
   },
   {
@@ -140,7 +150,7 @@ export const emeriti = [
     desc: 'Web Developer. Vue & Vite team member',
     links: [
       { icon: 'github', link: 'https://github.com/ygj6' },
-      { icon: 'twitter', link: 'https://twitter.com/ygj_66' },
+      { icon: 'x', link: 'https://x.com/ygj_66' },
     ],
   },
   {
@@ -151,7 +161,8 @@ export const emeriti = [
     desc: 'weeb/javascript lover.',
     links: [
       { icon: 'github', link: 'https://github.com/Niputi' },
-      { icon: 'twitter', link: 'https://twitter.com/Niputi_' },
+      { icon: 'x', link: 'https://x.com/Niputi_' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/niputi.bsky.social' },
     ],
   },
   {
@@ -164,7 +175,10 @@ export const emeriti = [
     avatar: 'https://github.com/GrygrFlzr.png',
     name: 'GrygrFlzr',
     title: 'Developer',
-    links: [{ icon: 'github', link: 'https://github.com/GrygrFlzr' }],
+    links: [
+      { icon: 'github', link: 'https://github.com/GrygrFlzr' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/bsky.cybeast.dev' },
+    ],
   },
   {
     avatar: 'https://github.com/nihalgonsalves.png',
@@ -185,17 +199,17 @@ export const emeriti = [
     ],
   },
   {
-    avatar: 'https://github.com/sodatea.png',
+    avatar: 'https://github.com/haoqunjiang.png',
     name: 'Haoqun Jiang',
-    title: 'Developer',
+    title: 'Core Team Member',
     org: 'Vue.js',
     orgLink: 'https://vuejs.org/',
-    desc: 'Vue/Vite team member. Full-time open sourcerer.',
+    desc: 'Curator of best practices for Vue.js tooling',
     links: [
-      { icon: 'github', link: 'https://github.com/sodatea' },
-      { icon: 'twitter', link: 'https://twitter.com/haoqunjiang' },
+      { icon: 'github', link: 'https://github.com/haoqunjiang' },
+      { icon: 'bluesky', link: 'https://bsky.app/profile/haoqun.dev' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@haoqun' },
     ],
-    sponsor: 'https://github.com/sponsors/sodatea',
+    sponsor: 'https://github.com/sponsors/haoqunjiang',
   },
 ]

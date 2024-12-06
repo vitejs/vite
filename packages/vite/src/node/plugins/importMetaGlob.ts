@@ -1,5 +1,5 @@
 import { isAbsolute, posix } from 'node:path'
-import micromatch from 'micromatch'
+import picomatch from 'picomatch'
 import { stripLiteral } from 'strip-literal'
 import colors from 'picocolors'
 import type {
@@ -24,8 +24,6 @@ import type { Logger } from '../logger'
 import { newlineRegEx, slash } from '../../shared/utils'
 import type { Environment } from '../environment'
 
-const { isMatch, scan } = micromatch
-
 export interface ParsedImportGlob {
   index: number
   globs: string[]
@@ -34,6 +32,8 @@ export interface ParsedImportGlob {
   options: ParsedGeneralImportGlobOptions
   start: number
   end: number
+  onlyKeys: boolean
+  onlyValues: boolean
 }
 
 interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
@@ -43,7 +43,7 @@ interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
   const importGlobMaps = new Map<
     Environment,
-    Map<string, { affirmed: string[]; negated: string[] }[]>
+    Map<string, Array<(file: string) => boolean>>
   >()
 
   return {
@@ -67,18 +67,25 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         if (!importGlobMaps.has(this.environment)) {
           importGlobMaps.set(this.environment, new Map())
         }
-        importGlobMaps.get(this.environment)!.set(
-          id,
-          allGlobs.map((globs) => {
-            const affirmed: string[] = []
-            const negated: string[] = []
 
-            for (const glob of globs) {
-              ;(glob[0] === '!' ? negated : affirmed).push(glob)
-            }
-            return { affirmed, negated }
-          }),
-        )
+        const globMatchers = allGlobs.map((globs) => {
+          const affirmed: string[] = []
+          const negated: string[] = []
+          for (const glob of globs) {
+            ;(glob[0] === '!' ? negated : affirmed).push(glob)
+          }
+          const affirmedMatcher = picomatch(affirmed)
+          const negatedMatcher = picomatch(negated)
+
+          return (file: string) => {
+            // (glob1 || glob2) && !(glob3 || glob4)...
+            return (
+              (affirmed.length === 0 || affirmedMatcher(file)) &&
+              !(negated.length > 0 && negatedMatcher(file))
+            )
+          }
+        })
+        importGlobMaps.get(this.environment)!.set(id, globMatchers)
 
         return transformStableResult(result.s, id, config)
       }
@@ -90,16 +97,8 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
       if (!importGlobMap) return
 
       const modules: EnvironmentModuleNode[] = []
-      for (const [id, allGlobs] of importGlobMap) {
-        // (glob1 || glob2) && !glob3 && !glob4...
-        if (
-          allGlobs.some(
-            ({ affirmed, negated }) =>
-              (!affirmed.length ||
-                affirmed.some((glob) => isMatch(file, glob))) &&
-              (!negated.length || negated.every((glob) => isMatch(file, glob))),
-          )
-        ) {
+      for (const [id, globMatchers] of importGlobMap) {
+        if (globMatchers.some((matcher) => matcher(file))) {
           const mod = this.environment.moduleGraph.getModuleById(id)
           if (mod) modules.push(mod)
         }
@@ -110,6 +109,8 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
 }
 
 const importGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(/g
+const objectKeysRE = /\bObject\.keys\(\s*$/
+const objectValuesRE = /\bObject\.values\(\s*$/
 
 const knownOptions = {
   as: ['string'],
@@ -309,6 +310,12 @@ export async function parseImportGlob(
       globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
+    const sliceCode = cleanCode.slice(0, start)
+    const onlyKeys = objectKeysRE.test(sliceCode)
+    let onlyValues = false
+    if (!onlyKeys) {
+      onlyValues = objectValuesRE.test(sliceCode)
+    }
 
     return {
       index,
@@ -318,6 +325,8 @@ export async function parseImportGlob(
       options,
       start,
       end,
+      onlyKeys,
+      onlyValues,
     }
   })
 
@@ -393,7 +402,16 @@ export async function transformGlobImport(
   const staticImports = (
     await Promise.all(
       matches.map(
-        async ({ globsResolved, isRelative, options, index, start, end }) => {
+        async ({
+          globsResolved,
+          isRelative,
+          options,
+          index,
+          start,
+          end,
+          onlyKeys,
+          onlyValues,
+        }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
             await glob(globsResolved, {
@@ -440,6 +458,11 @@ export async function transformGlobImport(
             let importPath = paths.importPath
             let importQuery = options.query ?? ''
 
+            if (onlyKeys) {
+              objectProps.push(`${JSON.stringify(filePath)}: 0`)
+              return
+            }
+
             if (importQuery && importQuery !== '?raw') {
               const fileExtension = basename(file).split('.').slice(-1)[0]
               if (fileExtension && restoreQueryExtension)
@@ -461,13 +484,19 @@ export async function transformGlobImport(
               staticImports.push(
                 `import ${expression} from ${JSON.stringify(importPath)}`,
               )
-              objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
+              objectProps.push(
+                onlyValues
+                  ? `${variableName}`
+                  : `${JSON.stringify(filePath)}: ${variableName}`,
+              )
             } else {
               let importStatement = `import(${JSON.stringify(importPath)})`
               if (importKey)
                 importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
               objectProps.push(
-                `${JSON.stringify(filePath)}: () => ${importStatement}`,
+                onlyValues
+                  ? `() => ${importStatement}`
+                  : `${JSON.stringify(filePath)}: () => ${importStatement}`,
               )
             }
           })
@@ -480,10 +509,17 @@ export async function transformGlobImport(
             originalLineBreakCount > 0
               ? '\n'.repeat(originalLineBreakCount)
               : ''
+          let replacement = ''
+          if (onlyKeys) {
+            replacement = `{${objectProps.join(',')}${lineBreaks}}`
+          } else if (onlyValues) {
+            replacement = `[${objectProps.join(',')}${lineBreaks}]`
+          } else {
+            replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+              ',',
+            )}${lineBreaks}})`
+          }
 
-          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-            ',',
-          )}${lineBreaks}})`
           s.overwrite(start, end, replacement)
 
           return staticImports
@@ -577,7 +613,7 @@ export function getCommonBase(globsResolved: string[]): null | string {
   const bases = globsResolved
     .filter((g) => g[0] !== '!')
     .map((glob) => {
-      let { base } = scan(glob)
+      let { base } = picomatch.scan(glob)
       // `scan('a/foo.js')` returns `base: 'a/foo.js'`
       if (posix.basename(base).includes('.')) base = posix.dirname(base)
 

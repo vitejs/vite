@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
 import MagicString from 'magic-string'
@@ -8,10 +9,8 @@ import type { IndexHtmlTransformHook } from '../../plugins/html'
 import {
   addToHTMLProxyCache,
   applyHtmlTransforms,
-  assetAttrsConfig,
   extractImportExpressionFromClassicScript,
   findNeedTransformStyleAttribute,
-  getAttrKey,
   getScriptInfo,
   htmlEnvHook,
   htmlProxyResult,
@@ -21,6 +20,7 @@ import {
   overwriteAttrValue,
   postImportMapHook,
   preImportMapHook,
+  removeViteIgnoreAttr,
   resolveHtmlTransforms,
   traverseHtml,
 } from '../../plugins/html'
@@ -39,11 +39,11 @@ import {
   processSrcSetSync,
   stripBase,
 } from '../../utils'
-import { getFsUtils } from '../../fsUtils'
 import { checkPublicFile } from '../../publicDir'
 import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
+import { getNodeAssetAttributes } from '../../assetSource'
 
 interface AssetNode {
   start: number
@@ -117,8 +117,6 @@ function isBareRelative(url: string) {
   return wordCharRE.test(url[0]) && !url.includes(':')
 }
 
-const isSrcSet = (attr: Token.Attribute) =>
-  attr.name === 'srcset' && attr.prefix === undefined
 const processNodeUrl = (
   url: string,
   useSrcSetReplacer: boolean,
@@ -196,7 +194,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   let proxyModuleUrl: string
 
   const trailingSlash = htmlPath.endsWith('/')
-  if (!trailingSlash && getFsUtils(config).existsSync(filename)) {
+  if (!trailingSlash && fs.existsSync(filename)) {
     proxyModulePath = htmlPath
     proxyModuleUrl = proxyModulePath
   } else {
@@ -220,6 +218,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
   )
   const styleUrl: AssetNode[] = []
   const inlineStyles: InlineStyleAttribute[] = []
+  const inlineModulePaths: string[] = []
 
   const addInlineModule = (
     node: DefaultTreeAdapterMap['element'],
@@ -248,13 +247,8 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
     // inline js module. convert to src="proxy" (dev only, base is never relative)
     const modulePath = `${proxyModuleUrl}?html-proxy&index=${inlineModuleIndex}.${ext}`
+    inlineModulePaths.push(modulePath)
 
-    // invalidate the module so the newly cached contents will be served
-    const clientModuleGraph = server?.environments.client.moduleGraph
-    const module = clientModuleGraph?.getModuleById(modulePath)
-    if (module) {
-      clientModuleGraph!.invalidateModule(module)
-    }
     s.update(
       node.sourceCodeLocation!.startOffset,
       node.sourceCodeLocation!.endOffset,
@@ -270,12 +264,15 @@ const devHtmlHook: IndexHtmlTransformHook = async (
 
     // script tags
     if (node.nodeName === 'script') {
-      const { src, sourceCodeLocation, isModule } = getScriptInfo(node)
+      const { src, sourceCodeLocation, isModule, isIgnored } =
+        getScriptInfo(node)
 
-      if (src) {
+      if (isIgnored) {
+        removeViteIgnoreAttr(s, sourceCodeLocation!)
+      } else if (src) {
         const processedUrl = processNodeUrl(
           src.value,
-          isSrcSet(src),
+          /* useSrcSetReplacer */ false,
           config,
           htmlPath,
           originalUrl,
@@ -330,29 +327,37 @@ const devHtmlHook: IndexHtmlTransformHook = async (
     }
 
     // elements with [href/src] attrs
-    const assetAttrs = assetAttrsConfig[node.nodeName]
-    if (assetAttrs) {
-      for (const p of node.attrs) {
-        const attrKey = getAttrKey(p)
-        if (p.value && assetAttrs.includes(attrKey)) {
-          const processedUrl = processNodeUrl(
-            p.value,
-            isSrcSet(p),
-            config,
-            htmlPath,
-            originalUrl,
-          )
-          if (processedUrl !== p.value) {
-            overwriteAttrValue(
-              s,
-              node.sourceCodeLocation!.attrs![attrKey],
-              processedUrl,
-            )
-          }
+    const assetAttributes = getNodeAssetAttributes(node)
+    for (const attr of assetAttributes) {
+      if (attr.type === 'remove') {
+        s.remove(attr.location.startOffset, attr.location.endOffset)
+      } else {
+        const processedUrl = processNodeUrl(
+          attr.value,
+          attr.type === 'srcset',
+          config,
+          htmlPath,
+          originalUrl,
+        )
+        if (processedUrl !== attr.value) {
+          overwriteAttrValue(s, attr.location, processedUrl)
         }
       }
     }
   })
+
+  // invalidate the module so the newly cached contents will be served
+  const clientModuelGraph = server?.environments.client.moduleGraph
+  if (clientModuelGraph) {
+    await Promise.all(
+      inlineModulePaths.map(async (url) => {
+        const module = await clientModuelGraph.getModuleByUrl(url)
+        if (module) {
+          clientModuelGraph.invalidateModule(module)
+        }
+      }),
+    )
+  }
 
   await Promise.all([
     ...styleUrl.map(async ({ start, end, code }, index) => {
@@ -370,19 +375,13 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         environment: server!.environments.client,
       })
       let content = ''
-      if (result) {
-        if (result.map && 'version' in result.map) {
-          if (result.map.mappings) {
-            await injectSourcesContent(
-              result.map,
-              proxyModulePath,
-              config.logger,
-            )
-          }
-          content = getCodeWithSourcemap('css', result.code, result.map)
-        } else {
-          content = result.code
+      if (result.map && 'version' in result.map) {
+        if (result.map.mappings) {
+          await injectSourcesContent(result.map, proxyModulePath, config.logger)
         }
+        content = getCodeWithSourcemap('css', result.code, result.map)
+      } else {
+        content = result.code
       }
       s.overwrite(start, end, content)
     }),
@@ -429,7 +428,6 @@ export function indexHtmlMiddleware(
   server: ViteDevServer | PreviewServer,
 ): Connect.NextHandleFunction {
   const isDev = isDevServer(server)
-  const fsUtils = getFsUtils(server.config)
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return async function viteIndexHtmlMiddleware(req, res, next) {
@@ -447,7 +445,7 @@ export function indexHtmlMiddleware(
         filePath = path.join(root, decodeURIComponent(url))
       }
 
-      if (fsUtils.existsSync(filePath)) {
+      if (fs.existsSync(filePath)) {
         const headers = isDev
           ? server.config.server.headers
           : server.config.preview.headers

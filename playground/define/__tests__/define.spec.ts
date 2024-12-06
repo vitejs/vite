@@ -3,6 +3,7 @@ import viteConfig from '../vite.config'
 import { page } from '~utils'
 
 const defines = viteConfig.define
+const envDefines = viteConfig.environments.client.define
 
 test('string', async () => {
   expect(await page.textContent('.exp')).toBe(
@@ -47,6 +48,9 @@ test('string', async () => {
   expect(await page.textContent('.import-json')).toBe('__EXP__')
   expect(await page.textContent('.define-in-dep')).toBe(
     defines.__STRINGIFIED_OBJ__,
+  )
+  expect(await page.textContent('.define-in-environment')).toBe(
+    envDefines.__DEFINE_IN_ENVIRONMENT__,
   )
 })
 

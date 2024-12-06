@@ -61,14 +61,14 @@ If you need a custom integration, you can follow the steps in this guide to conf
 
    ```json [.vite/manifest.json]
    {
-     "_shared-!~{003}~.js": {
-       "file": "assets/shared-ChJ_j-JJ.css",
-       "src": "_shared-!~{003}~.js"
-     },
      "_shared-B7PI925R.js": {
        "file": "assets/shared-B7PI925R.js",
        "name": "shared",
        "css": ["assets/shared-ChJ_j-JJ.css"]
+     },
+     "_shared-ChJ_j-JJ.css": {
+       "file": "assets/shared-ChJ_j-JJ.css",
+       "src": "_shared-ChJ_j-JJ.css"
      },
      "baz.js": {
        "file": "assets/baz-B2H3sXNv.js",
@@ -98,6 +98,7 @@ If you need a custom integration, you can follow the steps in this guide to conf
    - The manifest has a `Record<name, chunk>` structure
    - For entry or dynamic entry chunks, the key is the relative src path from project root.
    - For non entry chunks, the key is the base name of the generated file prefixed with `_`.
+   - For the CSS file generated when [`build.cssCodeSplit`](/config/build-options.md#build-csscodesplit) is `false`, the key is `style.css`.
    - Chunks will contain information on its static and dynamic imports (both are keys that map to the corresponding chunk in the manifest), and also its corresponding CSS and asset files (if any).
 
 4. You can use this file to render links or preload directives with hashed filenames.

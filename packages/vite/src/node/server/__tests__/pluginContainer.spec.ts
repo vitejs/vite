@@ -226,7 +226,7 @@ async function getDevEnvironment(
   // @ts-expect-error This plugin requires a ViteDevServer instance.
   config.plugins = config.plugins.filter((p) => !p.name.includes('pre-alias'))
 
-  const environment = new DevEnvironment('client', config, { hot: false })
+  const environment = new DevEnvironment('client', config, { hot: true })
   await environment.init()
 
   return environment

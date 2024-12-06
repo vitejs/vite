@@ -67,7 +67,7 @@ This is statically replaced during build so it will allow tree-shaking of unused
 
 ## Setting Up the Dev Server
 
-When building an SSR app, you likely want to have full control over your main server and decouple Vite from the production environment. It is therefore recommended to use Vite in middleware mode. Here is an example with [express](https://expressjs.com/):
+When building an SSR app, you likely want to have full control over your main server and decouple Vite from the production environment. It is therefore recommended to use Vite in middleware mode. Here is an example with [express](https://expressjs.com/) (v4):
 
 ```js{15-18} twoslash [server.js]
 import fs from 'node:fs'
@@ -149,7 +149,7 @@ app.use('*', async (req, res, next) => {
     const appHtml = await render(url)
 
     // 5. Inject the app-rendered HTML into the template.
-    const html = template.replace(`<!--ssr-outlet-->`, appHtml)
+    const html = template.replace(`<!--ssr-outlet-->`, () => appHtml)
 
     // 6. Send the rendered HTML back.
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)

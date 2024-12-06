@@ -8,6 +8,7 @@ const CLI_PATH = path.join(__dirname, '..')
 
 const projectName = 'test-app'
 const genPath = path.join(__dirname, projectName)
+const genPathWithSubfolder = path.join(__dirname, 'subfolder', projectName)
 
 const run = <SO extends SyncOptions>(
   args: string[],
@@ -17,12 +18,13 @@ const run = <SO extends SyncOptions>(
 }
 
 // Helper to create a non-empty directory
-const createNonEmptyDir = () => {
+const createNonEmptyDir = (overrideFolder?: string) => {
   // Create the temporary directory
-  fs.mkdirSync(genPath, { recursive: true })
+  const newNonEmptyFolder = overrideFolder || genPath
+  fs.mkdirSync(newNonEmptyFolder, { recursive: true })
 
   // Create a package.json file
-  const pkgJson = path.join(genPath, 'package.json')
+  const pkgJson = path.join(newNonEmptyFolder, 'package.json')
   fs.writeFileSync(pkgJson, '{ "foo": "bar" }')
 }
 
@@ -33,8 +35,24 @@ const templateFiles = fs
   .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
   .sort()
 
-beforeAll(() => fs.rmSync(genPath, { recursive: true, force: true }))
-afterEach(() => fs.rmSync(genPath, { recursive: true, force: true }))
+// React starter template
+const templateFilesReact = fs
+  .readdirSync(path.join(CLI_PATH, 'template-react'))
+  // _gitignore is renamed to .gitignore
+  .map((filePath) => (filePath === '_gitignore' ? '.gitignore' : filePath))
+  .sort()
+
+const clearAnyPreviousFolders = () => {
+  if (fs.existsSync(genPath)) {
+    fs.rmSync(genPath, { recursive: true, force: true })
+  }
+  if (fs.existsSync(genPathWithSubfolder)) {
+    fs.rmSync(genPathWithSubfolder, { recursive: true, force: true })
+  }
+}
+
+beforeAll(() => clearAnyPreviousFolders())
+afterEach(() => clearAnyPreviousFolders())
 
 test('prompts for the project name if none supplied', () => {
   const { stdout } = run([])
@@ -70,6 +88,14 @@ test('asks to overwrite non-empty target directory', () => {
   expect(stdout).toContain(`Target directory "${projectName}" is not empty.`)
 })
 
+test('asks to overwrite non-empty target directory with subfolder', () => {
+  createNonEmptyDir(genPathWithSubfolder)
+  const { stdout } = run([`subfolder/${projectName}`], { cwd: __dirname })
+  expect(stdout).toContain(
+    `Target directory "subfolder/${projectName}" is not empty.`,
+  )
+})
+
 test('asks to overwrite non-empty current directory', () => {
   createNonEmptyDir()
   const { stdout } = run(['.'], { cwd: genPath })
@@ -85,6 +111,17 @@ test('successfully scaffolds a project based on vue starter template', () => {
   // Assertions
   expect(stdout).toContain(`Scaffolding project in ${genPath}`)
   expect(templateFiles).toEqual(generatedFiles)
+})
+
+test('successfully scaffolds a project with subfolder based on react starter template', () => {
+  const { stdout } = run([`subfolder/${projectName}`, '--template', 'react'], {
+    cwd: __dirname,
+  })
+  const generatedFiles = fs.readdirSync(genPathWithSubfolder).sort()
+
+  // Assertions
+  expect(stdout).toContain(`Scaffolding project in ${genPathWithSubfolder}`)
+  expect(templateFilesReact).toEqual(generatedFiles)
 })
 
 test('works with the -t alias', () => {

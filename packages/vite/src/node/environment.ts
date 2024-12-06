@@ -14,8 +14,10 @@ export type Environment =
  * Creates a function that hides the complexities of a WeakMap with an initial value
  * to implement object metadata. Used by plugins to implement cross hooks per
  * environment metadata
+ *
+ * @experimental
  */
-export function usePerEnvironmentState<State>(
+export function perEnvironmentState<State>(
   initial: (environment: Environment) => State,
 ): (context: PluginContext) => State {
   const stateMap = new WeakMap<Environment, State>()

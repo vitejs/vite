@@ -123,6 +123,10 @@ test('absolute path', async () => {
   expect(await page.textContent('.absolute')).toMatch('[success]')
 })
 
+test('file url', async () => {
+  expect(await page.textContent('.file-url')).toMatch('[success]')
+})
+
 test('browser field', async () => {
   expect(await page.textContent('.browser')).toMatch('[success]')
 })

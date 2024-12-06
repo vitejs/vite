@@ -7,6 +7,7 @@ import {
   isBuild,
   isServe,
   page,
+  serverLogs,
   untilBrowserLogAfter,
   viteServer,
   viteTestUrl,
@@ -101,6 +102,39 @@ describe('main', () => {
     expect(html).toMatch(`<!-- comment one -->`)
     expect(html).toMatch(`<!-- comment two -->`)
   })
+
+  test('external paths works with vite-ignore attribute', async () => {
+    expect(await page.textContent('.external-path')).toBe('works')
+    expect(await page.getAttribute('.external-path', 'vite-ignore')).toBe(null)
+    expect(await getColor('.external-path')).toBe('red')
+    if (isServe) {
+      expect(serverLogs).not.toEqual(
+        expect.arrayContaining([
+          expect.stringMatching('Failed to load url /external-path.js'),
+        ]),
+      )
+    } else {
+      expect(serverLogs).not.toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(
+            /"\/external-path\.js".*can't be bundled without type="module" attribute/,
+          ),
+        ]),
+      )
+    }
+  })
+
+  test.runIf(isBuild)(
+    'external paths by rollupOptions.external works',
+    async () => {
+      expect(await page.textContent('.external-path-by-rollup-options')).toBe(
+        'works',
+      )
+      expect(serverLogs).not.toEqual(
+        expect.arrayContaining([expect.stringContaining('Could not load')]),
+      )
+    },
+  )
 })
 
 describe('nested', () => {
@@ -475,4 +509,13 @@ test('html fallback works non browser accept header', async () => {
 test('escape html attribute', async () => {
   const el = await page.$('.unescape-div')
   expect(el).toBeNull()
+})
+
+test('invalidate inline proxy module on reload', async () => {
+  await page.goto(`${viteTestUrl}/transform-inline-js`)
+  expect(await page.textContent('.test')).toContain('ok')
+  await page.reload()
+  expect(await page.textContent('.test')).toContain('ok')
+  await page.reload()
+  expect(await page.textContent('.test')).toContain('ok')
 })

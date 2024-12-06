@@ -1,3 +1,32 @@
+## 6.0.0 (2024-11-26)
+
+* chore: upgrade to unbuild v3 rc (#18502) ([ddd5c5d](https://github.com/vitejs/vite/commit/ddd5c5d00ff7894462a608841560883f9c771f22)), closes [#18502](https://github.com/vitejs/vite/issues/18502)
+* chore(deps): update all non-major dependencies (#18562) ([fb227ec](https://github.com/vitejs/vite/commit/fb227ec4402246b5a13e274c881d9de6dd8082dd)), closes [#18562](https://github.com/vitejs/vite/issues/18562)
+* chore(legacy): bump terser peer dep to ^5.16 (#18772) ([3f6d5fe](https://github.com/vitejs/vite/commit/3f6d5fed8739f30cddb821a680576d93b3a60bba)), closes [#18772](https://github.com/vitejs/vite/issues/18772)
+* chore(legacy): update peer dep Vite to 6 (#18771) ([63c62b3](https://github.com/vitejs/vite/commit/63c62b3059b589a51d1673bfdcefdb0b4e87c089)), closes [#18771](https://github.com/vitejs/vite/issues/18771)
+* chore(plugin-legacy): add type module in package.json (#18535) ([28cefca](https://github.com/vitejs/vite/commit/28cefcaf2861b72901abe1f047d9ec6298b745f8)), closes [#18535](https://github.com/vitejs/vite/issues/18535)
+* feat!: drop node 21 support in version ranges (#18729) ([a384d8f](https://github.com/vitejs/vite/commit/a384d8fd39162190675abcfea31ba657383a3d03)), closes [#18729](https://github.com/vitejs/vite/issues/18729)
+* fix(deps): update all non-major dependencies (#18484) ([2ec12df](https://github.com/vitejs/vite/commit/2ec12df98d07eb4c986737e86a4a9f8066724658)), closes [#18484](https://github.com/vitejs/vite/issues/18484)
+* fix(deps): update all non-major dependencies (#18691) ([f005461](https://github.com/vitejs/vite/commit/f005461ecce89ada21cb0c021f7af460b5479736)), closes [#18691](https://github.com/vitejs/vite/issues/18691)
+
+
+
+## <small>5.4.3 (2024-10-25)</small>
+
+* chore: enable some eslint rules (#18084) ([e9a2746](https://github.com/vitejs/vite/commit/e9a2746ca77473b1814fd05db3d299c074135fe5)), closes [#18084](https://github.com/vitejs/vite/issues/18084)
+* chore: remove stale TODOs (#17866) ([e012f29](https://github.com/vitejs/vite/commit/e012f296df583bd133d26399397bd4ae49de1497)), closes [#17866](https://github.com/vitejs/vite/issues/17866)
+* chore: update license copyright (#18278) ([56eb869](https://github.com/vitejs/vite/commit/56eb869a67551a257d20cba00016ea59b1e1a2c4)), closes [#18278](https://github.com/vitejs/vite/issues/18278)
+* chore(deps): update all non-major dependencies (#17945) ([cfb621e](https://github.com/vitejs/vite/commit/cfb621e7a5a3e24d710a9af156e6855e73caf891)), closes [#17945](https://github.com/vitejs/vite/issues/17945)
+* chore(deps): update all non-major dependencies (#18050) ([7cac03f](https://github.com/vitejs/vite/commit/7cac03fa5197a72d2e2422bd0243a85a9a18abfc)), closes [#18050](https://github.com/vitejs/vite/issues/18050)
+* chore(deps): update all non-major dependencies (#18404) ([802839d](https://github.com/vitejs/vite/commit/802839d48335a69eb15f71f2cd816d0b6e4d3556)), closes [#18404](https://github.com/vitejs/vite/issues/18404)
+* fix(deps): update all non-major dependencies (#18170) ([c8aea5a](https://github.com/vitejs/vite/commit/c8aea5ae0af90dc6796ef3bdd612d1eb819f157b)), closes [#18170](https://github.com/vitejs/vite/issues/18170)
+* fix(deps): update all non-major dependencies (#18292) ([5cac054](https://github.com/vitejs/vite/commit/5cac0544dca2764f0114aac38e9922a0c13d7ef4)), closes [#18292](https://github.com/vitejs/vite/issues/18292)
+* fix(deps): update all non-major dependencies (#18345) ([5552583](https://github.com/vitejs/vite/commit/5552583a2272cd4208b30ad60e99d984e34645f0)), closes [#18345](https://github.com/vitejs/vite/issues/18345)
+* fix(legacy): generate sourcemap for polyfill chunks (#18250) ([f311ff3](https://github.com/vitejs/vite/commit/f311ff3c2b19636457c3023095ef32ab9a96b84a)), closes [#18250](https://github.com/vitejs/vite/issues/18250)
+* perf: use `crypto.hash` when available (#18317) ([2a14884](https://github.com/vitejs/vite/commit/2a148844cf2382a5377b75066351f00207843352)), closes [#18317](https://github.com/vitejs/vite/issues/18317)
+
+
+
 ## <small>5.4.2 (2024-08-15)</small>
 
 * chore: extend commit hash (#17709) ([4fc9b64](https://github.com/vitejs/vite/commit/4fc9b6424c27aca8004c368b69991a56264e4fdb)), closes [#17709](https://github.com/vitejs/vite/issues/17709)

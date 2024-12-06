@@ -47,7 +47,7 @@ export async function createServer(
     app.use(vite.middlewares)
   }
 
-  app.use('*', async (req, res) => {
+  app.use('*all', async (req, res) => {
     try {
       const url = req.originalUrl
 

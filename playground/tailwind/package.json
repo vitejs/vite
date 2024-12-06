@@ -2,6 +2,7 @@
   "name": "@vitejs/test-tailwind",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,11 +11,11 @@
   },
   "dependencies": {
     "autoprefixer": "^10.4.20",
-    "tailwindcss": "^3.4.14",
-    "vue": "^3.5.12",
-    "vue-router": "^4.4.5"
+    "tailwindcss": "^3.4.15",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
-    "ts-node": "^10.9.2"
+    "tsx": "^4.19.2"
   }
 }

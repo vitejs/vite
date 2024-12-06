@@ -70,10 +70,12 @@ function fileToUrl(file: string, root: string) {
   return '/' + normalizePath(url)
 }
 
-function mapFiles(files: string[], root: string) {
-  return glob(files, {
+async function mapFiles(files: string[], root: string) {
+  if (!files.length) return []
+  return await glob(files, {
     absolute: true,
     cwd: root,
     expandDirectories: false,
+    ignore: ['**/.git/**', '**/node_modules/**'],
   })
 }

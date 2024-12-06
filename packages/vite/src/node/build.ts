@@ -44,11 +44,13 @@ import {
   copyDir,
   displayTime,
   emptyDir,
+  getPkgName,
   joinUrlSegments,
+  mergeWithDefaults,
   normalizePath,
   partialEncodeURIPath,
 } from './utils'
-import { resolveEnvironmentPlugins } from './plugin'
+import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
@@ -119,7 +121,10 @@ export interface BuildEnvironmentOptions {
   assetsDir?: string
   /**
    * Static asset files smaller than this number (in bytes) will be inlined as
-   * base64 strings. Default limit is `4096` (4 KiB). Set to `0` to disable.
+   * base64 strings. If a callback is passed, a boolean can be returned to opt-in
+   * or opt-out of inlining. If nothing is returned the default logic applies.
+   *
+   * Default limit is `4096` (4 KiB). Set to `0` to disable.
    * @default 4096
    */
   assetsInlineLimit?:
@@ -296,6 +301,12 @@ export interface LibraryOptions {
    * format as an argument.
    */
   fileName?: string | ((format: ModuleFormat, entryName: string) => string)
+  /**
+   * The name of the CSS file output if the library imports CSS. Defaults to the
+   * same value as `build.lib.fileName` if it's set a string, otherwise it falls
+   * back to the name option of the project package.json.
+   */
+  cssFileName?: string
 }
 
 export type LibraryFormats = 'es' | 'cjs' | 'umd' | 'iife' | 'system'
@@ -337,12 +348,50 @@ export interface ResolvedBuildOptions
   modulePreload: false | ResolvedModulePreloadOptions
 }
 
+export const buildEnvironmentOptionsDefaults = Object.freeze({
+  target: 'modules',
+  /** @deprecated */
+  polyfillModulePreload: true,
+  modulePreload: true,
+  outDir: 'dist',
+  assetsDir: 'assets',
+  assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
+  // cssCodeSplit
+  // cssTarget
+  // cssMinify
+  sourcemap: false,
+  // minify
+  terserOptions: {},
+  rollupOptions: {},
+  commonjsOptions: {
+    include: [/node_modules/],
+    extensions: ['.js', '.cjs'],
+  },
+  dynamicImportVarsOptions: {
+    warnOnError: true,
+    exclude: [/node_modules/],
+  },
+  write: true,
+  emptyOutDir: null,
+  copyPublicDir: true,
+  manifest: false,
+  lib: false,
+  // ssr
+  ssrManifest: false,
+  ssrEmitAssets: false,
+  // emitAssets
+  reportCompressedSize: true,
+  chunkSizeWarningLimit: 500,
+  watch: null,
+  // createEnvironment
+})
+
 export function resolveBuildEnvironmentOptions(
   raw: BuildEnvironmentOptions,
   logger: Logger,
   consumer: 'client' | 'server' | undefined,
 ): ResolvedBuildEnvironmentOptions {
-  const deprecatedPolyfillModulePreload = raw?.polyfillModulePreload
+  const deprecatedPolyfillModulePreload = raw.polyfillModulePreload
   const { polyfillModulePreload, ...rest } = raw
   raw = rest
   if (deprecatedPolyfillModulePreload !== undefined) {
@@ -357,84 +406,49 @@ export function resolveBuildEnvironmentOptions(
     raw.modulePreload = { polyfill: false }
   }
 
-  const modulePreload = raw.modulePreload
+  const merged = mergeWithDefaults(
+    {
+      ...buildEnvironmentOptionsDefaults,
+      cssCodeSplit: !raw.lib,
+      minify: consumer === 'server' ? false : 'esbuild',
+      ssr: consumer === 'server',
+      emitAssets: consumer === 'client',
+      createEnvironment: (name, config) => new BuildEnvironment(name, config),
+    } satisfies BuildEnvironmentOptions,
+    raw,
+  )
+
+  // handle special build targets
+  if (merged.target === 'modules') {
+    merged.target = ESBUILD_MODULES_TARGET
+  }
+
+  // normalize false string into actual false
+  if ((merged.minify as string) === 'false') {
+    merged.minify = false
+  } else if (merged.minify === true) {
+    merged.minify = 'esbuild'
+  }
+
   const defaultModulePreload = {
     polyfill: true,
   }
 
-  const defaultBuildEnvironmentOptions: BuildEnvironmentOptions = {
-    outDir: 'dist',
-    assetsDir: 'assets',
-    assetsInlineLimit: DEFAULT_ASSETS_INLINE_LIMIT,
-    cssCodeSplit: !raw.lib,
-    sourcemap: false,
-    rollupOptions: {},
-    minify: raw.ssr ? false : 'esbuild',
-    terserOptions: {},
-    write: true,
-    emptyOutDir: null,
-    copyPublicDir: true,
-    manifest: false,
-    lib: false,
-    ssr: consumer === 'server',
-    ssrManifest: false,
-    ssrEmitAssets: false,
-    emitAssets: consumer === 'client',
-    reportCompressedSize: true,
-    chunkSizeWarningLimit: 500,
-    watch: null,
-    createEnvironment: (name, config) => new BuildEnvironment(name, config),
-  }
-
-  const userBuildEnvironmentOptions = raw
-    ? mergeConfig(defaultBuildEnvironmentOptions, raw)
-    : defaultBuildEnvironmentOptions
-
-  // @ts-expect-error Fallback options instead of merging
   const resolved: ResolvedBuildEnvironmentOptions = {
-    target: 'modules',
-    cssTarget: false,
-    ...userBuildEnvironmentOptions,
-    commonjsOptions: {
-      include: [/node_modules/],
-      extensions: ['.js', '.cjs'],
-      ...userBuildEnvironmentOptions.commonjsOptions,
-    },
-    dynamicImportVarsOptions: {
-      warnOnError: true,
-      exclude: [/node_modules/],
-      ...userBuildEnvironmentOptions.dynamicImportVarsOptions,
-    },
+    ...merged,
+    cssTarget: merged.cssTarget ?? merged.target,
+    cssMinify:
+      merged.cssMinify ?? (consumer === 'server' ? 'esbuild' : !!merged.minify),
     // Resolve to false | object
     modulePreload:
-      modulePreload === false
+      merged.modulePreload === false
         ? false
-        : typeof modulePreload === 'object'
-          ? {
+        : merged.modulePreload === true
+          ? defaultModulePreload
+          : {
               ...defaultModulePreload,
-              ...modulePreload,
-            }
-          : defaultModulePreload,
-  }
-
-  // handle special build targets
-  if (resolved.target === 'modules') {
-    resolved.target = ESBUILD_MODULES_TARGET
-  }
-
-  if (!resolved.cssTarget) {
-    resolved.cssTarget = resolved.target
-  }
-
-  // normalize false string into actual false
-  if ((resolved.minify as string) === 'false') {
-    resolved.minify = false
-  } else if (resolved.minify === true) {
-    resolved.minify = 'esbuild'
-  }
-
-  if (resolved.cssMinify == null) {
-    resolved.cssMinify = !!resolved.minify
+              ...merged.modulePreload,
+            },
   }
 
   return resolved
@@ -444,34 +458,26 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   pre: Plugin[]
   post: Plugin[]
 }> {
-  const { commonjsOptions } = config.build
-  const usePluginCommonjs =
-    !Array.isArray(commonjsOptions.include) ||
-    commonjsOptions.include.length !== 0
   return {
     pre: [
       completeSystemWrapPlugin(),
-      /**
-       * environment.config.build.commonjsOptions isn't currently supported
-       * when builder.sharedConfigBuild or builder.sharedPlugins enabled.
-       * To do it, we could inject one commonjs plugin per environment with
-       * an applyToEnvironment hook.
-       */
-      ...(usePluginCommonjs ? [commonjsPlugin(commonjsOptions)] : []),
+      perEnvironmentPlugin('commonjs', (environment) => {
+        const { commonjsOptions } = environment.config.build
+        const usePluginCommonjs =
+          !Array.isArray(commonjsOptions.include) ||
+          commonjsOptions.include.length !== 0
+        return usePluginCommonjs ? commonjsPlugin(commonjsOptions) : false
+      }),
       dataURIPlugin(),
-      /**
-       * environment.config.build.rollupOptions.plugins isn't supported
-       * when builder.sharedConfigBuild or builder.sharedPlugins is enabled.
-       * To do it, we should add all these plugins to the global pipeline, each with
-       * an applyToEnvironment hook. It is similar to letting the user add per
-       * environment plugins giving them a environment.config.plugins option that
-       * we decided against.
-       * For backward compatibility, we are still injecting the rollup plugins
-       * defined in the default root build options.
-       */
-      ...((
-        await asyncFlatten(arraify(config.build.rollupOptions.plugins))
-      ).filter(Boolean) as Plugin[]),
+      perEnvironmentPlugin(
+        'vite:rollup-options-plugins',
+        async (environment) =>
+          (
+            await asyncFlatten(
+              arraify(environment.config.build.rollupOptions.plugins),
+            )
+          ).filter(Boolean) as Plugin[],
+      ),
       ...(config.isWorker ? [webWorkerPostPlugin()] : []),
     ],
     post: [
@@ -537,7 +543,7 @@ async function buildEnvironment(
 
   const resolve = (p: string) => path.resolve(root, p)
   const input = libOptions
-    ? options.rollupOptions?.input ||
+    ? options.rollupOptions.input ||
       (typeof libOptions.entry === 'string'
         ? resolve(libOptions.entry)
         : Array.isArray(libOptions.entry)
@@ -550,7 +556,7 @@ async function buildEnvironment(
             ))
     : typeof options.ssr === 'string'
       ? resolve(options.ssr)
-      : options.rollupOptions?.input || resolve('index.html')
+      : options.rollupOptions.input || resolve('index.html')
 
   if (ssr && typeof input === 'string' && input.endsWith('.html')) {
     throw new Error(
@@ -590,7 +596,7 @@ async function buildEnvironment(
     output: options.rollupOptions.output,
     input,
     plugins,
-    external: options.rollupOptions?.external,
+    external: options.rollupOptions.external,
     onwarn(warning, warn) {
       onRollupWarning(warning, warn, environment)
     },
@@ -657,6 +663,10 @@ async function buildEnvironment(
     logger.error(e.message, { error: e })
   }
 
+  const isSsrTargetWebworkerEnvironment =
+    environment.name === 'ssr' &&
+    environment.getTopLevelConfig().ssr?.target === 'webworker'
+
   let bundle: RollupBuild | undefined
   let startTime: number | undefined
   try {
@@ -686,7 +696,7 @@ async function buildEnvironment(
 
       const format = output.format || 'es'
       const jsExt =
-        !environment.config.webCompatible || libOptions
+        (ssr && !isSsrTargetWebworkerEnvironment) || libOptions
           ? resolveOutputJsExtension(
               format,
               findNearestPackageData(root, packageCache)?.data.type,
@@ -726,8 +736,7 @@ async function buildEnvironment(
         inlineDynamicImports:
           output.format === 'umd' ||
           output.format === 'iife' ||
-          (environment.config.consumer === 'server' &&
-            environment.config.webCompatible &&
+          (isSsrTargetWebworkerEnvironment &&
             (typeof input === 'string' || Object.keys(input).length === 1)),
         ...output,
       }
@@ -735,7 +744,7 @@ async function buildEnvironment(
 
     // resolve lib mode outputs
     const outputs = resolveBuildOutputs(
-      options.rollupOptions?.output,
+      options.rollupOptions.output,
       libOptions,
       logger,
     )
@@ -752,7 +761,7 @@ async function buildEnvironment(
     const resolvedOutDirs = getResolvedOutDirs(
       root,
       options.outDir,
-      options.rollupOptions?.output,
+      options.rollupOptions.output,
     )
     const emptyOutDir = resolveEmptyOutDir(
       options.emptyOutDir,
@@ -877,10 +886,6 @@ function prepareOutDir(
       copyDir(publicDir, outDir)
     }
   }
-}
-
-function getPkgName(name: string) {
-  return name?.[0] === '@' ? name.split('/')[1] : name
 }
 
 type JsExt = 'js' | 'cjs' | 'mjs'
@@ -1054,7 +1059,7 @@ export function onRollupWarning(
   }
 
   clearLine()
-  const userOnWarn = environment.config.build.rollupOptions?.onwarn
+  const userOnWarn = environment.config.build.rollupOptions.onwarn
   if (userOnWarn) {
     userOnWarn(warning, viteWarn)
   } else {
@@ -1436,19 +1441,18 @@ export class BuildEnvironment extends BaseEnvironment {
     if (setup?.options) {
       options = mergeConfig(
         options,
-        setup?.options,
+        setup.options,
       ) as ResolvedEnvironmentOptions
     }
     super(name, config, options)
   }
 
-  // TODO: This could be sync, discuss if applyToEnvironment should support async
   async init(): Promise<void> {
     if (this._initiated) {
       return
     }
     this._initiated = true
-    this._plugins = resolveEnvironmentPlugins(this)
+    this._plugins = await resolveEnvironmentPlugins(this)
   }
 }
 
@@ -1462,7 +1466,19 @@ export interface ViteBuilder {
 }
 
 export interface BuilderOptions {
+  /**
+   * Whether to share the config instance among environments to align with the behavior of dev server.
+   *
+   * @default false
+   * @experimental
+   */
   sharedConfigBuild?: boolean
+  /**
+   * Whether to share the plugin instances among environments to align with the behavior of dev server.
+   *
+   * @default false
+   * @experimental
+   */
   sharedPlugins?: boolean
   buildApp?: (builder: ViteBuilder) => Promise<void>
 }
@@ -1473,15 +1489,20 @@ async function defaultBuildApp(builder: ViteBuilder): Promise<void> {
   }
 }
 
+export const builderOptionsDefaults = Object.freeze({
+  sharedConfigBuild: false,
+  sharedPlugins: false,
+  // buildApp
+})
+
 export function resolveBuilderOptions(
   options: BuilderOptions | undefined,
 ): ResolvedBuilderOptions | undefined {
   if (!options) return
-  return {
-    sharedConfigBuild: options.sharedConfigBuild ?? false,
-    sharedPlugins: options.sharedPlugins ?? false,
-    buildApp: options.buildApp ?? defaultBuildApp,
-  }
+  return mergeWithDefaults(
+    { ...builderOptionsDefaults, buildApp: defaultBuildApp },
+    options,
+  )
 }
 
 export type ResolvedBuilderOptions = Required<BuilderOptions>

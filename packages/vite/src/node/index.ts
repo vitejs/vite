@@ -8,6 +8,8 @@ export {
   resolveConfig,
   sortUserPlugins,
 } from './config'
+export { perEnvironmentPlugin } from './plugin'
+export { perEnvironmentState } from './environment'
 export { createServer } from './server'
 export { preview } from './preview'
 export { build, createBuilder } from './build'
@@ -19,7 +21,6 @@ export { formatPostcssSourceMap, preprocessCSS } from './plugins/css'
 export { transformWithEsbuild } from './plugins/esbuild'
 export { buildErrorMessage } from './server/middlewares/error'
 
-export { RemoteEnvironmentTransport } from './server/environmentTransport'
 export {
   createRunnableDevEnvironment,
   isRunnableDevEnvironment,
@@ -35,7 +36,6 @@ export { BuildEnvironment } from './build'
 export { fetchModule, type FetchModuleOptions } from './ssr/fetchModule'
 export { createServerModuleRunner } from './ssr/runtime/serverModuleRunner'
 export { createServerHotChannel } from './server/hmr'
-export { ServerHMRConnector } from './ssr/runtime/serverHmrConnector'
 export { ssrTransform as moduleRunnerTransform } from './ssr/ssrTransform'
 export type { ModuleRunnerTransformOptions } from './ssr/ssrTransform'
 
@@ -128,6 +128,9 @@ export type {
   CSSModulesOptions,
   PreprocessCSSResult,
   ResolvedCSSOptions,
+  SassPreprocessorOptions,
+  LessPreprocessorOptions,
+  StylusPreprocessorOptions,
 } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
 export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
@@ -162,6 +165,7 @@ export type {
   HMRBroadcasterClient,
   ServerHMRChannel,
   HMRChannel,
+  HotChannelListener,
   HotChannel,
   ServerHotChannel,
   HotChannelClient,
@@ -207,16 +211,12 @@ export type {
 export type { Connect } from 'dep-types/connect'
 export type { WebSocket, WebSocketAlias } from 'dep-types/ws'
 export type { HttpProxy } from 'dep-types/http-proxy'
-export type {
-  FSWatcher,
-  WatchOptions,
-  AwaitWriteFinishOptions,
-} from 'dep-types/chokidar'
+export type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
 export type { Terser } from 'dep-types/terser'
 export type { RollupCommonJSOptions } from 'dep-types/commonjs'
 export type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 export type { Matcher, AnymatchPattern, AnymatchFn } from 'dep-types/anymatch'
-export type { LightningCSSOptions } from 'dep-types/lightningcss'
+export type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
 
 // Backward compatibility
 export type { ModuleGraph, ModuleNode } from './server/mixedModuleGraph'

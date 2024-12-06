@@ -65,7 +65,7 @@ export class ScanEnvironment extends BaseEnvironment {
       return
     }
     this._initiated = true
-    this._plugins = resolveEnvironmentPlugins(this)
+    this._plugins = await resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this.plugins,
@@ -149,7 +149,7 @@ export function scanImports(environment: ScanEnvironment): {
     entries = computedEntries
 
     if (!entries.length) {
-      if (!config.optimizeDeps.entries && !config.dev.optimizeDeps.include) {
+      if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
         environment.logger.warn(
           colors.yellow(
             '(!) Could not auto-determine entry point from rollupOptions or html files ' +
@@ -185,7 +185,7 @@ export function scanImports(environment: ScanEnvironment): {
           })
         })
       }
-      if (!context || scanContext?.cancelled) {
+      if (!context || scanContext.cancelled) {
         disposeContext()
         return { deps: {}, missing: {} }
       }
@@ -249,8 +249,8 @@ export function scanImports(environment: ScanEnvironment): {
 async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
-  const explicitEntryPatterns = environment.config.dev.optimizeDeps.entries
-  const buildInput = environment.config.build.rollupOptions?.input
+  const explicitEntryPatterns = environment.config.optimizeDeps.entries
+  const buildInput = environment.config.build.rollupOptions.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
@@ -285,7 +285,7 @@ async function computeEntries(environment: ScanEnvironment) {
   // dependencies.
   entries = entries.filter(
     (entry) =>
-      isScannable(entry, environment.config.dev.optimizeDeps.extensions) &&
+      isScannable(entry, environment.config.optimizeDeps.extensions) &&
       fs.existsSync(entry),
   )
 
@@ -297,14 +297,14 @@ async function prepareEsbuildScanner(
   entries: string[],
   deps: Record<string, string>,
   missing: Record<string, string>,
-  scanContext?: { cancelled: boolean },
+  scanContext: { cancelled: boolean },
 ): Promise<BuildContext | undefined> {
-  if (scanContext?.cancelled) return
+  if (scanContext.cancelled) return
 
   const plugin = esbuildScanPlugin(environment, deps, missing, entries)
 
   const { plugins = [], ...esbuildOptions } =
-    environment.config.dev.optimizeDeps.esbuildOptions ?? {}
+    environment.config.optimizeDeps.esbuildOptions ?? {}
 
   // The plugin pipeline automatically loads the closest tsconfig.json.
   // But esbuild doesn't support reading tsconfig.json if the plugin has resolved the path (https://github.com/evanw/esbuild/issues/2265).
@@ -313,10 +313,10 @@ async function prepareEsbuildScanner(
   // Therefore, we use the closest tsconfig.json from the root to make it work in most cases.
   let tsconfigRaw = esbuildOptions.tsconfigRaw
   if (!tsconfigRaw && !esbuildOptions.tsconfig) {
-    const tsconfigResult = await loadTsconfigJsonForFile(
+    const { tsconfig } = await loadTsconfigJsonForFile(
       path.join(environment.config.root, '_dummy.js'),
     )
-    if (tsconfigResult.compilerOptions?.experimentalDecorators) {
+    if (tsconfig.compilerOptions?.experimentalDecorators) {
       tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
     }
   }
@@ -358,7 +358,7 @@ function globEntries(pattern: string | string[], environment: ScanEnvironment) {
       '**/node_modules/**',
       `**/${environment.config.build.outDir}/**`,
       // if there aren't explicit entries, also ignore other common folders
-      ...(environment.config.dev.optimizeDeps.entries
+      ...(environment.config.optimizeDeps.entries
         ? []
         : [`**/__tests__/**`, `**/coverage/**`]),
     ],
@@ -411,7 +411,7 @@ function esbuildScanPlugin(
     return res
   }
 
-  const optimizeDepsOptions = environment.config.dev.optimizeDeps
+  const optimizeDepsOptions = environment.config.optimizeDeps
   const include = optimizeDepsOptions.include
   const exclude = [
     ...(optimizeDepsOptions.exclude ?? []),

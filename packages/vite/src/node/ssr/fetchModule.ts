@@ -47,11 +47,10 @@ export async function fetchModule(
 
     const resolved = tryNodeResolve(url, importer, {
       mainFields: ['main'],
-      conditions: [],
+      conditions: externalConditions,
       externalConditions,
       external: [],
       noExternal: [],
-      overrideConditions: [...externalConditions, 'production', 'development'],
       extensions: ['.js', '.cjs', '.json'],
       dedupe,
       preserveSymlinks,
@@ -59,7 +58,6 @@ export async function fetchModule(
       isProduction,
       root,
       packageCache: environment.config.packageCache,
-      webCompatible: environment.config.webCompatible,
     })
     if (!resolved) {
       const err: any = new Error(

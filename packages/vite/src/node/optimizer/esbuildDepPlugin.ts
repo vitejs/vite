@@ -55,11 +55,11 @@ export function esbuildDepPlugin(
   external: string[],
 ): Plugin {
   const { isProduction } = environment.config
-  const { extensions } = environment.config.dev.optimizeDeps
+  const { extensions } = environment.config.optimizeDeps
 
   // remove optimizable extensions from `externalTypes` list
   const allExternalTypes = extensions
-    ? externalTypes.filter((type) => !extensions?.includes('.' + type))
+    ? externalTypes.filter((type) => !extensions.includes('.' + type))
     : externalTypes
 
   // use separate package cache for optimizer as it caches paths around node_modules
@@ -306,7 +306,7 @@ const matchesEntireLine = (text: string) => `^${escapeRegex(text)}$`
 // https://github.com/evanw/esbuild/issues/566#issuecomment-735551834
 export function esbuildCjsExternalPlugin(
   externals: string[],
-  platform: 'node' | 'browser',
+  platform: 'node' | 'browser' | 'neutral',
 ): Plugin {
   return {
     name: 'cjs-external',

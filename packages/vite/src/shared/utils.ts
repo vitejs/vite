@@ -56,12 +56,32 @@ export function withTrailingSlash(path: string): string {
 export const AsyncFunction = async function () {}.constructor as typeof Function
 
 // https://github.com/nodejs/node/issues/43047#issuecomment-1564068099
-export const asyncFunctionDeclarationPaddingLineCount =
-  /** #__PURE__ */ (() => {
+let asyncFunctionDeclarationPaddingLineCount: number | undefined
+
+export function getAsyncFunctionDeclarationPaddingLineCount(): number {
+  if (typeof asyncFunctionDeclarationPaddingLineCount === 'undefined') {
     const body = '/*code*/'
     const source = new AsyncFunction('a', 'b', body).toString()
-    return source.slice(0, source.indexOf(body)).split('\n').length - 1
-  })()
+    asyncFunctionDeclarationPaddingLineCount =
+      source.slice(0, source.indexOf(body)).split('\n').length - 1
+  }
+  return asyncFunctionDeclarationPaddingLineCount
+}
+
+export interface PromiseWithResolvers<T> {
+  promise: Promise<T>
+  resolve: (value: T | PromiseLike<T>) => void
+  reject: (reason?: any) => void
+}
+export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
+  let resolve: any
+  let reject: any
+  const promise = new Promise<T>((_resolve, _reject) => {
+    resolve = _resolve
+    reject = _reject
+  })
+  return { promise, resolve, reject }
+}
 
 export const newlineRegEx = /\n/g
 export const hashRE = /#/g

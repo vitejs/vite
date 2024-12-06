@@ -832,11 +832,16 @@ if (!isBuild) {
       ),
     )
     const originalChildFileCode = readFile(childFile)
-    removeFile(childFile)
-    await untilUpdated(
-      () => page.textContent('.file-delete-restore'),
-      'parent:not-child',
-    )
+    await Promise.all([
+      untilBrowserLogAfter(
+        () => removeFile(childFile),
+        `${childFile} is disposed`,
+      ),
+      untilUpdated(
+        () => page.textContent('.file-delete-restore'),
+        'parent:not-child',
+      ),
+    ])
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
@@ -907,6 +912,7 @@ if (!isBuild) {
   })
 
   test('deleted file should trigger dispose and prune callbacks', async () => {
+    browserLogs.length = 0
     await page.goto(viteTestUrl)
 
     const parentFile = 'file-delete-restore/parent.js'
@@ -943,6 +949,8 @@ if (!isBuild) {
   })
 
   test('import.meta.hot?.accept', async () => {
+    await page.goto(viteTestUrl)
+
     const el = await page.$('.optional-chaining')
     await untilBrowserLogAfter(
       () =>
@@ -986,7 +994,20 @@ if (!isBuild) {
     )
   })
 
-  test('assets HMR', async () => {
+  test('not inlined assets HMR', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('#logo-no-inline')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('logo-no-inline.svg', (code) =>
+          code.replace('height="30px"', 'height="40px"'),
+        ),
+      /Logo-no-inline updated/,
+    )
+    await untilUpdated(() => el.evaluate((it) => `${it.clientHeight}`), '40')
+  })
+
+  test('inlined assets HMR', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('#logo')
     await untilBrowserLogAfter(
