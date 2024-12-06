@@ -587,6 +587,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       attributes: options?.attributes,
       custom: options?.custom,
       isEntry: !!options?.isEntry,
+      skip: this._resolveSkips,
       skipCalls,
       scan: this._scan,
     })
