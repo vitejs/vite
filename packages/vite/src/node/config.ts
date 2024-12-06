@@ -530,6 +530,7 @@ export interface ResolvedWorkerOptions {
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
   envFile?: false
+  forceOptimization?: boolean
 }
 
 export type ResolvedConfig = Readonly<
@@ -1163,7 +1164,7 @@ export async function resolveConfig(
       config.environments[environmentName],
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
-      config.optimizeDeps?.force,
+      inlineConfig.forceOptimization,
       logger,
       environmentName,
       config.experimental?.skipSsrTransform,
