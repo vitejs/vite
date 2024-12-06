@@ -742,6 +742,7 @@ function resolveEnvironmentOptions(
   options: EnvironmentOptions,
   alias: Alias[],
   preserveSymlinks: boolean,
+  optimizeDepsForce: boolean | undefined,
   logger: Logger,
   environmentName: string,
   // Backward compatibility
@@ -771,6 +772,7 @@ function resolveEnvironmentOptions(
     optimizeDeps: resolveDepOptimizationOptions(
       options.optimizeDeps,
       resolve.preserveSymlinks,
+      optimizeDepsForce,
       consumer,
     ),
     dev: resolveDevEnvironmentOptions(
@@ -938,6 +940,7 @@ function resolveResolveOptions(
 function resolveDepOptimizationOptions(
   optimizeDeps: DepOptimizationOptions | undefined,
   preserveSymlinks: boolean,
+  optimizeDepsForce: boolean | undefined,
   consumer: 'client' | 'server' | undefined,
 ): DepOptimizationOptions {
   return mergeWithDefaults(
@@ -948,6 +951,7 @@ function resolveDepOptimizationOptions(
       esbuildOptions: {
         preserveSymlinks,
       },
+      force: optimizeDepsForce ?? configDefaults.optimizeDeps.force,
     },
     optimizeDeps ?? {},
   )
@@ -1159,6 +1163,7 @@ export async function resolveConfig(
       config.environments[environmentName],
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
+      config.optimizeDeps?.force,
       logger,
       environmentName,
       config.experimental?.skipSsrTransform,
