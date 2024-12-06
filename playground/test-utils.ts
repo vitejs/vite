@@ -201,10 +201,13 @@ export function readManifest(base = ''): Manifest {
   )
 }
 
-export function readDepOptimizationMetadata(): DepOptimizationMetadata {
+export function readDepOptimizationMetadata(
+  environmentName = 'client',
+): DepOptimizationMetadata {
+  const suffix = environmentName === 'client' ? '' : `_${environmentName}`
   return JSON.parse(
     fs.readFileSync(
-      path.join(testDir, 'node_modules/.vite/deps/_metadata.json'),
+      path.join(testDir, `node_modules/.vite/deps${suffix}/_metadata.json`),
       'utf-8',
     ),
   )
