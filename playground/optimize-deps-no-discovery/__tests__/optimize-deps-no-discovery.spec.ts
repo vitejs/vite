@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest'
-import { isBuild, page, readFile } from '~utils'
+import { isBuild, page, readDepOptimizationMetadata } from '~utils'
 
 test('optimized dep', async () => {
   expect(await page.textContent('.optimized-dep')).toBe('[success]')
@@ -10,8 +10,8 @@ test('vue + vuex', async () => {
 })
 
 test.runIf(!isBuild)('metadata', async () => {
-  const meta = await readFile('node_modules/.vite/deps/_metadata.json')
-  expect(meta).toMatch(`"@vitejs/test-dep-no-discovery"`)
-  expect(meta).not.toMatch(`"vue"`)
-  expect(meta).not.toMatch(`"vuex"`)
+  const meta = readDepOptimizationMetadata()
+  expect(Object.keys(meta.optimized)).toContain('@vitejs/test-dep-no-discovery')
+  expect(Object.keys(meta.optimized)).not.toContain('vue')
+  expect(Object.keys(meta.optimized)).not.toContain('vuex')
 })
