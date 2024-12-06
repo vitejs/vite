@@ -219,7 +219,7 @@ export function resolvePlugin(
 
       // this is passed by @rollup/plugin-commonjs
       const isRequire: boolean =
-        resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
+        resolveOpts.custom?.['node-resolve']?.isRequire ?? false
 
       const currentEnvironmentOptions = this.environment.config
 
@@ -227,7 +227,7 @@ export function resolvePlugin(
         isRequire,
         ...currentEnvironmentOptions.resolve,
         ...resolveOptions, // plugin options + resolve options overrides
-        scan: resolveOpts?.scan ?? resolveOptions.scan,
+        scan: resolveOpts.scan ?? resolveOptions.scan,
       }
 
       const resolvedImports = resolveSubpathImports(id, importer, options)
@@ -691,7 +691,7 @@ export function tryNodeResolve(
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : cleanUrl(id)
 
   let basedir: string
-  if (dedupe?.includes(pkgId)) {
+  if (dedupe.includes(pkgId)) {
     basedir = root
   } else if (
     importer &&
@@ -709,7 +709,7 @@ export function tryNodeResolve(
     // check if it's a self reference dep.
     const selfPackageData = findNearestPackageData(basedir, packageCache)
     selfPkg =
-      selfPackageData?.data.exports && selfPackageData?.data.name === pkgId
+      selfPackageData?.data.exports && selfPackageData.data.name === pkgId
         ? selfPackageData
         : null
   }
@@ -762,7 +762,7 @@ export function tryNodeResolve(
     let resolvedId = id
     if (
       deepMatch &&
-      !pkg?.data.exports &&
+      !pkg.data.exports &&
       path.extname(id) !== path.extname(resolved.id)
     ) {
       // id date-fns/locale

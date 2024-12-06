@@ -11,7 +11,7 @@ Resources:
 Please share your feedback with us.
 :::
 
-## Environment factories
+## Environment Factories
 
 Environments factories are intended to be implemented by Environment providers like Cloudflare, and not by end users. Environment factories return a `EnvironmentOptions` for the most common case of using the target runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
 
@@ -72,7 +72,7 @@ and frameworks can use an environment with the workerd runtime to do SSR using:
 const ssrEnvironment = server.environments.ssr
 ```
 
-## Creating a new environment factory
+## Creating a New Environment Factory
 
 A Vite dev server exposes two environments by default: a `client` environment and an `ssr` environment. The client environment is a browser environment by default, and the module runner is implemented by importing the virtual module `/@vite/client` to client apps. The SSR environment runs in the same Node runtime as the Vite server by default and allows application servers to be used to render requests during dev with full HMR support.
 

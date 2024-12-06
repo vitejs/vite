@@ -343,7 +343,7 @@ let firstLoadCachedDepOptimizationMetadata = true
  */
 export async function loadCachedDepOptimizationMetadata(
   environment: Environment,
-  force = environment.config.optimizeDeps?.force ?? false,
+  force = environment.config.optimizeDeps.force ?? false,
   asCommand = false,
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? environment.logger.info : debug
@@ -751,7 +751,7 @@ async function prepareEsbuildOptimizerRun(
   const { optimizeDeps } = environment.config
 
   const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
-    optimizeDeps?.esbuildOptions ?? {}
+    optimizeDeps.esbuildOptions ?? {}
 
   await Promise.all(
     Object.keys(depsInfo).map(async (id) => {
@@ -790,7 +790,7 @@ async function prepareEsbuildOptimizerRun(
       ? 'browser'
       : 'node')
 
-  const external = [...(optimizeDeps?.exclude ?? [])]
+  const external = [...(optimizeDeps.exclude ?? [])]
 
   const plugins = [...pluginsFromConfig]
   if (external.length) {
@@ -837,7 +837,7 @@ export async function addManuallyIncludedOptimizeDeps(
 ): Promise<void> {
   const { logger } = environment
   const { optimizeDeps } = environment.config
-  const optimizeDepsInclude = optimizeDeps?.include ?? []
+  const optimizeDepsInclude = optimizeDeps.include ?? []
   if (optimizeDepsInclude.length) {
     const unableToOptimize = (id: string, msg: string) => {
       if (optimizeDepsInclude.includes(id)) {
@@ -1083,7 +1083,7 @@ export async function extractExportsData(
 
   const { optimizeDeps } = environment.config
 
-  const esbuildOptions = optimizeDeps?.esbuildOptions ?? {}
+  const esbuildOptions = optimizeDeps.esbuildOptions ?? {}
   if (optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
     // For custom supported extensions, build the entry file to transform it into JS,
     // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
@@ -1138,7 +1138,7 @@ function needsInterop(
   exportsData: ExportsData,
   output?: { exports: string[] },
 ): boolean {
-  if (environment.config.optimizeDeps?.needsInterop?.includes(id)) {
+  if (environment.config.optimizeDeps.needsInterop?.includes(id)) {
     return true
   }
   const { hasModuleSyntax, exports } = exportsData
@@ -1154,9 +1154,8 @@ function needsInterop(
     const generatedExports: string[] = output.exports
 
     if (
-      !generatedExports ||
-      (isSingleDefaultExport(generatedExports) &&
-        !isSingleDefaultExport(exports))
+      isSingleDefaultExport(generatedExports) &&
+      !isSingleDefaultExport(exports)
     ) {
       return true
     }
@@ -1217,15 +1216,15 @@ function getConfigHash(environment: Environment): string {
       assetsInclude: config.assetsInclude,
       plugins: config.plugins.map((p) => p.name),
       optimizeDeps: {
-        include: optimizeDeps?.include
+        include: optimizeDeps.include
           ? unique(optimizeDeps.include).sort()
           : undefined,
-        exclude: optimizeDeps?.exclude
+        exclude: optimizeDeps.exclude
           ? unique(optimizeDeps.exclude).sort()
           : undefined,
         esbuildOptions: {
-          ...optimizeDeps?.esbuildOptions,
-          plugins: optimizeDeps?.esbuildOptions?.plugins?.map((p) => p.name),
+          ...optimizeDeps.esbuildOptions,
+          plugins: optimizeDeps.esbuildOptions?.plugins?.map((p) => p.name),
         },
       },
     },
@@ -1392,6 +1391,6 @@ const safeRename = promisify(function gracefulRename(
       if (backoff < 100) backoff += 10
       return
     }
-    if (cb) cb(er)
+    cb(er)
   })
 })
