@@ -754,7 +754,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
         let normalized
-        const resolved = await this.resolve(url, importerModule.id || undefined)
+        const resolved = await this.resolve(url, importer)
         if (resolved?.id) {
           const mod = moduleGraph.getModuleById(resolved.id)
           normalized = mod?.url
