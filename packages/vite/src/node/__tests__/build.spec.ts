@@ -774,7 +774,7 @@ describe('onRollupLog', () => {
     logger: Logger,
     options?: Pick<RollupOptions, 'onLog' | 'onwarn'>,
   ) => {
-    return (await build({
+    await build({
       root: resolve(__dirname, 'packages/build-project'),
       logLevel: 'info',
       build: {
@@ -801,7 +801,7 @@ describe('onRollupLog', () => {
           },
         },
       ],
-    })) as RollupOutput
+    })
   }
 
   const callOnRollupLog = async (
