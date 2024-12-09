@@ -62,16 +62,17 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
-  isBuiltin,
   isExternalUrl,
   isFilePathESM,
   isInNodeModules,
   isNodeBuiltin,
+  isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
   mergeAlias,
   mergeConfig,
   mergeWithDefaults,
+  nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
 } from './utils'
@@ -882,7 +883,11 @@ function resolveEnvironmentResolveOptions(
         consumer === 'client' || isSsrTargetWebworkerEnvironment
           ? DEFAULT_CLIENT_CONDITIONS
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
-      enableBuiltinNoExternalCheck: !!isSsrTargetWebworkerEnvironment,
+      builtins:
+        resolve?.builtins ??
+        (consumer === 'server' && !isSsrTargetWebworkerEnvironment
+          ? nodeLikeBuiltins
+          : []),
     },
     resolve ?? {},
   )
@@ -1760,6 +1765,7 @@ async function bundleConfigFile(
               preserveSymlinks: false,
               packageCache,
               isRequire,
+              builtins: nodeLikeBuiltins,
             })?.id
           }
 
@@ -1778,7 +1784,7 @@ async function bundleConfigFile(
               // With the `isNodeBuiltin` check above, this check captures if the builtin is a
               // non-node built-in, which esbuild doesn't know how to handle. In that case, we
               // externalize it so the non-node runtime handles it instead.
-              if (isBuiltin(id)) {
+              if (isNodeLikeBuiltin(id)) {
                 return { external: true }
               }
 
