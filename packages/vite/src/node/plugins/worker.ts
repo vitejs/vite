@@ -81,7 +81,7 @@ async function bundleWorkerEntry(
 
   const bundle = await rollup({
     ...rollupOptions,
-    input: cleanUrl(id),
+    input,
     plugins: workerEnvironment.plugins.map((p) =>
       injectEnvironmentToHooks(workerEnvironment, p),
     ),

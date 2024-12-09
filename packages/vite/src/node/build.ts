@@ -598,7 +598,7 @@ async function buildEnvironment(
     output: options.rollupOptions.output,
     input,
     plugins,
-    external,
+    external: options.rollupOptions.external,
     onLog(level, log, defaultHandler) {
       onRollupLog(level, log, defaultHandler, environment)
     },
