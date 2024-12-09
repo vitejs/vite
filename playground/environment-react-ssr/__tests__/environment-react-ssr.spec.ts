@@ -48,16 +48,10 @@ describe.runIf(!isBuild)('pre-bundling', () => {
       })
       .filter((file) => file.isFile() && file.name.endsWith('.js'))
       .map((file) => path.join(file.parentPath, file.name))
-    const depsFilesWithProcessEnvNodeEnv = depsFiles
-      .filter((file) =>
-        fs.readFileSync(file, 'utf-8').includes('process.env.NODE_ENV'),
-      )
-      .map((file) =>
-        path.relative(
-          path.resolve(testDir, 'node_modules/.vite/deps_ssr'),
-          file,
-        ),
-      )
+    const depsFilesWithProcessEnvNodeEnv = depsFiles.filter((file) =>
+      fs.readFileSync(file, 'utf-8').includes('process.env.NODE_ENV'),
+    )
+
     expect(depsFilesWithProcessEnvNodeEnv.length).toBeGreaterThan(0)
   })
 
