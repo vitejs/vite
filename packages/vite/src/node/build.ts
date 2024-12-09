@@ -1073,11 +1073,7 @@ export function onRollupLog(
     logHandler(logLeveling, logging)
   }
 
-  const tty = process.stdout.isTTY && !process.env.CI
-  if (tty) {
-    process.stdout.clearLine(0)
-    process.stdout.cursorTo(0)
-  }
+  clearLine()
   const userOnLog = environment.config.build.rollupOptions?.onLog
   if (userOnLog) {
     userOnLog(level, log, viteLog)
