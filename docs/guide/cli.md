@@ -4,7 +4,7 @@
 
 ### `vite`
 
-Start Vite dev server in the current directory.
+Start Vite dev server in the current directory. `vite dev` and `vite serve` are aliases for `vite`.
 
 #### Usage
 
@@ -14,24 +14,24 @@ vite [root]
 
 #### Options
 
-| Options                  |                                                                   |
-| ------------------------ | ----------------------------------------------------------------- |
-| `--host [host]`          | Specify hostname (`string`)                                       |
-| `--port <port>`          | Specify port (`number`)                                           |
-| `--https`                | Use TLS + HTTP/2 (`boolean`)                                      |
-| `--open [path]`          | Open browser on startup (`boolean \| string`)                     |
-| `--cors`                 | Enable CORS (`boolean`)                                           |
-| `--strictPort`           | Exit if specified port is already in use (`boolean`)              |
-| `--force`                | Force the optimizer to ignore the cache and re-bundle (`boolean`) |
-| `-c, --config <file>`    | Use specified config file (`string`)                              |
-| `--base <path>`          | Public base path (default: `/`) (`string`)                        |
-| `-l, --logLevel <level>` | Info \| warn \| error \| silent (`string`)                        |
-| `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)               |
-| `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                             |
-| `-f, --filter <filter>`  | Filter debug logs (`string`)                                      |
-| `-m, --mode <mode>`      | Set env mode (`string`)                                           |
-| `-h, --help`             | Display available CLI options                                     |
-| `-v, --version`          | Display version number                                            |
+| Options                  |                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| `--host [host]`          | Specify hostname (`string`)                                                                                        |
+| `--port <port>`          | Specify port (`number`)                                                                                            |
+| `--open [path]`          | Open browser on startup (`boolean \| string`)                                                                      |
+| `--cors`                 | Enable CORS (`boolean`)                                                                                            |
+| `--strictPort`           | Exit if specified port is already in use (`boolean`)                                                               |
+| `--force`                | Force the optimizer to ignore the cache and re-bundle (`boolean`)                                                  |
+| `-c, --config <file>`    | Use specified config file (`string`)                                                                               |
+| `--base <path>`          | Public base path (default: `/`) (`string`)                                                                         |
+| `-l, --logLevel <level>` | info \| warn \| error \| silent (`string`)                                                                         |
+| `--clearScreen`          | Allow/disable clear screen when logging (`boolean`)                                                                |
+| `--profile`              | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks)) |
+| `-d, --debug [feat]`     | Show debug logs (`string \| boolean`)                                                                              |
+| `-f, --filter <filter>`  | Filter debug logs (`string`)                                                                                       |
+| `-m, --mode <mode>`      | Set env mode (`string`)                                                                                            |
+| `-h, --help`             | Display available CLI options                                                                                      |
+| `-v, --version`          | Display version number                                                                                             |
 
 ## Build
 
@@ -58,17 +58,18 @@ vite build [root]
 | `--minify [minifier]`          | Enable/disable minification, or specify minifier to use (default: `"esbuild"`) (`boolean \| "terser" \| "esbuild"`) |
 | `--manifest [name]`            | Emit build manifest json (`boolean \| string`)                                                                      |
 | `--ssrManifest [name]`         | Emit ssr manifest json (`boolean \| string`)                                                                        |
-| `--force`                      | Force the optimizer to ignore the cache and re-bundle (experimental)(`boolean`)                                     |
 | `--emptyOutDir`                | Force empty outDir when it's outside of root (`boolean`)                                                            |
 | `-w, --watch`                  | Rebuilds when modules have changed on disk (`boolean`)                                                              |
 | `-c, --config <file>`          | Use specified config file (`string`)                                                                                |
 | `--base <path>`                | Public base path (default: `/`) (`string`)                                                                          |
 | `-l, --logLevel <level>`       | Info \| warn \| error \| silent (`string`)                                                                          |
 | `--clearScreen`                | Allow/disable clear screen when logging (`boolean`)                                                                 |
+| `--profile`                    | Start built-in Node.js inspector (check [Performance bottlenecks](/guide/troubleshooting#performance-bottlenecks))  |
 | `-d, --debug [feat]`           | Show debug logs (`string \| boolean`)                                                                               |
 | `-f, --filter <filter>`        | Filter debug logs (`string`)                                                                                        |
 | `-m, --mode <mode>`            | Set env mode (`string`)                                                                                             |
 | `-h, --help`                   | Display available CLI options                                                                                       |
+| `--app`                        | Build all environments, same as `builder: {}` (`boolean`, experimental)                                             |
 
 ## Others
 
@@ -113,7 +114,6 @@ vite preview [root]
 | `--host [host]`          | Specify hostname (`string`)                          |
 | `--port <port>`          | Specify port (`number`)                              |
 | `--strictPort`           | Exit if specified port is already in use (`boolean`) |
-| `--https`                | Use TLS + HTTP/2 (`boolean`)                         |
 | `--open [path]`          | Open browser on startup (`boolean \| string`)        |
 | `--outDir <dir>`         | Output directory (default: `dist`)(`string`)         |
 | `-c, --config <file>`    | Use specified config file (`string`)                 |

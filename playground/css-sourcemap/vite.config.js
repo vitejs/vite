@@ -21,7 +21,7 @@ export default defineConfig({
           const start = content.indexOf(willBeReplaced)
           ms.overwrite(start, start + willBeReplaced.length, 'purple')
 
-          const map = ms.generateMap({ hires: true })
+          const map = ms.generateMap({ hires: 'boundary' })
           map.file = filename
           map.sources = [filename]
 

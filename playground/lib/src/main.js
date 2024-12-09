@@ -10,3 +10,6 @@ export default function myLib(sel) {
   // make sure umd helper has been moved to the right position
   console.log(`amd function(){ "use strict"; }`)
 }
+
+// For triggering unhandled global esbuild helpers in previous regex-based implementation for injection
+;(function () {})()?.foo

@@ -2,23 +2,27 @@ import { posix } from 'node:path'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
 import type { ImportSpecifier } from 'es-module-lexer'
-import { parse as parseJS } from 'acorn'
+import { parseAst } from 'rollup/parseAst'
 import { dynamicImportToGlob } from '@rollup/plugin-dynamic-import-vars'
-import type { KnownAsTypeMap } from 'types/importGlob'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY } from '../constants'
+import { createBackCompatIdResolver } from '../idResolver'
 import {
   createFilter,
   normalizePath,
-  parseRequest,
-  removeComments,
+  rawRE,
+  requestQueryMaybeEscapedSplitRE,
   requestQuerySplitRE,
   transformStableResult,
+  urlRE,
 } from '../utils'
-import { toAbsoluteGlob } from './importMetaGlob'
+import type { Environment } from '../environment'
+import { perEnvironmentState } from '../environment'
+import { hasViteIgnoreRE } from './importAnalysis'
+import { workerOrSharedWorkerRE } from './worker'
 
-export const dynamicImportHelperId = '\0vite/dynamic-import-helper'
+export const dynamicImportHelperId = '\0vite/dynamic-import-helper.js'
 
 const relativePathRE = /^\.{1,2}\//
 // fast path to check if source contains a dynamic import. we check for a
@@ -27,7 +31,8 @@ const relativePathRE = /^\.{1,2}\//
 const hasDynamicImportRE = /\bimport\s*[(/]/
 
 interface DynamicImportRequest {
-  as?: keyof KnownAsTypeMap
+  query?: string | Record<string, string>
+  import?: string
 }
 
 interface DynamicImportPattern {
@@ -36,14 +41,27 @@ interface DynamicImportPattern {
   rawPattern: string
 }
 
-const dynamicImportHelper = (glob: Record<string, any>, path: string) => {
+const dynamicImportHelper = (
+  glob: Record<string, any>,
+  path: string,
+  segs: number,
+) => {
   const v = glob[path]
   if (v) {
     return typeof v === 'function' ? v() : Promise.resolve(v)
   }
   return new Promise((_, reject) => {
     ;(typeof queueMicrotask === 'function' ? queueMicrotask : setTimeout)(
-      reject.bind(null, new Error('Unknown variable dynamic import: ' + path)),
+      reject.bind(
+        null,
+        new Error(
+          'Unknown variable dynamic import: ' +
+            path +
+            (path.split('/').length !== segs
+              ? '. Note that variables only represent file names one level deep.'
+              : ''),
+        ),
+      ),
     )
   })
 }
@@ -52,33 +70,36 @@ function parseDynamicImportPattern(
   strings: string,
 ): DynamicImportPattern | null {
   const filename = strings.slice(1, -1)
-  const rawQuery = parseRequest(filename)
-  let globParams: DynamicImportRequest | null = null
-  const ast = (
-    parseJS(strings, {
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-    }) as any
-  ).body[0].expression
+  const ast = (parseAst(strings).body[0] as any).expression
 
   const userPatternQuery = dynamicImportToGlob(ast, filename)
   if (!userPatternQuery) {
     return null
   }
 
-  const [userPattern] = userPatternQuery.split(requestQuerySplitRE, 2)
-  const [rawPattern] = filename.split(requestQuerySplitRE, 2)
-
-  if (rawQuery?.raw !== undefined) {
-    globParams = { as: 'raw' }
-  }
-
-  if (rawQuery?.url !== undefined) {
-    globParams = { as: 'url' }
-  }
-
-  if (rawQuery?.worker !== undefined) {
-    globParams = { as: 'worker' }
+  const [userPattern] = userPatternQuery.split(
+    // ? is escaped on posix OS
+    requestQueryMaybeEscapedSplitRE,
+    2,
+  )
+  let [rawPattern, search] = filename.split(requestQuerySplitRE, 2)
+  let globParams: DynamicImportRequest | null = null
+  if (search) {
+    search = '?' + search
+    if (
+      workerOrSharedWorkerRE.test(search) ||
+      urlRE.test(search) ||
+      rawRE.test(search)
+    ) {
+      globParams = {
+        query: search,
+        import: '*',
+      }
+    } else {
+      globParams = {
+        query: search,
+      }
+    }
   }
 
   return {
@@ -106,13 +127,14 @@ export async function transformDynamicImport(
     if (!resolvedFileName) {
       return null
     }
-    const relativeFileName = posix.relative(
-      posix.dirname(normalizePath(importer)),
-      normalizePath(resolvedFileName),
+    const relativeFileName = normalizePath(
+      posix.relative(
+        posix.dirname(normalizePath(importer)),
+        normalizePath(resolvedFileName),
+      ),
     )
-    importSource = normalizePath(
-      '`' + (relativeFileName[0] === '.' ? '' : './') + relativeFileName + '`',
-    )
+    importSource =
+      '`' + (relativeFileName[0] === '.' ? '' : './') + relativeFileName + '`'
   }
 
   const dynamicImportPattern = parseDynamicImportPattern(importSource)
@@ -120,14 +142,14 @@ export async function transformDynamicImport(
     return null
   }
   const { globParams, rawPattern, userPattern } = dynamicImportPattern
-  const params = globParams
-    ? `, ${JSON.stringify({ ...globParams, import: '*' })}`
-    : ''
+  const params = globParams ? `, ${JSON.stringify(globParams)}` : ''
+  const dir = importer ? posix.dirname(importer) : root
+  const normalized =
+    rawPattern[0] === '/'
+      ? posix.join(root, rawPattern.slice(1))
+      : posix.join(dir, rawPattern)
 
-  let newRawPattern = posix.relative(
-    posix.dirname(importer),
-    await toAbsoluteGlob(rawPattern, root, importer, resolve),
-  )
+  let newRawPattern = posix.relative(posix.dirname(importer), normalized)
 
   if (!relativePathRE.test(newRawPattern)) {
     newRawPattern = `./${newRawPattern}`
@@ -143,14 +165,17 @@ export async function transformDynamicImport(
 }
 
 export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
-  const resolve = config.createResolver({
+  const resolve = createBackCompatIdResolver(config, {
     preferRelative: true,
     tryIndex: false,
     extensions: [],
   })
-  const { include, exclude, warnOnError } =
-    config.build.dynamicImportVarsOptions
-  const filter = createFilter(include, exclude)
+
+  const getFilter = perEnvironmentState((environment: Environment) => {
+    const { include, exclude } =
+      environment.config.build.dynamicImportVarsOptions
+    return createFilter(include, exclude)
+  })
 
   return {
     name: 'vite:dynamic-import-vars',
@@ -168,8 +193,9 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(source, importer) {
+      const { environment } = this
       if (
-        !filter(importer) ||
+        !getFilter(this)(importer) ||
         importer === CLIENT_ENTRY ||
         !hasDynamicImportRE.test(source)
       ) {
@@ -181,7 +207,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
       let imports: readonly ImportSpecifier[] = []
       try {
         imports = parseImports(source)[0]
-      } catch (e: any) {
+      } catch {
         // ignore as it might not be a JS file, the subsequent plugins will catch the error
         return null
       }
@@ -206,23 +232,21 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
           continue
         }
 
+        if (hasViteIgnoreRE.test(source.slice(expStart, expEnd))) {
+          continue
+        }
+
         s ||= new MagicString(source)
         let result
         try {
-          // When import string is using backticks, es-module-lexer `end` captures
-          // until the closing parenthesis, instead of the closing backtick.
-          // There may be inline comments between the backtick and the closing
-          // parenthesis, so we manually remove them for now.
-          // See https://github.com/guybedford/es-module-lexer/issues/118
-          const importSource = removeComments(source.slice(start, end)).trim()
           result = await transformDynamicImport(
-            importSource,
+            source.slice(start, end),
             importer,
-            resolve,
+            (id, importer) => resolve(environment, id, importer),
             config.root,
           )
         } catch (error) {
-          if (warnOnError) {
+          if (environment.config.build.dynamicImportVarsOptions.warnOnError) {
             this.warn(error)
           } else {
             this.error(error)
@@ -239,7 +263,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
         s.overwrite(
           expStart,
           expEnd,
-          `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`,
+          `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`, ${rawPattern.split('/').length})`,
         )
       }
 

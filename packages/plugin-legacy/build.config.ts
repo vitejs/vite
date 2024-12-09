@@ -7,5 +7,8 @@ export default defineBuildConfig({
   rollup: {
     emitCJS: true,
     inlineDependencies: true,
+    esbuild: {
+      target: 'node18',
+    },
   },
 })

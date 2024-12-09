@@ -1,35 +1,72 @@
-import fs from 'node:fs'
 import path from 'node:path'
-import history from 'connect-history-api-fallback'
+import fs from 'node:fs'
 import type { Connect } from 'dep-types/connect'
 import { createDebugger } from '../../utils'
+import { cleanUrl } from '../../../shared/utils'
+
+const debug = createDebugger('vite:html-fallback')
 
 export function htmlFallbackMiddleware(
   root: string,
   spaFallback: boolean,
 ): Connect.NextHandleFunction {
-  const historyHtmlFallbackMiddleware = history({
-    logger: createDebugger('vite:html-fallback'),
-    // support /dir/ without explicit index.html
-    rewrites: [
-      {
-        from: /\/$/,
-        to({ parsedUrl, request }: any) {
-          const rewritten =
-            decodeURIComponent(parsedUrl.pathname) + 'index.html'
-
-          if (fs.existsSync(path.join(root, rewritten))) {
-            return rewritten
-          }
-
-          return spaFallback ? `/index.html` : request.url
-        },
-      },
-    ],
-  })
-
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteHtmlFallbackMiddleware(req, res, next) {
-    return historyHtmlFallbackMiddleware(req, res, next)
+  return function viteHtmlFallbackMiddleware(req, _res, next) {
+    if (
+      // Only accept GET or HEAD
+      (req.method !== 'GET' && req.method !== 'HEAD') ||
+      // Exclude default favicon requests
+      req.url === '/favicon.ico' ||
+      // Require Accept: text/html or */*
+      !(
+        req.headers.accept === undefined || // equivalent to `Accept: */*`
+        req.headers.accept === '' || // equivalent to `Accept: */*`
+        req.headers.accept.includes('text/html') ||
+        req.headers.accept.includes('*/*')
+      )
+    ) {
+      return next()
+    }
+
+    const url = cleanUrl(req.url!)
+    const pathname = decodeURIComponent(url)
+
+    // .html files are not handled by serveStaticMiddleware
+    // so we need to check if the file exists
+    if (pathname.endsWith('.html')) {
+      const filePath = path.join(root, pathname)
+      if (fs.existsSync(filePath)) {
+        debug?.(`Rewriting ${req.method} ${req.url} to ${url}`)
+        req.url = url
+        return next()
+      }
+    }
+    // trailing slash should check for fallback index.html
+    else if (pathname[pathname.length - 1] === '/') {
+      const filePath = path.join(root, pathname, 'index.html')
+      if (fs.existsSync(filePath)) {
+        const newUrl = url + 'index.html'
+        debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
+        req.url = newUrl
+        return next()
+      }
+    }
+    // non-trailing slash should check for fallback .html
+    else {
+      const filePath = path.join(root, pathname + '.html')
+      if (fs.existsSync(filePath)) {
+        const newUrl = url + '.html'
+        debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
+        req.url = newUrl
+        return next()
+      }
+    }
+
+    if (spaFallback) {
+      debug?.(`Rewriting ${req.method} ${req.url} to /index.html`)
+      req.url = '/index.html'
+    }
+
+    next()
   }
 }

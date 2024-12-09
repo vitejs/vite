@@ -1,0 +1,1 @@
+document.querySelector('main').innerHTML = '👋'

@@ -9,6 +9,7 @@ import chunkCssUrl from './chunk.css?url'
 globalThis.__test_chunkCssUrl = chunkCssUrl
 
 import('./async.css')
+import('./async-js')
 
 import('./inline.css?inline').then((css) => {
   document.querySelector('.dynamic-inline').textContent = css.default

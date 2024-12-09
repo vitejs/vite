@@ -27,8 +27,12 @@ function hasWorkspacePackageJSON(root: string): boolean {
   if (!isFileReadable(path)) {
     return false
   }
-  const content = JSON.parse(fs.readFileSync(path, 'utf-8')) || {}
-  return !!content.workspaces
+  try {
+    const content = JSON.parse(fs.readFileSync(path, 'utf-8')) || {}
+    return !!content.workspaces
+  } catch {
+    return false
+  }
 }
 
 function hasRootFile(root: string): boolean {

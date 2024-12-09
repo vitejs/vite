@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite'
 
+const noExternal = ['@vitejs/test-require-external-cjs']
 export default defineConfig({
   ssr: {
-    noExternal: ['@vitejs/test-require-external-cjs'],
+    noExternal,
     external: ['@vitejs/test-external-cjs'],
     optimizeDeps: {
-      disabled: false,
+      include: noExternal,
     },
   },
   build: {
@@ -13,9 +14,6 @@ export default defineConfig({
     minify: false,
     rollupOptions: {
       external: ['@vitejs/test-external-cjs'],
-    },
-    commonjsOptions: {
-      include: [],
     },
   },
 })

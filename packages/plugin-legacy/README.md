@@ -40,9 +40,22 @@ npm add -D terser
 - **Type:** `string | string[] | { [key: string]: string }`
 - **Default:** [`'last 2 versions and not dead, > 0.3%, Firefox ESR'`](https://browsersl.ist/#q=last+2+versions+and+not+dead%2C+%3E+0.3%25%2C+Firefox+ESR)
 
-  If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets).
+  If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when rendering **legacy chunks**.
 
   The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
+
+  If it's not set, plugin-legacy will load [the browserslist config sources](https://github.com/browserslist/browserslist#queries) and then fallback to the default value.
+
+### `modernTargets`
+
+- **Type:** `string | string[]`
+- **Default:** [`'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'`](https://browsersl.ist/#q=edge%3E%3D79%2C+firefox%3E%3D67%2C+chrome%3E%3D64%2C+safari%3E%3D12%2C+chromeAndroid%3E%3D64%2C+iOS%3E%3D12)
+
+  If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when rendering **modern chunks**.
+
+  The query is also [Browserslist compatible](https://github.com/browserslist/browserslist). See [Browserslist Best Practices](https://github.com/browserslist/browserslist#best-practices) for more details.
+
+  If it's not set, plugin-legacy will fallback to the default value.
 
 ### `polyfills`
 
@@ -61,32 +74,24 @@ npm add -D terser
 
   Add custom imports to the legacy polyfills chunk. Since the usage-based polyfill detection only covers ES language features, it may be necessary to manually specify additional DOM API polyfills using this option.
 
-  Note: if additional polyfills are needed for both the modern and legacy chunks, they can simply be imported in the application source code.
+### `additionalModernPolyfills`
 
-### `ignoreBrowserslistConfig`
+- **Type:** `string[]`
 
-- **Type:** `boolean`
-- **Default:** `false`
-
-  `@babel/preset-env` automatically detects [`browserslist` config sources](https://github.com/browserslist/browserslist#browserslist-):
-
-  - `browserslist` field in `package.json`
-  - `.browserslistrc` file in cwd.
-
-  Set to `false` to ignore these sources.
+  Add custom imports to the modern polyfills chunk. Since the usage-based polyfill detection only covers ES language features, it may be necessary to manually specify additional DOM API polyfills using this option.
 
 ### `modernPolyfills`
 
 - **Type:** `boolean | string[]`
 - **Default:** `false`
 
-  Defaults to `false`. Enabling this option will generate a separate polyfills chunk for the modern build (targeting browsers with [native ESM support](https://caniuse.com/es6-module)).
+  Defaults to `false`. Enabling this option will generate a separate polyfills chunk for the modern build (targeting [browsers that support widely-available features](#browsers-that-supports-esm-but-does-not-support-widely-available-features)).
 
   Set to a list of strings to explicitly control which polyfills to include. See [Polyfill Specifiers](#polyfill-specifiers) for details.
 
-  Note it is **not recommended** to use the `true` value (which uses auto-detection) because `core-js@3` is very aggressive in polyfill inclusions due to all the bleeding edge features it supports. Even when targeting native ESM support, it injects 15kb of polyfills!
+  If `modernTargets` is not set, it is **not recommended** to use the `true` value (which uses auto-detection) because `core-js@3` is very aggressive in polyfill inclusions due to all the bleeding edge features it supports. Even when targeting native ESM support, it injects 15kb of polyfills!
 
-  If you don't have hard reliance on bleeding edge runtime features, it is not that hard to avoid having to use polyfills in the modern build altogether. Alternatively, consider using an on-demand service like [Polyfill.io](https://polyfill.io/v3/) to only inject necessary polyfills based on actual browser user-agents (most modern browsers will need nothing!).
+  If you don't have hard reliance on bleeding edge runtime features, it is not that hard to avoid having to use polyfills in the modern build altogether. Alternatively, consider setting `modernTargets` or using an on-demand service like https://cdnjs.cloudflare.com/polyfill/ to only inject necessary polyfills based on actual browser user-agents (most modern browsers will need nothing!).
 
 ### `renderLegacyChunks`
 
@@ -162,22 +167,26 @@ export default {
 
 ## Content Security Policy
 
-The legacy plugin requires inline scripts for [Safari 10.1 `nomodule` fix](https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc), SystemJS initialization, and dynamic import fallback. If you have a strict CSP policy requirement, you will need to [add the corresponding hashes to your `script-src` list](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src#unsafe_inline_script):
+The legacy plugin requires inline scripts for [Safari 10.1 `nomodule` fix](https://gist.github.com/samthor/64b114e4a4f539915a95b91ffd340acc), SystemJS initialization, and dynamic import fallback. If you have a strict CSP policy requirement, you will need to [add the corresponding hashes to your `script-src` list](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy/script-src#unsafe_inline_script).
+
+The hash values (without the `sha256-` prefix) can be retrieved via:
+
+```js
+import { cspHashes } from '@vitejs/plugin-legacy'
+```
+
+The current values are:
 
 - `sha256-MS6/3FCg4WjP9gwgaBGwLpRCY6fZBgwmhVCdrPrNf3E=`
 - `sha256-tQjf8gvb2ROOMapIxFvFAYBeUJ0v1HCbOcSmDNXGtDo=`
-- `sha256-4y/gEB2/KIwZFTfNqwXJq4olzvmQ0S214m9jwKgNXoc=`
+- `sha256-VA8O2hAdooB288EpSTrGLl7z3QikbWU9wwoebO/QaYk=`
 - `sha256-+5XkZFazzJo8n0iOP4ti/cLCMUudTf//Mzkb7xNPXIc=`
 
 <!--
 Run `node --input-type=module -e "import {cspHashes} from '@vitejs/plugin-legacy'; console.log(cspHashes.map(h => 'sha256-'+h))"` to retrieve the value.
 -->
 
-These values (without the `sha256-` prefix) can also be retrieved via
-
-```js
-import { cspHashes } from '@vitejs/plugin-legacy'
-```
+Note that these values could change between minor versions. Thus, we recommend generating the CSP header from the exported `cspHashes` variable. If you copy the values manually, then you should pin the minor version using `~`.
 
 When using the `regenerator-runtime` polyfill, it will attempt to use the `globalThis` object to register itself. If `globalThis` is not available (it is [fairly new](https://caniuse.com/?search=globalThis) and not widely supported, including IE 11), it attempts to perform dynamic `Function(...)` call which violates the CSP. To avoid dynamic `eval` in the absence of `globalThis` consider adding `core-js/proposals/global-this` to `additionalLegacyPolyfills` to define it.
 

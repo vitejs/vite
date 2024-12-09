@@ -18,15 +18,15 @@ jobs:
     environment: Release
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2.2.4
+        uses: pnpm/action-setup@v4.0.0
 
-      - name: Set node version to 16.x
-        uses: actions/setup-node@v3
+      - name: Set node version to 20
+        uses: actions/setup-node@v4
         with:
-          node-version: 16.x
+          node-version: 20
           registry-url: https://registry.npmjs.org/
           cache: "pnpm"
 

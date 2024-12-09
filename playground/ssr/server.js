@@ -41,7 +41,7 @@ export async function createServer(
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
 
-  app.use('*', async (req, res, next) => {
+  app.use('*all', async (req, res, next) => {
     try {
       const url = req.originalUrl
 
@@ -57,6 +57,7 @@ export async function createServer(
       res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
     } catch (e) {
       vite && vite.ssrFixStacktrace(e)
+      if (isTest) throw e
       console.log(e.stack)
       res.status(500).end(e.stack)
     }

@@ -1,15 +1,12 @@
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import type {
-  Server as HttpServer,
-  OutgoingHttpHeaders as HttpServerHeaders,
-} from 'node:http'
+import type { OutgoingHttpHeaders as HttpServerHeaders } from 'node:http'
 import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import type { Connect } from 'dep-types/connect'
 import colors from 'picocolors'
-import { isObject } from './utils'
 import type { ProxyOptions } from './server/middlewares/proxy'
 import type { Logger } from './logger'
+import type { HttpServer } from './server'
 
 export interface CommonServerOptions {
   /**
@@ -31,7 +28,7 @@ export interface CommonServerOptions {
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
-  https?: boolean | HttpsServerOptions
+  https?: HttpsServerOptions
   /**
    * Open browser window on startup
    */
@@ -46,8 +43,8 @@ export interface CommonServerOptions {
    * ``` js
    * module.exports = {
    *   proxy: {
-   *     // string shorthand
-   *     '/foo': 'http://localhost:4567/foo',
+   *     // string shorthand: /foo -> http://localhost:4567/foo
+   *     '/foo': 'http://localhost:4567',
    *     // with options
    *     '/api': {
    *       target: 'http://jsonplaceholder.typicode.com',
@@ -78,7 +75,10 @@ export interface CommonServerOptions {
 export interface CorsOptions {
   origin?:
     | CorsOrigin
-    | ((origin: string, cb: (err: Error, origins: CorsOrigin) => void) => void)
+    | ((
+        origin: string | undefined,
+        cb: (err: Error, origins: CorsOrigin) => void,
+      ) => void)
   methods?: string | string[]
   allowedHeaders?: string | string[]
   exposedHeaders?: string | string[]
@@ -116,15 +116,14 @@ export async function resolveHttpServer(
       },
       // @ts-expect-error TODO: is this correct?
       app,
-    ) as unknown as HttpServer
+    )
   }
 }
 
 export async function resolveHttpsConfig(
-  https: boolean | HttpsServerOptions | undefined,
+  https: HttpsServerOptions | undefined,
 ): Promise<HttpsServerOptions | undefined> {
   if (!https) return undefined
-  if (!isObject(https)) return {}
 
   const [ca, cert, key, pfx] = await Promise.all([
     readFileIfExists(https.ca),
@@ -189,7 +188,7 @@ export function setClientErrorHandler(
       logger.warn(
         colors.yellow(
           'Server responded with status code 431. ' +
-            'See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
+            'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
         ),
       )
     }

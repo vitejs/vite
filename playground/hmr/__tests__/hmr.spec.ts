@@ -1,15 +1,19 @@
 import { beforeAll, describe, expect, it, test } from 'vitest'
+import type { Page } from 'playwright-chromium'
 import {
   addFile,
+  browser,
   browserLogs,
   editFile,
   getBg,
+  getColor,
   isBuild,
   page,
+  readFile,
   removeFile,
+  serverLogs,
   untilBrowserLogAfter,
   untilUpdated,
-  viteServer,
   viteTestUrl,
 } from '~utils'
 
@@ -22,7 +26,7 @@ test('should render', async () => {
 if (!isBuild) {
   test('should connect', async () => {
     expect(browserLogs.length).toBe(3)
-    expect(browserLogs.some((msg) => msg.match('connected'))).toBe(true)
+    expect(browserLogs.some((msg) => msg.includes('connected'))).toBe(true)
     browserLogs.length = 0
   })
 
@@ -150,7 +154,7 @@ if (!isBuild) {
   })
 
   test('invalidate', async () => {
-    const el = await page.$('.invalidation')
+    const el = await page.$('.invalidation-parent')
     await untilBrowserLogAfter(
       () =>
         editFile('invalidation/child.js', (code) =>
@@ -172,9 +176,83 @@ if (!isBuild) {
     await untilUpdated(() => el.textContent(), 'child updated')
   })
 
+  test('invalidate works with multiple tabs', async () => {
+    let page2: Page
+    try {
+      page2 = await browser.newPage()
+      await page2.goto(viteTestUrl)
+
+      const el = await page.$('.invalidation-parent')
+      await untilBrowserLogAfter(
+        () =>
+          editFile('invalidation/child.js', (code) =>
+            code.replace('child', 'child updated'),
+          ),
+        [
+          '>>> vite:beforeUpdate -- update',
+          '>>> vite:invalidate -- /invalidation/child.js',
+          '[vite] invalidate /invalidation/child.js',
+          '[vite] hot updated: /invalidation/child.js',
+          '>>> vite:afterUpdate -- update',
+          // if invalidate dedupe doesn't work correctly, this beforeUpdate will be called twice
+          '>>> vite:beforeUpdate -- update',
+          '(invalidation) parent is executing',
+          '[vite] hot updated: /invalidation/parent.js',
+          '>>> vite:afterUpdate -- update',
+        ],
+        true,
+      )
+      await untilUpdated(() => el.textContent(), 'child updated')
+    } finally {
+      await page2.close()
+    }
+  })
+
+  test('invalidate on root triggers page reload', async () => {
+    editFile('invalidation/root.js', (code) => code.replace('Init', 'Updated'))
+    await page.waitForEvent('load')
+    await untilUpdated(
+      async () => (await page.$('.invalidation-root')).textContent(),
+      'Updated',
+    )
+  })
+
+  test('soft invalidate', async () => {
+    const el = await page.$('.soft-invalidation')
+    expect(await el.textContent()).toBe(
+      'soft-invalidation/index.js is transformed 1 times. child is bar',
+    )
+    editFile('soft-invalidation/child.js', (code) =>
+      code.replace('bar', 'updated'),
+    )
+    await untilUpdated(
+      () => el.textContent(),
+      'soft-invalidation/index.js is transformed 1 times. child is updated',
+    )
+
+    editFile('soft-invalidation/index.js', (code) =>
+      code.replace('child is', 'child is now'),
+    )
+    editFile('soft-invalidation/child.js', (code) =>
+      code.replace('updated', 'updated?'),
+    )
+    await untilUpdated(
+      () => el.textContent(),
+      'soft-invalidation/index.js is transformed 2 times. child is now updated?',
+    )
+  })
+
   test('plugin hmr handler + custom event', async () => {
     const el = await page.$('.custom')
     editFile('customFile.js', (code) => code.replace('custom', 'edited'))
+    await untilUpdated(() => el.textContent(), 'edited')
+  })
+
+  test('plugin hmr remove custom events', async () => {
+    const el = await page.$('.toRemove')
+    editFile('customFile.js', (code) => code.replace('custom', 'edited'))
+    await untilUpdated(() => el.textContent(), 'edited')
+    editFile('customFile.js', (code) => code.replace('edited', 'custom'))
     await untilUpdated(() => el.textContent(), 'edited')
   })
 
@@ -624,7 +702,7 @@ if (!isBuild) {
 
           await untilBrowserLogAfter(
             () => page.goto(`${viteTestUrl}/${testDir}/`),
-            '>>> ready <<<',
+            [CONNECTED, '>>> ready <<<'],
             (logs) => {
               expect(logs).toContain('loaded:some:a0b0c0default0')
               expect(logs).toContain('some >>>>>> a0, b0, c0')
@@ -633,10 +711,11 @@ if (!isBuild) {
 
           await untilBrowserLogAfter(
             async () => {
+              const loadPromise = page.waitForEvent('load')
               editFile(file, (code) => code.replace(/([abc])0/g, '$11'))
-              await page.waitForEvent('load')
+              await loadPromise
             },
-            '>>> ready <<<',
+            [CONNECTED, '>>> ready <<<'],
             (logs) => {
               expect(logs).toContain('loaded:some:a1b1c1default0')
               expect(logs).toContain('some >>>>>> a1, b1, c1')
@@ -677,14 +756,6 @@ if (!isBuild) {
     expect(await btn.textContent()).toBe('Compteur 0')
   })
 
-  test('virtual module in module graph', async () => {
-    const moduleGraph = viteServer.moduleGraph
-    const virtualId = Array.from(moduleGraph.idToModuleMap.keys()).filter(
-      (id: string) => id.includes('virtual'),
-    )
-    expect(virtualId).toEqual(['\x00virtual:file', '/@id/__x00__virtual:file'])
-  })
-
   test('handle virtual module updates', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('.virtual')
@@ -713,21 +784,25 @@ if (!isBuild) {
     const importCode = "import 'missing-modules'"
     const unImportCode = `// ${importCode}`
 
-    await page.goto(viteTestUrl + '/missing-import/index.html', {
-      waitUntil: 'load',
-    })
+    await untilBrowserLogAfter(
+      () =>
+        page.goto(viteTestUrl + '/missing-import/index.html', {
+          waitUntil: 'load',
+        }),
+      /connected/, // wait for HMR connection
+    )
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(importCode, unImportCode))
       await loadPromise
-    }, 'missing test')
+    }, ['missing test', /connected/])
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
       editFile(file, (code) => code.replace(unImportCode, importCode))
       await loadPromise
-    }, /500/)
+    }, [/500/, /connected/])
   })
 
   test('should hmr when file is deleted and restored', async () => {
@@ -749,34 +824,118 @@ if (!isBuild) {
       'parent:child1',
     )
 
+    // delete the file
     editFile(parentFile, (code) =>
       code.replace(
         "export { value as childValue } from './child'",
         "export const childValue = 'not-child'",
       ),
     )
+    const originalChildFileCode = readFile(childFile)
+    await Promise.all([
+      untilBrowserLogAfter(
+        () => removeFile(childFile),
+        `${childFile} is disposed`,
+      ),
+      untilUpdated(
+        () => page.textContent('.file-delete-restore'),
+        'parent:not-child',
+      ),
+    ])
+
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      addFile(childFile, originalChildFileCode)
+      editFile(parentFile, (code) =>
+        code.replace(
+          "export const childValue = 'not-child'",
+          "export { value as childValue } from './child'",
+        ),
+      )
+      await loadPromise
+    }, [/connected/])
+    await untilUpdated(
+      () => page.textContent('.file-delete-restore'),
+      'parent:child',
+    )
+  })
+
+  test('delete file should not break hmr', async () => {
+    await page.goto(viteTestUrl)
+
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 1',
+    )
+
+    // add state
+    await page.click('.intermediate-file-delete-increment')
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2',
+    )
+
+    // update import, hmr works
+    editFile('intermediate-file-delete/index.js', (code) =>
+      code.replace("from './re-export.js'", "from './display.js'"),
+    )
+    editFile('intermediate-file-delete/display.js', (code) =>
+      code.replace('count is ${count}', 'count is ${count}!'),
+    )
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2!',
+    )
+
+    // remove unused file, page reload because it's considered entry point now
+    removeFile('intermediate-file-delete/re-export.js')
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 1!',
+    )
+
+    // re-add state
+    await page.click('.intermediate-file-delete-increment')
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2!',
+    )
+
+    // hmr works after file deletion
+    editFile('intermediate-file-delete/display.js', (code) =>
+      code.replace('count is ${count}!', 'count is ${count}'),
+    )
+    await untilUpdated(
+      () => page.textContent('.intermediate-file-delete-display'),
+      'count is 2',
+    )
+  })
+
+  test('deleted file should trigger dispose and prune callbacks', async () => {
+    browserLogs.length = 0
+    await page.goto(viteTestUrl)
+
+    const parentFile = 'file-delete-restore/parent.js'
+    const childFile = 'file-delete-restore/child.js'
+
+    // delete the file
+    editFile(parentFile, (code) =>
+      code.replace(
+        "export { value as childValue } from './child'",
+        "export const childValue = 'not-child'",
+      ),
+    )
+    const originalChildFileCode = readFile(childFile)
     removeFile(childFile)
     await untilUpdated(
       () => page.textContent('.file-delete-restore'),
       'parent:not-child',
     )
+    expect(browserLogs).to.include('file-delete-restore/child.js is disposed')
+    expect(browserLogs).to.include('file-delete-restore/child.js is pruned')
 
-    addFile(
-      childFile,
-      `
-import { rerender } from './runtime'
-
-export const value = 'child'
-
-if (import.meta.hot) {
-  import.meta.hot.accept((newMod) => {
-    if (!newMod) return
-
-    rerender({ child: newMod.value })
-  })
-}
-`,
-    )
+    // restore the file
+    addFile(childFile, originalChildFileCode)
     editFile(parentFile, (code) =>
       code.replace(
         "export const childValue = 'not-child'",
@@ -790,6 +949,8 @@ if (import.meta.hot) {
   })
 
   test('import.meta.hot?.accept', async () => {
+    await page.goto(viteTestUrl)
+
     const el = await page.$('.optional-chaining')
     await untilBrowserLogAfter(
       () =>
@@ -801,13 +962,87 @@ if (import.meta.hot) {
     await untilUpdated(() => el.textContent(), '2')
   })
 
-  test('issue-3033', async () => {
-    await page.goto(viteTestUrl + '/issue-3033/index.html')
-    const el = await page.$('.issue-3033')
+  test('hmr works for self-accepted module within circular imported files', async () => {
+    await page.goto(viteTestUrl + '/self-accept-within-circular/index.html')
+    const el = await page.$('.self-accept-within-circular')
     expect(await el.textContent()).toBe('c')
-    editFile('issue-3033/c.js', (code) =>
+    editFile('self-accept-within-circular/c.js', (code) =>
       code.replace(`export const c = 'c'`, `export const c = 'cc'`),
     )
-    await untilUpdated(() => el.textContent(), 'cc')
+    await untilUpdated(
+      () => page.textContent('.self-accept-within-circular'),
+      'cc',
+    )
+    expect(serverLogs.length).greaterThanOrEqual(1)
+    // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
+    // Match on full log not possible because of color markers
+    expect(serverLogs.at(-1)!).toContain('hmr update')
+  })
+
+  test('hmr should not reload if no accepted within circular imported files', async () => {
+    await page.goto(viteTestUrl + '/circular/index.html')
+    const el = await page.$('.circular')
+    expect(await el.textContent()).toBe(
+      'mod-a -> mod-b -> mod-c -> mod-a (expected error)',
+    )
+    editFile('circular/mod-b.js', (code) =>
+      code.replace(`mod-b ->`, `mod-b (edited) ->`),
+    )
+    await untilUpdated(
+      () => el.textContent(),
+      'mod-a -> mod-b (edited) -> mod-c -> mod-a (expected error)',
+    )
+  })
+
+  test('not inlined assets HMR', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('#logo-no-inline')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('logo-no-inline.svg', (code) =>
+          code.replace('height="30px"', 'height="40px"'),
+        ),
+      /Logo-no-inline updated/,
+    )
+    await untilUpdated(() => el.evaluate((it) => `${it.clientHeight}`), '40')
+  })
+
+  test('inlined assets HMR', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('#logo')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('logo.svg', (code) =>
+          code.replace('height="30px"', 'height="40px"'),
+        ),
+      /Logo updated/,
+    )
+    await untilUpdated(() => el.evaluate((it) => `${it.clientHeight}`), '40')
+  })
+
+  test('CSS HMR with this.addWatchFile', async () => {
+    await page.goto(viteTestUrl + '/css-deps/index.html')
+    expect(await getColor('.css-deps')).toMatch('red')
+    editFile('css-deps/dep.js', (code) => code.replace(`red`, `green`))
+    await untilUpdated(() => getColor('.css-deps'), 'green')
+  })
+
+  test('hmr should happen after missing file is created', async () => {
+    const file = 'missing-file/a.js'
+    const code = 'console.log("a.js")'
+
+    await untilBrowserLogAfter(
+      () =>
+        page.goto(viteTestUrl + '/missing-file/index.html', {
+          waitUntil: 'load',
+        }),
+      /connected/, // wait for HMR connection
+    )
+
+    await untilBrowserLogAfter(async () => {
+      const loadPromise = page.waitForEvent('load')
+      addFile(file, code)
+      await loadPromise
+    }, [/connected/, 'a.js'])
   })
 }

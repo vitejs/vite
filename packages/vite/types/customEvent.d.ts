@@ -23,6 +23,7 @@ export interface WebSocketConnectionPayload {
    * This might be removed in the future if we didn't find reasonable use cases.
    * If you find this useful, please open an issue with details so we can discuss and make it stable API.
    */
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins
   webSocket: WebSocket
 }
 
@@ -31,5 +32,8 @@ export interface InvalidatePayload {
   message: string | undefined
 }
 
+/**
+ * provides types for built-in Vite events
+ */
 export type InferCustomEventPayload<T extends string> =
   T extends keyof CustomEventMap ? CustomEventMap[T] : any

@@ -4,15 +4,18 @@ import { describe, expect, test } from 'vitest'
 import {
   asyncFlatten,
   bareImportRE,
+  flattenId,
+  generateCodeFrame,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
   injectQuery,
   isFileReadable,
-  isWindows,
+  mergeWithDefaults,
   posToNumber,
   processSrcSetSync,
   resolveHostname,
 } from '../utils'
+import { isWindows } from '../../shared/utils'
 
 describe('bareImportRE', () => {
   test('should work with normal package name', () => {
@@ -111,6 +114,12 @@ describe('injectQuery', () => {
       '/usr/vite/東京 %20 hello?direct',
     )
   })
+
+  test('path with url-encoded path as query parameter', () => {
+    const src = '/src/module.ts?url=https%3A%2F%2Fusr.vite%2F'
+    const expected = '/src/module.ts?t=1234&url=https%3A%2F%2Fusr.vite%2F'
+    expect(injectQuery(src, 't=1234')).toEqual(expected)
+  })
 })
 
 describe('resolveHostname', () => {
@@ -172,6 +181,74 @@ describe('posToNumber', () => {
   test('out of range', () => {
     const actual = posToNumber('a\nb', { line: 4, column: 0 })
     expect(actual).toBe(4)
+  })
+})
+
+describe('generateCodeFrames', () => {
+  const source = `
+import foo from './foo'
+foo()
+`.trim()
+  const sourceCrLf = source.replace(/\n/, '\r\n')
+  const longSource = `
+import foo from './foo'
+
+foo()
+// 1
+// 2
+// 3
+`.trim()
+
+  const expectSnapshot = (value: string) => {
+    try {
+      // add new line to make snapshot easier to read
+      expect('\n' + value + '\n').toMatchSnapshot()
+    } catch (e) {
+      // don't include this function in stacktrace
+      Error.captureStackTrace(e, expectSnapshot)
+      throw e
+    }
+  }
+
+  test('start with number', () => {
+    expectSnapshot(generateCodeFrame(source, -1))
+    expectSnapshot(generateCodeFrame(source, 0))
+    expectSnapshot(generateCodeFrame(source, 1))
+    expectSnapshot(generateCodeFrame(source, 24))
+  })
+
+  test('start with postion', () => {
+    expectSnapshot(generateCodeFrame(source, { line: 1, column: 0 }))
+    expectSnapshot(generateCodeFrame(source, { line: 1, column: 1 }))
+    expectSnapshot(generateCodeFrame(source, { line: 2, column: 0 }))
+  })
+
+  test('works with CRLF', () => {
+    expectSnapshot(generateCodeFrame(sourceCrLf, { line: 2, column: 0 }))
+  })
+
+  test('end', () => {
+    expectSnapshot(generateCodeFrame(source, 0, 0))
+    expectSnapshot(generateCodeFrame(source, 0, 23))
+    expectSnapshot(generateCodeFrame(source, 0, 29))
+    expectSnapshot(generateCodeFrame(source, 0, source.length))
+    expectSnapshot(generateCodeFrame(source, 0, source.length + 1))
+    expectSnapshot(generateCodeFrame(source, 0, source.length + 100))
+  })
+
+  test('range', () => {
+    expectSnapshot(generateCodeFrame(longSource, { line: 3, column: 0 }))
+    expectSnapshot(
+      generateCodeFrame(
+        longSource,
+        { line: 3, column: 0 },
+        { line: 4, column: 0 },
+      ),
+    )
+  })
+
+  test('invalid start > end', () => {
+    expectSnapshot(generateCodeFrame(source, 2, 0))
   })
 })
 
@@ -241,11 +318,14 @@ describe('isFileReadable', () => {
       fs.chmodSync(testFile, '400')
       expect(isFileReadable(testFile)).toBe(true)
     })
-    test('file without read permission', async () => {
-      fs.chmodSync(testFile, '044')
-      expect(isFileReadable(testFile)).toBe(false)
-      fs.chmodSync(testFile, '644')
-    })
+    test.runIf(process.getuid && process.getuid() !== 0)(
+      'file without read permission',
+      async () => {
+        fs.chmodSync(testFile, '044')
+        expect(isFileReadable(testFile)).toBe(false)
+        fs.chmodSync(testFile, '644')
+      },
+    )
   }
 })
 
@@ -258,5 +338,164 @@ describe('processSrcSetSync', () => {
         ({ url }) => path.posix.join(devBase, url),
       ),
     ).toBe('/base/nested/asset.png 1x, /base/nested/asset.png 2x')
+  })
+
+  test('should not split the comma inside base64 value', async () => {
+    const base64 =
+      'data:image/avif;base64,aA+/0= 400w, data:image/avif;base64,bB+/9= 800w'
+    expect(processSrcSetSync(base64, ({ url }) => url)).toBe(base64)
+  })
+
+  test('should not split the comma inside image URI', async () => {
+    const imageURIWithComma =
+      'asset.png?param1=true,param2=false 400w, asset.png?param1=true,param2=false 800w'
+    expect(processSrcSetSync(imageURIWithComma, ({ url }) => url)).toBe(
+      imageURIWithComma,
+    )
+  })
+
+  test('should handle srcset when descriptor is not present', async () => {
+    const srcsetNoDescriptor = 'asset.png, test.png 400w'
+    const result = 'asset.png, test.png 400w'
+    expect(processSrcSetSync(srcsetNoDescriptor, ({ url }) => url)).toBe(result)
+  })
+
+  test('should not break a regular URL in srcSet', async () => {
+    const source = 'https://anydomain/image.jpg'
+    expect(
+      processSrcSetSync('https://anydomain/image.jpg', ({ url }) => url),
+    ).toBe(source)
+  })
+
+  test('should not break URLs with commas in srcSet', async () => {
+    const source = `
+      \thttps://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img   1x,
+      \thttps://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img\t\t2x
+    `
+    const result =
+      'https://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img 1x, https://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should not break URLs with commas in image-set-options', async () => {
+    const source = `url(https://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img)   1x,
+      url("https://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img")\t\t2x
+    `
+    const result =
+      'url(https://example.com/dpr_1,f_auto,fl_progressive,q_auto,w_100/v1/img) 1x, url("https://example.com/dpr_2,f_auto,fl_progressive,q_auto,w_100/v1/img") 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should parse image-set-options with resolution', async () => {
+    const source = ` "foo.png" 1x,
+                     "foo-2x.png" 2x,
+                     "foo-print.png" 600dpi`
+    const result = '"foo.png" 1x, "foo-2x.png" 2x, "foo-print.png" 600dpi'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should parse image-set-options with type', async () => {
+    const source = ` "foo.avif" type("image/avif"),
+                     "foo.jpg" type("image/jpeg") `
+    const result = '"foo.avif" type("image/avif"), "foo.jpg" type("image/jpeg")'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should parse image-set-options with linear-gradient', async () => {
+    const source = `linear-gradient(cornflowerblue, white) 1x,
+                    url("detailed-gradient.png") 3x`
+    const result =
+      'linear-gradient(cornflowerblue, white) 1x, url("detailed-gradient.png") 3x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should parse image-set-options with resolution and type specified', async () => {
+    const source = `url("picture.png")\t1x\t type("image/jpeg"), url("picture.png")\t type("image/jpeg")\t2x`
+    const result =
+      'url("picture.png") 1x type("image/jpeg"), url("picture.png") type("image/jpeg") 2x'
+    expect(processSrcSetSync(source, ({ url }) => url)).toBe(result)
+  })
+
+  test('should capture whole image set options', async () => {
+    const source = `linear-gradient(cornflowerblue, white) 1x,
+                    url("detailed-gradient.png") 3x`
+    const expected = [
+      'linear-gradient(cornflowerblue, white)',
+      'url("detailed-gradient.png")',
+    ]
+    const result: string[] = []
+    processSrcSetSync(source, ({ url }) => {
+      result.push(url)
+      return url
+    })
+    expect(result).toEqual(expected)
+  })
+})
+
+describe('flattenId', () => {
+  test('should limit id to 170 characters', () => {
+    const tenChars = '1234567890'
+    let id = ''
+
+    for (let i = 0; i < 17; i++) {
+      id += tenChars
+    }
+    expect(id).toHaveLength(170)
+
+    const result = flattenId(id)
+    expect(result).toHaveLength(170)
+
+    id += tenChars
+    const result2 = flattenId(id)
+    expect(result2).toHaveLength(170)
+  })
+})
+
+describe('mergeWithDefaults', () => {
+  test('merges with defaults', () => {
+    const actual = mergeWithDefaults(
+      {
+        useDefault: 1,
+        useValueIfNull: 2,
+        replaceArray: [0, 1],
+        nested: {
+          foo: 'bar',
+        },
+      },
+      {
+        useDefault: undefined,
+        useValueIfNull: null,
+        useValueIfNoDefault: 'foo',
+        replaceArray: [2, 3],
+        nested: {
+          foo2: 'bar2',
+        },
+      },
+    )
+    expect(actual).toStrictEqual({
+      useDefault: 1,
+      useValueIfNull: null,
+      useValueIfNoDefault: 'foo',
+      replaceArray: [2, 3],
+      nested: {
+        foo: 'bar',
+        foo2: 'bar2',
+      },
+    })
+
+    const defaults = {
+      object: {},
+      array: [],
+      regex: /foo/,
+      function: () => {},
+    }
+    const actual2 = mergeWithDefaults(defaults, {})
+    expect(actual2.object).toStrictEqual({})
+    expect(actual2.array).toStrictEqual([])
+    expect(actual2.regex).toStrictEqual(/foo/)
+    expect(actual2.function).toStrictEqual(expect.any(Function))
+    // cloned
+    expect(actual2.object).not.toBe(defaults.object)
+    expect(actual2.array).not.toBe(defaults.array)
   })
 })

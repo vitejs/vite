@@ -1,4 +1,5 @@
 import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import stylus from 'stylus'
 import { defineConfig } from 'vite'
 
@@ -9,11 +10,18 @@ globalThis.window = {}
 // @ts-expect-error refer to https://github.com/vitejs/vite/pull/11079
 globalThis.location = new URL('http://localhost/')
 
-/** @type {import('vite').UserConfig} */
-// @ts-expect-error typecast
 export default defineConfig({
   build: {
     cssTarget: 'chrome61',
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('manual-chunk.css')) {
+            return 'dir/dir2/manual-chunk'
+          }
+        },
+      },
+    },
   },
   esbuild: {
     logOverride: {
@@ -54,12 +62,32 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         additionalData: `$injectedColor: orange;`,
-        importer: [
-          function (url) {
-            return url === 'virtual-dep' ? { contents: '' } : null
+        importers: [
+          {
+            canonicalize(url) {
+              return url === 'virtual-dep'
+                ? new URL('custom-importer:virtual-dep')
+                : null
+            },
+            load() {
+              return {
+                contents: ``,
+                syntax: 'scss',
+              }
+            },
           },
-          function (url) {
-            return url.endsWith('.wxss') ? { contents: '' } : null
+          {
+            canonicalize(url) {
+              return url === 'virtual-file-absolute'
+                ? new URL('custom-importer:virtual-file-absolute')
+                : null
+            },
+            load() {
+              return {
+                contents: `@use "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
+                syntax: 'scss',
+              }
+            },
           },
         ],
       },
@@ -75,5 +103,6 @@ export default defineConfig({
         },
       },
     },
+    preprocessorMaxWorkers: true,
   },
 })

@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-dep-source-map-no-sources",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  }
+}

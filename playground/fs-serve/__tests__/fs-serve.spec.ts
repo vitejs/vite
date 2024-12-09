@@ -7,7 +7,8 @@ const stringified = JSON.stringify(testJSON)
 
 describe.runIf(isServe)('main', () => {
   beforeAll(async () => {
-    await page.goto(viteTestUrl + '/src/')
+    const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
+    await page.goto(viteTestUrl + srcPrefix + 'src/')
   })
 
   test('default import', async () => {
@@ -66,12 +67,19 @@ describe.runIf(isServe)('main', () => {
     expect(await page.textContent('.safe-fs-fetch-special-characters')).toBe(
       stringified,
     )
-    expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
+    expect(
+      await page.textContent('.safe-fs-fetch-special-characters-status'),
+    ).toBe('200')
   })
 
   test('unsafe fs fetch', async () => {
     expect(await page.textContent('.unsafe-fs-fetch')).toBe('')
     expect(await page.textContent('.unsafe-fs-fetch-status')).toBe('403')
+  })
+
+  test('unsafe fs fetch', async () => {
+    expect(await page.textContent('.unsafe-fs-fetch-raw')).toBe('')
+    expect(await page.textContent('.unsafe-fs-fetch-raw-status')).toBe('403')
   })
 
   test('unsafe fs fetch with special characters (#8498)', async () => {
@@ -88,12 +96,14 @@ describe.runIf(isServe)('main', () => {
     expect(await page.textContent('.nested-entry')).toBe('foobar')
   })
 
-  test('nested entry', async () => {
-    expect(await page.textContent('.nested-entry')).toBe('foobar')
+  test('denied', async () => {
+    expect(await page.textContent('.unsafe-dotenv')).toBe('403')
   })
 
-  test('denied', async () => {
-    expect(await page.textContent('.unsafe-dotenv')).toBe('404')
+  test('denied EnV casing', async () => {
+    // It is 403 in case insensitive system, 404 in others
+    const code = await page.textContent('.unsafe-dotEnV-casing')
+    expect(code === '403' || code === '404').toBeTruthy()
   })
 })
 

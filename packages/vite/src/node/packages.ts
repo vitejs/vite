@@ -1,10 +1,16 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
-import { createFilter, isInNodeModules, safeRealpathSync } from './utils'
+import {
+  createFilter,
+  isInNodeModules,
+  normalizePath,
+  safeRealpathSync,
+  tryStatSync,
+} from './utils'
 import type { Plugin } from './plugin'
+import type { InternalResolveOptions } from './plugins/resolve'
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let pnp: typeof import('pnpapi') | undefined
 if (process.versions.pnp) {
   try {
@@ -17,11 +23,16 @@ export type PackageCache = Map<string, PackageData>
 
 export interface PackageData {
   dir: string
-  hasSideEffects: (id: string) => boolean | 'no-treeshake'
-  webResolvedImports: Record<string, string | undefined>
-  nodeResolvedImports: Record<string, string | undefined>
-  setResolvedCache: (key: string, entry: string, targetWeb: boolean) => void
-  getResolvedCache: (key: string, targetWeb: boolean) => string | undefined
+  hasSideEffects: (id: string) => boolean | 'no-treeshake' | null
+  setResolvedCache: (
+    key: string,
+    entry: string,
+    options: InternalResolveOptions,
+  ) => void
+  getResolvedCache: (
+    key: string,
+    options: InternalResolveOptions,
+  ) => string | undefined
   data: {
     [field: string]: any
     name: string
@@ -40,7 +51,7 @@ function invalidatePackageData(
   packageCache: PackageCache,
   pkgPath: string,
 ): void {
-  const pkgDir = path.dirname(pkgPath)
+  const pkgDir = normalizePath(path.dirname(pkgPath))
   packageCache.forEach((pkg, cacheKey) => {
     if (pkg.dir === pkgDir) {
       packageCache.delete(cacheKey)
@@ -126,8 +137,8 @@ export function findNearestPackageData(
     }
 
     const pkgPath = path.join(basedir, 'package.json')
-    try {
-      if (fs.statSync(pkgPath, { throwIfNoEntry: false })?.isFile()) {
+    if (tryStatSync(pkgPath)?.isFile()) {
+      try {
         const pkgData = loadPackageData(pkgPath)
 
         if (packageCache) {
@@ -135,8 +146,8 @@ export function findNearestPackageData(
         }
 
         return pkgData
-      }
-    } catch {}
+      } catch {}
+    }
 
     const nextBasedir = path.dirname(basedir)
     if (nextBasedir === basedir) break
@@ -165,54 +176,78 @@ export function findNearestMainPackageData(
 
 export function loadPackageData(pkgPath: string): PackageData {
   const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-  const pkgDir = path.dirname(pkgPath)
+  const pkgDir = normalizePath(path.dirname(pkgPath))
   const { sideEffects } = data
-  let hasSideEffects: (id: string) => boolean
+  let hasSideEffects: (id: string) => boolean | null
   if (typeof sideEffects === 'boolean') {
     hasSideEffects = () => sideEffects
   } else if (Array.isArray(sideEffects)) {
-    const finalPackageSideEffects = sideEffects.map((sideEffect) => {
-      /*
-       * The array accepts simple glob patterns to the relevant files... Patterns like *.css, which do not include a /, will be treated like **\/*.css.
-       * https://webpack.js.org/guides/tree-shaking/
-       * https://github.com/vitejs/vite/pull/11807
-       */
-      if (sideEffect.includes('/')) {
-        return sideEffect
-      }
-      return `**/${sideEffect}`
-    })
+    if (sideEffects.length <= 0) {
+      // createFilter always returns true if `includes` is an empty array
+      // but here we want it to always return false
+      hasSideEffects = () => false
+    } else {
+      const finalPackageSideEffects = sideEffects.map((sideEffect) => {
+        /*
+         * The array accepts simple glob patterns to the relevant files... Patterns like *.css, which do not include a /, will be treated like **\/*.css.
+         * https://webpack.js.org/guides/tree-shaking/
+         * https://github.com/vitejs/vite/pull/11807
+         */
+        if (sideEffect.includes('/')) {
+          return sideEffect
+        }
+        return `**/${sideEffect}`
+      })
 
-    hasSideEffects = createFilter(finalPackageSideEffects, null, {
-      resolve: pkgDir,
-    })
+      hasSideEffects = createFilter(finalPackageSideEffects, null, {
+        resolve: pkgDir,
+      })
+    }
   } else {
-    hasSideEffects = () => true
+    hasSideEffects = () => null
   }
 
+  const resolvedCache: Record<string, string | undefined> = {}
   const pkg: PackageData = {
     dir: pkgDir,
     data,
     hasSideEffects,
-    webResolvedImports: {},
-    nodeResolvedImports: {},
-    setResolvedCache(key: string, entry: string, targetWeb: boolean) {
-      if (targetWeb) {
-        pkg.webResolvedImports[key] = entry
-      } else {
-        pkg.nodeResolvedImports[key] = entry
-      }
+    setResolvedCache(key, entry, options) {
+      resolvedCache[getResolveCacheKey(key, options)] = entry
     },
-    getResolvedCache(key: string, targetWeb: boolean) {
-      if (targetWeb) {
-        return pkg.webResolvedImports[key]
-      } else {
-        return pkg.nodeResolvedImports[key]
-      }
+    getResolvedCache(key, options) {
+      return resolvedCache[getResolveCacheKey(key, options)]
     },
   }
 
   return pkg
+}
+
+function getResolveCacheKey(key: string, options: InternalResolveOptions) {
+  // cache key needs to include options which affect
+  // `resolvePackageEntry` or `resolveDeepImport`
+  return [
+    key,
+    options.isRequire ? '1' : '0',
+    options.conditions.join('_'),
+    options.extensions.join('_'),
+    options.mainFields.join('_'),
+  ].join('|')
+}
+
+export function findNearestNodeModules(basedir: string): string | null {
+  while (basedir) {
+    const pkgPath = path.join(basedir, 'node_modules')
+    if (tryStatSync(pkgPath)?.isDirectory()) {
+      return pkgPath
+    }
+
+    const nextBasedir = path.dirname(basedir)
+    if (nextBasedir === basedir) break
+    basedir = nextBasedir
+  }
+
+  return null
 }
 
 export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
@@ -247,11 +282,6 @@ export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {
     watchChange(id) {
       if (id.endsWith('/package.json')) {
         invalidatePackageData(packageCache, path.normalize(id))
-      }
-    },
-    handleHotUpdate({ file }) {
-      if (file.endsWith('/package.json')) {
-        invalidatePackageData(packageCache, path.normalize(file))
       }
     },
   }

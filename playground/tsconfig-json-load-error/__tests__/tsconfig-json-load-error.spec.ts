@@ -11,7 +11,7 @@ import {
 } from '~utils'
 
 const unexpectedTokenSyntaxErrorRE =
-  /^parsing .* failed: SyntaxError: Unexpected token.*\}.*/
+  /(\[vite:esbuild\] )*parsing .* failed: SyntaxError: Unexpected token.*\}.*/
 
 describe.runIf(isBuild)('build', () => {
   test('should throw an error on build', () => {
@@ -50,7 +50,7 @@ describe.runIf(isServe)('server', () => {
   })
 
   test('should reload when tsconfig is changed', async () => {
-    await editFile('has-error/tsconfig.json', (content) => {
+    editFile('has-error/tsconfig.json', (content) => {
       return content.replace('"compilerOptions":', '"compilerOptions":{}')
     })
     await untilUpdated(() => {

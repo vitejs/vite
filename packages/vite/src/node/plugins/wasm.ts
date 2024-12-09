@@ -1,8 +1,7 @@
-import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { fileToUrl } from './asset'
 
-const wasmHelperId = '\0vite/wasm-helper'
+const wasmHelperId = '\0vite/wasm-helper.js'
 
 const wasmHelper = async (opts = {}, url: string) => {
   let result
@@ -29,6 +28,7 @@ const wasmHelper = async (opts = {}, url: string) => {
     // correct MIME type for .wasm files, which unfortunately doesn't work for
     // a lot of static file servers, so we just work around it by getting the
     // raw buffer.
+    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- this function runs in browsers
     const response = await fetch(url)
     const contentType = response.headers.get('Content-Type') || ''
     if (
@@ -46,7 +46,7 @@ const wasmHelper = async (opts = {}, url: string) => {
 
 const wasmHelperCode = wasmHelper.toString()
 
-export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
+export const wasmHelperPlugin = (): Plugin => {
   return {
     name: 'vite:wasm-helper',
 
@@ -65,7 +65,7 @@ export const wasmHelperPlugin = (config: ResolvedConfig): Plugin => {
         return
       }
 
-      const url = await fileToUrl(id, config, this)
+      const url = await fileToUrl(this, id)
 
       return `
 import initWasm from "${wasmHelperId}"
@@ -88,7 +88,7 @@ export const wasmFallbackPlugin = (): Plugin => {
         '"ESM integration proposal for Wasm" is not supported currently. ' +
           'Use vite-plugin-wasm or other community plugins to handle this. ' +
           'Alternatively, you can use `.wasm?init` or `.wasm?url`. ' +
-          'See https://vitejs.dev/guide/features.html#webassembly for more details.',
+          'See https://vite.dev/guide/features.html#webassembly for more details.',
       )
     },
   }

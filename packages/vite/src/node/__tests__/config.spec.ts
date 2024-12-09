@@ -1,13 +1,14 @@
+import http from 'node:http'
 import { describe, expect, test } from 'vitest'
-import type { InlineConfig } from '..'
-import type { PluginOption, UserConfig, UserConfigExport } from '../config'
+import type { InlineConfig, PluginOption } from '..'
+import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
-import { mergeConfig } from '../publicUtils'
+import { createLogger, mergeConfig } from '../publicUtils'
 
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
-    const baseConfig: UserConfigExport = {
+    const baseConfig = defineConfig({
       resolve: {
         alias: [
           {
@@ -16,16 +17,16 @@ describe('mergeConfig', () => {
           },
         ],
       },
-    }
+    })
 
-    const newConfig: UserConfigExport = {
+    const newConfig = defineConfig({
       resolve: {
         alias: {
           bar: 'bar-value',
           baz: 'baz-value',
         },
       },
-    }
+    })
 
     const mergedConfig: UserConfigExport = {
       resolve: {
@@ -185,6 +186,18 @@ describe('mergeConfig', () => {
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
   })
 
+  test('handles server.hmr.server', () => {
+    const httpServer = http.createServer()
+
+    const baseConfig = { server: { hmr: { server: httpServer } } }
+    const newConfig = { server: { hmr: { server: httpServer } } }
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    // Server instance should not be recreated
+    expect(mergedConfig.server.hmr.server).toBe(httpServer)
+  })
+
   test('throws error with functions', () => {
     const baseConfig = defineConfig(() => ({ base: 'base' }))
     const newConfig = defineConfig(() => ({ base: 'new' }))
@@ -232,7 +245,6 @@ describe('preview config', () => {
     strictPort: true,
     host: true,
     open: true,
-    https: true,
     headers: {
       'Cache-Control': 'no-store',
     },
@@ -247,7 +259,7 @@ describe('preview config', () => {
     expect(await resolveConfig(config, 'serve')).toMatchObject({
       preview: {
         ...serverConfig(),
-        port: undefined,
+        port: 4173,
       },
     })
   })
@@ -272,7 +284,6 @@ describe('preview config', () => {
     strictPort: false,
     open: false,
     host: false,
-    https: false,
     proxy: { '/bar': 'http://localhost:3010' },
     cors: true,
   })
@@ -334,4 +345,139 @@ describe('resolveConfig', () => {
     expect(results1.clearScreen).toBe(false)
     expect(results2.clearScreen).toBe(false)
   })
+
+  test('resolveConfig with root path including "#" and "?" should warn ', async () => {
+    expect.assertions(1)
+
+    const logger = createLogger('info')
+    logger.warn = (str) => {
+      expect(str).to.include(
+        'Consider renaming the directory to remove the characters',
+      )
+    }
+
+    await resolveConfig({ root: './inc?ud#s', customLogger: logger }, 'build')
+  })
+})
+
+test('config compat 1', async () => {
+  const config = await resolveConfig(
+    {
+      resolve: {
+        conditions: ['client1'],
+      },
+      ssr: {
+        resolve: {
+          conditions: ['ssr1'],
+        },
+      },
+      plugins: [
+        {
+          name: 'test',
+          config() {
+            return {
+              environments: {
+                client: {
+                  resolve: {
+                    conditions: ['client2'],
+                  },
+                },
+                ssr: {
+                  resolve: {
+                    conditions: ['ssr2'],
+                  },
+                },
+              },
+            }
+          },
+        },
+      ],
+    },
+    'serve',
+  )
+  expect(config.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client1",
+      "client2",
+    ]
+  `)
+  expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client1",
+      "client2",
+    ]
+  `)
+  expect(config.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr1",
+      "ssr2",
+    ]
+  `)
+  expect(config.environments.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr1",
+      "ssr2",
+    ]
+  `)
+})
+
+test('config compat 2', async () => {
+  const config = await resolveConfig(
+    {
+      environments: {
+        client: {
+          resolve: {
+            conditions: ['client1'],
+          },
+        },
+        ssr: {
+          resolve: {
+            conditions: ['ssr1'],
+          },
+        },
+      },
+      plugins: [
+        {
+          name: 'test',
+          config() {
+            return {
+              resolve: {
+                conditions: ['client2'],
+              },
+              ssr: {
+                resolve: {
+                  conditions: ['ssr2'],
+                },
+              },
+            }
+          },
+        },
+      ],
+    },
+    'serve',
+  )
+  expect(config.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client2",
+      "client1",
+    ]
+  `)
+  expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client2",
+      "client1",
+    ]
+  `)
+  expect(config.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr2",
+      "ssr1",
+    ]
+  `)
+  expect(config.environments.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr2",
+      "ssr1",
+    ]
+  `)
 })

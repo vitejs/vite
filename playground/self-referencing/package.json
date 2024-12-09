@@ -1,0 +1,8 @@
+{
+  "name": "@vitejs/self-referencing",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./test": "./test/index.js"
+  }
+}

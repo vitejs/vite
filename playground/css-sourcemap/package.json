@@ -10,10 +10,10 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "less": "^4.1.3",
-    "magic-string": "^0.30.1",
-    "sass": "^1.63.6",
-    "stylus": "^0.59.0",
-    "sugarss": "^4.0.1"
+    "less": "^4.2.1",
+    "magic-string": "^0.30.14",
+    "sass": "^1.82.0",
+    "stylus": "^0.64.0",
+    "sugarss": "^5.0.0"
   }
 }

@@ -1,0 +1,21 @@
+{
+  "name": "@vitejs/test-ssr-conditions-no-external",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./server": {
+      "react-server": {
+        "workerd": "./edge.js",
+        "deno": "./browser.js",
+        "node": {
+          "webpack": "./node.js",
+          "default": "./node.unbundled.js"
+        },
+        "edge-light": "./edge.js",
+        "browser": "./browser.js"
+      },
+      "default": "./default.js"
+    }
+  }
+}

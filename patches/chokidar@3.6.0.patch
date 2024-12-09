@@ -1,0 +1,14 @@
+diff --git a/lib/fsevents-handler.js b/lib/fsevents-handler.js
+index fe29393c179d3d6673f996ca6f95bbc83f9a0699..0a341f3d6a2f1497486a23ea99b3c6da003c026f 100644
+--- a/lib/fsevents-handler.js
++++ b/lib/fsevents-handler.js
+@@ -305,7 +305,8 @@ _watchWithFsEvents(watchPath, realPath, transform, globFilter) {
+   if (this.fsw.closed || this.fsw._isIgnored(watchPath)) return;
+   const opts = this.fsw.options;
+   const watchCallback = async (fullPath, flags, info) => {
+-    if (this.fsw.closed) return;
++    // PATCH: bypass the callback for better perf when fullPath hit the ignored file list
++    if (this.fsw.closed || this.fsw._isIgnored(fullPath)) return;
+     if (
+       opts.depth !== undefined &&
+       calcDepth(fullPath, realPath) > opts.depth

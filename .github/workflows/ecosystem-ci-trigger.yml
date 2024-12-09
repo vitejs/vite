@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
     steps:
-      - uses: actions/github-script@v6
+      - uses: actions/github-script@v7
         with:
           script: |
             const user = context.payload.sender.login
@@ -45,7 +45,7 @@ jobs:
               })
               throw new Error('not allowed')
             }
-      - uses: actions/github-script@v6
+      - uses: actions/github-script@v7
         id: get-pr-data
         with:
           script: |
@@ -58,15 +58,16 @@ jobs:
             return {
               num: context.issue.number,
               branchName: pr.head.ref,
-              repo: pr.head.repo.full_name
+              repo: pr.head.repo.full_name,
+              commit: pr.head.sha
             }
       - id: generate-token
-        uses: tibdex/github-app-token@v1
+        uses: tibdex/github-app-token@v2
         with:
           app_id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
+          installation_retrieval_payload: "${{ github.repository_owner }}/vite-ecosystem-ci"
           private_key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
-          repository: "${{ github.repository_owner }}/vite-ecosystem-ci"
-      - uses: actions/github-script@v6
+      - uses: actions/github-script@v7
         id: trigger
         env:
           COMMENT: ${{ github.event.comment.body }}
@@ -88,6 +89,7 @@ jobs:
                 prNumber: '' + prData.num,
                 branchName: prData.branchName,
                 repo: prData.repo,
+                commit: prData.commit,
                 suite: suite === '' ? '-' : suite
               }
             })

@@ -1,0 +1,9 @@
+{
+  "name": "@vitejs/test-dep-with-asset-ext2.pdf",
+  "private": true,
+  "type": "module",
+  "exports": "./index.js",
+  "dependencies": {
+    "@vitejs/test-dep-with-asset-ext1.pdf": "file:../dep1"
+  }
+}

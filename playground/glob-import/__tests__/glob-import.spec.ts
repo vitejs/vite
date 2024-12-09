@@ -5,13 +5,10 @@ import {
   addFile,
   editFile,
   findAssetFile,
-  getColor,
   isBuild,
-  isServe,
   page,
   removeFile,
-  untilBrowserLogAfter,
-  viteTestUrl,
+  untilUpdated,
   withRetry,
 } from '~utils'
 
@@ -46,13 +43,7 @@ const allResult = {
     default: 'hi',
   },
   '/dir/baz.json': json,
-  '/dir/foo.css': isBuild
-    ? {
-        default: '.foo{color:#00f}\n',
-      }
-    : {
-        default: '.foo {\n  color: blue;\n}\n',
-      },
+  '/dir/foo.css': {},
   '/dir/foo.js': {
     msg: 'foo',
   },
@@ -96,15 +87,15 @@ test('should work', async () => {
   await withRetry(async () => {
     const actual = await page.textContent('.result')
     expect(JSON.parse(actual)).toStrictEqual(allResult)
-  }, true)
+  })
   await withRetry(async () => {
     const actualEager = await page.textContent('.result-eager')
     expect(JSON.parse(actualEager)).toStrictEqual(allResult)
-  }, true)
+  })
   await withRetry(async () => {
     const actualNodeModules = await page.textContent('.result-node_modules')
     expect(JSON.parse(actualNodeModules)).toStrictEqual(nodeModulesResult)
-  }, true)
+  })
 })
 
 test('import glob raw', async () => {
@@ -128,6 +119,12 @@ test('import relative glob raw', async () => {
 test('unassigned import processes', async () => {
   expect(await page.textContent('.side-effect-result')).toBe(
     'Hello from side effect',
+  )
+})
+
+test('import glob in package', async () => {
+  expect(await page.textContent('.in-package')).toBe(
+    JSON.stringify(['/pkg-pages/foo.js']),
   )
 })
 
@@ -178,43 +175,45 @@ if (!isBuild) {
       expect(JSON.parse(actualRemove)).toStrictEqual(allResult)
     })
   })
+
+  test('no hmr for adding/removing files', async () => {
+    let request = page.waitForResponse(/dir\/index\.js$/, { timeout: 200 })
+    addFile('nohmr.js', '')
+    let response = await request.catch(() => ({ status: () => -1 }))
+    expect(response.status()).toBe(-1)
+
+    request = page.waitForResponse(/dir\/index\.js$/, { timeout: 200 })
+    removeFile('nohmr.js')
+    response = await request.catch(() => ({ status: () => -1 }))
+    expect(response.status()).toBe(-1)
+  })
+
+  test('hmr for adding/removing files in package', async () => {
+    const resultElement = page.locator('.in-package')
+
+    addFile('pkg-pages/bar.js', '// empty')
+    await untilUpdated(
+      () => resultElement.textContent(),
+      JSON.stringify(['/pkg-pages/foo.js', '/pkg-pages/bar.js'].sort()),
+    )
+
+    removeFile('pkg-pages/bar.js')
+    await untilUpdated(
+      () => resultElement.textContent(),
+      JSON.stringify(['/pkg-pages/foo.js']),
+    )
+  })
 }
 
 test('tree-shake eager css', async () => {
-  expect(await getColor('.tree-shake-eager-css')).toBe('orange')
-  expect(await getColor('.no-tree-shake-eager-css')).toBe('orange')
   expect(await page.textContent('.no-tree-shake-eager-css-result')).toMatch(
     '.no-tree-shake-eager-css',
   )
 
   if (isBuild) {
-    const content = findAssetFile(/index-\w+\.js/)
+    const content = findAssetFile(/index-[-\w]+\.js/)
     expect(content).not.toMatch('.tree-shake-eager-css')
   }
-})
-
-test('warn CSS default import', async () => {
-  const logs = await untilBrowserLogAfter(
-    () => page.goto(viteTestUrl),
-    'Ran scripts',
-  )
-  const noTreeshakeCSSMessage =
-    'For example: `import.meta.glob("/no-tree-shake.css", { "eager": true, "query": "?inline" })`'
-  const treeshakeCSSMessage =
-    'For example: `import.meta.glob("/tree-shake.css", { "eager": true, "query": "?inline" })`'
-
-  expect(
-    logs.some((log) => log.includes(noTreeshakeCSSMessage)),
-    `expected logs to include a message including ${JSON.stringify(
-      noTreeshakeCSSMessage,
-    )}`,
-  ).toBe(isServe)
-  expect(
-    logs.every((log) => !log.includes(treeshakeCSSMessage)),
-    `expected logs not to include a message including ${JSON.stringify(
-      treeshakeCSSMessage,
-    )}`,
-  ).toBe(true)
 })
 
 test('escapes special chars in globs without mangling user supplied glob suffix', async () => {
@@ -241,6 +240,10 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
   expect(expectedNames).toEqual(foundAliasNames)
 })
 
-test('sub imports', async () => {
-  expect(await page.textContent('.sub-imports')).toMatch('bar foo')
+test('subpath imports', async () => {
+  expect(await page.textContent('.subpath-imports')).toMatch('bar foo')
+})
+
+test('#alias imports', async () => {
+  expect(await page.textContent('.hash-alias-imports')).toMatch('bar foo')
 })

@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@vitejs/test-css-lib": "file:./css-lib",
-    "bcrypt": "^5.1.0",
+    "bcrypt": "^5.1.1",
     "@vitejs/test-define-properties-exports": "file:./define-properties-exports",
     "@vitejs/test-define-property-exports": "file:./define-property-exports",
     "@vitejs/test-forwarded-export": "file:./forwarded-export",
@@ -26,6 +26,7 @@
     "@vitejs/test-non-optimized-with-nested-external": "workspace:*",
     "@vitejs/test-optimized-with-nested-external": "file:./optimized-with-nested-external",
     "@vitejs/test-optimized-cjs-with-nested-external": "file:./optimized-with-nested-external",
+    "@vitejs/test-nested-exclude": "file:./nested-exclude",
     "@vitejs/test-external-using-external-entry": "file:./external-using-external-entry",
     "@vitejs/test-external-entry": "file:./external-entry",
     "@vitejs/test-linked-no-external": "link:./linked-no-external",
@@ -33,6 +34,6 @@
     "@vitejs/test-module-condition": "file:./module-condition"
   },
   "devDependencies": {
-    "express": "^4.18.2"
+    "express": "^5.0.1"
   }
 }

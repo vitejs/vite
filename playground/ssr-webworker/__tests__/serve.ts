@@ -3,7 +3,7 @@
 
 import path from 'node:path'
 import kill from 'kill-port'
-import { isBuild, ports, rootDir } from '~utils'
+import { ports, rootDir } from '~utils'
 
 export const port = ports['ssr-webworker']
 
@@ -26,22 +26,12 @@ export async function serve(): Promise<{ close(): Promise<void> }> {
   })
 
   const { createServer } = await import(path.resolve(rootDir, 'worker.js'))
-  const { app } = await createServer(rootDir, isBuild)
+  const { mf } = await createServer(port)
 
-  return new Promise((resolve, reject) => {
-    try {
-      const server = app.listen(port, () => {
-        resolve({
-          // for test teardown
-          async close() {
-            await new Promise((resolve) => {
-              server.close(resolve)
-            })
-          },
-        })
-      })
-    } catch (e) {
-      reject(e)
-    }
-  })
+  return {
+    // for test teardown
+    async close() {
+      await mf.dispose()
+    },
+  }
 }

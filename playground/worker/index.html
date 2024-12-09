@@ -18,6 +18,16 @@
   <div>mode: <span class="mode"></span></div>
   <div>bundle-with-plugin: <span class="bundle-with-plugin"></span></div>
   <div>asset-url: <span class="asset-url"></span></div>
+  <div>dep-cjs: <span class="dep-cjs"></span></div>
+</div>
+
+<p>
+  import myWorker from '../my-worker?worker'
+  <span>new myWorker({ name: "named-worker" })</span>
+  <span class="classname">.pong-named</span>
+</p>
+<div>
+  <div>Response from worker: <span class="pong-named"></span></div>
 </div>
 
 <p>
@@ -25,6 +35,27 @@
   <span class="classname">.pong-inline</span>
 </p>
 <code class="pong-inline"></code>
+
+<p>
+  import InlineWorker from '../my-worker?worker&inline'
+  <span>new InlineWorker({ name: "named-inline-worker" })</span>
+  <span class="classname">.pong-inline-named</span>
+</p>
+<code class="pong-inline-named"></code>
+
+<p>
+  import InlineWorker from '../my-worker?worker&inline'
+  <span>new InlineWorker()</span>
+  <span>import.meta.url</span>
+  <span class="classname">.pong-inline-url</span>
+</p>
+<code class="pong-inline-url"></code>
+
+<p>
+  import InlineWorker from '../my-worker?worker&inline'
+  <span class="classname">.pong-inline-unicode</span>
+</p>
+<code class="pong-inline-unicode"></code>
 
 <p>
   import TSOutputWorker from '../possible-ts-output-worker?worker'
@@ -37,6 +68,13 @@
   <span class="classname">.tick-count</span>
 </p>
 <code class="tick-count"></code>
+
+<p>
+  import mySharedWorker from '../my-shared-worker?sharedworker&name=shared'
+  <span>new mySharedWorker({ name: "namedSharedWorker" })</span>
+  <span class="classname">.tick-count-named</span>
+</p>
+<code class="tick-count-named"></code>
 
 <p>
   import InlineSharedWorker from '../my-shared-worker?sharedworker&inline'
@@ -94,6 +132,7 @@
   <span class="classname">.classic-worker</span>
 </p>
 <code class="classic-worker"></code>
+<code class="classic-worker-import"></code>
 
 <p>
   new SharedWorker(new URL('./classic-shared-worker.js', import.meta.url), {
@@ -113,6 +152,44 @@
   <span class="classname">.importMetaGlobEager-worker</span>
 </p>
 <code class="importMetaGlobEager-worker"></code>
+
+<p>
+  self reference worker
+  <span class="classname">.self-reference-worker</span>
+</p>
+<code class="self-reference-worker"></code>
+
+<p>
+  new Worker(new URL('../self-reference-url-worker.js', import.meta.url))
+  <span class="classname">.self-reference-url-worker</span>
+</p>
+<code class="self-reference-url-worker"></code>
+
+<p>
+  <span class="classname">.self-reference-url-worker-dep</span>
+</p>
+<code class="self-reference-url-worker-dep"></code>
+
+<p>
+  new Worker(new URL('../deeply-nested-worker.js', import.meta.url), { type:
+  'module' })
+  <span class="classname">.deeply-nested-worker</span>
+</p>
+<code class="deeply-nested-worker"></code>
+
+<p>
+  new Worker(new URL('deeply-nested-second-worker.js', import.meta.url), { type:
+  'module' })
+  <span class="classname">.deeply-nested-second-worker</span>
+</p>
+<code class="deeply-nested-second-worker"></code>
+
+<p>
+  new Worker(new URL('deeply-nested-third-worker.js', import.meta.url), { type:
+  'module' })
+  <span class="classname">.deeply-nested-third-worker</span>
+</p>
+<code class="deeply-nested-third-worker"></code>
 
 <hr />
 

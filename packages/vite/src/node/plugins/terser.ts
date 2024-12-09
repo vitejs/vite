@@ -1,8 +1,18 @@
-import { Worker } from 'okie'
 import type { Terser } from 'dep-types/terser'
+import { Worker } from 'artichokie'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 import { requireResolveFromRootWithFallback } from '../utils'
+
+export interface TerserOptions extends Terser.MinifyOptions {
+  /**
+   * Vite-specific option to specify the max number of workers to spawn
+   * when minifying files with terser.
+   *
+   * @default number of CPUs minus 1
+   */
+  maxWorkers?: number
+}
 
 let terserPath: string | undefined
 const loadTerserPath = (root: string) => {
@@ -24,17 +34,23 @@ const loadTerserPath = (root: string) => {
 }
 
 export function terserPlugin(config: ResolvedConfig): Plugin {
+  const { maxWorkers, ...terserOptions } = config.build.terserOptions
+
   const makeWorker = () =>
     new Worker(
-      async (
-        terserPath: string,
-        code: string,
-        options: Terser.MinifyOptions,
-      ) => {
-        // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
-        // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
-        const terser = require(terserPath)
-        return terser.minify(code, options) as Terser.MinifyOutput
+      () =>
+        async (
+          terserPath: string,
+          code: string,
+          options: Terser.MinifyOptions,
+        ) => {
+          // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
+          // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
+          const terser = require(terserPath)
+          return terser.minify(code, options) as Terser.MinifyOutput
+        },
+      {
+        max: maxWorkers,
       },
     )
 
@@ -42,6 +58,12 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:terser',
+
+    applyToEnvironment(environment) {
+      // We also need the plugin even if minify isn't 'terser' as we force
+      // terser in plugin-legacy
+      return !!environment.config.build.minify
+    },
 
     async renderChunk(code, _chunk, outputOptions) {
       // This plugin is included for any non-false value of config.build.minify,
@@ -67,7 +89,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
       const terserPath = loadTerserPath(config.root)
       const res = await worker.run(terserPath, code, {
         safari10: true,
-        ...config.build.terserOptions,
+        ...terserOptions,
         sourceMap: !!outputOptions.sourcemap,
         module: outputOptions.format.startsWith('es'),
         toplevel: outputOptions.format === 'cjs',

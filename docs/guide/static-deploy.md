@@ -6,7 +6,7 @@ The following guides are based on some shared assumptions:
 - You are using npm. You can use equivalent commands to run the scripts if you are using Yarn or other package managers.
 - Vite is installed as a local dev dependency in your project, and you have setup the following npm scripts:
 
-```json
+```json [package.json]
 {
   "scripts": {
     "build": "vite build",
@@ -36,7 +36,6 @@ By default, the build output will be placed at `dist`. You may deploy this `dist
 Once you've built the app, you may test it locally by running `npm run preview` command.
 
 ```bash
-$ npm run build
 $ npm run preview
 ```
 
@@ -44,7 +43,7 @@ The `vite preview` command will boot up a local static web server that serves th
 
 You may configure the port of the server by passing the `--port` flag as an argument.
 
-```json
+```json [package.json]
 {
   "scripts": {
     "preview": "vite preview --port 8080"
@@ -58,9 +57,9 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
 1. Set the correct `base` in `vite.config.js`.
 
-   If you are deploying to `https://<USERNAME>.github.io/`, you can omit `base` as it defaults to `'/'`.
+   If you are deploying to `https://<USERNAME>.github.io/`, or to a custom domain through GitHub Pages (eg. `www.example.com`), set `base` to `'/'`. Alternatively, you can remove `base` from the configuration, as it defaults to `'/'`.
 
-   If you are deploying to `https://<USERNAME>.github.io/<REPO>/`, for example your repository is at `https://github.com/<USERNAME>/<REPO>`, then set `base` to `'/<REPO>/'`.
+   If you are deploying to `https://<USERNAME>.github.io/<REPO>/` (eg. your repository is at `https://github.com/<USERNAME>/<REPO>`), then set `base` to `'/<REPO>/'`.
 
 2. Go to your GitHub Pages configuration in the repository settings page and choose the source of deployment as "GitHub Actions", this will lead you to create a workflow that builds and deploys your project, a sample workflow that installs dependencies and builds using npm is provided:
 
@@ -96,26 +95,26 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
        runs-on: ubuntu-latest
        steps:
          - name: Checkout
-           uses: actions/checkout@v3
+           uses: actions/checkout@v4
          - name: Set up Node
-           uses: actions/setup-node@v3
+           uses: actions/setup-node@v4
            with:
-             node-version: 18
+             node-version: 20
              cache: 'npm'
          - name: Install dependencies
-           run: npm install
+           run: npm ci
          - name: Build
            run: npm run build
          - name: Setup Pages
-           uses: actions/configure-pages@v3
+           uses: actions/configure-pages@v4
          - name: Upload artifact
-           uses: actions/upload-pages-artifact@v1
+           uses: actions/upload-pages-artifact@v3
            with:
-             # Upload dist repository
+             # Upload dist folder
              path: './dist'
          - name: Deploy to GitHub Pages
            id: deployment
-           uses: actions/deploy-pages@v1
+           uses: actions/deploy-pages@v4
    ```
 
 ## GitLab Pages and GitLab CI
@@ -128,7 +127,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 
 2. Create a file called `.gitlab-ci.yml` in the root of your project with the content below. This will build and deploy your site whenever you make changes to your content:
 
-   ```yaml
+   ```yaml [.gitlab-ci.yml]
    image: node:16.5.0
    pages:
      stage: deploy
@@ -220,7 +219,7 @@ Learn more about Vercel’s [Git Integration](https://vercel.com/docs/concepts/g
 1. Install [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/get-started/).
 2. Authenticate Wrangler with your Cloudflare account using `wrangler login`.
 3. Run your build command.
-4. Deploy using `npx wrangler pages publish dist`.
+4. Deploy using `npx wrangler pages deploy dist`.
 
 ```bash
 # Install Wrangler CLI
@@ -233,7 +232,7 @@ $ wrangler login
 $ npm run build
 
 # Create new deployment
-$ npx wrangler pages publish dist
+$ npx wrangler pages deploy dist
 ```
 
 After your assets are uploaded, Wrangler will give you a preview URL to inspect your site. When you log into the Cloudflare Pages dashboard, you will see your new project.
@@ -258,9 +257,7 @@ You can also add custom domains and handle custom build settings on Pages. Learn
 
 2. Create `firebase.json` and `.firebaserc` at the root of your project with the following content:
 
-   `firebase.json`:
-
-   ```json
+   ```json [firebase.json]
    {
      "hosting": {
        "public": "dist",
@@ -275,9 +272,7 @@ You can also add custom domains and handle custom build settings on Pages. Learn
    }
    ```
 
-   `.firebaserc`:
-
-   ```js
+   ```js [.firebaserc]
    {
      "projects": {
        "default": "<YOUR_FIREBASE_ID>"
@@ -323,7 +318,7 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 
 4. Specify a project name and branch.
 
-   - **Build Command**: `npm run build`
+   - **Build Command**: `npm install && npm run build`
    - **Publish Directory**: `dist`
 
 5. Click **Create Static Site**.
@@ -333,3 +328,29 @@ You can deploy your Vite app as a Static Site on [Render](https://render.com/).
 By default, any new commit pushed to the specified branch will automatically trigger a new deployment. [Auto-Deploy](https://render.com/docs/deploys#toggling-auto-deploy-for-a-service) can be configured in the project settings.
 
 You can also add a [custom domain](https://render.com/docs/custom-domains) to your project.
+
+<!--
+  NOTE: The sections below are reserved for more deployment platforms not listed above.
+  Feel free to submit a PR that adds a new section with a link to your platform's
+  deployment guide, as long as it meets these criteria:
+
+  1. Users should be able to deploy their site for free.
+  2. Free tier offerings should host the site indefinitely and are not time-bound.
+     Offering a limited number of computation resource or site counts in exchange is fine.
+  3. The linked guides should not contain any malicious content.
+
+  The Vite team may change the criteria and audit the current list from time to time.
+  If a section is removed, we will ping the original PR authors before doing so.
+-->
+
+## Flightcontrol
+
+Deploy your static site using [Flightcontrol](https://www.flightcontrol.dev/?ref=docs-vite) by following these [instructions](https://www.flightcontrol.dev/docs/reference/examples/vite?ref=docs-vite).
+
+## Kinsta Static Site Hosting
+
+Deploy your static site using [Kinsta](https://kinsta.com/static-site-hosting/) by following these [instructions](https://kinsta.com/docs/react-vite-example/).
+
+## xmit Static Site Hosting
+
+Deploy your static site using [xmit](https://xmit.co) by following this [guide](https://xmit.dev/posts/vite-quickstart/).

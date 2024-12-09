@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import baseConfig from './vite.config.js'
 
 /** see `ports` variable in test-utils.ts */
-const port = 9524
+const port = 9525
 
 export default defineConfig({
   ...baseConfig,
@@ -28,9 +28,6 @@ export default defineConfig({
   preview: {
     port,
     strictPort: true,
-  },
-  testConfig: {
-    baseRoute: '/url-base/',
   },
   cacheDir: 'node_modules/.vite-url-base',
 })
