@@ -18,6 +18,6 @@
     "vite": "workspace:*",
     "@vitejs/plugin-legacy": "workspace:*",
     "express": "^5.0.1",
-    "terser": "^5.36.0"
+    "terser": "^5.37.0"
   }
 }
