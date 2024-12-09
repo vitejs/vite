@@ -1049,7 +1049,7 @@ export function onRollupLog(
       ) {
         switch (logLeveling) {
           case 'info':
-            environment.logger.info(colors.green(logging.message))
+            environment.logger.info(logging.message)
             return
           case 'warn':
             environment.logger.warn(colors.yellow(logging.message))
