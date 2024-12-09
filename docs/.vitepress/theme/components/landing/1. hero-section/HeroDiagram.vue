@@ -473,7 +473,7 @@ onMounted(() => {
         :src="isUwu ? '/logo-uwu.png' : '/logo.svg'"
         :alt="isUwu ? 'Vite Kawaii Logo by @icarusgkx' : 'Vite Logo'"
         class="vite-chip__logo"
-        :class="{ 'uwu': isUwu }"
+        :class="{ uwu: isUwu }"
       />
     </div>
   </div>
