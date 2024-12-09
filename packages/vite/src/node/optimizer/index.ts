@@ -1212,7 +1212,7 @@ function getConfigHash(environment: Environment): string {
   const { optimizeDeps } = config
   const content = JSON.stringify(
     {
-      define: config.keepProcessEnv
+      define: !config.keepProcessEnv
         ? process.env.NODE_ENV || config.mode
         : null,
       root: config.root,
