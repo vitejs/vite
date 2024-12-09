@@ -1061,7 +1061,7 @@ export function onRollupLog(
             return
 
           case 'debug':
-            debugLogger?.(colors.dim(logging.message))
+            debugLogger?.(logging.message)
             return
 
           default:
