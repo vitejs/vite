@@ -437,12 +437,6 @@ const isChromiumBrowser = ref(false)
 onMounted(() => {
   isChromiumBrowser.value = 'chrome' in window
 })
-
-// Check for uwu query
-const isUwu = ref(false)
-onMounted(() => {
-  isUwu.value = location.search.includes("?uwu")
-})
 </script>
 
 <template>
@@ -469,12 +463,7 @@ onMounted(() => {
         ></div>
       </div>
       <div class="vite-chip__filter" />
-      <img
-        :src="isUwu ? '/logo-uwu.png' : '/logo.svg'"
-        :alt="isUwu ? 'Vite Kawaii Logo by @icarusgkx' : 'Vite Logo'"
-        class="vite-chip__logo"
-        :class="{ 'uwu': isUwu }"
-      />
+      <img src="/logo.svg" alt="Vite Logo" class="vite-chip__logo" />
     </div>
   </div>
 
@@ -647,10 +636,6 @@ onMounted(() => {
     filter: grayscale(100%);
     transition: all 0.2s ease;
     z-index: 3;
-  }
-
-  .uwu.vite-chip__logo {
-    width: 134px;
   }
 
   &.active {
