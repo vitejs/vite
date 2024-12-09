@@ -1042,7 +1042,11 @@ export function onRollupLog(
         }
       }
 
-      if (logging.code?.startsWith('PLUGIN_')) {
+      if (
+        logging.code === 'PLUGIN_LOG' ||
+        logging.code === 'PLUGIN_WARNING' ||
+        logging.code === 'PLUGIN_ERROR'
+      ) {
         switch (logLeveling) {
           case 'info':
             environment.logger.info(colors.green(logging.message))
