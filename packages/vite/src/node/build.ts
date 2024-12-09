@@ -15,6 +15,7 @@ import type {
   RollupOptions,
   RollupOutput,
   RollupWatcher,
+  WarningHandlerWithDefault,
   WatcherOptions,
 } from 'rollup'
 import commonjsPlugin from '@rollup/plugin-commonjs'
@@ -1071,12 +1072,39 @@ export function onRollupLog(
 
   clearLine()
   const userOnLog = environment.config.build.rollupOptions?.onLog
+  const userOnWarn = environment.config.build.rollupOptions?.onwarn
   if (userOnLog) {
-    userOnLog(level, log, viteLog)
+    if (userOnWarn) {
+      const normalizedUserOnWarn = normalizeUserOnWarn(userOnWarn, viteLog)
+      userOnLog(level, log, normalizedUserOnWarn)
+    } else {
+      userOnLog(level, log, viteLog)
+    }
+  } else if (userOnWarn) {
+    const normalizedUserOnWarn = normalizeUserOnWarn(userOnWarn, viteLog)
+    normalizedUserOnWarn(level, log)
   } else {
     viteLog(level, log)
   }
 }
+
+function normalizeUserOnWarn(
+  userOnWarn: WarningHandlerWithDefault,
+  defaultHandler: LogOrStringHandler,
+): LogOrStringHandler {
+  return (logLevel, logging) => {
+    if (logLevel === 'warn') {
+      userOnWarn(normalizeLog(logging), (log) =>
+        defaultHandler('warn', typeof log === 'function' ? log() : log),
+      )
+    } else {
+      defaultHandler(logLevel, logging)
+    }
+  }
+}
+
+const normalizeLog = (log: RollupLog | string): RollupLog =>
+  typeof log === 'string' ? { message: log } : log
 
 export function resolveUserExternal(
   user: ExternalOption,

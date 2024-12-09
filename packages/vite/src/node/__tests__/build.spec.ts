@@ -8,6 +8,7 @@ import type {
   OutputChunk,
   OutputOptions,
   RollupLog,
+  RollupOptions,
   RollupOutput,
 } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
@@ -771,6 +772,7 @@ describe('onRollupLog', () => {
     level: LogLevel | 'error',
     message: string | RollupLog,
     logger: Logger,
+    options?: Pick<RollupOptions, 'onLog' | 'onwarn'>,
   ) => {
     return (await build({
       root: resolve(__dirname, 'packages/build-project'),
@@ -778,6 +780,7 @@ describe('onRollupLog', () => {
       build: {
         write: false,
         rollupOptions: {
+          ...options,
           logLevel: 'debug',
         },
       },
@@ -833,7 +836,7 @@ describe('onRollupLog', () => {
   })
 
   test('Rollup logs of warn should be handled by vite', async () => {
-    const logger = createLogger()
+    const logger = createLogger('silent')
     const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
 
     await buildProject('warn', msgWarn, logger)
@@ -841,6 +844,36 @@ describe('onRollupLog', () => {
       stripVTControlCharacters(args[0]),
     )
     expect(logs).contain(`[plugin ${pluginName}] ${msgWarn}`)
+  })
+
+  test('onLog passed by user is called', async () => {
+    const logger = createLogger('silent')
+
+    const onLogInfo = vi.fn((_log: RollupLog) => {})
+    await buildProject('info', msgInfo, logger, {
+      onLog(level, log) {
+        if (level === 'info') {
+          onLogInfo(log)
+        }
+      },
+    })
+    expect(onLogInfo).toBeCalledWith(
+      expect.objectContaining({ message: `[plugin ${pluginName}] ${msgInfo}` }),
+    )
+  })
+
+  test('onwarn passed by user is called', async () => {
+    const logger = createLogger('silent')
+
+    const onWarn = vi.fn((_log: RollupLog) => {})
+    await buildProject('warn', msgWarn, logger, {
+      onwarn(warning) {
+        onWarn(warning)
+      },
+    })
+    expect(onWarn).toBeCalledWith(
+      expect.objectContaining({ message: `[plugin ${pluginName}] ${msgWarn}` }),
+    )
   })
 
   test('should throw error when warning contains UNRESOLVED_IMPORT', async () => {
