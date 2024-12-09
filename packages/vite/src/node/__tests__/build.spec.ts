@@ -11,6 +11,7 @@ import type {
 } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
+  BuildEnvironment,
   build,
   createBuilder,
   onRollupLog,
@@ -851,13 +852,14 @@ describe('onRollupLog', () => {
       'production',
       'production',
     )
+    const buildEnvironment = new BuildEnvironment('client', config)
     const log: RollupLog = {
       code: 'UNRESOLVED_IMPORT',
       message: 'test',
     }
-    expect(() => onRollupLog('warn', log, loggerMock, config)).toThrowError(
-      /Rollup failed to resolve import/,
-    )
+    expect(() =>
+      onRollupLog('warn', log, loggerMock, buildEnvironment),
+    ).toThrowError(/Rollup failed to resolve import/)
   })
 
   test.each([[`Unsupported expression`], [`statically analyzed`]])(
@@ -874,12 +876,13 @@ describe('onRollupLog', () => {
         'production',
         'production',
       )
+      const buildEnvironment = new BuildEnvironment('client', config)
       const log: RollupLog = {
         code: 'PLUGIN_WARNING',
         message: message,
         plugin: 'rollup-plugin-dynamic-import-variables',
       }
-      onRollupLog('warn', log, rollupLogger, config)
+      onRollupLog('warn', log, rollupLogger, buildEnvironment)
       expect(loggerSpy).toBeCalledTimes(0)
     },
   )
@@ -898,12 +901,13 @@ describe('onRollupLog', () => {
         'production',
         'production',
       )
+      const buildEnvironment = new BuildEnvironment('client', config)
       const log: RollupLog = {
         code: code,
         message: 'test message',
         plugin: pluginName,
       }
-      onRollupLog('warn', log, rollupLogger, config)
+      onRollupLog('warn', log, rollupLogger, buildEnvironment)
       expect(loggerSpy).toBeCalledTimes(0)
     },
   )
