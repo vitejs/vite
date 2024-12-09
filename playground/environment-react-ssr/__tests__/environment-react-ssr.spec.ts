@@ -48,7 +48,7 @@ describe.runIf(!isBuild)('pre-bundling', () => {
       })
       .filter((file) => file.isFile() && file.name.endsWith('.js'))
       .map((file) => path.join(file.parentPath, file.name))
-    const depsFileHasProcessEnvNodeEnvLeft = depsFiles
+    const depsFilesWithProcessEnvNodeEnv = depsFiles
       .filter((file) =>
         fs.readFileSync(file, 'utf-8').includes('process.env.NODE_ENV'),
       )
@@ -58,7 +58,7 @@ describe.runIf(!isBuild)('pre-bundling', () => {
           file,
         ),
       )
-    expect(depsFileHasProcessEnvNodeEnvLeft.length).toBeGreaterThan(0)
+    expect(depsFilesWithProcessEnvNodeEnv.length).toBeGreaterThan(0)
   })
 
   test('deps reload', async () => {
