@@ -1045,33 +1045,19 @@ export function onRollupLog(
       if (logging.code?.startsWith('PLUGIN_')) {
         switch (logLeveling) {
           case 'info':
-            environment.logger.info(
-              `${colors.bold(
-                colors.green(`[plugin:${logging.plugin}]`),
-              )} ${colors.green(logging.message)}`,
-            )
+            environment.logger.info(colors.green(logging.message))
             return
 
           case 'warn':
-            environment.logger.warn(
-              `${colors.bold(
-                colors.yellow(`[plugin:${logging.plugin}]`),
-              )} ${colors.yellow(logging.message)}`,
-            )
+            environment.logger.warn(colors.yellow(logging.message))
             return
 
           case 'error':
-            environment.logger.error(
-              `${colors.bold(
-                colors.red(`[plugin:${logging.plugin}]`),
-              )} ${colors.red(logging.message)}`,
-            )
+            environment.logger.error(colors.red(logging.message))
             return
 
           case 'debug':
-            debugLogger?.(
-              `${`[plugin:${logging.plugin}]`} ${colors.dim(logging.message)}`,
-            )
+            debugLogger?.(colors.dim(logging.message))
             return
 
           default:

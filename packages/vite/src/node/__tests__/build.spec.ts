@@ -1,5 +1,6 @@
 import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { stripVTControlCharacters } from 'node:util'
 import colors from 'picocolors'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import type {
@@ -821,12 +822,10 @@ describe('onRollupLog', () => {
     const loggerSpy = vi.spyOn(logger, 'info').mockImplementation(() => {})
 
     await buildProject('info', logger)
-    const logs = loggerSpy.mock.calls.flat()
-    expect(logs).contain(
-      `${colors.bold(colors.green(`[plugin:${pluginName}]`))} ${colors.green(
-        msgInfo,
-      )}`,
-    )
+    const logs = loggerSpy.mock.calls
+      .flat()
+      .map((v) => (typeof v === 'string' ? stripVTControlCharacters(v) : v))
+    expect(logs).contain(`[plugin ${pluginName}] ${msgInfo}`)
   })
 
   test('Rollup logs of warn should be handled by vite', async () => {
@@ -835,12 +834,10 @@ describe('onRollupLog', () => {
     vi.spyOn(logger, 'info').mockImplementation(() => {})
 
     await buildProject('warn', logger)
-    const logs = loggerSpy.mock.calls.flat()
-    expect(logs).contain(
-      `${colors.bold(colors.yellow(`[plugin:${pluginName}]`))} ${colors.yellow(
-        msgWarn,
-      )}`,
-    )
+    const logs = loggerSpy.mock.calls
+      .flat()
+      .map((v) => (typeof v === 'string' ? stripVTControlCharacters(v) : v))
+    expect(logs).contain(`[plugin ${pluginName}] ${msgWarn}`)
   })
 
   test('should throw error when warning contains UNRESOLVED_IMPORT', async () => {
