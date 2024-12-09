@@ -1051,19 +1051,15 @@ export function onRollupLog(
           case 'info':
             environment.logger.info(colors.green(logging.message))
             return
-
           case 'warn':
             environment.logger.warn(colors.yellow(logging.message))
             return
-
           case 'error':
             environment.logger.error(colors.red(logging.message))
             return
-
           case 'debug':
             debugLogger?.(logging.message)
             return
-
           default:
             break
         }
