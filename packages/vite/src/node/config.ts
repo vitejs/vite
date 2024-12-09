@@ -1646,6 +1646,12 @@ export async function loadConfigFromFile(
   config: UserConfig
   dependencies: string[]
 } | null> {
+  if (configLoader !== 'bundle' && configLoader !== 'runner') {
+    throw new Error(
+      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle' and 'runner'.`,
+    )
+  }
+
   const start = performance.now()
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
@@ -1669,12 +1675,6 @@ export async function loadConfigFromFile(
   if (!resolvedPath) {
     debug?.('no config file found.')
     return null
-  }
-
-  if (configLoader !== 'bundle' && configLoader !== 'runner') {
-    throw new Error(
-      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle' and 'runner'.`,
-    )
   }
 
   try {
