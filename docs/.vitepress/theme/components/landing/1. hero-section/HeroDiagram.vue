@@ -441,7 +441,7 @@ onMounted(() => {
 // Check for uwu query
 const isUwu = ref(false)
 onMounted(() => {
-  isUwu.value = location.search.includes("?uwu")
+  isUwu.value = location.search.includes('?uwu')
 })
 </script>
 
