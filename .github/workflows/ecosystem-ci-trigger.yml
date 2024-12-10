@@ -9,6 +9,45 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
     steps:
+      - name: Check User Permissions
+        uses: actions/github-script@v7
+        id: check-permissions
+        with:
+          script: |
+            const user = context.payload.sender.login
+            console.log(`Validate user: ${user}`)
+
+            let hasTriagePermission = false
+            try {
+              const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                username: user,
+              });
+              hasTriagePermission = data.user.permissions.triage
+            } catch (e) {
+              console.warn(e)
+            }
+
+            if (hasTriagePermission) {
+              console.log('User is allowed. Adding +1 reaction.')
+              await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                content: '+1',
+              })
+            } else {
+              console.log('User is not allowed. Adding -1 reaction.')
+              await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                content: '-1',
+              })
+              throw new Error('User does not have the necessary permissions.')
+            }
+
       - name: Get PR Data
         uses: actions/github-script@v7
         id: get-pr-data
@@ -51,45 +90,6 @@ jobs:
 
             return { exists: true, reaction: null }
 
-      - name: Check User Permissions
-        uses: actions/github-script@v7
-        id: check-permissions
-        with:
-          script: |
-            const user = context.payload.sender.login
-            console.log(`Validate user: ${user}`)
-
-            let hasTriagePermission = false
-            try {
-              const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                username: user,
-              });
-              hasTriagePermission = data.user.permissions.triage
-            } catch (e) {
-              console.warn(e)
-            }
-
-            if (hasTriagePermission) {
-              console.log('User is allowed. Adding +1 reaction.')
-              await github.rest.reactions.createForIssueComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: context.payload.comment.id,
-                content: '+1',
-              })
-            } else {
-              console.log('User is not allowed. Adding -1 reaction.')
-              await github.rest.reactions.createForIssueComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: context.payload.comment.id,
-                content: '-1',
-              })
-              throw new Error('User does not have the necessary permissions.')
-            }
-
       - name: Generate Token
         id: generate-token
         uses: tibdex/github-app-token@v2
@@ -99,7 +99,7 @@ jobs:
           private_key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
 
       - name: Trigger Preview Release (if Package Not Found)
-        if: steps.check-package.outputs.exists == false
+        if: fromJSON(steps.check-package.outputs.result).exists == false
         uses: actions/github-script@v7
         id: trigger-preview-release
         with:
@@ -118,13 +118,13 @@ jobs:
             console.log('Added "trigger: preview" label.')
 
       - name: Wait for Preview Release Completion (if Package Not Found)
-        if: steps.check-package.outputs.exists == false
+        if: fromJSON(steps.check-package.outputs.result).exists == false
         uses: actions/github-script@v7
         id: wait-preview-release
         with:
           script: |
             const prData = ${{ steps.get-pr-data.outputs.result }}
-            const reaction = ${{ steps.check-package.outputs.reaction }}
+            const reaction = ${{ fromJSON(steps.check-package.outputs.result).reaction }}
             const workflowFileName = 'preview-release.yml'
             const workflow = await github.rest.actions.getWorkflow({
               owner: context.repo.owner,
@@ -192,7 +192,7 @@ jobs:
       - name: Check Commit Hash Ambiguity
         id: check_ambiguity
         run: |
-          HEAD_SHA=${{ steps.get-pr-data.outputs.head_sha }}
+          HEAD_SHA=${{ fromJSON(steps.get-pr-data.outputs.result).head_sha }}
           COMMIT_SHORT=${HEAD_SHA:0:7}
 
           if git show "$COMMIT_SHORT"; then
