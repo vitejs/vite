@@ -63,6 +63,7 @@ class SSRCompatModuleRunner extends ModuleRunner {
   constructor(private environment: DevEnvironment) {
     super(
       {
+        root: environment.config.root,
         transport: createServerModuleRunnerTransport({
           channel: environment.hot as NormalizedServerHotChannel,
         }),

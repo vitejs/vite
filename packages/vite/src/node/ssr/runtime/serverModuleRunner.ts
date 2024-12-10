@@ -126,6 +126,7 @@ export function createServerModuleRunner(
   return new ModuleRunner(
     {
       ...options,
+      root: environment.config.root,
       transport: createServerModuleRunnerTransport({
         channel: environment.hot as NormalizedServerHotChannel,
       }),
