@@ -71,7 +71,7 @@ jobs:
               console.warn(e)
             }
 
-            if (allowed) {
+            if (hasTriagePermission) {
               console.log('User is allowed. Adding +1 reaction.')
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
