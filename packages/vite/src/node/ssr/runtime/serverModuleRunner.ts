@@ -17,7 +17,10 @@ import type { ModuleRunnerTransport } from '../../../shared/moduleRunnerTranspor
  * @experimental
  */
 export interface ServerModuleRunnerOptions
-  extends Omit<ModuleRunnerOptions, 'fetchModule' | 'hmr' | 'transport'> {
+  extends Omit<
+    ModuleRunnerOptions,
+    'root' | 'fetchModule' | 'hmr' | 'transport'
+  > {
   /**
    * Disable HMR or configure HMR logger.
    */
