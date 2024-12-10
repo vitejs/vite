@@ -19,12 +19,12 @@ describe('module runner initialization', async () => {
     }
   }
   const serializeStack = (runner: ModuleRunner, err: Error) => {
-    return err.stack!.split('\n')[1].replace(runner.options.root, '<root>')
+    return err.stack!.split('\n')[1].replace(runner.options.root!, '<root>')
   }
   const serializeStackDeep = (runtime: ModuleRunner, err: Error) => {
     return err
       .stack!.split('\n')
-      .map((s) => s.replace(runtime.options.root, '<root>'))
+      .map((s) => s.replace(runtime.options.root!, '<root>'))
   }
 
   it('source maps are correctly applied to stack traces', async ({
