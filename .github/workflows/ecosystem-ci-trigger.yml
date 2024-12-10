@@ -159,7 +159,7 @@ jobs:
                     completed = true
                     break
                   } else if (latestRun.conclusion === 'skipped') {
-                    continue
+                   // noop
                   } else {
                     throw new Error('Preview Release workflow failed.')
                   }
