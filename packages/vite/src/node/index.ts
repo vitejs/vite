@@ -145,7 +145,7 @@ export type {
   WebSocketClient,
   WebSocketCustomListener,
 } from './server/ws'
-export type { PluginContainer } from './server/pluginContainer'
+export type { SkipInformation, PluginContainer } from './server/pluginContainer'
 export type {
   EnvironmentModuleGraph,
   EnvironmentModuleNode,
