@@ -192,7 +192,7 @@ jobs:
       - name: Check Commit Hash Ambiguity
         id: check_ambiguity
         run: |
-          HEAD_SHA=${{ fromJSON(steps.get-pr-data.outputs.result).head_sha }}
+          HEAD_SHA=${{ steps.get-pr-data.outputs.head_sha }}
           COMMIT_SHORT=${HEAD_SHA:0:7}
 
           if git show "$COMMIT_SHORT"; then
