@@ -72,8 +72,8 @@ export type InvokeResponseData<
   /** 'response' is for responses without an id */
   id: 'response' | `response:${string}`
   data:
-    | { r: Awaited<ReturnType<InvokeMethods[T]>>; e?: undefined }
-    | { r?: undefined; e: any }
+    | { result: Awaited<ReturnType<InvokeMethods[T]>>; error?: undefined }
+    | { result?: undefined; error: any }
 }
 
 export type InvokeMethods = {
