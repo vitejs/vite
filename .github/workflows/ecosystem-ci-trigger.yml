@@ -79,7 +79,7 @@ jobs:
 
             // Add 'rocket' reaction to the issue comment
             if (response.status === 404) {
-              const reaction = await github.rest.reactions.createForIssueComment({
+              const { data: reaction } = await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: context.payload.comment.id,
