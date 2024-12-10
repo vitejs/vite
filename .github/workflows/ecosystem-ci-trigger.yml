@@ -9,7 +9,51 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
     steps:
-      - uses: actions/github-script@v7
+      - name: Get PR Data
+        uses: actions/github-script@v7
+        id: get-pr-data
+        with:
+          script: |
+            console.log(`Get PR info: ${context.repo.owner}/${context.repo.repo}#${context.issue.number}`)
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            })
+            core.setOutput('head_sha', pr.head.sha)
+            return {
+              num: context.issue.number,
+              branchName: pr.head.ref,
+              commit: pr.head.sha,
+              repo: pr.head.repo.full_name
+            }
+
+      - name: Check Package Existence
+        uses: actions/github-script@v7
+        id: check-package
+        with:
+          script: |
+            const prData = ${{ steps.get-pr-data.outputs.result }}
+            const url = `https://pkg.pr.new/vite@${prData.commit}`
+            const response = await fetch(url)
+            console.log(`Package check URL: ${url}, Status: ${response.status}`)
+
+            // Add 'rocket' reaction to the issue comment
+            if (response.status === 404) {
+              const reaction = await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                content: 'rocket',
+              })
+              return { exists: false, reaction: reaction.id }
+            }
+
+            return { exists: true, reaction: null }
+
+      - name: Check User Permissions
+        uses: actions/github-script@v7
+        id: check-permissions
         with:
           script: |
             const user = context.payload.sender.login
@@ -27,8 +71,8 @@ jobs:
               console.warn(e)
             }
 
-            if (hasTriagePermission) {
-              console.log('Allowed')
+            if (allowed) {
+              console.log('User is allowed. Adding +1 reaction.')
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
@@ -36,44 +80,134 @@ jobs:
                 content: '+1',
               })
             } else {
-              console.log('Not allowed')
+              console.log('User is not allowed. Adding -1 reaction.')
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 comment_id: context.payload.comment.id,
                 content: '-1',
               })
-              throw new Error('not allowed')
+              throw new Error('User does not have the necessary permissions.')
             }
-      - uses: actions/github-script@v7
-        id: get-pr-data
-        with:
-          script: |
-            console.log(`Get PR info: ${context.repo.owner}/${context.repo.repo}#${context.issue.number}`)
-            const { data: pr } = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number
-            })
-            return {
-              num: context.issue.number,
-              branchName: pr.head.ref,
-              repo: pr.head.repo.full_name,
-              commit: pr.head.sha
-            }
-      - id: generate-token
+
+      - name: Generate Token
+        id: generate-token
         uses: tibdex/github-app-token@v2
         with:
           app_id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
           installation_retrieval_payload: "${{ github.repository_owner }}/vite-ecosystem-ci"
           private_key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
-      - uses: actions/github-script@v7
+
+      - name: Trigger Preview Release (if Package Not Found)
+        if: steps.check-package.outputs.exists == false
+        uses: actions/github-script@v7
+        id: trigger-preview-release
+        with:
+          github-token: ${{ steps.generate-token.outputs.token }}
+          script: |
+            const prData = ${{ steps.get-pr-data.outputs.result }}
+            console.log('Package not found, triggering preview release...')
+
+            // Add label "trigger: preview" to the PR
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prData.num,
+              labels: ['trigger: preview']
+            })
+            console.log('Added "trigger: preview" label.')
+
+      - name: Wait for Preview Release Completion (if Package Not Found)
+        if: steps.check-package.outputs.exists == false
+        uses: actions/github-script@v7
+        id: wait-preview-release
+        with:
+          script: |
+            const prData = ${{ steps.get-pr-data.outputs.result }}
+            const reaction = ${{ steps.check-package.outputs.reaction }}
+            const workflowFileName = 'preview-release.yml'
+            const workflow = await github.rest.actions.getWorkflow({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: workflowFileName,
+            })
+            const workflowId = workflow.data.id
+            console.log(`Waiting for workflow ID ${workflowId} to complete...`)
+
+            const maxRetries = 60 // Wait up to 10 minutes
+            const delay = 10000 // 10 seconds
+            let completed = false
+
+            for (let i = 0; i < maxRetries; i++) {
+              const runsData = await github.rest.actions.listWorkflowRuns({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: workflowId,
+                head_sha: prData.commit,
+                per_page: 100,
+                page: 1,
+              })
+
+              const runs = runsData.data.workflow_runs
+
+              if (runs.length > 0) {
+                const latestRun = runs[0]
+                console.log(`Latest run status: ${latestRun.status}, conclusion: ${latestRun.conclusion}`)
+                if (latestRun.status === 'completed') {
+                  if (latestRun.conclusion === 'success') {
+                    console.log('Preview release workflow completed successfully.')
+                    completed = true
+                    break
+                  } else {
+                    throw new Error('Preview Release workflow failed.')
+                  }
+                }
+              }
+
+              console.log(`Retrying... (${i + 1}/${maxRetries})`)
+              await new Promise(resolve => setTimeout(resolve, delay))
+            }
+
+            if (!completed) {
+              throw new Error('Preview Release workflow did not complete in time.')
+            }
+
+            // Remove the 'rocket' reaction
+            if (reaction) {
+              await github.rest.reactions.deleteForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: context.payload.comment.id,
+                reaction_id: reaction,
+              })
+              console.log('Removed "rocket" reaction.')
+            }
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # This step can be removed on May 26 2025
+      - name: Check Commit Hash Ambiguity
+        id: check_ambiguity
+        run: |
+          HEAD_SHA=${{ steps.get-pr-data.outputs.head_sha }}
+          COMMIT_SHORT=${HEAD_SHA:0:7}
+
+          if git show "$COMMIT_SHORT"; then
+            echo "COLLISION=false" >> $GITHUB_ENV
+          else
+            echo "COLLISION=true" >> $GITHUB_ENV
+          fi
+
+      - name: Trigger Downstream Workflow
+        uses: actions/github-script@v7
         id: trigger
         env:
           COMMENT: ${{ github.event.comment.body }}
         with:
           github-token: ${{ steps.generate-token.outputs.token }}
-          result-encoding: string
           script: |
             const comment = process.env.COMMENT.trim()
             const prData = ${{ steps.get-pr-data.outputs.result }}
@@ -89,7 +223,7 @@ jobs:
                 prNumber: '' + prData.num,
                 branchName: prData.branchName,
                 repo: prData.repo,
-                commit: prData.commit,
+                commit: process.env.COLLISION === 'false' ? prData.commit : '',
                 suite: suite === '' ? '-' : suite
               }
             })
