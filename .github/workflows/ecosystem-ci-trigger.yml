@@ -158,6 +158,8 @@ jobs:
                     console.log('Preview release workflow completed successfully.')
                     completed = true
                     break
+                  } else if (latestRun.conclusion === 'skipped') {
+                    continue
                   } else {
                     throw new Error('Preview Release workflow failed.')
                   }
