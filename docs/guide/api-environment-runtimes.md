@@ -182,8 +182,9 @@ type ModuleRunnerTransport = unknown
 interface ModuleRunnerOptions {
   /**
    * Root of the project
+   * @deprecated not used anymore and to be removed
    */
-  root: string
+  root?: string
   /**
    * A set of methods to communicate with the server.
    */
