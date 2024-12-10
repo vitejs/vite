@@ -4,7 +4,6 @@ import type { PluginHookUtils, ResolvedConfig } from '../config'
 import { isDepOptimizationDisabled } from '../optimizer'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
-import { getFsUtils } from '../fsUtils'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
@@ -58,30 +57,19 @@ export async function resolvePlugins(
     modulePreload !== false && modulePreload.polyfill
       ? modulePreloadPolyfillPlugin(config)
       : null,
-    resolvePlugin(
-      {
-        root: config.root,
-        isProduction: config.isProduction,
-        isBuild,
-        packageCache: config.packageCache,
-        asSrc: true,
-        fsUtils: getFsUtils(config),
-        optimizeDeps: true,
-        externalize: true,
-      },
-      config.environments,
-    ),
+    resolvePlugin({
+      root: config.root,
+      isProduction: config.isProduction,
+      isBuild,
+      packageCache: config.packageCache,
+      asSrc: true,
+      optimizeDeps: true,
+      externalize: true,
+    }),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
     config.esbuild !== false ? esbuildPlugin(config) : null,
-    jsonPlugin(
-      {
-        namedExports: true,
-        stringify: 'auto',
-        ...config.json,
-      },
-      isBuild,
-    ),
+    jsonPlugin(config.json, isBuild),
     wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),

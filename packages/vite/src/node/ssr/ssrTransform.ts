@@ -19,7 +19,12 @@ import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { parseAstAsync as rollupParseAstAsync } from 'rollup/parseAst'
 import type { TransformResult } from '../server/transformRequest'
-import { combineSourcemaps, isDefined } from '../utils'
+import {
+  combineSourcemaps,
+  generateCodeFrame,
+  isDefined,
+  numberToPos,
+} from '../utils'
 import { isJSONRequest } from '../plugins/json'
 import type { DefineImportMetadata } from '../../shared/ssrTransform'
 
@@ -39,7 +44,6 @@ export const ssrImportKey = `__vite_ssr_import__`
 export const ssrDynamicImportKey = `__vite_ssr_dynamic_import__`
 export const ssrExportAllKey = `__vite_ssr_exportAll__`
 export const ssrImportMetaKey = `__vite_ssr_import_meta__`
-const ssrIdentityFunction = `__vite_ssr_identity__`
 
 const hashbangRE = /^#!.*\n/
 
@@ -81,15 +85,21 @@ async function ssrTransformScript(
   try {
     ast = await rollupParseAstAsync(code)
   } catch (err) {
-    if (!err.loc || !err.loc.line) throw err
-    const line = err.loc.line
-    throw new Error(
-      `Parse failure: ${
-        err.message
-      }\nAt file: ${url}\nContents of line ${line}: ${
-        code.split('\n')[line - 1]
-      }`,
-    )
+    // enhance known rollup errors
+    // https://github.com/rollup/rollup/blob/42e587e0e37bc0661aa39fe7ad6f1d7fd33f825c/src/utils/bufferToAst.ts#L17-L22
+    if (err.code === 'PARSE_ERROR') {
+      err.message = `Parse failure: ${err.message}\n`
+      err.id = url
+      if (typeof err.pos === 'number') {
+        err.loc = numberToPos(code, err.pos)
+        err.loc.file = url
+        err.frame = generateCodeFrame(code, err.pos)
+        err.message += `At file: ${url}:${err.loc.line}:${err.loc.column}`
+      } else {
+        err.message += `At file: ${url}`
+      }
+    }
+    throw err
   }
 
   let uid = 0
@@ -320,9 +330,23 @@ async function ssrTransformScript(
     }
   }
 
-  let injectIdentityFunction = false
   // 3. convert references to import bindings & import.meta references
   walk(ast, {
+    onStatements(statements) {
+      // ensure ";" between statements
+      for (let i = 0; i < statements.length - 1; i++) {
+        const stmt = statements[i]
+        if (
+          code[stmt.end - 1] !== ';' &&
+          stmt.type !== 'FunctionDeclaration' &&
+          stmt.type !== 'ClassDeclaration' &&
+          stmt.type !== 'BlockStatement' &&
+          stmt.type !== 'ImportDeclaration'
+        ) {
+          s.appendRight(stmt.end, ';')
+        }
+      }
+    },
     onIdentifier(id, parent, parentStack) {
       const grandparent = parentStack[1]
       const binding = idToImportMap.get(id.name)
@@ -352,11 +376,10 @@ async function ssrTransformScript(
         }
       } else if (parent.type === 'CallExpression') {
         s.update(id.start, id.end, binding)
-        // wrap with identity function to avoid method binding `this`
+        // wrap with (0, ...) to avoid method binding `this`
         // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Property_accessors#method_binding
-        s.prependRight(id.start, `${ssrIdentityFunction}(`)
+        s.prependRight(id.start, `(0,`)
         s.appendLeft(id.end, `)`)
-        injectIdentityFunction = true
       } else if (
         // don't transform class name identifier
         !(parent.type === 'ClassExpression' && id === parent.id)
@@ -374,10 +397,6 @@ async function ssrTransformScript(
       }
     },
   })
-
-  if (injectIdentityFunction) {
-    s.prependLeft(fileStartIndex, `const ${ssrIdentityFunction} = v => v;\n`)
-  }
 
   let map = s.generateMap({ hires: 'boundary' })
   map.sources = [path.basename(url)]
@@ -420,6 +439,7 @@ interface Visitors {
   ) => void
   onImportMeta: (node: Node) => void
   onDynamicImport: (node: Node) => void
+  onStatements: (statements: Node[]) => void
 }
 
 const isNodeInPatternWeakSet = new WeakSet<_Node>()
@@ -433,7 +453,7 @@ const isNodeInPattern = (node: _Node): node is Property =>
  */
 function walk(
   root: Node,
-  { onIdentifier, onImportMeta, onDynamicImport }: Visitors,
+  { onIdentifier, onImportMeta, onDynamicImport, onStatements }: Visitors,
 ) {
   const parentStack: Node[] = []
   const varKindStack: VariableDeclaration['kind'][] = []
@@ -453,7 +473,7 @@ function walk(
   }
 
   function isInScope(name: string, parents: Node[]) {
-    return parents.some((node) => node && scopeMap.get(node)?.has(name))
+    return parents.some((node) => scopeMap.get(node)?.has(name))
   }
   function handlePattern(p: Pattern, parentScope: _Node) {
     if (p.type === 'Identifier') {
@@ -485,6 +505,17 @@ function walk(
     enter(node: Node, parent: Node | null) {
       if (node.type === 'ImportDeclaration') {
         return this.skip()
+      }
+
+      // for nodes that can contain multiple statements
+      if (
+        node.type === 'Program' ||
+        node.type === 'BlockStatement' ||
+        node.type === 'StaticBlock'
+      ) {
+        onStatements(node.body as Node[])
+      } else if (node.type === 'SwitchCase') {
+        onStatements(node.consequent as Node[])
       }
 
       // track parent stack, skip for "else-if"/"else" branches as acorn nests
@@ -537,11 +568,11 @@ function walk(
             return
           }
           ;(eswalk as any)(p.type === 'AssignmentPattern' ? p.left : p, {
-            enter(child: Node, parent: Node) {
+            enter(child: Node, parent: Node | undefined) {
               // skip params default value of destructure
               if (
                 parent?.type === 'AssignmentPattern' &&
-                parent?.right === child
+                parent.right === child
               ) {
                 return this.skip()
               }
@@ -552,8 +583,8 @@ function walk(
               // assignment of a destructuring variable
               if (
                 (parent?.type === 'TemplateLiteral' &&
-                  parent?.expressions.includes(child)) ||
-                (parent?.type === 'CallExpression' && parent?.callee === child)
+                  parent.expressions.includes(child)) ||
+                (parent?.type === 'CallExpression' && parent.callee === child)
               ) {
                 return
               }
@@ -675,10 +706,10 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
 }
 
 const isStaticProperty = (node: _Node): node is Property =>
-  node && node.type === 'Property' && !node.computed
+  node.type === 'Property' && !node.computed
 
-const isStaticPropertyKey = (node: _Node, parent: _Node) =>
-  isStaticProperty(parent) && parent.key === node
+const isStaticPropertyKey = (node: _Node, parent: _Node | undefined) =>
+  parent && isStaticProperty(parent) && parent.key === node
 
 const functionNodeTypeRE = /Function(?:Expression|Declaration)$|Method$/
 function isFunction(node: _Node): node is FunctionNode {
@@ -701,10 +732,7 @@ function isInDestructuringAssignment(
   parent: _Node,
   parentStack: _Node[],
 ): boolean {
-  if (
-    parent &&
-    (parent.type === 'Property' || parent.type === 'ArrayPattern')
-  ) {
+  if (parent.type === 'Property' || parent.type === 'ArrayPattern') {
     return parentStack.some((i) => i.type === 'AssignmentExpression')
   }
   return false

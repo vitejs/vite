@@ -137,7 +137,7 @@ describe('css url() references', () => {
 describe.runIf(isBuild)('index.css URLs', () => {
   let css: string
   beforeAll(() => {
-    css = findAssetFile(/index-[-\w]{8}\.css$/, '', 'other-assets')
+    css = findAssetFile(/index-[-\w]{8}\.css$/, 'runtime-base', 'other-assets')
   })
 
   test('relative asset URL', () => {

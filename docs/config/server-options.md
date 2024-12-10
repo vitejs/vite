@@ -101,15 +101,21 @@ In some cases, you might also want to configure the underlying dev server (e.g. 
 export default defineConfig({
   server: {
     proxy: {
-      // string shorthand: http://localhost:5173/foo -> http://localhost:4567/foo
+      // string shorthand:
+      // http://localhost:5173/foo
+      //   -> http://localhost:4567/foo
       '/foo': 'http://localhost:4567',
-      // with options: http://localhost:5173/api/bar-> http://jsonplaceholder.typicode.com/bar
+      // with options:
+      // http://localhost:5173/api/bar
+      //   -> http://jsonplaceholder.typicode.com/bar
       '/api': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      // with RegExp: http://localhost:5173/fallback/ -> http://jsonplaceholder.typicode.com/
+      // with RegExp:
+      // http://localhost:5173/fallback/
+      //   -> http://jsonplaceholder.typicode.com/
       '^/fallback/.*': {
         target: 'http://jsonplaceholder.typicode.com',
         changeOrigin: true,
@@ -123,8 +129,11 @@ export default defineConfig({
           // proxy will be an instance of 'http-proxy'
         },
       },
-      // Proxying websockets or socket.io: ws://localhost:5173/socket.io -> ws://localhost:5174/socket.io
-      // Exercise caution using `rewriteWsOrigin` as it can leave the proxying open to CSRF attacks.
+      // Proxying websockets or socket.io:
+      // ws://localhost:5173/socket.io
+      //   -> ws://localhost:5174/socket.io
+      // Exercise caution using `rewriteWsOrigin` as it can leave the
+      // proxying open to CSRF attacks.
       '/socket.io': {
         target: 'ws://localhost:5174',
         ws: true,
@@ -205,11 +214,11 @@ export default defineConfig({
 
 - **Type:** `object | null`
 
-File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar#getting-started). If the `ignored` option is passed, Vite will also automatically convert any strings as [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features).
+File system watcher options to pass on to [chokidar](https://github.com/paulmillr/chokidar/tree/3.6.0#api).
 
 The Vite server watcher watches the `root` and skips the `.git/`, `node_modules/`, and Vite's `cacheDir` and `build.outDir` directories by default. When updating a watched file, Vite will apply HMR and update the page only if needed.
 
-If set to `null`, no files will be watched. `server.watcher` will not watch any files and calling `add` will have no effect.
+If set to `null`, no files will be watched. `server.watcher` will provide a compatible event emitter, but calling `add` or `unwatch` will have no effect.
 
 ::: warning Watching files in `node_modules`
 
@@ -226,7 +235,7 @@ To fix it, you could either:
 - **Recommended**: Use WSL2 applications to edit your files.
   - It is also recommended to move the project folder outside of a Windows filesystem. Accessing Windows filesystem from WSL2 is slow. Removing that overhead will improve performance.
 - Set `{ usePolling: true }`.
-  - Note that [`usePolling` leads to high CPU utilization](https://github.com/paulmillr/chokidar#performance).
+  - Note that [`usePolling` leads to high CPU utilization](https://github.com/paulmillr/chokidar/tree/3.6.0#performance).
 
 :::
 
@@ -251,15 +260,16 @@ async function createServer() {
   // Create Vite server in middleware mode
   const vite = await createViteServer({
     server: { middlewareMode: true },
-    appType: 'custom', // don't include Vite's default HTML handling middlewares
+    // don't include Vite's default HTML handling middlewares
+    appType: 'custom',
   })
   // Use vite's connect instance as middleware
   app.use(vite.middlewares)
 
   app.use('*', async (req, res) => {
     // Since `appType` is `'custom'`, should serve response here.
-    // Note: if `appType` is `'spa'` or `'mpa'`, Vite includes middlewares to handle
-    // HTML requests and 404s so user middlewares should be added
+    // Note: if `appType` is `'spa'` or `'mpa'`, Vite includes middlewares
+    // to handle HTML requests and 404s so user middlewares should be added
     // before Vite's middlewares to take effect instead
   })
 }
@@ -328,14 +338,6 @@ export default defineConfig({
 - **Default:** `['.env', '.env.*', '*.{crt,pem}', '**/.git/**']`
 
 Blocklist for sensitive files being restricted to be served by Vite dev server. This will have higher priority than [`server.fs.allow`](#server-fs-allow). [picomatch patterns](https://github.com/micromatch/picomatch#globbing-features) are supported.
-
-## server.fs.cachedChecks
-
-- **Type:** `boolean`
-- **Default:** `false`
-- **Experimental**
-
-Caches filenames of accessed directories to avoid repeated filesystem operations. Particularly in Windows, this could result in a performance boost. It is disabled by default due to edge cases when writing a file in a cached folder and immediately importing it.
 
 ## server.origin
 

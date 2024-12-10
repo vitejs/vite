@@ -264,23 +264,21 @@ export class ErrorOverlay extends HTMLElement {
       fileRE.lastIndex = 0
       while ((match = fileRE.exec(text))) {
         const { 0: file, index } = match
-        if (index != null) {
-          const frag = text.slice(curIndex, index)
-          el.appendChild(document.createTextNode(frag))
-          const link = document.createElement('a')
-          link.textContent = file
-          link.className = 'file-link'
-          link.onclick = () => {
-            fetch(
-              new URL(
-                `${base}__open-in-editor?file=${encodeURIComponent(file)}`,
-                import.meta.url,
-              ),
-            )
-          }
-          el.appendChild(link)
-          curIndex += frag.length + file.length
+        const frag = text.slice(curIndex, index)
+        el.appendChild(document.createTextNode(frag))
+        const link = document.createElement('a')
+        link.textContent = file
+        link.className = 'file-link'
+        link.onclick = () => {
+          fetch(
+            new URL(
+              `${base}__open-in-editor?file=${encodeURIComponent(file)}`,
+              import.meta.url,
+            ),
+          )
         }
+        el.appendChild(link)
+        curIndex += frag.length + file.length
       }
     }
   }

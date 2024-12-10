@@ -39,12 +39,30 @@ export const ROLLUP_HOOKS = [
 
 export const VERSION = version as string
 
-export const DEFAULT_MAIN_FIELDS = [
+const DEFAULT_MAIN_FIELDS = [
   'browser',
   'module',
   'jsnext:main', // moment still uses this...
   'jsnext',
 ]
+export const DEFAULT_CLIENT_MAIN_FIELDS = Object.freeze(DEFAULT_MAIN_FIELDS)
+export const DEFAULT_SERVER_MAIN_FIELDS = Object.freeze(
+  DEFAULT_MAIN_FIELDS.filter((f) => f !== 'browser'),
+)
+
+/**
+ * A special condition that would be replaced with production or development
+ * depending on NODE_ENV env variable
+ */
+export const DEV_PROD_CONDITION = `development|production` as const
+
+const DEFAULT_CONDITIONS = ['module', 'browser', 'node', DEV_PROD_CONDITION]
+export const DEFAULT_CLIENT_CONDITIONS = Object.freeze(
+  DEFAULT_CONDITIONS.filter((c) => c !== 'node'),
+)
+export const DEFAULT_SERVER_CONDITIONS = Object.freeze(
+  DEFAULT_CONDITIONS.filter((c) => c !== 'browser'),
+)
 
 // Baseline support browserslist
 // "defaults and supports es6-module and supports es6-module-dynamic-import"
@@ -55,16 +73,6 @@ export const ESBUILD_MODULES_TARGET = [
   'firefox78',
   'chrome87',
   'safari14',
-]
-
-export const DEFAULT_EXTENSIONS = [
-  '.mjs',
-  '.js',
-  '.mts',
-  '.ts',
-  '.jsx',
-  '.tsx',
-  '.json',
 ]
 
 export const DEFAULT_CONFIG_FILES = [
@@ -108,6 +116,8 @@ export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 //   add a mime type to the `registerCustomMime` in
 //   `packages/vite/src/node/plugin/assets.ts` if mime type cannot be
 //   looked up by mrmime.
+//   You can check if the mime type can be looked up by mrmime by running
+//   `node --print "require('mrmime').lookup('foo.png')"`
 export const KNOWN_ASSET_TYPES = [
   // images
   'apng',
@@ -122,6 +132,7 @@ export const KNOWN_ASSET_TYPES = [
   'ico',
   'webp',
   'avif',
+  'cur',
 
   // media
   'mp4',
@@ -176,6 +187,5 @@ export const METADATA_FILENAME = '_metadata.json'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
-export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
 export const ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR =
   'ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR'

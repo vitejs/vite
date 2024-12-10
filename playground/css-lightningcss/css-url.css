@@ -1,0 +1,4 @@
+.css-url-aliased {
+  background: url('@/fragment.svg');
+  background-size: 10px;
+}

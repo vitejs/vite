@@ -63,7 +63,7 @@ export class ScanEnvironment extends BaseEnvironment {
       return
     }
     this._initiated = true
-    this._plugins = resolveEnvironmentPlugins(this)
+    this._plugins = await resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this.plugins,
@@ -183,7 +183,7 @@ export function scanImports(environment: ScanEnvironment): {
           })
         })
       }
-      if (!context || scanContext?.cancelled) {
+      if (!context || scanContext.cancelled) {
         disposeContext()
         return { deps: {}, missing: {} }
       }
@@ -248,7 +248,7 @@ async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
   const explicitEntryPatterns = environment.config.optimizeDeps.entries
-  const buildInput = environment.config.build.rollupOptions?.input
+  const buildInput = environment.config.build.rollupOptions.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
@@ -295,9 +295,9 @@ async function prepareEsbuildScanner(
   entries: string[],
   deps: Record<string, string>,
   missing: Record<string, string>,
-  scanContext?: { cancelled: boolean },
+  scanContext: { cancelled: boolean },
 ): Promise<BuildContext | undefined> {
-  if (scanContext?.cancelled) return
+  if (scanContext.cancelled) return
 
   const plugin = esbuildScanPlugin(environment, deps, missing, entries)
 
@@ -311,10 +311,10 @@ async function prepareEsbuildScanner(
   // Therefore, we use the closest tsconfig.json from the root to make it work in most cases.
   let tsconfigRaw = esbuildOptions.tsconfigRaw
   if (!tsconfigRaw && !esbuildOptions.tsconfig) {
-    const tsconfigResult = await loadTsconfigJsonForFile(
+    const { tsconfig } = await loadTsconfigJsonForFile(
       path.join(environment.config.root, '_dummy.js'),
     )
-    if (tsconfigResult.compilerOptions?.experimentalDecorators) {
+    if (tsconfig.compilerOptions?.experimentalDecorators) {
       tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
     }
   }

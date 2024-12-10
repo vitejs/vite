@@ -841,10 +841,6 @@ if (!isBuild) {
         () => page.textContent('.file-delete-restore'),
         'parent:not-child',
       ),
-      // chokidar sometimes detect a file delete and create immediately after as a single
-      // `change` event, which isn't expected in this test, so we create an artificial delay
-      // here to ensure there's ample time to dtect the difference
-      new Promise((r) => setTimeout(r, 200)),
     ])
 
     await untilBrowserLogAfter(async () => {
@@ -998,7 +994,20 @@ if (!isBuild) {
     )
   })
 
-  test('assets HMR', async () => {
+  test('not inlined assets HMR', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('#logo-no-inline')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('logo-no-inline.svg', (code) =>
+          code.replace('height="30px"', 'height="40px"'),
+        ),
+      /Logo-no-inline updated/,
+    )
+    await untilUpdated(() => el.evaluate((it) => `${it.clientHeight}`), '40')
+  })
+
+  test('inlined assets HMR', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('#logo')
     await untilBrowserLogAfter(

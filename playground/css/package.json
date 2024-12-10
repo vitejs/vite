@@ -21,11 +21,11 @@
     "@vitejs/test-css-js-dep": "file:./css-js-dep",
     "@vitejs/test-css-proxy-dep": "file:./css-proxy-dep",
     "@vitejs/test-scss-proxy-dep": "file:./scss-proxy-dep",
-    "less": "^4.2.0",
-    "postcss-nested": "^6.2.0",
-    "sass": "^1.80.4",
+    "less": "^4.2.1",
+    "postcss-nested": "^7.0.2",
+    "sass": "^1.82.0",
     "stylus": "^0.64.0",
-    "sugarss": "^4.0.1",
+    "sugarss": "^5.0.0",
     "tinyglobby": "^0.2.10"
   },
   "imports": {

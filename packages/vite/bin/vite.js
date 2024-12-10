@@ -7,6 +7,10 @@ if (!import.meta.url.includes('node_modules')) {
     // only available as dev dependency
     await import('source-map-support').then((r) => r.default.install())
   } catch {}
+
+  process.on('unhandledRejection', (err) => {
+    throw new Error('UNHANDLED PROMISE REJECTION', { cause: err })
+  })
 }
 
 global.__vite_start_time = performance.now()

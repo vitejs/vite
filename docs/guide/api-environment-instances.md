@@ -1,17 +1,17 @@
-# Using `Environment` instances
+# Using `Environment` Instances
 
 :::warning Experimental
-Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Environment API. This API will be released in Vite 6 as experimental. You can already test it in the latest `vite@6.0.0-beta.x` version.
+Environment API is experimental. We'll keep the APIs stable during Vite 6 to let the ecosystem experiment and build on top of it. We're planning to stabilize these new APIs with potential breaking changes in Vite 7.
 
 Resources:
 
 - [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
 - [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new API were implemented and reviewed.
 
-Please share with us your feedback as you test the proposal.
+Please share your feedback with us.
 :::
 
-## Accessing the environments
+## Accessing the Environments
 
 During dev, the available environments in a dev server can be accessed using `server.environments`:
 
@@ -41,7 +41,7 @@ class DevEnvironment {
    * Communication channel to send and receive messages from the
    * associated module runner in the target runtime.
    */
-  hot: HotChannel | null
+  hot: NormalizedHotChannel
   /**
    * Graph of module nodes, with the imported relationship between
    * processed modules and the cached result of the processed code.
@@ -64,25 +64,43 @@ class DevEnvironment {
    */
   config: ResolvedConfig & ResolvedDevEnvironmentOptions
 
-  constructor(name, config, { hot, options }: DevEnvironmentSetup)
+  constructor(
+    name: string,
+    config: ResolvedConfig,
+    context: DevEnvironmentContext,
+  )
 
   /**
    * Resolve the URL to an id, load it, and process the code using the
    * plugins pipeline. The module graph is also updated.
    */
-  async transformRequest(url: string): TransformResult
+  async transformRequest(url: string): Promise<TransformResult | null>
 
   /**
    * Register a request to be processed with low priority. This is useful
-   * to avoid waterfalls. The Vite server has information about the imported
-   * modules by other requests, so it can warmup the module graph so the
-   * modules are already processed when they are requested.
+   * to avoid waterfalls. The Vite server has information about the
+   * imported modules by other requests, so it can warmup the module graph
+   * so the modules are already processed when they are requested.
    */
-  async warmupRequest(url: string): void
+  async warmupRequest(url: string): Promise<void>
 }
 ```
 
-With `TransformResult` being:
+With `DevEnvironmentContext` being:
+
+```ts
+interface DevEnvironmentContext {
+  hot: boolean
+  transport?: HotChannel | WebSocketServer
+  options?: EnvironmentOptions
+  remoteRunner?: {
+    inlineSourceMap?: boolean
+  }
+  depsOptimizer?: DepsOptimizer
+}
+```
+
+and with `TransformResult` being:
 
 ```ts
 interface TransformResult {
@@ -100,7 +118,7 @@ An environment instance in the Vite server lets you process a URL using the `env
 We are using `transformRequest(url)` and `warmupRequest(url)` in the current version of this proposal so it is easier to discuss and understand for users used to Vite's current API. Before releasing, we can take the opportunity to review these names too. For example, it could be named `environment.processModule(url)` or `environment.loadModule(url)` taking a page from Rollup's `context.load(id)` in plugin hooks. For the moment, we think keeping the current names and delaying this discussion is better.
 :::
 
-## Separate module graphs
+## Separate Module Graphs
 
 Each environment has an isolated module graph. All module graphs have the same signature, so generic algorithms can be implemented to crawl or query the graph without depending on the environment. `hotUpdate` is a good example. When a file is modified, the module graph of each environment will be used to discover the affected modules and perform HMR for each environment independently.
 
@@ -156,9 +174,13 @@ export class EnvironmentModuleGraph {
     rawUrl: string,
   ): Promise<EnvironmentModuleNode | undefined>
 
+  getModuleById(id: string): EnvironmentModuleNode | undefined
+
   getModulesByFile(file: string): Set<EnvironmentModuleNode> | undefined
 
   onFileChange(file: string): void
+
+  onFileDelete(file: string): void
 
   invalidateModule(
     mod: EnvironmentModuleNode,

@@ -32,6 +32,7 @@ const clientConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/client.ts'),
   external: ['@vite/env'],
   plugins: [
+    nodeResolve({ preferBuiltins: true }),
     esbuild({
       tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
     }),
@@ -43,7 +44,18 @@ const clientConfig = defineConfig({
 
 const sharedNodeOptions = defineConfig({
   treeshake: {
-    moduleSideEffects: 'no-external',
+    moduleSideEffects(id, external) {
+      id = id.replaceAll('\\', '/')
+      // These nested dependencies should be considered side-effect free
+      // as it's not set within their package.json
+      if (
+        id.includes('node_modules/astring') ||
+        id.includes('node_modules/acorn')
+      ) {
+        return false
+      }
+      return !external
+    },
     propertyReadSideEffects: false,
     tryCatchDeoptimization: false,
   },
@@ -82,6 +94,7 @@ function createSharedNodePlugins({
       // Since ws is not that perf critical for us, just ignore these deps.
       ignore: ['bufferutil', 'utf-8-validate'],
       sourceMap: false,
+      strictRequires: 'auto',
     }),
     json(),
   ]
@@ -96,19 +109,25 @@ const nodeConfig = defineConfig({
   },
   external: [
     /^vite\//,
-    'lightningcss',
+    'fsevents',
     'rollup/parseAst',
-    // postcss-load-config
-    'yaml',
-    'jiti',
-    /^tsx(\/|$)/,
+    /^tsx\//,
+    /^#/,
     ...Object.keys(pkg.dependencies),
+    ...Object.keys(pkg.peerDependencies),
   ],
   plugins: [
     // Some deps have try...catch require of optional deps, but rollup will
     // generate code that force require them upfront for side effects.
     // Shim them with eval() so rollup can skip these calls.
     shimDepsPlugin({
+      // chokidar -> fsevents
+      'fsevents-handler.js': [
+        {
+          src: `require('fsevents')`,
+          replacement: `__require('fsevents')`,
+        },
+      ],
       // postcss-import -> sugarss
       'process-content.js': [
         {
@@ -133,12 +152,17 @@ const nodeConfig = defineConfig({
         },
       ],
       // postcss-import uses the `resolve` dep if the `resolve` option is not passed.
-      // However, we always pass the `resolve` option. Remove this import to avoid
-      // bundling the `resolve` dep.
+      // However, we always pass the `resolve` option. It also uses `read-cache` if
+      // the `load` option is not passed, but we also always pass the `load` option.
+      // Remove these two imports to avoid bundling them.
       'postcss-import/index.js': [
         {
           src: 'const resolveId = require("./lib/resolve-id")',
           replacement: 'const resolveId = (id) => id',
+        },
+        {
+          src: 'const loadContent = require("./lib/load-content")',
+          replacement: 'const loadContent = () => ""',
         },
       ],
       'postcss-import/lib/parse-styles.js': [
@@ -164,13 +188,14 @@ const moduleRunnerConfig = defineConfig({
     'module-runner': path.resolve(__dirname, 'src/module-runner/index.ts'),
   },
   external: [
+    'fsevents',
     'lightningcss',
     'rollup/parseAst',
     ...Object.keys(pkg.dependencies),
   ],
   plugins: [
     ...createSharedNodePlugins({ esbuildOptions: { minifySyntax: true } }),
-    bundleSizeLimit(50),
+    bundleSizeLimit(54),
   ],
 })
 
@@ -180,17 +205,17 @@ const cjsConfig = defineConfig({
     publicUtils: path.resolve(__dirname, 'src/node/publicUtils.ts'),
   },
   output: {
-    dir: './dist',
+    ...sharedNodeOptions.output,
     entryFileNames: `node-cjs/[name].cjs`,
     chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
-    exports: 'named',
     format: 'cjs',
-    externalLiveBindings: false,
-    freeze: false,
-    sourcemap: false,
   },
-  external: Object.keys(pkg.dependencies),
-  plugins: [...createSharedNodePlugins({}), bundleSizeLimit(175)],
+  external: ['fsevents', ...Object.keys(pkg.dependencies)],
+  plugins: [
+    ...createSharedNodePlugins({}),
+    bundleSizeLimit(175),
+    exportCheck(),
+  ],
 })
 
 export default defineConfig([
@@ -280,14 +305,15 @@ function cjsPatchPlugin(): Plugin {
   const cjsPatch = `
 import { createRequire as __cjs_createRequire } from 'node:module';
 
-const require = __cjs_createRequire(import.meta.url);
-const __require = require;
+const __require = __cjs_createRequire(import.meta.url);
 `.trimStart()
 
   return {
     name: 'cjs-chunk-patch',
     renderChunk(code, chunk) {
       if (!chunk.fileName.includes('chunks/dep-')) return
+      if (!code.includes('__require')) return
+
       const match = /^(?:import[\s\S]*?;\s*)+/.exec(code)
       const index = match ? match.index! + match[0].length : 0
       const s = new MagicString(code)
@@ -324,6 +350,33 @@ function bundleSizeLimit(limit: number): Plugin {
           `Bundle size exceeded ${limit} kB, current size is ${kb.toFixed(
             2,
           )}kb.`,
+        )
+      }
+    },
+  }
+}
+
+function exportCheck(): Plugin {
+  return {
+    name: 'export-check',
+    async writeBundle() {
+      // escape import so that it's not bundled while config load
+      const dynImport = (id: string) => import(id)
+      // ignore warning from CJS entrypoint to avoid misleading logs
+      process.env.VITE_CJS_IGNORE_WARNING = 'true'
+
+      const esmNamespace = await dynImport('./dist/node/index.js')
+      const cjsModuleExports = (await dynImport('./index.cjs')).default
+      const cjsModuleExportsKeys = new Set(
+        Object.getOwnPropertyNames(cjsModuleExports),
+      )
+      const lackingExports = Object.keys(esmNamespace).filter(
+        (key) => !cjsModuleExportsKeys.has(key),
+      )
+      if (lackingExports.length > 0) {
+        this.error(
+          `Exports missing from cjs build: ${lackingExports.join(', ')}.` +
+            ` Please update index.cjs or src/publicUtils.ts.`,
         )
       }
     },

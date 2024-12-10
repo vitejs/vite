@@ -1,5 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import fs from 'node:fs'
+import { stripVTControlCharacters } from 'node:util'
 import { expect, test } from 'vitest'
 import { createServer } from '../../server'
 import { normalizePath } from '../../utils'
@@ -177,4 +179,75 @@ test('can access nodejs global', async () => {
   const server = await createDevServer()
   const mod = await server.ssrLoadModule('/fixtures/global/test.js')
   expect(mod.default).toBe(globalThis)
+})
+
+test('parse error', async () => {
+  const server = await createDevServer()
+
+  function stripRoot(s?: string) {
+    return (s || '').replace(server.config.root, '<root>')
+  }
+
+  for (const file of [
+    '/fixtures/errors/syntax-error.ts',
+    '/fixtures/errors/syntax-error.js',
+    '/fixtures/errors/syntax-error-dep.ts',
+    '/fixtures/errors/syntax-error-dep.js',
+  ]) {
+    try {
+      await server.ssrLoadModule(file)
+    } catch (e) {
+      expect(e).toBeInstanceOf(Error)
+      expect({
+        message: stripRoot(e.message),
+        frame: stripVTControlCharacters(e.frame || ''),
+        id: stripRoot(e.id),
+        loc: e.loc && {
+          file: stripRoot(e.loc.file),
+          column: e.loc.column,
+          line: e.loc.line,
+        },
+      }).toMatchSnapshot()
+      continue
+    }
+    expect.unreachable()
+  }
+})
+
+test('json', async () => {
+  const server = await createDevServer()
+  const mod = await server.ssrLoadModule('/fixtures/json/test.json')
+  expect(mod).toMatchInlineSnapshot(`
+    {
+      "default": {
+        "hello": "this is json",
+      },
+      "hello": "this is json",
+    }
+  `)
+
+  const source = fs.readFileSync(
+    path.join(root, 'fixtures/json/test.json'),
+    'utf-8',
+  )
+  const json = await server.ssrTransform(
+    `export default ${source}`,
+    null,
+    '/test.json',
+  )
+  expect(json?.code.length).toMatchInlineSnapshot(`61`)
+})
+
+test('file url', async () => {
+  const server = await createDevServer()
+
+  const mod = await server.ssrLoadModule(
+    new URL('./fixtures/file-url/test.js', import.meta.url).href,
+  )
+  expect(mod.msg).toBe('works')
+
+  const modWithSpace = await server.ssrLoadModule(
+    new URL('./fixtures/file-url/test space.js', import.meta.url).href,
+  )
+  expect(modWithSpace.msg).toBe('works')
 })

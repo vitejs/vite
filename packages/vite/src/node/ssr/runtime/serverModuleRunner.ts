@@ -1,14 +1,17 @@
 import { existsSync, readFileSync } from 'node:fs'
-import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
+import { ModuleRunner } from 'vite/module-runner'
 import type {
   ModuleEvaluator,
-  ModuleRunnerHMRConnection,
   ModuleRunnerHmr,
   ModuleRunnerOptions,
 } from 'vite/module-runner'
+import type { HotPayload } from 'types/hmrPayload'
 import type { DevEnvironment } from '../../server/environment'
-import type { ServerHotChannel } from '../../server/hmr'
-import { ServerHMRConnector } from './serverHmrConnector'
+import type {
+  HotChannelClient,
+  NormalizedServerHotChannel,
+} from '../../server/hmr'
+import type { ModuleRunnerTransport } from '../../../shared/moduleRunnerTransport'
 
 /**
  * @experimental
@@ -21,7 +24,6 @@ export interface ServerModuleRunnerOptions
   hmr?:
     | false
     | {
-        connection?: ModuleRunnerHMRConnection
         logger?: ModuleRunnerHmr['logger']
       }
   /**
@@ -37,16 +39,8 @@ function createHMROptions(
   if (environment.config.server.hmr === false || options.hmr === false) {
     return false
   }
-  if (options.hmr?.connection) {
-    return {
-      connection: options.hmr.connection,
-      logger: options.hmr.logger,
-    }
-  }
   if (!('api' in environment.hot)) return false
-  const connection = new ServerHMRConnector(environment.hot as ServerHotChannel)
   return {
-    connection,
     logger: options.hmr?.logger,
   }
 }
@@ -75,6 +69,48 @@ function resolveSourceMapOptions(options: ServerModuleRunnerOptions) {
   return prepareStackTrace
 }
 
+export const createServerModuleRunnerTransport = (options: {
+  channel: NormalizedServerHotChannel
+}): ModuleRunnerTransport => {
+  const hmrClient: HotChannelClient = {
+    send: (payload: HotPayload) => {
+      if (payload.type !== 'custom') {
+        throw new Error(
+          'Cannot send non-custom events from the client to the server.',
+        )
+      }
+      options.channel.send(payload)
+    },
+  }
+
+  let handler: ((data: HotPayload) => void) | undefined
+
+  return {
+    connect({ onMessage }) {
+      options.channel.api!.outsideEmitter.on('send', onMessage)
+      onMessage({ type: 'connected' })
+      handler = onMessage
+    },
+    disconnect() {
+      if (handler) {
+        options.channel.api!.outsideEmitter.off('send', handler)
+      }
+    },
+    send(payload) {
+      if (payload.type !== 'custom') {
+        throw new Error(
+          'Cannot send non-custom events from the server to the client.',
+        )
+      }
+      options.channel.api!.innerEmitter.emit(
+        payload.event,
+        payload.data,
+        hmrClient,
+      )
+    },
+  }
+}
+
 /**
  * Create an instance of the Vite SSR runtime that support HMR.
  * @experimental
@@ -87,13 +123,13 @@ export function createServerModuleRunner(
   return new ModuleRunner(
     {
       ...options,
-      transport: {
-        fetchModule: (id, importer, options) =>
-          environment.fetchModule(id, importer, options),
-      },
+      root: environment.config.root,
+      transport: createServerModuleRunnerTransport({
+        channel: environment.hot as NormalizedServerHotChannel,
+      }),
       hmr,
       sourcemapInterceptor: resolveSourceMapOptions(options),
     },
-    options.evaluator || new ESModulesEvaluator(),
+    options.evaluator,
   )
 }

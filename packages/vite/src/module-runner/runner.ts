@@ -1,7 +1,11 @@
 import type { ViteHotContext } from 'types/hot'
-import { HMRClient, HMRContext } from '../shared/hmr'
+import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
 import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
+import {
+  type NormalizedModuleRunnerTransport,
+  normalizeModuleRunnerTransport,
+} from '../shared/moduleRunnerTransport'
 import type { EvaluatedModuleNode } from './evaluatedModules'
 import { EvaluatedModules } from './evaluatedModules'
 import type {
@@ -13,6 +17,7 @@ import type {
   SSRImportMetadata,
 } from './types'
 import {
+  // normalizeAbsoluteUrl,
   posixDirname,
   posixPathToFileHref,
   posixResolve,
@@ -28,7 +33,7 @@ import {
 import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
-import type { RunnerTransport } from './runnerTransport'
+import { ESModulesEvaluator } from './esmEvaluator'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -45,8 +50,9 @@ export class ModuleRunner {
       )
     },
   })
-  private readonly transport: RunnerTransport
+  private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
+  // private readonly root: string
   private readonly concurrentModuleNodePromises = new Map<
     string,
     Promise<EvaluatedModuleNode>
@@ -56,20 +62,34 @@ export class ModuleRunner {
 
   constructor(
     public options: ModuleRunnerOptions,
-    public evaluator: ModuleEvaluator,
+    public evaluator: ModuleEvaluator = new ESModulesEvaluator(),
     private debug?: ModuleRunnerDebugger,
   ) {
+    // const root = this.options.root
+    // this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
-    this.transport = options.transport
-    if (typeof options.hmr === 'object') {
+    this.transport = normalizeModuleRunnerTransport(options.transport)
+    if (options.hmr !== false) {
+      const optionsHmr = options.hmr ?? true
+      const resolvedHmrLogger: HMRLogger =
+        optionsHmr === true || optionsHmr.logger === undefined
+          ? hmrLogger
+          : optionsHmr.logger === false
+            ? silentConsole
+            : optionsHmr.logger
       this.hmrClient = new HMRClient(
-        options.hmr.logger === false
-          ? silentConsole
-          : options.hmr.logger || hmrLogger,
-        options.hmr.connection,
+        resolvedHmrLogger,
+        this.transport,
         ({ acceptedPath }) => this.import(acceptedPath),
       )
-      options.hmr.connection.onUpdate(createHMRHandler(this))
+      if (!this.transport.connect) {
+        throw new Error(
+          'HMR is not supported by this runner transport, but `hmr` option was set to true',
+        )
+      }
+      this.transport.connect(createHMRHandler(this))
+    } else {
+      this.transport.connect?.()
     }
     if (options.sourcemapInterceptor !== false) {
       this.resetSourceMapSupport = enableSourceMapSupport(this)
@@ -101,6 +121,7 @@ export class ModuleRunner {
     this.clearCache()
     this.hmrClient = undefined
     this.closed = true
+    await this.transport.disconnect?.()
   }
 
   /**
@@ -216,6 +237,8 @@ export class ModuleRunner {
     url: string,
     importer?: string,
   ): Promise<EvaluatedModuleNode> {
+    // url = normalizeAbsoluteUrl(url, this.root)
+
     let cached = this.concurrentModuleNodePromises.get(url)
     if (!cached) {
       const cachedModule = this.evaluatedModules.getModuleByUrl(url)
@@ -249,10 +272,14 @@ export class ModuleRunner {
       (
         url.startsWith('data:')
           ? { externalize: url, type: 'builtin' }
-          : await this.transport.fetchModule(url, importer, {
-              cached: isCached,
-              startOffset: this.evaluator.startOffset,
-            })
+          : await this.transport.invoke('fetchModule', [
+              url,
+              importer,
+              {
+                cached: isCached,
+                startOffset: this.evaluator.startOffset,
+              },
+            ])
       ) as ResolvedResult
 
     if ('cache' in fetchedModule) {

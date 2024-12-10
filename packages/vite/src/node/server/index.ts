@@ -30,33 +30,33 @@ import {
   isObject,
   isParentDirectory,
   mergeConfig,
+  mergeWithDefaults,
   normalizePath,
   resolveHostname,
   resolveServerUrls,
   setupSIGTERMListener,
   teardownSIGTERMListener,
 } from '../utils'
-import { getFsUtils } from '../fsUtils'
 import { ssrLoadModule } from '../ssr/ssrModuleLoader'
 import { ssrFixStacktrace, ssrRewriteStacktrace } from '../ssr/ssrStacktrace'
 import { ssrTransform } from '../ssr/ssrTransform'
+import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
-import {
-  CLIENT_DIR,
-  DEFAULT_DEV_PORT,
-  ERR_OUTDATED_OPTIMIZED_DEP,
-} from '../constants'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
+import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { warnFutureDeprecation } from '../deprecations'
 import {
+  createNoopWatcher,
   getResolvedOutDirs,
   resolveChokidarOptions,
   resolveEmptyOutDir,
 } from '../watch'
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
+import type { RequiredExceptFor } from '../typeUtils'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -81,7 +81,7 @@ import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
-import { errorMiddleware } from './middlewares/error'
+import { buildErrorMessage, errorMiddleware } from './middlewares/error'
 import type { HmrOptions, HotBroadcaster } from './hmr'
 import {
   createDeprecatedHotBroadcaster,
@@ -120,7 +120,7 @@ export interface ServerOptions extends CommonServerOptions {
   }
   /**
    * chokidar watch options or null to disable FS watching
-   * https://github.com/paulmillr/chokidar#getting-started
+   * https://github.com/paulmillr/chokidar/tree/3.6.0#api
    */
   watch?: WatchOptions | null
   /**
@@ -169,7 +169,7 @@ export interface ServerOptions extends CommonServerOptions {
    * @default false
    * @experimental
    */
-  perEnvironmentBuildStartEnd?: boolean
+  perEnvironmentStartEndDuringDev?: boolean
   /**
    * Run HMR tasks, by default the HMR propagation is done in parallel for all environments
    * @experimental
@@ -181,7 +181,20 @@ export interface ServerOptions extends CommonServerOptions {
 }
 
 export interface ResolvedServerOptions
-  extends Omit<ServerOptions, 'fs' | 'middlewareMode' | 'sourcemapIgnoreList'> {
+  extends Omit<
+    RequiredExceptFor<
+      ServerOptions,
+      | 'host'
+      | 'https'
+      | 'proxy'
+      | 'hmr'
+      | 'ws'
+      | 'watch'
+      | 'origin'
+      | 'hotUpdateEnvironments'
+    >,
+    'fs' | 'middlewareMode' | 'sourcemapIgnoreList'
+  > {
   fs: Required<FileSystemServeOptions>
   middlewareMode: NonNullable<ServerOptions['middlewareMode']>
   sourcemapIgnoreList: Exclude<
@@ -214,17 +227,9 @@ export interface FileSystemServeOptions {
    * This will have higher priority than `allow`.
    * picomatch patterns are supported.
    *
-   * @default ['.env', '.env.*', '*.crt', '*.pem']
+   * @default ['.env', '.env.*', '*.{crt,pem}', '**\/.git/**']
    */
   deny?: string[]
-
-  /**
-   * Enable caching of fs calls. It is enabled by default if no custom watch ignored patterns are provided.
-   *
-   * @experimental
-   * @default undefined
-   */
-  cachedChecks?: boolean
 }
 
 export type ServerHook = (
@@ -255,8 +260,8 @@ export interface ViteDevServer {
   httpServer: HttpServer | null
   /**
    * Chokidar watcher instance. If `config.server.watch` is set to `null`,
-   * it will not watch any files and calling `add` will have no effect.
-   * https://github.com/paulmillr/chokidar#getting-started
+   * it will not watch any files and calling `add` or `unwatch` will have no effect.
+   * https://github.com/paulmillr/chokidar/tree/3.6.0#api
    */
   watcher: FSWatcher
   /**
@@ -438,7 +443,7 @@ export async function _createServer(
   const resolvedOutDirs = getResolvedOutDirs(
     config.root,
     config.build.outDir,
-    config.build.rollupOptions?.output,
+    config.build.rollupOptions.output,
   )
   const emptyOutDir = resolveEmptyOutDir(
     config.build.emptyOutDir,
@@ -446,7 +451,10 @@ export async function _createServer(
     resolvedOutDirs,
   )
   const resolvedWatchOptions = resolveChokidarOptions(
-    serverConfig.watch,
+    {
+      disableGlobbing: true,
+      ...serverConfig.watch,
+    },
     resolvedOutDirs,
     emptyOutDir,
     config.cacheDir,
@@ -466,26 +474,23 @@ export async function _createServer(
     setClientErrorHandler(httpServer, config.logger)
   }
 
-  const watcher = chokidar.watch(
-    // config file dependencies and env file might be outside of root
-    [
-      root,
-      ...config.configFileDependencies,
-      ...getEnvFilesForMode(config.mode, config.envDir),
-      // Watch the public directory explicitly because it might be outside
-      // of the root directory.
-      ...(publicDir && publicFiles ? [publicDir] : []),
-    ],
-    resolvedWatchOptions,
-  )
-  // If watch is turned off, patch `.add()` as a noop to prevent programmatically
-  // watching additional files and to keep it fast.
-  // eslint-disable-next-line eqeqeq -- null means disabled
-  if (serverConfig.watch === null) {
-    watcher.add = function () {
-      return this
-    }
-  }
+  // eslint-disable-next-line eqeqeq
+  const watchEnabled = serverConfig.watch !== null
+  const watcher = watchEnabled
+    ? (chokidar.watch(
+        // config file dependencies and env file might be outside of root
+        [
+          root,
+          ...config.configFileDependencies,
+          ...getEnvFilesForMode(config.mode, config.envDir),
+          // Watch the public directory explicitly because it might be outside
+          // of the root directory.
+          ...(publicDir && publicFiles ? [publicDir] : []),
+        ],
+
+        resolvedWatchOptions,
+      ) as FSWatcher)
+    : createNoopWatcher(resolvedWatchOptions)
 
   const environments: Record<string, DevEnvironment> = {}
 
@@ -546,8 +551,7 @@ export async function _createServer(
       return ssrTransform(code, inMap, url, originalCode, {
         json: {
           stringify:
-            config.json?.stringify === true &&
-            config.json.namedExports !== true,
+            config.json.stringify === true && config.json.namedExports !== true,
         },
       })
     },
@@ -578,10 +582,13 @@ export async function _createServer(
           return
         }
         // Unexpected error, log the issue but avoid an unhandled exception
-        server.config.logger.error(`Pre-transform error: ${e.message}`, {
-          error: e,
-          timestamp: true,
-        })
+        server.config.logger.error(
+          buildErrorMessage(e, [`Pre-transform error: ${e.message}`], false),
+          {
+            error: e,
+            timestamp: true,
+          },
+        )
       }
     },
     transformIndexHtml(url, html, originalUrl) {
@@ -680,6 +687,7 @@ export async function _createServer(
           ),
         ),
         closeHttpServer(),
+        server._ssrCompatModuleRunner?.close(),
       ])
       server.resolvedUrls = null
     },
@@ -738,10 +746,11 @@ export async function _createServer(
     },
   })
 
-  const closeServerAndExit = async () => {
+  const closeServerAndExit = async (_: unknown, exitCode?: number) => {
     try {
       await server.close()
     } finally {
+      process.exitCode ??= exitCode ? 128 + exitCode : undefined
       process.exit()
     }
   }
@@ -761,6 +770,7 @@ export async function _createServer(
 
   const onFileAddUnlink = async (file: string, isUnlink: boolean) => {
     file = normalizePath(file)
+    reloadOnTsconfigChange(server, file)
 
     await pluginContainer.watchChange(file, {
       event: isUnlink ? 'delete' : 'create',
@@ -794,6 +804,7 @@ export async function _createServer(
 
   watcher.on('change', async (file) => {
     file = normalizePath(file)
+    reloadOnTsconfigChange(server, file)
 
     await pluginContainer.watchChange(file, { event: 'update' })
     // invalidate module graph cache on file change
@@ -802,8 +813,6 @@ export async function _createServer(
     }
     await onHMRUpdate('update', file)
   })
-
-  getFsUtils(config).initWatcher?.(watcher)
 
   watcher.on('add', (file) => {
     onFileAddUnlink(file, false)
@@ -882,13 +891,7 @@ export async function _createServer(
 
   // html fallback
   if (config.appType === 'spa' || config.appType === 'mpa') {
-    middlewares.use(
-      htmlFallbackMiddleware(
-        root,
-        config.appType === 'spa',
-        getFsUtils(config),
-      ),
-    )
+    middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
   }
 
   // run post config hooks
@@ -1026,32 +1029,63 @@ function resolvedAllowDir(root: string, dir: string): string {
   return normalizePath(path.resolve(root, dir))
 }
 
+export const serverConfigDefaults = Object.freeze({
+  port: DEFAULT_DEV_PORT,
+  strictPort: false,
+  host: 'localhost',
+  https: undefined,
+  open: false,
+  proxy: undefined,
+  cors: true,
+  headers: {},
+  // hmr
+  // ws
+  warmup: {
+    clientFiles: [],
+    ssrFiles: [],
+  },
+  // watch
+  middlewareMode: false,
+  fs: {
+    strict: true,
+    // allow
+    deny: ['.env', '.env.*', '*.{crt,pem}', '**/.git/**'],
+  },
+  // origin
+  preTransformRequests: true,
+  // sourcemapIgnoreList
+  perEnvironmentStartEndDuringDev: false,
+  // hotUpdateEnvironments
+} satisfies ServerOptions)
+
 export function resolveServerOptions(
   root: string,
   raw: ServerOptions | undefined,
   logger: Logger,
 ): ResolvedServerOptions {
-  const server: ResolvedServerOptions = {
-    preTransformRequests: true,
-    perEnvironmentBuildStartEnd: false,
-    ...(raw as Omit<ResolvedServerOptions, 'sourcemapIgnoreList'>),
-    sourcemapIgnoreList:
-      raw?.sourcemapIgnoreList === false
-        ? () => false
-        : raw?.sourcemapIgnoreList || isInNodeModules,
-    middlewareMode: raw?.middlewareMode || false,
-  }
-  let allowDirs = server.fs?.allow
-  const deny = server.fs?.deny || [
-    '.env',
-    '.env.*',
-    '*.{crt,pem}',
-    '**/.git/**',
-  ]
+  const _server = mergeWithDefaults(
+    {
+      ...serverConfigDefaults,
+      host: undefined, // do not set here to detect whether host is set or not
+      sourcemapIgnoreList: isInNodeModules,
+    },
+    raw ?? {},
+  )
 
-  if (!allowDirs) {
-    allowDirs = [searchForWorkspaceRoot(root)]
+  const server: ResolvedServerOptions = {
+    ..._server,
+    fs: {
+      ..._server.fs,
+      // run searchForWorkspaceRoot only if needed
+      allow: raw?.fs?.allow ?? [searchForWorkspaceRoot(root)],
+    },
+    sourcemapIgnoreList:
+      _server.sourcemapIgnoreList === false
+        ? () => false
+        : _server.sourcemapIgnoreList,
   }
+
+  let allowDirs = server.fs.allow
 
   if (process.versions.pnp) {
     // running a command fails if cwd doesn't exist and root may not exist
@@ -1084,12 +1118,7 @@ export function resolveServerOptions(
     allowDirs.push(resolvedClientDir)
   }
 
-  server.fs = {
-    strict: server.fs?.strict ?? true,
-    allow: allowDirs,
-    deny,
-    cachedChecks: server.fs?.cachedChecks,
-  }
+  server.fs.allow = allowDirs
 
   if (server.origin?.endsWith('/')) {
     server.origin = server.origin.slice(0, -1)

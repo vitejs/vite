@@ -283,15 +283,14 @@ class EnvironmentPluginContainer {
     hookName: H,
     context: (plugin: Plugin) => ThisType<FunctionPluginHooks[H]>,
     args: (plugin: Plugin) => Parameters<FunctionPluginHooks[H]>,
-    condition?: (plugin: Plugin) => boolean,
+    condition?: (plugin: Plugin) => boolean | undefined,
   ): Promise<void> {
     const parallelPromises: Promise<unknown>[] = []
     for (const plugin of this.getSortedPlugins(hookName)) {
       // Don't throw here if closed, so buildEnd and closeBundle hooks can finish running
-      const hook = plugin[hookName]
-      if (!hook) continue
       if (condition && !condition(plugin)) continue
 
+      const hook = plugin[hookName]
       const handler: Function = getHookHandler(hook)
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
@@ -312,6 +311,7 @@ class EnvironmentPluginContainer {
       return
     }
     this._started = true
+    const config = this.environment.getTopLevelConfig()
     this._buildStartPromise = this.handleHookPromise(
       this.hookParallel(
         'buildStart',
@@ -319,7 +319,8 @@ class EnvironmentPluginContainer {
         () => [this.options as NormalizedInputOptions],
         (plugin) =>
           this.environment.name === 'client' ||
-          plugin.perEnvironmentStartEndDuringDev === true,
+          config.server.perEnvironmentStartEndDuringDev ||
+          plugin.perEnvironmentStartEndDuringDev,
       ),
     ) as Promise<void>
     await this._buildStartPromise
@@ -358,7 +359,6 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('resolveId')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
-      if (!plugin.resolveId) continue
       if (skip?.has(plugin)) continue
 
       ctx._plugin = plugin
@@ -421,7 +421,6 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('load')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
-      if (!plugin.load) continue
       ctx._plugin = plugin
       const handler = getHookHandler(plugin.load)
       const result = await this.handleHookPromise(
@@ -456,7 +455,6 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('transform')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
-      if (!plugin.transform) continue
 
       ctx._updateActiveInfo(plugin, id, code)
       const start = debugPluginTransform ? performance.now() : 0
@@ -512,13 +510,15 @@ class EnvironmentPluginContainer {
     if (this._closed) return
     this._closed = true
     await Promise.allSettled(Array.from(this._processesing))
+    const config = this.environment.getTopLevelConfig()
     await this.hookParallel(
       'buildEnd',
       (plugin) => this._getPluginContext(plugin),
       () => [],
       (plugin) =>
         this.environment.name === 'client' ||
-        plugin.perEnvironmentStartEndDuringDev !== true,
+        config.server.perEnvironmentStartEndDuringDev ||
+        plugin.perEnvironmentStartEndDuringDev,
     )
     await this.hookParallel(
       'closeBundle',
@@ -560,7 +560,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     },
   ) {
     let skip: Set<Plugin> | undefined
-    if (options?.skipSelf !== false && this._plugin) {
+    if (options?.skipSelf !== false) {
       skip = new Set(this._resolveSkips)
       skip.add(this._plugin)
     }
@@ -684,7 +684,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     if (err.pluginCode) {
       return err // The plugin likely called `this.error`
     }
-    if (this._plugin) err.plugin = this._plugin.name
+    err.plugin = this._plugin.name
     if (this._activeId && !err.id) err.id = this._activeId
     if (this._activeCode) {
       err.pluginCode = this._activeCode
@@ -736,7 +736,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       if (
         this instanceof TransformPluginContext &&
         typeof err.loc?.line === 'number' &&
-        typeof err.loc?.column === 'number'
+        typeof err.loc.column === 'number'
       ) {
         const rawSourceMap = this._getCombinedSourcemap()
         if (rawSourceMap && 'version' in rawSourceMap) {
@@ -745,7 +745,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
             line: Number(err.loc.line),
             column: Number(err.loc.column),
           })
-          if (source && line != null && column != null) {
+          if (source) {
             err.loc = { file: source, line, column }
           }
         }
@@ -847,7 +847,7 @@ class TransformPluginContext
     }
   }
 
-  _getCombinedSourcemap(): SourceMap {
+  _getCombinedSourcemap(): SourceMap | { mappings: '' } | null {
     if (
       debugSourcemapCombine &&
       debugSourcemapCombineFilter &&
@@ -867,7 +867,7 @@ class TransformPluginContext
       combinedMap.mappings === ''
     ) {
       this.sourcemapChain.length = 0
-      return combinedMap as SourceMap
+      return combinedMap
     }
 
     for (let m of this.sourcemapChain) {
@@ -908,11 +908,11 @@ class TransformPluginContext
       this.combinedMap = combinedMap
       this.sourcemapChain.length = 0
     }
-    return this.combinedMap as SourceMap
+    return this.combinedMap
   }
 
   getCombinedSourcemap(): SourceMap {
-    const map = this._getCombinedSourcemap() as SourceMap | { mappings: '' }
+    const map = this._getCombinedSourcemap()
     if (!map || (!('version' in map) && map.mappings === '')) {
       return new MagicString(this.originalCode).generateMap({
         includeContent: true,
@@ -949,7 +949,7 @@ class PluginContainer {
   }) {
     return options?.environment
       ? options.environment
-      : this.environments?.[options?.ssr ? 'ssr' : 'client']
+      : this.environments[options?.ssr ? 'ssr' : 'client']
   }
 
   private _getPluginContainer(options?: {

@@ -117,6 +117,7 @@ For SSR builds, deduplication does not work for ESM build outputs configured fro
 ## resolve.conditions
 
 - **Type:** `string[]`
+- **Default:** `['module', 'browser', 'development|production']` (`defaultClientConditions`)
 
 Additional allowed conditions when resolving [Conditional Exports](https://nodejs.org/api/packages.html#packages_conditional_exports) from a package.
 
@@ -135,7 +136,9 @@ A package with conditional exports may have the following `exports` field in its
 
 Here, `import` and `require` are "conditions". Conditions can be nested and should be specified from most specific to least specific.
 
-Vite has a list of "allowed conditions" and will match the first condition that is in the allowed list. The default allowed conditions are: `import`, `module`, `browser`, `default`, and `production/development` based on current mode. The `resolve.conditions` config option allows specifying additional allowed conditions.
+`development|production` is a special value that is replaced with `production` or `development` depending on the value of `process.env.NODE_ENV`. It is replaced with `production` when `process.env.NODE_ENV === 'production'` and `development` otherwise.
+
+Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
 
 :::warning Resolving subpath exports
 Export keys ending with "/" is deprecated by Node and may not work well. Please contact the package author to use [`*` subpath patterns](https://nodejs.org/api/packages.html#package-entry-points) instead.
@@ -144,7 +147,7 @@ Export keys ending with "/" is deprecated by Node and may not work well. Please 
 ## resolve.mainFields
 
 - **Type:** `string[]`
-- **Default:** `['browser', 'module', 'jsnext:main', 'jsnext']`
+- **Default:** `['browser', 'module', 'jsnext:main', 'jsnext']` (`defaultClientMainFields`)
 
 List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
 
@@ -225,7 +228,7 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 
 - **Type:** `Record<string, object>`
 
-Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessors can be found in their respective documentation:
+Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessor can be found in their respective documentation:
 
 - `sass`/`scss`:
   - Select the sass API to use with `api: "modern-compiler" | "modern" | "legacy"` (default `"modern-compiler"` if `sass-embedded` is installed, otherwise `"modern"`). For the best performance, it's recommended to use `api: "modern-compiler"` with the `sass-embedded` package. The `"legacy"` API is deprecated and will be removed in Vite 7.

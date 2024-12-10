@@ -6,11 +6,11 @@ import {
   DEP_VERSION_RE,
   ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
-  ERR_OUTDATED_OPTIMIZED_DEP,
 } from '../constants'
 import { createDebugger } from '../utils'
 import { optimizedDepInfoFromFile } from '../optimizer'
 import { cleanUrl } from '../../shared/utils'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
 
 const debug = createDebugger('vite:optimize-deps')
 

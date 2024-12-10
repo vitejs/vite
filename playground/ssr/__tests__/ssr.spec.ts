@@ -36,7 +36,16 @@ test(`deadlock doesn't happen for dynamic imports`, async () => {
   )
 })
 
-test('should restart ssr', async () => {
+test.runIf(isServe)('html proxy is encoded', async () => {
+  await page.goto(
+    `${url}?%22%3E%3C/script%3E%3Cscript%3Econsole.log(%27html%20proxy%20is%20not%20encoded%27)%3C/script%3E`,
+  )
+
+  expect(browserLogs).not.toContain('html proxy is not encoded')
+})
+
+// run this at the end to reduce flakiness
+test.runIf(isServe)('should restart ssr', async () => {
   editFile('./vite.config.ts', (content) => content)
   await withRetry(async () => {
     expect(serverLogs).toEqual(
@@ -46,24 +55,4 @@ test('should restart ssr', async () => {
       expect.arrayContaining([expect.stringMatching('error')]),
     )
   })
-})
-
-test.runIf(isServe)('html proxy is encoded', async () => {
-  try {
-    await page.goto(
-      `${url}?%22%3E%3C/script%3E%3Cscript%3Econsole.log(%27html%20proxy%20is%20not%20encoded%27)%3C/script%3E`,
-    )
-
-    expect(browserLogs).not.toContain('html proxy is not encoded')
-  } catch (e) {
-    // Ignore net::ERR_ABORTED, which is causing flakiness in this test
-    if (
-      !(
-        e.message.includes('net::ERR_ABORTED') ||
-        e.message.includes('interrupted')
-      )
-    ) {
-      throw e
-    }
-  }
 })

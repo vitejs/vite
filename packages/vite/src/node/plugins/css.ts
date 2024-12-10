@@ -33,6 +33,10 @@ import type {
   SassModernPreprocessBaseOptions,
   StylusPreprocessorBaseOptions,
 } from 'types/internal/cssPreprocessorOptions'
+import type {
+  TransformAttributeResult as LightningCssTransformAttributeResult,
+  TransformResult as LightningCssTransformResult,
+} from 'lightningcss'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -41,9 +45,11 @@ import {
   toOutputFilePathInCss,
   toOutputFilePathInJS,
 } from '../build'
+import type { LibraryOptions } from '../build'
 import {
   CLIENT_PUBLIC_PATH,
   CSS_LANGS_RE,
+  DEV_PROD_CONDITION,
   ESBUILD_MODULES_TARGET,
   SPECIAL_QUERY_RE,
 } from '../constants'
@@ -60,11 +66,13 @@ import {
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
+  getPkgName,
   injectQuery,
   isDataUrl,
   isExternalUrl,
   isObject,
   joinUrlSegments,
+  mergeWithDefaults,
   normalizePath,
   processSrcSet,
   removeDirectQuery,
@@ -81,6 +89,8 @@ import { PartialEnvironment } from '../baseEnvironment'
 import type { TransformPluginContext } from '../server/pluginContainer'
 import { searchForWorkspaceRoot } from '../server/searchRoot'
 import { type DevEnvironment } from '..'
+import type { PackageCache } from '../packages'
+import { findNearestPackageData } from '../packages'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -180,25 +190,35 @@ export interface CSSModulesOptions {
       ) => string)
 }
 
-export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> & {
-  lightningcss?: LightningCSSOptions
-}
+export const cssConfigDefaults = Object.freeze({
+  /** @experimental */
+  transformer: 'postcss',
+  // modules
+  // preprocessorOptions
+  /** @experimental */
+  preprocessorMaxWorkers: 0,
+  // postcss
+  /** @experimental */
+  devSourcemap: false,
+  // lightningcss
+} satisfies CSSOptions)
+
+export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
+  Required<Pick<CSSOptions, 'transformer'>> & {
+    lightningcss?: LightningCSSOptions
+  }
 
 export function resolveCSSOptions(
   options: CSSOptions | undefined,
 ): ResolvedCSSOptions {
-  if (options?.transformer === 'lightningcss') {
-    return {
-      ...options,
-      lightningcss: {
-        ...options.lightningcss,
-        targets:
-          options.lightningcss?.targets ??
-          convertTargets(ESBUILD_MODULES_TARGET),
-      },
-    }
+  const resolved = mergeWithDefaults(cssConfigDefaults, options ?? {})
+  if (resolved.transformer === 'lightningcss') {
+    resolved.lightningcss ??= {}
+    resolved.lightningcss.targets ??= convertTargets(ESBUILD_MODULES_TARGET)
+  } else {
+    resolved.lightningcss = undefined
   }
-  return { ...options, lightningcss: undefined }
+  return resolved
 }
 
 const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
@@ -213,7 +233,7 @@ const functionCallRE = /^[A-Z_][.\w-]*\(/i
 const transformOnlyRE = /[?&]transform-only\b/
 const nonEscapedDoubleQuoteRe = /(?<!\\)"/g
 
-const cssBundleName = 'style.css'
+const defaultCssBundleName = 'style.css'
 
 const enum PreprocessLang {
   less = 'less',
@@ -256,6 +276,9 @@ export const removedPureCssFilesCache = new WeakMap<
   Map<string, RenderedChunk>
 >()
 
+// Used only if the config doesn't code-split CSS (builds a single CSS file)
+export const cssBundleNameCache = new WeakMap<ResolvedConfig, string>()
+
 const postcssConfigCache = new WeakMap<
   ResolvedConfig,
   PostCSSConfigResult | null | Promise<PostCSSConfigResult | null>
@@ -283,8 +306,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   let preprocessorWorkerController: PreprocessorWorkerController | undefined
 
   // warm up cache for resolved postcss config
-  if (config.css?.transformer !== 'lightningcss') {
-    resolvePostcssConfig(config)
+  if (config.css.transformer !== 'lightningcss') {
+    resolvePostcssConfig(config).catch(() => {
+      /* will be handled later */
+    })
   }
 
   return {
@@ -455,6 +480,21 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     }
   }
 
+  function getCssBundleName() {
+    const cached = cssBundleNameCache.get(config)
+    if (cached) return cached
+
+    const cssBundleName = config.build.lib
+      ? resolveLibCssFilename(
+          config.build.lib,
+          config.root,
+          config.packageCache,
+        )
+      : defaultCssBundleName
+    cssBundleNameCache.set(config, cssBundleName)
+    return cssBundleName
+  }
+
   return {
     name: 'vite:css-post',
 
@@ -510,7 +550,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       if (config.command === 'serve') {
         const getContentWithSourcemap = async (content: string) => {
-          if (config.css?.devSourcemap) {
+          if (config.css.devSourcemap) {
             const sourcemap = this.getCombinedSourcemap()
             if (sourcemap.mappings) {
               await injectSourcesContent(sourcemap, cleanUrl(id), config.logger)
@@ -523,12 +563,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         if (isDirectCSSRequest(id)) {
           return null
         }
-        // server only
-        if (this.environment.config.consumer !== 'client') {
-          return modulesCode || `export default ${JSON.stringify(css)}`
-        }
         if (inlined) {
           return `export default ${JSON.stringify(css)}`
+        }
+        if (this.environment.config.consumer === 'server') {
+          return modulesCode || 'export {}'
         }
 
         const cssContent = await getContentWithSourcemap(css)
@@ -829,7 +868,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         } else {
           // resolve public URL from CSS paths, we need to use absolute paths
-          chunkCSS = resolveAssetUrlsInCss(chunkCSS, cssBundleName)
+          chunkCSS = resolveAssetUrlsInCss(chunkCSS, getCssBundleName())
           // finalizeCss is called for the aggregated chunk in generateBundle
 
           chunkCSSMap.set(chunk.fileName, chunkCSS)
@@ -866,13 +905,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       // extract as single css bundle if no codesplit
-      if (!config.build.cssCodeSplit && !hasEmitted) {
+      if (!this.environment.config.build.cssCodeSplit && !hasEmitted) {
         let extractedCss = ''
         const collected = new Set<OutputChunk>()
         // will be populated in order they are used by entry points
         const dynamicImports = new Set<string>()
 
-        function collect(chunk: OutputChunk | OutputAsset) {
+        function collect(chunk: OutputChunk | OutputAsset | undefined) {
           if (!chunk || chunk.type !== 'chunk' || collected.has(chunk)) return
           collected.add(chunk)
 
@@ -903,9 +942,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           hasEmitted = true
           extractedCss = await finalizeCss(extractedCss, true, config)
           this.emitFile({
-            name: cssBundleName,
+            name: getCssBundleName(),
             type: 'asset',
             source: extractedCss,
+            // this file is an implicit entry point, use `style.css` as the original file name
+            // this name is also used as a key in the manifest
+            originalFileName: 'style.css',
           })
         }
       }
@@ -1020,7 +1062,11 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
               isCSSRequest(file)
                 ? moduleGraph.createFileOnlyEntry(file)
                 : await moduleGraph.ensureEntryFromUrl(
-                    fileToDevUrl(file, config, /* skipBase */ true),
+                    await fileToDevUrl(
+                      this.environment,
+                      file,
+                      /* skipBase */ true,
+                    ),
                   ),
             )
           }
@@ -1070,10 +1116,17 @@ export function getEmptyChunkReplacer(
     code.replace(
       emptyChunkRE,
       // remove css import while preserving source map location
-      (m) =>
-        outputFormat === 'es'
-          ? `/* empty css ${''.padEnd(m.length - 15)}*/`
-          : `${m.at(-1)}/* empty css ${''.padEnd(m.length - 16)}*/`,
+      (m, p1, p2) => {
+        if (outputFormat === 'es') {
+          return `/* empty css ${''.padEnd(m.length - 15)}*/`
+        }
+        if (p2 === ';') {
+          // if it ends with `;`, move it before and remove the leading `,`
+          return `${p2}/* empty css ${''.padEnd(m.length - 16)}*/`
+        }
+        // if it ends with `,`, remove it but keep the leading `,` if exists
+        return `${p1}/* empty css ${''.padEnd(m.length - 15 - p1.length)}*/`
+      },
     )
 }
 
@@ -1092,7 +1145,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
       return (cssResolve ??= createBackCompatIdResolver(config, {
         extensions: ['.css'],
         mainFields: ['style'],
-        conditions: ['style'],
+        conditions: ['style', DEV_PROD_CONDITION],
         tryIndex: false,
         preferRelative: true,
       }))
@@ -1103,7 +1156,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
         const resolver = createBackCompatIdResolver(config, {
           extensions: ['.scss', '.sass', '.css'],
           mainFields: ['sass', 'style'],
-          conditions: ['sass', 'style'],
+          conditions: ['sass', 'style', DEV_PROD_CONDITION],
           tryIndex: true,
           tryPrefix: '_',
           preferRelative: true,
@@ -1122,7 +1175,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
       return (lessResolve ??= createBackCompatIdResolver(config, {
         extensions: ['.less', '.css'],
         mainFields: ['less', 'style'],
-        conditions: ['less', 'style'],
+        conditions: ['less', 'style', DEV_PROD_CONDITION],
         tryIndex: false,
         preferRelative: true,
       }))
@@ -1144,7 +1197,7 @@ async function compileCSSPreprocessors(
   workerController: PreprocessorWorkerController,
 ): Promise<{ code: string; map?: ExistingRawSourceMap; deps?: Set<string> }> {
   const { config } = environment
-  const { preprocessorOptions, devSourcemap } = config.css ?? {}
+  const { preprocessorOptions, devSourcemap } = config.css
   const atImportResolvers = getAtImportResolvers(
     environment.getTopLevelConfig(),
   )
@@ -1169,7 +1222,7 @@ async function compileCSSPreprocessors(
   }
 
   let deps: Set<string> | undefined
-  if (preprocessResult.deps) {
+  if (preprocessResult.deps.length > 0) {
     const normalizedFilename = normalizePath(opts.filename)
     // sometimes sass registers the file itself as a dep
     deps = new Set(
@@ -1217,11 +1270,11 @@ async function compileCSS(
   deps?: Set<string>
 }> {
   const { config } = environment
-  if (config.css?.transformer === 'lightningcss') {
+  if (config.css.transformer === 'lightningcss') {
     return compileLightningCSS(id, code, environment, urlReplacer)
   }
 
-  const { modules: modulesOptions, devSourcemap } = config.css || {}
+  const { modules: modulesOptions, devSourcemap } = config.css
   const isModule = modulesOptions !== false && cssModuleRE.test(id)
   // although at serve time it can work without processing, we do need to
   // crawl them in order to register watch dependencies.
@@ -1265,10 +1318,8 @@ async function compileCSS(
   const atImportResolvers = getAtImportResolvers(
     environment.getTopLevelConfig(),
   )
-  const postcssOptions = (postcssConfig && postcssConfig.options) || {}
-
-  const postcssPlugins =
-    postcssConfig && postcssConfig.plugins ? postcssConfig.plugins.slice() : []
+  const postcssOptions = postcssConfig?.options ?? {}
+  const postcssPlugins = postcssConfig?.plugins.slice() ?? []
 
   if (needInlineImport) {
     postcssPlugins.unshift(
@@ -1624,7 +1675,7 @@ async function resolvePostcssConfig(
   }
 
   // inline postcss config via vite config
-  const inlineOptions = config.css?.postcss
+  const inlineOptions = config.css.postcss
   if (isObject(inlineOptions)) {
     const options = { ...inlineOptions }
 
@@ -1652,9 +1703,14 @@ async function resolvePostcssConfig(
       return null
     })
     // replace cached promise to result object when finished
-    result.then((resolved) => {
-      postcssConfigCache.set(config, resolved)
-    })
+    result.then(
+      (resolved) => {
+        postcssConfigCache.set(config, resolved)
+      },
+      () => {
+        /* keep as rejected promise, will be handled later */
+      },
+    )
   }
 
   postcssConfigCache.set(config, result)
@@ -1667,10 +1723,11 @@ type CssUrlReplacer = (
 ) => string | Promise<string>
 // https://drafts.csswg.org/css-syntax-3/#identifier-code-point
 export const cssUrlRE =
-  /(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
+  /(?<!@import\s+)(?<=^|[^\w\-\u0080-\uffff])url\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
 export const cssDataUriRE =
   /(?<=^|[^\w\-\u0080-\uffff])data-uri\((\s*('[^']+'|"[^"]+")\s*|[^'")]+)\)/
-export const importCssRE = /@import ('[^']+\.css'|"[^"]+\.css"|[^'")]+\.css)/
+export const importCssRE =
+  /@import\s+(?:url\()?('[^']+\.css'|"[^"]+\.css"|[^'"\s)]+\.css)/
 // Assuming a function name won't be longer than 256 chars
 // eslint-disable-next-line regexp/no-unused-capturing-group -- doesn't detect asyncReplace usage
 const cssImageSetRE = /(?<=image-set\()((?:[\w-]{1,256}\([^)]*\)|[^)])*)(?=\))/
@@ -1703,16 +1760,26 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
           const replacerForDeclaration = (rawUrl: string) => {
             return opts.replacer(rawUrl, importer)
           }
-          const rewriterToUse = isCssImageSet
-            ? rewriteCssImageSet
-            : rewriteCssUrls
-          promises.push(
-            rewriterToUse(declaration.value, replacerForDeclaration).then(
-              (url) => {
-                declaration.value = url
-              },
-            ),
-          )
+          if (isCssUrl && isCssImageSet) {
+            promises.push(
+              rewriteCssUrls(declaration.value, replacerForDeclaration)
+                .then((url) => rewriteCssImageSet(url, replacerForDeclaration))
+                .then((url) => {
+                  declaration.value = url
+                }),
+            )
+          } else {
+            const rewriterToUse = isCssImageSet
+              ? rewriteCssImageSet
+              : rewriteCssUrls
+            promises.push(
+              rewriterToUse(declaration.value, replacerForDeclaration).then(
+                (url) => {
+                  declaration.value = url
+                },
+              ),
+            )
+          }
         }
       })
       if (promises.length) {
@@ -1834,7 +1901,8 @@ async function doImportCSSReplace(
     return matched
   }
 
-  return `@import ${wrap}${await replacer(rawUrl)}${wrap}`
+  const prefix = matched.includes('url(') ? 'url(' : ''
+  return `@import ${prefix}${wrap}${await replacer(rawUrl)}${wrap}`
 }
 
 async function minifyCSS(
@@ -1848,10 +1916,12 @@ async function minifyCSS(
 
   if (config.build.cssMinify === 'lightningcss') {
     const { code, warnings } = (await importLightningCSS()).transform({
-      ...config.css?.lightningcss,
+      ...config.css.lightningcss,
       targets: convertTargets(config.build.cssTarget),
       cssModules: undefined,
-      filename: cssBundleName,
+      // TODO: Pass actual filename here, which can also be passed to esbuild's
+      // `sourcefile` option below to improve error messages
+      filename: defaultCssBundleName,
       code: Buffer.from(css),
       minify: true,
     })
@@ -2092,7 +2162,7 @@ function cleanScssBugUrl(url: string) {
     // check bug via `window` and `location` global
     typeof window !== 'undefined' &&
     typeof location !== 'undefined' &&
-    typeof location?.href === 'string'
+    typeof location.href === 'string'
   ) {
     const prefix = location.href.replace(/\/$/, '')
     return url.replace(prefix, '')
@@ -2182,7 +2252,7 @@ const makeScssWorker = (
           done,
         ) => {
           internalImporter(url, importer, options.filename).then((data) =>
-            done?.(data),
+            done(data),
           )
         }
         const importer = [_internalImporter]
@@ -2539,6 +2609,16 @@ const scssProcessor = (
         e.message = `[sass] ${e.message}`
         e.id = e.file
         e.frame = e.formatted
+        // modern api lacks `line` and `column` property. extract from `e.span`.
+        // NOTE: the values are 0-based so +1 is required.
+        if (e.span?.start) {
+          e.line = e.span.start.line + 1
+          e.column = e.span.start.column + 1
+          // it also lacks `e.formatted`, so we shim with the message here since
+          // sass error messages have the frame already in them and we don't want
+          // to re-generate a new frame (same as legacy api)
+          e.frame = e.message
+        }
         return { code: '', error: e, deps: [] }
       }
     },
@@ -2644,13 +2724,10 @@ const makeLessWorker = (
       '@',
       resolvers.less,
     )
-    if (result) {
-      return {
-        resolved,
-        contents: 'contents' in result ? result.contents : undefined,
-      }
+    return {
+      resolved,
+      contents: 'contents' in result ? result.contents : undefined,
     }
-    return result
   }
 
   const worker = new WorkerWithFallback(
@@ -2804,7 +2881,8 @@ const lessProcessor = (
         return { code: '', error: normalizedError, deps: [] }
       }
 
-      const map: ExistingRawSourceMap = result.map && JSON.parse(result.map)
+      const map: ExistingRawSourceMap | undefined =
+        result.map && JSON.parse(result.map)
       if (map) {
         delete map.sourcesContent
       }
@@ -3021,7 +3099,7 @@ const createPreprocessorWorkerController = (maxWorkers: number | undefined) => {
     [PreprocessLang.styl]: styl.process,
     [PreprocessLang.stylus]: styl.process,
     close,
-  } as const satisfies { [K in PreprocessLang | 'close']: unknown }
+  } as const satisfies Record<PreprocessLang | 'close', unknown>
 }
 
 const normalizeMaxWorkers = (maxWorker: number | true | undefined) => {
@@ -3060,60 +3138,71 @@ async function compileLightningCSS(
   const toAbsolute = (filePath: string) =>
     path.isAbsolute(filePath) ? filePath : path.join(config.root, filePath)
 
-  const res = styleAttrRE.test(id)
-    ? (await importLightningCSS()).transformStyleAttribute({
-        filename,
-        code: Buffer.from(src),
-        targets: config.css?.lightningcss?.targets,
-        minify: config.isProduction && !!config.build.cssMinify,
-        analyzeDependencies: true,
-      })
-    : await (
-        await importLightningCSS()
-      ).bundleAsync({
-        ...config.css?.lightningcss,
-        filename,
-        resolver: {
-          read(filePath) {
-            if (filePath === filename) {
-              return src
-            }
-            // This happens with html-proxy (#13776)
-            if (!filePath.endsWith('.css')) {
-              return src
-            }
-            return fs.readFileSync(toAbsolute(filePath), 'utf-8')
-          },
-          async resolve(id, from) {
-            const publicFile = checkPublicFile(
-              id,
-              environment.getTopLevelConfig(),
-            )
-            if (publicFile) {
-              return publicFile
-            }
+  let res: LightningCssTransformAttributeResult | LightningCssTransformResult
+  try {
+    res = styleAttrRE.test(id)
+      ? (await importLightningCSS()).transformStyleAttribute({
+          filename,
+          code: Buffer.from(src),
+          targets: config.css.lightningcss?.targets,
+          minify: config.isProduction && !!config.build.cssMinify,
+          analyzeDependencies: true,
+        })
+      : await (
+          await importLightningCSS()
+        ).bundleAsync({
+          ...config.css.lightningcss,
+          filename,
+          resolver: {
+            read(filePath) {
+              if (filePath === filename) {
+                return src
+              }
+              // This happens with html-proxy (#13776)
+              if (!filePath.endsWith('.css')) {
+                return src
+              }
+              return fs.readFileSync(toAbsolute(filePath), 'utf-8')
+            },
+            async resolve(id, from) {
+              const publicFile = checkPublicFile(
+                id,
+                environment.getTopLevelConfig(),
+              )
+              if (publicFile) {
+                return publicFile
+              }
 
-            const resolved = await getAtImportResolvers(
-              environment.getTopLevelConfig(),
-            ).css(environment, id, toAbsolute(from))
+              const resolved = await getAtImportResolvers(
+                environment.getTopLevelConfig(),
+              ).css(environment, id, toAbsolute(from))
 
-            if (resolved) {
-              deps.add(resolved)
-              return resolved
-            }
-            return id
+              if (resolved) {
+                deps.add(resolved)
+                return resolved
+              }
+              return id
+            },
           },
-        },
-        minify: config.isProduction && !!config.build.cssMinify,
-        sourceMap:
-          config.command === 'build'
-            ? !!config.build.sourcemap
-            : config.css?.devSourcemap,
-        analyzeDependencies: true,
-        cssModules: cssModuleRE.test(id)
-          ? (config.css?.lightningcss?.cssModules ?? true)
-          : undefined,
-      })
+          minify: config.isProduction && !!config.build.cssMinify,
+          sourceMap:
+            config.command === 'build'
+              ? !!config.build.sourcemap
+              : config.css.devSourcemap,
+          analyzeDependencies: true,
+          cssModules: cssModuleRE.test(id)
+            ? (config.css.lightningcss?.cssModules ?? true)
+            : undefined,
+        })
+  } catch (e) {
+    e.message = `[lightningcss] ${e.message}`
+    e.loc = {
+      file: toAbsolute(e.fileName),
+      line: e.loc.line,
+      column: e.loc.column - 1, // 1-based
+    }
+    throw e
+  }
 
   // NodeJS res.code = Buffer
   // Deno res.code = Uint8Array
@@ -3126,7 +3215,6 @@ async function compileLightningCSS(
           css = css.replace(dep.placeholder, () => dep.url)
           break
         }
-        deps.add(dep.url)
         if (urlReplacer) {
           const replaceUrl = await urlReplacer(
             dep.url,
@@ -3254,4 +3342,26 @@ export const convertTargets = (
 
   convertTargetsCache.set(esbuildTarget, targets)
   return targets
+}
+
+export function resolveLibCssFilename(
+  libOptions: LibraryOptions,
+  root: string,
+  packageCache?: PackageCache,
+): string {
+  if (typeof libOptions.cssFileName === 'string') {
+    return `${libOptions.cssFileName}.css`
+  } else if (typeof libOptions.fileName === 'string') {
+    return `${libOptions.fileName}.css`
+  }
+
+  const packageJson = findNearestPackageData(root, packageCache)?.data
+  const name = packageJson ? getPkgName(packageJson.name) : undefined
+
+  if (!name)
+    throw new Error(
+      'Name in package.json is required if option "build.lib.cssFileName" is not provided.',
+    )
+
+  return `${name}.css`
 }

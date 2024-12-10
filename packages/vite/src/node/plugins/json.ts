@@ -29,13 +29,15 @@ export interface JsonOptions {
 // Custom json filter for vite
 const jsonExtRE = /\.json(?:$|\?)(?!commonjs-(?:proxy|external))/
 
+const jsonObjRE = /^\s*\{/
+
 const jsonLangs = `\\.(?:json|json5)(?:$|\\?)`
 const jsonLangRE = new RegExp(jsonLangs)
 export const isJSONRequest = (request: string): boolean =>
   jsonLangRE.test(request)
 
 export function jsonPlugin(
-  options: JsonOptions = {},
+  options: Required<JsonOptions>,
   isBuild: boolean,
 ): Plugin {
   return {
@@ -49,36 +51,34 @@ export function jsonPlugin(
 
       try {
         if (options.stringify !== false) {
-          if (options.namedExports) {
+          if (options.namedExports && jsonObjRE.test(json)) {
             const parsed = JSON.parse(json)
-            if (typeof parsed === 'object' && parsed != null) {
-              const keys = Object.keys(parsed)
+            const keys = Object.keys(parsed)
 
-              let code = ''
-              let defaultObjectCode = '{\n'
-              for (const key of keys) {
-                if (key === makeLegalIdentifier(key)) {
-                  code += `export const ${key} = ${serializeValue(parsed[key])};\n`
-                  defaultObjectCode += `  ${key},\n`
-                } else {
-                  defaultObjectCode += `  ${JSON.stringify(key)}: ${serializeValue(parsed[key])},\n`
-                }
+            let code = ''
+            let defaultObjectCode = '{\n'
+            for (const key of keys) {
+              if (key === makeLegalIdentifier(key)) {
+                code += `export const ${key} = ${serializeValue(parsed[key])};\n`
+                defaultObjectCode += `  ${key},\n`
+              } else {
+                defaultObjectCode += `  ${JSON.stringify(key)}: ${serializeValue(parsed[key])},\n`
               }
-              defaultObjectCode += '}'
+            }
+            defaultObjectCode += '}'
 
-              code += `export default ${defaultObjectCode};\n`
-              return {
-                code,
-                map: { mappings: '' },
-              }
+            code += `export default ${defaultObjectCode};\n`
+            return {
+              code,
+              map: { mappings: '' },
             }
           }
 
           if (
             options.stringify === true ||
-            // use 10kB as a threshold
+            // use 10kB as a threshold for 'auto'
             // https://v8.dev/blog/cost-of-javascript-2019#:~:text=A%20good%20rule%20of%20thumb%20is%20to%20apply%20this%20technique%20for%20objects%20of%2010%20kB%20or%20larger
-            (options.stringify === 'auto' && json.length > 10 * 1000)
+            json.length > 10 * 1000
           ) {
             // during build, parse then double-stringify to remove all
             // unnecessary whitespaces to reduce bundle size.
