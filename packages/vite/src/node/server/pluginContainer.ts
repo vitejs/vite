@@ -982,14 +982,41 @@ class PluginContainer {
   }
 
   getModuleInfo(id: string): ModuleInfo | null {
-    return (
-      (
-        this.environments.client as DevEnvironment
-      ).pluginContainer.getModuleInfo(id) ||
-      (this.environments.ssr as DevEnvironment).pluginContainer.getModuleInfo(
-        id,
-      )
-    )
+    const clientModuleInfo = (
+      this.environments.client as DevEnvironment
+    ).pluginContainer.getModuleInfo(id)
+    const ssrModuleInfo = (
+      this.environments.ssr as DevEnvironment
+    ).pluginContainer.getModuleInfo(id)
+
+    if (clientModuleInfo == null && ssrModuleInfo == null) return null
+
+    return new Proxy({} as any, {
+      get: (_, key: string) => {
+        // `meta` refers to `ModuleInfo.meta` of both environments, so we also
+        // need to merge it here
+        if (key === 'meta') {
+          const meta: Record<string, any> = {}
+          if (ssrModuleInfo) {
+            Object.assign(meta, ssrModuleInfo.meta)
+          }
+          if (clientModuleInfo) {
+            Object.assign(meta, clientModuleInfo.meta)
+          }
+          return meta
+        }
+        if (clientModuleInfo) {
+          if (key in clientModuleInfo) {
+            return clientModuleInfo[key as keyof ModuleInfo]
+          }
+        }
+        if (ssrModuleInfo) {
+          if (key in ssrModuleInfo) {
+            return ssrModuleInfo[key as keyof ModuleInfo]
+          }
+        }
+      },
+    })
   }
 
   get options(): InputOptions {
