@@ -809,7 +809,6 @@ describe('onRollupLog', () => {
     level: LogLevel,
     log: RollupLog,
   ) => {
-    const defaultLogHandler = vi.fn(() => {})
     const config = await resolveConfig(
       { customLogger: logger },
       'build',
@@ -817,7 +816,7 @@ describe('onRollupLog', () => {
       'production',
     )
     const buildEnvironment = new BuildEnvironment('client', config)
-    onRollupLog(level, log, defaultLogHandler, buildEnvironment)
+    onRollupLog(level, log, buildEnvironment)
   }
 
   afterEach(() => {

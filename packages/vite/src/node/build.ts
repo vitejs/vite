@@ -600,8 +600,8 @@ async function buildEnvironment(
     input,
     plugins,
     external: options.rollupOptions.external,
-    onLog(level, log, defaultHandler) {
-      onRollupLog(level, log, defaultHandler, environment)
+    onLog(level, log) {
+      onRollupLog(level, log, environment)
     },
   }
 
@@ -1008,7 +1008,6 @@ function clearLine() {
 export function onRollupLog(
   level: LogLevel,
   log: RollupLog,
-  logHandler: LogOrStringHandler,
   environment: BuildEnvironment,
 ): void {
   const debugLogger = createDebugger('vite:build')
@@ -1045,33 +1044,25 @@ export function onRollupLog(
       }
     }
 
-    if (
-      logging.code === 'PLUGIN_LOG' ||
-      logging.code === 'PLUGIN_WARNING' ||
-      logging.code === 'PLUGIN_ERROR'
-    ) {
-      switch (logLeveling) {
-        case 'info':
-          environment.logger.info(logging.message)
-          return
-        case 'warn':
-          environment.logger.warn(colors.yellow(logging.message))
-          return
-        case 'error':
-          environment.logger.error(colors.red(logging.message))
-          return
-        case 'debug':
-          debugLogger?.(logging.message)
-          return
-        default:
-          logLeveling satisfies never
-          // fallback to info if a unknown log level is passed
-          environment.logger.info(logging.message)
-          return
-      }
+    switch (logLeveling) {
+      case 'info':
+        environment.logger.info(logging.message)
+        return
+      case 'warn':
+        environment.logger.warn(colors.yellow(logging.message))
+        return
+      case 'error':
+        environment.logger.error(colors.red(logging.message))
+        return
+      case 'debug':
+        debugLogger?.(logging.message)
+        return
+      default:
+        logLeveling satisfies never
+        // fallback to info if a unknown log level is passed
+        environment.logger.info(logging.message)
+        return
     }
-
-    logHandler(logLeveling, logging)
   }
 
   clearLine()

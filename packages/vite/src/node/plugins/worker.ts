@@ -85,8 +85,8 @@ async function bundleWorkerEntry(
     plugins: workerEnvironment.plugins.map((p) =>
       injectEnvironmentToHooks(workerEnvironment, p),
     ),
-    onLog(level, log, defaultHandler) {
-      onRollupLog(level, log, defaultHandler, workerEnvironment)
+    onLog(level, log) {
+      onRollupLog(level, log, workerEnvironment)
     },
     preserveEntrySignatures: false,
   })
