@@ -1012,61 +1012,62 @@ export function onRollupLog(
   environment: BuildEnvironment,
 ): void {
   const debugLogger = createDebugger('vite:build')
-  const viteLog: LogOrStringHandler = (logLeveling, logging) => {
-    if (typeof logging === 'object') {
-      if (logging.code === 'UNRESOLVED_IMPORT') {
-        const id = logging.id
-        const exporter = logging.exporter
-        // throw unless it's commonjs external...
-        if (!id || !id.endsWith('?commonjs-external')) {
-          throw new Error(
-            `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
-              `This is most likely unintended because it can break your application at runtime.\n` +
-              `If you do want to externalize this module explicitly add it to\n` +
-              `\`build.rollupOptions.external\``,
-          )
-        }
+  const viteLog: LogOrStringHandler = (logLeveling, rawLogging) => {
+    const logging =
+      typeof rawLogging === 'object' ? rawLogging : { message: rawLogging }
+
+    if (logging.code === 'UNRESOLVED_IMPORT') {
+      const id = logging.id
+      const exporter = logging.exporter
+      // throw unless it's commonjs external...
+      if (!id || !id.endsWith('?commonjs-external')) {
+        throw new Error(
+          `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
+            `This is most likely unintended because it can break your application at runtime.\n` +
+            `If you do want to externalize this module explicitly add it to\n` +
+            `\`build.rollupOptions.external\``,
+        )
       }
+    }
 
-      if (logLeveling === 'warn') {
-        if (
-          logging.plugin === 'rollup-plugin-dynamic-import-variables' &&
-          dynamicImportWarningIgnoreList.some((msg) =>
-            logging.message.includes(msg),
-          )
-        ) {
-          return
-        }
-
-        if (warningIgnoreList.includes(logging.code!)) {
-          return
-        }
-      }
-
+    if (logLeveling === 'warn') {
       if (
-        logging.code === 'PLUGIN_LOG' ||
-        logging.code === 'PLUGIN_WARNING' ||
-        logging.code === 'PLUGIN_ERROR'
+        logging.plugin === 'rollup-plugin-dynamic-import-variables' &&
+        dynamicImportWarningIgnoreList.some((msg) =>
+          logging.message.includes(msg),
+        )
       ) {
-        switch (logLeveling) {
-          case 'info':
-            environment.logger.info(logging.message)
-            return
-          case 'warn':
-            environment.logger.warn(colors.yellow(logging.message))
-            return
-          case 'error':
-            environment.logger.error(colors.red(logging.message))
-            return
-          case 'debug':
-            debugLogger?.(logging.message)
-            return
-          default:
-            logLeveling satisfies never
-            // fallback to info if a unknown log level is passed
-            environment.logger.info(logging.message)
-            return
-        }
+        return
+      }
+
+      if (warningIgnoreList.includes(logging.code!)) {
+        return
+      }
+    }
+
+    if (
+      logging.code === 'PLUGIN_LOG' ||
+      logging.code === 'PLUGIN_WARNING' ||
+      logging.code === 'PLUGIN_ERROR'
+    ) {
+      switch (logLeveling) {
+        case 'info':
+          environment.logger.info(logging.message)
+          return
+        case 'warn':
+          environment.logger.warn(colors.yellow(logging.message))
+          return
+        case 'error':
+          environment.logger.error(colors.red(logging.message))
+          return
+        case 'debug':
+          debugLogger?.(logging.message)
+          return
+        default:
+          logLeveling satisfies never
+          // fallback to info if a unknown log level is passed
+          environment.logger.info(logging.message)
+          return
       }
     }
 
