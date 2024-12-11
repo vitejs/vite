@@ -1974,7 +1974,8 @@ function resolveMinifyCssEsbuildOptions(
     logLevel: options.logLevel,
     logLimit: options.logLimit,
     logOverride: options.logOverride,
-    legalComments: options.legalComments,
+    legalComments:
+      options.legalComments === 'linked' ? 'external' : options.legalComments,
   }
 
   if (
