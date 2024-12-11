@@ -1062,7 +1062,10 @@ export function onRollupLog(
             debugLogger?.(logging.message)
             return
           default:
-            break
+            logLeveling satisfies never
+            // fallback to info if a unknown log level is passed
+            environment.logger.info(logging.message)
+            return
         }
       }
     }
