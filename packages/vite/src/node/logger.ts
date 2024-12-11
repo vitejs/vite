@@ -4,6 +4,7 @@ import readline from 'node:readline'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
 import type { ResolvedServerUrls } from './server'
+import { getLoadedEnvFileNamesForMode } from './env'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -165,19 +166,31 @@ export function createLogger(
   return logger
 }
 
-export function printServerUrls(
+export function printServerInfo(
   urls: ResolvedServerUrls,
   optionsHost: string | boolean | undefined,
+  mode: string,
+  envDir: string,
   info: Logger['info'],
 ): void {
-  const colorUrl = (url: string) =>
-    colors.cyan(url.replace(/:(\d+)\//, (_, port) => `:${colors.bold(port)}/`))
+  const formatUrl = (url: string) =>
+    url.replace(/:(\d+)\//, (_, port) => `:${colors.bold(port)}/`)
+
   for (const url of urls.local) {
-    info(`  ${colors.green('➜')}  ${colors.bold('Local')}:   ${colorUrl(url)}`)
+    info(
+      `  ${colors.green('➜')}  ${colors.bold('Local')}:   ${colors.cyan(formatUrl(url))}`,
+    )
   }
   for (const url of urls.network) {
-    info(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${colorUrl(url)}`)
+    info(
+      `  ${colors.green('➜')}  ${colors.bold('Network')}: ${colors.cyan(formatUrl(url))}`,
+    )
   }
+  info(`  ${colors.green('➜')}  ${colors.bold('Mode')}:    ${mode}`)
+  const envFiles = getLoadedEnvFileNamesForMode(mode, envDir)
+  info(
+    `  ${colors.green('➜')}  ${colors.bold('Env')}:     ${envFiles.length ? envFiles.join(' ') : 'no env files loaded'}`,
+  )
   if (urls.network.length === 0 && optionsHost === undefined) {
     info(
       colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: use `) +

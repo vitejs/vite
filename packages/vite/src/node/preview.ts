@@ -31,7 +31,7 @@ import {
   shouldServeFile,
   teardownSIGTERMListener,
 } from './utils'
-import { printServerUrls } from './logger'
+import { printServerInfo } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
 import { resolveConfig } from './config'
@@ -92,8 +92,13 @@ export interface PreviewServer {
   resolvedUrls: ResolvedServerUrls | null
   /**
    * Print server urls
+   * @deprecated use `printInfo` instead
    */
   printUrls(): void
+  /**
+   * Print server info
+   */
+  printInfo(): void
   /**
    * Bind CLI shortcuts
    */
@@ -159,8 +164,17 @@ export async function preview(
     },
     resolvedUrls: null,
     printUrls() {
+      return this.printInfo()
+    },
+    printInfo() {
       if (server.resolvedUrls) {
-        printServerUrls(server.resolvedUrls, options.host, logger.info)
+        printServerInfo(
+          server.resolvedUrls,
+          options.host,
+          config.mode,
+          config.envDir,
+          logger.info,
+        )
       } else {
         throw new Error('cannot print server URLs before server is listening.')
       }
