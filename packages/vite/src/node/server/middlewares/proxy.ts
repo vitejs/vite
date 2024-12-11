@@ -33,7 +33,7 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
     | undefined
     | false
     | string
-    | Promise<void | null | undefined | false | string>
+    | Promise<void | null | undefined | boolean | string>
   /**
    * rewrite the Origin header of a WebSocket request to match the target
    *
@@ -175,16 +175,21 @@ export function proxyMiddleware(
             opts.target?.toString().startsWith('wss:')
           ) {
             if (opts.bypass) {
-              const bypassResult = await opts.bypass(req, undefined, opts)
-              if (typeof bypassResult === 'string') {
-                req.url = bypassResult
-                debug?.(`bypass: ${req.url} -> ${bypassResult}`)
+              try {
+                const bypassResult = await opts.bypass(req, undefined, opts)
+                if (typeof bypassResult === 'string') {
+                  debug?.(`bypass: ${req.url} -> ${bypassResult}`)
+                  req.url = bypassResult
+                  return
+                }
+                if (bypassResult === false) {
+                  debug?.(`bypass: ${req.url} -> 404`)
+                  socket.end('HTTP/1.1 404 Not Found\r\n\r\n', '')
+                  return
+                }
+              } catch (e) {
+                debug?.(`bypass: ${req.url} -> ${e}`)
               }
-              if (bypassResult === false) {
-                debug?.(`bypass: ${req.url} -> 404`)
-                socket.end('HTTP/1.1 404 Not Found\r\n\r\n', '')
-              }
-              return
             }
 
             if (opts.rewrite) {
@@ -208,18 +213,22 @@ export function proxyMiddleware(
         const options: HttpProxy.ServerOptions = {}
 
         if (opts.bypass) {
-          const bypassResult = await opts.bypass(req, res, opts)
-          if (typeof bypassResult === 'string') {
-            req.url = bypassResult
-            debug?.(`bypass: ${req.url} -> ${bypassResult}`)
-            next()
+          try {
+            const bypassResult = await opts.bypass(req, res, opts)
+            if (typeof bypassResult === 'string') {
+              debug?.(`bypass: ${req.url} -> ${bypassResult}`)
+              req.url = bypassResult
+              return next()
+            }
+            if (bypassResult === false) {
+              debug?.(`bypass: ${req.url} -> 404`)
+              res.statusCode = 404
+              return res.end()
+            }
+          } catch (e) {
+            debug?.(`bypass: ${req.url} -> ${e}`)
+            return next(e)
           }
-          if (bypassResult === false) {
-            debug?.(`bypass: ${req.url} -> 404`)
-            res.statusCode = 404
-            res.end()
-          }
-          return
         }
 
         debug?.(`${req.url} -> ${opts.target || opts.forward}`)
