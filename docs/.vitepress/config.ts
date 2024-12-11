@@ -271,8 +271,8 @@ export default defineConfig({
               link: '/guide/static-deploy',
             },
             {
-              text: 'Env Variables and Modes',
-              link: '/guide/env-and-mode',
+              text: 'Constants and Modes',
+              link: '/guide/constants-and-mode',
             },
             {
               text: 'Server-Side Rendering (SSR)',
