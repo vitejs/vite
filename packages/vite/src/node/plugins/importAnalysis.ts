@@ -757,11 +757,29 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         const resolved = await this.resolve(url, importer)
         if (resolved?.id) {
           const mod = moduleGraph.getModuleById(resolved.id)
-          normalized = mod?.url
-        }
-        if (!normalized) {
-          const [resolved] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
-          normalized = resolved
+          if (!mod) {
+            this.error(
+              `module was not found for ${JSON.stringify(resolved.id)}`,
+              start,
+            )
+            return
+          }
+          normalized = mod.url
+        } else {
+          try {
+            const [resolved] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
+            if (resolved) {
+              this.warn({
+                message:
+                  `Failed to resolve ${JSON.stringify(url)} from ${importer}.` +
+                  ' An id should be written. Did you pass a URL?',
+                pos: start,
+              })
+              continue
+            }
+          } catch {}
+          this.error(`Failed to resolve ${JSON.stringify(url)}`, start)
+          return
         }
         normalizedAcceptedUrls.add(normalized)
         const hmrAccept = normalizeHmrUrl(normalized)
