@@ -177,7 +177,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
   const renderBuiltUrl = config.experimental.renderBuiltUrl
   const isRelativeBase = config.base === './' || config.base === ''
-
+  const namesRE = /\.([^.?]+)/
   return {
     name: 'vite:build-import-analysis',
     resolveId(id) {
@@ -274,7 +274,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
            *                                  ^
            */
           if (match[3]) {
-            let names = /\.([^.?]+)/.exec(match[4])?.[1] || ''
+            let names = namesRE.exec(match[4])?.[1] || ''
             // avoid `default` keyword error
             if (names === 'default') {
               names = 'default: __vite_default__'

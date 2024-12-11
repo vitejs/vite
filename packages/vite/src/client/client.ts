@@ -2,6 +2,7 @@ import type { ErrorPayload, HotPayload } from 'types/hmrPayload'
 import type { ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import { HMRClient, HMRContext } from '../shared/hmr'
+import { postfixRE } from '../shared/utils'
 import {
   createWebSocketModuleRunnerTransport,
   normalizeModuleRunnerTransport,
@@ -450,7 +451,7 @@ export function injectQuery(url: string, queryToInject: string): string {
   }
 
   // can't use pathname from URL since it may be relative like ../
-  const pathname = url.replace(/[?#].*$/, '')
+  const pathname = url.replace(postfixRE, '')
   const { search, hash } = new URL(url, 'http://vite.dev')
 
   return `${pathname}?${queryToInject}${search ? `&` + search.slice(1) : ''}${
