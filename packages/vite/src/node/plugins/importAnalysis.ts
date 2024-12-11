@@ -398,31 +398,31 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               url = injectQuery(url, versionMatch[1])
             }
           }
-
-          // check if the dep has been hmr updated. If yes, we need to attach
-          // its last updated timestamp to force the browser to fetch the most
-          // up-to-date version of this module.
-          try {
-            // delay setting `isSelfAccepting` until the file is actually used (#7870)
-            // We use an internal function to avoid resolving the url again
-            const depModule = await moduleGraph._ensureEntryFromUrl(
-              unwrapId(url),
-              canSkipImportAnalysis(url) || forceSkipImportAnalysis,
-              resolved,
-            )
-            if (depModule.lastHMRTimestamp > 0) {
-              url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
-            }
-          } catch (e: any) {
-            // it's possible that the dep fails to resolve (non-existent import)
-            // attach location to the missing import
-            e.pos = pos
-            throw e
-          }
-
-          // prepend base
-          if (!ssr) url = joinUrlSegments(base, url)
         }
+
+        // check if the dep has been hmr updated. If yes, we need to attach
+        // its last updated timestamp to force the browser to fetch the most
+        // up-to-date version of this module.
+        try {
+          // delay setting `isSelfAccepting` until the file is actually used (#7870)
+          // We use an internal function to avoid resolving the url again
+          const depModule = await moduleGraph._ensureEntryFromUrl(
+            unwrapId(url),
+            canSkipImportAnalysis(url) || forceSkipImportAnalysis,
+            resolved,
+          )
+          if (depModule.lastHMRTimestamp > 0) {
+            url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
+          }
+        } catch (e: any) {
+          // it's possible that the dep fails to resolve (non-existent import)
+          // attach location to the missing import
+          e.pos = pos
+          throw e
+        }
+
+        // prepend base
+        if (!ssr) url = joinUrlSegments(base, url)
 
         return [url, resolved.id]
       }
@@ -753,13 +753,12 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
-        let normalized
-        const resolved = await this.resolve(url, importer)
-        if (resolved?.id) {
-          const mod = moduleGraph.getModuleById(resolved.id)
+        let [normalized, resolvedId] = await normalizeUrl(url, start)
+        if (resolvedId) {
+          const mod = moduleGraph.getModuleById(resolvedId)
           if (!mod) {
             this.error(
-              `module was not found for ${JSON.stringify(resolved.id)}`,
+              `module was not found for ${JSON.stringify(resolvedId)}`,
               start,
             )
             return
