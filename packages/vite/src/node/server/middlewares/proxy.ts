@@ -27,7 +27,13 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
     /** undefined for WebSocket upgrade requests */
     res: http.ServerResponse | undefined,
     options: ProxyOptions,
-  ) => void | null | undefined | false | string
+  ) =>
+    | void
+    | null
+    | undefined
+    | false
+    | string
+    | Promise<void | null | undefined | false | string>
   /**
    * rewrite the Origin header of a WebSocket request to match the target
    *
@@ -158,7 +164,7 @@ export function proxyMiddleware(
   })
 
   if (httpServer) {
-    httpServer.on('upgrade', (req, socket, head) => {
+    httpServer.on('upgrade', async (req, socket, head) => {
       const url = req.url!
       for (const context in proxies) {
         if (doesProxyContextMatchUrl(context, url)) {
@@ -169,16 +175,16 @@ export function proxyMiddleware(
             opts.target?.toString().startsWith('wss:')
           ) {
             if (opts.bypass) {
-              const bypassResult = opts.bypass(req, undefined, opts)
+              const bypassResult = await opts.bypass(req, undefined, opts)
               if (typeof bypassResult === 'string') {
                 req.url = bypassResult
                 debug?.(`bypass: ${req.url} -> ${bypassResult}`)
-                return
-              } else if (bypassResult === false) {
+              }
+              if (bypassResult === false) {
                 debug?.(`bypass: ${req.url} -> 404`)
                 socket.end('HTTP/1.1 404 Not Found\r\n\r\n', '')
-                return
               }
+              return
             }
 
             if (opts.rewrite) {
@@ -194,7 +200,7 @@ export function proxyMiddleware(
   }
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteProxyMiddleware(req, res, next) {
+  return async function viteProxyMiddleware(req, res, next) {
     const url = req.url!
     for (const context in proxies) {
       if (doesProxyContextMatchUrl(context, url)) {
@@ -202,16 +208,18 @@ export function proxyMiddleware(
         const options: HttpProxy.ServerOptions = {}
 
         if (opts.bypass) {
-          const bypassResult = opts.bypass(req, res, opts)
+          const bypassResult = await opts.bypass(req, res, opts)
           if (typeof bypassResult === 'string') {
             req.url = bypassResult
             debug?.(`bypass: ${req.url} -> ${bypassResult}`)
-            return next()
-          } else if (bypassResult === false) {
+            next()
+          }
+          if (bypassResult === false) {
             debug?.(`bypass: ${req.url} -> 404`)
             res.statusCode = 404
-            return res.end()
+            res.end()
           }
+          return
         }
 
         debug?.(`${req.url} -> ${opts.target || opts.forward}`)
