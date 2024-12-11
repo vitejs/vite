@@ -189,6 +189,7 @@ export function proxyMiddleware(
                 }
               } catch (e) {
                 debug?.(`bypass: ${req.url} -> ${e}`)
+                return
               }
             }
 
