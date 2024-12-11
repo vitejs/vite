@@ -188,6 +188,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: refs/pull/${{ fromJSON(steps.get-pr-data.outputs.result).num }}/head
           fetch-depth: 0
 
       # This step can be removed on May 26 2025
