@@ -53,7 +53,8 @@ import {
   ESBUILD_MODULES_TARGET,
   SPECIAL_QUERY_RE,
 } from '../constants'
-import type { ResolvedConfig } from '../config'
+import type { ResolvedConfig, ResolvedEnvironmentOptions } from '../config'
+import type { Environment } from '../environment'
 import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
 import {
@@ -389,9 +390,9 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           return fileToUrl(this, resolved)
         }
         if (config.command === 'build') {
-          const isExternal = config.build.rollupOptions.external
+          const isExternal = environment.config.build.rollupOptions.external
             ? resolveUserExternal(
-                config.build.rollupOptions.external,
+                environment.config.build.rollupOptions.external,
                 decodedUrl, // use URL as id since id could not be resolved
                 id,
                 false,
@@ -454,16 +455,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
   let hasEmitted = false
   let chunkCSSMap: Map<string, string>
 
-  const rollupOptionsOutput = config.build.rollupOptions.output
-  const assetFileNames = (
-    Array.isArray(rollupOptionsOutput)
-      ? rollupOptionsOutput[0]
-      : rollupOptionsOutput
-  )?.assetFileNames
-  const getCssAssetDirname = (cssAssetName: string) => {
+  const getCssAssetDirname = (
+    cssAssetName: string,
+    environment: Environment,
+  ) => {
+    const rollupOptionsOutput = environment.config.build.rollupOptions.output
     const cssAssetNameDir = path.dirname(cssAssetName)
+    const assetFileNames = (
+      Array.isArray(rollupOptionsOutput)
+        ? rollupOptionsOutput[0]
+        : rollupOptionsOutput
+    )?.assetFileNames
     if (!assetFileNames) {
-      return path.join(config.build.assetsDir, cssAssetNameDir)
+      return path.join(environment.config.build.assetsDir, cssAssetNameDir)
     } else if (typeof assetFileNames === 'string') {
       return path.join(path.dirname(assetFileNames), cssAssetNameDir)
     } else {
@@ -480,16 +484,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     }
   }
 
-  function getCssBundleName() {
+  function getCssBundleName(environment: Environment) {
     const cached = cssBundleNameCache.get(config)
     if (cached) return cached
-
-    const cssBundleName = config.build.lib
-      ? resolveLibCssFilename(
-          config.build.lib,
-          config.root,
-          config.packageCache,
-        )
+    const { lib } = environment.config.build
+    const cssBundleName = lib
+      ? resolveLibCssFilename(lib, config.root, config.packageCache)
       : defaultCssBundleName
     cssBundleNameCache.set(config, cssBundleName)
     return cssBundleName
@@ -597,8 +597,8 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         code = modulesCode
       } else if (inlined) {
         let content = css
-        if (config.build.cssMinify) {
-          content = await minifyCSS(content, config, true)
+        if (this.environment.config.build.cssMinify) {
+          content = await minifyCSS(content, this.environment.config, true)
         }
         code = `export default ${JSON.stringify(content)}`
       } else {
@@ -651,7 +651,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         const relative = config.base === './' || config.base === ''
         const cssAssetDirname =
           encodedPublicUrls || relative
-            ? slash(getCssAssetDirname(cssAssetName))
+            ? slash(getCssAssetDirname(cssAssetName, this.environment))
             : undefined
 
         const toRelative = (filename: string) => {
@@ -750,7 +750,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       await urlEmitQueue.run(async () =>
         Promise.all(
           urlEmitTasks.map(async (info) => {
-            info.content = await finalizeCss(info.content, true, config)
+            info.content = await finalizeCss(
+              info.content,
+              true,
+              this.environment.config,
+            )
           }),
         ),
       )
@@ -821,7 +825,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
             // wait for previous tasks as well
             chunkCSS = await codeSplitEmitQueue.run(async () => {
-              return finalizeCss(chunkCSS, true, config)
+              return finalizeCss(chunkCSS, true, this.environment.config)
             })
 
             // emit corresponding css file
@@ -844,7 +848,11 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             // But because entry chunk can be imported by dynamic import,
             // we shouldn't remove the inlined CSS. (#10285)
 
-            chunkCSS = await finalizeCss(chunkCSS, true, config)
+            chunkCSS = await finalizeCss(
+              chunkCSS,
+              true,
+              this.environment.config,
+            )
             let cssString = JSON.stringify(chunkCSS)
             cssString =
               renderAssetUrlInJS(this, chunk, opts, cssString)?.toString() ||
@@ -868,7 +876,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         } else {
           // resolve public URL from CSS paths, we need to use absolute paths
-          chunkCSS = resolveAssetUrlsInCss(chunkCSS, getCssBundleName())
+          chunkCSS = resolveAssetUrlsInCss(
+            chunkCSS,
+            getCssBundleName(this.environment),
+          )
           // finalizeCss is called for the aggregated chunk in generateBundle
 
           chunkCSSMap.set(chunk.fileName, chunkCSS)
@@ -940,9 +951,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // Finally, if there's any extracted CSS, we emit the asset
         if (extractedCss) {
           hasEmitted = true
-          extractedCss = await finalizeCss(extractedCss, true, config)
+          extractedCss = await finalizeCss(
+            extractedCss,
+            true,
+            this.environment.config,
+          )
           this.emitFile({
-            name: getCssBundleName(),
+            name: getCssBundleName(this.environment),
             type: 'asset',
             source: extractedCss,
             // this file is an implicit entry point, use `style.css` as the original file name
@@ -1639,7 +1654,7 @@ const viteHashUpdateMarkerRE = /\/\*\$vite\$:\d+\*\//
 async function finalizeCss(
   css: string,
   minify: boolean,
-  config: ResolvedConfig,
+  config: ResolvedConfig & ResolvedEnvironmentOptions,
 ) {
   // hoist external @imports and @charset to the top of the CSS chunk per spec (#1845 and #6333)
   if (css.includes('@import') || css.includes('@charset')) {
@@ -1907,7 +1922,7 @@ async function doImportCSSReplace(
 
 async function minifyCSS(
   css: string,
-  config: ResolvedConfig,
+  config: ResolvedConfig & ResolvedEnvironmentOptions,
   inlined: boolean,
 ) {
   // We want inlined CSS to not end with a linebreak, while ensuring that
