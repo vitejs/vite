@@ -188,7 +188,13 @@ export function proxyMiddleware(
                   return
                 }
               } catch (e) {
-                debug?.(`bypass: ${req.url} -> ${e}`)
+                config.logger.error(
+                  `${colors.red(`ws proxy bypass error:`)}\n${err.stack}`,
+                  {
+                    timestamp: true,
+                    error: err,
+                  },
+                )
                 return
               }
             }
