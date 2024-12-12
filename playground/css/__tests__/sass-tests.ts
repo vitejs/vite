@@ -42,6 +42,8 @@ export const sassTest = (enableHmrTests = false) => {
 
     if (isBuild || !enableHmrTests) return
 
+    await new Promise((resolve) => setTimeout(resolve, 100)) // wait for other non-enableHmrTests tests to finish
+
     editFile('sass.scss', (code) =>
       code.replace('color: $injectedColor', 'color: red'),
     )
@@ -89,6 +91,8 @@ export const sassModuleTests = (enableHmrTests = false) => {
     )
 
     if (isBuild || !enableHmrTests) return
+
+    await new Promise((resolve) => setTimeout(resolve, 100)) // wait for other non-enableHmrTests tests to finish
 
     editFile('mod.module.scss', (code) =>
       code.replace('color: orangered', 'color: blue'),
