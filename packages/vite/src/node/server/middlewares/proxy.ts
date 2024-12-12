@@ -187,7 +187,7 @@ export function proxyMiddleware(
                   socket.end('HTTP/1.1 404 Not Found\r\n\r\n', '')
                   return
                 }
-              } catch (e) {
+              } catch (err) {
                 config.logger.error(
                   `${colors.red(`ws proxy bypass error:`)}\n${err.stack}`,
                   {
