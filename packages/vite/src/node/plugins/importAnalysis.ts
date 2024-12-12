@@ -411,7 +411,10 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           // check if the dep has been hmr updated. If yes, we need to attach
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
-          if (environment.config.consumer === 'client' && depModule.lastHMRTimestamp > 0) {
+          if (
+            environment.config.consumer === 'client' &&
+            depModule.lastHMRTimestamp > 0
+          ) {
             url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
           }
         } catch (e: any) {
