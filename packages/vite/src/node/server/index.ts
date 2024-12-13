@@ -56,6 +56,7 @@ import {
 } from '../watch'
 import { initPublicFiles } from '../publicDir'
 import { getEnvFilesForMode } from '../env'
+import type { RequiredExceptFor } from '../typeUtils'
 import type { PluginContainer } from './pluginContainer'
 import { ERR_CLOSED_SERVER, createPluginContainer } from './pluginContainer'
 import type { WebSocketServer } from './ws'
@@ -80,7 +81,7 @@ import { timeMiddleware } from './middlewares/time'
 import { ModuleGraph } from './mixedModuleGraph'
 import type { ModuleNode } from './mixedModuleGraph'
 import { notFoundMiddleware } from './middlewares/notFound'
-import { errorMiddleware } from './middlewares/error'
+import { buildErrorMessage, errorMiddleware } from './middlewares/error'
 import type { HmrOptions, HotBroadcaster } from './hmr'
 import {
   createDeprecatedHotBroadcaster,
@@ -180,7 +181,20 @@ export interface ServerOptions extends CommonServerOptions {
 }
 
 export interface ResolvedServerOptions
-  extends Omit<ServerOptions, 'fs' | 'middlewareMode' | 'sourcemapIgnoreList'> {
+  extends Omit<
+    RequiredExceptFor<
+      ServerOptions,
+      | 'host'
+      | 'https'
+      | 'proxy'
+      | 'hmr'
+      | 'ws'
+      | 'watch'
+      | 'origin'
+      | 'hotUpdateEnvironments'
+    >,
+    'fs' | 'middlewareMode' | 'sourcemapIgnoreList'
+  > {
   fs: Required<FileSystemServeOptions>
   middlewareMode: NonNullable<ServerOptions['middlewareMode']>
   sourcemapIgnoreList: Exclude<
@@ -429,7 +443,7 @@ export async function _createServer(
   const resolvedOutDirs = getResolvedOutDirs(
     config.root,
     config.build.outDir,
-    config.build.rollupOptions?.output,
+    config.build.rollupOptions.output,
   )
   const emptyOutDir = resolveEmptyOutDir(
     config.build.emptyOutDir,
@@ -537,8 +551,7 @@ export async function _createServer(
       return ssrTransform(code, inMap, url, originalCode, {
         json: {
           stringify:
-            config.json?.stringify === true &&
-            config.json.namedExports !== true,
+            config.json.stringify === true && config.json.namedExports !== true,
         },
       })
     },
@@ -569,10 +582,13 @@ export async function _createServer(
           return
         }
         // Unexpected error, log the issue but avoid an unhandled exception
-        server.config.logger.error(`Pre-transform error: ${e.message}`, {
-          error: e,
-          timestamp: true,
-        })
+        server.config.logger.error(
+          buildErrorMessage(e, [`Pre-transform error: ${e.message}`], false),
+          {
+            error: e,
+            timestamp: true,
+          },
+        )
       }
     },
     transformIndexHtml(url, html, originalUrl) {
@@ -671,6 +687,7 @@ export async function _createServer(
           ),
         ),
         closeHttpServer(),
+        server._ssrCompatModuleRunner?.close(),
       ])
       server.resolvedUrls = null
     },
@@ -1018,7 +1035,7 @@ export const serverConfigDefaults = Object.freeze({
   host: 'localhost',
   https: undefined,
   open: false,
-  proxy: {},
+  proxy: undefined,
   cors: true,
   headers: {},
   // hmr

@@ -7,7 +7,7 @@ export function normalizeAbsoluteUrl(url: string, root: string): string {
   // file:///C:/root/id.js -> C:/root/id.js
   if (url.startsWith('file://')) {
     // 8 is the length of "file:///"
-    url = url.slice(isWindows ? 8 : 7)
+    url = decodeURI(url.slice(isWindows ? 8 : 7))
   }
 
   // strip root from the URL because fetchModule prefers a public served url path

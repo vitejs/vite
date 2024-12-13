@@ -4,7 +4,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
-import { builtinModules, createRequire } from 'node:module'
+import { createRequire } from 'node:module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import { build } from 'esbuild'
@@ -25,6 +25,7 @@ import {
   FS_PREFIX,
 } from './constants'
 import type {
+  FalsyPlugin,
   HookHandler,
   Plugin,
   PluginOption,
@@ -522,9 +523,7 @@ export interface LegacyOptions {
 
 export interface ResolvedWorkerOptions {
   format: 'es' | 'iife'
-  plugins: (
-    bundleChain: string[],
-  ) => Promise<{ plugins: Plugin[]; config: ResolvedConfig }>
+  plugins: (bundleChain: string[]) => Promise<ResolvedConfig>
   rollupOptions: RollupOptions
 }
 
@@ -623,7 +622,7 @@ export const configDefaults = Object.freeze({
     dedupe: [],
     /** @experimental */
     noExternal: [],
-    // external
+    external: [],
     preserveSymlinks: false,
     alias: [],
   },
@@ -784,7 +783,6 @@ function resolveEnvironmentOptions(
       options.build ?? {},
       logger,
       consumer,
-      isSsrTargetWebworkerEnvironment,
     ),
   }
 }
@@ -884,10 +882,7 @@ function resolveEnvironmentResolveOptions(
         consumer === 'client' || isSsrTargetWebworkerEnvironment
           ? DEFAULT_CLIENT_CONDITIONS
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
-      external:
-        consumer === 'server' && !isSsrTargetWebworkerEnvironment
-          ? builtinModules
-          : [],
+      enableBuiltinNoExternalCheck: !!isSsrTargetWebworkerEnvironment,
     },
     resolve ?? {},
   )
@@ -1008,7 +1003,7 @@ export async function resolveConfig(
   mode = inlineConfig.mode || config.mode || mode
   configEnv.mode = mode
 
-  const filterPlugin = (p: Plugin) => {
+  const filterPlugin = (p: Plugin | FalsyPlugin): p is Plugin => {
     if (!p) {
       return false
     } else if (!p.apply) {
@@ -1021,9 +1016,9 @@ export async function resolveConfig(
   }
 
   // resolve plugins
-  const rawPlugins = (
-    (await asyncFlatten(config.plugins || [])) as Plugin[]
-  ).filter(filterPlugin)
+  const rawPlugins = (await asyncFlatten(config.plugins || [])).filter(
+    filterPlugin,
+  )
 
   const [prePlugins, normalPlugins, postPlugins] = sortUserPlugins(rawPlugins)
 
@@ -1074,12 +1069,12 @@ export async function resolveConfig(
   // Backward compatibility: server.warmup.clientFiles/ssrFiles -> environment.dev.warmup
   const warmupOptions = config.server?.warmup
   if (warmupOptions?.clientFiles) {
-    configEnvironmentsClient.dev.warmup = warmupOptions?.clientFiles
+    configEnvironmentsClient.dev.warmup = warmupOptions.clientFiles
   }
   if (warmupOptions?.ssrFiles) {
     configEnvironmentsSsr ??= {}
     configEnvironmentsSsr.dev ??= {}
-    configEnvironmentsSsr.dev.warmup = warmupOptions?.ssrFiles
+    configEnvironmentsSsr.dev.warmup = warmupOptions.ssrFiles
   }
 
   // Backward compatibility: merge ssr into environments.ssr.config as defaults
@@ -1089,13 +1084,16 @@ export async function resolveConfig(
       configEnvironmentsSsr.optimizeDeps ?? {},
     )
 
-    configEnvironmentsSsr.resolve ??= {}
-    configEnvironmentsSsr.resolve.conditions ??= config.ssr?.resolve?.conditions
-    configEnvironmentsSsr.resolve.externalConditions ??=
-      config.ssr?.resolve?.externalConditions
-    configEnvironmentsSsr.resolve.mainFields ??= config.ssr?.resolve?.mainFields
-    configEnvironmentsSsr.resolve.external ??= config.ssr?.external
-    configEnvironmentsSsr.resolve.noExternal ??= config.ssr?.noExternal
+    configEnvironmentsSsr.resolve = mergeConfig(
+      {
+        conditions: config.ssr?.resolve?.conditions,
+        externalConditions: config.ssr?.resolve?.externalConditions,
+        mainFields: config.ssr?.resolve?.mainFields,
+        external: config.ssr?.external,
+        noExternal: config.ssr?.noExternal,
+      } satisfies EnvironmentResolveOptions,
+      configEnvironmentsSsr.resolve ?? {},
+    )
   }
 
   if (config.build?.ssrEmitAssets !== undefined) {
@@ -1105,11 +1103,7 @@ export async function resolveConfig(
   }
 
   // The client and ssr environment configs can't be removed by the user in the config hook
-  if (
-    !config.environments ||
-    !config.environments.client ||
-    (!config.environments.ssr && !isBuild)
-  ) {
+  if (!config.environments.client || (!config.environments.ssr && !isBuild)) {
     throw new Error(
       'Required environments configuration were stripped out in the config hook',
     )
@@ -1151,6 +1145,11 @@ export async function resolveConfig(
     configEnv,
     config.ssr?.target === 'webworker',
   )
+
+  // Backward compatibility: merge config.environments.client.resolve back into config.resolve
+  config.resolve ??= {}
+  config.resolve.conditions = config.environments.client.resolve?.conditions
+  config.resolve.mainFields = config.environments.client.resolve?.mainFields
 
   const resolvedDefaultResolve = resolveResolveOptions(config.resolve, logger)
 
@@ -1242,7 +1241,7 @@ export async function resolveConfig(
     ? !isBuild || config.build?.ssr
       ? '/'
       : './'
-    : (resolveBaseUrl(config.base, isBuild, logger) ?? configDefaults.base)
+    : resolveBaseUrl(config.base, isBuild, logger)
 
   // resolve cache directory
   const pkgDir = findNearestPackageData(resolvedRoot, packageCache)?.dir
@@ -1299,7 +1298,7 @@ export async function resolveConfig(
     // And Plugins may also have cached that could be corrupted by being used in these extra rollup calls.
     // So we need to separate the worker plugin from the plugin that vite needs to run.
     const rawWorkerUserPlugins = (
-      (await asyncFlatten(createUserWorkerPlugins?.() || [])) as Plugin[]
+      await asyncFlatten(createUserWorkerPlugins?.() || [])
     ).filter(filterPlugin)
 
     // resolve worker
@@ -1340,7 +1339,10 @@ export async function resolveConfig(
         .map((hook) => hook(workerResolved)),
     )
 
-    return { plugins: resolvedWorkerPlugins, config: workerResolved }
+    return {
+      ...workerResolved,
+      plugins: resolvedWorkerPlugins,
+    }
   }
 
   const resolvedWorkerOptions: ResolvedWorkerOptions = {
@@ -1572,7 +1574,7 @@ assetFileNames isn't equal for every build.rollupOptions.output. A single patter
  * electron or expects to deploy
  */
 export function resolveBaseUrl(
-  base: UserConfig['base'] = '/',
+  base: UserConfig['base'] = configDefaults.base,
   isBuild: boolean,
   logger: Logger,
 ): string {
@@ -1719,6 +1721,8 @@ async function bundleConfigFile(
     format: isESM ? 'esm' : 'cjs',
     mainFields: ['main'],
     sourcemap: 'inline',
+    // the last slash is needed to make the path correct
+    sourceRoot: path.dirname(fileName) + path.sep,
     metafile: true,
     define: {
       __dirname: dirnameVarName,
@@ -1761,7 +1765,7 @@ async function bundleConfigFile(
 
           // externalize bare imports
           build.onResolve(
-            { filter: /^[^.].*/ },
+            { filter: /^[^.#].*/ },
             async ({ path: id, importer, kind }) => {
               if (
                 kind === 'entry-point' ||
@@ -1839,7 +1843,7 @@ async function bundleConfigFile(
   const { text } = result.outputFiles[0]
   return {
     code: text,
-    dependencies: result.metafile ? Object.keys(result.metafile.inputs) : [],
+    dependencies: Object.keys(result.metafile.inputs),
   }
 }
 
@@ -1857,11 +1861,26 @@ async function loadConfigFromBundledFile(
   // with --experimental-loader themselves, we have to do a hack here:
   // write it to disk, load it with native Node ESM, then delete the file.
   if (isESM) {
-    const nodeModulesDir = findNearestNodeModules(path.dirname(fileName))
+    // Storing the bundled file in node_modules/ is avoided for Deno
+    // because Deno only supports Node.js style modules under node_modules/
+    // and configs with `npm:` import statements will fail when executed.
+    let nodeModulesDir =
+      typeof process.versions.deno === 'string'
+        ? undefined
+        : findNearestNodeModules(path.dirname(fileName))
     if (nodeModulesDir) {
-      await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
-        recursive: true,
-      })
+      try {
+        await fsp.mkdir(path.resolve(nodeModulesDir, '.vite-temp/'), {
+          recursive: true,
+        })
+      } catch (e) {
+        if (e.code === 'EACCES') {
+          // If there is no access permission, a temporary configuration file is created by default.
+          nodeModulesDir = undefined
+        } else {
+          throw e
+        }
+      }
     }
     const hash = `timestamp-${Date.now()}-${Math.random().toString(16).slice(2)}`
     const tempFileName = nodeModulesDir
@@ -1912,11 +1931,9 @@ async function runConfigHook(
   for (const p of getSortedPluginsByHook('config', plugins)) {
     const hook = p.config
     const handler = getHookHandler(hook)
-    if (handler) {
-      const res = await handler(conf, configEnv)
-      if (res && res !== conf) {
-        conf = mergeConfig(conf, res)
-      }
+    const res = await handler(conf, configEnv)
+    if (res && res !== conf) {
+      conf = mergeConfig(conf, res)
     }
   }
 
@@ -1933,15 +1950,13 @@ async function runConfigEnvironmentHook(
   for (const p of getSortedPluginsByHook('configEnvironment', plugins)) {
     const hook = p.configEnvironment
     const handler = getHookHandler(hook)
-    if (handler) {
-      for (const name of environmentNames) {
-        const res = await handler(name, environments[name], {
-          ...configEnv,
-          isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
-        })
-        if (res) {
-          environments[name] = mergeConfig(environments[name], res)
-        }
+    for (const name of environmentNames) {
+      const res = await handler(name, environments[name], {
+        ...configEnv,
+        isSsrTargetWebworker: isSsrTargetWebworkerSet && name === 'ssr',
+      })
+      if (res) {
+        environments[name] = mergeConfig(environments[name], res)
       }
     }
   }
@@ -1955,7 +1970,7 @@ function optimizeDepsDisabledBackwardCompatibility(
   const optimizeDepsDisabled = optimizeDeps.disabled
   if (optimizeDepsDisabled !== undefined) {
     if (optimizeDepsDisabled === true || optimizeDepsDisabled === 'dev') {
-      const commonjsOptionsInclude = resolved.build?.commonjsOptions?.include
+      const commonjsOptionsInclude = resolved.build.commonjsOptions.include
       const commonjsPluginDisabled =
         Array.isArray(commonjsOptionsInclude) &&
         commonjsOptionsInclude.length === 0

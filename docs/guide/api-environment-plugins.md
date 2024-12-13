@@ -1,17 +1,17 @@
 # Environment API for Plugins
 
 :::warning Experimental
-Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Environment API. This API will be released in Vite 6 as experimental. You can already test it in the latest `vite@6.0.0-beta.x` version.
+Environment API is experimental. We'll keep the APIs stable during Vite 6 to let the ecosystem experiment and build on top of it. We're planning to stabilize these new APIs with potential breaking changes in Vite 7.
 
 Resources:
 
 - [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
 - [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new API were implemented and reviewed.
 
-Please share with us your feedback as you test the proposal.
+Please share your feedback with us.
 :::
 
-## Accessing the current environment in hooks
+## Accessing the Current Environment in Hooks
 
 Given that there were only two Environments until Vite 6 (`client` and `ssr`), a `ssr` boolean was enough to identify the current environment in Vite APIs. Plugin Hooks received a `ssr` boolean in the last options parameter, and several APIs expected an optional last `ssr` parameter to properly associate modules to the correct environment (for example `server.moduleGraph.getModuleByUrl(url, { ssr })`).
 
@@ -27,7 +27,7 @@ A plugin could use the `environment` instance to change how a module is processe
   }
 ```
 
-## Registering new environments using hooks
+## Registering New Environments Using Hooks
 
 Plugins can add new environments in the `config` hook (for example to have a separate module graph for [RSC](https://react.dev/blog/2023/03/22/react-labs-what-we-have-been-working-on-march-2023#react-server-components)):
 
@@ -39,7 +39,7 @@ Plugins can add new environments in the `config` hook (for example to have a sep
 
 An empty object is enough to register the environment, default values from the root level environment config.
 
-## Configuring environment using hooks
+## Configuring Environment Using Hooks
 
 While the `config` hook is running, the complete list of environments isn't yet known and the environments can be affected by both the default values from the root level environment config or explicitly through the `config.environments` record.
 Plugins should set default values using the `config` hook. To configure each environment, they can use the new `configEnvironment` hook. This hook is called for each environment with its partially resolved config including resolution of final defaults.
@@ -50,7 +50,7 @@ Plugins should set default values using the `config` hook. To configure each env
       options.resolve.conditions = // ...
 ```
 
-## The `hotUpdate` hook
+## The `hotUpdate` Hook
 
 - **Type:** `(this: { environment: DevEnvironment }, options: HotUpdateOptions) => Array<EnvironmentModuleNode> | void | Promise<Array<EnvironmentModuleNode> | void>`
 - **See also:** [HMR API](./api-hmr)
@@ -135,7 +135,7 @@ const UnoCssPlugin = () => {
   // shared global state
   return {
     buildStart() {
-      // init per environment state with WeakMap<Environment,Data>
+      // init per-environment state with WeakMap<Environment,Data>
       // using this.environment
     },
     configureServer() {
@@ -184,12 +184,12 @@ export default defineConfig({
 })
 ```
 
-## Environment in build hooks
+## Environment in Build Hooks
 
 In the same way as during dev, plugin hooks also receive the environment instance during build, replacing the `ssr` boolean.
 This also works for `renderChunk`, `generateBundle`, and other build only hooks.
 
-## Shared plugins during build
+## Shared Plugins During Build
 
 Before Vite 6, the plugins pipelines worked in a different way during dev and build:
 
@@ -204,7 +204,7 @@ In a future major (Vite 7 or 8), we aim to have complete alignment:
 
 There will also be a single `ResolvedConfig` instance shared during build, allowing for caching at entire app build process level in the same way as we have been doing with `WeakMap<ResolvedConfig, CachedData>` during dev.
 
-For Vite 6, we need to do a smaller step to keep backward compatibility. Ecosystem plugins are currently using `config.build` instead of `environment.config.build` to access configuration, so we need to create a new `ResolvedConfig` per environment by default. A project can opt-in into sharing the full config and plugins pipeline setting `builder.sharedConfigBuild` to `true`.
+For Vite 6, we need to do a smaller step to keep backward compatibility. Ecosystem plugins are currently using `config.build` instead of `environment.config.build` to access configuration, so we need to create a new `ResolvedConfig` per-environment by default. A project can opt-in into sharing the full config and plugins pipeline setting `builder.sharedConfigBuild` to `true`.
 
 This option would only work of a small subset of projects at first, so plugin authors can opt-in for a particular plugin to be shared by setting the `sharedDuringBuild` flag to `true`. This allows for easily sharing state both for regular plugins:
 

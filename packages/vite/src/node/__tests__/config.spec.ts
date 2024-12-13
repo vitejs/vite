@@ -1,7 +1,7 @@
 import http from 'node:http'
 import { describe, expect, test } from 'vitest'
-import type { InlineConfig } from '..'
-import type { PluginOption, UserConfig, UserConfigExport } from '../config'
+import type { InlineConfig, PluginOption } from '..'
+import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
 import { createLogger, mergeConfig } from '../publicUtils'
@@ -259,7 +259,7 @@ describe('preview config', () => {
     expect(await resolveConfig(config, 'serve')).toMatchObject({
       preview: {
         ...serverConfig(),
-        port: undefined,
+        port: 4173,
       },
     })
   })
@@ -358,4 +358,126 @@ describe('resolveConfig', () => {
 
     await resolveConfig({ root: './inc?ud#s', customLogger: logger }, 'build')
   })
+})
+
+test('config compat 1', async () => {
+  const config = await resolveConfig(
+    {
+      resolve: {
+        conditions: ['client1'],
+      },
+      ssr: {
+        resolve: {
+          conditions: ['ssr1'],
+        },
+      },
+      plugins: [
+        {
+          name: 'test',
+          config() {
+            return {
+              environments: {
+                client: {
+                  resolve: {
+                    conditions: ['client2'],
+                  },
+                },
+                ssr: {
+                  resolve: {
+                    conditions: ['ssr2'],
+                  },
+                },
+              },
+            }
+          },
+        },
+      ],
+    },
+    'serve',
+  )
+  expect(config.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client1",
+      "client2",
+    ]
+  `)
+  expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client1",
+      "client2",
+    ]
+  `)
+  expect(config.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr1",
+      "ssr2",
+    ]
+  `)
+  expect(config.environments.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr1",
+      "ssr2",
+    ]
+  `)
+})
+
+test('config compat 2', async () => {
+  const config = await resolveConfig(
+    {
+      environments: {
+        client: {
+          resolve: {
+            conditions: ['client1'],
+          },
+        },
+        ssr: {
+          resolve: {
+            conditions: ['ssr1'],
+          },
+        },
+      },
+      plugins: [
+        {
+          name: 'test',
+          config() {
+            return {
+              resolve: {
+                conditions: ['client2'],
+              },
+              ssr: {
+                resolve: {
+                  conditions: ['ssr2'],
+                },
+              },
+            }
+          },
+        },
+      ],
+    },
+    'serve',
+  )
+  expect(config.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client2",
+      "client1",
+    ]
+  `)
+  expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client2",
+      "client1",
+    ]
+  `)
+  expect(config.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr2",
+      "ssr1",
+    ]
+  `)
+  expect(config.environments.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr2",
+      "ssr1",
+    ]
+  `)
 })

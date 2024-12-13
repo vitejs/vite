@@ -29,3 +29,4 @@ export {
   ssrImportMetaKey,
   ssrModuleExportsKey,
 } from './constants'
+export type { InterceptorOptions } from './sourcemap/interceptor'

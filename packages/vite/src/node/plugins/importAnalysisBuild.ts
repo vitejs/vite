@@ -707,7 +707,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   '',
                 )
                 chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
-              } else if (buildSourcemap) {
+              } else {
                 if (originalDebugId) {
                   (map as any).debugId = originalDebugId;
                 }

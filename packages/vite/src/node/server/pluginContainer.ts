@@ -144,6 +144,12 @@ export async function createEnvironmentPluginContainer(
   return container
 }
 
+export type SkipInformation = {
+  id: string
+  importer: string | undefined
+  plugin: Plugin
+}
+
 class EnvironmentPluginContainer {
   private _pluginContextMap = new Map<Plugin, PluginContext>()
   private _resolvedRollupOptions?: InputOptions
@@ -288,10 +294,9 @@ class EnvironmentPluginContainer {
     const parallelPromises: Promise<unknown>[] = []
     for (const plugin of this.getSortedPlugins(hookName)) {
       // Don't throw here if closed, so buildEnd and closeBundle hooks can finish running
-      const hook = plugin[hookName]
-      if (!hook) continue
       if (condition && !condition(plugin)) continue
 
+      const hook = plugin[hookName]
       const handler: Function = getHookHandler(hook)
       if ((hook as { sequential?: boolean }).sequential) {
         await Promise.all(parallelPromises)
@@ -337,7 +342,9 @@ class EnvironmentPluginContainer {
     options?: {
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
+      /** @deprecated use `skipCalls` instead */
       skip?: Set<Plugin>
+      skipCalls?: readonly SkipInformation[]
       /**
        * @internal
        */
@@ -350,9 +357,17 @@ class EnvironmentPluginContainer {
       await this._buildStartPromise
     }
     const skip = options?.skip
+    const skipCalls = options?.skipCalls
     const scan = !!options?.scan
     const ssr = this.environment.config.consumer === 'server'
-    const ctx = new ResolveIdContext(this, skip, scan)
+    const ctx = new ResolveIdContext(this, skip, skipCalls, scan)
+
+    const mergedSkip = new Set<Plugin>(skip)
+    for (const call of skipCalls ?? []) {
+      if (call.id === rawId && call.importer === importer) {
+        mergedSkip.add(call.plugin)
+      }
+    }
 
     const resolveStart = debugResolve ? performance.now() : 0
     let id: string | null = null
@@ -360,8 +375,7 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('resolveId')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
-      if (!plugin.resolveId) continue
-      if (skip?.has(plugin)) continue
+      if (mergedSkip?.has(plugin)) continue
 
       ctx._plugin = plugin
 
@@ -423,7 +437,6 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('load')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
-      if (!plugin.load) continue
       ctx._plugin = plugin
       const handler = getHookHandler(plugin.load)
       const result = await this.handleHookPromise(
@@ -458,7 +471,6 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('transform')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
-      if (!plugin.transform) continue
 
       ctx._updateActiveInfo(plugin, id, code)
       const start = debugPluginTransform ? performance.now() : 0
@@ -538,6 +550,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
   _activeId: string | null = null
   _activeCode: string | null = null
   _resolveSkips?: Set<Plugin>
+  _resolveSkipCalls?: readonly SkipInformation[]
   meta: RollupPluginContext['meta']
   environment: Environment
 
@@ -563,16 +576,19 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       skipSelf?: boolean
     },
   ) {
-    let skip: Set<Plugin> | undefined
-    if (options?.skipSelf !== false && this._plugin) {
-      skip = new Set(this._resolveSkips)
-      skip.add(this._plugin)
-    }
+    const skipCalls =
+      options?.skipSelf === false
+        ? this._resolveSkipCalls
+        : [
+            ...(this._resolveSkipCalls || []),
+            { id, importer, plugin: this._plugin },
+          ]
     let out = await this._container.resolveId(id, importer, {
       attributes: options?.attributes,
       custom: options?.custom,
       isEntry: !!options?.isEntry,
-      skip,
+      skip: this._resolveSkips,
+      skipCalls,
       scan: this._scan,
     })
     if (typeof out === 'string') out = { id: out }
@@ -688,7 +704,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     if (err.pluginCode) {
       return err // The plugin likely called `this.error`
     }
-    if (this._plugin) err.plugin = this._plugin.name
+    err.plugin = this._plugin.name
     if (this._activeId && !err.id) err.id = this._activeId
     if (this._activeCode) {
       err.pluginCode = this._activeCode
@@ -740,7 +756,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       if (
         this instanceof TransformPluginContext &&
         typeof err.loc?.line === 'number' &&
-        typeof err.loc?.column === 'number'
+        typeof err.loc.column === 'number'
       ) {
         const rawSourceMap = this._getCombinedSourcemap()
         if (rawSourceMap && 'version' in rawSourceMap) {
@@ -749,7 +765,7 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
             line: Number(err.loc.line),
             column: Number(err.loc.column),
           })
-          if (source && line != null && column != null) {
+          if (source) {
             err.loc = { file: source, line, column }
           }
         }
@@ -798,10 +814,12 @@ class ResolveIdContext extends PluginContext {
   constructor(
     container: EnvironmentPluginContainer,
     skip: Set<Plugin> | undefined,
+    skipCalls: readonly SkipInformation[] | undefined,
     scan: boolean,
   ) {
     super(null!, container)
     this._resolveSkips = skip
+    this._resolveSkipCalls = skipCalls
     this._scan = scan
   }
 }
@@ -851,7 +869,7 @@ class TransformPluginContext
     }
   }
 
-  _getCombinedSourcemap(): SourceMap {
+  _getCombinedSourcemap(): SourceMap | { mappings: '' } | null {
     if (
       debugSourcemapCombine &&
       debugSourcemapCombineFilter &&
@@ -871,7 +889,7 @@ class TransformPluginContext
       combinedMap.mappings === ''
     ) {
       this.sourcemapChain.length = 0
-      return combinedMap as SourceMap
+      return combinedMap
     }
 
     for (let m of this.sourcemapChain) {
@@ -912,11 +930,11 @@ class TransformPluginContext
       this.combinedMap = combinedMap
       this.sourcemapChain.length = 0
     }
-    return this.combinedMap as SourceMap
+    return this.combinedMap
   }
 
   getCombinedSourcemap(): SourceMap {
-    const map = this._getCombinedSourcemap() as SourceMap | { mappings: '' }
+    const map = this._getCombinedSourcemap()
     if (!map || (!('version' in map) && map.mappings === '')) {
       return new MagicString(this.originalCode).generateMap({
         includeContent: true,
@@ -953,7 +971,7 @@ class PluginContainer {
   }) {
     return options?.environment
       ? options.environment
-      : this.environments?.[options?.ssr ? 'ssr' : 'client']
+      : this.environments[options?.ssr ? 'ssr' : 'client']
   }
 
   private _getPluginContainer(options?: {
@@ -964,14 +982,41 @@ class PluginContainer {
   }
 
   getModuleInfo(id: string): ModuleInfo | null {
-    return (
-      (
-        this.environments.client as DevEnvironment
-      ).pluginContainer.getModuleInfo(id) ||
-      (this.environments.ssr as DevEnvironment).pluginContainer.getModuleInfo(
-        id,
-      )
-    )
+    const clientModuleInfo = (
+      this.environments.client as DevEnvironment
+    ).pluginContainer.getModuleInfo(id)
+    const ssrModuleInfo = (
+      this.environments.ssr as DevEnvironment
+    ).pluginContainer.getModuleInfo(id)
+
+    if (clientModuleInfo == null && ssrModuleInfo == null) return null
+
+    return new Proxy({} as any, {
+      get: (_, key: string) => {
+        // `meta` refers to `ModuleInfo.meta` of both environments, so we also
+        // need to merge it here
+        if (key === 'meta') {
+          const meta: Record<string, any> = {}
+          if (ssrModuleInfo) {
+            Object.assign(meta, ssrModuleInfo.meta)
+          }
+          if (clientModuleInfo) {
+            Object.assign(meta, clientModuleInfo.meta)
+          }
+          return meta
+        }
+        if (clientModuleInfo) {
+          if (key in clientModuleInfo) {
+            return clientModuleInfo[key as keyof ModuleInfo]
+          }
+        }
+        if (ssrModuleInfo) {
+          if (key in ssrModuleInfo) {
+            return ssrModuleInfo[key as keyof ModuleInfo]
+          }
+        }
+      },
+    })
   }
 
   get options(): InputOptions {
@@ -1003,7 +1048,9 @@ class PluginContainer {
     options?: {
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
+      /** @deprecated use `skipCalls` instead */
       skip?: Set<Plugin>
+      skipCalls?: readonly SkipInformation[]
       ssr?: boolean
       /**
        * @internal

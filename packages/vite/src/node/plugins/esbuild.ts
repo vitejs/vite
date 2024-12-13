@@ -265,7 +265,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
     },
   }
 
-  let server: ViteDevServer
+  let server: ViteDevServer | undefined
 
   return {
     name: 'vite:esbuild',

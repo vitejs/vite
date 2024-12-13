@@ -102,6 +102,18 @@
     CSS background image-set() inline style (with multiple descriptor)
   </span>
 </div>
+<div
+  class="image-set-and-url-exsiting-at-same-time"
+  style="
+    background-image: image-set(url('./nested/asset.png')),
+      url('./nested/asset.png');
+    background-size: 10px 10px;
+  "
+>
+  <span style="background: #fff"
+    >CSS background image-set() and url existing at the same time</span
+  >
+</div>
 <div class="css-url-relative-at-imported">
   <span style="background: #fff"
     >CSS background (relative from @imported file in different dir)</span
