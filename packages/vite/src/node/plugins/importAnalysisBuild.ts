@@ -698,7 +698,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               ]) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)
 
-              const originalDebugId = chunk.map.debugId
+              const originalDebugId = chunk.map.debugId;
               chunk.map = map
 
               if (buildSourcemap === 'inline') {
