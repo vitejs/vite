@@ -112,13 +112,15 @@ function patchTypes(): Plugin {
  * Runner chunk should only import local dependencies to stay lightweight
  */
 function validateRunnerChunk(this: PluginContext, chunk: RenderedChunk) {
-  for (const id of chunk.imports) {
+  for (const [id, bindings] of Object.entries(chunk.importedBindings)) {
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
       !id.startsWith('types.d')
     ) {
-      this.warn(`${chunk.fileName} imports "${id}" which is not allowed`)
+      this.warn(
+        `${chunk.fileName} imports "${bindings.join(', ')}" from "${id}" which is not allowed`,
+      )
       process.exitCode = 1
     }
   }
@@ -129,7 +131,7 @@ function validateRunnerChunk(this: PluginContext, chunk: RenderedChunk) {
  */
 function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
   const deps = Object.keys(pkg.dependencies)
-  for (const id of chunk.imports) {
+  for (const [id, bindings] of Object.entries(chunk.importedBindings)) {
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
@@ -141,7 +143,9 @@ function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
     ) {
       // If validation failed, only warn and set exit code 1 so that files
       // are written to disk for inspection, but the build will fail
-      this.warn(`${chunk.fileName} imports "${id}" which is not allowed`)
+      this.warn(
+        `${chunk.fileName} imports "${bindings.join(', ')}" from "${id}" which is not allowed`,
+      )
       process.exitCode = 1
     }
   }
