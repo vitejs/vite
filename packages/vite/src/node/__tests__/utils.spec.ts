@@ -570,6 +570,45 @@ describe('combineSourcemaps', () => {
     )
   })
 
+  test('should combine sourcemaps with multiple sources 2', () => {
+    const sourcemaps = [
+      // processed with sass
+      // https://evanw.github.io/source-map-visualization/#NTYALmltcG9ydGVkMiB7CiAgY29sb3I6IHJlZAp9CgouaW1wb3J0ZWQgewogIGNvbG9yOiByZWQKfQoyNzAAewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsKICAgICIvaW1wb3J0ZWQyLnNhc3MiLAogICAgIi9Gb28udnVlIgogIF0sCiAgIm5hbWVzIjogW10sCiAgIm1hcHBpbmdzIjogIkFBQUE7RUFDRTs7O0FDRUY7RUFDRSIsCiAgImZpbGUiOiAiL0Zvby52dWUiLAogICJzb3VyY2VzQ29udGVudCI6IFsKICAgICIuaW1wb3J0ZWQyXG4gIGNvbG9yOiByZWRcbiIsCiAgICAiXG5AdXNlICcuL2ltcG9ydGVkMidcblxuLmltcG9ydGVkXG4gIGNvbG9yOiByZWRcbiIKICBdCn0K
+      {
+        version: 3 as const,
+        file: resolveFile('./src/Foo.vue'),
+        mappings: 'AAAA;EACE;;;ACEF;EACE',
+        names: [],
+        sources: [
+          resolveFile('./src/imported2.sass'),
+          resolveFile('./src/Foo.vue'),
+        ],
+      },
+      // processed with vue
+      // https://evanw.github.io/source-map-visualization/#NDQACkB1c2UgJy4vaW1wb3J0ZWQyJwoKLmltcG9ydGVkCiAgY29sb3I6IHJlZAo0OTQAewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsKICAgICIvRm9vLnZ1ZSIKICBdLAogICJuYW1lcyI6IFtdLAogICJtYXBwaW5ncyI6ICI7QUFNQSxDQUFDLENBQUMsQ0FBQyxFQUFFLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDOztBQUVqQixDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUM7RUFDTixDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsRUFBRSxDQUFDLENBQUMiLAogICJmaWxlIjogIi9Gb28udnVlIiwKICAic291cmNlc0NvbnRlbnQiOiBbCiAgICAiPHRlbXBsYXRlPlxuICA8cCBjbGFzcz1cImltcG9ydGVkXCI+Zm9vPC9wPlxuICA8cCBjbGFzcz1cImltcG9ydGVkMlwiPmJhcjwvcD5cbjwvdGVtcGxhdGU+XG5cbjxzdHlsZSBsYW5nPVwic2Fzc1wiPlxuQHVzZSAnLi9pbXBvcnRlZDInXG5cbi5pbXBvcnRlZFxuICBjb2xvcjogcmVkXG48L3N0eWxlPlxuIgogIF0KfQo=
+      {
+        version: 3 as const,
+        file: resolveFile('./src/Foo.vue'),
+        sources: [resolveFile('./src/Foo.vue')],
+        names: [],
+        mappings:
+          ';AAMA,CAAC,CAAC,CAAC,EAAE,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;;AAEjB,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;EACN,CAAC,CAAC,CAAC,CAAC,CAAC,EAAE,CAAC,CAAC',
+      },
+    ]
+    const combined = combineSourcemaps(resolveFile('./src/Foo.vue'), sourcemaps)
+    expect(combined).toStrictEqual(
+      expect.objectContaining({
+        version: 3,
+        file: resolveFile('./src/Foo.vue'),
+        mappings: 'AAAA;EACE;;;ACOF;EACE',
+        sources: [
+          resolveFile('./src/imported2.sass'),
+          resolveFile('./src/Foo.vue'),
+        ],
+      }),
+    )
+  })
+
   test('should combine sourcemaps with multiple sources without matched source', () => {
     const sourcemaps = [
       // processed with postcss
@@ -588,7 +627,6 @@ describe('combineSourcemaps', () => {
       // https://evanw.github.io/source-map-visualization/#MjkALmZvbyB7CiAgb3ZlcmZsb3c6IHNjcm9sbDsKfQoyMDcAewogICJmaWxlIjogIi9zcmMvc2Fzcy9zdHlsZS5zYXNzIiwKICAibWFwcGluZ3MiOiAiQUFBQTtFQUNFIiwKICAibmFtZXMiOiBbXSwKICAic291cmNlcyI6IFsKICAgICIvc3JjL3Nhc3MvdmVuZG9yL2luZGV4LnNjc3MiCiAgXSwKICAic291cmNlc0NvbnRlbnQiOiBbIi5mb28ge1xuICBvdmVyZmxvdzogc2Nyb2xsO1xufVxuIl0sCiAgInZlcnNpb24iOiAzCn0K
       {
         version: 3 as const,
-        sourceRoot: '',
         sources: [resolveFile('./src/sass/vendor/index.scss')],
         names: [],
         mappings: 'AAAA;EACE',

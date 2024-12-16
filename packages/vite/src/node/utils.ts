@@ -844,21 +844,39 @@ export function combineSourcemaps(
     }
     return newSourcemaps
   })
+  const escapedFilename = escapeToLinuxLikePath(filename)
 
   // We don't declare type here so we can convert/fake/map as RawSourceMap
   let map //: SourceMap
-  let mapIndex = 1
   const useArrayInterface =
     sourcemapList.slice(0, -1).find((m) => m.sources.length !== 1) === undefined
   if (useArrayInterface) {
     map = remapping(sourcemapList, () => null)
   } else {
-    map = remapping(sourcemapList[0], function loader() {
-      if (sourcemapList[mapIndex]) {
-        return sourcemapList[mapIndex++]
-      } else {
+    const usedIndexForEachSource = Object.create(null)
+
+    map = remapping(sourcemapList[0], function loader(sourcefile) {
+      usedIndexForEachSource[sourcefile] ||= 1
+      const startIndex = usedIndexForEachSource[sourcefile]
+      // already mapped all files for this source
+      if (startIndex < 0) {
         return null
       }
+
+      const foundIndex = sourcemapList.slice(startIndex).findIndex(
+        (s) =>
+          // if the sourcemap has no file field, assume it's the sourcemap for the current file
+          sourcefile ===
+          (s.file ? escapeToLinuxLikePath(s.file) : escapedFilename),
+      )
+      if (foundIndex === -1) {
+        usedIndexForEachSource[sourcefile] = -1
+        return null
+      }
+
+      const index = startIndex + foundIndex
+      usedIndexForEachSource[sourcefile] = index + 1
+      return sourcemapList[startIndex + foundIndex]
     })
   }
   if (!map.file) {
