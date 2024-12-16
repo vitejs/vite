@@ -373,20 +373,20 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       const resolveUrl = (url: string, importer?: string) =>
         idResolver(environment, url, importer)
 
-      const urlReplacer: CssUrlReplacer = async (url, importer) => {
+      const urlResolver: CssUrlResolver = async (url, importer) => {
         const decodedUrl = decodeURI(url)
         if (checkPublicFile(decodedUrl, config)) {
           if (encodePublicUrlsInCSS(config)) {
-            return publicFileToBuiltUrl(decodedUrl, config)
+            return [publicFileToBuiltUrl(decodedUrl, config), undefined]
           } else {
-            return joinUrlSegments(config.base, decodedUrl)
+            return [joinUrlSegments(config.base, decodedUrl), undefined]
           }
         }
         const [id, fragment] = decodedUrl.split('#')
         let resolved = await resolveUrl(id, importer)
         if (resolved) {
           if (fragment) resolved += '#' + fragment
-          return fileToUrl(this, resolved)
+          return [await fileToUrl(this, resolved), resolved]
         }
         if (config.command === 'build') {
           const isExternal = config.build.rollupOptions.external
@@ -405,7 +405,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             )
           }
         }
-        return url
+        return [url, undefined]
       }
 
       const {
@@ -418,7 +418,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         id,
         raw,
         preprocessorWorkerController!,
-        urlReplacer,
+        urlResolver,
       )
       if (modules) {
         moduleCache.set(id, modules)
@@ -1058,17 +1058,20 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           // main import to hot update
           const depModules = new Set<string | EnvironmentModuleNode>()
           for (const file of pluginImports) {
-            depModules.add(
-              isCSSRequest(file)
-                ? moduleGraph.createFileOnlyEntry(file)
-                : await moduleGraph.ensureEntryFromUrl(
-                    await fileToDevUrl(
-                      this.environment,
-                      file,
-                      /* skipBase */ true,
-                    ),
-                  ),
-            )
+            if (isCSSRequest(file)) {
+              depModules.add(moduleGraph.createFileOnlyEntry(file))
+            } else {
+              const url = await fileToDevUrl(
+                this.environment,
+                file,
+                /* skipBase */ true,
+              )
+              if (url.startsWith('data:')) {
+                depModules.add(moduleGraph.createFileOnlyEntry(file))
+              } else {
+                depModules.add(await moduleGraph.ensureEntryFromUrl(url))
+              }
+            }
           }
           moduleGraph.updateModuleInfo(
             thisModule,
@@ -1261,7 +1264,7 @@ async function compileCSS(
   id: string,
   code: string,
   workerController: PreprocessorWorkerController,
-  urlReplacer?: CssUrlReplacer,
+  urlResolver?: CssUrlResolver,
 ): Promise<{
   code: string
   map?: SourceMapInput
@@ -1271,7 +1274,7 @@ async function compileCSS(
 }> {
   const { config } = environment
   if (config.css.transformer === 'lightningcss') {
-    return compileLightningCSS(id, code, environment, urlReplacer)
+    return compileLightningCSS(id, code, environment, urlResolver)
   }
 
   const { modules: modulesOptions, devSourcemap } = config.css
@@ -1380,10 +1383,11 @@ async function compileCSS(
     )
   }
 
-  if (urlReplacer) {
+  if (urlResolver) {
     postcssPlugins.push(
       UrlRewritePostcssPlugin({
-        replacer: urlReplacer,
+        resolver: urlResolver,
+        deps,
         logger: environment.logger,
       }),
     )
@@ -1717,6 +1721,12 @@ async function resolvePostcssConfig(
   return result
 }
 
+type CssUrlResolver = (
+  url: string,
+  importer?: string,
+) =>
+  | [url: string, id: string | undefined]
+  | Promise<[url: string, id: string | undefined]>
 type CssUrlReplacer = (
   url: string,
   importer?: string,
@@ -1733,7 +1743,8 @@ export const importCssRE =
 const cssImageSetRE = /(?<=image-set\()((?:[\w-]{1,256}\([^)]*\)|[^)])*)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
-  replacer: CssUrlReplacer
+  resolver: CssUrlResolver
+  deps: Set<string>
   logger: Logger
 }> = (opts) => {
   if (!opts) {
@@ -1757,8 +1768,12 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
         const isCssUrl = cssUrlRE.test(declaration.value)
         const isCssImageSet = cssImageSetRE.test(declaration.value)
         if (isCssUrl || isCssImageSet) {
-          const replacerForDeclaration = (rawUrl: string) => {
-            return opts.replacer(rawUrl, importer)
+          const replacerForDeclaration = async (rawUrl: string) => {
+            const [newUrl, resolvedId] = await opts.resolver(rawUrl, importer)
+            if (resolvedId) {
+              opts.deps.add(resolvedId)
+            }
+            return newUrl
           }
           if (isCssUrl && isCssImageSet) {
             promises.push(
@@ -3129,7 +3144,7 @@ async function compileLightningCSS(
   id: string,
   src: string,
   environment: PartialEnvironment,
-  urlReplacer?: CssUrlReplacer,
+  urlResolver?: CssUrlResolver,
 ): ReturnType<typeof compileCSS> {
   const { config } = environment
   const deps = new Set<string>()
@@ -3215,11 +3230,14 @@ async function compileLightningCSS(
           css = css.replace(dep.placeholder, () => dep.url)
           break
         }
-        if (urlReplacer) {
-          const replaceUrl = await urlReplacer(
+        if (urlResolver) {
+          const [replaceUrl, resolvedId] = await urlResolver(
             dep.url,
             toAbsolute(dep.loc.filePath),
           )
+          if (resolvedId) {
+            deps.add(resolvedId)
+          }
           css = css.replace(dep.placeholder, () => replaceUrl)
         } else {
           css = css.replace(dep.placeholder, () => dep.url)
