@@ -101,6 +101,7 @@ test('sass', async () => {
   expect(await getColor(partialImport)).toBe('orchid')
   expect(await getColor(await page.$('.sass-file-absolute'))).toBe('orange')
   expect(await getColor(await page.$('.sass-dir-index'))).toBe('orange')
+  expect(await getColor(await page.$('.sass-root-relative'))).toBe('orange')
 
   if (isBuild) return
 

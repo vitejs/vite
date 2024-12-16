@@ -193,7 +193,7 @@ export const normalizeHotChannel = (
   ) => {
     if (!invokeHandlers) {
       return {
-        e: {
+        error: {
           name: 'TransportError',
           message: 'invokeHandlers is not set',
           stack: new Error().stack,
@@ -207,10 +207,10 @@ export const normalizeHotChannel = (
       const invokeHandler = invokeHandlers[name]
       // @ts-expect-error `invokeHandler` is `InvokeMethods[T]`, so passing the args is fine
       const result = await invokeHandler(...args)
-      return { r: result }
+      return { result }
     } catch (error) {
       return {
-        e: {
+        error: {
           name: error.name,
           message: error.message,
           stack: error.stack,
@@ -301,13 +301,7 @@ export const normalizeHotChannel = (
       }
       channel.on?.('vite:invoke', listenerForInvokeHandler)
     },
-    handleInvoke: async (payload) => {
-      const data = await handleInvoke(payload)
-      if (data.e) {
-        return { error: data.e }
-      }
-      return { result: data.r }
-    },
+    handleInvoke,
     send: (...args: any[]) => {
       let payload: HotPayload
       if (typeof args[0] === 'string') {

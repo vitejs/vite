@@ -82,7 +82,7 @@ import {
   urlRE,
 } from '../utils'
 import type { Logger } from '../logger'
-import { cleanUrl, slash } from '../../shared/utils'
+import { cleanUrl, isWindows, slash } from '../../shared/utils'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { PartialEnvironment } from '../baseEnvironment'
@@ -1162,8 +1162,14 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           preferRelative: true,
         })
         sassResolve = async (...args) => {
+          // the modern API calls `canonicalize` with resolved file URLs
+          // for relative URLs before raw specifiers
           if (args[1].startsWith('file://')) {
-            args[1] = fileURLToPath(args[1])
+            args[1] = fileURLToPath(args[1], {
+              windows:
+                // file:///foo cannot be converted to path with windows mode
+                isWindows && args[1].startsWith('file:///') ? false : undefined,
+            })
           }
           return resolver(...args)
         }

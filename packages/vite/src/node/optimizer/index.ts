@@ -775,9 +775,11 @@ async function prepareEsbuildOptimizerRun(
   if (optimizerContext.cancelled) return { context: undefined, idToExports }
 
   const define = {
-    'process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || environment.config.mode,
-    ),
+    'process.env.NODE_ENV': environment.config.keepProcessEnv
+      ? // define process.env.NODE_ENV even for keepProcessEnv === true
+        // as esbuild will replace it automatically when `platform` is `'browser'`
+        'process.env.NODE_ENV'
+      : JSON.stringify(process.env.NODE_ENV || environment.config.mode),
   }
 
   const platform =
@@ -1210,7 +1212,9 @@ function getConfigHash(environment: Environment): string {
   const { optimizeDeps } = config
   const content = JSON.stringify(
     {
-      mode: process.env.NODE_ENV || config.mode,
+      define: !config.keepProcessEnv
+        ? process.env.NODE_ENV || config.mode
+        : null,
       root: config.root,
       resolve: config.resolve,
       assetsInclude: config.assetsInclude,

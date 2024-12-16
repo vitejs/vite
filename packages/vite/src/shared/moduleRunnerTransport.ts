@@ -96,11 +96,11 @@ const createInvokeableTransport = (
 
               rpcPromises.delete(invokeId)
 
-              const { e, r } = data.data
-              if (e) {
-                promise.reject(e)
+              const { error, result } = data.data
+              if (error) {
+                promise.reject(error)
               } else {
-                promise.resolve(r)
+                promise.resolve(result)
               }
               return
             }
