@@ -28,45 +28,42 @@ export function htmlFallbackMiddleware(
       return next()
     }
 
-    const url = cleanUrl(req.url!)
-    const pathname = decodeURIComponent(url)
+    const { url, pathname } = normalizeIndexHtmlUrl(req.url!)
 
     // .html files are not handled by serveStaticMiddleware
     // so we need to check if the file exists
-    if (pathname.endsWith('.html')) {
-      const filePath = path.join(root, pathname)
-      if (fs.existsSync(filePath)) {
-        debug?.(`Rewriting ${req.method} ${req.url} to ${url}`)
-        req.url = url
-        return next()
-      }
-    }
-    // trailing slash should check for fallback index.html
-    else if (pathname[pathname.length - 1] === '/') {
-      const filePath = path.join(root, pathname, 'index.html')
-      if (fs.existsSync(filePath)) {
-        const newUrl = url + 'index.html'
-        debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
-        req.url = newUrl
-        return next()
-      }
-    }
-    // non-trailing slash should check for fallback .html
-    else {
-      const filePath = path.join(root, pathname + '.html')
-      if (fs.existsSync(filePath)) {
-        const newUrl = url + '.html'
-        debug?.(`Rewriting ${req.method} ${req.url} to ${newUrl}`)
-        req.url = newUrl
-        return next()
-      }
-    }
-
-    if (spaFallback) {
+    if (fs.existsSync(path.join(root, pathname))) {
+      debug?.(`Rewriting ${req.method} ${req.url} to ${url}`)
+      req.url = url
+    } else if (spaFallback) {
       debug?.(`Rewriting ${req.method} ${req.url} to /index.html`)
       req.url = '/index.html'
     }
 
     next()
+  }
+}
+
+export function normalizeIndexHtmlUrl(url: string): {
+  url: string
+  pathname: string
+} {
+  url = cleanUrl(url)
+  let pathname = decodeURIComponent(url)
+
+  if (pathname.endsWith('.html')) {
+    return { url, pathname }
+  }
+  // trailing slash should check for fallback index.html
+  else if (pathname[pathname.length - 1] === '/') {
+    pathname += 'index.html'
+    url += 'index.html'
+    return { url, pathname }
+  }
+  // non-trailing slash should check for fallback .html
+  else {
+    pathname += '.html'
+    url += '.html'
+    return { url, pathname }
   }
 }
