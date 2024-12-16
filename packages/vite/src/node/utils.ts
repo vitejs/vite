@@ -853,16 +853,12 @@ export function combineSourcemaps(
   if (useArrayInterface) {
     map = remapping(sourcemapList, () => null)
   } else {
-    map = remapping(sourcemapList[0], function loader(sourcefile) {
-      const mapForSources = sourcemapList
-        .slice(mapIndex)
-        .find((s) => s.sources.includes(sourcefile))
-
-      if (mapForSources) {
-        mapIndex++
-        return mapForSources
+    map = remapping(sourcemapList[0], function loader() {
+      if (sourcemapList[mapIndex]) {
+        return sourcemapList[mapIndex++]
+      } else {
+        return null
       }
-      return null
     })
   }
   if (!map.file) {

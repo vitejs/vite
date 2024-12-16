@@ -1,9 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
+import { fileURLToPath } from 'mlly'
 import {
   asyncFlatten,
   bareImportRE,
+  combineSourcemaps,
   flattenId,
   generateCodeFrame,
   getHash,
@@ -11,6 +13,7 @@ import {
   injectQuery,
   isFileReadable,
   mergeWithDefaults,
+  normalizePath,
   posToNumber,
   processSrcSetSync,
   resolveHostname,
@@ -497,5 +500,114 @@ describe('mergeWithDefaults', () => {
     // cloned
     expect(actual2.object).not.toBe(defaults.object)
     expect(actual2.array).not.toBe(defaults.array)
+  })
+})
+
+describe('combineSourcemaps', () => {
+  const _dirname = path.dirname(fileURLToPath(import.meta.url))
+  const resolveFile = (file: string) => {
+    return normalizePath(path.resolve(_dirname, file))
+  }
+
+  test('should combine sourcemaps with single sources', () => {
+    const sourcemaps = [
+      // processed with magic-string
+      // https://evanw.github.io/source-map-visualization/#MzQALyogY29tbWVudCAqLwpjb25zb2xlLmxvZygiZm9vIik7CjE1NgB7InZlcnNpb24iOjMsInNvdXJjZXMiOlsiL3NyYy9mb28uanMiXSwic291cmNlc0NvbnRlbnQiOlsiY29uc29sZS5sb2coXCJmb29cIik7XG4iXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IjtBQUFBLE9BQU8sQ0FBQyxHQUFHLENBQUMsQ0FBQyxHQUFHLENBQUMsQ0FBQzsifQo=
+      {
+        version: 3 as const,
+        mappings: ';AAAA,OAAO,CAAC,GAAG,CAAC,CAAC,GAAG,CAAC,CAAC;',
+        names: [],
+        sources: [resolveFile('./src/foo.js')],
+      },
+      // processed with esbuild
+      // https://evanw.github.io/source-map-visualization/#MjAAY29uc29sZS5sb2coImZvbyIpOwoxNDgAewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiL3NyYy9mb28uanMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnNvbGUubG9nKFwiZm9vXCIpIl0sCiAgIm1hcHBpbmdzIjogIkFBQUEsUUFBUSxJQUFJLEtBQUs7IiwKICAibmFtZXMiOiBbXQp9Cg==
+      {
+        version: 3 as const,
+        mappings: 'AAAA,QAAQ,IAAI,KAAK;',
+        names: [],
+        sources: [resolveFile('./src/foo.js')],
+      },
+    ]
+    const combined = combineSourcemaps(resolveFile('./src/foo.js'), sourcemaps)
+    expect(combined).toStrictEqual(
+      expect.objectContaining({
+        version: 3,
+        file: resolveFile('./src/foo.js'),
+        mappings: ';AAAA,QAAQ,IAAI,KAAK',
+        sources: [resolveFile('./src/foo.js')],
+      }),
+    )
+  })
+
+  test('should combine sourcemaps with multiple sources', () => {
+    const sourcemaps = [
+      // processed with magic-string
+      // https://evanw.github.io/source-map-visualization/#NzcALyogY29tbWVudCAqLwovLyBiLmpzCmNvbnNvbGUubG9nKCIuL2IuanMiKTsKCi8vIGEuanMKY29uc29sZS5sb2coIi4vYS5qcyIpOwozMzkAeyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIi9hLmpzIl0sInNvdXJjZXNDb250ZW50IjpbIi8vIGIuanNcbmNvbnNvbGUubG9nKFwiLi9iLmpzXCIpO1xuXG4vLyBhLmpzXG5jb25zb2xlLmxvZyhcIi4vYS5qc1wiKTtcblxuIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7QUFBQSxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUM7T0FDRSxDQUFDLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsRUFBRSxDQUFDLENBQUM7O0FBRXJCLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQztPQUNFLENBQUMsR0FBRyxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxFQUFFLENBQUMsQ0FBQzs7In0K
+      {
+        version: 3 as const,
+        mappings:
+          ';AAAA,CAAC,CAAC,CAAC,CAAC,CAAC;OACE,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,EAAE,CAAC,CAAC;;AAErB,CAAC,CAAC,CAAC,CAAC,CAAC;OACE,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,EAAE,CAAC,CAAC;;',
+        names: [],
+        sources: [resolveFile('./src/a.js')],
+      },
+      // processed with esbuild
+      // https://evanw.github.io/source-map-visualization/#NjMALy8gYi5qcwpjb25zb2xlLmxvZygiLi9iLmpzIik7CgovLyBhLmpzCmNvbnNvbGUubG9nKCIuL2EuanMiKTsKMjIwAHsKICAidmVyc2lvbiI6IDMsCiAgInNvdXJjZXMiOiBbImIuanMiLCAiYS5qcyJdLAogICJzb3VyY2VzQ29udGVudCI6IFsiY29uc29sZS5sb2coJy4vYi5qcycpXG4iLCAiaW1wb3J0ICcuL2IuanMnXG5jb25zb2xlLmxvZygnLi9hLmpzJylcbiJdLAogICJtYXBwaW5ncyI6ICI7QUFBQSxRQUFRLElBQUksUUFBUTs7O0FDQ3BCLFFBQVEsSUFBSSxRQUFROyIsCiAgIm5hbWVzIjogW10KfQo=
+      {
+        version: 3 as const,
+        mappings: ';AAAA,QAAQ,IAAI,QAAQ;;;ACCpB,QAAQ,IAAI,QAAQ;',
+        names: [],
+        sources: [resolveFile('./src/b.js'), resolveFile('./src/a.js')],
+      },
+    ]
+    const combined = combineSourcemaps(resolveFile('./src/a.js'), sourcemaps)
+    expect(combined).toStrictEqual(
+      expect.objectContaining({
+        version: 3,
+        file: resolveFile('./src/a.js'),
+        mappings: ';;OAAA,CAAQ,IAAI,QAAQ;;;OCCpB,CAAQ,IAAI,QAAQ',
+        sources: [resolveFile('./src/b.js'), resolveFile('./src/a.js')],
+      }),
+    )
+  })
+
+  test('should combine sourcemaps with multiple sources without matched source', () => {
+    const sourcemaps = [
+      // processed with postcss
+      // https://evanw.github.io/source-map-visualization/#NjYALmZvbyB7CiAgb3ZlcmZsb3c6IHNjcm9sbDsKICAtd2Via2l0LW92ZXJmbG93LXNjcm9sbGluZzogdG91Y2g7Cn0KMjU1AHsKICAiZmlsZSI6ICIvc3JjL3Nhc3Mvc3R5bGUuc2FzcyIsCiAgIm1hcHBpbmdzIjogIkFBQUE7RUFDRSxnQkFBZ0I7RUNEbEIsa0NBQUE7QURFQSIsCiAgIm5hbWVzIjogW10sCiAgInNvdXJjZXMiOiBbCiAgICAiL3NyYy9zYXNzL3N0eWxlLnNhc3MiLAogICAgIlx1MDAwMDxubyBzb3VyY2U+IgogIF0sCiAgInNvdXJjZXNDb250ZW50IjogWyAiLmZvbyB7XG4gIG92ZXJmbG93OiBzY3JvbGw7XG59IiwgbnVsbCBdLAogICJ2ZXJzaW9uIjogMwp9Cg==
+      {
+        version: 3 as const,
+        file: resolveFile('./src/sass/style.sass'),
+        mappings: 'AAAA;EACE,gBAAgB;ECDlB,kCAAA;ADEA',
+        names: [],
+        sources: [
+          resolveFile('./src/sass/style.sass'),
+          '\x00<no source>', // postcss virtual file
+        ],
+      },
+      // processed with sass
+      // https://evanw.github.io/source-map-visualization/#MjkALmZvbyB7CiAgb3ZlcmZsb3c6IHNjcm9sbDsKfQoyMDcAewogICJmaWxlIjogIi9zcmMvc2Fzcy9zdHlsZS5zYXNzIiwKICAibWFwcGluZ3MiOiAiQUFBQTtFQUNFIiwKICAibmFtZXMiOiBbXSwKICAic291cmNlcyI6IFsKICAgICIvc3JjL3Nhc3MvdmVuZG9yL2luZGV4LnNjc3MiCiAgXSwKICAic291cmNlc0NvbnRlbnQiOiBbIi5mb28ge1xuICBvdmVyZmxvdzogc2Nyb2xsO1xufVxuIl0sCiAgInZlcnNpb24iOiAzCn0K
+      {
+        version: 3 as const,
+        sourceRoot: '',
+        sources: [resolveFile('./src/sass/vendor/index.scss')],
+        names: [],
+        mappings: 'AAAA;EACE',
+      },
+    ]
+    const combined = combineSourcemaps(
+      resolveFile('./src/sass/style.sass'),
+      sourcemaps,
+    )
+    expect(combined).toStrictEqual(
+      expect.objectContaining({
+        version: 3,
+        file: resolveFile('./src/sass/style.sass'),
+        mappings: 'AAAA;EACE;ECDF',
+        sources: [
+          resolveFile('./src/sass/vendor/index.scss'),
+          '\x00<no source>',
+        ],
+      }),
+    )
   })
 })
