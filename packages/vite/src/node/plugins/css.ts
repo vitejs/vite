@@ -2374,7 +2374,15 @@ const makeModernScssWorker = (
               ? fileURLToPath(context.containingUrl)
               : options.filename
             const resolved = await internalCanonicalize(url, importer)
-            return resolved ? pathToFileURL(resolved) : null
+            if (
+              resolved &&
+              (resolved.endsWith('.css') ||
+                resolved.endsWith('.scss') ||
+                resolved.endsWith('.sass'))
+            ) {
+              return pathToFileURL(resolved)
+            }
+            return null
           },
           async load(canonicalUrl) {
             const ext = path.extname(canonicalUrl.pathname)
@@ -2463,7 +2471,15 @@ const makeModernCompilerScssWorker = (
             url,
             cleanScssBugUrl(importer),
           )
-          return resolved ? pathToFileURL(resolved) : null
+          if (
+            resolved &&
+            (resolved.endsWith('.css') ||
+              resolved.endsWith('.scss') ||
+              resolved.endsWith('.sass'))
+          ) {
+            return pathToFileURL(resolved)
+          }
+          return null
         },
         async load(canonicalUrl) {
           const ext = path.extname(canonicalUrl.pathname)
