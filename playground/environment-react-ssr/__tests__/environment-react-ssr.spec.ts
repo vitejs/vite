@@ -38,6 +38,19 @@ describe.runIf(!isBuild)('pre-bundling', () => {
     expect(metaJson.optimized['react/jsx-dev-runtime']).toBeTruthy()
 
     expect(metaJson.optimized['react-dom/client']).toBeFalsy()
+
+    // process.env.NODE_ENV should be kept as keepProcessEnv is true
+    const depsFiles = fs
+      .readdirSync(path.resolve(testDir, 'node_modules/.vite/deps_ssr'), {
+        withFileTypes: true,
+      })
+      .filter((file) => file.isFile() && file.name.endsWith('.js'))
+      .map((file) => path.join(file.parentPath, file.name))
+    const depsFilesWithProcessEnvNodeEnv = depsFiles.filter((file) =>
+      fs.readFileSync(file, 'utf-8').includes('process.env.NODE_ENV'),
+    )
+
+    expect(depsFilesWithProcessEnvNodeEnv.length).toBeGreaterThan(0)
   })
 
   test('deps reload', async () => {
