@@ -303,6 +303,20 @@ describe('css url() references', () => {
   test('image-set() with svg', async () => {
     expect(await getBg('.css-image-set-svg')).toMatch(/data:image\/svg\+xml,.+/)
   })
+
+  test('url() with svg in .css?url', async () => {
+    const bg = await getBg('.css-url-svg-in-url')
+    expect(bg).toMatch(/data:image\/svg\+xml,.+/)
+    expect(bg).toContain('blue')
+    expect(bg).not.toContain('red')
+
+    if (isServe) {
+      editFile('nested/fragment-bg-hmr2.svg', (code) =>
+        code.replace('fill="blue"', 'fill="red"'),
+      )
+      await untilUpdated(() => getBg('.css-url-svg'), 'red')
+    }
+  })
 })
 
 describe('image', () => {

@@ -184,6 +184,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       id = removeUrlQuery(id)
       let url = await fileToUrl(this, id)
 
+      if (id.endsWith('.css')) {
+        // .css?url depends on .css?direct
+        this.addWatchFile(id + '?direct')
+      }
+
       // Inherit HMR timestamp if this asset was invalidated
       if (!url.startsWith('data:') && this.environment.mode === 'dev') {
         const mod = this.environment.moduleGraph.getModuleById(id)
