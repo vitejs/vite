@@ -8,8 +8,7 @@ When running `vite` from the command line, Vite will automatically try to resolv
 
 The most basic config file looks like this:
 
-```js
-// vite.config.js
+```js [vite.config.js]
 export default {
   // config options
 }
