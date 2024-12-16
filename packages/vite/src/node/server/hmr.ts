@@ -793,6 +793,7 @@ function propagateUpdate(
     // #3716, #3913
     // For a non-CSS file, if all of its importers are CSS files (registered via
     // PostCSS plugins) it should be considered a dead end and force full reload.
+    // TODO
     if (
       !isCSSRequest(node.url) &&
       [...node.importers].every((i) => isCSSRequest(i.url))
