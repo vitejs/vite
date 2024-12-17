@@ -9,8 +9,8 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@types/react": "^18.3.14",
-    "@types/react-dom": "^18.3.2",
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
     "react": "^18.3.1",
     "react-fake-client": "npm:react@^18.3.1",
     "react-fake-server": "npm:react@^18.3.1",
