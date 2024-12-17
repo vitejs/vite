@@ -97,7 +97,7 @@
   },
   "packageManager": "pnpm@9.15.0",
   "pnpm": {
-    "x-overrides": {
+    "overrides": {
       "vite": "workspace:*"
     },
     "patchedDependencies": {
