@@ -9,7 +9,7 @@ import {
   viteTestUrl,
 } from '~utils'
 
-export const sassTest = (enableHmrTests = false) => {
+export const sassTest = () => {
   test('sass', async () => {
     const imported = await page.$('.sass')
     const atImport = await page.$('.sass-at-import')
@@ -40,7 +40,7 @@ export const sassTest = (enableHmrTests = false) => {
     expect(await getColor(await page.$('.sass-dir-index'))).toBe('orange')
     expect(await getColor(await page.$('.sass-root-relative'))).toBe('orange')
 
-    if (!enableHmrTests) return
+    if (isBuild) return
 
     editFile('sass.scss', (code) =>
       code.replace('color: $injectedColor', 'color: red'),
@@ -88,7 +88,7 @@ export const sassModuleTests = (enableHmrTests = false) => {
       /.mod-module__apply-color___[\w-]{5}/,
     )
 
-    if (!enableHmrTests) return
+    if (isBuild) return
 
     editFile('mod.module.scss', (code) =>
       code.replace('color: orangered', 'color: blue'),

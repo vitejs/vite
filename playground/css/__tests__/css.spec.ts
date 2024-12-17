@@ -76,7 +76,7 @@ test('postcss config', async () => {
   await untilUpdated(() => getColor(imported), 'red')
 })
 
-sassTest(!isBuild)
+sassTest()
 
 test('less', async () => {
   const imported = await page.$('.less')
@@ -182,7 +182,7 @@ test('css modules composes/from path resolving', async () => {
   // await untilUpdated(() => getColor(imported), 'red')
 })
 
-sassModuleTests(!isBuild)
+sassModuleTests()
 
 test('less modules composes/from path resolving', async () => {
   const imported = await page.$('.path-resolved-modules-less')
