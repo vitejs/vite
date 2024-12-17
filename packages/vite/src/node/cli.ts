@@ -183,7 +183,7 @@ cli
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
         server: cleanGlobalCLIOptions(options),
-        forceOptimization: options.force,
+        forceOptimizeDeps: options.force,
       })
 
       if (!server.httpServer) {

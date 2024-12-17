@@ -1141,7 +1141,7 @@ async function restartServer(server: ViteDevServer) {
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
-      forceOptimization: true,
+      forceOptimizeDeps: true,
     })
   }
 
