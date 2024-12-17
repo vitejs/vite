@@ -20,8 +20,8 @@ export const sassTest = (enableHmrTests = false) => {
     )
     const partialImport = await page.$('.sass-partial')
 
-    expectToBeEither(await getColor(imported), 'orange', 'red', enableHmrTests)
-    expectToBeEither(await getColor(atImport), 'olive', 'blue', enableHmrTests)
+    expect(await getColor(imported)).toBe('orange')
+    expect(await getColor(atImport)).toBe('olive')
     expect(await getBg(atImport)).toMatch(
       isBuild ? /base64/ : '/nested/icon.png',
     )
@@ -35,12 +35,7 @@ export const sassTest = (enableHmrTests = false) => {
     expect(await getBg(urlStartsWithFunctionCall)).toMatch(
       isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
     )
-    expectToBeEither(
-      await getColor(partialImport),
-      'orchid',
-      'green',
-      enableHmrTests,
-    )
+    expect(await getColor(partialImport)).toBe('orchid')
     expect(await getColor(await page.$('.sass-file-absolute'))).toBe('orange')
     expect(await getColor(await page.$('.sass-dir-index'))).toBe('orange')
     expect(await getColor(await page.$('.sass-root-relative'))).toBe('orange')
@@ -88,12 +83,7 @@ export const sassModuleTests = (enableHmrTests = false) => {
 
   test('css modules w/ sass', async () => {
     const imported = await page.$('.modules-sass')
-    expectToBeEither(
-      await getColor(imported),
-      'orangered',
-      'blue',
-      enableHmrTests,
-    )
+    expect(await getColor(imported)).toBe('orangered')
     expect(await imported.getAttribute('class')).toMatch(
       /.mod-module__apply-color___[\w-]{5}/,
     )
@@ -119,35 +109,4 @@ export const sassOtherTests = () => {
   test('@import dependency w/out package scss', async () => {
     expect(await getColor('.sass-dep')).toBe('lavender')
   })
-}
-
-/**
- * used to test things that is affected by the file modification for the HMR tests
- *
- * @param expected the expected value before the file modification
- * @param expectedAfterHMR the expected value after the file modification
- * @param hmrTestsEnabled whether the HMR tests are enabled
- */
-const expectToBeEither = (
-  actual: string,
-  expected: string,
-  expectedAfterHMR: string,
-  hmrTestsEnabled: boolean,
-) => {
-  if (hmrTestsEnabled) {
-    expect(actual).toBe(expected)
-    return
-  }
-
-  try {
-    expect(actual).toBe(expected)
-    return
-  } catch {}
-  try {
-    expect(actual).toMatch(expectedAfterHMR)
-  } catch {
-    throw new Error(
-      `expected ${actual} to be ${expected} or ${expectedAfterHMR}`,
-    )
-  }
 }
