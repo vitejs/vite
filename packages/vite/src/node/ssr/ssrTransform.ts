@@ -157,11 +157,11 @@ async function ssrTransformScript(
     return importId
   }
 
-  function defineExport(position: number, name: string, local = name) {
+  function defineExport(_position: number, name: string, local = name) {
     s.appendLeft(
-      position,
-      `\nObject.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
-        `{ enumerable: true, configurable: true, get(){ return ${local} }});`,
+      fileStartIndex,
+      `Object.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
+        `{ enumerable: true, configurable: true, get(){ return ${local} }});\n`,
     )
   }
 

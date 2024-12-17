@@ -232,6 +232,30 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('/fixtures/no-this/importer.js')
     expect(mod.result).toBe(undefined)
   })
+
+  it.for([
+    ['/fixtures/cyclic2/test1/index.js', true],
+    ['/fixtures/cyclic2/test2/index.js', true],
+    ['/fixtures/cyclic2/test3/index.js', true],
+    ['/fixtures/cyclic2/test4/index.js', true],
+    ['/fixtures/cyclic2/test5/index.js', false],
+  ] as const)(`cyclic %s`, async ([entry, ok], { runner }) => {
+    if (ok) {
+      const mod = await runner.import(entry)
+      expect({ ...mod }).toEqual({
+        dep1: {
+          ok: true,
+        },
+        dep2: {
+          ok: true,
+        },
+      })
+    } else {
+      await expect(() => runner.import(entry)).rejects.toMatchObject({
+        name: 'ReferenceError',
+      })
+    }
+  })
 })
 
 describe('optimize-deps', async () => {
