@@ -1,5 +1,6 @@
 @use 'sass:string';
 @use '/nested/root-relative'; // root relative path
+@use '../weapp.wxss'; // test user's custom importer in a file loaded by vite's custom importer
 
 @import './css-in-scss.css';
 

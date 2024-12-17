@@ -2380,7 +2380,20 @@ const makeModernScssWorker = (
               ? fileURLToPath(context.containingUrl)
               : options.filename
             const resolved = await internalCanonicalize(url, importer)
-            return resolved ? pathToFileURL(resolved) : null
+            if (
+              resolved &&
+              // only limit to these extensions because:
+              // - for the `@import`/`@use`s written in file loaded by `load` function,
+              //   the `canonicalize` function of that `importer` is called first
+              // - the `load` function of an importer is only called for the importer
+              //   that returned a non-null result from its `canonicalize` function
+              (resolved.endsWith('.css') ||
+                resolved.endsWith('.scss') ||
+                resolved.endsWith('.sass'))
+            ) {
+              return pathToFileURL(resolved)
+            }
+            return null
           },
           async load(canonicalUrl) {
             const ext = path.extname(canonicalUrl.pathname)
@@ -2469,7 +2482,15 @@ const makeModernCompilerScssWorker = (
             url,
             cleanScssBugUrl(importer),
           )
-          return resolved ? pathToFileURL(resolved) : null
+          if (
+            resolved &&
+            (resolved.endsWith('.css') ||
+              resolved.endsWith('.scss') ||
+              resolved.endsWith('.sass'))
+          ) {
+            return pathToFileURL(resolved)
+          }
+          return null
         },
         async load(canonicalUrl) {
           const ext = path.extname(canonicalUrl.pathname)
