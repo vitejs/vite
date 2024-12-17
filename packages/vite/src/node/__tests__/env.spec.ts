@@ -34,7 +34,18 @@ describe('loadEnv', () => {
       .toMatchInlineSnapshot(`
         {
           "VITE_APP_BASE_ROUTE": "/app/",
-          "VITE_APP_BASE_URL": "/app/",
+          "VITE_APP_BASE_URL": "/",
+        }
+      `)
+  })
+
+  test('override 2', () => {
+    expect(loadEnv('development2', join(__dirname, './env')))
+      .toMatchInlineSnapshot(`
+        {
+          "VITE_APP_BASE_ROUTE": "source",
+          "VITE_APP_BASE_URL": "/",
+          "VITE_SOURCE": "source",
         }
       `)
   })
