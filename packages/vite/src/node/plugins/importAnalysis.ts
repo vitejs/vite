@@ -769,7 +769,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
           normalized = mod.url
         } else {
           try {
+            // this fallback is for backward compat and will be removed in Vite 7
             const [resolved] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
+            normalized = resolved
             if (resolved) {
               this.warn({
                 message:
@@ -777,11 +779,11 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
                   ' An id should be written. Did you pass a URL?',
                 pos: start,
               })
-              continue
             }
-          } catch {}
-          this.error(`Failed to resolve ${JSON.stringify(url)}`, start)
-          return
+          } catch {
+            this.error(`Failed to resolve ${JSON.stringify(url)}`, start)
+            return
+          }
         }
         normalizedAcceptedUrls.add(normalized)
         const hmrAccept = normalizeHmrUrl(normalized)
