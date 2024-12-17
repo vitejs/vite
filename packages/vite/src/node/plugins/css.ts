@@ -1776,7 +1776,7 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
         if (isCssUrl || isCssImageSet) {
           const replacerForDeclaration = async (rawUrl: string) => {
             const [newUrl, resolvedId] = await opts.resolver(rawUrl, importer)
-            // only register inlined assets to avoid frequent full refresh
+            // only register inlined assets to avoid frequent full refresh (#18979)
             if (newUrl.startsWith('data:') && resolvedId) {
               opts.deps.add(resolvedId)
             }
@@ -3242,7 +3242,7 @@ async function compileLightningCSS(
             dep.url,
             toAbsolute(dep.loc.filePath),
           )
-          // only register inlined assets to avoid frequent full refresh
+          // only register inlined assets to avoid frequent full refresh (#18979)
           if (replaceUrl.startsWith('data:') && resolvedId) {
             deps.add(resolvedId)
           }
