@@ -29,7 +29,7 @@ export function loadEnv(
   const env: Record<string, string> = {}
   const envFiles = getEnvFilesForMode(mode, envDir)
 
-  const parsed = Object.fromEntries(
+  let parsed = Object.fromEntries(
     envFiles.flatMap((filePath) => {
       if (!tryStatSync(filePath)?.isFile()) return []
 
@@ -48,6 +48,8 @@ export function loadEnv(
   if (parsed.BROWSER_ARGS && process.env.BROWSER_ARGS === undefined) {
     process.env.BROWSER_ARGS = parsed.BROWSER_ARGS
   }
+
+  parsed = reorderEnvs(parsed)
 
   // let environment variables use each other. make a copy of `process.env` so that `dotenv-expand`
   // doesn't re-assign the expanded values to the global `process.env`.
@@ -82,4 +84,28 @@ export function resolveEnvPrefix({
     )
   }
   return envPrefix
+}
+
+// https://github.com/motdotla/dotenv-expand/blob/6af96d46a28db30779bec90b6e9f40a98028a735/lib/main.js#L10C17-L10C73
+const dotEnvExpandRE = /(?<!\\)\$\{[^{}]+\}|(?<!\\)\$[A-Za-z_]\w*/
+const isExpandable = (value: string) => dotEnvExpandRE.test(value)
+
+/**
+ * Reorder env keys so that env vars that are expandable are last
+ *
+ * This is to make all expandable variable possible to reference non-expandable variables
+ */
+function reorderEnvs(input: Record<string, string>) {
+  return Object.fromEntries(
+    Object.entries(input).sort(([, a], [, b]) => {
+      const aIsExpandable = isExpandable(a)
+      const bIsExpandable = isExpandable(b)
+      if (
+        (aIsExpandable && bIsExpandable) ||
+        (!aIsExpandable && !bIsExpandable)
+      )
+        return 0
+      return aIsExpandable ? 1 : -1
+    }),
+  )
 }
