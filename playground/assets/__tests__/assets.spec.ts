@@ -570,8 +570,8 @@ test.runIf(isBuild)('manifest', async () => {
 
   for (const file of listAssets('foo')) {
     if (file.endsWith('.css')) {
-      // ignore icons-*.css as it's imported with ?url
-      if (file.includes('icons-')) continue
+      // ignore icons-*.css and css-url-url-*.css as it's imported with ?url
+      if (file.includes('icons-') || file.includes('css-url-url-')) continue
       expect(entry.css).toContain(`assets/${file}`)
     } else if (!file.endsWith('.js')) {
       expect(entry.assets).toContain(`assets/${file}`)
