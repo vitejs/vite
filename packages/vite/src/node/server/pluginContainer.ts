@@ -146,6 +146,12 @@ export async function createEnvironmentPluginContainer(
   return container
 }
 
+export type SkipInformation = {
+  id: string
+  importer: string | undefined
+  plugin: Plugin
+}
+
 class EnvironmentPluginContainer {
   private _pluginContextMap = new Map<Plugin, PluginContext>()
   private _resolvedRollupOptions?: InputOptions
@@ -330,7 +336,9 @@ class EnvironmentPluginContainer {
     options?: {
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
+      /** @deprecated use `skipCalls` instead */
       skip?: Set<Plugin>
+      skipCalls?: readonly SkipInformation[]
       /**
        * @internal
        */
@@ -343,9 +351,17 @@ class EnvironmentPluginContainer {
       await this._buildStartPromise
     }
     const skip = options?.skip
+    const skipCalls = options?.skipCalls
     const scan = !!options?.scan
     const ssr = this.environment.config.consumer === 'server'
-    const ctx = new ResolveIdContext(this, skip, scan)
+    const ctx = new ResolveIdContext(this, skip, skipCalls, scan)
+
+    const mergedSkip = new Set<Plugin>(skip)
+    for (const call of skipCalls ?? []) {
+      if (call.id === rawId && call.importer === importer) {
+        mergedSkip.add(call.plugin)
+      }
+    }
 
     const resolveStart = debugResolve ? performance.now() : 0
     let id: string | null = null
@@ -353,7 +369,7 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('resolveId')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
-      if (skip?.has(plugin)) continue
+      if (mergedSkip?.has(plugin)) continue
 
       ctx._plugin = plugin
 
@@ -572,6 +588,7 @@ class PluginContext
   _activeId: string | null = null
   _activeCode: string | null = null
   _resolveSkips?: Set<Plugin>
+  _resolveSkipCalls?: readonly SkipInformation[]
 
   constructor(
     public _plugin: Plugin,
@@ -594,16 +611,19 @@ class PluginContext
       skipSelf?: boolean
     },
   ) {
-    let skip: Set<Plugin> | undefined
-    if (options?.skipSelf !== false) {
-      skip = new Set(this._resolveSkips)
-      skip.add(this._plugin)
-    }
+    const skipCalls =
+      options?.skipSelf === false
+        ? this._resolveSkipCalls
+        : [
+            ...(this._resolveSkipCalls || []),
+            { id, importer, plugin: this._plugin },
+          ]
     let out = await this._container.resolveId(id, importer, {
       attributes: options?.attributes,
       custom: options?.custom,
       isEntry: !!options?.isEntry,
-      skip,
+      skip: this._resolveSkips,
+      skipCalls,
       scan: this._scan,
     })
     if (typeof out === 'string') out = { id: out }
@@ -831,10 +851,12 @@ class ResolveIdContext extends PluginContext {
   constructor(
     container: EnvironmentPluginContainer,
     skip: Set<Plugin> | undefined,
+    skipCalls: readonly SkipInformation[] | undefined,
     scan: boolean,
   ) {
     super(null!, container)
     this._resolveSkips = skip
+    this._resolveSkipCalls = skipCalls
     this._scan = scan
   }
 }
@@ -997,14 +1019,41 @@ class PluginContainer {
   }
 
   getModuleInfo(id: string): ModuleInfo | null {
-    return (
-      (
-        this.environments.client as DevEnvironment
-      ).pluginContainer.getModuleInfo(id) ||
-      (this.environments.ssr as DevEnvironment).pluginContainer.getModuleInfo(
-        id,
-      )
-    )
+    const clientModuleInfo = (
+      this.environments.client as DevEnvironment
+    ).pluginContainer.getModuleInfo(id)
+    const ssrModuleInfo = (
+      this.environments.ssr as DevEnvironment
+    ).pluginContainer.getModuleInfo(id)
+
+    if (clientModuleInfo == null && ssrModuleInfo == null) return null
+
+    return new Proxy({} as any, {
+      get: (_, key: string) => {
+        // `meta` refers to `ModuleInfo.meta` of both environments, so we also
+        // need to merge it here
+        if (key === 'meta') {
+          const meta: Record<string, any> = {}
+          if (ssrModuleInfo) {
+            Object.assign(meta, ssrModuleInfo.meta)
+          }
+          if (clientModuleInfo) {
+            Object.assign(meta, clientModuleInfo.meta)
+          }
+          return meta
+        }
+        if (clientModuleInfo) {
+          if (key in clientModuleInfo) {
+            return clientModuleInfo[key as keyof ModuleInfo]
+          }
+        }
+        if (ssrModuleInfo) {
+          if (key in ssrModuleInfo) {
+            return ssrModuleInfo[key as keyof ModuleInfo]
+          }
+        }
+      },
+    })
   }
 
   get options(): InputOptions {
@@ -1036,7 +1085,9 @@ class PluginContainer {
     options?: {
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
+      /** @deprecated use `skipCalls` instead */
       skip?: Set<Plugin>
+      skipCalls?: readonly SkipInformation[]
       ssr?: boolean
       /**
        * @internal

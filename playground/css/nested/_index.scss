@@ -1,4 +1,5 @@
 @use 'sass:string';
+@use '/nested/root-relative'; // root relative path
 
 @import './css-in-scss.css';
 
