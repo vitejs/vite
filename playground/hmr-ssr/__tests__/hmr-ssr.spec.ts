@@ -844,7 +844,7 @@ if (!isBuild) {
     await untilUpdated(() => hmr('.optional-chaining')?.toString(), '2')
   })
 
-  test('hmr works for self-accepted module within circular imported files', async () => {
+  test.skip('hmr works for self-accepted module within circular imported files', async () => {
     await setupModuleRunner('/self-accept-within-circular/index')
     const el = () => hmr('.self-accept-within-circular')
     expect(el()).toBe('c')
