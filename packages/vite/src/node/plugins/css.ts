@@ -83,6 +83,7 @@ import {
 } from '../utils'
 import type { Logger } from '../logger'
 import { cleanUrl, isWindows, slash } from '../../shared/utils'
+import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { PartialEnvironment } from '../baseEnvironment'
@@ -3161,7 +3162,11 @@ async function compileLightningCSS(
   const { config } = environment
   const deps = new Set<string>()
   // Relative path is needed to get stable hash when using CSS modules
-  const filename = cleanUrl(path.relative(config.root, id))
+  const filename = path
+    .relative(config.root, id)
+    // replace null byte as lightningcss treats that as a string terminator
+    // https://github.com/parcel-bundler/lightningcss/issues/874
+    .replace('\0', NULL_BYTE_PLACEHOLDER)
   const toAbsolute = (filePath: string) =>
     path.isAbsolute(filePath) ? filePath : path.join(config.root, filePath)
 
@@ -3183,10 +3188,6 @@ async function compileLightningCSS(
           resolver: {
             read(filePath) {
               if (filePath === filename) {
-                return src
-              }
-              // This happens with html-proxy (#13776)
-              if (!filePath.endsWith('.css')) {
                 return src
               }
               return fs.readFileSync(toAbsolute(filePath), 'utf-8')
@@ -3224,7 +3225,7 @@ async function compileLightningCSS(
   } catch (e) {
     e.message = `[lightningcss] ${e.message}`
     e.loc = {
-      file: toAbsolute(e.fileName),
+      file: toAbsolute(e.fileName.replace(NULL_BYTE_PLACEHOLDER, '\0')),
       line: e.loc.line,
       column: e.loc.column - 1, // 1-based
     }
@@ -3242,7 +3243,10 @@ async function compileLightningCSS(
         if (skipUrlReplacer(dep.url)) {
           replaceUrl = dep.url
         } else if (urlReplacer) {
-          replaceUrl = await urlReplacer(dep.url, toAbsolute(dep.loc.filePath))
+          replaceUrl = await urlReplacer(
+            dep.url,
+            toAbsolute(dep.loc.filePath.replace(NULL_BYTE_PLACEHOLDER, '\0')),
+          )
         } else {
           replaceUrl = dep.url
         }
