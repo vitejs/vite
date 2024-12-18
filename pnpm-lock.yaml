@@ -899,7 +899,7 @@ importers:
 
   playground/nested-deps/test-package-e/test-package-e-included:
     dependencies:
-      test-package-e-excluded:
+      '@vitejs/test-package-e-excluded':
         specifier: link:../test-package-e-excluded
         version: link:../test-package-e-excluded
 
