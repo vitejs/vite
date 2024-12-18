@@ -3237,21 +3237,25 @@ async function compileLightningCSS(
   let css = decoder.decode(res.code)
   for (const dep of res.dependencies!) {
     switch (dep.type) {
-      case 'url':
+      case 'url': {
+        let replaceUrl: string
         if (skipUrlReplacer(dep.url)) {
-          css = css.replace(dep.placeholder, () => dep.url)
-          break
-        }
-        if (urlReplacer) {
-          const replaceUrl = await urlReplacer(
-            dep.url,
-            toAbsolute(dep.loc.filePath),
-          )
-          css = css.replace(dep.placeholder, () => replaceUrl)
+          replaceUrl = dep.url
+        } else if (urlReplacer) {
+          replaceUrl = await urlReplacer(dep.url, toAbsolute(dep.loc.filePath))
         } else {
-          css = css.replace(dep.placeholder, () => dep.url)
+          replaceUrl = dep.url
         }
+
+        css = css.replace(
+          dep.placeholder,
+          // lightningcss always generates `url("placeholder")`
+          // (`url('placeholder')`, `url(placeholder)` is not generated)
+          // so escape double quotes
+          () => replaceUrl.replaceAll('"', '\\"'),
+        )
         break
+      }
       default:
         throw new Error(`Unsupported dependency type: ${dep.type}`)
     }

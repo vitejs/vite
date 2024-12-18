@@ -87,3 +87,9 @@ test('aliased asset', async () => {
   const bg = await getBg('.css-url-aliased')
   expect(bg).toMatch('data:image/svg+xml,')
 })
+
+test('preinlined SVG', async () => {
+  expect(await getBg('.css-url-preinlined-svg')).toMatch(
+    /data:image\/svg\+xml,.+/,
+  )
+})
