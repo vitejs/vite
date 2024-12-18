@@ -6,6 +6,7 @@ import {
   isInNodeModules,
   normalizePath,
   safeRealpathSync,
+  stripBomTag,
   tryStatSync,
 } from './utils'
 import type { Plugin } from './plugin'
@@ -174,15 +175,8 @@ export function findNearestMainPackageData(
   )
 }
 
-function stripBOM(content: string) {
-  if (content.charCodeAt(0) === 0xfeff) {
-    content = content.slice(1)
-  }
-  return content
-}
-
 export function loadPackageData(pkgPath: string): PackageData {
-  const data = JSON.parse(stripBOM(fs.readFileSync(pkgPath, 'utf-8')))
+  const data = JSON.parse(stripBomTag(fs.readFileSync(pkgPath, 'utf-8')))
   const pkgDir = normalizePath(path.dirname(pkgPath))
   const { sideEffects } = data
   let hasSideEffects: (id: string) => boolean | null
