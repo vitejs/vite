@@ -14,11 +14,7 @@ export default defineConfig({
       './playground-temp/**/*.*',
     ],
     testTimeout: 20000,
-    // isolate: false,
-    // TODO:
-    // importing non entry file can be broken due to cyclic import e.g.
-    //   pnpm exec tsx packages/vite/src/node/server/index.ts
-    setupFiles: ['./packages/vite/src/node/index.ts'],
+    isolate: false,
   },
   esbuild: {
     target: 'node18',

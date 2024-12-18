@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { parseAst } from 'rollup/parseAst'
+import { resolveConfig } from '../..'
 import { assetImportMetaUrlPlugin } from '../../plugins/assetImportMetaUrl'
-import { resolveConfig } from '../../config'
 import { PartialEnvironment } from '../../baseEnvironment'
 
 async function createAssetImportMetaurlPluginTransform() {

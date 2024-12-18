@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+import '../..'
 import { transformCjsImport } from '../../plugins/importAnalysis'
 
 describe('transformCjsImport', () => {

@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'node:url'
 import { test } from 'vitest'
-import { createServer } from '../../server'
+import { createServer } from '../..'
 
 const root = fileURLToPath(new URL('./', import.meta.url))
 

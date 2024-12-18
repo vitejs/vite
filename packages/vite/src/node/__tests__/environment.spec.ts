@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { describe, expect, onTestFinished, test } from 'vitest'
 import type { RollupOutput } from 'rollup'
-import { createServer } from '../server'
+import { createServer } from '..'
 import type { InlineConfig } from '../config'
 import { createBuilder } from '../build'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
