@@ -3161,14 +3161,9 @@ async function compileLightningCSS(
 ): ReturnType<typeof compileCSS> {
   const { config } = environment
   const deps = new Set<string>()
-  // Relative path is needed to get stable hash when using CSS modules
-  const filename = path
-    .relative(config.root, id)
-    // replace null byte as lightningcss treats that as a string terminator
-    // https://github.com/parcel-bundler/lightningcss/issues/874
-    .replace('\0', NULL_BYTE_PLACEHOLDER)
-  const toAbsolute = (filePath: string) =>
-    path.isAbsolute(filePath) ? filePath : path.join(config.root, filePath)
+  // replace null byte as lightningcss treats that as a string terminator
+  // https://github.com/parcel-bundler/lightningcss/issues/874
+  const filename = id.replace('\0', NULL_BYTE_PLACEHOLDER)
 
   let res: LightningCssTransformAttributeResult | LightningCssTransformResult
   try {
@@ -3185,12 +3180,14 @@ async function compileLightningCSS(
         ).bundleAsync({
           ...config.css.lightningcss,
           filename,
+          // projectRoot is needed to get stable hash when using CSS modules
+          projectRoot: config.root,
           resolver: {
             read(filePath) {
               if (filePath === filename) {
                 return src
               }
-              return fs.readFileSync(toAbsolute(filePath), 'utf-8')
+              return fs.readFileSync(filePath, 'utf-8')
             },
             async resolve(id, from) {
               const publicFile = checkPublicFile(
@@ -3203,7 +3200,7 @@ async function compileLightningCSS(
 
               const resolved = await getAtImportResolvers(
                 environment.getTopLevelConfig(),
-              ).css(environment, id, toAbsolute(from))
+              ).css(environment, id, from)
 
               if (resolved) {
                 deps.add(resolved)
@@ -3225,7 +3222,7 @@ async function compileLightningCSS(
   } catch (e) {
     e.message = `[lightningcss] ${e.message}`
     e.loc = {
-      file: toAbsolute(e.fileName.replace(NULL_BYTE_PLACEHOLDER, '\0')),
+      file: e.fileName.replace(NULL_BYTE_PLACEHOLDER, '\0'),
       line: e.loc.line,
       column: e.loc.column - 1, // 1-based
     }
@@ -3245,7 +3242,7 @@ async function compileLightningCSS(
         } else if (urlReplacer) {
           replaceUrl = await urlReplacer(
             dep.url,
-            toAbsolute(dep.loc.filePath.replace(NULL_BYTE_PLACEHOLDER, '\0')),
+            dep.loc.filePath.replace(NULL_BYTE_PLACEHOLDER, '\0'),
           )
         } else {
           replaceUrl = dep.url
