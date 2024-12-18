@@ -789,6 +789,9 @@ function propagateUpdate(
     // PostCSS plugins) it should be considered a dead end and force full reload.
     if (
       !isCSSRequest(node.url) &&
+      // we assume .svg is never an entrypoint and does not need a full reload
+      // to avoid frequent full reloads when an SVG file is referenced in CSS files (#18979)
+      !node.file?.endsWith('.svg') &&
       [...node.importers].every((i) => isCSSRequest(i.url))
     ) {
       return true
