@@ -324,7 +324,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number,
         forceSkipImportAnalysis: boolean = false,
-      ): Promise<[string, string]> => {
+      ): Promise<[string, string | null]> => {
         url = stripBase(url, base)
 
         let importerFile = importer
@@ -357,7 +357,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (!resolved || resolved.meta?.['vite:alias']?.noResolved) {
           // in ssr, we should let node handle the missing modules
           if (ssr) {
-            return [url, url]
+            return [url, null]
           }
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
@@ -552,7 +552,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
 
             // normalize
-            const [url, resolvedId] = await normalizeUrl(specifier, start)
+            let [url, resolvedId] = await normalizeUrl(specifier, start)
+            resolvedId = resolvedId || url
 
             // record as safe modules
             // safeModulesPath should not include the base prefix.
