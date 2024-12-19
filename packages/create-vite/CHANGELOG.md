@@ -1,3 +1,15 @@
+## 6.1.0 (2024-12-19)
+
+* feat(create-vite): align tsconfigs in svelte-ts template with others (#18995) ([b48b98c](https://github.com/vitejs/vite/commit/b48b98ce0618eb3d142c0ce86a765502fb4ac190)), closes [#18995](https://github.com/vitejs/vite/issues/18995)
+* feat(create-vite): extend from @vue/tsconfig to simplify tsconfig.app.json (#18862) ([89eea02](https://github.com/vitejs/vite/commit/89eea020a3723276495b950542e1c71f4ced781a)), closes [#18862](https://github.com/vitejs/vite/issues/18862)
+* fix(deps): update all non-major dependencies (#18853) ([5c02236](https://github.com/vitejs/vite/commit/5c0223636fa277d5daeb4d93c3f32d9f3cd69fc5)), closes [#18853](https://github.com/vitejs/vite/issues/18853)
+* fix(deps): update all non-major dependencies (#18967) ([d88d000](https://github.com/vitejs/vite/commit/d88d0004a8e891ca6026d356695e0b319caa7fce)), closes [#18967](https://github.com/vitejs/vite/issues/18967)
+* fix(deps): update all non-major dependencies (#18996) ([2b4f115](https://github.com/vitejs/vite/commit/2b4f115129fb3fbd730a92078acb724f8527b7f7)), closes [#18996](https://github.com/vitejs/vite/issues/18996)
+* chore(deps): update all non-major dependencies (#18916) ([ef7a6a3](https://github.com/vitejs/vite/commit/ef7a6a35e6827b92445e5a0c2c0022616efc80dd)), closes [#18916](https://github.com/vitejs/vite/issues/18916)
+* refactor: fix logic errors found by no-unnecessary-condition rule (#18891) ([ea802f8](https://github.com/vitejs/vite/commit/ea802f8f8bcf3771a35c1eaf687378613fbabb24)), closes [#18891](https://github.com/vitejs/vite/issues/18891)
+
+
+
 ## <small>6.0.1 (2024-11-27)</small>
 
 * feat(create-vite): bump vite-plugin-solid to `2.11.0` (#18792) ([32ac96f](https://github.com/vitejs/vite/commit/32ac96f54ca459d1a4c7ff7f4dbb4111eaea00f1)), closes [#18792](https://github.com/vitejs/vite/issues/18792)
