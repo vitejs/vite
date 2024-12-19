@@ -184,7 +184,7 @@ test('hoist import to top', async () => {
   )
 })
 
-test('do not hoist import if only whitespace is between them', async () => {
+test('whitespace between imports does not trigger hoisting', async () => {
   expect(
     await ssrTransformSimpleCode(
       `import { dirname } from 'node:path';\n\n\nimport fs from 'node:fs';`,
