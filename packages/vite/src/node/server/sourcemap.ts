@@ -90,13 +90,14 @@ export function genSourceMapUrl(map: SourceMap | string): string {
   return `data:application/json;base64,${Buffer.from(map).toString('base64')}`
 }
 
+const asteriskSlashRE = /\*\//g
 export function getCodeWithSourcemap(
   type: 'js' | 'css',
   code: string,
   map: SourceMap,
 ): string {
   if (debug) {
-    code += `\n/*${JSON.stringify(map, null, 2).replace(/\*\//g, '*\\/')}*/\n`
+    code += `\n/*${JSON.stringify(map, null, 2).replace(asteriskSlashRE, '*\\/')}*/\n`
   }
 
   if (type === 'js') {

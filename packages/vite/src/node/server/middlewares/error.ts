@@ -35,10 +35,12 @@ export function buildErrorMessage(
   return args.join('\n')
 }
 
+const stackRE = /^\s*at/
+const newlineRE = /\n/
 function cleanStack(stack: string) {
   return stack
-    .split(/\n/)
-    .filter((l) => /^\s*at/.test(l))
+    .split(newlineRE)
+    .filter((l) => stackRE.test(l))
     .join('\n')
 }
 
@@ -63,6 +65,7 @@ export function errorMiddleware(
   server: ViteDevServer,
   allowNext = false,
 ): Connect.ErrorHandleFunction {
+  const arrowLeftRE = /</g
   // note the 4 args must be kept for connect to treat this as error middleware
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteErrorMiddleware(err: RollupError, _req, res, next) {
@@ -80,7 +83,7 @@ export function errorMiddleware(
             <title>Error</title>
             <script type="module">
               const error = ${JSON.stringify(prepareError(err)).replace(
-                /</g,
+                arrowLeftRE,
                 '\\u003c',
               )}
               try {
