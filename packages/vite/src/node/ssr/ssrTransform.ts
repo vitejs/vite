@@ -137,21 +137,38 @@ async function ssrTransformScript(
     }
     const metadataStr = metadata ? `, ${JSON.stringify(metadata)}` : ''
 
+    // Track how many lines the original import statement spans, so we can preserve the line offset.
+    let linesSpanned = 1
+    for (let i = importNode.start; i < importNode.end; i++) {
+      if (code[i] === '\n') {
+        linesSpanned++
+      }
+    }
+
     s.update(
       importNode.start,
       importNode.end,
       `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
         source,
-      )}${metadataStr});\n`,
+      )}${metadataStr});${'\n'.repeat(linesSpanned - 1)}`,
     )
 
-    if (importNode.start === index) {
-      // no need to hoist, but update hoistIndex to keep the order
-      hoistIndex = importNode.end
-    } else {
-      // There will be an error if the module is called before it is imported,
-      // so the module import statement is hoisted to the top
+    // Check for non-whitespace characters between the last import and the
+    // current one.
+    const nonWhitespaceRegex = /\S/g
+    nonWhitespaceRegex.lastIndex = index
+    nonWhitespaceRegex.exec(code)
+
+    // TODO: Account for comments between imports.
+    if (importNode.start > nonWhitespaceRegex.lastIndex) {
+      // By moving the import to the top of the module, we ensure that it's
+      // imported before it's used.
       s.move(importNode.start, importNode.end, index)
+    } else {
+      // Only update hoistIndex when not hoisting the current import. This
+      // ensures that once any import in this module has been hoisted, all
+      // remaining imports will also be hoisted.
+      hoistIndex = importNode.end
     }
 
     return importId
