@@ -68,7 +68,7 @@
     "playwright-chromium": "^1.49.1",
     "premove": "^4.0.0",
     "prettier": "3.4.2",
-    "rollup": "^4.23.0",
+    "rollup": "^4.29.0-0",
     "rollup-plugin-esbuild": "^6.1.1",
     "simple-git-hooks": "^2.11.1",
     "tslib": "^2.8.1",
@@ -103,7 +103,8 @@
     "patchedDependencies": {
       "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch",
       "sirv@3.0.0": "patches/sirv@3.0.0.patch",
-      "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
+      "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
+      "rollup@4.29.0-0": "patches/rollup@4.29.0-0.patch"
     },
     "peerDependencyRules": {
       "allowedVersions": {
