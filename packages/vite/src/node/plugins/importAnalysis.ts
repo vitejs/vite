@@ -757,7 +757,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
-        let [normalized, resolvedId] = await normalizeUrl(url, start)
+        let [normalized, resolvedId] = await normalizeUrl(url, start).catch(
+          () => [],
+        )
         if (resolvedId) {
           const mod = moduleGraph.getModuleById(resolvedId)
           if (!mod) {
