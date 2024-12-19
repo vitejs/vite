@@ -184,6 +184,78 @@ test('hoist import to top', async () => {
   )
 })
 
+test('preserve line offset when rewriting imports', async () => {
+  // The line number of each non-import statement must not change.
+  const inputLines = [
+    `debugger;`,
+    ``,
+    `import {`,
+    `  dirname,`,
+    `  join,`,
+    `} from 'node:path';`,
+    ``,
+    `debugger;`,
+    ``,
+    `import fs from 'node:fs';`,
+    ``,
+    `debugger;`,
+    ``,
+    `import {`,
+    `  red,`,
+    `  green,`,
+    `} from 'kleur/colors';`,
+    ``,
+    `debugger;`,
+  ]
+
+  const output = await ssrTransformSimpleCode(inputLines.join('\n'))
+  expect(output).toBeDefined()
+
+  const outputLines = output!.split('\n')
+  expect(
+    outputLines
+      .map((line, i) => `${String(i + 1).padStart(2)} | ${line}`.trimEnd())
+      .join('\n'),
+  ).toMatchInlineSnapshot(`
+    " 1 | const __vite_ssr_import_0__ = await __vite_ssr_import__("node:path", {"importedNames":["dirname","join"]});const __vite_ssr_import_1__ = await __vite_ssr_import__("node:fs", {"importedNames":["default"]});const __vite_ssr_import_2__ = await __vite_ssr_import__("kleur/colors", {"importedNames":["red","green"]});debugger;
+     2 |
+     3 |
+     4 |
+     5 |
+     6 |
+     7 |
+     8 | debugger;
+     9 |
+    10 |
+    11 |
+    12 | debugger;
+    13 |
+    14 |
+    15 |
+    16 |
+    17 |
+    18 |
+    19 | debugger;"
+  `)
+
+  // Ensure the debugger statements are still on the same lines.
+  expect(outputLines[0].endsWith(inputLines[0])).toBe(true)
+  expect(outputLines[7]).toBe(inputLines[7])
+  expect(outputLines[11]).toBe(inputLines[11])
+  expect(outputLines[18]).toBe(inputLines[18])
+})
+
+test.fails('comments between imports do not trigger hoisting', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { dirname } from 'node:path';// comment\nimport fs from 'node:fs';`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("node:path", {"importedNames":["dirname"]});// comment
+    const __vite_ssr_import_1__ = await __vite_ssr_import__("node:fs", {"importedNames":["default"]});"
+  `)
+})
+
 test('import.meta', async () => {
   expect(
     await ssrTransformSimpleCode(`console.log(import.meta.url)`),
