@@ -299,10 +299,67 @@ const renameFiles: Record<string, string | undefined> = {
 }
 
 const defaultTargetDir = 'vite-project'
+const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
+const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
+
+function run(...params: Parameters<typeof spawn.sync>) {
+  const { status, error } = spawn.sync(...params)
+
+  if (status !== null && status > 0) {
+    process.exit(status)
+  }
+
+  if (error) {
+    console.error(`\n${params.slice(0, -1).join(' ')} error!`)
+    console.error(error)
+    process.exit(1)
+  }
+}
+
+function nextAction(root: string) {
+  const cdProjectName = path.relative(cwd, root)
+  console.log(`\nDone. Now run:\n`)
+  if (root !== cwd) {
+    console.log(
+      `  cd ${
+        cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
+      }`,
+    )
+  }
+  switch (pkgManager) {
+    case 'yarn':
+      console.log('  yarn')
+      console.log('  yarn dev')
+      break
+    default:
+      console.log(`  ${pkgManager} install`)
+      console.log(`  ${pkgManager} run dev`)
+      break
+  }
+}
+
+function install(root: string, agent: string) {
+  console.log(`\nInstalling dependencies via ${agent}...`)
+  run(agent, agent === 'yarn' ? [] : ['install'], {
+    stdio: 'inherit',
+    cwd: root,
+  })
+}
+
+function start(root: string, agent: string) {
+  console.log('\nStart dev server...')
+  run(agent, agent === 'npm' ? ['run', 'dev'] : ['dev'], {
+    stdio: 'inherit',
+    cwd: root,
+  })
+}
 
 async function init() {
   const argTargetDir = formatTargetDir(argv._[0])
   const argTemplate = argv.template || argv.t
+  const argImmediate = argv.immediate || argv.i
+  const argAgent = argv.agent || argv.a
 
   const help = argv.help
   if (help) {
@@ -314,7 +371,13 @@ async function init() {
   const getProjectName = () => path.basename(path.resolve(targetDir))
 
   let result: prompts.Answers<
-    'projectName' | 'overwrite' | 'packageName' | 'framework' | 'variant'
+    | 'projectName'
+    | 'overwrite'
+    | 'packageName'
+    | 'framework'
+    | 'variant'
+    | 'immediate'
+    | 'agent'
   >
 
   prompts.override({
@@ -408,6 +471,21 @@ async function init() {
               }
             }),
         },
+        {
+          type: argImmediate ? null : 'confirm',
+          name: 'immediate',
+          message: reset('Install and start now?'),
+        },
+        {
+          type: (immediate: boolean) =>
+            !immediate || argAgent ? null : 'select',
+          name: 'agent',
+          message: reset('Select a agent:'),
+          choices: ['npm', 'yarn', 'pnpm'].map((agent) => ({
+            value: agent,
+            title: agent,
+          })),
+        },
       ],
       {
         onCancel: () => {
@@ -421,7 +499,14 @@ async function init() {
   }
 
   // user choice associated with prompts
-  const { framework, overwrite, packageName, variant } = result
+  const {
+    framework,
+    overwrite,
+    packageName,
+    variant,
+    immediate = argImmediate === true,
+    agent = argAgent,
+  } = result
 
   const root = path.join(cwd, targetDir)
 
@@ -438,10 +523,6 @@ async function init() {
     isReactSwc = true
     template = template.replace('-swc', '')
   }
-
-  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
-  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
-  const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
   const { customCommand } =
     FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
@@ -519,25 +600,11 @@ async function init() {
     setupReactSwc(root, template.endsWith('-ts'))
   }
 
-  const cdProjectName = path.relative(cwd, root)
-  console.log(`\nDone. Now run:\n`)
-  if (root !== cwd) {
-    console.log(
-      `  cd ${
-        cdProjectName.includes(' ') ? `"${cdProjectName}"` : cdProjectName
-      }`,
-    )
-  }
-  switch (pkgManager) {
-    case 'yarn':
-      console.log('  yarn')
-      console.log('  yarn dev')
-      break
-    default:
-      console.log(`  ${pkgManager} install`)
-      console.log(`  ${pkgManager} run dev`)
-      break
-  }
+  if (immediate && agent) {
+    install(root, agent)
+    start(root, agent)
+  } else nextAction(root)
+
   console.log()
 }
 
