@@ -25,7 +25,7 @@ describe('workerImportMetaUrlPlugin', async () => {
 
   test('without worker options', async () => {
     expect(
-      await transform('new Worker(new URL(`./worker.js`, import.meta.url))'),
+      await transform('new Worker(new URL("./worker.js", import.meta.url))'),
     ).toMatchInlineSnapshot(
       `"new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", import.meta.url))"`,
     )
@@ -34,7 +34,7 @@ describe('workerImportMetaUrlPlugin', async () => {
   test('with shared worker', async () => {
     expect(
       await transform(
-        'new SharedWorker(new URL(`./worker.js`, import.meta.url))',
+        'new SharedWorker(new URL("./worker.js", import.meta.url))',
       ),
     ).toMatchInlineSnapshot(
       `"new SharedWorker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", import.meta.url))"`,
@@ -44,7 +44,7 @@ describe('workerImportMetaUrlPlugin', async () => {
   test('with static worker options', async () => {
     expect(
       await transform(
-        'new Worker(new URL(`./worker.js`, import.meta.url), { type: "module", name: "worker1" })',
+        'new Worker(new URL("./worker.js", import.meta.url), { type: "module", name: "worker1" })',
       ),
     ).toMatchInlineSnapshot(
       `"new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", import.meta.url), { type: "module", name: "worker1" })"`,
@@ -54,7 +54,7 @@ describe('workerImportMetaUrlPlugin', async () => {
   test('with dynamic name field in worker options', async () => {
     expect(
       await transform(
-        'const id = 1; new Worker(new URL(`./worker.js`, import.meta.url), { name: "worker" + id })',
+        'const id = 1; new Worker(new URL("./worker.js", import.meta.url), { name: "worker" + id })',
       ),
     ).toMatchInlineSnapshot(
       `"const id = 1; new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", import.meta.url), { name: "worker" + id })"`,
@@ -64,7 +64,7 @@ describe('workerImportMetaUrlPlugin', async () => {
   test('with dynamic name field and static type in worker options', async () => {
     expect(
       await transform(
-        'const id = 1; new Worker(new URL(`./worker.js`, import.meta.url), { name: "worker" + id, type: "module" })',
+        'const id = 1; new Worker(new URL("./worker.js", import.meta.url), { name: "worker" + id, type: "module" })',
       ),
     ).toMatchInlineSnapshot(
       `"const id = 1; new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", import.meta.url), { name: "worker" + id, type: "module" })"`,
@@ -74,7 +74,7 @@ describe('workerImportMetaUrlPlugin', async () => {
   test('throws an error when non-static worker options are provided', async () => {
     await expect(
       transform(
-        'new Worker(new URL(`./worker.js`, import.meta.url), myWorkerOptions)',
+        'new Worker(new URL("./worker.js", import.meta.url), myWorkerOptions)',
       ),
     ).rejects.toThrow(
       'Vite is unable to parse the worker options as the value is not static. To ignore this error, please use /* @vite-ignore */ in the worker options.',
@@ -84,7 +84,7 @@ describe('workerImportMetaUrlPlugin', async () => {
   test('throws an error when worker options are not an object', async () => {
     await expect(
       transform(
-        'new Worker(new URL(`./worker.js`, import.meta.url), "notAnObject")',
+        'new Worker(new URL("./worker.js", import.meta.url), "notAnObject")',
       ),
     ).rejects.toThrow('Expected worker options to be an object, got string')
   })
@@ -92,7 +92,7 @@ describe('workerImportMetaUrlPlugin', async () => {
   test('throws an error when non-literal type field in worker options', async () => {
     await expect(
       transform(
-        'const type = "module"; new Worker(new URL(`./worker.js`, import.meta.url), { type })',
+        'const type = "module"; new Worker(new URL("./worker.js", import.meta.url), { type })',
       ),
     ).rejects.toThrow(
       'Expected worker options type property to be a literal value.',
@@ -102,7 +102,7 @@ describe('workerImportMetaUrlPlugin', async () => {
   test('throws an error when spread operator used without the type field', async () => {
     await expect(
       transform(
-        'const options = { name: "worker1" }; new Worker(new URL(`./worker.js`, import.meta.url), { ...options })',
+        'const options = { name: "worker1" }; new Worker(new URL("./worker.js", import.meta.url), { ...options })',
       ),
     ).rejects.toThrow(
       'Expected object spread to be used before the definition of the type property. Vite needs a static value for the type property to correctly infer it.',
@@ -112,7 +112,7 @@ describe('workerImportMetaUrlPlugin', async () => {
   test('throws an error when spread operator used after definition of type field', async () => {
     await expect(
       transform(
-        'const options = { name: "worker1" }; new Worker(new URL(`./worker.js`, import.meta.url), { type: "module", ...options })',
+        'const options = { name: "worker1" }; new Worker(new URL("./worker.js", import.meta.url), { type: "module", ...options })',
       ),
     ).rejects.toThrow(
       'Expected object spread to be used before the definition of the type property. Vite needs a static value for the type property to correctly infer it.',

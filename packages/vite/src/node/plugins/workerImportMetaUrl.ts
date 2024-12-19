@@ -25,27 +25,34 @@ function err(e: string, pos: number) {
   return error
 }
 
-function extractWorkerTypeFromAst(astNode: any, optsStartIndex: number) {
-  if (astNode.type !== 'ObjectExpression' || astNode.properties?.length < 1) {
+function extractWorkerTypeFromAst(
+  astNode: any,
+  optsStartIndex: number,
+): 'classic' | 'module' | undefined {
+  if (astNode.type !== 'ObjectExpression') {
     return
   }
 
   let lastSpreadElementIndex = -1
-  const typePropertyIndex = astNode.properties.findLastIndex(
-    (property: any, index: number) => {
-      if (property.type === 'SpreadElement' && lastSpreadElementIndex === -1) {
-        lastSpreadElementIndex = index
-        return
-      }
+  let typeProperty = null
+  let typePropertyIndex = -1
 
-      if (property.type === 'Property' && property.key.name === 'type') {
-        return true
-      }
-    },
-  )
+  for (let i = 0; i < astNode.properties.length; i++) {
+    const property = astNode.properties[i]
+
+    if (property.type === 'SpreadElement') {
+      lastSpreadElementIndex = i
+      continue
+    }
+
+    if (property.type === 'Property' && property.key?.name === 'type') {
+      typeProperty = property
+      typePropertyIndex = i
+    }
+  }
 
   if (typePropertyIndex === -1 && lastSpreadElementIndex === -1) {
-    // No type property or spread element in use. Assume safe definition and default to classic worker
+    // No type property or spread element in use. Assume safe usage and default to classic
     return 'classic'
   }
 
@@ -57,7 +64,6 @@ function extractWorkerTypeFromAst(astNode: any, optsStartIndex: number) {
     )
   }
 
-  const typeProperty = astNode.properties[typePropertyIndex]
   if (typeProperty?.value?.type !== 'Literal') {
     throw err(
       'Expected worker options type property to be a literal value.',
@@ -65,7 +71,8 @@ function extractWorkerTypeFromAst(astNode: any, optsStartIndex: number) {
     )
   }
 
-  return typeProperty?.value?.value
+  // Silently default to classic type like the getWorkerType method
+  return typeProperty.value.value === 'module' ? 'module' : 'classic'
 }
 
 async function parseWorkerOptions(
