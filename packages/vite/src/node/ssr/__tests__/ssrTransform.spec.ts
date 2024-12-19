@@ -184,6 +184,19 @@ test('hoist import to top', async () => {
   )
 })
 
+test('do not hoist import if only whitespace is between them', async () => {
+  expect(
+    await ssrTransformSimpleCode(
+      `import { dirname } from 'node:path';\n\n\nimport fs from 'node:fs';`,
+    ),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("node:path", {"importedNames":["dirname"]});
+
+
+    const __vite_ssr_import_1__ = await __vite_ssr_import__("node:fs", {"importedNames":["default"]});"
+  `)
+})
+
 test('preserve line offset when rewriting imports', async () => {
   // The line number of each non-import statement must not change.
   const inputLines = [
