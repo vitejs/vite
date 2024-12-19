@@ -77,6 +77,7 @@ import {
   processSrcSet,
   removeDirectQuery,
   removeUrlQuery,
+  replaceDotRE,
   requireResolveFromRootWithFallback,
   stripBomTag,
   urlRE,
@@ -479,6 +480,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       )
     }
   }
+  const quoteRE = /"/g
 
   function getCssBundleName() {
     const cached = cssBundleNameCache.get(config)
@@ -524,7 +526,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       const isHTMLProxy = htmlProxyRE.test(id)
       if (inlineCSS && isHTMLProxy) {
         if (styleAttrRE.test(id)) {
-          css = css.replace(/"/g, '&quot;')
+          css = css.replace(quoteRE, '&quot;')
         }
         const index = htmlProxyIndexRE.exec(id)?.[1]
         if (index == null) {
@@ -1100,7 +1102,7 @@ export function getEmptyChunkReplacer(
   const emptyChunkFiles = pureCssChunkNames
     .map((file) => path.basename(file))
     .join('|')
-    .replace(/\./g, '\\.')
+    .replace(replaceDotRE, '\\.')
 
   // for cjs, require calls might be chained by minifier using the comma operator.
   // in this case we have to keep one comma if a next require is chained
@@ -2161,6 +2163,7 @@ function loadSss(root: string) {
 declare const window: unknown | undefined
 declare const location: { href: string } | undefined
 
+const trailingSlashRE = /\/$/
 // in unix, scss might append `location.href` in environments that shim `location`
 // see https://github.com/sass/dart-sass/issues/710
 function cleanScssBugUrl(url: string) {
@@ -2170,7 +2173,7 @@ function cleanScssBugUrl(url: string) {
     typeof location !== 'undefined' &&
     typeof location.href === 'string'
   ) {
-    const prefix = location.href.replace(/\/$/, '')
+    const prefix = location.href.replace(trailingSlashRE, '')
     return url.replace(prefix, '')
   } else {
     return url

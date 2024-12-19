@@ -21,7 +21,7 @@ import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { evalValue, normalizePath, transformStableResult } from '../utils'
 import type { Logger } from '../logger'
-import { slash } from '../../shared/utils'
+import { newlineRegEx, slash } from '../../shared/utils'
 import type { Environment } from '../environment'
 
 export interface ParsedImportGlob {
@@ -504,7 +504,7 @@ export async function transformGlobImport(
           files.forEach((i) => matchedFiles.add(i))
 
           const originalLineBreakCount =
-            code.slice(start, end).match(/\n/g)?.length ?? 0
+            code.slice(start, end).match(newlineRegEx)?.length ?? 0
           const lineBreaks =
             originalLineBreakCount > 0
               ? '\n'.repeat(originalLineBreakCount)
