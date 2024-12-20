@@ -25,6 +25,18 @@ function err(e: string, pos: number) {
   return error
 }
 
+function findClosingParen(input: string, fromIndex: number) {
+  let count = 1
+
+  for (let i = fromIndex + 1; i < input.length; i++) {
+    if (input[i] === '(') count++
+    if (input[i] === ')') count--
+    if (count === 0) return i
+  }
+
+  return -1
+}
+
 function extractWorkerTypeFromAst(
   astNode: any,
   optsStartIndex: number,
@@ -122,7 +134,7 @@ async function getWorkerType(
   if (commaIndex === -1) {
     return 'classic'
   }
-  const endIndex = clean.indexOf(')', i)
+  const endIndex = findClosingParen(clean, i)
 
   // case: ') ... ,' mean no worker options params
   if (commaIndex > endIndex) {

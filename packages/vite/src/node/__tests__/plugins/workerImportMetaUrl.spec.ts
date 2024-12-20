@@ -71,6 +71,38 @@ describe('workerImportMetaUrlPlugin', async () => {
     )
   })
 
+  test('with parenthesis inside of worker options', async () => {
+    expect(
+      await transform(
+        'const worker = new Worker(new URL("./worker.js", import.meta.url), { name: genName(), type: "module"})',
+      ),
+    ).toMatchInlineSnapshot(
+      `"const worker = new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", import.meta.url), { name: genName(), type: "module"})"`,
+    )
+  })
+
+  test('with multi-line code and worker options', async () => {
+    expect(
+      await transform(`
+const worker = new Worker(new URL("./worker.js", import.meta.url), {
+    name: genName(),
+    type: "module",
+  },
+)
+
+worker.addEventListener('message', (ev) => text('.simple-worker-url', JSON.stringify(ev.data)))
+`),
+    ).toMatchInlineSnapshot(`"
+const worker = new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", import.meta.url), {
+    name: genName(),
+    type: "module",
+  },
+)
+
+worker.addEventListener('message', (ev) => text('.simple-worker-url', JSON.stringify(ev.data)))
+"`)
+  })
+
   test('throws an error when non-static worker options are provided', async () => {
     await expect(
       transform(
