@@ -106,6 +106,10 @@ declare module '*.cur' {
   const src: string
   export default src
 }
+declare module '*.jxl' {
+  const src: string
+  export default src
+}
 
 // media
 declare module '*.mp4' {
