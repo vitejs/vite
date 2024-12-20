@@ -23,12 +23,12 @@ export function unwrapId(id: string): string {
     : id
 }
 
-const windowsSlashRE = /\\/g
+export const backslashRE = /\\/g
 export function slash(p: string): string {
-  return p.replace(windowsSlashRE, '/')
+  return p.replace(backslashRE, '/')
 }
 
-const postfixRE = /[?#].*$/
+export const postfixRE = /[?#].*$/
 export function cleanUrl(url: string): string {
   return url.replace(postfixRE, '')
 }
@@ -82,3 +82,6 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
   })
   return { promise, resolve, reject }
 }
+
+export const newlineRegEx = /\n/g
+export const hashRE = /#/g

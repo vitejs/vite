@@ -20,6 +20,7 @@ import {
   SPECIAL_QUERY_RE,
 } from '../constants'
 import {
+  anyRE,
   arraify,
   createDebugger,
   dataUrlRE,
@@ -33,6 +34,7 @@ import {
   singlelineCommentsRE,
   virtualModulePrefix,
   virtualModuleRE,
+  windowsVolumeRE,
 } from '../utils'
 import { resolveEnvironmentPlugins } from '../plugin'
 import type { EnvironmentPluginContainer } from '../server/pluginContainer'
@@ -473,7 +475,7 @@ function esbuildScanPlugin(
         }
       })
 
-      build.onLoad({ filter: /.*/, namespace: 'script' }, ({ path }) => {
+      build.onLoad({ filter: anyRE, namespace: 'script' }, ({ path }) => {
         return scripts[path]
       })
 
@@ -631,7 +633,7 @@ function esbuildScanPlugin(
       build.onResolve(
         {
           // avoid matching windows volume
-          filter: /^[\w@][^:]/,
+          filter: windowsVolumeRE,
         },
         async ({ path: id, importer, pluginData }) => {
           if (moduleListContains(exclude, id)) {
@@ -704,7 +706,7 @@ function esbuildScanPlugin(
 
       build.onResolve(
         {
-          filter: /.*/,
+          filter: anyRE,
         },
         async ({ path: id, importer, pluginData }) => {
           // use vite resolver to support urls and omitted extensions
@@ -767,7 +769,7 @@ function esbuildScanPlugin(
       // onResolve is not called for glob imports.
       // we need to add that here as well until esbuild calls onResolve for glob imports.
       // https://github.com/evanw/esbuild/issues/3317
-      build.onLoad({ filter: /.*/, namespace: 'file' }, () => {
+      build.onLoad({ filter: anyRE, namespace: 'file' }, () => {
         return {
           loader: 'js',
           contents: 'export default {}',
