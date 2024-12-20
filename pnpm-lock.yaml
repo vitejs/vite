@@ -224,7 +224,7 @@ importers:
   packages/vite:
     dependencies:
       esbuild:
-        specifier: ^0.24.0
+        specifier: 0.24.0
         version: 0.24.0
       postcss:
         specifier: ^8.4.49
