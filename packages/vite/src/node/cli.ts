@@ -182,8 +182,8 @@ cli
         configFile: options.config,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
-        optimizeDeps: { force: options.force },
         server: cleanGlobalCLIOptions(options),
+        forceOptimizeDeps: options.force,
       })
 
       if (!server.httpServer) {
