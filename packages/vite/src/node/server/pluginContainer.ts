@@ -148,6 +148,7 @@ export type SkipInformation = {
   id: string
   importer: string | undefined
   plugin: Plugin
+  called?: boolean
 }
 
 class EnvironmentPluginContainer {
@@ -364,7 +365,7 @@ class EnvironmentPluginContainer {
 
     const mergedSkip = new Set<Plugin>(skip)
     for (const call of skipCalls ?? []) {
-      if (call.id === rawId && call.importer === importer) {
+      if (call.called || (call.id === rawId && call.importer === importer)) {
         mergedSkip.add(call.plugin)
       }
     }
@@ -576,13 +577,28 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       skipSelf?: boolean
     },
   ) {
-    const skipCalls =
-      options?.skipSelf === false
-        ? this._resolveSkipCalls
-        : [
-            ...(this._resolveSkipCalls || []),
-            { id, importer, plugin: this._plugin },
-          ]
+    let skipCalls: readonly SkipInformation[] | undefined
+    if (options?.skipSelf === false) {
+      skipCalls = this._resolveSkipCalls
+    } else if (this._resolveSkipCalls) {
+      const skipCallsTemp = [...this._resolveSkipCalls]
+      const sameCallIndex = this._resolveSkipCalls.findIndex(
+        (c) =>
+          c.id === id && c.importer === importer && c.plugin === this._plugin,
+      )
+      if (sameCallIndex !== -1) {
+        skipCallsTemp[sameCallIndex] = {
+          ...skipCallsTemp[sameCallIndex],
+          called: true,
+        }
+      } else {
+        skipCallsTemp.push({ id, importer, plugin: this._plugin })
+      }
+      skipCalls = skipCallsTemp
+    } else {
+      skipCalls = [{ id, importer, plugin: this._plugin }]
+    }
+
     let out = await this._container.resolveId(id, importer, {
       attributes: options?.attributes,
       custom: options?.custom,
