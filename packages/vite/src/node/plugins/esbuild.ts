@@ -317,7 +317,7 @@ const rollupToEsbuildFormatMap: Record<
   iife: undefined,
 }
 
-export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
+export const buildEsbuildPlugin = (): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
     async renderChunk(code, chunk, opts) {
@@ -326,6 +326,10 @@ export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
         return null
       }
 
+      const config = this.environment.config
+      if (config.esbuild === false) {
+        return
+      }
       const options = resolveEsbuildTranspileOptions(config, opts.format)
 
       if (!options) {
