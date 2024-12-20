@@ -140,9 +140,10 @@ async function ssrTransformScript(
 
     s.update(importNode.start, importNode.end, transformedImport)
 
-    // Check for non-whitespace characters between the last import and the
-    // current one, to determine if hoisting is needed.
-    // TODO: Account for comments between imports.
+    // If there's only whitespace characters between the last import and the
+    // current one, that means there's no statements between them and
+    // hoisting is not needed.
+    // FIXME: account for comments between imports
     const nonWhitespaceRegex = /\S/g
     nonWhitespaceRegex.lastIndex = index
     nonWhitespaceRegex.exec(code)
