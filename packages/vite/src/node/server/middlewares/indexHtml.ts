@@ -44,6 +44,7 @@ import { isCSSRequest } from '../../plugins/css'
 import { getCodeWithSourcemap, injectSourcesContent } from '../sourcemap'
 import { cleanUrl, unwrapId, wrapId } from '../../../shared/utils'
 import { getNodeAssetAttributes } from '../../assetSource'
+import { normalizeIndexHtmlUrl } from './htmlFallback'
 
 interface AssetNode {
   start: number
@@ -86,22 +87,21 @@ export function createDevHtmlTransformFn(
     html: string,
     originalUrl?: string,
   ): Promise<string> => {
+    const normalized = normalizeIndexHtmlUrl(url)
+    let filename: string
+    if (normalized.pathname.startsWith(FS_PREFIX)) {
+      filename = fsPathFromId(normalized.pathname)
+    } else {
+      filename = normalizePath(
+        path.join(server.config.root, normalized.pathname),
+      )
+    }
     return applyHtmlTransforms(html, transformHooks, {
-      path: url,
-      filename: getHtmlFilename(url, server),
+      path: normalized.url,
+      filename,
       server,
       originalUrl,
     })
-  }
-}
-
-function getHtmlFilename(url: string, server: ViteDevServer) {
-  if (url.startsWith(FS_PREFIX)) {
-    return decodeURIComponent(fsPathFromId(url))
-  } else {
-    return decodeURIComponent(
-      normalizePath(path.join(server.config.root, url.slice(1))),
-    )
   }
 }
 
