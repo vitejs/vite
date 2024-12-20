@@ -1,26 +1,5 @@
 import * as pathe from 'pathe'
-import { isWindows, slash } from '../shared/utils'
-
-export function normalizeAbsoluteUrl(url: string, root: string): string {
-  url = slash(url)
-
-  // file:///C:/root/id.js -> C:/root/id.js
-  if (url.startsWith('file://')) {
-    // 8 is the length of "file:///"
-    url = decodeURI(url.slice(isWindows ? 8 : 7))
-  }
-
-  // strip root from the URL because fetchModule prefers a public served url path
-  // packages/vite/src/node/server/moduleGraph.ts:17
-  if (url.startsWith(root)) {
-    // /root/id.js -> /id.js
-    // C:/root/id.js -> /id.js
-    // 1 is to keep the leading slash
-    url = url.slice(root.length - 1)
-  }
-
-  return url
-}
+import { isWindows } from '../shared/utils'
 
 export const decodeBase64 =
   typeof atob !== 'undefined'
