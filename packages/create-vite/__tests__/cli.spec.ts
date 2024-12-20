@@ -103,7 +103,7 @@ test('asks to overwrite non-empty current directory', () => {
 })
 
 test('successfully scaffolds a project based on vue starter template', () => {
-  const { stdout } = run([projectName, '--template', 'vue'], {
+  const { stdout } = run([projectName, '--template', 'vue', '-i', 'false'], {
     cwd: __dirname,
   })
   const generatedFiles = fs.readdirSync(genPath).sort()
@@ -125,7 +125,7 @@ test('successfully scaffolds a project with subfolder based on react starter tem
 })
 
 test('works with the -t alias', () => {
-  const { stdout } = run([projectName, '-t', 'vue'], {
+  const { stdout } = run([projectName, '-t', 'vue', '-i', 'false'], {
     cwd: __dirname,
   })
   const generatedFiles = fs.readdirSync(genPath).sort()
