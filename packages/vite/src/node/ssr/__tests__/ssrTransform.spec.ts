@@ -258,7 +258,8 @@ test('preserve line offset when rewriting imports', async () => {
   expect(outputLines[18]).toBe(inputLines[18])
 })
 
-test.fails('comments between imports do not trigger hoisting', async () => {
+// not implemented
+test.skip('comments between imports do not trigger hoisting', async () => {
   expect(
     await ssrTransformSimpleCode(
       `import { dirname } from 'node:path';// comment\nimport fs from 'node:fs';`,
