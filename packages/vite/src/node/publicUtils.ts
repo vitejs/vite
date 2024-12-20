@@ -10,6 +10,7 @@ export {
   DEFAULT_SERVER_CONDITIONS as defaultServerConditions,
   DEFAULT_SERVER_MAIN_FIELDS as defaultServerMainFields,
 } from './constants'
+export { configDefaults } from './config'
 export { version as esbuildVersion } from 'esbuild'
 export {
   splitVendorChunkPlugin,
