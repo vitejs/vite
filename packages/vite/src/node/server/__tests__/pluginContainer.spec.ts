@@ -258,6 +258,30 @@ describe('plugin container', () => {
         const result = await environment.pluginContainer.resolveId('foo')
         expect(result).toStrictEqual({ id: 'success' })
       })
+
+      it('should skip the plugin if it has been called before with the same id and importer', async () => {
+        const p1: Plugin = {
+          name: 'p1',
+          async resolveId(id, importer) {
+            return (
+              (await this.resolve(id.replace(/\/modified$/, ''), importer, {
+                skipSelf: true,
+              })) ?? 'success'
+            )
+          },
+        }
+        const p2: Plugin = {
+          name: 'p2',
+          async resolveId(id, importer) {
+            return await this.resolve(id + '/modified', importer, {
+              skipSelf: true,
+            })
+          },
+        }
+        const environment = await getDevEnvironment({ plugins: [p1, p2] })
+        const result = await environment.pluginContainer.resolveId('foo')
+        expect(result).toStrictEqual({ id: 'success' })
+      })
     })
   })
 })
