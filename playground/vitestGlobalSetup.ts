@@ -43,8 +43,8 @@ export async function setup({ provide }: GlobalSetupContext): Promise<void> {
     })
   // also setup dedicated copy for "variant" tests
   for (const [original, variants] of [
-    ['css', ['sass-modern', 'sass-modern-compiler']],
-    ['css-sourcemap', ['sass-modern', 'sass-modern-compiler']],
+    ['css', ['sass-legacy', 'sass-modern']],
+    ['css-sourcemap', ['sass-legacy', 'sass-modern']],
   ] as const) {
     for (const variant of variants) {
       await fs.cp(

@@ -11,6 +11,7 @@ export default defineConfig({
       ...baseConfig.css.preprocessorOptions,
       scss: {
         api: 'legacy',
+        additionalData: `$injectedColor: orange;`,
         importer: [
           function (url) {
             return url === 'virtual-dep' ? { contents: '' } : null
