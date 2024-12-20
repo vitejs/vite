@@ -1,6 +1,6 @@
 import { describe, it } from 'vitest'
 import type { ModuleFormat, RollupOutput } from 'rollup'
-import { build } from '../../../build'
+import { build } from '../../..'
 import { modulePreloadPolyfillId } from '../../../plugins/modulePreloadPolyfill'
 
 const buildProject = ({ format = 'es' as ModuleFormat } = {}) =>
