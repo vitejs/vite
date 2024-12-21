@@ -18,6 +18,7 @@ export interface FetchModuleOptions {
   startOffset?: number
 }
 
+const shebangRE = /^#!.*/
 /**
  * Fetch module information for Vite runner.
  * @experimental
@@ -119,7 +120,7 @@ export async function fetchModule(
 
   // remove shebang
   if (result.code[0] === '#')
-    result.code = result.code.replace(/^#!.*/, (s) => ' '.repeat(s.length))
+    result.code = result.code.replace(shebangRE, (s) => ' '.repeat(s.length))
 
   return {
     code: result.code,

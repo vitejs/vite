@@ -1,5 +1,11 @@
 import * as pathe from 'pathe'
-import { isWindows, slash } from '../shared/utils'
+import {
+  backslashRE,
+  hashRE,
+  isWindows,
+  newlineRegEx,
+  slash,
+} from '../shared/utils'
 
 export function normalizeAbsoluteUrl(url: string, root: string): string {
   url = slash(url)
@@ -31,19 +37,16 @@ const CHAR_FORWARD_SLASH = 47
 const CHAR_BACKWARD_SLASH = 92
 
 const percentRegEx = /%/g
-const backslashRegEx = /\\/g
-const newlineRegEx = /\n/g
 const carriageReturnRegEx = /\r/g
 const tabRegEx = /\t/g
 const questionRegex = /\?/g
-const hashRegex = /#/g
 
 function encodePathChars(filepath: string) {
   if (filepath.indexOf('%') !== -1)
     filepath = filepath.replace(percentRegEx, '%25')
   // In posix, backslash is a valid character in paths:
   if (!isWindows && filepath.indexOf('\\') !== -1)
-    filepath = filepath.replace(backslashRegEx, '%5C')
+    filepath = filepath.replace(backslashRE, '%5C')
   if (filepath.indexOf('\n') !== -1)
     filepath = filepath.replace(newlineRegEx, '%0A')
   if (filepath.indexOf('\r') !== -1)
@@ -76,11 +79,11 @@ export function posixPathToFileHref(posixPath: string): string {
   // later triggering pathname setter, which impacts performance
   if (resolved.indexOf('?') !== -1)
     resolved = resolved.replace(questionRegex, '%3F')
-  if (resolved.indexOf('#') !== -1)
-    resolved = resolved.replace(hashRegex, '%23')
+  if (resolved.indexOf('#') !== -1) resolved = resolved.replace(hashRE, '%23')
   return new URL(`file://${resolved}`).href
 }
 
+const forwardSlashRE = /\//g
 export function toWindowsPath(path: string): string {
-  return path.replace(/\//g, '\\')
+  return path.replace(forwardSlashRE, '\\')
 }

@@ -20,7 +20,7 @@ import commonjsPlugin from '@rollup/plugin-commonjs'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { TransformOptions } from 'esbuild'
-import { withTrailingSlash } from '../shared/utils'
+import { backslashRE, withTrailingSlash } from '../shared/utils'
 import {
   DEFAULT_ASSETS_INLINE_LIMIT,
   ESBUILD_MODULES_TARGET,
@@ -623,12 +623,13 @@ async function buildEnvironment(
     return stack
   }
 
+  const esbuildNewlineRE = /^\n|\n$/g
   /**
    * Esbuild code frames have newlines at the start and end of the frame, rollup doesn't
    * This function normalizes the frame to match the esbuild format which has more pleasing padding
    */
   const normalizeCodeFrame = (frame: string) => {
-    const trimmedPadding = frame.replace(/^\n|\n$/g, '')
+    const trimmedPadding = frame.replace(esbuildNewlineRE, '')
     return `\n${trimmedPadding}\n`
   }
 
@@ -1253,11 +1254,10 @@ function injectSsrFlag<T extends Record<string, any>>(
 */
 const needsEscapeRegEx = /[\n\r'\\\u2028\u2029]/
 const quoteNewlineRegEx = /([\n\r'\u2028\u2029])/g
-const backSlashRegEx = /\\/g
 
 function escapeId(id: string): string {
   if (!needsEscapeRegEx.test(id)) return id
-  return id.replace(backSlashRegEx, '\\\\').replace(quoteNewlineRegEx, '\\$1')
+  return id.replace(backslashRE, '\\\\').replace(quoteNewlineRegEx, '\\$1')
 }
 
 const getResolveUrl = (path: string, URL = 'URL') => `new ${URL}(${path}).href`

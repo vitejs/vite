@@ -3,12 +3,14 @@ import type { ImportKind, Plugin } from 'esbuild'
 import { JS_TYPES_RE, KNOWN_ASSET_TYPES } from '../constants'
 import type { PackageCache } from '../packages'
 import {
+  anyRE,
   escapeRegex,
   flattenId,
   isBuiltin,
   isExternalUrl,
   moduleListContains,
   normalizePath,
+  windowsVolumeRE,
 } from '../utils'
 import { browserExternalId, optionalPeerDepId } from '../plugins/resolve'
 import { isCSSRequest, isModuleCSSRequest } from '../plugins/css'
@@ -207,7 +209,7 @@ export function esbuildDepPlugin(
       }
 
       build.onResolve(
-        { filter: /^[\w@][^:]/ },
+        { filter: windowsVolumeRE },
         async ({ path: id, importer, kind }) => {
           if (moduleListContains(external, id)) {
             return {
@@ -237,7 +239,7 @@ export function esbuildDepPlugin(
       )
 
       build.onLoad(
-        { filter: /.*/, namespace: 'browser-external' },
+        { filter: anyRE, namespace: 'browser-external' },
         ({ path }) => {
           if (isProduction) {
             return {
@@ -280,7 +282,7 @@ module.exports = Object.create(new Proxy({}, {
       )
 
       build.onLoad(
-        { filter: /.*/, namespace: 'optional-peer-dep' },
+        { filter: anyRE, namespace: 'optional-peer-dep' },
         ({ path }) => {
           if (isProduction) {
             return {
@@ -334,7 +336,7 @@ export function esbuildCjsExternalPlugin(
       })
 
       build.onLoad(
-        { filter: /.*/, namespace: cjsExternalFacadeNamespace },
+        { filter: anyRE, namespace: cjsExternalFacadeNamespace },
         (args) => ({
           contents:
             `import * as m from ${JSON.stringify(

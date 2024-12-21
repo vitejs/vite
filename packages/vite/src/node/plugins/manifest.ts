@@ -188,6 +188,7 @@ export function manifestPlugin(): Plugin {
   }
 }
 
+const nullCharRE = /\0/g
 export function getChunkOriginalFileName(
   chunk: OutputChunk | RenderedChunk,
   root: string,
@@ -200,6 +201,6 @@ export function getChunkOriginalFileName(
       const endPos = ext.length !== 0 ? -ext.length : undefined
       name = `${name.slice(0, endPos)}-legacy${ext}`
     }
-    return name.replace(/\0/g, '')
+    return name.replace(nullCharRE, '')
   }
 }
