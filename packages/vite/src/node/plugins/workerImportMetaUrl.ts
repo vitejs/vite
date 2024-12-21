@@ -25,16 +25,87 @@ function err(e: string, pos: number) {
   return error
 }
 
-function parseWorkerOptions(
+function findClosingParen(input: string, fromIndex: number) {
+  let count = 1
+
+  for (let i = fromIndex + 1; i < input.length; i++) {
+    if (input[i] === '(') count++
+    if (input[i] === ')') count--
+    if (count === 0) return i
+  }
+
+  return -1
+}
+
+function extractWorkerTypeFromAst(
+  astNode: any,
+  optsStartIndex: number,
+): 'classic' | 'module' | undefined {
+  if (astNode.type !== 'ObjectExpression') {
+    return
+  }
+
+  let lastSpreadElementIndex = -1
+  let typeProperty = null
+  let typePropertyIndex = -1
+
+  for (let i = 0; i < astNode.properties.length; i++) {
+    const property = astNode.properties[i]
+
+    if (property.type === 'SpreadElement') {
+      lastSpreadElementIndex = i
+      continue
+    }
+
+    if (property.type === 'Property' && property.key?.name === 'type') {
+      typeProperty = property
+      typePropertyIndex = i
+    }
+  }
+
+  if (typePropertyIndex === -1 && lastSpreadElementIndex === -1) {
+    // No type property or spread element in use. Assume safe usage and default to classic
+    return 'classic'
+  }
+
+  if (typePropertyIndex < lastSpreadElementIndex) {
+    throw err(
+      'Expected object spread to be used before the definition of the type property. ' +
+        'Vite needs a static value for the type property to correctly infer it.',
+      optsStartIndex,
+    )
+  }
+
+  if (typeProperty?.value?.type !== 'Literal') {
+    throw err(
+      'Expected worker options type property to be a literal value.',
+      optsStartIndex,
+    )
+  }
+
+  // Silently default to classic type like the getWorkerType method
+  return typeProperty.value.value === 'module' ? 'module' : 'classic'
+}
+
+async function parseWorkerOptions(
   rawOpts: string,
   optsStartIndex: number,
-): WorkerOptions {
+): Promise<WorkerOptions> {
   let opts: WorkerOptions = {}
   try {
     opts = evalValue<WorkerOptions>(rawOpts)
   } catch {
+    const { parseAstAsync } = await import('rollup/parseAst')
+    const optsNode = ((await parseAstAsync(`(${rawOpts})`)).body[0] as any)
+      .expression
+
+    const type = extractWorkerTypeFromAst(optsNode, optsStartIndex)
+    if (type) {
+      return { type }
+    }
+
     throw err(
-      'Vite is unable to parse the worker options as the value is not static.' +
+      'Vite is unable to parse the worker options as the value is not static. ' +
         'To ignore this error, please use /* @vite-ignore */ in the worker options.',
       optsStartIndex,
     )
@@ -54,12 +125,16 @@ function parseWorkerOptions(
   return opts
 }
 
-function getWorkerType(raw: string, clean: string, i: number): WorkerType {
+async function getWorkerType(
+  raw: string,
+  clean: string,
+  i: number,
+): Promise<WorkerType> {
   const commaIndex = clean.indexOf(',', i)
   if (commaIndex === -1) {
     return 'classic'
   }
-  const endIndex = clean.indexOf(')', i)
+  const endIndex = findClosingParen(clean, i)
 
   // case: ') ... ,' mean no worker options params
   if (commaIndex > endIndex) {
@@ -82,7 +157,7 @@ function getWorkerType(raw: string, clean: string, i: number): WorkerType {
     return 'classic'
   }
 
-  const workerOpts = parseWorkerOptions(workerOptString, commaIndex + 1)
+  const workerOpts = await parseWorkerOptions(workerOptString, commaIndex + 1)
   if (
     workerOpts.type &&
     (workerOpts.type === 'module' || workerOpts.type === 'classic')
@@ -152,7 +227,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           s ||= new MagicString(code)
-          const workerType = getWorkerType(code, cleanString, endIndex)
+          const workerType = await getWorkerType(code, cleanString, endIndex)
           const url = rawUrl.slice(1, -1)
           let file: string | undefined
           if (url[0] === '.') {
