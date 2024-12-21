@@ -1,3 +1,4 @@
+import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import { parseAst } from 'rollup/parseAst'
 import { workerImportMetaUrlPlugin } from '../../plugins/workerImportMetaUrl'
@@ -5,7 +6,8 @@ import { resolveConfig } from '../../config'
 import { PartialEnvironment } from '../../baseEnvironment'
 
 async function createWorkerImportMetaUrlPluginTransform() {
-  const config = await resolveConfig({ configFile: false }, 'serve')
+  const root = path.join(import.meta.dirname, 'fixtures/worker')
+  const config = await resolveConfig({ configFile: false, root }, 'serve')
   const instance = workerImportMetaUrlPlugin(config)
   const environment = new PartialEnvironment('client', config)
 
@@ -14,7 +16,7 @@ async function createWorkerImportMetaUrlPluginTransform() {
     const result = await instance.transform.call(
       { environment, parse: parseAst },
       code,
-      'foo.ts',
+      path.join(root, 'foo.ts'),
     )
     return result?.code || result
   }
