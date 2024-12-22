@@ -61,4 +61,13 @@ describe('importing files using inlined environment', () => {
       )
     }).rejects.toThrow('Unknown file extension ".ts"')
   })
+
+  test('dynamic import', async () => {
+    const { module } = await runnerImport<any>(fixture('dynamic-import.ts'))
+    await expect(() => module.default()).rejects.toMatchInlineSnapshot(
+      `[Error: Vite module runner has been closed.]`,
+    )
+    // const dep = await module.default();
+    // expect(dep.default).toMatchInlineSnapshot(`"ok"`)
+  })
 })
