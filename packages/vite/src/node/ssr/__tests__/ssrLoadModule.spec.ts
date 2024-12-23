@@ -3,7 +3,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { stripVTControlCharacters } from 'node:util'
 import { expect, test } from 'vitest'
-import { createServer } from '../../server'
+import { createServer } from '../..'
 import { normalizePath } from '../../utils'
 
 const root = fileURLToPath(new URL('./', import.meta.url))

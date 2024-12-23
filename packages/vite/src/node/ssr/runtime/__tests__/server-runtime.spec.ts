@@ -245,6 +245,35 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('/fixtures/no-this/importer.js')
     expect(mod.result).toBe(undefined)
   })
+
+  it.for([
+    '/fixtures/cyclic2/test1/index.js',
+    '/fixtures/cyclic2/test2/index.js',
+    '/fixtures/cyclic2/test3/index.js',
+    '/fixtures/cyclic2/test4/index.js',
+  ] as const)(`cyclic %s`, async (entry, { runner }) => {
+    const mod = await runner.import(entry)
+    expect({ ...mod }).toEqual({
+      dep1: {
+        ok: true,
+      },
+      dep2: {
+        ok: true,
+      },
+    })
+  })
+
+  it(`cyclic invalid`, async ({ runner }) => {
+    // Node also fails but with a different message
+    //   $ node packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test5/index.js
+    //   ReferenceError: Cannot access 'dep1' before initialization
+    await expect(() =>
+      runner.import('/fixtures/cyclic2/test5/index.js'),
+    ).rejects.toMatchObject({
+      name: 'ReferenceError',
+      message: `Cannot access '__vite_ssr_import_1__' before initialization`,
+    })
+  })
 })
 
 describe('optimize-deps', async () => {
