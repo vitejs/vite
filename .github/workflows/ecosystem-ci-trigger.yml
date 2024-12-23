@@ -17,6 +17,8 @@ jobs:
             const user = context.payload.sender.login
             console.log(`Validate user: ${user}`)
 
+            const additionalAllowedUsers = ['lukastaegert']
+
             let hasTriagePermission = false
             try {
               const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
@@ -29,7 +31,7 @@ jobs:
               console.warn(e)
             }
 
-            if (hasTriagePermission) {
+            if (hasTriagePermission || additionalAllowedUsers.includes(user)) {
               console.log('User is allowed. Adding +1 reaction.')
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
