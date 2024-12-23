@@ -28,6 +28,19 @@ describe('module runner initialization', async () => {
   it('can load virtual modules as an entry point', async ({ runner }) => {
     const mod = await runner.import('virtual:test')
     expect(mod.msg).toBe('virtual')
+
+    // virtual module query is not supported out of the box
+    // (`?t=...` was working on Vite 5 ssrLoadModule as `transformRequest` strips off timestamp query)
+    await expect(() =>
+      runner.import(`virtual:test?t=${Date.now()}`),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining('cannot find entry point module'),
+    })
+    await expect(() =>
+      runner.import('virtual:test?abcd=1234'),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining('cannot find entry point module'),
+    })
   })
 
   it('css is loaded correctly', async ({ runner }) => {
