@@ -2464,7 +2464,6 @@ const makeModernCompilerScssWorker = (
       // need pathToFileURL for windows since import("D:...") fails
       // https://github.com/nodejs/node/issues/31710
       const sass: typeof Sass = (await import(pathToFileURL(sassPath).href))
-        .default
       compilerPromise ??= sass.initAsyncCompiler()
       const compiler = await compilerPromise
 
