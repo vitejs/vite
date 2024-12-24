@@ -85,8 +85,9 @@ export interface ModuleRunnerHmr {
 export interface ModuleRunnerOptions {
   /**
    * Root of the project
+   * @deprecated not used and to be removed
    */
-  root: string
+  root?: string
   /**
    * A set of methods to communicate with the server.
    */
