@@ -1199,7 +1199,8 @@ const lockfileFormats = [
     checkPatches: false,
     manager: 'pnpm',
   },
-  { name: 'bun.lockb', path: 'bun.lockb', checkPatches: true, manager: 'bun' },
+  { path: 'bun.lock', checkPatches: true, manager: 'bun' },
+  { path: 'bun.lockb', checkPatches: true, manager: 'bun' },
 ].sort((_, { manager }) => {
   return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
 })
