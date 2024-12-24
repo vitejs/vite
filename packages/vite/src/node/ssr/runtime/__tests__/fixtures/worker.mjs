@@ -1,7 +1,6 @@
 // @ts-check
 
 import { BroadcastChannel, parentPort } from 'node:worker_threads'
-import { fileURLToPath } from 'node:url'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 
 if (!parentPort) {
@@ -24,7 +23,6 @@ const messagePortTransport = {
 
 const runner = new ModuleRunner(
   {
-    root: fileURLToPath(new URL('./', import.meta.url)),
     transport: messagePortTransport,
   },
   new ESModulesEvaluator(),

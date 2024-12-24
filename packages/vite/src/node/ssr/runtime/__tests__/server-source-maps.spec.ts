@@ -1,5 +1,5 @@
 import { describe, expect } from 'vitest'
-import type { ModuleRunner } from 'vite/module-runner'
+import type { ViteDevServer } from '../../..'
 import { createModuleRunnerTester, editFile, resolvePath } from './utils'
 
 describe('module runner initialization', async () => {
@@ -18,13 +18,13 @@ describe('module runner initialization', async () => {
       return err
     }
   }
-  const serializeStack = (runner: ModuleRunner, err: Error) => {
-    return err.stack!.split('\n')[1].replace(runner.options.root, '<root>')
+  const serializeStack = (server: ViteDevServer, err: Error) => {
+    return err.stack!.split('\n')[1].replace(server.config.root, '<root>')
   }
-  const serializeStackDeep = (runtime: ModuleRunner, err: Error) => {
+  const serializeStackDeep = (server: ViteDevServer, err: Error) => {
     return err
       .stack!.split('\n')
-      .map((s) => s.replace(runtime.options.root, '<root>'))
+      .map((s) => s.replace(server.config.root, '<root>'))
   }
 
   it('source maps are correctly applied to stack traces', async ({
@@ -35,7 +35,7 @@ describe('module runner initialization', async () => {
     const topLevelError = await getError(() =>
       runner.import('/fixtures/has-error.js'),
     )
-    expect(serializeStack(runner, topLevelError)).toBe(
+    expect(serializeStack(server, topLevelError)).toBe(
       '    at <root>/fixtures/has-error.js:2:7',
     )
 
@@ -43,7 +43,7 @@ describe('module runner initialization', async () => {
       const mod = await runner.import('/fixtures/throws-error-method.ts')
       mod.throwError()
     })
-    expect(serializeStack(runner, methodError)).toBe(
+    expect(serializeStack(server, methodError)).toBe(
       '    at Module.throwError (<root>/fixtures/throws-error-method.ts:6:9)',
     )
 
@@ -60,17 +60,17 @@ describe('module runner initialization', async () => {
       mod.throwError()
     })
 
-    expect(serializeStack(runner, methodErrorNew)).toBe(
+    expect(serializeStack(server, methodErrorNew)).toBe(
       '    at Module.throwError (<root>/fixtures/throws-error-method.ts:11:9)',
     )
   })
 
-  it('deep stacktrace', async ({ runner }) => {
+  it('deep stacktrace', async ({ runner, server }) => {
     const methodError = await getError(async () => {
       const mod = await runner.import('/fixtures/has-error-deep.ts')
       mod.main()
     })
-    expect(serializeStackDeep(runner, methodError).slice(0, 3)).toEqual([
+    expect(serializeStackDeep(server, methodError).slice(0, 3)).toEqual([
       'Error: crash',
       '    at crash (<root>/fixtures/has-error-deep.ts:2:9)',
       '    at Module.main (<root>/fixtures/has-error-deep.ts:6:3)',

@@ -1,7 +1,6 @@
 // @ts-check
 
 import { BroadcastChannel, parentPort } from 'node:worker_threads'
-import { fileURLToPath } from 'node:url'
 import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 import { createBirpc } from 'birpc'
 
@@ -20,7 +19,6 @@ const rpc = createBirpc({}, {
 
 const runner = new ModuleRunner(
   {
-    root: fileURLToPath(new URL('./', import.meta.url)),
     transport: {
       invoke(data) { return rpc.invoke(data) }
     },
