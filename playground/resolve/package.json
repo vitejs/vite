@@ -40,6 +40,7 @@
     "@vitejs/test-resolve-exports-with-module-condition-required": "link:./exports-with-module-condition-required",
     "@vitejs/test-resolve-linked": "workspace:*",
     "@vitejs/test-resolve-imports-pkg": "link:./imports-path/other-pkg",
-    "@vitejs/test-resolve-sharp-dir": "link:./sharp-dir"
+    "@vitejs/test-resolve-sharp-dir": "link:./sharp-dir",
+    "@vitejs/test-utf8-bom-package": "link:./utf8-bom-package"
   }
 }

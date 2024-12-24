@@ -248,3 +248,7 @@ test.runIf(isBuild)('public dir is not copied', async () => {
     fs.existsSync(path.resolve(testDir, 'dist/should-not-be-copied')),
   ).toBe(false)
 })
+
+test('import utf8-bom package', async () => {
+  expect(await page.textContent('.utf8-bom-package')).toMatch('[success]')
+})
