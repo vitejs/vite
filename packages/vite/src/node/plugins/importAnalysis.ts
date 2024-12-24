@@ -321,7 +321,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number,
         forceSkipImportAnalysis: boolean = false,
-      ): Promise<[string, string]> => {
+      ): Promise<[string, string | null]> => {
         url = stripBase(url, base)
 
         let importerFile = importer
@@ -355,7 +355,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (!resolved || resolved.meta?.['vite:alias']?.noResolved) {
           // in ssr, we should let node handle the missing modules
           if (ssr) {
-            return [url, url]
+            return [url, null]
           }
           // fix#9534, prevent the importerModuleNode being stopped from propagating updates
           importerModule.isSelfAccepting = false
@@ -396,31 +396,34 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
               url = injectQuery(url, versionMatch[1])
             }
           }
+        }
 
+        try {
+          // delay setting `isSelfAccepting` until the file is actually used (#7870)
+          // We use an internal function to avoid resolving the url again
+          const depModule = await moduleGraph._ensureEntryFromUrl(
+            unwrapId(url),
+            canSkipImportAnalysis(url) || forceSkipImportAnalysis,
+            resolved,
+          )
           // check if the dep has been hmr updated. If yes, we need to attach
           // its last updated timestamp to force the browser to fetch the most
           // up-to-date version of this module.
-          try {
-            // delay setting `isSelfAccepting` until the file is actually used (#7870)
-            // We use an internal function to avoid resolving the url again
-            const depModule = await moduleGraph._ensureEntryFromUrl(
-              unwrapId(url),
-              canSkipImportAnalysis(url) || forceSkipImportAnalysis,
-              resolved,
-            )
-            if (depModule.lastHMRTimestamp > 0) {
-              url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
-            }
-          } catch (e: any) {
-            // it's possible that the dep fails to resolve (non-existent import)
-            // attach location to the missing import
-            e.pos = pos
-            throw e
+          if (
+            environment.config.consumer === 'client' &&
+            depModule.lastHMRTimestamp > 0
+          ) {
+            url = injectQuery(url, `t=${depModule.lastHMRTimestamp}`)
           }
-
-          // prepend base
-          if (!ssr) url = joinUrlSegments(base, url)
+        } catch (e: any) {
+          // it's possible that the dep fails to resolve (non-existent import)
+          // attach location to the missing import
+          e.pos = pos
+          throw e
         }
+
+        // prepend base
+        if (!ssr) url = joinUrlSegments(base, url)
 
         return [url, resolved.id]
       }
@@ -547,7 +550,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             }
 
             // normalize
-            const [url, resolvedId] = await normalizeUrl(specifier, start)
+            let [url, resolvedId] = await normalizeUrl(specifier, start)
+            resolvedId = resolvedId || url
 
             // record as safe modules
             // safeModulesPath should not include the base prefix.
@@ -751,9 +755,40 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       // normalize and rewrite accepted urls
       const normalizedAcceptedUrls = new Set<string>()
       for (const { url, start, end } of acceptedUrls) {
-        const [normalized] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
+        let [normalized, resolvedId] = await normalizeUrl(url, start).catch(
+          () => [],
+        )
+        if (resolvedId) {
+          const mod = moduleGraph.getModuleById(resolvedId)
+          if (!mod) {
+            this.error(
+              `module was not found for ${JSON.stringify(resolvedId)}`,
+              start,
+            )
+            return
+          }
+          normalized = mod.url
+        } else {
+          try {
+            // this fallback is for backward compat and will be removed in Vite 7
+            const [resolved] = await moduleGraph.resolveUrl(toAbsoluteUrl(url))
+            normalized = resolved
+            if (resolved) {
+              this.warn({
+                message:
+                  `Failed to resolve ${JSON.stringify(url)} from ${importer}.` +
+                  ' An id should be written. Did you pass a URL?',
+                pos: start,
+              })
+            }
+          } catch {
+            this.error(`Failed to resolve ${JSON.stringify(url)}`, start)
+            return
+          }
+        }
         normalizedAcceptedUrls.add(normalized)
-        str().overwrite(start, end, JSON.stringify(normalized), {
+        const hmrAccept = normalizeHmrUrl(normalized)
+        str().overwrite(start, end, JSON.stringify(hmrAccept), {
           contentOnly: true,
         })
       }
