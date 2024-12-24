@@ -513,7 +513,15 @@ async function init() {
 
   pkg.name = packageName || getProjectName()
 
-  write('package.json', JSON.stringify(pkg, null, 2) + '\n')
+  if (template.endsWith('-ts')) {
+    const major = parseInt(process.versions.node.split('.')[0])
+    if ((major === 18 || major >= 20) && (major & 1) === 0) {
+      if (!pkg.devDependencies) pkg.devDependencies = {}
+      pkg.devDependencies['@types/node'] = `^${process.versions.node}`
+    }
+  }
+
+  write('package.json', JSON.stringify(pkg, sortKeys, 2) + '\n')
 
   if (isReactSwc) {
     setupReactSwc(root, template.endsWith('-ts'))
@@ -623,6 +631,23 @@ function setupReactSwc(root: string, isTs: boolean) {
 function editFile(file: string, callback: (content: string) => string) {
   const content = fs.readFileSync(file, 'utf-8')
   fs.writeFileSync(file, callback(content), 'utf-8')
+}
+
+function sortKeys(key: string, value: any) {
+  if (
+    (key === 'dependencies' || key === 'devDependencies') &&
+    typeof value === 'object' &&
+    value != null
+  ) {
+    const sortedObject: Record<string, any> = {}
+    Object.keys(value)
+      .sort()
+      .forEach((it) => {
+        sortedObject[it] = value[it]
+      })
+    return sortedObject
+  }
+  return value
 }
 
 init().catch((e) => {
