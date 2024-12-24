@@ -133,6 +133,7 @@ export const KNOWN_ASSET_TYPES = [
   'webp',
   'avif',
   'cur',
+  'jxl',
 
   // media
   'mp4',
