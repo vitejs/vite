@@ -323,59 +323,153 @@ function hasErrorOverlay() {
   return document.querySelectorAll(overlayId).length
 }
 
-async function waitForSuccessfulPing(socketUrl: string, ms = 1000) {
-  async function ping() {
-    const socket = new WebSocket(socketUrl, 'vite-ping')
-    return new Promise<boolean>((resolve) => {
-      function onOpen() {
-        resolve(true)
-        close()
+function waitForSuccessfulPing(socketUrl: string) {
+  // needs to be inlined to
+  //   - load the worker after the server is closed
+  //   - make it work with backend integrations
+  const blob = new Blob(
+    [
+      `const fn = ${pingWorkerContent.toString()};`,
+      `fn(${JSON.stringify(socketUrl)})`,
+    ],
+    { type: 'application/javascript' },
+  )
+  const objURL = URL.createObjectURL(blob)
+  const sharedWorker = new SharedWorker(objURL, { type: 'module' })
+  return new Promise<void>((resolve, reject) => {
+    const onVisibilityChange = () => {
+      sharedWorker.port.postMessage({ visibility: document.visibilityState })
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    sharedWorker.port.addEventListener('message', (event) => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      sharedWorker.port.close()
+
+      const data: { type: 'success' } | { type: 'error'; error: unknown } =
+        event.data
+      if (data.type === 'error') {
+        reject(data.error)
+        return
       }
-      function onError() {
-        resolve(false)
-        close()
+      resolve()
+    })
+
+    onVisibilityChange()
+    sharedWorker.port.start()
+  })
+}
+
+function pingWorkerContent(socketUrl: string) {
+  type VisibilityManager = {
+    currentState: DocumentVisibilityState
+    listeners: Set<(newVisibility: DocumentVisibilityState) => void>
+  }
+
+  self.addEventListener('connect', (_event) => {
+    const event = _event as MessageEvent
+    const port = event.ports[0]
+
+    if (!socketUrl) {
+      port.postMessage({
+        type: 'error',
+        error: new Error('socketUrl not found'),
+      })
+      return
+    }
+
+    const visibilityManager: VisibilityManager = {
+      currentState: 'visible',
+      listeners: new Set(),
+    }
+    port.addEventListener('message', (event) => {
+      const { visibility } = event.data
+      visibilityManager.currentState = visibility
+      for (const listener of visibilityManager.listeners) {
+        listener(visibility)
       }
-      function close() {
-        socket.removeEventListener('open', onOpen)
-        socket.removeEventListener('error', onError)
-        socket.close()
+    })
+    port.start()
+
+    console.debug('connected from window')
+    waitForSuccessfulPing(socketUrl, visibilityManager).then(
+      () => {
+        console.debug('ping successful')
+        try {
+          port.postMessage({ type: 'success' })
+        } catch (error) {
+          port.postMessage({ type: 'error', error })
+        }
+      },
+      (error) => {
+        console.debug('error happened', error)
+        try {
+          port.postMessage({ type: 'error', error })
+        } catch (error) {
+          port.postMessage({ type: 'error', error })
+        }
+      },
+    )
+  })
+
+  async function waitForSuccessfulPing(
+    socketUrl: string,
+    visibilityManager: VisibilityManager,
+    ms = 1000,
+  ) {
+    async function ping() {
+      const socket = new WebSocket(socketUrl, 'vite-ping')
+      return new Promise<boolean>((resolve) => {
+        function onOpen() {
+          resolve(true)
+          close()
+        }
+        function onError() {
+          resolve(false)
+          close()
+        }
+        function close() {
+          socket.removeEventListener('open', onOpen)
+          socket.removeEventListener('error', onError)
+          socket.close()
+        }
+        socket.addEventListener('open', onOpen)
+        socket.addEventListener('error', onError)
+      })
+    }
+
+    if (await ping()) {
+      return
+    }
+    await wait(ms)
+
+    while (true) {
+      if (visibilityManager.currentState === 'visible') {
+        if (await ping()) {
+          break
+        }
+        await wait(ms)
+      } else {
+        await waitForWindowShow(visibilityManager)
       }
-      socket.addEventListener('open', onOpen)
-      socket.addEventListener('error', onError)
+    }
+  }
+
+  function wait(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+  }
+
+  function waitForWindowShow(visibilityManager: VisibilityManager) {
+    return new Promise<void>((resolve) => {
+      const onChange = (newVisibility: DocumentVisibilityState) => {
+        if (newVisibility === 'visible') {
+          resolve()
+          visibilityManager.listeners.delete(onChange)
+        }
+      }
+      visibilityManager.listeners.add(onChange)
     })
   }
-
-  if (await ping()) {
-    return
-  }
-  await wait(ms)
-
-  while (true) {
-    if (document.visibilityState === 'visible') {
-      if (await ping()) {
-        break
-      }
-      await wait(ms)
-    } else {
-      await waitForWindowShow()
-    }
-  }
-}
-
-function wait(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-function waitForWindowShow() {
-  return new Promise<void>((resolve) => {
-    const onChange = async () => {
-      if (document.visibilityState === 'visible') {
-        resolve()
-        document.removeEventListener('visibilitychange', onChange)
-      }
-    }
-    document.addEventListener('visibilitychange', onChange)
-  })
 }
 
 const sheetsMap = new Map<string, HTMLStyleElement>()
