@@ -176,6 +176,9 @@
 <h2>resolve non normalized absolute path</h2>
 <p class="non-normalized"></p>
 
+<h2>utf8-bom-package</h2>
+<p class="utf8-bom-package">fail</p>
+
 <script type="module">
   import '@generated-content-virtual-file'
   function text(selector, text) {
@@ -399,6 +402,9 @@
 
   import nonNormalizedAbsolute from '@non-normalized'
   text('.non-normalized', nonNormalizedAbsolute)
+
+  import { msg as utf8BomPackage } from '@vitejs/test-utf8-bom-package'
+  text('.utf8-bom-package', utf8BomPackage)
 </script>
 
 <style>
