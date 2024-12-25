@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
-// @ts-ignore `sass` may not be installed
+// @ts-ignore `lightningcss` may not be installed
 import type Lightningcss from 'lightningcss'
 
 /* eslint-enable @typescript-eslint/ban-ts-comment */
