@@ -268,7 +268,7 @@ const devHtmlHook: IndexHtmlTransformHook = async (
         getScriptInfo(node)
 
       if (isIgnored) {
-        removeViteIgnoreAttr(s, sourceCodeLocation!)
+        removeViteIgnoreAttr(s, node.sourceCodeLocation!)
       } else if (src) {
         const processedUrl = processNodeUrl(
           src.value,
