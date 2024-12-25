@@ -852,7 +852,7 @@ if (!isBuild) {
       code.replace(`export const c = 'c'`, `export const c = 'cc'`),
     )
     // it throws a same error as browser case,
-    // but it doesn't auto reload and it calls `hot.accept` called with `undefined`
+    // but it doesn't auto reload and it calls `hot.accept(nextExports)` with `nextExports = undefined`
     await untilUpdated(() => el(), '')
 
     // test reloading manually for now
