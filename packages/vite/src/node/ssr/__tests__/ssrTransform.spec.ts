@@ -197,7 +197,7 @@ test('preserve line offset when rewriting imports', async () => {
     `  dirname,`,
     `  join,`,
     `} from 'node:path';`,
-    ``,
+    `export { join };`,
     `debugger;`,
     ``,
     `import fs from 'node:fs';`,
@@ -208,7 +208,7 @@ test('preserve line offset when rewriting imports', async () => {
     `  red,`,
     `  green,`,
     `} from 'kleur/colors';`,
-    ``,
+    `export { red };`,
     `debugger;`,
   ]
 
@@ -221,7 +221,7 @@ test('preserve line offset when rewriting imports', async () => {
       .map((line, i) => `${String(i + 1).padStart(2)} | ${line}`.trimEnd())
       .join('\n'),
   ).toMatchInlineSnapshot(`
-    " 1 | const __vite_ssr_import_0__ = await __vite_ssr_import__("node:path", {"importedNames":["dirname","join"]});const __vite_ssr_import_1__ = await __vite_ssr_import__("node:fs", {"importedNames":["default"]});const __vite_ssr_import_2__ = await __vite_ssr_import__("kleur/colors", {"importedNames":["red","green"]});debugger;
+    " 1 | Object.defineProperty(__vite_ssr_exports__, "join", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_0__.join }});Object.defineProperty(__vite_ssr_exports__, "red", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_2__.red }});const __vite_ssr_import_0__ = await __vite_ssr_import__("node:path", {"importedNames":["dirname","join"]});const __vite_ssr_import_1__ = await __vite_ssr_import__("node:fs", {"importedNames":["default"]});const __vite_ssr_import_2__ = await __vite_ssr_import__("kleur/colors", {"importedNames":["red","green"]});debugger;
      2 |
      3 |
      4 |
