@@ -1,0 +1,152 @@
+diff --git a/node/composeVisitors.js b/node/composeVisitors.js
+index 850058d0b952a57b6b68b2da9f12790d51b59ca1..2144b1318b25900e38c9a75787bdf4684defe9a3 100644
+--- a/node/composeVisitors.js
++++ b/node/composeVisitors.js
+@@ -3,7 +3,7 @@
+ 
+ /**
+  * Composes multiple visitor objects into a single one.
+- * @param {Visitor[]} visitors 
++ * @param {Visitor[]} visitors
+  * @return {Visitor}
+  */
+ function composeVisitors(visitors) {
+@@ -13,6 +13,7 @@ function composeVisitors(visitors) {
+ 
+   /** @type Visitor */
+   let res = {};
++  composeSimpleVisitors(res, visitors, 'StyleSheet');
+   composeObjectVisitors(res, visitors, 'Rule', ruleVisitor, wrapUnknownAtRule);
+   composeObjectVisitors(res, visitors, 'RuleExit', ruleVisitor, wrapUnknownAtRule);
+   composeObjectVisitors(res, visitors, 'Declaration', declarationVisitor, wrapCustomProperty);
+@@ -54,8 +55,8 @@ function wrapCustomProperty(k, f) {
+ }
+ 
+ /**
+- * @param {import('./index').Visitor['Rule']} f 
+- * @param {import('./ast').Rule} item 
++ * @param {import('./index').Visitor['Rule']} f
++ * @param {import('./ast').Rule} item
+  */
+ function ruleVisitor(f, item) {
+   if (typeof f === 'object') {
+@@ -72,8 +73,8 @@ function ruleVisitor(f, item) {
+ }
+ 
+ /**
+- * @param {import('./index').Visitor['Declaration']} f 
+- * @param {import('./ast').Declaration} item 
++ * @param {import('./index').Visitor['Declaration']} f
++ * @param {import('./ast').Declaration} item
+  */
+ function declarationVisitor(f, item) {
+   if (typeof f === 'object') {
+@@ -94,9 +95,9 @@ function declarationVisitor(f, item) {
+ }
+ 
+ /**
+- * 
+- * @param {Visitor[]} visitors 
+- * @param {string} key 
++ *
++ * @param {Visitor[]} visitors
++ * @param {string} key
+  * @returns {[any[], boolean, Set<string>]}
+  */
+ function extractObjectsOrFunctions(visitors, key) {
+@@ -124,8 +125,8 @@ function extractObjectsOrFunctions(visitors, key) {
+  * @param {Visitor} res
+  * @param {Visitor[]} visitors
+  * @param {K} key
+- * @param {(visitor: Visitor[K], item: any) => any | any[] | void} apply 
+- * @param {(k: string, f: any) => any} wrapKey 
++ * @param {(visitor: Visitor[K], item: any) => any | any[] | void} apply
++ * @param {(k: string, f: any) => any} wrapKey
+  */
+ function composeObjectVisitors(res, visitors, key, apply, wrapKey) {
+   let [values, hasFunction, allKeys] = extractObjectsOrFunctions(visitors, key);
+@@ -152,11 +153,11 @@ function composeObjectVisitors(res, visitors, key, apply, wrapKey) {
+ }
+ 
+ /**
+- * @param {Visitor} res 
+- * @param {Visitor[]} visitors 
+- * @param {string} key 
+- * @param {import('./ast').TokenOrValue['type']} type 
+- * @param {boolean} isExit 
++ * @param {Visitor} res
++ * @param {Visitor[]} visitors
++ * @param {string} key
++ * @param {import('./ast').TokenOrValue['type']} type
++ * @param {boolean} isExit
+  */
+ function composeTokenVisitors(res, visitors, key, type, isExit) {
+   let [values, hasFunction, allKeys] = extractObjectsOrFunctions(visitors, key);
+@@ -182,8 +183,8 @@ function composeTokenVisitors(res, visitors, key, type, isExit) {
+ }
+ 
+ /**
+- * @param {Visitor[]} visitors 
+- * @param {import('./ast').TokenOrValue['type']} type 
++ * @param {Visitor[]} visitors
++ * @param {import('./ast').TokenOrValue['type']} type
+  */
+ function createTokenVisitor(visitors, type, isExit) {
+   let v = createArrayVisitor(visitors, (visitor, /** @type {import('./ast').TokenOrValue} */ item) => {
+@@ -271,8 +272,8 @@ function createTokenVisitor(visitors, type, isExit) {
+ }
+ 
+ /**
+- * @param {Visitor[]} visitors 
+- * @param {string} key 
++ * @param {Visitor[]} visitors
++ * @param {string} key
+  */
+ function extractFunctions(visitors, key) {
+   let functions = [];
+@@ -286,9 +287,9 @@ function extractFunctions(visitors, key) {
+ }
+ 
+ /**
+- * @param {Visitor} res 
+- * @param {Visitor[]} visitors 
+- * @param {string} key 
++ * @param {Visitor} res
++ * @param {Visitor[]} visitors
++ * @param {string} key
+  */
+ function composeSimpleVisitors(res, visitors, key) {
+   let functions = extractFunctions(visitors, key);
+@@ -316,9 +317,9 @@ function composeSimpleVisitors(res, visitors, key) {
+ }
+ 
+ /**
+- * @param {Visitor} res 
+- * @param {Visitor[]} visitors 
+- * @param {string} key 
++ * @param {Visitor} res
++ * @param {Visitor[]} visitors
++ * @param {string} key
+  */
+ function composeArrayFunctions(res, visitors, key) {
+   let functions = extractFunctions(visitors, key);
+@@ -337,8 +338,8 @@ function composeArrayFunctions(res, visitors, key) {
+ /**
+  * @template T
+  * @template V
+- * @param {T[]} visitors 
+- * @param {(visitor: T, item: V) => V | V[] | void} apply 
++ * @param {T[]} visitors
++ * @param {(visitor: T, item: V) => V | V[] | void} apply
+  * @returns {(item: V) => V | V[] | void}
+  */
+ function createArrayVisitor(visitors, apply) {
+@@ -350,7 +351,7 @@ function createArrayVisitor(visitors, apply) {
+     for (let i = 0; i < arr.length; i++) {
+       // For each value, call all visitors. If a visitor returns a new value,
+       // we start over, but skip the visitor that generated the value or saw
+-      // it before (to avoid cycles). This way, visitors can be composed in any order. 
++      // it before (to avoid cycles). This way, visitors can be composed in any order.
+       for (let v = 0; v < visitors.length;) {
+         if (seen.get(v)) {
+           v++;
