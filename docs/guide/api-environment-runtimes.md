@@ -150,11 +150,10 @@ Module runner exposes `import` method. When Vite server triggers `full-reload` H
 
 ```js
 import { ModuleRunner, ESModulesEvaluator } from 'vite/module-runner'
-import { root, transport } from './rpc-implementation.js'
+import { transport } from './rpc-implementation.js'
 
 const moduleRunner = new ModuleRunner(
   {
-    root,
     transport,
   },
   new ESModulesEvaluator(),
@@ -180,10 +179,6 @@ type ModuleRunnerTransport = unknown
 
 // ---cut---
 interface ModuleRunnerOptions {
-  /**
-   * Root of the project
-   */
-  root: string
   /**
    * A set of methods to communicate with the server.
    */
@@ -294,7 +289,6 @@ const transport = {
 
 const runner = new ModuleRunner(
   {
-    root: fileURLToPath(new URL('./', import.meta.url)),
     transport,
   },
   new ESModulesEvaluator(),
@@ -362,7 +356,6 @@ import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 
 export const runner = new ModuleRunner(
   {
-    root: fileURLToPath(new URL('./', import.meta.url)),
     transport: {
       async invoke(data) {
         const response = await fetch(`http://my-vite-server/invoke`, {
