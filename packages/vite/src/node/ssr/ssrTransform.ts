@@ -263,6 +263,7 @@ async function ssrTransformScript(
         }
         s.remove(node.start, (node.declaration as Node).start)
       } else {
+        // TODO: preserve new lines like `defineImport`
         s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
