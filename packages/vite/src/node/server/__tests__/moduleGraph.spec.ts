@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import '../..'
+import '../..' // fix cyclic import error
 import { EnvironmentModuleGraph } from '../moduleGraph'
 import type { ModuleNode } from '../mixedModuleGraph'
 import { ModuleGraph } from '../mixedModuleGraph'

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import '..'
+import '..' // fix cyclic import error
 import { commentRE, importsRE, scriptRE } from '../optimizer/scan'
 import { multilineCommentsRE, singlelineCommentsRE } from '../utils'
 
