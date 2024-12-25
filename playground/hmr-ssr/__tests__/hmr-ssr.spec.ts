@@ -856,10 +856,8 @@ if (!isBuild) {
     await untilUpdated(() => el(), '')
 
     // test reloading manually for now
-    // TODO: why clearCache not working?
-    // runner.clearCache();
-    // runner.import('/self-accept-within-circular/index')
-    await setupModuleRunner('/self-accept-within-circular/index')
+    server.moduleGraph.invalidateAll() // TODO: why is `runner.clearCache()` not enough?
+    await runner.import('/self-accept-within-circular/index')
     await untilUpdated(() => el(), 'cc')
   })
 
