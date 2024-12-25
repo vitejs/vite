@@ -3221,10 +3221,12 @@ async function compileLightningCSS(
         })
   } catch (e) {
     e.message = `[lightningcss] ${e.message}`
-    e.loc = {
-      file: e.fileName.replace(NULL_BYTE_PLACEHOLDER, '\0'),
-      line: e.loc.line,
-      column: e.loc.column - 1, // 1-based
+    if (e.loc) {
+      e.loc = {
+        file: e.fileName.replace(NULL_BYTE_PLACEHOLDER, '\0'),
+        line: e.loc.line,
+        column: e.loc.column - 1, // 1-based
+      }
     }
     throw e
   }
