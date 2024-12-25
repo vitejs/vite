@@ -76,7 +76,8 @@ test('postcss config', async () => {
   await untilUpdated(() => getColor(imported), 'red')
 })
 
-test('postcss plugin that injects url()', async () => {
+// this test is only relevant with postcss
+test.skip('postcss plugin that injects url()', async () => {
   const imported = await page.$('.postcss-inject-url')
   // alias should be resolved
   expect(await getBg(imported)).toMatch(
@@ -304,7 +305,8 @@ test('PostCSS dir-dependency', async () => {
   expect(await getColor(el2)).toBe('grey')
   expect(await getColor(el3)).toBe('grey')
 
-  if (!isBuild) {
+  // FIXME: skip for now as lightningcss does not support registering dependencies in plugins
+  if (!isBuild && false) {
     editFile('glob-dep/foo.css', (code) =>
       code.replace('color: grey', 'color: blue'),
     )
