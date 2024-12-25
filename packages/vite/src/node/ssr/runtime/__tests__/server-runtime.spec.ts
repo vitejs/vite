@@ -264,16 +264,23 @@ describe('module runner initialization', async () => {
     })
   })
 
-  it(`cyclic invalid`, async ({ runner }) => {
+  it(`cyclic invalid 1`, async ({ runner }) => {
     // Node also fails but with a different message
     //   $ node packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2/test5/index.js
     //   ReferenceError: Cannot access 'dep1' before initialization
     await expect(() =>
       runner.import('/fixtures/cyclic2/test5/index.js'),
-    ).rejects.toMatchObject({
-      name: 'ReferenceError',
-      message: `Cannot access '__vite_ssr_import_1__' before initialization`,
-    })
+    ).rejects.toMatchInlineSnapshot(
+      `[ReferenceError: Cannot access '__vite_ssr_import_1__' before initialization]`,
+    )
+  })
+
+  it(`cyclic invalid 2`, async ({ runner }) => {
+    await expect(() =>
+      runner.import('/fixtures/cyclic2/test6/index.js'),
+    ).rejects.toMatchInlineSnapshot(
+      `[ReferenceError: Cannot access 'dep1' before initialization]`,
+    )
   })
 })
 
