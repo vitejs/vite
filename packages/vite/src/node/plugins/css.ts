@@ -83,6 +83,7 @@ import {
 } from '../utils'
 import type { Logger } from '../logger'
 import { cleanUrl, isWindows, slash } from '../../shared/utils'
+import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { PartialEnvironment } from '../baseEnvironment'
@@ -3160,10 +3161,9 @@ async function compileLightningCSS(
 ): ReturnType<typeof compileCSS> {
   const { config } = environment
   const deps = new Set<string>()
-  // Relative path is needed to get stable hash when using CSS modules
-  const filename = cleanUrl(path.relative(config.root, id))
-  const toAbsolute = (filePath: string) =>
-    path.isAbsolute(filePath) ? filePath : path.join(config.root, filePath)
+  // replace null byte as lightningcss treats that as a string terminator
+  // https://github.com/parcel-bundler/lightningcss/issues/874
+  const filename = id.replace('\0', NULL_BYTE_PLACEHOLDER)
 
   let res: LightningCssTransformAttributeResult | LightningCssTransformResult
   try {
@@ -3180,16 +3180,14 @@ async function compileLightningCSS(
         ).bundleAsync({
           ...config.css.lightningcss,
           filename,
+          // projectRoot is needed to get stable hash when using CSS modules
+          projectRoot: config.root,
           resolver: {
             read(filePath) {
               if (filePath === filename) {
                 return src
               }
-              // This happens with html-proxy (#13776)
-              if (!filePath.endsWith('.css')) {
-                return src
-              }
-              return fs.readFileSync(toAbsolute(filePath), 'utf-8')
+              return fs.readFileSync(filePath, 'utf-8')
             },
             async resolve(id, from) {
               const publicFile = checkPublicFile(
@@ -3202,7 +3200,7 @@ async function compileLightningCSS(
 
               const resolved = await getAtImportResolvers(
                 environment.getTopLevelConfig(),
-              ).css(environment, id, toAbsolute(from))
+              ).css(environment, id, from)
 
               if (resolved) {
                 deps.add(resolved)
@@ -3224,7 +3222,7 @@ async function compileLightningCSS(
   } catch (e) {
     e.message = `[lightningcss] ${e.message}`
     e.loc = {
-      file: toAbsolute(e.fileName),
+      file: e.fileName.replace(NULL_BYTE_PLACEHOLDER, '\0'),
       line: e.loc.line,
       column: e.loc.column - 1, // 1-based
     }
@@ -3237,21 +3235,28 @@ async function compileLightningCSS(
   let css = decoder.decode(res.code)
   for (const dep of res.dependencies!) {
     switch (dep.type) {
-      case 'url':
+      case 'url': {
+        let replaceUrl: string
         if (skipUrlReplacer(dep.url)) {
-          css = css.replace(dep.placeholder, () => dep.url)
-          break
-        }
-        if (urlReplacer) {
-          const replaceUrl = await urlReplacer(
+          replaceUrl = dep.url
+        } else if (urlReplacer) {
+          replaceUrl = await urlReplacer(
             dep.url,
-            toAbsolute(dep.loc.filePath),
+            dep.loc.filePath.replace(NULL_BYTE_PLACEHOLDER, '\0'),
           )
-          css = css.replace(dep.placeholder, () => replaceUrl)
         } else {
-          css = css.replace(dep.placeholder, () => dep.url)
+          replaceUrl = dep.url
         }
+
+        css = css.replace(
+          dep.placeholder,
+          // lightningcss always generates `url("placeholder")`
+          // (`url('placeholder')`, `url(placeholder)` is not generated)
+          // so escape double quotes
+          () => replaceUrl.replaceAll('"', '\\"'),
+        )
         break
+      }
       default:
         throw new Error(`Unsupported dependency type: ${dep.type}`)
     }

@@ -126,32 +126,53 @@ async function ssrTransformScript(
   ) {
     const source = importNode.source.value as string
     deps.add(source)
-    const importId = `__vite_ssr_import_${uid++}__`
 
     // Reduce metadata to undefined if it's all default values
-    if (
-      metadata &&
-      (metadata.importedNames == null || metadata.importedNames.length === 0)
-    ) {
-      metadata = undefined
-    }
-    const metadataStr = metadata ? `, ${JSON.stringify(metadata)}` : ''
+    const metadataArg =
+      (metadata?.importedNames?.length ?? 0) > 0
+        ? `, ${JSON.stringify(metadata)}`
+        : ''
 
-    s.update(
-      importNode.start,
-      importNode.end,
-      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
-        source,
-      )}${metadataStr});\n`,
-    )
+    const importId = `__vite_ssr_import_${uid++}__`
+    const transformedImport = `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
+      source,
+    )}${metadataArg});`
 
-    if (importNode.start === index) {
-      // no need to hoist, but update hoistIndex to keep the order
-      hoistIndex = importNode.end
-    } else {
-      // There will be an error if the module is called before it is imported,
-      // so the module import statement is hoisted to the top
+    s.update(importNode.start, importNode.end, transformedImport)
+
+    // If there's only whitespace characters between the last import and the
+    // current one, that means there's no statements between them and
+    // hoisting is not needed.
+    // FIXME: account for comments between imports
+    const nonWhitespaceRegex = /\S/g
+    nonWhitespaceRegex.lastIndex = index
+    nonWhitespaceRegex.exec(code)
+    if (importNode.start > nonWhitespaceRegex.lastIndex) {
+      // Imports are moved to the top of the file (AKA “hoisting”) to ensure any
+      // non-import statements before them are executed after the import. This
+      // aligns SSR imports with native ESM import behavior.
       s.move(importNode.start, importNode.end, index)
+    } else {
+      // Only update hoistIndex when *not* hoisting the current import. This
+      // ensures that once any import in this module has been hoisted, all
+      // remaining imports will also be hoisted. This is inherently true because
+      // we work from the top of the file downward.
+      hoistIndex = importNode.end
+    }
+
+    // Track how many lines the original import statement spans, so we can
+    // preserve the line offset.
+    let linesSpanned = 1
+    for (let i = importNode.start; i < importNode.end; i++) {
+      if (code[i] === '\n') {
+        linesSpanned++
+      }
+    }
+    if (linesSpanned > 1) {
+      // This leaves behind any extra newlines that were removed during
+      // transformation, in the position of the original import statement
+      // (before any hoisting).
+      s.prependRight(importNode.end, '\n'.repeat(linesSpanned - 1))
     }
 
     return importId
