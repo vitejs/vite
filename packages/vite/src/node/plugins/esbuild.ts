@@ -317,15 +317,19 @@ const rollupToEsbuildFormatMap: Record<
   iife: undefined,
 }
 
-export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
+export const buildEsbuildPlugin = (): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
+    applyToEnvironment(environment) {
+      return environment.config.esbuild !== false
+    },
     async renderChunk(code, chunk, opts) {
       // @ts-expect-error injected by @vitejs/plugin-legacy
       if (opts.__vite_skip_esbuild__) {
         return null
       }
 
+      const config = this.environment.config
       const options = resolveEsbuildTranspileOptions(config, opts.format)
 
       if (!options) {

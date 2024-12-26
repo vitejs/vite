@@ -733,6 +733,65 @@ test('default sharedConfigBuild true on build api', async () => {
   expect(counter).toBe(1)
 })
 
+test.for([true, false])(
+  'minify per environment (builder.sharedPlugins: %s)',
+  async (sharedPlugins) => {
+    const root = resolve(__dirname, 'fixtures/shared-plugins/minify')
+    const builder = await createBuilder({
+      root,
+      logLevel: 'warn',
+      environments: {
+        client: {
+          build: {
+            outDir: './dist/client',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+        ssr: {
+          build: {
+            outDir: './dist/server',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+        custom1: {
+          build: {
+            minify: true,
+            outDir: './dist/custom1',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+        custom2: {
+          build: {
+            minify: false,
+            outDir: './dist/custom2',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+      },
+      builder: {
+        sharedPlugins,
+      },
+    })
+    const client = await builder.build(builder.environments.client)
+    const ssr = await builder.build(builder.environments.ssr)
+    const custom1 = await builder.build(builder.environments.custom1)
+    const custom2 = await builder.build(builder.environments.custom2)
+    expect(
+      ([client, ssr, custom1, custom2] as RollupOutput[]).map(
+        (o) => o.output[0].code.split('\n').length,
+      ),
+    ).toEqual([2, 5, 2, 5])
+  },
+)
+
 test('adjust worker build error for worker.format', async () => {
   try {
     await build({
