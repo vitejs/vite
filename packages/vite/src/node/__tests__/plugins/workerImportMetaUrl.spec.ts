@@ -5,8 +5,14 @@ import { workerImportMetaUrlPlugin } from '../../plugins/workerImportMetaUrl'
 import { resolveConfig } from '../../config'
 import { PartialEnvironment } from '../../baseEnvironment'
 
+// @Note copied from packages/vite/src/shared/utils.ts
+const windowsSlashRE = /\\/g
+function slash(p: string): string {
+  return p.replace(windowsSlashRE, '/')
+}
+
 async function createWorkerImportMetaUrlPluginTransform() {
-  const root = path.join(import.meta.dirname, 'fixtures/worker')
+  const root = slash(path.join(import.meta.dirname, 'fixtures/worker'))
   const config = await resolveConfig({ configFile: false, root }, 'serve')
   const instance = workerImportMetaUrlPlugin(config)
   const environment = new PartialEnvironment('client', config)
