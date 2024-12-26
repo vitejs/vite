@@ -1320,7 +1320,7 @@ async function compileCSS(
   if (!transformResult) {
     return {
       code,
-      map: preprocessorMap,
+      map: config.css.devSourcemap ? preprocessorMap : { mappings: '' },
       deps,
     }
   }
