@@ -320,6 +320,9 @@ const rollupToEsbuildFormatMap: Record<
 export const buildEsbuildPlugin = (): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
+    applyToEnvironment(environment) {
+      return environment.config.esbuild !== false
+    },
     async renderChunk(code, chunk, opts) {
       // @ts-expect-error injected by @vitejs/plugin-legacy
       if (opts.__vite_skip_esbuild__) {
@@ -327,9 +330,6 @@ export const buildEsbuildPlugin = (): Plugin => {
       }
 
       const config = this.environment.config
-      if (config.esbuild === false) {
-        return
-      }
       const options = resolveEsbuildTranspileOptions(config, opts.format)
 
       if (!options) {
