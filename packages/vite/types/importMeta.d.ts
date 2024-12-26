@@ -2,7 +2,11 @@
 // Thus cannot contain any top-level imports
 // <https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation>
 
+// @ts-ignore
+type ImportMetaKey = ViteStrictImportMetaEnv extends true ? never : string
+
 interface ImportMetaEnv {
+  [key: ImportMetaKey]: any
   BASE_URL: string
   MODE: string
   DEV: boolean
