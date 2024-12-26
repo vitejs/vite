@@ -1,3 +1,9 @@
+## <small>6.0.5 (2024-12-20)</small>
+
+* fix: esbuild regression (pin to 0.24.0) (#19027) ([4359e0d](https://github.com/vitejs/vite/commit/4359e0d5b33afd6259a4dcef787cc2670e963126)), closes [#19027](https://github.com/vitejs/vite/issues/19027)
+
+
+
 ## <small>6.0.4 (2024-12-19)</small>
 
 * fix: `this.resolve` skipSelf should not skip for different `id` or `import` (#18903) ([4727320](https://github.com/vitejs/vite/commit/472732057cb2273908e1fca8aa7dc18a7e1f7c74)), closes [#18903](https://github.com/vitejs/vite/issues/18903)
