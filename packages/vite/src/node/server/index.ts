@@ -690,6 +690,7 @@ export async function _createServer(
         server._ssrCompatModuleRunner?.close(),
       ])
       server.resolvedUrls = null
+      server._ssrCompatModuleRunner = undefined
     },
     printUrls() {
       if (server.resolvedUrls) {

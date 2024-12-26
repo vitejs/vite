@@ -65,7 +65,7 @@ export default defineConfig({
         importers: [
           {
             canonicalize(url) {
-              return url === 'virtual-dep'
+              return url === 'virtual-dep' || url.endsWith('.wxss')
                 ? new URL('custom-importer:virtual-dep')
                 : null
             },

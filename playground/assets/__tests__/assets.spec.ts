@@ -276,6 +276,12 @@ describe('css url() references', () => {
     expect(bg).toMatch(assetMatch)
   })
 
+  test('preinlined SVG', async () => {
+    expect(await getBg('.css-url-preinlined-svg')).toMatch(
+      /data:image\/svg\+xml,.+/,
+    )
+  })
+
   test.runIf(isBuild)('generated paths in CSS', () => {
     const css = findAssetFile(/index-[-\w]{8}\.css$/, 'foo')
 
