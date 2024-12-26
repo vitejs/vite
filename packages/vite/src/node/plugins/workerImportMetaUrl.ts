@@ -232,7 +232,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let file: string | undefined
           if (url[0] === '.') {
             file = path.resolve(path.dirname(id), url)
-            file = tryFsResolve(file, fsResolveOptions) ?? file
+            file = slash(tryFsResolve(file, fsResolveOptions) ?? file)
           } else {
             workerResolver ??= createBackCompatIdResolver(config, {
               extensions: [],
