@@ -38,9 +38,7 @@ export function testDirDep() {
     Rule: {
       unknown: {
         test(rule) {
-          const location = /** @type {import('lightningcss').Location2} */ (
-            rule.loc
-          )
+          const location = rule.loc
           const from = currentStyleSheetSources[location.source_index]
           const pattern = normalizePath(
             path.resolve(path.dirname(from), './glob-dep/**/*.css'),
@@ -68,9 +66,7 @@ export function testSourceInput() {
     Rule: {
       unknown: {
         'source-input': (rule) => {
-          const location = /** @type {import('lightningcss').Location2} */ (
-            rule.loc
-          )
+          const location = rule.loc
           const from = currentStyleSheetSources[location.source_index]
           return [
             {
