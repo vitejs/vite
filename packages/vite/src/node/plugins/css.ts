@@ -3231,6 +3231,15 @@ async function compileLightningCSS(
     throw e
   }
 
+  for (const warning of res.warnings) {
+    let msg = `[vite:css][lightningcss] ${warning.message}`
+    msg += `\n${generateCodeFrame(src, {
+      line: warning.loc.line,
+      column: warning.loc.column - 1, // 1-based
+    })}`
+    environment.logger.warn(colors.yellow(msg))
+  }
+
   // NodeJS res.code = Buffer
   // Deno res.code = Uint8Array
   // For correct decode compiled css need to use TextDecoder
