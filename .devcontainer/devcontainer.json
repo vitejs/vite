@@ -9,5 +9,5 @@
   "postCreateCommand": "pnpm i && pnpm run build",
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [4173]
+  "forwardPorts": [4173, 5173]
 }
