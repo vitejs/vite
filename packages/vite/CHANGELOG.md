@@ -1,3 +1,17 @@
+## <small>6.0.6 (2024-12-26)</small>
+
+* fix: replace runner-side path normalization with `fetchModule`-side resolve (#18361) ([9f10261](https://github.com/vitejs/vite/commit/9f10261e7609098b832fd0fb23a64840b3a0d1a0)), closes [#18361](https://github.com/vitejs/vite/issues/18361)
+* fix(css): resolve style tags in HTML files correctly for lightningcss (#19001) ([afff05c](https://github.com/vitejs/vite/commit/afff05c03266fc76d5ab8928215c89f5992f40f8)), closes [#19001](https://github.com/vitejs/vite/issues/19001)
+* fix(css): show correct error when unknown placeholder is used for CSS modules pattern in lightningcs ([9290d85](https://github.com/vitejs/vite/commit/9290d85b5d2ad64991bd296157cb3bcb959c341d)), closes [#19070](https://github.com/vitejs/vite/issues/19070)
+* fix(resolve): handle package.json with UTF-8 BOM (#19000) ([902567a](https://github.com/vitejs/vite/commit/902567ac5327e915ce65d090045fa4922ef9f2b5)), closes [#19000](https://github.com/vitejs/vite/issues/19000)
+* fix(ssrTransform): preserve line offset when transforming imports (#19004) ([1aa434e](https://github.com/vitejs/vite/commit/1aa434e8017012bf0939b2ff1a3a66b4bd12b76d)), closes [#19004](https://github.com/vitejs/vite/issues/19004)
+* chore: fix typo in comment (#19067) ([eb06ec3](https://github.com/vitejs/vite/commit/eb06ec30bb02ced66274f0fc6e90aff2bb20c632)), closes [#19067](https://github.com/vitejs/vite/issues/19067)
+* chore: update comment about `build.target` (#19047) ([0e9e81f](https://github.com/vitejs/vite/commit/0e9e81f622f13d78ee238c0fa72ba920e23419f4)), closes [#19047](https://github.com/vitejs/vite/issues/19047)
+* revert: unpin esbuild version (#19043) ([8bfe247](https://github.com/vitejs/vite/commit/8bfe247511517c631a26f3931bb3c93a7b0b7446)), closes [#19043](https://github.com/vitejs/vite/issues/19043)
+* test(ssr): test virtual module with query (#19044) ([a1f4b46](https://github.com/vitejs/vite/commit/a1f4b46896cb4b442b54a8336db8eca6df9ee02d)), closes [#19044](https://github.com/vitejs/vite/issues/19044)
+
+
+
 ## <small>6.0.5 (2024-12-20)</small>
 
 * fix: esbuild regression (pin to 0.24.0) (#19027) ([4359e0d](https://github.com/vitejs/vite/commit/4359e0d5b33afd6259a4dcef787cc2670e963126)), closes [#19027](https://github.com/vitejs/vite/issues/19027)
