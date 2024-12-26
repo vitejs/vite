@@ -1480,7 +1480,7 @@ async function compileCSS(
         }
       } else if (message.type === 'warning') {
         const warning = message as PostCSS.Warning
-        let msg = `[vite:css] ${warning.text}`
+        let msg = `[vite:css][postcss] ${warning.text}`
         msg += `\n${generateCodeFrame(
           code,
           {
