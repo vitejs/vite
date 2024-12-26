@@ -3365,32 +3365,39 @@ async function compileLightningCSS(
                 return publicFile
               }
 
-              // TODO: only do this for compose imports
+              // NOTE: with `transformer: 'postcss'`, CSS modules `composes` tried to resolve with
+              //       all resolvers, but in `transformer: 'lightningcss'`, only the one for the
+              //       current file type is used.
               const atImportResolvers = getAtImportResolvers(
                 environment.getTopLevelConfig(),
               )
-              for (const key of getCssResolversKeys(atImportResolvers)) {
-                const resolved = await atImportResolvers[key](
-                  environment,
-                  id,
-                  from,
-                )
-                if (resolved) {
-                  deps.add(resolved)
-                  return resolved
-                }
+              const lang = CSS_LANGS_RE.exec(from)?.[1] as CssLang | undefined
+              let resolver: ResolveIdFn
+              switch (lang) {
+                case 'css':
+                case 'sss':
+                case 'styl':
+                case 'stylus':
+                case undefined:
+                  resolver = atImportResolvers.css
+                  break
+                case 'sass':
+                case 'scss':
+                  resolver = atImportResolvers.sass
+                  break
+                case 'less':
+                  resolver = atImportResolvers.less
+                  break
+                default:
+                  throw new Error(`Unknown lang: ${lang satisfies never}`)
+              }
+
+              const resolved = await resolver(environment, id, from)
+              if (resolved) {
+                deps.add(resolved)
+                return resolved
               }
               return id
-
-              // const resolved = await getAtImportResolvers(
-              //   environment.getTopLevelConfig(),
-              // ).css(environment, id, from)
-
-              // if (resolved) {
-              //   deps.add(resolved)
-              //   return resolved
-              // }
-              // return id
             },
           },
           minify: config.isProduction && !!config.build.cssMinify,
