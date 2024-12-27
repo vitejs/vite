@@ -1480,7 +1480,7 @@ async function compileCSS(
         }
       } else if (message.type === 'warning') {
         const warning = message as PostCSS.Warning
-        let msg = `[vite:css] ${warning.text}`
+        let msg = `[vite:css][postcss] ${warning.text}`
         msg += `\n${generateCodeFrame(
           code,
           {
@@ -1922,31 +1922,47 @@ async function minifyCSS(
   // See https://github.com/vitejs/vite/pull/13893#issuecomment-1678628198
 
   if (config.build.cssMinify === 'lightningcss') {
-    const { code, warnings } = (await importLightningCSS()).transform({
-      ...config.css.lightningcss,
-      targets: convertTargets(config.build.cssTarget),
-      cssModules: undefined,
-      // TODO: Pass actual filename here, which can also be passed to esbuild's
-      // `sourcefile` option below to improve error messages
-      filename: defaultCssBundleName,
-      code: Buffer.from(css),
-      minify: true,
-    })
-    if (warnings.length) {
-      config.logger.warn(
-        colors.yellow(
-          `warnings when minifying css:\n${warnings
-            .map((w) => w.message)
-            .join('\n')}`,
-        ),
-      )
-    }
+    try {
+      const { code, warnings } = (await importLightningCSS()).transform({
+        ...config.css.lightningcss,
+        targets: convertTargets(config.build.cssTarget),
+        cssModules: undefined,
+        // TODO: Pass actual filename here, which can also be passed to esbuild's
+        // `sourcefile` option below to improve error messages
+        filename: defaultCssBundleName,
+        code: Buffer.from(css),
+        minify: true,
+      })
+      if (warnings.length) {
+        const messages = warnings.map(
+          (warning) =>
+            `${warning.message}\n` +
+            generateCodeFrame(css, {
+              line: warning.loc.line,
+              column: warning.loc.column - 1, // 1-based
+            }),
+        )
+        config.logger.warn(
+          colors.yellow(`warnings when minifying css:\n${messages.join('\n')}`),
+        )
+      }
 
-    // NodeJS res.code = Buffer
-    // Deno res.code = Uint8Array
-    // For correct decode compiled css need to use TextDecoder
-    // LightningCSS output does not return a linebreak at the end
-    return decoder.decode(code) + (inlined ? '' : '\n')
+      // NodeJS res.code = Buffer
+      // Deno res.code = Uint8Array
+      // For correct decode compiled css need to use TextDecoder
+      // LightningCSS output does not return a linebreak at the end
+      return decoder.decode(code) + (inlined ? '' : '\n')
+    } catch (e) {
+      e.message = `[lightningcss minify] ${e.message}`
+      if (e.loc) {
+        e.loc = {
+          line: e.loc.line,
+          column: e.loc.column - 1, // 1-based
+        }
+        e.frame = generateCodeFrame(css, e.loc)
+      }
+      throw e
+    }
   }
   try {
     const { code, warnings } = await transform(css, {
@@ -3229,6 +3245,15 @@ async function compileLightningCSS(
       }
     }
     throw e
+  }
+
+  for (const warning of res.warnings) {
+    let msg = `[vite:css][lightningcss] ${warning.message}`
+    msg += `\n${generateCodeFrame(src, {
+      line: warning.loc.line,
+      column: warning.loc.column - 1, // 1-based
+    })}`
+    environment.logger.warn(colors.yellow(msg))
   }
 
   // NodeJS res.code = Buffer
