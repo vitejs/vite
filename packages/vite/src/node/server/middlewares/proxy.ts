@@ -12,9 +12,9 @@ const debug = createDebugger('vite:proxy')
 
 export interface ProxyOptions extends HttpProxy.ServerOptions {
   /**
-   * rewrite path
+   * rewrite path (req contains the request data)
    */
-  rewrite?: (path: string) => string
+  rewrite?: (path: string, req?: object) => string
   /**
    * configure the proxy server (e.g. listen to events)
    */
@@ -182,7 +182,7 @@ export function proxyMiddleware(
             }
 
             if (opts.rewrite) {
-              req.url = opts.rewrite(url)
+              req.url = opts.rewrite(url, collectRequestData(req))
             }
             debug?.(`${req.url} -> ws ${opts.target}`)
             proxy.ws(req, socket, head)
@@ -216,7 +216,7 @@ export function proxyMiddleware(
 
         debug?.(`${req.url} -> ${opts.target || opts.forward}`)
         if (opts.rewrite) {
-          req.url = opts.rewrite(req.url!)
+          req.url = opts.rewrite(req.url!, collectRequestData(req))
         }
         proxy.web(req, res, options)
         return
@@ -231,4 +231,13 @@ function doesProxyContextMatchUrl(context: string, url: string): boolean {
     (context[0] === '^' && new RegExp(context).test(url)) ||
     url.startsWith(context)
   )
+}
+
+function collectRequestData(req: any) {
+  return {
+    pathname: req._parsedUrl.pathname,
+    query: req._parsedUrl.query,
+    method: req.method,
+    headers: req.headers,
+  }
 }
