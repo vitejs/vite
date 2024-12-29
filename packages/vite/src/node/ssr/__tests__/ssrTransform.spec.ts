@@ -1355,9 +1355,17 @@ test('does not break minified code', async () => {
   // Based on https://unpkg.com/@headlessui/vue@1.7.23/dist/components/transitions/transition.js
   expect(
     await ssrTransformSimpleCode(
-      `import { match as O } from 'a';const c=()=>{var val=1;if(val){return}O(1,{})}`,
+      `import O from 'a';
+const c = () => {
+  if(true){return}O(1,{})
+}`,
     ),
   ).toMatchInlineSnapshot(
-    `"const __vite_ssr_import_0__ = await __vite_ssr_import__("a", {"importedNames":["match"]});const c=()=>{var val=1;if(val){return}(0,__vite_ssr_import_0__.match)(1,{})}"`,
+    `
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("a", {"importedNames":["default"]});
+    const c = () => {
+      if(true){return}(0,__vite_ssr_import_0__.default)(1,{})
+    }"
+  `,
   )
 })
