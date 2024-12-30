@@ -1285,6 +1285,14 @@ switch (1) {
     f()
     break
 }
+
+if(0){}f()
+
+if(0){}else{}f()
+
+switch(1){}f()
+
+{}f(1)
 `),
   ).toMatchInlineSnapshot(`
     "
@@ -1346,7 +1354,15 @@ switch (1) {
         x;
         (0,__vite_ssr_import_0__.f)();
         break
-    }
+    };
+
+    if(0){};(0,__vite_ssr_import_0__.f)();
+
+    if(0){}else{};(0,__vite_ssr_import_0__.f)();
+
+    switch(1){};(0,__vite_ssr_import_0__.f)();
+
+    {}(0,__vite_ssr_import_0__.f)(1)
     "
   `)
 })
@@ -1364,7 +1380,7 @@ const c = () => {
     `
     "const __vite_ssr_import_0__ = await __vite_ssr_import__("a", {"importedNames":["default"]});
     const c = () => {
-      if(true){return}(0,__vite_ssr_import_0__.default)(1,{})
+      if(true){return};(0,__vite_ssr_import_0__.default)(1,{})
     }"
   `,
   )
