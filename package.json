@@ -98,7 +98,8 @@
   "packageManager": "pnpm@9.15.4",
   "pnpm": {
     "overrides": {
-      "vite": "workspace:*"
+      "vite": "workspace:*",
+      "rollup": "4.30.0-1"
     },
     "patchedDependencies": {
       "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch",
