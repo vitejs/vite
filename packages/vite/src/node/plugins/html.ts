@@ -199,13 +199,13 @@ export async function traverseHtml(
 
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   src: Token.Attribute | undefined
-  sourceCodeLocation: Token.Location | undefined
+  srcSourceCodeLocation: Token.Location | undefined
   isModule: boolean
   isAsync: boolean
   isIgnored: boolean
 } {
   let src: Token.Attribute | undefined
-  let sourceCodeLocation: Token.Location | undefined
+  let srcSourceCodeLocation: Token.Location | undefined
   let isModule = false
   let isAsync = false
   let isIgnored = false
@@ -214,7 +214,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
     if (p.name === 'src') {
       if (!src) {
         src = p
-        sourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
+        srcSourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
       }
     } else if (p.name === 'type' && p.value && p.value === 'module') {
       isModule = true
@@ -224,7 +224,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
       isIgnored = true
     }
   }
-  return { src, sourceCodeLocation, isModule, isAsync, isIgnored }
+  return { src, srcSourceCodeLocation, isModule, isAsync, isIgnored }
 }
 
 const attrValueStartRE = /=\s*(.)/
@@ -447,7 +447,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // script tags
           if (node.nodeName === 'script') {
-            const { src, sourceCodeLocation, isModule, isAsync, isIgnored } =
+            const { src, srcSourceCodeLocation, isModule, isAsync, isIgnored } =
               getScriptInfo(node)
 
             if (isIgnored) {
@@ -459,7 +459,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 // referencing public dir url, prefix with base
                 overwriteAttrValue(
                   s,
-                  sourceCodeLocation!,
+                  srcSourceCodeLocation!,
                   partialEncodeURIPath(toOutputPublicFilePath(url)),
                 )
               }
