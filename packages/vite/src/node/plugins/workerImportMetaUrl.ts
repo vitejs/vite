@@ -1,7 +1,9 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { RollupError } from 'rollup'
+import type { RollupAstNode, RollupError } from 'rollup'
+import { parseAstAsync } from 'rollup/parseAst'
 import { stripLiteral } from 'strip-literal'
+import type { Expression, ExpressionStatement } from 'estree'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { evalValue, injectQuery, transformStableResult } from '../utils'
@@ -38,10 +40,10 @@ function findClosingParen(input: string, fromIndex: number) {
 }
 
 function extractWorkerTypeFromAst(
-  astNode: any,
+  expression: Expression,
   optsStartIndex: number,
 ): 'classic' | 'module' | undefined {
-  if (astNode.type !== 'ObjectExpression') {
+  if (expression.type !== 'ObjectExpression') {
     return
   }
 
@@ -49,15 +51,19 @@ function extractWorkerTypeFromAst(
   let typeProperty = null
   let typePropertyIndex = -1
 
-  for (let i = 0; i < astNode.properties.length; i++) {
-    const property = astNode.properties[i]
+  for (let i = 0; i < expression.properties.length; i++) {
+    const property = expression.properties[i]
 
     if (property.type === 'SpreadElement') {
       lastSpreadElementIndex = i
       continue
     }
 
-    if (property.type === 'Property' && property.key?.name === 'type') {
+    if (
+      property.type === 'Property' &&
+      ((property.key.type === 'Identifier' && property.key.name === 'type') ||
+        (property.key.type === 'Literal' && property.key.value === 'type'))
+    ) {
       typeProperty = property
       typePropertyIndex = i
     }
@@ -76,7 +82,7 @@ function extractWorkerTypeFromAst(
     )
   }
 
-  if (typeProperty?.value?.type !== 'Literal') {
+  if (typeProperty?.value.type !== 'Literal') {
     throw err(
       'Expected worker options type property to be a literal value.',
       optsStartIndex,
@@ -84,7 +90,7 @@ function extractWorkerTypeFromAst(
   }
 
   // Silently default to classic type like the getWorkerType method
-  return typeProperty.value.value === 'module' ? 'module' : 'classic'
+  return typeProperty?.value.value === 'module' ? 'module' : 'classic'
 }
 
 async function parseWorkerOptions(
@@ -95,9 +101,10 @@ async function parseWorkerOptions(
   try {
     opts = evalValue<WorkerOptions>(rawOpts)
   } catch {
-    const { parseAstAsync } = await import('rollup/parseAst')
-    const optsNode = ((await parseAstAsync(`(${rawOpts})`)).body[0] as any)
-      .expression
+    const optsNode = (
+      (await parseAstAsync(`(${rawOpts})`))
+        .body[0] as RollupAstNode<ExpressionStatement>
+    ).expression
 
     const type = extractWorkerTypeFromAst(optsNode, optsStartIndex)
     if (type) {
