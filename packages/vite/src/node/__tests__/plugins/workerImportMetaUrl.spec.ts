@@ -41,13 +41,23 @@ describe('workerImportMetaUrlPlugin', async () => {
     )
   })
 
-  test('with static worker options', async () => {
+  test('with static worker options and identifier properties', async () => {
     expect(
       await transform(
         'new Worker(new URL("./worker.js", import.meta.url), { type: "module", name: "worker1" })',
       ),
     ).toMatchInlineSnapshot(
       `"new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", import.meta.url), { type: "module", name: "worker1" })"`,
+    )
+  })
+
+  test('with static worker options and literal properties', async () => {
+    expect(
+      await transform(
+        'new Worker(new URL("./worker.js", import.meta.url), { "type": "module", "name": "worker1" })',
+      ),
+    ).toMatchInlineSnapshot(
+      `"new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", import.meta.url), { "type": "module", "name": "worker1" })"`,
     )
   })
 
