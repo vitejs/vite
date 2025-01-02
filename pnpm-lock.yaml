@@ -795,6 +795,8 @@ importers:
         specifier: ^0.30.17
         version: 0.30.17
 
+  playground/js-sourcemap-debugids: {}
+
   playground/js-sourcemap/importee-pkg: {}
 
   playground/json:
