@@ -1170,9 +1170,11 @@ function isSingleDefaultExport(exports: readonly string[]) {
   return exports.length === 1 && exports[0] === 'default'
 }
 
-let yarnInstallStatePath;
+let yarnInstallStatePath
 try {
-  yarnInstallStatePath = execSync('yarn config get installStatePath').toString().trim()
+  yarnInstallStatePath = execSync('yarn config get installStatePath')
+    .toString()
+    .trim()
 } catch {
   yarnInstallStatePath = '.yarn/install-state.gz'
 }
