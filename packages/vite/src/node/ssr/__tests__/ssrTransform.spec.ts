@@ -1285,6 +1285,14 @@ switch (1) {
     f()
     break
 }
+
+if(0){}f()
+
+if(0){}else{}f()
+
+switch(1){}f()
+
+{}f(1)
 `),
   ).toMatchInlineSnapshot(`
     "
@@ -1346,7 +1354,34 @@ switch (1) {
         x;
         (0,__vite_ssr_import_0__.f)();
         break
-    }
+    };
+
+    if(0){};(0,__vite_ssr_import_0__.f)();
+
+    if(0){}else{};(0,__vite_ssr_import_0__.f)();
+
+    switch(1){};(0,__vite_ssr_import_0__.f)();
+
+    {}(0,__vite_ssr_import_0__.f)(1)
     "
   `)
+})
+
+test('does not break minified code', async () => {
+  // Based on https://unpkg.com/@headlessui/vue@1.7.23/dist/components/transitions/transition.js
+  expect(
+    await ssrTransformSimpleCode(
+      `import O from 'a';
+const c = () => {
+  if(true){return}O(1,{})
+}`,
+    ),
+  ).toMatchInlineSnapshot(
+    `
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("a", {"importedNames":["default"]});
+    const c = () => {
+      if(true){return};(0,__vite_ssr_import_0__.default)(1,{})
+    }"
+  `,
+  )
 })
