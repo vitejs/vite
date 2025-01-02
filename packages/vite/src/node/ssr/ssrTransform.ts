@@ -364,7 +364,7 @@ async function ssrTransformScript(
           stmt.type !== 'BlockStatement' &&
           stmt.type !== 'ImportDeclaration'
         ) {
-          s.appendRight(stmt.end, ';')
+          s.appendLeft(stmt.end, ';')
         }
       }
     },
