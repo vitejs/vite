@@ -1169,6 +1169,13 @@ function isSingleDefaultExport(exports: readonly string[]) {
   return exports.length === 1 && exports[0] === 'default'
 }
 
+let yarnInstallStatePath;
+try {
+  yarnInstallStatePath = execSync('yarn config get installStatePath').toString().trim()
+} catch {
+  yarnInstallStatePath = '.yarn/install-state.gz'
+}
+
 const lockfileFormats = [
   {
     path: 'node_modules/.package-lock.json',
@@ -1176,20 +1183,8 @@ const lockfileFormats = [
     manager: 'npm',
   },
   {
-    // Yarn non-PnP
-    path: 'node_modules/.yarn-state.yml',
-    checkPatches: false,
-    manager: 'yarn',
-  },
-  {
-    // Yarn v3+ PnP
-    path: '.pnp.cjs',
-    checkPatches: false,
-    manager: 'yarn',
-  },
-  {
-    // Yarn v2 PnP
-    path: '.pnp.js',
+    // yarn 2+
+    path: yarnInstallStatePath,
     checkPatches: false,
     manager: 'yarn',
   },
