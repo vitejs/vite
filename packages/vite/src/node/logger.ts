@@ -186,10 +186,11 @@ export function printServerInfo(
       `  ${colors.green('➜')}  ${colors.bold('Network')}: ${colors.cyan(formatUrl(url))}`,
     )
   }
-  info(`  ${colors.green('➜')}  ${colors.bold('Mode')}:    ${mode}`)
   const envFiles = getLoadedEnvFileNamesForMode(mode, envDir)
   info(
-    `  ${colors.green('➜')}  ${colors.bold('Env')}:     ${envFiles.length ? envFiles.join(' ') : 'no env files loaded'}`,
+    colors.dim(
+      `  ${colors.green('➜')}  ${colors.bold('Env')}:     ${envFiles.length ? envFiles.join(' ') : 'no env files loaded'}`,
+    ),
   )
   if (urls.network.length === 0 && optionsHost === undefined) {
     info(
