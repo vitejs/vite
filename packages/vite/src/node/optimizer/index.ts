@@ -1182,8 +1182,14 @@ const lockfileFormats = [
     manager: 'yarn',
   },
   {
-    // Yarn PnP
-    path: '.yarn/install-state.gz',
+    // Yarn v3+ PnP
+    path: '.pnp.cjs',
+    checkPatches: false,
+    manager: 'yarn',
+  },
+  {
+    // Yarn v2 PnP
+    path: '.pnp.js',
     checkPatches: false,
     manager: 'yarn',
   },
