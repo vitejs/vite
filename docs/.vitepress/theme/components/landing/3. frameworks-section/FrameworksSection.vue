@@ -166,7 +166,7 @@ const frameworks: Framework[] = [
     visible: ref(false),
   },
   {
-    name: 'HonoJS',
+    name: 'Hono',
     logo: logoHono,
     color: '#ff5c13',
     url: 'https://hono.dev/',
