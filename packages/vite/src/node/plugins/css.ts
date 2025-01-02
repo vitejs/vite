@@ -83,6 +83,7 @@ import {
 } from '../utils'
 import type { Logger } from '../logger'
 import { cleanUrl, isWindows, slash } from '../../shared/utils'
+import { NULL_BYTE_PLACEHOLDER } from '../../shared/constants'
 import { createBackCompatIdResolver } from '../idResolver'
 import type { ResolveIdFn } from '../idResolver'
 import { PartialEnvironment } from '../baseEnvironment'
@@ -1479,7 +1480,7 @@ async function compileCSS(
         }
       } else if (message.type === 'warning') {
         const warning = message as PostCSS.Warning
-        let msg = `[vite:css] ${warning.text}`
+        let msg = `[vite:css][postcss] ${warning.text}`
         msg += `\n${generateCodeFrame(
           code,
           {
@@ -1921,31 +1922,47 @@ async function minifyCSS(
   // See https://github.com/vitejs/vite/pull/13893#issuecomment-1678628198
 
   if (config.build.cssMinify === 'lightningcss') {
-    const { code, warnings } = (await importLightningCSS()).transform({
-      ...config.css.lightningcss,
-      targets: convertTargets(config.build.cssTarget),
-      cssModules: undefined,
-      // TODO: Pass actual filename here, which can also be passed to esbuild's
-      // `sourcefile` option below to improve error messages
-      filename: defaultCssBundleName,
-      code: Buffer.from(css),
-      minify: true,
-    })
-    if (warnings.length) {
-      config.logger.warn(
-        colors.yellow(
-          `warnings when minifying css:\n${warnings
-            .map((w) => w.message)
-            .join('\n')}`,
-        ),
-      )
-    }
+    try {
+      const { code, warnings } = (await importLightningCSS()).transform({
+        ...config.css.lightningcss,
+        targets: convertTargets(config.build.cssTarget),
+        cssModules: undefined,
+        // TODO: Pass actual filename here, which can also be passed to esbuild's
+        // `sourcefile` option below to improve error messages
+        filename: defaultCssBundleName,
+        code: Buffer.from(css),
+        minify: true,
+      })
+      if (warnings.length) {
+        const messages = warnings.map(
+          (warning) =>
+            `${warning.message}\n` +
+            generateCodeFrame(css, {
+              line: warning.loc.line,
+              column: warning.loc.column - 1, // 1-based
+            }),
+        )
+        config.logger.warn(
+          colors.yellow(`warnings when minifying css:\n${messages.join('\n')}`),
+        )
+      }
 
-    // NodeJS res.code = Buffer
-    // Deno res.code = Uint8Array
-    // For correct decode compiled css need to use TextDecoder
-    // LightningCSS output does not return a linebreak at the end
-    return decoder.decode(code) + (inlined ? '' : '\n')
+      // NodeJS res.code = Buffer
+      // Deno res.code = Uint8Array
+      // For correct decode compiled css need to use TextDecoder
+      // LightningCSS output does not return a linebreak at the end
+      return decoder.decode(code) + (inlined ? '' : '\n')
+    } catch (e) {
+      e.message = `[lightningcss minify] ${e.message}`
+      if (e.loc) {
+        e.loc = {
+          line: e.loc.line,
+          column: e.loc.column - 1, // 1-based
+        }
+        e.frame = generateCodeFrame(css, e.loc)
+      }
+      throw e
+    }
   }
   try {
     const { code, warnings } = await transform(css, {
@@ -3160,10 +3177,9 @@ async function compileLightningCSS(
 ): ReturnType<typeof compileCSS> {
   const { config } = environment
   const deps = new Set<string>()
-  // Relative path is needed to get stable hash when using CSS modules
-  const filename = cleanUrl(path.relative(config.root, id))
-  const toAbsolute = (filePath: string) =>
-    path.isAbsolute(filePath) ? filePath : path.join(config.root, filePath)
+  // replace null byte as lightningcss treats that as a string terminator
+  // https://github.com/parcel-bundler/lightningcss/issues/874
+  const filename = id.replace('\0', NULL_BYTE_PLACEHOLDER)
 
   let res: LightningCssTransformAttributeResult | LightningCssTransformResult
   try {
@@ -3180,16 +3196,14 @@ async function compileLightningCSS(
         ).bundleAsync({
           ...config.css.lightningcss,
           filename,
+          // projectRoot is needed to get stable hash when using CSS modules
+          projectRoot: config.root,
           resolver: {
             read(filePath) {
               if (filePath === filename) {
                 return src
               }
-              // This happens with html-proxy (#13776)
-              if (!filePath.endsWith('.css')) {
-                return src
-              }
-              return fs.readFileSync(toAbsolute(filePath), 'utf-8')
+              return fs.readFileSync(filePath, 'utf-8')
             },
             async resolve(id, from) {
               const publicFile = checkPublicFile(
@@ -3202,7 +3216,7 @@ async function compileLightningCSS(
 
               const resolved = await getAtImportResolvers(
                 environment.getTopLevelConfig(),
-              ).css(environment, id, toAbsolute(from))
+              ).css(environment, id, from)
 
               if (resolved) {
                 deps.add(resolved)
@@ -3223,12 +3237,23 @@ async function compileLightningCSS(
         })
   } catch (e) {
     e.message = `[lightningcss] ${e.message}`
-    e.loc = {
-      file: toAbsolute(e.fileName),
-      line: e.loc.line,
-      column: e.loc.column - 1, // 1-based
+    if (e.loc) {
+      e.loc = {
+        file: e.fileName.replace(NULL_BYTE_PLACEHOLDER, '\0'),
+        line: e.loc.line,
+        column: e.loc.column - 1, // 1-based
+      }
     }
     throw e
+  }
+
+  for (const warning of res.warnings) {
+    let msg = `[vite:css][lightningcss] ${warning.message}`
+    msg += `\n${generateCodeFrame(src, {
+      line: warning.loc.line,
+      column: warning.loc.column - 1, // 1-based
+    })}`
+    environment.logger.warn(colors.yellow(msg))
   }
 
   // NodeJS res.code = Buffer
@@ -3237,21 +3262,28 @@ async function compileLightningCSS(
   let css = decoder.decode(res.code)
   for (const dep of res.dependencies!) {
     switch (dep.type) {
-      case 'url':
+      case 'url': {
+        let replaceUrl: string
         if (skipUrlReplacer(dep.url)) {
-          css = css.replace(dep.placeholder, () => dep.url)
-          break
-        }
-        if (urlReplacer) {
-          const replaceUrl = await urlReplacer(
+          replaceUrl = dep.url
+        } else if (urlReplacer) {
+          replaceUrl = await urlReplacer(
             dep.url,
-            toAbsolute(dep.loc.filePath),
+            dep.loc.filePath.replace(NULL_BYTE_PLACEHOLDER, '\0'),
           )
-          css = css.replace(dep.placeholder, () => replaceUrl)
         } else {
-          css = css.replace(dep.placeholder, () => dep.url)
+          replaceUrl = dep.url
         }
+
+        css = css.replace(
+          dep.placeholder,
+          // lightningcss always generates `url("placeholder")`
+          // (`url('placeholder')`, `url(placeholder)` is not generated)
+          // so escape double quotes
+          () => replaceUrl.replaceAll('"', '\\"'),
+        )
         break
+      }
       default:
         throw new Error(`Unsupported dependency type: ${dep.type}`)
     }
