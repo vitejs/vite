@@ -170,18 +170,13 @@ export function printServerUrls(
   optionsHost: string | boolean | undefined,
   info: Logger['info'],
 ): void {
-  const formatUrl = (url: string) =>
-    url.replace(/:(\d+)\//, (_, port) => `:${colors.bold(port)}/`)
-
+  const colorUrl = (url: string) =>
+    colors.cyan(url.replace(/:(\d+)\//, (_, port) => `:${colors.bold(port)}/`))
   for (const url of urls.local) {
-    info(
-      `  ${colors.green('➜')}  ${colors.bold('Local')}:   ${colors.cyan(formatUrl(url))}`,
-    )
+    info(`  ${colors.green('➜')}  ${colors.bold('Local')}:   ${colorUrl(url)}`)
   }
   for (const url of urls.network) {
-    info(
-      `  ${colors.green('➜')}  ${colors.bold('Network')}: ${colors.cyan(formatUrl(url))}`,
-    )
+    info(`  ${colors.green('➜')}  ${colors.bold('Network')}: ${colorUrl(url)}`)
   }
   if (urls.network.length === 0 && optionsHost === undefined) {
     info(

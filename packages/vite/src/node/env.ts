@@ -30,7 +30,6 @@ export function loadEnv(
         `the .local postfix for .env files.`,
     )
   }
-
   prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
   const envFiles = getEnvFilesForMode(mode, envDir)
