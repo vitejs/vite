@@ -2,8 +2,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { parse } from 'dotenv'
 import { type DotenvPopulateInput, expand } from 'dotenv-expand'
-import { arraify, normalizePath, tryStatSync } from './utils'
+import { arraify, createDebugger, normalizePath, tryStatSync } from './utils'
 import type { UserConfig } from './config'
+
+const debug = createDebugger('vite:env')
 
 export function getEnvFilesForMode(mode: string, envDir: string): string[] {
   return [
@@ -19,6 +21,9 @@ export function loadEnv(
   envDir: string,
   prefixes: string | string[] = 'VITE_',
 ): Record<string, string> {
+  const start = performance.now()
+  const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
+
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
@@ -29,6 +34,8 @@ export function loadEnv(
   const env: Record<string, string> = {}
   const envFiles = getEnvFilesForMode(mode, envDir)
 
+  debug?.(`loading env files: %O`, envFiles)
+
   const parsed = Object.fromEntries(
     envFiles.flatMap((filePath) => {
       if (!tryStatSync(filePath)?.isFile()) return []
@@ -36,6 +43,8 @@ export function loadEnv(
       return Object.entries(parse(fs.readFileSync(filePath)))
     }),
   )
+
+  debug?.(`env files loaded in ${getTime()}`)
 
   // test NODE_ENV override before expand as otherwise process.env.NODE_ENV would override this
   if (parsed.NODE_ENV && process.env.VITE_USER_NODE_ENV === undefined) {
@@ -68,6 +77,8 @@ export function loadEnv(
       env[key] = process.env[key] as string
     }
   }
+
+  debug?.(`using resolved env: %O`, env)
 
   return env
 }
