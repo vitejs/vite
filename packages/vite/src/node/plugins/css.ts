@@ -1272,7 +1272,6 @@ async function compileCSS(
 ): Promise<{
   code: string
   map?: SourceMapInput
-  ast?: PostCSS.Result
   modules?: Record<string, string>
   deps?: Set<string>
 }> {
@@ -1281,32 +1280,10 @@ async function compileCSS(
     return compileLightningCSS(id, code, environment, urlReplacer)
   }
 
-  const { modules: modulesOptions, devSourcemap } = config.css
-  const isModule = modulesOptions !== false && cssModuleRE.test(id)
-  // although at serve time it can work without processing, we do need to
-  // crawl them in order to register watch dependencies.
-  const needInlineImport = code.includes('@import')
-  const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
   const lang = CSS_LANGS_RE.exec(id)?.[1] as CssLang | undefined
-  const postcssConfig = await resolvePostcssConfig(
-    environment.getTopLevelConfig(),
-  )
-
-  // 1. plain css that needs no processing
-  if (
-    lang === 'css' &&
-    !postcssConfig &&
-    !isModule &&
-    !needInlineImport &&
-    !hasUrl
-  ) {
-    return { code, map: null }
-  }
-
-  let modules: Record<string, string> | undefined
   const deps = new Set<string>()
 
-  // 2. pre-processors: sass etc.
+  // pre-processors: sass etc.
   let preprocessorMap: ExistingRawSourceMap | undefined
   if (isPreProcessor(lang)) {
     const preprocessorResult = await compileCSSPreprocessors(
@@ -1321,11 +1298,31 @@ async function compileCSS(
     preprocessorResult.deps?.forEach((dep) => deps.add(dep))
   }
 
-  // 3. postcss
+  const { modules: modulesOptions, devSourcemap } = config.css
+  const isModule = modulesOptions !== false && cssModuleRE.test(id)
+  // although at serve time it can work without processing, we do need to
+  // crawl them in order to register watch dependencies.
+  const needInlineImport = code.includes('@import')
+  const hasUrl = cssUrlRE.test(code) || cssImageSetRE.test(code)
+  const postcssConfig = await resolvePostcssConfig(
+    environment.getTopLevelConfig(),
+  )
+
+  // postcss processing is not needed
+  if (
+    lang !== 'sss' &&
+    !postcssConfig &&
+    !isModule &&
+    !needInlineImport &&
+    !hasUrl
+  ) {
+    return { code, map: preprocessorMap ?? null, deps }
+  }
+
+  // postcss
   const atImportResolvers = getAtImportResolvers(
     environment.getTopLevelConfig(),
   )
-  const postcssOptions = postcssConfig?.options ?? {}
   const postcssPlugins = postcssConfig?.plugins.slice() ?? []
 
   if (needInlineImport) {
@@ -1387,7 +1384,13 @@ async function compileCSS(
     )
   }
 
-  if (urlReplacer) {
+  if (
+    urlReplacer &&
+    // if there's an @import, we need to add this plugin
+    // regradless of whether it contains url() or image-set(),
+    // because we don't know the content referenced by @import
+    (needInlineImport || cssUrlRE.test(code) || cssImageSetRE.test(code))
+  ) {
     postcssPlugins.push(
       UrlRewritePostcssPlugin({
         replacer: urlReplacer,
@@ -1395,6 +1398,8 @@ async function compileCSS(
       }),
     )
   }
+
+  let modules: Record<string, string> | undefined
 
   if (isModule) {
     postcssPlugins.unshift(
@@ -1429,7 +1434,7 @@ async function compileCSS(
     )
   }
 
-  if (!postcssPlugins.length) {
+  if (lang !== 'sss' && !postcssPlugins.length) {
     return {
       code,
       map: preprocessorMap,
@@ -1441,6 +1446,8 @@ async function compileCSS(
   try {
     const source = removeDirectQuery(id)
     const postcss = await importPostcss()
+    const postcssOptions = postcssConfig?.options ?? {}
+
     // postcss is an unbundled dep and should be lazy imported
     postcssResult = await postcss.default(postcssPlugins).process(code, {
       ...postcssOptions,
@@ -1510,7 +1517,6 @@ async function compileCSS(
 
   if (!devSourcemap) {
     return {
-      ast: postcssResult,
       code: postcssResult.css,
       map: { mappings: '' },
       modules,
@@ -1528,7 +1534,6 @@ async function compileCSS(
   )
 
   return {
-    ast: postcssResult,
     code: postcssResult.css,
     map: combineSourcemapsIfExists(cleanUrl(id), postcssMap, preprocessorMap),
     modules,
