@@ -8,5 +8,5 @@ function render(content) {
 render(c)
 
 import.meta.hot?.accept((nextExports) => {
-  render(nextExports.c)
+  render(nextExports?.c)
 })

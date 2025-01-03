@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
+import '../..' // fix cyclic import error
 import { transformCjsImport } from '../../plugins/importAnalysis'
 
 describe('transformCjsImport', () => {

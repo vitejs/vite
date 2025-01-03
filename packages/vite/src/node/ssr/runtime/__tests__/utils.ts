@@ -7,7 +7,7 @@ import type { ModuleRunner } from 'vite/module-runner'
 import type { ServerModuleRunnerOptions } from '../serverModuleRunner'
 import type { ViteDevServer } from '../../../server'
 import type { InlineConfig } from '../../../config'
-import { createServer } from '../../../server'
+import { createServer } from '../../..'
 import { createServerModuleRunner } from '../serverModuleRunner'
 import type { DevEnvironment } from '../../../server/environment'
 
