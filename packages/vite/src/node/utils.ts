@@ -1530,19 +1530,23 @@ export function partialEncodeURIPath(uri: string): string {
 }
 
 export const setupSIGTERMListener = (
+  watchStdin: boolean,
   callback: (signal?: 'SIGTERM', exitCode?: number) => Promise<void>,
 ): void => {
   process.once('SIGTERM', callback)
-  if (process.env.CI !== 'true') {
+  if (watchStdin) {
     process.stdin.on('end', callback)
+    // resume stdin to allow the server to exit on EOF
+    process.stdin.resume()
   }
 }
 
 export const teardownSIGTERMListener = (
-  callback: Parameters<typeof setupSIGTERMListener>[0],
+  watchStdin: boolean,
+  callback: Parameters<typeof setupSIGTERMListener>[1],
 ): void => {
   process.off('SIGTERM', callback)
-  if (process.env.CI !== 'true') {
+  if (watchStdin) {
     process.stdin.off('end', callback)
   }
 }
