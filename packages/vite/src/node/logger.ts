@@ -4,7 +4,6 @@ import readline from 'node:readline'
 import colors from 'picocolors'
 import type { RollupError } from 'rollup'
 import type { ResolvedServerUrls } from './server'
-import { getLoadedEnvFileNamesForMode } from './env'
 
 export type LogType = 'error' | 'warn' | 'info'
 export type LogLevel = LogType | 'silent'
@@ -166,11 +165,9 @@ export function createLogger(
   return logger
 }
 
-export function printServerInfo(
+export function printServerUrls(
   urls: ResolvedServerUrls,
   optionsHost: string | boolean | undefined,
-  mode: string,
-  envDir: string,
   info: Logger['info'],
 ): void {
   const formatUrl = (url: string) =>
@@ -186,12 +183,6 @@ export function printServerInfo(
       `  ${colors.green('➜')}  ${colors.bold('Network')}: ${colors.cyan(formatUrl(url))}`,
     )
   }
-  const envFiles = getLoadedEnvFileNamesForMode(mode, envDir)
-  info(
-    colors.dim(
-      `  ${colors.green('➜')}  ${colors.bold('Env')}:     ${envFiles.length ? envFiles.join(' ') : 'no env files loaded'}`,
-    ),
-  )
   if (urls.network.length === 0 && optionsHost === undefined) {
     info(
       colors.dim(`  ${colors.green('➜')}  ${colors.bold('Network')}: use `) +

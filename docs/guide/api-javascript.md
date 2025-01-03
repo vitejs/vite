@@ -28,7 +28,7 @@ const server = await createServer({
 })
 await server.listen()
 
-server.printInfo()
+server.printUrls()
 server.bindCLIShortcuts({ print: true })
 ```
 
@@ -248,7 +248,7 @@ const previewServer = await preview({
   },
 })
 
-previewServer.printInfo()
+previewServer.printUrls()
 previewServer.bindCLIShortcuts({ print: true })
 ```
 
@@ -281,7 +281,7 @@ interface PreviewServer {
   /**
    * Print server urls
    */
-  printInfo(): void
+  printUrls(): void
   /**
    * Bind CLI shortcuts
    */

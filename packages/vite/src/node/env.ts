@@ -2,31 +2,18 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { parse } from 'dotenv'
 import { type DotenvPopulateInput, expand } from 'dotenv-expand'
-import { arraify, normalizePath, tryStatSync } from './utils'
+import { arraify, createDebugger, normalizePath, tryStatSync } from './utils'
 import type { UserConfig } from './config'
 
-function getEnvFileNamesForMode(mode: string): string[] {
+const debug = createDebugger('vite:env')
+
+export function getEnvFilesForMode(mode: string, envDir: string): string[] {
   return [
     /** default file */ `.env`,
     /** local file */ `.env.local`,
     /** mode file */ `.env.${mode}`,
     /** mode local file */ `.env.${mode}.local`,
-  ]
-}
-
-export function getEnvFilesForMode(mode: string, envDir: string): string[] {
-  return getEnvFileNamesForMode(mode).map((fileName) =>
-    normalizePath(path.join(envDir, fileName)),
-  )
-}
-
-export function getLoadedEnvFileNamesForMode(
-  mode: string,
-  envDir: string,
-): string[] {
-  return getEnvFileNamesForMode(mode).filter((fileName) =>
-    tryStatSync(normalizePath(path.join(envDir, fileName)))?.isFile(),
-  )
+  ].map((file) => normalizePath(path.join(envDir, file)))
 }
 
 export function loadEnv(
@@ -34,15 +21,21 @@ export function loadEnv(
   envDir: string,
   prefixes: string | string[] = 'VITE_',
 ): Record<string, string> {
+  const start = performance.now()
+  const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
+
   if (mode === 'local') {
     throw new Error(
       `"local" cannot be used as a mode name because it conflicts with ` +
         `the .local postfix for .env files.`,
     )
   }
+
   prefixes = arraify(prefixes)
   const env: Record<string, string> = {}
   const envFiles = getEnvFilesForMode(mode, envDir)
+
+  debug?.(`loading env files: %O`, envFiles)
 
   const parsed = Object.fromEntries(
     envFiles.flatMap((filePath) => {
@@ -51,6 +44,8 @@ export function loadEnv(
       return Object.entries(parse(fs.readFileSync(filePath)))
     }),
   )
+
+  debug?.(`env files loaded in ${getTime()}`)
 
   // test NODE_ENV override before expand as otherwise process.env.NODE_ENV would override this
   if (parsed.NODE_ENV && process.env.VITE_USER_NODE_ENV === undefined) {
@@ -83,6 +78,8 @@ export function loadEnv(
       env[key] = process.env[key] as string
     }
   }
+
+  debug?.(`using resolved env: %O`, env)
 
   return env
 }

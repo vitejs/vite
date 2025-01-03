@@ -105,7 +105,7 @@ const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
     description: 'show server info',
     action(server) {
       server.config.logger.info('')
-      server.printInfo()
+      server.printUrls()
     },
   },
   {
