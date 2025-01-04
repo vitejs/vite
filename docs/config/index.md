@@ -115,3 +115,21 @@ export default defineConfig(({ mode }) => {
   }
 })
 ```
+
+## Setting Environment Variables inside Config file
+
+Use the define block in Vite to inject global constants or environment variables accessible within the application at build time. While `.env` files should always be used for static variables, dynamic values like the latest Git commit hash can also be set.
+
+```js twoslash
+import { defineConfig } from 'vite'
+import { execSync } from 'child_process'
+
+export default defineConfig({
+  define: {
+    // Make the commit hash available as an env varaible in your app
+    'import.meta.env.VITE_CODE_VERSION': JSON.stringify(
+      execSync('git rev-parse HEAD').toString().trim(),
+    ),
+  },
+})
+```
