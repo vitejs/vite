@@ -29,8 +29,11 @@ import {
   lexAcceptedHmrExports,
   normalizeHmrUrl,
 } from '../server/hmr'
+import type {
+  FilterPattern} from '../utils';
 import {
   createDebugger,
+  createFilter,
   fsPathFromUrl,
   generateCodeFrame,
   getHash,
@@ -188,6 +191,51 @@ function extractImportedBindings(
   }
 }
 
+export type { ImportSpecifier, ExportSpecifier }
+
+export type ImportAnalysisListener = (
+  id: string,
+  imports: readonly Readonly<ImportSpecifier>[],
+  exports: readonly Readonly<ExportSpecifier>[],
+) => void
+
+export interface ImportAnalysisPluginAPI {
+  /**
+   * Add a listener for import analysis events. Returns a function that can be used to remove the
+   * listener. If no filter pattern is provided, the listener will be called for all modules capable
+   * of having imports and exports.
+   */
+  addImportAnalysisListener(
+    filter: FilterPattern | null | undefined,
+    listener: ImportAnalysisListener,
+  ): () => void
+  addImportAnalysisListener(listener: ImportAnalysisListener): () => void
+  /**
+   * Get a cache of imports and exports for all modules that match the filter. If no filter is
+   * provided, the cache will include all modules capable of having imports and exports.
+   */
+  getImportAnalysisCache(filter?: FilterPattern): ImportAnalysisCache
+}
+
+export interface ImportAnalysisCache {
+  getImports(id: string): readonly Readonly<ImportSpecifier>[]
+  getExports(id: string): readonly Readonly<ExportSpecifier>[]
+  /**
+   * Clear the cache. This is called automatically in the `buildStart` hook of the
+   * `vite:import-analysis` plugin.
+   */
+  clear(): void
+  /**
+   * Stop listening to import analysis events and dispose of the cache.
+   *
+   * You can call this function to avoid memory leaks once you are done using the cache.
+   * Alternatively, you can call `clear()` in the `buildEnd` hook of your plugin if you want to
+   * reuse the cache instance in the next build. Calling `clear()` will release memory while Vite is
+   * waiting to trigger the next build.
+   */
+  dispose(): void
+}
+
 /**
  * Dev-only plugin that lexes, resolves, rewrites and analyzes url imports.
  *
@@ -222,6 +270,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
   const clientPublicPath = path.posix.join(base, CLIENT_PUBLIC_PATH)
   const enablePartialAccept = config.experimental.hmrPartialAccept
   const matchAlias = getAliasPatternMatcher(config.resolve.alias)
+  const listeners = new Set<ImportAnalysisListener>()
+  const caches = new Set<ImportAnalysisCache>()
 
   let _env: string | undefined
   let _ssrEnv: string | undefined
@@ -249,8 +299,71 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
     return ssr ? _ssrEnv : _env
   }
 
+  const api: ImportAnalysisPluginAPI = {
+    addImportAnalysisListener(
+      filter: FilterPattern | ImportAnalysisListener | null | undefined,
+      listener?: ImportAnalysisListener,
+    ) {
+      if (!filter) {
+        listener = listener!
+      } else if (typeof filter === 'function') {
+        listener = filter
+      } else {
+        const originalListener = listener!
+        const match = createFilter(filter)
+        listener = (id, imports, exports) => {
+          if (match(id)) {
+            originalListener(id, imports, exports)
+          }
+        }
+      }
+      listeners.add(listener)
+      return () => {
+        listeners.delete(listener)
+      }
+    },
+    getImportAnalysisCache(filter?: FilterPattern) {
+      const importsCache = new Map<
+        string,
+        readonly Readonly<ImportSpecifier>[]
+      >()
+      const exportsCache = new Map<
+        string,
+        readonly Readonly<ExportSpecifier>[]
+      >()
+      const removeListener = api.addImportAnalysisListener(
+        filter,
+        (id, imports, exports) => {
+          importsCache.set(id, imports)
+          exportsCache.set(id, exports)
+        },
+      )
+      const cache: ImportAnalysisCache = {
+        getImports: (id) => importsCache.get(id) ?? [],
+        getExports: (id) => exportsCache.get(id) ?? [],
+        clear() {
+          importsCache.clear()
+          exportsCache.clear()
+        },
+        dispose() {
+          removeListener()
+          cache.clear()
+          caches.delete(cache)
+        },
+      }
+      caches.add(cache)
+      return cache
+    },
+  }
+
   return {
     name: 'vite:import-analysis',
+
+    api,
+
+    buildStart() {
+      caches.forEach((cache) => cache.clear())
+    },
 
     async transform(source, importer) {
       const environment = this.environment as DevEnvironment
@@ -269,6 +382,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
       source = stripBomTag(source)
       try {
         ;[imports, exports] = parseImports(source)
+        for (const listener of listeners) {
+          listener(importer, imports, exports)
+        }
       } catch (_e: unknown) {
         const e = _e as EsModuleLexerParseError
         const { message, showCodeFrame } = createParseErrorInfo(
