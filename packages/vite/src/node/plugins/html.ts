@@ -717,7 +717,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
-      const analyzedChunk = new Map<OutputChunk, number>()
+      const analyzedChunk = new Map<OutputChunk, Set<string>>()
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
         chunk: OutputChunk,
@@ -781,32 +781,61 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         chunk: OutputChunk,
         toOutputPath: (filename: string) => string,
         seen: Set<string> = new Set(),
+        parentImports?: Set<string>,
+        circle: Set<OutputChunk> = new Set(),
       ): HtmlTagDescriptor[] => {
         const tags: HtmlTagDescriptor[] = []
-        if (!analyzedChunk.has(chunk)) {
-          analyzedChunk.set(chunk, 1)
-          chunk.imports.forEach((file) => {
-            const importee = bundle[file]
-            if (importee?.type === 'chunk') {
-              tags.push(...getCssTagsForChunk(importee, toOutputPath, seen))
+        if (circle.has(chunk)) {
+          return tags
+        }
+        circle.add(chunk)
+        let analyzedChunkImportCss: Set<string>
+        const processImportedCss = (files: Set<string>): void => {
+          files.forEach((file) => {
+            if (parentImports) {
+              parentImports.add(file)
+            }
+            if (!seen.has(file)) {
+              seen.add(file)
+              tags.push({
+                tag: 'link',
+                attrs: {
+                  rel: 'stylesheet',
+                  crossorigin: true,
+                  href: toOutputPath(file),
+                },
+              })
             }
           })
         }
-
-        chunk.viteMetadata!.importedCss.forEach((file) => {
-          if (!seen.has(file)) {
-            seen.add(file)
-            tags.push({
-              tag: 'link',
-              attrs: {
-                rel: 'stylesheet',
-                crossorigin: true,
-                href: toOutputPath(file),
-              },
+        if (!analyzedChunk.has(chunk)) {
+          analyzedChunkImportCss = new Set()
+          chunk.imports.forEach((file) => {
+            const importee = bundle[file]
+            if (importee?.type === 'chunk') {
+              tags.push(
+                ...getCssTagsForChunk(
+                  importee,
+                  toOutputPath,
+                  seen,
+                  analyzedChunkImportCss,
+                  circle,
+                ),
+              )
+            }
+          })
+          analyzedChunk.set(chunk, analyzedChunkImportCss)
+          if (parentImports) {
+            analyzedChunkImportCss.forEach((file) => {
+              parentImports.add(file)
             })
           }
-        })
+        } else {
+          analyzedChunkImportCss = analyzedChunk.get(chunk)!
+          processImportedCss(analyzedChunkImportCss)
+        }
 
+        processImportedCss(chunk.viteMetadata!.importedCss)
         return tags
       }
 
