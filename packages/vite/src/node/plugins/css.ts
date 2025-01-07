@@ -2158,7 +2158,7 @@ function loadSassPackage(root: string): {
   }
 }
 
-let cachedSss: any
+let cachedSss: PostCSS.Syntax
 function loadSss(root: string): PostCSS.Syntax {
   if (cachedSss) return cachedSss
 
