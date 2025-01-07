@@ -119,12 +119,15 @@ export function serveStaticMiddleware(
     if (
       cleanedUrl[cleanedUrl.length - 1] === '/' ||
       path.extname(cleanedUrl) === '.html' ||
-      isInternalRequest(req.url!)
+      isInternalRequest(req.url!) ||
+      // skip url starting with // as these will be interpreted as
+      // scheme relative URLs by new URL() and will not be a valid file path
+      req.url?.startsWith('//')
     ) {
       return next()
     }
 
-    const url = new URL(req.url!.replace(/^\/{2,}/, '/'), 'http://example.com')
+    const url = new URL(req.url!, 'http://example.com')
     const pathname = decodeURI(url.pathname)
 
     // apply aliases to static requests as well
@@ -177,12 +180,12 @@ export function serveRawFsMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    const url = new URL(req.url!.replace(/^\/{2,}/, '/'), 'http://example.com')
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
-    if (url.pathname.startsWith(FS_PREFIX)) {
+    if (req.url!.startsWith(FS_PREFIX)) {
+      const url = new URL(req.url!, 'http://example.com')
       const pathname = decodeURI(url.pathname)
       // restrict files outside of `fs.allow`
       if (
