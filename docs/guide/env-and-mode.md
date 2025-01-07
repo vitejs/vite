@@ -87,7 +87,7 @@ To achieve this, you can create an `vite-env.d.ts` in `src` directory, then augm
 /// <reference types="vite/client" />
 
 // By adding this line, you can make the type of ImportMetaEnv strict.
-declare type ViteStrictImportMetaEnv = true
+type ViteStrictImportMetaEnv = true
 
 interface ImportMetaEnv {
   readonly VITE_APP_TITLE: string
