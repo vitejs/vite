@@ -1434,7 +1434,11 @@ async function compileCSS(
     )
   }
 
-  if (lang !== 'sss' && !postcssPlugins.length) {
+  const postcssOptions = postcssConfig?.options ?? {}
+  const postcssParser =
+    lang === 'sss' ? loadSss(config.root) : postcssOptions.parser
+
+  if (!postcssPlugins.length && !postcssParser) {
     return {
       code,
       map: preprocessorMap,
@@ -1446,12 +1450,11 @@ async function compileCSS(
   try {
     const source = removeDirectQuery(id)
     const postcss = await importPostcss()
-    const postcssOptions = postcssConfig?.options ?? {}
 
     // postcss is an unbundled dep and should be lazy imported
     postcssResult = await postcss.default(postcssPlugins).process(code, {
       ...postcssOptions,
-      parser: lang === 'sss' ? loadSss(config.root) : postcssOptions.parser,
+      parser: postcssParser,
       to: source,
       from: source,
       ...(devSourcemap
@@ -2156,7 +2159,7 @@ function loadSassPackage(root: string): {
 }
 
 let cachedSss: any
-function loadSss(root: string) {
+function loadSss(root: string): PostCSS.Syntax {
   if (cachedSss) return cachedSss
 
   const sssPath = loadPreprocessorPath(PostCssDialectLang.sss, root)
