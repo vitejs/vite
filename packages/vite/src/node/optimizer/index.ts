@@ -1261,7 +1261,7 @@ function getLockfileHash(environment: Environment): string {
       const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
       const fullPath = path.join(
         baseDir,
-        lockfileFormat.checkPatchesDir as string
+        lockfileFormat.checkPatchesDir as string,
       )
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
