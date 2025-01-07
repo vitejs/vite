@@ -10,7 +10,7 @@ const {
   blue,
   blueBright,
   cyan,
-  dim,
+  gray,
   green,
   greenBright,
   magenta,
@@ -413,7 +413,7 @@ async function init() {
               return {
                 title: variantColor(variant.display || variant.name),
                 value: variant.name,
-                description: command ? dim(command) : undefined,
+                description: command ? gray(command) : undefined,
               }
             }),
         },
