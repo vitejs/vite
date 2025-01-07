@@ -1501,11 +1501,17 @@ export function displayTime(time: number): string {
     return `${time.toFixed(2)}s`
   }
 
-  const mins = parseInt((time / 60).toString())
-  const seconds = time % 60
+  // Calculate total minutes and remaining seconds
+  const mins = Math.floor(time / 60)
+  const seconds = Math.round(time % 60)
+
+  // Handle case where seconds rounds to 60
+  if (seconds === 60) {
+    return `${mins + 1}m`
+  }
 
   // display: {X}m {Y}s
-  return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
+  return `${mins}m${seconds < 1 ? '' : ` ${seconds}s`}`
 }
 
 /**
