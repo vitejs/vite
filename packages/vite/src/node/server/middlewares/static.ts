@@ -117,9 +117,11 @@ export function serveStaticMiddleware(
     // also skip internal requests `/@fs/ /@vite-client` etc...
     const cleanedUrl = cleanUrl(req.url!)
     if (
-      cleanedUrl[cleanedUrl.length - 1] === '/' ||
-      path.extname(cleanedUrl) === '.html' ||
-      isInternalRequest(req.url!)
+      next && typeof next == 'function' && (
+        cleanedUrl[cleanedUrl.length - 1] === '/' ||
+        path.extname(cleanedUrl) === '.html' ||
+        isInternalRequest(req.url!)
+      )
     ) {
       return next()
     }
