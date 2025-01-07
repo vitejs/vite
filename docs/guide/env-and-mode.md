@@ -86,7 +86,8 @@ To achieve this, you can create an `vite-env.d.ts` in `src` directory, then augm
 ```typescript [vite-env.d.ts]
 /// <reference types="vite/client" />
 
-// By adding this line, you can make the type of ImportMetaEnv strict.
+// By adding this line, you can make the type of ImportMetaEnv strict
+// to disallow unknown keys.
 type ViteStrictImportMetaEnv = true
 
 interface ImportMetaEnv {
