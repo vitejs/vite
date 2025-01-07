@@ -1184,13 +1184,13 @@ const lockfileFormats = [
   {
     // Yarn v3+ PnP
     path: '.pnp.cjs',
-    checkPatches: false,
+    checkPatches: true,
     manager: 'yarn',
   },
   {
     // Yarn v2 PnP
     path: '.pnp.js',
-    checkPatches: false,
+    checkPatches: true,
     manager: 'yarn',
   },
   {
