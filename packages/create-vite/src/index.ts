@@ -101,7 +101,7 @@ const FRAMEWORKS: Framework[] = [
       },
       {
         name: 'custom-create-vue',
-        display: 'Customize with create-vue ↗',
+        display: 'Official Vue Starter ↗',
         color: green,
         customCommand: 'npm create vue@latest TARGET_DIR',
       },
@@ -163,7 +163,7 @@ const FRAMEWORKS: Framework[] = [
       },
       {
         name: 'custom-create-preact',
-        display: 'Customize with create-preact ↗',
+        display: 'Official Preact Starter ↗',
         color: magenta,
         customCommand: 'npm create preact@latest TARGET_DIR',
       },
