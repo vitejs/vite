@@ -50,7 +50,7 @@
     "@types/estree": "^1.0.6",
     "@types/etag": "^1.8.3",
     "@types/less": "^3.0.7",
-    "@types/node": "^22.10.2",
+    "@types/node": "^22.10.5",
     "@types/picomatch": "^3.0.1",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.5.13",
@@ -63,7 +63,7 @@
     "execa": "^9.5.2",
     "globals": "^15.14.0",
     "gsap": "^3.12.5",
-    "lint-staged": "^15.2.11",
+    "lint-staged": "^15.3.0",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.49.1",
     "premove": "^4.0.0",
@@ -74,7 +74,7 @@
     "tslib": "^2.8.1",
     "tsx": "^4.19.2",
     "typescript": "~5.7.2",
-    "typescript-eslint": "^8.18.2",
+    "typescript-eslint": "^8.19.1",
     "vite": "workspace:*",
     "vitest": "^2.1.8"
   },
@@ -95,7 +95,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@9.15.1",
+  "packageManager": "pnpm@9.15.3",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
