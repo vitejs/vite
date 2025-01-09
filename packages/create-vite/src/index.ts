@@ -275,13 +275,13 @@ const FRAMEWORKS: Framework[] = [
     variants: [
       {
         name: 'create-vite-extra',
-        display: 'create-vite-extra ↗',
+        display: 'Extra Vite Starters ↗',
         color: reset,
         customCommand: 'npm create vite-extra@latest TARGET_DIR',
       },
       {
         name: 'create-electron-vite',
-        display: 'create-electron-vite ↗',
+        display: 'Electron ↗',
         color: reset,
         customCommand: 'npm create electron-vite@latest TARGET_DIR',
       },
