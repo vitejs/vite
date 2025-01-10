@@ -481,3 +481,35 @@ test('config compat 2', async () => {
     ]
   `)
 })
+
+test('config compat 3', async () => {
+  const config = await resolveConfig({}, 'serve')
+  expect(config.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "browser",
+      "development|production",
+    ]
+  `)
+  expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "browser",
+      "development|production",
+    ]
+  `)
+  expect(config.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "node",
+      "development|production",
+    ]
+  `)
+  expect(config.environments.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "node",
+      "development|production",
+    ]
+  `)
+})
