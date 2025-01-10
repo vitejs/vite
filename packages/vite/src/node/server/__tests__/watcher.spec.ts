@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { type ViteDevServer, createServer } from '../..'
+import { type ViteDevServer, createServer } from '../index'
 
 const stubGetWatchedCode = /\(\)\s*\{\s*return this;\s*\}/
 

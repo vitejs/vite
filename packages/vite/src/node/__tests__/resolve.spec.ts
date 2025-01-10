@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { describe, expect, onTestFinished, test } from 'vitest'
-import { createServer } from '..'
+import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
 import type { InlineConfig } from '../config'
 import { build } from '../build'

@@ -4,8 +4,8 @@ import colors from 'picocolors'
 import { describe, expect, test, vi } from 'vitest'
 import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
-import { build } from '..'
 import {
+  build,
   createBuilder,
   resolveBuildOutputs,
   resolveLibFilename,

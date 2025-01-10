@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { resolveConfig } from '../..'
 import { definePlugin } from '../../plugins/define'
+import { resolveConfig } from '../../config'
 import { PartialEnvironment } from '../../baseEnvironment'
 
 async function createDefinePluginTransform(

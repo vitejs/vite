@@ -1,8 +1,8 @@
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { normalizePath } from '../../..'
 import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
+import { normalizePath } from '../../../utils'
 import { isWindows } from '../../../../shared/utils'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
