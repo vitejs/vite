@@ -46,7 +46,11 @@ The `runner` is evaluated eagerly when it's accessed for the first time. Beware 
 Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
 
 ```js
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const server = await createServer({
   server: { middlewareMode: true },
