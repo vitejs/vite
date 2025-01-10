@@ -289,9 +289,10 @@ const FRAMEWORKS: Framework[] = [
   },
 ]
 
-const TEMPLATES = FRAMEWORKS.map(
-  (f) => (f.variants && f.variants.map((v) => v.name)) || [f.name],
-).reduce((a, b) => a.concat(b), [])
+const TEMPLATES = FRAMEWORKS.map((f) => f.variants.map((v) => v.name)).reduce(
+  (a, b) => a.concat(b),
+  [],
+)
 
 const renameFiles: Record<string, string | undefined> = {
   _gitignore: '.gitignore',
@@ -394,8 +395,8 @@ async function init() {
           }),
         },
         {
-          type: (framework: Framework) =>
-            framework && framework.variants ? 'select' : null,
+          type: (framework: Framework | /* package name */ string) =>
+            typeof framework === 'object' ? 'select' : null,
           name: 'variant',
           message: reset('Select a variant:'),
           choices: (framework: Framework) =>

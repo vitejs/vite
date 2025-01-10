@@ -199,13 +199,13 @@ export async function traverseHtml(
 
 export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
   src: Token.Attribute | undefined
-  sourceCodeLocation: Token.Location | undefined
+  srcSourceCodeLocation: Token.Location | undefined
   isModule: boolean
   isAsync: boolean
   isIgnored: boolean
 } {
   let src: Token.Attribute | undefined
-  let sourceCodeLocation: Token.Location | undefined
+  let srcSourceCodeLocation: Token.Location | undefined
   let isModule = false
   let isAsync = false
   let isIgnored = false
@@ -214,7 +214,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
     if (p.name === 'src') {
       if (!src) {
         src = p
-        sourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
+        srcSourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
       }
     } else if (p.name === 'type' && p.value && p.value === 'module') {
       isModule = true
@@ -224,7 +224,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
       isIgnored = true
     }
   }
-  return { src, sourceCodeLocation, isModule, isAsync, isIgnored }
+  return { src, srcSourceCodeLocation, isModule, isAsync, isIgnored }
 }
 
 const attrValueStartRE = /=\s*(.)/
@@ -302,11 +302,15 @@ function handleParseError(
       // Accept elements without closing tag in <head>
       return
     case 'duplicate-attribute':
-      // Accept duplicate attributes #9566
+      // Accept duplicate attributes #5966
       // The first attribute is used, browsers silently ignore duplicates
       return
     case 'non-void-html-element-start-tag-with-trailing-solidus':
       // Allow self closing on non-void elements #10439
+      return
+    case 'unexpected-question-mark-instead-of-tag-name':
+      // Allow <?xml> declaration and <?> empty elements
+      // lit generates <?>: https://github.com/lit/lit/issues/2470
       return
   }
   const parseError = formatParseError(parserError, filePath, html)
@@ -415,9 +419,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         // for each encountered asset url, rewrite original html so that it
         // references the post-build location, ignoring empty attributes and
         // attributes that directly reference named output.
-        const namedOutput = Object.keys(
-          config?.build?.rollupOptions?.input || {},
-        )
+        const namedOutput = Object.keys(config.build.rollupOptions.input || {})
         const processAssetUrl = async (url: string, shouldInline?: boolean) => {
           if (
             url !== '' && // Empty attribute
@@ -445,7 +447,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
 
           // script tags
           if (node.nodeName === 'script') {
-            const { src, sourceCodeLocation, isModule, isAsync, isIgnored } =
+            const { src, srcSourceCodeLocation, isModule, isAsync, isIgnored } =
               getScriptInfo(node)
 
             if (isIgnored) {
@@ -457,7 +459,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 // referencing public dir url, prefix with base
                 overwriteAttrValue(
                   s,
-                  sourceCodeLocation!,
+                  srcSourceCodeLocation!,
                   partialEncodeURIPath(toOutputPublicFilePath(url)),
                 )
               }

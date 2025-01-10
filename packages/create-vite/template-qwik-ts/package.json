@@ -10,10 +10,10 @@
   },
   "devDependencies": {
     "serve": "^14.2.4",
-    "typescript": "~5.6.2",
-    "vite": "^6.0.1"
+    "typescript": "~5.7.2",
+    "vite": "^6.0.7"
   },
   "dependencies": {
-    "@builder.io/qwik": "^1.10.0"
+    "@builder.io/qwik": "^1.12.0"
   }
 }

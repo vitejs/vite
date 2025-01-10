@@ -343,7 +343,7 @@ let firstLoadCachedDepOptimizationMetadata = true
  */
 export async function loadCachedDepOptimizationMetadata(
   environment: Environment,
-  force = environment.config.optimizeDeps?.force ?? false,
+  force = environment.config.optimizeDeps.force ?? false,
   asCommand = false,
 ): Promise<DepOptimizationMetadata | undefined> {
   const log = asCommand ? environment.logger.info : debug
@@ -751,7 +751,7 @@ async function prepareEsbuildOptimizerRun(
   const { optimizeDeps } = environment.config
 
   const { plugins: pluginsFromConfig = [], ...esbuildOptions } =
-    optimizeDeps?.esbuildOptions ?? {}
+    optimizeDeps.esbuildOptions ?? {}
 
   await Promise.all(
     Object.keys(depsInfo).map(async (id) => {
@@ -775,9 +775,11 @@ async function prepareEsbuildOptimizerRun(
   if (optimizerContext.cancelled) return { context: undefined, idToExports }
 
   const define = {
-    'process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || environment.config.mode,
-    ),
+    'process.env.NODE_ENV': environment.config.keepProcessEnv
+      ? // define process.env.NODE_ENV even for keepProcessEnv === true
+        // as esbuild will replace it automatically when `platform` is `'browser'`
+        'process.env.NODE_ENV'
+      : JSON.stringify(process.env.NODE_ENV || environment.config.mode),
   }
 
   const platform =
@@ -790,7 +792,7 @@ async function prepareEsbuildOptimizerRun(
       ? 'browser'
       : 'node')
 
-  const external = [...(optimizeDeps?.exclude ?? [])]
+  const external = [...(optimizeDeps.exclude ?? [])]
 
   const plugins = [...pluginsFromConfig]
   if (external.length) {
@@ -837,7 +839,7 @@ export async function addManuallyIncludedOptimizeDeps(
 ): Promise<void> {
   const { logger } = environment
   const { optimizeDeps } = environment.config
-  const optimizeDepsInclude = optimizeDeps?.include ?? []
+  const optimizeDepsInclude = optimizeDeps.include ?? []
   if (optimizeDepsInclude.length) {
     const unableToOptimize = (id: string, msg: string) => {
       if (optimizeDepsInclude.includes(id)) {
@@ -1083,7 +1085,7 @@ export async function extractExportsData(
 
   const { optimizeDeps } = environment.config
 
-  const esbuildOptions = optimizeDeps?.esbuildOptions ?? {}
+  const esbuildOptions = optimizeDeps.esbuildOptions ?? {}
   if (optimizeDeps.extensions?.some((ext) => filePath.endsWith(ext))) {
     // For custom supported extensions, build the entry file to transform it into JS,
     // and then parse with es-module-lexer. Note that the `bundle` option is not `true`,
@@ -1138,7 +1140,7 @@ function needsInterop(
   exportsData: ExportsData,
   output?: { exports: string[] },
 ): boolean {
-  if (environment.config.optimizeDeps?.needsInterop?.includes(id)) {
+  if (environment.config.optimizeDeps.needsInterop?.includes(id)) {
     return true
   }
   const { hasModuleSyntax, exports } = exportsData
@@ -1154,9 +1156,8 @@ function needsInterop(
     const generatedExports: string[] = output.exports
 
     if (
-      !generatedExports ||
-      (isSingleDefaultExport(generatedExports) &&
-        !isSingleDefaultExport(exports))
+      isSingleDefaultExport(generatedExports) &&
+      !isSingleDefaultExport(exports)
     ) {
       return true
     }
@@ -1171,34 +1172,45 @@ function isSingleDefaultExport(exports: readonly string[]) {
 const lockfileFormats = [
   {
     path: 'node_modules/.package-lock.json',
-    checkPatches: true,
+    checkPatchesDir: 'patches',
     manager: 'npm',
   },
   {
     // Yarn non-PnP
     path: 'node_modules/.yarn-state.yml',
-    checkPatches: false,
+    checkPatchesDir: false,
     manager: 'yarn',
   },
   {
-    // Yarn PnP
-    path: '.yarn/install-state',
-    checkPatches: false,
+    // Yarn v3+ PnP
+    path: '.pnp.cjs',
+    checkPatchesDir: '.yarn/patches',
+    manager: 'yarn',
+  },
+  {
+    // Yarn v2 PnP
+    path: '.pnp.js',
+    checkPatchesDir: '.yarn/patches',
     manager: 'yarn',
   },
   {
     // yarn 1
     path: 'node_modules/.yarn-integrity',
-    checkPatches: true,
+    checkPatchesDir: 'patches',
     manager: 'yarn',
   },
   {
     path: 'node_modules/.pnpm/lock.yaml',
     // Included in lockfile
-    checkPatches: false,
+    checkPatchesDir: false,
     manager: 'pnpm',
   },
-  { name: 'bun.lockb', path: 'bun.lockb', checkPatches: true, manager: 'bun' },
+  {
+    name: 'bun.lockb',
+    path: 'bun.lockb',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
 ].sort((_, { manager }) => {
   return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
 })
@@ -1211,21 +1223,23 @@ function getConfigHash(environment: Environment): string {
   const { optimizeDeps } = config
   const content = JSON.stringify(
     {
-      mode: process.env.NODE_ENV || config.mode,
+      define: !config.keepProcessEnv
+        ? process.env.NODE_ENV || config.mode
+        : null,
       root: config.root,
       resolve: config.resolve,
       assetsInclude: config.assetsInclude,
       plugins: config.plugins.map((p) => p.name),
       optimizeDeps: {
-        include: optimizeDeps?.include
+        include: optimizeDeps.include
           ? unique(optimizeDeps.include).sort()
           : undefined,
-        exclude: optimizeDeps?.exclude
+        exclude: optimizeDeps.exclude
           ? unique(optimizeDeps.exclude).sort()
           : undefined,
         esbuildOptions: {
-          ...optimizeDeps?.esbuildOptions,
-          plugins: optimizeDeps?.esbuildOptions?.plugins?.map((p) => p.name),
+          ...optimizeDeps.esbuildOptions,
+          plugins: optimizeDeps.esbuildOptions?.plugins?.map((p) => p.name),
         },
       },
     },
@@ -1247,10 +1261,13 @@ function getLockfileHash(environment: Environment): string {
     const lockfileFormat = lockfileFormats.find((f) =>
       normalizedLockfilePath.endsWith(f.path),
     )!
-    if (lockfileFormat.checkPatches) {
+    if (lockfileFormat.checkPatchesDir) {
       // Default of https://github.com/ds300/patch-package
       const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
-      const fullPath = path.join(baseDir, 'patches')
+      const fullPath = path.join(
+        baseDir,
+        lockfileFormat.checkPatchesDir as string,
+      )
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
         content += stat.mtimeMs.toString()
@@ -1392,6 +1409,6 @@ const safeRename = promisify(function gracefulRename(
       if (backoff < 100) backoff += 10
       return
     }
-    if (cb) cb(er)
+    cb(er)
   })
 })

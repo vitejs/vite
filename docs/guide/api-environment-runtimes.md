@@ -1,17 +1,17 @@
 # Environment API for Runtimes
 
 :::warning Experimental
-Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Environment API. This API will be released in Vite 6 as experimental. You can already test it in the latest `vite@6.0.0-beta.x` version.
+Environment API is experimental. We'll keep the APIs stable during Vite 6 to let the ecosystem experiment and build on top of it. We're planning to stabilize these new APIs with potential breaking changes in Vite 7.
 
 Resources:
 
 - [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
 - [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new API were implemented and reviewed.
 
-Please share with us your feedback as you test the proposal.
+Please share your feedback with us.
 :::
 
-## Environment factories
+## Environment Factories
 
 Environments factories are intended to be implemented by Environment providers like Cloudflare, and not by end users. Environment factories return a `EnvironmentOptions` for the most common case of using the target runtime for both dev and build environments. The default environment options can also be set so the user doesn't need to do it.
 
@@ -72,7 +72,7 @@ and frameworks can use an environment with the workerd runtime to do SSR using:
 const ssrEnvironment = server.environments.ssr
 ```
 
-## Creating a new environment factory
+## Creating a New Environment Factory
 
 A Vite dev server exposes two environments by default: a `client` environment and an `ssr` environment. The client environment is a browser environment by default, and the module runner is implemented by importing the virtual module `/@vite/client` to client apps. The SSR environment runs in the same Node runtime as the Vite server by default and allows application servers to be used to render requests during dev with full HMR support.
 
@@ -150,11 +150,10 @@ Module runner exposes `import` method. When Vite server triggers `full-reload` H
 
 ```js
 import { ModuleRunner, ESModulesEvaluator } from 'vite/module-runner'
-import { root, transport } from './rpc-implementation.js'
+import { transport } from './rpc-implementation.js'
 
 const moduleRunner = new ModuleRunner(
   {
-    root,
     transport,
   },
   new ESModulesEvaluator(),
@@ -180,10 +179,6 @@ type ModuleRunnerTransport = unknown
 
 // ---cut---
 interface ModuleRunnerOptions {
-  /**
-   * Root of the project
-   */
-  root: string
   /**
    * A set of methods to communicate with the server.
    */
@@ -265,9 +260,7 @@ interface ModuleRunnerTransport {
   connect?(handlers: ModuleRunnerTransportHandlers): Promise<void> | void
   disconnect?(): Promise<void> | void
   send?(data: HotPayload): Promise<void> | void
-  invoke?(
-    data: HotPayload,
-  ): Promise<{ /** result */ r: any } | { /** error */ e: any }>
+  invoke?(data: HotPayload): Promise<{ result: any } | { error: any }>
   timeout?: number
 }
 ```
@@ -296,7 +289,6 @@ const transport = {
 
 const runner = new ModuleRunner(
   {
-    root: fileURLToPath(new URL('./', import.meta.url)),
     transport,
   },
   new ESModulesEvaluator(),
@@ -364,7 +356,6 @@ import { ESModulesEvaluator, ModuleRunner } from 'vite/module-runner'
 
 export const runner = new ModuleRunner(
   {
-    root: fileURLToPath(new URL('./', import.meta.url)),
     transport: {
       async invoke(data) {
         const response = await fetch(`http://my-vite-server/invoke`, {

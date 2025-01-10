@@ -987,7 +987,6 @@ export async function resolveServerUrls(
       .flatMap((nInterface) => nInterface ?? [])
       .filter(
         (detail) =>
-          detail &&
           detail.address &&
           (detail.family === 'IPv4' ||
             // @ts-expect-error Node 18.0 - 18.3 returns number
@@ -1307,11 +1306,17 @@ export function transformStableResult(
   }
 }
 
-export async function asyncFlatten<T>(arr: T[]): Promise<T[]> {
+type AsyncFlatten<T extends unknown[]> = T extends (infer U)[]
+  ? Exclude<Awaited<U>, U[]>[]
+  : never
+
+export async function asyncFlatten<T extends unknown[]>(
+  arr: T,
+): Promise<AsyncFlatten<T>> {
   do {
     arr = (await Promise.all(arr)).flat(Infinity) as any
   } while (arr.some((v: any) => v?.then))
-  return arr
+  return arr as unknown[] as AsyncFlatten<T>
 }
 
 // strip UTF-8 BOM
@@ -1414,7 +1419,7 @@ export function getNpmPackageName(importPath: string): string | null {
 }
 
 export function getPkgName(name: string): string | undefined {
-  return name?.[0] === '@' ? name.split('/')[1] : name
+  return name[0] === '@' ? name.split('/')[1] : name
 }
 
 const escapeRegexRE = /[-/\\^$*+?.()|[\]{}]/g
@@ -1496,11 +1501,17 @@ export function displayTime(time: number): string {
     return `${time.toFixed(2)}s`
   }
 
-  const mins = parseInt((time / 60).toString())
-  const seconds = time % 60
+  // Calculate total minutes and remaining seconds
+  const mins = Math.floor(time / 60)
+  const seconds = Math.round(time % 60)
+
+  // Handle case where seconds rounds to 60
+  if (seconds === 60) {
+    return `${mins + 1}m`
+  }
 
   // display: {X}m {Y}s
-  return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
+  return `${mins}m${seconds < 1 ? '' : ` ${seconds}s`}`
 }
 
 /**

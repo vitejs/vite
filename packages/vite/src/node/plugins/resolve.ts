@@ -96,6 +96,10 @@ export interface EnvironmentResolveOptions {
    * @experimental
    */
   external?: string[] | true
+  /**
+   * @internal
+   */
+  enableBuiltinNoExternalCheck?: boolean
 }
 
 export interface ResolveOptions extends EnvironmentResolveOptions {
@@ -169,8 +173,11 @@ interface ResolvePluginOptions {
 }
 
 export interface InternalResolveOptions
-  extends Required<ResolveOptions>,
-    ResolvePluginOptions {}
+  extends Required<Omit<ResolveOptions, 'enableBuiltinNoExternalCheck'>>,
+    ResolvePluginOptions {
+  /** @internal this is always optional for backward compat */
+  enableBuiltinNoExternalCheck?: boolean
+}
 
 // Defined ResolveOptions are used to overwrite the values for all environments
 // It is used when creating custom resolvers (for CSS, scanning, etc)
@@ -216,7 +223,7 @@ export function resolvePlugin(
 
       // this is passed by @rollup/plugin-commonjs
       const isRequire: boolean =
-        resolveOpts?.custom?.['node-resolve']?.isRequire ?? false
+        resolveOpts.custom?.['node-resolve']?.isRequire ?? false
 
       const currentEnvironmentOptions = this.environment.config
 
@@ -224,7 +231,7 @@ export function resolvePlugin(
         isRequire,
         ...currentEnvironmentOptions.resolve,
         ...resolveOptions, // plugin options + resolve options overrides
-        scan: resolveOpts?.scan ?? resolveOptions.scan,
+        scan: resolveOpts.scan ?? resolveOptions.scan,
       }
 
       const resolvedImports = resolveSubpathImports(id, importer, options)
@@ -243,7 +250,7 @@ export function resolvePlugin(
         ) {
           options.isFromTsImporter = true
         } else {
-          const moduleLang = this.getModuleInfo(importer)?.meta?.vite?.lang
+          const moduleLang = this.getModuleInfo(importer)?.meta.vite?.lang
           options.isFromTsImporter = moduleLang && isTsRequest(`.${moduleLang}`)
         }
       }
@@ -420,6 +427,7 @@ export function resolvePlugin(
         if (isBuiltin(id)) {
           if (currentEnvironmentOptions.consumer === 'server') {
             if (
+              options.enableBuiltinNoExternalCheck &&
               options.noExternal === true &&
               // if both noExternal and external are true, noExternal will take the higher priority and bundle it.
               // only if the id is explicitly listed in external, we will externalize it and skip this error.
@@ -699,7 +707,7 @@ export function tryNodeResolve(
   const pkgId = deepMatch ? deepMatch[1] || deepMatch[2] : cleanUrl(id)
 
   let basedir: string
-  if (dedupe?.includes(pkgId)) {
+  if (dedupe.includes(pkgId)) {
     basedir = root
   } else if (
     importer &&
@@ -717,7 +725,7 @@ export function tryNodeResolve(
     // check if it's a self reference dep.
     const selfPackageData = findNearestPackageData(basedir, packageCache)
     selfPkg =
-      selfPackageData?.data.exports && selfPackageData?.data.name === pkgId
+      selfPackageData?.data.exports && selfPackageData.data.name === pkgId
         ? selfPackageData
         : null
   }
@@ -770,7 +778,7 @@ export function tryNodeResolve(
     let resolvedId = id
     if (
       deepMatch &&
-      !pkg?.data.exports &&
+      !pkg.data.exports &&
       path.extname(id) !== path.extname(resolved.id)
     ) {
       // id date-fns/locale

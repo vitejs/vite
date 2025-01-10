@@ -228,6 +228,11 @@ describe('css url() references', () => {
     })
   })
 
+  test('image-set and url exist at the same time.', async () => {
+    const imageSet = await getBg('.image-set-and-url-exsiting-at-same-time')
+    expect(imageSet).toMatch(assetMatch)
+  })
+
   test('relative in @import', async () => {
     expect(await getBg('.css-url-relative-at-imported')).toMatch(assetMatch)
   })
@@ -269,6 +274,12 @@ describe('css url() references', () => {
   test('aliased', async () => {
     const bg = await getBg('.css-url-aliased')
     expect(bg).toMatch(assetMatch)
+  })
+
+  test('preinlined SVG', async () => {
+    expect(await getBg('.css-url-preinlined-svg')).toMatch(
+      /data:image\/svg\+xml,.+/,
+    )
   })
 
   test.runIf(isBuild)('generated paths in CSS', () => {

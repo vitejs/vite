@@ -157,7 +157,7 @@ export interface NormalizedHotChannel<Api = any> {
   off(event: string, listener: Function): void
   /** @internal */
   setInvokeHandler(invokeHandlers: InvokeMethods | undefined): void
-  handleInvoke(payload: HotPayload): Promise<{ r: any } | { e: any }>
+  handleInvoke(payload: HotPayload): Promise<{ result: any } | { error: any }>
   /**
    * Start listening for messages
    */
@@ -193,7 +193,7 @@ export const normalizeHotChannel = (
   ) => {
     if (!invokeHandlers) {
       return {
-        e: {
+        error: {
           name: 'TransportError',
           message: 'invokeHandlers is not set',
           stack: new Error().stack,
@@ -207,10 +207,10 @@ export const normalizeHotChannel = (
       const invokeHandler = invokeHandlers[name]
       // @ts-expect-error `invokeHandler` is `InvokeMethods[T]`, so passing the args is fine
       const result = await invokeHandler(...args)
-      return { r: result }
+      return { result }
     } catch (error) {
       return {
-        e: {
+        error: {
           name: error.name,
           message: error.message,
           stack: error.stack,
@@ -364,7 +364,7 @@ export function getSortedPluginsByHotUpdateHook(
 
 const sortedHotUpdatePluginsCache = new WeakMap<Environment, Plugin[]>()
 function getSortedHotUpdatePlugins(environment: Environment): Plugin[] {
-  let sortedPlugins = sortedHotUpdatePluginsCache.get(environment) as Plugin[]
+  let sortedPlugins = sortedHotUpdatePluginsCache.get(environment)
   if (!sortedPlugins) {
     sortedPlugins = getSortedPluginsByHotUpdateHook(environment.plugins)
     sortedHotUpdatePluginsCache.set(environment, sortedPlugins)
@@ -989,7 +989,7 @@ export function lexAcceptedHmrDeps(
               // in both case this indicates a self-accepting module
               return true // done
             }
-          } else if (state === LexerState.inArray) {
+          } else {
             if (char === `]`) {
               return false // done
             } else if (char === ',') {
@@ -1161,7 +1161,7 @@ export function createDeprecatedHotBroadcaster(
     send: ws.send,
     setInvokeHandler: ws.setInvokeHandler,
     handleInvoke: async () => ({
-      e: {
+      error: {
         name: 'TransportError',
         message: 'handleInvoke not implemented',
         stack: new Error().stack,
@@ -1174,9 +1174,7 @@ export function createDeprecatedHotBroadcaster(
       return broadcaster
     },
     close() {
-      return Promise.all(
-        broadcaster.channels.map((channel) => channel.close?.()),
-      )
+      return Promise.all(broadcaster.channels.map((channel) => channel.close()))
     },
   }
   return broadcaster
