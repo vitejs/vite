@@ -87,7 +87,7 @@ export function jsonPlugin(
             }
 
             return {
-              code: `export default JSON.parse(${JSON.stringify(json)})`,
+              code: `export default /* #__PURE__ */ JSON.parse(${JSON.stringify(json)})`,
               map: { mappings: '' },
             }
           }
