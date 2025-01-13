@@ -31,11 +31,6 @@
 <script type="module">
   import json, { hello } from './test.json'
   import deepJson, { name } from 'vue/package.json'
-  import dev from './dev.json'
-
-  if (import.meta.env.MODE === 'dev') {
-    text('.dev', dev)
-  }
 
   text('.full', JSON.stringify(json))
   text('.named', hello)

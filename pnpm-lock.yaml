@@ -809,20 +809,6 @@ importers:
         specifier: ^3.5.13
         version: 3.5.13(typescript@5.7.2)
 
-  playground/json-stringify:
-    devDependencies:
-      '@vitejs/test-json-module':
-        specifier: file:./json-module
-        version: file:playground/json-stringify/json-module
-      express:
-        specifier: ^5.0.1
-        version: 5.0.1
-      vue:
-        specifier: ^3.5.13
-        version: 3.5.13(typescript@5.7.2)
-
-  playground/json-stringify/json-module: {}
-
   playground/json/json-module: {}
 
   playground/legacy:
@@ -3434,9 +3420,6 @@ packages:
 
   '@vitejs/test-importee-pkg@file:playground/js-sourcemap/importee-pkg':
     resolution: {directory: playground/js-sourcemap/importee-pkg, type: directory}
-
-  '@vitejs/test-json-module@file:playground/json-stringify/json-module':
-    resolution: {directory: playground/json-stringify/json-module, type: directory}
 
   '@vitejs/test-json-module@file:playground/json/json-module':
     resolution: {directory: playground/json/json-module, type: directory}
@@ -9049,8 +9032,6 @@ snapshots:
   '@vitejs/test-import-meta-glob-pkg@file:playground/glob-import/import-meta-glob-pkg': {}
 
   '@vitejs/test-importee-pkg@file:playground/js-sourcemap/importee-pkg': {}
-
-  '@vitejs/test-json-module@file:playground/json-stringify/json-module': {}
 
   '@vitejs/test-json-module@file:playground/json/json-module': {}
 
