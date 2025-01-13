@@ -42,7 +42,9 @@ export function splitFileAndPostfix(path: string): {
 }
 
 export function isPrimitive(value: unknown): boolean {
-  return !value || (typeof value !== 'object' && typeof value !== 'function')
+  return (
+    value == null || (typeof value !== 'object' && typeof value !== 'function')
+  )
 }
 
 export function withTrailingSlash(path: string): string {
