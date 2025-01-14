@@ -579,7 +579,7 @@ export async function handleHMRUpdate(
       }
       if (!options.modules.length) {
         // html file cannot be hot updated
-        if (file.endsWith('.html')) {
+        if (file.endsWith('.html') && environment.name === 'client') {
           environment.logger.info(
             colors.green(`page reload `) + colors.dim(shortFile),
             {
