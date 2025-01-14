@@ -52,7 +52,7 @@ export class PartialEnvironment {
   constructor(
     name: string,
     topLevelConfig: ResolvedConfig,
-    options: ResolvedEnvironmentOptions = topLevelConfig.environments[name],
+    options: ResolvedEnvironmentOptions = topLevelConfig.environments?.[name] ?? {},
   ) {
     // only allow some characters so that we can use name without escaping for directory names
     // and make users easier to access with `environments.*`
