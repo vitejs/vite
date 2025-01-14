@@ -148,14 +148,23 @@ export async function preview(
 
   const closeHttpServer = createServerCloseFn(httpServer)
 
+  // Promise used by `server.close()` to ensure `closeServer()` is only called once
+  let closeServerPromise: Promise<void> | undefined
+  const closeServer = async () => {
+    teardownSIGTERMListener(closeServerAndExit)
+    await closeHttpServer()
+    server.resolvedUrls = null
+  }
+
   const server: PreviewServer = {
     config,
     middlewares: app,
     httpServer,
     async close() {
-      teardownSIGTERMListener(closeServerAndExit)
-      await closeHttpServer()
-      server.resolvedUrls = null
+      if (!closeServerPromise) {
+        closeServerPromise = closeServer()
+      }
+      return closeServerPromise
     },
     resolvedUrls: null,
     printUrls() {

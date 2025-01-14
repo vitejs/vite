@@ -523,6 +523,28 @@ export async function _createServer(
 
   const devHtmlTransformFn = createDevHtmlTransformFn(config)
 
+  // Promise used by `server.close()` to ensure `closeServer()` is only called once
+  let closeServerPromise: Promise<void> | undefined
+  const closeServer = async () => {
+    if (!middlewareMode) {
+      teardownSIGTERMListener(closeServerAndExit)
+    }
+
+    await Promise.allSettled([
+      watcher.close(),
+      ws.close(),
+      Promise.allSettled(
+        Object.values(server.environments).map((environment) =>
+          environment.close(),
+        ),
+      ),
+      closeHttpServer(),
+      server._ssrCompatModuleRunner?.close(),
+    ])
+    server.resolvedUrls = null
+    server._ssrCompatModuleRunner = undefined
+  }
+
   let server: ViteDevServer = {
     config,
     middlewares,
@@ -674,23 +696,10 @@ export async function _createServer(
       }
     },
     async close() {
-      if (!middlewareMode) {
-        teardownSIGTERMListener(closeServerAndExit)
+      if (!closeServerPromise) {
+        closeServerPromise = closeServer()
       }
-
-      await Promise.allSettled([
-        watcher.close(),
-        ws.close(),
-        Promise.allSettled(
-          Object.values(server.environments).map((environment) =>
-            environment.close(),
-          ),
-        ),
-        closeHttpServer(),
-        server._ssrCompatModuleRunner?.close(),
-      ])
-      server.resolvedUrls = null
-      server._ssrCompatModuleRunner = undefined
+      return closeServerPromise
     },
     printUrls() {
       if (server.resolvedUrls) {
