@@ -14,7 +14,6 @@ Currently, Vite is working on an improved SSR API with the [Environment API](htt
 
 :::tip Help
 If you have questions, the community is usually helpful at [Vite Discord's #collaborate channel](https://discord.gg/zZfRUcb5).
-
 :::
 
 ## Example Projects
