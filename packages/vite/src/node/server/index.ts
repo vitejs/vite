@@ -699,7 +699,7 @@ export async function _createServer(
       if (!closeServerPromise) {
         closeServerPromise = closeServer()
       }
-      await closeServerPromise
+      return closeServerPromise
     },
     printUrls() {
       if (server.resolvedUrls) {
