@@ -847,9 +847,9 @@ export async function _createServer(
     middlewares.use(timeMiddleware(root))
   }
 
-  // cors (enabled by default)
+  // cors
   const { cors } = serverConfig
-  if (cors !== false) {
+  if (cors !== undefined && cors !== false) {
     middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
