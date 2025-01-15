@@ -12,6 +12,12 @@ If you need a custom integration, you can follow the steps in this guide to conf
    import { defineConfig } from 'vite'
    // ---cut---
    export default defineConfig({
+     server: {
+       cors: {
+         // the origin you will be accessing via browser
+         origin: 'http://my-backend.example.com',
+       },
+     },
      build: {
        // generate .vite/manifest.json in outDir
        manifest: true,

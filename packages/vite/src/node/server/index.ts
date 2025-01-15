@@ -851,7 +851,7 @@ export async function _createServer(
     middlewares.use(timeMiddleware(root))
   }
 
-  // cors (enabled by default)
+  // cors
   const { cors } = serverConfig
   if (cors !== false) {
     middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
@@ -1046,7 +1046,7 @@ export const serverConfigDefaults = Object.freeze({
   https: undefined,
   open: false,
   proxy: undefined,
-  cors: true,
+  cors: false,
   headers: {},
   // hmr
   // ws
