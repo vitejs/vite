@@ -73,6 +73,7 @@ import { findNearestPackageData } from './packages'
 import { loadEnv, resolveEnvPrefix } from './env'
 import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions } from './ssr'
+import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
 
 const debug = createDebugger('vite:config')
 const promisifiedRealpath = promisify(fs.realpath)
@@ -424,6 +425,8 @@ export type ResolvedConfig = Readonly<
      * @deprecated
      */
     webSocketToken: string
+    /** @internal */
+    additionalAllowedHosts: string[]
   } & PluginHookUtils
 >
 
@@ -791,6 +794,8 @@ export async function resolveConfig(
 
   const base = withTrailingSlash(resolvedBase)
 
+  const preview = resolvePreviewOptions(config.preview, server)
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -822,7 +827,7 @@ export async function resolveConfig(
           },
     server,
     build: resolvedBuildOptions,
-    preview: resolvePreviewOptions(config.preview, server),
+    preview,
     envDir,
     env: {
       ...userEnv,
@@ -858,6 +863,7 @@ export async function resolveConfig(
     webSocketToken: Buffer.from(
       crypto.getRandomValues(new Uint8Array(9)),
     ).toString('base64url'),
+    additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
   }

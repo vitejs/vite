@@ -25,6 +25,18 @@ export interface CommonServerOptions {
    */
   host?: string | boolean
   /**
+   * The hostnames that Vite is allowed to respond to.
+   * `localhost` and subdomains under `.localhost` and all IP addresses are allowed by default.
+   * When using HTTPS, this check is skipped.
+   *
+   * If a string starts with `.`, it will allow that hostname without the `.` and all subdomains under the hostname.
+   * For example, `.example.com` will allow `example.com`, `foo.example.com`, and `foo.bar.example.com`.
+   *
+   * If set to `true`, the server is allowed to respond to requests for any hosts.
+   * This is not recommended as it will be vulnerable to DNS rebinding attacks.
+   */
+  allowedHosts?: string[] | true
+  /**
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
