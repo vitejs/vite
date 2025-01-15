@@ -16,6 +16,7 @@ import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { NormalizedHotChannel, NormalizedHotChannelClient } from './hmr'
 import { normalizeHotChannel } from './hmr'
+import { isHostAllowed } from './middlewares/hostCheck'
 import type { HttpServer } from '.'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
@@ -164,6 +165,11 @@ export function createWebSocketServer(
     // because it needs to be connected before the client fetches the new `/@vite/client`
     // this is fine because vite-ping does not receive / send any meaningful data
     if (protocol === 'vite-ping') return true
+
+    const hostHeader = req.headers.host
+    if (!hostHeader || !isHostAllowed(config, hostHeader)) {
+      return false
+    }
 
     if (config.legacy?.skipWebSocketTokenCheck) {
       return true
