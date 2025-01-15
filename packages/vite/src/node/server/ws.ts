@@ -14,6 +14,7 @@ import type { CustomPayload, ErrorPayload, HMRPayload } from 'types/hmrPayload'
 import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
+import { isHostAllowed } from './middlewares/hostCheck'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
  * of `ws` will not work as Bun's req.socket does not allow reading/writing to the underlying socket.
@@ -139,6 +140,11 @@ export function createWebSocketServer(
   const host = (hmr && hmr.host) || undefined
 
   const shouldHandle = (req: IncomingMessage) => {
+    const hostHeader = req.headers.host
+    if (!hostHeader || !isHostAllowed(config, hostHeader)) {
+      return false
+    }
+
     if (config.legacy?.skipWebSocketTokenCheck) {
       return true
     }
