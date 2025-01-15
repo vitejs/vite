@@ -8,8 +8,9 @@ import {
   test,
 } from 'vitest'
 import type { Page } from 'playwright-chromium'
+import WebSocket from 'ws'
 import testJSON from '../safe.json'
-import { browser, isServe, page, viteTestUrl } from '~utils'
+import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
 
 const getViteTestIndexHtmlUrl = () => {
   const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
@@ -139,6 +140,51 @@ describe('cross origin', () => {
     }, url)
   }
 
+  const connectWebSocketFromPage = async (page: Page, url: string) => {
+    return await page.evaluate(async (url: string) => {
+      try {
+        const ws = new globalThis.WebSocket(url, ['vite-hmr'])
+        await new Promise<void>((resolve, reject) => {
+          ws.addEventListener('open', () => {
+            resolve()
+            ws.close()
+          })
+          ws.addEventListener('error', () => {
+            reject()
+          })
+        })
+        return true
+      } catch {
+        return false
+      }
+    }, url)
+  }
+
+  const connectWebSocketFromServer = async (
+    url: string,
+    origin: string | undefined,
+  ) => {
+    try {
+      const ws = new WebSocket(url, ['vite-hmr'], {
+        headers: {
+          ...(origin ? { Origin: origin } : undefined),
+        },
+      })
+      await new Promise<void>((resolve, reject) => {
+        ws.addEventListener('open', () => {
+          resolve()
+          ws.close()
+        })
+        ws.addEventListener('error', () => {
+          reject()
+        })
+      })
+      return true
+    } catch {
+      return false
+    }
+  }
+
   describe('allowed for same origin', () => {
     beforeEach(async () => {
       await page.goto(getViteTestIndexHtmlUrl())
@@ -156,6 +202,23 @@ describe('cross origin', () => {
       )
       expect(status).toBe(200)
     })
+
+    test.runIf(isServe)('connect WebSocket with valid token', async () => {
+      const token = viteServer.config.webSocketToken
+      const result = await connectWebSocketFromPage(
+        page,
+        `${viteTestUrl}?token=${token}`,
+      )
+      expect(result).toBe(true)
+    })
+
+    test.runIf(isServe)(
+      'connect WebSocket without a token without the origin header',
+      async () => {
+        const result = await connectWebSocketFromServer(viteTestUrl, undefined)
+        expect(result).toBe(true)
+      },
+    )
   })
 
   describe('denied for different origin', async () => {
@@ -179,6 +242,32 @@ describe('cross origin', () => {
         viteTestUrl + '/src/code.js',
       )
       expect(status).not.toBe(200)
+    })
+
+    test.runIf(isServe)('connect WebSocket without token', async () => {
+      const result = await connectWebSocketFromPage(page, viteTestUrl)
+      expect(result).toBe(false)
+
+      const result2 = await connectWebSocketFromPage(
+        page,
+        `${viteTestUrl}?token=`,
+      )
+      expect(result2).toBe(false)
+    })
+
+    test.runIf(isServe)('connect WebSocket with invalid token', async () => {
+      const token = viteServer.config.webSocketToken
+      const result = await connectWebSocketFromPage(
+        page,
+        `${viteTestUrl}?token=${'t'.repeat(token.length)}`,
+      )
+      expect(result).toBe(false)
+
+      const result2 = await connectWebSocketFromPage(
+        page,
+        `${viteTestUrl}?token=${'t'.repeat(token.length)}t`, // different length
+      )
+      expect(result2).toBe(false)
     })
   })
 })
