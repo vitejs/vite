@@ -15,6 +15,7 @@ import type { InferCustomEventPayload } from 'types/customEvent'
 import type { ResolvedConfig } from '..'
 import { isObject } from '../utils'
 import type { HMRChannel } from './hmr'
+import { isHostAllowed } from './middlewares/hostCheck'
 import type { HttpServer } from '.'
 
 /* In Bun, the `ws` module is overridden to hook into the native code. Using the bundled `js` version
@@ -153,6 +154,11 @@ export function createWebSocketServer(
   const host = (hmr && hmr.host) || undefined
 
   const shouldHandle = (req: IncomingMessage) => {
+    const hostHeader = req.headers.host
+    if (!hostHeader || !isHostAllowed(config, hostHeader)) {
+      return false
+    }
+
     if (config.legacy?.skipWebSocketTokenCheck) {
       return true
     }

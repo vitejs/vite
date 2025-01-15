@@ -97,6 +97,7 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { warmupFiles } from './warmup'
+import { hostCheckMiddleware } from './middlewares/hostCheck'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -851,6 +852,13 @@ export async function _createServer(
   const { cors } = serverConfig
   if (cors !== undefined && cors !== false) {
     middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+  }
+
+  // host check (to prevent DNS rebinding attacks)
+  const { allowedHosts } = serverConfig
+  // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
+  if (allowedHosts !== true && !serverConfig.https) {
+    middlewares.use(hostCheckMiddleware(config))
   }
 
   middlewares.use(cachedTransformMiddleware(server))
