@@ -144,7 +144,7 @@ export async function preview(
 
   // cors
   const { cors } = config.preview
-  if (cors !== false) {
+  if (cors !== undefined && cors !== false) {
     app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 

@@ -62,8 +62,14 @@ export interface CommonServerOptions {
   /**
    * Configure CORS for the dev server.
    * Uses https://github.com/expressjs/cors.
+   *
+   * When enabling this option, **we recommend setting a specific value
+   * rather than `true`** to avoid exposing the source code to untrusted origins.
+   *
    * Set to `true` to allow all methods from any origin, or configure separately
    * using an object.
+   *
+   * @default false
    */
   cors?: CorsOptions | boolean
   /**
@@ -76,6 +82,12 @@ export interface CommonServerOptions {
  * https://github.com/expressjs/cors#configuration-options
  */
 export interface CorsOptions {
+  /**
+   * Configures the Access-Control-Allow-Origin CORS header.
+   *
+   * **We recommend setting a specific value rather than
+   * `true`** to avoid exposing the source code to untrusted origins.
+   */
   origin?:
     | CorsOrigin
     | ((origin: string, cb: (err: Error, origins: CorsOrigin) => void) => void)

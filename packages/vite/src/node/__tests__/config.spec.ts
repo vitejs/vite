@@ -237,7 +237,7 @@ describe('preview config', () => {
       'Cache-Control': 'no-store',
     },
     proxy: { '/foo': 'http://localhost:4567' },
-    cors: false,
+    cors: true,
   })
 
   test('preview inherits server config with default port', async () => {
@@ -274,7 +274,7 @@ describe('preview config', () => {
     host: false,
     https: false,
     proxy: { '/bar': 'http://localhost:3010' },
-    cors: true,
+    cors: false,
   })
 
   test('preview overrides server config', async () => {

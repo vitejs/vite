@@ -1,14 +1,27 @@
 import fetch from 'node-fetch'
-import { beforeAll, describe, expect, test } from 'vitest'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from 'vitest'
+import type { Page } from 'playwright-chromium'
 import testJSON from '../safe.json'
-import { isServe, page, viteTestUrl } from '~utils'
+import { browser, isServe, page, viteTestUrl } from '~utils'
+
+const getViteTestIndexHtmlUrl = () => {
+  const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
+  // NOTE: viteTestUrl is set lazily
+  return viteTestUrl + srcPrefix + 'src/'
+}
 
 const stringified = JSON.stringify(testJSON)
 
 describe.runIf(isServe)('main', () => {
   beforeAll(async () => {
-    const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
-    await page.goto(viteTestUrl + srcPrefix + 'src/')
+    await page.goto(getViteTestIndexHtmlUrl())
   })
 
   test('default import', async () => {
@@ -111,5 +124,61 @@ describe('fetch', () => {
   test('serve with configured headers', async () => {
     const res = await fetch(viteTestUrl + '/src/')
     expect(res.headers.get('x-served-by')).toBe('vite')
+  })
+})
+
+describe('cross origin', () => {
+  const fetchStatusFromPage = async (page: Page, url: string) => {
+    return await page.evaluate(async (url: string) => {
+      try {
+        const res = await globalThis.fetch(url)
+        return res.status
+      } catch {
+        return -1
+      }
+    }, url)
+  }
+
+  describe('allowed for same origin', () => {
+    beforeEach(async () => {
+      await page.goto(getViteTestIndexHtmlUrl())
+    })
+
+    test('fetch HTML file', async () => {
+      const status = await fetchStatusFromPage(page, viteTestUrl + '/src/')
+      expect(status).toBe(200)
+    })
+
+    test.runIf(isServe)('fetch JS file', async () => {
+      const status = await fetchStatusFromPage(
+        page,
+        viteTestUrl + '/src/code.js',
+      )
+      expect(status).toBe(200)
+    })
+  })
+
+  describe('denied for different origin', async () => {
+    let page2: Page
+    beforeEach(async () => {
+      page2 = await browser.newPage()
+      await page2.goto('http://vite.dev/404')
+    })
+    afterEach(async () => {
+      await page2.close()
+    })
+
+    test('fetch HTML file', async () => {
+      const status = await fetchStatusFromPage(page2, viteTestUrl + '/src/')
+      expect(status).not.toBe(200)
+    })
+
+    test.runIf(isServe)('fetch JS file', async () => {
+      const status = await fetchStatusFromPage(
+        page2,
+        viteTestUrl + '/src/code.js',
+      )
+      expect(status).not.toBe(200)
+    })
   })
 })
