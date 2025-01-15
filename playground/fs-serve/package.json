@@ -14,5 +14,8 @@
     "dev:deny": "vite root --config ./root/vite.config-deny.js",
     "build:deny": "vite build root --config ./root/vite.config-deny.js",
     "preview:deny": "vite preview root --config ./root/vite.config-deny.js"
+  },
+  "devDependencies": {
+    "ws": "^8.18.0"
   }
 }
