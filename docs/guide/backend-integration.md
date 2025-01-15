@@ -11,6 +11,12 @@ If you need a custom integration, you can follow the steps in this guide to conf
    ```js
    // vite.config.js
    export default defineConfig({
+     server: {
+       cors: {
+         // the origin you will be accessing via browser
+         origin: 'http://my-backend.example.com',
+       },
+     },
      build: {
        // generate manifest.json in outDir
        manifest: true,
