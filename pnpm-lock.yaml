@@ -760,7 +760,11 @@ importers:
         specifier: ^3.5.13
         version: 3.5.13(typescript@5.7.2)
 
-  playground/fs-serve: {}
+  playground/fs-serve:
+    devDependencies:
+      ws:
+        specifier: ^8.18.0
+        version: 8.18.0
 
   playground/glob-import:
     dependencies:
