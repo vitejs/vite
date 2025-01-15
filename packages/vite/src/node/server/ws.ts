@@ -5,6 +5,7 @@ import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { createServer as createHttpsServer } from 'node:https'
 import type { Socket } from 'node:net'
 import type { Duplex } from 'node:stream'
+import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type { WebSocket as WebSocketRaw } from 'ws'
 import { WebSocketServer as WebSocketServerRaw_ } from 'ws'
@@ -89,6 +90,29 @@ function noop() {
   // noop
 }
 
+// we only allow websockets to be connected if it has a valid token
+// this is to prevent untrusted origins to connect to the server
+// for example, Cross-site WebSocket hijacking
+//
+// we should check the token before calling wss.handleUpgrade
+// otherwise untrusted ws clients will be included in wss.clients
+//
+// using the query params means the token might be logged out in server or middleware logs
+// but we assume that is not an issue since the token is regenerated for each process
+function hasValidToken(config: ResolvedConfig, url: URL) {
+  const token = url.searchParams.get('token')
+  if (!token) return false
+
+  try {
+    const isValidToken = crypto.timingSafeEqual(
+      Buffer.from(token),
+      Buffer.from(config.webSocketToken),
+    )
+    return isValidToken
+  } catch {} // an error is thrown when the length is incorrect
+  return false
+}
+
 export function createWebSocketServer(
   server: HttpServer | null,
   config: ResolvedConfig,
@@ -110,7 +134,6 @@ export function createWebSocketServer(
     }
   }
 
-  let wss: WebSocketServerRaw_
   let wsHttpServer: Server | undefined = undefined
 
   const hmr = isObject(config.server.hmr) && config.server.hmr
@@ -129,21 +152,50 @@ export function createWebSocketServer(
   const port = hmrPort || 24678
   const host = (hmr && hmr.host) || undefined
 
+  const shouldHandle = (req: IncomingMessage) => {
+    if (config.legacy?.skipWebSocketTokenCheck) {
+      return true
+    }
+
+    // If the Origin header is set, this request might be coming from a browser.
+    // Browsers always sets the Origin header for WebSocket connections.
+    if (req.headers.origin) {
+      const parsedUrl = new URL(`http://example.com${req.url!}`)
+      return hasValidToken(config, parsedUrl)
+    }
+
+    // We allow non-browser requests to connect without a token
+    // for backward compat and convenience
+    // This is fine because if you can sent a request without the SOP limitation,
+    // you can also send a normal HTTP request to the server.
+    return true
+  }
+  const handleUpgrade = (
+    req: IncomingMessage,
+    socket: Duplex,
+    head: Buffer,
+    _isPing: boolean,
+  ) => {
+    wss.handleUpgrade(req, socket as Socket, head, (ws) => {
+      wss.emit('connection', ws, req)
+    })
+  }
+  const wss: WebSocketServerRaw_ = new WebSocketServerRaw({ noServer: true })
+  wss.shouldHandle = shouldHandle
+
   if (wsServer) {
     let hmrBase = config.base
     const hmrPath = hmr ? hmr.path : undefined
     if (hmrPath) {
       hmrBase = path.posix.join(hmrBase, hmrPath)
     }
-    wss = new WebSocketServerRaw({ noServer: true })
     hmrServerWsListener = (req, socket, head) => {
+      const parsedUrl = new URL(`http://example.com${req.url!}`)
       if (
         req.headers['sec-websocket-protocol'] === HMR_HEADER &&
-        req.url === hmrBase
+        parsedUrl.pathname === hmrBase
       ) {
-        wss.handleUpgrade(req, socket as Socket, head, (ws) => {
-          wss.emit('connection', ws, req)
-        })
+        handleUpgrade(req, socket as Socket, head, false)
       }
     }
     wsServer.on('upgrade', hmrServerWsListener)
@@ -167,9 +219,22 @@ export function createWebSocketServer(
     } else {
       wsHttpServer = createHttpServer(route)
     }
-    // vite dev server in middleware mode
-    // need to call ws listen manually
-    wss = new WebSocketServerRaw({ server: wsHttpServer })
+    wsHttpServer.on('upgrade', (req, socket, head) => {
+      handleUpgrade(req, socket as Socket, head, false)
+    })
+    wsHttpServer.on('error', (e: Error & { code: string }) => {
+      if (e.code === 'EADDRINUSE') {
+        config.logger.error(
+          colors.red(`WebSocket server error: Port is already in use`),
+          { error: e },
+        )
+      } else {
+        config.logger.error(
+          colors.red(`WebSocket server error:\n${e.stack || e.message}`),
+          { error: e },
+        )
+      }
+    })
   }
 
   wss.on('connection', (socket) => {

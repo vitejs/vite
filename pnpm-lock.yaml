@@ -728,7 +728,11 @@ importers:
         specifier: ^3.4.38
         version: 3.4.38(typescript@5.5.3)
 
-  playground/fs-serve: {}
+  playground/fs-serve:
+    devDependencies:
+      ws:
+        specifier: ^8.18.0
+        version: 8.18.0
 
   playground/glob-import:
     dependencies:
