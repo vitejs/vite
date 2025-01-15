@@ -162,11 +162,13 @@ describe('cross origin', () => {
 
   const connectWebSocketFromServer = async (
     url: string,
+    host: string,
     origin: string | undefined,
   ) => {
     try {
       const ws = new WebSocket(url, ['vite-hmr'], {
         headers: {
+          Host: host,
           ...(origin ? { Origin: origin } : undefined),
         },
       })
@@ -212,10 +214,37 @@ describe('cross origin', () => {
       expect(result).toBe(true)
     })
 
+    test('fetch with allowed hosts', async () => {
+      const viteTestUrlUrl = new URL(viteTestUrl)
+      const res = await fetch(viteTestUrl + '/src/index.html', {
+        headers: { Host: viteTestUrlUrl.host },
+      })
+      expect(res.status).toBe(200)
+    })
+
+    test.runIf(isServe)(
+      'connect WebSocket with valid token with allowed hosts',
+      async () => {
+        const viteTestUrlUrl = new URL(viteTestUrl)
+        const token = viteServer.config.webSocketToken
+        const result = await connectWebSocketFromServer(
+          `${viteTestUrl}?token=${token}`,
+          viteTestUrlUrl.host,
+          viteTestUrlUrl.origin,
+        )
+        expect(result).toBe(true)
+      },
+    )
+
     test.runIf(isServe)(
       'connect WebSocket without a token without the origin header',
       async () => {
-        const result = await connectWebSocketFromServer(viteTestUrl, undefined)
+        const viteTestUrlUrl = new URL(viteTestUrl)
+        const result = await connectWebSocketFromServer(
+          viteTestUrl,
+          viteTestUrlUrl.host,
+          undefined,
+        )
         expect(result).toBe(true)
       },
     )
@@ -269,5 +298,34 @@ describe('cross origin', () => {
       )
       expect(result2).toBe(false)
     })
+
+    test('fetch with non-allowed hosts', async () => {
+      const res = await fetch(viteTestUrl + '/src/index.html', {
+        headers: {
+          Host: 'vite.dev',
+        },
+      })
+      expect(res.status).toBe(403)
+    })
+
+    test.runIf(isServe)(
+      'connect WebSocket with valid token with non-allowed hosts',
+      async () => {
+        const token = viteServer.config.webSocketToken
+        const result = await connectWebSocketFromServer(
+          `${viteTestUrl}?token=${token}`,
+          'vite.dev',
+          'http://vite.dev',
+        )
+        expect(result).toBe(false)
+
+        const result2 = await connectWebSocketFromServer(
+          `${viteTestUrl}?token=${token}`,
+          'vite.dev',
+          undefined,
+        )
+        expect(result2).toBe(false)
+      },
+    )
   })
 })

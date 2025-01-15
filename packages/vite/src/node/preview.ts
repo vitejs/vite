@@ -38,6 +38,7 @@ import { resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { DEFAULT_PREVIEW_PORT } from './constants'
 import type { RequiredExceptFor } from './typeUtils'
+import { hostCheckMiddleware } from './server/middlewares/hostCheck'
 
 export interface PreviewOptions extends CommonServerOptions {}
 
@@ -55,6 +56,7 @@ export function resolvePreviewOptions(
     port: preview?.port ?? DEFAULT_PREVIEW_PORT,
     strictPort: preview?.strictPort ?? server.strictPort,
     host: preview?.host ?? server.host,
+    allowedHosts: preview?.allowedHosts ?? server.allowedHosts,
     https: preview?.https ?? server.https,
     open: preview?.open ?? server.open,
     proxy: preview?.proxy ?? server.proxy,
@@ -200,6 +202,13 @@ export async function preview(
   const { cors } = config.preview
   if (cors !== false) {
     app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+  }
+
+  // host check (to prevent DNS rebinding attacks)
+  const { allowedHosts } = config.preview
+  // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
+  if (allowedHosts !== true && !config.preview.https) {
+    app.use(hostCheckMiddleware(config))
   }
 
   // proxy
