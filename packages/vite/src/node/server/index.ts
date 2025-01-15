@@ -93,6 +93,7 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
+import { hostCheckMiddleware } from './middlewares/hostCheck'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -857,6 +858,13 @@ export async function _createServer(
     middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
   }
 
+  // host check (to prevent DNS rebinding attacks)
+  const { allowedHosts } = serverConfig
+  // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
+  if (allowedHosts !== true && !serverConfig.https) {
+    middlewares.use(hostCheckMiddleware(config))
+  }
+
   middlewares.use(cachedTransformMiddleware(server))
 
   // proxy
@@ -1043,6 +1051,7 @@ export const serverConfigDefaults = Object.freeze({
   port: DEFAULT_DEV_PORT,
   strictPort: false,
   host: 'localhost',
+  allowedHosts: [],
   https: undefined,
   open: false,
   proxy: undefined,

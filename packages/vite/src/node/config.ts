@@ -100,6 +100,7 @@ import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
+import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -621,6 +622,8 @@ export type ResolvedConfig = Readonly<
     fsDenyGlob: AnymatchFn
     /** @internal */
     safeModulePaths: Set<string>
+    /** @internal */
+    additionalAllowedHosts: string[]
   } & PluginHookUtils
 >
 
@@ -1383,6 +1386,8 @@ export async function resolveConfig(
 
   const base = withTrailingSlash(resolvedBase)
 
+  const preview = resolvePreviewOptions(config.preview, server)
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1413,7 +1418,7 @@ export async function resolveConfig(
           },
     server,
     builder,
-    preview: resolvePreviewOptions(config.preview, server),
+    preview,
     envDir,
     env: {
       ...userEnv,
@@ -1492,6 +1497,7 @@ export async function resolveConfig(
       },
     ),
     safeModulePaths: new Set<string>(),
+    additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
   }
   resolved = {
     ...config,
