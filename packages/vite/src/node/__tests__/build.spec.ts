@@ -134,6 +134,69 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test.for([
+    [true, true],
+    [true, false],
+    [false, true],
+    [false, false],
+    ['auto', true],
+    ['auto', false],
+  ] as const)(
+    'large json object files should have tree-shaking (json.stringify: %s, json.namedExports: %s)',
+    async ([stringify, namedExports]) => {
+      const esBundle = (await build({
+        mode: 'development',
+        root: resolve(__dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        json: { stringify, namedExports },
+        build: {
+          minify: false,
+          modulePreload: { polyfill: false },
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (
+                id === 'entry.js' ||
+                id === 'object.json' ||
+                id === 'array.json'
+              ) {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `
+                  import object from 'object.json';
+                  import array from 'array.json';
+                  console.log();
+                `
+              }
+              if (id === '\0object.json') {
+                return `
+                  {"value": {"${stringify}_${namedExports}":"JSON_OBJ${'_'.repeat(10_000)}"}}
+                `
+              }
+              if (id === '\0array.json') {
+                return `
+                  ["${stringify}_${namedExports}","JSON_ARR${'_'.repeat(10_000)}"]
+                `
+              }
+            },
+          },
+        ],
+      })) as RollupOutput
+
+      const foo = esBundle.output.find(
+        (chunk) => chunk.type === 'chunk' && chunk.isEntry,
+      ) as OutputChunk
+      expect(foo.code).not.contains('JSON_ARR')
+      expect(foo.code).not.contains('JSON_OBJ')
+    },
+  )
+
   test('external modules should not be hoisted in library build', async () => {
     const [esBundle] = (await build({
       logLevel: 'silent',
