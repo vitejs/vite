@@ -1,15 +1,15 @@
 import fs from 'node:fs'
-import fsp from 'node:fs/promises'
 import path from 'node:path'
+import fsp from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
-import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
+import { build } from 'esbuild'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
 import {
@@ -82,12 +82,12 @@ import {
   resolvePlugins,
 } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
-import type {
-  EnvironmentResolveOptions,
-  InternalResolveOptions,
-  ResolveOptions,
+import {
+  type EnvironmentResolveOptions,
+  type InternalResolveOptions,
+  type ResolveOptions,
+  tryNodeResolve,
 } from './plugins/resolve'
-import { tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
@@ -99,6 +99,7 @@ import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
+import { runnerImport } from './ssr/runnerImport'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -529,6 +530,8 @@ export interface ResolvedWorkerOptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
+  /** @experimental */
+  configLoader?: 'bundle' | 'runner' | 'native'
   envFile?: false
 }
 
@@ -996,6 +999,7 @@ export async function resolveConfig(
       config.root,
       config.logLevel,
       config.customLogger,
+      config.configLoader,
     )
     if (loadResult) {
       config = mergeConfig(loadResult.config, config)
@@ -1642,11 +1646,22 @@ export async function loadConfigFromFile(
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
+  configLoader: 'bundle' | 'runner' | 'native' = 'bundle',
 ): Promise<{
   path: string
   config: UserConfig
   dependencies: string[]
 } | null> {
+  if (
+    configLoader !== 'bundle' &&
+    configLoader !== 'runner' &&
+    configLoader !== 'native'
+  ) {
+    throw new Error(
+      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
+    )
+  }
+
   const start = performance.now()
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
@@ -1672,28 +1687,27 @@ export async function loadConfigFromFile(
     return null
   }
 
-  const isESM =
-    typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
-
   try {
-    const bundled = await bundleConfigFile(resolvedPath, isESM)
-    const userConfig = await loadConfigFromBundledFile(
-      resolvedPath,
-      bundled.code,
-      isESM,
-    )
-    debug?.(`bundled config file loaded in ${getTime()}`)
+    const resolver =
+      configLoader === 'bundle'
+        ? bundleAndLoadConfigFile
+        : configLoader === 'runner'
+          ? runnerImportConfigFile
+          : nativeImportConfigFile
+    const { configExport, dependencies } = await resolver(resolvedPath)
+    debug?.(`config file loaded in ${getTime()}`)
 
-    const config = await (typeof userConfig === 'function'
-      ? userConfig(configEnv)
-      : userConfig)
+    const config = await (typeof configExport === 'function'
+      ? configExport(configEnv)
+      : configExport)
     if (!isObject(config)) {
       throw new Error(`config must export or return an object.`)
     }
+
     return {
       path: normalizePath(resolvedPath),
       config,
-      dependencies: bundled.dependencies,
+      dependencies,
     }
   } catch (e) {
     createLogger(logLevel, { customLogger }).error(
@@ -1703,6 +1717,43 @@ export async function loadConfigFromFile(
       },
     )
     throw e
+  }
+}
+
+async function nativeImportConfigFile(resolvedPath: string) {
+  const module = await import(
+    pathToFileURL(resolvedPath).href + '?t=' + Date.now()
+  )
+  return {
+    configExport: module.default,
+    dependencies: [],
+  }
+}
+
+async function runnerImportConfigFile(resolvedPath: string) {
+  const { module, dependencies } = await runnerImport<{
+    default: UserConfigExport
+  }>(resolvedPath)
+  return {
+    configExport: module.default,
+    dependencies,
+  }
+}
+
+async function bundleAndLoadConfigFile(resolvedPath: string) {
+  const isESM =
+    typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
+
+  const bundled = await bundleConfigFile(resolvedPath, isESM)
+  const userConfig = await loadConfigFromBundledFile(
+    resolvedPath,
+    bundled.code,
+    isESM,
+  )
+
+  return {
+    configExport: userConfig,
+    dependencies: bundled.dependencies,
   }
 }
 
