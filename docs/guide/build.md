@@ -106,8 +106,11 @@ During dev, simply navigate or link to `/nested/` - it works as expected, just l
 During build, all you need to do is to specify multiple `.html` files as entry points:
 
 ```js twoslash [vite.config.js]
-import { resolve } from 'path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   build: {
@@ -134,8 +137,11 @@ When it is time to bundle your library for distribution, use the [`build.lib` co
 ::: code-group
 
 ```js twoslash [vite.config.js (single entry)]
-import { resolve } from 'path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   build: {
@@ -162,8 +168,11 @@ export default defineConfig({
 ```
 
 ```js twoslash [vite.config.js (multiple entries)]
-import { resolve } from 'path'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   build: {
