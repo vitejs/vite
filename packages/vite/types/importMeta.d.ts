@@ -2,8 +2,12 @@
 // Thus cannot contain any top-level imports
 // <https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation>
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore ViteStrictImportMetaEnv may or may not be declared by users
+type ImportMetaKey = ViteStrictImportMetaEnv extends true ? never : string
+
 interface ImportMetaEnv {
-  [key: string]: any
+  [key: ImportMetaKey]: any
   BASE_URL: string
   MODE: string
   DEV: boolean
