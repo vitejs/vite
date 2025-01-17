@@ -867,6 +867,7 @@ function resolveEnvironmentResolveOptions(
   alias: Alias[],
   preserveSymlinks: boolean,
   logger: Logger,
+  /** undefined when resolving the top-level resolve options */
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
   isSsrTargetWebworkerEnvironment?: boolean,
@@ -875,11 +876,15 @@ function resolveEnvironmentResolveOptions(
     {
       ...configDefaults.resolve,
       mainFields:
-        consumer === 'client' || isSsrTargetWebworkerEnvironment
+        consumer === undefined ||
+        consumer === 'client' ||
+        isSsrTargetWebworkerEnvironment
           ? DEFAULT_CLIENT_MAIN_FIELDS
           : DEFAULT_SERVER_MAIN_FIELDS,
       conditions:
-        consumer === 'client' || isSsrTargetWebworkerEnvironment
+        consumer === undefined ||
+        consumer === 'client' ||
+        isSsrTargetWebworkerEnvironment
           ? DEFAULT_CLIENT_CONDITIONS
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
       enableBuiltinNoExternalCheck: !!isSsrTargetWebworkerEnvironment,

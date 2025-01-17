@@ -62,7 +62,7 @@ describe('transform', () => {
       false,
     )
     expect(actualSmall).toMatchInlineSnapshot(
-      `"export default JSON.parse("[{\\"a\\":1,\\"b\\":2}]")"`,
+      `"export default /* #__PURE__ */ JSON.parse("[{\\"a\\":1,\\"b\\":2}]")"`,
     )
   })
 
@@ -122,7 +122,7 @@ describe('transform', () => {
       false,
     )
     expect(actualDev).toMatchInlineSnapshot(
-      `"export default JSON.parse("{\\"a\\":1,\\n\\"🫠\\": \\"\\",\\n\\"const\\": false}")"`,
+      `"export default /* #__PURE__ */ JSON.parse("{\\"a\\":1,\\n\\"🫠\\": \\"\\",\\n\\"const\\": false}")"`,
     )
 
     const actualBuild = transform(
@@ -131,7 +131,7 @@ describe('transform', () => {
       true,
     )
     expect(actualBuild).toMatchInlineSnapshot(
-      `"export default JSON.parse("{\\"a\\":1,\\"🫠\\":\\"\\",\\"const\\":false}")"`,
+      `"export default /* #__PURE__ */ JSON.parse("{\\"a\\":1,\\"🫠\\":\\"\\",\\"const\\":false}")"`,
     )
   })
 

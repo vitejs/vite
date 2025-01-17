@@ -38,12 +38,9 @@ import {
 } from './snippets'
 
 // lazy load babel since it's not used during dev
-let babel: typeof import('@babel/core') | undefined
+let babel: Promise<typeof import('@babel/core')> | undefined
 async function loadBabel() {
-  if (!babel) {
-    babel = await import('@babel/core')
-  }
-  return babel
+  return (babel ??= import('@babel/core'))
 }
 
 // The requested module 'browserslist' is a CommonJS module

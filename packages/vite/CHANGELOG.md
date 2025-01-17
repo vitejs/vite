@@ -1,3 +1,14 @@
+## <small>6.0.7 (2025-01-02)</small>
+
+* fix: fix `minify` when `builder.sharedPlugins: true` (#19025) ([f7b1964](https://github.com/vitejs/vite/commit/f7b1964d3a93a21f80b61638fa6ae9606d0a6f4f)), closes [#19025](https://github.com/vitejs/vite/issues/19025)
+* fix: skip the plugin if it has been called before with the same id and importer (#19016) ([b178c90](https://github.com/vitejs/vite/commit/b178c90c7d175ea31f8b67dccad3918f820357a4)), closes [#19016](https://github.com/vitejs/vite/issues/19016)
+* fix(html): error while removing `vite-ignore` attribute for inline script (#19062) ([a492253](https://github.com/vitejs/vite/commit/a4922537a8d705da7769d30626a0d846511fc124)), closes [#19062](https://github.com/vitejs/vite/issues/19062)
+* fix(ssr): fix semicolon injection by ssr transform (#19097) ([1c102d5](https://github.com/vitejs/vite/commit/1c102d517de52531faf5765632703977a17de65a)), closes [#19097](https://github.com/vitejs/vite/issues/19097)
+* perf: skip globbing for static path in warmup (#19107) ([677508b](https://github.com/vitejs/vite/commit/677508bf8268a7b8661e5557a3d0a2a76cab8bd1)), closes [#19107](https://github.com/vitejs/vite/issues/19107)
+* feat(css): show lightningcss warnings (#19076) ([b07c036](https://github.com/vitejs/vite/commit/b07c036faf6849fe5ffd03125f25dc00f460f8ba)), closes [#19076](https://github.com/vitejs/vite/issues/19076)
+
+
+
 ## <small>6.0.6 (2024-12-26)</small>
 
 * fix: replace runner-side path normalization with `fetchModule`-side resolve (#18361) ([9f10261](https://github.com/vitejs/vite/commit/9f10261e7609098b832fd0fb23a64840b3a0d1a0)), closes [#18361](https://github.com/vitejs/vite/issues/18361)
