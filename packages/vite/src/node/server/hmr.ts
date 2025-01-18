@@ -10,7 +10,7 @@ import type {
   InvokeSendData,
 } from '../../shared/invokeMethods'
 import { CLIENT_DIR } from '../constants'
-import { createDebugger, normalizePath } from '../utils'
+import { createDebugger, normalizePath, hasCorrectCase } from '../utils'
 import type { InferCustomEventPayload, ViteDevServer } from '..'
 import { getHookHandler } from '../plugins'
 import { isCSSRequest } from '../plugins/css'
@@ -379,18 +379,19 @@ export async function handleHMRUpdate(
 ): Promise<void> {
   const { config } = server
   const mixedModuleGraph = ignoreDeprecationWarnings(() => server.moduleGraph)
-
   const environments = Object.values(server.environments)
   const shortFile = getShortName(file, config.root)
 
   const isConfig = file === config.configFile
   const isConfigDependency = config.configFileDependencies.some(
-    (name) => file === name,
+    (name) => name.toLowerCase() === file.toLowerCase(),
   )
 
   const isEnv =
     config.inlineConfig.envFile !== false &&
-    getEnvFilesForMode(config.mode, config.envDir).includes(file)
+    getEnvFilesForMode(config.mode, config.envDir).some(
+      (envFile) => envFile.toLowerCase() === file.toLowerCase()
+    )
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
     debugHmr?.(`[config change] ${colors.dim(shortFile)}`)
@@ -701,7 +702,7 @@ export function updateModules(
 
   environment.logger.info(
     colors.green(`hmr update `) +
-      colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
+    colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
     { clear: !afterInvalidation, timestamp: true },
   )
   hot.send({
@@ -890,7 +891,7 @@ function isNodeWithinCircularImports(
         ]
         debugHmr(
           colors.yellow(`circular imports detected: `) +
-            importChain.map((m) => colors.dim(m.url)).join(' -> '),
+          importChain.map((m) => colors.dim(m.url)).join(' -> '),
         )
       }
       return true
@@ -1071,7 +1072,7 @@ export function normalizeHmrUrl(url: string): string {
 function error(pos: number) {
   const err = new Error(
     `import.meta.hot.accept() can only accept string literals or an ` +
-      `Array of string literals.`,
+    `Array of string literals.`,
   ) as RollupError
   err.pos = pos
   throw err
