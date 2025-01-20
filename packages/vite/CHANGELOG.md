@@ -1,3 +1,12 @@
+## <small>5.4.12 (2025-01-20)</small>
+
+* fix!: check host header to prevent DNS rebinding attacks and introduce `server.allowedHosts` ([9da4abc](https://github.com/vitejs/vite/commit/9da4abc8dde7f032ca1f23f425c2060b9b9ebd34))
+* fix!: default `server.cors: false` to disallow fetching from untrusted origins ([dfea38f](https://github.com/vitejs/vite/commit/dfea38f1ff9f6fc0f0ca57927c527b0b9ffd2210))
+* fix: verify token for HMR WebSocket connection ([b71a5c8](https://github.com/vitejs/vite/commit/b71a5c89a1b4b913813ae665e6e04dd9d18c189c))
+* chore: add deps update changelog ([ecd2375](https://github.com/vitejs/vite/commit/ecd2375460edb4ae258fed4abe6c6f6ed7323b23))
+
+
+
 ## <small>5.4.11 (2024-11-11)</small>
 
 * fix(deps): update dependencies of postcss-modules ([ceb15db](https://github.com/vitejs/vite/commit/ceb15db613d107e29f7cc1d441364f7b5c831ed3)), closes [#18617](https://github.com/vitejs/vite/issues/18617)
