@@ -29,18 +29,30 @@ export function loadEnv(
   const env: Record<string, string> = {}
   const envFiles = getEnvFilesForMode(mode, envDir)
 
-  const parsed = Object.fromEntries(
-    envFiles.flatMap((filePath) => {
-      if (!tryStatSync(filePath)?.isFile()) return []
+  const parsedList = envFiles.map((filePath) => {
+    if (!tryStatSync(filePath)?.isFile()) return {}
 
-      return Object.entries(parse(fs.readFileSync(filePath)))
-    }),
+    return parse(fs.readFileSync(filePath))
+  })
+
+  const findValue = (name: string) =>
+    parsedList.findLast((obj) => obj[name])?.[name]
+  // test NODE_ENV override before expand as otherwise process.env.NODE_ENV would override this
+  if (findValue('NODE_ENV') && process.env.VITE_USER_NODE_ENV === undefined) {
+    process.env.VITE_USER_NODE_ENV = findValue('NODE_ENV')!
+  }
+
+  for (const parsed of parsedList) {
+    // let environment variables use each other. make a copy of `process.env` so that `dotenv-expand`
+    // doesn't re-assign the expanded values to the global `process.env`.
+    const processEnv = { ...process.env } as DotenvPopulateInput
+    expand({ parsed, processEnv })
+  }
+
+  const parsed = Object.fromEntries(
+    parsedList.flatMap((parsed) => Object.entries(parsed)),
   )
 
-  // test NODE_ENV override before expand as otherwise process.env.NODE_ENV would override this
-  if (parsed.NODE_ENV && process.env.VITE_USER_NODE_ENV === undefined) {
-    process.env.VITE_USER_NODE_ENV = parsed.NODE_ENV
-  }
   // support BROWSER and BROWSER_ARGS env variables
   if (parsed.BROWSER && process.env.BROWSER === undefined) {
     process.env.BROWSER = parsed.BROWSER
@@ -48,11 +60,6 @@ export function loadEnv(
   if (parsed.BROWSER_ARGS && process.env.BROWSER_ARGS === undefined) {
     process.env.BROWSER_ARGS = parsed.BROWSER_ARGS
   }
-
-  // let environment variables use each other. make a copy of `process.env` so that `dotenv-expand`
-  // doesn't re-assign the expanded values to the global `process.env`.
-  const processEnv = { ...process.env } as DotenvPopulateInput
-  expand({ parsed, processEnv })
 
   // only keys that start with prefix are exposed to client
   for (const [key, value] of Object.entries(parsed)) {
