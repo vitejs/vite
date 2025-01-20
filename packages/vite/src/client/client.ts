@@ -14,6 +14,7 @@ declare const __HMR_DIRECT_TARGET__: string
 declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
+declare const __WS_TOKEN__: string
 
 console.debug('[vite] connecting...')
 
@@ -29,6 +30,7 @@ const socketHost = `${__HMR_HOSTNAME__ || importMetaUrl.hostname}:${
 }${__HMR_BASE__}`
 const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
+const wsToken = __WS_TOKEN__
 const messageBuffer: string[] = []
 
 let socket: WebSocket
@@ -74,7 +76,10 @@ function setupWebSocket(
   hostAndPath: string,
   onCloseWithoutOpen?: () => void,
 ) {
-  const socket = new WebSocket(`${protocol}://${hostAndPath}`, 'vite-hmr')
+  const socket = new WebSocket(
+    `${protocol}://${hostAndPath}?token=${wsToken}`,
+    'vite-hmr',
+  )
   let isOpened = false
 
   socket.addEventListener(
