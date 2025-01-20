@@ -767,7 +767,7 @@ export async function resolveConfig(
     // at least 64bits is recommended
     // https://owasp.org/www-community/vulnerabilities/Insufficient_Session-ID_Length
     webSocketToken: Buffer.from(
-      crypto.getRandomValues(new Uint8Array(9)),
+      crypto.randomFillSync(new Uint8Array(9)),
     ).toString('base64url'),
     additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
     getSortedPlugins: undefined!,
