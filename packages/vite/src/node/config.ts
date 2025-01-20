@@ -544,6 +544,7 @@ export interface ResolvedWorkerOptions {
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
   envFile?: false
+  forceOptimizeDeps?: boolean
 }
 
 export type ResolvedConfig = Readonly<
@@ -770,6 +771,7 @@ function resolveEnvironmentOptions(
   options: EnvironmentOptions,
   alias: Alias[],
   preserveSymlinks: boolean,
+  forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
   // Backward compatibility
@@ -799,6 +801,7 @@ function resolveEnvironmentOptions(
     optimizeDeps: resolveDepOptimizationOptions(
       options.optimizeDeps,
       resolve.preserveSymlinks,
+      forceOptimizeDeps,
       consumer,
     ),
     dev: resolveDevEnvironmentOptions(
@@ -971,6 +974,7 @@ function resolveResolveOptions(
 function resolveDepOptimizationOptions(
   optimizeDeps: DepOptimizationOptions | undefined,
   preserveSymlinks: boolean,
+  forceOptimizeDeps: boolean | undefined,
   consumer: 'client' | 'server' | undefined,
 ): DepOptimizationOptions {
   return mergeWithDefaults(
@@ -981,6 +985,7 @@ function resolveDepOptimizationOptions(
       esbuildOptions: {
         preserveSymlinks,
       },
+      force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
     },
     optimizeDeps ?? {},
   )
@@ -1192,6 +1197,7 @@ export async function resolveConfig(
       config.environments[environmentName],
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
+      inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
       config.experimental?.skipSsrTransform,
