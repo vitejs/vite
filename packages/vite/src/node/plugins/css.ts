@@ -2480,8 +2480,10 @@ const makeModernCompilerScssWorker = (
     async run(sassPath, data, options) {
       // need pathToFileURL for windows since import("D:...") fails
       // https://github.com/nodejs/node/issues/31710
-      const sass: typeof Sass = (await import(pathToFileURL(sassPath).href))
-        .default
+      const sass_ = await import(pathToFileURL(sassPath).href)
+      // fallback for `default` to workaround tsx's __esModule interop
+      // https://github.com/privatenumber/tsx/issues/627
+      const sass: typeof Sass = sass_.default ?? sass_
       compilerPromise ??= sass.initAsyncCompiler()
       const compiler = await compilerPromise
 
