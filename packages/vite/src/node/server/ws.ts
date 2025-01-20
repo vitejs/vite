@@ -258,10 +258,12 @@ export function createWebSocketServer(
       }
       handleUpgrade(req, socket as Socket, head, protocol === 'vite-ping')
     })
-    wsHttpServer.on('error', (e: Error & { code: string }) => {
+    wsHttpServer.on('error', (e: Error & { code: string; port: number }) => {
       if (e.code === 'EADDRINUSE') {
         config.logger.error(
-          colors.red(`WebSocket server error: Port is already in use`),
+          colors.red(
+            `WebSocket server error: Port ${e.port} is already in use`,
+          ),
           { error: e },
         )
       } else {
@@ -301,10 +303,10 @@ export function createWebSocketServer(
     }
   })
 
-  wss.on('error', (e: Error & { code: string }) => {
+  wss.on('error', (e: Error & { code: string; port: number }) => {
     if (e.code === 'EADDRINUSE') {
       config.logger.error(
-        colors.red(`WebSocket server error: Port is already in use`),
+        colors.red(`WebSocket server error: Port ${e.port} is already in use`),
         { error: e },
       )
     } else {
