@@ -65,6 +65,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const hmrBaseReplacement = escapeReplacement(hmrBase)
       const hmrTimeoutReplacement = escapeReplacement(timeout)
       const hmrEnableOverlayReplacement = escapeReplacement(overlay)
+      const wsTokenReplacement = escapeReplacement(config.webSocketToken)
 
       injectConfigValues = (code: string) => {
         return code
@@ -79,6 +80,7 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_BASE__`, hmrBaseReplacement)
           .replace(`__HMR_TIMEOUT__`, hmrTimeoutReplacement)
           .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
+          .replace(`__WS_TOKEN__`, wsTokenReplacement)
       }
     },
     transform(code, id, options) {
