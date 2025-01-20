@@ -1,3 +1,9 @@
+## <small>4.5.8 (2025-01-20)</small>
+
+* fix: try parse `server.origin` URL (#19241) ([3680bad](https://github.com/vitejs/vite/commit/3680bad)), closes [#19241](https://github.com/vitejs/vite/issues/19241)
+
+
+
 ## <small>4.5.7 (2025-01-20)</small>
 
 * fix: `crypto.getRandomValues` is not available in old Node versions (#19237) ([f4d3c46](https://github.com/vitejs/vite/commit/f4d3c46)), closes [#19237](https://github.com/vitejs/vite/issues/19237)
