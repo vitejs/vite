@@ -1,3 +1,9 @@
+## <small>6.0.10 (2025-01-20)</small>
+
+* fix: try parse `server.origin` URL (#19241) ([2495022](https://github.com/vitejs/vite/commit/2495022420fda05ee389c2dcf26921b21e2aed3b)), closes [#19241](https://github.com/vitejs/vite/issues/19241)
+
+
+
 ## <small>6.0.9 (2025-01-20)</small>
 
 * fix!: check host header to prevent DNS rebinding attacks and introduce `server.allowedHosts` ([bd896fb](https://github.com/vitejs/vite/commit/bd896fb5f312fc0ff1730166d1d142fc0d34ba6d))
