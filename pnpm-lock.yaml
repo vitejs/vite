@@ -109,7 +109,7 @@ importers:
         specifier: 3.4.2
         version: 3.4.2
       rollup:
-        specifier: ^4.23.0
+        specifier: ^4.28.1
         version: 4.30.0
       rollup-plugin-esbuild:
         specifier: ^6.1.1
@@ -230,7 +230,7 @@ importers:
         specifier: ^8.4.49
         version: 8.4.49
       rollup:
-        specifier: ^4.23.0
+        specifier: ^4.28.1
         version: 4.30.0
     optionalDependencies:
       fsevents:

@@ -30,6 +30,7 @@ export default defineConfig({
             return '#!/usr/bin/env node'
           }
         },
+        sourcemapDebugIds: true,
       },
     },
   },
