@@ -1322,7 +1322,7 @@ export async function asyncFlatten<T extends unknown[]>(
 // strip UTF-8 BOM
 export function stripBomTag(content: string): string {
   if (content.charCodeAt(0) === 0xfeff) {
-    return content.slice(1)
+    return stripBomTag(content.slice(1))
   }
 
   return content
