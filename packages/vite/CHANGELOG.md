@@ -1,3 +1,19 @@
+## <small>6.0.8 (2025-01-20)</small>
+
+* fix: avoid SSR HMR for HTML files (#19193) ([3bd55bc](https://github.com/vitejs/vite/commit/3bd55bcb7e831d2c4f66c90d7bbb3e1fbf7a02b6)), closes [#19193](https://github.com/vitejs/vite/issues/19193)
+* fix: build time display 7m 60s (#19108) ([cf0d2c8](https://github.com/vitejs/vite/commit/cf0d2c8e232a1af716c71cdd2218d180f7ecc02b)), closes [#19108](https://github.com/vitejs/vite/issues/19108)
+* fix: don't resolve URL starting with double slash (#19059) ([35942cd](https://github.com/vitejs/vite/commit/35942cde11fd8a68fa89bf25f7aa1ddb87d775b2)), closes [#19059](https://github.com/vitejs/vite/issues/19059)
+* fix: ensure `server.close()` only called once (#19204) ([db81c2d](https://github.com/vitejs/vite/commit/db81c2dada961f40c0882b5182adf2f34bb5c178)), closes [#19204](https://github.com/vitejs/vite/issues/19204)
+* fix: resolve.conditions in ResolvedConfig was `defaultServerConditions` (#19174) ([ad75c56](https://github.com/vitejs/vite/commit/ad75c56dce5618a3a416e18f9a5c3880d437a107)), closes [#19174](https://github.com/vitejs/vite/issues/19174)
+* fix: tree shake stringified JSON imports (#19189) ([f2aed62](https://github.com/vitejs/vite/commit/f2aed62d0bf1b66e870ee6b4aab80cd1702793ab)), closes [#19189](https://github.com/vitejs/vite/issues/19189)
+* fix: use shared sigterm callback (#19203) ([47039f4](https://github.com/vitejs/vite/commit/47039f4643179be31a8d7c7fbff83c5c13deb787)), closes [#19203](https://github.com/vitejs/vite/issues/19203)
+* fix(deps): update all non-major dependencies (#19098) ([8639538](https://github.com/vitejs/vite/commit/8639538e6498d1109da583ad942c1472098b5919)), closes [#19098](https://github.com/vitejs/vite/issues/19098)
+* fix(optimizer): use correct default install state path for yarn PnP (#19119) ([e690d8b](https://github.com/vitejs/vite/commit/e690d8bb1e5741e81df5b7a6a5c8c3c1c971fa41)), closes [#19119](https://github.com/vitejs/vite/issues/19119)
+* fix(types): improve `ESBuildOptions.include / exclude` type to allow `readonly (string | RegExp)[]`  ([ea53e70](https://github.com/vitejs/vite/commit/ea53e7095297ea4192490fd58556414cc59a8975)), closes [#19146](https://github.com/vitejs/vite/issues/19146)
+* chore(deps): update dependency pathe to v2 (#19139) ([71506f0](https://github.com/vitejs/vite/commit/71506f0a8deda5254cb49c743cd439dfe42859ce)), closes [#19139](https://github.com/vitejs/vite/issues/19139)
+
+
+
 ## <small>6.0.7 (2025-01-02)</small>
 
 * fix: fix `minify` when `builder.sharedPlugins: true` (#19025) ([f7b1964](https://github.com/vitejs/vite/commit/f7b1964d3a93a21f80b61638fa6ae9606d0a6f4f)), closes [#19025](https://github.com/vitejs/vite/issues/19025)
