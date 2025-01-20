@@ -1,3 +1,9 @@
+## <small>4.5.7 (2025-01-20)</small>
+
+* fix: `crypto.getRandomValues` is not available in old Node versions (#19237) ([f4d3c46](https://github.com/vitejs/vite/commit/f4d3c46)), closes [#19237](https://github.com/vitejs/vite/issues/19237)
+
+
+
 ## <small>4.5.6 (2025-01-20)</small>
 
 * fix!: check host header to prevent DNS rebinding attacks and introduce `server.allowedHosts` ([ef1049d](https://github.com/vitejs/vite/commit/ef1049d))
