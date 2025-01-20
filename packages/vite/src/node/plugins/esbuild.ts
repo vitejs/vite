@@ -336,6 +336,10 @@ export const buildEsbuildPlugin = (): Plugin => {
         return null
       }
 
+      if (chunk.name === 'worker' && opts.format === 'iife') {
+        options.format = 'iife'
+      }
+
       const res = await transformWithEsbuild(
         code,
         chunk.fileName,

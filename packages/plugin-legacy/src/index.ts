@@ -267,6 +267,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ),
         )
       }
+      if (config.isWorker) {
+        config.logger.warn(
+          colors.yellow(
+            `Workers are not supported when generating legacy chunks. Ensure that workers are not used in your application when targeting legacy browsers.`,
+          ),
+        )
+      }
     },
   }
 
