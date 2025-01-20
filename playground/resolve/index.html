@@ -113,6 +113,9 @@
 </h2>
 <p class="cjs-extension">fail</p>
 
+<h2>A js module can import TS modules using its corresponding js file name</h2>
+<p class="js-ts-extension">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
@@ -303,6 +306,9 @@
 
   import { msgMjs as tsMjsExtensionWithQueryMsg } from './ts-extension?query=1'
   text('.mjs-extension-with-query', tsMjsExtensionWithQueryMsg)
+
+  import { msg as jsTsExtensionMsg } from './ts-extension/index-js.js'
+  text('.js-ts-extension', jsTsExtensionMsg)
 
   // filename with dot
   import { bar } from './util/bar.util'
