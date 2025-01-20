@@ -39,6 +39,6 @@
     "minimist": "^1.2.8",
     "picocolors": "^1.1.1",
     "prompts": "^2.4.2",
-    "unbuild": "^3.2.0"
+    "unbuild": "^3.3.1"
   }
 }
