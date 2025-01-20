@@ -1,3 +1,11 @@
+## <small>4.5.6 (2025-01-20)</small>
+
+* fix!: check host header to prevent DNS rebinding attacks and introduce `server.allowedHosts` ([ef1049d](https://github.com/vitejs/vite/commit/ef1049d))
+* fix!: default `server.cors: false` to disallow fetching from untrusted origins ([07b36d5](https://github.com/vitejs/vite/commit/07b36d5))
+* fix: verify token for HMR WebSocket connection ([c065a77](https://github.com/vitejs/vite/commit/c065a77))
+
+
+
 ## <small>4.5.5 (2024-09-16)</small>
 
 
