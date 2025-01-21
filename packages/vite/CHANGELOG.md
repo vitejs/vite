@@ -1,3 +1,10 @@
+## <small>4.5.9 (2025-01-21)</small>
+
+* fix: `preview.allowedHosts` with specific values was not respected (#19246) ([0bc52e0](https://github.com/vitejs/vite/commit/0bc52e0)), closes [#19246](https://github.com/vitejs/vite/issues/19246)
+* fix: allow CORS from loopback addresses by default (#19249) ([8f63cd6](https://github.com/vitejs/vite/commit/8f63cd6)), closes [#19249](https://github.com/vitejs/vite/issues/19249)
+
+
+
 ## <small>4.5.8 (2025-01-20)</small>
 
 * fix: try parse `server.origin` URL (#19241) ([3680bad](https://github.com/vitejs/vite/commit/3680bad)), closes [#19241](https://github.com/vitejs/vite/issues/19241)
