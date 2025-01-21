@@ -167,7 +167,7 @@ export function createWebSocketServer(
     if (protocol === 'vite-ping') return true
 
     const hostHeader = req.headers.host
-    if (!hostHeader || !isHostAllowed(config, hostHeader)) {
+    if (!hostHeader || !isHostAllowed(config, false, hostHeader)) {
       return false
     }
 
