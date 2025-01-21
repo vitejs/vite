@@ -26,7 +26,7 @@ export interface CommonServerOptions {
   host?: string | boolean
   /**
    * The hostnames that Vite is allowed to respond to.
-   * `localhost` and subdomains under `.localhost` and all IP addresses are allowed by default.
+   * `localhost`/`test` and domains under `.localhost`/`.test` and all IP addresses are allowed by default.
    * When using HTTPS, this check is skipped.
    *
    * If a string starts with `.`, it will allow that hostname without the `.` and all subdomains under the hostname.

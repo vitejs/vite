@@ -5,6 +5,7 @@ test('defaultAllowedOrigins', () => {
   const allowed = [
     'http://localhost',
     'http://foo.localhost',
+    'http://foo.test',
     'http://localhost:3000',
     'https://localhost:3000',
     'http://127.0.0.1',
