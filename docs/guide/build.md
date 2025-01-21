@@ -11,7 +11,7 @@ By default, the production bundle assumes support for modern JavaScript, includi
 - Safari >=14
 - Edge >=88
 
-You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`. For custom `build.target`, the support range will be lower than the default list but higher than browsers supporting `es2015` as Vite still requires [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import) and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta). The browser support range when setting target `es2015` is:
+You can specify custom targets via the [`build.target` config option](/config/build-options.md#build-target), where the lowest target is `es2015`. If a lower target is set, Vite will still require these minimum browser support ranges as it relies on [native ESM dynamic import](https://caniuse.com/es6-module-dynamic-import) and [`import.meta`](https://caniuse.com/mdn-javascript_operators_import_meta):
 
 - Chrome >=64
 - Firefox >=67
