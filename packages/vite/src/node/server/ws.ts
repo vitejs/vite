@@ -141,7 +141,7 @@ export function createWebSocketServer(
 
   const shouldHandle = (req: IncomingMessage) => {
     const hostHeader = req.headers.host
-    if (!hostHeader || !isHostAllowed(config, hostHeader)) {
+    if (!hostHeader || !isHostAllowed(config, false, hostHeader)) {
       return false
     }
 
