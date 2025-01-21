@@ -16,6 +16,8 @@ test('defaultAllowedOrigins', () => {
     'http://localhost.example.com',
     'http://foo.example.com:localhost',
     'http://',
+    'http://192.0.2',
+    'http://[2001:db8::1]',
     'http://vite',
     'http://vite:3000',
   ]
