@@ -5,7 +5,7 @@ import compression from '@polka/compression'
 import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
-import { DEFAULT_PREVIEW_PORT } from './constants'
+import { DEFAULT_PREVIEW_PORT, defaultAllowedOrigins } from './constants'
 import type {
   HttpServer,
   ResolvedServerOptions,
@@ -186,8 +186,14 @@ export async function preview(
 
   // cors
   const { cors } = config.preview
-  if (cors !== undefined && cors !== false) {
-    app.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+  if (cors !== false) {
+    app.use(
+      corsMiddleware(
+        typeof cors === 'boolean'
+          ? {}
+          : (cors ?? { origin: defaultAllowedOrigins }),
+      ),
+    )
   }
 
   // host check (to prevent DNS rebinding attacks)

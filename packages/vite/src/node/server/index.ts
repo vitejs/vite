@@ -46,7 +46,11 @@ import { ERR_OUTDATED_OPTIMIZED_DEP } from '../plugins/optimizedDeps'
 import { getDepsOptimizer, initDepsOptimizer } from '../optimizer'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
-import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
+import {
+  CLIENT_DIR,
+  DEFAULT_DEV_PORT,
+  defaultAllowedOrigins,
+} from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import {
@@ -850,8 +854,14 @@ export async function _createServer(
 
   // cors
   const { cors } = serverConfig
-  if (cors !== undefined && cors !== false) {
-    middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+  if (cors !== false) {
+    middlewares.use(
+      corsMiddleware(
+        typeof cors === 'boolean'
+          ? {}
+          : (cors ?? { origin: defaultAllowedOrigins }),
+      ),
+    )
   }
 
   // host check (to prevent DNS rebinding attacks)
