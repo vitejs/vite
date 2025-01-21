@@ -91,6 +91,11 @@ export function isHostAllowedWithoutCache(
   if (hostname === 'localhost' || hostname.endsWith('.localhost')) {
     return true
   }
+  // allow test and .test by default as they will never be registered
+  // https://datatracker.ietf.org/doc/html/rfc6761#section-6.2
+  if (hostname === 'test' || hostname.endsWith('.test')) {
+    return true
+  }
 
   for (const additionalAllowedHost of additionalAllowedHosts) {
     if (additionalAllowedHost === hostname) {

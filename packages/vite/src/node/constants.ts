@@ -183,6 +183,14 @@ export const DEFAULT_PREVIEW_PORT = 4173
 
 export const DEFAULT_ASSETS_INLINE_LIMIT = 4096
 
+// the regex to allow loopback address origins:
+// - localhost domains (which will always resolve to the loopback address by RFC 6761 section 6.3)
+// - test domains (which will never be registered by RFC 6761 section 6.2)
+// - 127.0.0.1
+// - ::1
+export const defaultAllowedOrigins =
+  /^https?:\/\/(?:(?:[^:]+\.)?(?:localhost|test)|127\.0\.0\.1|\[::1\])(?::\d+)?$/
+
 export const METADATA_FILENAME = '_metadata.json'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =

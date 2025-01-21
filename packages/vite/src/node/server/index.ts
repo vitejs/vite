@@ -44,7 +44,11 @@ import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
-import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
+import {
+  CLIENT_DIR,
+  DEFAULT_DEV_PORT,
+  defaultAllowedOrigins,
+} from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { warnFutureDeprecation } from '../deprecations'
@@ -1055,7 +1059,7 @@ export const serverConfigDefaults = Object.freeze({
   https: undefined,
   open: false,
   proxy: undefined,
-  cors: false,
+  cors: { origin: defaultAllowedOrigins },
   headers: {},
   // hmr
   // ws

@@ -48,7 +48,7 @@ See [the WSL document](https://learn.microsoft.com/en-us/windows/wsl/networking#
 - **Default:** `[]`
 
 The hostnames that Vite is allowed to respond to.
-`localhost` and domains under `.localhost` and all IP addresses are allowed by default.
+`localhost`/`test` and domains under `.localhost`/`.test` and all IP addresses are allowed by default.
 When using HTTPS, this check is skipped.
 
 If a string starts with `.`, it will allow that hostname without the `.` and all subdomains under the hostname. For example, `.example.com` will allow `example.com`, `foo.example.com`, and `foo.bar.example.com`.
@@ -161,7 +161,7 @@ export default defineConfig({
 ## server.cors
 
 - **Type:** `boolean | CorsOptions`
-- **Default:** `false`
+- **Default:** `{ origin: /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/ }` (allows localhost, `127.0.0.1` and `::1`)
 
 Configure CORS for the dev server. Pass an [options object](https://github.com/expressjs/cors#configuration-options) to fine tune the behavior or `true` to allow any origin.
 
