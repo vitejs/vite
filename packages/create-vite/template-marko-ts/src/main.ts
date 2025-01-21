@@ -1,3 +1,3 @@
-import app from "./app.marko";
+import app from './app.marko'
 
-app.mount({}, document.getElementById("app")!);
+app.mount({}, document.getElementById('app')!)
