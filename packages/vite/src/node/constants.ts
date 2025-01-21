@@ -183,6 +183,9 @@ export const DEFAULT_PREVIEW_PORT = 4173
 
 export const DEFAULT_ASSETS_INLINE_LIMIT = 4096
 
+export const defaultAllowedOrigins =
+  /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/
+
 export const METADATA_FILENAME = '_metadata.json'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
