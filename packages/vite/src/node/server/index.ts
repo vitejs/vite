@@ -42,7 +42,11 @@ import {
 } from '../optimizer'
 import { bindShortcuts } from '../shortcuts'
 import type { BindShortcutsOptions } from '../shortcuts'
-import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
+import {
+  CLIENT_DIR,
+  DEFAULT_DEV_PORT,
+  defaultAllowedOrigins,
+} from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { resolveChokidarOptions } from '../watch'
@@ -614,8 +618,14 @@ export async function _createServer(
 
   // cors
   const { cors } = serverConfig
-  if (cors !== undefined && cors !== false) {
-    middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+  if (cors !== false) {
+    middlewares.use(
+      corsMiddleware(
+        typeof cors === 'boolean'
+          ? {}
+          : cors ?? { origin: defaultAllowedOrigins },
+      ),
+    )
   }
 
   // host check (to prevent DNS rebinding attacks)
