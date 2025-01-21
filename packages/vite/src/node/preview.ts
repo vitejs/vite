@@ -208,7 +208,7 @@ export async function preview(
   const { allowedHosts } = config.preview
   // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
   if (allowedHosts !== true && !config.preview.https) {
-    app.use(hostCheckMiddleware(config))
+    app.use(hostCheckMiddleware(config, true))
   }
 
   // proxy

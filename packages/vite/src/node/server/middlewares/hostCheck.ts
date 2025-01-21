@@ -3,7 +3,8 @@ import type { Connect } from 'dep-types/connect'
 import type { ResolvedConfig } from '../../config'
 import type { ResolvedPreviewOptions, ResolvedServerOptions } from '../..'
 
-const allowedHostsCache = new WeakMap<ResolvedConfig, Set<string>>()
+const allowedHostsServerCache = new WeakMap<ResolvedConfig, Set<string>>()
+const allowedHostsPreviewCache = new WeakMap<ResolvedConfig, Set<string>>()
 
 const isFileOrExtensionProtocolRE = /^(?:file|.+-extension):/i
 
@@ -118,48 +119,59 @@ export function isHostAllowedWithoutCache(
 
 /**
  * @param config resolved config
+ * @param isPreview whether it's for the preview server or not
  * @param host the value of host header. See [RFC 9110 7.2](https://datatracker.ietf.org/doc/html/rfc9110#name-host-and-authority).
  */
-export function isHostAllowed(config: ResolvedConfig, host: string): boolean {
-  if (config.server.allowedHosts === true) {
+export function isHostAllowed(
+  config: ResolvedConfig,
+  isPreview: boolean,
+  host: string,
+): boolean {
+  const allowedHosts = isPreview
+    ? config.preview.allowedHosts
+    : config.server.allowedHosts
+  if (allowedHosts === true) {
     return true
   }
 
-  if (!allowedHostsCache.has(config)) {
-    allowedHostsCache.set(config, new Set())
+  const cache = isPreview ? allowedHostsPreviewCache : allowedHostsServerCache
+  if (!cache.has(config)) {
+    cache.set(config, new Set())
   }
 
-  const allowedHosts = allowedHostsCache.get(config)!
-  if (allowedHosts.has(host)) {
+  const cachedAllowedHosts = cache.get(config)!
+  if (cachedAllowedHosts.has(host)) {
     return true
   }
 
   const result = isHostAllowedWithoutCache(
-    config.server.allowedHosts,
+    allowedHosts,
     config.additionalAllowedHosts,
     host,
   )
   if (result) {
-    allowedHosts.add(host)
+    cachedAllowedHosts.add(host)
   }
   return result
 }
 
 export function hostCheckMiddleware(
   config: ResolvedConfig,
+  isPreview: boolean,
 ): Connect.NextHandleFunction {
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteHostCheckMiddleware(req, res, next) {
     const hostHeader = req.headers.host
-    if (!hostHeader || !isHostAllowed(config, hostHeader)) {
+    if (!hostHeader || !isHostAllowed(config, isPreview, hostHeader)) {
       const hostname = hostHeader?.replace(/:\d+$/, '')
       const hostnameWithQuotes = JSON.stringify(hostname)
+      const optionName = `${isPreview ? 'preview' : 'server'}.allowedHosts`
       res.writeHead(403, {
         'Content-Type': 'text/plain',
       })
       res.end(
         `Blocked request. This host (${hostnameWithQuotes}) is not allowed.\n` +
-          `To allow this host, add ${hostnameWithQuotes} to \`server.allowedHosts\` in vite.config.js.`,
+          `To allow this host, add ${hostnameWithQuotes} to \`${optionName}\` in vite.config.js.`,
       )
       return
     }
