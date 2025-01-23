@@ -95,6 +95,8 @@ function patchTypes(): Plugin {
     renderChunk(code, chunk) {
       if (
         chunk.fileName.startsWith('module-runner') ||
+        // index and moduleRunner have a common chunk "moduleRunnerTransport"
+        chunk.fileName.startsWith('moduleRunnerTransport') ||
         chunk.fileName.startsWith('types.d-')
       ) {
         validateRunnerChunk.call(this, chunk)
@@ -117,6 +119,8 @@ function validateRunnerChunk(this: PluginContext, chunk: RenderedChunk) {
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
+      // index and moduleRunner have a common chunk "moduleRunnerTransport"
+      !id.startsWith('moduleRunnerTransport.d') &&
       !id.startsWith('types.d')
     ) {
       this.warn(
@@ -139,6 +143,8 @@ function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
       !id.startsWith('node:') &&
       !id.startsWith('types.d') &&
       !id.startsWith('vite/') &&
+      // index and moduleRunner have a common chunk "moduleRunnerTransport"
+      !id.startsWith('moduleRunnerTransport.d') &&
       !deps.includes(id) &&
       !deps.some((name) => id.startsWith(name + '/'))
     ) {
