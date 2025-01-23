@@ -86,15 +86,15 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.24.2",
-    "postcss": "^8.4.49",
-    "rollup": "^4.23.0"
+    "postcss": "^8.5.1",
+    "rollup": "^4.30.1"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.3.0",
-    "@babel/parser": "^7.26.3",
+    "@babel/parser": "^7.26.5",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.1",
@@ -122,14 +122,14 @@
     "etag": "^1.8.1",
     "http-proxy": "^1.18.1",
     "launch-editor-middleware": "^2.9.1",
-    "lightningcss": "^1.28.2",
+    "lightningcss": "^1.29.1",
     "magic-string": "^0.30.17",
-    "mlly": "^1.7.3",
+    "mlly": "^1.7.4",
     "mrmime": "^2.0.0",
     "nanoid": "^5.0.9",
     "open": "^10.1.0",
     "parse5": "^7.2.1",
-    "pathe": "^2.0.0",
+    "pathe": "^2.0.1",
     "periscopic": "^4.0.2",
     "picocolors": "^1.1.1",
     "picomatch": "^4.0.2",
@@ -140,8 +140,8 @@
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-esbuild": "^6.1.1",
     "rollup-plugin-license": "^3.5.3",
-    "sass": "^1.83.1",
-    "sass-embedded": "^1.83.1",
+    "sass": "^1.83.4",
+    "sass-embedded": "^1.83.4",
     "sirv": "^3.0.0",
     "source-map-support": "^0.5.21",
     "strip-literal": "^3.0.0",
