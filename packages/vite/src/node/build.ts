@@ -5,7 +5,8 @@ import type {
   ExternalOption,
   InputOption,
   InternalModuleFormat,
-  LoggingFunction,
+  LogLevel,
+  LogOrStringHandler,
   ModuleFormat,
   OutputOptions,
   RollupBuild,
@@ -14,6 +15,7 @@ import type {
   RollupOptions,
   RollupOutput,
   RollupWatcher,
+  WarningHandlerWithDefault,
   WatcherOptions,
 } from 'rollup'
 import commonjsPlugin from '@rollup/plugin-commonjs'
@@ -42,6 +44,7 @@ import {
   arraify,
   asyncFlatten,
   copyDir,
+  createDebugger,
   displayTime,
   emptyDir,
   getPkgName,
@@ -596,8 +599,8 @@ async function buildEnvironment(
     input,
     plugins,
     external: options.rollupOptions.external,
-    onwarn(warning, warn) {
-      onRollupWarning(warning, warn, environment)
+    onLog(level, log) {
+      onRollupLog(level, log, environment)
     },
   }
 
@@ -1006,69 +1009,101 @@ function clearLine() {
   }
 }
 
-export function onRollupWarning(
-  warning: RollupLog,
-  warn: LoggingFunction,
+export function onRollupLog(
+  level: LogLevel,
+  log: RollupLog,
   environment: BuildEnvironment,
 ): void {
-  const viteWarn: LoggingFunction = (warnLog) => {
-    let warning: string | RollupLog
+  const debugLogger = createDebugger('vite:build')
+  const viteLog: LogOrStringHandler = (logLeveling, rawLogging) => {
+    const logging =
+      typeof rawLogging === 'object' ? rawLogging : { message: rawLogging }
 
-    if (typeof warnLog === 'function') {
-      warning = warnLog()
-    } else {
-      warning = warnLog
+    if (logging.code === 'UNRESOLVED_IMPORT') {
+      const id = logging.id
+      const exporter = logging.exporter
+      // throw unless it's commonjs external...
+      if (!id || !id.endsWith('?commonjs-external')) {
+        throw new Error(
+          `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
+            `This is most likely unintended because it can break your application at runtime.\n` +
+            `If you do want to externalize this module explicitly add it to\n` +
+            `\`build.rollupOptions.external\``,
+        )
+      }
     }
 
-    if (typeof warning === 'object') {
-      if (warning.code === 'UNRESOLVED_IMPORT') {
-        const id = warning.id
-        const exporter = warning.exporter
-        // throw unless it's commonjs external...
-        if (!id || !id.endsWith('?commonjs-external')) {
-          throw new Error(
-            `[vite]: Rollup failed to resolve import "${exporter}" from "${id}".\n` +
-              `This is most likely unintended because it can break your application at runtime.\n` +
-              `If you do want to externalize this module explicitly add it to\n` +
-              `\`build.rollupOptions.external\``,
-          )
-        }
-      }
-
+    if (logLeveling === 'warn') {
       if (
-        warning.plugin === 'rollup-plugin-dynamic-import-variables' &&
+        logging.plugin === 'rollup-plugin-dynamic-import-variables' &&
         dynamicImportWarningIgnoreList.some((msg) =>
-          warning.message.includes(msg),
+          logging.message.includes(msg),
         )
       ) {
         return
       }
 
-      if (warningIgnoreList.includes(warning.code!)) {
-        return
-      }
-
-      if (warning.code === 'PLUGIN_WARNING') {
-        environment.logger.warn(
-          `${colors.bold(
-            colors.yellow(`[plugin:${warning.plugin}]`),
-          )} ${colors.yellow(warning.message)}`,
-        )
+      if (warningIgnoreList.includes(logging.code!)) {
         return
       }
     }
 
-    warn(warnLog)
+    switch (logLeveling) {
+      case 'info':
+        environment.logger.info(logging.message)
+        return
+      case 'warn':
+        environment.logger.warn(colors.yellow(logging.message))
+        return
+      case 'error':
+        environment.logger.error(colors.red(logging.message))
+        return
+      case 'debug':
+        debugLogger?.(logging.message)
+        return
+      default:
+        logLeveling satisfies never
+        // fallback to info if a unknown log level is passed
+        environment.logger.info(logging.message)
+        return
+    }
   }
 
   clearLine()
-  const userOnWarn = environment.config.build.rollupOptions.onwarn
-  if (userOnWarn) {
-    userOnWarn(warning, viteWarn)
+  const userOnLog = environment.config.build.rollupOptions?.onLog
+  const userOnWarn = environment.config.build.rollupOptions?.onwarn
+  if (userOnLog) {
+    if (userOnWarn) {
+      const normalizedUserOnWarn = normalizeUserOnWarn(userOnWarn, viteLog)
+      userOnLog(level, log, normalizedUserOnWarn)
+    } else {
+      userOnLog(level, log, viteLog)
+    }
+  } else if (userOnWarn) {
+    const normalizedUserOnWarn = normalizeUserOnWarn(userOnWarn, viteLog)
+    normalizedUserOnWarn(level, log)
   } else {
-    viteWarn(warning)
+    viteLog(level, log)
   }
 }
+
+function normalizeUserOnWarn(
+  userOnWarn: WarningHandlerWithDefault,
+  defaultHandler: LogOrStringHandler,
+): LogOrStringHandler {
+  return (logLevel, logging) => {
+    if (logLevel === 'warn') {
+      userOnWarn(normalizeLog(logging), (log) =>
+        defaultHandler('warn', typeof log === 'function' ? log() : log),
+      )
+    } else {
+      defaultHandler(logLevel, logging)
+    }
+  }
+}
+
+const normalizeLog = (log: RollupLog | string): RollupLog =>
+  typeof log === 'string' ? { message: log } : log
 
 export function resolveUserExternal(
   user: ExternalOption,
