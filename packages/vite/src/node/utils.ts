@@ -327,9 +327,6 @@ export const isJSRequest = (url: string): boolean => {
   return false
 }
 
-const knownTsRE = /\.(?:ts|mts|cts|tsx)(?:$|\?)/
-export const isTsRequest = (url: string): boolean => knownTsRE.test(url)
-
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const directRequestRE = /(\?|&)direct=?(?:&|$)/
 const internalPrefixes = [
