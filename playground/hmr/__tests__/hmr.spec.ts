@@ -779,6 +779,29 @@ if (!isBuild) {
     }, '[wow]1')
   })
 
+  test('handle virtual module accept updates', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.virtual-dep')
+    expect(await el.textContent()).toBe('0')
+    editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
+    await untilUpdated(async () => {
+      const el = await page.$('.virtual-dep')
+      return await el.textContent()
+    }, '[wow]')
+  })
+
+  test('invalidate virtual module and accept', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.virtual-dep')
+    expect(await el.textContent()).toBe('0')
+    const btn = await page.$('.virtual-update-dep')
+    btn.click()
+    await untilUpdated(async () => {
+      const el = await page.$('.virtual-dep')
+      return await el.textContent()
+    }, '[wow]2')
+  })
+
   test('keep hmr reload after missing import on server startup', async () => {
     const file = 'missing-import/a.js'
     const importCode = "import 'missing-modules'"
