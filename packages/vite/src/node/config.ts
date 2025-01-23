@@ -1,15 +1,16 @@
 import fs from 'node:fs'
-import fsp from 'node:fs/promises'
 import path from 'node:path'
+import fsp from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
+import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
-import { build } from 'esbuild'
 import type { RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
+import { build } from 'esbuild'
 import type { AnymatchFn } from '../types/anymatch'
 import { withTrailingSlash } from '../shared/utils'
 import {
@@ -62,16 +63,17 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
-  isBuiltin,
   isExternalUrl,
   isFilePathESM,
   isInNodeModules,
   isNodeBuiltin,
+  isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
   mergeAlias,
   mergeConfig,
   mergeWithDefaults,
+  nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
 } from './utils'
@@ -82,12 +84,12 @@ import {
   resolvePlugins,
 } from './plugins'
 import type { ESBuildOptions } from './plugins/esbuild'
-import type {
-  EnvironmentResolveOptions,
-  InternalResolveOptions,
-  ResolveOptions,
+import {
+  type EnvironmentResolveOptions,
+  type InternalResolveOptions,
+  type ResolveOptions,
+  tryNodeResolve,
 } from './plugins/resolve'
-import { tryNodeResolve } from './plugins/resolve'
 import type { LogLevel, Logger } from './logger'
 import { createLogger } from './logger'
 import type { DepOptimizationOptions } from './optimizer'
@@ -99,6 +101,8 @@ import type { ResolvedSSROptions, SSROptions } from './ssr'
 import { resolveSSROptions, ssrConfigDefaults } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
+import { runnerImport } from './ssr/runnerImport'
+import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -519,6 +523,18 @@ export interface LegacyOptions {
    * https://github.com/vitejs/vite/discussions/14697.
    */
   proxySsrExternalModules?: boolean
+  /**
+   * In Vite 6.0.8 and below, WebSocket server was able to connect from any web pages. However,
+   * that could be exploited by a malicious web page.
+   *
+   * In Vite 6.0.9+, the WebSocket server now requires a token to connect from a web page.
+   * But this may break some plugins and frameworks that connects to the WebSocket server
+   * on their own. Enabling this option will make Vite skip the token check.
+   *
+   * **We do not recommend enabling this option unless you are sure that you are fine with
+   * that security weakness.**
+   */
+  skipWebSocketTokenCheck?: boolean
 }
 
 export interface ResolvedWorkerOptions {
@@ -529,76 +545,93 @@ export interface ResolvedWorkerOptions {
 
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
+  /** @experimental */
+  configLoader?: 'bundle' | 'runner'
   envFile?: false
+  forceOptimizeDeps?: boolean
 }
 
-export type ResolvedConfig = Readonly<
-  Omit<
-    UserConfig,
-    | 'plugins'
-    | 'css'
-    | 'json'
-    | 'assetsInclude'
-    | 'optimizeDeps'
-    | 'worker'
-    | 'build'
-    | 'dev'
-    | 'environments'
-    | 'server'
-    | 'preview'
-  > & {
-    configFile: string | undefined
-    configFileDependencies: string[]
-    inlineConfig: InlineConfig
-    root: string
-    base: string
-    /** @internal */
-    decodedBase: string
-    /** @internal */
-    rawBase: string
-    publicDir: string
-    cacheDir: string
-    command: 'build' | 'serve'
-    mode: string
-    isWorker: boolean
-    // in nested worker bundle to find the main config
-    /** @internal */
-    mainConfig: ResolvedConfig | null
-    /** @internal list of bundle entry id. used to detect recursive worker bundle. */
-    bundleChain: string[]
-    isProduction: boolean
-    envDir: string
-    env: Record<string, any>
-    resolve: Required<ResolveOptions> & {
-      alias: Alias[]
-    }
-    plugins: readonly Plugin[]
-    css: ResolvedCSSOptions
-    json: Required<JsonOptions>
-    esbuild: ESBuildOptions | false
-    server: ResolvedServerOptions
-    dev: ResolvedDevEnvironmentOptions
-    /** @experimental */
-    builder: ResolvedBuilderOptions | undefined
-    build: ResolvedBuildOptions
-    preview: ResolvedPreviewOptions
-    ssr: ResolvedSSROptions
-    assetsInclude: (file: string) => boolean
-    logger: Logger
-    createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
-    optimizeDeps: DepOptimizationOptions
-    /** @internal */
-    packageCache: PackageCache
-    worker: ResolvedWorkerOptions
-    appType: AppType
-    experimental: ExperimentalOptions
-    environments: Record<string, ResolvedEnvironmentOptions>
-    /** @internal */
-    fsDenyGlob: AnymatchFn
-    /** @internal */
-    safeModulePaths: Set<string>
-  } & PluginHookUtils
->
+export interface ResolvedConfig
+  extends Readonly<
+    Omit<
+      UserConfig,
+      | 'plugins'
+      | 'css'
+      | 'json'
+      | 'assetsInclude'
+      | 'optimizeDeps'
+      | 'worker'
+      | 'build'
+      | 'dev'
+      | 'environments'
+      | 'server'
+      | 'preview'
+    > & {
+      configFile: string | undefined
+      configFileDependencies: string[]
+      inlineConfig: InlineConfig
+      root: string
+      base: string
+      /** @internal */
+      decodedBase: string
+      /** @internal */
+      rawBase: string
+      publicDir: string
+      cacheDir: string
+      command: 'build' | 'serve'
+      mode: string
+      isWorker: boolean
+      // in nested worker bundle to find the main config
+      /** @internal */
+      mainConfig: ResolvedConfig | null
+      /** @internal list of bundle entry id. used to detect recursive worker bundle. */
+      bundleChain: string[]
+      isProduction: boolean
+      envDir: string
+      env: Record<string, any>
+      resolve: Required<ResolveOptions> & {
+        alias: Alias[]
+      }
+      plugins: readonly Plugin[]
+      css: ResolvedCSSOptions
+      json: Required<JsonOptions>
+      esbuild: ESBuildOptions | false
+      server: ResolvedServerOptions
+      dev: ResolvedDevEnvironmentOptions
+      /** @experimental */
+      builder: ResolvedBuilderOptions | undefined
+      build: ResolvedBuildOptions
+      preview: ResolvedPreviewOptions
+      ssr: ResolvedSSROptions
+      assetsInclude: (file: string) => boolean
+      logger: Logger
+      createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
+      optimizeDeps: DepOptimizationOptions
+      /** @internal */
+      packageCache: PackageCache
+      worker: ResolvedWorkerOptions
+      appType: AppType
+      experimental: ExperimentalOptions
+      environments: Record<string, ResolvedEnvironmentOptions>
+      /**
+       * The token to connect to the WebSocket server from browsers.
+       *
+       * We recommend using `import.meta.hot` rather than connecting
+       * to the WebSocket server directly.
+       * If you have a usecase that requires connecting to the WebSocket
+       * server, please create an issue so that we can discuss.
+       *
+       * @deprecated
+       */
+      webSocketToken: string
+      /** @internal */
+      fsDenyGlob: AnymatchFn
+      /** @internal */
+      safeModulePaths: Set<string>
+      /** @internal */
+      additionalAllowedHosts: string[]
+    } & PluginHookUtils
+  > {}
 
 // inferred ones are omitted
 export const configDefaults = Object.freeze({
@@ -673,6 +706,7 @@ export const configDefaults = Object.freeze({
   },
   legacy: {
     proxySsrExternalModules: false,
+    skipWebSocketTokenCheck: false,
   },
   logLevel: 'info',
   customLogger: undefined,
@@ -742,6 +776,7 @@ function resolveEnvironmentOptions(
   options: EnvironmentOptions,
   alias: Alias[],
   preserveSymlinks: boolean,
+  forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
   // Backward compatibility
@@ -771,6 +806,7 @@ function resolveEnvironmentOptions(
     optimizeDeps: resolveDepOptimizationOptions(
       options.optimizeDeps,
       resolve.preserveSymlinks,
+      forceOptimizeDeps,
       consumer,
     ),
     dev: resolveDevEnvironmentOptions(
@@ -887,7 +923,11 @@ function resolveEnvironmentResolveOptions(
         isSsrTargetWebworkerEnvironment
           ? DEFAULT_CLIENT_CONDITIONS
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
-      enableBuiltinNoExternalCheck: !!isSsrTargetWebworkerEnvironment,
+      builtins:
+        resolve?.builtins ??
+        (consumer === 'server' && !isSsrTargetWebworkerEnvironment
+          ? nodeLikeBuiltins
+          : []),
     },
     resolve ?? {},
   )
@@ -943,6 +983,7 @@ function resolveResolveOptions(
 function resolveDepOptimizationOptions(
   optimizeDeps: DepOptimizationOptions | undefined,
   preserveSymlinks: boolean,
+  forceOptimizeDeps: boolean | undefined,
   consumer: 'client' | 'server' | undefined,
 ): DepOptimizationOptions {
   return mergeWithDefaults(
@@ -953,6 +994,7 @@ function resolveDepOptimizationOptions(
       esbuildOptions: {
         preserveSymlinks,
       },
+      force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
     },
     optimizeDeps ?? {},
   )
@@ -996,6 +1038,7 @@ export async function resolveConfig(
       config.root,
       config.logLevel,
       config.customLogger,
+      config.configLoader,
     )
     if (loadResult) {
       config = mergeConfig(loadResult.config, config)
@@ -1164,6 +1207,7 @@ export async function resolveConfig(
       config.environments[environmentName],
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
+      inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
       config.experimental?.skipSsrTransform,
@@ -1358,6 +1402,8 @@ export async function resolveConfig(
 
   const base = withTrailingSlash(resolvedBase)
 
+  const preview = resolvePreviewOptions(config.preview, server)
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1388,7 +1434,7 @@ export async function resolveConfig(
           },
     server,
     builder,
-    preview: resolvePreviewOptions(config.preview, server),
+    preview,
     envDir,
     env: {
       ...userEnv,
@@ -1419,6 +1465,13 @@ export async function resolveConfig(
     build: resolvedBuildOptions,
 
     environments: resolvedEnvironments,
+
+    // random 72 bits (12 base64 chars)
+    // at least 64bits is recommended
+    // https://owasp.org/www-community/vulnerabilities/Insufficient_Session-ID_Length
+    webSocketToken: Buffer.from(
+      crypto.getRandomValues(new Uint8Array(9)),
+    ).toString('base64url'),
 
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
@@ -1460,6 +1513,7 @@ export async function resolveConfig(
       },
     ),
     safeModulePaths: new Set<string>(),
+    additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
   }
   resolved = {
     ...config,
@@ -1642,11 +1696,18 @@ export async function loadConfigFromFile(
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
+  configLoader: 'bundle' | 'runner' = 'bundle',
 ): Promise<{
   path: string
   config: UserConfig
   dependencies: string[]
 } | null> {
+  if (configLoader !== 'bundle' && configLoader !== 'runner') {
+    throw new Error(
+      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle' and 'runner'.`,
+    )
+  }
+
   const start = performance.now()
   const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
 
@@ -1672,28 +1733,23 @@ export async function loadConfigFromFile(
     return null
   }
 
-  const isESM =
-    typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
-
   try {
-    const bundled = await bundleConfigFile(resolvedPath, isESM)
-    const userConfig = await loadConfigFromBundledFile(
-      resolvedPath,
-      bundled.code,
-      isESM,
-    )
-    debug?.(`bundled config file loaded in ${getTime()}`)
+    const resolver =
+      configLoader === 'bundle' ? bundleAndLoadConfigFile : importConfigFile
+    const { configExport, dependencies } = await resolver(resolvedPath)
+    debug?.(`config file loaded in ${getTime()}`)
 
-    const config = await (typeof userConfig === 'function'
-      ? userConfig(configEnv)
-      : userConfig)
+    const config = await (typeof configExport === 'function'
+      ? configExport(configEnv)
+      : configExport)
     if (!isObject(config)) {
       throw new Error(`config must export or return an object.`)
     }
+
     return {
       path: normalizePath(resolvedPath),
       config,
-      dependencies: bundled.dependencies,
+      dependencies,
     }
   } catch (e) {
     createLogger(logLevel, { customLogger }).error(
@@ -1703,6 +1759,33 @@ export async function loadConfigFromFile(
       },
     )
     throw e
+  }
+}
+
+async function importConfigFile(resolvedPath: string) {
+  const { module, dependencies } = await runnerImport<{
+    default: UserConfigExport
+  }>(resolvedPath)
+  return {
+    configExport: module.default,
+    dependencies,
+  }
+}
+
+async function bundleAndLoadConfigFile(resolvedPath: string) {
+  const isESM =
+    typeof process.versions.deno === 'string' || isFilePathESM(resolvedPath)
+
+  const bundled = await bundleConfigFile(resolvedPath, isESM)
+  const userConfig = await loadConfigFromBundledFile(
+    resolvedPath,
+    bundled.code,
+    isESM,
+  )
+
+  return {
+    configExport: userConfig,
+    dependencies: bundled.dependencies,
   }
 }
 
@@ -1765,6 +1848,7 @@ async function bundleConfigFile(
               preserveSymlinks: false,
               packageCache,
               isRequire,
+              builtins: nodeLikeBuiltins,
             })?.id
           }
 
@@ -1783,7 +1867,7 @@ async function bundleConfigFile(
               // With the `isNodeBuiltin` check above, this check captures if the builtin is a
               // non-node built-in, which esbuild doesn't know how to handle. In that case, we
               // externalize it so the non-node runtime handles it instead.
-              if (isBuiltin(id)) {
+              if (isNodeLikeBuiltin(id)) {
                 return { external: true }
               }
 

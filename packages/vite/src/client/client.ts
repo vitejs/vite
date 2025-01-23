@@ -19,6 +19,7 @@ declare const __HMR_DIRECT_TARGET__: string
 declare const __HMR_BASE__: string
 declare const __HMR_TIMEOUT__: number
 declare const __HMR_ENABLE_OVERLAY__: boolean
+declare const __WS_TOKEN__: string
 
 console.debug('[vite] connecting...')
 
@@ -35,12 +36,16 @@ const socketHost = `${__HMR_HOSTNAME__ || importMetaUrl.hostname}:${
 const directSocketHost = __HMR_DIRECT_TARGET__
 const base = __BASE__ || '/'
 const hmrTimeout = __HMR_TIMEOUT__
+const wsToken = __WS_TOKEN__
 
 const transport = normalizeModuleRunnerTransport(
   (() => {
     let wsTransport = createWebSocketModuleRunnerTransport({
       createConnection: () =>
-        new WebSocket(`${socketProtocol}://${socketHost}`, 'vite-hmr'),
+        new WebSocket(
+          `${socketProtocol}://${socketHost}?token=${wsToken}`,
+          'vite-hmr',
+        ),
       pingInterval: hmrTimeout,
     })
 
@@ -54,7 +59,7 @@ const transport = normalizeModuleRunnerTransport(
             wsTransport = createWebSocketModuleRunnerTransport({
               createConnection: () =>
                 new WebSocket(
-                  `${socketProtocol}://${directSocketHost}`,
+                  `${socketProtocol}://${directSocketHost}?token=${wsToken}`,
                   'vite-hmr',
                 ),
               pingInterval: hmrTimeout,
@@ -241,7 +246,9 @@ async function handleMessage(payload: HotPayload) {
         if (hasDocument && !willUnload) {
           console.log(`[vite] server connection lost. Polling for restart...`)
           const socket = payload.data.webSocket as WebSocket
-          await waitForSuccessfulPing(socket.url)
+          const url = new URL(socket.url)
+          url.search = '' // remove query string including `token`
+          await waitForSuccessfulPing(url.href)
           location.reload()
         }
       }

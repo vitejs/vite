@@ -3243,6 +3243,25 @@ async function compileLightningCSS(
         line: e.loc.line,
         column: e.loc.column - 1, // 1-based
       }
+      // add friendly error for https://github.com/parcel-bundler/lightningcss/issues/39
+      try {
+        const code = fs.readFileSync(e.fileName, 'utf-8')
+        const commonIeMessage =
+          ', which was used in the past to support old Internet Explorer versions.' +
+          ' This is not a valid CSS syntax and will be ignored by modern browsers. ' +
+          '\nWhile this is not supported by LightningCSS, you can set `css.lightningcss.errorRecovery: true` to strip these codes.'
+        if (/[\s;{]\*[a-zA-Z-][\w-]+\s*:/.test(code)) {
+          // https://stackoverflow.com/a/1667560
+          e.message +=
+            '.\nThis file contains star property hack (e.g. `*zoom`)' +
+            commonIeMessage
+        } else if (/min-width:\s*0\\0/.test(code)) {
+          // https://stackoverflow.com/a/14585820
+          e.message +=
+            '.\nThis file contains @media zero hack (e.g. `@media (min-width: 0\\0)`)' +
+            commonIeMessage
+        }
+      } catch {}
     }
     throw e
   }
