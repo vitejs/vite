@@ -1,17 +1,27 @@
 import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { stripVTControlCharacters } from 'node:util'
 import colors from 'picocolors'
-import { describe, expect, test, vi } from 'vitest'
-import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import type {
+  LogLevel,
+  OutputChunk,
+  OutputOptions,
+  RollupLog,
+  RollupOptions,
+  RollupOutput,
+} from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
   build,
   createBuilder,
+  onRollupLog,
   resolveBuildOutputs,
   resolveLibFilename,
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
+import { BuildEnvironment, resolveConfig } from '..'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
@@ -874,6 +884,158 @@ test('adjust worker build error for worker.format', async () => {
     return
   }
   expect.unreachable()
+})
+
+describe('onRollupLog', () => {
+  const pluginName = 'rollup-plugin-test'
+  const msgInfo = 'This is the INFO message.'
+  const msgWarn = 'This is the WARN message.'
+  const buildProject = async (
+    level: LogLevel | 'error',
+    message: string | RollupLog,
+    logger: Logger,
+    options?: Pick<RollupOptions, 'onLog' | 'onwarn'>,
+  ) => {
+    await build({
+      root: resolve(__dirname, 'packages/build-project'),
+      logLevel: 'info',
+      build: {
+        write: false,
+        rollupOptions: {
+          ...options,
+          logLevel: 'debug',
+        },
+      },
+      customLogger: logger,
+      plugins: [
+        {
+          name: pluginName,
+          resolveId(id) {
+            this[level](message)
+            if (id === 'entry.js') {
+              return '\0' + id
+            }
+          },
+          load(id) {
+            if (id === '\0entry.js') {
+              return `export default "This is test module";`
+            }
+          },
+        },
+      ],
+    })
+  }
+
+  const callOnRollupLog = async (
+    logger: Logger,
+    level: LogLevel,
+    log: RollupLog,
+  ) => {
+    const config = await resolveConfig(
+      { customLogger: logger },
+      'build',
+      'production',
+      'production',
+    )
+    const buildEnvironment = new BuildEnvironment('client', config)
+    onRollupLog(level, log, buildEnvironment)
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  test('Rollup logs of info should be handled by vite', async () => {
+    const logger = createLogger()
+    const loggerSpy = vi.spyOn(logger, 'info').mockImplementation(() => {})
+
+    await buildProject('info', msgInfo, logger)
+    const logs = loggerSpy.mock.calls.map((args) =>
+      stripVTControlCharacters(args[0]),
+    )
+    expect(logs).contain(`[plugin ${pluginName}] ${msgInfo}`)
+  })
+
+  test('Rollup logs of warn should be handled by vite', async () => {
+    const logger = createLogger('silent')
+    const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+
+    await buildProject('warn', msgWarn, logger)
+    const logs = loggerSpy.mock.calls.map((args) =>
+      stripVTControlCharacters(args[0]),
+    )
+    expect(logs).contain(`[plugin ${pluginName}] ${msgWarn}`)
+  })
+
+  test('onLog passed by user is called', async () => {
+    const logger = createLogger('silent')
+
+    const onLogInfo = vi.fn((_log: RollupLog) => {})
+    await buildProject('info', msgInfo, logger, {
+      onLog(level, log) {
+        if (level === 'info') {
+          onLogInfo(log)
+        }
+      },
+    })
+    expect(onLogInfo).toBeCalledWith(
+      expect.objectContaining({ message: `[plugin ${pluginName}] ${msgInfo}` }),
+    )
+  })
+
+  test('onwarn passed by user is called', async () => {
+    const logger = createLogger('silent')
+
+    const onWarn = vi.fn((_log: RollupLog) => {})
+    await buildProject('warn', msgWarn, logger, {
+      onwarn(warning) {
+        onWarn(warning)
+      },
+    })
+    expect(onWarn).toBeCalledWith(
+      expect.objectContaining({ message: `[plugin ${pluginName}] ${msgWarn}` }),
+    )
+  })
+
+  test('should throw error when warning contains UNRESOLVED_IMPORT', async () => {
+    const logger = createLogger()
+    await expect(() =>
+      callOnRollupLog(logger, 'warn', {
+        code: 'UNRESOLVED_IMPORT',
+        message: 'test',
+      }),
+    ).rejects.toThrowError(/Rollup failed to resolve import/)
+  })
+
+  test.each([[`Unsupported expression`], [`statically analyzed`]])(
+    'should ignore dynamic import warnings (%s)',
+    async (message: string) => {
+      const logger = createLogger()
+      const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+
+      await callOnRollupLog(logger, 'warn', {
+        code: 'PLUGIN_WARNING',
+        message: message,
+        plugin: 'rollup-plugin-dynamic-import-variables',
+      })
+      expect(loggerSpy).toBeCalledTimes(0)
+    },
+  )
+
+  test.each([[`CIRCULAR_DEPENDENCY`], [`THIS_IS_UNDEFINED`]])(
+    'should ignore some warnings (%s)',
+    async (code: string) => {
+      const logger = createLogger()
+      const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+
+      await callOnRollupLog(logger, 'warn', {
+        code: code,
+        message: 'test message',
+        plugin: pluginName,
+      })
+      expect(loggerSpy).toBeCalledTimes(0)
+    },
+  )
 })
 
 /**
