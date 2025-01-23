@@ -549,86 +549,87 @@ export interface InlineConfig extends UserConfig {
   envFile?: false
 }
 
-export type ResolvedConfig = Readonly<
-  Omit<
-    UserConfig,
-    | 'plugins'
-    | 'css'
-    | 'json'
-    | 'assetsInclude'
-    | 'optimizeDeps'
-    | 'worker'
-    | 'build'
-    | 'dev'
-    | 'environments'
-    | 'server'
-    | 'preview'
-  > & {
-    configFile: string | undefined
-    configFileDependencies: string[]
-    inlineConfig: InlineConfig
-    root: string
-    base: string
-    /** @internal */
-    decodedBase: string
-    /** @internal */
-    rawBase: string
-    publicDir: string
-    cacheDir: string
-    command: 'build' | 'serve'
-    mode: string
-    isWorker: boolean
-    // in nested worker bundle to find the main config
-    /** @internal */
-    mainConfig: ResolvedConfig | null
-    /** @internal list of bundle entry id. used to detect recursive worker bundle. */
-    bundleChain: string[]
-    isProduction: boolean
-    envDir: string
-    env: Record<string, any>
-    resolve: Required<ResolveOptions> & {
-      alias: Alias[]
-    }
-    plugins: readonly Plugin[]
-    css: ResolvedCSSOptions
-    json: Required<JsonOptions>
-    esbuild: ESBuildOptions | false
-    server: ResolvedServerOptions
-    dev: ResolvedDevEnvironmentOptions
-    /** @experimental */
-    builder: ResolvedBuilderOptions | undefined
-    build: ResolvedBuildOptions
-    preview: ResolvedPreviewOptions
-    ssr: ResolvedSSROptions
-    assetsInclude: (file: string) => boolean
-    logger: Logger
-    createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
-    optimizeDeps: DepOptimizationOptions
-    /** @internal */
-    packageCache: PackageCache
-    worker: ResolvedWorkerOptions
-    appType: AppType
-    experimental: ExperimentalOptions
-    environments: Record<string, ResolvedEnvironmentOptions>
-    /**
-     * The token to connect to the WebSocket server from browsers.
-     *
-     * We recommend using `import.meta.hot` rather than connecting
-     * to the WebSocket server directly.
-     * If you have a usecase that requires connecting to the WebSocket
-     * server, please create an issue so that we can discuss.
-     *
-     * @deprecated
-     */
-    webSocketToken: string
-    /** @internal */
-    fsDenyGlob: AnymatchFn
-    /** @internal */
-    safeModulePaths: Set<string>
-    /** @internal */
-    additionalAllowedHosts: string[]
-  } & PluginHookUtils
->
+export interface ResolvedConfig
+  extends Readonly<
+    Omit<
+      UserConfig,
+      | 'plugins'
+      | 'css'
+      | 'json'
+      | 'assetsInclude'
+      | 'optimizeDeps'
+      | 'worker'
+      | 'build'
+      | 'dev'
+      | 'environments'
+      | 'server'
+      | 'preview'
+    > & {
+      configFile: string | undefined
+      configFileDependencies: string[]
+      inlineConfig: InlineConfig
+      root: string
+      base: string
+      /** @internal */
+      decodedBase: string
+      /** @internal */
+      rawBase: string
+      publicDir: string
+      cacheDir: string
+      command: 'build' | 'serve'
+      mode: string
+      isWorker: boolean
+      // in nested worker bundle to find the main config
+      /** @internal */
+      mainConfig: ResolvedConfig | null
+      /** @internal list of bundle entry id. used to detect recursive worker bundle. */
+      bundleChain: string[]
+      isProduction: boolean
+      envDir: string
+      env: Record<string, any>
+      resolve: Required<ResolveOptions> & {
+        alias: Alias[]
+      }
+      plugins: readonly Plugin[]
+      css: ResolvedCSSOptions
+      json: Required<JsonOptions>
+      esbuild: ESBuildOptions | false
+      server: ResolvedServerOptions
+      dev: ResolvedDevEnvironmentOptions
+      /** @experimental */
+      builder: ResolvedBuilderOptions | undefined
+      build: ResolvedBuildOptions
+      preview: ResolvedPreviewOptions
+      ssr: ResolvedSSROptions
+      assetsInclude: (file: string) => boolean
+      logger: Logger
+      createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
+      optimizeDeps: DepOptimizationOptions
+      /** @internal */
+      packageCache: PackageCache
+      worker: ResolvedWorkerOptions
+      appType: AppType
+      experimental: ExperimentalOptions
+      environments: Record<string, ResolvedEnvironmentOptions>
+      /**
+       * The token to connect to the WebSocket server from browsers.
+       *
+       * We recommend using `import.meta.hot` rather than connecting
+       * to the WebSocket server directly.
+       * If you have a usecase that requires connecting to the WebSocket
+       * server, please create an issue so that we can discuss.
+       *
+       * @deprecated
+       */
+      webSocketToken: string
+      /** @internal */
+      fsDenyGlob: AnymatchFn
+      /** @internal */
+      safeModulePaths: Set<string>
+      /** @internal */
+      additionalAllowedHosts: string[]
+    } & PluginHookUtils
+  > {}
 
 // inferred ones are omitted
 export const configDefaults = Object.freeze({
