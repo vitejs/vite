@@ -115,7 +115,7 @@ export function esbuildDepPlugin(
         namespace: 'optional-peer-dep',
       }
     }
-    if (environment.config.consumer === 'server' && isBuiltin(resolved)) {
+    if (isBuiltin(environment.config.resolve.builtins, resolved)) {
       return
     }
     if (isExternalUrl(resolved)) {

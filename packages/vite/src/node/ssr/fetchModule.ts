@@ -28,8 +28,10 @@ export async function fetchModule(
   importer?: string,
   options: FetchModuleOptions = {},
 ): Promise<FetchResult> {
-  // builtins should always be externalized
-  if (url.startsWith('data:') || isBuiltin(url)) {
+  if (
+    url.startsWith('data:') ||
+    isBuiltin(environment.config.resolve.builtins, url)
+  ) {
     return { externalize: url, type: 'builtin' }
   }
 
@@ -60,6 +62,7 @@ export async function fetchModule(
       isProduction,
       root,
       packageCache: environment.config.packageCache,
+      builtins: environment.config.resolve.builtins,
     })
     if (!resolved) {
       const err: any = new Error(
