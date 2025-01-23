@@ -9,6 +9,7 @@ export {
   DEFAULT_CLIENT_MAIN_FIELDS as defaultClientMainFields,
   DEFAULT_SERVER_CONDITIONS as defaultServerConditions,
   DEFAULT_SERVER_MAIN_FIELDS as defaultServerMainFields,
+  defaultAllowedOrigins,
 } from './constants'
 export { version as esbuildVersion } from 'esbuild'
 export {
