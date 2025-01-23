@@ -742,7 +742,8 @@ export function ensureWatchedFile(
   if (
     file &&
     // only need to watch if out of root
-    !file.startsWith(withTrailingSlash(root)) &&
+    (!file.startsWith(withTrailingSlash(root)) ||
+      file.includes('/.yarn/__virtual__/')) &&
     // some rollup plugins use null bytes for private resolved Ids
     !file.includes('\0') &&
     fs.existsSync(file)
