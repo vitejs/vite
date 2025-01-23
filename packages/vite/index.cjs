@@ -21,6 +21,7 @@ const asyncFunctions = [
   'loadConfigFromFile',
   'preprocessCSS',
   'createBuilder',
+  'runnerImport',
 ]
 asyncFunctions.forEach((name) => {
   module.exports[name] = (...args) =>
