@@ -22,6 +22,10 @@ You can also explicitly specify a config file to use with the `--config` CLI opt
 vite --config my-config.js
 ```
 
+::: tip BUNDLING THE CONFIG
+By default, Vite uses `esbuild` to bundle the config into a temporary file. This can cause issues when importing TypeScript files in a monorepo. If you encounter any issues with this approach, you can specify `--configLoader=runner` to use the module runner instead - it will not create a temporary config and will transform any files on the fly. Note that module runner doesn't support CJS in config files, but external CJS packages should work as usual.
+:::
+
 ## Config Intellisense
 
 Since Vite ships with TypeScript typings, you can leverage your IDE's intellisense with jsdoc type hints:
