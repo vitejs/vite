@@ -1206,7 +1206,6 @@ const lockfileFormats = [
     manager: 'pnpm',
   },
   {
-    name: 'bun.lockb',
     path: 'bun.lockb',
     checkPatchesDir: 'patches',
     manager: 'bun',
