@@ -811,6 +811,7 @@ async function buildPolyfillChunk(
         },
         output: {
           format,
+          hashCharacters: rollupOutputOptions.hashCharacters,
           entryFileNames: rollupOutputOptions.entryFileNames,
         },
       },

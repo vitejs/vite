@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
+import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import type { RollupOptions } from 'rollup'
@@ -100,6 +101,7 @@ import { resolveSSROptions, ssrConfigDefaults } from './ssr'
 import { PartialEnvironment } from './baseEnvironment'
 import { createIdResolver } from './idResolver'
 import { runnerImport } from './ssr/runnerImport'
+import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -520,6 +522,18 @@ export interface LegacyOptions {
    * https://github.com/vitejs/vite/discussions/14697.
    */
   proxySsrExternalModules?: boolean
+  /**
+   * In Vite 6.0.8 and below, WebSocket server was able to connect from any web pages. However,
+   * that could be exploited by a malicious web page.
+   *
+   * In Vite 6.0.9+, the WebSocket server now requires a token to connect from a web page.
+   * But this may break some plugins and frameworks that connects to the WebSocket server
+   * on their own. Enabling this option will make Vite skip the token check.
+   *
+   * **We do not recommend enabling this option unless you are sure that you are fine with
+   * that security weakness.**
+   */
+  skipWebSocketTokenCheck?: boolean
 }
 
 export interface ResolvedWorkerOptions {
@@ -596,10 +610,23 @@ export type ResolvedConfig = Readonly<
     appType: AppType
     experimental: ExperimentalOptions
     environments: Record<string, ResolvedEnvironmentOptions>
+    /**
+     * The token to connect to the WebSocket server from browsers.
+     *
+     * We recommend using `import.meta.hot` rather than connecting
+     * to the WebSocket server directly.
+     * If you have a usecase that requires connecting to the WebSocket
+     * server, please create an issue so that we can discuss.
+     *
+     * @deprecated
+     */
+    webSocketToken: string
     /** @internal */
     fsDenyGlob: AnymatchFn
     /** @internal */
     safeModulePaths: Set<string>
+    /** @internal */
+    additionalAllowedHosts: string[]
   } & PluginHookUtils
 >
 
@@ -676,6 +703,7 @@ export const configDefaults = Object.freeze({
   },
   legacy: {
     proxySsrExternalModules: false,
+    skipWebSocketTokenCheck: false,
   },
   logLevel: 'info',
   customLogger: undefined,
@@ -1362,6 +1390,8 @@ export async function resolveConfig(
 
   const base = withTrailingSlash(resolvedBase)
 
+  const preview = resolvePreviewOptions(config.preview, server)
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1392,7 +1422,7 @@ export async function resolveConfig(
           },
     server,
     builder,
-    preview: resolvePreviewOptions(config.preview, server),
+    preview,
     envDir,
     env: {
       ...userEnv,
@@ -1423,6 +1453,13 @@ export async function resolveConfig(
     build: resolvedBuildOptions,
 
     environments: resolvedEnvironments,
+
+    // random 72 bits (12 base64 chars)
+    // at least 64bits is recommended
+    // https://owasp.org/www-community/vulnerabilities/Insufficient_Session-ID_Length
+    webSocketToken: Buffer.from(
+      crypto.getRandomValues(new Uint8Array(9)),
+    ).toString('base64url'),
 
     getSortedPlugins: undefined!,
     getSortedPluginHooks: undefined!,
@@ -1464,6 +1501,7 @@ export async function resolveConfig(
       },
     ),
     safeModulePaths: new Set<string>(),
+    additionalAllowedHosts: getAdditionalAllowedHosts(server, preview),
   }
   resolved = {
     ...config,
