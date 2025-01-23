@@ -635,7 +635,12 @@ async function buildEnvironment(
     const stackOnly = extractStack(e)
 
     let msg = colors.red((e.plugin ? `[${e.plugin}] ` : '') + e.message)
-    if (e.id) {
+    if (e.loc && e.loc.file && e.loc.file !== e.id) {
+      msg += `\nfile: ${colors.cyan(
+        `${e.loc.file}:${e.loc.line}:${e.loc.column}` +
+          (e.id ? ` (${e.id})` : ''),
+      )}`
+    } else if (e.id) {
       msg += `\nfile: ${colors.cyan(
         e.id + (e.loc ? `:${e.loc.line}:${e.loc.column}` : ''),
       )}`
