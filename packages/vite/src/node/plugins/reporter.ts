@@ -24,7 +24,7 @@ type LogEntry = {
   mapSize: number | null
 }
 
-const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml)$/
+const COMPRESSIBLE_ASSETS_RE = /\.(?:html|json|svg|txt|xml|xhtml|wasm)$/
 
 export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const compress = promisify(gzip)
