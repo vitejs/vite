@@ -10,6 +10,7 @@ const {
   blue,
   blueBright,
   cyan,
+  gray,
   green,
   greenBright,
   magenta,
@@ -311,6 +312,7 @@ async function init() {
   }
 
   let targetDir = argTargetDir || defaultTargetDir
+  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
   const getProjectName = () => path.basename(path.resolve(targetDir))
 
   let result: prompts.Answers<
@@ -402,9 +404,16 @@ async function init() {
           choices: (framework: Framework) =>
             framework.variants.map((variant) => {
               const variantColor = variant.color
+              const command = variant.customCommand
+                ? getFullCustomCommand(variant.customCommand, pkgInfo).replace(
+                    / TARGET_DIR$/,
+                    '',
+                  )
+                : undefined
               return {
                 title: variantColor(variant.display || variant.name),
                 value: variant.name,
+                description: command ? gray(command) : undefined,
               }
             }),
         },
@@ -439,40 +448,13 @@ async function init() {
     template = template.replace('-swc', '')
   }
 
-  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
-  const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
   const { customCommand } =
     FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
 
   if (customCommand) {
-    const fullCustomCommand = customCommand
-      .replace(/^npm create /, () => {
-        // `bun create` uses it's own set of templates,
-        // the closest alternative is using `bun x` directly on the package
-        if (pkgManager === 'bun') {
-          return 'bun x create-'
-        }
-        return `${pkgManager} create `
-      })
-      // Only Yarn 1.x doesn't support `@version` in the `create` command
-      .replace('@latest', () => (isYarn1 ? '' : '@latest'))
-      .replace(/^npm exec/, () => {
-        // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
-        if (pkgManager === 'pnpm') {
-          return 'pnpm dlx'
-        }
-        if (pkgManager === 'yarn' && !isYarn1) {
-          return 'yarn dlx'
-        }
-        if (pkgManager === 'bun') {
-          return 'bun x'
-        }
-        // Use `npm exec` in all other cases,
-        // including Yarn 1.x and other custom npm clients.
-        return 'npm exec'
-      })
+    const fullCustomCommand = getFullCustomCommand(customCommand, pkgInfo)
 
     const [command, ...args] = fullCustomCommand.split(' ')
     // we replace TARGET_DIR here because targetDir may include a space
@@ -595,7 +577,12 @@ function emptyDir(dir: string) {
   }
 }
 
-function pkgFromUserAgent(userAgent: string | undefined) {
+interface PkgInfo {
+  name: string
+  version: string
+}
+
+function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
   if (!userAgent) return undefined
   const pkgSpec = userAgent.split(' ')[0]
   const pkgSpecArr = pkgSpec.split('/')
@@ -623,6 +610,40 @@ function setupReactSwc(root: string, isTs: boolean) {
 function editFile(file: string, callback: (content: string) => string) {
   const content = fs.readFileSync(file, 'utf-8')
   fs.writeFileSync(file, callback(content), 'utf-8')
+}
+
+function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+  const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
+
+  return (
+    customCommand
+      .replace(/^npm create /, () => {
+        // `bun create` uses it's own set of templates,
+        // the closest alternative is using `bun x` directly on the package
+        if (pkgManager === 'bun') {
+          return 'bun x create-'
+        }
+        return `${pkgManager} create `
+      })
+      // Only Yarn 1.x doesn't support `@version` in the `create` command
+      .replace('@latest', () => (isYarn1 ? '' : '@latest'))
+      .replace(/^npm exec/, () => {
+        // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
+        if (pkgManager === 'pnpm') {
+          return 'pnpm dlx'
+        }
+        if (pkgManager === 'yarn' && !isYarn1) {
+          return 'yarn dlx'
+        }
+        if (pkgManager === 'bun') {
+          return 'bun x'
+        }
+        // Use `npm exec` in all other cases,
+        // including Yarn 1.x and other custom npm clients.
+        return 'npm exec'
+      })
+  )
 }
 
 init().catch((e) => {
