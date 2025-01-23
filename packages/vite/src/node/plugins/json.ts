@@ -87,7 +87,7 @@ export function jsonPlugin(
             }
 
             return {
-              code: `export default JSON.parse(${JSON.stringify(json)})`,
+              code: `export default /* #__PURE__ */ JSON.parse(${JSON.stringify(json)})`,
               map: { mappings: '' },
             }
           }
@@ -120,7 +120,7 @@ function serializeValue(value: unknown): string {
     value != null &&
     valueAsString.length > 10 * 1000
   ) {
-    return `JSON.parse(${JSON.stringify(valueAsString)})`
+    return `/* #__PURE__ */ JSON.parse(${JSON.stringify(valueAsString)})`
   }
   return valueAsString
 }

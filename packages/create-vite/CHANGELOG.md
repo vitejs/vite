@@ -1,3 +1,11 @@
+## <small>6.1.1 (2024-12-24)</small>
+
+* fix(create-vite): svelte-ts typecheck command (#19014) ([ac32968](https://github.com/vitejs/vite/commit/ac329685bba229e1ff43e3d96324f817d48abe48)), closes [#19014](https://github.com/vitejs/vite/issues/19014)
+* fix(deps): update all non-major dependencies (#19045) ([b442d12](https://github.com/vitejs/vite/commit/b442d12c97357697be9341b7abebd78382a3d93d)), closes [#19045](https://github.com/vitejs/vite/issues/19045)
+* refactor(create-vite): remove tslib from svelte-ts template (#19015) ([9066049](https://github.com/vitejs/vite/commit/9066049216b41ac8c6b9177539647d50d3498f1f)), closes [#19015](https://github.com/vitejs/vite/issues/19015)
+
+
+
 ## 6.1.0 (2024-12-19)
 
 * feat(create-vite): align tsconfigs in svelte-ts template with others (#18995) ([b48b98c](https://github.com/vitejs/vite/commit/b48b98ce0618eb3d142c0ce86a765502fb4ac190)), closes [#18995](https://github.com/vitejs/vite/issues/18995)

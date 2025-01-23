@@ -1501,11 +1501,17 @@ export function displayTime(time: number): string {
     return `${time.toFixed(2)}s`
   }
 
-  const mins = parseInt((time / 60).toString())
-  const seconds = time % 60
+  // Calculate total minutes and remaining seconds
+  const mins = Math.floor(time / 60)
+  const seconds = Math.round(time % 60)
+
+  // Handle case where seconds rounds to 60
+  if (seconds === 60) {
+    return `${mins + 1}m`
+  }
 
   // display: {X}m {Y}s
-  return `${mins}m${seconds < 1 ? '' : ` ${seconds.toFixed(0)}s`}`
+  return `${mins}m${seconds < 1 ? '' : ` ${seconds}s`}`
 }
 
 /**
@@ -1529,20 +1535,34 @@ export function partialEncodeURIPath(uri: string): string {
   return filePath.replaceAll('%', '%25') + postfix
 }
 
+type SigtermCallback = (signal?: 'SIGTERM', exitCode?: number) => Promise<void>
+
+// Use a shared callback when attaching sigterm listeners to avoid `MaxListenersExceededWarning`
+const sigtermCallbacks = new Set<SigtermCallback>()
+const parentSigtermCallback: SigtermCallback = async (signal, exitCode) => {
+  await Promise.all([...sigtermCallbacks].map((cb) => cb(signal, exitCode)))
+}
+
 export const setupSIGTERMListener = (
   callback: (signal?: 'SIGTERM', exitCode?: number) => Promise<void>,
 ): void => {
-  process.once('SIGTERM', callback)
-  if (process.env.CI !== 'true') {
-    process.stdin.on('end', callback)
+  if (sigtermCallbacks.size === 0) {
+    process.once('SIGTERM', parentSigtermCallback)
+    if (process.env.CI !== 'true') {
+      process.stdin.on('end', parentSigtermCallback)
+    }
   }
+  sigtermCallbacks.add(callback)
 }
 
 export const teardownSIGTERMListener = (
   callback: Parameters<typeof setupSIGTERMListener>[0],
 ): void => {
-  process.off('SIGTERM', callback)
-  if (process.env.CI !== 'true') {
-    process.stdin.off('end', callback)
+  sigtermCallbacks.delete(callback)
+  if (sigtermCallbacks.size === 0) {
+    process.off('SIGTERM', parentSigtermCallback)
+    if (process.env.CI !== 'true') {
+      process.stdin.off('end', parentSigtermCallback)
+    }
   }
 }
