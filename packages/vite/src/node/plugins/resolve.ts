@@ -29,7 +29,6 @@ import {
   isNonDriveRelativeAbsolutePath,
   isObject,
   isOptimizable,
-  isTsRequest,
   normalizePath,
   safeRealpathSync,
   tryStatSync,
@@ -125,10 +124,7 @@ interface ResolvePluginOptions {
   tryPrefix?: string
   preferRelative?: boolean
   isRequire?: boolean
-  // #3040
-  // when the importer is a ts module,
-  // if the specifier requests a non-existent `.js/jsx/mjs/cjs` file,
-  // should also try import from `.ts/tsx/mts/cts` source file as fallback.
+  /** @deprecated */
   isFromTsImporter?: boolean
   // True when resolving during the scan phase to discover dependencies
   scan?: boolean
@@ -238,18 +234,6 @@ export function resolvePlugin(
 
         if (resolveOpts.custom?.['vite:import-glob']?.isSubImportsPattern) {
           return normalizePath(path.join(root, id))
-        }
-      }
-
-      if (importer) {
-        if (
-          isTsRequest(importer) ||
-          resolveOpts.custom?.depScan?.loader?.startsWith('ts')
-        ) {
-          options.isFromTsImporter = true
-        } else {
-          const moduleLang = this.getModuleInfo(importer)?.meta.vite?.lang
-          options.isFromTsImporter = moduleLang && isTsRequest(`.${moduleLang}`)
         }
       }
 
@@ -616,7 +600,7 @@ function tryCleanFsResolve(
   let res: string | undefined
 
   // If path.dirname is a valid directory, try extensions and ts resolution logic
-  const possibleJsToTs = options.isFromTsImporter && isPossibleTsOutput(file)
+  const possibleJsToTs = isPossibleTsOutput(file)
   if (possibleJsToTs || options.extensions.length || tryPrefix) {
     const dirPath = path.dirname(file)
     if (isDirectory(dirPath)) {

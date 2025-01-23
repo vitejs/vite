@@ -111,6 +111,10 @@ test('a ts module can import another ts module using its corresponding js file n
   expect(await page.textContent('.ts-extension')).toMatch('[success]')
 })
 
+test('a js module can import another ts module using its corresponding js file name', async () => {
+  expect(await page.textContent('.js-ts-extension')).toMatch('[success]')
+})
+
 test('filename with dot', async () => {
   expect(await page.textContent('.dot')).toMatch('[success]')
 })
