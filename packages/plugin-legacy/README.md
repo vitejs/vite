@@ -129,6 +129,13 @@ npm add -D terser
 
   Set to `false` to only output the legacy bundles that support all target browsers.
 
+### `sourcemapBaseUrl`
+
+- **Type:** `string`
+- **Default:** `undefined`
+
+  Set custom base url for sourcemaps. Inherited from from `build.rollupOptions.output.sourcemapBaseUrl` option in `vite.config.js`.
+
 ## Browsers that supports ESM but does not support widely-available features
 
 The legacy plugin offers a way to use widely-available features natively in the modern build, while falling back to the legacy build in browsers with native ESM but without those features supported (e.g. Legacy Edge). This feature works by injecting a runtime check and loading the legacy bundle with SystemJs runtime if needed. There are the following drawbacks:

@@ -275,6 +275,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     apply: 'build',
 
     async generateBundle(opts, bundle) {
+      const sourcemapBaseUrl = options.sourcemapBaseUrl || opts.sourcemapBaseUrl;
       if (config.build.ssr) {
         return
       }
@@ -309,6 +310,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           config.build,
           'es',
           opts,
+          sourcemapBaseUrl,
           true,
           genLegacy,
         )
@@ -353,6 +355,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           config.build,
           'iife',
           opts,
+          sourcemapBaseUrl,
           options.externalSystemJS,
         )
       }
@@ -785,6 +788,7 @@ async function buildPolyfillChunk(
   buildOptions: BuildOptions,
   format: 'iife' | 'es',
   rollupOutputOptions: NormalizedOutputOptions,
+  sourcemapBaseUrl?: string,
   excludeSystemJS?: boolean,
   prependModenChunkLegacyGuard?: boolean,
 ) {
@@ -812,6 +816,7 @@ async function buildPolyfillChunk(
         output: {
           format,
           hashCharacters: rollupOutputOptions.hashCharacters,
+          sourcemapBaseUrl,
           entryFileNames: rollupOutputOptions.entryFileNames,
         },
       },

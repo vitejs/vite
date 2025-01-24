@@ -29,4 +29,5 @@ export interface Options {
    * default: true
    */
   renderModernChunks?: boolean
+  sourcemapBaseUrl?: string
 }
