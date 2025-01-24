@@ -1122,7 +1122,7 @@ function deepClone<T>(value: T): DeepWritable<T> {
     return value as DeepWritable<T>
   }
   if (value instanceof RegExp) {
-    return structuredClone(value) as DeepWritable<T>
+    return new RegExp(value) as DeepWritable<T>
   }
   if (typeof value === 'object' && value != null) {
     throw new Error('Cannot deep clone non-plain object')
