@@ -63,16 +63,17 @@ import {
   asyncFlatten,
   createDebugger,
   createFilter,
-  isBuiltin,
   isExternalUrl,
   isFilePathESM,
   isInNodeModules,
   isNodeBuiltin,
+  isNodeLikeBuiltin,
   isObject,
   isParentDirectory,
   mergeAlias,
   mergeConfig,
   mergeWithDefaults,
+  nodeLikeBuiltins,
   normalizeAlias,
   normalizePath,
 } from './utils'
@@ -547,6 +548,7 @@ export interface InlineConfig extends UserConfig {
   /** @experimental */
   configLoader?: 'bundle' | 'runner'
   envFile?: false
+  forceOptimizeDeps?: boolean
 }
 
 export interface ResolvedConfig
@@ -774,6 +776,7 @@ function resolveEnvironmentOptions(
   options: EnvironmentOptions,
   alias: Alias[],
   preserveSymlinks: boolean,
+  forceOptimizeDeps: boolean | undefined,
   logger: Logger,
   environmentName: string,
   // Backward compatibility
@@ -803,6 +806,7 @@ function resolveEnvironmentOptions(
     optimizeDeps: resolveDepOptimizationOptions(
       options.optimizeDeps,
       resolve.preserveSymlinks,
+      forceOptimizeDeps,
       consumer,
     ),
     dev: resolveDevEnvironmentOptions(
@@ -919,7 +923,11 @@ function resolveEnvironmentResolveOptions(
         isSsrTargetWebworkerEnvironment
           ? DEFAULT_CLIENT_CONDITIONS
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
-      enableBuiltinNoExternalCheck: !!isSsrTargetWebworkerEnvironment,
+      builtins:
+        resolve?.builtins ??
+        (consumer === 'server' && !isSsrTargetWebworkerEnvironment
+          ? nodeLikeBuiltins
+          : []),
     },
     resolve ?? {},
   )
@@ -975,6 +983,7 @@ function resolveResolveOptions(
 function resolveDepOptimizationOptions(
   optimizeDeps: DepOptimizationOptions | undefined,
   preserveSymlinks: boolean,
+  forceOptimizeDeps: boolean | undefined,
   consumer: 'client' | 'server' | undefined,
 ): DepOptimizationOptions {
   return mergeWithDefaults(
@@ -985,6 +994,7 @@ function resolveDepOptimizationOptions(
       esbuildOptions: {
         preserveSymlinks,
       },
+      force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
     },
     optimizeDeps ?? {},
   )
@@ -1197,6 +1207,7 @@ export async function resolveConfig(
       config.environments[environmentName],
       resolvedDefaultResolve.alias,
       resolvedDefaultResolve.preserveSymlinks,
+      inlineConfig.forceOptimizeDeps,
       logger,
       environmentName,
       config.experimental?.skipSsrTransform,
@@ -1837,6 +1848,7 @@ async function bundleConfigFile(
               preserveSymlinks: false,
               packageCache,
               isRequire,
+              builtins: nodeLikeBuiltins,
             })?.id
           }
 
@@ -1855,7 +1867,7 @@ async function bundleConfigFile(
               // With the `isNodeBuiltin` check above, this check captures if the builtin is a
               // non-node built-in, which esbuild doesn't know how to handle. In that case, we
               // externalize it so the non-node runtime handles it instead.
-              if (isBuiltin(id)) {
+              if (isNodeLikeBuiltin(id)) {
                 return { external: true }
               }
 
