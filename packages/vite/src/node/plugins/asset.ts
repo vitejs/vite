@@ -57,6 +57,8 @@ export function registerCustomMime(): void {
   mrmime.mimes['flac'] = 'audio/flac'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
   mrmime.mimes['eot'] = 'application/vnd.ms-fontobject'
+  // https://github.com/lukeed/mrmime/issues/10
+  mrmime.mimes['jxl'] = 'image/jxl'
 }
 
 export function renderAssetUrlInJS(

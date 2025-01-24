@@ -5,6 +5,7 @@ import type { SourceMap } from 'rollup'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { transformWithEsbuild } from '../../plugins/esbuild'
 import { ssrTransform } from '../ssrTransform'
+import { createServer } from '../..'
 
 const ssrTransformSimple = async (code: string, url = '') =>
   ssrTransform(code, null, url, code)
@@ -1285,6 +1286,14 @@ switch (1) {
     f()
     break
 }
+
+if(0){}f()
+
+if(0){}else{}f()
+
+switch(1){}f()
+
+{}f(1)
 `),
   ).toMatchInlineSnapshot(`
     "
@@ -1346,7 +1355,107 @@ switch (1) {
         x;
         (0,__vite_ssr_import_0__.f)();
         break
-    }
+    };
+
+    if(0){};(0,__vite_ssr_import_0__.f)();
+
+    if(0){}else{};(0,__vite_ssr_import_0__.f)();
+
+    switch(1){};(0,__vite_ssr_import_0__.f)();
+
+    {}(0,__vite_ssr_import_0__.f)(1)
     "
   `)
+})
+
+test('does not break minified code', async () => {
+  // Based on https://unpkg.com/@headlessui/vue@1.7.23/dist/components/transitions/transition.js
+  expect(
+    await ssrTransformSimpleCode(
+      `import O from 'a';
+const c = () => {
+  if(true){return}O(1,{})
+}`,
+    ),
+  ).toMatchInlineSnapshot(
+    `
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("a", {"importedNames":["default"]});
+    const c = () => {
+      if(true){return};(0,__vite_ssr_import_0__.default)(1,{})
+    }"
+  `,
+  )
+})
+
+test('combine mappings', async () => {
+  const server = await createServer({
+    configFile: false,
+    envFile: false,
+    logLevel: 'error',
+    plugins: [
+      {
+        name: 'test-mappings',
+        resolveId(source) {
+          if (source.startsWith('virtual:test-mappings')) {
+            return '\0' + source
+          }
+        },
+        load(id) {
+          if (id.startsWith('\0virtual:test-mappings')) {
+            const code = `export default "test";\n`
+            if (id === '\0virtual:test-mappings:empty') {
+              return { code, map: { mappings: '' } }
+            }
+            if (id === '\0virtual:test-mappings:null') {
+              return { code, map: null }
+            }
+          }
+        },
+      },
+    ],
+  })
+
+  {
+    const result = await server.environments.ssr.transformRequest(
+      'virtual:test-mappings:empty',
+    )
+    expect(result?.map).toMatchInlineSnapshot(`
+      {
+        "mappings": "",
+      }
+    `)
+    const mod = await server.ssrLoadModule('virtual:test-mappings:empty')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "default": "test",
+      }
+    `)
+  }
+
+  {
+    const result = await server.environments.ssr.transformRequest(
+      'virtual:test-mappings:null',
+    )
+    expect(result?.map).toMatchInlineSnapshot(`
+      SourceMap {
+        "file": undefined,
+        "mappings": "AAAA,8BAAc,CAAC,CAAC,IAAI,CAAC;",
+        "names": [],
+        "sources": [
+          "virtual:test-mappings:null",
+        ],
+        "sourcesContent": [
+          "export default "test";
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+    const mod = await server.ssrLoadModule('virtual:test-mappings:null')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "default": "test",
+      }
+    `)
+  }
 })

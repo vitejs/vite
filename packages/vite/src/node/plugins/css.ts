@@ -374,20 +374,20 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       const resolveUrl = (url: string, importer?: string) =>
         idResolver(environment, url, importer)
 
-      const urlReplacer: CssUrlReplacer = async (url, importer) => {
+      const urlResolver: CssUrlResolver = async (url, importer) => {
         const decodedUrl = decodeURI(url)
         if (checkPublicFile(decodedUrl, config)) {
           if (encodePublicUrlsInCSS(config)) {
-            return publicFileToBuiltUrl(decodedUrl, config)
+            return [publicFileToBuiltUrl(decodedUrl, config), undefined]
           } else {
-            return joinUrlSegments(config.base, decodedUrl)
+            return [joinUrlSegments(config.base, decodedUrl), undefined]
           }
         }
         const [id, fragment] = decodedUrl.split('#')
         let resolved = await resolveUrl(id, importer)
         if (resolved) {
           if (fragment) resolved += '#' + fragment
-          return fileToUrl(this, resolved)
+          return [await fileToUrl(this, resolved), resolved]
         }
         if (config.command === 'build') {
           const isExternal = config.build.rollupOptions.external
@@ -406,7 +406,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
             )
           }
         }
-        return url
+        return [url, undefined]
       }
 
       const {
@@ -419,7 +419,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         id,
         raw,
         preprocessorWorkerController!,
-        urlReplacer,
+        urlResolver,
       )
       if (modules) {
         moduleCache.set(id, modules)
@@ -1059,17 +1059,20 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
           // main import to hot update
           const depModules = new Set<string | EnvironmentModuleNode>()
           for (const file of pluginImports) {
-            depModules.add(
-              isCSSRequest(file)
-                ? moduleGraph.createFileOnlyEntry(file)
-                : await moduleGraph.ensureEntryFromUrl(
-                    await fileToDevUrl(
-                      this.environment,
-                      file,
-                      /* skipBase */ true,
-                    ),
-                  ),
-            )
+            if (isCSSRequest(file)) {
+              depModules.add(moduleGraph.createFileOnlyEntry(file))
+            } else {
+              const url = await fileToDevUrl(
+                this.environment,
+                file,
+                /* skipBase */ true,
+              )
+              if (url.startsWith('data:')) {
+                depModules.add(moduleGraph.createFileOnlyEntry(file))
+              } else {
+                depModules.add(await moduleGraph.ensureEntryFromUrl(url))
+              }
+            }
           }
           moduleGraph.updateModuleInfo(
             thisModule,
@@ -1268,7 +1271,7 @@ async function compileCSS(
   id: string,
   code: string,
   workerController: PreprocessorWorkerController,
-  urlReplacer?: CssUrlReplacer,
+  urlResolver?: CssUrlResolver,
 ): Promise<{
   code: string
   map?: SourceMapInput
@@ -1277,7 +1280,7 @@ async function compileCSS(
 }> {
   const { config } = environment
   if (config.css.transformer === 'lightningcss') {
-    return compileLightningCSS(id, code, environment, urlReplacer)
+    return compileLightningCSS(id, code, environment, urlResolver)
   }
 
   const lang = CSS_LANGS_RE.exec(id)?.[1] as CssLang | undefined
@@ -1385,7 +1388,7 @@ async function compileCSS(
   }
 
   if (
-    urlReplacer &&
+    urlResolver &&
     // if there's an @import, we need to add this plugin
     // regradless of whether it contains url() or image-set(),
     // because we don't know the content referenced by @import
@@ -1393,7 +1396,8 @@ async function compileCSS(
   ) {
     postcssPlugins.push(
       UrlRewritePostcssPlugin({
-        replacer: urlReplacer,
+        resolver: urlResolver,
+        deps,
         logger: environment.logger,
       }),
     )
@@ -1490,7 +1494,7 @@ async function compileCSS(
         }
       } else if (message.type === 'warning') {
         const warning = message as PostCSS.Warning
-        let msg = `[vite:css] ${warning.text}`
+        let msg = `[vite:css][postcss] ${warning.text}`
         msg += `\n${generateCodeFrame(
           code,
           {
@@ -1732,6 +1736,12 @@ async function resolvePostcssConfig(
   return result
 }
 
+type CssUrlResolver = (
+  url: string,
+  importer?: string,
+) =>
+  | [url: string, id: string | undefined]
+  | Promise<[url: string, id: string | undefined]>
 type CssUrlReplacer = (
   url: string,
   importer?: string,
@@ -1748,7 +1758,8 @@ export const importCssRE =
 const cssImageSetRE = /(?<=image-set\()((?:[\w-]{1,256}\([^)]*\)|[^)])*)(?=\))/
 
 const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
-  replacer: CssUrlReplacer
+  resolver: CssUrlResolver
+  deps: Set<string>
   logger: Logger
 }> = (opts) => {
   if (!opts) {
@@ -1772,8 +1783,13 @@ const UrlRewritePostcssPlugin: PostCSS.PluginCreator<{
         const isCssUrl = cssUrlRE.test(declaration.value)
         const isCssImageSet = cssImageSetRE.test(declaration.value)
         if (isCssUrl || isCssImageSet) {
-          const replacerForDeclaration = (rawUrl: string) => {
-            return opts.replacer(rawUrl, importer)
+          const replacerForDeclaration = async (rawUrl: string) => {
+            const [newUrl, resolvedId] = await opts.resolver(rawUrl, importer)
+            // only register inlined assets to avoid frequent full refresh (#18979)
+            if (newUrl.startsWith('data:') && resolvedId) {
+              opts.deps.add(resolvedId)
+            }
+            return newUrl
           }
           if (isCssUrl && isCssImageSet) {
             promises.push(
@@ -1930,31 +1946,47 @@ async function minifyCSS(
   // See https://github.com/vitejs/vite/pull/13893#issuecomment-1678628198
 
   if (config.build.cssMinify === 'lightningcss') {
-    const { code, warnings } = (await importLightningCSS()).transform({
-      ...config.css.lightningcss,
-      targets: convertTargets(config.build.cssTarget),
-      cssModules: undefined,
-      // TODO: Pass actual filename here, which can also be passed to esbuild's
-      // `sourcefile` option below to improve error messages
-      filename: defaultCssBundleName,
-      code: Buffer.from(css),
-      minify: true,
-    })
-    if (warnings.length) {
-      config.logger.warn(
-        colors.yellow(
-          `warnings when minifying css:\n${warnings
-            .map((w) => w.message)
-            .join('\n')}`,
-        ),
-      )
-    }
+    try {
+      const { code, warnings } = (await importLightningCSS()).transform({
+        ...config.css.lightningcss,
+        targets: convertTargets(config.build.cssTarget),
+        cssModules: undefined,
+        // TODO: Pass actual filename here, which can also be passed to esbuild's
+        // `sourcefile` option below to improve error messages
+        filename: defaultCssBundleName,
+        code: Buffer.from(css),
+        minify: true,
+      })
+      if (warnings.length) {
+        const messages = warnings.map(
+          (warning) =>
+            `${warning.message}\n` +
+            generateCodeFrame(css, {
+              line: warning.loc.line,
+              column: warning.loc.column - 1, // 1-based
+            }),
+        )
+        config.logger.warn(
+          colors.yellow(`warnings when minifying css:\n${messages.join('\n')}`),
+        )
+      }
 
-    // NodeJS res.code = Buffer
-    // Deno res.code = Uint8Array
-    // For correct decode compiled css need to use TextDecoder
-    // LightningCSS output does not return a linebreak at the end
-    return decoder.decode(code) + (inlined ? '' : '\n')
+      // NodeJS res.code = Buffer
+      // Deno res.code = Uint8Array
+      // For correct decode compiled css need to use TextDecoder
+      // LightningCSS output does not return a linebreak at the end
+      return decoder.decode(code) + (inlined ? '' : '\n')
+    } catch (e) {
+      e.message = `[lightningcss minify] ${e.message}`
+      if (e.loc) {
+        e.loc = {
+          line: e.loc.line,
+          column: e.loc.column - 1, // 1-based
+        }
+        e.frame = generateCodeFrame(css, e.loc)
+      }
+      throw e
+    }
   }
   try {
     const { code, warnings } = await transform(css, {
@@ -3165,7 +3197,7 @@ async function compileLightningCSS(
   id: string,
   src: string,
   environment: PartialEnvironment,
-  urlReplacer?: CssUrlReplacer,
+  urlResolver?: CssUrlResolver,
 ): ReturnType<typeof compileCSS> {
   const { config } = environment
   const deps = new Set<string>()
@@ -3229,12 +3261,42 @@ async function compileLightningCSS(
         })
   } catch (e) {
     e.message = `[lightningcss] ${e.message}`
-    e.loc = {
-      file: e.fileName.replace(NULL_BYTE_PLACEHOLDER, '\0'),
-      line: e.loc.line,
-      column: e.loc.column - 1, // 1-based
+    if (e.loc) {
+      e.loc = {
+        file: e.fileName.replace(NULL_BYTE_PLACEHOLDER, '\0'),
+        line: e.loc.line,
+        column: e.loc.column - 1, // 1-based
+      }
+      // add friendly error for https://github.com/parcel-bundler/lightningcss/issues/39
+      try {
+        const code = fs.readFileSync(e.fileName, 'utf-8')
+        const commonIeMessage =
+          ', which was used in the past to support old Internet Explorer versions.' +
+          ' This is not a valid CSS syntax and will be ignored by modern browsers. ' +
+          '\nWhile this is not supported by LightningCSS, you can set `css.lightningcss.errorRecovery: true` to strip these codes.'
+        if (/[\s;{]\*[a-zA-Z-][\w-]+\s*:/.test(code)) {
+          // https://stackoverflow.com/a/1667560
+          e.message +=
+            '.\nThis file contains star property hack (e.g. `*zoom`)' +
+            commonIeMessage
+        } else if (/min-width:\s*0\\0/.test(code)) {
+          // https://stackoverflow.com/a/14585820
+          e.message +=
+            '.\nThis file contains @media zero hack (e.g. `@media (min-width: 0\\0)`)' +
+            commonIeMessage
+        }
+      } catch {}
     }
     throw e
+  }
+
+  for (const warning of res.warnings) {
+    let msg = `[vite:css][lightningcss] ${warning.message}`
+    msg += `\n${generateCodeFrame(src, {
+      line: warning.loc.line,
+      column: warning.loc.column - 1, // 1-based
+    })}`
+    environment.logger.warn(colors.yellow(msg))
   }
 
   // NodeJS res.code = Buffer
@@ -3247,11 +3309,16 @@ async function compileLightningCSS(
         let replaceUrl: string
         if (skipUrlReplacer(dep.url)) {
           replaceUrl = dep.url
-        } else if (urlReplacer) {
-          replaceUrl = await urlReplacer(
+        } else if (urlResolver) {
+          const [newUrl, resolvedId] = await urlResolver(
             dep.url,
             dep.loc.filePath.replace(NULL_BYTE_PLACEHOLDER, '\0'),
           )
+          // only register inlined assets to avoid frequent full refresh (#18979)
+          if (newUrl.startsWith('data:') && resolvedId) {
+            deps.add(resolvedId)
+          }
+          replaceUrl = newUrl
         } else {
           replaceUrl = dep.url
         }

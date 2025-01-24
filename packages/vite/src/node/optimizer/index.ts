@@ -373,24 +373,36 @@ export async function loadCachedDepOptimizationMetadata(
       if (cachedMetadata.lockfileHash !== getLockfileHash(environment)) {
         environment.logger.info(
           'Re-optimizing dependencies because lockfile has changed',
+          {
+            timestamp: true,
+          },
         )
       } else if (cachedMetadata.configHash !== getConfigHash(environment)) {
         environment.logger.info(
           'Re-optimizing dependencies because vite config has changed',
+          {
+            timestamp: true,
+          },
         )
       } else {
-        log?.('Hash is consistent. Skipping. Use --force to override.')
+        log?.(
+          `(${environment.name}) Hash is consistent. Skipping. Use --force to override.`,
+        )
         // Nothing to commit or cancel as we are using the cache, we only
         // need to resolve the processing promise so requests can move on
         return cachedMetadata
       }
     }
   } else {
-    environment.logger.info('Forced re-optimization of dependencies')
+    environment.logger.info('Forced re-optimization of dependencies', {
+      timestamp: true,
+    })
   }
 
   // Start with a fresh cache
-  debug?.(colors.green(`removing old cache dir ${depsCacheDir}`))
+  debug?.(
+    `(${environment.name}) ${colors.green(`removing old cache dir ${depsCacheDir}`)}`,
+  )
   await fsp.rm(depsCacheDir, { recursive: true, force: true })
 }
 
@@ -1172,34 +1184,49 @@ function isSingleDefaultExport(exports: readonly string[]) {
 const lockfileFormats = [
   {
     path: 'node_modules/.package-lock.json',
-    checkPatches: true,
+    checkPatchesDir: 'patches',
     manager: 'npm',
   },
   {
     // Yarn non-PnP
     path: 'node_modules/.yarn-state.yml',
-    checkPatches: false,
+    checkPatchesDir: false,
     manager: 'yarn',
   },
   {
-    // Yarn PnP
-    path: '.yarn/install-state',
-    checkPatches: false,
+    // Yarn v3+ PnP
+    path: '.pnp.cjs',
+    checkPatchesDir: '.yarn/patches',
+    manager: 'yarn',
+  },
+  {
+    // Yarn v2 PnP
+    path: '.pnp.js',
+    checkPatchesDir: '.yarn/patches',
     manager: 'yarn',
   },
   {
     // yarn 1
     path: 'node_modules/.yarn-integrity',
-    checkPatches: true,
+    checkPatchesDir: 'patches',
     manager: 'yarn',
   },
   {
     path: 'node_modules/.pnpm/lock.yaml',
     // Included in lockfile
-    checkPatches: false,
+    checkPatchesDir: false,
     manager: 'pnpm',
   },
-  { name: 'bun.lockb', path: 'bun.lockb', checkPatches: true, manager: 'bun' },
+  {
+    path: 'bun.lock',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
+  {
+    path: 'bun.lockb',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
 ].sort((_, { manager }) => {
   return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
 })
@@ -1250,10 +1277,13 @@ function getLockfileHash(environment: Environment): string {
     const lockfileFormat = lockfileFormats.find((f) =>
       normalizedLockfilePath.endsWith(f.path),
     )!
-    if (lockfileFormat.checkPatches) {
+    if (lockfileFormat.checkPatchesDir) {
       // Default of https://github.com/ds300/patch-package
       const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
-      const fullPath = path.join(baseDir, 'patches')
+      const fullPath = path.join(
+        baseDir,
+        lockfileFormat.checkPatchesDir as string,
+      )
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
         content += stat.mtimeMs.toString()

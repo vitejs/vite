@@ -26,6 +26,7 @@ import logoLaravel from './images/laravel.svg'
 import logoAdonis from './images/adonis.svg'
 import logoEmber from './images/ember.svg'
 import logoPreact from './images/preact.svg'
+import logoHono from './images/hono.svg'
 
 /**
  * The frameworks and tools to display in this section.
@@ -162,6 +163,13 @@ const frameworks: Framework[] = [
     logo: logoEmber,
     color: '#e04e39',
     url: 'https://emberjs.com/',
+    visible: ref(false),
+  },
+  {
+    name: 'Hono',
+    logo: logoHono,
+    color: '#ff5c13',
+    url: 'https://hono.dev/',
     visible: ref(false),
   },
 ]

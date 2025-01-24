@@ -249,7 +249,7 @@ describe('preview config', () => {
       'Cache-Control': 'no-store',
     },
     proxy: { '/foo': 'http://localhost:4567' },
-    cors: false,
+    cors: true,
   })
 
   test('preview inherits server config with default port', async () => {
@@ -285,7 +285,7 @@ describe('preview config', () => {
     open: false,
     host: false,
     proxy: { '/bar': 'http://localhost:3010' },
-    cors: true,
+    cors: false,
   })
 
   test('preview overrides server config', async () => {
@@ -478,6 +478,38 @@ test('config compat 2', async () => {
     [
       "ssr2",
       "ssr1",
+    ]
+  `)
+})
+
+test('config compat 3', async () => {
+  const config = await resolveConfig({}, 'serve')
+  expect(config.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "browser",
+      "development|production",
+    ]
+  `)
+  expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "browser",
+      "development|production",
+    ]
+  `)
+  expect(config.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "node",
+      "development|production",
+    ]
+  `)
+  expect(config.environments.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "node",
+      "development|production",
     ]
   `)
 })

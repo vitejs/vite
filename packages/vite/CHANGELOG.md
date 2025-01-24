@@ -1,3 +1,65 @@
+## <small>6.0.11 (2025-01-21)</small>
+
+* fix: `preview.allowedHosts` with specific values was not respected (#19246) ([aeb3ec8](https://github.com/vitejs/vite/commit/aeb3ec84a288d6be227a1284607f13428a4f14a1)), closes [#19246](https://github.com/vitejs/vite/issues/19246)
+* fix: allow CORS from loopback addresses by default (#19249) ([3d03899](https://github.com/vitejs/vite/commit/3d038997377a30022b6a6b7916e0b4b5d8b9a363)), closes [#19249](https://github.com/vitejs/vite/issues/19249)
+
+
+
+## <small>6.0.10 (2025-01-20)</small>
+
+* fix: try parse `server.origin` URL (#19241) ([2495022](https://github.com/vitejs/vite/commit/2495022420fda05ee389c2dcf26921b21e2aed3b)), closes [#19241](https://github.com/vitejs/vite/issues/19241)
+
+
+
+## <small>6.0.9 (2025-01-20)</small>
+
+* fix!: check host header to prevent DNS rebinding attacks and introduce `server.allowedHosts` ([bd896fb](https://github.com/vitejs/vite/commit/bd896fb5f312fc0ff1730166d1d142fc0d34ba6d))
+* fix!: default `server.cors: false` to disallow fetching from untrusted origins ([b09572a](https://github.com/vitejs/vite/commit/b09572acc939351f4e4c50ddf793017a92c678b1))
+* fix: verify token for HMR WebSocket connection ([029dcd6](https://github.com/vitejs/vite/commit/029dcd6d77d3e3ef10bc38e9a0829784d9760fdb))
+
+
+
+## <small>6.0.8 (2025-01-20)</small>
+
+* fix: avoid SSR HMR for HTML files (#19193) ([3bd55bc](https://github.com/vitejs/vite/commit/3bd55bcb7e831d2c4f66c90d7bbb3e1fbf7a02b6)), closes [#19193](https://github.com/vitejs/vite/issues/19193)
+* fix: build time display 7m 60s (#19108) ([cf0d2c8](https://github.com/vitejs/vite/commit/cf0d2c8e232a1af716c71cdd2218d180f7ecc02b)), closes [#19108](https://github.com/vitejs/vite/issues/19108)
+* fix: don't resolve URL starting with double slash (#19059) ([35942cd](https://github.com/vitejs/vite/commit/35942cde11fd8a68fa89bf25f7aa1ddb87d775b2)), closes [#19059](https://github.com/vitejs/vite/issues/19059)
+* fix: ensure `server.close()` only called once (#19204) ([db81c2d](https://github.com/vitejs/vite/commit/db81c2dada961f40c0882b5182adf2f34bb5c178)), closes [#19204](https://github.com/vitejs/vite/issues/19204)
+* fix: resolve.conditions in ResolvedConfig was `defaultServerConditions` (#19174) ([ad75c56](https://github.com/vitejs/vite/commit/ad75c56dce5618a3a416e18f9a5c3880d437a107)), closes [#19174](https://github.com/vitejs/vite/issues/19174)
+* fix: tree shake stringified JSON imports (#19189) ([f2aed62](https://github.com/vitejs/vite/commit/f2aed62d0bf1b66e870ee6b4aab80cd1702793ab)), closes [#19189](https://github.com/vitejs/vite/issues/19189)
+* fix: use shared sigterm callback (#19203) ([47039f4](https://github.com/vitejs/vite/commit/47039f4643179be31a8d7c7fbff83c5c13deb787)), closes [#19203](https://github.com/vitejs/vite/issues/19203)
+* fix(deps): update all non-major dependencies (#19098) ([8639538](https://github.com/vitejs/vite/commit/8639538e6498d1109da583ad942c1472098b5919)), closes [#19098](https://github.com/vitejs/vite/issues/19098)
+* fix(optimizer): use correct default install state path for yarn PnP (#19119) ([e690d8b](https://github.com/vitejs/vite/commit/e690d8bb1e5741e81df5b7a6a5c8c3c1c971fa41)), closes [#19119](https://github.com/vitejs/vite/issues/19119)
+* fix(types): improve `ESBuildOptions.include / exclude` type to allow `readonly (string | RegExp)[]`  ([ea53e70](https://github.com/vitejs/vite/commit/ea53e7095297ea4192490fd58556414cc59a8975)), closes [#19146](https://github.com/vitejs/vite/issues/19146)
+* chore(deps): update dependency pathe to v2 (#19139) ([71506f0](https://github.com/vitejs/vite/commit/71506f0a8deda5254cb49c743cd439dfe42859ce)), closes [#19139](https://github.com/vitejs/vite/issues/19139)
+
+
+
+## <small>6.0.7 (2025-01-02)</small>
+
+* fix: fix `minify` when `builder.sharedPlugins: true` (#19025) ([f7b1964](https://github.com/vitejs/vite/commit/f7b1964d3a93a21f80b61638fa6ae9606d0a6f4f)), closes [#19025](https://github.com/vitejs/vite/issues/19025)
+* fix: skip the plugin if it has been called before with the same id and importer (#19016) ([b178c90](https://github.com/vitejs/vite/commit/b178c90c7d175ea31f8b67dccad3918f820357a4)), closes [#19016](https://github.com/vitejs/vite/issues/19016)
+* fix(html): error while removing `vite-ignore` attribute for inline script (#19062) ([a492253](https://github.com/vitejs/vite/commit/a4922537a8d705da7769d30626a0d846511fc124)), closes [#19062](https://github.com/vitejs/vite/issues/19062)
+* fix(ssr): fix semicolon injection by ssr transform (#19097) ([1c102d5](https://github.com/vitejs/vite/commit/1c102d517de52531faf5765632703977a17de65a)), closes [#19097](https://github.com/vitejs/vite/issues/19097)
+* perf: skip globbing for static path in warmup (#19107) ([677508b](https://github.com/vitejs/vite/commit/677508bf8268a7b8661e5557a3d0a2a76cab8bd1)), closes [#19107](https://github.com/vitejs/vite/issues/19107)
+* feat(css): show lightningcss warnings (#19076) ([b07c036](https://github.com/vitejs/vite/commit/b07c036faf6849fe5ffd03125f25dc00f460f8ba)), closes [#19076](https://github.com/vitejs/vite/issues/19076)
+
+
+
+## <small>6.0.6 (2024-12-26)</small>
+
+* fix: replace runner-side path normalization with `fetchModule`-side resolve (#18361) ([9f10261](https://github.com/vitejs/vite/commit/9f10261e7609098b832fd0fb23a64840b3a0d1a0)), closes [#18361](https://github.com/vitejs/vite/issues/18361)
+* fix(css): resolve style tags in HTML files correctly for lightningcss (#19001) ([afff05c](https://github.com/vitejs/vite/commit/afff05c03266fc76d5ab8928215c89f5992f40f8)), closes [#19001](https://github.com/vitejs/vite/issues/19001)
+* fix(css): show correct error when unknown placeholder is used for CSS modules pattern in lightningcs ([9290d85](https://github.com/vitejs/vite/commit/9290d85b5d2ad64991bd296157cb3bcb959c341d)), closes [#19070](https://github.com/vitejs/vite/issues/19070)
+* fix(resolve): handle package.json with UTF-8 BOM (#19000) ([902567a](https://github.com/vitejs/vite/commit/902567ac5327e915ce65d090045fa4922ef9f2b5)), closes [#19000](https://github.com/vitejs/vite/issues/19000)
+* fix(ssrTransform): preserve line offset when transforming imports (#19004) ([1aa434e](https://github.com/vitejs/vite/commit/1aa434e8017012bf0939b2ff1a3a66b4bd12b76d)), closes [#19004](https://github.com/vitejs/vite/issues/19004)
+* chore: fix typo in comment (#19067) ([eb06ec3](https://github.com/vitejs/vite/commit/eb06ec30bb02ced66274f0fc6e90aff2bb20c632)), closes [#19067](https://github.com/vitejs/vite/issues/19067)
+* chore: update comment about `build.target` (#19047) ([0e9e81f](https://github.com/vitejs/vite/commit/0e9e81f622f13d78ee238c0fa72ba920e23419f4)), closes [#19047](https://github.com/vitejs/vite/issues/19047)
+* revert: unpin esbuild version (#19043) ([8bfe247](https://github.com/vitejs/vite/commit/8bfe247511517c631a26f3931bb3c93a7b0b7446)), closes [#19043](https://github.com/vitejs/vite/issues/19043)
+* test(ssr): test virtual module with query (#19044) ([a1f4b46](https://github.com/vitejs/vite/commit/a1f4b46896cb4b442b54a8336db8eca6df9ee02d)), closes [#19044](https://github.com/vitejs/vite/issues/19044)
+
+
+
 ## <small>6.0.5 (2024-12-20)</small>
 
 * fix: esbuild regression (pin to 0.24.0) (#19027) ([4359e0d](https://github.com/vitejs/vite/commit/4359e0d5b33afd6259a4dcef787cc2670e963126)), closes [#19027](https://github.com/vitejs/vite/issues/19027)
