@@ -91,6 +91,18 @@ const FRAMEWORKS: Framework[] = [
     color: green,
     variants: [
       {
+        name: 'custom-nuxt',
+        display: 'Nuxt ↗',
+        color: greenBright,
+        customCommand: 'npm exec nuxi init TARGET_DIR',
+      },
+      {
+        name: 'custom-create-vue',
+        display: 'Customize with create-vue ↗',
+        color: green,
+        customCommand: 'npm create vue@latest TARGET_DIR',
+      },
+      {
         name: 'vue-ts',
         display: 'TypeScript',
         color: blue,
@@ -100,18 +112,6 @@ const FRAMEWORKS: Framework[] = [
         display: 'JavaScript',
         color: yellow,
       },
-      {
-        name: 'custom-create-vue',
-        display: 'Customize with create-vue ↗',
-        color: green,
-        customCommand: 'npm create vue@latest TARGET_DIR',
-      },
-      {
-        name: 'custom-nuxt',
-        display: 'Nuxt ↗',
-        color: greenBright,
-        customCommand: 'npm exec nuxi init TARGET_DIR',
-      },
     ],
   },
   {
@@ -119,6 +119,12 @@ const FRAMEWORKS: Framework[] = [
     display: 'React',
     color: cyan,
     variants: [
+      {
+        name: 'custom-react-router',
+        display: 'React Router v7 ↗',
+        color: cyan,
+        customCommand: 'npm create react-router@latest TARGET_DIR',
+      },
       {
         name: 'react-ts',
         display: 'TypeScript',
@@ -139,12 +145,6 @@ const FRAMEWORKS: Framework[] = [
         display: 'JavaScript + SWC',
         color: yellow,
       },
-      {
-        name: 'custom-react-router',
-        display: 'React Router v7 ↗',
-        color: cyan,
-        customCommand: 'npm create react-router@latest TARGET_DIR',
-      },
     ],
   },
   {
@@ -152,6 +152,12 @@ const FRAMEWORKS: Framework[] = [
     display: 'Preact',
     color: magenta,
     variants: [
+      {
+        name: 'custom-create-preact',
+        display: 'Customize with create-preact ↗',
+        color: magenta,
+        customCommand: 'npm create preact@latest TARGET_DIR',
+      },
       {
         name: 'preact-ts',
         display: 'TypeScript',
@@ -161,12 +167,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'preact',
         display: 'JavaScript',
         color: yellow,
-      },
-      {
-        name: 'custom-create-preact',
-        display: 'Customize with create-preact ↗',
-        color: magenta,
-        customCommand: 'npm create preact@latest TARGET_DIR',
       },
     ],
   },
@@ -193,6 +193,12 @@ const FRAMEWORKS: Framework[] = [
     color: red,
     variants: [
       {
+        name: 'custom-svelte-kit',
+        display: 'SvelteKit ↗',
+        color: red,
+        customCommand: 'npm exec sv create TARGET_DIR',
+      },
+      {
         name: 'svelte-ts',
         display: 'TypeScript',
         color: blue,
@@ -201,12 +207,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'svelte',
         display: 'JavaScript',
         color: yellow,
-      },
-      {
-        name: 'custom-svelte-kit',
-        display: 'SvelteKit ↗',
-        color: red,
-        customCommand: 'npm exec sv create TARGET_DIR',
       },
     ],
   },
@@ -233,6 +233,12 @@ const FRAMEWORKS: Framework[] = [
     color: blueBright,
     variants: [
       {
+        name: 'custom-qwik-city',
+        display: 'QwikCity ↗',
+        color: blueBright,
+        customCommand: 'npm create qwik@latest basic TARGET_DIR',
+      },
+      {
         name: 'qwik-ts',
         display: 'TypeScript',
         color: blueBright,
@@ -241,12 +247,6 @@ const FRAMEWORKS: Framework[] = [
         name: 'qwik',
         display: 'JavaScript',
         color: yellow,
-      },
-      {
-        name: 'custom-qwik-city',
-        display: 'QwikCity ↗',
-        color: blueBright,
-        customCommand: 'npm create qwik@latest basic TARGET_DIR',
       },
     ],
   },
