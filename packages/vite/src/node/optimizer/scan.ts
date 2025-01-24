@@ -127,8 +127,6 @@ export function scanImports(environment: ScanEnvironment): {
     missing: Record<string, string>
   }>
 } {
-  // Only used to scan non-ssr code
-
   const start = performance.now()
   const deps: Record<string, string> = {}
   const missing: Record<string, string> = {}
