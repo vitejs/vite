@@ -1,3 +1,33 @@
+## 6.1.0-beta.0 (2025-01-24)
+
+* chore: remove outdated code comment about `scanImports` not being used in ssr (#19285) ([fbbc6da](https://github.com/vitejs/vite/commit/fbbc6da186d72b7c2ad1efce22d42d302f673516)), closes [#19285](https://github.com/vitejs/vite/issues/19285)
+* chore: unneeded name in lockfileFormats (#19275) ([96092cb](https://github.com/vitejs/vite/commit/96092cb566ee50881edb391187d33f71af8f47b1)), closes [#19275](https://github.com/vitejs/vite/issues/19275)
+* chore(deps): update dependency strip-literal to v3 (#19231) ([1172d65](https://github.com/vitejs/vite/commit/1172d655c19e689e03e6a6346eefe3ac7cc5baad)), closes [#19231](https://github.com/vitejs/vite/issues/19231)
+* perf(css): only run postcss when needed (#19061) ([30194fa](https://github.com/vitejs/vite/commit/30194fa1e41dda6470aa20f2bb34655c4bfd9cd1)), closes [#19061](https://github.com/vitejs/vite/issues/19061)
+* fix: change ResolvedConfig type to interface to allow extending it (#19210) ([bc851e3](https://github.com/vitejs/vite/commit/bc851e31d88cb26a2cba3fa46763bcd368e8df36)), closes [#19210](https://github.com/vitejs/vite/issues/19210)
+* fix: correctly resolve hmr dep ids and fallback to url  (#18840) ([b84498b](https://github.com/vitejs/vite/commit/b84498b6def7d57ff6719da2d2baf6e29f0bb819)), closes [#18840](https://github.com/vitejs/vite/issues/18840)
+* fix: make `--force` work for all environments (#18901) ([51a42c6](https://github.com/vitejs/vite/commit/51a42c6b6a285fb1f092be5bbd2e18cd1fe2b214)), closes [#18901](https://github.com/vitejs/vite/issues/18901)
+* fix: use loc.file from rollup errors if available (#19222) ([ce3fe23](https://github.com/vitejs/vite/commit/ce3fe236de625de745643e127e27f2a5b52c6d2e)), closes [#19222](https://github.com/vitejs/vite/issues/19222)
+* fix(deps): update all non-major dependencies (#19190) ([f2c07db](https://github.com/vitejs/vite/commit/f2c07dbfc874b46f6e09bb04996d0514663e4544)), closes [#19190](https://github.com/vitejs/vite/issues/19190)
+* fix(hmr): register inlined assets as a dependency of CSS file (#18979) ([eb22a74](https://github.com/vitejs/vite/commit/eb22a74d29813d30be48d4413d785eedb0064b2c)), closes [#18979](https://github.com/vitejs/vite/issues/18979)
+* fix(resolve): support resolving TS files by JS extension specifiers in JS files (#18889) ([612332b](https://github.com/vitejs/vite/commit/612332b9bbe8d489265aea31c9c9a712319abc51)), closes [#18889](https://github.com/vitejs/vite/issues/18889)
+* fix(ssr): combine empty source mappings (#19226) ([ba03da2](https://github.com/vitejs/vite/commit/ba03da2a8c9ea6b26533cbcc4e50d58dc36499e2)), closes [#19226](https://github.com/vitejs/vite/issues/19226)
+* fix(utils): clone `RegExp` values with `new RegExp` instead of `structuredClone` (fix #19245, fix #1 ([56ad2be](https://github.com/vitejs/vite/commit/56ad2bef0353a4d00cd18789de7f4e7e5329d663)), closes [#19245](https://github.com/vitejs/vite/issues/19245) [#18875](https://github.com/vitejs/vite/issues/18875) [#19247](https://github.com/vitejs/vite/issues/19247)
+* feat: add support for `.jxl` (#18855) ([57b397c](https://github.com/vitejs/vite/commit/57b397c4aa3d3c657e0117c2468800d627049c8d)), closes [#18855](https://github.com/vitejs/vite/issues/18855)
+* feat: add the `builtins` environment `resolve` (#18584) ([2c2d521](https://github.com/vitejs/vite/commit/2c2d521abfd7a3263b5082f9420738ad0ef67c71)), closes [#18584](https://github.com/vitejs/vite/issues/18584)
+* feat: call Logger for plugin logs in build (#13757) ([bf3e410](https://github.com/vitejs/vite/commit/bf3e41082932f4bf7d828e18ab0346b2ac8b59c9)), closes [#13757](https://github.com/vitejs/vite/issues/13757)
+* feat: export `defaultAllowedOrigins` for user-land config and 3rd party plugins (#19259) ([dc8946b](https://github.com/vitejs/vite/commit/dc8946b9f6483ca7d63df3a5cbba307f1c21041e)), closes [#19259](https://github.com/vitejs/vite/issues/19259)
+* feat: expose createServerModuleRunnerTransport (#18730) ([8c24ee4](https://github.com/vitejs/vite/commit/8c24ee4b4fcfa16fdd8bb699643a92ee81f9c92b)), closes [#18730](https://github.com/vitejs/vite/issues/18730)
+* feat: support async for proxy.bypass (#18940) ([a6b9587](https://github.com/vitejs/vite/commit/a6b958741bd97d631aba21aa5925bbf2bca65dac)), closes [#18940](https://github.com/vitejs/vite/issues/18940)
+* feat: support log related functions in dev (#18922) ([3766004](https://github.com/vitejs/vite/commit/3766004289fde3300d1278fcf35f3bb980d9785f)), closes [#18922](https://github.com/vitejs/vite/issues/18922)
+* feat: use module runner to import the config (#18637) ([b7e0e42](https://github.com/vitejs/vite/commit/b7e0e42098dd2d42285a9d3c4f39c48a580367e7)), closes [#18637](https://github.com/vitejs/vite/issues/18637)
+* feat(css): add friendly errors for IE hacks that are not supported by lightningcss (#19072) ([caad985](https://github.com/vitejs/vite/commit/caad985abca6450d56ca3d4e27e1e859fe8909b9)), closes [#19072](https://github.com/vitejs/vite/issues/19072)
+* feat(optimizer): support bun text lockfile (#18403) ([05b005f](https://github.com/vitejs/vite/commit/05b005fc25a1e8dda749fb14149aa2f3c988b6a1)), closes [#18403](https://github.com/vitejs/vite/issues/18403)
+* feat(reporter): add `wasm` to the compressible assets regex (#19085) ([ce84142](https://github.com/vitejs/vite/commit/ce84142110584eadfccbd6ce9319573358af31a6)), closes [#19085](https://github.com/vitejs/vite/issues/19085)
+* feat(worker): support dynamic worker option fields (#19010) ([d0c3523](https://github.com/vitejs/vite/commit/d0c35232c6ccbcf448941328df34d15e9f73919b)), closes [#19010](https://github.com/vitejs/vite/issues/19010)
+
+
+
 ## <small>6.0.11 (2025-01-21)</small>
 
 * fix: `preview.allowedHosts` with specific values was not respected (#19246) ([aeb3ec8](https://github.com/vitejs/vite/commit/aeb3ec84a288d6be227a1284607f13428a4f14a1)), closes [#19246](https://github.com/vitejs/vite/issues/19246)
