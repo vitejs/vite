@@ -151,6 +151,9 @@
 <div class="css-url-svg">
   <span style="background: #fff">CSS SVG background</span>
 </div>
+<div class="css-url-svg-in-url">
+  <span style="background: #fff">CSS (?url) SVG background</span>
+</div>
 
 <div class="css-image-set-svg">
   <span style="background: #fff">CSS SVG background with image-set</span>
@@ -530,6 +533,12 @@
 
   import cssUrl from './css/icons.css?url'
   text('.url-css', cssUrl)
+
+  import cssUrlUrl from './css/css-url-url.css?url'
+  const linkTag = document.createElement('link')
+  linkTag.href = cssUrlUrl
+  linkTag.rel = 'stylesheet'
+  document.body.appendChild(linkTag)
 
   // const url = new URL('non_existent_file.png', import.meta.url)
   const metaUrl = new URL('./nested/asset.png', import.meta.url)

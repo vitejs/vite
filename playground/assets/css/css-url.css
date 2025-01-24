@@ -119,7 +119,7 @@ urls inside comments should be ignored
 */
 
 .css-url-svg {
-  background: url(../nested/fragment-bg.svg);
+  background: url(../nested/fragment-bg-hmr.svg);
   background-size: 10px;
 }
 
