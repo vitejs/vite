@@ -91,16 +91,16 @@ const FRAMEWORKS: Framework[] = [
     color: green,
     variants: [
       {
-        name: 'custom-nuxt',
-        display: 'Nuxt ↗',
-        color: greenBright,
-        customCommand: 'npm exec nuxi init TARGET_DIR',
-      },
-      {
         name: 'custom-create-vue',
         display: 'Customize with create-vue ↗',
         color: green,
         customCommand: 'npm create vue@latest TARGET_DIR',
+      },
+      {
+        name: 'custom-nuxt',
+        display: 'Nuxt ↗',
+        color: greenBright,
+        customCommand: 'npm exec nuxi init TARGET_DIR',
       },
       {
         name: 'vue-ts',
