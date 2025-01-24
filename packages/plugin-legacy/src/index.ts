@@ -275,7 +275,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
     apply: 'build',
 
     async generateBundle(opts, bundle) {
-      const sourcemapBaseUrl = options.sourcemapBaseUrl || opts.sourcemapBaseUrl;
+      const sourcemapBaseUrl = options.sourcemapBaseUrl || opts.sourcemapBaseUrl
       if (config.build.ssr) {
         return
       }
