@@ -1113,16 +1113,6 @@ export async function resolveConfig(
     configEnvironmentsSsr.dev.warmup = warmupOptions.ssrFiles
   }
 
-  // Backward compatibility: server.preTransformRequests -> environment.dev.preTransformRequests
-  if (typeof config.server?.preTransformRequests !== 'undefined') {
-    configEnvironmentsClient.dev.preTransformRequests =
-      config.server?.preTransformRequests
-    configEnvironmentsSsr ??= {}
-    configEnvironmentsSsr.dev ??= {}
-    configEnvironmentsSsr.dev.preTransformRequests ??=
-      config.server?.preTransformRequests
-  }
-
   // Backward compatibility: merge ssr into environments.ssr.config as defaults
   if (configEnvironmentsSsr) {
     configEnvironmentsSsr.optimizeDeps = mergeConfig(
