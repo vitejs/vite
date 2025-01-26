@@ -49,7 +49,7 @@ async function instantiateModule(
 
     environment.logger.error(
       buildErrorMessage(e, [
-        colors.red(`Error when evaluating SSR module ${url}`),
+        colors.red(`Error when evaluating SSR module ${url}: ${e.message}`),
       ]),
       {
         timestamp: true,
