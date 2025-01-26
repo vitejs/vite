@@ -284,7 +284,6 @@ test('plugin error', async () => {
   } catch {}
   expect(
     stripVTControlCharacters(spy.mock.lastCall![0])
-      .replace('\0', '_0_')
       .split('\n')
       .slice(0, 2)
       .join('\n'),
