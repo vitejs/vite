@@ -64,11 +64,20 @@ export const DEFAULT_SERVER_CONDITIONS = Object.freeze(
   DEFAULT_CONDITIONS.filter((c) => c !== 'browser'),
 )
 
-// Baseline support browserslist
-// "defaults and supports es6-module and supports es6-module-dynamic-import"
-// Higher browser versions may be needed for extra features.
+// Baseline support for:
+// - es2020 (covers most of following features)
+// - modules via script tag
+// - dynamic imports
+// - import.meta
+// - nullish coalescing (??)
+// - bigint
+//
+// Use this link to check for browser support (excludes es2020):
+// https://caniuse.com/es6-module,es6-module-dynamic-import,mdn-javascript_operators_import_meta,mdn-javascript_operators_nullish_coalescing,bigint#:~:text=Feature%20summary
+// NOTE: Browser versions may be slightly off as previously the browserslist special `"defaults"` query
+// was used around May 2021, which targeted browsers with >0.5% usage at the time.
 export const ESBUILD_MODULES_TARGET = [
-  'es2020', // support import.meta.url
+  'es2020',
   'edge88',
   'firefox78',
   'chrome87',

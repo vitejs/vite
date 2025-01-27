@@ -37,6 +37,7 @@ const jsxExtensionsRE = /\.(?:j|t)sx\b/
 // the final build should always support dynamic import and import.meta.
 // if they need to be polyfilled, plugin-legacy should be used.
 // plugin-legacy detects these two features when checking for modern code.
+// Browser support: https://caniuse.com/es6-module-dynamic-import,mdn-javascript_operators_import_meta#:~:text=Feature%20summary
 export const defaultEsbuildSupported = {
   'dynamic-import': true,
   'import-meta': true,
