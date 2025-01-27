@@ -128,20 +128,19 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 2. Create a file called `.gitlab-ci.yml` in the root of your project with the content below. This will build and deploy your site whenever you make changes to your content:
 
    ```yaml [.gitlab-ci.yml]
-   image: node:16.5.0
+   image: node:18.16.0
+
    pages:
      stage: deploy
      cache:
-       key:
-         files:
-           - package-lock.json
-         prefix: npm
+       key: npm-cache
        paths:
          - node_modules/
      script:
        - npm install
        - npm run build
-       - cp -a dist/. public/
+       - mkdir -p public
+       - cp -r dist/* public
      artifacts:
        paths:
          - public
