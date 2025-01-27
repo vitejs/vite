@@ -132,7 +132,7 @@ To avoid this, try to reduce your request header size. For example, if the cooki
 
 ### Dev Containers / VS Code Port Forwarding
 
-If you are using Dev Container or port forwarding feature in VS Code, you may need to set the [`server.host`](/config/server-options.md#server-host) option to `127.0.0.1` in the config to make it work.
+If you are using a Dev Container or port forwarding feature in VS Code, you may need to set the [`server.host`](/config/server-options.md#server-host) option to `127.0.0.1` in the config to make it work.
 
 This is because [the port forwarding feature in VSCode does not support IPv6](https://github.com/microsoft/vscode-remote-release/issues/7029).
 
