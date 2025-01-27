@@ -134,7 +134,7 @@ To avoid this, try to reduce your request header size. For example, if the cooki
 
 If you are using a Dev Container or port forwarding feature in VS Code, you may need to set the [`server.host`](/config/server-options.md#server-host) option to `127.0.0.1` in the config to make it work.
 
-This is because [the port forwarding feature in VSCode does not support IPv6](https://github.com/microsoft/vscode-remote-release/issues/7029).
+This is because [the port forwarding feature in VS Code does not support IPv6](https://github.com/microsoft/vscode-remote-release/issues/7029).
 
 See [#16522](https://github.com/vitejs/vite/issues/16522) for more details.
 
