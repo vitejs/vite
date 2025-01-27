@@ -94,7 +94,7 @@
   },
   "devDependencies": {
     "@ampproject/remapping": "^2.3.0",
-    "@babel/parser": "^7.26.5",
+    "@babel/parser": "^7.26.7",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.1",
@@ -129,7 +129,7 @@
     "nanoid": "^5.0.9",
     "open": "^10.1.0",
     "parse5": "^7.2.1",
-    "pathe": "^2.0.1",
+    "pathe": "^2.0.2",
     "periscopic": "^4.0.2",
     "picocolors": "^1.1.1",
     "picomatch": "^4.0.2",
