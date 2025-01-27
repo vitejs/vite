@@ -128,25 +128,24 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
 2. Create a file called `.gitlab-ci.yml` in the root of your project with the content below. This will build and deploy your site whenever you make changes to your content:
 
    ```yaml [.gitlab-ci.yml]
-   image: node:16.5.0
-   pages:
-     stage: deploy
-     cache:
-       key:
-         files:
-           - package-lock.json
-         prefix: npm
-       paths:
-         - node_modules/
-     script:
-       - npm install
-       - npm run build
-       - cp -a dist/. public/
-     artifacts:
-       paths:
-         - public
-     rules:
-       - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    image: node:18.16.0
+
+    pages:
+      stage: deploy
+      cache:
+        key: npm-cache
+        paths:
+          - node_modules/
+      script:
+        - npm install
+        - npm run build
+        - mkdir -p public
+        - cp -r dist/* public
+      artifacts:
+        paths:
+          - public
+      rules:
+        - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
    ```
 
 ## Netlify
