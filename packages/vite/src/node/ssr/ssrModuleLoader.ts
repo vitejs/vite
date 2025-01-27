@@ -5,6 +5,7 @@ import type { ViteDevServer } from '../server'
 import { unwrapId } from '../../shared/utils'
 import type { DevEnvironment } from '../server/environment'
 import type { NormalizedServerHotChannel } from '../server/hmr'
+import { buildErrorMessage } from '../server/middlewares/error'
 import { ssrFixStacktrace } from './ssrStacktrace'
 import { createServerModuleRunnerTransport } from './runtime/serverModuleRunner'
 
@@ -47,7 +48,9 @@ async function instantiateModule(
     }
 
     environment.logger.error(
-      colors.red(`Error when evaluating SSR module ${url}:\n|- ${e.stack}\n`),
+      buildErrorMessage(e, [
+        colors.red(`Error when evaluating SSR module ${url}: ${e.message}`),
+      ]),
       {
         timestamp: true,
         clear: environment.config.clearScreen,

@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
 import { stripVTControlCharacters } from 'node:util'
-import { expect, test } from 'vitest'
+import { expect, onTestFinished, test, vi } from 'vitest'
 import { createServer } from '../../server'
 import { normalizePath } from '../../utils'
 
@@ -250,4 +250,45 @@ test('file url', async () => {
     new URL('./fixtures/file-url/test space.js', import.meta.url).href,
   )
   expect(modWithSpace.msg).toBe('works')
+})
+
+test('plugin error', async () => {
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'error',
+    plugins: [
+      {
+        name: 'test-plugin',
+        resolveId(source) {
+          if (source === 'virtual:test') {
+            return '\0' + source
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test') {
+            return this.error('test-error')
+          }
+        },
+      },
+    ],
+  })
+  onTestFinished(() => server.close())
+
+  const spy = vi
+    .spyOn(server.config.logger, 'error')
+    .mockImplementation(() => {})
+  try {
+    await server.ssrLoadModule('virtual:test')
+    expect.unreachable()
+  } catch {}
+  expect(
+    stripVTControlCharacters(spy.mock.lastCall![0])
+      .split('\n')
+      .slice(0, 2)
+      .join('\n'),
+  ).toMatchInlineSnapshot(`
+    "Error when evaluating SSR module virtual:test: test-error
+      Plugin: test-plugin"
+  `)
 })
