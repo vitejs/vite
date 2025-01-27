@@ -130,6 +130,14 @@ This is because Node.js limits request header size to mitigate [CVE-2018-12121](
 
 To avoid this, try to reduce your request header size. For example, if the cookie is long, delete it. Or you can use [`--max-http-header-size`](https://nodejs.org/api/cli.html#--max-http-header-sizesize) to change max header size.
 
+### Dev Containers / VS Code Port Forwarding
+
+If you are using a Dev Container or port forwarding feature in VS Code, you may need to set the [`server.host`](/config/server-options.md#server-host) option to `127.0.0.1` in the config to make it work.
+
+This is because [the port forwarding feature in VS Code does not support IPv6](https://github.com/microsoft/vscode-remote-release/issues/7029).
+
+See [#16522](https://github.com/vitejs/vite/issues/16522) for more details.
+
 ## HMR
 
 ### Vite detects a file change but the HMR is not working
