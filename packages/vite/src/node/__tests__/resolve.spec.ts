@@ -1,5 +1,5 @@
 import { join } from 'node:path'
-import { describe, expect, onTestFinished, test } from 'vitest'
+import { describe, expect, onTestFinished, test, vi } from 'vitest'
 import { createServer } from '../server'
 import { createServerModuleRunner } from '../ssr/runtime/serverModuleRunner'
 import type { EnvironmentOptions, InlineConfig } from '../config'
@@ -150,6 +150,11 @@ describe('file url', () => {
       idToResolve: string
     }) {
       const server = await createServer(getConfig(targetEnv, builtins))
+      vi.spyOn(server.config.logger, 'warn').mockImplementationOnce(
+        (message) => {
+          throw new Error(message)
+        },
+      )
       onTestFinished(() => server.close())
 
       return server.environments[testEnv]?.pluginContainer.resolveId(
@@ -192,7 +197,7 @@ describe('file url', () => {
           idToResolve: 'node:fs',
         }),
       ).rejects.toThrowError(
-        /Automatically externalized node built-in module "node:fs"/,
+        /warning: Automatically externalized node built-in module "node:fs"/,
       )
     })
 

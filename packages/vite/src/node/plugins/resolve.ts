@@ -426,7 +426,7 @@ export function resolvePlugin(
               )}"`
             }
             message += `. Consider adding it to environments.${this.environment.name}.external if it is intended.`
-            this.error(message)
+            this.warn(message)
           }
 
           return options.idOnly
