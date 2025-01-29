@@ -925,8 +925,10 @@ function resolveEnvironmentResolveOptions(
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
       builtins:
         resolve?.builtins ??
-        (consumer === 'server' && !isSsrTargetWebworkerEnvironment
-          ? nodeLikeBuiltins
+        (consumer === 'server'
+          ? isSsrTargetWebworkerEnvironment && resolve?.noExternal === true
+            ? []
+            : nodeLikeBuiltins
           : []),
     },
     resolve ?? {},
