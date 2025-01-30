@@ -75,7 +75,7 @@ function componentToHex(c: number): string {
   return hex.length === 1 ? '0' + hex : hex
 }
 
-function rgbToHex(rgb: string): string {
+function rgbToHex(rgb: string): string | undefined {
   const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
   if (match) {
     const [_, rs, gs, bs] = match
@@ -85,9 +85,8 @@ function rgbToHex(rgb: string): string {
       componentToHex(parseInt(gs, 10)) +
       componentToHex(parseInt(bs, 10))
     )
-  } else {
-    return '#000000'
   }
+  return undefined
 }
 
 const timeout = (n: number) => new Promise((r) => setTimeout(r, n))

@@ -1,11 +1,7 @@
-import { fileURLToPath } from 'node:url'
-import { dirname } from 'node:path'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
 export default {
   plugins: {
-    tailwindcss: { config: __dirname + '/tailwind.config.js' },
+    // using postcss tailwind as aliases does not work with vite plugin one
+    // https://github.com/tailwindlabs/tailwindcss/issues/16039
+    '@tailwindcss/postcss': {},
   },
 }
