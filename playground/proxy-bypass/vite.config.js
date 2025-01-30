@@ -30,4 +30,18 @@ export default defineConfig({
       },
     },
   },
+  plugins: [
+    {
+      name: 'handle-error-in-preview',
+      configurePreviewServer({ config, middlewares }) {
+        return () => {
+          middlewares.use((err, _req, res, _next) => {
+            config.logger.error(err.message, { error: err })
+            res.statusCode = 500
+            res.end()
+          })
+        }
+      },
+    },
+  ],
 })
