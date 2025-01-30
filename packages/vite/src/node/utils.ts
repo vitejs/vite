@@ -4,6 +4,7 @@ import path from 'node:path'
 import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
 import { URL, fileURLToPath } from 'node:url'
+import type { ServerOptions as HttpsServerOptions } from 'node:https'
 import { builtinModules, createRequire } from 'node:module'
 import { promises as dns } from 'node:dns'
 import { performance } from 'node:perf_hooks'
@@ -982,6 +983,7 @@ export async function resolveHostname(
 export async function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
+  httpsOptions: HttpsServerOptions | undefined,
   config: ResolvedConfig,
 ): Promise<ResolvedServerUrls> {
   const address = server.address()
@@ -1035,7 +1037,58 @@ export async function resolveServerUrls(
         }
       })
   }
+
+  const cert =
+    httpsOptions?.cert && !Array.isArray(httpsOptions.cert)
+      ? new crypto.X509Certificate(httpsOptions.cert)
+      : undefined
+  const hostnameFromCert = cert?.subjectAltName
+    ? extractHostnamesFromSubjectAltName(cert.subjectAltName)
+    : []
+
+  if (hostnameFromCert.length > 0) {
+    const existings = new Set([...local, ...network])
+    local.push(
+      ...hostnameFromCert
+        .map((hostname) => `https://${hostname}:${port}${base}`)
+        .filter((url) => !existings.has(url)),
+    )
+  }
+
   return { local, network }
+}
+
+export function extractHostnamesFromSubjectAltName(
+  subjectAltName: string,
+): string[] {
+  const hostnames: string[] = []
+  let remaining = subjectAltName
+  while (remaining) {
+    const nameEndIndex = remaining.indexOf(':')
+    const name = remaining.slice(0, nameEndIndex)
+    remaining = remaining.slice(nameEndIndex + 1)
+    if (!remaining) break
+
+    const isQuoted = remaining[0] === '"'
+    let value: string
+    if (isQuoted) {
+      const endQuoteIndex = remaining.indexOf('"', 1)
+      value = JSON.parse(remaining.slice(0, endQuoteIndex + 1))
+      remaining = remaining.slice(endQuoteIndex + 1)
+    } else {
+      const maybeEndIndex = remaining.indexOf(',')
+      const endIndex = maybeEndIndex === -1 ? remaining.length : maybeEndIndex
+      value = remaining.slice(0, endIndex)
+      remaining = remaining.slice(endIndex)
+    }
+    remaining = remaining.slice(/* for , */ 1).trimStart()
+
+    // [::1] might be included but skip it as it's already included as a local address
+    if (name === 'DNS' && value !== '[::1]') {
+      hostnames.push(value.replace('*', 'vite'))
+    }
+  }
+  return hostnames
 }
 
 export function arraify<T>(target: T | T[]): T[] {
