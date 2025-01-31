@@ -1,7 +1,6 @@
 import { expect, test } from 'vitest'
 import {
   editFile,
-  expectWithRetry,
   getColor,
   isServe,
   page,
@@ -15,7 +14,7 @@ test('should render', async () => {
 
 test.runIf(isServe)('regenerate CSS and HMR (glob pattern)', async () => {
   const el = page.locator('#view1-text')
-  await expectWithRetry(() => getColor(el)).toBe('oklch(0.627 0.194 149.214)')
+  expect(await getColor(el)).toBe('oklch(0.627 0.194 149.214)')
 
   await untilBrowserLogAfter(
     () =>
