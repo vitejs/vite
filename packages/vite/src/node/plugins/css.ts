@@ -3463,7 +3463,8 @@ export function resolveLibCssFilename(
   }
 
   const packageJson = findNearestPackageData(root, packageCache)?.data
-  const name = (packageJson && packageJson.name) ? getPkgName(packageJson.name) : undefined
+  const name =
+    packageJson && packageJson.name ? getPkgName(packageJson.name) : undefined
 
   if (!name)
     throw new Error(
