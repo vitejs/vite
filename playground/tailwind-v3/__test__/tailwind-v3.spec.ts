@@ -1,7 +1,6 @@
 import { expect, test } from 'vitest'
 import {
   editFile,
-  expectWithRetry,
   getColor,
   isServe,
   page,
