@@ -719,7 +719,12 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
     return false
   }
 
-  if (parent.type === 'ExportSpecifier') {
+  // export { id } from "lib"
+  // export * as id from "lib"
+  if (
+    parent.type === 'ExportSpecifier' ||
+    parent.type === 'ExportAllDeclaration'
+  ) {
     return false
   }
 
