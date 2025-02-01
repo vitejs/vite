@@ -1,5 +1,5 @@
 import { expect, test, vi } from 'vitest'
-import { browserLogs, isServe, page, serverLogs } from '~utils'
+import { browserLogs, page, serverLogs } from '~utils'
 
 test('proxy-bypass', async () => {
   await vi.waitFor(() => {
@@ -12,7 +12,7 @@ test('async-proxy-bypass', async () => {
   expect(content).toContain('Hello after 4 ms (async timeout)')
 })
 
-test.runIf(isServe)('async-proxy-bypass-with-error', async () => {
+test('async-proxy-bypass-with-error', async () => {
   await vi.waitFor(() => {
     expect(serverLogs.join('\n')).toContain('bypass error')
   })
