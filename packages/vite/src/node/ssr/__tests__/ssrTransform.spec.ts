@@ -127,6 +127,44 @@ test('export * as from', async () => {
     `)
 })
 
+test('re-export by imported name', async () => {
+  expect(
+    await ssrTransformSimpleCode(`\
+import * as foo from 'foo'
+export * as foo from 'foo'
+`),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("foo");
+    const __vite_ssr_import_1__ = await __vite_ssr_import__("foo");
+    Object.defineProperty(__vite_ssr_exports__, "foo", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_1__ }});
+    "
+  `)
+
+  expect(
+    await ssrTransformSimpleCode(`\
+import { foo } from 'foo'
+export { foo } from 'foo'
+`),
+  ).toMatchInlineSnapshot(`
+      "const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["foo"]});
+      const __vite_ssr_import_1__ = await __vite_ssr_import__("foo", {"importedNames":["foo"]});
+      Object.defineProperty(__vite_ssr_exports__, "foo", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_1__.foo }});
+      "
+    `)
+
+  expect(
+    await ssrTransformSimpleCode(`\
+import { foo } from 'foo'
+export { foo as foo } from 'foo'
+`),
+  ).toMatchInlineSnapshot(`
+      "const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["foo"]});
+      const __vite_ssr_import_1__ = await __vite_ssr_import__("foo", {"importedNames":["foo"]});
+      Object.defineProperty(__vite_ssr_exports__, "foo", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_1__.foo }});
+      "
+    `)
+})
+
 test('export * as from arbitrary module namespace identifier', async () => {
   expect(
     await ssrTransformSimpleCode(`export * as "arbitrary string" from 'vue'`),
