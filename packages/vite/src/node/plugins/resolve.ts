@@ -327,9 +327,10 @@ export function resolvePlugin(
         }
       }
 
-      // file url as path
+      // file url to path with preserving hash/search
       if (id.startsWith('file://')) {
-        id = fileURLToPath(id)
+        const { file, postfix } = splitFileAndPostfix(id)
+        id = fileURLToPath(file) + postfix
       }
 
       // drive relative fs paths (only windows)

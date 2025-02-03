@@ -80,9 +80,21 @@ describe('file url', () => {
                 export default dep;
               `
             }
+            if (id === '\0virtual:test-dep/static-postfix') {
+              return `
+                import * as dep from ${JSON.stringify(fileUrl.href + '?query=test')};
+                export default dep;
+              `
+            }
             if (id === '\0virtual:test-dep/non-static') {
               return `
                 const dep = await import(/* @vite-ignore */ String(${JSON.stringify(fileUrl.href)}));
+                export default dep;
+              `
+            }
+            if (id === '\0virtual:test-dep/non-static-postfix') {
+              return `
+                const dep = await import(/* @vite-ignore */ String(${JSON.stringify(fileUrl.href + '?query=test')}));
                 export default dep;
               `
             }
@@ -114,6 +126,20 @@ describe('file url', () => {
 
     const mod4 = await runner.import('virtual:test-dep/non-static')
     expect(mod4.default).toBe(mod)
+
+    const mod5 = await runner.import(fileUrl.href + '?query=test')
+    expect(mod5).toEqual(mod)
+    expect(mod5).not.toBe(mod)
+
+    const mod6 = await runner.import('virtual:test-dep/static-postfix')
+    expect(mod6.default).toEqual(mod)
+    expect(mod6.default).not.toBe(mod)
+    expect(mod6.default).toBe(mod5)
+
+    const mod7 = await runner.import('virtual:test-dep/non-static-postfix')
+    expect(mod7.default).toEqual(mod)
+    expect(mod7.default).not.toBe(mod)
+    expect(mod7.default).toBe(mod5)
   })
 
   describe('environment builtins', () => {
