@@ -225,6 +225,9 @@ export function proxyMiddleware(
             if (typeof bypassResult === 'string') {
               debug?.(`bypass: ${req.url} -> ${bypassResult}`)
               req.url = bypassResult
+              if (res.writableEnded) {
+                return
+              }
               return next()
             }
             if (bypassResult === false) {
