@@ -181,6 +181,10 @@ test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
 })
 
+test('?binary import', async () => {
+  expect(await page.textContent('.binary')).toMatch('60,63,120,109,')
+})
+
 test('?url import', async () => {
   expect(await page.textContent('.url')).toMatch(
     isBuild

@@ -39,6 +39,7 @@ const jsSourceMapRE = /\.[cm]?js\.map$/
 const noInlineRE = /[?&]no-inline\b/
 const inlineRE = /[?&]inline\b/
 const svgExtRE = /\.svg(?:$|\?)/
+const binaryRE = /[?&]binary\b/
 
 const assetCache = new WeakMap<Environment, Map<string, string>>()
 
@@ -177,6 +178,15 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         return `export default ${JSON.stringify(
           await fsp.readFile(file, 'utf-8'),
         )}`
+      }
+
+      if (binaryRE.test(id)) {
+        const file = checkPublicFile(id, config) || cleanUrl(id)
+        this.addWatchFile(file)
+        // binary query, read file and return as buffer
+        return `export default new Uint8Array(${JSON.stringify(
+          Array.from(await fsp.readFile(file)),
+        )})`
       }
 
       if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {

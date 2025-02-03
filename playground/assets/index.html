@@ -255,6 +255,9 @@
 <h2>?raw import</h2>
 <code class="raw"></code>
 
+<h2>?binary import</h2>
+<code class="binary"></code>
+
 <h2>?no-inline svg import</h2>
 <code class="no-inline-svg"></code>
 
@@ -505,6 +508,9 @@
 
   import rawSvg from './nested/fragment.svg?raw'
   text('.raw', rawSvg)
+
+  import rawBinary from './nested/fragment.svg?binary'
+  text('.binary', rawBinary)
 
   import noInlineSvg from './nested/fragment.svg?no-inline'
   text('.no-inline-svg', noInlineSvg)
