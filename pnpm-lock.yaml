@@ -519,9 +519,9 @@ importers:
 
   playground/backend-integration:
     devDependencies:
-      '@tailwindcss/postcss':
+      '@tailwindcss/vite':
         specifier: ^4.0.3
-        version: 4.0.3
+        version: 4.0.3(vite@packages+vite)
       sass:
         specifier: ^1.83.4
         version: 1.83.4
