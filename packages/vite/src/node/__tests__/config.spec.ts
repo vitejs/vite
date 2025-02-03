@@ -513,3 +513,97 @@ test('config compat 3', async () => {
     ]
   `)
 })
+
+test('preTransformRequests', async () => {
+  async function testConfig(inlineConfig: InlineConfig) {
+    return Object.fromEntries(
+      Object.entries(
+        (await resolveConfig(inlineConfig, 'serve')).environments,
+      ).map(([name, e]) => [name, e.dev.preTransformRequests]),
+    )
+  }
+
+  expect(
+    await testConfig({
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": true,
+      "custom": false,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": false,
+    }
+  `)
+
+  expect(
+    await testConfig({
+      server: {
+        preTransformRequests: true,
+      },
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": true,
+      "custom": true,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": true,
+    }
+  `)
+
+  expect(
+    await testConfig({
+      server: {
+        preTransformRequests: false,
+      },
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": false,
+      "custom": false,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": false,
+    }
+  `)
+})

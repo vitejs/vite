@@ -745,12 +745,13 @@ export function resolveDevEnvironmentOptions(
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
   skipSsrTransform?: boolean,
+  preTransformRequest?: boolean,
 ): ResolvedDevEnvironmentOptions {
   const resolved = mergeWithDefaults(
     {
       ...configDefaults.dev,
       sourcemapIgnoreList: isInNodeModules,
-      preTransformRequests: consumer === 'client',
+      preTransformRequests: preTransformRequest ?? consumer === 'client',
       createEnvironment:
         environmentName === 'client'
           ? defaultCreateClientDevEnvironment
@@ -782,6 +783,7 @@ function resolveEnvironmentOptions(
   // Backward compatibility
   skipSsrTransform?: boolean,
   isSsrTargetWebworkerSet?: boolean,
+  preTransformRequests?: boolean,
 ): ResolvedEnvironmentOptions {
   const isClientEnvironment = environmentName === 'client'
   const consumer =
@@ -814,6 +816,7 @@ function resolveEnvironmentOptions(
       environmentName,
       consumer,
       skipSsrTransform,
+      preTransformRequests,
     ),
     build: resolveBuildEnvironmentOptions(
       options.build ?? {},
@@ -1212,6 +1215,7 @@ export async function resolveConfig(
       environmentName,
       config.experimental?.skipSsrTransform,
       config.ssr?.target === 'webworker',
+      config.server?.preTransformRequests,
     )
   }
 
