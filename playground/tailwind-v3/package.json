@@ -1,5 +1,5 @@
 {
-  "name": "@vitejs/test-tailwind-sourcemap",
+  "name": "@vitejs/test-tailwind-v3",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,7 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/postcss": "^4.0.3",
-    "tailwindcss": "^4.0.3"
+    "autoprefixer": "^10.4.20",
+    "tailwindcss": "^3.4.17",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
   }
 }
