@@ -1,0 +1,142 @@
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import BarcodeScannerComponent from "react-qr-barcode-scanner";
+
+const mockDatabase = {
+  "123456789": { name: "Mehl", origin: "Deutschland", supplier: "Mühlen AG", batch: "B123", deliveryDate: "2025-02-01" },
+  "987654321": { name: "Zucker", origin: "Brasilien", supplier: "SweetTrade", batch: "B456", deliveryDate: "2025-01-15" }
+};
+
+export default function TraceabilityApp() {
+  const [products, setProducts] = useState([]);
+  const [form, setForm] = useState({
+    name: "",
+    date: "",
+    ingredients: [],
+    ingredientForm: { name: "", origin: "", supplier: "", batch: "", barcode: "", deliveryDate: "" },
+    scanning: false
+  });
+
+  const handleProductChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleIngredientChange = (e) => {
+    setForm({ ...form, ingredientForm: { ...form.ingredientForm, [e.target.name]: e.target.value } });
+  };
+
+  const addIngredient = () => {
+    setForm({ ...form, ingredients: [...form.ingredients, form.ingredientForm], ingredientForm: { name: "", origin: "", supplier: "", batch: "", barcode: "", deliveryDate: "" } });
+  };
+
+  const addProduct = () => {
+    setProducts([...products, { name: form.name, date: form.date, ingredients: form.ingredients }]);
+    setForm({ name: "", date: "", ingredients: [], ingredientForm: { name: "", origin: "", supplier: "", batch: "", barcode: "", deliveryDate: "" } });
+  };
+
+  const handleBarcodeScan = (barcode) => {
+    if (mockDatabase[barcode]) {
+      setForm({
+        ...form,
+        ingredientForm: { ...mockDatabase[barcode], barcode: barcode },
+        scanning: false
+      });
+    } else {
+      setForm({ ...form, ingredientForm: { ...form.ingredientForm, barcode: barcode }, scanning: false });
+    }
+  };
+
+  return (
+    <div className="p-6 max-w-2xl mx-auto">
+      <h1 className="text-xl font-bold mb-4">Produkt-Rückverfolgbarkeit</h1>
+      <Card>
+        <CardContent className="p-4 grid gap-2">
+          <Input
+            name="name"
+            placeholder="Hauptproduktname"
+            value={form.name}
+            onChange={handleProductChange}
+          />
+          <Input
+            name="date"
+            type="date"
+            placeholder="Erstellungsdatum"
+            value={form.date}
+            onChange={handleProductChange}
+          />
+          <h2 className="text-md font-semibold mt-4">Zutat hinzufügen</h2>
+          <Input
+            name="name"
+            placeholder="Zutat"
+            value={form.ingredientForm.name}
+            onChange={handleIngredientChange}
+          />
+          <Input
+            name="origin"
+            placeholder="Herkunftsland"
+            value={form.ingredientForm.origin}
+            onChange={handleIngredientChange}
+          />
+          <Input
+            name="supplier"
+            placeholder="Lieferant"
+            value={form.ingredientForm.supplier}
+            onChange={handleIngredientChange}
+          />
+          <Input
+            name="batch"
+            placeholder="Chargennummer"
+            value={form.ingredientForm.batch}
+            onChange={handleIngredientChange}
+          />
+          <Input
+            name="barcode"
+            placeholder="Barcode"
+            value={form.ingredientForm.barcode}
+            onChange={handleIngredientChange}
+          />
+          <Button onClick={() => setForm({ ...form, scanning: !form.scanning })}>Barcode scannen</Button>
+          {form.scanning && (
+            <BarcodeScannerComponent
+              width={300}
+              height={200}
+              onUpdate={(err, result) => {
+                if (result) {
+                  handleBarcodeScan(result.text);
+                }
+              }}
+            />
+          )}
+          <Input
+            name="deliveryDate"
+            type="date"
+            placeholder="Lieferdatum"
+            value={form.ingredientForm.deliveryDate}
+            onChange={handleIngredientChange}
+          />
+          <Button onClick={addIngredient}>Zutat hinzufügen</Button>
+          <Button onClick={addProduct} className="mt-2">Produkt erstellen</Button>
+        </CardContent>
+      </Card>
+      <div className="mt-6">
+        <h2 className="text-lg font-bold">Erfasste Produkte</h2>
+        <ul>
+          {products.map((product, index) => (
+            <li key={index} className="border p-2 mt-2">
+              <strong>{product.name}</strong> - <span className="text-sm">{product.date}</span>
+              <ul className="mt-2">
+                {product.ingredients.map((ingredient, iIndex) => (
+                  <li key={iIndex} className="border p-2 mt-1">
+                    {ingredient.name} - {ingredient.origin} - {ingredient.supplier} - {ingredient.batch} - {ingredient.barcode} - {ingredient.deliveryDate}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
