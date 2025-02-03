@@ -42,7 +42,7 @@
     "@vitejs/test-dep-cjs-external-package-omit-js-suffix": "file:./dep-cjs-external-package-omit-js-suffix",
     "lodash-es": "^4.17.21",
     "@vitejs/test-nested-exclude": "file:./nested-exclude",
-    "phoenix": "^1.7.18",
+    "phoenix": "^1.7.19",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "@vitejs/test-resolve-linked": "workspace:0.0.0",
