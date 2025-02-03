@@ -22,7 +22,7 @@ test.runIf(isServe)('postcss plugins in different dir', async () => {
   try {
     await page.goto(`http://localhost:${port}`)
     const tailwindStyle = page.locator('#tailwind-style')
-    expect(await getBgColor(tailwindStyle)).toBe('rgb(254, 226, 226)')
+    expect(await getBgColor(tailwindStyle)).toBe('oklch(0.936 0.032 17.717)')
     expect(await getColor(tailwindStyle)).toBe('rgb(136, 136, 136)')
   } finally {
     await server.close()
