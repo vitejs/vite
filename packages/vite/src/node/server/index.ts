@@ -1158,11 +1158,8 @@ export function resolveServerOptions(
     process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS &&
     Array.isArray(server.allowedHosts)
   ) {
-    const additionalHosts = process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
-      .split(',')
-      .map((h) => h.trim())
-
-    server.allowedHosts = [...server.allowedHosts, ...additionalHosts]
+    const additionalHost = process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    server.allowedHosts = [...server.allowedHosts, additionalHost]
   }
 
   return server
