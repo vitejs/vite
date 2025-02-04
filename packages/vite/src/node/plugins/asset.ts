@@ -184,9 +184,9 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
         const file = checkPublicFile(id, config) || cleanUrl(id)
         this.addWatchFile(file)
         // binary query, read file and return as buffer
-        return `export default new Uint8Array(${JSON.stringify(
+        return `export default new Uint8Array([${JSON.stringify(
           Array.from(await fsp.readFile(file)),
-        )})`
+        )}])`
       }
 
       if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
