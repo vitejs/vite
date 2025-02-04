@@ -1035,6 +1035,7 @@ export async function resolveConfig(
     command,
     isSsrBuild: command === 'build' && !!config.build?.ssr,
     isPreview,
+    // https://github.com/vitejs/vite/pull/19355
     version: VERSION,
   }
 
