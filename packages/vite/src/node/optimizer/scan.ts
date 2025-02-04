@@ -67,6 +67,8 @@ export class ScanEnvironment extends BaseEnvironment {
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this.plugins,
+      undefined,
+      false,
     )
   }
 }
