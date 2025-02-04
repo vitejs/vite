@@ -333,7 +333,10 @@ cli
 
 // optimize
 cli
-  .command('optimize [root]', 'pre-bundle dependencies')
+  .command(
+    'optimize [root]',
+    'pre-bundle dependencies (deprecated, the pre-bundle process runs automatically and does not need to be called)',
+  )
   .option(
     '--force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`,
