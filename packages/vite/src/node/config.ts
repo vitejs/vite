@@ -1,11 +1,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import fsp from 'node:fs/promises'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
+import { MessageChannel } from 'node:worker_threads'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
 import type { RollupOptions } from 'rollup'
@@ -1777,12 +1778,84 @@ export async function loadConfigFromFile(
 }
 
 async function nativeImportConfigFile(resolvedPath: string) {
+  depsTracker ??= await createDepsTracker()
+  if (depsTracker) {
+    const { result, dependencies } = await depsTracker.collect(
+      () => import(pathToFileURL(resolvedPath).href + '?t=' + Date.now()),
+    )
+    return { configExport: result.default, dependencies }
+  }
+
   const module = await import(
     pathToFileURL(resolvedPath).href + '?t=' + Date.now()
   )
   return {
     configExport: module.default,
     dependencies: [],
+  }
+}
+
+// rather than a singleton, it would be better to unregister the loader
+// so that it doesn't incur the overhead when not needed
+// but unregistering a loader is not supported
+let depsTracker: DepsTracker | undefined
+
+type DepsTracker = {
+  collect: <T>(
+    cb: () => Promise<T>,
+  ) => Promise<{ result: T; dependencies: string[] }>
+}
+
+// This only tracks ESM dependencies that are statically imported (not dynamic imports)
+async function createDepsTracker(): Promise<DepsTracker | undefined> {
+  const { Module } = await import('node:module')
+  // register only exists in Node.js 18.19.0+, 20.6.0+
+  if (!Module.register) {
+    return
+  }
+
+  // we want to register this loader as the last one
+  // this is ensured for the first config load,
+  // but for the subsequent config loads, a different loader may be registered.
+  // we hope that that doesn't happen
+  const { port1, port2 } = new MessageChannel()
+  Module.register('#deps-tracker', {
+    parentURL: import.meta.url,
+    data: { port: port2 },
+    transferList: [port2],
+  })
+  port1.unref()
+
+  let collecting = false
+  return {
+    async collect(cb) {
+      if (collecting) throw new Error('already collecting')
+      collecting = true
+
+      const depsList: string[] = []
+      const onMessage = (e: string) => {
+        depsList.push(e)
+      }
+      port1.on('message', onMessage)
+      port1.postMessage(true)
+      port1.unref()
+
+      let result: Awaited<ReturnType<typeof cb>>
+      try {
+        result = await cb()
+      } finally {
+        collecting = false
+        port1.postMessage(false)
+        port1.off('message', onMessage)
+      }
+
+      return {
+        result,
+        dependencies: depsList
+          .filter((url) => url.startsWith('file:'))
+          .map((url) => fileURLToPath(url)),
+      }
+    },
   }
 }
 
