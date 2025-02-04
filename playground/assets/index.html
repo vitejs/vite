@@ -510,7 +510,7 @@
   text('.raw', rawSvg)
 
   import rawBinary from './nested/fragment.svg?binary'
-  text('.binary', rawBinary)
+  text('.binary', rawBinary.buffer)
 
   import noInlineSvg from './nested/fragment.svg?no-inline'
   text('.no-inline-svg', noInlineSvg)

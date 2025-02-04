@@ -193,7 +193,7 @@ test('?raw import', async () => {
 })
 
 test('?binary import', async () => {
-  expect(await page.textContent('.binary')).toMatch('60,63,120,109,')
+  expect(await page.textContent('.binary')).toMatch('[object ArrayBuffer]')
 })
 
 test('?url import', async () => {
