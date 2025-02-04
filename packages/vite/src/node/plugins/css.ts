@@ -2761,14 +2761,10 @@ const makeLessWorker = (
     )
     if (!resolved) return undefined
 
+    // don't rebase URLs in JavaScript plugins
     if (mime === 'application/javascript') {
-      // loading a JavaScript plugin, so don't attempt to rebase urls; just load the contents
       const file = path.resolve(resolved) // ensure os-specific flashes
-      const contents = await fsp.readFile(file, 'utf-8')
-      return {
-        resolved,
-        contents,
-      }
+      return { resolved: file }
     }
 
     const result = await rebaseUrls(
