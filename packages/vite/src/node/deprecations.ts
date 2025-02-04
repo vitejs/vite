@@ -1,8 +1,7 @@
 import colors from 'picocolors'
 import type { FutureOptions, ResolvedConfig } from './config'
 
-// TODO: switch to production docs URL
-const docsURL = 'https://main.vite.dev'
+const docsURL = 'https://vite.dev'
 
 const deprecationCode = {
   removePluginHookSsrArgument: 'changes/this-environment-in-hooks',
