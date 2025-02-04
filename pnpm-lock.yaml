@@ -13,6 +13,9 @@ patchedDependencies:
   chokidar@3.6.0:
     hash: r6f2jac4ef543toizf7sfnkaom
     path: patches/chokidar@3.6.0.patch
+  dotenv-expand@12.0.1:
+    hash: cccknsdvxfahgkn34dugpdmdpa
+    path: patches/dotenv-expand@12.0.1.patch
   http-proxy@1.18.1:
     hash: qqiqxx62zlcu62nljjmhlvexni
     path: patches/http-proxy@1.18.1.patch
@@ -305,7 +308,7 @@ importers:
         version: 16.4.7
       dotenv-expand:
         specifier: ^12.0.1
-        version: 12.0.1
+        version: 12.0.1(patch_hash=cccknsdvxfahgkn34dugpdmdpa)
       es-module-lexer:
         specifier: ^1.6.0
         version: 1.6.0
@@ -10255,7 +10258,7 @@ snapshots:
     dependencies:
       is-obj: 2.0.0
 
-  dotenv-expand@12.0.1:
+  dotenv-expand@12.0.1(patch_hash=cccknsdvxfahgkn34dugpdmdpa):
     dependencies:
       dotenv: 16.4.7
 
