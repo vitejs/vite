@@ -1,3 +1,12 @@
+## 6.1.0-beta.2 (2025-02-04)
+
+* fix: allow expanding env vars in reverse order (#19352) ([3f5f2bd](https://github.com/vitejs/vite/commit/3f5f2bddf142b2d1b162d4553d26f1ff0758b10d)), closes [#19352](https://github.com/vitejs/vite/issues/19352)
+* fix: avoid packageJson without name in `resolveLibCssFilename` (#19324) ([f183bdf](https://github.com/vitejs/vite/commit/f183bdf2a799e703672ab1887d707ce120053eb2)), closes [#19324](https://github.com/vitejs/vite/issues/19324)
+* fix(html): fix css disorder when building multiple entry html (#19143) ([e7b4ba3](https://github.com/vitejs/vite/commit/e7b4ba37f90a033036326b45023a1753584dd259)), closes [#19143](https://github.com/vitejs/vite/issues/19143)
+* chore: update deprecate links domain (#19353) ([2b2299c](https://github.com/vitejs/vite/commit/2b2299cbac37548a163f0523c0cb92eb70a9aacf)), closes [#19353](https://github.com/vitejs/vite/issues/19353)
+
+
+
 ## 6.1.0-beta.1 (2025-02-04)
 
 * fix: don't call buildStart hooks for `vite optimize` (#19347) ([19ffad0](https://github.com/vitejs/vite/commit/19ffad0a5aaf8c0ff55409e746048431b8b6640d)), closes [#19347](https://github.com/vitejs/vite/issues/19347)
