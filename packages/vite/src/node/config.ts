@@ -24,6 +24,7 @@ import {
   DEFAULT_SERVER_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
+  VERSION,
 } from './constants'
 import type {
   FalsyPlugin,
@@ -116,6 +117,7 @@ export interface ConfigEnv {
   mode: string
   isSsrBuild?: boolean
   isPreview?: boolean
+  version: string
 }
 
 /**
@@ -1033,6 +1035,7 @@ export async function resolveConfig(
     command,
     isSsrBuild: command === 'build' && !!config.build?.ssr,
     isPreview,
+    version: VERSION,
   }
 
   let { configFile } = config
