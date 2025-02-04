@@ -1,3 +1,21 @@
+## 6.1.0-beta.1 (2025-02-04)
+
+* fix: don't call buildStart hooks for `vite optimize` (#19347) ([19ffad0](https://github.com/vitejs/vite/commit/19ffad0a5aaf8c0ff55409e746048431b8b6640d)), closes [#19347](https://github.com/vitejs/vite/issues/19347)
+* fix: don't call next middleware if user sent response in proxy.bypass (#19318) ([7e6364d](https://github.com/vitejs/vite/commit/7e6364de2b0f3bf65aefaf451646ca500bad8239)), closes [#19318](https://github.com/vitejs/vite/issues/19318)
+* fix: respect top-level `server.preTransformRequests` (#19272) ([12aaa58](https://github.com/vitejs/vite/commit/12aaa585bc3fac403bf93f48ea117482cc7f43b1)), closes [#19272](https://github.com/vitejs/vite/issues/19272)
+* fix: use `nodeLikeBuiltins` for `ssr.target: 'webworker'` without `noExternal: true` (#19313) ([9fc31b6](https://github.com/vitejs/vite/commit/9fc31b6e4d4f2a5bd9711d4f84dcb55061ebead0)), closes [#19313](https://github.com/vitejs/vite/issues/19313)
+* fix(css): less `@plugin` imports of JS files treated as CSS and rebased (fix #19268) (#19269) ([602b373](https://github.com/vitejs/vite/commit/602b373dcdc755816ce28913873f70550347e936)), closes [#19268](https://github.com/vitejs/vite/issues/19268) [#19269](https://github.com/vitejs/vite/issues/19269)
+* fix(deps): update all non-major dependencies (#19296) ([2bea7ce](https://github.com/vitejs/vite/commit/2bea7cec4b7fddbd5f2fb6090a7eaf5ae7ca0f1b)), closes [#19296](https://github.com/vitejs/vite/issues/19296)
+* fix(resolve): preserve hash/search of file url (#19300) ([d1e1b24](https://github.com/vitejs/vite/commit/d1e1b24c57328b5a808b981829503caa6ffadb56)), closes [#19300](https://github.com/vitejs/vite/issues/19300)
+* fix(resolve): warn if node-like builtin was imported when `resolve.builtin` is empty (#19312) ([b7aba0b](https://github.com/vitejs/vite/commit/b7aba0bc925f6d672bbb6a1e6c8c5c123a3bef55)), closes [#19312](https://github.com/vitejs/vite/issues/19312)
+* fix(ssr): fix transform error due to export all id scope (#19331) ([e28bce2](https://github.com/vitejs/vite/commit/e28bce244918dac27b26d4e428f86b323a1c51ba)), closes [#19331](https://github.com/vitejs/vite/issues/19331)
+* fix(ssr): pretty print plugin error in `ssrLoadModule` (#19290) ([353c467](https://github.com/vitejs/vite/commit/353c467610e2d92c0929fa4abd03f2cbd26e34ed)), closes [#19290](https://github.com/vitejs/vite/issues/19290)
+* feat: print `port` in the logged error message after failed WS connection with `EADDRINUSE` (#19212) ([14027b0](https://github.com/vitejs/vite/commit/14027b0f2a9b01c14815c38aab22baf5b29594bb)), closes [#19212](https://github.com/vitejs/vite/issues/19212)
+* docs: rephrase browser range and features relation (#19286) ([97569ef](https://github.com/vitejs/vite/commit/97569efd9d26b5c24d3a702d3171426f97c403cc)), closes [#19286](https://github.com/vitejs/vite/issues/19286)
+* docs: update `build.manifest` jsdocs (#19332) ([4583781](https://github.com/vitejs/vite/commit/45837817dea1fd76fbc3dcf05ca7fcd46daa7b23)), closes [#19332](https://github.com/vitejs/vite/issues/19332)
+
+
+
 ## 6.1.0-beta.0 (2025-01-24)
 
 * chore: remove outdated code comment about `scanImports` not being used in ssr (#19285) ([fbbc6da](https://github.com/vitejs/vite/commit/fbbc6da186d72b7c2ad1efce22d42d302f673516)), closes [#19285](https://github.com/vitejs/vite/issues/19285)
