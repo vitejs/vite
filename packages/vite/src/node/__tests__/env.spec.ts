@@ -39,6 +39,17 @@ describe('loadEnv', () => {
       `)
   })
 
+  test('override 2', () => {
+    expect(loadEnv('development2', join(__dirname, './env')))
+      .toMatchInlineSnapshot(`
+        {
+          "VITE_APP_BASE_ROUTE": "source",
+          "VITE_APP_BASE_URL": "source",
+          "VITE_SOURCE": "source",
+        }
+      `)
+  })
+
   test('VITE_USER_NODE_ENV', () => {
     loadEnv('development', join(__dirname, './env'))
     expect(process.env.VITE_USER_NODE_ENV).toEqual(undefined)

@@ -103,7 +103,8 @@
     "patchedDependencies": {
       "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch",
       "sirv@3.0.0": "patches/sirv@3.0.0.patch",
-      "chokidar@3.6.0": "patches/chokidar@3.6.0.patch"
+      "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
+      "dotenv-expand@12.0.1": "patches/dotenv-expand@12.0.1.patch"
     },
     "peerDependencyRules": {
       "allowedVersions": {

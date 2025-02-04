@@ -99,8 +99,8 @@ There are other breaking changes which only affect few users.
   - This PR not only introduces a breaking change mentioned above as "Default value for `resolve.conditions`", but also makes `resolve.mainFields` to not be used for no-externalized dependencies in SSR. If you were using `resolve.mainFields` and want to apply that to no-externalized dependencies in SSR, you can use [`ssr.resolve.mainFields`](/config/ssr-options#ssr-resolve-mainfields).
 - [[#18493] refactor!: remove fs.cachedChecks option](https://github.com/vitejs/vite/pull/18493)
   - This opt-in optimization was removed due to edge cases when writing a file in a cached folder and immediately importing it.
-- [[#18697] fix(deps)!: update dependency dotenv-expand to v12](https://github.com/vitejs/vite/pull/18697)
-  - Variables used in interpolation should be declared before the interpolation now. For more details, see [the `dotenv-expand` changelog](https://github.com/motdotla/dotenv-expand/blob/v12.0.1/CHANGELOG.md#1200-2024-11-16).
+- ~~[[#18697] fix(deps)!: update dependency dotenv-expand to v12](https://github.com/vitejs/vite/pull/18697)~~
+  - ~~Variables used in interpolation should be declared before the interpolation now. For more details, see [the `dotenv-expand` changelog](https://github.com/motdotla/dotenv-expand/blob/v12.0.1/CHANGELOG.md#1200-2024-11-16).~~ This breaking change was reverted in v6.1.0.
 - [[#16471] feat: v6 - Environment API](https://github.com/vitejs/vite/pull/16471)
 
   - Updates to an SSR-only module no longer triggers a full page reload in the client. To return to the previous behaviour, a custom Vite plugin can be used:
