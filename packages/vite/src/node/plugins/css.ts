@@ -91,7 +91,7 @@ import type { TransformPluginContext } from '../server/pluginContainer'
 import { searchForWorkspaceRoot } from '../server/searchRoot'
 import { type DevEnvironment } from '..'
 import type { PackageCache } from '../packages'
-import { findNearestPackageData } from '../packages'
+import { findNearestMainPackageData } from '../packages'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -3474,7 +3474,7 @@ export function resolveLibCssFilename(
     return `${libOptions.fileName}.css`
   }
 
-  const packageJson = findNearestPackageData(root, packageCache)?.data
+  const packageJson = findNearestMainPackageData(root, packageCache)?.data
   const name = packageJson ? getPkgName(packageJson.name) : undefined
 
   if (!name)

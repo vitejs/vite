@@ -60,7 +60,7 @@ import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { buildLoadFallbackPlugin } from './plugins/loadFallback'
-import { findNearestPackageData } from './packages'
+import { findNearestMainPackageData, findNearestPackageData } from './packages'
 import type { PackageCache } from './packages'
 import {
   getResolvedOutDirs,
@@ -919,7 +919,7 @@ export function resolveLibFilename(
     return libOptions.fileName(format, entryName)
   }
 
-  const packageJson = findNearestPackageData(root, packageCache)?.data
+  const packageJson = findNearestMainPackageData(root, packageCache)?.data
   const name =
     libOptions.fileName ||
     (packageJson && typeof libOptions.entry === 'string'

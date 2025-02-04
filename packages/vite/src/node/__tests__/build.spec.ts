@@ -410,16 +410,15 @@ describe('resolveLibFilename', () => {
   })
 
   test('missing filename', () => {
-    expect(() => {
-      resolveLibFilename(
-        {
-          entry: 'mylib.js',
-        },
-        'es',
-        'myLib',
-        resolve(__dirname, 'packages/noname'),
-      )
-    }).toThrow()
+    const filename = resolveLibFilename(
+      {
+        entry: 'mylib.js',
+      },
+      'es',
+      'myLib',
+      resolve(__dirname, 'packages/noname'),
+    )
+    expect(filename).toBe('named-testing-package.mjs')
   })
 
   test('commonjs package extensions', () => {
