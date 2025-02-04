@@ -2776,6 +2776,7 @@ const makeLessWorker = (
     filename: string,
     dir: string,
     rootFile: string,
+    mime: string | undefined,
   ) => {
     const resolved = await resolvers.less(
       environment,
@@ -2783,6 +2784,12 @@ const makeLessWorker = (
       path.join(dir, '*'),
     )
     if (!resolved) return undefined
+
+    // don't rebase URLs in JavaScript plugins
+    if (mime === 'application/javascript') {
+      const file = path.resolve(resolved) // ensure os-specific flashes
+      return { resolved: file }
+    }
 
     const result = await rebaseUrls(
       environment,
@@ -2829,7 +2836,12 @@ const makeLessWorker = (
             opts: any,
             env: any,
           ): Promise<Less.FileLoadResult> {
-            const result = await viteLessResolve(filename, dir, this.rootFile)
+            const result = await viteLessResolve(
+              filename,
+              dir,
+              this.rootFile,
+              opts.mime,
+            )
             if (result) {
               return {
                 filename: path.resolve(result.resolved),

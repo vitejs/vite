@@ -108,6 +108,13 @@ test('less', async () => {
   await untilUpdated(() => getColor(atImport), 'blue')
 })
 
+test('less-plugin', async () => {
+  const body = await page.$('body')
+  expect(await getBg(body)).toBe(
+    'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wIAAgEBAFPIhPsAAAAASUVORK5CYII=")',
+  )
+})
+
 test('stylus', async () => {
   const imported = await page.$('.stylus')
   const additionalData = await page.$('.stylus-additional-data')
