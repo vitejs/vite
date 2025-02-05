@@ -649,6 +649,7 @@ export async function _createServer(
         server.resolvedUrls = await resolveServerUrls(
           httpServer,
           config.server,
+          httpsOptions,
           config,
         )
         if (!isRestart && config.server.open) server.openBrowser()
