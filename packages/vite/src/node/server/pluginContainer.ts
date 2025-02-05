@@ -136,11 +136,13 @@ export async function createEnvironmentPluginContainer(
   environment: Environment,
   plugins: Plugin[],
   watcher?: FSWatcher,
+  autoStart = true,
 ): Promise<EnvironmentPluginContainer> {
   const container = new EnvironmentPluginContainer(
     environment,
     plugins,
     watcher,
+    autoStart,
   )
   await container.resolveRollupOptions()
   return container
@@ -183,7 +185,9 @@ class EnvironmentPluginContainer {
     public environment: Environment,
     public plugins: Plugin[],
     public watcher?: FSWatcher,
+    autoStart = true,
   ) {
+    this._started = !autoStart
     this.minimalContext = new MinimalPluginContext(
       { rollupVersion, watchMode: true },
       environment,
