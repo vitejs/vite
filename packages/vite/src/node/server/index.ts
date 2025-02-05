@@ -1154,6 +1154,14 @@ export function resolveServerOptions(
     )
   }
 
+  if (
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS &&
+    Array.isArray(server.allowedHosts)
+  ) {
+    const additionalHost = process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    server.allowedHosts = [...server.allowedHosts, additionalHost]
+  }
+
   return server
 }
 
