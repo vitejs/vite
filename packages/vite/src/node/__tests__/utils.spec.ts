@@ -1,9 +1,11 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import crypto from 'node:crypto'
 import { describe, expect, test } from 'vitest'
 import {
   asyncFlatten,
   bareImportRE,
+  extractHostnamesFromSubjectAltName,
   flattenId,
   generateCodeFrame,
   getHash,
@@ -162,6 +164,59 @@ describe('resolveHostname', () => {
       host: '0000:0000:0000:0000:0000:0000:0000:0000',
       name: 'localhost',
     })
+  })
+})
+
+describe('extractHostnamesFromSubjectAltName', () => {
+  const testCases = [
+    ['DNS:localhost', ['localhost']],
+    ['DNS:localhost, DNS:foo.localhost', ['localhost', 'foo.localhost']],
+    ['DNS:*.localhost', ['vite.localhost']],
+    ['DNS:[::1]', []], // [::1] is skipped
+    ['othername:"foo,bar", DNS:localhost', ['localhost']], // handle quoted correctly
+  ] as const
+
+  for (const [input, expected] of testCases) {
+    test(`should extract names from subjectAltName: ${input}`, () => {
+      expect(extractHostnamesFromSubjectAltName(input)).toStrictEqual(expected)
+    })
+  }
+
+  test('should extract names from actual certificate', () => {
+    const certText = `
+-----BEGIN CERTIFICATE-----
+MIID7zCCAtegAwIBAgIJS9D2rIN7tA8mMA0GCSqGSIb3DQEBCwUAMGkxFDASBgNV
+BAMTC2V4YW1wbGUub3JnMQswCQYDVQQGEwJVUzERMA8GA1UECBMIVmlyZ2luaWEx
+EzARBgNVBAcTCkJsYWNrc2J1cmcxDTALBgNVBAoTBFRlc3QxDTALBgNVBAsTBFRl
+c3QwHhcNMjUwMTMwMDQxNTI1WhcNMjUwMzAxMDQxNTI1WjBpMRQwEgYDVQQDEwtl
+eGFtcGxlLm9yZzELMAkGA1UEBhMCVVMxETAPBgNVBAgTCFZpcmdpbmlhMRMwEQYD
+VQQHEwpCbGFja3NidXJnMQ0wCwYDVQQKEwRUZXN0MQ0wCwYDVQQLEwRUZXN0MIIB
+IjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxNPlCqTmUZ7/F7GyFWDopqZ6
+w19Y7/98B10JEeFGTAQIj/RP2UgZNcTABQDUvtkF7y+bOeoVJW7Zz8ozQYhRaDp8
+CN2gXMcYeTUku/pKLXyCzHHVrOPAXTeU7sMRgLvPCrrJtx5OjvndW+O/PhohPRi3
+iEpPvpM8gi7MVRGhnWVSx0/Ynx5c0+/vqyBTzrM2OX7Ufg8Nv7LaTXpCAnmIQp+f
+Sqq7HZ7t6Y7laS4RApityvlnFHZ4f2cEibAKv/vXLED7bgAlGb8R1viPRdMtAPuI
+MYvHBgGFjyX1fmq6Mz3aqlAscJILtbQlwty1oYyaENE0lq8+nZXQ+t6I+CIVLQID
+AQABo4GZMIGWMAsGA1UdDwQEAwIC9DAxBgNVHSUEKjAoBggrBgEFBQcDAQYIKwYB
+BQUHAwIGCCsGAQUFBwMDBggrBgEFBQcDCDBUBgNVHREETTBLgglsb2NhbGhvc3SC
+DWZvby5sb2NhbGhvc3SCECoudml0ZS5sb2NhbGhvc3SCBVs6OjFdhwR/AAABhxD+
+gAAAAAAAAAAAAAAAAAABMA0GCSqGSIb3DQEBCwUAA4IBAQBi302qLCgxWsUalgc2
+olFxVKob1xCciS8yUVX6HX0vza0WJ7oGW6qZsBbQtfgDwB/dHv7rwsfpjRWvFhmq
+gEUrewa1h0TIC+PPTYYz4M0LOwcLIWZLZr4am1eI7YP9NDgRdhfAfM4hw20vjf2a
+kYLKyRTC5+3/ly5opMq+CGLQ8/gnFxhP3ho8JYrRnqLeh3KCTGen3kmbAhD4IOJ9
+lxMwFPTTWLFFjxbXjXmt5cEiL2mpcq13VCF2HmheCen37CyYIkrwK9IfLhBd5QQh
+WEIBLwjKCAscrtyayXWp6zUTmgvb8PQf//3Mh2DiEngAi3WI/nL+8Y0RkqbvxBar
+X2JN
+-----END CERTIFICATE-----
+    `.trim()
+    const cert = new crypto.X509Certificate(certText)
+    expect(
+      extractHostnamesFromSubjectAltName(cert.subjectAltName ?? ''),
+    ).toStrictEqual([
+      'localhost',
+      'foo.localhost',
+      'vite.vite.localhost', // *.vite.localhost
+    ])
   })
 })
 

@@ -137,12 +137,9 @@ export async function preview(
     )
   }
 
+  const httpsOptions = await resolveHttpsConfig(config.server.https)
   const app = connect() as Connect.Server
-  const httpServer = await resolveHttpServer(
-    config.preview,
-    app,
-    await resolveHttpsConfig(config.preview.https),
-  )
+  const httpServer = await resolveHttpServer(config.preview, app, httpsOptions)
   setClientErrorHandler(httpServer, config.logger)
 
   const options = config.preview
@@ -274,6 +271,7 @@ export async function preview(
   server.resolvedUrls = await resolveServerUrls(
     httpServer,
     config.preview,
+    httpsOptions,
     config,
   )
 
