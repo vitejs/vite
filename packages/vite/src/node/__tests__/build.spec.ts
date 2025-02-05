@@ -1039,6 +1039,8 @@ describe('onRollupLog', () => {
 })
 
 test('watch rebuild manifest', async (ctx) => {
+  // this doesn't actually test watch rebuild
+  // but it simulates something similar by running two builds for the same environment
   const root = resolve(__dirname, 'fixtures/watch-rebuild-manifest')
   const builder = await createBuilder({
     root,
