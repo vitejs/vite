@@ -246,6 +246,8 @@ export interface DepOptimizationMetadata {
 /**
  * Scan and optimize dependencies within a project.
  * Used by Vite CLI when running `vite optimize`.
+ *
+ * @deprecated the optimization process runs automatically and does not need to be called
  */
 
 export async function optimizeDeps(
@@ -254,6 +256,12 @@ export async function optimizeDeps(
   asCommand = false,
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
+
+  config.logger.warn(
+    colors.yellow(
+      'manually calling optimizeDeps is deprecated. This is done automatically and does not need to be called manually.',
+    ),
+  )
 
   const environment = new ScanEnvironment('client', config)
   await environment.init()
