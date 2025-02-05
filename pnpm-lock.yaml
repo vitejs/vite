@@ -436,6 +436,8 @@ importers:
 
   packages/vite/src/node/__tests__/fixtures/test-dep-conditions: {}
 
+  packages/vite/src/node/__tests__/fixtures/watch-rebuild-manifest: {}
+
   packages/vite/src/node/__tests__/packages: {}
 
   packages/vite/src/node/__tests__/packages/child: {}

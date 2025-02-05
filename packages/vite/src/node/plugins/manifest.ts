@@ -32,6 +32,7 @@ export function manifestPlugin(): Plugin {
       manifest: {} as Manifest,
       outputCount: 0,
       reset() {
+        this.manifest = {}
         this.outputCount = 0
       },
     }

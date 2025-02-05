@@ -1,6 +1,7 @@
 import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { stripVTControlCharacters } from 'node:util'
+import fsp from 'node:fs/promises'
 import colors from 'picocolors'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import type {
@@ -1035,6 +1036,62 @@ describe('onRollupLog', () => {
       expect(loggerSpy).toBeCalledTimes(0)
     },
   )
+})
+
+test('watch rebuild manifest', async (ctx) => {
+  // this doesn't actually test watch rebuild
+  // but it simulates something similar by running two builds for the same environment
+  const root = resolve(__dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      client: {
+        build: {
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      manifest: true,
+    },
+  })
+
+  function getManifestKeys(output: RollupOutput) {
+    return Object.keys(
+      JSON.parse(
+        (output.output.find((o) => o.fileName === '.vite/manifest.json') as any)
+          .source,
+      ),
+    )
+  }
+
+  const result = await builder.build(builder.environments.client)
+  expect(getManifestKeys(result as RollupOutput)).toMatchInlineSnapshot(`
+    [
+      "dep.js",
+      "entry.js",
+    ]
+  `)
+
+  const entry = resolve(root, 'entry.js')
+  const content = await fsp.readFile(entry, 'utf-8')
+  await fsp.writeFile(
+    entry,
+    content.replace(`import('./dep.js')`, `'dep.js removed'`),
+  )
+  ctx.onTestFinished(async () => {
+    await fsp.writeFile(entry, content)
+  })
+
+  const result2 = await builder.build(builder.environments.client)
+  expect(getManifestKeys(result2 as RollupOutput)).toMatchInlineSnapshot(`
+    [
+      "entry.js",
+    ]
+  `)
 })
 
 /**
