@@ -79,6 +79,8 @@ vite build [root]
 
 Pre-bundle dependencies.
 
+**Deprecated**: the pre-bundle process runs automatically and does not need to be called.
+
 #### Usage
 
 ```bash
