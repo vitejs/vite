@@ -1,3 +1,16 @@
+## 6.2.0 (2025-02-05)
+
+* fix(deps): update all non-major dependencies (#19098) ([8639538](https://github.com/vitejs/vite/commit/8639538e6498d1109da583ad942c1472098b5919)), closes [#19098](https://github.com/vitejs/vite/issues/19098)
+* fix(deps): update all non-major dependencies (#19190) ([f2c07db](https://github.com/vitejs/vite/commit/f2c07dbfc874b46f6e09bb04996d0514663e4544)), closes [#19190](https://github.com/vitejs/vite/issues/19190)
+* fix(deps): update all non-major dependencies (#19296) ([2bea7ce](https://github.com/vitejs/vite/commit/2bea7cec4b7fddbd5f2fb6090a7eaf5ae7ca0f1b)), closes [#19296](https://github.com/vitejs/vite/issues/19296)
+* fix(deps): update all non-major dependencies (#19341) ([a2b2fad](https://github.com/vitejs/vite/commit/a2b2fad6adb781d3fb163a7e2ce4670d56d60748)), closes [#19341](https://github.com/vitejs/vite/issues/19341)
+* fix(deps): update react monorepo to v19 (major) (#18917) ([93d5443](https://github.com/vitejs/vite/commit/93d54439784da0c0a995e50dcfcc081ce4da0121)), closes [#18917](https://github.com/vitejs/vite/issues/18917)
+* feat(create-vite): add hint for external CLIs (#19157) ([b9a4cc6](https://github.com/vitejs/vite/commit/b9a4cc6b2875555b621f23ae5457fa37f31e2e24)), closes [#19157](https://github.com/vitejs/vite/issues/19157)
+* feat(create-vite): official starters options naming (#19163) ([1992f68](https://github.com/vitejs/vite/commit/1992f681fc7662780f2f2fa4fdb0865a8a54deff)), closes [#19163](https://github.com/vitejs/vite/issues/19163)
+* chore: bump TypeScript to ~5.7.2 (#19056) ([1acea1f](https://github.com/vitejs/vite/commit/1acea1f7c42e43209a6ea0aa99441f143ee15018)), closes [#19056](https://github.com/vitejs/vite/issues/19056)
+
+
+
 ## <small>6.1.1 (2024-12-24)</small>
 
 * fix(create-vite): svelte-ts typecheck command (#19014) ([ac32968](https://github.com/vitejs/vite/commit/ac329685bba229e1ff43e3d96324f817d48abe48)), closes [#19014](https://github.com/vitejs/vite/issues/19014)
