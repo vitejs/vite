@@ -546,7 +546,7 @@ export interface ResolvedWorkerOptions {
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
   /** @experimental */
-  configLoader?: 'bundle' | 'runner'
+  configLoader?: 'bundle' | 'runner' | 'native'
   envFile?: false
   forceOptimizeDeps?: boolean
 }
@@ -1702,15 +1702,19 @@ export async function loadConfigFromFile(
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
-  configLoader: 'bundle' | 'runner' = 'bundle',
+  configLoader: 'bundle' | 'runner' | 'native' = 'bundle',
 ): Promise<{
   path: string
   config: UserConfig
   dependencies: string[]
 } | null> {
-  if (configLoader !== 'bundle' && configLoader !== 'runner') {
+  if (
+    configLoader !== 'bundle' &&
+    configLoader !== 'runner' &&
+    configLoader !== 'native'
+  ) {
     throw new Error(
-      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle' and 'runner'.`,
+      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
     )
   }
 
@@ -1741,7 +1745,11 @@ export async function loadConfigFromFile(
 
   try {
     const resolver =
-      configLoader === 'bundle' ? bundleAndLoadConfigFile : importConfigFile
+      configLoader === 'bundle'
+        ? bundleAndLoadConfigFile
+        : configLoader === 'runner'
+          ? runnerImportConfigFile
+          : nativeImportConfigFile
     const { configExport, dependencies } = await resolver(resolvedPath)
     debug?.(`config file loaded in ${getTime()}`)
 
@@ -1768,7 +1776,17 @@ export async function loadConfigFromFile(
   }
 }
 
-async function importConfigFile(resolvedPath: string) {
+async function nativeImportConfigFile(resolvedPath: string) {
+  const module = await import(
+    pathToFileURL(resolvedPath).href + '?t=' + Date.now()
+  )
+  return {
+    configExport: module.default,
+    dependencies: [],
+  }
+}
+
+async function runnerImportConfigFile(resolvedPath: string) {
   const { module, dependencies } = await runnerImport<{
     default: UserConfigExport
   }>(resolvedPath)
