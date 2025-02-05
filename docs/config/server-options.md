@@ -56,6 +56,10 @@ If a string starts with `.`, it will allow that hostname without the `.` and all
 If set to `true`, the server is allowed to respond to requests for any hosts.
 This is not recommended as it will be vulnerable to DNS rebinding attacks.
 
+::: details Configure via environment variable
+You can set the environment variable `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` to add an additional allowed host.
+:::
+
 ## server.port
 
 - **Type:** `number`
