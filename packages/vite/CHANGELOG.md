@@ -1,3 +1,14 @@
+## 6.1.0 (2025-02-05)
+
+* refactor: deprecate `vite optimize` command (#19348) ([6e0e3c0](https://github.com/vitejs/vite/commit/6e0e3c0b990f1132db923e4599e18b270baa3a93)), closes [#19348](https://github.com/vitejs/vite/issues/19348)
+* feat: show hosts in cert in CLI (#19317) ([a5e306f](https://github.com/vitejs/vite/commit/a5e306f2fc34fc70d543028c319367ff9b232ea0)), closes [#19317](https://github.com/vitejs/vite/issues/19317)
+* feat: support for env var for defining allowed hosts (#19325) ([4d88f6c](https://github.com/vitejs/vite/commit/4d88f6c9391f96275b1359f1343ee2ec3e1adb7b)), closes [#19325](https://github.com/vitejs/vite/issues/19325)
+* feat: use native runtime to import the config (#19178) ([7c2a794](https://github.com/vitejs/vite/commit/7c2a7942cc8494a98fbc2b0235d91faf25242d30)), closes [#19178](https://github.com/vitejs/vite/issues/19178)
+* fix: avoid builtStart during vite optimize (#19356) ([fdb36e0](https://github.com/vitejs/vite/commit/fdb36e076969c763d4249f6db890f8bf26e9f5d1)), closes [#19356](https://github.com/vitejs/vite/issues/19356)
+* fix(build): fix stale build manifest on watch rebuild (#19361) ([fcd5785](https://github.com/vitejs/vite/commit/fcd578587b2fbdef0ff8de8a0d97c9fc6da19ce1)), closes [#19361](https://github.com/vitejs/vite/issues/19361)
+
+
+
 ## 6.1.0-beta.2 (2025-02-04)
 
 * fix: allow expanding env vars in reverse order (#19352) ([3f5f2bd](https://github.com/vitejs/vite/commit/3f5f2bddf142b2d1b162d4553d26f1ff0758b10d)), closes [#19352](https://github.com/vitejs/vite/issues/19352)
