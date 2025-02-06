@@ -17,7 +17,7 @@
 
 > Next Generation Frontend Tooling
 
-- 💡 Instant Server Start
+- 💡 Instants Server Start
 - ⚡️ Lightning Fast HMR
 - 🛠️ Rich Features
 - 📦 Optimized Build
