@@ -4,7 +4,7 @@ import fsp from 'node:fs/promises'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
-import { createRequire } from 'node:module'
+import { Module, createRequire } from 'node:module'
 import crypto from 'node:crypto'
 import { MessageChannel } from 'node:worker_threads'
 import colors from 'picocolors'
@@ -1777,11 +1777,17 @@ export async function loadConfigFromFile(
   }
 }
 
-async function nativeImportConfigFile(resolvedPath: string) {
-  depsTracker ??= await createDepsTracker()
+export async function nativeImportConfigFile(
+  resolvedPath: string,
+): Promise<{ configExport: any; dependencies: string[] }> {
+  depsTracker ??= createDepsTracker()
   if (depsTracker) {
     const { result, dependencies } = await depsTracker.collect(
-      () => import(pathToFileURL(resolvedPath).href + '?t=' + Date.now()),
+      resolvedPath,
+      () =>
+        import(
+          pathToFileURL(resolvedPath).href + `?t=${Date.now()},${resolvedPath}`
+        ),
     )
     return { configExport: result.default, dependencies }
   }
@@ -1802,15 +1808,18 @@ let depsTracker: DepsTracker | undefined
 
 type DepsTracker = {
   collect: <T>(
+    context: string,
     cb: () => Promise<T>,
   ) => Promise<{ result: T; dependencies: string[] }>
 }
 
 // This only tracks ESM dependencies that are statically imported (not dynamic imports)
-async function createDepsTracker(): Promise<DepsTracker | undefined> {
-  const { Module } = await import('node:module')
+function createDepsTracker(): DepsTracker | undefined {
   // register only exists in Node.js 18.19.0+, 20.6.0+
-  if (!Module.register) {
+  // bail out if it is not supported
+  // eslint-disable-next-line n/no-unsupported-features/node-builtins
+  const register = Module.register
+  if (!register) {
     return
   }
 
@@ -1819,33 +1828,28 @@ async function createDepsTracker(): Promise<DepsTracker | undefined> {
   // but for the subsequent config loads, a different loader may be registered.
   // we hope that that doesn't happen
   const { port1, port2 } = new MessageChannel()
-  Module.register('#deps-tracker', {
+  register('#deps-tracker', {
     parentURL: import.meta.url,
     data: { port: port2 },
     transferList: [port2],
   })
   port1.unref()
 
-  let collecting = false
   return {
-    async collect(cb) {
-      if (collecting) throw new Error('already collecting')
-      collecting = true
-
+    async collect(context, cb) {
       const depsList: string[] = []
-      const onMessage = (e: string) => {
-        depsList.push(e)
+      const onMessage = (e: { context: string; url: string }) => {
+        if (e.context === context) {
+          depsList.push(e.url)
+        }
       }
       port1.on('message', onMessage)
-      port1.postMessage(true)
       port1.unref()
 
       let result: Awaited<ReturnType<typeof cb>>
       try {
         result = await cb()
       } finally {
-        collecting = false
-        port1.postMessage(false)
         port1.off('message', onMessage)
       }
 
