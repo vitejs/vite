@@ -1777,7 +1777,7 @@ export async function loadConfigFromFile(
   }
 }
 
-export async function nativeImportConfigFile(
+async function nativeImportConfigFile(
   resolvedPath: string,
 ): Promise<{ configExport: any; dependencies: string[] }> {
   depsTracker ??= createDepsTracker()
