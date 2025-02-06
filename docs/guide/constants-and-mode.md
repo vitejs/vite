@@ -80,6 +80,8 @@ NEW_KEY3=test$KEY   # test123
 
 - Since any variables exposed to your Vite source code will end up in your client bundle, `VITE_*` variables should _not_ contain any sensitive information.
 
+:::
+
 ::: details Expanding variables in reverse order
 
 Vite supports expanding variables in reverse order.
