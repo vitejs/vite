@@ -23,6 +23,7 @@ interface GlobalCLIOptions {
   l?: LogLevel
   logLevel?: LogLevel
   clearScreen?: boolean
+  configLoader?: 'bundle' | 'runner' | 'native'
   d?: boolean | string
   debug?: boolean | string
   f?: string
@@ -87,6 +88,7 @@ function cleanGlobalCLIOptions<Options extends GlobalCLIOptions>(
   delete ret.l
   delete ret.logLevel
   delete ret.clearScreen
+  delete ret.configLoader
   delete ret.d
   delete ret.debug
   delete ret.f
@@ -151,6 +153,10 @@ cli
   })
   .option('-l, --logLevel <level>', `[string] info | warn | error | silent`)
   .option('--clearScreen', `[boolean] allow/disable clear screen when logging`)
+  .option(
+    '--configLoader <loader>',
+    `[string] use 'bundle' to bundle the config with esbuild, or 'runner' (experimental) to process it on the fly, or 'native' (experimental) to load using the native runtime (default: bundle)`,
+  )
   .option('-d, --debug [feat]', `[string | boolean] show debug logs`)
   .option('-f, --filter <filter>', `[string] filter debug logs`)
   .option('-m, --mode <mode>', `[string] set env mode`)
@@ -180,10 +186,11 @@ cli
         base: options.base,
         mode: options.mode,
         configFile: options.config,
+        configLoader: options.configLoader,
         logLevel: options.logLevel,
         clearScreen: options.clearScreen,
-        optimizeDeps: { force: options.force },
         server: cleanGlobalCLIOptions(options),
+        forceOptimizeDeps: options.force,
       })
 
       if (!server.httpServer) {
@@ -304,6 +311,7 @@ cli
           base: options.base,
           mode: options.mode,
           configFile: options.config,
+          configLoader: options.configLoader,
           logLevel: options.logLevel,
           clearScreen: options.clearScreen,
           build: buildOptions,
@@ -325,7 +333,10 @@ cli
 
 // optimize
 cli
-  .command('optimize [root]', 'pre-bundle dependencies')
+  .command(
+    'optimize [root]',
+    'pre-bundle dependencies (deprecated, the pre-bundle process runs automatically and does not need to be called)',
+  )
   .option(
     '--force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`,
@@ -340,6 +351,7 @@ cli
             root,
             base: options.base,
             configFile: options.config,
+            configLoader: options.configLoader,
             logLevel: options.logLevel,
             mode: options.mode,
           },
@@ -382,6 +394,7 @@ cli
           root,
           base: options.base,
           configFile: options.config,
+          configLoader: options.configLoader,
           logLevel: options.logLevel,
           mode: options.mode,
           build: {

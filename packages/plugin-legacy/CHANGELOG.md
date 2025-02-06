@@ -1,3 +1,16 @@
+## <small>6.0.1 (2025-02-05)</small>
+
+* fix(deps): update all non-major dependencies (#18853) ([5c02236](https://github.com/vitejs/vite/commit/5c0223636fa277d5daeb4d93c3f32d9f3cd69fc5)), closes [#18853](https://github.com/vitejs/vite/issues/18853)
+* fix(deps): update all non-major dependencies (#18967) ([d88d000](https://github.com/vitejs/vite/commit/d88d0004a8e891ca6026d356695e0b319caa7fce)), closes [#18967](https://github.com/vitejs/vite/issues/18967)
+* fix(deps): update all non-major dependencies (#19098) ([8639538](https://github.com/vitejs/vite/commit/8639538e6498d1109da583ad942c1472098b5919)), closes [#19098](https://github.com/vitejs/vite/issues/19098)
+* fix(deps): update all non-major dependencies (#19190) ([f2c07db](https://github.com/vitejs/vite/commit/f2c07dbfc874b46f6e09bb04996d0514663e4544)), closes [#19190](https://github.com/vitejs/vite/issues/19190)
+* fix(deps): update all non-major dependencies (#19296) ([2bea7ce](https://github.com/vitejs/vite/commit/2bea7cec4b7fddbd5f2fb6090a7eaf5ae7ca0f1b)), closes [#19296](https://github.com/vitejs/vite/issues/19296)
+* fix(legacy): build respect `hashCharacters` config (#19262) ([3aa10b7](https://github.com/vitejs/vite/commit/3aa10b7d618b178aec0f027b1f5fcd3353d2b166)), closes [#19262](https://github.com/vitejs/vite/issues/19262)
+* fix(legacy): import babel once (#19152) ([282496d](https://github.com/vitejs/vite/commit/282496daaca43494feceaa59809f6ceafd62dedd)), closes [#19152](https://github.com/vitejs/vite/issues/19152)
+* revert: update moduleResolution value casing (#18409) (#18774) ([b0fc6e3](https://github.com/vitejs/vite/commit/b0fc6e3c2591a30360d3714263cf7cc0e2acbfdf)), closes [#18409](https://github.com/vitejs/vite/issues/18409) [#18774](https://github.com/vitejs/vite/issues/18774)
+
+
+
 ## 6.0.0 (2024-11-26)
 
 * chore: upgrade to unbuild v3 rc (#18502) ([ddd5c5d](https://github.com/vitejs/vite/commit/ddd5c5d00ff7894462a608841560883f9c771f22)), closes [#18502](https://github.com/vitejs/vite/issues/18502)

@@ -140,7 +140,6 @@ const genWorkerName = () => 'module'
 const w2 = new SharedWorker(
   new URL('../url-shared-worker.js', import.meta.url),
   {
-    /* @vite-ignore */
     name: genWorkerName(),
     type: 'module',
   },

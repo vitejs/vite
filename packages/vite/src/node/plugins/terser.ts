@@ -1,5 +1,5 @@
 import type { Terser } from 'dep-types/terser'
-import { Worker } from 'artichokie'
+import { WorkerWithFallback } from 'artichokie'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 import { requireResolveFromRootWithFallback } from '../utils'
@@ -37,7 +37,7 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
   const { maxWorkers, ...terserOptions } = config.build.terserOptions
 
   const makeWorker = () =>
-    new Worker(
+    new WorkerWithFallback(
       () =>
         async (
           terserPath: string,
@@ -50,6 +50,16 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
           return terser.minify(code, options) as Terser.MinifyOutput
         },
       {
+        shouldUseFake(_terserPath, _code, options) {
+          return !!(
+            (typeof options.mangle === 'object' &&
+              (options.mangle.nth_identifier?.get ||
+                (typeof options.mangle.properties === 'object' &&
+                  options.mangle.properties.nth_identifier?.get))) ||
+            typeof options.format?.comments === 'function' ||
+            typeof options.output?.comments === 'function'
+          )
+        },
         max: maxWorkers,
       },
     )

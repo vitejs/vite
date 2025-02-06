@@ -1,17 +1,28 @@
 import { basename, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { stripVTControlCharacters } from 'node:util'
+import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import { describe, expect, test, vi } from 'vitest'
-import type { OutputChunk, OutputOptions, RollupOutput } from 'rollup'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import type {
+  LogLevel,
+  OutputChunk,
+  OutputOptions,
+  RollupLog,
+  RollupOptions,
+  RollupOutput,
+} from 'rollup'
 import type { LibraryFormats, LibraryOptions } from '../build'
 import {
   build,
   createBuilder,
+  onRollupLog,
   resolveBuildOutputs,
   resolveLibFilename,
 } from '../build'
 import type { Logger } from '../logger'
 import { createLogger } from '../logger'
+import { BuildEnvironment, resolveConfig } from '..'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
@@ -133,6 +144,69 @@ describe('build', () => {
     `)
     assertOutputHashContentChange(result[0], result[1])
   })
+
+  test.for([
+    [true, true],
+    [true, false],
+    [false, true],
+    [false, false],
+    ['auto', true],
+    ['auto', false],
+  ] as const)(
+    'large json object files should have tree-shaking (json.stringify: %s, json.namedExports: %s)',
+    async ([stringify, namedExports]) => {
+      const esBundle = (await build({
+        mode: 'development',
+        root: resolve(__dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        json: { stringify, namedExports },
+        build: {
+          minify: false,
+          modulePreload: { polyfill: false },
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (
+                id === 'entry.js' ||
+                id === 'object.json' ||
+                id === 'array.json'
+              ) {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `
+                  import object from 'object.json';
+                  import array from 'array.json';
+                  console.log();
+                `
+              }
+              if (id === '\0object.json') {
+                return `
+                  {"value": {"${stringify}_${namedExports}":"JSON_OBJ${'_'.repeat(10_000)}"}}
+                `
+              }
+              if (id === '\0array.json') {
+                return `
+                  ["${stringify}_${namedExports}","JSON_ARR${'_'.repeat(10_000)}"]
+                `
+              }
+            },
+          },
+        ],
+      })) as RollupOutput
+
+      const foo = esBundle.output.find(
+        (chunk) => chunk.type === 'chunk' && chunk.isEntry,
+      ) as OutputChunk
+      expect(foo.code).not.contains('JSON_ARR')
+      expect(foo.code).not.contains('JSON_OBJ')
+    },
+  )
 
   test('external modules should not be hoisted in library build', async () => {
     const [esBundle] = (await build({
@@ -337,16 +411,15 @@ describe('resolveLibFilename', () => {
   })
 
   test('missing filename', () => {
-    expect(() => {
-      resolveLibFilename(
-        {
-          entry: 'mylib.js',
-        },
-        'es',
-        'myLib',
-        resolve(__dirname, 'packages/noname'),
-      )
-    }).toThrow()
+    const filename = resolveLibFilename(
+      {
+        entry: 'mylib.js',
+      },
+      'es',
+      'myLib',
+      resolve(__dirname, 'packages/noname'),
+    )
+    expect(filename).toBe('named-testing-package.mjs')
   })
 
   test('commonjs package extensions', () => {
@@ -733,6 +806,65 @@ test('default sharedConfigBuild true on build api', async () => {
   expect(counter).toBe(1)
 })
 
+test.for([true, false])(
+  'minify per environment (builder.sharedPlugins: %s)',
+  async (sharedPlugins) => {
+    const root = resolve(__dirname, 'fixtures/shared-plugins/minify')
+    const builder = await createBuilder({
+      root,
+      logLevel: 'warn',
+      environments: {
+        client: {
+          build: {
+            outDir: './dist/client',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+        ssr: {
+          build: {
+            outDir: './dist/server',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+        custom1: {
+          build: {
+            minify: true,
+            outDir: './dist/custom1',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+        custom2: {
+          build: {
+            minify: false,
+            outDir: './dist/custom2',
+            rollupOptions: {
+              input: '/entry.js',
+            },
+          },
+        },
+      },
+      builder: {
+        sharedPlugins,
+      },
+    })
+    const client = await builder.build(builder.environments.client)
+    const ssr = await builder.build(builder.environments.ssr)
+    const custom1 = await builder.build(builder.environments.custom1)
+    const custom2 = await builder.build(builder.environments.custom2)
+    expect(
+      ([client, ssr, custom1, custom2] as RollupOutput[]).map(
+        (o) => o.output[0].code.split('\n').length,
+      ),
+    ).toEqual([2, 5, 2, 5])
+  },
+)
+
 test('adjust worker build error for worker.format', async () => {
   try {
     await build({
@@ -752,6 +884,214 @@ test('adjust worker build error for worker.format', async () => {
     return
   }
   expect.unreachable()
+})
+
+describe('onRollupLog', () => {
+  const pluginName = 'rollup-plugin-test'
+  const msgInfo = 'This is the INFO message.'
+  const msgWarn = 'This is the WARN message.'
+  const buildProject = async (
+    level: LogLevel | 'error',
+    message: string | RollupLog,
+    logger: Logger,
+    options?: Pick<RollupOptions, 'onLog' | 'onwarn'>,
+  ) => {
+    await build({
+      root: resolve(__dirname, 'packages/build-project'),
+      logLevel: 'info',
+      build: {
+        write: false,
+        rollupOptions: {
+          ...options,
+          logLevel: 'debug',
+        },
+      },
+      customLogger: logger,
+      plugins: [
+        {
+          name: pluginName,
+          resolveId(id) {
+            this[level](message)
+            if (id === 'entry.js') {
+              return '\0' + id
+            }
+          },
+          load(id) {
+            if (id === '\0entry.js') {
+              return `export default "This is test module";`
+            }
+          },
+        },
+      ],
+    })
+  }
+
+  const callOnRollupLog = async (
+    logger: Logger,
+    level: LogLevel,
+    log: RollupLog,
+  ) => {
+    const config = await resolveConfig(
+      { customLogger: logger },
+      'build',
+      'production',
+      'production',
+    )
+    const buildEnvironment = new BuildEnvironment('client', config)
+    onRollupLog(level, log, buildEnvironment)
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  test('Rollup logs of info should be handled by vite', async () => {
+    const logger = createLogger()
+    const loggerSpy = vi.spyOn(logger, 'info').mockImplementation(() => {})
+
+    await buildProject('info', msgInfo, logger)
+    const logs = loggerSpy.mock.calls.map((args) =>
+      stripVTControlCharacters(args[0]),
+    )
+    expect(logs).contain(`[plugin ${pluginName}] ${msgInfo}`)
+  })
+
+  test('Rollup logs of warn should be handled by vite', async () => {
+    const logger = createLogger('silent')
+    const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+
+    await buildProject('warn', msgWarn, logger)
+    const logs = loggerSpy.mock.calls.map((args) =>
+      stripVTControlCharacters(args[0]),
+    )
+    expect(logs).contain(`[plugin ${pluginName}] ${msgWarn}`)
+  })
+
+  test('onLog passed by user is called', async () => {
+    const logger = createLogger('silent')
+
+    const onLogInfo = vi.fn((_log: RollupLog) => {})
+    await buildProject('info', msgInfo, logger, {
+      onLog(level, log) {
+        if (level === 'info') {
+          onLogInfo(log)
+        }
+      },
+    })
+    expect(onLogInfo).toBeCalledWith(
+      expect.objectContaining({ message: `[plugin ${pluginName}] ${msgInfo}` }),
+    )
+  })
+
+  test('onwarn passed by user is called', async () => {
+    const logger = createLogger('silent')
+
+    const onWarn = vi.fn((_log: RollupLog) => {})
+    await buildProject('warn', msgWarn, logger, {
+      onwarn(warning) {
+        onWarn(warning)
+      },
+    })
+    expect(onWarn).toBeCalledWith(
+      expect.objectContaining({ message: `[plugin ${pluginName}] ${msgWarn}` }),
+    )
+  })
+
+  test('should throw error when warning contains UNRESOLVED_IMPORT', async () => {
+    const logger = createLogger()
+    await expect(() =>
+      callOnRollupLog(logger, 'warn', {
+        code: 'UNRESOLVED_IMPORT',
+        message: 'test',
+      }),
+    ).rejects.toThrowError(/Rollup failed to resolve import/)
+  })
+
+  test.each([[`Unsupported expression`], [`statically analyzed`]])(
+    'should ignore dynamic import warnings (%s)',
+    async (message: string) => {
+      const logger = createLogger()
+      const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+
+      await callOnRollupLog(logger, 'warn', {
+        code: 'PLUGIN_WARNING',
+        message: message,
+        plugin: 'rollup-plugin-dynamic-import-variables',
+      })
+      expect(loggerSpy).toBeCalledTimes(0)
+    },
+  )
+
+  test.each([[`CIRCULAR_DEPENDENCY`], [`THIS_IS_UNDEFINED`]])(
+    'should ignore some warnings (%s)',
+    async (code: string) => {
+      const logger = createLogger()
+      const loggerSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {})
+
+      await callOnRollupLog(logger, 'warn', {
+        code: code,
+        message: 'test message',
+        plugin: pluginName,
+      })
+      expect(loggerSpy).toBeCalledTimes(0)
+    },
+  )
+})
+
+test('watch rebuild manifest', async (ctx) => {
+  // this doesn't actually test watch rebuild
+  // but it simulates something similar by running two builds for the same environment
+  const root = resolve(__dirname, 'fixtures/watch-rebuild-manifest')
+  const builder = await createBuilder({
+    root,
+    logLevel: 'error',
+    environments: {
+      client: {
+        build: {
+          rollupOptions: {
+            input: '/entry.js',
+          },
+        },
+      },
+    },
+    build: {
+      manifest: true,
+    },
+  })
+
+  function getManifestKeys(output: RollupOutput) {
+    return Object.keys(
+      JSON.parse(
+        (output.output.find((o) => o.fileName === '.vite/manifest.json') as any)
+          .source,
+      ),
+    )
+  }
+
+  const result = await builder.build(builder.environments.client)
+  expect(getManifestKeys(result as RollupOutput)).toMatchInlineSnapshot(`
+    [
+      "dep.js",
+      "entry.js",
+    ]
+  `)
+
+  const entry = resolve(root, 'entry.js')
+  const content = await fsp.readFile(entry, 'utf-8')
+  await fsp.writeFile(
+    entry,
+    content.replace(`import('./dep.js')`, `'dep.js removed'`),
+  )
+  ctx.onTestFinished(async () => {
+    await fsp.writeFile(entry, content)
+  })
+
+  const result2 = await builder.build(builder.environments.client)
+  expect(getManifestKeys(result2 as RollupOutput)).toMatchInlineSnapshot(`
+    [
+      "entry.js",
+    ]
+  `)
 })
 
 /**

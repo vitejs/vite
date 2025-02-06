@@ -1,3 +1,36 @@
+## 6.2.0 (2025-02-05)
+
+* fix(deps): update all non-major dependencies (#19098) ([8639538](https://github.com/vitejs/vite/commit/8639538e6498d1109da583ad942c1472098b5919)), closes [#19098](https://github.com/vitejs/vite/issues/19098)
+* fix(deps): update all non-major dependencies (#19190) ([f2c07db](https://github.com/vitejs/vite/commit/f2c07dbfc874b46f6e09bb04996d0514663e4544)), closes [#19190](https://github.com/vitejs/vite/issues/19190)
+* fix(deps): update all non-major dependencies (#19296) ([2bea7ce](https://github.com/vitejs/vite/commit/2bea7cec4b7fddbd5f2fb6090a7eaf5ae7ca0f1b)), closes [#19296](https://github.com/vitejs/vite/issues/19296)
+* fix(deps): update all non-major dependencies (#19341) ([a2b2fad](https://github.com/vitejs/vite/commit/a2b2fad6adb781d3fb163a7e2ce4670d56d60748)), closes [#19341](https://github.com/vitejs/vite/issues/19341)
+* fix(deps): update react monorepo to v19 (major) (#18917) ([93d5443](https://github.com/vitejs/vite/commit/93d54439784da0c0a995e50dcfcc081ce4da0121)), closes [#18917](https://github.com/vitejs/vite/issues/18917)
+* feat(create-vite): add hint for external CLIs (#19157) ([b9a4cc6](https://github.com/vitejs/vite/commit/b9a4cc6b2875555b621f23ae5457fa37f31e2e24)), closes [#19157](https://github.com/vitejs/vite/issues/19157)
+* feat(create-vite): official starters options naming (#19163) ([1992f68](https://github.com/vitejs/vite/commit/1992f681fc7662780f2f2fa4fdb0865a8a54deff)), closes [#19163](https://github.com/vitejs/vite/issues/19163)
+* chore: bump TypeScript to ~5.7.2 (#19056) ([1acea1f](https://github.com/vitejs/vite/commit/1acea1f7c42e43209a6ea0aa99441f143ee15018)), closes [#19056](https://github.com/vitejs/vite/issues/19056)
+
+
+
+## <small>6.1.1 (2024-12-24)</small>
+
+* fix(create-vite): svelte-ts typecheck command (#19014) ([ac32968](https://github.com/vitejs/vite/commit/ac329685bba229e1ff43e3d96324f817d48abe48)), closes [#19014](https://github.com/vitejs/vite/issues/19014)
+* fix(deps): update all non-major dependencies (#19045) ([b442d12](https://github.com/vitejs/vite/commit/b442d12c97357697be9341b7abebd78382a3d93d)), closes [#19045](https://github.com/vitejs/vite/issues/19045)
+* refactor(create-vite): remove tslib from svelte-ts template (#19015) ([9066049](https://github.com/vitejs/vite/commit/9066049216b41ac8c6b9177539647d50d3498f1f)), closes [#19015](https://github.com/vitejs/vite/issues/19015)
+
+
+
+## 6.1.0 (2024-12-19)
+
+* feat(create-vite): align tsconfigs in svelte-ts template with others (#18995) ([b48b98c](https://github.com/vitejs/vite/commit/b48b98ce0618eb3d142c0ce86a765502fb4ac190)), closes [#18995](https://github.com/vitejs/vite/issues/18995)
+* feat(create-vite): extend from @vue/tsconfig to simplify tsconfig.app.json (#18862) ([89eea02](https://github.com/vitejs/vite/commit/89eea020a3723276495b950542e1c71f4ced781a)), closes [#18862](https://github.com/vitejs/vite/issues/18862)
+* fix(deps): update all non-major dependencies (#18853) ([5c02236](https://github.com/vitejs/vite/commit/5c0223636fa277d5daeb4d93c3f32d9f3cd69fc5)), closes [#18853](https://github.com/vitejs/vite/issues/18853)
+* fix(deps): update all non-major dependencies (#18967) ([d88d000](https://github.com/vitejs/vite/commit/d88d0004a8e891ca6026d356695e0b319caa7fce)), closes [#18967](https://github.com/vitejs/vite/issues/18967)
+* fix(deps): update all non-major dependencies (#18996) ([2b4f115](https://github.com/vitejs/vite/commit/2b4f115129fb3fbd730a92078acb724f8527b7f7)), closes [#18996](https://github.com/vitejs/vite/issues/18996)
+* chore(deps): update all non-major dependencies (#18916) ([ef7a6a3](https://github.com/vitejs/vite/commit/ef7a6a35e6827b92445e5a0c2c0022616efc80dd)), closes [#18916](https://github.com/vitejs/vite/issues/18916)
+* refactor: fix logic errors found by no-unnecessary-condition rule (#18891) ([ea802f8](https://github.com/vitejs/vite/commit/ea802f8f8bcf3771a35c1eaf687378613fbabb24)), closes [#18891](https://github.com/vitejs/vite/issues/18891)
+
+
+
 ## <small>6.0.1 (2024-11-27)</small>
 
 * feat(create-vite): bump vite-plugin-solid to `2.11.0` (#18792) ([32ac96f](https://github.com/vitejs/vite/commit/32ac96f54ca459d1a4c7ff7f4dbb4111eaea00f1)), closes [#18792](https://github.com/vitejs/vite/issues/18792)

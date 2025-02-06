@@ -37,14 +37,15 @@ const jsxExtensionsRE = /\.(?:j|t)sx\b/
 // the final build should always support dynamic import and import.meta.
 // if they need to be polyfilled, plugin-legacy should be used.
 // plugin-legacy detects these two features when checking for modern code.
+// Browser support: https://caniuse.com/es6-module-dynamic-import,mdn-javascript_operators_import_meta#:~:text=Feature%20summary
 export const defaultEsbuildSupported = {
   'dynamic-import': true,
   'import-meta': true,
 }
 
 export interface ESBuildOptions extends TransformOptions {
-  include?: string | RegExp | string[] | RegExp[]
-  exclude?: string | RegExp | string[] | RegExp[]
+  include?: string | RegExp | ReadonlyArray<string | RegExp>
+  exclude?: string | RegExp | ReadonlyArray<string | RegExp>
   jsxInject?: string
   /**
    * This option is not respected. Use `build.minify` instead.
@@ -317,15 +318,19 @@ const rollupToEsbuildFormatMap: Record<
   iife: undefined,
 }
 
-export const buildEsbuildPlugin = (config: ResolvedConfig): Plugin => {
+export const buildEsbuildPlugin = (): Plugin => {
   return {
     name: 'vite:esbuild-transpile',
+    applyToEnvironment(environment) {
+      return environment.config.esbuild !== false
+    },
     async renderChunk(code, chunk, opts) {
       // @ts-expect-error injected by @vitejs/plugin-legacy
       if (opts.__vite_skip_esbuild__) {
         return null
       }
 
+      const config = this.environment.config
       const options = resolveEsbuildTranspileOptions(config, opts.format)
 
       if (!options) {

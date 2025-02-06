@@ -80,6 +80,21 @@ NEW_KEY3=test$KEY   # test123
 
 - Since any variables exposed to your Vite source code will end up in your client bundle, `VITE_*` variables should _not_ contain any sensitive information.
 
+::: details Expanding variables in reverse order
+
+Vite supports expanding variables in reverse order.
+For example, the `.env` below will be evaluated as `VITE_FOO=foobar`, `VITE_BAR=bar`.
+
+```[.env]
+VITE_FOO=foo${VITE_BAR}
+VITE_BAR=bar
+```
+
+This does not work in shell scripts and other tools like `docker-compose`.
+That said, Vite supports this behavior as this has been supported by `dotenv-expand` for a long time and other tools in JavaScript ecosystem uses older versions that supports this behavior.
+
+To avoid interop issues, it is recommended to avoid relying on this behavior. Vite may start emitting warnings for this behavior in the future.
+
 :::
 
 ## IntelliSense for TypeScript

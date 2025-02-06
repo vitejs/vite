@@ -126,32 +126,53 @@ async function ssrTransformScript(
   ) {
     const source = importNode.source.value as string
     deps.add(source)
-    const importId = `__vite_ssr_import_${uid++}__`
 
     // Reduce metadata to undefined if it's all default values
-    if (
-      metadata &&
-      (metadata.importedNames == null || metadata.importedNames.length === 0)
-    ) {
-      metadata = undefined
-    }
-    const metadataStr = metadata ? `, ${JSON.stringify(metadata)}` : ''
+    const metadataArg =
+      (metadata?.importedNames?.length ?? 0) > 0
+        ? `, ${JSON.stringify(metadata)}`
+        : ''
 
-    s.update(
-      importNode.start,
-      importNode.end,
-      `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
-        source,
-      )}${metadataStr});\n`,
-    )
+    const importId = `__vite_ssr_import_${uid++}__`
+    const transformedImport = `const ${importId} = await ${ssrImportKey}(${JSON.stringify(
+      source,
+    )}${metadataArg});`
 
-    if (importNode.start === index) {
-      // no need to hoist, but update hoistIndex to keep the order
-      hoistIndex = importNode.end
-    } else {
-      // There will be an error if the module is called before it is imported,
-      // so the module import statement is hoisted to the top
+    s.update(importNode.start, importNode.end, transformedImport)
+
+    // If there's only whitespace characters between the last import and the
+    // current one, that means there's no statements between them and
+    // hoisting is not needed.
+    // FIXME: account for comments between imports
+    const nonWhitespaceRegex = /\S/g
+    nonWhitespaceRegex.lastIndex = index
+    nonWhitespaceRegex.exec(code)
+    if (importNode.start > nonWhitespaceRegex.lastIndex) {
+      // Imports are moved to the top of the file (AKA “hoisting”) to ensure any
+      // non-import statements before them are executed after the import. This
+      // aligns SSR imports with native ESM import behavior.
       s.move(importNode.start, importNode.end, index)
+    } else {
+      // Only update hoistIndex when *not* hoisting the current import. This
+      // ensures that once any import in this module has been hoisted, all
+      // remaining imports will also be hoisted. This is inherently true because
+      // we work from the top of the file downward.
+      hoistIndex = importNode.end
+    }
+
+    // Track how many lines the original import statement spans, so we can
+    // preserve the line offset.
+    let linesSpanned = 1
+    for (let i = importNode.start; i < importNode.end; i++) {
+      if (code[i] === '\n') {
+        linesSpanned++
+      }
+    }
+    if (linesSpanned > 1) {
+      // This leaves behind any extra newlines that were removed during
+      // transformation, in the position of the original import statement
+      // (before any hoisting).
+      s.prependRight(importNode.end, '\n'.repeat(linesSpanned - 1))
     }
 
     return importId
@@ -343,7 +364,7 @@ async function ssrTransformScript(
           stmt.type !== 'BlockStatement' &&
           stmt.type !== 'ImportDeclaration'
         ) {
-          s.appendRight(stmt.end, ';')
+          s.appendLeft(stmt.end, ';')
         }
       }
     },
@@ -398,21 +419,26 @@ async function ssrTransformScript(
     },
   })
 
-  let map = s.generateMap({ hires: 'boundary' })
-  map.sources = [path.basename(url)]
-  // needs to use originalCode instead of code
-  // because code might be already transformed even if map is null
-  map.sourcesContent = [originalCode]
-  if (
-    inMap &&
-    inMap.mappings &&
-    'sources' in inMap &&
-    inMap.sources.length > 0
-  ) {
-    map = combineSourcemaps(url, [
-      map as RawSourceMap,
-      inMap as RawSourceMap,
-    ]) as SourceMap
+  let map: TransformResult['map']
+  if (inMap?.mappings === '') {
+    map = inMap
+  } else {
+    map = s.generateMap({ hires: 'boundary' })
+    map.sources = [path.basename(url)]
+    // needs to use originalCode instead of code
+    // because code might be already transformed even if map is null
+    map.sourcesContent = [originalCode]
+    if (
+      inMap &&
+      inMap.mappings &&
+      'sources' in inMap &&
+      inMap.sources.length > 0
+    ) {
+      map = combineSourcemaps(url, [
+        map as RawSourceMap,
+        inMap as RawSourceMap,
+      ]) as SourceMap
+    }
   }
 
   return {
@@ -693,7 +719,12 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
     return false
   }
 
-  if (parent.type === 'ExportSpecifier') {
+  // export { id } from "lib"
+  // export * as id from "lib"
+  if (
+    parent.type === 'ExportSpecifier' ||
+    parent.type === 'ExportAllDeclaration'
+  ) {
     return false
   }
 

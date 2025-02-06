@@ -337,7 +337,7 @@ export default defineConfig({
               link: '/guide/api-environment',
             },
             {
-              text: 'Environment instances',
+              text: 'Environment Instances',
               link: '/guide/api-environment-instances',
             },
             {
@@ -442,7 +442,7 @@ export default defineConfig({
   transformPageData(pageData) {
     const canonicalUrl = `${ogUrl}/${pageData.relativePath}`
       .replace(/\/index\.md$/, '/')
-      .replace(/\.md$/, '/')
+      .replace(/\.md$/, '')
     pageData.frontmatter.head ??= []
     pageData.frontmatter.head.unshift(
       ['link', { rel: 'canonical', href: canonicalUrl }],

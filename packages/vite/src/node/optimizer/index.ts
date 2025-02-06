@@ -246,6 +246,8 @@ export interface DepOptimizationMetadata {
 /**
  * Scan and optimize dependencies within a project.
  * Used by Vite CLI when running `vite optimize`.
+ *
+ * @deprecated the optimization process runs automatically and does not need to be called
  */
 
 export async function optimizeDeps(
@@ -254,6 +256,12 @@ export async function optimizeDeps(
   asCommand = false,
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
+
+  config.logger.warn(
+    colors.yellow(
+      'manually calling optimizeDeps is deprecated. This is done automatically and does not need to be called manually.',
+    ),
+  )
 
   const environment = new ScanEnvironment('client', config)
   await environment.init()
@@ -373,24 +381,36 @@ export async function loadCachedDepOptimizationMetadata(
       if (cachedMetadata.lockfileHash !== getLockfileHash(environment)) {
         environment.logger.info(
           'Re-optimizing dependencies because lockfile has changed',
+          {
+            timestamp: true,
+          },
         )
       } else if (cachedMetadata.configHash !== getConfigHash(environment)) {
         environment.logger.info(
           'Re-optimizing dependencies because vite config has changed',
+          {
+            timestamp: true,
+          },
         )
       } else {
-        log?.('Hash is consistent. Skipping. Use --force to override.')
+        log?.(
+          `(${environment.name}) Hash is consistent. Skipping. Use --force to override.`,
+        )
         // Nothing to commit or cancel as we are using the cache, we only
         // need to resolve the processing promise so requests can move on
         return cachedMetadata
       }
     }
   } else {
-    environment.logger.info('Forced re-optimization of dependencies')
+    environment.logger.info('Forced re-optimization of dependencies', {
+      timestamp: true,
+    })
   }
 
   // Start with a fresh cache
-  debug?.(colors.green(`removing old cache dir ${depsCacheDir}`))
+  debug?.(
+    `(${environment.name}) ${colors.green(`removing old cache dir ${depsCacheDir}`)}`,
+  )
   await fsp.rm(depsCacheDir, { recursive: true, force: true })
 }
 
@@ -775,9 +795,11 @@ async function prepareEsbuildOptimizerRun(
   if (optimizerContext.cancelled) return { context: undefined, idToExports }
 
   const define = {
-    'process.env.NODE_ENV': JSON.stringify(
-      process.env.NODE_ENV || environment.config.mode,
-    ),
+    'process.env.NODE_ENV': environment.config.keepProcessEnv
+      ? // define process.env.NODE_ENV even for keepProcessEnv === true
+        // as esbuild will replace it automatically when `platform` is `'browser'`
+        'process.env.NODE_ENV'
+      : JSON.stringify(process.env.NODE_ENV || environment.config.mode),
   }
 
   const platform =
@@ -1170,34 +1192,49 @@ function isSingleDefaultExport(exports: readonly string[]) {
 const lockfileFormats = [
   {
     path: 'node_modules/.package-lock.json',
-    checkPatches: true,
+    checkPatchesDir: 'patches',
     manager: 'npm',
   },
   {
     // Yarn non-PnP
     path: 'node_modules/.yarn-state.yml',
-    checkPatches: false,
+    checkPatchesDir: false,
     manager: 'yarn',
   },
   {
-    // Yarn PnP
-    path: '.yarn/install-state',
-    checkPatches: false,
+    // Yarn v3+ PnP
+    path: '.pnp.cjs',
+    checkPatchesDir: '.yarn/patches',
+    manager: 'yarn',
+  },
+  {
+    // Yarn v2 PnP
+    path: '.pnp.js',
+    checkPatchesDir: '.yarn/patches',
     manager: 'yarn',
   },
   {
     // yarn 1
     path: 'node_modules/.yarn-integrity',
-    checkPatches: true,
+    checkPatchesDir: 'patches',
     manager: 'yarn',
   },
   {
     path: 'node_modules/.pnpm/lock.yaml',
     // Included in lockfile
-    checkPatches: false,
+    checkPatchesDir: false,
     manager: 'pnpm',
   },
-  { name: 'bun.lockb', path: 'bun.lockb', checkPatches: true, manager: 'bun' },
+  {
+    path: 'bun.lock',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
+  {
+    path: 'bun.lockb',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
 ].sort((_, { manager }) => {
   return process.env.npm_config_user_agent?.startsWith(manager) ? 1 : -1
 })
@@ -1210,7 +1247,9 @@ function getConfigHash(environment: Environment): string {
   const { optimizeDeps } = config
   const content = JSON.stringify(
     {
-      mode: process.env.NODE_ENV || config.mode,
+      define: !config.keepProcessEnv
+        ? process.env.NODE_ENV || config.mode
+        : null,
       root: config.root,
       resolve: config.resolve,
       assetsInclude: config.assetsInclude,
@@ -1246,10 +1285,13 @@ function getLockfileHash(environment: Environment): string {
     const lockfileFormat = lockfileFormats.find((f) =>
       normalizedLockfilePath.endsWith(f.path),
     )!
-    if (lockfileFormat.checkPatches) {
+    if (lockfileFormat.checkPatchesDir) {
       // Default of https://github.com/ds300/patch-package
       const baseDir = lockfilePath.slice(0, -lockfileFormat.path.length)
-      const fullPath = path.join(baseDir, 'patches')
+      const fullPath = path.join(
+        baseDir,
+        lockfileFormat.checkPatchesDir as string,
+      )
       const stat = tryStatSync(fullPath)
       if (stat?.isDirectory()) {
         content += stat.mtimeMs.toString()

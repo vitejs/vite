@@ -193,7 +193,7 @@ export const normalizeHotChannel = (
   ) => {
     if (!invokeHandlers) {
       return {
-        e: {
+        error: {
           name: 'TransportError',
           message: 'invokeHandlers is not set',
           stack: new Error().stack,
@@ -207,10 +207,10 @@ export const normalizeHotChannel = (
       const invokeHandler = invokeHandlers[name]
       // @ts-expect-error `invokeHandler` is `InvokeMethods[T]`, so passing the args is fine
       const result = await invokeHandler(...args)
-      return { r: result }
+      return { result }
     } catch (error) {
       return {
-        e: {
+        error: {
           name: error.name,
           message: error.message,
           stack: error.stack,
@@ -301,13 +301,7 @@ export const normalizeHotChannel = (
       }
       channel.on?.('vite:invoke', listenerForInvokeHandler)
     },
-    handleInvoke: async (payload) => {
-      const data = await handleInvoke(payload)
-      if (data.e) {
-        return { error: data.e }
-      }
-      return { result: data.r }
-    },
+    handleInvoke,
     send: (...args: any[]) => {
       let payload: HotPayload
       if (typeof args[0] === 'string') {
@@ -585,7 +579,7 @@ export async function handleHMRUpdate(
       }
       if (!options.modules.length) {
         // html file cannot be hot updated
-        if (file.endsWith('.html')) {
+        if (file.endsWith('.html') && environment.name === 'client') {
           environment.logger.info(
             colors.green(`page reload `) + colors.dim(shortFile),
             {
@@ -795,6 +789,9 @@ function propagateUpdate(
     // PostCSS plugins) it should be considered a dead end and force full reload.
     if (
       !isCSSRequest(node.url) &&
+      // we assume .svg is never an entrypoint and does not need a full reload
+      // to avoid frequent full reloads when an SVG file is referenced in CSS files (#18979)
+      !node.file?.endsWith('.svg') &&
       [...node.importers].every((i) => isCSSRequest(i.url))
     ) {
       return true
