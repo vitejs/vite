@@ -109,9 +109,9 @@ test('less', async () => {
 })
 
 test('less-plugin', async () => {
-  const body = await page.$('body')
+  const body = await page.$('.less-js-plugin')
   expect(await getBg(body)).toBe(
-    'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/wIAAgEBAFPIhPsAAAAASUVORK5CYII=")',
+    'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAA1JREFUGFdjYGD4/x8AAwIB/8myre4AAAAASUVORK5CYII=")',
   )
 })
 
