@@ -249,7 +249,7 @@ describe('preview config', () => {
       'Cache-Control': 'no-store',
     },
     proxy: { '/foo': 'http://localhost:4567' },
-    cors: false,
+    cors: true,
   })
 
   test('preview inherits server config with default port', async () => {
@@ -285,7 +285,7 @@ describe('preview config', () => {
     open: false,
     host: false,
     proxy: { '/bar': 'http://localhost:3010' },
-    cors: true,
+    cors: false,
   })
 
   test('preview overrides server config', async () => {
@@ -511,5 +511,99 @@ test('config compat 3', async () => {
       "node",
       "development|production",
     ]
+  `)
+})
+
+test('preTransformRequests', async () => {
+  async function testConfig(inlineConfig: InlineConfig) {
+    return Object.fromEntries(
+      Object.entries(
+        (await resolveConfig(inlineConfig, 'serve')).environments,
+      ).map(([name, e]) => [name, e.dev.preTransformRequests]),
+    )
+  }
+
+  expect(
+    await testConfig({
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": true,
+      "custom": false,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": false,
+    }
+  `)
+
+  expect(
+    await testConfig({
+      server: {
+        preTransformRequests: true,
+      },
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": true,
+      "custom": true,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": true,
+    }
+  `)
+
+  expect(
+    await testConfig({
+      server: {
+        preTransformRequests: false,
+      },
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": false,
+      "custom": false,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": false,
+    }
   `)
 })

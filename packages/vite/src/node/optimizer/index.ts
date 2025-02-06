@@ -246,6 +246,8 @@ export interface DepOptimizationMetadata {
 /**
  * Scan and optimize dependencies within a project.
  * Used by Vite CLI when running `vite optimize`.
+ *
+ * @deprecated the optimization process runs automatically and does not need to be called
  */
 
 export async function optimizeDeps(
@@ -254,6 +256,12 @@ export async function optimizeDeps(
   asCommand = false,
 ): Promise<DepOptimizationMetadata> {
   const log = asCommand ? config.logger.info : debug
+
+  config.logger.warn(
+    colors.yellow(
+      'manually calling optimizeDeps is deprecated. This is done automatically and does not need to be called manually.',
+    ),
+  )
 
   const environment = new ScanEnvironment('client', config)
   await environment.init()
@@ -373,24 +381,36 @@ export async function loadCachedDepOptimizationMetadata(
       if (cachedMetadata.lockfileHash !== getLockfileHash(environment)) {
         environment.logger.info(
           'Re-optimizing dependencies because lockfile has changed',
+          {
+            timestamp: true,
+          },
         )
       } else if (cachedMetadata.configHash !== getConfigHash(environment)) {
         environment.logger.info(
           'Re-optimizing dependencies because vite config has changed',
+          {
+            timestamp: true,
+          },
         )
       } else {
-        log?.('Hash is consistent. Skipping. Use --force to override.')
+        log?.(
+          `(${environment.name}) Hash is consistent. Skipping. Use --force to override.`,
+        )
         // Nothing to commit or cancel as we are using the cache, we only
         // need to resolve the processing promise so requests can move on
         return cachedMetadata
       }
     }
   } else {
-    environment.logger.info('Forced re-optimization of dependencies')
+    environment.logger.info('Forced re-optimization of dependencies', {
+      timestamp: true,
+    })
   }
 
   // Start with a fresh cache
-  debug?.(colors.green(`removing old cache dir ${depsCacheDir}`))
+  debug?.(
+    `(${environment.name}) ${colors.green(`removing old cache dir ${depsCacheDir}`)}`,
+  )
   await fsp.rm(depsCacheDir, { recursive: true, force: true })
 }
 
@@ -1206,7 +1226,11 @@ const lockfileFormats = [
     manager: 'pnpm',
   },
   {
-    name: 'bun.lockb',
+    path: 'bun.lock',
+    checkPatchesDir: 'patches',
+    manager: 'bun',
+  },
+  {
     path: 'bun.lockb',
     checkPatchesDir: 'patches',
     manager: 'bun',

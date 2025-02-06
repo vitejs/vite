@@ -419,21 +419,26 @@ async function ssrTransformScript(
     },
   })
 
-  let map = s.generateMap({ hires: 'boundary' })
-  map.sources = [path.basename(url)]
-  // needs to use originalCode instead of code
-  // because code might be already transformed even if map is null
-  map.sourcesContent = [originalCode]
-  if (
-    inMap &&
-    inMap.mappings &&
-    'sources' in inMap &&
-    inMap.sources.length > 0
-  ) {
-    map = combineSourcemaps(url, [
-      map as RawSourceMap,
-      inMap as RawSourceMap,
-    ]) as SourceMap
+  let map: TransformResult['map']
+  if (inMap?.mappings === '') {
+    map = inMap
+  } else {
+    map = s.generateMap({ hires: 'boundary' })
+    map.sources = [path.basename(url)]
+    // needs to use originalCode instead of code
+    // because code might be already transformed even if map is null
+    map.sourcesContent = [originalCode]
+    if (
+      inMap &&
+      inMap.mappings &&
+      'sources' in inMap &&
+      inMap.sources.length > 0
+    ) {
+      map = combineSourcemaps(url, [
+        map as RawSourceMap,
+        inMap as RawSourceMap,
+      ]) as SourceMap
+    }
   }
 
   return {
@@ -714,7 +719,12 @@ function isRefIdentifier(id: Identifier, parent: _Node, parentStack: _Node[]) {
     return false
   }
 
-  if (parent.type === 'ExportSpecifier') {
+  // export { id } from "lib"
+  // export * as id from "lib"
+  if (
+    parent.type === 'ExportSpecifier' ||
+    parent.type === 'ExportAllDeclaration'
+  ) {
     return false
   }
 
