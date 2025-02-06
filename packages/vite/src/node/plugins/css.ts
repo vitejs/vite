@@ -1389,10 +1389,11 @@ async function compileCSS(
 
   if (
     urlResolver &&
-    // if there's an @import, we need to add this plugin
-    // regradless of whether it contains url() or image-set(),
-    // because we don't know the content referenced by @import
-    (needInlineImport || hasUrl)
+    // when a postcss plugin is used (including the internal postcss plugins),
+    // we need to add this plugin regardless of whether
+    // this file contains url() or image-set(),
+    // because we don't know the content injected by those plugins
+    (postcssPlugins.length > 0 || isModule || hasUrl)
   ) {
     postcssPlugins.push(
       UrlRewritePostcssPlugin({
