@@ -374,7 +374,7 @@ function loadEnv(
 ): Record<string, string>
 ```
 
-**Related:** [`.env` Files](./constants-and-mode.md#env-files)
+**Related:** [`.env` Files](./env-and-mode.md#env-files)
 
 Load `.env` files within the `envDir`. By default, only env variables prefixed with `VITE_` are loaded, unless `prefixes` is changed.
 

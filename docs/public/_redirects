@@ -5,6 +5,3 @@ https://vitejs.dev/* https://vite.dev/:splat 301!
 /guide/api-vite-runtime.html /guide/api-environment 302
 /guide/api-vite-environment /guide/api-environment 302
 /guide/api-vite-environment.html /guide/api-environment 302
-
-/guide/env-and-mode /guide/constants-and-mode 302
-/guide/env-and-mode.html /guide/constants-and-mode 302

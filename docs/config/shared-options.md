@@ -32,7 +32,7 @@ See [Public Base Path](/guide/build#public-base-path) for more details.
 
 Specifying this in config will override the default mode for **both serve and build**. This value can also be overridden via the command line `--mode` option.
 
-See [Constants and Modes](/guide/constants-and-mode) for more details.
+See [Env Variables and Modes](/guide/env-and-mode) for more details.
 
 ## define
 
@@ -464,7 +464,7 @@ Set to `false` to prevent Vite from clearing the terminal screen when logging ce
 
 The directory from which `.env` files are loaded. Can be an absolute path, or a path relative to the project root.
 
-See [here](/guide/constants-and-mode#env-files) for more about environment files.
+See [here](/guide/env-and-mode#env-files) for more about environment files.
 
 ## envPrefix
 
