@@ -61,7 +61,7 @@ export default {
 
 ## Conditional Config
 
-If the config needs to conditionally determine options based on the command (`serve` or `build`), the [mode](/guide/env-and-mode#mode) being used, if it's an SSR build (`isSsrBuild`), or is previewing the build (`isPreview`), it can export a function instead:
+If the config needs to conditionally determine options based on the command (`serve` or `build`), the [mode](/guide/env-and-mode#modes) being used, if it's an SSR build (`isSsrBuild`), or is previewing the build (`isPreview`), it can export a function instead:
 
 ```js twoslash
 import { defineConfig } from 'vite'
