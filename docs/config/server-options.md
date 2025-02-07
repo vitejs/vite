@@ -65,7 +65,7 @@ Especially, you should never add Top-Level Domains like `.com` to the list. This
 
 ::: danger
 
-Setting this to `true` virtually grants any websites to send requests to your dev server by DNS rebinding attacks, allowing them to download your source code and content. We recommend always using an explicit list of allowed hosts. See [GHSA-vg6x-rcgg-rjx6](https://github.com/vitejs/vite/security/advisories/GHSA-vg6x-rcgg-rjx6) for more details.
+Setting `server.allowedHosts` to `true` allows any website to send requests to your dev server through DNS rebinding attacks, allowing them to download your source code and content. We recommend always using an explicit list of allowed hosts. See [GHSA-vg6x-rcgg-rjx6](https://github.com/vitejs/vite/security/advisories/GHSA-vg6x-rcgg-rjx6) for more details.
 
 :::
 
@@ -184,7 +184,7 @@ Configure CORS for the dev server. Pass an [options object](https://github.com/e
 
 ::: danger
 
-Setting this to `true` grants any websites to send requests to your dev server, allowing them to download your source code and content. We recommend always using an explicit list of allowed origins.
+Setting `server.cors` to `true` allows any website to send requests to your dev server and download your source code and content. We recommend always using an explicit list of allowed origins.
 
 :::
 
