@@ -51,10 +51,13 @@ The hostnames that Vite is allowed to respond to.
 `localhost` and domains under `.localhost` and all IP addresses are allowed by default.
 When using HTTPS, this check is skipped.
 
-If a string starts with `.`, it will allow that hostname without the `.` and all subdomains under the hostname. For example, `.example.com` will allow `example.com`, `foo.example.com`, and `foo.bar.example.com`.
+If a string starts with `.`, it will allow that hostname without the `.` and all subdomains under the hostname. For example, `.example.com` will allow `example.com`, `foo.example.com`, and `foo.bar.example.com`. If set to `true`, the server is allowed to respond to requests for any hosts.
 
-If set to `true`, the server is allowed to respond to requests for any hosts.
-This is not recommended as it will be vulnerable to DNS rebinding attacks.
+::: danger
+
+Setting this to `true` virtually grants any websites to send requests to your dev server by DNS rebinding attacks, allowing them to download your source code and content. We recommend always using an explicit list of allowed hosts. See [GHSA-vg6x-rcgg-rjx6](https://github.com/vitejs/vite/security/advisories/GHSA-vg6x-rcgg-rjx6) for more details.
+
+:::
 
 ::: details Configure via environment variable
 You can set the environment variable `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` to add an additional allowed host.
