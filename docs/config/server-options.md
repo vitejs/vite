@@ -51,10 +51,23 @@ The hostnames that Vite is allowed to respond to.
 `localhost` and domains under `.localhost` and all IP addresses are allowed by default.
 When using HTTPS, this check is skipped.
 
-If a string starts with `.`, it will allow that hostname without the `.` and all subdomains under the hostname. For example, `.example.com` will allow `example.com`, `foo.example.com`, and `foo.bar.example.com`.
+If a string starts with `.`, it will allow that hostname without the `.` and all subdomains under the hostname. For example, `.example.com` will allow `example.com`, `foo.example.com`, and `foo.bar.example.com`. If set to `true`, the server is allowed to respond to requests for any hosts.
 
-If set to `true`, the server is allowed to respond to requests for any hosts.
-This is not recommended as it will be vulnerable to DNS rebinding attacks.
+::: details What hosts are safe to be added?
+
+Hosts that you have control over which IP addresses they resolve to are safe to add to the list of allowed hosts.
+
+For example, if you own a domain `vite.dev`, you can add `vite.dev` and `.vite.dev` to the list. If you don't own that domain and you cannot trust the owner of that domain, you should not add it.
+
+Especially, you should never add Top-Level Domains like `.com` to the list. This is because anyone can purchase a domain like `example.com` and control the IP address it resolves to.
+
+:::
+
+::: danger
+
+Setting `server.allowedHosts` to `true` allows any website to send requests to your dev server through DNS rebinding attacks, allowing them to download your source code and content. We recommend always using an explicit list of allowed hosts. See [GHSA-vg6x-rcgg-rjx6](https://github.com/vitejs/vite/security/advisories/GHSA-vg6x-rcgg-rjx6) for more details.
+
+:::
 
 ::: details Configure via environment variable
 You can set the environment variable `__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS` to add an additional allowed host.
@@ -169,9 +182,9 @@ export default defineConfig({
 
 Configure CORS for the dev server. Pass an [options object](https://github.com/expressjs/cors#configuration-options) to fine tune the behavior or `true` to allow any origin.
 
-:::warning
+::: danger
 
-We recommend setting a specific value rather than `true` to avoid exposing the source code to untrusted origins.
+Setting `server.cors` to `true` allows any website to send requests to your dev server and download your source code and content. We recommend always using an explicit list of allowed origins.
 
 :::
 
