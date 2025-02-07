@@ -34,6 +34,12 @@ In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/gui
 
 [Read the Docs to Learn More](https://vite.dev).
 
+## VoidZero Inc.
+
+Vite is a project of [VoidZero](https://voidzero.dev/), see our announcement [Announcing VoidZero - Next Generation Toolchain for JavaScript](https://voidzero.dev/blog).
+
+If you have requirements for JavaScript tools at scale, please [get in touch](https://forms.gle/WQgjyzYJpwurpxWKA)!
+
 ## Packages
 
 | Package                                         | Version (click for changelogs)                                                                                                    |
