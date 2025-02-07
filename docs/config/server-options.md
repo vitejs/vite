@@ -169,9 +169,9 @@ export default defineConfig({
 
 Configure CORS for the dev server. Pass an [options object](https://github.com/expressjs/cors#configuration-options) to fine tune the behavior or `true` to allow any origin.
 
-:::warning
+::: danger
 
-We recommend setting a specific value rather than `true` to avoid exposing the source code to untrusted origins.
+Setting this to `true` grants any websites to send requests to your dev server, allowing them to download your source code and content. We recommend always using an explicit list of allowed origins.
 
 :::
 
