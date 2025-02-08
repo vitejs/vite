@@ -91,7 +91,7 @@ import type { TransformPluginContext } from '../server/pluginContainer'
 import { searchForWorkspaceRoot } from '../server/searchRoot'
 import { type DevEnvironment } from '..'
 import type { PackageCache } from '../packages'
-import { findNearestPackageData } from '../packages'
+import { findNearestMainPackageData } from '../packages'
 import { addToHTMLProxyTransformResult } from './html'
 import {
   assetUrlRE,
@@ -1389,10 +1389,11 @@ async function compileCSS(
 
   if (
     urlResolver &&
-    // if there's an @import, we need to add this plugin
-    // regradless of whether it contains url() or image-set(),
-    // because we don't know the content referenced by @import
-    (needInlineImport || hasUrl)
+    // when a postcss plugin is used (including the internal postcss plugins),
+    // we need to add this plugin regardless of whether
+    // this file contains url() or image-set(),
+    // because we don't know the content injected by those plugins
+    (postcssPlugins.length > 0 || isModule || hasUrl)
   ) {
     postcssPlugins.push(
       UrlRewritePostcssPlugin({
@@ -2776,6 +2777,7 @@ const makeLessWorker = (
     filename: string,
     dir: string,
     rootFile: string,
+    mime: string | undefined,
   ) => {
     const resolved = await resolvers.less(
       environment,
@@ -2783,6 +2785,12 @@ const makeLessWorker = (
       path.join(dir, '*'),
     )
     if (!resolved) return undefined
+
+    // don't rebase URLs in JavaScript plugins
+    if (mime === 'application/javascript') {
+      const file = path.resolve(resolved) // ensure os-specific flashes
+      return { resolved: file }
+    }
 
     const result = await rebaseUrls(
       environment,
@@ -2829,7 +2837,12 @@ const makeLessWorker = (
             opts: any,
             env: any,
           ): Promise<Less.FileLoadResult> {
-            const result = await viteLessResolve(filename, dir, this.rootFile)
+            const result = await viteLessResolve(
+              filename,
+              dir,
+              this.rootFile,
+              opts.mime,
+            )
             if (result) {
               return {
                 filename: path.resolve(result.resolved),
@@ -3462,7 +3475,7 @@ export function resolveLibCssFilename(
     return `${libOptions.fileName}.css`
   }
 
-  const packageJson = findNearestPackageData(root, packageCache)?.data
+  const packageJson = findNearestMainPackageData(root, packageCache)?.data
   const name = packageJson ? getPkgName(packageJson.name) : undefined
 
   if (!name)

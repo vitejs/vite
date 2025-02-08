@@ -327,9 +327,10 @@ export function resolvePlugin(
         }
       }
 
-      // file url as path
+      // file url to path with preserving hash/search
       if (id.startsWith('file://')) {
-        id = fileURLToPath(id)
+        const { file, postfix } = splitFileAndPostfix(id)
+        id = fileURLToPath(file) + postfix
       }
 
       // drive relative fs paths (only windows)
@@ -426,7 +427,7 @@ export function resolvePlugin(
               )}"`
             }
             message += `. Consider adding it to environments.${this.environment.name}.external if it is intended.`
-            this.error(message)
+            this.warn(message)
           }
 
           return options.idOnly

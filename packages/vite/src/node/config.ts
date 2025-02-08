@@ -546,7 +546,7 @@ export interface ResolvedWorkerOptions {
 export interface InlineConfig extends UserConfig {
   configFile?: string | false
   /** @experimental */
-  configLoader?: 'bundle' | 'runner'
+  configLoader?: 'bundle' | 'runner' | 'native'
   envFile?: false
   forceOptimizeDeps?: boolean
 }
@@ -745,12 +745,13 @@ export function resolveDevEnvironmentOptions(
   consumer: 'client' | 'server' | undefined,
   // Backward compatibility
   skipSsrTransform?: boolean,
+  preTransformRequest?: boolean,
 ): ResolvedDevEnvironmentOptions {
   const resolved = mergeWithDefaults(
     {
       ...configDefaults.dev,
       sourcemapIgnoreList: isInNodeModules,
-      preTransformRequests: consumer === 'client',
+      preTransformRequests: preTransformRequest ?? consumer === 'client',
       createEnvironment:
         environmentName === 'client'
           ? defaultCreateClientDevEnvironment
@@ -782,6 +783,7 @@ function resolveEnvironmentOptions(
   // Backward compatibility
   skipSsrTransform?: boolean,
   isSsrTargetWebworkerSet?: boolean,
+  preTransformRequests?: boolean,
 ): ResolvedEnvironmentOptions {
   const isClientEnvironment = environmentName === 'client'
   const consumer =
@@ -814,6 +816,7 @@ function resolveEnvironmentOptions(
       environmentName,
       consumer,
       skipSsrTransform,
+      preTransformRequests,
     ),
     build: resolveBuildEnvironmentOptions(
       options.build ?? {},
@@ -925,8 +928,10 @@ function resolveEnvironmentResolveOptions(
           : DEFAULT_SERVER_CONDITIONS.filter((c) => c !== 'browser'),
       builtins:
         resolve?.builtins ??
-        (consumer === 'server' && !isSsrTargetWebworkerEnvironment
-          ? nodeLikeBuiltins
+        (consumer === 'server'
+          ? isSsrTargetWebworkerEnvironment && resolve?.noExternal === true
+            ? []
+            : nodeLikeBuiltins
           : []),
     },
     resolve ?? {},
@@ -1212,6 +1217,7 @@ export async function resolveConfig(
       environmentName,
       config.experimental?.skipSsrTransform,
       config.ssr?.target === 'webworker',
+      config.server?.preTransformRequests,
     )
   }
 
@@ -1696,15 +1702,19 @@ export async function loadConfigFromFile(
   configRoot: string = process.cwd(),
   logLevel?: LogLevel,
   customLogger?: Logger,
-  configLoader: 'bundle' | 'runner' = 'bundle',
+  configLoader: 'bundle' | 'runner' | 'native' = 'bundle',
 ): Promise<{
   path: string
   config: UserConfig
   dependencies: string[]
 } | null> {
-  if (configLoader !== 'bundle' && configLoader !== 'runner') {
+  if (
+    configLoader !== 'bundle' &&
+    configLoader !== 'runner' &&
+    configLoader !== 'native'
+  ) {
     throw new Error(
-      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle' and 'runner'.`,
+      `Unsupported configLoader: ${configLoader}. Accepted values are 'bundle', 'runner', and 'native'.`,
     )
   }
 
@@ -1735,7 +1745,11 @@ export async function loadConfigFromFile(
 
   try {
     const resolver =
-      configLoader === 'bundle' ? bundleAndLoadConfigFile : importConfigFile
+      configLoader === 'bundle'
+        ? bundleAndLoadConfigFile
+        : configLoader === 'runner'
+          ? runnerImportConfigFile
+          : nativeImportConfigFile
     const { configExport, dependencies } = await resolver(resolvedPath)
     debug?.(`config file loaded in ${getTime()}`)
 
@@ -1762,7 +1776,17 @@ export async function loadConfigFromFile(
   }
 }
 
-async function importConfigFile(resolvedPath: string) {
+async function nativeImportConfigFile(resolvedPath: string) {
+  const module = await import(
+    pathToFileURL(resolvedPath).href + '?t=' + Date.now()
+  )
+  return {
+    configExport: module.default,
+    dependencies: [],
+  }
+}
+
+async function runnerImportConfigFile(resolvedPath: string) {
   const { module, dependencies } = await runnerImport<{
     default: UserConfigExport
   }>(resolvedPath)

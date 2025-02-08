@@ -64,6 +64,15 @@ While it may work using [`--experimental-require-module`](https://nodejs.org/doc
 - adding `"type": "module"` to the nearest `package.json`
 - renaming `vite.config.js`/`vite.config.ts` to `vite.config.mjs`/`vite.config.mts`
 
+### `failed to load config from '/path/to/config*/vite.config.js'`
+
+> failed to load config from '/path/to/config\*/vite.config.js'
+> error when starting dev server:
+> Error: Build failed with 1 error:
+> error: Must use "outdir" when there are multiple input files
+
+The error above may occur if the path to your project folder contains `*`, which esbuild treats as a glob. You will need to rename your directory to remove the `*`.
+
 ## Dev Server
 
 ### Requests are stalled forever
@@ -129,6 +138,14 @@ When the server / WebSocket server receives a large HTTP header, the request wil
 This is because Node.js limits request header size to mitigate [CVE-2018-12121](https://www.cve.org/CVERecord?id=CVE-2018-12121).
 
 To avoid this, try to reduce your request header size. For example, if the cookie is long, delete it. Or you can use [`--max-http-header-size`](https://nodejs.org/api/cli.html#--max-http-header-sizesize) to change max header size.
+
+### Dev Containers / VS Code Port Forwarding
+
+If you are using a Dev Container or port forwarding feature in VS Code, you may need to set the [`server.host`](/config/server-options.md#server-host) option to `127.0.0.1` in the config to make it work.
+
+This is because [the port forwarding feature in VS Code does not support IPv6](https://github.com/microsoft/vscode-remote-release/issues/7029).
+
+See [#16522](https://github.com/vitejs/vite/issues/16522) for more details.
 
 ## HMR
 

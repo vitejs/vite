@@ -76,6 +76,14 @@ test('postcss config', async () => {
   await untilUpdated(() => getColor(imported), 'red')
 })
 
+test('postcss plugin that injects url()', async () => {
+  const imported = await page.$('.postcss-inject-url')
+  // alias should be resolved
+  expect(await getBg(imported)).toMatch(
+    /localhost(?::\d+)?\/(?:assets\/)?ok.*\.png/,
+  )
+})
+
 sassTest()
 
 test('less', async () => {
@@ -106,6 +114,13 @@ test('less', async () => {
     code.replace('color: darkslateblue', 'color: blue'),
   )
   await untilUpdated(() => getColor(atImport), 'blue')
+})
+
+test('less-plugin', async () => {
+  const body = await page.$('.less-js-plugin')
+  expect(await getBg(body)).toBe(
+    'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAA1JREFUGFdjYGD4/x8AAwIB/8myre4AAAAASUVORK5CYII=")',
+  )
 })
 
 test('stylus', async () => {

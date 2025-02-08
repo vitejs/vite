@@ -3,8 +3,10 @@ import './imported.css'
 import './sugarss.sss'
 import './sass.scss'
 import './less.less'
+import './less-plugin.less'
 import './stylus.styl'
 import './manual-chunk.css'
+import './postcss-inject-url.css'
 
 import urlCss from './url-imported.css?url'
 appendLinkStylesheet(urlCss)
