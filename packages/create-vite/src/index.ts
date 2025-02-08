@@ -596,7 +596,7 @@ function setupReactSwc(root: string, isTs: boolean) {
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(
       /"@vitejs\/plugin-react": ".+?"/,
-      `"@vitejs/plugin-react-swc": "^3.5.0"`,
+      `"@vitejs/plugin-react-swc": "^3.7.2"`,
     )
   })
   editFile(
