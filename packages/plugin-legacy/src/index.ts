@@ -38,12 +38,9 @@ import {
 } from './snippets'
 
 // lazy load babel since it's not used during dev
-let babel: typeof import('@babel/core') | undefined
+let babel: Promise<typeof import('@babel/core')> | undefined
 async function loadBabel() {
-  if (!babel) {
-    babel = await import('@babel/core')
-  }
-  return babel
+  return (babel ??= import('@babel/core'))
 }
 
 // The requested module 'browserslist' is a CommonJS module
@@ -313,6 +310,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         config.logger.warn(
           colors.yellow(
             `plugin-legacy 'modernTargets' option overrode the builtin targets of modern chunks. Some versions of browsers between legacy and modern may not be supported.`,
+          ),
+        )
+      }
+      if (config.isWorker) {
+        config.logger.warn(
+          colors.yellow(
+            `plugin-legacy should not be passed to 'worker.plugins'. Pass to 'plugins' instead. Note that generating legacy chunks for workers are not supported by plugin-legacy.`,
           ),
         )
       }
@@ -896,6 +900,7 @@ async function buildPolyfillChunk(
         },
         output: {
           format,
+          hashCharacters: rollupOutputOptions.hashCharacters,
           entryFileNames: rollupOutputOptions.entryFileNames,
         },
       },

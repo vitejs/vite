@@ -1,14 +1,14 @@
 # Environment API for Frameworks
 
 :::warning Experimental
-Initial work for this API was introduced in Vite 5.1 with the name "Vite Runtime API". This guide describes a revised API, renamed to Environment API. This API will be released in Vite 6 as experimental. You can already test it in the latest `vite@6.0.0-beta.x` version.
+Environment API is experimental. We'll keep the APIs stable during Vite 6 to let the ecosystem experiment and build on top of it. We're planning to stabilize these new APIs with potential breaking changes in Vite 7.
 
 Resources:
 
 - [Feedback discussion](https://github.com/vitejs/vite/discussions/16358) where we are gathering feedback about the new APIs.
 - [Environment API PR](https://github.com/vitejs/vite/pull/16471) where the new API were implemented and reviewed.
 
-Please share with us your feedback as you test the proposal.
+Please share your feedback with us.
 :::
 
 ## Environments and frameworks
@@ -22,7 +22,8 @@ export class RunnableDevEnvironment extends DevEnvironment {
 
 class ModuleRunner {
   /**
-   * URL to execute. Accepts file path, server path, or id relative to the root.
+   * URL to execute.
+   * Accepts file path, server path, or id relative to the root.
    * Returns an instantiated module (same as in ssrLoadModule)
    */
   public async import(url: string): Promise<Record<string, any>>
@@ -45,27 +46,33 @@ The `runner` is evaluated eagerly when it's accessed for the first time. Beware 
 Given a Vite server configured in middleware mode as described by the [SSR setup guide](/guide/ssr#setting-up-the-dev-server), let's implement the SSR middleware using the environment API. Error handling is omitted.
 
 ```js
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { createServer } from 'vite'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const server = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
   environments: {
     server: {
-      // by default, the modules are run in the same process as the vite dev server during dev
+      // by default, modules are run in the same process as the vite server
     },
   },
 })
 
-// You might need to cast this to RunnableDevEnvironment in TypeScript or use
-// the "isRunnableDevEnvironment" function to guard the access to the runner
+// You might need to cast this to RunnableDevEnvironment in TypeScript or
+// use isRunnableDevEnvironment to guard the access to the runner
 const environment = server.environments.node
 
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
   // 1. Read index.html
-  let template = fs.readFileSync(path.resolve(__dirname, 'index.html'), 'utf-8')
+  const indexHtmlPath = path.resolve(__dirname, 'index.html')
+  let template = fs.readFileSync(indexHtmlPath, 'utf-8')
 
   // 2. Apply Vite HTML transforms. This injects the Vite HMR client,
   //    and also applies HTML transforms from Vite plugins, e.g. global
@@ -90,7 +97,7 @@ app.use('*', async (req, res, next) => {
 })
 ```
 
-## Runtime agnostic SSR
+## Runtime Agnostic SSR
 
 Since the `RunnableDevEnvironment` can only be used to run the code in the same runtime as the Vite server, it requires a runtime that can run the Vite Server (a runtime that is compatible with Node.js). This means that you will need to use the raw `DevEnvironment` to make it runtime agnostic.
 
@@ -112,7 +119,7 @@ const server = createServer()
 const ssrEnvironment = server.environment.ssr
 const input = {}
 
-const { createHandler } = await ssrEnvironment.runner.import('./entrypoint.js')
+const { createHandler } = await ssrEnvironment.runner.import('./entry.js')
 const handler = createHandler(input)
 const response = handler(new Request('/'))
 
@@ -186,10 +193,10 @@ function vitePluginVirtualIndexHtml(): Plugin {
         let html: string
         if (server) {
           this.addWatchFile('index.html')
-          html = await fs.promises.readFile('index.html', 'utf-8')
+          html = fs.readFileSync('index.html', 'utf-8')
           html = await server.transformIndexHtml('/', html)
         } else {
-          html = await fs.promises.readFile('dist/client/index.html', 'utf-8')
+          html = fs.readFileSync('dist/client/index.html', 'utf-8')
         }
         return `export default ${JSON.stringify(html)}`
       }
@@ -262,11 +269,11 @@ export function createHandler(input) {
 }
 ```
 
-## Environments during build
+## Environments During Build
 
 In the CLI, calling `vite build` and `vite build --ssr` will still build the client only and ssr only environments for backward compatibility.
 
-When `builder.entireApp` is `true` (or when calling `vite build --app`), `vite build` will opt-in into building the entire app instead. This would later on become the default in a future major. A `ViteBuilder` instance will be created (build-time equivalent to a `ViteDevServer`) to build all configured environments for production. By default the build of environments is run in series respecting the order of the `environments` record. A framework or user can further configure how the environments are built using:
+When `builder` is not `undefined` (or when calling `vite build --app`), `vite build` will opt-in into building the entire app instead. This would later on become the default in a future major. A `ViteBuilder` instance will be created (build-time equivalent to a `ViteDevServer`) to build all configured environments for production. By default the build of environments is run in series respecting the order of the `environments` record. A framework or user can further configure how the environments are built using:
 
 ```js
 export default {
@@ -281,6 +288,6 @@ export default {
 }
 ```
 
-## Environment agnostic code
+## Environment Agnostic Code
 
 Most of the time, the current `environment` instance will be available as part of the context of the code being run so the need to access them through `server.environments` should be rare. For example, inside plugin hooks the environment is exposed as part of the `PluginContext`, so it can be accessed using `this.environment`. See [Environment API for Plugins](./api-environment-plugins.md) to learn about how to build environment aware plugins.

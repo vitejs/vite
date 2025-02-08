@@ -87,15 +87,15 @@ test('should work', async () => {
   await withRetry(async () => {
     const actual = await page.textContent('.result')
     expect(JSON.parse(actual)).toStrictEqual(allResult)
-  }, true)
+  })
   await withRetry(async () => {
     const actualEager = await page.textContent('.result-eager')
     expect(JSON.parse(actualEager)).toStrictEqual(allResult)
-  }, true)
+  })
   await withRetry(async () => {
     const actualNodeModules = await page.textContent('.result-node_modules')
     expect(JSON.parse(actualNodeModules)).toStrictEqual(nodeModulesResult)
-  }, true)
+  })
 })
 
 test('import glob raw', async () => {

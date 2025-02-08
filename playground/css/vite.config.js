@@ -62,22 +62,34 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         additionalData: `$injectedColor: orange;`,
-        importer: [
-          function (url) {
-            return url === 'virtual-dep' ? { contents: '' } : null
+        importers: [
+          {
+            canonicalize(url) {
+              return url === 'virtual-dep' || url.endsWith('.wxss')
+                ? new URL('custom-importer:virtual-dep')
+                : null
+            },
+            load() {
+              return {
+                contents: ``,
+                syntax: 'scss',
+              }
+            },
           },
-          function (url) {
-            return url === 'virtual-file-absolute'
-              ? {
-                  contents: `@import "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
-                }
-              : null
-          },
-          function (url) {
-            return url.endsWith('.wxss') ? { contents: '' } : null
+          {
+            canonicalize(url) {
+              return url === 'virtual-file-absolute'
+                ? new URL('custom-importer:virtual-file-absolute')
+                : null
+            },
+            load() {
+              return {
+                contents: `@use "${pathToFileURL(path.join(import.meta.dirname, 'file-absolute.scss')).href}"`,
+                syntax: 'scss',
+              }
+            },
           },
         ],
-        silenceDeprecations: ['legacy-js-api'],
       },
       styl: {
         additionalData: `$injectedColor ?= orange`,

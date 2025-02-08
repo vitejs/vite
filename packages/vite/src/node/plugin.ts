@@ -22,7 +22,9 @@ import type { ModuleNode } from './server/mixedModuleGraph'
 import type { HmrContext, HotUpdateOptions } from './server/hmr'
 import type { DevEnvironment } from './server/environment'
 import type { Environment } from './environment'
+import type { PartialEnvironment } from './baseEnvironment'
 import type { PreviewServerHook } from './preview'
+import { arraify, asyncFlatten } from './utils'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -203,8 +205,11 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
   /**
    * Define environments where this plugin should be active
    * By default, the plugin is active in all environments
+   * @experimental
    */
-  applyToEnvironment?: (environment: Environment) => boolean
+  applyToEnvironment?: (
+    environment: PartialEnvironment,
+  ) => boolean | Promise<boolean> | PluginOption
   /**
    * Modify vite config before it's resolved. The hook can either mutate the
    * passed-in config directly, or return a partial config object that will be
@@ -239,7 +244,13 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       this: void,
       name: string,
       config: EnvironmentOptions,
-      env: ConfigEnv,
+      env: ConfigEnv & {
+        /**
+         * Whether this environment is SSR environment and `ssr.target` is set to `'webworker'`.
+         * Only intended to be used for backward compatibility.
+         */
+        isSsrTargetWebworker?: boolean
+      },
     ) =>
       | EnvironmentOptions
       | null
@@ -320,15 +331,45 @@ export type PluginWithRequiredHook<K extends keyof Plugin> = Plugin & {
 
 type Thenable<T> = T | Promise<T>
 
-type FalsyPlugin = false | null | undefined
+export type FalsyPlugin = false | null | undefined
 
 export type PluginOption = Thenable<Plugin | FalsyPlugin | PluginOption[]>
 
-export function resolveEnvironmentPlugins(environment: Environment): Plugin[] {
-  return environment
-    .getTopLevelConfig()
-    .plugins.filter(
-      (plugin) =>
-        !plugin.applyToEnvironment || plugin.applyToEnvironment(environment),
-    )
+export async function resolveEnvironmentPlugins(
+  environment: PartialEnvironment,
+): Promise<Plugin[]> {
+  const environmentPlugins: Plugin[] = []
+  for (const plugin of environment.getTopLevelConfig().plugins) {
+    if (plugin.applyToEnvironment) {
+      const applied = await plugin.applyToEnvironment(environment)
+      if (!applied) {
+        continue
+      }
+      if (applied !== true) {
+        environmentPlugins.push(
+          ...((await asyncFlatten(arraify(applied))).filter(
+            Boolean,
+          ) as Plugin[]),
+        )
+        continue
+      }
+    }
+    environmentPlugins.push(plugin)
+  }
+  return environmentPlugins
+}
+
+/**
+ * @experimental
+ */
+export function perEnvironmentPlugin(
+  name: string,
+  applyToEnvironment: (
+    environment: PartialEnvironment,
+  ) => boolean | Promise<boolean> | PluginOption,
+): Plugin {
+  return {
+    name,
+    applyToEnvironment,
+  }
 }

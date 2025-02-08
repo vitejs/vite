@@ -11,11 +11,7 @@ import {
   vi,
 } from 'vitest'
 import type { InlineConfig, RunnableDevEnvironment, ViteDevServer } from 'vite'
-import {
-  createRunnableDevEnvironment,
-  createServer,
-  createServerHotChannel,
-} from 'vite'
+import { createRunnableDevEnvironment, createServer } from 'vite'
 import type { ModuleRunner } from 'vite/module-runner'
 import {
   addFile,
@@ -884,9 +880,24 @@ if (!isBuild) {
     )
   })
 
-  test('assets HMR', async () => {
+  test('not inlined assets HMR', async () => {
+    await setupModuleRunner('/hmr.ts')
+    const el = () => hmr('#logo-no-inline')
+    await untilConsoleLogAfter(
+      () =>
+        editFile('logo-no-inline.svg', (code) =>
+          code.replace('height="30px"', 'height="40px"'),
+        ),
+      /Logo-no-inline updated/,
+    )
+    await vi.waitUntil(() => el().includes('logo-no-inline.svg?t='))
+  })
+
+  test('inlined assets HMR', async () => {
     await setupModuleRunner('/hmr.ts')
     const el = () => hmr('#logo')
+    const initialLogoUrl = el()
+    expect(initialLogoUrl).toMatch(/^data:image\/svg\+xml/)
     await untilConsoleLogAfter(
       () =>
         editFile('logo.svg', (code) =>
@@ -894,7 +905,10 @@ if (!isBuild) {
         ),
       /Logo updated/,
     )
-    await vi.waitUntil(() => el().includes('logo.svg?t='))
+    // Should be updated with new data url
+    const updatedLogoUrl = el()
+    expect(updatedLogoUrl).toMatch(/^data:image\/svg\+xml/)
+    expect(updatedLogoUrl).not.toEqual(initialLogoUrl)
   })
 } else {
   test('this file only includes test for serve', () => {
@@ -1067,7 +1081,6 @@ async function setupModuleRunner(
           createEnvironment(name, config) {
             return createRunnableDevEnvironment(name, config, {
               runnerOptions: { hmr: { logger } },
-              hot: createServerHotChannel(),
             })
           },
         },

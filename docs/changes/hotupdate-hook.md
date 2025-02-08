@@ -28,10 +28,10 @@ interface HmrContext {
 
 This hook is called once for all environments, and the passed modules have mixed information from the Client and SSR environments only. Once frameworks move to custom environments, a new hook that is called for each of them is needed.
 
-The new `hotUpdate` hook works in the same way as `handleHotUpdate` but it is called for each environment and receives a new `HotUpdateContext` instance:
+The new `hotUpdate` hook works in the same way as `handleHotUpdate` but it is called for each environment and receives a new `HotUpdateOptions` instance:
 
 ```ts
-interface HotUpdateContext {
+interface HotUpdateOptions {
   type: 'create' | 'update' | 'delete'
   file: string
   timestamp: number

@@ -3,6 +3,7 @@ import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
 import { CLIENT_ENTRY, ENV_ENTRY } from '../constants'
 import { isObject, normalizePath, resolveHostname } from '../utils'
+import { perEnvironmentState } from '../environment'
 import { replaceDefine, serializeDefine } from './define'
 
 // ids in transform are normalized to unix style
@@ -15,6 +16,19 @@ const normalizedEnvEntry = normalizePath(ENV_ENTRY)
  */
 export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
   let injectConfigValues: (code: string) => string
+
+  const getDefineReplacer = perEnvironmentState((environment) => {
+    const userDefine: Record<string, any> = {}
+    for (const key in environment.config.define) {
+      // import.meta.env.* is handled in `importAnalysis` plugin
+      if (!key.startsWith('import.meta.env.')) {
+        userDefine[key] = environment.config.define[key]
+      }
+    }
+    const serializedDefines = serializeDefine(userDefine)
+    const definesReplacement = () => serializedDefines
+    return (code: string) => code.replace(`__DEFINES__`, definesReplacement)
+  })
 
   return {
     name: 'vite:client-inject',
@@ -51,18 +65,8 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
         hmrBase = path.posix.join(hmrBase, hmrConfig.path)
       }
 
-      const userDefine: Record<string, any> = {}
-      for (const key in config.define) {
-        // import.meta.env.* is handled in `importAnalysis` plugin
-        if (!key.startsWith('import.meta.env.')) {
-          userDefine[key] = config.define[key]
-        }
-      }
-      const serializedDefines = serializeDefine(userDefine)
-
       const modeReplacement = escapeReplacement(config.mode)
       const baseReplacement = escapeReplacement(devBase)
-      const definesReplacement = () => serializedDefines
       const serverHostReplacement = escapeReplacement(serverHost)
       const hmrProtocolReplacement = escapeReplacement(protocol)
       const hmrHostnameReplacement = escapeReplacement(host)
@@ -72,12 +76,12 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
       const hmrTimeoutReplacement = escapeReplacement(timeout)
       const hmrEnableOverlayReplacement = escapeReplacement(overlay)
       const hmrConfigNameReplacement = escapeReplacement(hmrConfigName)
+      const wsTokenReplacement = escapeReplacement(config.webSocketToken)
 
       injectConfigValues = (code: string) => {
         return code
           .replace(`__MODE__`, modeReplacement)
           .replace(/__BASE__/g, baseReplacement)
-          .replace(`__DEFINES__`, definesReplacement)
           .replace(`__SERVER_HOST__`, serverHostReplacement)
           .replace(`__HMR_PROTOCOL__`, hmrProtocolReplacement)
           .replace(`__HMR_HOSTNAME__`, hmrHostnameReplacement)
@@ -87,19 +91,21 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__HMR_TIMEOUT__`, hmrTimeoutReplacement)
           .replace(`__HMR_ENABLE_OVERLAY__`, hmrEnableOverlayReplacement)
           .replace(`__HMR_CONFIG_NAME__`, hmrConfigNameReplacement)
+          .replace(`__WS_TOKEN__`, wsTokenReplacement)
       }
     },
     async transform(code, id, options) {
       // TODO: Remove options?.ssr, Vitest currently hijacks this plugin
       const ssr = options?.ssr ?? this.environment.config.consumer === 'server'
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
-        return injectConfigValues(code)
+        const defineReplacer = getDefineReplacer(this)
+        return defineReplacer(injectConfigValues(code))
       } else if (!ssr && code.includes('process.env.NODE_ENV')) {
         // replace process.env.NODE_ENV instead of defining a global
         // for it to avoid shimming a `process` object during dev,
         // avoiding inconsistencies between dev and build
         const nodeEnv =
-          config.define?.['process.env.NODE_ENV'] ||
+          this.environment.config.define?.['process.env.NODE_ENV'] ||
           JSON.stringify(process.env.NODE_ENV || config.mode)
         return await replaceDefine(this.environment, code, id, {
           'process.env.NODE_ENV': nodeEnv,

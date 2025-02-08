@@ -39,32 +39,49 @@ export const ROLLUP_HOOKS = [
 
 export const VERSION = version as string
 
-export const DEFAULT_MAIN_FIELDS = [
+const DEFAULT_MAIN_FIELDS = [
   'browser',
   'module',
   'jsnext:main', // moment still uses this...
   'jsnext',
 ]
+export const DEFAULT_CLIENT_MAIN_FIELDS = Object.freeze(DEFAULT_MAIN_FIELDS)
+export const DEFAULT_SERVER_MAIN_FIELDS = Object.freeze(
+  DEFAULT_MAIN_FIELDS.filter((f) => f !== 'browser'),
+)
 
-// Baseline support browserslist
-// "defaults and supports es6-module and supports es6-module-dynamic-import"
-// Higher browser versions may be needed for extra features.
+/**
+ * A special condition that would be replaced with production or development
+ * depending on NODE_ENV env variable
+ */
+export const DEV_PROD_CONDITION = `development|production` as const
+
+const DEFAULT_CONDITIONS = ['module', 'browser', 'node', DEV_PROD_CONDITION]
+export const DEFAULT_CLIENT_CONDITIONS = Object.freeze(
+  DEFAULT_CONDITIONS.filter((c) => c !== 'node'),
+)
+export const DEFAULT_SERVER_CONDITIONS = Object.freeze(
+  DEFAULT_CONDITIONS.filter((c) => c !== 'browser'),
+)
+
+// Baseline support for:
+// - es2020 (covers most of following features)
+// - modules via script tag
+// - dynamic imports
+// - import.meta
+// - nullish coalescing (??)
+// - bigint
+//
+// Use this link to check for browser support (excludes es2020):
+// https://caniuse.com/es6-module,es6-module-dynamic-import,mdn-javascript_operators_import_meta,mdn-javascript_operators_nullish_coalescing,bigint#:~:text=Feature%20summary
+// NOTE: Browser versions may be slightly off as previously the browserslist special `"defaults"` query
+// was used around May 2021, which targeted browsers with >0.5% usage at the time.
 export const ESBUILD_MODULES_TARGET = [
-  'es2020', // support import.meta.url
+  'es2020',
   'edge88',
   'firefox78',
   'chrome87',
   'safari14',
-]
-
-export const DEFAULT_EXTENSIONS = [
-  '.mjs',
-  '.js',
-  '.mts',
-  '.ts',
-  '.jsx',
-  '.tsx',
-  '.json',
 ]
 
 export const DEFAULT_CONFIG_FILES = [
@@ -108,6 +125,8 @@ export const CLIENT_DIR = path.dirname(CLIENT_ENTRY)
 //   add a mime type to the `registerCustomMime` in
 //   `packages/vite/src/node/plugin/assets.ts` if mime type cannot be
 //   looked up by mrmime.
+//   You can check if the mime type can be looked up by mrmime by running
+//   `node --print "require('mrmime').lookup('foo.png')"`
 export const KNOWN_ASSET_TYPES = [
   // images
   'apng',
@@ -122,6 +141,8 @@ export const KNOWN_ASSET_TYPES = [
   'ico',
   'webp',
   'avif',
+  'cur',
+  'jxl',
 
   // media
   'mp4',
@@ -172,10 +193,16 @@ export const DEFAULT_PREVIEW_PORT = 4173
 
 export const DEFAULT_ASSETS_INLINE_LIMIT = 4096
 
+// the regex to allow loopback address origins:
+// - localhost domains (which will always resolve to the loopback address by RFC 6761 section 6.3)
+// - 127.0.0.1
+// - ::1
+export const defaultAllowedOrigins =
+  /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/
+
 export const METADATA_FILENAME = '_metadata.json'
 
 export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
   'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
-export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
 export const ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR =
   'ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR'

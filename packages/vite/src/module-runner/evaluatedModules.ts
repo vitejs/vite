@@ -124,7 +124,13 @@ export class EvaluatedModules {
 }
 
 // unique id that is not available as "$bare_import" like "test"
-const prefixedBuiltins = new Set(['node:test', 'node:sqlite'])
+// https://nodejs.org/api/modules.html#built-in-modules-with-mandatory-node-prefix
+const prefixedBuiltins = new Set([
+  'node:sea',
+  'node:sqlite',
+  'node:test',
+  'node:test/reporters',
+])
 
 // transform file url to id
 // virtual:custom -> virtual:custom

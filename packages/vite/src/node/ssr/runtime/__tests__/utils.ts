@@ -32,6 +32,7 @@ export async function createModuleRunnerTester(
   }
 
   beforeEach<TestClient>(async (t) => {
+    // @ts-ignore
     globalThis.__HMR__ = {}
 
     t.server = await createServer({
@@ -70,6 +71,7 @@ export async function createModuleRunnerTester(
             }
           },
         },
+        ...(config.plugins ?? []),
       ],
       ...config,
     })

@@ -1,5 +1,6 @@
 import type { HotPayload } from 'types/hmrPayload'
 import { slash, unwrapId } from '../shared/utils'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../shared/constants'
 import type { ModuleRunner } from './runner'
 
 // updates to HMR should go one after another. It is possible to trigger another update during the invalidation for example.
@@ -19,7 +20,6 @@ export async function handleHotPayload(
   switch (payload.type) {
     case 'connected':
       hmrClient.logger.debug(`connected.`)
-      hmrClient.messenger.flush()
       break
     case 'update':
       await hmrClient.notifyListeners('vite:beforeUpdate', payload)
@@ -57,7 +57,15 @@ export async function handleHotPayload(
       runner.evaluatedModules.clear()
 
       for (const url of clearEntrypointUrls) {
-        await runner.import(url)
+        try {
+          await runner.import(url)
+        } catch (err) {
+          if (err.code !== ERR_OUTDATED_OPTIMIZED_DEP) {
+            hmrClient.logger.error(
+              `An error happened during full reload\n${err.message}\n${err.stack}`,
+            )
+          }
+        }
       }
       break
     }
@@ -73,6 +81,8 @@ export async function handleHotPayload(
       )
       break
     }
+    case 'ping': // noop
+      break
     default: {
       const check: never = payload
       return check
@@ -141,11 +151,11 @@ function getModulesEntrypoints(
     if (!module) {
       continue
     }
-    if (module.importers && !module.importers.size) {
+    if (!module.importers.size) {
       entrypoints.add(module.url)
       continue
     }
-    for (const importer of module.importers || []) {
+    for (const importer of module.importers) {
       getModulesEntrypoints(runner, [importer], visited, entrypoints)
     }
   }
@@ -157,7 +167,7 @@ function findAllEntrypoints(
   entrypoints = new Set<string>(),
 ): Set<string> {
   for (const mod of runner.evaluatedModules.idToModuleMap.values()) {
-    if (mod.importers && !mod.importers.size) {
+    if (!mod.importers.size) {
       entrypoints.add(mod.url)
     }
   }

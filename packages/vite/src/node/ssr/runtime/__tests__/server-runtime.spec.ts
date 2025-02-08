@@ -28,16 +28,24 @@ describe('module runner initialization', async () => {
   it('can load virtual modules as an entry point', async ({ runner }) => {
     const mod = await runner.import('virtual:test')
     expect(mod.msg).toBe('virtual')
+
+    // virtual module query is not supported out of the box
+    // (`?t=...` was working on Vite 5 ssrLoadModule as `transformRequest` strips off timestamp query)
+    await expect(() =>
+      runner.import(`virtual:test?t=${Date.now()}`),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining('cannot find entry point module'),
+    })
+    await expect(() =>
+      runner.import('virtual:test?abcd=1234'),
+    ).rejects.toMatchObject({
+      message: expect.stringContaining('cannot find entry point module'),
+    })
   })
 
   it('css is loaded correctly', async ({ runner }) => {
     const css = await runner.import('/fixtures/test.css')
-    expect(css.default).toMatchInlineSnapshot(`
-      ".test {
-        color: red;
-      }
-      "
-    `)
+    expect(css.default).toBe(undefined)
     const module = await runner.import('/fixtures/test.module.css')
     expect(module).toMatchObject({
       default: {
@@ -170,6 +178,7 @@ describe('module runner initialization', async () => {
     expect(modules.static).toBe(modules.dynamicAbsolute)
     expect(modules.static).toBe(modules.dynamicAbsoluteExtension)
     expect(modules.static).toBe(modules.dynamicAbsoluteFull)
+    expect(modules.static).toBe(modules.dynamicFileUrl)
   })
 
   it('correctly imports a virtual module', async ({ runner }) => {
@@ -253,5 +262,43 @@ describe('optimize-deps', async () => {
   it('optimized dep as entry', async ({ runner }) => {
     const mod = await runner.import('@vitejs/cjs-external')
     expect(mod.default.hello()).toMatchInlineSnapshot(`"world"`)
+  })
+})
+
+describe('resolveId absolute path entry', async () => {
+  const it = await createModuleRunnerTester({
+    plugins: [
+      {
+        name: 'test-resolevId',
+        enforce: 'pre',
+        resolveId(source) {
+          if (
+            source ===
+            posix.join(this.environment.config.root, 'fixtures/basic.js')
+          ) {
+            return '\0virtual:basic'
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:basic') {
+            return `export const name = "virtual:basic"`
+          }
+        },
+      },
+    ],
+  })
+
+  it('ssrLoadModule', async ({ server }) => {
+    const mod = await server.ssrLoadModule(
+      posix.join(server.config.root, 'fixtures/basic.js'),
+    )
+    expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
+  })
+
+  it('runner', async ({ server, runner }) => {
+    const mod = await runner.import(
+      posix.join(server.config.root, 'fixtures/basic.js'),
+    )
+    expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
   })
 })

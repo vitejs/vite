@@ -10,6 +10,7 @@ const {
   blue,
   blueBright,
   cyan,
+  gray,
   green,
   greenBright,
   magenta,
@@ -101,7 +102,7 @@ const FRAMEWORKS: Framework[] = [
       },
       {
         name: 'custom-create-vue',
-        display: 'Customize with create-vue ↗',
+        display: 'Official Vue Starter ↗',
         color: green,
         customCommand: 'npm create vue@latest TARGET_DIR',
       },
@@ -139,10 +140,10 @@ const FRAMEWORKS: Framework[] = [
         color: yellow,
       },
       {
-        name: 'custom-remix',
-        display: 'Remix ↗',
+        name: 'custom-react-router',
+        display: 'React Router v7 ↗',
         color: cyan,
-        customCommand: 'npm create remix@latest TARGET_DIR',
+        customCommand: 'npm create react-router@latest TARGET_DIR',
       },
     ],
   },
@@ -163,7 +164,7 @@ const FRAMEWORKS: Framework[] = [
       },
       {
         name: 'custom-create-preact',
-        display: 'Customize with create-preact ↗',
+        display: 'Official Preact Starter ↗',
         color: magenta,
         customCommand: 'npm create preact@latest TARGET_DIR',
       },
@@ -205,7 +206,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-svelte-kit',
         display: 'SvelteKit ↗',
         color: red,
-        customCommand: 'npm create svelte@latest TARGET_DIR',
+        customCommand: 'npm exec sv create TARGET_DIR',
       },
     ],
   },
@@ -250,19 +251,38 @@ const FRAMEWORKS: Framework[] = [
     ],
   },
   {
+    name: 'angular',
+    display: 'Angular',
+    color: red,
+    variants: [
+      {
+        name: 'custom-angular',
+        display: 'Angular ↗',
+        color: red,
+        customCommand: 'npm exec @angular/cli@latest new TARGET_DIR',
+      },
+      {
+        name: 'custom-analog',
+        display: 'Analog ↗',
+        color: yellow,
+        customCommand: 'npm create analog@latest TARGET_DIR',
+      },
+    ],
+  },
+  {
     name: 'others',
     display: 'Others',
     color: reset,
     variants: [
       {
         name: 'create-vite-extra',
-        display: 'create-vite-extra ↗',
+        display: 'Extra Vite Starters ↗',
         color: reset,
         customCommand: 'npm create vite-extra@latest TARGET_DIR',
       },
       {
         name: 'create-electron-vite',
-        display: 'create-electron-vite ↗',
+        display: 'Electron ↗',
         color: reset,
         customCommand: 'npm create electron-vite@latest TARGET_DIR',
       },
@@ -270,9 +290,10 @@ const FRAMEWORKS: Framework[] = [
   },
 ]
 
-const TEMPLATES = FRAMEWORKS.map(
-  (f) => (f.variants && f.variants.map((v) => v.name)) || [f.name],
-).reduce((a, b) => a.concat(b), [])
+const TEMPLATES = FRAMEWORKS.map((f) => f.variants.map((v) => v.name)).reduce(
+  (a, b) => a.concat(b),
+  [],
+)
 
 const renameFiles: Record<string, string | undefined> = {
   _gitignore: '.gitignore',
@@ -291,8 +312,8 @@ async function init() {
   }
 
   let targetDir = argTargetDir || defaultTargetDir
-  const getProjectName = () =>
-    targetDir === '.' ? path.basename(path.resolve()) : targetDir
+  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
+  const getProjectName = () => path.basename(path.resolve(targetDir))
 
   let result: prompts.Answers<
     'projectName' | 'overwrite' | 'packageName' | 'framework' | 'variant'
@@ -326,12 +347,12 @@ async function init() {
           initial: 0,
           choices: [
             {
-              title: 'Remove existing files and continue',
-              value: 'yes',
-            },
-            {
               title: 'Cancel operation',
               value: 'no',
+            },
+            {
+              title: 'Remove existing files and continue',
+              value: 'yes',
             },
             {
               title: 'Ignore files and continue',
@@ -376,16 +397,23 @@ async function init() {
           }),
         },
         {
-          type: (framework: Framework) =>
-            framework && framework.variants ? 'select' : null,
+          type: (framework: Framework | /* package name */ string) =>
+            typeof framework === 'object' ? 'select' : null,
           name: 'variant',
           message: reset('Select a variant:'),
           choices: (framework: Framework) =>
             framework.variants.map((variant) => {
               const variantColor = variant.color
+              const command = variant.customCommand
+                ? getFullCustomCommand(variant.customCommand, pkgInfo).replace(
+                    / TARGET_DIR$/,
+                    '',
+                  )
+                : undefined
               return {
                 title: variantColor(variant.display || variant.name),
                 value: variant.name,
+                description: command ? gray(command) : undefined,
               }
             }),
         },
@@ -420,40 +448,13 @@ async function init() {
     template = template.replace('-swc', '')
   }
 
-  const pkgInfo = pkgFromUserAgent(process.env.npm_config_user_agent)
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
-  const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
 
   const { customCommand } =
     FRAMEWORKS.flatMap((f) => f.variants).find((v) => v.name === template) ?? {}
 
   if (customCommand) {
-    const fullCustomCommand = customCommand
-      .replace(/^npm create /, () => {
-        // `bun create` uses it's own set of templates,
-        // the closest alternative is using `bun x` directly on the package
-        if (pkgManager === 'bun') {
-          return 'bun x create-'
-        }
-        return `${pkgManager} create `
-      })
-      // Only Yarn 1.x doesn't support `@version` in the `create` command
-      .replace('@latest', () => (isYarn1 ? '' : '@latest'))
-      .replace(/^npm exec/, () => {
-        // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
-        if (pkgManager === 'pnpm') {
-          return 'pnpm dlx'
-        }
-        if (pkgManager === 'yarn' && !isYarn1) {
-          return 'yarn dlx'
-        }
-        if (pkgManager === 'bun') {
-          return 'bun x'
-        }
-        // Use `npm exec` in all other cases,
-        // including Yarn 1.x and other custom npm clients.
-        return 'npm exec'
-      })
+    const fullCustomCommand = getFullCustomCommand(customCommand, pkgInfo)
 
     const [command, ...args] = fullCustomCommand.split(' ')
     // we replace TARGET_DIR here because targetDir may include a space
@@ -576,7 +577,12 @@ function emptyDir(dir: string) {
   }
 }
 
-function pkgFromUserAgent(userAgent: string | undefined) {
+interface PkgInfo {
+  name: string
+  version: string
+}
+
+function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
   if (!userAgent) return undefined
   const pkgSpec = userAgent.split(' ')[0]
   const pkgSpecArr = pkgSpec.split('/')
@@ -590,7 +596,7 @@ function setupReactSwc(root: string, isTs: boolean) {
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(
       /"@vitejs\/plugin-react": ".+?"/,
-      `"@vitejs/plugin-react-swc": "^3.5.0"`,
+      `"@vitejs/plugin-react-swc": "^3.7.2"`,
     )
   })
   editFile(
@@ -604,6 +610,40 @@ function setupReactSwc(root: string, isTs: boolean) {
 function editFile(file: string, callback: (content: string) => string) {
   const content = fs.readFileSync(file, 'utf-8')
   fs.writeFileSync(file, callback(content), 'utf-8')
+}
+
+function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
+  const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
+  const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
+
+  return (
+    customCommand
+      .replace(/^npm create /, () => {
+        // `bun create` uses it's own set of templates,
+        // the closest alternative is using `bun x` directly on the package
+        if (pkgManager === 'bun') {
+          return 'bun x create-'
+        }
+        return `${pkgManager} create `
+      })
+      // Only Yarn 1.x doesn't support `@version` in the `create` command
+      .replace('@latest', () => (isYarn1 ? '' : '@latest'))
+      .replace(/^npm exec/, () => {
+        // Prefer `pnpm dlx`, `yarn dlx`, or `bun x`
+        if (pkgManager === 'pnpm') {
+          return 'pnpm dlx'
+        }
+        if (pkgManager === 'yarn' && !isYarn1) {
+          return 'yarn dlx'
+        }
+        if (pkgManager === 'bun') {
+          return 'bun x'
+        }
+        // Use `npm exec` in all other cases,
+        // including Yarn 1.x and other custom npm clients.
+        return 'npm exec'
+      })
+  )
 }
 
 init().catch((e) => {

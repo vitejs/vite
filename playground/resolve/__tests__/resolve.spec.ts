@@ -111,6 +111,10 @@ test('a ts module can import another ts module using its corresponding js file n
   expect(await page.textContent('.ts-extension')).toMatch('[success]')
 })
 
+test('a js module can import another ts module using its corresponding js file name', async () => {
+  expect(await page.textContent('.js-ts-extension')).toMatch('[success]')
+})
+
 test('filename with dot', async () => {
   expect(await page.textContent('.dot')).toMatch('[success]')
 })
@@ -121,6 +125,10 @@ test.runIf(isWindows)('drive-relative path', async () => {
 
 test('absolute path', async () => {
   expect(await page.textContent('.absolute')).toMatch('[success]')
+})
+
+test('file url', async () => {
+  expect(await page.textContent('.file-url')).toMatch('[success]')
 })
 
 test('browser field', async () => {
@@ -243,4 +251,8 @@ test.runIf(isBuild)('public dir is not copied', async () => {
   expect(
     fs.existsSync(path.resolve(testDir, 'dist/should-not-be-copied')),
   ).toBe(false)
+})
+
+test('import utf8-bom package', async () => {
+  expect(await page.textContent('.utf8-bom-package')).toMatch('[success]')
 })

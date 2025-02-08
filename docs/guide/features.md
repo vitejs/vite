@@ -137,7 +137,7 @@ Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsco
 This will provide the following type shims:
 
 - Asset imports (e.g. importing an `.svg` file)
-- Types for the Vite-injected [env variables](./env-and-mode#env-variables) on `import.meta.env`
+- Types for the Vite-injected [constant variables](./env-and-mode#env-variables) on `import.meta.env`
 - Types for the [HMR API](./api-hmr) on `import.meta.hot`
 
 ::: tip
@@ -159,6 +159,50 @@ For example, to make the default import of `*.svg` a React component:
   ```
 
 :::
+
+## HTML
+
+HTML files stand [front-and-center](/guide/#index-html-and-project-root) of a Vite project, serving as the entry points for your application, making it simple to build single-page and [multi-page applications](/guide/build.html#multi-page-app).
+
+Any HTML files in your project root can be directly accessed by its respective directory path:
+
+- `<root>/index.html` -> `http://localhost:5173/`
+- `<root>/about.html` -> `http://localhost:5173/about.html`
+- `<root>/blog/index.html` -> `http://localhost:5173/blog/index.html`
+
+Assets referenced by HTML elements such as `<script type="module" src>` and `<link href>` are processed and bundled as part of the app. The full list of supported elements are as below:
+
+- `<audio src>`
+- `<embed src>`
+- `<img src>` and `<img srcset>`
+- `<image src>`
+- `<input src>`
+- `<link href>` and `<link imagesrcset>`
+- `<object data>`
+- `<script type="module" src>`
+- `<source src>` and `<source srcset>`
+- `<track src>`
+- `<use href>` and `<use xlink:href>`
+- `<video src>` and `<video poster>`
+- `<meta content>`
+  - Only if `name` attribute matches `msapplication-tileimage`, `msapplication-square70x70logo`, `msapplication-square150x150logo`, `msapplication-wide310x150logo`, `msapplication-square310x310logo`, `msapplication-config`, or `twitter:image`
+  - Or only if `property` attribute matches `og:image`, `og:image:url`, `og:image:secure_url`, `og:audio`, `og:audio:secure_url`, `og:video`, or `og:video:secure_url`
+
+```html {4-5,8-9}
+<!doctype html>
+<html>
+  <head>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <img src="/src/images/logo.svg" alt="logo" />
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
+```
+
+To opt-out of HTML processing on certain elements, you can add the `vite-ignore` attribute on the element, which can be useful when referencing external assets or CDN.
 
 ## Vue
 

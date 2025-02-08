@@ -15,7 +15,7 @@ import {
   BuildEnvironment,
   createToImportMetaURLBasedRelativeRuntime,
   injectEnvironmentToHooks,
-  onRollupWarning,
+  onRollupLog,
   toOutputFilePathInJS,
 } from '../build'
 import { cleanUrl } from '../../shared/utils'
@@ -23,7 +23,9 @@ import { fileToUrl } from './asset'
 
 type WorkerBundleAsset = {
   fileName: string
+  /** @deprecated */
   originalFileName: string | null
+  originalFileNames: string[]
   source: string | Uint8Array
 }
 
@@ -73,17 +75,18 @@ async function bundleWorkerEntry(
   // bundle the file as entry to support imports
   const { rollup } = await import('rollup')
   const { plugins, rollupOptions, format } = config.worker
-  const { plugins: resolvedPlugins, config: workerConfig } =
-    await plugins(newBundleChain)
+  const workerConfig = await plugins(newBundleChain)
   const workerEnvironment = new BuildEnvironment('client', workerConfig) // TODO: should this be 'worker'?
+  await workerEnvironment.init()
+
   const bundle = await rollup({
     ...rollupOptions,
     input,
-    plugins: resolvedPlugins.map((p) =>
+    plugins: workerEnvironment.plugins.map((p) =>
       injectEnvironmentToHooks(workerEnvironment, p),
     ),
-    onwarn(warning, warn) {
-      onRollupWarning(warning, warn, workerEnvironment)
+    onLog(level, log) {
+      onRollupLog(level, log, workerEnvironment)
     },
     preserveEntrySignatures: false,
   })
@@ -122,6 +125,7 @@ async function bundleWorkerEntry(
         saveEmitWorkerAsset(config, {
           fileName: outputChunk.fileName,
           originalFileName: null,
+          originalFileNames: [],
           source: outputChunk.code,
         })
       }
@@ -159,6 +163,7 @@ function emitSourcemapForWorkerEntry(
       saveEmitWorkerAsset(config, {
         fileName: mapFileName,
         originalFileName: null,
+        originalFileNames: [],
         source: data,
       })
     }
@@ -193,6 +198,7 @@ export async function workerFileToUrl(
     saveEmitWorkerAsset(config, {
       fileName,
       originalFileName: null,
+      originalFileNames: [],
       source: outputChunk.code,
     })
     workerMap.bundle.set(id, fileName)
@@ -317,21 +323,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           urlCode = 'self.location.href'
         } else if (inlineRE.test(id)) {
           const chunk = await bundleWorkerEntry(config, id)
-          const encodedJs = `const encodedJs = "${Buffer.from(
-            chunk.code,
-          ).toString('base64')}";`
+          const jsContent = `const jsContent = ${JSON.stringify(chunk.code)};`
 
           const code =
             // Using blob URL for SharedWorker results in multiple instances of a same worker
             workerConstructor === 'Worker'
-              ? `${encodedJs}
-          const decodeBase64 = (base64) => Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+              ? `${jsContent}
           const blob = typeof self !== "undefined" && self.Blob && new Blob([${
             workerType === 'classic'
               ? ''
               : // `URL` is always available, in `Worker[type="module"]`
                 `'URL.revokeObjectURL(import.meta.url);',`
-          }decodeBase64(encodedJs)], { type: "text/javascript;charset=utf-8" });
+          }jsContent], { type: "text/javascript;charset=utf-8" });
           export default function WorkerWrapper(options) {
             let objURL;
             try {
@@ -344,7 +347,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               return worker;
             } catch(e) {
               return new ${workerConstructor}(
-                "data:text/javascript;base64," + encodedJs,
+                'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
                 ${workerTypeOption}
               );
             }${
@@ -357,10 +360,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 : ''
             }
           }`
-              : `${encodedJs}
+              : `${jsContent}
           export default function WorkerWrapper(options) {
             return new ${workerConstructor}(
-              "data:text/javascript;base64," + encodedJs,
+              'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
               ${workerTypeOption}
             );
           }
@@ -468,8 +471,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
         this.emitFile({
           type: 'asset',
           fileName: asset.fileName,
-          originalFileName: asset.originalFileName,
           source: asset.source,
+          // NOTE: fileName is already generated when bundling the worker
+          //       so no need to pass originalFileNames/names
         })
       })
       workerMap.assets.clear()

@@ -47,7 +47,7 @@ export async function createServer(root = process.cwd(), hmrPort) {
   // use vite's connect instance as middleware
   app.use(vite.middlewares)
 
-  app.use('*', async (req, res) => {
+  app.use('*all', async (req, res) => {
     try {
       let [url] = req.originalUrl.split('?')
       url = url.replace(/\.html$/, '.pug')

@@ -1,0 +1,8 @@
+﻿{
+  "name": "@vitejs/test-utf8-bom-package",
+  "private": true,
+  "version": "1.0.0",
+  "exports": {
+    ".": "./index.mjs"
+  }
+}

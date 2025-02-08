@@ -10,7 +10,7 @@ import type {
   ResolvedConfig,
   ResolvedEnvironmentOptions,
 } from '../config'
-import { mergeConfig, promiseWithResolvers } from '../utils'
+import { mergeConfig } from '../utils'
 import { fetchModule } from '../ssr/fetchModule'
 import type { DepsOptimizer } from '../optimizer'
 import { isDepOptimizationDisabled } from '../optimizer'
@@ -19,12 +19,13 @@ import {
   createExplicitDepsOptimizer,
 } from '../optimizer/optimizer'
 import { resolveEnvironmentPlugins } from '../plugin'
-import { ERR_OUTDATED_OPTIMIZED_DEP } from '../constants'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
+import { promiseWithResolvers } from '../../shared/utils'
 import type { ViteDevServer } from '../server'
 import { EnvironmentModuleGraph } from './moduleGraph'
 import type { EnvironmentModuleNode } from './moduleGraph'
-import type { HotChannel } from './hmr'
-import { createNoopHotChannel, getShortName, updateModules } from './hmr'
+import type { HotChannel, NormalizedHotChannel } from './hmr'
+import { getShortName, normalizeHotChannel, updateModules } from './hmr'
 import type { TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import type { EnvironmentPluginContainer } from './pluginContainer'
@@ -32,16 +33,16 @@ import {
   ERR_CLOSED_SERVER,
   createEnvironmentPluginContainer,
 } from './pluginContainer'
-import type { RemoteEnvironmentTransport } from './environmentTransport'
-import { isWebSocketServer } from './ws'
+import { type WebSocketServer, isWebSocketServer } from './ws'
 import { warmupFiles } from './warmup'
+import { buildErrorMessage } from './middlewares/error'
 
 export interface DevEnvironmentContext {
-  hot: false | HotChannel
+  hot: boolean
+  transport?: HotChannel | WebSocketServer
   options?: EnvironmentOptions
   remoteRunner?: {
     inlineSourceMap?: boolean
-    transport?: RemoteEnvironmentTransport
   }
   depsOptimizer?: DepsOptimizer
 }
@@ -95,7 +96,7 @@ export class DevEnvironment extends BaseEnvironment {
    * @example
    * environment.hot.send({ type: 'full-reload' })
    */
-  hot: HotChannel
+  hot: NormalizedHotChannel
   constructor(
     name: string,
     config: ResolvedConfig,
@@ -117,12 +118,21 @@ export class DevEnvironment extends BaseEnvironment {
       this.pluginContainer!.resolveId(url, undefined),
     )
 
-    this.hot = context.hot || createNoopHotChannel()
-
     this._crawlEndFinder = setupOnCrawlEnd()
 
     this._remoteRunnerOptions = context.remoteRunner ?? {}
-    context.remoteRunner?.transport?.register(this)
+
+    this.hot = context.transport
+      ? isWebSocketServer in context.transport
+        ? context.transport
+        : normalizeHotChannel(context.transport, context.hot)
+      : normalizeHotChannel({}, context.hot)
+
+    this.hot.setInvokeHandler({
+      fetchModule: (id, importer, options) => {
+        return this.fetchModule(id, importer, options)
+      },
+    })
 
     this.hot.on('vite:invalidate', async ({ path, message }) => {
       invalidateModule(this, {
@@ -131,20 +141,14 @@ export class DevEnvironment extends BaseEnvironment {
       })
     })
 
-    const { optimizeDeps } = this.config.dev
+    const { optimizeDeps } = this.config
     if (context.depsOptimizer) {
       this.depsOptimizer = context.depsOptimizer
     } else if (isDepOptimizationDisabled(optimizeDeps)) {
       this.depsOptimizer = undefined
     } else {
-      // We only support auto-discovery for the client environment, for all other
-      // environments `noDiscovery` has no effect and a simpler explicit deps
-      // optimizer is used that only optimizes explicitly included dependencies
-      // so it doesn't need to reload the environment. Now that we have proper HMR
-      // and full reload for general environments, we can enable auto-discovery for
-      // them in the future
       this.depsOptimizer = (
-        optimizeDeps.noDiscovery || options.consumer !== 'client'
+        optimizeDeps.noDiscovery
           ? createExplicitDepsOptimizer
           : createDepsOptimizer
       )(this)
@@ -164,7 +168,7 @@ export class DevEnvironment extends BaseEnvironment {
       return
     }
     this._initiated = true
-    this._plugins = resolveEnvironmentPlugins(this)
+    this._plugins = await resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this._plugins,
@@ -217,17 +221,20 @@ export class DevEnvironment extends BaseEnvironment {
         return
       }
       // Unexpected error, log the issue but avoid an unhandled exception
-      this.logger.error(`Pre-transform error: ${e.message}`, {
-        error: e,
-        timestamp: true,
-      })
+      this.logger.error(
+        buildErrorMessage(e, [`Pre-transform error: ${e.message}`], false),
+        {
+          error: e,
+          timestamp: true,
+        },
+      )
     }
   }
 
   async close(): Promise<void> {
     this._closing = true
 
-    this._crawlEndFinder?.cancel()
+    this._crawlEndFinder.cancel()
     await Promise.allSettled([
       this.pluginContainer.close(),
       this.depsOptimizer?.close(),

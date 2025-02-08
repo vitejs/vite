@@ -63,12 +63,13 @@ export class ScanEnvironment extends BaseEnvironment {
       return
     }
     this._initiated = true
-    this._plugins = resolveEnvironmentPlugins(this)
+    this._plugins = await resolveEnvironmentPlugins(this)
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this.plugins,
+      undefined,
+      false,
     )
-    await this._pluginContainer.buildStart()
   }
 }
 
@@ -105,11 +106,6 @@ export function devToScanEnvironment(
   } as unknown as ScanEnvironment
 }
 
-type ResolveIdOptions = Omit<
-  Parameters<EnvironmentPluginContainer['resolveId']>[2],
-  'environment'
->
-
 const debug = createDebugger('vite:deps')
 
 const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
@@ -132,8 +128,6 @@ export function scanImports(environment: ScanEnvironment): {
     missing: Record<string, string>
   }>
 } {
-  // Only used to scan non-ssr code
-
   const start = performance.now()
   const deps: Record<string, string> = {}
   const missing: Record<string, string> = {}
@@ -147,7 +141,7 @@ export function scanImports(environment: ScanEnvironment): {
     entries = computedEntries
 
     if (!entries.length) {
-      if (!config.optimizeDeps.entries && !config.dev.optimizeDeps.include) {
+      if (!config.optimizeDeps.entries && !config.optimizeDeps.include) {
         environment.logger.warn(
           colors.yellow(
             '(!) Could not auto-determine entry point from rollupOptions or html files ' +
@@ -183,7 +177,7 @@ export function scanImports(environment: ScanEnvironment): {
           })
         })
       }
-      if (!context || scanContext?.cancelled) {
+      if (!context || scanContext.cancelled) {
         disposeContext()
         return { deps: {}, missing: {} }
       }
@@ -247,19 +241,31 @@ export function scanImports(environment: ScanEnvironment): {
 async function computeEntries(environment: ScanEnvironment) {
   let entries: string[] = []
 
-  const explicitEntryPatterns = environment.config.dev.optimizeDeps.entries
-  const buildInput = environment.config.build.rollupOptions?.input
+  const explicitEntryPatterns = environment.config.optimizeDeps.entries
+  const buildInput = environment.config.build.rollupOptions.input
 
   if (explicitEntryPatterns) {
     entries = await globEntries(explicitEntryPatterns, environment)
   } else if (buildInput) {
-    const resolvePath = (p: string) => path.resolve(environment.config.root, p)
+    const resolvePath = async (p: string) => {
+      const id = (
+        await environment.pluginContainer.resolveId(p, undefined, {
+          scan: true,
+        })
+      )?.id
+      if (id === undefined) {
+        throw new Error(
+          `failed to resolve rollupOptions.input value: ${JSON.stringify(p)}.`,
+        )
+      }
+      return id
+    }
     if (typeof buildInput === 'string') {
-      entries = [resolvePath(buildInput)]
+      entries = [await resolvePath(buildInput)]
     } else if (Array.isArray(buildInput)) {
-      entries = buildInput.map(resolvePath)
+      entries = await Promise.all(buildInput.map(resolvePath))
     } else if (isObject(buildInput)) {
-      entries = Object.values(buildInput).map(resolvePath)
+      entries = await Promise.all(Object.values(buildInput).map(resolvePath))
     } else {
       throw new Error('invalid rollupOptions.input value.')
     }
@@ -271,7 +277,7 @@ async function computeEntries(environment: ScanEnvironment) {
   // dependencies.
   entries = entries.filter(
     (entry) =>
-      isScannable(entry, environment.config.dev.optimizeDeps.extensions) &&
+      isScannable(entry, environment.config.optimizeDeps.extensions) &&
       fs.existsSync(entry),
   )
 
@@ -283,14 +289,14 @@ async function prepareEsbuildScanner(
   entries: string[],
   deps: Record<string, string>,
   missing: Record<string, string>,
-  scanContext?: { cancelled: boolean },
+  scanContext: { cancelled: boolean },
 ): Promise<BuildContext | undefined> {
-  if (scanContext?.cancelled) return
+  if (scanContext.cancelled) return
 
   const plugin = esbuildScanPlugin(environment, deps, missing, entries)
 
   const { plugins = [], ...esbuildOptions } =
-    environment.config.dev.optimizeDeps.esbuildOptions ?? {}
+    environment.config.optimizeDeps.esbuildOptions ?? {}
 
   // The plugin pipeline automatically loads the closest tsconfig.json.
   // But esbuild doesn't support reading tsconfig.json if the plugin has resolved the path (https://github.com/evanw/esbuild/issues/2265).
@@ -299,10 +305,10 @@ async function prepareEsbuildScanner(
   // Therefore, we use the closest tsconfig.json from the root to make it work in most cases.
   let tsconfigRaw = esbuildOptions.tsconfigRaw
   if (!tsconfigRaw && !esbuildOptions.tsconfig) {
-    const tsconfigResult = await loadTsconfigJsonForFile(
+    const { tsconfig } = await loadTsconfigJsonForFile(
       path.join(environment.config.root, '_dummy.js'),
     )
-    if (tsconfigResult.compilerOptions?.experimentalDecorators) {
+    if (tsconfig.compilerOptions?.experimentalDecorators) {
       tsconfigRaw = { compilerOptions: { experimentalDecorators: true } }
     }
   }
@@ -344,7 +350,7 @@ function globEntries(pattern: string | string[], environment: ScanEnvironment) {
       '**/node_modules/**',
       `**/${environment.config.build.outDir}/**`,
       // if there aren't explicit entries, also ignore other common folders
-      ...(environment.config.dev.optimizeDeps.entries
+      ...(environment.config.optimizeDeps.entries
         ? []
         : [`**/__tests__/**`, `**/coverage/**`]),
     ],
@@ -371,33 +377,25 @@ function esbuildScanPlugin(
   async function resolveId(
     id: string,
     importer?: string,
-    options?: ResolveIdOptions,
   ): Promise<PartialResolvedId | null> {
     return environment.pluginContainer.resolveId(
       id,
       importer && normalizePath(importer),
-      {
-        ...options,
-        scan: true,
-      },
+      { scan: true },
     )
   }
-  const resolve = async (
-    id: string,
-    importer?: string,
-    options?: ResolveIdOptions,
-  ) => {
+  const resolve = async (id: string, importer?: string) => {
     const key = id + (importer && path.dirname(importer))
     if (seen.has(key)) {
       return seen.get(key)
     }
-    const resolved = await resolveId(id, importer, options)
+    const resolved = await resolveId(id, importer)
     const res = resolved?.id
     seen.set(key, res)
     return res
   }
 
-  const optimizeDepsOptions = environment.config.dev.optimizeDeps
+  const optimizeDepsOptions = environment.config.optimizeDeps
   const include = optimizeDepsOptions.include
   const exclude = [
     ...(optimizeDepsOptions.exclude ?? []),
@@ -621,18 +619,14 @@ function esbuildScanPlugin(
           // avoid matching windows volume
           filter: /^[\w@][^:]/,
         },
-        async ({ path: id, importer, pluginData }) => {
+        async ({ path: id, importer }) => {
           if (moduleListContains(exclude, id)) {
             return externalUnlessEntry({ path: id })
           }
           if (depImports[id]) {
             return externalUnlessEntry({ path: id })
           }
-          const resolved = await resolve(id, importer, {
-            custom: {
-              depScan: { loader: pluginData?.htmlType?.loader },
-            },
-          })
+          const resolved = await resolve(id, importer)
           if (resolved) {
             if (shouldExternalizeDep(resolved, id)) {
               return externalUnlessEntry({ path: id })
@@ -694,13 +688,9 @@ function esbuildScanPlugin(
         {
           filter: /.*/,
         },
-        async ({ path: id, importer, pluginData }) => {
+        async ({ path: id, importer }) => {
           // use vite resolver to support urls and omitted extensions
-          const resolved = await resolve(id, importer, {
-            custom: {
-              depScan: { loader: pluginData?.htmlType?.loader },
-            },
-          })
+          const resolved = await resolve(id, importer)
           if (resolved) {
             if (
               shouldExternalizeDep(resolved, id) ||

@@ -21,7 +21,7 @@ import {
 } from 'vite'
 import type { Browser, Page } from 'playwright-chromium'
 import type { RollupError, RollupWatcher, RollupWatcherEvent } from 'rollup'
-import type { File } from 'vitest'
+import type { RunnerTestFile } from 'vitest'
 import { beforeAll, inject } from 'vitest'
 
 // #region env
@@ -81,7 +81,7 @@ export function setViteUrl(url: string): void {
 // #endregion
 
 beforeAll(async (s) => {
-  const suite = s as File
+  const suite = s as RunnerTestFile
 
   testPath = suite.filepath!
   testName = slash(testPath).match(/playground\/([\w-]+)\//)?.[1]

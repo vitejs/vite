@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import colors from 'picocolors'
-import { glob } from 'tinyglobby'
+import { glob, isDynamicPattern } from 'tinyglobby'
 import { FS_PREFIX } from '../constants'
 import { normalizePath } from '../utils'
 import type { ViteDevServer } from '../index'
@@ -70,10 +70,31 @@ function fileToUrl(file: string, root: string) {
   return '/' + normalizePath(url)
 }
 
-function mapFiles(files: string[], root: string) {
-  return glob(files, {
-    absolute: true,
-    cwd: root,
-    expandDirectories: false,
-  })
+async function mapFiles(files: string[], root: string) {
+  if (!files.length) return []
+
+  const result: string[] = []
+  const globs: string[] = []
+  for (const file of files) {
+    if (isDynamicPattern(file)) {
+      globs.push(file)
+    } else {
+      if (path.isAbsolute(file)) {
+        result.push(file)
+      } else {
+        result.push(path.resolve(root, file))
+      }
+    }
+  }
+  if (globs.length) {
+    result.push(
+      ...(await glob(globs, {
+        absolute: true,
+        cwd: root,
+        expandDirectories: false,
+        ignore: ['**/.git/**', '**/node_modules/**'],
+      })),
+    )
+  }
+  return result
 }

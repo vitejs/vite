@@ -6,10 +6,11 @@ import {
   isInNodeModules,
   normalizePath,
   safeRealpathSync,
+  stripBomTag,
   tryStatSync,
 } from './utils'
 import type { Plugin } from './plugin'
-import type { InternalResolveOptionsWithOverrideConditions } from './plugins/resolve'
+import type { InternalResolveOptions } from './plugins/resolve'
 
 let pnp: typeof import('pnpapi') | undefined
 if (process.versions.pnp) {
@@ -27,11 +28,11 @@ export interface PackageData {
   setResolvedCache: (
     key: string,
     entry: string,
-    options: InternalResolveOptionsWithOverrideConditions,
+    options: InternalResolveOptions,
   ) => void
   getResolvedCache: (
     key: string,
-    options: InternalResolveOptionsWithOverrideConditions,
+    options: InternalResolveOptions,
   ) => string | undefined
   data: {
     [field: string]: any
@@ -175,7 +176,7 @@ export function findNearestMainPackageData(
 }
 
 export function loadPackageData(pkgPath: string): PackageData {
-  const data = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
+  const data = JSON.parse(stripBomTag(fs.readFileSync(pkgPath, 'utf-8')))
   const pkgDir = normalizePath(path.dirname(pkgPath))
   const { sideEffects } = data
   let hasSideEffects: (id: string) => boolean | null
@@ -223,21 +224,31 @@ export function loadPackageData(pkgPath: string): PackageData {
   return pkg
 }
 
-function getResolveCacheKey(
-  key: string,
-  options: InternalResolveOptionsWithOverrideConditions,
-) {
+function getResolveCacheKey(key: string, options: InternalResolveOptions) {
   // cache key needs to include options which affect
   // `resolvePackageEntry` or `resolveDeepImport`
   return [
     key,
-    options.webCompatible ? '1' : '0',
     options.isRequire ? '1' : '0',
     options.conditions.join('_'),
-    options.overrideConditions?.join('_') || '',
     options.extensions.join('_'),
     options.mainFields.join('_'),
   ].join('|')
+}
+
+export function findNearestNodeModules(basedir: string): string | null {
+  while (basedir) {
+    const pkgPath = path.join(basedir, 'node_modules')
+    if (tryStatSync(pkgPath)?.isDirectory()) {
+      return pkgPath
+    }
+
+    const nextBasedir = path.dirname(basedir)
+    if (nextBasedir === basedir) break
+    basedir = nextBasedir
+  }
+
+  return null
 }
 
 export function watchPackageDataPlugin(packageCache: PackageCache): Plugin {

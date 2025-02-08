@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { globSync } from 'tinyglobby'
 import { defineConfig, normalizePath } from 'vite'
+import tailwind from '@tailwindcss/vite'
 
 /**
  * @returns {import('vite').Plugin}
@@ -53,12 +54,5 @@ function BackendIntegrationExample() {
 
 export default defineConfig({
   base: '/dev/',
-  plugins: [BackendIntegrationExample()],
-  css: {
-    preprocessorOptions: {
-      scss: {
-        silenceDeprecations: ['legacy-js-api'],
-      },
-    },
-  },
+  plugins: [BackendIntegrationExample(), tailwind()],
 })

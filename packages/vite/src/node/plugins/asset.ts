@@ -36,28 +36,29 @@ export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
 
 const jsSourceMapRE = /\.[cm]?js\.map$/
 
+const noInlineRE = /[?&]no-inline\b/
+const inlineRE = /[?&]inline\b/
+const svgExtRE = /\.svg(?:$|\?)/
+
 const assetCache = new WeakMap<Environment, Map<string, string>>()
 
-// chunk.name is the basename for the asset ignoring the directory structure
-// For the manifest, we need to preserve the original file path and isEntry
-// for CSS assets. We keep a map from referenceId to this information.
-export interface GeneratedAssetMeta {
-  originalFileName: string
-  isEntry?: boolean
-}
-export const generatedAssetsMap = new WeakMap<
-  Environment,
-  Map<string, GeneratedAssetMeta>
->()
+/** a set of referenceId for entry CSS assets for each environment */
+export const cssEntriesMap = new WeakMap<Environment, Set<string>>()
 
 // add own dictionary entry by directly assigning mrmime
 export function registerCustomMime(): void {
   // https://github.com/lukeed/mrmime/issues/3
+  // instead of `image/vnd.microsoft.icon` which is registered on IANA Media Types DB
+  // image/x-icon should be used instead for better compatibility (https://github.com/h5bp/html5-boilerplate/issues/219)
   mrmime.mimes['ico'] = 'image/x-icon'
+  // https://mimesniff.spec.whatwg.org/#matching-an-image-type-pattern
+  mrmime.mimes['cur'] = 'image/x-icon'
   // https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers#flac
   mrmime.mimes['flac'] = 'audio/flac'
   // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
   mrmime.mimes['eot'] = 'application/vnd.ms-fontobject'
+  // https://github.com/lukeed/mrmime/issues/10
+  mrmime.mimes['jxl'] = 'image/jxl'
 }
 
 export function renderAssetUrlInJS(
@@ -146,7 +147,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     buildStart() {
       assetCache.set(this.environment, new Map())
-      generatedAssetsMap.set(this.environment, new Map())
+      cssEntriesMap.set(this.environment, new Set())
     },
 
     resolveId(id) {
@@ -186,11 +187,11 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       let url = await fileToUrl(this, id)
 
       // Inherit HMR timestamp if this asset was invalidated
-      const environment = this.environment
-      const mod =
-        environment.mode === 'dev' && environment.moduleGraph.getModuleById(id)
-      if (mod && mod.lastHMRTimestamp > 0) {
-        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+      if (!url.startsWith('data:') && this.environment.mode === 'dev') {
+        const mod = this.environment.moduleGraph.getModuleById(id)
+        if (mod && mod.lastHMRTimestamp > 0) {
+          url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+        }
       }
 
       return {
@@ -260,19 +261,39 @@ export async function fileToUrl(
 ): Promise<string> {
   const { environment } = pluginContext
   if (environment.config.command === 'serve') {
-    return fileToDevUrl(id, environment.getTopLevelConfig())
+    return fileToDevUrl(environment, id)
   } else {
     return fileToBuiltUrl(pluginContext, id)
   }
 }
 
-export function fileToDevUrl(
+export async function fileToDevUrl(
+  environment: Environment,
   id: string,
-  config: ResolvedConfig,
   skipBase = false,
-): string {
+): Promise<string> {
+  const config = environment.getTopLevelConfig()
+  const publicFile = checkPublicFile(id, config)
+
+  // If has inline query, unconditionally inline the asset
+  if (inlineRE.test(id)) {
+    const file = publicFile || cleanUrl(id)
+    const content = await fsp.readFile(file)
+    return assetToDataURL(environment, file, content)
+  }
+
+  // If is svg and it's inlined in build, also inline it in dev to match
+  // the behaviour in build due to quote handling differences.
+  if (svgExtRE.test(id)) {
+    const file = publicFile || cleanUrl(id)
+    const content = await fsp.readFile(file)
+    if (shouldInline(environment, file, id, content, undefined, undefined)) {
+      return assetToDataURL(environment, file, content)
+    }
+  }
+
   let rtn: string
-  if (checkPublicFile(id, config)) {
+  if (publicFile) {
     // in public dir during dev, keep the url as-is
     rtn = id
   } else if (id.startsWith(withTrailingSlash(config.root))) {
@@ -286,7 +307,7 @@ export function fileToDevUrl(
   if (skipBase) {
     return rtn
   }
-  const base = joinUrlSegments(config.server?.origin ?? '', config.decodedBase)
+  const base = joinUrlSegments(config.server.origin ?? '', config.decodedBase)
   return joinUrlSegments(base, removeLeadingSlash(rtn))
 }
 
@@ -344,8 +365,16 @@ async function fileToBuiltUrl(
 ): Promise<string> {
   const environment = pluginContext.environment
   const topLevelConfig = environment.getTopLevelConfig()
-  if (!skipPublicCheck && checkPublicFile(id, topLevelConfig)) {
-    return publicFileToBuiltUrl(id, topLevelConfig)
+  if (!skipPublicCheck) {
+    const publicFile = checkPublicFile(id, topLevelConfig)
+    if (publicFile) {
+      if (inlineRE.test(id)) {
+        // If inline via query, re-assign the id so it can be read by the fs and inlined
+        id = publicFile
+      } else {
+        return publicFileToBuiltUrl(id, topLevelConfig)
+      }
+    }
   }
 
   const cache = assetCache.get(environment)!
@@ -358,20 +387,10 @@ async function fileToBuiltUrl(
   const content = await fsp.readFile(file)
 
   let url: string
-  if (shouldInline(pluginContext, file, id, content, forceInline)) {
-    if (environment.config.build.lib && isGitLfsPlaceholder(content)) {
-      environment.logger.warn(
-        colors.yellow(`Inlined file ${id} was not downloaded via Git LFS`),
-      )
-    }
-
-    if (file.endsWith('.svg')) {
-      url = svgToDataURL(content)
-    } else {
-      const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
-      // base64 inlined as a string
-      url = `data:${mimeType};base64,${content.toString('base64')}`
-    }
+  if (
+    shouldInline(environment, file, id, content, pluginContext, forceInline)
+  ) {
+    url = assetToDataURL(environment, file, content)
   } else {
     // emit as asset
     const originalFileName = normalizePath(
@@ -384,8 +403,6 @@ async function fileToBuiltUrl(
       originalFileName,
       source: content,
     })
-    generatedAssetsMap.get(environment)!.set(referenceId, { originalFileName })
-
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
   }
 
@@ -416,19 +433,28 @@ export async function urlToBuiltUrl(
   )
 }
 
-const shouldInline = (
-  pluginContext: PluginContext,
+function shouldInline(
+  environment: Environment,
   file: string,
   id: string,
   content: Buffer,
+  /** Should be passed only in build */
+  buildPluginContext: PluginContext | undefined,
   forceInline: boolean | undefined,
-): boolean => {
-  const environment = pluginContext.environment
-  const { assetsInlineLimit } = environment.config.build
-  if (environment.config.build.lib) return true
-  if (pluginContext.getModuleInfo(id)?.isEntry) return false
+): boolean {
+  if (noInlineRE.test(id)) return false
+  if (inlineRE.test(id)) return true
+  // Do build only checks if passed the plugin context during build
+  if (buildPluginContext) {
+    if (environment.config.build.lib) return true
+    if (buildPluginContext.getModuleInfo(id)?.isEntry) return false
+  }
   if (forceInline !== undefined) return forceInline
+  if (file.endsWith('.html')) return false
+  // Don't inline SVG with fragments, as they are meant to be reused
+  if (file.endsWith('.svg') && id.includes('#')) return false
   let limit: number
+  const { assetsInlineLimit } = environment.config.build
   if (typeof assetsInlineLimit === 'function') {
     const userShouldInline = assetsInlineLimit(file, content)
     if (userShouldInline != null) return userShouldInline
@@ -436,10 +462,27 @@ const shouldInline = (
   } else {
     limit = Number(assetsInlineLimit)
   }
-  if (file.endsWith('.html')) return false
-  // Don't inline SVG with fragments, as they are meant to be reused
-  if (file.endsWith('.svg') && id.includes('#')) return false
   return content.length < limit && !isGitLfsPlaceholder(content)
+}
+
+function assetToDataURL(
+  environment: Environment,
+  file: string,
+  content: Buffer,
+) {
+  if (environment.config.build.lib && isGitLfsPlaceholder(content)) {
+    environment.logger.warn(
+      colors.yellow(`Inlined file ${file} was not downloaded via Git LFS`),
+    )
+  }
+
+  if (file.endsWith('.svg')) {
+    return svgToDataURL(content)
+  } else {
+    const mimeType = mrmime.lookup(file) ?? 'application/octet-stream'
+    // base64 inlined as a string
+    return `data:${mimeType};base64,${content.toString('base64')}`
+  }
 }
 
 const nestedQuotesRE = /"[^"']*'[^"]*"|'[^'"]*"[^']*'/

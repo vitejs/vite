@@ -13,6 +13,9 @@ import type {
  * We are going to deprecate these types and we can try to use them back in the future.
  */
 
+// same default value of "moduleInfo.meta" as in Rollup
+const EMPTY_OBJECT = Object.freeze({})
+
 export class ModuleNode {
   _moduleGraph: ModuleGraph
   _clientModule: EnvironmentModuleNode | undefined
@@ -76,6 +79,48 @@ export class ModuleNode {
     }
     return importedModules
   }
+  _getModuleInfoUnion(prop: 'info'): ModuleInfo | undefined {
+    const _clientValue = this._clientModule?.[prop]
+    const _ssrValue = this._ssrModule?.[prop]
+
+    if (_clientValue == null && _ssrValue == null) return undefined
+
+    return new Proxy({} as any, {
+      get: (_, key: string) => {
+        // `meta` refers to `ModuleInfo.meta` so we refer to `this.meta` to
+        // handle the object union between client and ssr
+        if (key === 'meta') {
+          return this.meta || EMPTY_OBJECT
+        }
+        if (_clientValue) {
+          if (key in _clientValue) {
+            return _clientValue[key as keyof ModuleInfo]
+          }
+        }
+        if (_ssrValue) {
+          if (key in _ssrValue) {
+            return _ssrValue[key as keyof ModuleInfo]
+          }
+        }
+      },
+    })
+  }
+  _getModuleObjectUnion(prop: 'meta'): Record<string, any> | undefined {
+    const _clientValue = this._clientModule?.[prop]
+    const _ssrValue = this._ssrModule?.[prop]
+
+    if (_clientValue == null && _ssrValue == null) return undefined
+
+    const info: Record<string, any> = {}
+    if (_ssrValue) {
+      Object.assign(info, _ssrValue)
+    }
+    if (_clientValue) {
+      Object.assign(info, _clientValue)
+    }
+    return info
+  }
+
   get url(): string {
     return this._get('url')
   }
@@ -97,11 +142,13 @@ export class ModuleNode {
   get type(): 'js' | 'css' {
     return this._get('type')
   }
+  // `info` needs special care as it's defined as a proxy in `pluginContainer`,
+  // so we also merge it as a proxy too
   get info(): ModuleInfo | undefined {
-    return this._get('info')
+    return this._getModuleInfoUnion('info')
   }
   get meta(): Record<string, any> | undefined {
-    return this._get('meta')
+    return this._getModuleObjectUnion('meta')
   }
   get importers(): Set<ModuleNode> {
     return this._getModuleSetUnion('importers')
@@ -220,6 +267,12 @@ export class ModuleGraph {
 
   fileToModulesMap: Map<string, Set<ModuleNode>>
 
+  private moduleNodeCache = new DualWeakMap<
+    EnvironmentModuleNode,
+    EnvironmentModuleNode,
+    ModuleNode
+  >()
+
   constructor(moduleGraphs: {
     client: () => EnvironmentModuleGraph
     ssr: () => EnvironmentModuleGraph
@@ -302,7 +355,7 @@ export class ModuleGraph {
     if (ssrModules) {
       for (const mod of ssrModules) {
         if (mod.id == null || !this._client.getModuleById(mod.id)) {
-          result.add(this.getBackwardCompatibleBrowserModuleNode(mod)!)
+          result.add(this.getBackwardCompatibleServerModuleNode(mod)!)
         }
       }
     }
@@ -452,8 +505,36 @@ export class ModuleGraph {
     clientModule?: EnvironmentModuleNode,
     ssrModule?: EnvironmentModuleNode,
   ): ModuleNode {
-    // ...
-    return new ModuleNode(this, clientModule, ssrModule)
+    const cached = this.moduleNodeCache.get(clientModule, ssrModule)
+    if (cached) {
+      return cached
+    }
+
+    const moduleNode = new ModuleNode(this, clientModule, ssrModule)
+    this.moduleNodeCache.set(clientModule, ssrModule, moduleNode)
+    return moduleNode
+  }
+}
+
+class DualWeakMap<K1 extends WeakKey, K2 extends WeakKey, V> {
+  private map = new WeakMap<K1 | object, WeakMap<K2 | object, V>>()
+  private undefinedKey = {}
+
+  get(key1: K1 | undefined, key2: K2 | undefined): V | undefined {
+    const k1 = key1 ?? this.undefinedKey
+    const k2 = key2 ?? this.undefinedKey
+    return this.map.get(k1)?.get(k2)
+  }
+
+  set(key1: K1 | undefined, key2: K2 | undefined, value: V): void {
+    const k1 = key1 ?? this.undefinedKey
+    const k2 = key2 ?? this.undefinedKey
+    if (!this.map.has(k1)) {
+      this.map.set(k1, new Map<K2, V>())
+    }
+
+    const m = this.map.get(k1)!
+    m.set(k2, value)
   }
 }
 
@@ -625,7 +706,7 @@ function createBackwardCompatibleFileToModulesMap(
               }
             }
             if (!found) {
-              modules?.add(ssrModule)
+              modules.add(ssrModule)
             }
           }
         }

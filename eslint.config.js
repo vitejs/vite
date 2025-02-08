@@ -8,7 +8,6 @@ import tseslint from 'typescript-eslint'
 import globals from 'globals'
 
 const require = createRequire(import.meta.url)
-const pkg = require('./package.json')
 const pkgVite = require('./packages/vite/package.json')
 
 // Some rules work better with typechecking enabled, but as enabling it is slow,
@@ -51,6 +50,11 @@ export default tseslint.config(
         ...globals.node,
       },
     },
+    settings: {
+      node: {
+        version: '^18.0.0 || ^20.0.0 || >=22.0.0',
+      },
+    },
     plugins: {
       n: pluginN,
       'import-x': pluginImportX,
@@ -85,7 +89,15 @@ export default tseslint.config(
       'n/no-extraneous-import': [
         'error',
         {
-          allowModules: ['vite', 'less', 'sass', 'vitest', 'unbuild'],
+          allowModules: [
+            'vite',
+            'less',
+            'sass',
+            'sass-embedded',
+            'lightningcss',
+            'vitest',
+            'unbuild',
+          ],
         },
       ],
       'n/no-extraneous-require': [
@@ -196,7 +208,6 @@ export default tseslint.config(
       'playground/**/*dep*/**',
       'playground/resolve/browser-module-field2/index.web.js',
       'playground/resolve/browser-field/**',
-      'playground/tailwind/**', // blocked by https://github.com/postcss/postcss-load-config/issues/239
     ],
     rules: {
       'import-x/no-commonjs': 'error',
@@ -206,17 +217,9 @@ export default tseslint.config(
     name: 'playground/test',
     files: ['playground/**/__tests__/**/*.?([cm])[jt]s?(x)'],
     rules: {
-      // engine field doesn't exist in playgrounds
-      'n/no-unsupported-features/es-builtins': [
-        'error',
-        {
-          version: pkg.engines.node,
-        },
-      ],
       'n/no-unsupported-features/node-builtins': [
         'error',
         {
-          version: pkg.engines.node,
           // ideally we would like to allow all experimental features
           // https://github.com/eslint-community/eslint-plugin-n/issues/199
           ignores: ['fetch'],

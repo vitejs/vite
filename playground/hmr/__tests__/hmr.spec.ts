@@ -779,6 +779,29 @@ if (!isBuild) {
     }, '[wow]1')
   })
 
+  test('handle virtual module accept updates', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.virtual-dep')
+    expect(await el.textContent()).toBe('0')
+    editFile('importedVirtual.js', (code) => code.replace('[success]', '[wow]'))
+    await untilUpdated(async () => {
+      const el = await page.$('.virtual-dep')
+      return await el.textContent()
+    }, '[wow]')
+  })
+
+  test('invalidate virtual module and accept', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('.virtual-dep')
+    expect(await el.textContent()).toBe('0')
+    const btn = await page.$('.virtual-update-dep')
+    btn.click()
+    await untilUpdated(async () => {
+      const el = await page.$('.virtual-dep')
+      return await el.textContent()
+    }, '[wow]2')
+  })
+
   test('keep hmr reload after missing import on server startup', async () => {
     const file = 'missing-import/a.js'
     const importCode = "import 'missing-modules'"
@@ -832,11 +855,16 @@ if (!isBuild) {
       ),
     )
     const originalChildFileCode = readFile(childFile)
-    removeFile(childFile)
-    await untilUpdated(
-      () => page.textContent('.file-delete-restore'),
-      'parent:not-child',
-    )
+    await Promise.all([
+      untilBrowserLogAfter(
+        () => removeFile(childFile),
+        `${childFile} is disposed`,
+      ),
+      untilUpdated(
+        () => page.textContent('.file-delete-restore'),
+        'parent:not-child',
+      ),
+    ])
 
     await untilBrowserLogAfter(async () => {
       const loadPromise = page.waitForEvent('load')
@@ -907,6 +935,7 @@ if (!isBuild) {
   })
 
   test('deleted file should trigger dispose and prune callbacks', async () => {
+    browserLogs.length = 0
     await page.goto(viteTestUrl)
 
     const parentFile = 'file-delete-restore/parent.js'
@@ -943,6 +972,8 @@ if (!isBuild) {
   })
 
   test('import.meta.hot?.accept', async () => {
+    await page.goto(viteTestUrl)
+
     const el = await page.$('.optional-chaining')
     await untilBrowserLogAfter(
       () =>
@@ -986,7 +1017,20 @@ if (!isBuild) {
     )
   })
 
-  test('assets HMR', async () => {
+  test('not inlined assets HMR', async () => {
+    await page.goto(viteTestUrl)
+    const el = await page.$('#logo-no-inline')
+    await untilBrowserLogAfter(
+      () =>
+        editFile('logo-no-inline.svg', (code) =>
+          code.replace('height="30px"', 'height="40px"'),
+        ),
+      /Logo-no-inline updated/,
+    )
+    await untilUpdated(() => el.evaluate((it) => `${it.clientHeight}`), '40')
+  })
+
+  test('inlined assets HMR', async () => {
     await page.goto(viteTestUrl)
     const el = await page.$('#logo')
     await untilBrowserLogAfter(

@@ -113,6 +113,9 @@
 </h2>
 <p class="cjs-extension">fail</p>
 
+<h2>A js module can import TS modules using its corresponding js file name</h2>
+<p class="js-ts-extension">fail</p>
+
 <h2>Resolve file name containing dot</h2>
 <p class="dot">fail</p>
 
@@ -121,6 +124,9 @@
 
 <h2>Resolve absolute path</h2>
 <p class="absolute">fail</p>
+
+<h2>Resolve file url</h2>
+<p class="file-url">fail</p>
 
 <h2>Browser Field</h2>
 <p class="browser">fail</p>
@@ -172,6 +178,9 @@
 
 <h2>resolve non normalized absolute path</h2>
 <p class="non-normalized"></p>
+
+<h2>utf8-bom-package</h2>
+<p class="utf8-bom-package">fail</p>
 
 <script type="module">
   import '@generated-content-virtual-file'
@@ -298,6 +307,9 @@
   import { msgMjs as tsMjsExtensionWithQueryMsg } from './ts-extension?query=1'
   text('.mjs-extension-with-query', tsMjsExtensionWithQueryMsg)
 
+  import { msg as jsTsExtensionMsg } from './ts-extension/index-js.js'
+  text('.js-ts-extension', jsTsExtensionMsg)
+
   // filename with dot
   import { bar } from './util/bar.util'
   text('.dot', bar())
@@ -396,6 +408,9 @@
 
   import nonNormalizedAbsolute from '@non-normalized'
   text('.non-normalized', nonNormalizedAbsolute)
+
+  import { msg as utf8BomPackage } from '@vitejs/test-utf8-bom-package'
+  text('.utf8-bom-package', utf8BomPackage)
 </script>
 
 <style>

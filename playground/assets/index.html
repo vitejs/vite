@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <link class="ico" rel="icon" type="image/svg+xml" href="favicon.ico" />
   <link rel="manifest" href="manifest.json" />
+  <meta
+    class="meta-og-image"
+    property="og:image"
+    content="./nested/asset.png"
+  />
 </head>
 
 <link class="data-href" rel="icon" href="data:," />
@@ -97,6 +102,18 @@
     CSS background image-set() inline style (with multiple descriptor)
   </span>
 </div>
+<div
+  class="image-set-and-url-exsiting-at-same-time"
+  style="
+    background-image: image-set(url('./nested/asset.png')),
+      url('./nested/asset.png');
+    background-size: 10px 10px;
+  "
+>
+  <span style="background: #fff"
+    >CSS background image-set() and url existing at the same time</span
+  >
+</div>
 <div class="css-url-relative-at-imported">
   <span style="background: #fff"
     >CSS background (relative from @imported file in different dir)</span
@@ -122,6 +139,9 @@
 <div class="css-url-aliased">
   <span style="background: #fff">CSS background (aliased)</span>
 </div>
+<div class="css-url-preinlined-svg">
+  <span style="background: #fff">CSS background (pre inlined SVG)</span>
+</div>
 <div class="css-manual-chunks-relative">
   <span style="background: #fff"
     >CSS nested manual chunks relative base background</span
@@ -130,6 +150,9 @@
 
 <div class="css-url-svg">
   <span style="background: #fff">CSS SVG background</span>
+</div>
+<div class="css-url-svg-in-url">
+  <span style="background: #fff">CSS (?url) SVG background</span>
 </div>
 
 <div class="css-image-set-svg">
@@ -231,6 +254,18 @@
 
 <h2>?raw import</h2>
 <code class="raw"></code>
+
+<h2>?no-inline svg import</h2>
+<code class="no-inline-svg"></code>
+
+<h2>?inline png import</h2>
+<code class="inline-png"></code>
+
+<h2>?inline public png import</h2>
+<code class="inline-public-png"></code>
+
+<h2>?url&inline public json import</h2>
+<code class="inline-public-json"></code>
 
 <h2>?url import</h2>
 <code class="url"></code>
@@ -471,6 +506,18 @@
   import rawSvg from './nested/fragment.svg?raw'
   text('.raw', rawSvg)
 
+  import noInlineSvg from './nested/fragment.svg?no-inline'
+  text('.no-inline-svg', noInlineSvg)
+
+  import inlinePng from './nested/asset.png?inline'
+  text('.inline-png', inlinePng)
+
+  import inlinePublicPng from '/icon.png?inline'
+  text('.inline-public-png', inlinePublicPng)
+
+  import inlinePublicJson from '/foo.json?url&inline'
+  text('.inline-public-json', inlinePublicJson)
+
   import fooUrl from './foo.js?url'
   text('.url', fooUrl)
 
@@ -486,6 +533,12 @@
 
   import cssUrl from './css/icons.css?url'
   text('.url-css', cssUrl)
+
+  import cssUrlUrl from './css/css-url-url.css?url'
+  const linkTag = document.createElement('link')
+  linkTag.href = cssUrlUrl
+  linkTag.rel = 'stylesheet'
+  document.body.appendChild(linkTag)
 
   // const url = new URL('non_existent_file.png', import.meta.url)
   const metaUrl = new URL('./nested/asset.png', import.meta.url)

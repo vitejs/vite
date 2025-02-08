@@ -9,7 +9,7 @@ import { editFile, isServe, page, untilUpdated } from '~utils'
 
 const url = `http://localhost:${port}`
 
-describe('injected inline scripts', () => {
+describe.runIf(isServe)('injected inline scripts', () => {
   test('no injected inline scripts are present', async () => {
     await page.goto(url)
     const inlineScripts = await page.$$eval('script', (nodes) =>

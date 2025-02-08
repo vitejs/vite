@@ -39,6 +39,10 @@ const additionalTitle = ((): string => {
 const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
   const oldVersions: DefaultTheme.NavItemWithLink[] = [
     {
+      text: 'Vite 5 Docs',
+      link: 'https://v5.vite.dev',
+    },
+    {
       text: 'Vite 4 Docs',
       link: 'https://v4.vite.dev',
     },
@@ -57,7 +61,7 @@ const versionLinks = ((): DefaultTheme.NavItemWithLink[] => {
     case 'local':
       return [
         {
-          text: 'Vite 5 Docs (release)',
+          text: 'Vite 6 Docs (release)',
           link: 'https://vite.dev',
         },
         ...oldVersions,
@@ -141,8 +145,9 @@ export default defineConfig({
     },
 
     socialLinks: [
+      { icon: 'bluesky', link: 'https://bsky.app/profile/vite.dev' },
       { icon: 'mastodon', link: 'https://elk.zone/m.webtoo.ls/@vite' },
-      { icon: 'twitter', link: 'https://twitter.com/vite_js' },
+      { icon: 'x', link: 'https://x.com/vite_js' },
       { icon: 'discord', link: 'https://chat.vite.dev' },
       { icon: 'github', link: 'https://github.com/vitejs/vite' },
     ],
@@ -179,12 +184,16 @@ export default defineConfig({
           {
             items: [
               {
+                text: 'Bluesky',
+                link: 'https://bsky.app/profile/vite.dev',
+              },
+              {
                 text: 'Mastodon',
                 link: 'https://elk.zone/m.webtoo.ls/@vite',
               },
               {
-                text: 'Twitter',
-                link: 'https://twitter.com/vite_js',
+                text: 'X',
+                link: 'https://x.com/vite_js',
               },
               {
                 text: 'Discord Chat',
@@ -328,7 +337,7 @@ export default defineConfig({
               link: '/guide/api-environment',
             },
             {
-              text: 'Environment instances',
+              text: 'Environment Instances',
               link: '/guide/api-environment-instances',
             },
             {
@@ -433,7 +442,7 @@ export default defineConfig({
   transformPageData(pageData) {
     const canonicalUrl = `${ogUrl}/${pageData.relativePath}`
       .replace(/\/index\.md$/, '/')
-      .replace(/\.md$/, '/')
+      .replace(/\.md$/, '')
     pageData.frontmatter.head ??= []
     pageData.frontmatter.head.unshift(
       ['link', { rel: 'canonical', href: canonicalUrl }],
@@ -456,19 +465,13 @@ export default defineConfig({
         },
       }),
     ],
-    environments: {
-      client: {
-        dev: {
-          optimizeDeps: {
-            include: [
-              '@shikijs/vitepress-twoslash/client',
-              'gsap',
-              'gsap/dist/ScrollTrigger',
-              'gsap/dist/MotionPathPlugin',
-            ],
-          },
-        },
-      },
+    optimizeDeps: {
+      include: [
+        '@shikijs/vitepress-twoslash/client',
+        'gsap',
+        'gsap/dist/ScrollTrigger',
+        'gsap/dist/MotionPathPlugin',
+      ],
     },
   },
   buildEnd,

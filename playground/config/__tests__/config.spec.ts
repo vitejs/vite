@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import { loadConfigFromFile } from 'vite'
-import { expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 const [nvMajor, nvMinor] = process.versions.node.split('.').map(Number)
 const isImportAttributesSupported =
@@ -27,6 +27,7 @@ it('loadConfigFromFile', async () => {
           4,
         ],
       ],
+      "importsField": "imports-field",
       "moduleCondition": "import condition",
     }
   `)
@@ -47,3 +48,24 @@ it.runIf(isImportAttributesSupported)(
     `)
   },
 )
+
+describe('loadConfigFromFile with configLoader: native', () => {
+  const fixtureRoot = resolve(import.meta.dirname, '../packages/native-import')
+
+  it('imports a basic js config', async () => {
+    const result = await loadConfigFromFile(
+      {} as any,
+      resolve(fixtureRoot, 'basic.js'),
+      fixtureRoot,
+      undefined,
+      undefined,
+      'native',
+    )
+    expect(result.config).toMatchInlineSnapshot(`
+      {
+        "value": "works",
+      }
+    `)
+    expect(result.dependencies.length).toBe(0)
+  })
+})
