@@ -222,7 +222,8 @@ ${
             {
               tag: 'link',
               attrs: {
-                href: `"><div class=unescape-div>extra content</div>`,
+                class: 'escape-html-attribute',
+                href: `"><div class=unescape-div>extra content'&</div>`,
               },
               injectTo: 'body',
             },

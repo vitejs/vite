@@ -10,7 +10,6 @@ import MagicString from 'magic-string'
 import colors from 'picocolors'
 import type { DefaultTreeAdapterMap, ParserError, Token } from 'parse5'
 import { stripLiteral } from 'strip-literal'
-import escapeHtml from 'escape-html'
 import type { Plugin } from '../plugin'
 import type { ViteDevServer } from '../server'
 import {
@@ -1571,10 +1570,19 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
     if (typeof attrs[key] === 'boolean') {
       res += attrs[key] ? ` ${key}` : ``
     } else {
-      res += ` ${key}="${escapeHtml(attrs[key])}"`
+      res += ` ${key}="${escapeForHtmlDoubleQuoteAttr(attrs[key]!)}"`
     }
   }
   return res
+}
+
+/**
+ * Escape `"` / `&` which is the minimal set of characters needed to be escaped in double-quoted attributes.
+ *
+ * This is to keep `<` / `>` used by some template engines (e.g. EJS, eRuby, Mako) as interpolation syntax as-is.
+ */
+function escapeForHtmlDoubleQuoteAttr(s: string) {
+  return s.replaceAll('&', '&amp;').replaceAll('"', '&quot;')
 }
 
 function incrementIndent(indent: string = '') {
