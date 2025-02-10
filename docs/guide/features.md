@@ -759,7 +759,7 @@ Do not allow `data:` for [`script-src`](https://developer.mozilla.org/en-US/docs
 
 ## Build Optimizations
 
-> Features listed below are automatically applied as part of the build process and there is no need for explicit configuration unless you want to disable them.
+> Features listed below (except for the chunk importmap feature) are automatically applied as part of the build process and there is no need for explicit configuration unless you want to disable them.
 
 ### CSS Code Splitting
 
@@ -793,3 +793,7 @@ Entry ---> (A + C)
 ```
 
 It is possible for `C` to have further imports, which will result in even more roundtrips in the un-optimized scenario. Vite's optimization will trace all the direct imports to completely eliminate the roundtrips regardless of import depth.
+
+### Chunk importmap
+
+Creating an import map for chunks helps prevent the issue of cascading cache invalidation. This import map features a list of stable file IDs linked to filenames with content-based hashes. When one chunk references another, it utilizes the file ID instead of the content-hashed filename. As a result, only the updated chunk needs cache invalidation in the browser, leaving intermediary chunks unchanged. This strategy enhances the cache hit rate following deployments.

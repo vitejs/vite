@@ -105,6 +105,7 @@ import {
 } from './asset'
 import type { ESBuildOptions } from './esbuild'
 import { getChunkOriginalFileName } from './manifest'
+import { createChunkImportMap } from './chunkImportMap'
 
 const decoder = new TextDecoder()
 // const debug = createDebugger('vite:css')
@@ -953,6 +954,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
 
+      const chunkImportMap = config.build.chunkImportMap
+        ? createChunkImportMap(bundle)
+        : {}
+      const valueKeyChunkImportMap = Object.fromEntries(
+        Object.entries(chunkImportMap).map(([k, v]) => [v, k]),
+      )
+
       // remove empty css chunks and their imports
       if (pureCssChunks.size) {
         // map each pure css chunk (rendered chunk) to it's corresponding bundle
@@ -969,7 +977,12 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // but they are still in `pureCssChunks`.
         // So we need to filter the names and only use those who are defined
         const pureCssChunkNames = [...pureCssChunks]
-          .map((pureCssChunk) => prelimaryNameToChunkMap[pureCssChunk.fileName])
+          .map((pureCssChunk) => {
+            const chunkName = prelimaryNameToChunkMap[pureCssChunk.fileName]
+            return config.build.chunkImportMap
+              ? valueKeyChunkImportMap[chunkName]
+              : chunkName
+          })
           .filter(Boolean)
 
         const replaceEmptyChunk = getEmptyChunkReplacer(
@@ -1008,7 +1021,10 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
         const removedPureCssFiles = removedPureCssFilesCache.get(config)!
         pureCssChunkNames.forEach((fileName) => {
-          removedPureCssFiles.set(fileName, bundle[fileName] as RenderedChunk)
+          const chunk = bundle[fileName] as RenderedChunk
+          if (!chunk) return
+          removedPureCssFiles.set(fileName, chunk)
+          removedPureCssFiles.set(valueKeyChunkImportMap[fileName], chunk)
           delete bundle[fileName]
           delete bundle[`${fileName}.map`]
         })
