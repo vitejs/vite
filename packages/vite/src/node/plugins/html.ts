@@ -534,8 +534,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   const processedEncodedUrl = await processSrcSet(
                     attr.value,
                     async ({ url }) => {
-                      const decodedUrl = decodeURI(url)
-                      if (!isExcludedUrl(decodedUrl)) {
+                      const decodedUrl = decodeURIIfPossible(url)
+                      if (
+                        decodedUrl !== undefined &&
+                        !isExcludedUrl(decodedUrl)
+                      ) {
                         const result = await processAssetUrl(url)
                         return result !== decodedUrl
                           ? encodeURIPath(result)
@@ -550,8 +553,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 })(),
               )
             } else if (attr.type === 'src') {
-              const url = decodeURI(attr.value)
-              if (checkPublicFile(url, config)) {
+              const url = decodeURIIfPossible(attr.value)
+              if (url === undefined) {
+                // ignore it
+              } else if (checkPublicFile(url, config)) {
                 overwriteAttrValue(
                   s,
                   attr.location,
@@ -1579,4 +1584,13 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
 
 function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
+}
+
+function decodeURIIfPossible(input: string): string | undefined {
+  try {
+    return decodeURI(input)
+  } catch {
+    // url is malformed, probably a interpolate syntax of template engines
+    return
+  }
 }
