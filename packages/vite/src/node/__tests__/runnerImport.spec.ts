@@ -54,7 +54,7 @@ describe('importing files using inlined environment', () => {
     await expect(async () => {
       const root = resolve(import.meta.dirname, './fixtures/runner-import')
       await loadConfigFromFile(
-        { mode: 'production', command: 'serve' },
+        { mode: 'production', command: 'serve', version: '6.6.6' },
         resolve(root, './vite.config.outside-pkg-import.mts'),
         root,
         'silent',
