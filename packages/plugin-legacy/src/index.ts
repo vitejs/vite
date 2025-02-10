@@ -464,7 +464,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return null
       }
 
-      // On first run, intialize the map with sorted chunk file names
+      // On first run, initialize the map with sorted chunk file names
       let chunkFileNameToPolyfills = outputToChunkFileNameToPolyfills.get(opts)
       if (chunkFileNameToPolyfills == null) {
         chunkFileNameToPolyfills = new Map()
