@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.0.3",
-    "tailwindcss": "^4.0.3",
+    "@tailwindcss/vite": "^4.0.6",
+    "tailwindcss": "^4.0.6",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },
