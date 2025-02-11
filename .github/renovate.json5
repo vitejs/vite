@@ -16,6 +16,7 @@
     "rollup",
     "node",
     "typescript",
+    "pnpm",
     "eslint-plugin-react-hooks", // prevent bumping to messy -rc-<hash>-<date>
     "@rollup/plugin-dynamic-import-vars", // prefer version using tinyglobby
     "@types/express", // express latest is still on v4, so types should also be v4
