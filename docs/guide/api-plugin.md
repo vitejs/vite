@@ -388,6 +388,9 @@ Vite plugins can also provide hooks that serve Vite-specific purposes. These hoo
 
   interface HtmlTagDescriptor {
     tag: string
+    /**
+     * attribute values will be escaped automatically if needed
+     */
     attrs?: Record<string, string | boolean>
     children?: string | HtmlTagDescriptor[]
     /**
