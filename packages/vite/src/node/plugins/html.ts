@@ -1270,7 +1270,10 @@ export function injectNonceAttributeTagHook(
         // is appended prior to the `/`
         const appendOffset = html[startTagEndOffset - 2] === '/' ? 2 : 1
 
-        s.appendRight(startTagEndOffset - appendOffset, ` nonce="${nonce}"`)
+        s.appendRight(
+          startTagEndOffset - appendOffset,
+          ` nonce="${escapeForHtmlDoubleQuoteAttr(nonce)}"`,
+        )
       }
     })
 
