@@ -232,16 +232,25 @@ export default defineConfig({
     sidebar: {
       '/guide/': [
         {
-          text: 'Guide',
+          text: 'Introduction',
           items: [
-            {
-              text: 'Why Vite',
-              link: '/guide/why',
-            },
             {
               text: 'Getting Started',
               link: '/guide/',
             },
+            {
+              text: 'Philosophy',
+              link: '/guide/philosophy',
+            },
+            {
+              text: 'Why Vite',
+              link: '/guide/why',
+            },
+          ],
+        },
+        {
+          text: 'Guide',
+          items: [
             {
               text: 'Features',
               link: '/guide/features',
@@ -293,10 +302,6 @@ export default defineConfig({
             {
               text: 'Performance',
               link: '/guide/performance',
-            },
-            {
-              text: 'Philosophy',
-              link: '/guide/philosophy',
             },
             {
               text: 'Migration from v5',
