@@ -292,10 +292,6 @@ export default defineConfig({
               link: '/guide/backend-integration',
             },
             {
-              text: 'Comparisons',
-              link: '/guide/comparisons',
-            },
-            {
               text: 'Troubleshooting',
               link: '/guide/troubleshooting',
             },
