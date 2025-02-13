@@ -71,18 +71,13 @@ If a dependency doesn't work well with `"isolatedModules": true`. You can use `"
 
 - [TypeScript documentation](https://www.typescriptlang.org/tsconfig#useDefineForClassFields)
 
-Starting from Vite 2.5.0, the default value will be `true` if the TypeScript target is `ESNext` or `ES2022` or newer. It is consistent with the [behavior of `tsc` 4.3.2 and later](https://github.com/microsoft/TypeScript/pull/42663). It is also the standard ECMAScript runtime behavior.
-
+The default value will be `true` if the TypeScript target is `ES2022` or newer including `ESNext`. It is consistent with the [behavior of TypeScript 4.3.2+](https://github.com/microsoft/TypeScript/pull/42663).
 Other TypeScript targets will default to `false`.
 
-But it may be counter-intuitive for those coming from other programming languages or older versions of TypeScript.
-You can read more about the transition in the [TypeScript 3.7 release notes](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-7.html#the-usedefineforclassfields-flag-and-the-declare-property-modifier).
+`true` is the standard ECMAScript runtime behavior.
 
 If you are using a library that heavily relies on class fields, please be careful about the library's intended usage of it.
-
-Most libraries expect `"useDefineForClassFields": true`, such as [MobX](https://mobx.js.org/installation.html#use-spec-compliant-transpilation-for-class-properties).
-
-But a few libraries haven't transitioned to this new default yet, including [`lit-element`](https://github.com/lit/lit-element/issues/1030). Please explicitly set `useDefineForClassFields` to `false` in these cases.
+While most libraries expect `"useDefineForClassFields": true`, you can explicitly set `useDefineForClassFields` to `false` if your library doesn't support it.
 
 #### `target`
 
@@ -124,6 +119,8 @@ Vite's default types are for its Node.js API. To shim the environment of client 
 /// <reference types="vite/client" />
 ```
 
+::: details Using `compilerOptions.types`
+
 Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsconfig.json`:
 
 ```json [tsconfig.json]
@@ -134,9 +131,7 @@ Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsco
 }
 ```
 
-::: warning
-
-If [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#types) is specified, only these packages will be included in the global scope (instead of all visible ”@types” packages).
+Note that if [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#types) is specified, only these packages will be included in the global scope (instead of all visible ”@types” packages).
 
 :::
 
@@ -216,8 +211,6 @@ Vite provides first-class Vue support:
 
 - Vue 3 SFC support via [@vitejs/plugin-vue](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue)
 - Vue 3 JSX support via [@vitejs/plugin-vue-jsx](https://github.com/vitejs/vite-plugin-vue/tree/main/packages/plugin-vue-jsx)
-- Vue 2.7 SFC support via [@vitejs/plugin-vue2](https://github.com/vitejs/vite-plugin-vue2)
-- Vue 2.7 JSX support via [@vitejs/plugin-vue2-jsx](https://github.com/vitejs/vite-plugin-vue2-jsx)
 
 ## JSX
 
