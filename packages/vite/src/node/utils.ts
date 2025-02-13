@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import os from 'node:os'
+import net from 'node:net'
 import path from 'node:path'
 import { exec } from 'node:child_process'
 import crypto from 'node:crypto'
@@ -1083,8 +1084,13 @@ export function extractHostnamesFromSubjectAltName(
     }
     remaining = remaining.slice(/* for , */ 1).trimStart()
 
-    // [::1] might be included but skip it as it's already included as a local address
-    if (name === 'DNS' && value !== '[::1]') {
+    if (
+      name === 'DNS' &&
+      // [::1] might be included but skip it as it's already included as a local address
+      value !== '[::1]' &&
+      // skip *.IPv4 addresses, which is invalid
+      !(value.startsWith('*.') && net.isIPv4(value.slice(2)))
+    ) {
       hostnames.push(value.replace('*', 'vite'))
     }
   }
