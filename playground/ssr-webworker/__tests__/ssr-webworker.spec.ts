@@ -23,6 +23,13 @@ test('respects browser export', async () => {
   )
 })
 
+test('supports nodejs_compat', async () => {
+  await page.goto(url)
+  expect(await page.textContent('.nodejs-compat')).toMatch(
+    '[success] nodejs compat',
+  )
+})
+
 test.runIf(isBuild)('inlineDynamicImports', () => {
   const dynamicJsContent = findAssetFile(/dynamic-[-\w]+\.js/, 'worker')
   expect(dynamicJsContent).toBe('')

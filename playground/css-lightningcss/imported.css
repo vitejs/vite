@@ -1,3 +1,4 @@
+@import url('./nested/nested.css');
 @import './imported-at-import.css';
 
 .imported {

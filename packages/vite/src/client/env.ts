@@ -1,4 +1,3 @@
-declare const __MODE__: string
 declare const __DEFINES__: Record<string, any>
 
 const context = (() => {

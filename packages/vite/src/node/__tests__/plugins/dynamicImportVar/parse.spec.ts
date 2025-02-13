@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { transformDynamicImport } from '../../../plugins/dynamicImportVars'
 import { normalizePath } from '../../../utils'
+import { isWindows } from '../../../../shared/utils'
 
 const __dirname = resolve(fileURLToPath(import.meta.url), '..')
 
@@ -11,7 +12,10 @@ async function run(input: string) {
     (await transformDynamicImport(
       input,
       normalizePath(resolve(__dirname, 'index.js')),
-      (id) => id.replace('@', resolve(__dirname, './mods/')),
+      (id) =>
+        id
+          .replace('@', resolve(__dirname, './mods/'))
+          .replace('#', resolve(__dirname, '../../')),
       __dirname,
     )) || {}
   return `__variableDynamicImportRuntimeHelper(${glob}, \`${rawPattern}\`)`
@@ -24,6 +28,10 @@ describe('parse positives', () => {
 
   it('alias path', async () => {
     expect(await run('`@/${base}.js`')).toMatchSnapshot()
+  })
+
+  it('alias path with multi ../', async () => {
+    expect(await run('`#/${base}.js`')).toMatchSnapshot()
   })
 
   it('with query', async () => {
@@ -42,11 +50,13 @@ describe('parse positives', () => {
     expect(await run('`./mods/${base ?? foo}.js?raw`')).toMatchSnapshot()
   })
 
-  it('? in url', async () => {
+  // ? is not escaped on windows (? cannot be used as a filename on windows)
+  it.skipIf(isWindows)('? in url', async () => {
     expect(await run('`./mo?ds/${base ?? foo}.js?url`')).toMatchSnapshot()
   })
 
-  it('? in worker', async () => {
+  // ? is not escaped on windows (? cannot be used as a filename on windows)
+  it.skipIf(isWindows)('? in worker', async () => {
     expect(await run('`./mo?ds/${base ?? foo}.js?worker`')).toMatchSnapshot()
   })
 

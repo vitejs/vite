@@ -1,0 +1,19 @@
+{
+  "name": "@vitejs/test-environment-react-ssr",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --app",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "react": "^19.0.0",
+    "react-fake-client": "npm:react@^19.0.0",
+    "react-fake-server": "npm:react@^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

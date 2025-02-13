@@ -1,9 +1,10 @@
 import { basename, dirname, join, relative } from 'node:path'
 import { parse as parseImports } from 'es-module-lexer'
-import type { ImportSpecifier } from 'es-module-lexer'
+import type {
+  ParseError as EsModuleLexerParseError,
+  ImportSpecifier,
+} from 'es-module-lexer'
 import type { OutputChunk } from 'rollup'
-import jsonStableStringify from 'json-stable-stringify'
-import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
 import { preloadMethod } from '../plugins/importAnalysisBuild'
 import {
@@ -11,16 +12,27 @@ import {
   joinUrlSegments,
   normalizePath,
   numberToPos,
+  sortObjectKeys,
 } from '../utils'
+import { perEnvironmentState } from '../environment'
 
-export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
+export function ssrManifestPlugin(): Plugin {
   // module id => preload assets mapping
-  const ssrManifest: Record<string, string[]> = {}
-  const base = config.base // TODO:base
+  const getSsrManifest = perEnvironmentState(() => {
+    return {} as Record<string, string[]>
+  })
 
   return {
     name: 'vite:ssr-manifest',
+
+    applyToEnvironment(environment) {
+      return !!environment.config.build.ssrManifest
+    },
+
     generateBundle(_options, bundle) {
+      const config = this.environment.config
+      const ssrManifest = getSsrManifest(this)
+      const { base } = config
       for (const file in bundle) {
         const chunk = bundle[file]
         if (chunk.type === 'chunk') {
@@ -46,7 +58,8 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
             let imports: ImportSpecifier[] = []
             try {
               imports = parseImports(code)[0].filter((i) => i.n && i.d > -1)
-            } catch (e: any) {
+            } catch (_e: unknown) {
+              const e = _e as EsModuleLexerParseError
               const loc = numberToPos(code, e.idx)
               this.error({
                 name: e.name,
@@ -74,7 +87,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
                   const chunk = bundle[filename] as OutputChunk | undefined
                   if (chunk) {
                     chunk.viteMetadata!.importedCss.forEach((file) => {
-                      deps.push(joinUrlSegments(base, file)) // TODO:base
+                      deps.push(joinUrlSegments(base, file))
                     })
                     chunk.imports.forEach(addDeps)
                   }
@@ -96,7 +109,7 @@ export function ssrManifestPlugin(config: ResolvedConfig): Plugin {
             ? config.build.ssrManifest
             : '.vite/ssr-manifest.json',
         type: 'asset',
-        source: jsonStableStringify(ssrManifest, { space: 2 }),
+        source: JSON.stringify(sortObjectKeys(ssrManifest), undefined, 2),
       })
     },
   }

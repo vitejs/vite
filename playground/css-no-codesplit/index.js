@@ -1,0 +1,1 @@
+import('./async-js')

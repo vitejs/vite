@@ -3,6 +3,7 @@ import viteConfig from '../vite.config'
 import { page } from '~utils'
 
 const defines = viteConfig.define
+const envDefines = viteConfig.environments.client.define
 
 test('string', async () => {
   expect(await page.textContent('.exp')).toBe(
@@ -18,6 +19,9 @@ test('string', async () => {
   )
   expect(await page.textContent('.process-node-env')).toBe(
     JSON.parse(defines['process.env.NODE_ENV']),
+  )
+  expect(await page.textContent('.process-env')).toBe(
+    JSON.stringify(defines['process.env'], null, 2),
   )
   expect(await page.textContent('.env-var')).toBe(
     JSON.parse(defines['process.env.SOMEVAR']),
@@ -44,6 +48,9 @@ test('string', async () => {
   expect(await page.textContent('.import-json')).toBe('__EXP__')
   expect(await page.textContent('.define-in-dep')).toBe(
     defines.__STRINGIFIED_OBJ__,
+  )
+  expect(await page.textContent('.define-in-environment')).toBe(
+    envDefines.__DEFINE_IN_ENVIRONMENT__,
   )
 })
 
@@ -88,4 +95,17 @@ test('replaces constants in template literal expressions', async () => {
       '.replaces-constants-in-template-literal-expressions .process-env-NODE_ENV',
     ),
   ).toBe('dev')
+})
+
+test('replace constants on import.meta.env when it is a invalid json', async () => {
+  expect(
+    await page.textContent(
+      '.replace-undefined-constants-on-import-meta-env .import-meta-env-UNDEFINED',
+    ),
+  ).toBe('undefined')
+  expect(
+    await page.textContent(
+      '.replace-undefined-constants-on-import-meta-env .import-meta-env-SOME_IDENTIFIER',
+    ),
+  ).toBe('true')
 })

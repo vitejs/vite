@@ -1,0 +1,8 @@
+<div class="css-deps">should be red</div>
+
+<script type="module">
+  import './main.css'
+  // Import dep.js so that not only the CSS depends on dep.js, as Vite will do
+  // a full page reload if the only importers are CSS files.
+  import './dep.js'
+</script>

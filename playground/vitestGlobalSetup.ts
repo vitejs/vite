@@ -1,14 +1,12 @@
-import os from 'node:os'
+import fs from 'node:fs/promises'
 import path from 'node:path'
-import fs from 'fs-extra'
+import type { TestProject } from 'vitest/node'
 import type { BrowserServer } from 'playwright-chromium'
 import { chromium } from 'playwright-chromium'
 
-const DIR = path.join(os.tmpdir(), 'vitest_playwright_global_setup')
-
 let browserServer: BrowserServer | undefined
 
-export async function setup(): Promise<void> {
+export async function setup({ provide }: TestProject): Promise<void> {
   process.env.NODE_ENV = process.env.VITE_TEST_BUILD
     ? 'production'
     : 'development'
@@ -20,18 +18,18 @@ export async function setup(): Promise<void> {
       : undefined,
   })
 
-  await fs.mkdirp(DIR)
-  await fs.writeFile(path.join(DIR, 'wsEndpoint'), browserServer.wsEndpoint())
+  provide('wsEndpoint', browserServer.wsEndpoint())
 
   const tempDir = path.resolve(__dirname, '../playground-temp')
-  await fs.ensureDir(tempDir)
-  await fs.emptyDir(tempDir)
+  await fs.rm(tempDir, { recursive: true, force: true })
+  await fs.mkdir(tempDir, { recursive: true })
   await fs
-    .copy(path.resolve(__dirname, '../playground'), tempDir, {
+    .cp(path.resolve(__dirname, '../playground'), tempDir, {
+      recursive: true,
       dereference: false,
       filter(file) {
         file = file.replace(/\\/g, '/')
-        return !file.includes('__tests__') && !file.match(/dist(\/|$)/)
+        return !file.includes('__tests__') && !/dist(?:\/|$)/.test(file)
       },
     })
     .catch(async (error) => {
@@ -43,11 +41,26 @@ export async function setup(): Promise<void> {
         throw error
       }
     })
+  // also setup dedicated copy for "variant" tests
+  for (const [original, variants] of [
+    ['css', ['sass-legacy', 'sass-modern']],
+    ['css-sourcemap', ['sass-legacy', 'sass-modern']],
+  ] as const) {
+    for (const variant of variants) {
+      await fs.cp(
+        path.resolve(tempDir, original),
+        path.resolve(tempDir, `${original}__${variant}`),
+        { recursive: true },
+      )
+    }
+  }
 }
 
 export async function teardown(): Promise<void> {
   await browserServer?.close()
   if (!process.env.VITE_PRESERVE_BUILD_ARTIFACTS) {
-    fs.removeSync(path.resolve(__dirname, '../playground-temp'))
+    await fs.rm(path.resolve(__dirname, '../playground-temp'), {
+      recursive: true,
+    })
   }
 }

@@ -1,5 +1,5 @@
-import { Worker } from 'okie'
 import type { Terser } from 'dep-types/terser'
+import { WorkerWithFallback } from 'artichokie'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '..'
 import { requireResolveFromRootWithFallback } from '../utils'
@@ -37,18 +37,29 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
   const { maxWorkers, ...terserOptions } = config.build.terserOptions
 
   const makeWorker = () =>
-    new Worker(
-      async (
-        terserPath: string,
-        code: string,
-        options: Terser.MinifyOptions,
-      ) => {
-        // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
-        // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
-        const terser = require(terserPath)
-        return terser.minify(code, options) as Terser.MinifyOutput
-      },
+    new WorkerWithFallback(
+      () =>
+        async (
+          terserPath: string,
+          code: string,
+          options: Terser.MinifyOptions,
+        ) => {
+          // test fails when using `import`. maybe related: https://github.com/nodejs/node/issues/43205
+          // eslint-disable-next-line no-restricted-globals -- this function runs inside cjs
+          const terser = require(terserPath)
+          return terser.minify(code, options) as Terser.MinifyOutput
+        },
       {
+        shouldUseFake(_terserPath, _code, options) {
+          return !!(
+            (typeof options.mangle === 'object' &&
+              (options.mangle.nth_identifier?.get ||
+                (typeof options.mangle.properties === 'object' &&
+                  options.mangle.properties.nth_identifier?.get))) ||
+            typeof options.format?.comments === 'function' ||
+            typeof options.output?.comments === 'function'
+          )
+        },
         max: maxWorkers,
       },
     )
@@ -57,6 +68,12 @@ export function terserPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:terser',
+
+    applyToEnvironment(environment) {
+      // We also need the plugin even if minify isn't 'terser' as we force
+      // terser in plugin-legacy
+      return !!environment.config.build.minify
+    },
 
     async renderChunk(code, _chunk, outputOptions) {
       // This plugin is included for any non-false value of config.build.minify,

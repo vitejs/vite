@@ -3,7 +3,13 @@ import './imported.css'
 import './sugarss.sss'
 import './sass.scss'
 import './less.less'
+import './less-plugin.less'
 import './stylus.styl'
+import './manual-chunk.css'
+import './postcss-inject-url.css'
+
+import urlCss from './url-imported.css?url'
+appendLinkStylesheet(urlCss)
 
 import rawCss from './raw-imported.css?raw'
 text('.raw-imported-css', rawCss)
@@ -15,6 +21,11 @@ text('.modules-code', JSON.stringify(mod, null, 2))
 import sassMod from './mod.module.scss'
 document.querySelector('.modules-sass').classList.add(sassMod['apply-color'])
 text('.modules-sass-code', JSON.stringify(sassMod, null, 2))
+
+import { a as treeshakeMod } from './treeshake-module/index.js'
+document
+  .querySelector('.modules-treeshake')
+  .classList.add(treeshakeMod()['treeshake-module-a'])
 
 import composesPathResolvingMod from './composes-path-resolving.module.css'
 document
@@ -42,7 +53,7 @@ import './layered/index.css'
 import './dep.css'
 import './glob-dep.css'
 
-// eslint-disable-next-line import/order
+// eslint-disable-next-line import-x/order
 import { barModuleClasses } from '@vitejs/test-css-js-dep'
 document
   .querySelector('.css-js-dep-module')
@@ -50,6 +61,13 @@ document
 
 function text(el, text) {
   document.querySelector(el).textContent = text
+}
+
+function appendLinkStylesheet(href) {
+  const link = document.createElement('link')
+  link.rel = 'stylesheet'
+  link.href = href
+  document.head.appendChild(link)
 }
 
 if (import.meta.hot) {
@@ -115,3 +133,5 @@ import './async/index'
 
 import('./same-name/sub1/sub')
 import('./same-name/sub2/sub')
+
+import './imports-imports-field.css'

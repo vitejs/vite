@@ -67,6 +67,14 @@ describe.runIf(isBuild)('build', () => {
     expect(code).toMatch(/await import\("\.\/message-[-\w]{8}.js"\)/)
   })
 
+  test('Library mode does not have any reference to pure CSS chunks', async () => {
+    const code = readFile('dist/lib/dynamic-import-message.es.mjs')
+
+    // Does not import pure CSS chunks and replaced by `Promise.resolve({})` instead
+    expect(code).not.toMatch(/await import\("\.\/dynamic-[-\w]{8}.js"\)/)
+    expect(code).toMatch(/await Promise.resolve\(\{.*\}\)/)
+  })
+
   test('@import hoist', async () => {
     serverLogs.forEach((log) => {
       // no warning from esbuild css minifier
@@ -81,6 +89,44 @@ describe.runIf(isBuild)('build', () => {
     expect(es).toMatch('process.env.NODE_ENV')
     expect(iife).toMatch('process.env.NODE_ENV')
     expect(umd).toMatch('process.env.NODE_ENV')
+  })
+
+  test('single entry with css', () => {
+    const css = readFile('dist/css-single-entry/test-my-lib.css')
+    const js = readFile('dist/css-single-entry/test-my-lib.js')
+    const umd = readFile('dist/css-single-entry/test-my-lib.umd.cjs')
+    expect(css).toMatch('entry-1.css')
+    expect(js).toMatch('css-entry-1')
+    expect(umd).toContain('css-entry-1')
+  })
+
+  test('multi entry with css', () => {
+    const css = readFile('dist/css-multi-entry/test-my-lib.css')
+    const js1 = readFile('dist/css-multi-entry/css-entry-1.js')
+    const js2 = readFile('dist/css-multi-entry/css-entry-2.js')
+    const cjs1 = readFile('dist/css-multi-entry/css-entry-1.cjs')
+    const cjs2 = readFile('dist/css-multi-entry/css-entry-2.cjs')
+    expect(css).toMatch('entry-1.css')
+    expect(css).toMatch('entry-2.css')
+    expect(js1).toMatch('css-entry-1')
+    expect(js2).toMatch('css-entry-2')
+    expect(cjs1).toContain('css-entry-1')
+    expect(cjs2).toContain('css-entry-2')
+  })
+
+  test('multi entry with css and code split', () => {
+    const css1 = readFile('dist/css-code-split/css-entry-1.css')
+    const css2 = readFile('dist/css-code-split/css-entry-2.css')
+    const js1 = readFile('dist/css-code-split/css-entry-1.js')
+    const js2 = readFile('dist/css-code-split/css-entry-2.js')
+    const cjs1 = readFile('dist/css-code-split/css-entry-1.cjs')
+    const cjs2 = readFile('dist/css-code-split/css-entry-2.cjs')
+    expect(css1).toMatch('entry-1.css')
+    expect(css2).toMatch('entry-2.css')
+    expect(js1).toMatch('css-entry-1')
+    expect(js2).toMatch('css-entry-2')
+    expect(cjs1).toContain('css-entry-1')
+    expect(cjs2).toContain('css-entry-2')
   })
 })
 

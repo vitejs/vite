@@ -18,6 +18,7 @@
   <div>mode: <span class="mode"></span></div>
   <div>bundle-with-plugin: <span class="bundle-with-plugin"></span></div>
   <div>asset-url: <span class="asset-url"></span></div>
+  <div>dep-cjs: <span class="dep-cjs"></span></div>
 </div>
 
 <p>
@@ -49,6 +50,12 @@
   <span class="classname">.pong-inline-url</span>
 </p>
 <code class="pong-inline-url"></code>
+
+<p>
+  import InlineWorker from '../my-worker?worker&inline'
+  <span class="classname">.pong-inline-unicode</span>
+</p>
+<code class="pong-inline-unicode"></code>
 
 <p>
   import TSOutputWorker from '../possible-ts-output-worker?worker'
@@ -125,6 +132,7 @@
   <span class="classname">.classic-worker</span>
 </p>
 <code class="classic-worker"></code>
+<code class="classic-worker-import"></code>
 
 <p>
   new SharedWorker(new URL('./classic-shared-worker.js', import.meta.url), {
@@ -144,6 +152,23 @@
   <span class="classname">.importMetaGlobEager-worker</span>
 </p>
 <code class="importMetaGlobEager-worker"></code>
+
+<p>
+  self reference worker
+  <span class="classname">.self-reference-worker</span>
+</p>
+<code class="self-reference-worker"></code>
+
+<p>
+  new Worker(new URL('../self-reference-url-worker.js', import.meta.url))
+  <span class="classname">.self-reference-url-worker</span>
+</p>
+<code class="self-reference-url-worker"></code>
+
+<p>
+  <span class="classname">.self-reference-url-worker-dep</span>
+</p>
+<code class="self-reference-url-worker-dep"></code>
 
 <p>
   new Worker(new URL('../deeply-nested-worker.js', import.meta.url), { type:

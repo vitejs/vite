@@ -2,8 +2,8 @@ import path from 'node:path'
 import legacy from '@vitejs/plugin-legacy'
 import { defineConfig } from 'vite'
 
-export default defineConfig({
-  base: './',
+export default defineConfig(({ isPreview }) => ({
+  base: !isPreview ? './' : '/no-polyfills-no-systemjs/',
   plugins: [
     legacy({
       renderModernChunks: false,
@@ -25,7 +25,4 @@ export default defineConfig({
       },
     },
   },
-  testConfig: {
-    previewBase: '/no-polyfills-no-systemjs/',
-  },
-})
+}))

@@ -6,8 +6,6 @@ export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'
 const resolvedModulePreloadPolyfillId = '\0' + modulePreloadPolyfillId + '.js'
 
 export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
-  // `isModernFlag` is only available during build since it is resolved by `vite:build-import-analysis`
-  const skip = config.command !== 'build' || config.build.ssr
   let polyfillString: string | undefined
 
   return {
@@ -19,7 +17,11 @@ export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
     },
     load(id) {
       if (id === resolvedModulePreloadPolyfillId) {
-        if (skip) {
+        // `isModernFlag` is only available during build since it is resolved by `vite:build-import-analysis`
+        if (
+          config.command !== 'build' ||
+          this.environment.config.consumer !== 'client'
+        ) {
           return ''
         }
         if (!polyfillString) {

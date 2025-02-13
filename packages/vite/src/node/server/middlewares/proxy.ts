@@ -24,9 +24,54 @@ export interface ProxyOptions extends HttpProxy.ServerOptions {
    */
   bypass?: (
     req: http.IncomingMessage,
-    res: http.ServerResponse,
+    /** undefined for WebSocket upgrade requests */
+    res: http.ServerResponse | undefined,
     options: ProxyOptions,
-  ) => void | null | undefined | false | string
+  ) =>
+    | void
+    | null
+    | undefined
+    | false
+    | string
+    | Promise<void | null | undefined | boolean | string>
+  /**
+   * rewrite the Origin header of a WebSocket request to match the target
+   *
+   * **Exercise caution as rewriting the Origin can leave the proxying open to [CSRF attacks](https://owasp.org/www-community/attacks/csrf).**
+   */
+  rewriteWsOrigin?: boolean | undefined
+}
+
+const rewriteOriginHeader = (
+  proxyReq: http.ClientRequest,
+  options: ProxyOptions,
+  config: ResolvedConfig,
+) => {
+  // Browsers may send Origin headers even with same-origin
+  // requests. It is common for WebSocket servers to check the Origin
+  // header, so if rewriteWsOrigin is true we change the Origin to match
+  // the target URL.
+  if (options.rewriteWsOrigin) {
+    const { target } = options
+
+    if (proxyReq.headersSent) {
+      config.logger.warn(
+        colors.yellow(
+          `Unable to rewrite Origin header as headers are already sent.`,
+        ),
+      )
+      return
+    }
+
+    if (proxyReq.getHeader('origin') && target) {
+      const changedOrigin =
+        typeof target === 'object'
+          ? `${target.protocol}//${target.host}`
+          : target
+
+      proxyReq.setHeader('origin', changedOrigin)
+    }
+  }
 }
 
 export function proxyMiddleware(
@@ -51,7 +96,7 @@ export function proxyMiddleware(
       opts.configure(proxy, opts)
     }
 
-    proxy.on('error', (err, req, originalRes) => {
+    proxy.on('error', (err, _req, originalRes) => {
       // When it is ws proxy, res is net.Socket
       // originalRes can be falsy if the proxy itself errored
       const res = originalRes as http.ServerResponse | net.Socket | undefined
@@ -65,7 +110,7 @@ export function proxyMiddleware(
         )
       } else if ('req' in res) {
         config.logger.error(
-          `${colors.red(`http proxy error at ${originalRes.req.url}:`)}\n${
+          `${colors.red(`http proxy error: ${originalRes.req.url}`)}\n${
             err.stack
           }`,
           {
@@ -89,7 +134,9 @@ export function proxyMiddleware(
       }
     })
 
-    proxy.on('proxyReqWs', (proxyReq, req, socket, options, head) => {
+    proxy.on('proxyReqWs', (proxyReq, _req, socket, options) => {
+      rewriteOriginHeader(proxyReq, options, config)
+
       socket.on('error', (err) => {
         config.logger.error(
           `${colors.red(`ws proxy socket error:`)}\n${err.stack}`,
@@ -103,7 +150,7 @@ export function proxyMiddleware(
 
     // https://github.com/http-party/node-http-proxy/issues/1520#issue-877626125
     // https://github.com/chimurai/http-proxy-middleware/blob/cd58f962aec22c925b7df5140502978da8f87d5f/src/plugins/default/debug-proxy-errors-plugin.ts#L25-L37
-    proxy.on('proxyRes', (proxyRes, req, res) => {
+    proxy.on('proxyRes', (proxyRes, _req, res) => {
       res.on('close', () => {
         if (!res.writableEnded) {
           debug?.('destroying proxyRes in proxyRes close event')
@@ -117,7 +164,7 @@ export function proxyMiddleware(
   })
 
   if (httpServer) {
-    httpServer.on('upgrade', (req, socket, head) => {
+    httpServer.on('upgrade', async (req, socket, head) => {
       const url = req.url!
       for (const context in proxies) {
         if (doesProxyContextMatchUrl(context, url)) {
@@ -127,6 +174,31 @@ export function proxyMiddleware(
             opts.target?.toString().startsWith('ws:') ||
             opts.target?.toString().startsWith('wss:')
           ) {
+            if (opts.bypass) {
+              try {
+                const bypassResult = await opts.bypass(req, undefined, opts)
+                if (typeof bypassResult === 'string') {
+                  debug?.(`bypass: ${req.url} -> ${bypassResult}`)
+                  req.url = bypassResult
+                  return
+                }
+                if (bypassResult === false) {
+                  debug?.(`bypass: ${req.url} -> 404`)
+                  socket.end('HTTP/1.1 404 Not Found\r\n\r\n', '')
+                  return
+                }
+              } catch (err) {
+                config.logger.error(
+                  `${colors.red(`ws proxy bypass error:`)}\n${err.stack}`,
+                  {
+                    timestamp: true,
+                    error: err,
+                  },
+                )
+                return
+              }
+            }
+
             if (opts.rewrite) {
               req.url = opts.rewrite(url)
             }
@@ -140,7 +212,7 @@ export function proxyMiddleware(
   }
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
-  return function viteProxyMiddleware(req, res, next) {
+  return async function viteProxyMiddleware(req, res, next) {
     const url = req.url!
     for (const context in proxies) {
       if (doesProxyContextMatchUrl(context, url)) {
@@ -148,15 +220,24 @@ export function proxyMiddleware(
         const options: HttpProxy.ServerOptions = {}
 
         if (opts.bypass) {
-          const bypassResult = opts.bypass(req, res, opts)
-          if (typeof bypassResult === 'string') {
-            req.url = bypassResult
-            debug?.(`bypass: ${req.url} -> ${bypassResult}`)
-            return next()
-          } else if (bypassResult === false) {
-            debug?.(`bypass: ${req.url} -> 404`)
-            res.statusCode = 404
-            return res.end()
+          try {
+            const bypassResult = await opts.bypass(req, res, opts)
+            if (typeof bypassResult === 'string') {
+              debug?.(`bypass: ${req.url} -> ${bypassResult}`)
+              req.url = bypassResult
+              if (res.writableEnded) {
+                return
+              }
+              return next()
+            }
+            if (bypassResult === false) {
+              debug?.(`bypass: ${req.url} -> 404`)
+              res.statusCode = 404
+              return res.end()
+            }
+          } catch (e) {
+            debug?.(`bypass: ${req.url} -> ${e}`)
+            return next(e)
           }
         }
 

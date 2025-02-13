@@ -1,16 +1,18 @@
 import type { DepOptimizationConfig } from '../optimizer'
+import { mergeWithDefaults } from '../utils'
 
 export type SSRTarget = 'node' | 'webworker'
 
-export type SsrDepOptimizationOptions = DepOptimizationConfig
+export type SsrDepOptimizationConfig = DepOptimizationConfig
 
 export interface SSROptions {
   noExternal?: string | RegExp | (string | RegExp)[] | true
-  external?: string[]
+  external?: string[] | true
 
   /**
    * Define the target for the ssr build. The browser field in package.json
    * is ignored for node but used if webworker is the target
+   * This option will be removed in a future major version
    * @default 'node'
    */
   target?: SSRTarget
@@ -23,7 +25,7 @@ export interface SSROptions {
    *   explicit no external CJS dependencies are optimized by default
    * @experimental
    */
-  optimizeDeps?: SsrDepOptimizationOptions
+  optimizeDeps?: SsrDepOptimizationConfig
 
   resolve?: {
     /**
@@ -41,31 +43,30 @@ export interface SSROptions {
      * @default []
      */
     externalConditions?: string[]
+
+    mainFields?: string[]
   }
 }
 
 export interface ResolvedSSROptions extends SSROptions {
   target: SSRTarget
-  optimizeDeps: SsrDepOptimizationOptions
+  optimizeDeps: SsrDepOptimizationConfig
 }
+
+export const ssrConfigDefaults = Object.freeze({
+  // noExternal
+  // external
+  target: 'node',
+  optimizeDeps: {},
+  // resolve
+} satisfies SSROptions)
 
 export function resolveSSROptions(
   ssr: SSROptions | undefined,
   preserveSymlinks: boolean,
 ): ResolvedSSROptions {
-  ssr ??= {}
-  const optimizeDeps = ssr.optimizeDeps ?? {}
-  const target: SSRTarget = 'node'
-  return {
-    target,
-    ...ssr,
-    optimizeDeps: {
-      disabled: true,
-      ...optimizeDeps,
-      esbuildOptions: {
-        preserveSymlinks,
-        ...optimizeDeps.esbuildOptions,
-      },
-    },
-  }
+  const defaults = mergeWithDefaults(ssrConfigDefaults, {
+    optimizeDeps: { esbuildOptions: { preserveSymlinks } },
+  } satisfies SSROptions)
+  return mergeWithDefaults(defaults, ssr ?? {})
 }

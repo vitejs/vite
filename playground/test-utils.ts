@@ -12,9 +12,10 @@ import type {
 import type { DepOptimizationMetadata, Manifest } from 'vite'
 import { normalizePath } from 'vite'
 import { fromComment } from 'convert-source-map'
+import type { Assertion } from 'vitest'
 import { expect } from 'vitest'
-import type { ExecaChildProcess } from 'execa'
-import { isBuild, isWindows, page, testDir } from './vitestSetup'
+import type { ResultPromise as ExecaResultPromise } from 'execa'
+import { isWindows, page, testDir } from './vitestSetup'
 
 export * from './vitestSetup'
 
@@ -27,20 +28,28 @@ export const ports = {
   lib: 9521,
   'optimize-missing-deps': 9522,
   'legacy/client-and-ssr': 9523,
-  'assets/url-base': 9524, // not imported but used in `assets/vite.config-url-base.js`
+  'assets/encoded-base': 9554, // not imported but used in `assets/vite.config-encoded-base.js`
+  'assets/url-base': 9525, // not imported but used in `assets/vite.config-url-base.js`
   ssr: 9600,
   'ssr-deps': 9601,
   'ssr-html': 9602,
   'ssr-noexternal': 9603,
   'ssr-pug': 9604,
   'ssr-webworker': 9605,
-  'proxy-hmr': 9606, // not imported but used in `proxy-hmr/vite.config.js`
-  'proxy-hmr/other-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
-  'ssr-conditions': 9608,
+  'proxy-bypass': 9606, // not imported but used in `proxy-hmr/vite.config.js`
+  'proxy-bypass/non-existent-app': 9607, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'ssr-hmr': 9609, // not imported but used in `hmr-ssr/__tests__/hmr.spec.ts`
+  'proxy-hmr': 9616, // not imported but used in `proxy-hmr/vite.config.js`
+  'proxy-hmr/other-app': 9617, // not imported but used in `proxy-hmr/other-app/vite.config.js`
+  'ssr-conditions': 9620,
   'css/postcss-caching': 5005,
   'css/postcss-plugins-different-dir': 5006,
   'css/dynamic-import': 5007,
   'css/lightningcss-proxy': 5008,
+  'backend-integration': 5009,
+  'client-reload': 5010,
+  'client-reload/hmr-port': 5011,
+  'client-reload/cross-origin': 5012,
 }
 export const hmrPorts = {
   'optimize-missing-deps': 24680,
@@ -52,6 +61,8 @@ export const hmrPorts = {
   'css/lightningcss-proxy': 24686,
   json: 24687,
   'ssr-conditions': 24688,
+  'client-reload/hmr-port': 24689,
+  'client-reload/cross-origin': 24690,
 }
 
 const hexToNameMap: Record<string, string> = {}
@@ -64,7 +75,7 @@ function componentToHex(c: number): string {
   return hex.length === 1 ? '0' + hex : hex
 }
 
-function rgbToHex(rgb: string): string {
+function rgbToHex(rgb: string): string | undefined {
   const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
   if (match) {
     const [_, rs, gs, bs] = match
@@ -74,9 +85,8 @@ function rgbToHex(rgb: string): string {
       componentToHex(parseInt(gs, 10)) +
       componentToHex(parseInt(bs, 10))
     )
-  } else {
-    return '#000000'
   }
+  return undefined
 }
 
 const timeout = (n: number) => new Promise((r) => setTimeout(r, n))
@@ -126,9 +136,7 @@ export function readFile(filename: string): string {
 export function editFile(
   filename: string,
   replacer: (str: string) => string,
-  runInBuild: boolean = false,
 ): void {
-  if (isBuild && !runInBuild) return
   filename = path.resolve(testDir, filename)
   const content = fs.readFileSync(filename, 'utf-8')
   const modified = replacer(content)
@@ -136,7 +144,9 @@ export function editFile(
 }
 
 export function addFile(filename: string, content: string): void {
-  fs.writeFileSync(path.resolve(testDir, filename), content)
+  const resolvedFilename = path.resolve(testDir, filename)
+  fs.mkdirSync(path.dirname(resolvedFilename), { recursive: true })
+  fs.writeFileSync(resolvedFilename, content)
 }
 
 export function removeFile(filename: string): void {
@@ -152,6 +162,7 @@ export function findAssetFile(
   match: string | RegExp,
   base = '',
   assets = 'assets',
+  matchAll = false,
 ): string {
   const assetsDir = path.join(testDir, 'dist', base, assets)
   let files: string[]
@@ -163,10 +174,21 @@ export function findAssetFile(
     }
     throw e
   }
-  const file = files.find((file) => {
-    return file.match(match)
-  })
-  return file ? fs.readFileSync(path.resolve(assetsDir, file), 'utf-8') : ''
+  if (matchAll) {
+    const matchedFiles = files.filter((file) => file.match(match))
+    return matchedFiles.length
+      ? matchedFiles
+          .map((file) =>
+            fs.readFileSync(path.resolve(assetsDir, file), 'utf-8'),
+          )
+          .join('')
+      : ''
+  } else {
+    const matchedFile = files.find((file) => file.match(match))
+    return matchedFile
+      ? fs.readFileSync(path.resolve(assetsDir, matchedFile), 'utf-8')
+      : ''
+  }
 }
 
 export function readManifest(base = ''): Manifest {
@@ -178,10 +200,13 @@ export function readManifest(base = ''): Manifest {
   )
 }
 
-export function readDepOptimizationMetadata(): DepOptimizationMetadata {
+export function readDepOptimizationMetadata(
+  environmentName = 'client',
+): DepOptimizationMetadata {
+  const suffix = environmentName === 'client' ? '' : `_${environmentName}`
   return JSON.parse(
     fs.readFileSync(
-      path.join(testDir, 'node_modules/.vite/deps/_metadata.json'),
+      path.join(testDir, `node_modules/.vite/deps${suffix}/_metadata.json`),
       'utf-8',
     ),
   )
@@ -193,9 +218,7 @@ export function readDepOptimizationMetadata(): DepOptimizationMetadata {
 export async function untilUpdated(
   poll: () => string | Promise<string>,
   expected: string | RegExp,
-  runInBuild = false,
 ): Promise<void> {
-  if (isBuild && !runInBuild) return
   const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     const actual = (await poll()) ?? ''
@@ -216,11 +239,7 @@ export async function untilUpdated(
 /**
  * Retry `func` until it does not throw error.
  */
-export async function withRetry(
-  func: () => Promise<void>,
-  runInBuild = false,
-): Promise<void> {
-  if (isBuild && !runInBuild) return
+export async function withRetry(func: () => Promise<void>): Promise<void> {
   const maxTries = process.env.CI ? 200 : 50
   for (let tries = 0; tries < maxTries; tries++) {
     try {
@@ -230,6 +249,21 @@ export async function withRetry(
     await timeout(50)
   }
   await func()
+}
+
+export const expectWithRetry = <T>(getActual: () => Promise<T>) => {
+  return new Proxy(
+    {},
+    {
+      get(_target, key) {
+        return async (...args) => {
+          await withRetry(async () => expect(await getActual())[key](...args))
+        }
+      },
+    },
+  ) as Assertion<T>['resolves']
+  // NOTE: `Assertion<T>['resolves']` has the special "promisify all assertion property functions"
+  // behaviour that we're lending here, which is the same as `PromisifyAssertion<T>` if Vitest exposes it
 }
 
 type UntilBrowserLogAfterCallback = (logs: string[]) => PromiseLike<void> | void
@@ -267,12 +301,7 @@ async function untilBrowserLog(
   target?: string | RegExp | Array<string | RegExp>,
   expectOrder = true,
 ): Promise<string[]> {
-  let resolve: () => void
-  let reject: (reason: any) => void
-  const promise = new Promise<void>((_resolve, _reject) => {
-    resolve = _resolve
-    reject = _reject
-  })
+  const { promise, resolve, reject } = promiseWithResolvers<void>()
 
   const logs = []
 
@@ -350,7 +379,7 @@ export const formatSourcemapForSnapshot = (map: any): any => {
 
 // helper function to kill process, uses taskkill on windows to ensure child process is killed too
 export async function killProcess(
-  serverProcess: ExecaChildProcess,
+  serverProcess: ExecaResultPromise,
 ): Promise<void> {
   if (isWindows) {
     try {
@@ -360,6 +389,21 @@ export async function killProcess(
       console.error('failed to taskkill:', e)
     }
   } else {
-    serverProcess.kill('SIGTERM', { forceKillAfterTimeout: 2000 })
+    serverProcess.kill('SIGTERM')
   }
+}
+
+export interface PromiseWithResolvers<T> {
+  promise: Promise<T>
+  resolve: (value: T | PromiseLike<T>) => void
+  reject: (reason?: any) => void
+}
+export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
+  let resolve: any
+  let reject: any
+  const promise = new Promise<T>((_resolve, _reject) => {
+    resolve = _resolve
+    reject = _reject
+  })
+  return { promise, resolve, reject }
 }

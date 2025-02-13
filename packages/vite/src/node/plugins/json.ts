@@ -6,7 +6,7 @@
  * https://github.com/rollup/plugins/blob/master/LICENSE
  */
 
-import { dataToEsm } from '@rollup/pluginutils'
+import { dataToEsm, makeLegalIdentifier } from '@rollup/pluginutils'
 import { SPECIAL_QUERY_RE } from '../constants'
 import type { Plugin } from '../plugin'
 import { stripBomTag } from '../utils'
@@ -19,14 +19,17 @@ export interface JsonOptions {
   namedExports?: boolean
   /**
    * Generate performant output as JSON.parse("stringified").
-   * Enabling this will disable namedExports.
-   * @default false
+   *
+   * When set to 'auto', the data will be stringified only if the data is bigger than 10kB.
+   * @default 'auto'
    */
-  stringify?: boolean
+  stringify?: boolean | 'auto'
 }
 
 // Custom json filter for vite
 const jsonExtRE = /\.json(?:$|\?)(?!commonjs-(?:proxy|external))/
+
+const jsonObjRE = /^\s*\{/
 
 const jsonLangs = `\\.(?:json|json5)(?:$|\\?)`
 const jsonLangRE = new RegExp(jsonLangs)
@@ -34,7 +37,7 @@ export const isJSONRequest = (request: string): boolean =>
   jsonLangRE.test(request)
 
 export function jsonPlugin(
-  options: JsonOptions = {},
+  options: Required<JsonOptions>,
   isBuild: boolean,
 ): Plugin {
   return {
@@ -47,37 +50,91 @@ export function jsonPlugin(
       json = stripBomTag(json)
 
       try {
-        if (options.stringify) {
-          if (isBuild) {
+        if (options.stringify !== false) {
+          if (options.namedExports && jsonObjRE.test(json)) {
+            const parsed = JSON.parse(json)
+            const keys = Object.keys(parsed)
+
+            let code = ''
+            let defaultObjectCode = '{\n'
+            for (const key of keys) {
+              if (key === makeLegalIdentifier(key)) {
+                code += `export const ${key} = ${serializeValue(parsed[key])};\n`
+                defaultObjectCode += `  ${key},\n`
+              } else {
+                defaultObjectCode += `  ${JSON.stringify(key)}: ${serializeValue(parsed[key])},\n`
+              }
+            }
+            defaultObjectCode += '}'
+
+            code += `export default ${defaultObjectCode};\n`
             return {
-              // during build, parse then double-stringify to remove all
-              // unnecessary whitespaces to reduce bundle size.
-              code: `export default JSON.parse(${JSON.stringify(
-                JSON.stringify(JSON.parse(json)),
-              )})`,
+              code,
               map: { mappings: '' },
             }
-          } else {
-            return `export default JSON.parse(${JSON.stringify(json)})`
+          }
+
+          if (
+            options.stringify === true ||
+            // use 10kB as a threshold for 'auto'
+            // https://v8.dev/blog/cost-of-javascript-2019#:~:text=A%20good%20rule%20of%20thumb%20is%20to%20apply%20this%20technique%20for%20objects%20of%2010%20kB%20or%20larger
+            json.length > 10 * 1000
+          ) {
+            // during build, parse then double-stringify to remove all
+            // unnecessary whitespaces to reduce bundle size.
+            if (isBuild) {
+              json = JSON.stringify(JSON.parse(json))
+            }
+
+            return {
+              code: `export default /* #__PURE__ */ JSON.parse(${JSON.stringify(json)})`,
+              map: { mappings: '' },
+            }
           }
         }
 
-        const parsed = JSON.parse(json)
         return {
-          code: dataToEsm(parsed, {
+          code: dataToEsm(JSON.parse(json), {
             preferConst: true,
             namedExports: options.namedExports,
           }),
           map: { mappings: '' },
         }
       } catch (e) {
-        const errorMessageList = /\d+/.exec(e.message)
-        const position = errorMessageList && parseInt(errorMessageList[0], 10)
+        const position = extractJsonErrorPosition(e.message, json.length)
         const msg = position
-          ? `, invalid JSON syntax found at line ${position}`
+          ? `, invalid JSON syntax found at position ${position}`
           : `.`
-        this.error(`Failed to parse JSON file` + msg, e.idx)
+        this.error(`Failed to parse JSON file` + msg, position)
       }
     },
   }
+}
+
+function serializeValue(value: unknown): string {
+  const valueAsString = JSON.stringify(value)
+  // use 10kB as a threshold
+  // https://v8.dev/blog/cost-of-javascript-2019#:~:text=A%20good%20rule%20of%20thumb%20is%20to%20apply%20this%20technique%20for%20objects%20of%2010%20kB%20or%20larger
+  if (
+    typeof value === 'object' &&
+    value != null &&
+    valueAsString.length > 10 * 1000
+  ) {
+    return `/* #__PURE__ */ JSON.parse(${JSON.stringify(valueAsString)})`
+  }
+  return valueAsString
+}
+
+export function extractJsonErrorPosition(
+  errorMessage: string,
+  inputLength: number,
+): number | undefined {
+  if (errorMessage.startsWith('Unexpected end of JSON input')) {
+    return inputLength - 1
+  }
+
+  const errorMessageList = /at position (\d+)/.exec(errorMessage)
+  return errorMessageList
+    ? Math.max(parseInt(errorMessageList[1], 10) - 1, 0)
+    : undefined
 }

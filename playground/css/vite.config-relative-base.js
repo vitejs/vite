@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite'
 import baseConfig from './vite.config.js'
 
-export default defineConfig({
+export default defineConfig(({ isPreview }) => ({
   ...baseConfig,
-  base: './', // relative base to make dist portable
+  base: !isPreview ? './' : '/relative-base/', // relative base to make dist portable
   build: {
     ...baseConfig.build,
     outDir: 'dist/relative-base',
@@ -18,8 +18,5 @@ export default defineConfig({
       },
     },
   },
-  testConfig: {
-    previewBase: '/relative-base/',
-  },
   cacheDir: 'node_modules/.vite-relative-base',
-})
+}))

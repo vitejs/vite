@@ -1,5 +1,7 @@
 # Preview Options
 
+Unless noted, the options in this section are only applied to preview.
+
 ## preview.host
 
 - **Type:** `string | boolean`
@@ -16,6 +18,15 @@ There are cases when other servers might respond instead of Vite.
 See [`server.host`](./server-options#server-host) for more details.
 
 :::
+
+## preview.allowedHosts
+
+- **Type:** `string | true`
+- **Default:** [`server.allowedHosts`](./server-options#server-allowedhosts)
+
+The hostnames that Vite is allowed to respond to.
+
+See [`server.allowedHosts`](./server-options#server-allowedhosts) for more details.
 
 ## preview.port
 
@@ -46,7 +57,7 @@ Set to `true` to exit if port is already in use, instead of automatically trying
 
 ## preview.https
 
-- **Type:** `boolean | https.ServerOptions`
+- **Type:** `https.ServerOptions`
 - **Default:** [`server.https`](./server-options#server-https)
 
 Enable TLS + HTTP/2. Note this downgrades to TLS only when the [`server.proxy` option](./server-options#server-proxy) is also used.
@@ -76,7 +87,9 @@ Uses [`http-proxy`](https://github.com/http-party/node-http-proxy). Full options
 - **Type:** `boolean | CorsOptions`
 - **Default:** [`server.cors`](./server-options#server-cors)
 
-Configure CORS for the preview server. This is enabled by default and allows any origin. Pass an [options object](https://github.com/expressjs/cors#configuration-options) to fine tune the behavior or `false` to disable.
+Configure CORS for the preview server.
+
+See [`server.cors`](./server-options#server-cors) for more details.
 
 ## preview.headers
 

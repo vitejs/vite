@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { expect, test } from 'vitest'
+import { sassModuleTests, sassOtherTests, sassTest } from './sass-tests'
 import {
   editFile,
   findAssetFile,
@@ -30,6 +31,8 @@ test('linked css', async () => {
   expect(await getColor(linked)).toBe('blue')
   expect(await getColor(atImport)).toBe('red')
 
+  if (isBuild) return
+
   editFile('linked.css', (code) => code.replace('color: blue', 'color: red'))
   await untilUpdated(() => getColor(linked), 'red')
 
@@ -45,6 +48,8 @@ test('css import from js', async () => {
 
   expect(await getColor(imported)).toBe('green')
   expect(await getColor(atImport)).toBe('purple')
+
+  if (isBuild) return
 
   editFile('imported.css', (code) => code.replace('color: green', 'color: red'))
   await untilUpdated(() => getColor(imported), 'red')
@@ -65,49 +70,27 @@ test('postcss config', async () => {
   const imported = await page.$('.postcss .nesting')
   expect(await getColor(imported)).toBe('pink')
 
+  if (isBuild) return
+
   editFile('imported.css', (code) => code.replace('color: pink', 'color: red'))
   await untilUpdated(() => getColor(imported), 'red')
 })
 
-test('sass', async () => {
-  const imported = await page.$('.sass')
-  const atImport = await page.$('.sass-at-import')
-  const atImportAlias = await page.$('.sass-at-import-alias')
-  const urlStartsWithVariable = await page.$('.sass-url-starts-with-variable')
-  const partialImport = await page.$('.sass-partial')
-
-  expect(await getColor(imported)).toBe('orange')
-  expect(await getColor(atImport)).toBe('olive')
-  expect(await getBg(atImport)).toMatch(isBuild ? /base64/ : '/nested/icon.png')
-  expect(await getColor(atImportAlias)).toBe('olive')
-  expect(await getBg(atImportAlias)).toMatch(
-    isBuild ? /base64/ : '/nested/icon.png',
+test('postcss plugin that injects url()', async () => {
+  const imported = await page.$('.postcss-inject-url')
+  // alias should be resolved
+  expect(await getBg(imported)).toMatch(
+    /localhost(?::\d+)?\/(?:assets\/)?ok.*\.png/,
   )
-  expect(await getBg(urlStartsWithVariable)).toMatch(
-    isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
-  )
-  expect(await getColor(partialImport)).toBe('orchid')
-
-  editFile('sass.scss', (code) =>
-    code.replace('color: $injectedColor', 'color: red'),
-  )
-  await untilUpdated(() => getColor(imported), 'red')
-
-  editFile('nested/_index.scss', (code) =>
-    code.replace('color: olive', 'color: blue'),
-  )
-  await untilUpdated(() => getColor(atImport), 'blue')
-
-  editFile('nested/_partial.scss', (code) =>
-    code.replace('color: orchid', 'color: green'),
-  )
-  await untilUpdated(() => getColor(partialImport), 'green')
 })
+
+sassTest()
 
 test('less', async () => {
   const imported = await page.$('.less')
   const atImport = await page.$('.less-at-import')
   const atImportAlias = await page.$('.less-at-import-alias')
+  const atImportUrlOmmer = await page.$('.less-at-import-url-ommer')
   const urlStartsWithVariable = await page.$('.less-url-starts-with-variable')
 
   expect(await getColor(imported)).toBe('blue')
@@ -117,9 +100,12 @@ test('less', async () => {
   expect(await getBg(atImportAlias)).toMatch(
     isBuild ? /base64/ : '/nested/icon.png',
   )
+  expect(await getColor(atImportUrlOmmer)).toBe('darkorange')
   expect(await getBg(urlStartsWithVariable)).toMatch(
     isBuild ? /ok-[-\w]+\.png/ : `${viteTestUrl}/ok.png`,
   )
+
+  if (isBuild) return
 
   editFile('less.less', (code) => code.replace('@color: blue', '@color: red'))
   await untilUpdated(() => getColor(imported), 'red')
@@ -128,6 +114,13 @@ test('less', async () => {
     code.replace('color: darkslateblue', 'color: blue'),
   )
   await untilUpdated(() => getColor(atImport), 'blue')
+})
+
+test('less-plugin', async () => {
+  const body = await page.$('.less-js-plugin')
+  expect(await getBg(body)).toBe(
+    'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAA1JREFUGFdjYGD4/x8AAwIB/8myre4AAAAASUVORK5CYII=")',
+  )
 })
 
 test('stylus', async () => {
@@ -152,6 +145,8 @@ test('stylus', async () => {
   expect(await getColor(optionsDefineVar)).toBe('rgb(51, 197, 255)')
   expect(await getColor(optionsDefineFunc)).toBe('rgb(255, 0, 98)')
 
+  if (isBuild) return
+
   editFile('stylus.styl', (code) =>
     code.replace('$color ?= blue', '$color ?= red'),
   )
@@ -172,6 +167,8 @@ test('css modules', async () => {
   expect(await imported.getAttribute('class')).toMatch(
     /.mod-module__apply-color___[\w-]{5}/,
   )
+
+  if (isBuild) return
 
   editFile('mod.module.css', (code) =>
     code.replace('color: turquoise', 'color: red'),
@@ -200,26 +197,7 @@ test('css modules composes/from path resolving', async () => {
   // await untilUpdated(() => getColor(imported), 'red')
 })
 
-test('sass modules composes/from path resolving', async () => {
-  const imported = await page.$('.path-resolved-modules-sass')
-  expect(await getColor(imported)).toBe('orangered')
-
-  // check if the generated CSS module class name is indeed using the
-  // format specified in vite.config.js
-  expect(await imported.getAttribute('class')).toMatch(
-    /.composed-module__apply-color___[\w-]{5}/,
-  )
-
-  expect(await imported.getAttribute('class')).toMatch(
-    /.composes-path-resolving-module__path-resolving-sass___[\w-]{5}/,
-  )
-
-  // @todo HMR is not working on this situation.
-  // editFile('composed.module.scss', (code) =>
-  //   code.replace('color: orangered', 'color: red')
-  // )
-  // await untilUpdated(() => getColor(imported), 'red')
-})
+sassModuleTests()
 
 test('less modules composes/from path resolving', async () => {
   const imported = await page.$('.path-resolved-modules-less')
@@ -240,19 +218,6 @@ test('less modules composes/from path resolving', async () => {
   //   code.replace('color: orangered', 'color: red')
   // )
   // await untilUpdated(() => getColor(imported), 'red')
-})
-
-test('css modules w/ sass', async () => {
-  const imported = await page.$('.modules-sass')
-  expect(await getColor(imported)).toBe('orangered')
-  expect(await imported.getAttribute('class')).toMatch(
-    /.mod-module__apply-color___[\w-]{5}/,
-  )
-
-  editFile('mod.module.scss', (code) =>
-    code.replace('color: orangered', 'color: blue'),
-  )
-  await untilUpdated(() => getColor(imported), 'blue')
 })
 
 test('inline css modules', async () => {
@@ -276,25 +241,19 @@ test('@import dependency w/ style entry', async () => {
   expect(await getColor('.css-dep')).toBe('purple')
 })
 
-test('@import dependency w/ sass entry', async () => {
-  expect(await getColor('.css-dep-sass')).toBe('orange')
-})
-
 test('@import dependency w/ style export mapping', async () => {
   expect(await getColor('.css-dep-exports')).toBe('purple')
-})
-
-test('@import dependency w/ sass export mapping', async () => {
-  expect(await getColor('.css-dep-exports-sass')).toBe('orange')
 })
 
 test('@import dependency that @import another dependency', async () => {
   expect(await getColor('.css-proxy-dep')).toBe('purple')
 })
 
-test('@import dependency w/out package scss', async () => {
-  expect(await getColor('.sass-dep')).toBe('lavender')
+test('@import scss dependency that has @import with a css extension pointing to another dependency', async () => {
+  expect(await getColor('.scss-proxy-dep')).toBe('purple')
 })
+
+sassOtherTests()
 
 test('async chunk', async () => {
   const el = await page.$('.async')
@@ -428,12 +387,26 @@ test('minify css', async () => {
   expect(cssFile).not.toMatch('#ffff00b3')
 })
 
+test('?url', async () => {
+  expect(await getColor('.url-imported-css')).toBe('yellow')
+})
+
 test('?raw', async () => {
   const rawImportCss = await page.$('.raw-imported-css')
 
   expect(await rawImportCss.textContent()).toBe(
     readFileSync(require.resolve('../raw-imported.css'), 'utf-8'),
   )
+
+  if (!isBuild) {
+    editFile('raw-imported.css', (code) =>
+      code.replace('color: yellow', 'color: blue'),
+    )
+    await untilUpdated(
+      () => page.textContent('.raw-imported-css'),
+      'color: blue',
+    )
+  }
 })
 
 test('import css in less', async () => {
@@ -462,6 +435,10 @@ test('aliased css has content', async () => {
   expect(await getColor('.aliased-module')).toBe('blue')
 })
 
+test('resolve imports field in CSS', async () => {
+  expect(await getColor('.imports-field')).toBe('red')
+})
+
 test.runIf(isBuild)('warning can be suppressed by esbuild.logOverride', () => {
   serverLogs.forEach((log) => {
     // no warning from esbuild css minifier
@@ -482,6 +459,8 @@ test('sugarss', async () => {
     isBuild ? /base64/ : '/nested/icon.png',
   )
 
+  if (isBuild) return
+
   editFile('sugarss.sss', (code) => code.replace('color: blue', 'color: coral'))
   await untilUpdated(() => getColor(imported), 'coral')
 
@@ -496,15 +475,27 @@ test('async css order', async () => {
   await withRetry(async () => {
     expect(await getColor('.async-green')).toMatchInlineSnapshot('"green"')
     expect(await getColor('.async-blue')).toMatchInlineSnapshot('"blue"')
-  }, true)
+  })
 })
 
 test('async css order with css modules', async () => {
   await withRetry(async () => {
     expect(await getColor('.modules-pink')).toMatchInlineSnapshot('"pink"')
-  }, true)
+  })
 })
 
 test('@import scss', async () => {
   expect(await getColor('.at-import-scss')).toBe('red')
+})
+
+test.runIf(isBuild)('manual chunk path', async () => {
+  // assert that the manual-chunk css is output in the directory specified in manualChunk (#12072)
+  expect(
+    findAssetFile(/dir\/dir2\/manual-chunk-[-\w]{8}\.css$/),
+  ).not.toBeUndefined()
+})
+
+test.runIf(isBuild)('CSS modules should be treeshaken if not used', () => {
+  const css = findAssetFile(/\.css$/, undefined, undefined, true)
+  expect(css).not.toContain('treeshake-module-b')
 })

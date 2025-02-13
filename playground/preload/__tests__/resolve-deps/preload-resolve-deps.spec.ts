@@ -21,7 +21,9 @@ describe.runIf(isBuild)('build', () => {
     expect(html).toMatch(
       /link rel="modulepreload".*?href="http.*?\/hello-[-\w]{8}\.js"/,
     )
-    expect(html).toMatch(/link rel="modulepreload".*?href="\/preloaded.js"/)
+    expect(html).toMatch(
+      /link rel="modulepreload".*?href="http.*?\/preloaded.js"/,
+    )
     expect(html).toMatch(
       /link rel="stylesheet".*?href="http.*?\/hello-[-\w]{8}\.css"/,
     )

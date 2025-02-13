@@ -28,6 +28,8 @@
     "debug": "node --inspect-brk ../../packages/vite/bin/vite"
   },
   "dependencies": {
-    "@vitejs/test-dep-to-optimize": "file:./dep-to-optimize"
+    "@vitejs/test-dep-self-reference-url-worker": "file:./dep-self-reference-url-worker",
+    "@vitejs/test-dep-to-optimize": "file:./dep-to-optimize",
+    "@vitejs/test-worker-dep-cjs": "file:./dep-cjs"
   }
 }

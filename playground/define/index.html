@@ -10,6 +10,7 @@
 <p>Object <span class="pre object"></span></p>
 <p>Env Var <code class="env-var"></code></p>
 <p>process node env: <code class="process-node-env"></code></p>
+<p>process env: <code class="process-env"></code></p>
 <p>process as property: <code class="process-as-property"></code></p>
 <p>spread object: <code class="spread-object"></code></p>
 <p>spread array: <code class="spread-array"></code></p>
@@ -20,6 +21,7 @@
 <p>define variable in html: <code class="exp-define">__EXP__</code></p>
 <p>import json: <code class="import-json"></code></p>
 <p>define in dep: <code class="define-in-dep"></code></p>
+<p>define in environment: <code class="define-in-environment"></code></p>
 
 <h2>Define ignores string literals</h2>
 <section class="ignores-string-literals">
@@ -59,6 +61,21 @@
   <p>import.meta.hot <code class="import-meta-hot"></code></p>
 </section>
 
+<h2>Define undefined constants on import.meta.env when it's a invalid json</h2>
+<section class="replace-undefined-constants-on-import-meta-env">
+  <p>
+    import.meta.env.UNDEFINED <code class="import-meta-env-UNDEFINED"></code>
+  </p>
+  <p>
+    import.meta.env.SOME_IDENTIFIER
+    <code class="import-meta-env-SOME_IDENTIFIER"></code>
+  </p>
+</section>
+
+<script>
+  // inject __VITE_SOME_IDENTIFIER__ to test if it's replaced
+  window.__VITE_SOME_IDENTIFIER__ = true
+</script>
 <script type="module">
   const __VAR_NAME__ = true // ensure define doesn't replace var name
   text('.exp', typeof __EXP__) // typeof __EXP__ would be `boolean` instead of `string`
@@ -68,6 +85,7 @@
   text('.undefined', __UNDEFINED__)
   text('.object', JSON.stringify(__OBJ__, null, 2))
   text('.process-node-env', process.env.NODE_ENV)
+  text('.process-env', JSON.stringify(process.env, null, 2))
   text('.env-var', process.env.SOMEVAR)
   text('.process-as-property', __OBJ__.process.env.SOMEVAR)
   text(
@@ -97,6 +115,8 @@
   import { defined } from '@vitejs/test-commonjs-dep'
   text('.define-in-dep', JSON.stringify(defined))
 
+  text('.define-in-environment', JSON.stringify(__DEFINE_IN_ENVIRONMENT__))
+
   text('.ignores-string-literals .process-env-dot', 'process.env.')
   text(
     '.ignores-string-literals .global-process-env-dot',
@@ -124,6 +144,15 @@
   text(
     '.replaces-constants-in-template-literal-expressions .process-env-NODE_ENV',
     `${process.env.NODE_ENV}`,
+  )
+
+  text(
+    '.replace-undefined-constants-on-import-meta-env .import-meta-env-UNDEFINED',
+    `${import.meta.env.UNDEFINED}`,
+  )
+  text(
+    '.replace-undefined-constants-on-import-meta-env .import-meta-env-SOME_IDENTIFIER',
+    `${import.meta.env.SOME_IDENTIFIER}`,
   )
 </script>
 

@@ -91,7 +91,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AAAA,CAAC,QAAQ,CAAC,CAAC;AACX,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG,CAAC;AACb,CAAC;",
+        "mappings": "AAAA,CAAC,QAAQ,CAAC;AACV,CAAC,CAAC,KAAK,CAAC,CAAC,GAAG;AACZ;",
         "sources": [
           "/root/imported.css",
         ],
@@ -138,14 +138,20 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AACE;EACE",
+        "mappings": "AAGE;EACE,OCJM",
+        "sourceRoot": "",
         "sources": [
           "/root/imported.sass",
+          "/root/imported-nested.sass",
         ],
         "sourcesContent": [
-          ".imported
+          "@use "/imported-nested.sass"
+
+      .imported
         &-sass
-          color: red
+          color: imported-nested.$primary
+      ",
+          "$primary: red
       ",
         ],
         "version": 3,
@@ -158,6 +164,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
+        "ignoreList": [],
         "mappings": "AACE;EACE",
         "sources": [
           "/root/imported.module.sass",
@@ -178,7 +185,8 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AACE;EACE",
+        "ignoreList": [],
+        "mappings": "AACE,SAAC;EACC",
         "sources": [
           "/root/imported.less",
         ],
@@ -200,7 +208,8 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AACE;EACE,cAAM",
+        "ignoreList": [],
+        "mappings": "AACE;EACE,OAAM,QAAN",
         "sources": [
           "/root/imported.styl",
         ],
@@ -220,7 +229,7 @@ describe.runIf(isServe)('serve', () => {
     const map = extractSourcemap(css)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AAAA;EACE;AADc",
+        "mappings": "AAAA;EACE;AADe",
         "sources": [
           "/root/imported.sss",
         ],

@@ -2,7 +2,7 @@ import fs from 'node:fs/promises'
 import { defineConfig } from 'vite'
 
 const npmDirectServeConfig = {
-  '/vue@3.2.0.js': 'vue32/dist/vue.runtime.esm-browser.js',
+  '/vue@3.2.47.js': 'vue32/dist/vue.runtime.esm-browser.js',
   '/slash@5.js': 'slash5/index.js',
 }
 /** @type {import('vite').Connect.NextHandleFunction} */
@@ -12,7 +12,7 @@ const serveNpmCodeDirectlyMiddleware = async (req, res, next) => {
       const code = await fs.readFile(
         new URL(`./node_modules/${file}`, import.meta.url),
       )
-      res.setHeader('Content-Type', 'application/javascript')
+      res.setHeader('Content-Type', 'text/javascript')
       res.end(code)
       return
     }

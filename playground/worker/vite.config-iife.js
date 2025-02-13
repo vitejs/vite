@@ -22,7 +22,8 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist/iife',
-    assetsInlineLimit: 100, // keep SVG as assets URL
+    assetsInlineLimit: (filePath) =>
+      filePath.endsWith('.svg') ? false : undefined,
     manifest: true,
     rollupOptions: {
       output: {
@@ -50,4 +51,7 @@ export default defineConfig({
     },
   ],
   cacheDir: 'node_modules/.vite-iife',
+  optimizeDeps: {
+    exclude: ['@vitejs/test-dep-self-reference-url-worker'],
+  },
 })

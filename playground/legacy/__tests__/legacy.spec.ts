@@ -10,40 +10,31 @@ import {
 } from '~utils'
 
 test('should load the worker', async () => {
-  await untilUpdated(() => page.textContent('.worker-message'), 'module', true)
+  await untilUpdated(() => page.textContent('.worker-message'), 'module')
 })
 
 test('should work', async () => {
-  await untilUpdated(() => page.textContent('#app'), 'Hello', true)
+  await untilUpdated(() => page.textContent('#app'), 'Hello')
 })
 
 test('import.meta.env.LEGACY', async () => {
-  await untilUpdated(
-    () => page.textContent('#env'),
-    isBuild ? 'true' : 'false',
-    true,
-  )
-  await untilUpdated(() => page.textContent('#env-equal'), 'true', true)
+  await untilUpdated(() => page.textContent('#env'), isBuild ? 'true' : 'false')
+  await untilUpdated(() => page.textContent('#env-equal'), 'true')
 })
 
 // https://github.com/vitejs/vite/issues/3400
 test('transpiles down iterators correctly', async () => {
-  await untilUpdated(() => page.textContent('#iterators'), 'hello', true)
+  await untilUpdated(() => page.textContent('#iterators'), 'hello')
 })
 
 test('async generator', async () => {
-  await untilUpdated(
-    () => page.textContent('#async-generator'),
-    '[0,1,2]',
-    true,
-  )
+  await untilUpdated(() => page.textContent('#async-generator'), '[0,1,2]')
 })
 
 test('wraps with iife', async () => {
   await untilUpdated(
     () => page.textContent('#babel-helpers'),
     'exposed babel helpers: false',
-    true,
   )
 })
 
@@ -56,8 +47,8 @@ test('generates assets', async () => {
           'index-legacy: text/html',
           'chunk-async: text/html',
           'chunk-async-legacy: text/html',
-          'immutable-chunk: application/javascript',
-          'immutable-chunk-legacy: application/javascript',
+          'immutable-chunk: text/javascript',
+          'immutable-chunk-legacy: text/javascript',
           'polyfills-legacy: text/html',
         ].join('\n')
       : [
@@ -69,7 +60,6 @@ test('generates assets', async () => {
           'immutable-chunk-legacy: text/html',
           'polyfills-legacy: text/html',
         ].join('\n'),
-    true,
   )
 })
 
@@ -80,7 +70,7 @@ test('correctly emits styles', async () => {
 // dynamic import css
 test('should load dynamic import with css', async () => {
   await page.click('#dynamic-css-button')
-  await untilUpdated(() => getColor('#dynamic-css'), 'red', true)
+  await untilUpdated(() => getColor('#dynamic-css'), 'red')
 })
 
 test('asset url', async () => {
@@ -120,11 +110,13 @@ describe.runIf(isBuild)('build', () => {
     const terserPattern = /^(?:!function|System.register)/
 
     expect(findAssetFile(/chunk-async-legacy/)).toMatch(terserPattern)
-    expect(findAssetFile(/chunk-async\./)).not.toMatch(terserPattern)
+    expect(findAssetFile(/chunk-async(?!-legacy)/)).not.toMatch(terserPattern)
     expect(findAssetFile(/immutable-chunk-legacy/)).toMatch(terserPattern)
-    expect(findAssetFile(/immutable-chunk\./)).not.toMatch(terserPattern)
+    expect(findAssetFile(/immutable-chunk(?!-legacy)/)).not.toMatch(
+      terserPattern,
+    )
     expect(findAssetFile(/index-legacy/)).toMatch(terserPattern)
-    expect(findAssetFile(/index\./)).not.toMatch(terserPattern)
+    expect(findAssetFile(/index(?!-legacy)/)).not.toMatch(terserPattern)
     expect(findAssetFile(/polyfills-legacy/)).toMatch(terserPattern)
   })
 
@@ -141,12 +133,29 @@ describe.runIf(isBuild)('build', () => {
 
   test('should generate legacy sourcemap file', async () => {
     expect(
-      listAssets().some((filename) => /index-legacy.+\.map$/.test(filename)),
+      listAssets().some((filename) =>
+        /index-legacy-[-\w]{8}\.js\.map$/.test(filename),
+      ),
     ).toBeTruthy()
     expect(
       listAssets().some((filename) =>
-        /polyfills-legacy.+\.map$/.test(filename),
+        /polyfills-legacy-[-\w]{8}\.js\.map$/.test(filename),
       ),
-    ).toBeFalsy()
+    ).toBeTruthy()
+    // also for modern polyfills
+    expect(
+      listAssets().some((filename) =>
+        /polyfills-[-\w]{8}\.js\.map$/.test(filename),
+      ),
+    ).toBeTruthy()
+  })
+
+  test('should have only modern entry files guarded', async () => {
+    const guard = /(import\s*\()|(import.meta)|(async\s*function\*)/
+    expect(findAssetFile(/index(?!-legacy)/)).toMatch(guard)
+    expect(findAssetFile(/polyfills(?!-legacy)/)).toMatch(guard)
+
+    expect(findAssetFile(/chunk-async(?!-legacy)/)).not.toMatch(guard)
+    expect(findAssetFile(/index-legacy/)).not.toMatch(guard)
   })
 })

@@ -9,10 +9,10 @@ jobs:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
     steps:
-      - name: need reproduction
+      - name: needs reproduction
         uses: actions-cool/issues-helper@v3
         with:
           actions: "close-issues"
           token: ${{ secrets.GITHUB_TOKEN }}
-          labels: "need reproduction"
+          labels: "needs reproduction"
           inactive-day: 3

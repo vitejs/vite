@@ -5,15 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "solid-js": "^1.8.4"
+    "solid-js": "^1.9.4"
   },
   "devDependencies": {
-    "typescript": "^5.2.2",
-    "vite": "^5.0.0-beta.13",
-    "vite-plugin-solid": "^2.7.2"
+    "typescript": "~5.7.2",
+    "vite": "^6.1.0",
+    "vite-plugin-solid": "^2.11.0"
   }
 }
