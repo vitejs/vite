@@ -520,8 +520,7 @@ onMounted(() => {
     bottom: 0;
     transform: translate3d(0, 0, 0) scale(1);
     transition: transform 0.3s ease-in-out;
-    background:
-      linear-gradient(
+    background: linear-gradient(
         130deg,
         rgba(61, 61, 61, 0.3) 0%,
         rgba(61, 61, 61, 0) 40%
@@ -714,8 +713,7 @@ onMounted(() => {
     opacity: 0.1;
   }
 
-  background:
-    url('/noise.png'),
+  background: url('/noise.png'),
     radial-gradient(
       circle at right center,
       rgb(86, 50, 119) 0%,
@@ -731,8 +729,7 @@ onMounted(() => {
   );
 
   @media (min-width: 1024px) {
-    background:
-      url('/noise.png'),
+    background: url('/noise.png'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,
@@ -750,8 +747,7 @@ onMounted(() => {
   }
 
   @media (min-width: 1500px) {
-    background:
-      url('/noise.png'),
+    background: url('/noise.png'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,
@@ -769,8 +765,7 @@ onMounted(() => {
   }
 
   @media (min-width: 1800px) {
-    background:
-      url('/noise.png'),
+    background: url('/noise.png'),
       radial-gradient(
         circle at right center,
         rgba(75, 41, 105, 0.5) 0%,
