@@ -9,7 +9,9 @@ import {
   findAssetFile,
   formatSourcemapForSnapshot,
   isBuild,
+  listAssets,
   page,
+  readFile,
   serverLogs,
 } from '~utils'
 
@@ -139,6 +141,7 @@ describe.runIf(isBuild)('build tests', () => {
     const map = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
+        "debugId": "c3dabf82-954a-4c41-ba03-767350e274b5",
         "ignoreList": [],
         "mappings": ";+8BAAA,OAAO,2BAAuB,0BAE9B,QAAQ,IAAI,uBAAuB",
         "sources": [
@@ -177,6 +180,7 @@ describe.runIf(isBuild)('build tests', () => {
     const map = findAssetFile(/with-define-object.*\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
+        "debugId": "bd3962fc-edb5-4a6d-a5da-f27a1e5f3268",
         "mappings": "qBAEA,SAASA,GAAO,CACJC,EAAA,CACZ,CAEA,SAASA,GAAY,CAEX,QAAA,MAAM,qBAAsBC,CAAkB,CACxD,CAEAF,EAAK",
         "sources": [
           "../../with-define-object.ts",
@@ -206,5 +210,35 @@ describe.runIf(isBuild)('build tests', () => {
     await execFileAsync('node', ['test-ssr-dev.js'], {
       cwd: fileURLToPath(new URL('..', import.meta.url)),
     })
+  })
+
+  test('source and sourcemap contain matching debug IDs', () => {
+    function getDebugIdFromString(input: string): string | undefined {
+      const match = input.match(/\/\/# debugId=([a-fA-F0-9-]+)/)
+      return match ? match[1] : undefined
+    }
+
+    const assets = listAssets().map((asset) => `dist/assets/${asset}`)
+    const jsAssets = assets.filter((asset) => asset.endsWith('.js'))
+
+    for (const jsAsset of jsAssets) {
+      const jsContent = readFile(jsAsset)
+      const sourceDebugId = getDebugIdFromString(jsContent)
+      expect(
+        sourceDebugId,
+        `Asset '${jsAsset}' did not contain a debug ID`,
+      ).toBeDefined()
+
+      const mapFile = jsAsset + '.map'
+      const mapContent = readFile(mapFile)
+
+      const mapObj = JSON.parse(mapContent)
+      const mapDebugId = mapObj.debugId
+
+      expect(
+        sourceDebugId,
+        'Debug ID in source didnt match debug ID in sourcemap',
+      ).toEqual(mapDebugId)
+    }
   })
 })
