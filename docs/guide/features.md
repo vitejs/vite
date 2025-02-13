@@ -129,12 +129,18 @@ Alternatively, you can add `vite/client` to `compilerOptions.types` inside `tsco
 ```json [tsconfig.json]
 {
   "compilerOptions": {
-    "types": ["vite/client"]
+    "types": ["vite/client", "some-other-global-lib"]
   }
 }
 ```
 
-This will provide the following type shims:
+::: warning
+
+If [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#types) is specified, only these packages will be included in the global scope (instead of all visible ”@types” packages).
+
+:::
+
+`vite/client` provides the following type shims:
 
 - Asset imports (e.g. importing an `.svg` file)
 - Types for the Vite-injected [constant variables](./env-and-mode#env-variables) on `import.meta.env`
