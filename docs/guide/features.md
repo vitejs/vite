@@ -138,7 +138,7 @@ Note that if [`compilerOptions.types`](https://www.typescriptlang.org/tsconfig#t
 `vite/client` provides the following type shims:
 
 - Asset imports (e.g. importing an `.svg` file)
-- Types for the Vite-injected [constant variables](./env-and-mode#env-variables) on `import.meta.env`
+- Types for the Vite-injected [constants](./env-and-mode#env-variables) on `import.meta.env`
 - Types for the [HMR API](./api-hmr) on `import.meta.hot`
 
 ::: tip
