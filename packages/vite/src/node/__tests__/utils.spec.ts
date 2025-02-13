@@ -173,6 +173,7 @@ describe('extractHostnamesFromSubjectAltName', () => {
     ['DNS:localhost, DNS:foo.localhost', ['localhost', 'foo.localhost']],
     ['DNS:*.localhost', ['vite.localhost']],
     ['DNS:[::1]', []], // [::1] is skipped
+    ['DNS:*.192.168.0.152, DNS:192.168.0.152', ['192.168.0.152']], // *.192.168.0.152 is skipped
     ['othername:"foo,bar", DNS:localhost', ['localhost']], // handle quoted correctly
   ] as const
 
