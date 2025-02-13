@@ -28,4 +28,13 @@
     // breaking changes
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
   ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["packages\/create-vite\/src\/index\\.ts$"],
+      "matchStrings": [
+        "\/\/\\s*renovate:\\s+datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s+(?:var|let|const)\\s+\\S+\\s*=\\s*[\"'](?<currentValue>[^\"']+)[\"']",
+      ],
+    },
+  ],
 }
