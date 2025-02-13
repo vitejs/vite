@@ -3,5 +3,6 @@
 
 <script type="module">
   import { d } from './index.js'
-  document.querySelector('.scoped-another').classList.add(d())
+  import { a } from './barrel/index.js'
+  document.querySelector('.scoped-another').classList.add(d(), a())
 </script>

@@ -54,7 +54,7 @@ import {
   SPECIAL_QUERY_RE,
 } from '../constants'
 import type { ResolvedConfig } from '../config'
-import type { Plugin } from '../plugin'
+import type { CustomPluginOptionsVite, Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
 import {
   arraify,
@@ -445,6 +445,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
   const styles: Map<string, string> = new Map<string, string>()
+  const scopedStyles = new Map<string, Map<string | undefined, string[]>>()
   // queue to emit css serially to guarantee the files are emitted in a deterministic order
   let codeSplitEmitQueue = createSerialPromiseQueue<string>()
   const urlEmitQueue = createSerialPromiseQueue<unknown>()
@@ -607,16 +608,33 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         code = ''
       }
 
+      const cssScopeTo = (
+        this.getModuleInfo(id)?.meta?.vite as
+          | CustomPluginOptionsVite
+          | undefined
+      )?.cssScopeTo
+      if (cssScopeTo) {
+        const [file, exp] = cssScopeTo
+        if (!scopedStyles.has(file)) {
+          scopedStyles.set(file, new Map())
+        }
+        if (!scopedStyles.get(file)!.has(exp)) {
+          scopedStyles.get(file)!.set(exp, [])
+        }
+        scopedStyles.get(file)!.get(exp)!.push(css)
+      }
+
       return {
         code,
         map: { mappings: '' },
         // avoid the css module from being tree-shaken so that we can retrieve
         // it in renderChunk()
-        moduleSideEffects: modulesCode || inlined ? false : 'no-treeshake',
+        moduleSideEffects:
+          modulesCode || inlined || cssScopeTo ? false : 'no-treeshake',
       }
     },
 
-    async renderChunk(code, chunk, opts, meta) {
+    async renderChunk(code, chunk, opts) {
       let chunkCSS = ''
       // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
       const isJsChunkEmpty = code === '' && !chunk.isEntry
@@ -625,26 +643,23 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       for (const id of ids) {
         if (styles.has(id)) {
           // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
-          if (transformOnlyRE.test(id)) {
-            continue
+          if (!transformOnlyRE.test(id)) {
+            chunkCSS += styles.get(id)
+            // a css module contains JS, so it makes this not a pure css chunk
+            if (cssModuleRE.test(id)) {
+              isPureCssChunk = false
+            }
           }
-
-          // If this CSS is scoped to its importers exports, check if those importers exports
-          // are rendered in the chunks. If they are not, we can skip bundling this CSS.
-          const cssScopeTo = this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
-          if (
-            cssScopeTo &&
-            !isCssScopeToRendered(cssScopeTo, Object.values(meta.chunks))
-          ) {
-            continue
+        } else if (scopedStyles.has(id)) {
+          const renderedExports = chunk.modules[id]!.renderedExports
+          // If this module is has a scoped style, check for the rendered exports
+          // and include the corresponding CSS.
+          for (const [exp, styles] of scopedStyles.get(id)!) {
+            if (exp === undefined || renderedExports.includes(exp)) {
+              // TODO: do we need to care the order?
+              chunkCSS += styles.join('')
+            }
           }
-
-          // a css module contains JS, so it makes this not a pure css chunk
-          if (cssModuleRE.test(id)) {
-            isPureCssChunk = false
-          }
-
-          chunkCSS += styles.get(id)
         } else if (!isJsChunkEmpty) {
           // if the module does not have a style, then it's not a pure css chunk.
           // this is true because in the `transform` hook above, only modules
@@ -1145,24 +1160,6 @@ export function getEmptyChunkReplacer(
         return `${p1}/* empty css ${''.padEnd(m.length - 15 - p1.length)}*/`
       },
     )
-}
-
-function isCssScopeToRendered(
-  cssScopeTo: Record<string, string[]>,
-  chunks: RenderedChunk[],
-) {
-  for (const moduleId in cssScopeTo) {
-    const exports = cssScopeTo[moduleId]
-    // Find the chunk that renders this `moduleId` and get the rendered module
-    const renderedModule = chunks.find((c) => c.moduleIds.includes(moduleId))
-      ?.modules[moduleId]
-
-    if (renderedModule?.renderedExports.some((e) => exports.includes(e))) {
-      return true
-    }
-  }
-
-  return false
 }
 
 interface CSSAtImportResolvers {

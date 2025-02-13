@@ -27,9 +27,10 @@ export default defineConfig({
           ...resolved,
           meta: {
             vite: {
-              cssScopeTo: {
-                [importer]: ['default'],
-              },
+              cssScopeTo: [
+                importer,
+                resolved.id.includes('barrel') ? undefined : 'default',
+              ],
             },
           },
         }
@@ -44,6 +45,10 @@ export default defineConfig({
         treeshakeScoped: path.resolve(
           __dirname,
           './treeshake-scoped/index.html',
+        ),
+        treeshakeScopedAnother: path.resolve(
+          __dirname,
+          './treeshake-scoped/another.html',
         ),
       },
       output: {
