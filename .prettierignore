@@ -1,5 +1,6 @@
 packages/*/CHANGELOG.md
 packages/vite/src/node/ssr/runtime/__tests__/fixtures
+packages/vite/src/node/ssr/__tests__/fixtures/errors
 playground-temp/
 dist/
 temp/
@@ -11,3 +12,5 @@ playground/html/invalid.html
 playground/html/valid.html
 playground/external/public/slash@3.0.0.js
 playground/ssr-html/public/slash@3.0.0.js
+playground/worker/classic-worker.js
+playground/css/weapp.wxss

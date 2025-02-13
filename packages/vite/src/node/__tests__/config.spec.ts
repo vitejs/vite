@@ -1,6 +1,7 @@
+import http from 'node:http'
 import { describe, expect, test } from 'vitest'
-import type { InlineConfig } from '..'
-import type { PluginOption, UserConfig, UserConfigExport } from '../config'
+import type { InlineConfig, PluginOption } from '..'
+import type { UserConfig, UserConfigExport } from '../config'
 import { defineConfig, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
 import { createLogger, mergeConfig } from '../publicUtils'
@@ -185,6 +186,18 @@ describe('mergeConfig', () => {
     expect(mergeConfig(newConfig, baseConfig)).toEqual(mergedConfig)
   })
 
+  test('handles server.hmr.server', () => {
+    const httpServer = http.createServer()
+
+    const baseConfig = { server: { hmr: { server: httpServer } } }
+    const newConfig = { server: { hmr: { server: httpServer } } }
+
+    const mergedConfig = mergeConfig(baseConfig, newConfig)
+
+    // Server instance should not be recreated
+    expect(mergedConfig.server.hmr.server).toBe(httpServer)
+  })
+
   test('throws error with functions', () => {
     const baseConfig = defineConfig(() => ({ base: 'base' }))
     const newConfig = defineConfig(() => ({ base: 'new' }))
@@ -236,7 +249,7 @@ describe('preview config', () => {
       'Cache-Control': 'no-store',
     },
     proxy: { '/foo': 'http://localhost:4567' },
-    cors: false,
+    cors: true,
   })
 
   test('preview inherits server config with default port', async () => {
@@ -246,7 +259,7 @@ describe('preview config', () => {
     expect(await resolveConfig(config, 'serve')).toMatchObject({
       preview: {
         ...serverConfig(),
-        port: undefined,
+        port: 4173,
       },
     })
   })
@@ -272,7 +285,7 @@ describe('preview config', () => {
     open: false,
     host: false,
     proxy: { '/bar': 'http://localhost:3010' },
-    cors: true,
+    cors: false,
   })
 
   test('preview overrides server config', async () => {
@@ -345,4 +358,252 @@ describe('resolveConfig', () => {
 
     await resolveConfig({ root: './inc?ud#s', customLogger: logger }, 'build')
   })
+})
+
+test('config compat 1', async () => {
+  const config = await resolveConfig(
+    {
+      resolve: {
+        conditions: ['client1'],
+      },
+      ssr: {
+        resolve: {
+          conditions: ['ssr1'],
+        },
+      },
+      plugins: [
+        {
+          name: 'test',
+          config() {
+            return {
+              environments: {
+                client: {
+                  resolve: {
+                    conditions: ['client2'],
+                  },
+                },
+                ssr: {
+                  resolve: {
+                    conditions: ['ssr2'],
+                  },
+                },
+              },
+            }
+          },
+        },
+      ],
+    },
+    'serve',
+  )
+  expect(config.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client1",
+      "client2",
+    ]
+  `)
+  expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client1",
+      "client2",
+    ]
+  `)
+  expect(config.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr1",
+      "ssr2",
+    ]
+  `)
+  expect(config.environments.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr1",
+      "ssr2",
+    ]
+  `)
+})
+
+test('config compat 2', async () => {
+  const config = await resolveConfig(
+    {
+      environments: {
+        client: {
+          resolve: {
+            conditions: ['client1'],
+          },
+        },
+        ssr: {
+          resolve: {
+            conditions: ['ssr1'],
+          },
+        },
+      },
+      plugins: [
+        {
+          name: 'test',
+          config() {
+            return {
+              resolve: {
+                conditions: ['client2'],
+              },
+              ssr: {
+                resolve: {
+                  conditions: ['ssr2'],
+                },
+              },
+            }
+          },
+        },
+      ],
+    },
+    'serve',
+  )
+  expect(config.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client2",
+      "client1",
+    ]
+  `)
+  expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "client2",
+      "client1",
+    ]
+  `)
+  expect(config.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr2",
+      "ssr1",
+    ]
+  `)
+  expect(config.environments.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "ssr2",
+      "ssr1",
+    ]
+  `)
+})
+
+test('config compat 3', async () => {
+  const config = await resolveConfig({}, 'serve')
+  expect(config.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "browser",
+      "development|production",
+    ]
+  `)
+  expect(config.environments.client.resolve.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "browser",
+      "development|production",
+    ]
+  `)
+  expect(config.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "node",
+      "development|production",
+    ]
+  `)
+  expect(config.environments.ssr.resolve?.conditions).toMatchInlineSnapshot(`
+    [
+      "module",
+      "node",
+      "development|production",
+    ]
+  `)
+})
+
+test('preTransformRequests', async () => {
+  async function testConfig(inlineConfig: InlineConfig) {
+    return Object.fromEntries(
+      Object.entries(
+        (await resolveConfig(inlineConfig, 'serve')).environments,
+      ).map(([name, e]) => [name, e.dev.preTransformRequests]),
+    )
+  }
+
+  expect(
+    await testConfig({
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": true,
+      "custom": false,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": false,
+    }
+  `)
+
+  expect(
+    await testConfig({
+      server: {
+        preTransformRequests: true,
+      },
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": true,
+      "custom": true,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": true,
+    }
+  `)
+
+  expect(
+    await testConfig({
+      server: {
+        preTransformRequests: false,
+      },
+      environments: {
+        custom: {},
+        customTrue: {
+          dev: {
+            preTransformRequests: true,
+          },
+        },
+        customFalse: {
+          dev: {
+            preTransformRequests: false,
+          },
+        },
+      },
+    }),
+  ).toMatchInlineSnapshot(`
+    {
+      "client": false,
+      "custom": false,
+      "customFalse": false,
+      "customTrue": true,
+      "ssr": false,
+    }
+  `)
 })

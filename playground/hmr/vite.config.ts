@@ -7,21 +7,31 @@ export default defineConfig({
   experimental: {
     hmrPartialAccept: true,
   },
+  build: {
+    assetsInlineLimit(filePath) {
+      if (filePath.endsWith('logo-no-inline.svg')) {
+        return false
+      }
+    },
+  },
   plugins: [
     {
       name: 'mock-custom',
-      async handleHotUpdate({ file, read, server }) {
+      async hotUpdate({ file, read }) {
         if (file.endsWith('customFile.js')) {
           const content = await read()
           const msg = content.match(/export const msg = '(\w+)'/)[1]
-          server.hot.send('custom:foo', { msg })
-          server.hot.send('custom:remove', { msg })
+          this.environment.hot.send('custom:foo', { msg })
+          this.environment.hot.send('custom:remove', { msg })
         }
       },
       configureServer(server) {
-        server.hot.on('custom:remote-add', ({ a, b }, client) => {
-          client.send('custom:remote-add-result', { result: a + b })
-        })
+        server.environments.client.hot.on(
+          'custom:remote-add',
+          ({ a, b }, client) => {
+            client.send('custom:remote-add-result', { result: a + b })
+          },
+        )
       },
     },
     virtualPlugin(),
@@ -35,23 +45,25 @@ function virtualPlugin(): Plugin {
   return {
     name: 'virtual-file',
     resolveId(id) {
-      if (id === 'virtual:file') {
-        return '\0virtual:file'
+      if (id.startsWith('virtual:file')) {
+        return '\0' + id
       }
     },
     load(id) {
-      if (id === '\0virtual:file') {
+      if (id.startsWith('\0virtual:file')) {
         return `\
 import { virtual as _virtual } from "/importedVirtual.js";
 export const virtual = _virtual + '${num}';`
       }
     },
     configureServer(server) {
-      server.hot.on('virtual:increment', async () => {
-        const mod = await server.moduleGraph.getModuleByUrl('\0virtual:file')
+      server.environments.client.hot.on('virtual:increment', async (suffix) => {
+        const mod = await server.environments.client.moduleGraph.getModuleById(
+          '\0virtual:file' + (suffix || ''),
+        )
         if (mod) {
           num++
-          server.reloadModule(mod)
+          server.environments.client.reloadModule(mod)
         }
       })
     },

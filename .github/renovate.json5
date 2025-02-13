@@ -16,6 +16,9 @@
     "rollup",
     "node",
     "typescript",
+    "eslint-plugin-react-hooks", // prevent bumping to messy -rc-<hash>-<date>
+    "@rollup/plugin-dynamic-import-vars", // prefer version using tinyglobby
+    "@types/express", // express latest is still on v4, so types should also be v4
 
     // pinned
     "slash3",
@@ -24,5 +27,14 @@
 
     // breaking changes
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["packages\/create-vite\/src\/index\\.ts$"],
+      "matchStrings": [
+        "\/\/\\s*renovate:\\s+datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s+(?:var|let|const)\\s+\\S+\\s*=\\s*[\"'](?<currentValue>[^\"']+)[\"']",
+      ],
+    },
   ],
 }

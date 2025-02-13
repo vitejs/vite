@@ -1,5 +1,7 @@
 # Shared Options
 
+Unless noted, the options in this section are applied to all dev, build, and preview.
+
 ## root
 
 - **Type:** `string`
@@ -18,7 +20,7 @@ See [Project Root](/guide/#index-html-and-project-root) for more details.
 Base public path when served in development or production. Valid values include:
 
 - Absolute URL pathname, e.g. `/foo/`
-- Full URL, e.g. `https://foo.com/` (The origin part won't be used in development)
+- Full URL, e.g. `https://bar.com/foo/` (The origin part won't be used in development so the value is the same as `/foo/`)
 - Empty string or `./` (for embedded deployment)
 
 See [Public Base Path](/guide/build#public-base-path) for more details.
@@ -115,6 +117,7 @@ For SSR builds, deduplication does not work for ESM build outputs configured fro
 ## resolve.conditions
 
 - **Type:** `string[]`
+- **Default:** `['module', 'browser', 'development|production']` (`defaultClientConditions`)
 
 Additional allowed conditions when resolving [Conditional Exports](https://nodejs.org/api/packages.html#packages_conditional_exports) from a package.
 
@@ -133,7 +136,9 @@ A package with conditional exports may have the following `exports` field in its
 
 Here, `import` and `require` are "conditions". Conditions can be nested and should be specified from most specific to least specific.
 
-Vite has a list of "allowed conditions" and will match the first condition that is in the allowed list. The default allowed conditions are: `import`, `module`, `browser`, `default`, and `production/development` based on current mode. The `resolve.conditions` config option allows specifying additional allowed conditions.
+`development|production` is a special value that is replaced with `production` or `development` depending on the value of `process.env.NODE_ENV`. It is replaced with `production` when `process.env.NODE_ENV === 'production'` and `development` otherwise.
+
+Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
 
 :::warning Resolving subpath exports
 Export keys ending with "/" is deprecated by Node and may not work well. Please contact the package author to use [`*` subpath patterns](https://nodejs.org/api/packages.html#package-entry-points) instead.
@@ -142,7 +147,7 @@ Export keys ending with "/" is deprecated by Node and may not work well. Please 
 ## resolve.mainFields
 
 - **Type:** `string[]`
-- **Default:** `['browser', 'module', 'jsnext:main', 'jsnext']`
+- **Default:** `['browser', 'module', 'jsnext:main', 'jsnext']` (`defaultClientMainFields`)
 
 List of fields in `package.json` to try when resolving a package's entry point. Note this takes lower precedence than conditional exports resolved from the `exports` field: if an entry point is successfully resolved from `exports`, the main field will be ignored.
 
@@ -162,6 +167,13 @@ Enabling this setting causes vite to determine file identity by the original fil
 
 - **Related:** [esbuild#preserve-symlinks](https://esbuild.github.io/api/#preserve-symlinks), [webpack#resolve.symlinks
   ](https://webpack.js.org/configuration/resolve/#resolvesymlinks)
+
+## html.cspNonce
+
+- **Type:** `string`
+- **Related:** [Content Security Policy (CSP)](/guide/features#content-security-policy-csp)
+
+A nonce value placeholder that will be used when generating script / style tags. Setting this value will also generate a meta tag with nonce value.
 
 ## css.modules
 
@@ -208,7 +220,7 @@ Inline PostCSS config or a custom directory to search PostCSS config from (defau
 
 For inline PostCSS config, it expects the same format as `postcss.config.js`. But for `plugins` property, only [array format](https://github.com/postcss/postcss-load-config/blob/main/README.md#array) can be used.
 
-The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config) and only the supported config file names are loaded.
+The search is done using [postcss-load-config](https://github.com/postcss/postcss-load-config) and only the supported config file names are loaded. Config files outside the workspace root (or the [project root](/guide/#index-html-and-project-root) if no workspace is found) are not searched by default. You can specify a custom path outside of the root to load the specific config file instead if needed.
 
 Note if an inline config is provided, Vite will not search for other PostCSS config sources.
 
@@ -216,11 +228,14 @@ Note if an inline config is provided, Vite will not search for other PostCSS con
 
 - **Type:** `Record<string, object>`
 
-Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessors can be found in their respective documentation:
+Specify options to pass to CSS pre-processors. The file extensions are used as keys for the options. The supported options for each preprocessor can be found in their respective documentation:
 
-- `sass`/`scss` - [Options](https://sass-lang.com/documentation/js-api/interfaces/LegacyStringOptions).
-- `less` - [Options](https://lesscss.org/usage/#less-options).
-- `styl`/`stylus` - Only [`define`](https://stylus-lang.com/docs/js.html#define-name-node) is supported, which can be passed as an object.
+- `sass`/`scss`:
+  - Select the sass API to use with `api: "modern-compiler" | "modern" | "legacy"` (default `"modern-compiler"` if `sass-embedded` is installed, otherwise `"modern"`). For the best performance, it's recommended to use `api: "modern-compiler"` with the `sass-embedded` package. The `"legacy"` API is deprecated and will be removed in Vite 7.
+  - [Options (modern)](https://sass-lang.com/documentation/js-api/interfaces/stringoptions/)
+  - [Options (legacy)](https://sass-lang.com/documentation/js-api/interfaces/LegacyStringOptions).
+- `less`: [Options](https://lesscss.org/usage/#less-options).
+- `styl`/`stylus`: Only [`define`](https://stylus-lang.com/docs/js.html#define-name-node) is supported, which can be passed as an object.
 
 **Example:**
 
@@ -235,6 +250,12 @@ export default defineConfig({
         define: {
           $specialColor: new stylus.nodes.RGBA(51, 197, 255, 1),
         },
+      },
+      scss: {
+        api: 'modern-compiler', // or "modern", "legacy"
+        importers: [
+          // ...
+        ],
       },
     },
   },
@@ -285,6 +306,10 @@ Whether to enable sourcemaps during dev.
 
 Selects the engine used for CSS processing. Check out [Lightning CSS](../guide/features.md#lightning-css) for more information.
 
+::: info Duplicate `@import`s
+Note that postcss (postcss-import) has a different behavior with duplicated `@import` from browsers. See [postcss/postcss-import#462](https://github.com/postcss/postcss-import/issues/462).
+:::
+
 ## css.lightningcss
 
 - **Experimental:** [Give Feedback](https://github.com/vitejs/vite/discussions/13835)
@@ -326,12 +351,12 @@ Whether to support named imports from `.json` files.
 
 ## json.stringify
 
-- **Type:** `boolean`
-- **Default:** `false`
+- **Type:** `boolean | 'auto'`
+- **Default:** `'auto'`
 
 If set to `true`, imported JSON will be transformed into `export default JSON.parse("...")` which is significantly more performant than Object literals, especially when the JSON file is large.
 
-Enabling this disables named imports.
+If set to `'auto'`, the data will be stringified only if [the data is bigger than 10kB](https://v8.dev/blog/cost-of-javascript-2019#json:~:text=A%20good%20rule%20of%20thumb%20is%20to%20apply%20this%20technique%20for%20objects%20of%2010%20kB%20or%20larger).
 
 ## esbuild
 
@@ -408,7 +433,7 @@ Adjust console output verbosity. Default is `'info'`.
 
 Use a custom logger to log messages. You can use Vite's `createLogger` API to get the default logger and customize it to, for example, change the message or filter out certain warnings.
 
-```js
+```ts twoslash
 import { createLogger, defineConfig } from 'vite'
 
 const logger = createLogger()
@@ -473,3 +498,12 @@ Whether your application is a Single Page Application (SPA), a [Multi Page Appli
 - `'custom'`: don't include HTML middlewares
 
 Learn more in Vite's [SSR guide](/guide/ssr#vite-cli). Related: [`server.middlewareMode`](./server-options#server-middlewaremode).
+
+## future
+
+- **Type:** `Record<string, 'warn' | undefined>`
+- **Related:** [Breaking Changes](/changes/)
+
+Enable future breaking changes to prepare for a smooth migration to the next major version of Vite. The list may be updated, added, or removed at any time as new features are developed.
+
+See the [Breaking Changes](/changes/) page for details of the possible options.

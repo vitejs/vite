@@ -26,6 +26,9 @@ export const isCSSRequest = (request: string): boolean =>
 // The cache needs to be reset on buildStart for watch mode to work correctly
 // Don't use this manualChunks strategy for ssr, lib mode, and 'umd' or 'iife'
 
+/**
+ * @deprecated use build.rollupOptions.output.manualChunks or framework specific configuration
+ */
 export class SplitVendorChunkCache {
   cache: Map<string, boolean>
   constructor() {
@@ -36,6 +39,9 @@ export class SplitVendorChunkCache {
   }
 }
 
+/**
+ * @deprecated use build.rollupOptions.output.manualChunks or framework specific configuration
+ */
 export function splitVendorChunk(
   options: { cache?: SplitVendorChunkCache } = {},
 ): GetManualChunk {
@@ -87,13 +93,16 @@ function staticImportedByEntry(
   return someImporterIs
 }
 
+/**
+ * @deprecated use build.rollupOptions.output.manualChunks or framework specific configuration
+ */
 export function splitVendorChunkPlugin(): Plugin {
   const caches: SplitVendorChunkCache[] = []
   function createSplitVendorChunk(output: OutputOptions, config: UserConfig) {
     const cache = new SplitVendorChunkCache()
     caches.push(cache)
     const build = config.build ?? {}
-    const format = output?.format
+    const format = output.format
     if (!build.ssr && !build.lib && format !== 'umd' && format !== 'iife') {
       return splitVendorChunk({ cache })
     }
@@ -101,7 +110,7 @@ export function splitVendorChunkPlugin(): Plugin {
   return {
     name: 'vite:split-vendor-chunk',
     config(config) {
-      let outputs = config?.build?.rollupOptions?.output
+      let outputs = config.build?.rollupOptions?.output
       if (outputs) {
         outputs = arraify(outputs)
         for (const output of outputs) {

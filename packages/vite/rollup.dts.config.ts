@@ -18,14 +18,14 @@ const external = [
   /^vite\//,
   'rollup/parseAst',
   ...Object.keys(pkg.dependencies),
-  // lightningcss types are bundled
-  ...Object.keys(pkg.devDependencies).filter((d) => d !== 'lightningcss'),
+  ...Object.keys(pkg.peerDependencies),
+  ...Object.keys(pkg.devDependencies),
 ]
 
 export default defineConfig({
   input: {
-    index: './temp/node/index.d.ts',
-    runtime: './temp/runtime/index.d.ts',
+    index: './temp/src/node/index.d.ts',
+    'module-runner': './temp/src/module-runner/index.d.ts',
   },
   output: {
     dir: './dist/node',
@@ -48,10 +48,13 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
 const identifierReplacements: Record<string, Record<string, string>> = {
   rollup: {
     Plugin$1: 'rollup.Plugin',
-    TransformResult$2: 'rollup.TransformResult',
+    PluginContext$1: 'rollup.PluginContext',
+    MinimalPluginContext$1: 'rollup.MinimalPluginContext',
+    TransformPluginContext$1: 'rollup.TransformPluginContext',
+    TransformResult$1: 'rollup.TransformResult',
   },
   esbuild: {
-    TransformResult$1: 'esbuild_TransformResult',
+    TransformResult$2: 'esbuild_TransformResult',
     TransformOptions$1: 'esbuild_TransformOptions',
     BuildOptions$1: 'esbuild_BuildOptions',
   },
@@ -91,10 +94,12 @@ function patchTypes(): Plugin {
     },
     renderChunk(code, chunk) {
       if (
-        chunk.fileName.startsWith('runtime') ||
+        chunk.fileName.startsWith('module-runner') ||
+        // index and moduleRunner have a common chunk "moduleRunnerTransport"
+        chunk.fileName.startsWith('moduleRunnerTransport') ||
         chunk.fileName.startsWith('types.d-')
       ) {
-        validateRuntimeChunk.call(this, chunk)
+        validateRunnerChunk.call(this, chunk)
       } else {
         validateChunkImports.call(this, chunk)
         code = replaceConfusingTypeNames.call(this, code, chunk)
@@ -107,16 +112,20 @@ function patchTypes(): Plugin {
 }
 
 /**
- * Runtime chunk should only import local dependencies to stay lightweight
+ * Runner chunk should only import local dependencies to stay lightweight
  */
-function validateRuntimeChunk(this: PluginContext, chunk: RenderedChunk) {
-  for (const id of chunk.imports) {
+function validateRunnerChunk(this: PluginContext, chunk: RenderedChunk) {
+  for (const [id, bindings] of Object.entries(chunk.importedBindings)) {
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
+      // index and moduleRunner have a common chunk "moduleRunnerTransport"
+      !id.startsWith('moduleRunnerTransport.d') &&
       !id.startsWith('types.d')
     ) {
-      this.warn(`${chunk.fileName} imports "${id}" which is not allowed`)
+      this.warn(
+        `${chunk.fileName} imports "${bindings.join(', ')}" from "${id}" which is not allowed`,
+      )
       process.exitCode = 1
     }
   }
@@ -127,19 +136,23 @@ function validateRuntimeChunk(this: PluginContext, chunk: RenderedChunk) {
  */
 function validateChunkImports(this: PluginContext, chunk: RenderedChunk) {
   const deps = Object.keys(pkg.dependencies)
-  for (const id of chunk.imports) {
+  for (const [id, bindings] of Object.entries(chunk.importedBindings)) {
     if (
       !id.startsWith('./') &&
       !id.startsWith('../') &&
       !id.startsWith('node:') &&
       !id.startsWith('types.d') &&
       !id.startsWith('vite/') &&
+      // index and moduleRunner have a common chunk "moduleRunnerTransport"
+      !id.startsWith('moduleRunnerTransport.d') &&
       !deps.includes(id) &&
       !deps.some((name) => id.startsWith(name + '/'))
     ) {
       // If validation failed, only warn and set exit code 1 so that files
       // are written to disk for inspection, but the build will fail
-      this.warn(`${chunk.fileName} imports "${id}" which is not allowed`)
+      this.warn(
+        `${chunk.fileName} imports "${bindings.join(', ')}" from "${id}" which is not allowed`,
+      )
       process.exitCode = 1
     }
   }
@@ -257,11 +270,15 @@ function removeInternal(s: MagicString, node: any): boolean {
     })
   ) {
     // Examples:
-    // function a(foo: string, /* @internal */ bar: number)
-    //                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    // strip trailing comma
-    const end = s.original[node.end] === ',' ? node.end + 1 : node.end
-    s.remove(node.leadingComments[0].start, end)
+    // function a(foo: string, /* @internal */ bar: number, baz: boolean)
+    //                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    // type Enum = Foo | /* @internal */ Bar | Baz
+    //                   ^^^^^^^^^^^^^^^^^^^^^
+    // strip trailing comma or pipe
+    const trailingRe = /\s*[,|]/y
+    trailingRe.lastIndex = node.end
+    const trailingStr = trailingRe.exec(s.original)?.[0] ?? ''
+    s.remove(node.leadingComments[0].start, node.end + trailingStr.length)
     return true
   }
   return false

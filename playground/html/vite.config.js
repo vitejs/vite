@@ -1,6 +1,5 @@
-import { resolve } from 'node:path'
+import { relative, resolve } from 'node:path'
 import { defineConfig } from 'vite'
-import { hasWindowsUnicodeFsBug } from '../hasWindowsUnicodeFsBug'
 
 export default defineConfig({
   base: './',
@@ -21,14 +20,10 @@ export default defineConfig({
         inline1: resolve(__dirname, 'inline/shared-1.html'),
         inline2: resolve(__dirname, 'inline/shared-2.html'),
         inline3: resolve(__dirname, 'inline/unique.html'),
-        ...(hasWindowsUnicodeFsBug
-          ? {}
-          : {
-              unicodePath: resolve(
-                __dirname,
-                'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
-              ),
-            }),
+        unicodePath: resolve(
+          __dirname,
+          'unicode-path/中文-にほんご-한글-🌕🌖🌗/index.html',
+        ),
         linkProps: resolve(__dirname, 'link-props/index.html'),
         valid: resolve(__dirname, 'valid.html'),
         importmapOrder: resolve(__dirname, 'importmapOrder.html'),
@@ -40,14 +35,17 @@ export default defineConfig({
         serveBothFile: resolve(__dirname, 'serve/both.html'),
         serveBothFolder: resolve(__dirname, 'serve/both/index.html'),
         write: resolve(__dirname, 'write.html'),
+        'transform-inline-js': resolve(__dirname, 'transform-inline-js.html'),
+        relativeInput: relative(
+          process.cwd(),
+          resolve(__dirname, 'relative-input.html'),
+        ),
       },
+      external: ['/external-path-by-rollup-options.js'],
     },
   },
 
   server: {
-    fs: {
-      cachedChecks: false,
-    },
     warmup: {
       clientFiles: ['./warmup/*'],
     },
@@ -206,7 +204,7 @@ ${
             children: `
               {
                 "imports": {
-                  "vue": "https://unpkg.com/vue@3.2.0/dist/vue.runtime.esm-browser.js"
+                  "vue": "https://unpkg.com/vue@3.2.47/dist/vue.runtime.esm-browser.js"
                 }
               }
             `,
@@ -215,5 +213,85 @@ ${
         ]
       },
     },
+    {
+      name: 'escape-html-attribute',
+      transformIndexHtml: {
+        order: 'post',
+        handler() {
+          return [
+            {
+              tag: 'link',
+              attrs: {
+                href: `"><div class=unescape-div>extra content</div>`,
+              },
+              injectTo: 'body',
+            },
+          ]
+        },
+      },
+    },
+    {
+      name: 'append-external-path-by-rollup-options',
+      apply: 'build', // this does not work in serve
+      transformIndexHtml: {
+        order: 'pre',
+        handler(_, ctx) {
+          if (!ctx.filename.endsWith('html/index.html')) return
+          return [
+            {
+              tag: 'script',
+              attrs: {
+                type: 'module',
+                src: '/external-path-by-rollup-options.js',
+              },
+              injectTo: 'body',
+            },
+          ]
+        },
+      },
+    },
+    {
+      name: 'transform-inline-js',
+      transformIndexHtml: {
+        order: 'pre',
+        handler(html, ctx) {
+          if (!ctx.filename.endsWith('html/transform-inline-js.html')) return
+          return html.replaceAll(
+            '{{ id }}',
+            Math.random().toString(36).slice(2),
+          )
+        },
+      },
+    },
+    serveExternalPathPlugin(),
   ],
 })
+
+/** @returns {import('vite').Plugin} */
+function serveExternalPathPlugin() {
+  const handler = (req, res, next) => {
+    if (req.url === '/external-path.js') {
+      res.setHeader('Content-Type', 'application/javascript')
+      res.end('document.querySelector(".external-path").textContent = "works"')
+    } else if (req.url === '/external-path.css') {
+      res.setHeader('Content-Type', 'text/css')
+      res.end('.external-path{color:red}')
+    } else if (req.url === '/external-path-by-rollup-options.js') {
+      res.setHeader('Content-Type', 'application/javascript')
+      res.end(
+        'document.querySelector(".external-path-by-rollup-options").textContent = "works"',
+      )
+    } else {
+      next()
+    }
+  }
+  return {
+    name: 'serve-external-path',
+    configureServer(server) {
+      server.middlewares.use(handler)
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(handler)
+    },
+  }
+}

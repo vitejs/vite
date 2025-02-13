@@ -1,24 +1,26 @@
 import fsp from 'node:fs/promises'
 import colors from 'picocolors'
-import type { ResolvedConfig } from '..'
+import type { DevEnvironment } from '..'
 import type { Plugin } from '../plugin'
-import { DEP_VERSION_RE } from '../constants'
+import {
+  DEP_VERSION_RE,
+  ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR,
+  ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
+} from '../constants'
 import { createDebugger } from '../utils'
-import { getDepsOptimizer, optimizedDepInfoFromFile } from '../optimizer'
+import { optimizedDepInfoFromFile } from '../optimizer'
 import { cleanUrl } from '../../shared/utils'
-
-export const ERR_OPTIMIZE_DEPS_PROCESSING_ERROR =
-  'ERR_OPTIMIZE_DEPS_PROCESSING_ERROR'
-export const ERR_OUTDATED_OPTIMIZED_DEP = 'ERR_OUTDATED_OPTIMIZED_DEP'
+import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
 
 const debug = createDebugger('vite:optimize-deps')
 
-export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
+export function optimizedDepsPlugin(): Plugin {
   return {
     name: 'vite:optimized-deps',
 
-    resolveId(id, source, { ssr }) {
-      if (getDepsOptimizer(config, ssr)?.isOptimizedDepFile(id)) {
+    resolveId(id) {
+      const environment = this.environment as DevEnvironment
+      if (environment.depsOptimizer?.isOptimizedDepFile(id)) {
         return id
       }
     },
@@ -27,13 +29,13 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
     // The logic to register an id to wait until it is processed
     // is in importAnalysis, see call to delayDepsOptimizerUntil
 
-    async load(id, options) {
-      const ssr = options?.ssr === true
-      const depsOptimizer = getDepsOptimizer(config, ssr)
+    async load(id) {
+      const environment = this.environment as DevEnvironment
+      const depsOptimizer = environment.depsOptimizer
       if (depsOptimizer?.isOptimizedDepFile(id)) {
         const metadata = depsOptimizer.metadata
         const file = cleanUrl(id)
-        const versionMatch = id.match(DEP_VERSION_RE)
+        const versionMatch = DEP_VERSION_RE.exec(file)
         const browserHash = versionMatch
           ? versionMatch[1].split('=')[1]
           : undefined
@@ -67,9 +69,13 @@ export function optimizedDepsPlugin(config: ResolvedConfig): Plugin {
         // we are sure that the file has been properly save to disk
         try {
           return await fsp.readFile(file, 'utf-8')
-        } catch (e) {
-          // Outdated non-entry points (CHUNK), loaded after a rerun
-          throwOutdatedRequest(id)
+        } catch {
+          const newMetadata = depsOptimizer.metadata
+          if (optimizedDepInfoFromFile(newMetadata, file)) {
+            // Outdated non-entry points (CHUNK), loaded after a rerun
+            throwOutdatedRequest(id)
+          }
+          throwFileNotFoundInOptimizedDep(id)
         }
       }
     },
@@ -95,5 +101,17 @@ export function throwOutdatedRequest(id: string): never {
   err.code = ERR_OUTDATED_OPTIMIZED_DEP
   // This error will be caught by the transform middleware that will
   // send a 504 status code request timeout
+  throw err
+}
+
+export function throwFileNotFoundInOptimizedDep(id: string): never {
+  const err: any = new Error(
+    `The file does not exist at "${id}" which is in the optimize deps directory. ` +
+      `The dependency might be incompatible with the dep optimizer. ` +
+      `Try adding it to \`optimizeDeps.exclude\`.`,
+  )
+  err.code = ERR_FILE_NOT_FOUND_IN_OPTIMIZED_DEP_DIR
+  // This error will be caught by the transform middleware that will
+  // send a 404 status code not found
   throw err
 }

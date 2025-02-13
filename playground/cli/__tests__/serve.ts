@@ -73,6 +73,7 @@ export async function serve() {
   const serverProcess = execaCommand(serverCommand, {
     cwd: rootDir,
     stdio: 'pipe',
+    forceKillAfterDelay: 3000,
   })
   collectStreams('server', serverProcess)
 

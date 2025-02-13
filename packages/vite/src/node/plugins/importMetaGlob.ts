@@ -1,34 +1,28 @@
 import { isAbsolute, posix } from 'node:path'
-import micromatch from 'micromatch'
+import picomatch from 'picomatch'
 import { stripLiteral } from 'strip-literal'
 import colors from 'picocolors'
 import type {
   ArrayExpression,
-  CallExpression,
   Expression,
   Literal,
-  MemberExpression,
   Node,
-  SequenceExpression,
   SpreadElement,
   TemplateLiteral,
 } from 'estree'
-import { parseExpressionAt } from 'acorn'
-import type { CustomPluginOptions, RollupError } from 'rollup'
-import { findNodeAt } from 'acorn-walk'
+import type { CustomPluginOptions, RollupAstNode, RollupError } from 'rollup'
 import MagicString from 'magic-string'
-import fg from 'fast-glob'
 import { stringifyQuery } from 'ufo'
 import type { GeneralImportGlobOptions } from 'types/importGlob'
+import { parseAstAsync } from 'rollup/parseAst'
+import { escapePath, glob } from 'tinyglobby'
 import type { Plugin } from '../plugin'
-import type { ViteDevServer } from '../server'
-import type { ModuleNode } from '../server/moduleGraph'
+import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import type { ResolvedConfig } from '../config'
 import { evalValue, normalizePath, transformStableResult } from '../utils'
 import type { Logger } from '../logger'
 import { slash } from '../../shared/utils'
-
-const { isMatch, scan } = micromatch
+import type { Environment } from '../environment'
 
 export interface ParsedImportGlob {
   index: number
@@ -38,44 +32,24 @@ export interface ParsedImportGlob {
   options: ParsedGeneralImportGlobOptions
   start: number
   end: number
+  onlyKeys: boolean
+  onlyValues: boolean
 }
 
 interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
   query?: string
 }
 
-export function getAffectedGlobModules(
-  file: string,
-  server: ViteDevServer,
-): ModuleNode[] {
-  const modules: ModuleNode[] = []
-  for (const [id, allGlobs] of server._importGlobMap!) {
-    // (glob1 || glob2) && !glob3 && !glob4...
-    if (
-      allGlobs.some(
-        ({ affirmed, negated }) =>
-          (!affirmed.length || affirmed.some((glob) => isMatch(file, glob))) &&
-          (!negated.length || negated.every((glob) => isMatch(file, glob))),
-      )
-    ) {
-      const mod = server.moduleGraph.getModuleById(id)
-      if (mod) modules.push(mod)
-    }
-  }
-  modules.forEach((i) => {
-    if (i?.file) server.moduleGraph.onFileChange(i.file)
-  })
-  return modules
-}
-
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
-  let server: ViteDevServer | undefined
+  const importGlobMaps = new Map<
+    Environment,
+    Map<string, Array<(file: string) => boolean>>
+  >()
 
   return {
     name: 'vite:import-glob',
-    configureServer(_server) {
-      server = _server
-      server._importGlobMap.clear()
+    buildStart() {
+      importGlobMaps.clear()
     },
     async transform(code, id) {
       if (!code.includes('import.meta.glob')) return
@@ -89,28 +63,54 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
         config.logger,
       )
       if (result) {
-        if (server) {
-          const allGlobs = result.matches.map((i) => i.globsResolved)
-          server._importGlobMap.set(
-            id,
-            allGlobs.map((globs) => {
-              const affirmed: string[] = []
-              const negated: string[] = []
-
-              for (const glob of globs) {
-                ;(glob[0] === '!' ? negated : affirmed).push(glob)
-              }
-              return { affirmed, negated }
-            }),
-          )
+        const allGlobs = result.matches.map((i) => i.globsResolved)
+        if (!importGlobMaps.has(this.environment)) {
+          importGlobMaps.set(this.environment, new Map())
         }
+
+        const globMatchers = allGlobs.map((globs) => {
+          const affirmed: string[] = []
+          const negated: string[] = []
+          for (const glob of globs) {
+            ;(glob[0] === '!' ? negated : affirmed).push(glob)
+          }
+          const affirmedMatcher = picomatch(affirmed)
+          const negatedMatcher = picomatch(negated)
+
+          return (file: string) => {
+            // (glob1 || glob2) && !(glob3 || glob4)...
+            return (
+              (affirmed.length === 0 || affirmedMatcher(file)) &&
+              !(negated.length > 0 && negatedMatcher(file))
+            )
+          }
+        })
+        importGlobMaps.get(this.environment)!.set(id, globMatchers)
+
         return transformStableResult(result.s, id, config)
       }
+    },
+    hotUpdate({ type, file, modules: oldModules }) {
+      if (type === 'update') return
+
+      const importGlobMap = importGlobMaps.get(this.environment)
+      if (!importGlobMap) return
+
+      const modules: EnvironmentModuleNode[] = []
+      for (const [id, globMatchers] of importGlobMap) {
+        if (globMatchers.some((matcher) => matcher(file))) {
+          const mod = this.environment.moduleGraph.getModuleById(id)
+          if (mod) modules.push(mod)
+        }
+      }
+      return modules.length > 0 ? [...oldModules, ...modules] : undefined
     },
   }
 }
 
 const importGlobRE = /\bimport\.meta\.glob(?:<\w+>)?\s*\(/g
+const objectKeysRE = /\bObject\.keys\(\s*$/
+const objectValuesRE = /\bObject\.values\(\s*$/
 
 const knownOptions = {
   as: ['string'],
@@ -218,10 +218,10 @@ export async function parseImportGlob(
   resolveId: IdResolver,
   logger?: Logger,
 ): Promise<ParsedImportGlob[]> {
-  let cleanCode
+  let cleanCode: string
   try {
     cleanCode = stripLiteral(code)
-  } catch (e) {
+  } catch {
     // skip invalid js code
     return []
   }
@@ -236,51 +236,30 @@ export async function parseImportGlob(
       return e
     }
 
-    let ast: CallExpression | SequenceExpression | MemberExpression
-    let lastTokenPos: number | undefined
-
-    try {
-      ast = parseExpressionAt(code, start, {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ranges: true,
-        onToken: (token) => {
-          lastTokenPos = token.end
-        },
-      }) as any
-    } catch (e) {
-      const _e = e as any
-      if (_e.message && _e.message.startsWith('Unterminated string constant'))
-        return undefined!
-      if (lastTokenPos == null || lastTokenPos <= start) throw _e
-
-      // tailing comma in object or array will make the parser think it's a comma operation
-      // we try to parse again removing the comma
-      try {
-        const statement = code.slice(start, lastTokenPos).replace(/[,\s]*$/, '')
-        ast = parseExpressionAt(
-          ' '.repeat(start) + statement, // to keep the ast position
-          start,
-          {
-            ecmaVersion: 'latest',
-            sourceType: 'module',
-            ranges: true,
-          },
-        ) as any
-      } catch {
-        throw _e
-      }
+    const end =
+      findCorrespondingCloseParenthesisPosition(
+        cleanCode,
+        start + match[0].length,
+      ) + 1
+    if (end <= 0) {
+      throw err('Close parenthesis not found')
     }
 
-    const found = findNodeAt(ast as any, start, undefined, 'CallExpression')
-    if (!found) throw err(`Expect CallExpression, got ${ast.type}`)
-    ast = found.node as unknown as CallExpression
+    const statementCode = code.slice(start, end)
 
+    const rootAst = (await parseAstAsync(statementCode)).body[0]
+    if (rootAst.type !== 'ExpressionStatement') {
+      throw err(`Expect CallExpression, got ${rootAst.type}`)
+    }
+    const ast = rootAst.expression
+    if (ast.type !== 'CallExpression') {
+      throw err(`Expect CallExpression, got ${ast.type}`)
+    }
     if (ast.arguments.length < 1 || ast.arguments.length > 2)
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
 
     const arg1 = ast.arguments[0] as ArrayExpression | Literal | TemplateLiteral
-    const arg2 = ast.arguments[1] as Node | undefined
+    const arg2 = ast.arguments[1] as RollupAstNode<Node> | undefined
 
     const globs: string[] = []
 
@@ -321,18 +300,22 @@ export async function parseImportGlob(
         )
 
       options = parseGlobOptions(
-        code.slice(arg2.range![0], arg2.range![1]),
-        arg2.range![0],
+        code.slice(start + arg2.start, start + arg2.end),
+        start + arg2.start,
         logger,
       )
     }
-
-    const end = ast.range![1]
 
     const globsResolved = await Promise.all(
       globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
+    const sliceCode = cleanCode.slice(0, start)
+    const onlyKeys = objectKeysRE.test(sliceCode)
+    let onlyValues = false
+    if (!onlyKeys) {
+      onlyValues = objectValuesRE.test(sliceCode)
+    }
 
     return {
       index,
@@ -342,15 +325,45 @@ export async function parseImportGlob(
       options,
       start,
       end,
+      onlyKeys,
+      onlyValues,
     }
   })
 
   return (await Promise.all(tasks)).filter(Boolean)
 }
 
+function findCorrespondingCloseParenthesisPosition(
+  cleanCode: string,
+  openPos: number,
+) {
+  const closePos = cleanCode.indexOf(')', openPos)
+  if (closePos < 0) return -1
+
+  if (!cleanCode.slice(openPos, closePos).includes('(')) return closePos
+
+  let remainingParenthesisCount = 0
+  const cleanCodeLen = cleanCode.length
+  for (let pos = openPos; pos < cleanCodeLen; pos++) {
+    switch (cleanCode[pos]) {
+      case '(': {
+        remainingParenthesisCount++
+        break
+      }
+      case ')': {
+        remainingParenthesisCount--
+        if (remainingParenthesisCount <= 0) {
+          return pos
+        }
+      }
+    }
+  }
+  return -1
+}
+
 const importPrefix = '__vite_glob_'
 
-const { basename, dirname, relative, join } = posix
+const { basename, dirname, relative } = posix
 
 export interface TransformGlobImportResult {
   s: MagicString
@@ -389,16 +402,24 @@ export async function transformGlobImport(
   const staticImports = (
     await Promise.all(
       matches.map(
-        async ({ globsResolved, isRelative, options, index, start, end }) => {
+        async ({
+          globsResolved,
+          isRelative,
+          options,
+          index,
+          start,
+          end,
+          onlyKeys,
+          onlyValues,
+        }) => {
           const cwd = getCommonBase(globsResolved) ?? root
           const files = (
-            await fg(globsResolved, {
-              cwd,
+            await glob(globsResolved, {
               absolute: true,
+              cwd,
               dot: !!options.exhaustive,
-              ignore: options.exhaustive
-                ? []
-                : [join(cwd, '**/node_modules/**')],
+              expandDirectories: false,
+              ignore: options.exhaustive ? [] : ['**/node_modules/**'],
             })
           )
             .filter((file) => file !== id)
@@ -437,6 +458,11 @@ export async function transformGlobImport(
             let importPath = paths.importPath
             let importQuery = options.query ?? ''
 
+            if (onlyKeys) {
+              objectProps.push(`${JSON.stringify(filePath)}: 0`)
+              return
+            }
+
             if (importQuery && importQuery !== '?raw') {
               const fileExtension = basename(file).split('.').slice(-1)[0]
               if (fileExtension && restoreQueryExtension)
@@ -458,13 +484,19 @@ export async function transformGlobImport(
               staticImports.push(
                 `import ${expression} from ${JSON.stringify(importPath)}`,
               )
-              objectProps.push(`${JSON.stringify(filePath)}: ${variableName}`)
+              objectProps.push(
+                onlyValues
+                  ? `${variableName}`
+                  : `${JSON.stringify(filePath)}: ${variableName}`,
+              )
             } else {
               let importStatement = `import(${JSON.stringify(importPath)})`
               if (importKey)
                 importStatement += `.then(m => m[${JSON.stringify(importKey)}])`
               objectProps.push(
-                `${JSON.stringify(filePath)}: () => ${importStatement}`,
+                onlyValues
+                  ? `() => ${importStatement}`
+                  : `${JSON.stringify(filePath)}: () => ${importStatement}`,
               )
             }
           })
@@ -477,10 +509,17 @@ export async function transformGlobImport(
             originalLineBreakCount > 0
               ? '\n'.repeat(originalLineBreakCount)
               : ''
+          let replacement = ''
+          if (onlyKeys) {
+            replacement = `{${objectProps.join(',')}${lineBreaks}}`
+          } else if (onlyValues) {
+            replacement = `[${objectProps.join(',')}${lineBreaks}]`
+          } else {
+            replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
+              ',',
+            )}${lineBreaks}})`
+          }
 
-          const replacement = `/* #__PURE__ */ Object.assign({${objectProps.join(
-            ',',
-          )}${lineBreaks}})`
           s.overwrite(start, end, replacement)
 
           return staticImports
@@ -511,8 +550,7 @@ type IdResolver = (
 
 function globSafePath(path: string) {
   // slash path to ensure \ is converted to / as \ could lead to a double escape scenario
-  // see https://github.com/mrmlnc/fast-glob#advanced-syntax
-  return fg.escapePath(normalizePath(path))
+  return escapePath(normalizePath(path))
 }
 
 function lastNthChar(str: string, n: number) {
@@ -562,9 +600,6 @@ export async function toAbsoluteGlob(
       custom: { 'vite:import-glob': { isSubImportsPattern } },
     })) || glob,
   )
-  if (isSubImportsPattern) {
-    return join(root, resolved)
-  }
   if (isAbsolute(resolved)) {
     return pre + globSafeResolvedPath(resolved, glob)
   }
@@ -578,7 +613,7 @@ export function getCommonBase(globsResolved: string[]): null | string {
   const bases = globsResolved
     .filter((g) => g[0] !== '!')
     .map((glob) => {
-      let { base } = scan(glob)
+      let { base } = picomatch.scan(glob)
       // `scan('a/foo.js')` returns `base: 'a/foo.js'`
       if (posix.basename(base).includes('.')) base = posix.dirname(base)
 
@@ -601,6 +636,6 @@ export function getCommonBase(globsResolved: string[]): null | string {
 }
 
 export function isVirtualModule(id: string): boolean {
-  // https://vitejs.dev/guide/api-plugin.html#virtual-modules-convention
+  // https://vite.dev/guide/api-plugin.html#virtual-modules-convention
   return id.startsWith('virtual:') || id[0] === '\0' || !id.includes('/')
 }

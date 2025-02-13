@@ -1,6 +1,6 @@
 {
   "name": "vite",
-  "version": "5.1.4",
+  "version": "6.1.0",
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
@@ -20,45 +20,45 @@
   "types": "./dist/node/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/node/index.d.ts",
-        "default": "./dist/node/index.js"
-      },
-      "require": {
-        "types": "./index.d.cts",
-        "default": "./index.cjs"
-      }
+      "module-sync": "./dist/node/index.js",
+      "import": "./dist/node/index.js",
+      "require": "./index.cjs"
     },
     "./client": {
       "types": "./client.d.ts"
     },
-    "./runtime": {
-      "types": "./dist/node/runtime.d.ts",
-      "import": "./dist/node/runtime.js"
-    },
+    "./module-runner": "./dist/node/module-runner.js",
     "./dist/client/*": "./dist/client/*",
     "./types/*": {
       "types": "./types/*"
     },
+    "./types/internal/*": null,
     "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
-      "runtime": [
-        "dist/node/runtime.d.ts"
+      "module-runner": [
+        "dist/node/module-runner.d.ts"
       ]
+    }
+  },
+  "imports": {
+    "#module-sync-enabled": {
+      "module-sync": "./misc/true.js",
+      "default": "./misc/false.js"
     }
   },
   "files": [
     "bin",
     "dist",
+    "misc/**/*.js",
     "client.d.ts",
     "index.cjs",
     "index.d.cts",
     "types"
   ],
   "engines": {
-    "node": "^18.0.0 || >=20.0.0"
+    "node": "^18.0.0 || ^20.0.0 || >=22.0.0"
   },
   "repository": {
     "type": "git",
@@ -68,104 +68,115 @@
   "bugs": {
     "url": "https://github.com/vitejs/vite/issues"
   },
-  "homepage": "https://vitejs.dev",
+  "homepage": "https://vite.dev",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "scripts": {
-    "dev": "rimraf dist && pnpm run build-bundle -w",
-    "build": "rimraf dist && run-s build-bundle build-types",
-    "build-bundle": "rollup --config rollup.config.ts --configPlugin typescript",
-    "build-types": "run-s build-types-temp build-types-roll build-types-check",
-    "build-types-temp": "tsc --emitDeclarationOnly --outDir temp -p src/node",
-    "build-types-roll": "rollup --config rollup.dts.config.ts --configPlugin typescript && rimraf temp",
+    "dev": "tsx scripts/dev.ts",
+    "build": "premove dist && pnpm build-bundle && pnpm build-types",
+    "build-bundle": "rollup --config rollup.config.ts --configPlugin esbuild",
+    "build-types": "pnpm build-types-temp && pnpm build-types-roll && pnpm build-types-check",
+    "build-types-temp": "tsc --emitDeclarationOnly --outDir temp -p src/node/tsconfig.build.json",
+    "build-types-roll": "rollup --config rollup.dts.config.ts --configPlugin esbuild && premove temp",
     "build-types-check": "tsc --project tsconfig.check.json",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/node",
     "lint": "eslint --cache --ext .ts src/**",
     "format": "prettier --write --cache --parser typescript \"src/**/*.ts\"",
     "prepublishOnly": "npm run build"
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "esbuild": "^0.19.3",
-    "postcss": "^8.4.35",
-    "rollup": "^4.2.0"
+    "esbuild": "^0.24.2",
+    "postcss": "^8.5.1",
+    "rollup": "^4.30.1"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
   },
   "devDependencies": {
-    "@ampproject/remapping": "^2.2.1",
-    "@babel/parser": "^7.23.9",
-    "@jridgewell/trace-mapping": "^0.3.23",
-    "@rollup/plugin-alias": "^5.1.0",
-    "@rollup/plugin-commonjs": "^25.0.7",
-    "@rollup/plugin-dynamic-import-vars": "^2.1.2",
+    "@ampproject/remapping": "^2.3.0",
+    "@babel/parser": "^7.26.7",
+    "@jridgewell/trace-mapping": "^0.3.25",
+    "@polka/compression": "^1.0.0-next.25",
+    "@rollup/plugin-alias": "^5.1.1",
+    "@rollup/plugin-commonjs": "^28.0.2",
+    "@rollup/plugin-dynamic-import-vars": "2.1.4",
     "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "15.2.3",
-    "@rollup/plugin-typescript": "^11.1.6",
-    "@rollup/pluginutils": "^5.1.0",
+    "@rollup/plugin-node-resolve": "16.0.0",
+    "@rollup/pluginutils": "^5.1.4",
     "@types/escape-html": "^1.0.4",
     "@types/pnpapi": "^0.0.5",
-    "acorn": "^8.11.3",
-    "acorn-walk": "^8.3.2",
-    "artichokie": "^0.2.0",
+    "artichokie": "^0.3.1",
     "cac": "^6.7.14",
     "chokidar": "^3.6.0",
     "connect": "^3.7.0",
     "convert-source-map": "^2.0.0",
     "cors": "^2.8.5",
-    "cross-spawn": "^7.0.3",
-    "debug": "^4.3.4",
+    "cross-spawn": "^7.0.6",
+    "debug": "^4.4.0",
     "dep-types": "link:./src/types",
-    "dotenv": "^16.4.5",
-    "dotenv-expand": "^11.0.6",
-    "es-module-lexer": "^1.4.1",
+    "dotenv": "^16.4.7",
+    "dotenv-expand": "^12.0.1",
+    "es-module-lexer": "^1.6.0",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
-    "fast-glob": "^3.3.2",
     "http-proxy": "^1.18.1",
-    "launch-editor-middleware": "^2.6.1",
-    "lightningcss": "^1.24.0",
-    "magic-string": "^0.30.7",
-    "micromatch": "^4.0.5",
-    "mlly": "^1.6.1",
+    "launch-editor-middleware": "^2.9.1",
+    "lightningcss": "^1.29.1",
+    "magic-string": "^0.30.17",
+    "mlly": "^1.7.4",
     "mrmime": "^2.0.0",
-    "open": "^8.4.2",
-    "parse5": "^7.1.2",
+    "nanoid": "^5.0.9",
+    "open": "^10.1.0",
+    "parse5": "^7.2.1",
+    "pathe": "^2.0.2",
     "periscopic": "^4.0.2",
-    "picocolors": "^1.0.0",
-    "picomatch": "^2.3.1",
-    "postcss-import": "^16.0.1",
-    "postcss-load-config": "^4.0.2",
-    "postcss-modules": "^6.0.0",
-    "resolve.exports": "^2.0.2",
-    "rollup-plugin-dts": "^6.1.0",
+    "picocolors": "^1.1.1",
+    "picomatch": "^4.0.2",
+    "postcss-import": "^16.1.0",
+    "postcss-load-config": "^6.0.1",
+    "postcss-modules": "^6.0.1",
+    "resolve.exports": "^2.0.3",
+    "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-esbuild": "^6.1.1",
-    "rollup-plugin-license": "^3.2.0",
-    "sirv": "^2.0.4",
+    "rollup-plugin-license": "^3.5.3",
+    "sass": "^1.83.4",
+    "sass-embedded": "^1.83.4",
+    "sirv": "^3.0.0",
     "source-map-support": "^0.5.21",
-    "strip-ansi": "^7.1.0",
-    "strip-literal": "^2.0.0",
-    "tsconfck": "^3.0.2",
-    "tslib": "^2.6.2",
+    "strip-literal": "^3.0.0",
+    "terser": "^5.37.0",
+    "tinyglobby": "^0.2.10",
+    "tsconfck": "^3.1.5",
+    "tslib": "^2.8.1",
     "types": "link:./types",
-    "ufo": "^1.4.0",
-    "ws": "^8.16.0"
+    "ufo": "^1.5.4",
+    "ws": "^8.18.0"
   },
   "peerDependencies": {
-    "@types/node": "^18.0.0 || >=20.0.0",
+    "@types/node": "^18.0.0 || ^20.0.0 || >=22.0.0",
+    "jiti": ">=1.21.0",
     "less": "*",
     "lightningcss": "^1.21.0",
     "sass": "*",
+    "sass-embedded": "*",
     "stylus": "*",
     "sugarss": "*",
-    "terser": "^5.4.0"
+    "terser": "^5.16.0",
+    "tsx": "^4.8.1",
+    "yaml": "^2.4.2"
   },
   "peerDependenciesMeta": {
     "@types/node": {
       "optional": true
     },
+    "jiti": {
+      "optional": true
+    },
     "sass": {
+      "optional": true
+    },
+    "sass-embedded": {
       "optional": true
     },
     "stylus": {
@@ -181,6 +192,12 @@
       "optional": true
     },
     "terser": {
+      "optional": true
+    },
+    "tsx": {
+      "optional": true
+    },
+    "yaml": {
       "optional": true
     }
   }

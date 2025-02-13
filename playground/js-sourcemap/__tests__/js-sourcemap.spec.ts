@@ -1,4 +1,6 @@
-import { URL } from 'node:url'
+import { URL, fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
+import { execFile } from 'node:child_process'
 import { describe, expect, test } from 'vitest'
 import { mapFileCommentRegex } from 'convert-source-map'
 import { commentSourceMap } from '../foo-with-sourcemap-plugin'
@@ -18,7 +20,7 @@ if (!isBuild) {
     const map = extractSourcemap(js)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG,CAAC;",
+        "mappings": "AAAA,MAAM,CAAC,KAAK,CAAC,GAAG,CAAC,CAAC,CAAC,CAAC,GAAG;",
         "sources": [
           "foo.js",
         ],
@@ -39,7 +41,7 @@ if (!isBuild) {
     const map = extractSourcemap(js)
     expect(formatSourcemapForSnapshot(map)).toMatchInlineSnapshot(`
       {
-        "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
+        "mappings": "AAAA,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC;",
         "sources": [
           "zoo.js",
         ],
@@ -134,10 +136,11 @@ describe.runIf(isBuild)('build tests', () => {
   })
 
   test('sourcemap is correct when preload information is injected', async () => {
-    const map = findAssetFile(/after-preload-dynamic.*\.js\.map/)
+    const map = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
-        "mappings": ";;;;;;i3BAAA,OAAO,2BAAuB,EAAC,wBAE/B,QAAQ,IAAI,uBAAuB",
+        "ignoreList": [],
+        "mappings": ";+8BAAA,OAAO,2BAAuB,0BAE9B,QAAQ,IAAI,uBAAuB",
         "sources": [
           "../../after-preload-dynamic.js",
         ],
@@ -151,9 +154,57 @@ describe.runIf(isBuild)('build tests', () => {
       }
     `)
     // verify sourcemap comment is preserved at the last line
-    const js = findAssetFile(/after-preload-dynamic.*\.js$/)
+    const js = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js$/)
     expect(js).toMatch(
-      /\n\/\/# sourceMappingURL=after-preload-dynamic.*\.js\.map\n$/,
+      /\n\/\/# sourceMappingURL=after-preload-dynamic-[-\w]{8}\.js\.map\n$/,
     )
+  })
+
+  test('__vite__mapDeps injected after banner', async () => {
+    const js = findAssetFile(/after-preload-dynamic-hashbang-[-\w]{8}\.js$/)
+    expect(js.split('\n').slice(0, 2)).toEqual([
+      '#!/usr/bin/env node',
+      expect.stringContaining('const __vite__mapDeps=(i'),
+    ])
+  })
+
+  test('no unused __vite__mapDeps', async () => {
+    const js = findAssetFile(/after-preload-dynamic-no-dep-[-\w]{8}\.js$/)
+    expect(js).not.toMatch(/__vite__mapDeps/)
+  })
+
+  test('sourcemap is correct when using object as "define" value', async () => {
+    const map = findAssetFile(/with-define-object.*\.js\.map/)
+    expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
+      {
+        "mappings": "qBAEA,SAASA,GAAO,CACJC,EAAA,CACZ,CAEA,SAASA,GAAY,CAEX,QAAA,MAAM,qBAAsBC,CAAkB,CACxD,CAEAF,EAAK",
+        "sources": [
+          "../../with-define-object.ts",
+        ],
+        "sourcesContent": [
+          "// test complicated stack since broken sourcemap
+      // might still look correct with a simple case
+      function main() {
+        mainInner()
+      }
+
+      function mainInner() {
+        // @ts-expect-error "define"
+        console.trace('with-define-object', __testDefineObject)
+      }
+
+      main()
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+  })
+
+  test('correct sourcemap during ssr dev when using object as "define" value', async () => {
+    const execFileAsync = promisify(execFile)
+    await execFileAsync('node', ['test-ssr-dev.js'], {
+      cwd: fileURLToPath(new URL('..', import.meta.url)),
+    })
   })
 })

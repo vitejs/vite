@@ -15,7 +15,6 @@
     image
   </p>
   <p>Imported css string:</p>
-  <pre class="imported-css"></pre>
   <pre class="imported-css-glob"></pre>
   <pre class="imported-css-globEager"></pre>
 
@@ -23,6 +22,9 @@
 
   <p class="postcss">
     <span class="nesting">PostCSS nesting plugin: this should be pink</span>
+  </p>
+  <p class="postcss-inject-url">
+    PostCSS plugin: this should have a background image
   </p>
 
   <p class="sass">SASS: This should be orange</p>
@@ -39,9 +41,15 @@
     url starts with function call
   </p>
   <p>Imported SASS string:</p>
-  <pre class="imported-sass"></pre>
   <p class="sass-dep">
     @import dependency w/ no scss entrypoint: this should be lavender
+  </p>
+  <p class="sass-file-absolute">
+    @import "file:///xxx/absolute-path.scss" should be orange
+  </p>
+  <p class="sass-dir-index">@import "./dir" should be orange</p>
+  <p class="sass-root-relative">
+    @import "/nested/root-relative.scss" should be orange
   </p>
 
   <p class="less">Less: This should be blue</p>
@@ -52,12 +60,17 @@
     @import from Less: This should be darkslateblue and have bg image which url
     contains alias
   </p>
+  <p class="less-at-import-url-ommer">
+    @import url() from Less: This should be darkorange
+  </p>
   <p class="less-url-starts-with-variable">url starts with variable</p>
-  <p>Imported Less string:</p>
-  <pre class="imported-less"></pre>
 
   <div class="form-box-data-uri">
     tests Less's `data-uri()` function with relative image paths
+  </div>
+  <div>
+    url in Less's JS plugin: This should have a blue square below
+    <div class="less-js-plugin"></div>
   </div>
 
   <p class="stylus">Stylus: This should be blue</p>
@@ -85,8 +98,6 @@
     Stylus define function via vite config preprocessor options: This should be
     rgb(255, 0, 98)
   </p>
-  <p>Imported Stylus string:</p>
-  <pre class="imported-stylus"></pre>
 
   <p class="sugarss">SugarSS: This should be blue</p>
   <p class="sugarss-at-import">
@@ -96,8 +107,6 @@
     @import from SugarSS: This should be darkslateblue and have bg image which
     url contains alias
   </p>
-  <p>Imported SugarSS string:</p>
-  <pre class="imported-sugarss"></pre>
 
   <p class="modules">CSS modules: this should be turquoise</p>
   <p>Imported CSS module:</p>
@@ -106,6 +115,8 @@
   <p class="modules-sass">CSS modules w/ SASS: this should be orangered</p>
   <p>Imported SASS module:</p>
   <pre class="modules-sass-code"></pre>
+
+  <p class="modules-treeshake">CSS modules should treeshake in build</p>
 
   <p>Imported compose/from CSS/SASS module:</p>
   <p class="path-resolved-modules-css">

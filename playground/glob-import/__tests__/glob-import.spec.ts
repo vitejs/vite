@@ -87,15 +87,15 @@ test('should work', async () => {
   await withRetry(async () => {
     const actual = await page.textContent('.result')
     expect(JSON.parse(actual)).toStrictEqual(allResult)
-  }, true)
+  })
   await withRetry(async () => {
     const actualEager = await page.textContent('.result-eager')
     expect(JSON.parse(actualEager)).toStrictEqual(allResult)
-  }, true)
+  })
   await withRetry(async () => {
     const actualNodeModules = await page.textContent('.result-node_modules')
     expect(JSON.parse(actualNodeModules)).toStrictEqual(nodeModulesResult)
-  }, true)
+  })
 })
 
 test('import glob raw', async () => {
@@ -240,6 +240,10 @@ test('escapes special chars in globs without mangling user supplied glob suffix'
   expect(expectedNames).toEqual(foundAliasNames)
 })
 
-test('sub imports', async () => {
-  expect(await page.textContent('.sub-imports')).toMatch('bar foo')
+test('subpath imports', async () => {
+  expect(await page.textContent('.subpath-imports')).toMatch('bar foo')
+})
+
+test('#alias imports', async () => {
+  expect(await page.textContent('.hash-alias-imports')).toMatch('bar foo')
 })

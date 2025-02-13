@@ -8,6 +8,7 @@ import './intermediate-file-delete'
 import './circular'
 import './queries'
 import logo from './logo.svg'
+import logoNoInline from './logo-no-inline.svg'
 import { msg as softInvalidationMsg } from './soft-invalidation'
 
 export const foo = 1
@@ -16,7 +17,8 @@ text('.dep', depFoo)
 text('.nested', nestedFoo)
 text('.virtual', virtual)
 text('.soft-invalidation', softInvalidationMsg)
-setLogo(logo)
+setImgSrc('#logo', logo)
+setImgSrc('#logo-no-inline', logoNoInline)
 
 globalThis.__HMR__['virtual:increment'] = () => {
   if (import.meta.hot) {
@@ -41,8 +43,13 @@ if (import.meta.hot) {
   }
 
   import.meta.hot.accept('./logo.svg', (newUrl) => {
-    setLogo(newUrl.default)
+    setImgSrc('#logo', newUrl.default)
     log('Logo updated', newUrl.default)
+  })
+
+  import.meta.hot.accept('./logo-no-inline.svg', (newUrl) => {
+    setImgSrc('#logo-no-inline', newUrl.default)
+    log('Logo-no-inline updated', newUrl.default)
   })
 
   import.meta.hot.accept('./hmrDep', ({ foo, nestedFoo }) => {
@@ -98,8 +105,8 @@ function text(el, text) {
   hmr(el, text)
 }
 
-function setLogo(src) {
-  hmr('#logo', src)
+function setImgSrc(el, src) {
+  hmr(el, src)
 }
 
 function removeCb({ msg }) {

@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
+  expectWithRetry,
   isBuild,
   isServe,
   page,
@@ -21,12 +22,11 @@ test('normal', async () => {
   await untilUpdated(
     () => page.textContent('.asset-url'),
     isBuild ? '/iife/assets/worker_asset-vite.svg' : '/iife/vite.svg',
-    true,
   )
 })
 
 test('named', async () => {
-  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker', true)
+  await untilUpdated(() => page.textContent('.pong-named'), 'namedWorker')
 })
 
 test('TS output', async () => {
@@ -41,7 +41,6 @@ test('named inlined', async () => {
   await untilUpdated(
     () => page.textContent('.pong-inline-named'),
     'namedInlineWorker',
-    true,
   )
 })
 
@@ -50,31 +49,37 @@ test('shared worker', async () => {
 })
 
 test('named shared worker', async () => {
-  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong', true)
+  await untilUpdated(() => page.textContent('.tick-count-named'), 'pong')
 })
 
 test('inline shared worker', async () => {
   await untilUpdated(() => page.textContent('.pong-shared-inline'), 'pong')
 })
 
-test('worker emitted and import.meta.url in nested worker (serve)', async () => {
-  await untilUpdated(() => page.textContent('.nested-worker'), '/worker-nested')
-  await untilUpdated(
-    () => page.textContent('.nested-worker-module'),
-    '/sub-worker',
-  )
-  await untilUpdated(
-    () => page.textContent('.nested-worker-constructor'),
-    '"type":"constructor"',
-  )
-})
+test.runIf(!isBuild)(
+  'worker emitted and import.meta.url in nested worker (serve)',
+  async () => {
+    await untilUpdated(
+      () => page.textContent('.nested-worker'),
+      '/worker-nested',
+    )
+    await untilUpdated(
+      () => page.textContent('.nested-worker-module'),
+      '/sub-worker',
+    )
+    await untilUpdated(
+      () => page.textContent('.nested-worker-constructor'),
+      '"type":"constructor"',
+    )
+  },
+)
 
 describe.runIf(isBuild)('build', () => {
   // assert correct files
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/iife/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(20)
+    expect(files.length).toBe(23)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('worker_entry-my-worker'))
@@ -90,8 +95,8 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(`new Worker("/iife/assets`)
     expect(content).toMatch(`new SharedWorker("/iife/assets`)
     // inlined
-    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
-    expect(content).toMatch(`window.Blob`)
+    expect(content).toMatch(`(self.URL||self.webkitURL).createObjectURL`)
+    expect(content).toMatch(`self.Blob`)
   })
 
   test('worker emitted and import.meta.url in nested worker (build)', async () => {
@@ -115,31 +120,29 @@ test('module worker', async () => {
   await untilUpdated(
     async () => page.textContent('.worker-import-meta-url'),
     /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
-    true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-resolve'),
     /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
-    true,
   )
   await untilUpdated(
     () => page.textContent('.worker-import-meta-url-without-extension'),
     /A\sstring.*\/iife\/.+url-worker\.js.+url-worker\.js/,
-    true,
   )
   await untilUpdated(
     () => page.textContent('.shared-worker-import-meta-url'),
     'A string',
-    true,
   )
 })
 
 test('classic worker', async () => {
   await untilUpdated(() => page.textContent('.classic-worker'), 'A classic')
-  await untilUpdated(
-    () => page.textContent('.classic-worker-import'),
-    '[success] classic-esm',
-  )
+  if (!isBuild) {
+    await untilUpdated(
+      () => page.textContent('.classic-worker-import'),
+      '[success] classic-esm',
+    )
+  }
   await untilUpdated(
     () => page.textContent('.classic-shared-worker'),
     'A classic',
@@ -160,13 +163,34 @@ test('import.meta.glob eager in worker', async () => {
   )
 })
 
-test.runIf(isServe)('sourcemap boundary', async () => {
-  const response = page.waitForResponse(/my-worker.ts\?worker_file&type=module/)
+test('self reference worker', async () => {
+  await expectWithRetry(() => page.textContent('.self-reference-worker')).toBe(
+    'pong: main\npong: nested\n',
+  )
+})
+
+test('self reference url worker', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.self-reference-url-worker'),
+  ).toBe('pong: main\npong: nested\n')
+})
+
+test('self reference url worker in dependency', async () => {
+  await expectWithRetry(() =>
+    page.textContent('.self-reference-url-worker-dep'),
+  ).toBe('pong: main\npong: nested\n')
+})
+
+test.runIf(isServe)('sourcemap is correct after env is injected', async () => {
+  const response = page.waitForResponse(
+    /my-worker\.ts\?worker_file&type=module/,
+  )
   await page.goto(viteTestUrl)
   const content = await (await response).text()
   const { mappings } = decodeSourceMapUrl(content)
-  expect(mappings.startsWith(';')).toBeTruthy()
-  expect(mappings.endsWith(';')).toBeFalsy()
+  expect(mappings).toMatchInlineSnapshot(
+    `";;AAAA,SAAS,OAAO,kBAAkB;AAClC,OAAO,YAAY;AACnB,SAAS,MAAM,WAAW;AAC1B,SAAS,wBAAwB;AACjC,OAAO,aAAa;AACpB,MAAM,UAAU,YAAY;AAE5B,KAAK,YAAY,CAAC,MAAM;AACtB,MAAI,EAAE,SAAS,QAAQ;AACrB,SAAK,YAAY;AAAA,MACf;AAAA,MACA;AAAA,MACA;AAAA,MACA;AAAA,MACA;AAAA,MACA;AAAA,MACA;AAAA,IACF,CAAC;AAAA,EACH;AACA,MAAI,EAAE,SAAS,gBAAgB;AAC7B,SAAK,YAAY;AAAA,MACf,KAAK;AAAA,MACL;AAAA,MACA;AAAA,MACA;AAAA,MACA;AAAA,MACA;AAAA,MACA;AAAA,IACF,CAAC;AAAA,EACH;AACF;AACA,KAAK,YAAY;AAAA,EACf;AAAA,EACA;AAAA,EACA;AAAA,EACA;AAAA,EACA;AAAA,EACA;AAAA,EACA;AAAA,EACA;AACF,CAAC;AAGD,QAAQ,IAAI,cAAc"`,
+  )
 })
 
 function decodeSourceMapUrl(content: string) {

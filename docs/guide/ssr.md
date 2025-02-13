@@ -1,4 +1,4 @@
-# Server-Side Rendering
+# Server-Side Rendering (SSR)
 
 :::tip Note
 SSR specifically refers to front-end frameworks (for example React, Preact, Vue, and Svelte) that support running the same application in Node.js, pre-rendering it to HTML, and finally hydrating it on the client. If you are looking for integration with traditional server-side frameworks, check out the [Backend Integration guide](./backend-integration) instead.
@@ -8,10 +8,8 @@ The following guide also assumes prior experience working with SSR in your frame
 
 :::warning Low-level API
 This is a low-level API meant for library and framework authors. If your goal is to create an application, make sure to check out the higher-level SSR plugins and tools at [Awesome Vite SSR section](https://github.com/vitejs/awesome-vite#ssr) first. That said, many applications are successfully built directly on top of Vite's native low-level API.
-:::
 
-:::tip Help
-If you have questions, the community is usually helpful at [Vite Discord's #ssr channel](https://discord.gg/PkbxgzPhJv).
+Currently, Vite is working on an improved SSR API with the [Environment API](https://github.com/vitejs/vite/discussions/16358). Check out the link for more details.
 :::
 
 ## Example Projects
@@ -42,7 +40,7 @@ A typical SSR application will have the following source file structure:
 
 The `index.html` will need to reference `entry-client.js` and include a placeholder where the server-rendered markup should be injected:
 
-```html
+```html [index.html]
 <div id="app"><!--ssr-outlet--></div>
 <script type="module" src="/src/entry-client.js"></script>
 ```
@@ -53,7 +51,9 @@ You can use any placeholder you prefer instead of `<!--ssr-outlet-->`, as long a
 
 If you need to perform conditional logic based on SSR vs. client, you can use
 
-```js
+```js twoslash
+import 'vite/client'
+// ---cut---
 if (import.meta.env.SSR) {
   // ... server only logic
 }
@@ -63,14 +63,12 @@ This is statically replaced during build so it will allow tree-shaking of unused
 
 ## Setting Up the Dev Server
 
-When building an SSR app, you likely want to have full control over your main server and decouple Vite from the production environment. It is therefore recommended to use Vite in middleware mode. Here is an example with [express](https://expressjs.com/):
+When building an SSR app, you likely want to have full control over your main server and decouple Vite from the production environment. It is therefore recommended to use Vite in middleware mode. Here is an example with [express](https://expressjs.com/) (v4):
 
-**server.js**
-
-```js{15-18}
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+```js{15-18} twoslash [server.js]
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import express from 'express'
 import { createServer as createViteServer } from 'vite'
 
@@ -109,7 +107,18 @@ Here `vite` is an instance of [ViteDevServer](./api-javascript#vitedevserver). `
 
 The next step is implementing the `*` handler to serve server-rendered HTML:
 
-```js
+```js twoslash [server.js]
+// @noErrors
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+/** @type {import('express').Express} */
+var app
+/** @type {import('vite').ViteDevServer}  */
+var vite
+
+// ---cut---
 app.use('*', async (req, res, next) => {
   const url = req.originalUrl
 
@@ -125,17 +134,10 @@ app.use('*', async (req, res, next) => {
     //    preambles from @vitejs/plugin-react
     template = await vite.transformIndexHtml(url, template)
 
-    // 3a. Load the server entry. ssrLoadModule automatically transforms
+    // 3. Load the server entry. ssrLoadModule automatically transforms
     //    ESM source code to be usable in Node.js! There is no bundling
     //    required, and provides efficient invalidation similar to HMR.
     const { render } = await vite.ssrLoadModule('/src/entry-server.js')
-    // 3b. Since Vite 5.1, you can use the experimental createViteRuntime API
-    //    instead.
-    //    It fully supports HMR and works in a simillar way to ssrLoadModule
-    //    More advanced use case would be creating a runtime in a separate
-    //    thread or even a different machine using ViteRuntime class
-    const runtime = await vite.createViteRuntime(server)
-    const { render } = await runtime.executeEntrypoint('/src/entry-server.js')
 
     // 4. render the app HTML. This assumes entry-server.js's exported
     //     `render` function calls appropriate framework SSR APIs,
@@ -143,7 +145,7 @@ app.use('*', async (req, res, next) => {
     const appHtml = await render(url)
 
     // 5. Inject the app-rendered HTML into the template.
-    const html = template.replace(`<!--ssr-outlet-->`, appHtml)
+    const html = template.replace(`<!--ssr-outlet-->`, () => appHtml)
 
     // 6. Send the rendered HTML back.
     res.status(200).set({ 'Content-Type': 'text/html' }).end(html)
@@ -158,7 +160,7 @@ app.use('*', async (req, res, next) => {
 
 The `dev` script in `package.json` should also be changed to use the server script instead:
 
-```diff
+```diff [package.json]
   "scripts": {
 -   "dev": "vite"
 +   "dev": "node server"
@@ -170,11 +172,11 @@ The `dev` script in `package.json` should also be changed to use the server scri
 To ship an SSR project for production, we need to:
 
 1. Produce a client build as normal;
-2. Produce an SSR build, which can be directly loaded via `import()` so that we don't have to go through Vite's `ssrLoadModule` or `runtime.executeEntrypoint`;
+2. Produce an SSR build, which can be directly loaded via `import()` so that we don't have to go through Vite's `ssrLoadModule`;
 
 Our scripts in `package.json` will look like this:
 
-```json
+```json [package.json]
 {
   "scripts": {
     "dev": "node server",
@@ -190,7 +192,7 @@ Then, in `server.js` we need to add some production specific logic by checking `
 
 - Instead of reading the root `index.html`, use the `dist/client/index.html` as the template, since it contains the correct asset links to the client build.
 
-- Instead of `await vite.ssrLoadModule('/src/entry-server.js')` or `await runtime.executeEntrypoint('/src/entry-server.js')`, use `import('./dist/server/entry-server.js')` (this file is the result of the SSR build).
+- Instead of `await vite.ssrLoadModule('/src/entry-server.js')`, use `import('./dist/server/entry-server.js')` (this file is the result of the SSR build).
 
 - Move the creation and all usage of the `vite` dev server behind dev-only conditional branches, then add static file serving middlewares to serve files from `dist/client`.
 
@@ -211,8 +213,7 @@ To leverage the manifest, frameworks need to provide a way to collect the module
 
 `@vitejs/plugin-vue` supports this out of the box and automatically registers used component module IDs on to the associated Vue SSR context:
 
-```js
-// src/entry-server.js
+```js [src/entry-server.js]
 const ctx = {}
 const html = await vueServerRenderer.renderToString(app, ctx)
 // ctx.modules is now a Set of module IDs that were used during the render
@@ -246,7 +247,9 @@ Some frameworks such as Vue or Svelte compile components into different formats 
 
 **Example:**
 
-```js
+```js twoslash
+/** @type {() => import('vite').Plugin} */
+// ---cut---
 export function mySSRPlugin() {
   return {
     name: 'my-ssr',

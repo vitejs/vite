@@ -1,5 +1,6 @@
 <div class="plain"></div>
 <div class="base64"></div>
+<div class="comma"></div>
 
 <script type="module">
   import msg from "data:text/javascript, export default 'hi'"
@@ -7,6 +8,9 @@
 
   import base64Msg from 'data:text/javascript;base64, ZXhwb3J0IGRlZmF1bHQgJ2hpJw=='
   text('.base64', base64Msg)
+
+  import { comma } from 'comma/foo?number=1,2,3'
+  text('.comma', comma)
 
   function text(el, text) {
     document.querySelector(el).textContent = text

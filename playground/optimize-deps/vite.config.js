@@ -17,9 +17,11 @@ export default defineConfig({
     include: [
       '@vitejs/test-dep-linked-include',
       '@vitejs/test-nested-exclude > @vitejs/test-nested-include',
+      '@vitejs/test-dep-cjs-external-package-omit-js-suffix',
       // will throw if optimized (should log warning instead)
       '@vitejs/test-non-optimizable-include',
       '@vitejs/test-dep-optimize-exports-with-glob/**/*',
+      '@vitejs/test-dep-optimize-exports-with-root-glob/**/*.js',
       '@vitejs/test-dep-optimize-with-glob/**/*.js',
     ],
     exclude: ['@vitejs/test-nested-exclude', '@vitejs/test-dep-non-optimized'],

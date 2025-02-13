@@ -1,6 +1,7 @@
-import type { Update } from 'types/hmrPayload'
+import type { HotPayload, Update } from 'types/hmrPayload'
 import type { ModuleNamespace, ViteHotContext } from 'types/hot'
 import type { InferCustomEventPayload } from 'types/customEvent'
+import type { NormalizedModuleRunnerTransport } from './moduleRunnerTransport'
 
 type CustomListenersMap = Map<string, ((data: any) => void)[]>
 
@@ -18,17 +19,6 @@ interface HotCallback {
 export interface HMRLogger {
   error(msg: string | Error): void
   debug(...msg: unknown[]): void
-}
-
-export interface HMRConnection {
-  /**
-   * Checked before sending messages to the client.
-   */
-  isReady(): boolean
-  /**
-   * Send message to the client.
-   */
-  send(messages: string): void
 }
 
 export class HMRContext implements ViteHotContext {
@@ -89,7 +79,7 @@ export class HMRContext implements ViteHotContext {
   // extracted in the server for propagation
   acceptExports(
     _: string | readonly string[],
-    callback: (data: any) => void,
+    callback?: (data: any) => void,
   ): void {
     this.acceptDeps([this.ownerPath], ([mod]) => callback?.(mod))
   }
@@ -111,9 +101,12 @@ export class HMRContext implements ViteHotContext {
       path: this.ownerPath,
       message,
     })
-    this.send('vite:invalidate', { path: this.ownerPath, message })
+    this.send('vite:invalidate', {
+      path: this.ownerPath,
+      message,
+    })
     this.hmrClient.logger.debug(
-      `[vite] invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
+      `invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
     )
   }
 
@@ -151,9 +144,7 @@ export class HMRContext implements ViteHotContext {
   }
 
   send<T extends string>(event: T, data?: InferCustomEventPayload<T>): void {
-    this.hmrClient.messenger.send(
-      JSON.stringify({ type: 'custom', event, data }),
-    )
+    this.hmrClient.send({ type: 'custom', event, data })
   }
 
   private acceptDeps(
@@ -172,24 +163,6 @@ export class HMRContext implements ViteHotContext {
   }
 }
 
-class HMRMessenger {
-  constructor(private connection: HMRConnection) {}
-
-  private queue: string[] = []
-
-  public send(message: string): void {
-    this.queue.push(message)
-    this.flush()
-  }
-
-  public flush(): void {
-    if (this.connection.isReady()) {
-      this.queue.forEach((msg) => this.connection.send(msg))
-      this.queue = []
-    }
-  }
-}
-
 export class HMRClient {
   public hotModulesMap = new Map<string, HotModule>()
   public disposeMap = new Map<string, (data: any) => void | Promise<void>>()
@@ -198,16 +171,12 @@ export class HMRClient {
   public customListenersMap: CustomListenersMap = new Map()
   public ctxToListenersMap = new Map<string, CustomListenersMap>()
 
-  public messenger: HMRMessenger
-
   constructor(
     public logger: HMRLogger,
-    connection: HMRConnection,
+    private transport: NormalizedModuleRunnerTransport,
     // This allows implementing reloading via different methods depending on the environment
     private importUpdatedModule: (update: Update) => Promise<ModuleNamespace>,
-  ) {
-    this.messenger = new HMRMessenger(connection)
-  }
+  ) {}
 
   public async notifyListeners<T extends string>(
     event: T,
@@ -218,6 +187,12 @@ export class HMRClient {
     if (cbs) {
       await Promise.allSettled(cbs.map((cb) => cb(data)))
     }
+  }
+
+  public send(payload: HotPayload): void {
+    this.transport.send(payload).catch((err) => {
+      this.logger.error(err)
+    })
   }
 
   public clear(): void {
@@ -231,9 +206,14 @@ export class HMRClient {
 
   // After an HMR update, some modules are no longer imported on the page
   // but they may have left behind side effects that need to be cleaned up
-  // (.e.g style injections)
-  // TODO Trigger their dispose callbacks.
-  public prunePaths(paths: string[]): void {
+  // (e.g. style injections)
+  public async prunePaths(paths: string[]): Promise<void> {
+    await Promise.all(
+      paths.map((path) => {
+        const disposer = this.disposeMap.get(path)
+        if (disposer) return disposer(this.dataMap.get(path))
+      }),
+    )
     paths.forEach((path) => {
       const fn = this.pruneMap.get(path)
       if (fn) {
@@ -247,7 +227,7 @@ export class HMRClient {
       this.logger.error(err)
     }
     this.logger.error(
-      `[hmr] Failed to reload ${path}. ` +
+      `Failed to reload ${path}. ` +
         `This could be due to syntax errors or importing non-existent ` +
         `modules. (see errors above)`,
     )
@@ -308,7 +288,7 @@ export class HMRClient {
         )
       }
       const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
-      this.logger.debug(`[vite] hot updated: ${loggedPath}`)
+      this.logger.debug(`hot updated: ${loggedPath}`)
     }
   }
 }

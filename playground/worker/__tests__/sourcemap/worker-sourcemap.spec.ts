@@ -9,7 +9,7 @@ describe.runIf(isBuild)('build', () => {
     const assetsDir = path.resolve(testDir, 'dist/iife-sourcemap/assets')
     const files = fs.readdirSync(assetsDir)
     // should have 2 worker chunk
-    expect(files.length).toBe(40)
+    expect(files.length).toBe(46)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const indexSourcemap = getSourceMapUrl(content)
@@ -95,7 +95,7 @@ describe.runIf(isBuild)('build', () => {
 
     // chunk
     expect(content).toMatch(`new Worker("/iife-sourcemap/assets/my-worker`)
-    expect(content).toMatch(`new Worker("data:text/javascript;base64`)
+    expect(content).toMatch(`new Worker("data:text/javascript;charset=utf-8,"+`)
     expect(content).toMatch(
       `new Worker("/iife-sourcemap/assets/possible-ts-output-worker`,
     )
@@ -107,8 +107,8 @@ describe.runIf(isBuild)('build', () => {
     )
 
     // inlined
-    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
-    expect(content).toMatch(`window.Blob`)
+    expect(content).toMatch(`(self.URL||self.webkitURL).createObjectURL`)
+    expect(content).toMatch(`self.Blob`)
 
     expect(workerNestedWorkerContent).toMatch(
       `new Worker("/iife-sourcemap/assets/sub-worker`,
@@ -117,8 +117,9 @@ describe.runIf(isBuild)('build', () => {
 })
 
 function getSourceMapUrl(code: string): string {
-  const regex = /\/\/[#@]\ssource(?:Mapping)?URL=\s*(\S+)/
-  const results = regex.exec(code)
+  const regex = /\/\/[#@]\ssource(?:Mapping)?URL=\s*(\S+)/g
+  const matches = [...code.matchAll(regex)]
+  const results = matches.at(-1)
 
   if (results && results.length >= 2) {
     return results[1]

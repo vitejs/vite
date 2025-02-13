@@ -49,7 +49,7 @@ npm add -D terser
 ### `modernTargets`
 
 - **Type:** `string | string[]`
-- **Default:** [`'edge>=80, firefox>=72, chrome>=80, safari>=13.1, chromeAndroid>=80, iOS>=13.1'`](https://browsersl.ist/#q=edge%3E%3D80%2C+firefox%3E%3D72%2C+chrome%3E%3D80%2C+safari%3E%3D13.1%2C+chromeAndroid%3E%3D80%2C+iOS%3E%3D13.1)
+- **Default:** [`'edge>=79, firefox>=67, chrome>=64, safari>=12, chromeAndroid>=64, iOS>=12'`](https://browsersl.ist/#q=edge%3E%3D79%2C+firefox%3E%3D67%2C+chrome%3E%3D64%2C+safari%3E%3D12%2C+chromeAndroid%3E%3D64%2C+iOS%3E%3D12)
 
   If explicitly set, it's passed on to [`@babel/preset-env`](https://babeljs.io/docs/en/babel-preset-env#targets) when rendering **modern chunks**.
 
@@ -74,7 +74,11 @@ npm add -D terser
 
   Add custom imports to the legacy polyfills chunk. Since the usage-based polyfill detection only covers ES language features, it may be necessary to manually specify additional DOM API polyfills using this option.
 
-  Note: if additional polyfills are needed for both the modern and legacy chunks, they can simply be imported in the application source code.
+### `additionalModernPolyfills`
+
+- **Type:** `string[]`
+
+  Add custom imports to the modern polyfills chunk. Since the usage-based polyfill detection only covers ES language features, it may be necessary to manually specify additional DOM API polyfills using this option.
 
 ### `modernPolyfills`
 
@@ -85,9 +89,9 @@ npm add -D terser
 
   Set to a list of strings to explicitly control which polyfills to include. See [Polyfill Specifiers](#polyfill-specifiers) for details.
 
-  Note it is **not recommended** to use the `true` value (which uses auto-detection) because `core-js@3` is very aggressive in polyfill inclusions due to all the bleeding edge features it supports. Even when targeting native ESM support, it injects 15kb of polyfills!
+  If `modernTargets` is not set, it is **not recommended** to use the `true` value (which uses auto-detection) because `core-js@3` is very aggressive in polyfill inclusions due to all the bleeding edge features it supports. Even when targeting native ESM support, it injects 15kb of polyfills!
 
-  If you don't have hard reliance on bleeding edge runtime features, it is not that hard to avoid having to use polyfills in the modern build altogether. Alternatively, consider using an on-demand service like [Polyfill.io](https://polyfill.io) to only inject necessary polyfills based on actual browser user-agents (most modern browsers will need nothing!).
+  If you don't have hard reliance on bleeding edge runtime features, it is not that hard to avoid having to use polyfills in the modern build altogether. Alternatively, consider setting `modernTargets` or using an on-demand service like https://cdnjs.cloudflare.com/polyfill/ to only inject necessary polyfills based on actual browser user-agents (most modern browsers will need nothing!).
 
 ### `renderLegacyChunks`
 

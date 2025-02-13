@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { defineConfig, normalizePath } from 'vite'
+import { defaultClientConditions, defineConfig, normalizePath } from 'vite'
 import { a } from './config-dep.cjs'
 
 const virtualFile = '@virtual-file'
@@ -22,13 +22,17 @@ const generatedContentImports = [
     specifier: normalizePath(path.resolve(__dirname, './absolute.js')),
     elementQuery: '.absolute',
   },
+  {
+    specifier: new URL('file-url.js', import.meta.url),
+    elementQuery: '.file-url',
+  },
 ]
 
 export default defineConfig({
   resolve: {
     extensions: ['.mjs', '.js', '.es', '.ts'],
     mainFields: ['browser', 'custom', 'module'],
-    conditions: ['custom'],
+    conditions: [...defaultClientConditions, 'custom'],
   },
   define: {
     VITE_CONFIG_DEP_TEST: a,

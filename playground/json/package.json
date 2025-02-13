@@ -7,14 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "debug": "node --inspect-brk ../../packages/vite/bin/vite",
-    "preview": "vite preview",
-    "dev:ssr": "node server",
-    "serve:ssr": "NODE_ENV=production node server",
-    "debug:ssr": "node --inspect-brk server"
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@vitejs/test-json-module": "file:./json-module",
-    "express": "^4.18.2",
-    "vue": "^3.4.20"
+    "express": "^5.0.1",
+    "vue": "^3.5.13"
   }
 }

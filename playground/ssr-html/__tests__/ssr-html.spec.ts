@@ -9,7 +9,7 @@ import { editFile, isServe, page, untilUpdated } from '~utils'
 
 const url = `http://localhost:${port}`
 
-describe('injected inline scripts', () => {
+describe.runIf(isServe)('injected inline scripts', () => {
   test('no injected inline scripts are present', async () => {
     await page.goto(url)
     const inlineScripts = await page.$$eval('script', (nodes) =>
@@ -98,9 +98,19 @@ describe.runIf(isServe)('stacktrace', () => {
       })
     }
   }
+
+  test('with Vite runtime', async () => {
+    await execFileAsync('node', ['test-stacktrace-runtime.js'], {
+      cwd: fileURLToPath(new URL('..', import.meta.url)),
+    })
+  })
 })
 
-describe.runIf(isServe)('network-imports', () => {
+// --experimental-network-imports is going to be dropped
+// https://github.com/nodejs/node/pull/53822
+const noNetworkImports = Number(process.version.match(/^v(\d+)\./)[1]) >= 22
+
+describe.runIf(isServe && !noNetworkImports)('network-imports', () => {
   test('with Vite SSR', async () => {
     await execFileAsync(
       'node',
@@ -117,7 +127,7 @@ describe.runIf(isServe)('network-imports', () => {
       [
         '--experimental-network-imports',
         'test-network-imports.js',
-        '--runtime',
+        '--module-runner',
       ],
       {
         cwd: fileURLToPath(new URL('..', import.meta.url)),

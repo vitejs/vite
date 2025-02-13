@@ -10,7 +10,7 @@ describe.runIf(isBuild)('build', () => {
 
     const files = fs.readdirSync(assetsDir)
     // should have 2 worker chunk
-    expect(files.length).toBe(40)
+    expect(files.length).toBe(46)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const indexSourcemap = getSourceMapUrl(content)
@@ -94,7 +94,7 @@ describe.runIf(isBuild)('build', () => {
     expect(content).toMatch(
       `new Worker("/iife-sourcemap-hidden/assets/my-worker`,
     )
-    expect(content).toMatch(`new Worker("data:text/javascript;base64`)
+    expect(content).toMatch(`new Worker("data:text/javascript;charset=utf-8,"+`)
     expect(content).toMatch(
       `new Worker("/iife-sourcemap-hidden/assets/possible-ts-output-worker`,
     )
@@ -106,8 +106,8 @@ describe.runIf(isBuild)('build', () => {
     )
 
     // inlined
-    expect(content).toMatch(`(window.URL||window.webkitURL).createObjectURL`)
-    expect(content).toMatch(`window.Blob`)
+    expect(content).toMatch(`(self.URL||self.webkitURL).createObjectURL`)
+    expect(content).toMatch(`self.Blob`)
 
     expect(workerNestedWorkerContent).toMatch(
       `new Worker("/iife-sourcemap-hidden/assets/sub-worker`,

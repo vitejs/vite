@@ -10,10 +10,10 @@ export const App = component$(() => {
   return (
     <>
       <div>
-        <a href="https://vitejs.dev" target="_blank">
+        <a href="https://vite.dev" target="_blank">
           <img src={viteLogo} class="logo" alt="Vite logo" />
         </a>
-        <a href="https://qwik.builder.io" target="_blank">
+        <a href="https://qwik.dev" target="_blank">
           <img src={qwikLogo} class="logo qwik" alt="Qwik logo" />
         </a>
       </div>

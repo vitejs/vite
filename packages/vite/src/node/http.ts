@@ -25,6 +25,18 @@ export interface CommonServerOptions {
    */
   host?: string | boolean
   /**
+   * The hostnames that Vite is allowed to respond to.
+   * `localhost` and subdomains under `.localhost` and all IP addresses are allowed by default.
+   * When using HTTPS, this check is skipped.
+   *
+   * If a string starts with `.`, it will allow that hostname without the `.` and all subdomains under the hostname.
+   * For example, `.example.com` will allow `example.com`, `foo.example.com`, and `foo.bar.example.com`.
+   *
+   * If set to `true`, the server is allowed to respond to requests for any hosts.
+   * This is not recommended as it will be vulnerable to DNS rebinding attacks.
+   */
+  allowedHosts?: string[] | true
+  /**
    * Enable TLS + HTTP/2.
    * Note: this downgrades to TLS only when the proxy option is also used.
    */
@@ -43,8 +55,8 @@ export interface CommonServerOptions {
    * ``` js
    * module.exports = {
    *   proxy: {
-   *     // string shorthand
-   *     '/foo': 'http://localhost:4567/foo',
+   *     // string shorthand: /foo -> http://localhost:4567/foo
+   *     '/foo': 'http://localhost:4567',
    *     // with options
    *     '/api': {
    *       target: 'http://jsonplaceholder.typicode.com',
@@ -59,8 +71,14 @@ export interface CommonServerOptions {
   /**
    * Configure CORS for the dev server.
    * Uses https://github.com/expressjs/cors.
+   *
+   * When enabling this option, **we recommend setting a specific value
+   * rather than `true`** to avoid exposing the source code to untrusted origins.
+   *
    * Set to `true` to allow all methods from any origin, or configure separately
    * using an object.
+   *
+   * @default false
    */
   cors?: CorsOptions | boolean
   /**
@@ -73,9 +91,18 @@ export interface CommonServerOptions {
  * https://github.com/expressjs/cors#configuration-options
  */
 export interface CorsOptions {
+  /**
+   * Configures the Access-Control-Allow-Origin CORS header.
+   *
+   * **We recommend setting a specific value rather than
+   * `true`** to avoid exposing the source code to untrusted origins.
+   */
   origin?:
     | CorsOrigin
-    | ((origin: string, cb: (err: Error, origins: CorsOrigin) => void) => void)
+    | ((
+        origin: string | undefined,
+        cb: (err: Error, origins: CorsOrigin) => void,
+      ) => void)
   methods?: string | string[]
   allowedHeaders?: string | string[]
   exposedHeaders?: string | string[]
@@ -185,7 +212,7 @@ export function setClientErrorHandler(
       logger.warn(
         colors.yellow(
           'Server responded with status code 431. ' +
-            'See https://vitejs.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
+            'See https://vite.dev/guide/troubleshooting.html#_431-request-header-fields-too-large.',
         ),
       )
     }

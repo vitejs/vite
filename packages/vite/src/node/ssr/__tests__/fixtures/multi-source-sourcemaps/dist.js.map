@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["nested-directory/nested-file.js", "entrypoint.js"],
+  "sourcesContent": ["export default 'Nested file will trigger edge case that used to break sourcemaps'\n", "/*\n * You can rebuild this with:\n * - rm -f ./dist.js ./dist.js.map\n * - npx esbuild --bundle entrypoint.js --outfile=dist.js --sourcemap --format=esm\n */\n\nimport nested from './nested-directory/nested-file'\n\nexport function entrypoint() {\n  console.log(nested)\n  throw new Error('Hello world')\n}\n"],
+  "mappings": ";AAAA,IAAO,sBAAQ;;;ACQR,SAAS,aAAa;AAC3B,UAAQ,IAAI,mBAAM;AAClB,QAAM,IAAI,MAAM,aAAa;AAC/B;",
+  "names": []
+}

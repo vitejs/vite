@@ -3,14 +3,21 @@ import MagicString from 'magic-string'
 import { stripLiteral } from 'strip-literal'
 import type { Plugin } from '../plugin'
 import type { ResolvedConfig } from '../config'
-import type { ResolveFn } from '../'
-import { injectQuery, isParentDirectory, transformStableResult } from '../utils'
+import {
+  injectQuery,
+  isDataUrl,
+  isParentDirectory,
+  transformStableResult,
+} from '../utils'
 import { CLIENT_ENTRY } from '../constants'
 import { slash } from '../../shared/utils'
+import { createBackCompatIdResolver } from '../idResolver'
+import type { ResolveIdFn } from '../idResolver'
 import { fileToUrl } from './asset'
 import { preloadHelperId } from './importAnalysisBuild'
 import type { InternalResolveOptions } from './resolve'
 import { tryFsResolve } from './resolve'
+import { hasViteIgnoreRE } from './importAnalysis'
 
 /**
  * Convert `new URL('./foo.png', import.meta.url)` to its resolved built URL
@@ -24,7 +31,7 @@ import { tryFsResolve } from './resolve'
  */
 export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   const { publicDir } = config
-  let assetResolver: ResolveFn
+  let assetResolver: ResolveIdFn
 
   const fsResolveOptions: InternalResolveOptions = {
     ...config.resolve,
@@ -32,15 +39,15 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     isProduction: config.isProduction,
     isBuild: config.command === 'build',
     packageCache: config.packageCache,
-    ssrConfig: config.ssr,
     asSrc: true,
   }
 
   return {
     name: 'vite:asset-import-meta-url',
-    async transform(code, id, options) {
+    async transform(code, id) {
+      const { environment } = this
       if (
-        !options?.ssr &&
+        environment.config.consumer === 'client' &&
         id !== preloadHelperId &&
         id !== CLIENT_ENTRY &&
         code.includes('new URL') &&
@@ -54,6 +61,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
         let match: RegExpExecArray | null
         while ((match = assetImportMetaUrlRE.exec(cleanString))) {
           const [[startIndex, endIndex], [urlStart, urlEnd]] = match.indices!
+          if (hasViteIgnoreRE.test(code.slice(startIndex, urlStart))) continue
+
           const rawUrl = code.slice(urlStart, urlEnd)
 
           if (!s) s = new MagicString(code)
@@ -72,7 +81,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
             const templateLiteral = (ast as any).body[0].expression
             if (templateLiteral.expressions.length) {
               const pattern = buildGlobPattern(templateLiteral)
-              if (pattern.startsWith('**')) {
+              if (pattern.startsWith('*')) {
                 // don't transform for patterns like this
                 // because users won't intend to do that in most cases
                 continue
@@ -98,18 +107,21 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           }
 
           const url = rawUrl.slice(1, -1)
+          if (isDataUrl(url)) {
+            continue
+          }
           let file: string | undefined
           if (url[0] === '.') {
             file = slash(path.resolve(path.dirname(id), url))
             file = tryFsResolve(file, fsResolveOptions) ?? file
           } else {
-            assetResolver ??= config.createResolver({
+            assetResolver ??= createBackCompatIdResolver(config, {
               extensions: [],
               mainFields: [],
               tryIndex: false,
               preferRelative: true,
             })
-            file = await assetResolver(url, id)
+            file = await assetResolver(environment, url, id)
             file ??=
               url[0] === '/'
                 ? slash(path.join(publicDir, url))
@@ -121,11 +133,11 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           let builtUrl: string | undefined
           if (file) {
             try {
-              if (isParentDirectory(publicDir, file)) {
+              if (publicDir && isParentDirectory(publicDir, file)) {
                 const publicPath = '/' + path.posix.relative(publicDir, file)
-                builtUrl = await fileToUrl(publicPath, config, this)
+                builtUrl = await fileToUrl(this, publicPath)
               } else {
-                builtUrl = await fileToUrl(file, config, this)
+                builtUrl = await fileToUrl(this, file)
               }
             } catch {
               // do nothing, we'll log a warning after this
@@ -134,7 +146,8 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
           if (!builtUrl) {
             const rawExp = code.slice(startIndex, endIndex)
             config.logger.warnOnce(
-              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime`,
+              `\n${rawExp} doesn't exist at build time, it will remain unchanged to be resolved at runtime. ` +
+                `If this is intended, you can use the /* @vite-ignore */ comment to suppress this warning.`,
             )
             builtUrl = url
           }
@@ -155,19 +168,18 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
 function buildGlobPattern(ast: any) {
   let pattern = ''
-  let lastElementIndex = -1
-  for (const exp of ast.expressions) {
-    for (let i = lastElementIndex + 1; i < ast.quasis.length; i++) {
-      const el = ast.quasis[i]
-      if (el.end < exp.start) {
-        pattern += el.value.raw
-        lastElementIndex = i
-      }
+  let lastIsGlob = false
+  for (let i = 0; i < ast.quasis.length; i++) {
+    const str = ast.quasis[i].value.raw
+    if (str) {
+      pattern += str
+      lastIsGlob = false
     }
-    pattern += '**'
-  }
-  for (let i = lastElementIndex + 1; i < ast.quasis.length; i++) {
-    pattern += ast.quasis[i].value.raw
+
+    if (ast.expressions[i] && !lastIsGlob) {
+      pattern += '*'
+      lastIsGlob = true
+    }
   }
   return pattern
 }

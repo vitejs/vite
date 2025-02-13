@@ -126,7 +126,11 @@ const BASE_DEV_SHORTCUTS: CLIShortcut<ViteDevServer>[] = [
     key: 'q',
     description: 'quit',
     async action(server) {
-      await server.close().finally(() => process.exit())
+      try {
+        await server.close()
+      } finally {
+        process.exit()
+      }
     },
   },
 ]
@@ -148,9 +152,9 @@ const BASE_PREVIEW_SHORTCUTS: CLIShortcut<PreviewServer>[] = [
   {
     key: 'q',
     description: 'quit',
-    action(server) {
+    async action(server) {
       try {
-        server.httpServer.close()
+        await server.close()
       } finally {
         process.exit()
       }

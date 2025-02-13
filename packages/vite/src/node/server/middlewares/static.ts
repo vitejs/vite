@@ -4,7 +4,8 @@ import type { Options } from 'sirv'
 import sirv from 'sirv'
 import type { Connect } from 'dep-types/connect'
 import escapeHtml from 'escape-html'
-import type { ViteDevServer } from '../..'
+import type { ViteDevServer } from '../../server'
+import type { ResolvedConfig } from '../../config'
 import { FS_PREFIX } from '../../constants'
 import {
   fsPathFromId,
@@ -16,6 +17,7 @@ import {
   isSameFileUri,
   normalizePath,
   removeLeadingSlash,
+  urlRE,
 } from '../../utils'
 import {
   cleanUrl,
@@ -71,7 +73,7 @@ export function servePublicMiddleware(
     if (filePath.indexOf('%') !== -1) {
       try {
         filePath = decodeURI(filePath)
-      } catch (err) {
+      } catch {
         /* malform uri */
       }
     }
@@ -86,7 +88,9 @@ export function servePublicMiddleware(
     if (
       (publicFiles && !publicFiles.has(toFilePath(req.url!))) ||
       isImportRequest(req.url!) ||
-      isInternalRequest(req.url!)
+      isInternalRequest(req.url!) ||
+      // for `/public-file.js?url` to be transformed
+      urlRE.test(req.url!)
     ) {
       return next()
     }
@@ -115,12 +119,15 @@ export function serveStaticMiddleware(
     if (
       cleanedUrl[cleanedUrl.length - 1] === '/' ||
       path.extname(cleanedUrl) === '.html' ||
-      isInternalRequest(req.url!)
+      isInternalRequest(req.url!) ||
+      // skip url starting with // as these will be interpreted as
+      // scheme relative URLs by new URL() and will not be a valid file path
+      req.url?.startsWith('//')
     ) {
       return next()
     }
 
-    const url = new URL(req.url!.replace(/^\/{2,}/, '/'), 'http://example.com')
+    const url = new URL(req.url!, 'http://example.com')
     const pathname = decodeURI(url.pathname)
 
     // apply aliases to static requests as well
@@ -173,12 +180,12 @@ export function serveRawFsMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    const url = new URL(req.url!.replace(/^\/{2,}/, '/'), 'http://example.com')
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
-    if (url.pathname.startsWith(FS_PREFIX)) {
+    if (req.url!.startsWith(FS_PREFIX)) {
+      const url = new URL(req.url!, 'http://example.com')
       const pathname = decodeURI(url.pathname)
       // restrict files outside of `fs.allow`
       if (
@@ -208,28 +215,54 @@ export function serveRawFsMiddleware(
  * Check if the url is allowed to be served, via the `server.fs` config.
  */
 export function isFileServingAllowed(
+  config: ResolvedConfig,
+  url: string,
+): boolean
+/**
+ * @deprecated Use the `isFileServingAllowed(config, url)` signature instead.
+ */
+export function isFileServingAllowed(
   url: string,
   server: ViteDevServer,
+): boolean
+export function isFileServingAllowed(
+  configOrUrl: ResolvedConfig | string,
+  urlOrServer: string | ViteDevServer,
 ): boolean {
-  if (!server.config.server.fs.strict) return true
+  const config = (
+    typeof urlOrServer === 'string' ? configOrUrl : urlOrServer.config
+  ) as ResolvedConfig
+  const url = (
+    typeof urlOrServer === 'string' ? urlOrServer : configOrUrl
+  ) as string
 
-  const file = fsPathFromUrl(url)
+  if (!config.server.fs.strict) return true
+  const filePath = fsPathFromUrl(url)
+  return isFileLoadingAllowed(config, filePath)
+}
 
-  if (server._fsDenyGlob(file)) return false
+function isUriInFilePath(uri: string, filePath: string) {
+  return isSameFileUri(uri, filePath) || isParentDirectory(uri, filePath)
+}
 
-  if (server.moduleGraph.safeModulesPath.has(file)) return true
+export function isFileLoadingAllowed(
+  config: ResolvedConfig,
+  filePath: string,
+): boolean {
+  const { fs } = config.server
 
-  if (
-    server.config.server.fs.allow.some(
-      (uri) => isSameFileUri(uri, file) || isParentDirectory(uri, file),
-    )
-  )
-    return true
+  if (!fs.strict) return true
+
+  if (config.fsDenyGlob(filePath)) return false
+
+  if (config.safeModulePaths.has(filePath)) return true
+
+  if (fs.allow.some((uri) => isUriInFilePath(uri, filePath))) return true
 
   return false
 }
 
-function ensureServingAccess(
+export function ensureServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,
@@ -243,7 +276,7 @@ function ensureServingAccess(
     const hintMessage = `
 ${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}
 
-Refer to docs https://vitejs.dev/config/server-options.html#server-fs-allow for configurations and more details.`
+Refer to docs https://vite.dev/config/server-options.html#server-fs-allow for configurations and more details.`
 
     server.config.logger.error(urlMessage)
     server.config.logger.warnOnce(hintMessage + '\n')

@@ -20,6 +20,7 @@ export interface Logger {
 export interface LogOptions {
   clear?: boolean
   timestamp?: boolean
+  environment?: string
 }
 
 export interface LogErrorOptions extends LogOptions {
@@ -49,6 +50,7 @@ export interface LoggerOptions {
   prefix?: string
   allowClearScreen?: boolean
   customLogger?: Logger
+  console?: Console
 }
 
 // Only initialize the timeFormatter when the timestamp option is used, and
@@ -72,7 +74,11 @@ export function createLogger(
   }
 
   const loggedErrors = new WeakSet<Error | RollupError>()
-  const { prefix = '[vite]', allowClearScreen = true } = options
+  const {
+    prefix = '[vite]',
+    allowClearScreen = true,
+    console = globalThis.console,
+  } = options
   const thresh = LogLevels[level]
   const canClearScreen =
     allowClearScreen && process.stdout.isTTY && !process.env.CI
@@ -80,15 +86,16 @@ export function createLogger(
 
   function format(type: LogType, msg: string, options: LogErrorOptions = {}) {
     if (options.timestamp) {
-      const tag =
-        type === 'info'
-          ? colors.cyan(colors.bold(prefix))
-          : type === 'warn'
-            ? colors.yellow(colors.bold(prefix))
-            : colors.red(colors.bold(prefix))
-      return `${colors.dim(
-        getTimeFormatter().format(new Date()),
-      )} ${tag} ${msg}`
+      let tag = ''
+      if (type === 'info') {
+        tag = colors.cyan(colors.bold(prefix))
+      } else if (type === 'warn') {
+        tag = colors.yellow(colors.bold(prefix))
+      } else {
+        tag = colors.red(colors.bold(prefix))
+      }
+      const environment = options.environment ? options.environment + ' ' : ''
+      return `${colors.dim(getTimeFormatter().format(new Date()))} ${tag} ${environment}${msg}`
     } else {
       return msg
     }
