@@ -57,6 +57,10 @@ Vite's current plugin API isn't compatible with using `esbuild` as a bundler. In
 
 Rollup has also been working on performance improvements, [switching its parser to SWC in v4](https://github.com/rollup/rollup/pull/5073). And there is an ongoing effort to build a Rust-port of Rollup called Rolldown. Once Rolldown is ready, it could replace both Rollup and esbuild in Vite, improving build performance significantly and removing inconsistencies between development and build. You can watch [Evan You's ViteConf 2023 keynote for more details](https://youtu.be/hrdwQHoAp0M).
 
-## How is Vite Different from X?
+## How Vite Relates to Other Unbundled Build Tools?
 
-You can check out the [Comparisons](./comparisons.md) section for more details on how Vite differs from other similar tools.
+[WMR](https://github.com/preactjs/wmr) by the Preact team looked to provide a similar feature set. Vite's universal Rollup plugin API for dev and build was inspired by it. WMR is no longer maintained. The Preact team now recommends Vite with [@preactjs/preset-vite](https://github.com/preactjs/preset-vite).
+
+[Snowpack](https://www.snowpack.dev/) was also a no-bundle native ESM dev server, very similar in scope to Vite. Vite's dependency pre-bundling is also inspired by Snowpack v1 (now [`esinstall`](https://github.com/snowpackjs/snowpack/tree/main/esinstall)). Snowpack is no longer being maintained. The Snowpack team is now working on [Astro](https://astro.build/), a static site builder powered by Vite.
+
+[@web/dev-server](https://modern-web.dev/docs/dev-server/overview/) (previously `es-dev-server`) is a great project and Vite 1.0's Koa-based server setup was inspired by it. The `@web` umbrella project is actively maintained and contains many other excellent tools that may benefit Vite users as well.
