@@ -593,10 +593,13 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 }
 
 function setupReactSwc(root: string, isTs: boolean) {
+  // renovate: datasource=npm depName=@vitejs/plugin-react-swc
+  const reactSwcPluginVersion = '3.7.2'
+
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(
       /"@vitejs\/plugin-react": ".+?"/,
-      `"@vitejs/plugin-react-swc": "^3.7.2"`,
+      `"@vitejs/plugin-react-swc": "^${reactSwcPluginVersion}"`,
     )
   })
   editFile(
