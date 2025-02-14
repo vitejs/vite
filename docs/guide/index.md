@@ -202,7 +202,31 @@ Learn more about the [Command Line Interface](./cli.md)
 
 ## Using Unreleased Commits
 
-If you can't wait for a new release to test the latest features, you will need to clone the [vite repo](https://github.com/vitejs/vite) to your local machine and then build and link it yourself ([pnpm](https://pnpm.io/) is required):
+If you can't wait for a new release to test the latest features, you can install a specific commit of Vite with https://pkg.pr.new:
+
+::: code-group
+
+```bash [npm]
+$ npm install -D https://pkg.pr.new/vite@SHA
+```
+
+```bash [Yarn]
+$ yarn add -D https://pkg.pr.new/vite@SHA
+```
+
+```bash [pnpm]
+$ pnpm add -D https://pkg.pr.new/vite@SHA
+```
+
+```bash [Bun]
+$ bun add -D https://pkg.pr.new/vite@SHA
+```
+
+:::
+
+Replace `SHA` with any of [Vite's commit SHAs](https://github.com/vitejs/vite/commits/main/). Note that only commits within the last month will work, as older commit releases are purged.
+
+Alternatively, you can also clone the [vite repo](https://github.com/vitejs/vite) to your local machine and then build and link it yourself ([pnpm](https://pnpm.io/) is required):
 
 ```bash
 git clone https://github.com/vitejs/vite.git
@@ -214,6 +238,10 @@ pnpm link --global # use your preferred package manager for this step
 ```
 
 Then go to your Vite based project and run `pnpm link --global vite` (or the package manager that you used to link `vite` globally). Now restart the development server to ride on the bleeding edge!
+
+::: tip Dependencies using Vite
+To replace the Vite version used by dependencies transitively, you should use [npm overrides](https://docs.npmjs.com/cli/v11/configuring-npm/package-json#overrides) or [pnpm overrides](https://pnpm.io/package_json#pnpmoverrides).
+:::
 
 ## Community
 
