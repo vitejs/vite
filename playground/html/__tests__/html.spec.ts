@@ -295,8 +295,8 @@ describe.runIf(isServe)('invalid', () => {
     expect(errorOverlay).toBeTruthy()
 
     await page.click('html')
-    const isVisbleOverlay = await errorOverlay.isVisible()
-    expect(isVisbleOverlay).toBeFalsy()
+    const isVisibleOverlay = await errorOverlay.isVisible()
+    expect(isVisibleOverlay).toBeFalsy()
   })
 
   test('should close overlay when escape key is pressed', async () => {
@@ -305,8 +305,8 @@ describe.runIf(isServe)('invalid', () => {
     expect(errorOverlay).toBeTruthy()
 
     await page.keyboard.press('Escape')
-    const isVisbleOverlay = await errorOverlay.isVisible()
-    expect(isVisbleOverlay).toBeFalsy()
+    const isVisibleOverlay = await errorOverlay.isVisible()
+    expect(isVisibleOverlay).toBeFalsy()
   })
 
   test('stack is updated', async () => {

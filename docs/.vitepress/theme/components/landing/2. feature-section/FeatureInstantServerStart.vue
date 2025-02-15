@@ -342,7 +342,8 @@ onUnmounted(() => {
       bottom: 0;
       height: 100%;
       border-radius: 12px 0 0 12px;
-      background: url('/noise.png'),
+      background:
+        url('/noise.png'),
         radial-gradient(
           ellipse 140% 80% at 96% bottom,
           #13b351 0%,
