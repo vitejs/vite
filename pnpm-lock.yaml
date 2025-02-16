@@ -249,6 +249,9 @@ importers:
       '@jridgewell/trace-mapping':
         specifier: ^0.3.25
         version: 0.3.25
+      '@pkgjs/parseargs':
+        specifier: 0.9.0
+        version: 0.9.0
       '@polka/compression':
         specifier: ^1.0.0-next.25
         version: 1.0.0-next.25
@@ -345,6 +348,12 @@ importers:
       open:
         specifier: ^10.1.0
         version: 10.1.0
+      ordana:
+        specifier: ^0.2.0
+        version: 0.2.0
+      ordana-gen-docs:
+        specifier: ^0.2.0
+        version: 0.2.0(ordana@0.2.0)
       parse5:
         specifier: ^7.2.1
         version: 7.2.1
@@ -2870,6 +2879,9 @@ packages:
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
+
+  '@pkgjs/parseargs@0.9.0':
+    resolution: {integrity: sha512-jUn59xyDdWEOZCRxH+ISzq1nVLLLLbyqX69v5VoiHx3kp22FbkXgj7wrwtkDwjZmQj3rhB3gcWQIC13JH6pd7w==}
 
   '@polka/compression@1.0.0-next.25':
     resolution: {integrity: sha512-UlVkoSGRig87riHSn8QOxd2DzGhadRpNSj5Ukqj+Bt7WTE4Es+sE3ju3OYbe8SiV2OwA+8tDcSuHWUh5S3jCBQ==}
@@ -5823,6 +5835,14 @@ packages:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
 
+  ordana-gen-docs@0.2.0:
+    resolution: {integrity: sha512-Va/Em6zMlWFxAnPpRM7iIvsXlzlHB4zy0pua2GJ9OvBbmlTrq4d5dr4Il1tQQXA16uVLyHX8XCZ14ivxzYhyUg==}
+    peerDependencies:
+      ordana: ^0.2.0
+
+  ordana@0.2.0:
+    resolution: {integrity: sha512-fTT/iMFHR6R/baGZNStNbns9qIvNrwonCS43qRKH3MjT5PALNSFvG+TE/RhhhHAGwoztMU8rMPtivcMv6/1jzA==}
+
   p-limit@3.1.0:
     resolution: {integrity: sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ==}
     engines: {node: '>=10'}
@@ -8563,6 +8583,8 @@ snapshots:
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
+
+  '@pkgjs/parseargs@0.9.0': {}
 
   '@polka/compression@1.0.0-next.25': {}
 
@@ -11783,6 +11805,14 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
       word-wrap: 1.2.5
+
+  ordana-gen-docs@0.2.0(ordana@0.2.0):
+    dependencies:
+      ordana: 0.2.0
+
+  ordana@0.2.0:
+    dependencies:
+      picocolors: 1.1.1
 
   p-limit@3.1.0:
     dependencies:
