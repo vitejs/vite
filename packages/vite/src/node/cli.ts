@@ -53,6 +53,7 @@ const numberType = {
 
 export const cliOptions = {
   name: 'vite',
+  allowKebabCaseAsCamelCaseArguments: true,
   globalArguments: {
     config: {
       type: 'string',

@@ -1869,6 +1869,7 @@ Repository: jshttp/on-finished
 ## ordana
 License: MIT
 By: sapphi-red
+Repository: git+https://github.com/sapphi-red/ordana.git
 
 > MIT License
 > 

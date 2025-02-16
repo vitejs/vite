@@ -349,11 +349,11 @@ importers:
         specifier: ^10.1.0
         version: 10.1.0
       ordana:
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.3.0
+        version: 0.3.0
       ordana-gen-docs:
-        specifier: ^0.2.0
-        version: 0.2.0(ordana@0.2.0)
+        specifier: ^0.3.0
+        version: 0.3.0(ordana@0.3.0)
       parse5:
         specifier: ^7.2.1
         version: 7.2.1
@@ -5835,13 +5835,13 @@ packages:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
     engines: {node: '>= 0.8.0'}
 
-  ordana-gen-docs@0.2.0:
-    resolution: {integrity: sha512-Va/Em6zMlWFxAnPpRM7iIvsXlzlHB4zy0pua2GJ9OvBbmlTrq4d5dr4Il1tQQXA16uVLyHX8XCZ14ivxzYhyUg==}
+  ordana-gen-docs@0.3.0:
+    resolution: {integrity: sha512-IStstgSC/gifdejgLwvCr6G/EzA03hWTldlfYERPmaGUUnfJkW0AoP8iQZjl3Tj7CDf9fkOm+KD3nX+JwjbivQ==}
     peerDependencies:
-      ordana: ^0.2.0
+      ordana: ^0.3.0
 
-  ordana@0.2.0:
-    resolution: {integrity: sha512-fTT/iMFHR6R/baGZNStNbns9qIvNrwonCS43qRKH3MjT5PALNSFvG+TE/RhhhHAGwoztMU8rMPtivcMv6/1jzA==}
+  ordana@0.3.0:
+    resolution: {integrity: sha512-RKP9fIh1MfEqKHqILhNkPZ6GQmngaWKEzLQanAnk2Y3Vxf9b4N6aKr0rNO4A+kVmJswR/EmWgfsC9z2TEDsTtQ==}
 
   p-limit@3.1.0:
     resolution: {integrity: sha512-TYOanM3wGwNGsZN2cVTYPArw454xnXj5qmWF1bEoAc4+cU/ol7GVh7odevjp1FNHduHc3KZMcFduxU5Xc6uJRQ==}
@@ -11806,11 +11806,11 @@ snapshots:
       type-check: 0.4.0
       word-wrap: 1.2.5
 
-  ordana-gen-docs@0.2.0(ordana@0.2.0):
+  ordana-gen-docs@0.3.0(ordana@0.3.0):
     dependencies:
-      ordana: 0.2.0
+      ordana: 0.3.0
 
-  ordana@0.2.0:
+  ordana@0.3.0:
     dependencies:
       picocolors: 1.1.1
 
