@@ -33,12 +33,10 @@
   "homepage": "https://github.com/vitejs/vite/tree/main/packages/create-vite#readme",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
   "devDependencies": {
-    "@types/minimist": "^1.2.5",
-    "@types/prompts": "^2.4.9",
+    "@clack/prompts": "^0.10.0",
     "cross-spawn": "^7.0.6",
-    "minimist": "^1.2.8",
+    "mri": "^1.2.0",
     "picocolors": "^1.1.1",
-    "prompts": "^2.4.2",
     "unbuild": "^3.3.1"
   }
 }
