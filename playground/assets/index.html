@@ -471,6 +471,24 @@
   import './css/icons.css'
   import './css/manual-chunks.css'
 
+  import mts from './static/index.mts'
+  console.log('import.mts', mts)
+
+  import ts from './static/index.ts'
+  console.log('import.ts', ts)
+
+  fetch('/foo/bar/index.mts')
+    .then((res) => res.text())
+    .then((text) => {
+      console.log('fetch.mts', text)
+    })
+
+  fetch('/foo/bar/index.ts')
+    .then((res) => res.text())
+    .then((text) => {
+      console.log('fetch.ts', text)
+    })
+
   text('.base', `import.meta.${``}env.BASE_URL: ${import.meta.env.BASE_URL}`)
 
   import url from './nested/asset.png'
