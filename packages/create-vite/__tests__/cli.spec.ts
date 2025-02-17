@@ -55,8 +55,12 @@ beforeAll(() => clearAnyPreviousFolders())
 afterEach(() => clearAnyPreviousFolders())
 
 test('prompts for the project name if none supplied', () => {
-  const { stdout } = run([])
-  expect(stdout).toContain('Project name:')
+  const { stdout, stderr } = run([])
+  if (process.platform === 'win32') {
+    console.log(stdout)
+    console.log(stderr)
+  }
+  expect(stdout).toContain('Project namea:')
 })
 
 test('prompts for the framework if none supplied when target dir is current directory', () => {

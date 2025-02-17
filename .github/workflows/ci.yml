@@ -65,11 +65,11 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        node_version: [18, 20, 22]
+        node_version: [18]
         include:
           # Active LTS + other OS
-          - os: macos-latest
-            node_version: 22
+          # - os: macos-latest
+          #   node_version: 22
           - os: windows-latest
             node_version: 22
       fail-fast: false
