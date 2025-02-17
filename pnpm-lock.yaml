@@ -10,6 +10,9 @@ overrides:
 packageExtensionsChecksum: 632c5477927702fb9badd3e595784820
 
 patchedDependencies:
+  '@clack/core@0.4.1':
+    hash: azmxd25h4jbz5cp74olnoeo6fe
+    path: patches/@clack__core@0.4.1.patch
   chokidar@3.6.0:
     hash: r6f2jac4ef543toizf7sfnkaom
     path: patches/chokidar@3.6.0.patch
@@ -8207,14 +8210,14 @@ snapshots:
 
   '@bufbuild/protobuf@2.2.2': {}
 
-  '@clack/core@0.4.1':
+  '@clack/core@0.4.1(patch_hash=azmxd25h4jbz5cp74olnoeo6fe)':
     dependencies:
       picocolors: 1.1.1
       sisteransi: 1.0.5
 
   '@clack/prompts@0.10.0':
     dependencies:
-      '@clack/core': 0.4.1
+      '@clack/core': 0.4.1(patch_hash=azmxd25h4jbz5cp74olnoeo6fe)
       picocolors: 1.1.1
       sisteransi: 1.0.5
 
