@@ -404,7 +404,7 @@ async function init() {
     if (prompts.isCancel(framework)) return cancel()
 
     const variant = await prompts.select({
-      message: reset('Select a variant:'),
+      message: 'Select a variant:',
       options: framework.variants.map((variant) => {
         const variantColor = variant.color
         const command = variant.customCommand
