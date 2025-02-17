@@ -301,7 +301,9 @@ const renameFiles: Record<string, string | undefined> = {
 const defaultTargetDir = 'vite-project'
 
 async function init() {
-  const argTargetDir = argv._[0] ? formatTargetDir(argv._[0]) : undefined
+  const argTargetDir = argv._[0]
+    ? formatTargetDir(String(argv._[0]))
+    : undefined
   const argTemplate = argv.template
   const argOverwrite = argv.overwrite
 
