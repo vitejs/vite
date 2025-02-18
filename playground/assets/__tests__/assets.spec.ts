@@ -170,9 +170,12 @@ describe('asset imports from js', () => {
       }
       "
     `)
-    expect(await page.textContent('.public-ts-import-content-type')).toMatch(
-      'text/javascript',
-    )
+    // NOTE: users should configure the mime type for .ts files for preview server
+    if (isServe) {
+      expect(await page.textContent('.public-ts-import-content-type')).toMatch(
+        'text/javascript',
+      )
+    }
   })
 
   test('from /public (mts)', async () => {
@@ -186,9 +189,12 @@ describe('asset imports from js', () => {
       }
       "
     `)
-    expect(await page.textContent('.public-mts-import-content-type')).toMatch(
-      'text/javascript',
-    )
+    // NOTE: users should configure the mime type for .ts files for preview server
+    if (isServe) {
+      expect(await page.textContent('.public-mts-import-content-type')).toMatch(
+        'text/javascript',
+      )
+    }
   })
 })
 
