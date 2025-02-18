@@ -439,13 +439,61 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
+const createStyleContentMap = () => {
+  const contents = new Map<string, string>() // css id -> css content
+  const scopedIds = new Set<string>() // whether that id of css is scoped
+  const relations = new Map<
+    /* the id of the target for which css is scoped to */ string,
+    Array<{
+      /** css id */ id: string
+      /** export name */ exp: string | undefined
+    }>
+  >()
+
+  return {
+    putContent(
+      id: string,
+      content: string,
+      scopeTo: CustomPluginOptionsVite['cssScopeTo'] | undefined,
+    ) {
+      contents.set(id, content)
+      if (scopeTo) {
+        const [scopedId, exp] = scopeTo
+        if (!relations.has(scopedId)) {
+          relations.set(scopedId, [])
+        }
+        relations.get(scopedId)!.push({ id, exp })
+        scopedIds.add(id)
+      }
+    },
+    hasContentOfNonScoped(id: string) {
+      return !scopedIds.has(id) && contents.has(id)
+    },
+    getContentOfNonScoped(id: string) {
+      if (scopedIds.has(id)) return
+      return contents.get(id)
+    },
+    hasContentsScopedTo(id: string) {
+      return (relations.get(id) ?? [])?.length > 0
+    },
+    getContentsScopedTo(id: string) {
+      const rels = [...(relations.get(id) ?? [])]
+      // sort to get a deterministic output
+      rels.sort((a, b) => (a.id > b.id ? 1 : -1))
+      return rels.map(({ id, exp }) => ({
+        content: contents.get(id) ?? '',
+        exp,
+      }))
+    },
+  }
+}
+
 /**
  * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
   // styles initialization in buildStart causes a styling loss in watch
-  const styles: Map<string, string> = new Map<string, string>()
-  const scopedStyles = new Map<string, Map<string | undefined, string[]>>()
+  const styles = createStyleContentMap()
   // queue to emit css serially to guarantee the files are emitted in a deterministic order
   let codeSplitEmitQueue = createSerialPromiseQueue<string>()
   const urlEmitQueue = createSerialPromiseQueue<unknown>()
@@ -589,9 +637,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // build CSS handling ----------------------------------------------------
 
+      const cssScopeTo = (
+        this.getModuleInfo(id)?.meta?.vite as
+          | CustomPluginOptionsVite
+          | undefined
+      )?.cssScopeTo
+
       // record css
       if (!inlined) {
-        styles.set(id, css)
+        styles.putContent(id, css, cssScopeTo)
       }
 
       let code: string
@@ -606,22 +660,6 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       } else {
         // empty module when it's not a CSS module nor `?inline`
         code = ''
-      }
-
-      const cssScopeTo = (
-        this.getModuleInfo(id)?.meta?.vite as
-          | CustomPluginOptionsVite
-          | undefined
-      )?.cssScopeTo
-      if (cssScopeTo) {
-        const [file, exp] = cssScopeTo
-        if (!scopedStyles.has(file)) {
-          scopedStyles.set(file, new Map())
-        }
-        if (!scopedStyles.get(file)!.has(exp)) {
-          scopedStyles.get(file)!.set(exp, [])
-        }
-        scopedStyles.get(file)!.get(exp)!.push(css)
       }
 
       return {
@@ -641,23 +679,22 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       let isPureCssChunk = chunk.exports.length === 0
       const ids = Object.keys(chunk.modules)
       for (const id of ids) {
-        if (styles.has(id)) {
+        if (styles.hasContentOfNonScoped(id)) {
           // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
           if (!transformOnlyRE.test(id)) {
-            chunkCSS += styles.get(id)
+            chunkCSS += styles.getContentOfNonScoped(id)
             // a css module contains JS, so it makes this not a pure css chunk
             if (cssModuleRE.test(id)) {
               isPureCssChunk = false
             }
           }
-        } else if (scopedStyles.has(id)) {
+        } else if (styles.hasContentsScopedTo(id)) {
           const renderedExports = chunk.modules[id]!.renderedExports
           // If this module is has a scoped style, check for the rendered exports
           // and include the corresponding CSS.
-          for (const [exp, styles] of scopedStyles.get(id)!) {
+          for (const { exp, content } of styles.getContentsScopedTo(id)) {
             if (exp === undefined || renderedExports.includes(exp)) {
-              // TODO: do we need to care the order?
-              chunkCSS += styles.join('')
+              chunkCSS += content
             }
           }
         } else if (!isJsChunkEmpty) {
@@ -754,13 +791,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
             path.basename(originalFileName),
             '.css',
           )
-          if (!styles.has(id)) {
+          if (!styles.hasContentOfNonScoped(id)) {
             throw new Error(
               `css content for ${JSON.stringify(id)} was not found`,
             )
           }
 
-          let cssContent = styles.get(id)!
+          let cssContent = styles.getContentOfNonScoped(id)!
 
           cssContent = resolveAssetUrlsInCss(cssContent, cssAssetName)
 
