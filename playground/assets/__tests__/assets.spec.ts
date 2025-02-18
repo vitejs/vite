@@ -154,6 +154,41 @@ describe('asset imports from js', () => {
           '[success] Raw js from /public loaded'
         "
       `)
+    expect(await page.textContent('.public-js-import-content-type')).toMatch(
+      'text/javascript',
+    )
+  })
+
+  test('from /public (ts)', async () => {
+    expect(await page.textContent('.public-ts-import')).toMatch(
+      '/foo/bar/raw.ts',
+    )
+    expect(await page.textContent('.public-ts-import-content'))
+      .toMatchInlineSnapshot(`
+      "export default function other() {
+        return 1 + 2
+      }
+      "
+    `)
+    expect(await page.textContent('.public-ts-import-content-type')).toMatch(
+      'text/javascript',
+    )
+  })
+
+  test('from /public (mts)', async () => {
+    expect(await page.textContent('.public-mts-import')).toMatch(
+      '/foo/bar/raw.mts',
+    )
+    expect(await page.textContent('.public-mts-import-content'))
+      .toMatchInlineSnapshot(`
+      "export default function foobar() {
+        return 1 + 2
+      }
+      "
+    `)
+    expect(await page.textContent('.public-mts-import-content-type')).toMatch(
+      'text/javascript',
+    )
   })
 })
 
