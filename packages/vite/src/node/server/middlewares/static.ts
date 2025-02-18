@@ -26,7 +26,7 @@ import {
   withTrailingSlash,
 } from '../../../shared/utils'
 
-const knownJavascriptExtensionRE = /\.[cm]?[tj]sx?$/
+const knownJavascriptExtensionRE = /\.(?:[tj]sx?|[cm][tj]s)$/
 
 const sirvOptions = ({
   getHeaders,
