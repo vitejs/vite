@@ -30,7 +30,7 @@ function err(e: string, pos: number) {
 function findClosingParen(input: string, fromIndex: number) {
   let count = 1
 
-  for (let i = fromIndex + 1; i < input.length; i++) {
+  for (let i = fromIndex; i < input.length; i++) {
     if (input[i] === '(') count++
     if (input[i] === ')') count--
     if (count === 0) return i

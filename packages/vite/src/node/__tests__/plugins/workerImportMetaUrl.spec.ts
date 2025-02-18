@@ -160,4 +160,21 @@ worker.addEventListener('message', (ev) => text('.simple-worker-url', JSON.strin
       'Expected object spread to be used before the definition of the type property. Vite needs a static value for the type property to correctly infer it.',
     )
   })
+
+  test('find closing parenthesis correctly', async () => {
+    expect(
+      await transform(
+        `(() => { new Worker(new URL('./worker', import.meta.url)); repro({ test: "foo", }); })();`,
+      ),
+    ).toMatchInlineSnapshot(
+      `"(() => { new Worker(new URL(/* @vite-ignore */ "/worker?worker_file&type=classic", import.meta.url)); repro({ test: "foo", }); })();"`,
+    )
+    expect(
+      await transform(
+        `repro(new Worker(new URL('./worker', import.meta.url)), { type: "module" })`,
+      ),
+    ).toMatchInlineSnapshot(
+      `"repro(new Worker(new URL(/* @vite-ignore */ "/worker?worker_file&type=classic", import.meta.url)), { type: "module" })"`,
+    )
+  })
 })
