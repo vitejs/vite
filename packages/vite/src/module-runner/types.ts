@@ -1,4 +1,3 @@
-import type { ViteHotContext } from 'types/hot'
 import type { HMRLogger } from '../shared/hmr'
 import type {
   DefineImportMetadata,
@@ -20,13 +19,14 @@ import type {
   ssrModuleExportsKey,
 } from './constants'
 import type { InterceptorOptions } from './sourcemap/interceptor'
+import type { ModuleRunnerHMRContext } from './hmrContext'
 
 export type { DefineImportMetadata, SSRImportMetadata }
 
 export interface ModuleRunnerImportMeta extends ImportMeta {
   url: string
   env: ImportMetaEnv
-  hot?: ViteHotContext
+  hot?: ModuleRunnerHMRContext
   [key: string]: any
 }
 
