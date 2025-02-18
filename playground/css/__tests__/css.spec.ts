@@ -505,3 +505,17 @@ test.runIf(isBuild)('Scoped CSS via cssScopeTo should be treeshaken', () => {
   expect(css).not.toContain('treeshake-module-b')
   expect(css).not.toContain('treeshake-module-c')
 })
+
+test.runIf(isBuild)(
+  'Scoped CSS via cssScopeTo should be bundled separately',
+  () => {
+    const scopedIndexCss = findAssetFile(/treeshakeScoped-[-\w]{8}\.css$/)
+    expect(scopedIndexCss).toContain('treeshake-scoped-barrel-a')
+    expect(scopedIndexCss).not.toContain('treeshake-scoped-barrel-b')
+    const scopedAnotherCss = findAssetFile(
+      /treeshakeScopedAnother-[-\w]{8}\.css$/,
+    )
+    expect(scopedAnotherCss).toContain('treeshake-scoped-barrel-b')
+    expect(scopedAnotherCss).not.toContain('treeshake-scoped-barrel-a')
+  },
+)
