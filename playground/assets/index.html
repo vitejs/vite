@@ -38,7 +38,18 @@
   </li>
   <li>
     From publicDir (js): <code class="public-js-import"></code> Content:
-    <code class="public-js-import-content"></code>
+    <code class="public-js-import-content"></code> Content-Type:
+    <code class="public-js-import-content-type"></code>
+  </li>
+  <li>
+    From publicDir (ts): <code class="public-ts-import"></code> Content:
+    <code class="public-ts-import-content"></code> Content-Type:
+    <code class="public-ts-import-content-type"></code>
+  </li>
+  <li>
+    From publicDir (mts): <code class="public-mts-import"></code> Content:
+    <code class="public-mts-import-content"></code> Content-Type:
+    <code class="public-mts-import-content-type"></code>
   </li>
 </ul>
 
@@ -494,6 +505,32 @@
   ;(async () => {
     const res = await fetch(publicJsUrl)
     text('.public-js-import-content', await res.text())
+    text(
+      '.public-js-import-content-type',
+      await res.headers.get('Content-Type'),
+    )
+  })()
+
+  import publicTsUrl from '/raw.ts?url'
+  text('.public-ts-import', publicTsUrl)
+  ;(async () => {
+    const res = await fetch(publicTsUrl)
+    text('.public-ts-import-content', await res.text())
+    text(
+      '.public-ts-import-content-type',
+      await res.headers.get('Content-Type'),
+    )
+  })()
+
+  import publicMtsUrl from '/raw.mts?url'
+  text('.public-mts-import', publicMtsUrl)
+  ;(async () => {
+    const res = await fetch(publicMtsUrl)
+    text('.public-mts-import-content', await res.text())
+    text(
+      '.public-mts-import-content-type',
+      await res.headers.get('Content-Type'),
+    )
   })()
 
   import svgFrag from './nested/fragment.svg'
