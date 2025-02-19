@@ -45,12 +45,18 @@ if (debugIndex > 0) {
   }
 }
 
-function start() {
+async function start() {
   try {
     // eslint-disable-next-line n/no-unsupported-features/node-builtins -- it is supported in Node 22.8.0+ and only called if it exists
     module.enableCompileCache?.()
   } catch {}
-  return import('../dist/node/cli.js')
+  const { runCli } = await import('../dist/node/cli.js')
+  try {
+    await runCli(process.argv.slice(2))
+  } catch (e) {
+    console.error(e)
+    process.exit(1)
+  }
 }
 
 if (profileIndex > 0) {

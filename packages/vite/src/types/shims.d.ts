@@ -32,6 +32,10 @@ declare module 'postcss-import' {
   export = plugin
 }
 
+declare module '@pkgjs/parseargs' {
+  export { parseArgs } from 'node:util'
+}
+
 // eslint-disable-next-line no-var
 declare var __vite_profile_session: import('node:inspector').Session | undefined
 // eslint-disable-next-line no-var
