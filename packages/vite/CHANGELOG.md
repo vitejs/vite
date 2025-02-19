@@ -1,3 +1,19 @@
+## <small>6.1.1 (2025-02-19)</small>
+
+* fix: ensure `.[cm]?[tj]sx?` static assets are JS mime (#19453) ([e7ba55e](https://github.com/vitejs/vite/commit/e7ba55e7d57ad97ab43682b152159e29fa4b3753)), closes [#19453](https://github.com/vitejs/vite/issues/19453)
+* fix: ignore `*.ipv4` address in cert (#19416) ([973283b](https://github.com/vitejs/vite/commit/973283bf84c3dca42e2e20a9f9b8761011878b8b)), closes [#19416](https://github.com/vitejs/vite/issues/19416)
+* fix(css): run rewrite plugin if postcss plugin exists (#19371) ([bcdb51a](https://github.com/vitejs/vite/commit/bcdb51a1ac082f4e8ed6f820787d6745dfaa972d)), closes [#19371](https://github.com/vitejs/vite/issues/19371)
+* fix(deps): bump tsconfck (#19375) ([746a583](https://github.com/vitejs/vite/commit/746a583d42592a31e1e8e80cc790a7c9e6acf58e)), closes [#19375](https://github.com/vitejs/vite/issues/19375)
+* fix(deps): update all non-major dependencies (#19392) ([60456a5](https://github.com/vitejs/vite/commit/60456a54fe90872dbd4bed332ecbd85bc88deb92)), closes [#19392](https://github.com/vitejs/vite/issues/19392)
+* fix(deps): update all non-major dependencies (#19440) ([ccac73d](https://github.com/vitejs/vite/commit/ccac73d9d0e92c7232f09207d1d6b893e823ed8e)), closes [#19440](https://github.com/vitejs/vite/issues/19440)
+* fix(html): ignore malformed src attrs (#19397) ([aff7812](https://github.com/vitejs/vite/commit/aff7812f0aed059c05ca36c86bf907d25964119a)), closes [#19397](https://github.com/vitejs/vite/issues/19397)
+* fix(worker): fix web worker type detection (#19462) ([edc65ea](https://github.com/vitejs/vite/commit/edc65eafa332b57ce44835deb7d7707e2d036c24)), closes [#19462](https://github.com/vitejs/vite/issues/19462)
+* refactor: remove custom .jxl mime (#19457) ([0c85464](https://github.com/vitejs/vite/commit/0c854645bd17960abbe8f01b602d1a1da1a2b9fd)), closes [#19457](https://github.com/vitejs/vite/issues/19457)
+* feat: add support for injecting debug IDs (#18763) ([0ff556a](https://github.com/vitejs/vite/commit/0ff556a6d9b55bff7cac17396ce7d4397becacaa)), closes [#18763](https://github.com/vitejs/vite/issues/18763)
+* chore: update 6.1.0 changelog (#19363) ([fa7c211](https://github.com/vitejs/vite/commit/fa7c211bf3e51269f8a8601e5994fb3ebb6859f9)), closes [#19363](https://github.com/vitejs/vite/issues/19363)
+
+
+
 ## 6.1.0 (2025-02-05)
 
 
