@@ -5,7 +5,7 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { SourceMap } from 'rollup'
+import type { OutputBundle, SourceMap } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
 import {
@@ -486,6 +486,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             })
           }
 
+          const alreadyImported = new Set<string>()
+          collectImports(chunk.fileName, alreadyImported, bundle)
+
           const s = new MagicString(code)
           const rewroteMarkerStartPos = new Set() // position of the leading double quote
 
@@ -530,41 +533,24 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   url,
                 )
 
-                const ownerFilename = chunk.fileName
-                // literal import - trace direct imports and add to deps
-                const analyzed: Set<string> = new Set<string>()
-                const addDeps = (filename: string) => {
-                  if (filename === ownerFilename) return
-                  if (analyzed.has(filename)) return
-                  analyzed.add(filename)
-                  const chunk = bundle[filename]
+                const importedChunk = bundle[normalizedFile]
+                if (importedChunk) {
+                  collectImports(normalizedFile, deps, bundle, alreadyImported)
+                } else {
+                  const removedPureCssFiles =
+                    removedPureCssFilesCache.get(config)!
+                  const chunk = removedPureCssFiles.get(normalizedFile)
                   if (chunk) {
-                    deps.add(chunk.fileName)
-                    if (chunk.type === 'chunk') {
-                      chunk.imports.forEach(addDeps)
-                      // Ensure that the css imported by current chunk is loaded after the dependencies.
-                      // So the style of current chunk won't be overwritten unexpectedly.
+                    if (chunk.viteMetadata!.importedCss.size) {
                       chunk.viteMetadata!.importedCss.forEach((file) => {
                         deps.add(file)
                       })
+                      hasRemovedPureCssChunk = true
                     }
-                  } else {
-                    const removedPureCssFiles =
-                      removedPureCssFilesCache.get(config)!
-                    const chunk = removedPureCssFiles.get(filename)
-                    if (chunk) {
-                      if (chunk.viteMetadata!.importedCss.size) {
-                        chunk.viteMetadata!.importedCss.forEach((file) => {
-                          deps.add(file)
-                        })
-                        hasRemovedPureCssChunk = true
-                      }
 
-                      s.update(expStart, expEnd, 'Promise.resolve({})')
-                    }
+                    s.update(expStart, expEnd, 'Promise.resolve({})')
                   }
                 }
-                addDeps(normalizedFile)
               }
 
               let markerStartPos = indexOfMatchInSlice(
@@ -722,4 +708,32 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+function collectImports(
+  startFilename: string,
+  deps: Set<string>,
+  bundle: OutputBundle,
+  skipFiles?: ReadonlySet<string>,
+) {
+  // literal import - trace direct imports and add to deps
+  const analyzed: Set<string> = new Set<string>()
+  const addDeps = (filename: string) => {
+    if (skipFiles?.has(filename)) return
+    if (analyzed.has(filename)) return
+    analyzed.add(filename)
+    const chunk = bundle[filename]
+    if (chunk) {
+      deps.add(chunk.fileName)
+      if (chunk.type === 'chunk') {
+        chunk.imports.forEach(addDeps)
+        // Ensure that the css imported by current chunk is loaded after the dependencies.
+        // So the style of current chunk won't be overwritten unexpectedly.
+        chunk.viteMetadata!.importedCss.forEach((file) => {
+          deps.add(file)
+        })
+      }
+    }
+  }
+  addDeps(startFilename)
 }
