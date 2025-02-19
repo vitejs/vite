@@ -507,6 +507,11 @@ test('html fallback works non browser accept header', async () => {
 })
 
 test('escape html attribute', async () => {
+  const content = await fetch(viteTestUrl)
+  // only escape double quote and ampersand
+  expect(await content.text()).toContain(
+    `&quot;><div class=unescape-div>extra content'&amp;</div>`,
+  )
   const el = await page.$('.unescape-div')
   expect(el).toBeNull()
 })
