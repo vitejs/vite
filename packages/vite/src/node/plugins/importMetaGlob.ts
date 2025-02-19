@@ -38,6 +38,7 @@ export interface ParsedImportGlob {
 
 interface ParsedGeneralImportGlobOptions extends GeneralImportGlobOptions {
   query?: string
+  base?: string
 }
 
 export function importGlobPlugin(config: ResolvedConfig): Plugin {
@@ -118,6 +119,7 @@ const knownOptions = {
   import: ['string'],
   exhaustive: ['boolean'],
   query: ['object', 'string'],
+  base: ['string'],
 }
 
 const forceDefaultAs = ['raw', 'url']
@@ -307,7 +309,9 @@ export async function parseImportGlob(
     }
 
     const globsResolved = await Promise.all(
-      globs.map((glob) => toAbsoluteGlob(glob, root, importer, resolveId)),
+      globs.map((glob) =>
+        toAbsoluteGlob(glob, root, importer, resolveId, options.base),
+      ),
     )
     const isRelative = globs.every((i) => '.!'.includes(i[0]))
     const sliceCode = cleanCode.slice(0, start)
@@ -434,15 +438,26 @@ export async function transformGlobImport(
                 throw new Error(
                   "In virtual modules, all globs must start with '/'",
                 )
-              const filePath = `/${relative(root, file)}`
-              return { filePath, importPath: filePath }
+
+              if (options.base) {
+                const rootBase = posix.join(root, options.base)
+                const filePath = `${relative(rootBase, file)}`
+                const importPath = `/${relative(root, file)}`
+                return { filePath, importPath }
+              } else {
+                const filePath = `/${relative(root, file)}`
+                return { filePath, importPath: filePath }
+              }
             }
 
             let importPath = relative(dir, file)
             if (importPath[0] !== '.') importPath = `./${importPath}`
 
             let filePath: string
-            if (isRelative) {
+            if (options.base) {
+              const rootBase = posix.join(root, options.base)
+              filePath = relative(rootBase, file)
+            } else if (isRelative) {
               filePath = importPath
             } else {
               filePath = relative(root, file)
@@ -580,6 +595,7 @@ export async function toAbsoluteGlob(
   root: string,
   importer: string | undefined,
   resolveId: IdResolver,
+  base?: string,
 ): Promise<string> {
   let pre = ''
   if (glob[0] === '!') {
@@ -588,9 +604,13 @@ export async function toAbsoluteGlob(
   }
   root = globSafePath(root)
   const dir = importer ? globSafePath(dirname(importer)) : root
+
+  glob = base ? posix.join(base, glob) : glob
+
   if (glob[0] === '/') return pre + posix.join(root, glob.slice(1))
   if (glob.startsWith('./')) return pre + posix.join(dir, glob.slice(2))
   if (glob.startsWith('../')) return pre + posix.join(dir, glob)
+  if (base && !posix.isAbsolute(base)) return pre + posix.join(dir, glob)
   if (glob.startsWith('**')) return pre + glob
 
   const isSubImportsPattern = glob[0] === '#' && glob.includes('*')
