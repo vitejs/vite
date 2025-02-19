@@ -45,7 +45,7 @@ export const core = [
     avatar: 'https://github.com/bluwy.png',
     name: 'Bjorn Lu',
     title: 'Open Source Developer',
-    desc: 'Vite, Astro, and Svelte core team member.',
+    desc: 'Building tools for fun.',
     links: [
       { icon: 'github', link: 'https://github.com/bluwy' },
       { icon: 'bluesky', link: 'https://bsky.app/profile/bluwy.me' },

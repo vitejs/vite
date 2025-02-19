@@ -26,7 +26,7 @@ import {
   withTrailingSlash,
 } from '../../../shared/utils'
 
-const knownJavascriptExtensionRE = /\.[tj]sx?$/
+const knownJavascriptExtensionRE = /\.(?:[tj]sx?|[cm][tj]s)$/
 
 const sirvOptions = ({
   getHeaders,
@@ -38,9 +38,9 @@ const sirvOptions = ({
     etag: true,
     extensions: [],
     setHeaders(res, pathname) {
-      // Matches js, jsx, ts, tsx.
-      // The reason this is done, is that the .ts file extension is reserved
-      // for the MIME type video/mp2t. In almost all cases, we can expect
+      // Matches js, jsx, ts, tsx, mts, mjs, cjs, cts, ctx, mtx
+      // The reason this is done, is that the .ts and .mts file extensions are
+      // reserved for the MIME type video/mp2t. In almost all cases, we can expect
       // these files to be TypeScript files, and for Vite to serve them with
       // this Content-Type.
       if (knownJavascriptExtensionRE.test(pathname)) {
