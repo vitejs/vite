@@ -82,6 +82,42 @@ describe('build', () => {
     assertOutputHashContentChange(result[0], result[1])
   })
 
+  test('file hash should not change when changes for dynamic entries while chunk map option enabled', async () => {
+    const buildProject = async (text: string) => {
+      return (await build({
+        root: resolve(__dirname, 'packages/build-project'),
+        logLevel: 'silent',
+        build: {
+          chunkImportMap: true,
+          write: false,
+        },
+        plugins: [
+          {
+            name: 'test',
+            resolveId(id) {
+              if (id === 'entry.js' || id === 'subentry.js') {
+                return '\0' + id
+              }
+            },
+            load(id) {
+              if (id === '\0entry.js') {
+                return `window.addEventListener('click', () => { import('subentry.js') });`
+              }
+              if (id === '\0subentry.js') {
+                return `console.log(${text})`
+              }
+            },
+          },
+        ],
+      })) as RollupOutput
+    }
+
+    const result = await Promise.all([buildProject('foo'), buildProject('bar')])
+
+    expect(result[0].output[0].fileName).toBe(result[1].output[0].fileName)
+    expect(result[0].output[1].fileName).not.toBe(result[1].output[1].fileName)
+  })
+
   test('file hash should change when pure css chunk changes', async () => {
     const buildProject = async (cssColor: string) => {
       return (await build({
