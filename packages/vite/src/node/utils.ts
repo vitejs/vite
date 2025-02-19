@@ -981,6 +981,32 @@ export async function resolveHostname(
   return { host, name }
 }
 
+export function resolveHosts(): string[] {
+  const hosts: string[] = []
+
+  Object.values(os.networkInterfaces())
+    .flatMap((nInterface) => nInterface ?? [])
+    .filter(
+      (detail) =>
+        detail &&
+        detail.address &&
+        (detail.family === 'IPv4' ||
+          // @ts-expect-error Node 18.0 - 18.3 returns number
+          detail.family === 4),
+    )
+    .forEach((detail) => {
+      let host = detail.address.replace('127.0.0.1', 'localhost')
+      // ipv6 host
+      if (host.includes(':')) {
+        host = `[${host}]`
+      }
+
+      hosts.push(host)
+    })
+
+  return hosts
+}
+
 export async function resolveServerUrls(
   server: Server,
   options: CommonServerOptions,
