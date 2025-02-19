@@ -1,5 +1,4 @@
-import type { ViteHotContext } from 'types/hot'
-import { HMRClient, HMRContext, type HMRLogger } from '../shared/hmr'
+import { HMRClient, type HMRLogger } from '../shared/hmr'
 import { cleanUrl, isPrimitive, isWindows } from '../shared/utils'
 import { analyzeImportedModDifference } from '../shared/ssrTransform'
 import {
@@ -33,6 +32,7 @@ import { hmrLogger, silentConsole } from './hmrLogger'
 import { createHMRHandler } from './hmrHandler'
 import { enableSourceMapSupport } from './sourcemap/index'
 import { ESModulesEvaluator } from './esmEvaluator'
+import { ModuleRunnerHMRContext } from './hmrContext'
 
 interface ModuleRunnerDebugger {
   (formatter: unknown, ...args: unknown[]): void
@@ -382,7 +382,7 @@ export class ModuleRunner {
 
     mod.exports = exports
 
-    let hotContext: ViteHotContext | undefined
+    let hotContext: ModuleRunnerHMRContext | undefined
     if (this.hmrClient) {
       Object.defineProperty(meta, 'hot', {
         enumerable: true,
@@ -390,8 +390,11 @@ export class ModuleRunner {
           if (!this.hmrClient) {
             throw new Error(`[module runner] HMR client was closed.`)
           }
+          if (hotContext) {
+            return hotContext
+          }
           this.debug?.('[module runner] creating hmr context for', mod.url)
-          hotContext ||= new HMRContext(this.hmrClient, mod.url)
+          hotContext = new ModuleRunnerHMRContext(this, mod.url)
           return hotContext
         },
         set: (value) => {
