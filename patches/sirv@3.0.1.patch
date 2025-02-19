@@ -1,0 +1,86 @@
+diff --git a/build.js b/build.js
+index 0c6ed8e2c0949c93978dd1a244baa9bf2448e9b8..08a9347cfdca06e6a97077ea4582c5b0922ecb2d 100644
+--- a/build.js
++++ b/build.js
+@@ -35,7 +35,7 @@ function viaCache(cache, uri, extns) {
+ 	}
+ }
+ 
+-function viaLocal(dir, isEtag, uri, extns) {
++function viaLocal(dir, isEtag, uri, extns, shouldServe) {
+ 	let i=0, arr=toAssume(uri, extns);
+ 	let abs, stats, name, headers;
+ 	for (; i < arr.length; i++) {
+@@ -43,6 +43,7 @@ function viaLocal(dir, isEtag, uri, extns) {
+ 		if (abs.startsWith(dir) && fs.existsSync(abs)) {
+ 			stats = fs.statSync(abs);
+ 			if (stats.isDirectory()) continue;
++			if (shouldServe && !shouldServe(abs)) continue;
+ 			headers = toHeaders(name, stats, isEtag);
+ 			headers['Cache-Control'] = isEtag ? 'no-cache' : 'no-store';
+ 			return { abs, stats, headers };
+@@ -176,7 +177,7 @@ module.exports = function (dir, opts={}) {
+ 			catch (err) { /* malform uri */ }
+ 		}
+ 
+-		let data = lookup(pathname, extns) || isSPA && !isMatch(pathname, ignores) && lookup(fallback, extns);
++		let data = lookup(pathname, extns, opts.shouldServe) || isSPA && !isMatch(pathname, ignores) && lookup(fallback, extns, opts.shouldServe);
+ 		if (!data) return next ? next() : isNotFound(req, res);
+ 
+ 		if (isEtag && req.headers['if-none-match'] === data.headers['ETag']) {
+diff --git a/build.mjs b/build.mjs
+index 3ad14d45630a8627b93842a04a96465120d3f223..8451277c015b56a7d2cb99aaee3a318d9c0893dd 100644
+--- a/build.mjs
++++ b/build.mjs
+@@ -35,7 +35,7 @@ function viaCache(cache, uri, extns) {
+ 	}
+ }
+ 
+-function viaLocal(dir, isEtag, uri, extns) {
++function viaLocal(dir, isEtag, uri, extns, shouldServe) {
+ 	let i=0, arr=toAssume(uri, extns);
+ 	let abs, stats, name, headers;
+ 	for (; i < arr.length; i++) {
+@@ -43,6 +43,7 @@ function viaLocal(dir, isEtag, uri, extns) {
+ 		if (abs.startsWith(dir) && fs.existsSync(abs)) {
+ 			stats = fs.statSync(abs);
+ 			if (stats.isDirectory()) continue;
++			if (shouldServe && !shouldServe(abs)) continue;
+ 			headers = toHeaders(name, stats, isEtag);
+ 			headers['Cache-Control'] = isEtag ? 'no-cache' : 'no-store';
+ 			return { abs, stats, headers };
+@@ -176,7 +177,7 @@ export default function (dir, opts={}) {
+ 			catch (err) { /* malform uri */ }
+ 		}
+ 
+-		let data = lookup(pathname, extns) || isSPA && !isMatch(pathname, ignores) && lookup(fallback, extns);
++		let data = lookup(pathname, extns, opts.shouldServe) || isSPA && !isMatch(pathname, ignores) && lookup(fallback, extns, opts.shouldServe);
+ 		if (!data) return next ? next() : isNotFound(req, res);
+ 
+ 		if (isEtag && req.headers['if-none-match'] === data.headers['ETag']) {
+diff --git a/index.d.mts b/index.d.mts
+index 8bfe364f1db2d1382c56a9b75a014579083cfa70..a8dfa1c473ff15c979bbfbc28c3630a12e222c3a 100644
+--- a/index.d.mts
++++ b/index.d.mts
+@@ -24,6 +24,8 @@ export interface Options {
+ 	gzip?: boolean;
+ 	onNoMatch?: (req: IncomingMessage, res: ServerResponse) => void;
+ 	setHeaders?: (res: ServerResponse, pathname: string, stats: Stats) => void;
++	/** patched */
++	shouldServe?: (absoluteFilePath: string) => void;
+ }
+ 
+ export default function (dir?: string, opts?: Options): RequestHandler;
+diff --git a/index.d.ts b/index.d.ts
+index 96cc63e7ee1ccdd7266e9193252b799068ef2e3c..9e298d627002cd0b073073aa13528b7492541b5b 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -25,6 +25,8 @@ declare namespace sirv {
+ 		gzip?: boolean;
+ 		onNoMatch?: (req: IncomingMessage, res: ServerResponse) => void;
+ 		setHeaders?: (res: ServerResponse, pathname: string, stats: Stats) => void;
++		/** patched */
++		shouldServe?: (absoluteFilePath: string) => void;
+ 	}
+ }
+ 
