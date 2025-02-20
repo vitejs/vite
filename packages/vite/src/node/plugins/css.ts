@@ -476,14 +476,22 @@ const createStyleContentMap = () => {
     hasContentsScopedTo(id: string) {
       return (relations.get(id) ?? [])?.length > 0
     },
-    getContentsScopedTo(id: string) {
-      const rels = [...(relations.get(id) ?? [])]
-      // sort to get a deterministic output
-      rels.sort((a, b) => (a.id > b.id ? 1 : -1))
-      return rels.map(({ id, exp }) => ({
-        content: contents.get(id) ?? '',
-        exp,
-      }))
+    getContentsScopedTo(id: string, importedIds: readonly string[]) {
+      const values = (relations.get(id) ?? []).map(
+        ({ id, exp }) =>
+          [
+            id,
+            {
+              content: contents.get(id) ?? '',
+              exp,
+            },
+          ] as const,
+      )
+      const styleIdToValue = new Map(values)
+      // get a sorted output by import order to make output deterministic
+      return importedIds
+        .filter((id) => styleIdToValue.has(id))
+        .map((id) => styleIdToValue.get(id)!)
     },
   }
 }
@@ -690,9 +698,13 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         } else if (styles.hasContentsScopedTo(id)) {
           const renderedExports = chunk.modules[id]!.renderedExports
+          const importedIds = this.getModuleInfo(id)?.importedIds ?? []
           // If this module has scoped styles, check for the rendered exports
           // and include the corresponding CSS.
-          for (const { exp, content } of styles.getContentsScopedTo(id)) {
+          for (const { exp, content } of styles.getContentsScopedTo(
+            id,
+            importedIds,
+          )) {
             if (exp === undefined || renderedExports.includes(exp)) {
               chunkCSS += content
             }
