@@ -659,14 +659,14 @@ export async function _createServer(
     openBrowser() {
       const options = server.config.server
       const host = options.host
-      let url = server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+      let url: string | undefined
       if (typeof host === 'string') {
-        url =
-          [
-            ...(server.resolvedUrls?.local ?? []),
-            ...(server.resolvedUrls?.network ?? []),
-          ].find((url) => url.includes(host)) || url
+        url = [
+          ...(server.resolvedUrls?.local ?? []),
+          ...(server.resolvedUrls?.network ?? []),
+        ].find((url) => url.includes(host))
       }
+      url ??= server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
       if (url) {
         const path =
           typeof options.open === 'string'
