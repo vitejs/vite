@@ -329,6 +329,8 @@ export interface CustomPluginOptionsVite {
    * so that if those exports are treeshaken away, the CSS module will also
    * be treeshaken.
    *
+   * The "importerId" must import the CSS Rollup module statically.
+   *
    * Example config if the CSS id is `/src/App.vue?vue&type=style&lang.css`:
    * ```js
    * cssScopeTo: ['/src/App.vue', 'default']
