@@ -333,8 +333,10 @@ export interface CustomPluginOptionsVite {
    * ```js
    * cssScopeTo: ['/src/App.vue', 'default']
    * ```
+   *
+   * @experimental
    */
-  cssScopeTo?: [string, string | undefined]
+  cssScopeTo?: [importerId: string, exportName: string | undefined]
 }
 
 export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T
