@@ -141,7 +141,7 @@ describe.runIf(isBuild)('build tests', () => {
     const map = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
-        "debugId": "c3dabf82-954a-4c41-ba03-767350e274b5",
+        "debugId": "b4f4ae40-1415-414c-8350-c7286c81a413",
         "ignoreList": [],
         "mappings": ";+8BAAA,OAAO,2BAAuB,0BAE9B,QAAQ,IAAI,uBAAuB",
         "sources": [
