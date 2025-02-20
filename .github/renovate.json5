@@ -24,6 +24,8 @@
     "slash3",
     "slash5",
     "vue32",
+    // ordana only uses features that was added by 0.9.1 and the newer versions are bigger
+    "@pkgjs/parseargs",
 
     // breaking changes
     "kill-port", // `kill-port:^2.0.0 has perf issues (#8392)
