@@ -133,6 +133,26 @@ worker.addEventListener('message', (ev) => text('.simple-worker-url', JSON.strin
 "`)
   })
 
+  test('trailing comma', async () => {
+    expect(
+      await transform(`
+new Worker(
+  new URL('./worker.js', import.meta.url),
+  {
+    type: 'module'
+  }, // },
+)
+`),
+    ).toMatchInlineSnapshot(`"
+new Worker(
+  new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", import.meta.url),
+  {
+    type: 'module'
+  }, // },
+)
+"`)
+  })
+
   test('throws an error when non-static worker options are provided', async () => {
     await expect(
       transform(
