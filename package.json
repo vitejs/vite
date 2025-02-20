@@ -72,11 +72,11 @@
     "rollup-plugin-esbuild": "^6.2.0",
     "simple-git-hooks": "^2.11.1",
     "tslib": "^2.8.1",
-    "tsx": "^4.19.2",
+    "tsx": "^4.19.3",
     "typescript": "~5.7.2",
-    "typescript-eslint": "^8.24.0",
+    "typescript-eslint": "^8.24.1",
     "vite": "workspace:*",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.6"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -102,7 +102,7 @@
     },
     "patchedDependencies": {
       "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch",
-      "sirv@3.0.0": "patches/sirv@3.0.0.patch",
+      "sirv@3.0.1": "patches/sirv@3.0.1.patch",
       "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
       "dotenv-expand@12.0.1": "patches/dotenv-expand@12.0.1.patch"
     },
