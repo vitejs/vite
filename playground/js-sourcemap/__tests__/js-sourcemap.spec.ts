@@ -141,7 +141,7 @@ describe.runIf(isBuild)('build tests', () => {
     const map = findAssetFile(/after-preload-dynamic-[-\w]{8}\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
-        "debugId": "b4f4ae40-1415-414c-8350-c7286c81a413",
+        "debugId": "00000000-0000-0000-0000-000000000000",
         "ignoreList": [],
         "mappings": ";+8BAAA,OAAO,2BAAuB,0BAE9B,QAAQ,IAAI,uBAAuB",
         "sources": [
@@ -180,7 +180,7 @@ describe.runIf(isBuild)('build tests', () => {
     const map = findAssetFile(/with-define-object.*\.js\.map/)
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
-        "debugId": "bd3962fc-edb5-4a6d-a5da-f27a1e5f3268",
+        "debugId": "00000000-0000-0000-0000-000000000000",
         "mappings": "qBAEA,SAASA,GAAO,CACJC,EAAA,CACZ,CAEA,SAASA,GAAY,CAEX,QAAA,MAAM,qBAAsBC,CAAkB,CACxD,CAEAF,EAAK",
         "sources": [
           "../../with-define-object.ts",
