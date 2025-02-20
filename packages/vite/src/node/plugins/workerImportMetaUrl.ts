@@ -149,9 +149,12 @@ async function getWorkerType(
   }
 
   // need to find in comment code
-  const workerOptString = raw
-    .substring(commaIndex + 1, endIndex)
-    .replace(/\}[\s\S]*,/g, '}') // strip trailing comma for parsing
+  let workerOptString = raw.substring(commaIndex + 1, endIndex).trim()
+
+  // strip trailing comma for parsing
+  if (workerOptString.endsWith(',')) {
+    workerOptString = workerOptString.slice(0, -1)
+  }
 
   const hasViteIgnore = hasViteIgnoreRE.test(workerOptString)
   if (hasViteIgnore) {
