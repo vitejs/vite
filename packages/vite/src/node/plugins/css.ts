@@ -441,7 +441,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
 
 const createStyleContentMap = () => {
   const contents = new Map<string, string>() // css id -> css content
-  const scopedIds = new Set<string>() // whether that id of css is scoped
+  const scopedIds = new Set<string>() // ids of css that are scoped
   const relations = new Map<
     /* the id of the target for which css is scoped to */ string,
     Array<{
@@ -690,7 +690,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
           }
         } else if (styles.hasContentsScopedTo(id)) {
           const renderedExports = chunk.modules[id]!.renderedExports
-          // If this module is has a scoped style, check for the rendered exports
+          // If this module has scoped styles, check for the rendered exports
           // and include the corresponding CSS.
           for (const { exp, content } of styles.getContentsScopedTo(id)) {
             if (exp === undefined || renderedExports.includes(exp)) {
