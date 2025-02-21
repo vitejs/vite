@@ -162,7 +162,7 @@ async function getWorkerType(
     return 'classic'
   }
 
-  // strip trailing comma for parsing
+  // strip trailing comma for evalValue
   if (trimmedCleanWorkerOptString.endsWith(',')) {
     workerOptString = workerOptString.slice(
       0,
