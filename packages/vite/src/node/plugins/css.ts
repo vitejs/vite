@@ -645,11 +645,15 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
       // build CSS handling ----------------------------------------------------
 
-      const cssScopeTo = (
-        this.getModuleInfo(id)?.meta?.vite as
-          | CustomPluginOptionsVite
-          | undefined
-      )?.cssScopeTo
+      const cssScopeTo =
+        // NOTE: `this.getModuleInfo` can be undefined when the plugin is called directly
+        //       adding `?.` temporary to avoid unocss from breaking
+        // TODO: remove `?.` after `this.getModuleInfo` in Vite 7
+        (
+          this.getModuleInfo?.(id)?.meta?.vite as
+            | CustomPluginOptionsVite
+            | undefined
+        )?.cssScopeTo
 
       // record css
       if (!inlined) {
