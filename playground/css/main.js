@@ -14,6 +14,9 @@ appendLinkStylesheet(urlCss)
 import rawCss from './raw-imported.css?raw'
 text('.raw-imported-css', rawCss)
 
+import { cUsed, a as treeshakeScopedA } from './treeshake-scoped/index.js'
+document.querySelector('.scoped').classList.add(treeshakeScopedA(), cUsed())
+
 import mod from './mod.module.css'
 document.querySelector('.modules').classList.add(mod['apply-color'])
 text('.modules-code', JSON.stringify(mod, null, 2))
