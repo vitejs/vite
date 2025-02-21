@@ -11,7 +11,9 @@
   },
   "dependencies": {
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "@tailwindcss/vite": "^4.0.7",
+    "tailwindcss": "^4.0.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
