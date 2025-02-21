@@ -8,9 +8,13 @@ function App() {
 
   return (
     <>
-      <div className='flex justify-between'>
+      <div className="flex justify-between">
         <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="h-24 p-6 hover:drop-shadow-[0_0_2em_#646cffaa] transition-all" alt="Vite logo" />
+          <img
+            src={viteLogo}
+            className="h-24 p-6 hover:drop-shadow-[0_0_2em_#646cffaa] transition-all"
+            alt="Vite logo"
+          />
         </a>
         <a href="https://react.dev" target="_blank">
           <img
@@ -32,7 +36,7 @@ function App() {
         <button onClick={() => setCount((count) => count + 1)}>
           count is {count}
         </button>
-        <p className='pt-2'>
+        <p className="pt-2">
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
       </div>
