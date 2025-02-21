@@ -1,3 +1,12 @@
+## 6.2.0-beta.0 (2025-02-21)
+
+* feat: show `mode` on server start and add env debugger (#18808) ([c575b82](https://github.com/vitejs/vite/commit/c575b825596ccaedfac1cfecbb9a464e5e584a60)), closes [#18808](https://github.com/vitejs/vite/issues/18808)
+* feat: use host url to open browser (#19414) ([f6926ca](https://github.com/vitejs/vite/commit/f6926caa1f2c9433ca544172378412795722d8e1)), closes [#19414](https://github.com/vitejs/vite/issues/19414)
+* feat(css): allow scoping css to importers exports (#19418) ([3ebd838](https://github.com/vitejs/vite/commit/3ebd83833f723dde64098bc617c61b37adb3ad01)), closes [#19418](https://github.com/vitejs/vite/issues/19418)
+* chore: bump esbuild to 0.25.0 (#19389) ([73987f2](https://github.com/vitejs/vite/commit/73987f22ec3f2df0d36154f1766ca7a7dc4c2460)), closes [#19389](https://github.com/vitejs/vite/issues/19389)
+
+
+
 ## <small>6.1.1 (2025-02-19)</small>
 
 * fix: ensure `.[cm]?[tj]sx?` static assets are JS mime (#19453) ([e7ba55e](https://github.com/vitejs/vite/commit/e7ba55e7d57ad97ab43682b152159e29fa4b3753)), closes [#19453](https://github.com/vitejs/vite/issues/19453)
