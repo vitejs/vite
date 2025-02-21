@@ -1,0 +1,7 @@
+<h1>treeshake-scoped (another)</h1>
+<p class="scoped-another">Imported scoped CSS</p>
+
+<script type="module">
+  import { b } from './barrel/index.js'
+  document.querySelector('.scoped-another').classList.add(b())
+</script>
