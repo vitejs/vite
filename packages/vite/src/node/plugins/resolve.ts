@@ -280,7 +280,19 @@ export function resolvePlugin(
           startsWithWordCharRE.test(id))
       ) {
         const basedir = importer ? path.dirname(importer) : process.cwd()
-        const fsPath = path.resolve(basedir, id)
+        const { file, postfix } = splitFileAndPostfix(id)
+        let fsPath
+        if (postfix) {
+          fsPath = path.resolve(basedir, file)
+          if (postfix.startsWith('#')) {
+            fsPath += `/${postfix}`
+          } else {
+            fsPath += postfix
+          }
+        } else {
+          fsPath = path.resolve(basedir, id)
+        }
+
         // handle browser field mapping for relative imports
 
         const normalizedFsPath = normalizePath(fsPath)

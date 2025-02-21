@@ -257,7 +257,12 @@ export const isCaseInsensitiveFS = testCaseInsensitiveFS()
 const VOLUME_RE = /^[A-Z]:/i
 
 export function normalizePath(id: string): string {
-  return path.posix.normalize(isWindows ? slash(id) : id)
+  const { file, postfix } = splitFileAndPostfix(id)
+  let normalize = path.posix.normalize(isWindows ? slash(file) : file)
+  if (postfix) {
+    normalize += postfix
+  }
+  return normalize
 }
 
 export function fsPathFromId(id: string): string {
