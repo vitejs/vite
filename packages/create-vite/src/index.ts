@@ -43,15 +43,16 @@ Options:
   -t, --template NAME        use a specific template
 
 Available templates:
-${yellow    ('vanilla-ts     vanilla'  )}
-${green     ('vue-ts         vue'      )}
-${cyan      ('react-ts       react'    )}
-${cyan      ('react-swc-ts   react-swc')}
-${magenta   ('preact-ts      preact'   )}
-${redBright ('lit-ts         lit'      )}
-${red       ('svelte-ts      svelte'   )}
-${blue      ('solid-ts       solid'    )}
-${blueBright('qwik-ts        qwik'     )}`
+${yellow    ('vanilla-ts     vanilla'       )}
+${green     ('vue-ts         vue'           )}
+${cyan      ('react-ts       react'         )}
+${cyan      ('react-ts-tw    react+tailwind')}
+${cyan      ('react-swc-ts   react-swc'     )}
+${magenta   ('preact-ts      preact'        )}
+${redBright ('lit-ts         lit'           )}
+${red       ('svelte-ts      svelte'        )}
+${blue      ('solid-ts       solid'         )}
+${blueBright('qwik-ts        qwik'          )}`
 
 type ColorFunc = (str: string | number) => string
 type Framework = {
@@ -122,6 +123,11 @@ const FRAMEWORKS: Framework[] = [
       {
         name: 'react-ts',
         display: 'TypeScript',
+        color: blue,
+      },
+      {
+        name: 'react-ts-tw',
+        display: 'TypeScript + Tailwindcss',
         color: blue,
       },
       {
