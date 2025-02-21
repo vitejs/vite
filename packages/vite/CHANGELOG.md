@@ -1,3 +1,9 @@
+## 6.2.0-beta.1 (2025-02-21)
+
+* fix(css): temporary add `?.` after `this.getModuleInfo` in `vite:css-post` (#19478) ([12b0b8a](https://github.com/vitejs/vite/commit/12b0b8a953ad7d08ba0540cb4f5cb26a7fa69da2)), closes [#19478](https://github.com/vitejs/vite/issues/19478)
+
+
+
 ## 6.2.0-beta.0 (2025-02-21)
 
 * feat: show `mode` on server start and add env debugger (#18808) ([c575b82](https://github.com/vitejs/vite/commit/c575b825596ccaedfac1cfecbb9a464e5e584a60)), closes [#18808](https://github.com/vitejs/vite/issues/18808)
