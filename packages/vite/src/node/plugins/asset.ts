@@ -361,7 +361,7 @@ async function fileToBuiltUrl(
   skipPublicCheck = false,
   forceInline?: boolean,
 ): Promise<string> {
-  const environment = pluginContext.environment
+  const { environment, emitFile } = pluginContext
   const topLevelConfig = environment.getTopLevelConfig()
   if (!skipPublicCheck) {
     const publicFile = checkPublicFile(id, topLevelConfig)
@@ -381,7 +381,7 @@ async function fileToBuiltUrl(
     return cached
   }
 
-  const { file, postfix } = splitFileAndPostfix(id)
+  let { file, postfix } = splitFileAndPostfix(id)
   const content = await fsp.readFile(file)
 
   let url: string
@@ -394,13 +394,18 @@ async function fileToBuiltUrl(
     const originalFileName = normalizePath(
       path.relative(environment.config.root, file),
     )
-    const referenceId = pluginContext.emitFile({
+    const referenceId = emitFile({
       type: 'asset',
       // Ignore directory structure for asset file names
       name: path.basename(file),
       originalFileName,
       source: content,
     })
+
+    if (environment.config.command === 'build') {
+      postfix = postfix.replace(noInlineRE, '')
+    }
+
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
   }
 
