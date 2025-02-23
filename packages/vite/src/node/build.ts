@@ -836,7 +836,7 @@ async function buildEnvironment(
     clearLine()
     if (startTime) {
       logger.error(
-        `${colors.red('x')} Build failed in ${displayTime(Date.now() - startTime)}`,
+        `${colors.red('✗')} Build failed in ${displayTime(Date.now() - startTime)}`,
       )
       startTime = undefined
     }
