@@ -370,6 +370,9 @@ export const formatSourcemapForSnapshot = (map: any): any => {
   const m = { ...map }
   delete m.file
   delete m.names
+  if (m.debugId) {
+    m.debugId = '00000000-0000-0000-0000-000000000000'
+  }
   m.sources = m.sources.map((source) => source.replace(root, '/root'))
   if (m.sourceRoot) {
     m.sourceRoot = m.sourceRoot.replace(root, '/root')

@@ -201,6 +201,10 @@ cli
 
       const info = server.config.logger.info
 
+      const modeString =
+        options.mode && options.mode !== 'development'
+          ? `  ${colors.bgGreen(` ${colors.bold(options.mode)} `)}`
+          : ''
       const viteStartTime = global.__vite_start_time ?? false
       const startupDurationString = viteStartTime
         ? colors.dim(
@@ -215,7 +219,7 @@ cli
       info(
         `\n  ${colors.green(
           `${colors.bold('VITE')} v${VERSION}`,
-        )}  ${startupDurationString}\n`,
+        )}${modeString}  ${startupDurationString}\n`,
         {
           clear: !hasExistingLogs,
         },

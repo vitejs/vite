@@ -149,19 +149,25 @@ async function getWorkerType(
   }
 
   // need to find in comment code
-  const workerOptString = raw
-    .substring(commaIndex + 1, endIndex)
-    .replace(/\}[\s\S]*,/g, '}') // strip trailing comma for parsing
-
+  let workerOptString = raw.substring(commaIndex + 1, endIndex)
   const hasViteIgnore = hasViteIgnoreRE.test(workerOptString)
   if (hasViteIgnore) {
     return 'ignore'
   }
 
   // need to find in no comment code
-  const cleanWorkerOptString = clean.substring(commaIndex + 1, endIndex).trim()
-  if (!cleanWorkerOptString.length) {
+  const cleanWorkerOptString = clean.substring(commaIndex + 1, endIndex)
+  const trimmedCleanWorkerOptString = cleanWorkerOptString.trim()
+  if (!trimmedCleanWorkerOptString.length) {
     return 'classic'
+  }
+
+  // strip trailing comma for evalValue
+  if (trimmedCleanWorkerOptString.endsWith(',')) {
+    workerOptString = workerOptString.slice(
+      0,
+      cleanWorkerOptString.lastIndexOf(','),
+    )
   }
 
   const workerOpts = await parseWorkerOptions(workerOptString, commaIndex + 1)
