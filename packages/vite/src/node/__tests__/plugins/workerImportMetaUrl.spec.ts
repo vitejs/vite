@@ -71,6 +71,16 @@ describe('workerImportMetaUrlPlugin', async () => {
     )
   })
 
+  test('with interpolated dynamic name field in worker options', async () => {
+    expect(
+      await transform(
+        'const id = 1; new Worker(new URL("./worker.js", import.meta.url), { name: `worker-${id}` })',
+      ),
+    ).toMatchInlineSnapshot(
+      `"const id = 1; new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=classic", import.meta.url), { name: \`worker-\${id}\` })"`,
+    )
+  })
+
   test('with dynamic name field and static type in worker options', async () => {
     expect(
       await transform(
@@ -78,6 +88,16 @@ describe('workerImportMetaUrlPlugin', async () => {
       ),
     ).toMatchInlineSnapshot(
       `"const id = 1; new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", import.meta.url), { name: "worker" + id, type: "module" })"`,
+    )
+  })
+
+  test('with interpolated dynamic name field and static type in worker options', async () => {
+    expect(
+      await transform(
+        'const id = 1; new Worker(new URL("./worker.js", import.meta.url), { name: `worker-${id}`, type: "module" })',
+      ),
+    ).toMatchInlineSnapshot(
+      `"const id = 1; new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", import.meta.url), { name: \`worker-\${id}\`, type: "module" })"`,
     )
   })
 
@@ -110,6 +130,26 @@ const worker = new Worker(new URL(/* @vite-ignore */ "/worker.js?worker_file&typ
 )
 
 worker.addEventListener('message', (ev) => text('.simple-worker-url', JSON.stringify(ev.data)))
+"`)
+  })
+
+  test('trailing comma', async () => {
+    expect(
+      await transform(`
+new Worker(
+  new URL('./worker.js', import.meta.url),
+  {
+    type: 'module'
+  }, // },
+)
+`),
+    ).toMatchInlineSnapshot(`"
+new Worker(
+  new URL(/* @vite-ignore */ "/worker.js?worker_file&type=module", import.meta.url),
+  {
+    type: 'module'
+  }, // },
+)
 "`)
   })
 
@@ -158,6 +198,23 @@ worker.addEventListener('message', (ev) => text('.simple-worker-url', JSON.strin
       ),
     ).rejects.toThrow(
       'Expected object spread to be used before the definition of the type property. Vite needs a static value for the type property to correctly infer it.',
+    )
+  })
+
+  test('find closing parenthesis correctly', async () => {
+    expect(
+      await transform(
+        `(() => { new Worker(new URL('./worker', import.meta.url)); repro({ test: "foo", }); })();`,
+      ),
+    ).toMatchInlineSnapshot(
+      `"(() => { new Worker(new URL(/* @vite-ignore */ "/worker?worker_file&type=classic", import.meta.url)); repro({ test: "foo", }); })();"`,
+    )
+    expect(
+      await transform(
+        `repro(new Worker(new URL('./worker', import.meta.url)), { type: "module" })`,
+      ),
+    ).toMatchInlineSnapshot(
+      `"repro(new Worker(new URL(/* @vite-ignore */ "/worker?worker_file&type=classic", import.meta.url)), { type: "module" })"`,
     )
   })
 })
