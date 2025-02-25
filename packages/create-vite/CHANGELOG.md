@@ -1,3 +1,14 @@
+## <small>6.2.1 (2025-02-25)</small>
+
+* fix(deps): update all non-major dependencies (#19392) ([60456a5](https://github.com/vitejs/vite/commit/60456a54fe90872dbd4bed332ecbd85bc88deb92)), closes [#19392](https://github.com/vitejs/vite/issues/19392)
+* fix(deps): update all non-major dependencies (#19440) ([ccac73d](https://github.com/vitejs/vite/commit/ccac73d9d0e92c7232f09207d1d6b893e823ed8e)), closes [#19440](https://github.com/vitejs/vite/issues/19440)
+* fix(deps): update all non-major dependencies (#19501) ([c94c9e0](https://github.com/vitejs/vite/commit/c94c9e052127cf4796374de1d698ec60b2973dfa)), closes [#19501](https://github.com/vitejs/vite/issues/19501)
+* chore(create-vite): remove font family `Inter` (#19474) ([4bcd79a](https://github.com/vitejs/vite/commit/4bcd79a0b38c968825494da1a48f3f91fbc0fbf5)), closes [#19474](https://github.com/vitejs/vite/issues/19474)
+* chore(create-vite): update `@vitejs/plugin-react-swc` version (#19384) ([39fab6d](https://github.com/vitejs/vite/commit/39fab6db204ea88ffdb346ee98d8abe0ff5d685f)), closes [#19384](https://github.com/vitejs/vite/issues/19384)
+* ci: update react-swc plugin version in create-vite by renovate (#19394) ([0f058a9](https://github.com/vitejs/vite/commit/0f058a989f974d6f012539122f0580e37c2e9852)), closes [#19394](https://github.com/vitejs/vite/issues/19394)
+
+
+
 ## 6.2.0 (2025-02-05)
 
 * fix(deps): update all non-major dependencies (#19098) ([8639538](https://github.com/vitejs/vite/commit/8639538e6498d1109da583ad942c1472098b5919)), closes [#19098](https://github.com/vitejs/vite/issues/19098)
