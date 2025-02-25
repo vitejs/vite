@@ -1,3 +1,11 @@
+## 6.2.0 (2025-02-25)
+
+* fix(deps): update all non-major dependencies (#19501) ([c94c9e0](https://github.com/vitejs/vite/commit/c94c9e052127cf4796374de1d698ec60b2973dfa)), closes [#19501](https://github.com/vitejs/vite/issues/19501)
+* fix(worker): string interpolation in dynamic worker options (#19476) ([07091a1](https://github.com/vitejs/vite/commit/07091a1e804e5934208ef0b6324a04317dd0d815)), closes [#19476](https://github.com/vitejs/vite/issues/19476)
+* chore: use unicode cross icon instead of x (#19497) ([5c70296](https://github.com/vitejs/vite/commit/5c70296ffb22fe5a0f4039835aa14feb096b4a97)), closes [#19497](https://github.com/vitejs/vite/issues/19497)
+
+
+
 ## 6.2.0-beta.1 (2025-02-21)
 
 * fix(css): temporary add `?.` after `this.getModuleInfo` in `vite:css-post` (#19478) ([12b0b8a](https://github.com/vitejs/vite/commit/12b0b8a953ad7d08ba0540cb4f5cb26a7fa69da2)), closes [#19478](https://github.com/vitejs/vite/issues/19478)
