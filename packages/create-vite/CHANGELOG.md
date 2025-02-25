@@ -1,3 +1,9 @@
+## 6.3.0 (2025-02-25)
+
+* feat(create-vite): use `@clack/prompts` (#19445) ([5dae6c1](https://github.com/vitejs/vite/commit/5dae6c17da2ef135c2864500db2c8f3e2cf2b3db)), closes [#19445](https://github.com/vitejs/vite/issues/19445)
+
+
+
 ## <small>6.2.1 (2025-02-25)</small>
 
 * fix(deps): update all non-major dependencies (#19392) ([60456a5](https://github.com/vitejs/vite/commit/60456a54fe90872dbd4bed332ecbd85bc88deb92)), closes [#19392](https://github.com/vitejs/vite/issues/19392)
