@@ -11,7 +11,7 @@ packageExtensionsChecksum: sha256-BLDZCgUIohvBXMHo3XFOlGLzGXRyK3sDU0nMBRk9APY=
 
 patchedDependencies:
   '@clack/core@0.4.1':
-    hash: d9afe857cbb480ac3615ab67142c1299fe94bb25ef574fba0b932b5f1739bca2
+    hash: 00ce0d17727d5b3ef7add6723490478f994340b9a76ea02f8d20682e097f0e7a
     path: patches/@clack__core@0.4.1.patch
   chokidar@3.6.0:
     hash: 8a4f9e2b397e6034b91a0508faae3cecb97f222313faa129d7cb0eb71e9d0e84
@@ -8083,14 +8083,14 @@ snapshots:
 
   '@bufbuild/protobuf@2.2.3': {}
 
-  '@clack/core@0.4.1(patch_hash=d9afe857cbb480ac3615ab67142c1299fe94bb25ef574fba0b932b5f1739bca2)':
+  '@clack/core@0.4.1(patch_hash=00ce0d17727d5b3ef7add6723490478f994340b9a76ea02f8d20682e097f0e7a)':
     dependencies:
       picocolors: 1.1.1
       sisteransi: 1.0.5
 
   '@clack/prompts@0.10.0':
     dependencies:
-      '@clack/core': 0.4.1(patch_hash=d9afe857cbb480ac3615ab67142c1299fe94bb25ef574fba0b932b5f1739bca2)
+      '@clack/core': 0.4.1(patch_hash=00ce0d17727d5b3ef7add6723490478f994340b9a76ea02f8d20682e097f0e7a)
       picocolors: 1.1.1
       sisteransi: 1.0.5
 
