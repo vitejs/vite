@@ -1,3 +1,12 @@
+## <small>6.0.2 (2025-02-25)</small>
+
+* fix(deps): update all non-major dependencies (#19392) ([60456a5](https://github.com/vitejs/vite/commit/60456a54fe90872dbd4bed332ecbd85bc88deb92)), closes [#19392](https://github.com/vitejs/vite/issues/19392)
+* fix(deps): update all non-major dependencies (#19440) ([ccac73d](https://github.com/vitejs/vite/commit/ccac73d9d0e92c7232f09207d1d6b893e823ed8e)), closes [#19440](https://github.com/vitejs/vite/issues/19440)
+* fix(legacy): warn if plugin-legacy is passed to `worker.plugins` (#19079) ([171f2fb](https://github.com/vitejs/vite/commit/171f2fbe0afe09eeb49f5f29f9ecd845c39a8401)), closes [#19079](https://github.com/vitejs/vite/issues/19079)
+* chore: fix typos (#19398) ([b44e3d4](https://github.com/vitejs/vite/commit/b44e3d43db65babe1c32e143964add02e080dc15)), closes [#19398](https://github.com/vitejs/vite/issues/19398)
+
+
+
 ## <small>6.0.1 (2025-02-05)</small>
 
 * fix(deps): update all non-major dependencies (#18853) ([5c02236](https://github.com/vitejs/vite/commit/5c0223636fa277d5daeb4d93c3f32d9f3cd69fc5)), closes [#18853](https://github.com/vitejs/vite/issues/18853)
