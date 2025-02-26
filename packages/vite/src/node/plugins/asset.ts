@@ -403,10 +403,7 @@ async function fileToBuiltUrl(
     })
 
     if (environment.config.command === 'build' && noInlineRE.test(postfix)) {
-      postfix = postfix.replace(noInlineRE, '')
-      if (postfix.startsWith('&')) {
-        postfix = postfix.replace(/^&/, '?')
-      }
+      postfix = postfix.replace(noInlineRE, '').replace(/^&/, '?')
     }
 
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
