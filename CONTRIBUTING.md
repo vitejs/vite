@@ -8,7 +8,7 @@ You can use [StackBlitz Codeflow](https://stackblitz.com/codeflow) to fix bugs o
 
 ## Repo Setup
 
-To develop locally, fork the Vite repository and clone it in your local machine. The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/). You can find required pnpm version in `package.json` under `packageManager` key.
+To develop locally, fork the Vite repository and clone it in your local machine. The Vite repo is a monorepo using pnpm workspaces. The package manager used to install and link dependencies must be [pnpm](https://pnpm.io/). You can find the required pnpm version in `package.json` under the `packageManager` key.
 
 To develop and test the core `vite` package:
 
