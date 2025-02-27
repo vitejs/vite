@@ -363,7 +363,6 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(raw, id) {
-      const { environment } = this
       if (
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
@@ -371,6 +370,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
       ) {
         return
       }
+
+      const { environment } = this
       const resolveUrl = (url: string, importer?: string) =>
         idResolver(environment, url, importer)
 
