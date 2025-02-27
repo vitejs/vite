@@ -216,7 +216,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
         src = p
         srcSourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
       }
-    } else if (p.name === 'type' && p.value && p.value === 'module') {
+    } else if (p.name === 'type' && p.value === 'module') {
       isModule = true
     } else if (p.name === 'async') {
       isAsync = true
