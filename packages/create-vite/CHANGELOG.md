@@ -1,3 +1,12 @@
+## <small>6.3.1 (2025-02-27)</small>
+
+* fix(create-vite): make custom command visible (#19519) ([5ea9a42](https://github.com/vitejs/vite/commit/5ea9a422c5a000c6a3183c617d6c853cdc4a5151)), closes [#19519](https://github.com/vitejs/vite/issues/19519)
+* fix(create-vite): remove eslint-plugin-react (#19514) ([c0e3dba](https://github.com/vitejs/vite/commit/c0e3dba3108e479ab839205cfb046db327bdaf43)), closes [#19514](https://github.com/vitejs/vite/issues/19514)
+* docs(create-vite): recommend eslint-react for linting (#19524) ([e912080](https://github.com/vitejs/vite/commit/e9120805df4dcf202caa65f15edc7d94fb521a63)), closes [#19524](https://github.com/vitejs/vite/issues/19524)
+* chore: remove prompts alias (#19507) ([276c1d3](https://github.com/vitejs/vite/commit/276c1d3b4761c436dc668e76decb9cf20cb25ab9)), closes [#19507](https://github.com/vitejs/vite/issues/19507)
+
+
+
 ## 6.3.0 (2025-02-25)
 
 * feat(create-vite): use `@clack/prompts` (#19445) ([5dae6c1](https://github.com/vitejs/vite/commit/5dae6c17da2ef135c2864500db2c8f3e2cf2b3db)), closes [#19445](https://github.com/vitejs/vite/issues/19445)
