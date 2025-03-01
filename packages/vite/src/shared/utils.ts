@@ -1,3 +1,4 @@
+import { performance } from 'node:perf_hooks'
 import { NULL_BYTE_PLACEHOLDER, VALID_ID_PREFIX } from './constants'
 
 export const isWindows =
@@ -81,4 +82,9 @@ export function promiseWithResolvers<T>(): PromiseWithResolvers<T> {
     reject = _reject
   })
   return { promise, resolve, reject }
+}
+
+export function createDurationTimer() {
+  const start = performance.now()
+  return (): string => `${(performance.now() - start).toFixed(2)}ms`
 }

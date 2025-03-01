@@ -3,7 +3,6 @@ import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
-import { performance } from 'node:perf_hooks'
 import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
 import colors from 'picocolors'
@@ -12,7 +11,7 @@ import type { RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
 import { build } from 'esbuild'
 import type { AnymatchFn } from '../types/anymatch'
-import { withTrailingSlash } from '../shared/utils'
+import { createDurationTimer, withTrailingSlash } from '../shared/utils'
 import {
   CLIENT_ENTRY,
   DEFAULT_ASSETS_RE,
@@ -1718,8 +1717,7 @@ export async function loadConfigFromFile(
     )
   }
 
-  const start = performance.now()
-  const getTime = () => `${(performance.now() - start).toFixed(2)}ms`
+  const getDurationTime = createDurationTimer()
 
   let resolvedPath: string | undefined
 
@@ -1751,7 +1749,7 @@ export async function loadConfigFromFile(
           ? runnerImportConfigFile
           : nativeImportConfigFile
     const { configExport, dependencies } = await resolver(resolvedPath)
-    debug?.(`config file loaded in ${getTime()}`)
+    debug?.(`config file loaded in ${getDurationTime()}`)
 
     const config = await (typeof configExport === 'function'
       ? configExport(configEnv)
