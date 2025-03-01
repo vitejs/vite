@@ -26,18 +26,15 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
+      if (options.scan || id === '@vite/client' || id === '@vite/env') {
+        return null
+      }
+
       const { environment } = this
       const ssr = environment.config.consumer === 'server'
       const depsOptimizer =
         environment.mode === 'dev' ? environment.depsOptimizer : undefined
-      if (
-        importer &&
-        depsOptimizer &&
-        bareImportRE.test(id) &&
-        !options.scan &&
-        id !== '@vite/client' &&
-        id !== '@vite/env'
-      ) {
+      if (importer && depsOptimizer && bareImportRE.test(id)) {
         if (findPatterns.find((pattern) => matches(pattern, id))) {
           const optimizedId = await tryOptimizedResolve(
             depsOptimizer,
