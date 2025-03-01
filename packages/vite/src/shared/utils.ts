@@ -1,4 +1,3 @@
-import { performance } from 'node:perf_hooks'
 import { NULL_BYTE_PLACEHOLDER, VALID_ID_PREFIX } from './constants'
 
 export const isWindows =
