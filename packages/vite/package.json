@@ -160,7 +160,7 @@
     "lightningcss": "^1.21.0",
     "sass": "*",
     "sass-embedded": "*",
-    "stylus": "*",
+    "stylus": "^0.55.0",
     "sugarss": "*",
     "terser": "^5.16.0",
     "tsx": "^4.8.1",
