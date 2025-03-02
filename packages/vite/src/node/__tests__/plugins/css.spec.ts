@@ -114,6 +114,25 @@ composes: bar from '@/css/bar.module.css';
     const result2 = await transform(css, '/foo.module.css?direct') // client
     expect(result1.code).toBe(result2.code)
   })
+
+  test('custom generateScopedName with lightningcss', async () => {
+    const { transform } = await createCssPluginTransform({
+      configFile: false,
+      css: {
+        modules: {
+          generateScopedName: 'custom__[hash:base64:5]',
+        },
+        transformer: 'lightningcss',
+      },
+    })
+    const css = `\
+.foo {
+  color: red;
+}`
+    const result1 = await transform(css, '/foo.module.css') // server
+    const result2 = await transform(css, '/foo.module.css?direct') // client
+    expect(result1.code).toBe(result2.code)
+  })
 })
 
 describe('hoist @ rules', () => {
