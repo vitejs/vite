@@ -292,3 +292,26 @@ test('plugin error', async () => {
       Plugin: test-plugin"
   `)
 })
+
+test('named exports overwrite export all', async () => {
+  const server = await createDevServer()
+  const mod = await server.ssrLoadModule(
+    './fixtures/named-overwrite-all/main.js',
+  )
+
+  // ESM spec doesn't allow conflicting `export *` and such duplicate exports are removed (in this case "d"),
+  // but this is likely not possible to support due to Vite dev SSR's lazy nature.
+  // [Node]
+  //   $ node -e 'import("./packages/vite/src/node/ssr/__tests__/fixtures/named-overwrite-all/main.js").then(console.log)'
+  //   [Module: null prototype] { a: 'main-a', b: 'dep1-b', c: 'main-c' }
+  // [Rollup]
+  //   Conflicting namespaces: "main.js" re-exports "d" from one of the modules "dep1.js" and "dep2.js" (will be ignored).
+  expect(mod).toMatchInlineSnapshot(`
+    {
+      "a": "main-a",
+      "b": "dep1-b",
+      "c": "main-c",
+      "d": "dep1-d",
+    }
+  `)
+})

@@ -429,7 +429,7 @@ function exportAll(exports: any, sourceModule: any) {
     return
 
   for (const key in sourceModule) {
-    if (key !== 'default' && key !== '__esModule') {
+    if (key !== 'default' && key !== '__esModule' && !(key in exports)) {
       try {
         Object.defineProperty(exports, key, {
           enumerable: true,
