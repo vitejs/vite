@@ -1,6 +1,7 @@
 name: "\U0001F680 New feature proposal"
 description: Propose a new feature to be added to Vite
 labels: ["enhancement: pending triage"]
+type: Feature
 body:
   - type: markdown
     attributes:
