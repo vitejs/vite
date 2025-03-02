@@ -27,7 +27,7 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
       if (options.scan || id === '@vite/client' || id === '@vite/env') {
-        return null
+        return
       }
 
       const { environment } = this
