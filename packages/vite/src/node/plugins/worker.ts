@@ -341,7 +341,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               objURL = blob && (self.URL || self.webkitURL).createObjectURL(blob);
               if (!objURL) throw ''
               const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
-              worker.addEventListener("error", () => {
+              worker.addEventListener("message", () => {
                 (self.URL || self.webkitURL).revokeObjectURL(objURL);
               });
               return worker;
@@ -350,14 +350,6 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
                 ${workerTypeOption}
               );
-            }${
-              // For module workers, we should not revoke the URL until the worker runs,
-              // otherwise the worker fails to run
-              workerType === 'classic'
-                ? ` finally {
-                    objURL && (self.URL || self.webkitURL).revokeObjectURL(objURL);
-                  }`
-                : ''
             }
           }`
               : `${jsContent}
