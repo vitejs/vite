@@ -1,0 +1,70 @@
+{
+  "name": "vite-ember-ts-starter",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Small description for app-template goes here",
+  "repository": "",
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "imports": {
+    "#/*": "./src/*",
+    "#config": "./src/config.js",
+    "#components/*": "./src/components/*"
+  },
+  "exports": {
+    "./tests/*": "./tests/*",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "build": "vite build",
+    "build:test": "NODE_ENV=development vite build --mode test",
+    "start": "vite",
+    "test": "pnpm test:ember",
+    "test:ember": "pnpm build:test && pnpm dist:ember:test",
+    "dist:ember:test": "ember test --path dist --config-file ./testem.cjs"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.3",
+    "@babel/plugin-transform-typescript": "^7.26.8",
+    "@babel/plugin-transform-runtime": "^7.25.4",
+    "@babel/runtime": "^7.25.6",
+    "@ember/optional-features": "^2.0.0",
+    "@ember/test-helpers": "^5.0.0",
+    "@embroider/core": "^4.0.0-alpha.6",
+    "@embroider/macros": "^1.17.0-alpha.5",
+    "@embroider/router": "^3.0.0-alpha.1",
+    "@embroider/vite": "^1.0.0-alpha.7",
+    "@glimmer/component": "^2.0.0",
+    "@glimmer/tracking": "^1.1.2",
+    "@glint/core": "^1.4.1-unstable.469c15e",
+    "@glint/template": "^1.4.1-unstable.469c15e",
+    "@glint/environment-ember-template-imports": "^1.4.1-unstable.469c15e",
+    "@rollup/plugin-babel": "^5.3.1",
+    "@tsconfig/ember": "^3.0.9",
+    "@types/qunit": "^2.19.12",
+    "@types/rsvp": "^4.0.9",
+    "babel-plugin-ember-template-compilation": "^2.3.0",
+    "decorator-transforms": "^2.0.0",
+    "ember-cli": "^6.2.2",
+    "ember-modifier": "^4.1.0",
+    "ember-page-title": "^8.2.4",
+    "ember-qunit": "^9.0.1",
+    "ember-resolver": "^13.1.0",
+    "ember-source": "6.4.0-alpha.4",
+    "qunit": "^2.19.4",
+    "qunit-dom": "^3.4.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "ember": {
+    "edition": "octane"
+  },
+  "ember-addon": {
+    "type": "app",
+    "version": 2
+  }
+}

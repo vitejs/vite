@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>AppTemplate Tests</title>
+    <meta name="description" content="" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../src/styles/app.css" />
+  </head>
+  <body>
+    <div id="qunit"></div>
+    <div id="qunit-fixture">
+      <div id="ember-testing-container">
+        <div id="ember-testing"></div>
+      </div>
+    </div>
+
+    <script src="/testem.js" integrity="" data-embroider-ignore></script>
+    <script type="module">
+      import "ember-testing";
+      // Needed until we have:
+      // https://github.com/emberjs/ember-test-helpers/pull/1528
+      globalThis.EmberENV = {};
+    </script>
+
+    <script type="module">
+      import { start } from "./test-helper";
+      import.meta.glob("./**/*.{js,gjs,gts}", { eager: true });
+      start();
+    </script>
+  </body>
+</html>
