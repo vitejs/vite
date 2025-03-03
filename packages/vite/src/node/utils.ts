@@ -1359,8 +1359,8 @@ function normalizeSingleAlias({
 }: Alias): Alias {
   if (
     typeof find === 'string' &&
-    find[find.length - 1] === '/' &&
-    replacement[replacement.length - 1] === '/'
+    find.endsWith('/') &&
+    replacement.endsWith('/')
   ) {
     find = find.slice(0, find.length - 1)
     replacement = replacement.slice(0, replacement.length - 1)
@@ -1458,7 +1458,7 @@ export function joinUrlSegments(a: string, b: string): string {
   if (!a || !b) {
     return a || b || ''
   }
-  if (a[a.length - 1] === '/') {
+  if (a.endsWith('/')) {
     a = a.substring(0, a.length - 1)
   }
   if (b[0] !== '/') {

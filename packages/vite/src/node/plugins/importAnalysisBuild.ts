@@ -439,7 +439,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 let url = name
                 if (!url) {
                   const rawUrl = code.slice(start, end)
-                  if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
+                  if (rawUrl[0] === `"` && rawUrl.endsWith(`"`))
                     url = rawUrl.slice(1, -1)
                 }
                 if (!url) continue
@@ -516,7 +516,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               let url = name
               if (!url) {
                 const rawUrl = code.slice(start, end)
-                if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
+                if (rawUrl[0] === `"` && rawUrl.endsWith(`"`))
                   url = rawUrl.slice(1, -1)
               }
               const deps = new Set<string>()
