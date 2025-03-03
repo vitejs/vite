@@ -49,6 +49,7 @@ ${magenta   ('preact-ts      preact'   )}
 ${redBright ('lit-ts         lit'      )}
 ${red       ('svelte-ts      svelte'   )}
 ${blue      ('solid-ts       solid'    )}
+${redBright ('ember-ts       ember'    )}
 ${blueBright('qwik-ts        qwik'     )}`
 
 type ColorFunc = (str: string | number) => string
@@ -220,6 +221,23 @@ const FRAMEWORKS: Framework[] = [
       },
       {
         name: 'solid',
+        display: 'JavaScript',
+        color: yellow,
+      },
+    ],
+  },
+  {
+    name: 'ember',
+    display: 'Ember',
+    color: redBright,
+    variants: [
+      {
+        name: 'ember-ts',
+        display: 'TypeScript',
+        color: blue,
+      },
+      {
+        name: 'ember',
         display: 'JavaScript',
         color: yellow,
       },
