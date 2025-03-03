@@ -287,6 +287,41 @@ const FRAMEWORKS: Framework[] = [
     ],
   },
   {
+    name: 'ember',
+    display: 'Ember',
+    color: redBright,
+    variants: [
+      {
+        name: 'ember app',
+        display: 'Production-ready App',
+        color: redBright,
+        customCommand:
+          'npx ember-cli@latest new TARGET_DIR --blueprint @ember/app-blueprint --pnpm --lang en',
+      },
+      {
+        name: 'ember app (ts)',
+        display: 'Production-ready App (TypeScript)',
+        color: blueBright,
+        customCommand:
+          'npx ember-cli@latest new TARGET_DIR --blueprint @ember/app-blueprint --pnpm --lang en --typescript',
+      },
+      {
+        name: 'ember library',
+        display: 'Production and OSS ready Library',
+        color: redBright,
+        customCommand:
+          'npx ember-cli@latest addon TARGET_DIR --blueprint @ember/addon-blueprint --pnpm --typescript',
+      },
+      {
+        name: 'ember library (ts)',
+        display: 'Production and OSS ready Library (TypeScript)',
+        color: blueBright,
+        customCommand:
+          'npx ember-cli@latest addon TARGET_DIR --blueprint @ember/addon-blueprint --pnpm --typescript',
+      },
+    ],
+  },
+  {
     name: 'qwik',
     display: 'Qwik',
     color: blueBright,
