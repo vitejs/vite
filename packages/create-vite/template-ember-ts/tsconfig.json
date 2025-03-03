@@ -11,8 +11,6 @@
     "declaration": false,
     "declarationMap": false,
     "experimentalDecorators": true,
-    "types": ["vite/client","@embroider/core/virtual",
-      "ember-source/types"
-    ]
+    "types": ["vite/client", "@embroider/core/virtual", "ember-source/types"]
   }
 }

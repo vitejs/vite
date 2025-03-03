@@ -7,12 +7,12 @@ const ENV = {
     // Here you can pass flags/options to your application instance
     // when it is created
   },
-};
+}
 
-export default ENV;
+export default ENV
 
 export function enterTestMode() {
-  ENV.locationType = 'none';
-  ENV.APP.rootElement = '#ember-testing';
-  ENV.APP.autoboot = false;
+  ENV.locationType = 'none'
+  ENV.APP.rootElement = '#ember-testing'
+  ENV.APP.autoboot = false
 }

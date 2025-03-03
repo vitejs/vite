@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -17,16 +17,16 @@
 
     <script src="/testem.js" integrity="" data-embroider-ignore></script>
     <script type="module">
-      import "ember-testing";
+      import 'ember-testing'
       // Needed until we have:
       // https://github.com/emberjs/ember-test-helpers/pull/1528
-      globalThis.EmberENV = {};
+      globalThis.EmberENV = {}
     </script>
 
     <script type="module">
-      import { start } from "./test-helper";
-      import.meta.glob("./**/*.{js,gjs,gts}", { eager: true });
-      start();
+      import { start } from './test-helper'
+      import.meta.glob('./**/*.{js,gjs,gts}', { eager: true })
+      start()
     </script>
   </body>
 </html>

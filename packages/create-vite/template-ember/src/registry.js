@@ -1,13 +1,16 @@
-import Router from './router.js';
-import PageTitleService from 'ember-page-title/services/page-title';
-import config from './config.js';
+import Router from './router.js'
+import PageTitleService from 'ember-page-title/services/page-title'
+import config from './config.js'
 
-const appName = config.modulePrefix;
+const appName = config.modulePrefix
 
 function formatAsResolverEntries(imports) {
   return Object.fromEntries(
-    Object.entries(imports).map(([k, v]) => [k.replace(/\.g?(j|t)s$/, '').replace(/^\.\//, `${appName}/`), v])
-  );
+    Object.entries(imports).map(([k, v]) => [
+      k.replace(/\.g?(j|t)s$/, '').replace(/^\.\//, `${appName}/`),
+      v,
+    ]),
+  )
 }
 
 /**
@@ -16,13 +19,19 @@ function formatAsResolverEntries(imports) {
  * - we design a new routing system
  */
 const resolverRegistry = {
-  ...formatAsResolverEntries(import.meta.glob('./templates/**/*.{gjs,gts,js,ts}', { eager: true })),
-  ...formatAsResolverEntries(import.meta.glob('./services/**/*.{js,ts}', { eager: true })),
-  ...formatAsResolverEntries(import.meta.glob('./routes/**/*.{js,ts}', { eager: true })),
+  ...formatAsResolverEntries(
+    import.meta.glob('./templates/**/*.{gjs,gts,js,ts}', { eager: true }),
+  ),
+  ...formatAsResolverEntries(
+    import.meta.glob('./services/**/*.{js,ts}', { eager: true }),
+  ),
+  ...formatAsResolverEntries(
+    import.meta.glob('./routes/**/*.{js,ts}', { eager: true }),
+  ),
   [`${appName}/router`]: Router,
-};
+}
 
 export const registry = {
   ...resolverRegistry,
   [`${appName}/services/page-title`]: PageTitleService,
-};
+}

@@ -1,6 +1,6 @@
-const { buildMacros } = require('@embroider/macros/babel');
+const { buildMacros } = require('@embroider/macros/babel')
 
-const macros = buildMacros();
+const macros = buildMacros()
 
 module.exports = {
   plugins: [
@@ -34,4 +34,4 @@ module.exports = {
   generatorOpts: {
     compact: false,
   },
-};
+}
