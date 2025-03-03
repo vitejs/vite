@@ -55,6 +55,7 @@ ${magenta   ('preact-ts           preact'        )}
 ${redBright ('lit-ts              lit'           )}
 ${red       ('svelte-ts           svelte'        )}
 ${blue      ('solid-ts            solid'         )}
+${redBright ('ember-ts            ember'         )}
 ${blueBright('qwik-ts             qwik'          )}`
 
 type ColorFunc = (str: string | number) => string
@@ -283,6 +284,30 @@ const FRAMEWORKS: Framework[] = [
         display: 'Vike ↗',
         color: cyan,
         customCommand: 'npm create -- vike@latest --solid TARGET_DIR',
+      },
+    ],
+  },
+  {
+    name: 'ember',
+    display: 'Ember',
+    color: redBright,
+    variants: [
+      {
+        name: 'ember-ts',
+        display: 'TypeScript',
+        color: blue,
+      },
+      {
+        name: 'ember',
+        display: 'JavaScript',
+        color: yellow,
+      },
+      {
+        name: 'ember app',
+        display: 'Production-ready App',
+        color: redBright,
+        customCommand:
+          'npx ember-cli@latest new TARGET_DIR --blueprint @embroider/app-blueprint --interactive --lang en',
       },
     ],
   },

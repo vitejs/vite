@@ -1,0 +1,43 @@
+{
+  "name": "vite-ember-starter",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*",
+    "#config": "./src/config.js",
+    "#components/*": "./src/components/*"
+  },
+  "exports": {
+    "./tests/*": "./tests/*",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.3",
+    "@babel/plugin-transform-runtime": "^7.25.4",
+    "@babel/runtime": "^7.25.6",
+    "@embroider/core": "^4.0.1",
+    "@embroider/macros": "^1.17.1'",
+    "@embroider/vite": "^1.0.2",
+    "@glimmer/component": "^2.0.0",
+    "@rollup/plugin-babel": "^5.3.1",
+    "babel-plugin-ember-template-compilation": "^2.3.0",
+    "decorator-transforms": "^2.0.0",
+    "ember-modifier": "^4.1.0",
+    "ember-resolver": "^13.1.0",
+    "ember-source": "^6.3.0",
+    "vite": "^6.2.0"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "ember": {
+    "edition": "octane"
+  }
+}

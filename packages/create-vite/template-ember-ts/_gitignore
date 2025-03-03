@@ -1,0 +1,26 @@
+# compiled output
+/dist/
+
+# dependencies
+/node_modules/
+
+# misc
+/.env*
+/.pnp*
+/.sass-cache
+/connect.lock
+/.eslintcache
+/coverage/
+/npm-debug.log*
+/testem.log
+/yarn-error.log
+
+# ember-try
+/.node_modules.ember-try/
+/npm-shrinkwrap.json.ember-try
+/package.json.ember-try
+/package-lock.json.ember-try
+/yarn.lock.ember-try
+
+# broccoli-debug
+/DEBUG/

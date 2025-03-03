@@ -1,0 +1,9 @@
+{
+  "extends": "@ember/app-tsconfig",
+  "glint": {
+    "environment": ["ember-template-imports"]
+  },
+  "compilerOptions": {
+    "types": ["vite/client", "@embroider/core/virtual", "ember-source/types", "@glint/ember-tsc/types"]
+  }
+}

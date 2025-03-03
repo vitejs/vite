@@ -1,0 +1,49 @@
+{
+  "name": "vite-ember-ts-starter",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*",
+    "#config": "./src/config.ts",
+    "#components/*": "./src/components/*"
+  },
+  "exports": {
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.3",
+    "@babel/plugin-transform-typescript": "^7.26.8",
+    "@babel/plugin-transform-runtime": "^7.25.4",
+    "@babel/runtime": "^7.25.6",
+    "@ember/app-tsconfig": "^1.0.1",
+    "@embroider/core": "^4.0.1",
+    "@embroider/macros": "^1.17.1'",
+    "@embroider/vite": "^1.0.2",
+    "@glimmer/component": "^2.0.0",
+    "@glint/ember-tsc": "^1.0.4",
+    "@glint/template": "^1.6.2",
+    "@glint/tsserver-plugin": "^2.0.4"
+    "@rollup/plugin-babel": "^5.3.1",
+    "@types/rsvp": "^4.0.9",
+    "babel-plugin-ember-template-compilation": "^2.3.0",
+    "decorator-transforms": "^2.0.0",
+    "ember-modifier": "^4.1.0",
+    "ember-resolver": "^13.1.0",
+    "ember-source": "^6.3.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "ember": {
+    "edition": "octane"
+  }
+}
