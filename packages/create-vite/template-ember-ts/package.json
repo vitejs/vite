@@ -8,8 +8,8 @@
   "author": "",
   "type": "module",
   "imports": {
-    "#/*": "./src/*",
-    "#config": "./src/config.js",
+    "#src/*": "./src/*",
+    "#config": "./src/config.ts",
     "#components/*": "./src/components/*"
   },
   "exports": {

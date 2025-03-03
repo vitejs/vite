@@ -1,4 +1,4 @@
-import Application from '#/app'
+import Application from '#src/app.ts'
 import config, { enterTestMode } from '#config'
 
 import * as QUnit from 'qunit'
