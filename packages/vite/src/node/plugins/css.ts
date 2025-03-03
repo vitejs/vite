@@ -37,6 +37,7 @@ import type {
   TransformAttributeResult as LightningCssTransformAttributeResult,
   TransformResult as LightningCssTransformResult,
 } from 'lightningcss'
+import type { CustomPluginOptionsVite } from 'types/metadata'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -54,7 +55,7 @@ import {
   SPECIAL_QUERY_RE,
 } from '../constants'
 import type { ResolvedConfig } from '../config'
-import type { CustomPluginOptionsVite, Plugin } from '../plugin'
+import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
 import {
   arraify,
@@ -650,11 +651,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         // NOTE: `this.getModuleInfo` can be undefined when the plugin is called directly
         //       adding `?.` temporary to avoid unocss from breaking
         // TODO: remove `?.` after `this.getModuleInfo` in Vite 7
-        (
-          this.getModuleInfo?.(id)?.meta?.vite as
-            | CustomPluginOptionsVite
-            | undefined
-        )?.cssScopeTo
+        this.getModuleInfo?.(id)?.meta?.vite?.cssScopeTo
 
       // record css
       if (!inlined) {

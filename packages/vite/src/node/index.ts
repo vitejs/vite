@@ -205,7 +205,7 @@ export type {
   GeneralImportGlobOptions,
   KnownAsTypeMap,
 } from 'types/importGlob'
-export type { ChunkMetadata } from 'types/metadata'
+export type { ChunkMetadata, CustomPluginOptionsVite } from 'types/metadata'
 
 // dep types
 export type {
