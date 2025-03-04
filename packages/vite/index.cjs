@@ -25,7 +25,7 @@ const asyncFunctions = [
 ]
 asyncFunctions.forEach((name) => {
   module.exports[name] = (...args) =>
-    import('./dist/node/index.js').then((i) => i[name](...args))
+    import('#dist-index').then((i) => i[name](...args))
 })
 
 // variables and sync functions that cannot be used from cjs build

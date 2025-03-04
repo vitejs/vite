@@ -6,7 +6,7 @@
   "author": "Evan You",
   "description": "Native-ESM powered web dev build tool",
   "bin": {
-    "vite": "bin/vite.js"
+    "vite": "bin/wrapper.js"
   },
   "keywords": [
     "frontend",
@@ -16,12 +16,12 @@
     "build-tool",
     "vite"
   ],
-  "main": "./dist/node/index.js",
-  "types": "./dist/node/index.d.ts",
+  "main": "./index-wrapper.js",
+  "types": "./index-wrapper.d.ts",
   "exports": {
     ".": {
-      "module-sync": "./dist/node/index.js",
-      "import": "./dist/node/index.js",
+      "module-sync": "./index-wrapper.js",
+      "import": "./index-wrapper.js",
       "require": "./index.cjs"
     },
     "./client": {
@@ -43,6 +43,14 @@
     }
   },
   "imports": {
+    "#dist-index": {
+      "rolldown-vite": "@vitejs/rolldown-vite-core",
+      "default": "./dist/node/index.js"
+    },
+    "#dist-bin": {
+      "rolldown-vite": "@vitejs/rolldown-vite-core/bin",
+      "default": "./bin/vite.js"
+    },
     "#module-sync-enabled": {
       "module-sync": "./misc/true.js",
       "default": "./misc/false.js"
@@ -155,6 +163,7 @@
   },
   "peerDependencies": {
     "@types/node": "^18.0.0 || ^20.0.0 || >=22.0.0",
+    "@vitejs/rolldown-vite-core": "*",
     "jiti": ">=1.21.0",
     "less": "*",
     "lightningcss": "^1.21.0",
@@ -168,6 +177,9 @@
   },
   "peerDependenciesMeta": {
     "@types/node": {
+      "optional": true
+    },
+    "@vitejs/rolldown-vite-core": {
       "optional": true
     },
     "jiti": {
