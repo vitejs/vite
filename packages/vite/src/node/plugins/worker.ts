@@ -350,13 +350,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               }
             };
           `
-
+          
           // Invoke revokeObjectURL after Worker runs
-          if (import.meta.url) {
+          if (typeof window !== 'undefined' && typeof URL.revokeObjectURL === 'function' && typeof import.meta.url === 'string' && import.meta.url) {
             // eslint-disable-next-line n/no-unsupported-features/node-builtins
-            URL.revokeObjectURL(import.meta.url)
+            URL.revokeObjectURL(import.meta.url);
           }
-
+          
           return {
             code,
             // Empty sourcemap to suppress Rollup warning
