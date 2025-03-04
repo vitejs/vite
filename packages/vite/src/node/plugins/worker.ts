@@ -325,41 +325,37 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const chunk = await bundleWorkerEntry(config, id)
           const jsContent = `const jsContent = ${JSON.stringify(chunk.code)};`
 
-          const code =
-            // Using blob URL for SharedWorker results in multiple instances of a same worker
-            workerConstructor === 'Worker'
-              ? `${jsContent}
-          const blob = typeof self !== "undefined" && self.Blob && new Blob([${
-            workerType === 'classic'
-              ? ''
-              : // `URL` is always available, in `Worker[type="module"]`
-                `'URL.revokeObjectURL(import.meta.url);',`
-          }jsContent], { type: "text/javascript;charset=utf-8" });
-          export default function WorkerWrapper(options) {
-            let objURL;
-            try {
-              objURL = blob && (self.URL || self.webkitURL).createObjectURL(blob);
-              if (!objURL) throw ''
-              const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
-              worker.addEventListener("message", () => {
-                (self.URL || self.webkitURL).revokeObjectURL(objURL);
-              });
-              return worker;
-            } catch(e) {
-              return new ${workerConstructor}(
-                'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
-                ${workerTypeOption}
-              );
-            }
-          }`
-              : `${jsContent}
-          export default function WorkerWrapper(options) {
-            return new ${workerConstructor}(
-              'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
-              ${workerTypeOption}
-            );
-          }
+          const code = `
+            ${jsContent}
+            export default function WorkerWrapper(options) {
+              let objURL;
+              try {
+                const blob = new Blob([${
+                  workerType === 'classic'
+                    ? ''
+                    : `'URL.revokeObjectURL(import.meta.url);'`
+                } + jsContent], { type: "text/javascript;charset=utf-8" });
+                objURL = self.URL?.createObjectURL(blob);
+                if (!objURL) throw '';
+                const worker = new Worker(objURL, options);
+                worker.addEventListener("error", () => {
+                  self.URL?.revokeObjectURL(objURL);
+                });
+                return worker;
+              } catch (e) {
+                if (objURL) {
+                  self.URL?.revokeObjectURL(objURL);
+                }
+                return new Worker('data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent), options);
+              }
+            };
           `
+
+          // Invoke revokeObjectURL after Worker runs
+          if (import.meta.url) {
+            // eslint-disable-next-line n/no-unsupported-features/node-builtins
+            URL.revokeObjectURL(import.meta.url)
+          }
 
           return {
             code,
