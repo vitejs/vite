@@ -10,6 +10,7 @@ import { dataToEsm, makeLegalIdentifier } from '@rollup/pluginutils'
 import { SPECIAL_QUERY_RE } from '../constants'
 import type { Plugin } from '../plugin'
 import { stripBomTag } from '../utils'
+import { inlineRE, noInlineRE } from './asset'
 
 export interface JsonOptions {
   /**
@@ -46,6 +47,14 @@ export function jsonPlugin(
     transform(json, id) {
       if (!jsonExtRE.test(id)) return null
       if (SPECIAL_QUERY_RE.test(id)) return null
+
+      if (inlineRE.test(id) || noInlineRE.test(id)) {
+        this.warn(
+          `\n` +
+            `Using ?inline or ?no-inline for JSON imports will have no effect.\n` +
+            `Please use ?url&inline or ?url&no-inline to control JSON file inlining behavior.\n`,
+        )
+      }
 
       json = stripBomTag(json)
 
