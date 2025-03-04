@@ -147,7 +147,7 @@ const FRAMEWORKS: Framework[] = [
         name: 'custom-tanstack-router',
         display: 'TanStack Router ↗',
         color: cyan,
-        customCommand: 'npm create tsrouter-app@latest TARGET_DIR --framework react',
+        customCommand: 'npm create -- tsrouter-app@latest TARGET_DIR --framework react',
       },
     ],
   },
