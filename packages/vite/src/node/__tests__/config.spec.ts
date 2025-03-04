@@ -8,6 +8,13 @@ import { defineConfig, loadConfigFromFile, resolveConfig } from '../config'
 import { resolveEnvPrefix } from '../env'
 import { createLogger, mergeConfig } from '../publicUtils'
 
+const [nvMajor, nvMinor] = process.versions.node.split('.').map(Number)
+const isImportAttributesSupported =
+  (nvMajor === 18 && nvMinor >= 20) ||
+  // Node v19 doesn't support import attributes
+  (nvMajor === 20 && nvMinor >= 10) ||
+  nvMajor >= 21
+
 describe('mergeConfig', () => {
   test('handles configs with different alias schemas', () => {
     const baseConfig = defineConfig({
@@ -611,101 +618,166 @@ test('preTransformRequests', async () => {
 })
 
 describe('loadConfigFromFile', () => {
-  const root = path.resolve(__dirname, './fixtures/config/loadConfigFromFile')
+  const fixtures = path.resolve(__dirname, './fixtures/config')
 
-  let writtenConfig: string | undefined
-  afterEach(() => {
-    if (writtenConfig) {
-      fs.unlinkSync(path.resolve(root, writtenConfig))
+  describe('load default files', () => {
+    const root = path.resolve(fixtures, './loadConfigFromFile')
+
+    let writtenConfig: string | undefined
+    afterEach(() => {
+      if (writtenConfig) {
+        fs.unlinkSync(path.resolve(root, writtenConfig))
+      }
+      fs.unlinkSync(path.resolve(root, 'package.json'))
+    })
+
+    const writeConfig = (fileName: string, content: string) => {
+      fs.writeFileSync(path.resolve(root, fileName), content)
+      writtenConfig = fileName
     }
-    fs.unlinkSync(path.resolve(root, 'package.json'))
+    const writePackageJson = (typeField: string | undefined) => {
+      fs.writeFileSync(
+        path.resolve(root, 'package.json'),
+        JSON.stringify({
+          name: '@vitejs/test-load-config-from-file',
+          type: typeField,
+        }),
+      )
+    }
+
+    const canLoadConfig = async () => {
+      const result = await loadConfigFromFile(
+        { command: 'build', mode: 'production' },
+        undefined,
+        root,
+      )
+      expect(result).toBeTruthy()
+      expect(result?.config).toStrictEqual({ define: { foo: 1 } })
+      expect(path.normalize(result!.path)).toBe(
+        path.resolve(root, writtenConfig!),
+      )
+    }
+
+    const cases = [
+      {
+        fileName: 'vite.config.js',
+        content: 'export default { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.js',
+        content: 'export default { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.cjs',
+        content: 'module.exports = { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.cjs',
+        content: 'module.exports = { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.mjs',
+        content: 'export default { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.mjs',
+        content: 'export default { define: { foo: 1 } }',
+      },
+      {
+        fileName: 'vite.config.ts',
+        content: 'export default { define: { foo: 1 as number } }',
+      },
+      {
+        fileName: 'vite.config.ts',
+        content: 'export default { define: { foo: 1 as number } }',
+      },
+      {
+        fileName: 'vite.config.mts',
+        content: 'export default { define: { foo: 1 as number } }',
+      },
+      {
+        fileName: 'vite.config.mts',
+        content: 'export default { define: { foo: 1 as number } }',
+      },
+      {
+        fileName: 'vite.config.cts',
+        content: 'module.exports = { define: { foo: 1 as number } }',
+      },
+      {
+        fileName: 'vite.config.cts',
+        content: 'module.exports = { define: { foo: 1 as number } }',
+      },
+    ]
+
+    for (const { fileName, content } of cases) {
+      for (const typeField of [undefined, 'module']) {
+        test(`load ${fileName}${typeField ? ' with package#type module' : ''}`, async () => {
+          writePackageJson(typeField)
+          writeConfig(fileName, content)
+          await canLoadConfig()
+        })
+      }
+    }
   })
 
-  const writeConfig = (fileName: string, content: string) => {
-    fs.writeFileSync(path.resolve(root, fileName), content)
-    writtenConfig = fileName
-  }
-  const writePackageJson = (typeField: string | undefined) => {
-    fs.writeFileSync(
-      path.resolve(root, 'package.json'),
-      JSON.stringify({
-        name: '@vitejs/test-load-config-from-file',
-        type: typeField,
-      }),
-    )
-  }
+  test('can import values', async () => {
+    const { config } = (await loadConfigFromFile(
+      {} as any,
+      path.resolve(fixtures, './entry/vite.config.ts'),
+      path.resolve(fixtures, './entry'),
+    ))!
+    expect(config).toMatchInlineSnapshot(`
+      {
+        "array": [
+          [
+            1,
+            3,
+          ],
+          [
+            2,
+            4,
+          ],
+        ],
+        "importsField": "imports-field",
+        "moduleCondition": "import condition",
+      }
+    `)
+  })
 
-  const canLoadConfig = async () => {
-    const result = await loadConfigFromFile(
-      { command: 'build', mode: 'production' },
-      undefined,
-      root,
-    )
-    expect(result).toBeTruthy()
-    expect(result?.config).toStrictEqual({ define: { foo: 1 } })
-    expect(path.normalize(result!.path)).toBe(
-      path.resolve(root, writtenConfig!),
-    )
-  }
+  test.runIf(isImportAttributesSupported)(
+    'loadConfigFromFile with import attributes',
+    async () => {
+      const { config } = (await loadConfigFromFile(
+        {} as any,
+        path.resolve(fixtures, './entry/vite.config.import-attributes.ts'),
+        path.resolve(fixtures, './entry'),
+      ))!
+      expect(config).toMatchInlineSnapshot(`
+        {
+          "jsonValue": "vite",
+        }
+      `)
+    },
+  )
 
-  const cases = [
-    {
-      fileName: 'vite.config.js',
-      content: 'export default { define: { foo: 1 } }',
-    },
-    {
-      fileName: 'vite.config.js',
-      content: 'export default { define: { foo: 1 } }',
-    },
-    {
-      fileName: 'vite.config.cjs',
-      content: 'module.exports = { define: { foo: 1 } }',
-    },
-    {
-      fileName: 'vite.config.cjs',
-      content: 'module.exports = { define: { foo: 1 } }',
-    },
-    {
-      fileName: 'vite.config.mjs',
-      content: 'export default { define: { foo: 1 } }',
-    },
-    {
-      fileName: 'vite.config.mjs',
-      content: 'export default { define: { foo: 1 } }',
-    },
-    {
-      fileName: 'vite.config.ts',
-      content: 'export default { define: { foo: 1 as number } }',
-    },
-    {
-      fileName: 'vite.config.ts',
-      content: 'export default { define: { foo: 1 as number } }',
-    },
-    {
-      fileName: 'vite.config.mts',
-      content: 'export default { define: { foo: 1 as number } }',
-    },
-    {
-      fileName: 'vite.config.mts',
-      content: 'export default { define: { foo: 1 as number } }',
-    },
-    {
-      fileName: 'vite.config.cts',
-      content: 'module.exports = { define: { foo: 1 as number } }',
-    },
-    {
-      fileName: 'vite.config.cts',
-      content: 'module.exports = { define: { foo: 1 as number } }',
-    },
-  ]
+  describe('loadConfigFromFile with configLoader: native', () => {
+    const fixtureRoot = path.resolve(fixtures, './native-import')
 
-  for (const { fileName, content } of cases) {
-    for (const typeField of [undefined, 'module']) {
-      test(`load ${fileName}${typeField ? ' with package#type module' : ''}`, async () => {
-        writePackageJson(typeField)
-        writeConfig(fileName, content)
-        await canLoadConfig()
-      })
-    }
-  }
+    test('imports a basic js config', async () => {
+      const result = (await loadConfigFromFile(
+        {} as any,
+        path.resolve(fixtureRoot, 'basic.js'),
+        fixtureRoot,
+        undefined,
+        undefined,
+        'native',
+      ))!
+      expect(result.config).toMatchInlineSnapshot(`
+        {
+          "value": "works",
+        }
+      `)
+      expect(result.dependencies.length).toBe(0)
+    })
+  })
 })

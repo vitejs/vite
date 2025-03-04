@@ -429,6 +429,23 @@ importers:
 
   packages/vite/src/node/__tests__/fixtures/cjs-ssr-dep: {}
 
+  packages/vite/src/node/__tests__/fixtures/config/entry:
+    dependencies:
+      '@vite/test-config-plugin-module-condition':
+        specifier: link:../plugin-module-condition
+        version: link:../plugin-module-condition
+
+  packages/vite/src/node/__tests__/fixtures/config/plugin-module-condition: {}
+
+  packages/vite/src/node/__tests__/fixtures/config/siblings:
+    devDependencies:
+      '@types/lodash':
+        specifier: ^4.17.16
+        version: 4.17.16
+      lodash:
+        specifier: ^4.17.21
+        version: 4.17.21
+
   packages/vite/src/node/__tests__/fixtures/file-url: {}
 
   packages/vite/src/node/__tests__/fixtures/test-dep-conditions: {}
@@ -547,23 +564,6 @@ importers:
         version: 0.11.4
 
   playground/client-reload: {}
-
-  playground/config/packages/entry:
-    dependencies:
-      '@vite/test-config-plugin-module-condition':
-        specifier: link:../plugin-module-condition
-        version: link:../plugin-module-condition
-
-  playground/config/packages/plugin-module-condition: {}
-
-  playground/config/packages/siblings:
-    devDependencies:
-      '@types/lodash':
-        specifier: ^4.17.16
-        version: 4.17.16
-      lodash:
-        specifier: ^4.17.21
-        version: 4.17.21
 
   playground/csp: {}
 
