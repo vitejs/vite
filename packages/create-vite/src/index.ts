@@ -615,7 +615,7 @@ function editFile(file: string, callback: (content: string) => string) {
 function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
   const pkgManager = pkgInfo ? pkgInfo.name : 'npm'
   const isYarn1 = pkgManager === 'yarn' && pkgInfo?.version.startsWith('1.')
-  
+
   return (
     customCommand
       .replace(/^npm create /, () => {
