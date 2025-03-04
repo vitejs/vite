@@ -330,11 +330,13 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             export default function WorkerWrapper(options) {
               let objURL;
               try {
-                const blob = new Blob([${
-                  workerType === 'classic'
-                    ? ''
-                    : `'URL.revokeObjectURL(import.meta.url);'`
-                } + jsContent], { type: "text/javascript;charset=utf-8" });
+                const blob = new Blob([
+                  ${
+                    workerType === 'classic'
+                      ? `self.addEventListener("error", () => URL.revokeObjectURL(objURL));`
+                      : `'URL.revokeObjectURL(import.meta.url);'`
+                  } + jsContent
+                ], { type: "text/javascript;charset=utf-8" });
                 objURL = self.URL?.createObjectURL(blob);
                 if (!objURL) throw '';
                 const worker = new Worker(objURL, options);
@@ -349,13 +351,24 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 return new Worker('data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent), options);
               }
             };
-          `
+          `;
 
-          if (typeof window !== 'undefined' && typeof URL.revokeObjectURL === 'function' && typeof import.meta.url === 'string' && import.meta.url) {
-            // eslint-disable-next-line n/no-unsupported-features/node-builtins
-            URL.revokeObjectURL(import.meta.url)
+          if (
+            typeof window !== 'undefined' &&
+            typeof URL.revokeObjectURL === 'function' &&
+            typeof import.meta !== 'undefined' &&
+            typeof import.meta.url === 'string' &&
+            import.meta.url.trim().length > 0
+          ) {
+            try {
+              // eslint-disable-next-line n/no-unsupported-features/node-builtins
+              URL.revokeObjectURL(import.meta.url);
+            } catch (e) {
+              // eslint-disable-next-line no-console
+              console.warn('Failed to revokeObjectURL:', e);
+            }
           }
-
+          
           return {
             code,
             // Empty sourcemap to suppress Rollup warning
