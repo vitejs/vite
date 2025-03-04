@@ -1279,8 +1279,6 @@ importers:
         specifier: ^8.0.1
         version: 8.0.1
 
-  playground/resolve-config: {}
-
   playground/resolve-linked: {}
 
   playground/resolve/browser-field:
