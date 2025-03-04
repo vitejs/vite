@@ -148,9 +148,11 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     return {
                       name: chunk.fileName,
                       group: 'JS',
-                      size: chunk.code.length,
+                      size: Buffer.byteLength(chunk.code),
                       compressedSize: await getCompressedSize(chunk.code),
-                      mapSize: chunk.map ? chunk.map.toString().length : null,
+                      mapSize: chunk.map
+                        ? Buffer.byteLength(chunk.map.toString())
+                        : null,
                     }
                   } else {
                     if (chunk.fileName.endsWith('.map')) return null
@@ -160,7 +162,7 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
                     return {
                       name: chunk.fileName,
                       group: isCSS ? 'CSS' : 'Assets',
-                      size: chunk.source.length,
+                      size: Buffer.byteLength(chunk.source),
                       mapSize: null, // Rollup doesn't support CSS maps?
                       compressedSize: isCompressible
                         ? await getCompressedSize(chunk.source)
