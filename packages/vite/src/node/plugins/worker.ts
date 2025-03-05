@@ -325,50 +325,45 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const chunk = await bundleWorkerEntry(config, id)
           const jsContent = `const jsContent = ${JSON.stringify(chunk.code)};`
 
-          const code = `
-            ${jsContent}
-            export default function WorkerWrapper(options) {
-              let objURL;
-              try {
-                const blob = new Blob([
-                  ${
-                    workerType === 'classic'
-                      ? `self.addEventListener("error", () => URL.revokeObjectURL(objURL));`
-                      : `'URL.revokeObjectURL(import.meta.url);'`
-                  } + jsContent
-                ], { type: "text/javascript;charset=utf-8" });
-                objURL = self.URL?.createObjectURL(blob);
-                if (!objURL) throw '';
-                const worker = new Worker(objURL, options);
-                worker.addEventListener("error", () => {
-                  self.URL?.revokeObjectURL(objURL);
-                });
-                return worker;
-              } catch (e) {
-                if (objURL) {
-                  self.URL?.revokeObjectURL(objURL);
-                }
-                return new Worker('data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent), options);
-              }
-            };
-          `;
-
-          if (
-            typeof window !== 'undefined' &&
-            typeof URL.revokeObjectURL === 'function' &&
-            typeof import.meta !== 'undefined' &&
-            typeof import.meta.url === 'string' &&
-            import.meta.url.trim().length > 0
-          ) {
+          const code =
+            // Using blob URL for SharedWorker results in multiple instances of a same worker
+            workerConstructor === 'Worker'
+              ? `${jsContent}
+          const blob = typeof self !== "undefined" && self.Blob && new Blob([${
+            workerType === 'classic'
+              ? ''
+              : // For module workers, append revokeObjectURL to the script
+                `'self.URL.revokeObjectURL(import.meta.url);',`
+          }jsContent], { type: "text/javascript;charset=utf-8" });
+          export default function WorkerWrapper(options) {
+            let objURL;
             try {
-              // eslint-disable-next-line n/no-unsupported-features/node-builtins
-              URL.revokeObjectURL(import.meta.url);
-            } catch (e) {
-              // eslint-disable-next-line no-console
-              console.warn('Failed to revokeObjectURL:', e);
+              objURL = blob && (self.URL || self.webkitURL).createObjectURL(blob);
+              if (!objURL) throw ''
+              const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
+              // Append cleanup code to the worker script to ensure revokeObjectURL is called
+              const originalCode = jsContent;
+              const cleanupCode = ';(function(){const cleanup=function(){(self.URL||self.webkitURL).revokeObjectURL("'+objURL+'")};self.addEventListener("error",cleanup);})();';
+              const finalCode = originalCode + cleanupCode;
+              const cleanupBlob = new Blob([finalCode], { type: "text/javascript;charset=utf-8" });
+              const cleanupURL = (self.URL || self.webkitURL).createObjectURL(cleanupBlob);
+              return new ${workerConstructor}(cleanupURL, ${workerTypeOption});
+            } catch(e) {
+              return new ${workerConstructor}(
+                'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
+                ${workerTypeOption}
+              );
             }
+          }`
+              : `${jsContent}
+          export default function WorkerWrapper(options) {
+            return new ${workerConstructor}(
+              'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
+              ${workerTypeOption}
+            );
           }
-          
+          `
+
           return {
             code,
             // Empty sourcemap to suppress Rollup warning
