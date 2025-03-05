@@ -597,7 +597,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       }
 
       const inlined = inlineRE.test(id)
-      const modules = cssModulesCache.get(config)!.get(id)
+      const modules = cssModulesCache.get(config)?.get(id)
 
       // #6984, #7552
       // `foo.module.css` => modulesCode
