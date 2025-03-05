@@ -20,6 +20,7 @@
     "build": "vite build",
     "build:test": "NODE_ENV=development vite build --mode test",
     "start": "vite",
+    "dev": "vite",
     "test": "pnpm test:ember",
     "test:ember": "pnpm build:test && pnpm dist:ember:test",
     "dist:ember:test": "ember test --path dist --config-file ./testem.cjs"
@@ -40,6 +41,7 @@
     "babel-plugin-ember-template-compilation": "^2.3.0",
     "decorator-transforms": "^2.0.0",
     "ember-cli": "^6.2.2",
+    "ember-cli-deprecation-workflow": "^3.1.0",
     "ember-modifier": "^4.1.0",
     "ember-page-title": "^8.2.4",
     "ember-qunit": "^9.0.1",
