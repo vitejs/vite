@@ -36,8 +36,8 @@ export const assetUrlRE = /__VITE_ASSET__([\w$]+)__(?:\$_(.*?)__)?/g
 
 const jsSourceMapRE = /\.[cm]?js\.map$/
 
-const noInlineRE = /[?&]no-inline\b/
-const inlineRE = /[?&]inline\b/
+export const noInlineRE = /[?&]no-inline\b/
+export const inlineRE = /[?&]inline\b/
 const svgExtRE = /\.svg(?:$|\?)/
 
 const assetCache = new WeakMap<Environment, Map<string, string>>()
