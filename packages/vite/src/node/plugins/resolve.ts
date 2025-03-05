@@ -716,7 +716,7 @@ export function tryNodeResolve(
     importer &&
     path.isAbsolute(importer) &&
     // css processing appends `*` for importer
-    (importer[importer.length - 1] === '*' || fs.existsSync(cleanUrl(importer)))
+    (importer.endsWith('*') || fs.existsSync(cleanUrl(importer)))
   ) {
     basedir = path.dirname(importer)
   } else {

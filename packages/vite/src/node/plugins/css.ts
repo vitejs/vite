@@ -1703,7 +1703,7 @@ export async function formatPostcssSourceMap(
     const cleanSource = cleanUrl(decodeURIComponent(source))
 
     // postcss virtual files
-    if (cleanSource[0] === '<' && cleanSource[cleanSource.length - 1] === '>') {
+    if (cleanSource[0] === '<' && cleanSource.endsWith('>')) {
       return `\0${cleanSource}`
     }
 

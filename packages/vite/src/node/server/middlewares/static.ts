@@ -117,7 +117,7 @@ export function serveStaticMiddleware(
     // also skip internal requests `/@fs/ /@vite-client` etc...
     const cleanedUrl = cleanUrl(req.url!)
     if (
-      cleanedUrl[cleanedUrl.length - 1] === '/' ||
+      cleanedUrl.endsWith('/') ||
       path.extname(cleanedUrl) === '.html' ||
       isInternalRequest(req.url!) ||
       // skip url starting with // as these will be interpreted as
@@ -151,10 +151,7 @@ export function serveStaticMiddleware(
 
     const resolvedPathname = redirectedPathname || pathname
     let fileUrl = path.resolve(dir, removeLeadingSlash(resolvedPathname))
-    if (
-      resolvedPathname[resolvedPathname.length - 1] === '/' &&
-      fileUrl[fileUrl.length - 1] !== '/'
-    ) {
+    if (resolvedPathname.endsWith('/') && fileUrl[fileUrl.length - 1] !== '/') {
       fileUrl = withTrailingSlash(fileUrl)
     }
     if (!ensureServingAccess(fileUrl, server, res, next)) {

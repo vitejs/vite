@@ -42,7 +42,7 @@ export function htmlFallbackMiddleware(
       }
     }
     // trailing slash should check for fallback index.html
-    else if (pathname[pathname.length - 1] === '/') {
+    else if (pathname.endsWith('/')) {
       const filePath = path.join(root, pathname, 'index.html')
       if (fs.existsSync(filePath)) {
         const newUrl = url + 'index.html'
