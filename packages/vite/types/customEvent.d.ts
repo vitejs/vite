@@ -37,3 +37,5 @@ export interface InvalidatePayload {
  */
 export type InferCustomEventPayload<T extends string> =
   T extends keyof CustomEventMap ? CustomEventMap[T] : any
+
+export type CustomEventName = keyof CustomEventMap | (string & {})
