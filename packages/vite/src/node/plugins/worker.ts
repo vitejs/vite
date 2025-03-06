@@ -1,6 +1,7 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { OutputChunk, RollupError } from 'rollup'
+import colors from 'picocolors'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
@@ -56,6 +57,17 @@ function saveEmitWorkerAsset(
   asset: WorkerBundleAsset,
 ): void {
   const workerMap = workerCache.get(config.mainConfig || config)!
+  const duplicateAsset = workerMap.assets.get(asset.fileName)
+  if (duplicateAsset) {
+    if (!isSameContent(duplicateAsset.source, asset.source)) {
+      config.logger.warn(
+        `\n` +
+          colors.yellow(
+            `The emitted file ${JSON.stringify(asset.fileName)} overwrites a previously emitted file of the same name.`,
+          ),
+      )
+    }
+  }
   workerMap.assets.set(asset.fileName, asset)
 }
 
