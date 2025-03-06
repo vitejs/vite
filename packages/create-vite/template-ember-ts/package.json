@@ -36,7 +36,6 @@
     "@embroider/router": "^3.0.0-alpha.1",
     "@embroider/vite": "^1.0.0-alpha.7",
     "@glimmer/component": "^2.0.0",
-    "@glimmer/tracking": "^1.1.2",
     "@glint/core": "^1.4.1-unstable.469c15e",
     "@glint/template": "^1.4.1-unstable.469c15e",
     "@glint/environment-ember-template-imports": "^1.4.1-unstable.469c15e",
