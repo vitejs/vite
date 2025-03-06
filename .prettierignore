@@ -13,3 +13,4 @@ playground/html/valid.html
 playground/external/public/slash@3.0.0.js
 playground/ssr-html/public/slash@3.0.0.js
 playground/worker/classic-worker.js
+playground/css/weapp.wxss

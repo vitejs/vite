@@ -6,7 +6,7 @@ import type DartSass from 'sass'
 import type SassEmbedded from 'sass-embedded'
 // @ts-ignore `less` may not be installed
 import type Less from 'less'
-// @ts-ignore `less` may not be installed
+// @ts-ignore `stylus` may not be installed
 import type Stylus from 'stylus'
 
 /* eslint-enable @typescript-eslint/ban-ts-comment */

@@ -67,8 +67,9 @@ export class ScanEnvironment extends BaseEnvironment {
     this._pluginContainer = await createEnvironmentPluginContainer(
       this,
       this.plugins,
+      undefined,
+      false,
     )
-    await this._pluginContainer.buildStart()
   }
 }
 
@@ -105,11 +106,6 @@ export function devToScanEnvironment(
   } as unknown as ScanEnvironment
 }
 
-type ResolveIdOptions = Omit<
-  Parameters<EnvironmentPluginContainer['resolveId']>[2],
-  'environment'
->
-
 const debug = createDebugger('vite:deps')
 
 const htmlTypesRE = /\.(html|vue|svelte|astro|imba)$/
@@ -132,8 +128,6 @@ export function scanImports(environment: ScanEnvironment): {
     missing: Record<string, string>
   }>
 } {
-  // Only used to scan non-ssr code
-
   const start = performance.now()
   const deps: Record<string, string> = {}
   const missing: Record<string, string> = {}
@@ -383,27 +377,19 @@ function esbuildScanPlugin(
   async function resolveId(
     id: string,
     importer?: string,
-    options?: ResolveIdOptions,
   ): Promise<PartialResolvedId | null> {
     return environment.pluginContainer.resolveId(
       id,
       importer && normalizePath(importer),
-      {
-        ...options,
-        scan: true,
-      },
+      { scan: true },
     )
   }
-  const resolve = async (
-    id: string,
-    importer?: string,
-    options?: ResolveIdOptions,
-  ) => {
+  const resolve = async (id: string, importer?: string) => {
     const key = id + (importer && path.dirname(importer))
     if (seen.has(key)) {
       return seen.get(key)
     }
-    const resolved = await resolveId(id, importer, options)
+    const resolved = await resolveId(id, importer)
     const res = resolved?.id
     seen.set(key, res)
     return res
@@ -633,18 +619,14 @@ function esbuildScanPlugin(
           // avoid matching windows volume
           filter: /^[\w@][^:]/,
         },
-        async ({ path: id, importer, pluginData }) => {
+        async ({ path: id, importer }) => {
           if (moduleListContains(exclude, id)) {
             return externalUnlessEntry({ path: id })
           }
           if (depImports[id]) {
             return externalUnlessEntry({ path: id })
           }
-          const resolved = await resolve(id, importer, {
-            custom: {
-              depScan: { loader: pluginData?.htmlType?.loader },
-            },
-          })
+          const resolved = await resolve(id, importer)
           if (resolved) {
             if (shouldExternalizeDep(resolved, id)) {
               return externalUnlessEntry({ path: id })
@@ -706,13 +688,9 @@ function esbuildScanPlugin(
         {
           filter: /.*/,
         },
-        async ({ path: id, importer, pluginData }) => {
+        async ({ path: id, importer }) => {
           // use vite resolver to support urls and omitted extensions
-          const resolved = await resolve(id, importer, {
-            custom: {
-              depScan: { loader: pluginData?.htmlType?.loader },
-            },
-          })
+          const resolved = await resolve(id, importer)
           if (resolved) {
             if (
               shouldExternalizeDep(resolved, id) ||

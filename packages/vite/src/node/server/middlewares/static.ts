@@ -26,7 +26,7 @@ import {
   withTrailingSlash,
 } from '../../../shared/utils'
 
-const knownJavascriptExtensionRE = /\.[tj]sx?$/
+const knownJavascriptExtensionRE = /\.(?:[tj]sx?|[cm][tj]s)$/
 
 const sirvOptions = ({
   getHeaders,
@@ -38,9 +38,9 @@ const sirvOptions = ({
     etag: true,
     extensions: [],
     setHeaders(res, pathname) {
-      // Matches js, jsx, ts, tsx.
-      // The reason this is done, is that the .ts file extension is reserved
-      // for the MIME type video/mp2t. In almost all cases, we can expect
+      // Matches js, jsx, ts, tsx, mts, mjs, cjs, cts, ctx, mtx
+      // The reason this is done, is that the .ts and .mts file extensions are
+      // reserved for the MIME type video/mp2t. In almost all cases, we can expect
       // these files to be TypeScript files, and for Vite to serve them with
       // this Content-Type.
       if (knownJavascriptExtensionRE.test(pathname)) {
@@ -117,14 +117,17 @@ export function serveStaticMiddleware(
     // also skip internal requests `/@fs/ /@vite-client` etc...
     const cleanedUrl = cleanUrl(req.url!)
     if (
-      cleanedUrl[cleanedUrl.length - 1] === '/' ||
+      cleanedUrl.endsWith('/') ||
       path.extname(cleanedUrl) === '.html' ||
-      isInternalRequest(req.url!)
+      isInternalRequest(req.url!) ||
+      // skip url starting with // as these will be interpreted as
+      // scheme relative URLs by new URL() and will not be a valid file path
+      req.url?.startsWith('//')
     ) {
       return next()
     }
 
-    const url = new URL(req.url!.replace(/^\/{2,}/, '/'), 'http://example.com')
+    const url = new URL(req.url!, 'http://example.com')
     const pathname = decodeURI(url.pathname)
 
     // apply aliases to static requests as well
@@ -148,10 +151,7 @@ export function serveStaticMiddleware(
 
     const resolvedPathname = redirectedPathname || pathname
     let fileUrl = path.resolve(dir, removeLeadingSlash(resolvedPathname))
-    if (
-      resolvedPathname[resolvedPathname.length - 1] === '/' &&
-      fileUrl[fileUrl.length - 1] !== '/'
-    ) {
+    if (resolvedPathname.endsWith('/') && fileUrl[fileUrl.length - 1] !== '/') {
       fileUrl = withTrailingSlash(fileUrl)
     }
     if (!ensureServingAccess(fileUrl, server, res, next)) {
@@ -177,12 +177,12 @@ export function serveRawFsMiddleware(
 
   // Keep the named function. The name is visible in debug logs via `DEBUG=connect:dispatcher ...`
   return function viteServeRawFsMiddleware(req, res, next) {
-    const url = new URL(req.url!.replace(/^\/{2,}/, '/'), 'http://example.com')
     // In some cases (e.g. linked monorepos) files outside of root will
     // reference assets that are also out of served root. In such cases
     // the paths are rewritten to `/@fs/` prefixed paths and must be served by
     // searching based from fs root.
-    if (url.pathname.startsWith(FS_PREFIX)) {
+    if (req.url!.startsWith(FS_PREFIX)) {
+      const url = new URL(req.url!, 'http://example.com')
       const pathname = decodeURI(url.pathname)
       // restrict files outside of `fs.allow`
       if (

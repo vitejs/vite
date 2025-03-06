@@ -52,12 +52,13 @@
 <script type="module">
   import '../../entry'
   import json, { msg } from '../../safe.json'
+  import './code.js'
 
   function joinUrlSegments(a, b) {
     if (!a || !b) {
       return a || b || ''
     }
-    if (a[a.length - 1] === '/') {
+    if (a.endsWith('/')) {
       a = a.substring(0, a.length - 1)
     }
     if (b[0] !== '/') {

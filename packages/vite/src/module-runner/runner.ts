@@ -17,7 +17,6 @@ import type {
   SSRImportMetadata,
 } from './types'
 import {
-  normalizeAbsoluteUrl,
   posixDirname,
   posixPathToFileHref,
   posixResolve,
@@ -52,7 +51,6 @@ export class ModuleRunner {
   })
   private readonly transport: NormalizedModuleRunnerTransport
   private readonly resetSourceMapSupport?: () => void
-  private readonly root: string
   private readonly concurrentModuleNodePromises = new Map<
     string,
     Promise<EvaluatedModuleNode>
@@ -65,8 +63,6 @@ export class ModuleRunner {
     public evaluator: ModuleEvaluator = new ESModulesEvaluator(),
     private debug?: ModuleRunnerDebugger,
   ) {
-    const root = this.options.root
-    this.root = root[root.length - 1] === '/' ? root : `${root}/`
     this.evaluatedModules = options.evaluatedModules ?? new EvaluatedModules()
     this.transport = normalizeModuleRunnerTransport(options.transport)
     if (options.hmr !== false) {
@@ -237,8 +233,6 @@ export class ModuleRunner {
     url: string,
     importer?: string,
   ): Promise<EvaluatedModuleNode> {
-    url = normalizeAbsoluteUrl(url, this.root)
-
     let cached = this.concurrentModuleNodePromises.get(url)
     if (!cached) {
       const cachedModule = this.evaluatedModules.getModuleByUrl(url)
@@ -435,7 +429,7 @@ function exportAll(exports: any, sourceModule: any) {
     return
 
   for (const key in sourceModule) {
-    if (key !== 'default' && key !== '__esModule') {
+    if (key !== 'default' && key !== '__esModule' && !(key in exports)) {
       try {
         Object.defineProperty(exports, key, {
           enumerable: true,

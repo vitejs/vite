@@ -45,12 +45,6 @@ const viteSponsors: Pick<Sponsors, 'special' | 'gold'> = {
       url: 'https://nuxtlabs.com',
       img: '/nuxtlabs.svg',
     },
-    // sponsors bluwy
-    {
-      name: 'Astro',
-      url: 'https://astro.build',
-      img: '/astro.svg',
-    },
   ],
   gold: [
     // now automated via sponsors.vuejs.org too

@@ -40,7 +40,6 @@ import type {
   FunctionPluginHooks,
   InputOptions,
   LoadResult,
-  MinimalPluginContext,
   ModuleInfo,
   ModuleOptions,
   NormalizedInputOptions,
@@ -48,9 +47,11 @@ import type {
   ParallelPluginHooks,
   PartialNull,
   PartialResolvedId,
+  PluginContextMeta,
   ResolvedId,
   RollupError,
   RollupLog,
+  MinimalPluginContext as RollupMinimalPluginContext,
   PluginContext as RollupPluginContext,
   TransformPluginContext as RollupTransformPluginContext,
   SourceDescription,
@@ -88,8 +89,6 @@ import type {
   EnvironmentModuleNode,
 } from './moduleGraph'
 
-const noop = () => {}
-
 // same default value of "moduleInfo.meta" as in Rollup
 const EMPTY_OBJECT = Object.freeze({})
 
@@ -105,6 +104,9 @@ const debugPluginResolve = createDebugger('vite:plugin-resolve', {
 const debugPluginTransform = createDebugger('vite:plugin-transform', {
   onlyWhenFocused: 'vite:plugin',
 })
+const debugPluginContainerContext = createDebugger(
+  'vite:plugin-container-context',
+)
 
 export const ERR_CLOSED_SERVER = 'ERR_CLOSED_SERVER'
 
@@ -134,11 +136,13 @@ export async function createEnvironmentPluginContainer(
   environment: Environment,
   plugins: Plugin[],
   watcher?: FSWatcher,
+  autoStart = true,
 ): Promise<EnvironmentPluginContainer> {
   const container = new EnvironmentPluginContainer(
     environment,
     plugins,
     watcher,
+    autoStart,
   )
   await container.resolveRollupOptions()
   return container
@@ -148,6 +152,7 @@ export type SkipInformation = {
   id: string
   importer: string | undefined
   plugin: Plugin
+  called?: boolean
 }
 
 class EnvironmentPluginContainer {
@@ -180,19 +185,13 @@ class EnvironmentPluginContainer {
     public environment: Environment,
     public plugins: Plugin[],
     public watcher?: FSWatcher,
+    autoStart = true,
   ) {
-    this.minimalContext = {
-      meta: {
-        rollupVersion,
-        watchMode: true,
-      },
-      debug: noop,
-      info: noop,
-      warn: noop,
-      // @ts-expect-error noop
-      error: noop,
+    this._started = !autoStart
+    this.minimalContext = new MinimalPluginContext(
+      { rollupVersion, watchMode: true },
       environment,
-    }
+    )
     const utils = createPluginHookUtils(plugins)
     this.getSortedPlugins = utils.getSortedPlugins
     this.getSortedPluginHooks = utils.getSortedPluginHooks
@@ -364,7 +363,7 @@ class EnvironmentPluginContainer {
 
     const mergedSkip = new Set<Plugin>(skip)
     for (const call of skipCalls ?? []) {
-      if (call.id === rawId && call.importer === importer) {
+      if (call.called || (call.id === rawId && call.importer === importer)) {
         mergedSkip.add(call.plugin)
       }
     }
@@ -544,22 +543,63 @@ class EnvironmentPluginContainer {
   }
 }
 
-class PluginContext implements Omit<RollupPluginContext, 'cache'> {
+class MinimalPluginContext implements RollupMinimalPluginContext {
+  constructor(
+    public meta: PluginContextMeta,
+    public environment: Environment,
+  ) {}
+
+  debug(rawLog: string | RollupLog | (() => string | RollupLog)): void {
+    const log = this._normalizeRawLog(rawLog)
+    const msg = buildErrorMessage(log, [`debug: ${log.message}`], false)
+    debugPluginContainerContext?.(msg)
+  }
+
+  info(rawLog: string | RollupLog | (() => string | RollupLog)): void {
+    const log = this._normalizeRawLog(rawLog)
+    const msg = buildErrorMessage(log, [`info: ${log.message}`], false)
+    this.environment.logger.info(msg, { clear: true, timestamp: true })
+  }
+
+  warn(rawLog: string | RollupLog | (() => string | RollupLog)): void {
+    const log = this._normalizeRawLog(rawLog)
+    const msg = buildErrorMessage(
+      log,
+      [colors.yellow(`warning: ${log.message}`)],
+      false,
+    )
+    this.environment.logger.warn(msg, { clear: true, timestamp: true })
+  }
+
+  error(e: string | RollupError): never {
+    const err = (typeof e === 'string' ? new Error(e) : e) as RollupError
+    throw err
+  }
+
+  private _normalizeRawLog(
+    rawLog: string | RollupLog | (() => string | RollupLog),
+  ): RollupLog {
+    const logValue = typeof rawLog === 'function' ? rawLog() : rawLog
+    return typeof logValue === 'string' ? new Error(logValue) : logValue
+  }
+}
+
+class PluginContext
+  extends MinimalPluginContext
+  implements Omit<RollupPluginContext, 'cache'>
+{
   ssr = false
   _scan = false
   _activeId: string | null = null
   _activeCode: string | null = null
   _resolveSkips?: Set<Plugin>
   _resolveSkipCalls?: readonly SkipInformation[]
-  meta: RollupPluginContext['meta']
-  environment: Environment
 
   constructor(
     public _plugin: Plugin,
     public _container: EnvironmentPluginContainer,
   ) {
-    this.environment = this._container.environment
-    this.meta = this._container.minimalContext.meta
+    super(_container.minimalContext.meta, _container.environment)
   }
 
   parse(code: string, opts: any) {
@@ -576,13 +616,28 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
       skipSelf?: boolean
     },
   ) {
-    const skipCalls =
-      options?.skipSelf === false
-        ? this._resolveSkipCalls
-        : [
-            ...(this._resolveSkipCalls || []),
-            { id, importer, plugin: this._plugin },
-          ]
+    let skipCalls: readonly SkipInformation[] | undefined
+    if (options?.skipSelf === false) {
+      skipCalls = this._resolveSkipCalls
+    } else if (this._resolveSkipCalls) {
+      const skipCallsTemp = [...this._resolveSkipCalls]
+      const sameCallIndex = this._resolveSkipCalls.findIndex(
+        (c) =>
+          c.id === id && c.importer === importer && c.plugin === this._plugin,
+      )
+      if (sameCallIndex !== -1) {
+        skipCallsTemp[sameCallIndex] = {
+          ...skipCallsTemp[sameCallIndex],
+          called: true,
+        }
+      } else {
+        skipCallsTemp.push({ id, importer, plugin: this._plugin })
+      }
+      skipCalls = skipCallsTemp
+    } else {
+      skipCalls = [{ id, importer, plugin: this._plugin }]
+    }
+
     let out = await this._container.resolveId(id, importer, {
       attributes: options?.attributes,
       custom: options?.custom,
@@ -668,39 +723,41 @@ class PluginContext implements Omit<RollupPluginContext, 'cache'> {
     return ''
   }
 
-  warn(
-    e: string | RollupLog | (() => string | RollupLog),
-    position?: number | { column: number; line: number },
-  ): void {
-    const err = this._formatError(typeof e === 'function' ? e() : e, position)
-    const msg = buildErrorMessage(
-      err,
-      [colors.yellow(`warning: ${err.message}`)],
-      false,
-    )
-    this.environment.logger.warn(msg, {
-      clear: true,
-      timestamp: true,
-    })
+  override debug(log: string | RollupLog | (() => string | RollupLog)): void {
+    const err = this._formatLog(typeof log === 'function' ? log() : log)
+    super.debug(err)
   }
 
-  error(
+  override info(log: string | RollupLog | (() => string | RollupLog)): void {
+    const err = this._formatLog(typeof log === 'function' ? log() : log)
+    super.info(err)
+  }
+
+  override warn(
+    log: string | RollupLog | (() => string | RollupLog),
+    position?: number | { column: number; line: number },
+  ): void {
+    const err = this._formatLog(
+      typeof log === 'function' ? log() : log,
+      position,
+    )
+    super.warn(err)
+  }
+
+  override error(
     e: string | RollupError,
     position?: number | { column: number; line: number },
   ): never {
     // error thrown here is caught by the transform middleware and passed on
     // the the error middleware.
-    throw this._formatError(e, position)
+    throw this._formatLog(e, position)
   }
 
-  debug = noop
-  info = noop
-
-  private _formatError(
-    e: string | RollupError,
-    position: number | { column: number; line: number } | undefined,
-  ): RollupError {
-    const err = (typeof e === 'string' ? new Error(e) : e) as RollupError
+  private _formatLog<E extends RollupLog>(
+    e: string | E,
+    position?: number | { column: number; line: number } | undefined,
+  ): E {
+    const err = (typeof e === 'string' ? new Error(e) : e) as E
     if (err.pluginCode) {
       return err // The plugin likely called `this.error`
     }

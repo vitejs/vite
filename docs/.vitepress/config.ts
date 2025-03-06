@@ -232,16 +232,25 @@ export default defineConfig({
     sidebar: {
       '/guide/': [
         {
-          text: 'Guide',
+          text: 'Introduction',
           items: [
-            {
-              text: 'Why Vite',
-              link: '/guide/why',
-            },
             {
               text: 'Getting Started',
               link: '/guide/',
             },
+            {
+              text: 'Philosophy',
+              link: '/guide/philosophy',
+            },
+            {
+              text: 'Why Vite',
+              link: '/guide/why',
+            },
+          ],
+        },
+        {
+          text: 'Guide',
+          items: [
             {
               text: 'Features',
               link: '/guide/features',
@@ -283,20 +292,12 @@ export default defineConfig({
               link: '/guide/backend-integration',
             },
             {
-              text: 'Comparisons',
-              link: '/guide/comparisons',
-            },
-            {
               text: 'Troubleshooting',
               link: '/guide/troubleshooting',
             },
             {
               text: 'Performance',
               link: '/guide/performance',
-            },
-            {
-              text: 'Philosophy',
-              link: '/guide/philosophy',
             },
             {
               text: 'Migration from v5',
@@ -337,7 +338,7 @@ export default defineConfig({
               link: '/guide/api-environment',
             },
             {
-              text: 'Environment instances',
+              text: 'Environment Instances',
               link: '/guide/api-environment-instances',
             },
             {
@@ -442,7 +443,7 @@ export default defineConfig({
   transformPageData(pageData) {
     const canonicalUrl = `${ogUrl}/${pageData.relativePath}`
       .replace(/\/index\.md$/, '/')
-      .replace(/\.md$/, '/')
+      .replace(/\.md$/, '')
     pageData.frontmatter.head ??= []
     pageData.frontmatter.head.unshift(
       ['link', { rel: 'canonical', href: canonicalUrl }],

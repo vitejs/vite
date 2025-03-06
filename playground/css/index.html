@@ -18,8 +18,13 @@
   <pre class="imported-css-glob"></pre>
   <pre class="imported-css-globEager"></pre>
 
+  <p class="scoped">Imported scoped CSS</p>
+
   <p class="postcss">
     <span class="nesting">PostCSS nesting plugin: this should be pink</span>
+  </p>
+  <p class="postcss-inject-url">
+    PostCSS plugin: this should have a background image
   </p>
 
   <p class="sass">SASS: This should be orange</p>
@@ -43,6 +48,9 @@
     @import "file:///xxx/absolute-path.scss" should be orange
   </p>
   <p class="sass-dir-index">@import "./dir" should be orange</p>
+  <p class="sass-root-relative">
+    @import "/nested/root-relative.scss" should be orange
+  </p>
 
   <p class="less">Less: This should be blue</p>
   <p class="less-at-import">
@@ -59,6 +67,10 @@
 
   <div class="form-box-data-uri">
     tests Less's `data-uri()` function with relative image paths
+  </div>
+  <div>
+    url in Less's JS plugin: This should have a blue square below
+    <div class="less-js-plugin"></div>
   </div>
 
   <p class="stylus">Stylus: This should be blue</p>
