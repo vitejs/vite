@@ -7,7 +7,6 @@ import type {
   ResolvedConfig,
 } from '..'
 import type { Plugin } from '../plugin'
-import { isConfiguredAsExternal } from '../external'
 import {
   bareImportRE,
   isInNodeModules,
@@ -22,7 +21,6 @@ import { tryOptimizedResolve } from './resolve'
  */
 export function preAliasPlugin(config: ResolvedConfig): Plugin {
   const findPatterns = getAliasPatterns(config.resolve.alias)
-  const isBuild = config.command === 'build'
   return {
     name: 'vite:pre-alias',
     async resolveId(id, importer, options) {
@@ -65,11 +63,6 @@ export function preAliasPlugin(config: ResolvedConfig): Plugin {
               (isInNodeModules(resolvedId) ||
                 optimizeDeps.include?.includes(id)) &&
               isOptimizable(resolvedId, optimizeDeps) &&
-              !(
-                isBuild &&
-                ssr &&
-                isConfiguredAsExternal(environment, id, importer)
-              ) &&
               (!ssr || optimizeAliasReplacementForSSR(resolvedId, optimizeDeps))
             ) {
               // aliased dep has not yet been optimized
