@@ -191,7 +191,9 @@ export default defineConfig({
 - **Default:** `false`
 - **Related:** [Backend Integration](/guide/backend-integration)
 
-When set to `true`, the build will also generate a `.vite/manifest.json` file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links. When the value is a string, it will be used as the manifest file name.
+Whether to generate a manifest file that contains a mapping of non-hashed asset filenames to their hashed versions, which can then be used by a server framework to render the correct asset links.
+
+When the value is a string, it will be used as the manifest file path relative to `build.outDir`. When set to `true`, the path would be `.vite/manifest.json`.
 
 ## build.ssrManifest
 
@@ -199,7 +201,9 @@ When set to `true`, the build will also generate a `.vite/manifest.json` file th
 - **Default:** `false`
 - **Related:** [Server-Side Rendering](/guide/ssr)
 
-When set to `true`, the build will also generate an SSR manifest for determining style links and asset preload directives in production. When the value is a string, it will be used as the manifest file name.
+Whether to generate a SSR manifest file for determining style links and asset preload directives in production.
+
+When the value is a string, it will be used as the manifest file path relative to `build.outDir`. When set to `true`, the path would be `.vite/ssr-manifest.json`.
 
 ## build.ssr
 
