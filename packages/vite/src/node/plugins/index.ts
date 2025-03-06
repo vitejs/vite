@@ -1,7 +1,6 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rollup'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
-import { isDepOptimizationDisabled } from '../optimizer'
 import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
 import { jsonPlugin } from './json'
@@ -36,17 +35,12 @@ export async function resolvePlugins(
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
-  const depOptimizationEnabled =
-    !isBuild &&
-    Object.values(config.environments).some(
-      (environment) => !isDepOptimizationDisabled(environment.optimizeDeps),
-    )
 
   return [
-    depOptimizationEnabled ? optimizedDepsPlugin() : null,
+    !isBuild ? optimizedDepsPlugin() : null,
     isBuild ? metadataPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
-    preAliasPlugin(config),
+    !isBuild ? preAliasPlugin(config) : null,
     aliasPlugin({
       entries: config.resolve.alias,
       customResolver: viteAliasCustomResolver,
