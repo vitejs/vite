@@ -36,7 +36,8 @@ export default defineConfig({
     },
     virtualPlugin(),
     transformCountPlugin(),
-    watchCssDepsPlugin(),
+    watchCssDepsTransformPlugin(),
+    watchCssDepsLoadPlugin(),
   ],
 })
 
@@ -82,17 +83,50 @@ function transformCountPlugin(): Plugin {
   }
 }
 
-function watchCssDepsPlugin(): Plugin {
+// `addWatchFile` called from `transform` hook
+function watchCssDepsTransformPlugin(): Plugin {
   return {
-    name: 'watch-css-deps',
+    name: 'watch-css-deps-transform',
     async transform(code, id) {
       // replace the `replaced` identifier in the CSS file with the adjacent
       // `dep.js` file's `color` variable.
-      if (id.includes('css-deps/main.css')) {
-        const depPath = path.resolve(__dirname, './css-deps/dep.js')
+      if (id.includes('css-deps/main-transform.css')) {
+        const depPath = path.resolve(__dirname, './css-deps/dep-transform.js')
         const dep = await fs.readFile(depPath, 'utf-8')
         const color = dep.match(/color = '(.+?)'/)[1]
         this.addWatchFile(depPath)
+        return code.replace('replaced', color)
+      }
+    },
+  }
+}
+
+// `addWatchFile` called from `load` hook
+function watchCssDepsLoadPlugin(): Plugin {
+  return {
+    name: 'watch-css-deps-load',
+    resolveId(id) {
+      if (id === 'virtual:css-deps-load.css') {
+        return '\0virtual:css-deps-load.css'
+      }
+    },
+    async load(id) {
+      if (id === '\0virtual:css-deps-load.css') {
+        const depPath = path.resolve(__dirname, './css-deps/dep.js')
+        this.addWatchFile(depPath)
+        return `\
+.css-deps-load {
+  color: replaced;
+}`
+      }
+    },
+    async transform(code, id) {
+      // replace the `replaced` identifier in the CSS file with the adjacent
+      // `dep.js` file's `color` variable.
+      if (id === '\0virtual:css-deps-load.css') {
+        const depPath = path.resolve(__dirname, './css-deps/dep-load.js')
+        const dep = await fs.readFile(depPath, 'utf-8')
+        const color = dep.match(/color = '(.+?)'/)[1]
         return code.replace('replaced', color)
       }
     },
