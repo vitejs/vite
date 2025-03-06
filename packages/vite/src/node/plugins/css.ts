@@ -951,7 +951,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               injectionPoint =
                 code.indexOf(doubleQuoteUseStruct) + doubleQuoteUseStruct.length
             } else {
-              throw new Error('Not found injection point for inlined CSS')
+              throw new Error('Injection point for inlined CSS not found')
             }
             s ||= new MagicString(code)
             s.appendRight(injectionPoint, injectCode)
