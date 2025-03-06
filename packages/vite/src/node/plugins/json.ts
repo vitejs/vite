@@ -44,78 +44,80 @@ export function jsonPlugin(
   return {
     name: 'vite:json',
 
-    transform(json, id) {
-      if (!jsonExtRE.test(id)) return null
-      if (SPECIAL_QUERY_RE.test(id)) return null
+    transform: {
+      handler(json, id) {
+        if (!jsonExtRE.test(id)) return null
+        if (SPECIAL_QUERY_RE.test(id)) return null
 
-      if (inlineRE.test(id) || noInlineRE.test(id)) {
-        this.warn(
-          `\n` +
-            `Using ?inline or ?no-inline for JSON imports will have no effect.\n` +
-            `Please use ?url&inline or ?url&no-inline to control JSON file inlining behavior.\n`,
-        )
-      }
+        if (inlineRE.test(id) || noInlineRE.test(id)) {
+          this.warn(
+            `\n` +
+              `Using ?inline or ?no-inline for JSON imports will have no effect.\n` +
+              `Please use ?url&inline or ?url&no-inline to control JSON file inlining behavior.\n`,
+          )
+        }
 
-      json = stripBomTag(json)
+        json = stripBomTag(json)
 
-      try {
-        if (options.stringify !== false) {
-          if (options.namedExports && jsonObjRE.test(json)) {
-            const parsed = JSON.parse(json)
-            const keys = Object.keys(parsed)
+        try {
+          if (options.stringify !== false) {
+            if (options.namedExports && jsonObjRE.test(json)) {
+              const parsed = JSON.parse(json)
+              const keys = Object.keys(parsed)
 
-            let code = ''
-            let defaultObjectCode = '{\n'
-            for (const key of keys) {
-              if (key === makeLegalIdentifier(key)) {
-                code += `export const ${key} = ${serializeValue(parsed[key])};\n`
-                defaultObjectCode += `  ${key},\n`
-              } else {
-                defaultObjectCode += `  ${JSON.stringify(key)}: ${serializeValue(parsed[key])},\n`
+              let code = ''
+              let defaultObjectCode = '{\n'
+              for (const key of keys) {
+                if (key === makeLegalIdentifier(key)) {
+                  code += `export const ${key} = ${serializeValue(parsed[key])};\n`
+                  defaultObjectCode += `  ${key},\n`
+                } else {
+                  defaultObjectCode += `  ${JSON.stringify(key)}: ${serializeValue(parsed[key])},\n`
+                }
+              }
+              defaultObjectCode += '}'
+
+              code += `export default ${defaultObjectCode};\n`
+              return {
+                code,
+                map: { mappings: '' },
               }
             }
-            defaultObjectCode += '}'
 
-            code += `export default ${defaultObjectCode};\n`
-            return {
-              code,
-              map: { mappings: '' },
+            if (
+              options.stringify === true ||
+              // use 10kB as a threshold for 'auto'
+              // https://v8.dev/blog/cost-of-javascript-2019#:~:text=A%20good%20rule%20of%20thumb%20is%20to%20apply%20this%20technique%20for%20objects%20of%2010%20kB%20or%20larger
+              json.length > 10 * 1000
+            ) {
+              // during build, parse then double-stringify to remove all
+              // unnecessary whitespaces to reduce bundle size.
+              if (isBuild) {
+                json = JSON.stringify(JSON.parse(json))
+              }
+
+              return {
+                code: `export default /* #__PURE__ */ JSON.parse(${JSON.stringify(json)})`,
+                map: { mappings: '' },
+              }
             }
           }
 
-          if (
-            options.stringify === true ||
-            // use 10kB as a threshold for 'auto'
-            // https://v8.dev/blog/cost-of-javascript-2019#:~:text=A%20good%20rule%20of%20thumb%20is%20to%20apply%20this%20technique%20for%20objects%20of%2010%20kB%20or%20larger
-            json.length > 10 * 1000
-          ) {
-            // during build, parse then double-stringify to remove all
-            // unnecessary whitespaces to reduce bundle size.
-            if (isBuild) {
-              json = JSON.stringify(JSON.parse(json))
-            }
-
-            return {
-              code: `export default /* #__PURE__ */ JSON.parse(${JSON.stringify(json)})`,
-              map: { mappings: '' },
-            }
+          return {
+            code: dataToEsm(JSON.parse(json), {
+              preferConst: true,
+              namedExports: options.namedExports,
+            }),
+            map: { mappings: '' },
           }
+        } catch (e) {
+          const position = extractJsonErrorPosition(e.message, json.length)
+          const msg = position
+            ? `, invalid JSON syntax found at position ${position}`
+            : `.`
+          this.error(`Failed to parse JSON file` + msg, position)
         }
-
-        return {
-          code: dataToEsm(JSON.parse(json), {
-            preferConst: true,
-            namedExports: options.namedExports,
-          }),
-          map: { mappings: '' },
-        }
-      } catch (e) {
-        const position = extractJsonErrorPosition(e.message, json.length)
-        const msg = position
-          ? `, invalid JSON syntax found at position ${position}`
-          : `.`
-        this.error(`Failed to parse JSON file` + msg, position)
-      }
+      },
     },
   }
 }
