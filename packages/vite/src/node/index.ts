@@ -144,8 +144,7 @@ export type {
   StylusPreprocessorOptions,
 } from './plugins/css'
 export type { JsonOptions } from './plugins/json'
-export type { TransformOptions as EsbuildTransformOptions } from 'esbuild'
-export type { ESBuildOptions, ESBuildTransformResult } from './plugins/esbuild'
+export type { EsbuildTransformOptions } from 'types/internal/esbuildOptions'
 export type { OxcOptions } from './plugins/oxc'
 export type { Manifest, ManifestChunk } from './plugins/manifest'
 export type { ResolveOptions, InternalResolveOptions } from './plugins/resolve'

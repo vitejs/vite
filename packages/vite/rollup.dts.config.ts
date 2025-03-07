@@ -55,13 +55,8 @@ const identifierReplacements: Record<string, Record<string, string>> = {
     TransformResult$1: 'rolldown.TransformResult',
   },
   'rolldown/experimental': {
-    TransformOptions$2: 'rolldown_experimental_TransformOptions',
-    TransformResult$3: 'rolldown_experimental_TransformResult',
-  },
-  esbuild: {
-    TransformResult$2: 'esbuild_TransformResult',
-    TransformOptions$1: 'esbuild_TransformOptions',
-    BuildOptions$1: 'esbuild_BuildOptions',
+    TransformOptions$1: 'rolldown_experimental_TransformOptions',
+    TransformResult$2: 'rolldown_experimental_TransformResult',
   },
   'node:https': {
     Server$1: 'HttpsServer',

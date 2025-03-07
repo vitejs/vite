@@ -226,9 +226,6 @@ importers:
       '@oxc-project/runtime':
         specifier: 0.61.2
         version: 0.61.2
-      esbuild:
-        specifier: ^0.25.0
-        version: 0.25.0
       lightningcss:
         specifier: ^1.29.3
         version: 1.29.3
@@ -320,6 +317,9 @@ importers:
       es-module-lexer:
         specifier: ^1.6.0
         version: 1.6.0
+      esbuild:
+        specifier: ^0.25.0
+        version: 0.25.0
       escape-html:
         specifier: ^1.0.3
         version: 1.0.3

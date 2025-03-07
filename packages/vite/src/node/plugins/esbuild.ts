@@ -1,12 +1,11 @@
 import path from 'node:path'
 import colors from 'picocolors'
 import type {
-  Loader,
-  Message,
-  TransformOptions,
-  TransformResult,
-} from 'esbuild'
-import { transform } from 'esbuild'
+  EsbuildLoader,
+  EsbuildMessage,
+  EsbuildTransformOptions,
+  EsbuildTransformResult as RawEsbuildTransformResult,
+} from 'types/internal/esbuildOptions'
 import type { RawSourceMap } from '@ampproject/remapping'
 import type { InternalModuleFormat, SourceMap } from 'rolldown'
 import type { TSConfckParseResult } from 'tsconfck'
@@ -43,7 +42,7 @@ export const defaultEsbuildSupported = {
   'import-meta': true,
 }
 
-export interface ESBuildOptions extends TransformOptions {
+export interface ESBuildOptions extends EsbuildTransformOptions {
   include?: string | RegExp | ReadonlyArray<string | RegExp>
   exclude?: string | RegExp | ReadonlyArray<string | RegExp>
   jsxInject?: string
@@ -53,7 +52,7 @@ export interface ESBuildOptions extends TransformOptions {
   minify?: never
 }
 
-export type ESBuildTransformResult = Omit<TransformResult, 'map'> & {
+export type ESBuildTransformResult = Omit<RawEsbuildTransformResult, 'map'> & {
   map: SourceMap
 }
 
@@ -76,10 +75,16 @@ type TSConfigJSON = {
 }
 type TSCompilerOptions = NonNullable<TSConfigJSON['compilerOptions']>
 
+let esbuild: Promise<typeof import('esbuild')> | undefined
+const importEsbuild = () => {
+  esbuild ||= import('esbuild')
+  return esbuild
+}
+
 export async function transformWithEsbuild(
   code: string,
   filename: string,
-  options?: TransformOptions,
+  options?: EsbuildTransformOptions,
   inMap?: object,
   config?: ResolvedConfig,
   watcher?: FSWatcher,
@@ -98,7 +103,7 @@ export async function transformWithEsbuild(
     } else if (ext === 'cts' || ext === 'mts') {
       loader = 'ts'
     } else {
-      loader = ext as Loader
+      loader = ext as EsbuildLoader
     }
   }
 
@@ -179,7 +184,7 @@ export async function transformWithEsbuild(
     }
   }
 
-  const resolvedOptions: TransformOptions = {
+  const resolvedOptions: EsbuildTransformOptions = {
     sourcemap: true,
     // ensure source file name contains full query
     sourcefile: filename,
@@ -198,6 +203,7 @@ export async function transformWithEsbuild(
   delete resolvedOptions.jsxInject
 
   try {
+    const { transform } = await importEsbuild()
     const result = await transform(code, resolvedOptions)
     let map: SourceMap
     if (inMap && resolvedOptions.sourcemap) {
@@ -222,7 +228,7 @@ export async function transformWithEsbuild(
     // patch error information
     if (e.errors) {
       e.frame = ''
-      e.errors.forEach((m: Message) => {
+      e.errors.forEach((m: EsbuildMessage) => {
         if (
           m.text === 'Experimental decorators are not currently enabled' ||
           m.text ===
@@ -247,7 +253,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
 
   // Remove optimization options for dev as we only need to transpile them,
   // and for build as the final optimization is in `buildEsbuildPlugin`
-  const transformOptions: TransformOptions = {
+  const transformOptions: EsbuildTransformOptions = {
     target: 'esnext',
     charset: 'utf8',
     ...esbuildTransformOptions,
@@ -303,7 +309,7 @@ export function esbuildPlugin(config: ResolvedConfig): Plugin {
 
 const rollupToEsbuildFormatMap: Record<
   string,
-  TransformOptions['format'] | undefined
+  EsbuildTransformOptions['format'] | undefined
 > = {
   es: 'esm',
   cjs: 'cjs',
@@ -381,7 +387,7 @@ export const buildEsbuildPlugin = (): Plugin => {
 export function resolveEsbuildTranspileOptions(
   config: ResolvedConfig,
   format: InternalModuleFormat,
-): TransformOptions | null {
+): EsbuildTransformOptions | null {
   const target = config.build.target
   const minify = config.build.minify === 'esbuild'
 
@@ -395,7 +401,7 @@ export function resolveEsbuildTranspileOptions(
   const isEsLibBuild = config.build.lib && format === 'es'
   const esbuildOptions = config.esbuild || {}
 
-  const options: TransformOptions = {
+  const options: EsbuildTransformOptions = {
     charset: 'utf8',
     ...esbuildOptions,
     loader: 'js',
@@ -467,7 +473,7 @@ export function resolveEsbuildTranspileOptions(
   }
 }
 
-function prettifyMessage(m: Message, code: string): string {
+function prettifyMessage(m: EsbuildMessage, code: string): string {
   let res = colors.yellow(m.text)
   if (m.location) {
     res += `\n` + generateCodeFrame(code, m.location)

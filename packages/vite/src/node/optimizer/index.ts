@@ -4,7 +4,7 @@ import path from 'node:path'
 import { promisify } from 'node:util'
 import { performance } from 'node:perf_hooks'
 import colors from 'picocolors'
-import type { BuildOptions as EsbuildBuildOptions } from 'esbuild'
+import type { DepsOptimizerEsbuildOptions } from 'types/internal/esbuildOptions'
 import { init, parse } from 'es-module-lexer'
 import { isDynamicPattern } from 'tinyglobby'
 import {
@@ -96,19 +96,7 @@ export interface DepOptimizationConfig {
    *
    * https://esbuild.github.io/api
    */
-  esbuildOptions?: Omit<
-    EsbuildBuildOptions,
-    | 'bundle'
-    | 'entryPoints'
-    | 'external'
-    | 'write'
-    | 'watch'
-    | 'outdir'
-    | 'outfile'
-    | 'outbase'
-    | 'outExtension'
-    | 'metafile'
-  >
+  esbuildOptions?: DepsOptimizerEsbuildOptions
   rollupOptions?: Omit<RolldownOptions, 'input' | 'logLevel' | 'output'> & {
     output?: Omit<
       RolldownOutputOptions,

@@ -86,7 +86,6 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "@oxc-project/runtime": "0.61.2",
-    "esbuild": "^0.25.0",
     "lightningcss": "^1.29.3",
     "picomatch": "^4.0.2",
     "postcss": "^8.5.3",
@@ -122,6 +121,7 @@
     "dotenv": "^16.4.7",
     "dotenv-expand": "^12.0.1",
     "es-module-lexer": "^1.6.0",
+    "esbuild": "^0.25.0",
     "escape-html": "^1.0.3",
     "estree-walker": "^3.0.3",
     "etag": "^1.8.1",
@@ -158,6 +158,7 @@
   },
   "peerDependencies": {
     "@types/node": "^18.0.0 || ^20.0.0 || >=22.0.0",
+    "esbuild": "^0.25.0",
     "jiti": ">=1.21.0",
     "less": "*",
     "sass": "*",
@@ -170,6 +171,9 @@
   },
   "peerDependenciesMeta": {
     "@types/node": {
+      "optional": true
+    },
+    "esbuild": {
       "optional": true
     },
     "jiti": {
