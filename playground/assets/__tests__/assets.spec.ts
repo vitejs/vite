@@ -154,6 +154,47 @@ describe('asset imports from js', () => {
           '[success] Raw js from /public loaded'
         "
       `)
+    expect(await page.textContent('.public-js-import-content-type')).toMatch(
+      'text/javascript',
+    )
+  })
+
+  test('from /public (ts)', async () => {
+    expect(await page.textContent('.public-ts-import')).toMatch(
+      '/foo/bar/raw.ts',
+    )
+    expect(await page.textContent('.public-ts-import-content'))
+      .toMatchInlineSnapshot(`
+      "export default function other() {
+        return 1 + 2
+      }
+      "
+    `)
+    // NOTE: users should configure the mime type for .ts files for preview server
+    if (isServe) {
+      expect(await page.textContent('.public-ts-import-content-type')).toMatch(
+        'text/javascript',
+      )
+    }
+  })
+
+  test('from /public (mts)', async () => {
+    expect(await page.textContent('.public-mts-import')).toMatch(
+      '/foo/bar/raw.mts',
+    )
+    expect(await page.textContent('.public-mts-import-content'))
+      .toMatchInlineSnapshot(`
+      "export default function foobar() {
+        return 1 + 2
+      }
+      "
+    `)
+    // NOTE: users should configure the mime type for .ts files for preview server
+    if (isServe) {
+      expect(await page.textContent('.public-mts-import-content-type')).toMatch(
+        'text/javascript',
+      )
+    }
   })
 })
 
@@ -293,11 +334,35 @@ describe('css url() references', () => {
   })
 
   test('url() with svg', async () => {
-    expect(await getBg('.css-url-svg')).toMatch(/data:image\/svg\+xml,.+/)
+    const bg = await getBg('.css-url-svg')
+    expect(bg).toMatch(/data:image\/svg\+xml,.+/)
+    expect(bg).toContain('blue')
+    expect(bg).not.toContain('red')
+
+    if (isServe) {
+      editFile('nested/fragment-bg-hmr.svg', (code) =>
+        code.replace('fill="blue"', 'fill="red"'),
+      )
+      await untilUpdated(() => getBg('.css-url-svg'), 'red')
+    }
   })
 
   test('image-set() with svg', async () => {
     expect(await getBg('.css-image-set-svg')).toMatch(/data:image\/svg\+xml,.+/)
+  })
+
+  test('url() with svg in .css?url', async () => {
+    const bg = await getBg('.css-url-svg-in-url')
+    expect(bg).toMatch(/data:image\/svg\+xml,.+/)
+    expect(bg).toContain('blue')
+    expect(bg).not.toContain('red')
+
+    if (isServe) {
+      editFile('nested/fragment-bg-hmr2.svg', (code) =>
+        code.replace('fill="blue"', 'fill="red"'),
+      )
+      await untilUpdated(() => getBg('.css-url-svg'), 'red')
+    }
   })
 })
 
@@ -552,8 +617,8 @@ test.runIf(isBuild)('manifest', async () => {
 
   for (const file of listAssets('foo')) {
     if (file.endsWith('.css')) {
-      // ignore icons-*.css as it's imported with ?url
-      if (file.includes('icons-')) continue
+      // ignore icons-*.css and css-url-url-*.css as it's imported with ?url
+      if (file.includes('icons-') || file.includes('css-url-url-')) continue
       expect(entry.css).toContain(`assets/${file}`)
     } else if (!file.endsWith('.js')) {
       expect(entry.assets).toContain(`assets/${file}`)

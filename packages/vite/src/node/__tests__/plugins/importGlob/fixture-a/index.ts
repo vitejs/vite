@@ -80,6 +80,7 @@ export const excludeSelf = import.meta.glob(
    * for test: annotation contain ")"
    * */
 )
+export const excludeSelfRaw = import.meta.glob('./*.ts', { query: '?raw' })
 
 export const customQueryString = import.meta.glob('./*.ts', { query: 'custom' })
 

@@ -5,7 +5,7 @@ import { normalizePath } from 'vite'
 import postcssNested from 'postcss-nested'
 
 export default {
-  plugins: [postcssNested, testDirDep, testSourceInput],
+  plugins: [postcssNested, testDirDep, testSourceInput, testInjectUrl],
 }
 
 /**
@@ -61,3 +61,25 @@ function testSourceInput() {
   }
 }
 testSourceInput.postcss = true
+
+function testInjectUrl() {
+  return {
+    postcssPlugin: 'inject-url',
+    Once(root, { Rule }) {
+      root.walkAtRules('inject-url', (atRule) => {
+        const rule = new Rule({
+          selector: '.postcss-inject-url',
+          source: atRule.source,
+        })
+        rule.append({
+          prop: 'background',
+          value: "url('=/ok.png')",
+          source: atRule.source,
+        })
+        atRule.after(rule)
+        atRule.remove()
+      })
+    },
+  }
+}
+testInjectUrl.postcss = true

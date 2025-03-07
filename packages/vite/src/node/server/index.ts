@@ -44,7 +44,11 @@ import { reloadOnTsconfigChange } from '../plugins/esbuild'
 import { bindCLIShortcuts } from '../shortcuts'
 import type { BindCLIShortcutsOptions } from '../shortcuts'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
-import { CLIENT_DIR, DEFAULT_DEV_PORT } from '../constants'
+import {
+  CLIENT_DIR,
+  DEFAULT_DEV_PORT,
+  defaultAllowedOrigins,
+} from '../constants'
 import type { Logger } from '../logger'
 import { printServerUrls } from '../logger'
 import { warnFutureDeprecation } from '../deprecations'
@@ -93,6 +97,7 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
+import { hostCheckMiddleware } from './middlewares/hostCheck'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -523,6 +528,28 @@ export async function _createServer(
 
   const devHtmlTransformFn = createDevHtmlTransformFn(config)
 
+  // Promise used by `server.close()` to ensure `closeServer()` is only called once
+  let closeServerPromise: Promise<void> | undefined
+  const closeServer = async () => {
+    if (!middlewareMode) {
+      teardownSIGTERMListener(closeServerAndExit)
+    }
+
+    await Promise.allSettled([
+      watcher.close(),
+      ws.close(),
+      Promise.allSettled(
+        Object.values(server.environments).map((environment) =>
+          environment.close(),
+        ),
+      ),
+      closeHttpServer(),
+      server._ssrCompatModuleRunner?.close(),
+    ])
+    server.resolvedUrls = null
+    server._ssrCompatModuleRunner = undefined
+  }
+
   let server: ViteDevServer = {
     config,
     middlewares,
@@ -622,6 +649,7 @@ export async function _createServer(
         server.resolvedUrls = await resolveServerUrls(
           httpServer,
           config.server,
+          httpsOptions,
           config,
         )
         if (!isRestart && config.server.open) server.openBrowser()
@@ -630,8 +658,15 @@ export async function _createServer(
     },
     openBrowser() {
       const options = server.config.server
-      const url =
-        server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+      const host = options.host
+      let url: string | undefined
+      if (typeof host === 'string') {
+        url = [
+          ...(server.resolvedUrls?.local ?? []),
+          ...(server.resolvedUrls?.network ?? []),
+        ].find((url) => url.includes(host))
+      }
+      url ??= server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
       if (url) {
         const path =
           typeof options.open === 'string'
@@ -674,23 +709,10 @@ export async function _createServer(
       }
     },
     async close() {
-      if (!middlewareMode) {
-        teardownSIGTERMListener(closeServerAndExit)
+      if (!closeServerPromise) {
+        closeServerPromise = closeServer()
       }
-
-      await Promise.allSettled([
-        watcher.close(),
-        ws.close(),
-        Promise.allSettled(
-          Object.values(server.environments).map((environment) =>
-            environment.close(),
-          ),
-        ),
-        closeHttpServer(),
-        server._ssrCompatModuleRunner?.close(),
-      ])
-      server.resolvedUrls = null
-      server._ssrCompatModuleRunner = undefined
+      return closeServerPromise
     },
     printUrls() {
       if (server.resolvedUrls) {
@@ -842,10 +864,17 @@ export async function _createServer(
     middlewares.use(timeMiddleware(root))
   }
 
-  // cors (enabled by default)
+  // cors
   const { cors } = serverConfig
   if (cors !== false) {
     middlewares.use(corsMiddleware(typeof cors === 'boolean' ? {} : cors))
+  }
+
+  // host check (to prevent DNS rebinding attacks)
+  const { allowedHosts } = serverConfig
+  // no need to check for HTTPS as HTTPS is not vulnerable to DNS rebinding attacks
+  if (allowedHosts !== true && !serverConfig.https) {
+    middlewares.use(hostCheckMiddleware(config, false))
   }
 
   middlewares.use(cachedTransformMiddleware(server))
@@ -1034,10 +1063,11 @@ export const serverConfigDefaults = Object.freeze({
   port: DEFAULT_DEV_PORT,
   strictPort: false,
   host: 'localhost',
+  allowedHosts: [],
   https: undefined,
   open: false,
   proxy: undefined,
-  cors: true,
+  cors: { origin: defaultAllowedOrigins },
   headers: {},
   // hmr
   // ws
@@ -1132,6 +1162,14 @@ export function resolveServerOptions(
     )
   }
 
+  if (
+    process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS &&
+    Array.isArray(server.allowedHosts)
+  ) {
+    const additionalHost = process.env.__VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS
+    server.allowedHosts = [...server.allowedHosts, additionalHost]
+  }
+
   return server
 }
 
@@ -1142,9 +1180,7 @@ async function restartServer(server: ViteDevServer) {
   let inlineConfig = server.config.inlineConfig
   if (server._forceOptimizeOnRestart) {
     inlineConfig = mergeConfig(inlineConfig, {
-      optimizeDeps: {
-        force: true,
-      },
+      forceOptimizeDeps: true,
     })
   }
 

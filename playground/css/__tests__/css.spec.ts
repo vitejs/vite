@@ -76,6 +76,14 @@ test('postcss config', async () => {
   await untilUpdated(() => getColor(imported), 'red')
 })
 
+test('postcss plugin that injects url()', async () => {
+  const imported = await page.$('.postcss-inject-url')
+  // alias should be resolved
+  expect(await getBg(imported)).toMatch(
+    /localhost(?::\d+)?\/(?:assets\/)?ok.*\.png/,
+  )
+})
+
 sassTest()
 
 test('less', async () => {
@@ -106,6 +114,13 @@ test('less', async () => {
     code.replace('color: darkslateblue', 'color: blue'),
   )
   await untilUpdated(() => getColor(atImport), 'blue')
+})
+
+test('less-plugin', async () => {
+  const body = await page.$('.less-js-plugin')
+  expect(await getBg(body)).toBe(
+    'url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAXNSR0IArs4c6QAAAA1JREFUGFdjYGD4/x8AAwIB/8myre4AAAAASUVORK5CYII=")',
+  )
 })
 
 test('stylus', async () => {
@@ -484,3 +499,23 @@ test.runIf(isBuild)('CSS modules should be treeshaken if not used', () => {
   const css = findAssetFile(/\.css$/, undefined, undefined, true)
   expect(css).not.toContain('treeshake-module-b')
 })
+
+test.runIf(isBuild)('Scoped CSS via cssScopeTo should be treeshaken', () => {
+  const css = findAssetFile(/\.css$/, undefined, undefined, true)
+  expect(css).not.toContain('treeshake-module-b')
+  expect(css).not.toContain('treeshake-module-c')
+})
+
+test.runIf(isBuild)(
+  'Scoped CSS via cssScopeTo should be bundled separately',
+  () => {
+    const scopedIndexCss = findAssetFile(/treeshakeScoped-[-\w]{8}\.css$/)
+    expect(scopedIndexCss).toContain('treeshake-scoped-barrel-a')
+    expect(scopedIndexCss).not.toContain('treeshake-scoped-barrel-b')
+    const scopedAnotherCss = findAssetFile(
+      /treeshakeScopedAnother-[-\w]{8}\.css$/,
+    )
+    expect(scopedAnotherCss).toContain('treeshake-scoped-barrel-b')
+    expect(scopedAnotherCss).not.toContain('treeshake-scoped-barrel-a')
+  },
+)

@@ -15,7 +15,7 @@ import {
   BuildEnvironment,
   createToImportMetaURLBasedRelativeRuntime,
   injectEnvironmentToHooks,
-  onRollupWarning,
+  onRollupLog,
   toOutputFilePathInJS,
 } from '../build'
 import { cleanUrl } from '../../shared/utils'
@@ -85,8 +85,8 @@ async function bundleWorkerEntry(
     plugins: workerEnvironment.plugins.map((p) =>
       injectEnvironmentToHooks(workerEnvironment, p),
     ),
-    onwarn(warning, warn) {
-      onRollupWarning(warning, warn, workerEnvironment)
+    onLog(level, log) {
+      onRollupLog(level, log, workerEnvironment)
     },
     preserveEntrySignatures: false,
   })

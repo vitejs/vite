@@ -176,7 +176,8 @@ html:has(.landing) {
 
     &.btn--primary {
       position: relative;
-      background: radial-gradient(
+      background:
+        radial-gradient(
           141.42% 141.42% at 100% 0%,
           rgba(255, 255, 255, 0.4) 0%,
           rgba(255, 255, 255, 0) 100%
@@ -194,7 +195,8 @@ html:has(.landing) {
       box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.75) inset;
 
       &:hover {
-        background: radial-gradient(
+        background:
+          radial-gradient(
             141.42% 141.42% at 100% 0%,
             rgba(255, 255, 255, 0.5) 0%,
             rgba(255, 255, 255, 0) 100%

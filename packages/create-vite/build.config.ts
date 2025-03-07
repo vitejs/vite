@@ -15,10 +15,6 @@ export default defineBuildConfig({
       minify: true,
     },
   },
-  alias: {
-    // we can always use non-transpiled code since we support node 18+
-    prompts: 'prompts/lib/index.js',
-  },
   hooks: {
     'rollup:options'(_ctx, options) {
       options.plugins = [

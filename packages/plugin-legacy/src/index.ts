@@ -99,7 +99,7 @@ function joinUrlSegments(a: string, b: string): string {
   if (!a || !b) {
     return a || b || ''
   }
-  if (a[a.length - 1] === '/') {
+  if (a.endsWith('/')) {
     a = a.substring(0, a.length - 1)
   }
   if (b[0] !== '/') {
@@ -264,6 +264,13 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         config.logger.warn(
           colors.yellow(
             `plugin-legacy 'modernTargets' option overrode the builtin targets of modern chunks. Some versions of browsers between legacy and modern may not be supported.`,
+          ),
+        )
+      }
+      if (config.isWorker) {
+        config.logger.warn(
+          colors.yellow(
+            `plugin-legacy should not be passed to 'worker.plugins'. Pass to 'plugins' instead. Note that generating legacy chunks for workers are not supported by plugin-legacy.`,
           ),
         )
       }
@@ -457,7 +464,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         return null
       }
 
-      // On first run, intialize the map with sorted chunk file names
+      // On first run, initialize the map with sorted chunk file names
       let chunkFileNameToPolyfills = outputToChunkFileNameToPolyfills.get(opts)
       if (chunkFileNameToPolyfills == null) {
         chunkFileNameToPolyfills = new Map()
@@ -811,6 +818,7 @@ async function buildPolyfillChunk(
         },
         output: {
           format,
+          hashCharacters: rollupOutputOptions.hashCharacters,
           entryFileNames: rollupOutputOptions.entryFileNames,
         },
       },

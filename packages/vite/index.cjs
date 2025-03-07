@@ -21,6 +21,7 @@ const asyncFunctions = [
   'loadConfigFromFile',
   'preprocessCSS',
   'createBuilder',
+  'runnerImport',
 ]
 asyncFunctions.forEach((name) => {
   module.exports[name] = (...args) =>
@@ -45,6 +46,7 @@ const disallowedVariables = [
   // can be exposed, but doesn't make sense as it's Environment API related
   'createServerHotChannel',
   'createServerModuleRunner',
+  'createServerModuleRunnerTransport',
   'isRunnableDevEnvironment',
 ]
 disallowedVariables.forEach((name) => {

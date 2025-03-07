@@ -5,6 +5,7 @@ import type { SourceMap } from 'rollup'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import { transformWithEsbuild } from '../../plugins/esbuild'
 import { ssrTransform } from '../ssrTransform'
+import { createServer } from '../..'
 
 const ssrTransformSimple = async (code: string, url = '') =>
   ssrTransform(code, null, url, code)
@@ -118,6 +119,44 @@ test('export * as from', async () => {
   ).toMatchInlineSnapshot(
     `"Object.defineProperty(__vite_ssr_exports__, "foo", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_0__ }});const __vite_ssr_import_0__ = await __vite_ssr_import__("vue");"`,
   )
+})
+
+test('re-export by imported name', async () => {
+  expect(
+    await ssrTransformSimpleCode(`\
+import * as foo from 'foo'
+export * as foo from 'foo'
+`),
+  ).toMatchInlineSnapshot(`
+    "const __vite_ssr_import_0__ = await __vite_ssr_import__("foo");
+    const __vite_ssr_import_1__ = await __vite_ssr_import__("foo");
+    Object.defineProperty(__vite_ssr_exports__, "foo", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_1__ }});
+    "
+  `)
+
+  expect(
+    await ssrTransformSimpleCode(`\
+import { foo } from 'foo'
+export { foo } from 'foo'
+`),
+  ).toMatchInlineSnapshot(`
+      "const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["foo"]});
+      const __vite_ssr_import_1__ = await __vite_ssr_import__("foo", {"importedNames":["foo"]});
+      Object.defineProperty(__vite_ssr_exports__, "foo", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_1__.foo }});
+      "
+    `)
+
+  expect(
+    await ssrTransformSimpleCode(`\
+import { foo } from 'foo'
+export { foo as foo } from 'foo'
+`),
+  ).toMatchInlineSnapshot(`
+      "const __vite_ssr_import_0__ = await __vite_ssr_import__("foo", {"importedNames":["foo"]});
+      const __vite_ssr_import_1__ = await __vite_ssr_import__("foo", {"importedNames":["foo"]});
+      Object.defineProperty(__vite_ssr_exports__, "foo", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_1__.foo }});
+      "
+    `)
 })
 
 test('export * as from arbitrary module namespace identifier', async () => {
@@ -1368,4 +1407,77 @@ const c = () => {
     }"
   `,
   )
+})
+
+test('combine mappings', async () => {
+  const server = await createServer({
+    configFile: false,
+    envFile: false,
+    logLevel: 'error',
+    plugins: [
+      {
+        name: 'test-mappings',
+        resolveId(source) {
+          if (source.startsWith('virtual:test-mappings')) {
+            return '\0' + source
+          }
+        },
+        load(id) {
+          if (id.startsWith('\0virtual:test-mappings')) {
+            const code = `export default "test";\n`
+            if (id === '\0virtual:test-mappings:empty') {
+              return { code, map: { mappings: '' } }
+            }
+            if (id === '\0virtual:test-mappings:null') {
+              return { code, map: null }
+            }
+          }
+        },
+      },
+    ],
+  })
+
+  {
+    const result = await server.environments.ssr.transformRequest(
+      'virtual:test-mappings:empty',
+    )
+    expect(result?.map).toMatchInlineSnapshot(`
+      {
+        "mappings": "",
+      }
+    `)
+    const mod = await server.ssrLoadModule('virtual:test-mappings:empty')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "default": "test",
+      }
+    `)
+  }
+
+  {
+    const result = await server.environments.ssr.transformRequest(
+      'virtual:test-mappings:null',
+    )
+    expect(result?.map).toMatchInlineSnapshot(`
+      SourceMap {
+        "file": undefined,
+        "mappings": "AAAA,8BAAc,CAAC,CAAC,IAAI,CAAC;",
+        "names": [],
+        "sources": [
+          "virtual:test-mappings:null",
+        ],
+        "sourcesContent": [
+          "export default "test";
+      ",
+        ],
+        "version": 3,
+      }
+    `)
+    const mod = await server.ssrLoadModule('virtual:test-mappings:null')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "default": "test",
+      }
+    `)
+  }
 })

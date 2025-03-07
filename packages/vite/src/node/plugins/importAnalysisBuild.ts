@@ -439,7 +439,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 let url = name
                 if (!url) {
                   const rawUrl = code.slice(start, end)
-                  if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
+                  if (rawUrl[0] === `"` && rawUrl.endsWith(`"`))
                     url = rawUrl.slice(1, -1)
                 }
                 if (!url) continue
@@ -516,7 +516,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               let url = name
               if (!url) {
                 const rawUrl = code.slice(start, end)
-                if (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`)
+                if (rawUrl[0] === `"` && rawUrl.endsWith(`"`))
                   url = rawUrl.slice(1, -1)
               }
               const deps = new Set<string>()
@@ -697,6 +697,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 chunk.map as RawSourceMap,
               ]) as SourceMap
               map.toUrl = () => genSourceMapUrl(map)
+
+              const originalDebugId = chunk.map.debugId
               chunk.map = map
 
               if (buildSourcemap === 'inline') {
@@ -706,6 +708,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 )
                 chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
               } else {
+                if (originalDebugId) {
+                  map.debugId = originalDebugId
+                }
                 const mapAsset = bundle[chunk.fileName + '.map']
                 if (mapAsset && mapAsset.type === 'asset') {
                   mapAsset.source = map.toString()

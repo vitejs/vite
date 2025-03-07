@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { stripVTControlCharacters } from 'node:util'
+import { describe, expect, it, vi } from 'vitest'
 import type { UserConfig } from '../../config'
 import { resolveConfig } from '../../config'
 import type { Plugin } from '../../plugin'
 import { DevEnvironment } from '../environment'
+import { createLogger } from '../../logger'
 
 describe('plugin container', () => {
   describe('getModuleInfo', () => {
@@ -142,6 +144,55 @@ describe('plugin container', () => {
     })
   })
 
+  describe('options', () => {
+    it('should not throw errors when this.debug is called', async () => {
+      const plugin: Plugin = {
+        name: 'p1',
+        options() {
+          this.debug('test')
+        },
+      }
+      await getDevEnvironment({
+        plugins: [plugin],
+      })
+    })
+
+    const logFunctions = ['info', 'warn'] as const
+    for (const logFunction of logFunctions) {
+      it(`should support this.${logFunction}`, async () => {
+        const logger = createLogger()
+        const mockedFn = vi
+          .spyOn(logger, logFunction)
+          .mockImplementation(() => {})
+        const plugin: Plugin = {
+          name: 'p1',
+          options() {
+            this[logFunction]('test')
+          },
+        }
+        await getDevEnvironment({
+          plugins: [plugin],
+          customLogger: logger,
+        })
+        expect(mockedFn).toHaveBeenCalledOnce()
+      })
+    }
+
+    it('should support this.error', async () => {
+      const plugin: Plugin = {
+        name: 'p1',
+        options() {
+          this.error('test')
+        },
+      }
+      await expect(() =>
+        getDevEnvironment({
+          plugins: [plugin],
+        }),
+      ).rejects.toThrowError('test')
+    })
+  })
+
   describe('load', () => {
     it('can resolve a secondary module', async () => {
       const entryUrl = '/x.js'
@@ -211,6 +262,65 @@ describe('plugin container', () => {
         entryUrl,
       )
       expect(result.code).equals('3')
+    })
+
+    it('should not throw errors when this.debug is called', async () => {
+      const plugin: Plugin = {
+        name: 'p1',
+        load() {
+          this.debug({ message: 'test', pos: 12 })
+        },
+      }
+      const environment = await getDevEnvironment({
+        plugins: [plugin],
+      })
+      await environment.pluginContainer.load('foo')
+    })
+
+    const logFunctions = ['info', 'warn'] as const
+    for (const logFunction of logFunctions) {
+      it(`should support this.${logFunction}`, async () => {
+        const logger = createLogger()
+        const mockedFn = vi
+          .spyOn(logger, logFunction)
+          .mockImplementation(() => {})
+        const plugin: Plugin = {
+          name: 'p1',
+          load() {
+            this[logFunction]({ message: 'test', pos: 12 })
+          },
+        }
+        const environment = await getDevEnvironment({
+          plugins: [plugin],
+          customLogger: logger,
+        })
+        await environment.pluginContainer.load('foo')
+        expect(mockedFn).toHaveBeenCalledOnce()
+        expect(stripVTControlCharacters(mockedFn.mock.calls[0][0])).toBe(
+          `${logFunction === 'warn' ? 'warning' : logFunction}: test\n` +
+            '  Plugin: p1',
+        )
+      })
+    }
+
+    it('should support this.error', async () => {
+      const plugin: Plugin = {
+        name: 'p1',
+        load() {
+          this.error({ message: 'test', pos: 12 })
+        },
+      }
+      const environment = await getDevEnvironment({
+        plugins: [plugin],
+      })
+      await expect(() => environment.pluginContainer.load('foo')).rejects
+        .toThrowErrorMatchingInlineSnapshot(`
+        {
+          "message": "test",
+          "plugin": "p1",
+          "pos": 12,
+        }
+      `)
     })
   })
 

@@ -13,6 +13,10 @@ export default defineConfig({
       './playground/**/*.*',
       './playground-temp/**/*.*',
     ],
+    deps: {
+      // we specify 'packages' so Vitest doesn't inline the files
+      moduleDirectories: ['node_modules', 'packages'],
+    },
     testTimeout: 20000,
     isolate: false,
     // importing non entry files (e.g. config.ts, build.ts, server/index.ts) is broken due to cyclic import

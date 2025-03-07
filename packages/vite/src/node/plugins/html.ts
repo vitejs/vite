@@ -216,7 +216,7 @@ export function getScriptInfo(node: DefaultTreeAdapterMap['element']): {
         src = p
         srcSourceCodeLocation = node.sourceCodeLocation?.attrs!['src']
       }
-    } else if (p.name === 'type' && p.value && p.value === 'module') {
+    } else if (p.name === 'type' && p.value === 'module') {
       isModule = true
     } else if (p.name === 'async') {
       isAsync = true
@@ -534,8 +534,11 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                   const processedEncodedUrl = await processSrcSet(
                     attr.value,
                     async ({ url }) => {
-                      const decodedUrl = decodeURI(url)
-                      if (!isExcludedUrl(decodedUrl)) {
+                      const decodedUrl = decodeURIIfPossible(url)
+                      if (
+                        decodedUrl !== undefined &&
+                        !isExcludedUrl(decodedUrl)
+                      ) {
                         const result = await processAssetUrl(url)
                         return result !== decodedUrl
                           ? encodeURIPath(result)
@@ -550,8 +553,10 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
                 })(),
               )
             } else if (attr.type === 'src') {
-              const url = decodeURI(attr.value)
-              if (checkPublicFile(url, config)) {
+              const url = decodeURIIfPossible(attr.value)
+              if (url === undefined) {
+                // ignore it
+              } else if (checkPublicFile(url, config)) {
                 overwriteAttrValue(
                   s,
                   attr.location,
@@ -717,7 +722,7 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async generateBundle(options, bundle) {
-      const analyzedChunk = new Map<OutputChunk, number>()
+      const analyzedImportedCssFiles = new Map<OutputChunk, string[]>()
       const inlineEntryChunk = new Set<string>()
       const getImportedChunks = (
         chunk: OutputChunk,
@@ -777,38 +782,61 @@ export function buildHtmlPlugin(config: ResolvedConfig): Plugin {
         },
       })
 
-      const getCssTagsForChunk = (
-        chunk: OutputChunk,
+      const toStyleSheetLinkTag = (
+        file: string,
         toOutputPath: (filename: string) => string,
-        seen: Set<string> = new Set(),
-      ): HtmlTagDescriptor[] => {
-        const tags: HtmlTagDescriptor[] = []
-        if (!analyzedChunk.has(chunk)) {
-          analyzedChunk.set(chunk, 1)
-          chunk.imports.forEach((file) => {
-            const importee = bundle[file]
-            if (importee?.type === 'chunk') {
-              tags.push(...getCssTagsForChunk(importee, toOutputPath, seen))
-            }
-          })
+      ): HtmlTagDescriptor => ({
+        tag: 'link',
+        attrs: {
+          rel: 'stylesheet',
+          crossorigin: true,
+          href: toOutputPath(file),
+        },
+      })
+
+      const getCssFilesForChunk = (
+        chunk: OutputChunk,
+        seenChunks: Set<string> = new Set(),
+        seenCss: Set<string> = new Set(),
+      ): string[] => {
+        if (seenChunks.has(chunk.fileName)) {
+          return []
+        }
+        seenChunks.add(chunk.fileName)
+
+        if (analyzedImportedCssFiles.has(chunk)) {
+          const files = analyzedImportedCssFiles.get(chunk)!
+          const additionals = files.filter((file) => !seenCss.has(file))
+          additionals.forEach((file) => seenCss.add(file))
+          return additionals
         }
 
+        const files: string[] = []
+        chunk.imports.forEach((file) => {
+          const importee = bundle[file]
+          if (importee?.type === 'chunk') {
+            files.push(...getCssFilesForChunk(importee, seenChunks, seenCss))
+          }
+        })
+        analyzedImportedCssFiles.set(chunk, files)
+
         chunk.viteMetadata!.importedCss.forEach((file) => {
-          if (!seen.has(file)) {
-            seen.add(file)
-            tags.push({
-              tag: 'link',
-              attrs: {
-                rel: 'stylesheet',
-                crossorigin: true,
-                href: toOutputPath(file),
-              },
-            })
+          if (!seenCss.has(file)) {
+            seenCss.add(file)
+            files.push(file)
           }
         })
 
-        return tags
+        return files
       }
+
+      const getCssTagsForChunk = (
+        chunk: OutputChunk,
+        toOutputPath: (filename: string) => string,
+      ) =>
+        getCssFilesForChunk(chunk).map((file) =>
+          toStyleSheetLinkTag(file, toOutputPath),
+        )
 
       for (const [normalizedId, html] of processedHtml(this)) {
         const relativeUrlPath = normalizePath(
@@ -1556,4 +1584,13 @@ function serializeAttrs(attrs: HtmlTagDescriptor['attrs']): string {
 
 function incrementIndent(indent: string = '') {
   return `${indent}${indent[0] === '\t' ? '\t' : '  '}`
+}
+
+function decodeURIIfPossible(input: string): string | undefined {
+  try {
+    return decodeURI(input)
+  } catch {
+    // url is malformed, probably a interpolate syntax of template engines
+    return
+  }
 }
