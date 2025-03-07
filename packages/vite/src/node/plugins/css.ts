@@ -939,12 +939,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
               `document.head.appendChild(${style});`
             let injectionPoint
             const wrapIdx = code.indexOf('System.register')
+            const singleQuoteUseStrict = `'use strict';`
+            const doubleQuoteUseStrict = `"use strict";`
             if (wrapIdx >= 0) {
               const executeFnStart = code.indexOf('execute:', wrapIdx)
               injectionPoint = code.indexOf('{', executeFnStart) + 1
+            } else if (code.includes(singleQuoteUseStrict)) {
+              injectionPoint =
+                code.indexOf(singleQuoteUseStrict) + singleQuoteUseStrict.length
+            } else if (code.includes(doubleQuoteUseStrict)) {
+              injectionPoint =
+                code.indexOf(doubleQuoteUseStrict) + doubleQuoteUseStrict.length
             } else {
-              const insertMark = "'use strict';"
-              injectionPoint = code.indexOf(insertMark) + insertMark.length
+              throw new Error('Injection point for inlined CSS not found')
             }
             s ||= new MagicString(code)
             s.appendRight(injectionPoint, injectCode)
