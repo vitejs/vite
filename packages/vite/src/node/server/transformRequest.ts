@@ -4,7 +4,7 @@ import { performance } from 'node:perf_hooks'
 import getEtag from 'etag'
 import MagicString from 'magic-string'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { PartialResolvedId, SourceDescription, SourceMap } from 'rollup'
+import type { PartialResolvedId, SourceDescription, SourceMap } from 'rolldown'
 import colors from 'picocolors'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {

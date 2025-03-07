@@ -2,7 +2,7 @@ import path from 'node:path'
 import fsp from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
 import * as mrmime from 'mrmime'
-import type { NormalizedOutputOptions, RenderedChunk } from 'rollup'
+import type { NormalizedOutputOptions, RenderedChunk } from 'rolldown'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
 import {
@@ -175,9 +175,12 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           const file = checkPublicFile(id, config) || cleanUrl(id)
           this.addWatchFile(file)
           // raw query, read file and return as string
-          return `export default ${JSON.stringify(
-            await fsp.readFile(file, 'utf-8'),
-          )}`
+          return {
+            code: `export default ${JSON.stringify(
+              await fsp.readFile(file, 'utf-8'),
+            )}`,
+            moduleType: 'js', // NOTE: needs to be set to avoid double `export default` in `?raw&.txt`s
+          }
         }
 
         if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
@@ -204,6 +207,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
               ? 'no-treeshake'
               : false,
           meta: config.command === 'build' ? { 'vite:asset': true } : undefined,
+          moduleType: 'js', // NOTE: needs to be set to avoid double `export default` in `.txt`s
         }
       },
     },

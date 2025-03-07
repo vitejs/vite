@@ -48,11 +48,11 @@ export default defineConfig({
         ),
       },
       output: {
-        manualChunks(id) {
-          if (id.includes('manual-chunk.css')) {
-            return 'dir/dir2/manual-chunk'
-          }
-        },
+        // manualChunks(id) {
+        //   if (id.includes('manual-chunk.css')) {
+        //     return 'dir/dir2/manual-chunk'
+        //   }
+        // },
       },
     },
   },

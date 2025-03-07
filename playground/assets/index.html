@@ -627,9 +627,10 @@
   import someString from './static/foo.txt?raw'
   document.querySelector('.raw-query').textContent = someString
 
+  // NOTE: add `'' +` to opt-out rolldown's transform: https://github.com/rolldown/rolldown/issues/2745
   const metaUrlNonExistent = new URL(
     /* @vite-ignore */ 'non-existent',
-    import.meta.url,
+    '' + import.meta.url,
   ).pathname
   text('.non-existent-import-meta-url', metaUrlNonExistent)
 

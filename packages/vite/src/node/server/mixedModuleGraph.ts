@@ -1,4 +1,4 @@
-import type { ModuleInfo } from 'rollup'
+import type { ModuleInfo } from 'rolldown'
 import type { TransformResult } from './transformRequest'
 import type {
   EnvironmentModuleGraph,

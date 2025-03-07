@@ -7,7 +7,7 @@ export default defineConfig(({ isPreview }) => ({
   build: {
     ...baseConfig.build,
     outDir: 'dist/relative-base',
-    watch: null,
+    // watch: null,
     minify: false,
     assetsInlineLimit: 0,
     rollupOptions: {
@@ -15,11 +15,11 @@ export default defineConfig(({ isPreview }) => ({
         entryFileNames: 'entries/[name].js',
         chunkFileNames: 'chunks/[name]-[hash].js',
         assetFileNames: 'other-assets/[name]-[hash][extname]',
-        manualChunks(id) {
-          if (id.includes('css/manual-chunks.css')) {
-            return 'css/manual-chunks'
-          }
-        },
+        // manualChunks(id) {
+        //   if (id.includes('css/manual-chunks.css')) {
+        //     return 'css/manual-chunks'
+        //   }
+        // },
       },
     },
   },

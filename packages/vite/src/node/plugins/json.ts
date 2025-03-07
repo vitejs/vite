@@ -81,6 +81,7 @@ export function jsonPlugin(
               return {
                 code,
                 map: { mappings: '' },
+                moduleType: 'js',
               }
             }
 
@@ -99,6 +100,7 @@ export function jsonPlugin(
               return {
                 code: `export default /* #__PURE__ */ JSON.parse(${JSON.stringify(json)})`,
                 map: { mappings: '' },
+                moduleType: 'js',
               }
             }
           }
@@ -109,6 +111,7 @@ export function jsonPlugin(
               namedExports: options.namedExports,
             }),
             map: { mappings: '' },
+            moduleType: 'js',
           }
         } catch (e) {
           const position = extractJsonErrorPosition(e.message, json.length)

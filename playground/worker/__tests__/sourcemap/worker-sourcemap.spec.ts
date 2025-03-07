@@ -87,11 +87,11 @@ describe.runIf(isBuild)('build', () => {
 
     // worker should have all imports resolved and no exports
     expect(workerContent).not.toMatch(`import`)
-    expect(workerContent).not.toMatch(`export`)
+    expect(workerContent).not.toMatch(/\bexport\b/)
 
     // shared worker should have all imports resolved and no exports
     expect(sharedWorkerContent).not.toMatch(`import`)
-    expect(sharedWorkerContent).not.toMatch(`export`)
+    expect(sharedWorkerContent).not.toMatch(/\bexport\b/)
 
     // chunk
     expect(content).toMatch(`new Worker("/iife-sourcemap/assets/my-worker`)

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events'
 import path from 'node:path'
 import type { FSWatcher, WatchOptions } from 'dep-types/chokidar'
-import type { OutputOptions } from 'rollup'
+import type { OutputOptions } from 'rolldown'
 import colors from 'picocolors'
 import { escapePath } from 'tinyglobby'
 import { withTrailingSlash } from '../shared/utils'

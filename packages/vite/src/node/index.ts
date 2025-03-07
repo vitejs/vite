@@ -1,4 +1,4 @@
-import type * as Rollup from 'rollup'
+import type * as Rollup from 'rolldown'
 
 export type { Rollup }
 export { parseAst, parseAstAsync } from 'rolldown/parseAst'

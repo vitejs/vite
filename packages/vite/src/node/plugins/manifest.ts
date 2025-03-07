@@ -4,7 +4,7 @@ import type {
   OutputAsset,
   OutputChunk,
   RenderedChunk,
-} from 'rollup'
+} from 'rolldown'
 import type { Plugin } from '../plugin'
 import { normalizePath, sortObjectKeys } from '../utils'
 import { perEnvironmentState } from '../environment'
@@ -196,6 +196,7 @@ export function getChunkOriginalFileName(
 ): string | undefined {
   if (chunk.facadeModuleId) {
     let name = normalizePath(path.relative(root, chunk.facadeModuleId))
+    // @ts-expect-error TODO: system format is not supported
     if (format === 'system' && !chunk.name.includes('-legacy')) {
       const ext = path.extname(name)
       const endPos = ext.length !== 0 ? -ext.length : undefined

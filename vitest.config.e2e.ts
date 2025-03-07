@@ -1,5 +1,7 @@
 import { resolve } from 'node:path'
-import { defineConfig } from 'vitest/config'
+import { defaultExclude, defineConfig } from 'vitest/config'
+
+const isBuild = !!process.env.VITE_TEST_BUILD
 
 const timeout = process.env.PWDEBUG ? Infinity : process.env.CI ? 50000 : 30000
 
@@ -11,6 +13,16 @@ export default defineConfig({
   },
   test: {
     include: ['./playground/**/*.spec.[tj]s'],
+    exclude: [
+      './playground/legacy/**/*.spec.[tj]s', // system format
+      ...(isBuild
+        ? [
+            './playground/object-hooks/**/*.spec.[tj]s', // object hook sequential
+            './playground/optimize-deps/**/*.spec.[tj]s', // https://github.com/rolldown/rolldown/issues/2031
+          ]
+        : []),
+      ...defaultExclude,
+    ],
     setupFiles: ['./playground/vitestSetup.ts'],
     globalSetup: ['./playground/vitestGlobalSetup.ts'],
     testTimeout: timeout,

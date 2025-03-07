@@ -1,11 +1,11 @@
-import type {
-  GetManualChunk,
-  GetModuleInfo,
-  ManualChunkMeta,
-  OutputOptions,
-} from 'rollup'
-import { arraify, isInNodeModules } from '../utils'
-import type { UserConfig } from '../../node'
+// import type {
+//   GetManualChunk,
+//   GetModuleInfo,
+//   ManualChunkMeta,
+//   OutputOptions,
+// } from 'rollup'
+// import { arraify, isInNodeModules } from '../utils'
+// import type { UserConfig } from '../../node'
 import type { Plugin } from '../plugin'
 
 // This file will be built for both ESM and CJS. Avoid relying on other modules as possible.
@@ -43,112 +43,113 @@ export class SplitVendorChunkCache {
  * @deprecated use build.rollupOptions.output.manualChunks or framework specific configuration
  */
 export function splitVendorChunk(
-  options: { cache?: SplitVendorChunkCache } = {},
-): GetManualChunk {
-  const cache = options.cache ?? new SplitVendorChunkCache()
-  return (id, { getModuleInfo }) => {
-    if (
-      isInNodeModules(id) &&
-      !isCSSRequest(id) &&
-      staticImportedByEntry(id, getModuleInfo, cache.cache)
-    ) {
-      return 'vendor'
-    }
-  }
+  _options: { cache?: SplitVendorChunkCache } = {},
+): () => null /* GetManualChunk */ {
+  // const cache = options.cache ?? new SplitVendorChunkCache()
+  // return (id, { getModuleInfo }) => {
+  //   if (
+  //     isInNodeModules(id) &&
+  //     !isCSSRequest(id) &&
+  //     staticImportedByEntry(id, getModuleInfo, cache.cache)
+  //   ) {
+  //     return 'vendor'
+  //   }
+  // }
+  return () => null
 }
 
-function staticImportedByEntry(
-  id: string,
-  getModuleInfo: GetModuleInfo,
-  cache: Map<string, boolean>,
-  importStack: string[] = [],
-): boolean {
-  if (cache.has(id)) {
-    return cache.get(id) as boolean
-  }
-  if (importStack.includes(id)) {
-    // circular deps!
-    cache.set(id, false)
-    return false
-  }
-  const mod = getModuleInfo(id)
-  if (!mod) {
-    cache.set(id, false)
-    return false
-  }
+// function staticImportedByEntry(
+//   id: string,
+//   getModuleInfo: GetModuleInfo,
+//   cache: Map<string, boolean>,
+//   importStack: string[] = [],
+// ): boolean {
+//   if (cache.has(id)) {
+//     return cache.get(id) as boolean
+//   }
+//   if (importStack.includes(id)) {
+//     // circular deps!
+//     cache.set(id, false)
+//     return false
+//   }
+//   const mod = getModuleInfo(id)
+//   if (!mod) {
+//     cache.set(id, false)
+//     return false
+//   }
 
-  if (mod.isEntry) {
-    cache.set(id, true)
-    return true
-  }
-  const someImporterIs = mod.importers.some((importer) =>
-    staticImportedByEntry(
-      importer,
-      getModuleInfo,
-      cache,
-      importStack.concat(id),
-    ),
-  )
-  cache.set(id, someImporterIs)
-  return someImporterIs
-}
+//   if (mod.isEntry) {
+//     cache.set(id, true)
+//     return true
+//   }
+//   const someImporterIs = mod.importers.some((importer) =>
+//     staticImportedByEntry(
+//       importer,
+//       getModuleInfo,
+//       cache,
+//       importStack.concat(id),
+//     ),
+//   )
+//   cache.set(id, someImporterIs)
+//   return someImporterIs
+// }
 
 /**
  * @deprecated use build.rollupOptions.output.manualChunks or framework specific configuration
  */
 export function splitVendorChunkPlugin(): Plugin {
-  const caches: SplitVendorChunkCache[] = []
-  function createSplitVendorChunk(output: OutputOptions, config: UserConfig) {
-    const cache = new SplitVendorChunkCache()
-    caches.push(cache)
-    const build = config.build ?? {}
-    const format = output.format
-    if (!build.ssr && !build.lib && format !== 'umd' && format !== 'iife') {
-      return splitVendorChunk({ cache })
-    }
-  }
+  // const caches: SplitVendorChunkCache[] = []
+  // function createSplitVendorChunk(output: OutputOptions, config: UserConfig) {
+  //   const cache = new SplitVendorChunkCache()
+  //   caches.push(cache)
+  //   const build = config.build ?? {}
+  //   const format = output.format
+  //   if (!build.ssr && !build.lib && format !== 'umd' && format !== 'iife') {
+  //     return splitVendorChunk({ cache })
+  //   }
+  // }
   return {
     name: 'vite:split-vendor-chunk',
-    config(config) {
-      let outputs = config.build?.rollupOptions?.output
-      if (outputs) {
-        outputs = arraify(outputs)
-        for (const output of outputs) {
-          const viteManualChunks = createSplitVendorChunk(output, config)
-          if (viteManualChunks) {
-            if (output.manualChunks) {
-              if (typeof output.manualChunks === 'function') {
-                const userManualChunks = output.manualChunks
-                output.manualChunks = (id: string, api: ManualChunkMeta) => {
-                  return userManualChunks(id, api) ?? viteManualChunks(id, api)
-                }
-              } else {
-                // else, leave the object form of manualChunks untouched, as
-                // we can't safely replicate rollup handling.
-                // eslint-disable-next-line no-console
-                console.warn(
-                  "(!) the `splitVendorChunk` plugin doesn't have any effect when using the object form of `build.rollupOptions.output.manualChunks`. Consider using the function form instead.",
-                )
-              }
-            } else {
-              output.manualChunks = viteManualChunks
-            }
-          }
-        }
-      } else {
-        return {
-          build: {
-            rollupOptions: {
-              output: {
-                manualChunks: createSplitVendorChunk({}, config),
-              },
-            },
-          },
-        }
-      }
-    },
-    buildStart() {
-      caches.forEach((cache) => cache.reset())
-    },
+    // config(config) {
+    //   let outputs = config.build?.rollupOptions?.output
+    //   if (outputs) {
+    //     outputs = arraify(outputs)
+    //     for (const output of outputs) {
+    //       const viteManualChunks = createSplitVendorChunk(output, config)
+    //       if (viteManualChunks) {
+    //         if (output.manualChunks) {
+    //           if (typeof output.manualChunks === 'function') {
+    //             const userManualChunks = output.manualChunks
+    //             output.manualChunks = (id: string, api: ManualChunkMeta) => {
+    //               return userManualChunks(id, api) ?? viteManualChunks(id, api)
+    //             }
+    //           } else {
+    //             // else, leave the object form of manualChunks untouched, as
+    //             // we can't safely replicate rollup handling.
+    //             // eslint-disable-next-line no-console
+    //             console.warn(
+    //               "(!) the `splitVendorChunk` plugin doesn't have any effect when using the object form of `build.rollupOptions.output.manualChunks`. Consider using the function form instead.",
+    //             )
+    //           }
+    //         } else {
+    //           output.manualChunks = viteManualChunks
+    //         }
+    //       }
+    //     }
+    //   } else {
+    //     return {
+    //       build: {
+    //         rollupOptions: {
+    //           output: {
+    //             manualChunks: createSplitVendorChunk({}, config),
+    //           },
+    //         },
+    //       },
+    //     }
+    //   }
+    // },
+    // buildStart() {
+    //   caches.forEach((cache) => cache.reset())
+    // },
   }
 }

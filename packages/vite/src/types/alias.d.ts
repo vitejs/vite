@@ -27,7 +27,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-import type { PluginHooks } from 'rollup'
+import type { FunctionPluginHooks } from 'rolldown'
 
 export interface Alias {
   find: string | RegExp
@@ -42,10 +42,10 @@ export interface Alias {
 
 export type MapToFunction<T> = T extends Function ? T : never
 
-export type ResolverFunction = MapToFunction<PluginHooks['resolveId']>
+export type ResolverFunction = MapToFunction<FunctionPluginHooks['resolveId']>
 
 export interface ResolverObject {
-  buildStart?: PluginHooks['buildStart']
+  buildStart?: FunctionPluginHooks['buildStart']
   resolveId: ResolverFunction
 }
 

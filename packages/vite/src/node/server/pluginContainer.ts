@@ -33,6 +33,7 @@ import fs from 'node:fs'
 import { join } from 'node:path'
 import { performance } from 'node:perf_hooks'
 import { parseAst as rolldownParseAst } from 'rolldown/parseAst'
+import type { Program } from '@oxc-project/types'
 import type {
   AsyncPluginHooks,
   CustomPluginOptions,
@@ -57,7 +58,7 @@ import type {
   SourceDescription,
   SourceMap,
   TransformResult,
-} from 'rollup'
+} from 'rolldown'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { TraceMap, originalPositionFor } from '@jridgewell/trace-mapping'
 import MagicString from 'magic-string'
@@ -74,6 +75,7 @@ import {
   normalizePath,
   numberToPos,
   prettifyUrl,
+  rolldownVersion,
   rollupVersion,
   timeFrom,
 } from '../utils'
@@ -193,7 +195,7 @@ class EnvironmentPluginContainer {
   ) {
     this._started = !autoStart
     this.minimalContext = new MinimalPluginContext(
-      { rollupVersion, watchMode: true },
+      { rollupVersion, rolldownVersion, watchMode: true },
       environment,
     )
     const utils = createPluginHookUtils(plugins)
@@ -343,6 +345,7 @@ class EnvironmentPluginContainer {
       'index.html',
     ),
     options?: {
+      kind?: 'import' | 'dynamic-import' | 'require-call'
       attributes?: Record<string, string>
       custom?: CustomPluginOptions
       /** @deprecated use `skipCalls` instead */
@@ -389,6 +392,7 @@ class EnvironmentPluginContainer {
       const handler = getHookHandler(plugin.resolveId)
       const result = await this.handleHookPromise(
         handler.call(ctx as any, rawId, importer, {
+          kind: options?.kind,
           attributes: options?.attributes ?? {},
           custom: options?.custom,
           isEntry: !!options?.isEntry,
@@ -472,7 +476,9 @@ class EnvironmentPluginContainer {
     },
   ): Promise<{ code: string; map: SourceMap | { mappings: '' } | null }> {
     const ssr = this.environment.config.consumer === 'server'
-    const optionsWithSSR = options ? { ...options, ssr } : { ssr }
+    const optionsWithSSR = options
+      ? { ...options, ssr, moduleType: 'js' }
+      : { ssr, moduleType: 'js' }
     const inMap = options?.inMap
 
     const ctx = new TransformPluginContext(this, id, code, inMap as SourceMap)
@@ -563,6 +569,12 @@ class MinimalPluginContext implements RollupMinimalPluginContext {
     public environment: Environment,
   ) {}
 
+  // FIXME: properly support this later
+  // eslint-disable-next-line @typescript-eslint/class-literal-property-style
+  get pluginName() {
+    return ''
+  }
+
   debug(rawLog: string | RollupLog | (() => string | RollupLog)): void {
     const log = this._normalizeRawLog(rawLog)
     const msg = buildErrorMessage(log, [`debug: ${log.message}`], false)
@@ -609,6 +621,10 @@ class PluginContext
   _resolveSkips?: Set<Plugin>
   _resolveSkipCalls?: readonly SkipInformation[]
 
+  override get pluginName() {
+    return this._plugin.name
+  }
+
   constructor(
     public _plugin: Plugin,
     public _container: EnvironmentPluginContainer,
@@ -616,8 +632,8 @@ class PluginContext
     super(_container.minimalContext.meta, _container.environment)
   }
 
-  parse(code: string, opts: any) {
-    return rolldownParseAst(code, opts) as any
+  parse(code: string, opts: any): Program {
+    return rolldownParseAst(code, opts)
   }
 
   async resolve(
@@ -1011,7 +1027,7 @@ class TransformPluginContext
         includeContent: true,
         hires: 'boundary',
         source: cleanUrl(this.filename),
-      })
+      }) as SourceMap
     }
     return map
   }

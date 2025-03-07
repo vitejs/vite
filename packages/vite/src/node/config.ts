@@ -8,7 +8,6 @@ import { createRequire } from 'node:module'
 import crypto from 'node:crypto'
 import colors from 'picocolors'
 import type { Alias, AliasOptions } from 'dep-types/alias'
-import type { RollupOptions } from 'rollup'
 import picomatch from 'picomatch'
 import { type OutputChunk, type RolldownOptions, rolldown } from 'rolldown'
 import type { AnymatchFn } from '../types/anymatch'
@@ -434,7 +433,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
      * Rollup options to build worker bundle
      */
     rollupOptions?: Omit<
-      RollupOptions,
+      RolldownOptions,
       'plugins' | 'input' | 'onwarn' | 'preserveEntrySignatures'
     >
   }
@@ -541,7 +540,7 @@ export interface LegacyOptions {
 export interface ResolvedWorkerOptions {
   format: 'es' | 'iife'
   plugins: (bundleChain: string[]) => Promise<ResolvedConfig>
-  rollupOptions: RollupOptions
+  rollupOptions: RolldownOptions
 }
 
 export interface InlineConfig extends UserConfig {

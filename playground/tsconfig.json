@@ -1,6 +1,6 @@
 {
   "include": ["**/vite*config*", "**/*.ts"],
-  "exclude": ["**/dist/**"],
+  "exclude": ["**/dist/**", "./legacy/**"],
   "compilerOptions": {
     "checkJs": true,
     "target": "ES2022",

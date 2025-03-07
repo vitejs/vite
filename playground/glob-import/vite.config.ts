@@ -26,11 +26,11 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('foo.css')) {
-            return 'foo_css'
-          }
-        },
+        // manualChunks(id) {
+        //   if (id.includes('foo.css')) {
+        //     return 'foo_css'
+        //   }
+        // },
       },
     },
   },

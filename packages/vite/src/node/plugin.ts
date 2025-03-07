@@ -1,14 +1,15 @@
 import type {
   CustomPluginOptions,
   LoadResult,
+  ModuleType,
   ObjectHook,
   ResolveIdResult,
-  MinimalPluginContext as RollupMinimalPluginContext,
-  Plugin as RollupPlugin,
-  PluginContext as RollupPluginContext,
-  TransformPluginContext as RollupTransformPluginContext,
+  MinimalPluginContext as RolldownMinimalPluginContext,
+  Plugin as RolldownPlugin,
+  PluginContext as RolldownPluginContext,
+  TransformPluginContext as RolldownTransformPluginContext,
   TransformResult,
-} from 'rollup'
+} from 'rolldown'
 import type {
   ConfigEnv,
   EnvironmentOptions,
@@ -66,23 +67,23 @@ export interface HotUpdatePluginContext {
 }
 
 export interface MinimalPluginContext
-  extends RollupMinimalPluginContext,
+  extends RolldownMinimalPluginContext,
     PluginContextExtension {}
 
 export interface PluginContext
-  extends RollupPluginContext,
+  extends RolldownPluginContext,
     PluginContextExtension {}
 
 export interface ResolveIdPluginContext
-  extends RollupPluginContext,
+  extends RolldownPluginContext,
     PluginContextExtension {}
 
 export interface TransformPluginContext
-  extends RollupTransformPluginContext,
+  extends RolldownTransformPluginContext,
     PluginContextExtension {}
 
-// Argument Rollup types to have the PluginContextExtension
-declare module 'rollup' {
+// Argument Rolldown types to have the PluginContextExtension
+declare module 'rolldown' {
   export interface MinimalPluginContext extends PluginContextExtension {}
 }
 
@@ -96,7 +97,7 @@ declare module 'rollup' {
  * Environment Plugins are closer to regular rollup plugins. They can't define
  * app level hooks (like config, configResolved, configureServer, etc).
  */
-export interface Plugin<A = any> extends RollupPlugin<A> {
+export interface Plugin<A = any> extends RolldownPlugin<A> {
   /**
    * Perform custom handling of HMR updates.
    * The handler receives an options containing changed filename, timestamp, a
@@ -131,7 +132,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       source: string,
       importer: string | undefined,
       options: {
-        attributes: Record<string, string>
+        kind?: 'import' | 'dynamic-import' | 'require-call'
         custom?: CustomPluginOptions
         ssr?: boolean
         /**
@@ -163,6 +164,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       code: string,
       id: string,
       options?: {
+        moduleType: ModuleType
         ssr?: boolean
       },
     ) => Promise<TransformResult> | TransformResult,

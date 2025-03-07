@@ -1,6 +1,6 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { RollupAstNode, SourceMap } from 'rollup'
+import type { SourceMap } from 'rolldown'
 import type {
   ExportAllDeclaration,
   ExportDefaultDeclaration,
@@ -29,6 +29,11 @@ import { isJSONRequest } from '../plugins/json'
 import type { DefineImportMetadata } from '../../shared/ssrTransform'
 
 type Node = _Node & {
+  start: number
+  end: number
+}
+
+type OxcAstNode<T extends _Node> = T & {
   start: number
   end: number
 }
@@ -186,11 +191,11 @@ async function ssrTransformScript(
     )
   }
 
-  const imports: RollupAstNode<ImportDeclaration>[] = []
+  const imports: OxcAstNode<ImportDeclaration>[] = []
   const exports: (
-    | RollupAstNode<ExportNamedDeclaration>
-    | RollupAstNode<ExportDefaultDeclaration>
-    | RollupAstNode<ExportAllDeclaration>
+    | OxcAstNode<ExportNamedDeclaration>
+    | OxcAstNode<ExportDefaultDeclaration>
+    | OxcAstNode<ExportAllDeclaration>
   )[] = []
 
   for (const node of ast.body as Node[]) {
@@ -268,7 +273,7 @@ async function ssrTransformScript(
           // export { foo, bar } from './foo'
           const importId = defineImport(
             node.start,
-            node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
+            node as OxcAstNode<ExportNamedDeclaration & { source: Literal }>,
             {
               importedNames: node.specifiers.map(
                 (s) => getIdentifierNameOrLiteralValue(s.local) as string,
@@ -418,7 +423,7 @@ async function ssrTransformScript(
   if (inMap?.mappings === '') {
     map = inMap
   } else {
-    map = s.generateMap({ hires: 'boundary' })
+    map = s.generateMap({ hires: 'boundary' }) as SourceMap
     map.sources = [path.basename(url)]
     // needs to use originalCode instead of code
     // because code might be already transformed even if map is null

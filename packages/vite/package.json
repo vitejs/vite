@@ -89,7 +89,6 @@
     "picomatch": "^4.0.2",
     "postcss": "^8.5.3",
     "rolldown": "1.0.0-beta.7-commit.7452fa0",
-    "rollup": "^4.34.9",
     "tinyglobby": "^0.2.12"
   },
   "optionalDependencies": {
@@ -99,6 +98,7 @@
     "@ampproject/remapping": "^2.3.0",
     "@babel/parser": "^7.26.10",
     "@jridgewell/trace-mapping": "^0.3.25",
+    "@oxc-project/types": "0.61.2",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^28.0.3",
@@ -139,6 +139,7 @@
     "postcss-load-config": "^6.0.1",
     "postcss-modules": "^6.0.1",
     "resolve.exports": "^2.0.3",
+    "rollup": "^4.34.9",
     "rollup-plugin-dts": "^6.1.1",
     "rollup-plugin-esbuild": "^6.2.1",
     "rollup-plugin-license": "^3.6.0",

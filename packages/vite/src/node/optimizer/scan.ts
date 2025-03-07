@@ -332,7 +332,7 @@ function rolldownScanPlugin(
       id,
       importer && normalizePath(importer),
       { scan: true },
-    ) as Promise<PartialResolvedId | null>
+    )
   }
   const resolve = async (id: string, importer?: string) => {
     const key = id + (importer && path.dirname(importer))

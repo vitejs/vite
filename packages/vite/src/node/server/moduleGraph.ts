@@ -1,5 +1,5 @@
 import { extname } from 'node:path'
-import type { ModuleInfo, PartialResolvedId } from 'rollup'
+import type { ModuleInfo, PartialResolvedId } from 'rolldown'
 import { isDirectCSSRequest } from '../plugins/css'
 import {
   normalizePath,
