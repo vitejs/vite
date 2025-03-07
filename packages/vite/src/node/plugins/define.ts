@@ -1,5 +1,4 @@
-import { transform } from 'esbuild'
-import { TraceMap, decodedMap, encodedMap } from '@jridgewell/trace-mapping'
+import { transform } from 'rolldown/experimental'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { escapeRegex } from '../utils'
@@ -171,9 +170,7 @@ export function definePlugin(config: ResolvedConfig): Plugin {
               `const ${marker} = ${importMetaEnvVal};\n` + result.code
 
             if (result.map) {
-              const map = JSON.parse(result.map)
-              map.mappings = ';' + map.mappings
-              result.map = map
+              result.map.mappings = ';' + result.map.mappings
             }
           }
         }
@@ -189,39 +186,19 @@ export async function replaceDefine(
   code: string,
   id: string,
   define: Record<string, string>,
-): Promise<{ code: string; map: string | null }> {
-  const esbuildOptions = environment.config.esbuild || {}
-
-  const result = await transform(code, {
-    loader: 'js',
-    charset: esbuildOptions.charset ?? 'utf8',
-    platform: 'neutral',
+): Promise<{ code: string; map: ReturnType<typeof transform>['map'] | null }> {
+  const result = transform(id, code, {
+    lang: 'js',
+    sourceType: 'module',
     define,
-    sourcefile: id,
     sourcemap:
       environment.config.command === 'build'
         ? !!environment.config.build.sourcemap
         : true,
   })
 
-  // remove esbuild's <define:...> source entries
-  // since they would confuse source map remapping/collapsing which expects a single source
-  if (result.map.includes('<define:')) {
-    const originalMap = new TraceMap(result.map)
-    if (originalMap.sources.length >= 2) {
-      const sourceIndex = originalMap.sources.indexOf(id)
-      const decoded = decodedMap(originalMap)
-      decoded.sources = [id]
-      decoded.mappings = decoded.mappings.map((segments) =>
-        segments.filter((segment) => {
-          // modify and filter
-          const index = segment[1]
-          segment[1] = 0
-          return index === sourceIndex
-        }),
-      )
-      result.map = JSON.stringify(encodedMap(new TraceMap(decoded as any)))
-    }
+  if (result.errors.length > 0) {
+    throw new AggregateError(result.errors, 'oxc transform error')
   }
 
   return {

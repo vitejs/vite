@@ -181,7 +181,7 @@ describe.runIf(isBuild)('build tests', () => {
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
         "debugId": "00000000-0000-0000-0000-000000000000",
-        "mappings": "qBAEA,SAAS,GAAO,CACd,GAAA,AACD,CAED,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAsB,EAAA,AACrC,CAED,GAAA",
+        "mappings": "AAEA,SAAS,GAAO,CACd,GAAW,AACZ,CAED,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAA,CAAA,MAAA,MAAA,EAAyC,AACxD,CAED,GAAM",
         "sources": [
           "../../with-define-object.ts",
         ],
