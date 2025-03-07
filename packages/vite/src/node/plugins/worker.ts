@@ -14,7 +14,7 @@ import {
 import {
   BuildEnvironment,
   createToImportMetaURLBasedRelativeRuntime,
-  injectEnvironmentToHooks,
+  injectEnvironmentAndFilterToHooks,
   onRollupLog,
   toOutputFilePathInJS,
 } from '../build'
@@ -83,7 +83,7 @@ async function bundleWorkerEntry(
     ...rollupOptions,
     input,
     plugins: workerEnvironment.plugins.map((p) =>
-      injectEnvironmentToHooks(workerEnvironment, p),
+      injectEnvironmentAndFilterToHooks(workerEnvironment, p),
     ),
     onLog(level, log) {
       onRollupLog(level, log, workerEnvironment)
