@@ -111,6 +111,9 @@ For Ubuntu Linux, you may need to add the line `* - nofile 65536` to the file `/
 
 Note that these settings persist but a **restart is required**.
 
+Alternatively, if the server is running inside a VS Code devcontainer, the request may appear to be stalled. To fix this issue, see
+[Dev Containers / VS Code Port Forwarding](#dev-containers-vs-code-port-forwarding).
+
 ### Network requests stop loading
 
 When using a self-signed SSL certificate, Chrome ignores all caching directives and reloads the content. Vite relies on these caching directives.
