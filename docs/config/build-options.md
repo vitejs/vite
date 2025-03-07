@@ -298,3 +298,10 @@ There are cases that file system watching does not work with WSL2.
 See [`server.watch`](./server-options.md#server-watch) for more details.
 
 :::
+
+## build.chunkImportMap
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Whether to inject importmap for generated chunks. This importmap is used to optimize caching efficiency.
