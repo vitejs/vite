@@ -15,6 +15,7 @@ const asyncFunctions = [
   'createServer',
   'preview',
   'transformWithEsbuild',
+  'transformWithOxc',
   'resolveConfig',
   'optimizeDeps',
   'formatPostcssSourceMap',

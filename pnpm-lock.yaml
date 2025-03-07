@@ -223,6 +223,9 @@ importers:
 
   packages/vite:
     dependencies:
+      '@oxc-project/runtime':
+        specifier: 0.61.2
+        version: 0.61.2
       esbuild:
         specifier: ^0.25.0
         version: 0.25.0
@@ -234,7 +237,7 @@ importers:
         version: 8.5.3
       rolldown:
         specifier: 1.0.0-beta.7-commit.7452fa0
-        version: 1.0.0-beta.7-commit.7452fa0(typescript@5.7.3)
+        version: 1.0.0-beta.7-commit.7452fa0(@oxc-project/runtime@0.61.2)(typescript@5.7.3)
       tinyglobby:
         specifier: ^0.2.12
         version: 0.2.12
@@ -2817,6 +2820,10 @@ packages:
   '@nodelib/fs.walk@1.2.8':
     resolution: {integrity: sha512-oGB+UxlgWcgQkgwo8GcEGwemoTFt3FIO9ababBmaGwXIoBKZ+GTy0pP185beGg7Llih/NSHSV2XAs1lnznocSg==}
     engines: {node: '>= 8'}
+
+  '@oxc-project/runtime@0.61.2':
+    resolution: {integrity: sha512-UNv56Aa4pTtsnqapa2LC+gRxXbUZxA6j1WlSYV8+zan5sD+CvwOMSzUsMNdUUTebob6PafJfT+/TN83yWXWmSA==}
+    engines: {node: '>=6.9.0'}
 
   '@oxc-project/types@0.61.2':
     resolution: {integrity: sha512-rfuwJwvwn9MRthHNXlSo9Eka/u7gC0MhnWAoX3BhE1+rwPOl22nq0K0Y997Hof0tHCOuD7H3/Z8HTfCVhB4c5Q==}
@@ -8795,6 +8802,8 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.0
 
+  '@oxc-project/runtime@0.61.2': {}
+
   '@oxc-project/types@0.61.2': {}
 
   '@parcel/watcher-android-arm64@2.5.1':
@@ -12766,12 +12775,13 @@ snapshots:
     dependencies:
       glob: 7.2.3
 
-  rolldown@1.0.0-beta.7-commit.7452fa0(typescript@5.7.3):
+  rolldown@1.0.0-beta.7-commit.7452fa0(@oxc-project/runtime@0.61.2)(typescript@5.7.3):
     dependencies:
       '@oxc-project/types': 0.61.2
       '@valibot/to-json-schema': 1.0.0(valibot@1.0.0(typescript@5.7.3))
       valibot: 1.0.0(typescript@5.7.3)
     optionalDependencies:
+      '@oxc-project/runtime': 0.61.2
       '@rolldown/binding-darwin-arm64': 1.0.0-beta.7-commit.7452fa0
       '@rolldown/binding-darwin-x64': 1.0.0-beta.7-commit.7452fa0
       '@rolldown/binding-freebsd-x64': 1.0.0-beta.7-commit.7452fa0

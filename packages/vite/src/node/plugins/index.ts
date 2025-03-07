@@ -6,7 +6,6 @@ import { watchPackageDataPlugin } from '../packages'
 import { jsonPlugin } from './json'
 import { resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
-import { esbuildPlugin } from './esbuild'
 import { importAnalysisPlugin } from './importAnalysis'
 import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
 import { assetPlugin } from './asset'
@@ -27,6 +26,7 @@ import {
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
+import { oxcPlugin } from './oxc'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -67,7 +67,7 @@ export async function resolvePlugins(
     }),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
-    config.esbuild !== false ? esbuildPlugin(config) : null,
+    config.oxc !== false ? oxcPlugin(config) : null,
     jsonPlugin(config.json, isBuild),
     wasmHelperPlugin(),
     webWorkerPlugin(config),

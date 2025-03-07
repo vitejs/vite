@@ -28,10 +28,10 @@ import {
   tryStatSync,
   unique,
 } from '../utils'
-import { transformWithEsbuild } from '../plugins/esbuild'
 import { METADATA_FILENAME } from '../constants'
 import { isWindows } from '../../shared/utils'
 import type { Environment } from '../environment'
+import { transformWithOxc } from '../plugins/oxc'
 import { ScanEnvironment, scanImports } from './scan'
 import { createOptimizeDepsIncludeResolver, expandGlobIds } from './resolve'
 import {
@@ -1126,10 +1126,10 @@ export async function extractExportsData(
     if (lang !== 'jsx' && lang !== 'tsx' && lang !== 'ts') {
       throw new Error(`Unable to parse : ${filePath}.`)
     }
-    const transformed = await transformWithEsbuild(
+    const transformed = await transformWithOxc(
       entryContent,
       filePath,
-      { loader: lang },
+      { lang },
       undefined,
       environment.config,
     )

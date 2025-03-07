@@ -55,6 +55,7 @@ import {
   mergeWithDefaults,
   normalizePath,
   partialEncodeURIPath,
+  unique,
 } from './utils'
 import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
@@ -84,6 +85,7 @@ import {
   createFilterForTransform,
   createIdFilter,
 } from './plugins/pluginFilter'
+import { buildOxcPlugin } from './plugins/oxc'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -434,6 +436,11 @@ export function resolveBuildEnvironmentOptions(
   if (merged.target === 'modules') {
     merged.target = ESBUILD_MODULES_TARGET
   }
+  // dedupe target
+  if (Array.isArray(merged.target)) {
+    // esbuild allowed duplicate targets but oxc does not
+    merged.target = unique(merged.target)
+  }
 
   // normalize false string into actual false
   if ((merged.minify as string) === 'false') {
@@ -487,7 +494,8 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
     ],
     post: [
       buildImportAnalysisPlugin(config),
-      buildEsbuildPlugin(),
+      buildOxcPlugin(),
+      ...(config.build.minify === 'esbuild' ? [buildEsbuildPlugin()] : []),
       terserPlugin(config),
       ...(!config.isWorker
         ? [manifestPlugin(), ssrManifestPlugin(), buildReporterPlugin(config)]
