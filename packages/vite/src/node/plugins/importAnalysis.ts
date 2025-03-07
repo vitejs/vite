@@ -13,7 +13,7 @@ import { parseAst } from 'rolldown/parseAst'
 import type { StaticImport } from 'mlly'
 import { ESM_STATIC_IMPORT_RE, parseStaticImport } from 'mlly'
 import { makeLegalIdentifier } from '@rollup/pluginutils'
-import type { PartialResolvedId, RollupError } from 'rollup'
+import type { PartialResolvedId, RollupError } from 'rolldown'
 import type { Identifier, Literal, Program } from 'estree'
 import {
   CLIENT_DIR,

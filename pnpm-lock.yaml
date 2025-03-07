@@ -235,9 +235,6 @@ importers:
       rolldown:
         specifier: 1.0.0-beta.7-commit.7452fa0
         version: 1.0.0-beta.7-commit.7452fa0(typescript@5.7.3)
-      rollup:
-        specifier: ^4.34.9
-        version: 4.34.9
       tinyglobby:
         specifier: ^0.2.12
         version: 0.2.12
@@ -251,6 +248,9 @@ importers:
       '@jridgewell/trace-mapping':
         specifier: ^0.3.25
         version: 0.3.25
+      '@oxc-project/types':
+        specifier: 0.61.2
+        version: 0.61.2
       '@polka/compression':
         specifier: ^1.0.0-next.25
         version: 1.0.0-next.25
@@ -371,6 +371,9 @@ importers:
       resolve.exports:
         specifier: ^2.0.3
         version: 2.0.3
+      rollup:
+        specifier: ^4.34.9
+        version: 4.34.9
       rollup-plugin-dts:
         specifier: ^6.1.1
         version: 6.1.1(rollup@4.34.9)(typescript@5.7.3)

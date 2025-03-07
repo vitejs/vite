@@ -1,7 +1,7 @@
 /**
  * This is a development only file for testing types.
  */
-import type { Plugin as RollupPlugin } from 'rollup'
+import type { Plugin as RollupPlugin } from 'rolldown'
 import type { Equal, ExpectExtends, ExpectTrue } from '@type-challenges/utils'
 import type { Plugin, PluginContextExtension } from '../plugin'
 import type { ROLLUP_HOOKS } from '../constants'

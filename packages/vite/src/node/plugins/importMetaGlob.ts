@@ -10,7 +10,7 @@ import type {
   SpreadElement,
   TemplateLiteral,
 } from 'estree'
-import type { CustomPluginOptions, RollupAstNode, RollupError } from 'rollup'
+import type { CustomPluginOptions, RollupError } from 'rolldown'
 import MagicString from 'magic-string'
 import { stringifyQuery } from 'ufo'
 import type { GeneralImportGlobOptions } from 'types/importGlob'
@@ -261,7 +261,9 @@ export async function parseImportGlob(
       throw err(`Expected 1-2 arguments, but got ${ast.arguments.length}`)
 
     const arg1 = ast.arguments[0] as ArrayExpression | Literal | TemplateLiteral
-    const arg2 = ast.arguments[1] as RollupAstNode<Node> | undefined
+    const arg2 = ast.arguments[1] as
+      | (Node & { start: number; end: number })
+      | undefined
 
     const globs: string[] = []
 

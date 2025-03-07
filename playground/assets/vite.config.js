@@ -15,6 +15,6 @@ export default defineConfig({
     outDir: 'dist/foo',
     assetsInlineLimit: 8000, // 8 kB
     manifest: true,
-    watch: {},
+    // watch: {},
   },
 })

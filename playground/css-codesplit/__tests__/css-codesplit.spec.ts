@@ -55,7 +55,7 @@ describe.runIf(isBuild)('build', () => {
     expect(sharedCSSWithJSChunk).toMatch(`/* empty css`)
     // there are functions and modules in the src code that should be tree-shaken
     expect(sharedCSSWithJSChunk).not.toMatch('function')
-    expect(sharedCSSWithJSChunk).not.toMatch(/import(?!".\/modulepreload)/)
+    expect(sharedCSSWithJSChunk).not.toMatch(/import(?!\s*".\/modulepreload)/)
   })
 
   test('should generate correct manifest', async () => {

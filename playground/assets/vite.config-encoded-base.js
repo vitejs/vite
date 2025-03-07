@@ -15,7 +15,7 @@ export default defineConfig({
   build: {
     ...baseConfig.build,
     outDir: 'dist/encoded-base',
-    watch: null,
+    // watch: null,
     minify: false,
     assetsInlineLimit: 0,
     rollupOptions: {

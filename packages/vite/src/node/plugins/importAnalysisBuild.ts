@@ -5,7 +5,7 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { SourceMap } from 'rollup'
+import type { SourceMap } from 'rolldown'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
 import {
@@ -447,7 +447,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 let url = name
                 if (!url) {
                   const rawUrl = code.slice(start, end)
-                  if (rawUrl[0] === `"` && rawUrl.endsWith(`"`))
+                  if (
+                    (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`) ||
+                    (rawUrl[0] === '`' && rawUrl[rawUrl.length - 1] === '`')
+                  )
                     url = rawUrl.slice(1, -1)
                 }
                 if (!url) continue
@@ -524,7 +527,10 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               let url = name
               if (!url) {
                 const rawUrl = code.slice(start, end)
-                if (rawUrl[0] === `"` && rawUrl.endsWith(`"`))
+                if (
+                  (rawUrl[0] === `"` && rawUrl[rawUrl.length - 1] === `"`) ||
+                  (rawUrl[0] === '`' && rawUrl[rawUrl.length - 1] === '`')
+                )
                   url = rawUrl.slice(1, -1)
               }
               const deps = new Set<string>()

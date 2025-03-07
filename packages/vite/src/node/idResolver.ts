@@ -1,4 +1,4 @@
-import type { PartialResolvedId } from 'rollup'
+import type { PartialResolvedId } from 'rolldown'
 import aliasPlugin from '@rollup/plugin-alias'
 import type { ResolvedConfig } from './config'
 import type { EnvironmentPluginContainer } from './server/pluginContainer'
@@ -59,6 +59,7 @@ export function createIdResolver(
       pluginContainer = await createEnvironmentPluginContainer(
         environment as Environment,
         [
+          // @ts-expect-error  the aliasPlugin uses rollup types
           aliasPlugin({ entries: environment.config.resolve.alias }),
           resolvePlugin({
             root: config.root,
@@ -93,6 +94,7 @@ export function createIdResolver(
     if (!pluginContainer) {
       pluginContainer = await createEnvironmentPluginContainer(
         environment as Environment,
+        // @ts-expect-error  the aliasPlugin uses rollup types
         [aliasPlugin({ entries: environment.config.resolve.alias })],
         undefined,
         false,

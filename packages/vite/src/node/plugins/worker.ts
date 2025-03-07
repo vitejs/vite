@@ -1,7 +1,9 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
-import type { OutputChunk, RollupError } from 'rollup'
+import type { OutputChunk, RollupError } from 'rolldown'
 import colors from 'picocolors'
+import { type ImportSpecifier, init, parse } from 'es-module-lexer'
+import type { ChunkMetadata } from 'types/metadata'
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { ENV_ENTRY, ENV_PUBLIC_PATH } from '../constants'
@@ -85,22 +87,28 @@ async function bundleWorkerEntry(
   }
 
   // bundle the file as entry to support imports
-  const { rollup } = await import('rollup')
+  const { rolldown } = await import('rolldown')
   const { plugins, rollupOptions, format } = config.worker
   const workerConfig = await plugins(newBundleChain)
   const workerEnvironment = new BuildEnvironment('client', workerConfig) // TODO: should this be 'worker'?
   await workerEnvironment.init()
 
-  const bundle = await rollup({
+  const chunkMetadataMap = new Map<string, ChunkMetadata>()
+  const bundle = await rolldown({
     ...rollupOptions,
     input,
     plugins: workerEnvironment.plugins.map((p) =>
-      injectEnvironmentAndFilterToHooks(workerEnvironment, p),
+      injectEnvironmentAndFilterToHooks(workerEnvironment, chunkMetadataMap, p),
     ),
     onLog(level, log) {
       onRollupLog(level, log, workerEnvironment)
     },
-    preserveEntrySignatures: false,
+    // TODO: remove this and enable rolldown's CSS support later
+    moduleTypes: {
+      '.css': 'js',
+      ...rollupOptions.moduleTypes,
+    },
+    // preserveEntrySignatures: false,
   })
   let chunk: OutputChunk
   try {
@@ -221,24 +229,43 @@ export async function workerFileToUrl(
 export function webWorkerPostPlugin(): Plugin {
   return {
     name: 'vite:worker-post',
-    resolveImportMeta(property, { format }) {
-      // document is undefined in the worker, so we need to avoid it in iife
-      if (format === 'iife') {
-        // compiling import.meta
-        if (!property) {
-          // rollup only supports `url` property. we only support `url` property as well.
-          // https://github.com/rollup/rollup/blob/62b648e1cc6a1f00260bb85aa2050097bb4afd2b/src/ast/nodes/MetaProperty.ts#L164-L173
-          return `{
-            url: self.location.href
-          }`
-        }
-        // compiling import.meta.url
-        if (property === 'url') {
-          return 'self.location.href'
-        }
-      }
+    transform: {
+      filter: {
+        code: 'import.meta.url',
+      },
+      async handler(code, id) {
+        // document is undefined in the worker, so we need to avoid import.meta.url in iife
+        if (this.environment.config.worker.format === 'iife') {
+          await init
 
-      return null
+          let imports: readonly ImportSpecifier[]
+          try {
+            imports = parse(code)[0]
+          } catch {
+            // ignore if parse fails
+            return
+          }
+
+          let s: MagicString | undefined
+          for (const { s: start, e: end, d: dynamicIndex } of imports) {
+            // is import.meta
+            if (dynamicIndex === -2) {
+              const prop = code.slice(end, end + 4)
+              if (prop === '.url') {
+                s ||= new MagicString(code)
+                s.overwrite(start, end + 4, 'self.location.href')
+              }
+            }
+          }
+
+          if (!s) return
+
+          return {
+            code: s.toString(),
+            map: s.generateMap({ hires: 'boundary', source: id }),
+          }
+        }
+      },
     },
   }
 }
@@ -269,11 +296,11 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       },
     },
 
-    shouldTransformCachedModule({ id }) {
-      if (isBuild && config.build.watch && workerOrSharedWorkerRE.test(id)) {
-        return true
-      }
-    },
+    // shouldTransformCachedModule({ id }) {
+    //   if (isBuild && config.build.watch && workerOrSharedWorkerRE.test(id)) {
+    //     return true
+    //   }
+    // },
 
     transform: {
       async handler(raw, id) {

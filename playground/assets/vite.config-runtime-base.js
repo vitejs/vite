@@ -12,7 +12,7 @@ export default defineConfig({
   build: {
     ...baseConfig.build,
     outDir: 'dist/runtime-base',
-    watch: null,
+    // watch: null,
     minify: false,
     assetsInlineLimit: 0,
     rollupOptions: {

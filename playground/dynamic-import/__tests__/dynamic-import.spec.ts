@@ -158,6 +158,8 @@ test('should work a load path that contains parentheses.', async () => {
 
 test.runIf(isBuild)(
   'should rollup warn when static and dynamic import a module in same chunk',
+  // NOTE: this is a warning related to rollup's chunking behavior
+  { skip: true },
   async () => {
     const log = serverLogs.join('\n')
     expect(log).toContain(
