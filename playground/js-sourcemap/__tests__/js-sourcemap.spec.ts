@@ -143,7 +143,7 @@ describe.runIf(isBuild)('build tests', () => {
       {
         "debugId": "00000000-0000-0000-0000-000000000000",
         "ignoreList": [],
-        "mappings": ";4jCAAA,OAAO,6BAAuB,wBAE9B,QAAQ,IAAI",
+        "mappings": ";sjCAEA,MAFA,OAAO,6BAAuB,wBAE9B,QAAQ,IAAI,wBAAuB",
         "sources": [
           "../../after-preload-dynamic.js",
         ],
@@ -181,7 +181,7 @@ describe.runIf(isBuild)('build tests', () => {
     expect(formatSourcemapForSnapshot(JSON.parse(map))).toMatchInlineSnapshot(`
       {
         "debugId": "00000000-0000-0000-0000-000000000000",
-        "mappings": "qBAEA,SAAS,GAAO,CACd,EAAA,CACF,CAEA,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAsB,CAAA,CACtC,CAEA,EAAA",
+        "mappings": "qBAEA,SAAS,GAAO,CACd,GAAU,AACZ,CAEA,SAAS,GAAY,CAEnB,QAAQ,MAAM,qBAAsB,EAAkB,AACxD,CAEA,GAAK",
         "sources": [
           "../../with-define-object.ts",
         ],

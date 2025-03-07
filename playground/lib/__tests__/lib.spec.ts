@@ -24,7 +24,7 @@ describe.runIf(isBuild)('build', () => {
     // esbuild helpers are injected inside of the UMD wrapper
     expect(code).toMatch(/^\(function\(/)
     expect(noMinifyCode).toMatch(
-      /^\(function\(global.+?"use strict";\/\*[^*]*\*\/\s*var.+?function\smyLib\(/s,
+      /^\(function\(global.+?"use strict";\s*var.+?function\smyLib\(/s,
     )
     expect(namedCode).toMatch(/^\(function\(/)
   })
@@ -51,7 +51,7 @@ describe.runIf(isBuild)('build', () => {
       'dist/helpers-injection/my-lib-custom-filename.iife.js',
     )
     expect(code).toMatch(
-      `'"use strict"; return (' + expressionSyntax + ").constructor;"`,
+      `\\"use strict\\"; return (" + expressionSyntax + ").constructor;"`,
     )
   })
 
@@ -64,14 +64,14 @@ describe.runIf(isBuild)('build', () => {
     expect(code).not.toMatch('__vitePreload')
 
     // Test that library chunks are hashed
-    expect(code).toMatch(/await import\("\.\/message-[-\w]{8}.js"\)/)
+    expect(code).toMatch(/await import\(`\.\/message-[-\w]{8}.js`\)/)
   })
 
   test('Library mode does not have any reference to pure CSS chunks', async () => {
     const code = readFile('dist/lib/dynamic-import-message.es.mjs')
 
     // Does not import pure CSS chunks and replaced by `Promise.resolve({})` instead
-    expect(code).not.toMatch(/await import\("\.\/dynamic-[-\w]{8}.js"\)/)
+    expect(code).not.toMatch(/await import\(`\.\/dynamic-[-\w]{8}.js`\)/)
     expect(code).toMatch(/await Promise.resolve\(\{.*\}\)/)
   })
 
