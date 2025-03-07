@@ -1,10 +1,25 @@
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rolldown'
+import {
+  aliasPlugin as nativeAliasPlugin,
+  dynamicImportVarsPlugin as nativeDynamicImportVarsPlugin,
+  importGlobPlugin as nativeImportGlobPlugin,
+  jsonPlugin as nativeJsonPlugin,
+  modulePreloadPolyfillPlugin as nativeModulePreloadPolyfillPlugin,
+  transformPlugin as nativeTransformPlugin,
+  wasmFallbackPlugin as nativeWasmFallbackPlugin,
+  wasmHelperPlugin as nativeWasmHelperPlugin,
+} from 'rolldown/experimental'
 import type { PluginHookUtils, ResolvedConfig } from '../config'
-import type { HookHandler, Plugin, PluginWithRequiredHook } from '../plugin'
+import {
+  type HookHandler,
+  type Plugin,
+  type PluginWithRequiredHook,
+  perEnvironmentPlugin,
+} from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
 import { jsonPlugin } from './json'
-import { resolvePlugin } from './resolve'
+import { oxcResolvePlugin, resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
 import { importAnalysisPlugin } from './importAnalysis'
 import { cssAnalysisPlugin, cssPlugin, cssPostPlugin } from './css'
@@ -40,50 +55,104 @@ export async function resolvePlugins(
     ? await (await import('../build')).resolveBuildPlugins(config)
     : { pre: [], post: [] }
   const { modulePreload } = config.build
+  const enableNativePlugin = config.experimental.enableNativePlugin
 
   return [
     !isBuild ? optimizedDepsPlugin() : null,
     !isWorker ? watchPackageDataPlugin(config.packageCache) : null,
     !isBuild ? preAliasPlugin(config) : null,
-    aliasPlugin({
-      // @ts-expect-error aliasPlugin receives rollup types
-      entries: config.resolve.alias,
-      customResolver: viteAliasCustomResolver,
-    }),
+    enableNativePlugin === true
+      ? nativeAliasPlugin({
+          entries: config.resolve.alias.map((item) => {
+            return {
+              find: item.find,
+              replacement: item.replacement,
+            }
+          }),
+        })
+      : aliasPlugin({
+          // @ts-expect-error aliasPlugin receives rollup types
+          entries: config.resolve.alias,
+          customResolver: viteAliasCustomResolver,
+        }),
 
     ...prePlugins,
 
     modulePreload !== false && modulePreload.polyfill
-      ? modulePreloadPolyfillPlugin(config)
+      ? enableNativePlugin === true
+        ? perEnvironmentPlugin(
+            'native:modulepreload-polyfill',
+            (environment) => {
+              if (
+                config.command !== 'build' ||
+                environment.config.consumer !== 'client'
+              )
+                return false
+              return nativeModulePreloadPolyfillPlugin({
+                skip: false,
+              })
+            },
+          )
+        : modulePreloadPolyfillPlugin(config)
       : null,
-    resolvePlugin({
-      root: config.root,
-      isProduction: config.isProduction,
-      isBuild,
-      packageCache: config.packageCache,
-      asSrc: true,
-      optimizeDeps: true,
-      externalize: true,
-    }),
+    ...(enableNativePlugin
+      ? oxcResolvePlugin(
+          {
+            root: config.root,
+            isProduction: config.isProduction,
+            isBuild,
+            packageCache: config.packageCache,
+            asSrc: true,
+            optimizeDeps: true,
+            externalize: true,
+          },
+          isWorker ? { ...config, consumer: 'client' } : undefined,
+        )
+      : [
+          resolvePlugin({
+            root: config.root,
+            isProduction: config.isProduction,
+            isBuild,
+            packageCache: config.packageCache,
+            asSrc: true,
+            optimizeDeps: true,
+            externalize: true,
+          }),
+        ]),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
-    config.oxc !== false ? oxcPlugin(config) : null,
-    jsonPlugin(config.json, isBuild),
-    wasmHelperPlugin(),
+    config.oxc !== false
+      ? enableNativePlugin === true
+        ? nativeTransformPlugin()
+        : oxcPlugin(config)
+      : null,
+    enableNativePlugin === true
+      ? nativeJsonPlugin({ ...config.json, isBuild })
+      : jsonPlugin(config.json, isBuild),
+    enableNativePlugin === true ? nativeWasmHelperPlugin() : wasmHelperPlugin(),
     webWorkerPlugin(config),
     assetPlugin(config),
 
     ...normalPlugins,
 
-    wasmFallbackPlugin(),
+    enableNativePlugin === true
+      ? nativeWasmFallbackPlugin()
+      : wasmFallbackPlugin(),
     definePlugin(config),
     cssPostPlugin(config),
     isBuild && buildHtmlPlugin(config),
     workerImportMetaUrlPlugin(config),
     assetImportMetaUrlPlugin(config),
     ...buildPlugins.pre,
-    dynamicImportVarsPlugin(config),
-    importGlobPlugin(config),
+    enableNativePlugin === true
+      ? nativeDynamicImportVarsPlugin()
+      : dynamicImportVarsPlugin(config),
+    enableNativePlugin === true
+      ? nativeImportGlobPlugin({
+          root: config.root,
+          restoreQueryExtension: config.experimental.importGlobRestoreExtension,
+        })
+      : importGlobPlugin(config),
 
     ...postPlugins,
 

@@ -515,6 +515,13 @@ export interface ExperimentalOptions {
    * @default false
    */
   skipSsrTransform?: boolean
+  /**
+   * Enable builtin plugin that written by rust, which is faster than js plugin.
+   *
+   * @experimental
+   * @default false
+   */
+  enableNativePlugin?: boolean | 'resolver'
 }
 
 export interface LegacyOptions {
@@ -702,6 +709,7 @@ export const configDefaults = Object.freeze({
     renderBuiltUrl: undefined,
     hmrPartialAccept: false,
     skipSsrTransform: false,
+    enableNativePlugin: false,
   },
   future: {
     removePluginHookHandleHotUpdate: undefined,
@@ -1662,6 +1670,7 @@ export async function resolveConfig(
     experimental: {
       importGlobRestoreExtension: false,
       hmrPartialAccept: false,
+      enableNativePlugin: false,
       ...config.experimental,
     },
     future: config.future,
