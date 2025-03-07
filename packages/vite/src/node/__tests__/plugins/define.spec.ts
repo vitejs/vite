@@ -60,7 +60,7 @@ describe('definePlugin', () => {
     // assert that the default behavior is to replace import.meta.hot with undefined
     const transform = await createDefinePluginTransform()
     expect(await transform('const hot = import.meta.hot;')).toBe(
-      'const hot = void 0;\n',
+      'const hot = undefined;\n',
     )
     // assert that we can specify a user define to preserve import.meta.hot
     const overrideTransform = await createDefinePluginTransform({
