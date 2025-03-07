@@ -103,6 +103,7 @@ import { createIdResolver } from './idResolver'
 import { runnerImport } from './ssr/runnerImport'
 import { getAdditionalAllowedHosts } from './server/middlewares/hostCheck'
 import { convertEsbuildPluginToRolldownPlugin } from './optimizer/pluginConverter'
+import { type OxcOptions, convertEsbuildConfigToOxcConfig } from './plugins/oxc'
 
 const debug = createDebugger('vite:config', { depth: 10 })
 const promisifiedRealpath = promisify(fs.realpath)
@@ -355,6 +356,11 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    */
   esbuild?: ESBuildOptions | false
   /**
+   * Transform options to pass to esbuild.
+   * Or set to `false` to disable OXC.
+   */
+  oxc?: OxcOptions | false
+  /**
    * Specify additional picomatch patterns to be treated as static assets.
    */
   assetsInclude?: string | RegExp | (string | RegExp)[]
@@ -596,6 +602,7 @@ export interface ResolvedConfig
       css: ResolvedCSSOptions
       json: Required<JsonOptions>
       esbuild: ESBuildOptions | false
+      oxc: OxcOptions | false
       server: ResolvedServerOptions
       dev: ResolvedDevEnvironmentOptions
       /** @experimental */
@@ -1581,6 +1588,17 @@ export async function resolveConfig(
 
   const preview = resolvePreviewOptions(config.preview, server)
 
+  let oxc: OxcOptions | false | undefined = config.oxc
+  if (config.esbuild) {
+    if (config.oxc) {
+      logger.warn(
+        `Found esbuild and oxc options, will use oxc and ignore esbuild at transformer.`,
+      )
+    } else {
+      oxc = convertEsbuildConfigToOxcConfig(config.esbuild, logger)
+    }
+  }
+
   resolved = {
     configFile: configFile ? normalizePath(configFile) : undefined,
     configFileDependencies: configFileDependencies.map((name) =>
@@ -1602,12 +1620,26 @@ export async function resolveConfig(
     plugins: userPlugins, // placeholder to be replaced
     css: resolveCSSOptions(config.css),
     json: mergeWithDefaults(configDefaults.json, config.json ?? {}),
+    // preserve esbuild for buildEsbuildPlugin
     esbuild:
       config.esbuild === false
         ? false
         : {
             jsxDev: !isProduction,
             ...config.esbuild,
+          },
+    oxc:
+      oxc === false
+        ? false
+        : {
+            ...oxc,
+            jsx:
+              typeof oxc?.jsx === 'string'
+                ? oxc.jsx
+                : {
+                    development: oxc?.jsx?.development ?? !isProduction,
+                    ...oxc?.jsx,
+                  },
           },
     server,
     builder,

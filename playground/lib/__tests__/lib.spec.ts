@@ -24,7 +24,7 @@ describe.runIf(isBuild)('build', () => {
     // esbuild helpers are injected inside of the UMD wrapper
     expect(code).toMatch(/^\(function\(/)
     expect(noMinifyCode).toMatch(
-      /^\(function\(global.+?"use strict";\s*var.+?function\smyLib\(/s,
+      /^\/\*[^*]*\*\/\s*\(function\(global.+?"use strict";\s*var.+?function\smyLib\(/s,
     )
     expect(namedCode).toMatch(/^\(function\(/)
   })
@@ -39,7 +39,7 @@ describe.runIf(isBuild)('build', () => {
     // esbuild helpers are injected inside of the IIFE wrapper
     expect(code).toMatch(/^var MyLib=function\(\)\{\s*"use strict";/)
     expect(noMinifyCode).toMatch(
-      /^var MyLib\s*=\s*function\(\)\s*\{\s*"use strict";/,
+      /^\/\*[^*]*\*\/\s*var MyLib\s*=\s*function\(\)\s*\{\s*"use strict";/,
     )
     expect(namedCode).toMatch(
       /^var MyLibNamed=function\([^()]+\)\{\s*"use strict";/,
