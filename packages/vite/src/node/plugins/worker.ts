@@ -295,8 +295,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     },
 
     load: {
-      handler(id) {
-        if (isBuild && workerOrSharedWorkerRE.test(id)) {
+      filter: { id: workerOrSharedWorkerRE },
+      handler(_id) {
+        if (isBuild) {
           return ''
         }
       },
@@ -309,6 +310,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
     // },
 
     transform: {
+      filter: {
+        id: [workerFileRE, workerOrSharedWorkerRE],
+      },
       async handler(raw, id) {
         const workerFileMatch = workerFileRE.exec(id)
         if (workerFileMatch) {

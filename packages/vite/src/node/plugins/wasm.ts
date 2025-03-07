@@ -51,21 +51,17 @@ export const wasmHelperPlugin = (): Plugin => {
     name: 'vite:wasm-helper',
 
     resolveId: {
+      filter: { id: wasmHelperId },
       handler(id) {
-        if (id === wasmHelperId) {
-          return id
-        }
+        return id
       },
     },
 
     load: {
+      filter: { id: [wasmHelperId, /\.wasm\?init$/] },
       async handler(id) {
         if (id === wasmHelperId) {
           return `export default ${wasmHelperCode}`
-        }
-
-        if (!id.endsWith('.wasm?init')) {
-          return
         }
 
         const url = await fileToUrl(this, id)
@@ -84,11 +80,8 @@ export const wasmFallbackPlugin = (): Plugin => {
     name: 'vite:wasm-fallback',
 
     load: {
-      handler(id) {
-        if (!id.endsWith('.wasm')) {
-          return
-        }
-
+      filter: { id: /\.wasm$/ },
+      handler(_id) {
         throw new Error(
           '"ESM integration proposal for Wasm" is not supported currently. ' +
             'Use vite-plugin-wasm or other community plugins to handle this. ' +

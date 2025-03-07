@@ -338,9 +338,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
     },
 
     load: {
+      filter: {
+        id: CSS_LANGS_RE,
+      },
       async handler(id) {
-        if (!isCSSRequest(id)) return
-
         if (urlRE.test(id)) {
           if (isModuleCSSRequest(id)) {
             throw new Error(
@@ -367,7 +368,14 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   }
 
   const transformHook: Plugin['transform'] = {
+    filter: {
+      id: {
+        include: CSS_LANGS_RE,
+        exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+      },
+    },
     async handler(raw, id) {
+      // for backward compat this if statement is needed
       if (
         !isCSSRequest(id) ||
         commonjsProxyRE.test(id) ||
@@ -445,9 +453,10 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
   }
 
   // for backward compat, make `plugin.transform` a function
-  // but still keep the `handler` property
-  // so that we can use `filter` property in the future
+  // but still keep the `filter` and `handler` properties
+  // so that rolldown can use `filter`
   plugin.transform = transformHook.handler
+  ;(plugin.transform as any).filter = transformHook.filter
   ;(plugin.transform as any).handler = transformHook.handler
 
   return plugin
@@ -520,7 +529,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     },
 
     transform: {
+      filter: {
+        id: {
+          include: CSS_LANGS_RE,
+          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+        },
+      },
       async handler(css, id) {
+        // for backward compat this if statement is needed
         if (
           !isCSSRequest(id) ||
           commonjsProxyRE.test(id) ||
@@ -1075,15 +1091,13 @@ export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:css-analysis',
 
     transform: {
+      filter: {
+        id: {
+          include: CSS_LANGS_RE,
+          exclude: [commonjsProxyRE, SPECIAL_QUERY_RE],
+        },
+      },
       async handler(_, id) {
-        if (
-          !isCSSRequest(id) ||
-          commonjsProxyRE.test(id) ||
-          SPECIAL_QUERY_RE.test(id)
-        ) {
-          return
-        }
-
         const { moduleGraph } = this.environment as DevEnvironment
         const thisModule = moduleGraph.getModuleById(id)
 
