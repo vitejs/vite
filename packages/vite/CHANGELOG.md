@@ -13,7 +13,7 @@
 * test: convert config playground to unit tests (#19568) ([c0e68da](https://github.com/vitejs/vite/commit/c0e68da4774f3487e9ba0c4d4d2c5e76bdc890ea)), closes [#19568](https://github.com/vitejs/vite/issues/19568)
 * test: convert resolve-config playground to unit tests (#19567) ([db5fb48](https://github.com/vitejs/vite/commit/db5fb48f5d4c1ee411e59c1e9b70d62fdb9d53d2)), closes [#19567](https://github.com/vitejs/vite/issues/19567)
 * perf: flush compile cache after 10s (#19537) ([6c8a5a2](https://github.com/vitejs/vite/commit/6c8a5a27e645a182f5b03a4ed6aa726eab85993f)), closes [#19537](https://github.com/vitejs/vite/issues/19537)
-* chore(css): move environment destructuring after condition check (#19492) ([c9eda23](https://github.com/vitejs/vite/commit/c9eda23)), closes [#19492](https://github.com/vitejs/vite/issues/19492)
+* chore(css): move environment destructuring after condition check (#19492) ([c9eda23](https://github.com/vitejs/vite/commit/c9eda2348c244d591d23f131c6ddf262b256cbf0)), closes [#19492](https://github.com/vitejs/vite/issues/19492)
 * chore(html): remove unnecessary value check (#19491) ([797959f](https://github.com/vitejs/vite/commit/797959f01da583b85a0be1dc89f762fd01d138db)), closes [#19491](https://github.com/vitejs/vite/issues/19491)
 
 
