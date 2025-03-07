@@ -1,3 +1,23 @@
+## <small>6.2.1 (2025-03-07)</small>
+
+* refactor: remove `isBuild` check from preAliasPlugin (#19587) ([c9e086d](https://github.com/vitejs/vite/commit/c9e086d35ac35ee1c6d85d48369e8a67a2ba6bfe)), closes [#19587](https://github.com/vitejs/vite/issues/19587)
+* refactor: restore endsWith usage (#19554) ([6113a96](https://github.com/vitejs/vite/commit/6113a9670cc9b7d29fe0bffe033f7823e36ded00)), closes [#19554](https://github.com/vitejs/vite/issues/19554)
+* refactor: use `applyToEnvironment` in internal plugins (#19588) ([f678442](https://github.com/vitejs/vite/commit/f678442d5701a00648a745956f9d884247e4e710)), closes [#19588](https://github.com/vitejs/vite/issues/19588)
+* fix(css): stabilize css module hashes with lightningcss in dev mode (#19481) ([92125b4](https://github.com/vitejs/vite/commit/92125b41e4caa3e862bf5fd9b1941546f25d9bf2)), closes [#19481](https://github.com/vitejs/vite/issues/19481)
+* fix(deps): update all non-major dependencies (#19555) ([f612e0f](https://github.com/vitejs/vite/commit/f612e0fdf6810317b61fcca1ded125755f261d78)), closes [#19555](https://github.com/vitejs/vite/issues/19555)
+* fix(reporter): fix incorrect bundle size calculation with non-ASCII characters (#19561) ([437c0ed](https://github.com/vitejs/vite/commit/437c0ed8baa6739bbe944779b9e7515f9035046a)), closes [#19561](https://github.com/vitejs/vite/issues/19561)
+* fix(sourcemap): combine sourcemaps with multiple sources without matched source (#18971) ([e3f6ae1](https://github.com/vitejs/vite/commit/e3f6ae14f7a93118d7341de7379967f815725c4b)), closes [#18971](https://github.com/vitejs/vite/issues/18971)
+* fix(ssr): named export should overwrite export all (#19534) ([2fd2fc1](https://github.com/vitejs/vite/commit/2fd2fc110738622651d361488767734cc23c34dd)), closes [#19534](https://github.com/vitejs/vite/issues/19534)
+* feat: add `*?url&no-inline` type and warning for `.json?inline` / `.json?no-inline` (#19566) ([c0d3667](https://github.com/vitejs/vite/commit/c0d36677cd305e8fa89153ed6305f0e0df43d289)), closes [#19566](https://github.com/vitejs/vite/issues/19566)
+* test: add glob import test case (#19516) ([aa1d807](https://github.com/vitejs/vite/commit/aa1d8075cc7ce7fbba62fea9e37ccb9b304fc039)), closes [#19516](https://github.com/vitejs/vite/issues/19516)
+* test: convert config playground to unit tests (#19568) ([c0e68da](https://github.com/vitejs/vite/commit/c0e68da4774f3487e9ba0c4d4d2c5e76bdc890ea)), closes [#19568](https://github.com/vitejs/vite/issues/19568)
+* test: convert resolve-config playground to unit tests (#19567) ([db5fb48](https://github.com/vitejs/vite/commit/db5fb48f5d4c1ee411e59c1e9b70d62fdb9d53d2)), closes [#19567](https://github.com/vitejs/vite/issues/19567)
+* perf: flush compile cache after 10s (#19537) ([6c8a5a2](https://github.com/vitejs/vite/commit/6c8a5a27e645a182f5b03a4ed6aa726eab85993f)), closes [#19537](https://github.com/vitejs/vite/issues/19537)
+* chore(css): move environment destructuring after condition check (#19492) ([c9eda23](https://github.com/vitejs/vite/commit/c9eda23)), closes [#19492](https://github.com/vitejs/vite/issues/19492)
+* chore(html): remove unnecessary value check (#19491) ([797959f](https://github.com/vitejs/vite/commit/797959f01da583b85a0be1dc89f762fd01d138db)), closes [#19491](https://github.com/vitejs/vite/issues/19491)
+
+
+
 ## 6.2.0 (2025-02-25)
 
 * fix(deps): update all non-major dependencies (#19501) ([c94c9e0](https://github.com/vitejs/vite/commit/c94c9e052127cf4796374de1d698ec60b2973dfa)), closes [#19501](https://github.com/vitejs/vite/issues/19501)
