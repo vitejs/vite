@@ -44,10 +44,13 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
 
   return {
     name: 'vite:asset-import-meta-url',
+
+    applyToEnvironment(environment) {
+      return environment.config.consumer === 'client'
+    },
+
     async transform(code, id) {
-      const { environment } = this
       if (
-        environment.config.consumer === 'client' &&
         id !== preloadHelperId &&
         id !== CLIENT_ENTRY &&
         code.includes('new URL') &&
@@ -121,7 +124,7 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
               tryIndex: false,
               preferRelative: true,
             })
-            file = await assetResolver(environment, url, id)
+            file = await assetResolver(this.environment, url, id)
             file ??=
               url[0] === '/'
                 ? slash(path.join(publicDir, url))

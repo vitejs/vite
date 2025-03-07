@@ -8,7 +8,10 @@ import {
   ERR_OPTIMIZE_DEPS_PROCESSING_ERROR,
 } from '../constants'
 import { createDebugger } from '../utils'
-import { optimizedDepInfoFromFile } from '../optimizer'
+import {
+  isDepOptimizationDisabled,
+  optimizedDepInfoFromFile,
+} from '../optimizer'
 import { cleanUrl } from '../../shared/utils'
 import { ERR_OUTDATED_OPTIMIZED_DEP } from '../../shared/constants'
 
@@ -17,6 +20,10 @@ const debug = createDebugger('vite:optimize-deps')
 export function optimizedDepsPlugin(): Plugin {
   return {
     name: 'vite:optimized-deps',
+
+    applyToEnvironment(environment) {
+      return !isDepOptimizationDisabled(environment.config.optimizeDeps)
+    },
 
     resolveId(id) {
       const environment = this.environment as DevEnvironment

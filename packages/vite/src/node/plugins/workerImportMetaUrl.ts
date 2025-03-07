@@ -208,6 +208,10 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   return {
     name: 'vite:worker-import-meta-url',
 
+    applyToEnvironment(environment) {
+      return environment.config.consumer === 'client'
+    },
+
     shouldTransformCachedModule({ code }) {
       if (isBuild && config.build.watch && isIncludeWorkerImportMetaUrl(code)) {
         return true
@@ -215,10 +219,7 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
     },
 
     async transform(code, id) {
-      if (
-        this.environment.config.consumer === 'client' &&
-        isIncludeWorkerImportMetaUrl(code)
-      ) {
+      if (isIncludeWorkerImportMetaUrl(code)) {
         let s: MagicString | undefined
         const cleanString = stripLiteral(code)
         const workerImportMetaUrlRE =
