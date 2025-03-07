@@ -23,8 +23,6 @@ import type Stylus from 'stylus'
 import type Less from 'less'
 import type { Alias } from 'dep-types/alias'
 import type { LightningCSSOptions } from 'types/internal/lightningcssOptions'
-import type { TransformOptions } from 'esbuild'
-import { formatMessages, transform } from 'esbuild'
 import type { RawSourceMap } from '@ampproject/remapping'
 import { WorkerWithFallback } from 'artichokie'
 import { globSync } from 'tinyglobby'
@@ -39,6 +37,7 @@ import type {
   TransformResult as LightningCssTransformResult,
 } from 'lightningcss'
 import type { CustomPluginOptionsVite } from 'types/metadata'
+import type { EsbuildTransformOptions } from 'types/internal/esbuildOptions'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -2103,6 +2102,7 @@ async function minifyCSS(
   // See https://github.com/vitejs/vite/pull/13893#issuecomment-1678628198
 
   if (config.build.cssMinify === 'esbuild') {
+    const { transform, formatMessages } = await importEsbuild()
     try {
       const { code, warnings } = await transform(css, {
         loader: 'css',
@@ -2173,8 +2173,8 @@ async function minifyCSS(
 
 function resolveMinifyCssEsbuildOptions(
   options: ESBuildOptions,
-): TransformOptions {
-  const base: TransformOptions = {
+): EsbuildTransformOptions {
+  const base: EsbuildTransformOptions = {
     charset: options.charset ?? 'utf8',
     logLevel: options.logLevel,
     logLimit: options.logLimit,
@@ -3366,6 +3366,8 @@ const preprocessorSet = new Set([
 function isPreProcessor(lang: any): lang is PreprocessLang {
   return lang && preprocessorSet.has(lang)
 }
+
+const importEsbuild = createCachedImport(() => import('esbuild'))
 
 const importLightningCSS = createCachedImport(() => import('lightningcss'))
 async function compileLightningCSS(

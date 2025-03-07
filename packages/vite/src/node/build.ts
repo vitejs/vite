@@ -23,7 +23,7 @@ import type {
 } from 'rolldown'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
-import type { TransformOptions } from 'esbuild'
+import type { EsbuildTarget } from 'types/internal/esbuildOptions'
 import type { ChunkMetadata } from 'types/metadata'
 import { withTrailingSlash } from '../shared/utils'
 import {
@@ -104,7 +104,7 @@ export interface BuildEnvironmentOptions {
    * https://esbuild.github.io/content-types/#javascript for more details.
    * @default 'modules'
    */
-  target?: 'modules' | TransformOptions['target'] | false
+  target?: 'modules' | EsbuildTarget | false
   /**
    * whether to inject module preload polyfill.
    * Note: does not apply to library mode.
@@ -157,7 +157,7 @@ export interface BuildEnvironmentOptions {
    * doesn't support the #RGBA syntax.
    * @default target
    */
-  cssTarget?: TransformOptions['target'] | false
+  cssTarget?: EsbuildTarget | false
   /**
    * Override CSS minification specifically instead of defaulting to `build.minify`,
    * so you can configure minification for JS and CSS separately.
