@@ -13,8 +13,8 @@ export default defineConfig({
     plugins: () => [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/worker_asset-[name].[ext]',
-        chunkFileNames: 'assets/worker_chunk-[name].js',
+        assetFileNames: 'assets/worker_asset-[name]-[hash].[ext]',
+        chunkFileNames: 'assets/worker_chunk-[name]-[hash].js',
         // should be overwritten to worker_entry-[name] by the config-test plugin
         entryFileNames: 'assets/worker_-[name].js',
       },
@@ -27,8 +27,8 @@ export default defineConfig({
     manifest: true,
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/[name].[ext]',
-        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+        chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name].js',
       },
     },

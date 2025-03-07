@@ -12,7 +12,7 @@ test('normal', async () => {
   )
   await untilUpdated(
     () => page.textContent('.asset-url'),
-    isBuild ? '/es/assets/worker_asset-vite.svg' : '/es/vite.svg',
+    isBuild ? /\/es\/assets\/worker_asset-vite-[\w-]{8}\.svg/ : '/es/vite.svg',
   )
   await untilUpdated(() => page.textContent('.dep-cjs'), '[cjs ok]')
 })
@@ -94,7 +94,7 @@ describe.runIf(isBuild)('build', () => {
   test('inlined code generation', async () => {
     const assetsDir = path.resolve(testDir, 'dist/es/assets')
     const files = fs.readdirSync(assetsDir)
-    expect(files.length).toBe(35)
+    expect(files.length).toBe(36)
     const index = files.find((f) => f.includes('main-module'))
     const content = fs.readFileSync(path.resolve(assetsDir, index), 'utf-8')
     const worker = files.find((f) => f.includes('my-worker'))

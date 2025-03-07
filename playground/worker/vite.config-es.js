@@ -13,8 +13,8 @@ export default defineConfig({
     plugins: () => [workerPluginTestPlugin()],
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/worker_asset-[name].[ext]',
-        chunkFileNames: 'assets/worker_chunk-[name].js',
+        assetFileNames: 'assets/worker_asset-[name]-[hash].[ext]',
+        chunkFileNames: 'assets/worker_chunk-[name]-[hash].js',
         entryFileNames: 'assets/worker_entry-[name].js',
       },
     },
@@ -25,8 +25,8 @@ export default defineConfig({
       filePath.endsWith('.svg') ? false : undefined,
     rollupOptions: {
       output: {
-        assetFileNames: 'assets/[name].[ext]',
-        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+        chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name].js',
       },
     },
