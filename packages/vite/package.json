@@ -88,6 +88,7 @@
     "esbuild": "^0.25.0",
     "picomatch": "^4.0.2",
     "postcss": "^8.5.3",
+    "rolldown": "1.0.0-beta.7-commit.7452fa0",
     "rollup": "^4.34.9",
     "tinyglobby": "^0.2.12"
   },
