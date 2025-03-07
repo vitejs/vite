@@ -851,6 +851,10 @@ const nullSourceMap: RawSourceMap = {
   mappings: '',
   version: 3,
 }
+/**
+ * Combines multiple sourcemaps into a single sourcemap.
+ * Note that the length of sourcemapList must be 2.
+ */
 export function combineSourcemaps(
   filename: string,
   sourcemapList: Array<DecodedSourceMap | RawSourceMap>,
@@ -875,6 +879,7 @@ export function combineSourcemaps(
     }
     return newSourcemaps
   })
+  const escapedFilename = escapeToLinuxLikePath(filename)
 
   // We don't declare type here so we can convert/fake/map as RawSourceMap
   let map //: SourceMap
@@ -885,15 +890,12 @@ export function combineSourcemaps(
     map = remapping(sourcemapList, () => null)
   } else {
     map = remapping(sourcemapList[0], function loader(sourcefile) {
-      const mapForSources = sourcemapList
-        .slice(mapIndex)
-        .find((s) => s.sources.includes(sourcefile))
-
-      if (mapForSources) {
-        mapIndex++
-        return mapForSources
+      // this line assumes that the length of the sourcemapList is 2
+      if (sourcefile === escapedFilename && sourcemapList[mapIndex]) {
+        return sourcemapList[mapIndex++]
+      } else {
+        return null
       }
-      return null
     })
   }
   if (!map.file) {
