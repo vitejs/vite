@@ -226,12 +226,18 @@ importers:
       esbuild:
         specifier: ^0.25.0
         version: 0.25.0
+      picomatch:
+        specifier: ^4.0.2
+        version: 4.0.2
       postcss:
         specifier: ^8.5.3
         version: 8.5.3
       rollup:
         specifier: ^4.30.1
         version: 4.34.8
+      tinyglobby:
+        specifier: ^0.2.12
+        version: 0.2.12
     devDependencies:
       '@ampproject/remapping':
         specifier: ^2.3.0
@@ -350,9 +356,6 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
-      picomatch:
-        specifier: ^4.0.2
-        version: 4.0.2
       postcss-import:
         specifier: ^16.1.0
         version: 16.1.0(postcss@8.5.3)
@@ -392,9 +395,6 @@ importers:
       terser:
         specifier: ^5.39.0
         version: 5.39.0
-      tinyglobby:
-        specifier: ^0.2.12
-        version: 0.2.12
       tsconfck:
         specifier: ^3.1.5
         version: 3.1.5(typescript@5.7.3)
