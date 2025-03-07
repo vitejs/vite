@@ -470,6 +470,10 @@ test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
 })
 
+test('?binary import', async () => {
+  expect(await page.textContent('.binary')).toMatch('[object ArrayBuffer]')
+})
+
 test('?no-inline svg import', async () => {
   expect(await page.textContent('.no-inline-svg')).toMatch(
     isBuild
