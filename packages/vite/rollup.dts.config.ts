@@ -17,6 +17,7 @@ const external = [
   /^node:*/,
   /^vite\//,
   'rollup/parseAst',
+  'rolldown/experimental',
   ...Object.keys(pkg.dependencies),
   ...Object.keys(pkg.peerDependencies),
   ...Object.keys(pkg.devDependencies),

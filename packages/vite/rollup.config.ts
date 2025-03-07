@@ -111,6 +111,7 @@ const nodeConfig = defineConfig({
     /^vite\//,
     'fsevents',
     'rollup/parseAst',
+    'rolldown/experimental',
     /^tsx\//,
     /^#/,
     ...Object.keys(pkg.dependencies),
