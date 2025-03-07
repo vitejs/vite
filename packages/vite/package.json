@@ -4,7 +4,7 @@
   "type": "module",
   "license": "MIT",
   "author": "Evan You",
-  "description": "Native-ESM powered web dev build tool",
+  "description": "Vite on Rolldown preview",
   "bin": {
     "vite": "bin/vite.js"
   },

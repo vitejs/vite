@@ -10,14 +10,14 @@ permissions:
 on:
   push:
     branches:
-      - main
+      - rolldown-vite
   pull_request:
     types: [opened, synchronize, labeled]
 
 jobs:
   preview:
     if: >
-      github.repository == 'vitejs/vite' &&
+      github.repository == 'vitejs/rolldown-vite' &&
       (github.event_name == 'push' ||
       (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'trigger: preview')))
     runs-on: ubuntu-latest
@@ -35,4 +35,4 @@ jobs:
         working-directory: ./packages/vite
         run: pnpm build
 
-      - run: pnpm dlx pkg-pr-new@0.0 publish --compact --pnpm ./packages/vite
+      - run: pnpm dlx pkg-pr-new@0.0 publish --pnpm ./packages/vite
