@@ -477,6 +477,12 @@ export function resolvePlugin(
     },
 
     load: {
+      filter: {
+        id: [
+          new RegExp(`^${browserExternalId}`),
+          new RegExp(`^${optionalPeerDepId}`),
+        ],
+      },
       handler(id) {
         if (id.startsWith(browserExternalId)) {
           if (isBuild) {

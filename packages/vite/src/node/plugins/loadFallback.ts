@@ -9,6 +9,12 @@ export function buildLoadFallbackPlugin(): Plugin {
   return {
     name: 'vite:load-fallback',
     load: {
+      filter: {
+        id: {
+          include: /\?|#/,
+          exclude: /^data:/,
+        },
+      },
       async handler(id) {
         try {
           const cleanedId = cleanUrl(id)
