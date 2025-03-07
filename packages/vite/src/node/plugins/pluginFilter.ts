@@ -1,6 +1,6 @@
 import path from 'node:path'
 import picomatch from 'picomatch'
-import { arraify } from '../utils'
+import { arraify, normalizePath } from '../utils'
 
 export const FALLBACK_TRUE = 1
 export const FALLBACK_FALSE = 0
@@ -91,7 +91,7 @@ export function createIdFilter(
   const cwd = process.cwd()
   return f
     ? (id) => {
-        const normalizedId = path.relative(cwd, id)
+        const normalizedId = normalizePath(path.relative(cwd, id))
         return f(normalizedId)
       }
     : undefined
