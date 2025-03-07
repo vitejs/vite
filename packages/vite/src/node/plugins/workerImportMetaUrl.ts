@@ -1,7 +1,7 @@
 import path from 'node:path'
 import MagicString from 'magic-string'
 import type { RollupAstNode, RollupError } from 'rollup'
-import { parseAstAsync } from 'rollup/parseAst'
+import { parseAstAsync } from 'rolldown/parseAst'
 import { stripLiteral } from 'strip-literal'
 import type { Expression, ExpressionStatement } from 'estree'
 import type { ResolvedConfig } from '../config'

@@ -17,7 +17,7 @@ import type {
 import { extract_names as extractNames } from 'periscopic'
 import { walk as eswalk } from 'estree-walker'
 import type { RawSourceMap } from '@ampproject/remapping'
-import { parseAstAsync as rollupParseAstAsync } from 'rollup/parseAst'
+import { parseAstAsync as rolldownParseAstAsync } from 'rolldown/parseAst'
 import type { TransformResult } from '../server/transformRequest'
 import {
   combineSourcemaps,
@@ -83,7 +83,7 @@ async function ssrTransformScript(
 
   let ast: any
   try {
-    ast = await rollupParseAstAsync(code)
+    ast = await rolldownParseAstAsync(code)
   } catch (err) {
     // enhance known rollup errors
     // https://github.com/rollup/rollup/blob/42e587e0e37bc0661aa39fe7ad6f1d7fd33f825c/src/utils/bufferToAst.ts#L17-L22
