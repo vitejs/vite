@@ -241,6 +241,13 @@ const FRAMEWORKS: Framework[] = [
         display: 'JavaScript',
         color: yellow,
       },
+      {
+        name: 'ember app',
+        display: 'Production-ready App',
+        color: redBright,
+        customCommand:
+          'npx ember-cli@latest new TARGET_DIR --blueprint @embroider/app-blueprint --interactive --lang en',
+      },
     ],
   },
   {
