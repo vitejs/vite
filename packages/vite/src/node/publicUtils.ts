@@ -12,11 +12,7 @@ export {
   defaultAllowedOrigins,
 } from './constants'
 export { version as esbuildVersion } from 'esbuild'
-export {
-  splitVendorChunkPlugin,
-  splitVendorChunk,
-  isCSSRequest,
-} from './plugins/splitVendorChunk'
+export { isCSSRequest } from './plugins/css'
 export {
   normalizePath,
   mergeConfig,
