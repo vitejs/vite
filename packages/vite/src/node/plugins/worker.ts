@@ -133,6 +133,12 @@ async function bundleWorkerEntry(
         config.build.assetsDir,
         '[name]-[hash].[ext]',
       ),
+      minify:
+        config.build.minify === 'oxc'
+          ? true
+          : config.build.minify === false
+            ? 'dce-only'
+            : undefined,
       ...workerConfig,
       format,
       sourcemap: config.build.sourcemap,
