@@ -181,7 +181,7 @@ async function ssrTransformScript(
   function defineExport(name: string, local = name) {
     s.appendLeft(
       fileStartIndex,
-      `Object.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
+      `\nObject.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
         `{ enumerable: true, configurable: true, get(){ return ${local} }});`,
     )
   }
@@ -263,7 +263,6 @@ async function ssrTransformScript(
         }
         s.remove(node.start, (node.declaration as Node).start)
       } else {
-        // TODO: preserve new lines like `defineImport` (cf. https://github.com/vitejs/vite/pull/19004)
         s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
