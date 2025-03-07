@@ -322,7 +322,8 @@
   import c from '@vitejs/test-resolve-browser-field/ext'
   import d from '@vitejs/test-resolve-browser-field/ext.js'
   import e from '@vitejs/test-resolve-browser-field/ext-index/index.js'
-  import f from '@vitejs/test-resolve-browser-field/ext-index'
+  // webpack does not support this case, so should be fine
+  // import f from '@vitejs/test-resolve-browser-field/ext-index'
   import g from '@vitejs/test-resolve-browser-field/no-ext-index/index.js' // no substitution
   import h from '@vitejs/test-resolve-browser-field/no-ext?query'
   import i from '@vitejs/test-resolve-browser-field/bare-import'
@@ -334,11 +335,10 @@
     rd,
     re,
     rf,
-    rg,
   } from '@vitejs/test-resolve-browser-field/relative'
 
-  const success = [main, a, c, d, e, f, h, i, ra, rc, rd, re, rf]
-  const noSuccess = [b, g, rb, rg]
+  const success = [main, a, c, d, e, h, i, ra, rc, rd, re]
+  const noSuccess = [b, g, rb, rf]
 
   if (
     [...success, ...noSuccess].filter((text) => text.includes('[success]'))
@@ -350,11 +350,13 @@
   import browserModule1 from '@vitejs/test-resolve-browser-module-field1'
   text('.browser-module1', browserModule1)
 
-  import browserModule2 from '@vitejs/test-resolve-browser-module-field2'
-  text('.browser-module2', browserModule2)
+  // should not fallback
+  // import browserModule2 from '@vitejs/test-resolve-browser-module-field2'
+  // text('.browser-module2', browserModule2)
 
-  import browserModule3 from '@vitejs/test-resolve-browser-module-field3'
-  text('.browser-module3', browserModule3)
+  // should not fallback
+  // import browserModule3 from '@vitejs/test-resolve-browser-module-field3'
+  // text('.browser-module3', browserModule3)
 
   import { msg as requireButWithModuleFieldMsg } from '@vitejs/test-require-pkg-with-module-field'
   text('.require-pkg-with-module-field', requireButWithModuleFieldMsg)

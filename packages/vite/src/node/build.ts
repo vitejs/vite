@@ -21,6 +21,10 @@ import type {
   WarningHandlerWithDefault,
   // WatcherOptions,
 } from 'rolldown'
+import {
+  loadFallbackPlugin as nativeLoadFallbackPlugin,
+  manifestPlugin as nativeManifestPlugin,
+} from 'rolldown/experimental'
 import type { RollupCommonJSOptions } from 'dep-types/commonjs'
 import type { RollupDynamicImportVarsOptions } from 'dep-types/dynamicImportVars'
 import type { EsbuildTarget } from 'types/internal/esbuildOptions'
@@ -474,10 +478,12 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   pre: Plugin[]
   post: Plugin[]
 }> {
+  const enableNativePlugin = config.experimental.enableNativePlugin
   return {
     pre: [
       completeSystemWrapPlugin(),
-      dataURIPlugin(),
+      // rolldown has builtin support datauri, use a switch to control it for convenience
+      ...(enableNativePlugin === true ? [] : [dataURIPlugin()]),
       perEnvironmentPlugin(
         'vite:rollup-options-plugins',
         async (environment) =>
@@ -491,13 +497,37 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
     ],
     post: [
       buildImportAnalysisPlugin(config),
-      buildOxcPlugin(),
-      ...(config.build.minify === 'esbuild' ? [buildEsbuildPlugin()] : []),
+      ...(enableNativePlugin !== true
+        ? [
+            buildOxcPlugin(),
+            ...(config.build.minify === 'esbuild'
+              ? [buildEsbuildPlugin()]
+              : []),
+          ]
+        : []),
       terserPlugin(config),
       ...(!config.isWorker
-        ? [manifestPlugin(), ssrManifestPlugin(), buildReporterPlugin(config)]
+        ? [
+            config.build.manifest && enableNativePlugin === true
+              ? perEnvironmentPlugin('native:manifest', (environment) => {
+                  if (!environment.config.build.manifest) return false
+
+                  return nativeManifestPlugin({
+                    root: environment.config.root,
+                    outPath:
+                      environment.config.build.manifest === true
+                        ? '.vite/manifest.json'
+                        : environment.config.build.manifest,
+                  })
+                })
+              : manifestPlugin(),
+            ssrManifestPlugin(),
+            buildReporterPlugin(config),
+          ]
         : []),
-      buildLoadFallbackPlugin(),
+      enableNativePlugin === true
+        ? nativeLoadFallbackPlugin()
+        : buildLoadFallbackPlugin(),
     ],
   }
 }
@@ -1160,7 +1190,11 @@ export function injectEnvironmentToHooks(
 ): Plugin {
   const { resolveId, load, transform } = plugin
 
-  const clone = { ...plugin }
+  // the plugin can be a class instance (e.g. native plugins)
+  const clone: Plugin = Object.assign(
+    Object.create(Object.getPrototypeOf(plugin)),
+    plugin,
+  )
 
   for (const hook of Object.keys(clone) as RollupPluginHooks[]) {
     switch (hook) {

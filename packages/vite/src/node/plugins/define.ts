@@ -110,6 +110,19 @@ export function definePlugin(config: ResolvedConfig): Plugin {
     return pattern
   }
 
+  if (config.experimental.enableNativePlugin === true) {
+    return {
+      name: 'vite:define',
+      options(option) {
+        const [define, _pattern, importMetaEnvVal] = getPattern(
+          this.environment,
+        )
+        define['import.meta.env'] = importMetaEnvVal
+        option.define = define
+      },
+    }
+  }
+
   return {
     name: 'vite:define',
 

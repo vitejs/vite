@@ -1234,6 +1234,7 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
           tryIndex: true,
           tryPrefix: '_',
           preferRelative: true,
+          skipMainField: true,
         })
         sassResolve = async (...args) => {
           // the modern API calls `canonicalize` with resolved file URLs
