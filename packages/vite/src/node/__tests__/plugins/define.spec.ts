@@ -1,15 +1,30 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { definePlugin } from '../../plugins/define'
 import { resolveConfig } from '../../config'
 import { PartialEnvironment } from '../../baseEnvironment'
+import type { InlineConfig } from '../../config'
+import type { Logger } from '../../logger'
+
+function createMockLogger(): Logger {
+  return {
+    hasWarned: false,
+    clearScreen: vi.fn(),
+    hasErrorLogged: vi.fn(),
+    info: vi.fn(),
+    warnOnce: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  }
+}
 
 async function createDefinePluginTransform(
   define: Record<string, any> = {},
   build = true,
   ssr = false,
+  otherConfig: Partial<InlineConfig> = {},
 ) {
   const config = await resolveConfig(
-    { configFile: false, define },
+    { configFile: false, define, ...otherConfig },
     build ? 'build' : 'serve',
   )
   const instance = definePlugin(config)
@@ -75,6 +90,31 @@ describe('definePlugin', () => {
     const transform = await createDefinePluginTransform()
     expect(await transform('const foo = import.meta.env.UNKNOWN;')).toBe(
       'const foo = undefined                       ;\n',
+    )
+  })
+
+  test("throw error when import.meta.env.UNKNOWN is unset and unsetEnv === 'error'", async () => {
+    const transform = await createDefinePluginTransform({}, true, false, {
+      unsetEnv: 'error',
+    })
+    await expect(
+      transform('const foo = import.meta.env.UNKNOWN;'),
+    ).rejects.toThrow(
+      'Environment variable UNKNOWN is unset. Referenced in foo.ts',
+    )
+  })
+
+  test("log warning when import.meta.env.UNKNOWN is unset and unsetEnv === 'warn'", async () => {
+    const mockLogger = createMockLogger()
+    const transform = await createDefinePluginTransform({}, true, false, {
+      unsetEnv: 'warn',
+      customLogger: mockLogger,
+    })
+    expect(await transform('const foo = import.meta.env.UNKNOWN;')).toBe(
+      'const foo = undefined                       ;\n',
+    )
+    expect(mockLogger.warnOnce).toBeCalledWith(
+      'Environment variable UNKNOWN is unset. Referenced in foo.ts',
     )
   })
 

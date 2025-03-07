@@ -486,6 +486,23 @@ define: {
 
 :::
 
+## unsetEnv
+
+- **Type:** `'error' | 'warn' | 'off'`
+- **Default:** `'off'`
+
+Controls the behaviour when an unset environment variable is encountered during build.
+
+- `'error'` - throw an error and abort the build
+- `'warn'` - write a warning and continue
+- `'off'` - disable this check
+
+:::warning WARNING
+
+If set to `'warn'` or `'off'` any unset environment variables will be replaced with `undefined`.
+
+:::
+
 ## appType
 
 - **Type:** `'spa' | 'mpa' | 'custom'`

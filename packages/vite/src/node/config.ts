@@ -415,6 +415,11 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    */
   envPrefix?: string | string[]
   /**
+   * What to do with unset environment variables during build. Available options: 'error', 'warn' and 'off'
+   * @default 'off'
+   */
+  unsetEnv?: 'error' | 'warn' | 'off'
+  /**
    * Worker bundle options
    */
   worker?: {
