@@ -87,6 +87,7 @@
   "dependencies": {
     "@oxc-project/runtime": "0.61.2",
     "esbuild": "^0.25.0",
+    "lightningcss": "^1.29.3",
     "picomatch": "^4.0.2",
     "postcss": "^8.5.3",
     "rolldown": "1.0.0-beta.7-commit.7452fa0",
@@ -126,7 +127,6 @@
     "etag": "^1.8.1",
     "http-proxy": "^1.18.1",
     "launch-editor-middleware": "^2.10.0",
-    "lightningcss": "^1.29.3",
     "magic-string": "^0.30.17",
     "mlly": "^1.7.4",
     "mrmime": "^2.0.1",
@@ -160,7 +160,6 @@
     "@types/node": "^18.0.0 || ^20.0.0 || >=22.0.0",
     "jiti": ">=1.21.0",
     "less": "*",
-    "lightningcss": "^1.21.0",
     "sass": "*",
     "sass-embedded": "*",
     "stylus": "*",
@@ -189,9 +188,6 @@
       "optional": true
     },
     "sugarss": {
-      "optional": true
-    },
-    "lightningcss": {
       "optional": true
     },
     "terser": {

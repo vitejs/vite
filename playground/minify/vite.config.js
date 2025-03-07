@@ -5,4 +5,7 @@ export default defineConfig({
     legalComments: 'none',
     minifySyntax: false,
   },
+  build: {
+    cssMinify: 'esbuild',
+  },
 })
