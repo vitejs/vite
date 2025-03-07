@@ -181,8 +181,8 @@ async function ssrTransformScript(
   function defineExport(name: string, local = name) {
     s.appendLeft(
       fileStartIndex,
-      `\nObject.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
-        `{ enumerable: true, configurable: true, get(){ return ${local} }});`,
+      `Object.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
+        `{ enumerable: true, configurable: true, get(){ return ${local} }});\n`,
     )
   }
 
