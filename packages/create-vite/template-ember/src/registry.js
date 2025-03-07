@@ -1,5 +1,5 @@
 import Router from './router.js'
-import PageTitleService from 'ember-page-title/services/page-title'
+//import PageTitleService from 'ember-page-title/services/page-title'
 import config from './config.js'
 
 const appName = config.modulePrefix
@@ -33,5 +33,5 @@ const resolverRegistry = {
 
 export const registry = {
   ...resolverRegistry,
-  [`${appName}/services/page-title`]: PageTitleService,
+  //[`${appName}/services/page-title`]: PageTitleService,
 }
