@@ -70,4 +70,9 @@ describe('importing files using inlined environment', () => {
     // const dep = await module.default();
     // expect(dep.default).toMatchInlineSnapshot(`"ok"`)
   })
+
+  test('css import', async () => {
+    const { module } = await runnerImport<any>(fixture('css-import.js'))
+    expect(module.default).toMatchInlineSnapshot(`"ok"`)
+  })
 })

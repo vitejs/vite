@@ -39,6 +39,9 @@ export async function runnerImport<T>(
           },
         },
       },
+      server: {
+        perEnvironmentStartEndDuringDev: true,
+      },
     } satisfies InlineConfig),
     'serve',
   )
