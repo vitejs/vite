@@ -128,13 +128,6 @@ const processNodeUrl = (
 ): string => {
   // prefix with base (dev only, base is never relative)
   const replacer = (url: string) => {
-    if (server) {
-      const mod = server.environments.client.moduleGraph.urlToModuleMap.get(url)
-      if (mod && mod.lastHMRTimestamp > 0) {
-        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
-      }
-    }
-
     if (
       (url[0] === '/' && url[1] !== '/') ||
       // #3230 if some request url (localhost:3000/a/b) return to fallback html, the relative assets
@@ -153,8 +146,9 @@ const processNodeUrl = (
       url = path.posix.join(config.base, url)
     }
 
-    if (server && !isClassicScriptLink && shouldPreTransform(url, config)) {
-      let preTransformUrl: string | undefined
+    let preTransformUrl: string | undefined
+
+    if (!isClassicScriptLink && shouldPreTransform(url, config)) {
       if (url[0] === '/' && url[1] !== '/') {
         preTransformUrl = url
       } else if (url[0] === '.' || isBareRelative(url)) {
@@ -164,16 +158,27 @@ const processNodeUrl = (
           url,
         )
       }
-      if (preTransformUrl) {
-        try {
-          preTransformUrl = decodeURI(preTransformUrl)
-        } catch {
-          // Malformed uri. Skip pre-transform.
-          return url
-        }
-        preTransformRequest(server, preTransformUrl, config.decodedBase)
+    }
+
+    if (server) {
+      const mod = server.environments.client.moduleGraph.urlToModuleMap.get(
+        preTransformUrl || url,
+      )
+      if (mod && mod.lastHMRTimestamp > 0) {
+        url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
       }
     }
+
+    if (server && preTransformUrl) {
+      try {
+        preTransformUrl = decodeURI(preTransformUrl)
+      } catch {
+        // Malformed uri. Skip pre-transform.
+        return url
+      }
+      preTransformRequest(server, preTransformUrl, config.decodedBase)
+    }
+
     return url
   }
 
