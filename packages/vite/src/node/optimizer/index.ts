@@ -813,10 +813,6 @@ async function prepareRolldownOptimizerRun(
       sourcemap: true,
       dir: processingCacheDir,
       entryFileNames: '[name].js',
-      banner:
-        platform === 'node'
-          ? `import { createRequire } from 'module';const require = createRequire(import.meta.url);`
-          : undefined,
     })
     await bundle.close()
     return result
