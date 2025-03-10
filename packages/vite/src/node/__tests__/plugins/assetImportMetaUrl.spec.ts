@@ -23,11 +23,19 @@ async function createAssetImportMetaurlPluginTransform() {
 describe('assetImportMetaUrlPlugin', async () => {
   const transform = await createAssetImportMetaurlPluginTransform()
 
+  test('no file extension specified', async () => {
+    expect(
+      await transform('new URL(`./foo/${filePath}`, import.meta.url)'),
+    ).toMatchInlineSnapshot(
+      `"new URL((import.meta.glob("./foo/**", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${filePath}\`], import.meta.url)"`,
+    )
+  })
+
   test('variable between /', async () => {
     expect(
       await transform('new URL(`./foo/${dir}/index.js`, import.meta.url)'),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}/index.js\`], import.meta.url)"`,
+      `"new URL((import.meta.glob("./foo/**/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}/index.js\`], import.meta.url)"`,
     )
   })
 
@@ -35,7 +43,7 @@ describe('assetImportMetaUrlPlugin', async () => {
     expect(
       await transform('new URL(`./foo/${dir}.js`, import.meta.url)'),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}.js\`], import.meta.url)"`,
+      `"new URL((import.meta.glob("./foo/**/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}.js\`], import.meta.url)"`,
     )
   })
 
@@ -43,7 +51,7 @@ describe('assetImportMetaUrlPlugin', async () => {
     expect(
       await transform('new URL(`./foo/${dir}${file}.js`, import.meta.url)'),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${file}.js\`], import.meta.url)"`,
+      `"new URL((import.meta.glob("./foo/**/*.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${file}.js\`], import.meta.url)"`,
     )
   })
 
@@ -53,7 +61,7 @@ describe('assetImportMetaUrlPlugin', async () => {
         'new URL(`./foo/${dir}${dir2}/index.js`, import.meta.url)',
       ),
     ).toMatchInlineSnapshot(
-      `"new URL((import.meta.glob("./foo/*/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${dir2}/index.js\`], import.meta.url)"`,
+      `"new URL((import.meta.glob("./foo/**/index.js", {"eager":true,"import":"default","query":"?url"}))[\`./foo/\${dir}\${dir2}/index.js\`], import.meta.url)"`,
     )
   })
 
