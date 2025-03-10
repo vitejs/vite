@@ -94,9 +94,8 @@ export function clientInjectionsPlugin(config: ResolvedConfig): Plugin {
           .replace(`__WS_TOKEN__`, wsTokenReplacement)
       }
     },
-    async transform(code, id, options) {
-      // TODO: Remove options?.ssr, Vitest currently hijacks this plugin
-      const ssr = options?.ssr ?? this.environment.config.consumer === 'server'
+    async transform(code, id) {
+      const ssr = this.environment.config.consumer === 'server'
       if (id === normalizedClientEntry || id === normalizedEnvEntry) {
         const defineReplacer = getDefineReplacer(this)
         return defineReplacer(injectConfigValues(code))
