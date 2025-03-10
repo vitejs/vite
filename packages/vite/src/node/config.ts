@@ -1418,7 +1418,7 @@ export async function resolveConfig(
     inlineConfig,
     root: resolvedRoot,
     base,
-    decodedBase: decodeURI(base),
+    decodedBase: decodeBase(base),
     rawBase: resolvedBase,
     publicDir: resolvedPublicDir,
     cacheDir,
@@ -1676,6 +1676,16 @@ export function resolveBaseUrl(
   }
 
   return base
+}
+
+function decodeBase(base: string): string {
+  try {
+    return decodeURI(base)
+  } catch {
+    throw new Error(
+      'The value passed to "base" option was malformed. It should be a valid URL.',
+    )
+  }
 }
 
 export function sortUserPlugins(
