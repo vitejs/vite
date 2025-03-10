@@ -2,12 +2,6 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import stylus from 'stylus'
 import { defineConfig } from 'vite'
-import { composeVisitors } from 'lightningcss'
-import {
-  nestedLikePlugin,
-  testDirDep,
-  testSourceInput,
-} from './lightningcss-plugins'
 
 // trigger scss bug: https://github.com/sass/dart-sass/issues/710
 // make sure Vite handles safely
@@ -81,17 +75,6 @@ export default defineConfig({
     },
   },
   css: {
-    transformer: 'lightningcss',
-    lightningcss: {
-      cssModules: {
-        pattern: '[name]__[local]___[hash]',
-      },
-      visitor: composeVisitors([
-        nestedLikePlugin(),
-        testDirDep(),
-        testSourceInput(),
-      ]),
-    },
     modules: {
       generateScopedName: '[name]__[local]___[hash:base64:5]',
 
