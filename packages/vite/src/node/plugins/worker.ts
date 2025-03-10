@@ -344,8 +344,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
           const blob = typeof self !== "undefined" && self.Blob && new Blob([${
             workerType === 'classic'
               ? ''
-              : // `URL` is always available, in `Worker[type="module"]`
-                `'URL.revokeObjectURL(import.meta.url);',`
+              : // For module workers, append revokeObjectURL to the script
+                `'self.URL.revokeObjectURL(import.meta.url);',`
           }jsContent], { type: "text/javascript;charset=utf-8" });
           export default function WorkerWrapper(options) {
             let objURL;
@@ -353,23 +353,18 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               objURL = blob && (self.URL || self.webkitURL).createObjectURL(blob);
               if (!objURL) throw ''
               const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
-              worker.addEventListener("error", () => {
-                (self.URL || self.webkitURL).revokeObjectURL(objURL);
-              });
-              return worker;
+              // Append cleanup code to the worker script to ensure revokeObjectURL is called
+              const originalCode = jsContent;
+              const cleanupCode = ';(function(){const cleanup=function(){(self.URL||self.webkitURL).revokeObjectURL("'+objURL+'")};self.addEventListener("error",cleanup);})();';
+              const finalCode = originalCode + cleanupCode;
+              const cleanupBlob = new Blob([finalCode], { type: "text/javascript;charset=utf-8" });
+              const cleanupURL = (self.URL || self.webkitURL).createObjectURL(cleanupBlob);
+              return new ${workerConstructor}(cleanupURL, ${workerTypeOption});
             } catch(e) {
               return new ${workerConstructor}(
                 'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
                 ${workerTypeOption}
               );
-            }${
-              // For module workers, we should not revoke the URL until the worker runs,
-              // otherwise the worker fails to run
-              workerType === 'classic'
-                ? ` finally {
-                    objURL && (self.URL || self.webkitURL).revokeObjectURL(objURL);
-                  }`
-                : ''
             }
           }`
               : `${jsContent}
