@@ -7,6 +7,9 @@ import {
 } from 'vitepress-plugin-group-icons'
 import { buildEnd } from './buildEnd.config'
 
+// NOTE: allow additional options to be passed to rolldown for now
+process.env.ROLLDOWN_OPTIONS_VALIDATION = 'loose'
+
 const ogDescription = 'Next Generation Frontend Tooling'
 const ogImage = 'https://vite.dev/og-image.jpg'
 const ogTitle = 'Vite'
