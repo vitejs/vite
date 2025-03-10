@@ -1,0 +1,49 @@
+{
+  "name": "vite-ember-starter",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Small description for app-template goes here",
+  "repository": "",
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*",
+    "#config": "./src/config.js",
+    "#components/*": "./src/components/*"
+  },
+  "exports": {
+    "./tests/*": "./tests/*",
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "start": "vite",
+    "dev": "vite"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.3",
+    "@babel/plugin-transform-runtime": "^7.25.4",
+    "@babel/runtime": "^7.25.6",
+    "@embroider/core": "^4.0.0-alpha.6",
+    "@embroider/macros": "^1.17.0-alpha.5",
+    "@embroider/vite": "^1.0.0-alpha.7",
+    "@glimmer/component": "^2.0.0",
+    "@rollup/plugin-babel": "^5.3.1",
+    "babel-plugin-ember-template-compilation": "^2.3.0",
+    "decorator-transforms": "^2.0.0",
+    "ember-modifier": "^4.1.0",
+    "ember-resolver": "^13.1.0",
+    "ember-source": "6.4.0-alpha.4",
+    "vite": "^6.2.0"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "ember": {
+    "edition": "octane"
+  },
+  "ember-addon": {
+    "type": "app",
+    "version": 2
+  }
+}
