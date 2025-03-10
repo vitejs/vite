@@ -205,7 +205,7 @@ export const cssConfigDefaults = Object.freeze({
 } satisfies CSSOptions)
 
 export type ResolvedCSSOptions = Omit<CSSOptions, 'lightningcss'> &
-  Required<Pick<CSSOptions, 'transformer'>> & {
+  Required<Pick<CSSOptions, 'transformer' | 'devSourcemap'>> & {
     lightningcss?: LightningCSSOptions
   }
 
@@ -1294,7 +1294,11 @@ async function compileCSSPreprocessors(
   lang: PreprocessLang,
   code: string,
   workerController: PreprocessorWorkerController,
-): Promise<{ code: string; map?: ExistingRawSourceMap; deps?: Set<string> }> {
+): Promise<{
+  code: string
+  map?: ExistingRawSourceMap | { mappings: '' }
+  deps?: Set<string>
+}> {
   const { config } = environment
   const { preprocessorOptions, devSourcemap } = config.css
   const atImportResolvers = getAtImportResolvers(
@@ -1372,7 +1376,7 @@ async function compileCSS(
   const deps = new Set<string>()
 
   // pre-processors: sass etc.
-  let preprocessorMap: ExistingRawSourceMap | undefined
+  let preprocessorMap: ExistingRawSourceMap | { mappings: '' } | undefined
   if (isPreProcessor(lang)) {
     const preprocessorResult = await compileCSSPreprocessors(
       environment,
@@ -1595,18 +1599,58 @@ async function compilePostCSS(
     return
   }
 
+  const result = await runPostCSS(
+    id,
+    code,
+    postcssPlugins,
+    { ...postcssOptions, parser: postcssParser },
+    deps,
+    environment.logger,
+    devSourcemap,
+  )
+  return { ...result, modules }
+}
+
+async function transformSugarSS(
+  environment: PartialEnvironment,
+  id: string,
+  code: string,
+) {
+  const { config } = environment
+  const { devSourcemap } = config.css
+
+  const result = await runPostCSS(
+    id,
+    code,
+    [],
+    { parser: loadSss(config.root) },
+    undefined,
+    environment.logger,
+    devSourcemap,
+  )
+  return result
+}
+
+async function runPostCSS(
+  id: string,
+  code: string,
+  plugins: PostCSS.AcceptedPlugin[],
+  options: PostCSS.ProcessOptions,
+  deps: Set<string> | undefined,
+  logger: Logger,
+  enableSourcemap: boolean,
+) {
   let postcssResult: PostCSS.Result
   try {
     const source = removeDirectQuery(id)
     const postcss = await importPostcss()
 
     // postcss is an unbundled dep and should be lazy imported
-    postcssResult = await postcss.default(postcssPlugins).process(code, {
-      ...postcssOptions,
-      parser: postcssParser,
+    postcssResult = await postcss.default(plugins).process(code, {
+      ...options,
       to: source,
       from: source,
-      ...(devSourcemap
+      ...(enableSourcemap
         ? {
             map: {
               inline: false,
@@ -1624,7 +1668,7 @@ async function compilePostCSS(
     // record CSS dependencies from @imports
     for (const message of postcssResult.messages) {
       if (message.type === 'dependency') {
-        deps.add(normalizePath(message.file as string))
+        deps?.add(normalizePath(message.file as string))
       } else if (message.type === 'dir-dependency') {
         // https://github.com/postcss/postcss/blob/main/docs/guidelines/plugin.md#3-dependencies
         const { dir, glob: globPattern = '**' } = message
@@ -1635,7 +1679,7 @@ async function compilePostCSS(
           ignore: ['**/node_modules/**'],
         })
         for (let i = 0; i < files.length; i++) {
-          deps.add(files[i])
+          deps?.add(files[i])
         }
       } else if (message.type === 'warning') {
         const warning = message as PostCSS.Warning
@@ -1653,7 +1697,7 @@ async function compilePostCSS(
               }
             : undefined,
         )}`
-        environment.logger.warn(colors.yellow(msg))
+        logger.warn(colors.yellow(msg))
       }
     }
   } catch (e) {
@@ -1667,96 +1711,10 @@ async function compilePostCSS(
     throw e
   }
 
-  if (!devSourcemap) {
+  if (!enableSourcemap) {
     return {
       code: postcssResult.css,
-      map: { mappings: '' },
-      modules,
-    }
-  }
-
-  const rawPostcssMap = postcssResult.map.toJSON()
-  const postcssMap = await formatPostcssSourceMap(
-    // version property of rawPostcssMap is declared as string
-    // but actually it is a number
-    rawPostcssMap as Omit<RawSourceMap, 'version'> as ExistingRawSourceMap,
-    cleanUrl(id),
-  )
-
-  return {
-    code: postcssResult.css,
-    map: postcssMap,
-    modules,
-  }
-}
-
-// TODO: dedupe
-async function transformSugarSS(
-  environment: PartialEnvironment,
-  id: string,
-  code: string,
-) {
-  const { config } = environment
-  const { devSourcemap } = config.css
-
-  let postcssResult: PostCSS.Result
-  try {
-    const source = removeDirectQuery(id)
-    const postcss = await importPostcss()
-    // postcss is an unbundled dep and should be lazy imported
-    postcssResult = await postcss.default().process(code, {
-      parser: loadSss(config.root),
-      to: source,
-      from: source,
-      ...(devSourcemap
-        ? {
-            map: {
-              inline: false,
-              annotation: false,
-              // postcss may return virtual files
-              // we cannot obtain content of them, so this needs to be enabled
-              sourcesContent: true,
-              // when "prev: preprocessorMap", the result map may include duplicate filename in `postcssResult.map.sources`
-              // prev: preprocessorMap,
-            },
-          }
-        : {}),
-    })
-
-    for (const message of postcssResult.messages) {
-      if (message.type === 'warning') {
-        const warning = message as PostCSS.Warning
-        let msg = `[vite:css] ${warning.text}`
-        msg += `\n${generateCodeFrame(
-          code,
-          {
-            line: warning.line,
-            column: warning.column - 1, // 1-based
-          },
-          warning.endLine !== undefined && warning.endColumn !== undefined
-            ? {
-                line: warning.endLine,
-                column: warning.endColumn - 1, // 1-based
-              }
-            : undefined,
-        )}`
-        environment.logger.warn(colors.yellow(msg))
-      }
-    }
-  } catch (e) {
-    e.message = `[postcss] ${e.message}`
-    e.code = code
-    e.loc = {
-      file: e.file,
-      line: e.line,
-      column: e.column - 1, // 1-based
-    }
-    throw e
-  }
-
-  if (!devSourcemap) {
-    return {
-      code: postcssResult.css,
+      map: { mappings: '' as const },
     }
   }
 
@@ -1865,17 +1823,21 @@ export async function formatPostcssSourceMap(
 
 function combineSourcemapsIfExists(
   filename: string,
-  map1: ExistingRawSourceMap | undefined,
-  map2: ExistingRawSourceMap | undefined,
-): ExistingRawSourceMap | undefined {
-  return map1 && map2
-    ? (combineSourcemaps(filename, [
-        // type of version property of ExistingRawSourceMap is number
-        // but it is always 3
-        map1 as RawSourceMap,
-        map2 as RawSourceMap,
-      ]) as ExistingRawSourceMap)
-    : map1
+  map1: ExistingRawSourceMap | { mappings: '' } | undefined,
+  map2: ExistingRawSourceMap | { mappings: '' } | undefined,
+): ExistingRawSourceMap | { mappings: '' } | undefined {
+  if (!map1 || !map2) {
+    return map1
+  }
+  if (map1.mappings === '' || map2.mappings === '') {
+    return { mappings: '' }
+  }
+  return combineSourcemaps(filename, [
+    // type of version property of ExistingRawSourceMap is number
+    // but it is always 3
+    map1 as RawSourceMap,
+    map2 as RawSourceMap,
+  ]) as ExistingRawSourceMap
 }
 
 const viteHashUpdateMarker = '/*$vite$:1*/'
