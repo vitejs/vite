@@ -481,13 +481,19 @@ export async function _createServer(
 
   // eslint-disable-next-line eqeqeq
   const watchEnabled = serverConfig.watch !== null
+  let envFiles: string[] | undefined = undefined
+
+  if (config.envDir !== false) {
+    envFiles = getEnvFilesForMode(config.mode, config.envDir)
+  }
+
   const watcher = watchEnabled
     ? (chokidar.watch(
         // config file dependencies and env file might be outside of root
         [
           root,
           ...config.configFileDependencies,
-          ...getEnvFilesForMode(config.mode, config.envDir),
+          ...(envFiles || []),
           // Watch the public directory explicitly because it might be outside
           // of the root directory.
           ...(publicDir && publicFiles ? [publicDir] : []),
