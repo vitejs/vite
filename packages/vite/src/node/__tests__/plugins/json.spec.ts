@@ -36,7 +36,8 @@ describe('transform', () => {
     isBuild: boolean,
   ) => {
     const plugin = jsonPlugin(opts, isBuild)
-    return (plugin.transform! as Function)(input, 'test.json').code
+    // @ts-expect-error transform.handler should exist
+    return plugin.transform.handler(input, 'test.json').code
   }
 
   test("namedExports: true, stringify: 'auto' should not transformed an array input", () => {

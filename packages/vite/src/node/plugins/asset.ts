@@ -148,60 +148,64 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       cssEntriesMap.set(this.environment, new Set())
     },
 
-    resolveId(id) {
-      if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
-        return
-      }
-      // imports to absolute urls pointing to files in /public
-      // will fail to resolve in the main resolver. handle them here.
-      const publicFile = checkPublicFile(id, config)
-      if (publicFile) {
-        return id
-      }
+    resolveId: {
+      handler(id) {
+        if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
+          return
+        }
+        // imports to absolute urls pointing to files in /public
+        // will fail to resolve in the main resolver. handle them here.
+        const publicFile = checkPublicFile(id, config)
+        if (publicFile) {
+          return id
+        }
+      },
     },
 
-    async load(id) {
-      if (id[0] === '\0') {
-        // Rollup convention, this id should be handled by the
-        // plugin that marked it with \0
-        return
-      }
-
-      // raw requests, read from disk
-      if (rawRE.test(id)) {
-        const file = checkPublicFile(id, config) || cleanUrl(id)
-        this.addWatchFile(file)
-        // raw query, read file and return as string
-        return `export default ${JSON.stringify(
-          await fsp.readFile(file, 'utf-8'),
-        )}`
-      }
-
-      if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
-        return
-      }
-
-      id = removeUrlQuery(id)
-      let url = await fileToUrl(this, id)
-
-      // Inherit HMR timestamp if this asset was invalidated
-      if (!url.startsWith('data:') && this.environment.mode === 'dev') {
-        const mod = this.environment.moduleGraph.getModuleById(id)
-        if (mod && mod.lastHMRTimestamp > 0) {
-          url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+    load: {
+      async handler(id) {
+        if (id[0] === '\0') {
+          // Rollup convention, this id should be handled by the
+          // plugin that marked it with \0
+          return
         }
-      }
 
-      return {
-        code: `export default ${JSON.stringify(encodeURIPath(url))}`,
-        // Force rollup to keep this module from being shared between other entry points if it's an entrypoint.
-        // If the resulting chunk is empty, it will be removed in generateBundle.
-        moduleSideEffects:
-          config.command === 'build' && this.getModuleInfo(id)?.isEntry
-            ? 'no-treeshake'
-            : false,
-        meta: config.command === 'build' ? { 'vite:asset': true } : undefined,
-      }
+        // raw requests, read from disk
+        if (rawRE.test(id)) {
+          const file = checkPublicFile(id, config) || cleanUrl(id)
+          this.addWatchFile(file)
+          // raw query, read file and return as string
+          return `export default ${JSON.stringify(
+            await fsp.readFile(file, 'utf-8'),
+          )}`
+        }
+
+        if (!urlRE.test(id) && !config.assetsInclude(cleanUrl(id))) {
+          return
+        }
+
+        id = removeUrlQuery(id)
+        let url = await fileToUrl(this, id)
+
+        // Inherit HMR timestamp if this asset was invalidated
+        if (!url.startsWith('data:') && this.environment.mode === 'dev') {
+          const mod = this.environment.moduleGraph.getModuleById(id)
+          if (mod && mod.lastHMRTimestamp > 0) {
+            url = injectQuery(url, `t=${mod.lastHMRTimestamp}`)
+          }
+        }
+
+        return {
+          code: `export default ${JSON.stringify(encodeURIPath(url))}`,
+          // Force rollup to keep this module from being shared between other entry points if it's an entrypoint.
+          // If the resulting chunk is empty, it will be removed in generateBundle.
+          moduleSideEffects:
+            config.command === 'build' && this.getModuleInfo(id)?.isEntry
+              ? 'no-treeshake'
+              : false,
+          meta: config.command === 'build' ? { 'vite:asset': true } : undefined,
+        }
+      },
     },
 
     renderChunk(code, chunk, opts) {

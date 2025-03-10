@@ -50,27 +50,31 @@ export const wasmHelperPlugin = (): Plugin => {
   return {
     name: 'vite:wasm-helper',
 
-    resolveId(id) {
-      if (id === wasmHelperId) {
-        return id
-      }
+    resolveId: {
+      handler(id) {
+        if (id === wasmHelperId) {
+          return id
+        }
+      },
     },
 
-    async load(id) {
-      if (id === wasmHelperId) {
-        return `export default ${wasmHelperCode}`
-      }
+    load: {
+      async handler(id) {
+        if (id === wasmHelperId) {
+          return `export default ${wasmHelperCode}`
+        }
 
-      if (!id.endsWith('.wasm?init')) {
-        return
-      }
+        if (!id.endsWith('.wasm?init')) {
+          return
+        }
 
-      const url = await fileToUrl(this, id)
+        const url = await fileToUrl(this, id)
 
-      return `
-import initWasm from "${wasmHelperId}"
-export default opts => initWasm(opts, ${JSON.stringify(url)})
-`
+        return `
+  import initWasm from "${wasmHelperId}"
+  export default opts => initWasm(opts, ${JSON.stringify(url)})
+  `
+      },
     },
   }
 }
