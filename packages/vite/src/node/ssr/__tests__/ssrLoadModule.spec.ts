@@ -315,3 +315,45 @@ test('named exports overwrite export all', async () => {
     }
   `)
 })
+
+test('buildStart before transform', async () => {
+  const fn = vi.fn()
+  const server = await createServer({
+    configFile: false,
+    root,
+    logLevel: 'error',
+    plugins: [
+      {
+        name: 'test-plugin',
+        async buildStart() {
+          fn('buildStart:in')
+          await new Promise((r) => setTimeout(r, 200))
+          fn('buildStart:out')
+        },
+        resolveId(source) {
+          expect(fn).toHaveBeenCalledWith('buildStart:out')
+          if (source === 'virtual:test') {
+            return '\0' + source
+          }
+        },
+        load(id) {
+          expect(fn).toHaveBeenCalledWith('buildStart:out')
+          if (id === '\0virtual:test') {
+            return `export default 'ok'`
+          }
+        },
+        transform(code, id) {
+          expect(fn).toHaveBeenCalledWith('buildStart:out')
+          if (id === '\0virtual:test') {
+            return code
+          }
+        },
+      },
+    ],
+  })
+  onTestFinished(() => server.close())
+  await server.pluginContainer.buildStart({})
+
+  const mod = await server.ssrLoadModule('virtual:test')
+  expect(mod.default).toBe('ok')
+})
