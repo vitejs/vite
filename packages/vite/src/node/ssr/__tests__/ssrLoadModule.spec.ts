@@ -331,20 +331,20 @@ test('buildStart before transform', async () => {
           fn('buildStart:out')
         },
         resolveId(source) {
-          expect(fn).toHaveBeenCalledWith('buildStart:out')
           if (source === 'virtual:test') {
+            fn('resolveId')
             return '\0' + source
           }
         },
         load(id) {
-          expect(fn).toHaveBeenCalledWith('buildStart:out')
           if (id === '\0virtual:test') {
+            fn('load')
             return `export default 'ok'`
           }
         },
         transform(code, id) {
-          expect(fn).toHaveBeenCalledWith('buildStart:out')
           if (id === '\0virtual:test') {
+            fn('transform')
             return code
           }
         },
@@ -356,4 +356,26 @@ test('buildStart before transform', async () => {
 
   const mod = await server.ssrLoadModule('virtual:test')
   expect(mod.default).toBe('ok')
+  expect(fn.mock.calls).toMatchInlineSnapshot(`
+    [
+      [
+        "buildStart:in",
+      ],
+      [
+        "buildStart:out",
+      ],
+      [
+        "resolveId",
+      ],
+      [
+        "resolveId",
+      ],
+      [
+        "load",
+      ],
+      [
+        "transform",
+      ],
+    ]
+  `)
 })
