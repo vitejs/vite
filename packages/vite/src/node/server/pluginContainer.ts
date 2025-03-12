@@ -1084,19 +1084,18 @@ class PluginContainer {
   // buildStart is called per environment for a plugin with the perEnvironmentStartEndDuring dev flag
 
   async buildStart(_options?: InputOptions): Promise<void> {
-    ;(this.environments.client as DevEnvironment).pluginContainer.buildStart(
-      _options,
-    )
+    return (
+      this.environments.client as DevEnvironment
+    ).pluginContainer.buildStart(_options)
   }
 
   async watchChange(
     id: string,
     change: { event: 'create' | 'update' | 'delete' },
   ): Promise<void> {
-    ;(this.environments.client as DevEnvironment).pluginContainer.watchChange(
-      id,
-      change,
-    )
+    return (
+      this.environments.client as DevEnvironment
+    ).pluginContainer.watchChange(id, change)
   }
 
   async resolveId(
