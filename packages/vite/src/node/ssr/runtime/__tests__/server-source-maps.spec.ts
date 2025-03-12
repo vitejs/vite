@@ -66,12 +66,19 @@ describe('module runner initialization', async () => {
   })
 
   it('stacktrace column on first line', async ({ runner, server }) => {
+    // column is off by "use strict"
     const topLevelError = await getError(() =>
       runner.import('/fixtures/has-error-first.js'),
     )
-    // column is off by "use strict"
-    expect(serializeStack(server, topLevelError)).toMatchInlineSnapshot(
-      `"    at <root>/fixtures/has-error-first.js:1:18"`,
+    expect(serializeStack(server, topLevelError)).toBe(
+      '    at <root>/fixtures/has-error-first.js:1:18',
+    )
+
+    const topLevelErrorTs = await getError(() =>
+      runner.import('/fixtures/has-error-first-comment.ts'),
+    )
+    expect(serializeStack(server, topLevelErrorTs)).toBe(
+      '    at <root>/fixtures/has-error-first-comment.ts:2:17',
     )
   })
 
