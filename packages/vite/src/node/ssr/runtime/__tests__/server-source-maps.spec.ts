@@ -65,6 +65,16 @@ describe('module runner initialization', async () => {
     )
   })
 
+  it('stacktrace column on first line', async ({ runner, server }) => {
+    const topLevelError = await getError(() =>
+      runner.import('/fixtures/has-error-first.js'),
+    )
+    // column is off by "use strict"
+    expect(serializeStack(server, topLevelError)).toMatchInlineSnapshot(
+      `"    at <root>/fixtures/has-error-first.js:1:18"`,
+    )
+  })
+
   it('deep stacktrace', async ({ runner, server }) => {
     const methodError = await getError(async () => {
       const mod = await runner.import('/fixtures/has-error-deep.ts')
