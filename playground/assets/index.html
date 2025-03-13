@@ -269,6 +269,9 @@
 <h2>?no-inline svg import</h2>
 <code class="no-inline-svg"></code>
 
+<h2>?no-inline svg import -- multiple postfix</h2>
+<code class="no-inline-svg-mp"></code>
+
 <h2>?inline png import</h2>
 <code class="inline-png"></code>
 
@@ -545,6 +548,9 @@
 
   import noInlineSvg from './nested/fragment.svg?no-inline'
   text('.no-inline-svg', noInlineSvg)
+
+  import noInlineSvgMP from './nested/fragment.svg?no-inline&foo=bar'
+  text('.no-inline-svg-mp', noInlineSvgMP)
 
   import inlinePng from './nested/asset.png?inline'
   text('.inline-png', inlinePng)
