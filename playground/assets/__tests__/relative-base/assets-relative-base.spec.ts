@@ -192,6 +192,10 @@ test('?raw import', async () => {
   expect(await page.textContent('.raw')).toMatch('SVG')
 })
 
+test('?binary import', async () => {
+  expect(await page.textContent('.binary')).toMatch('[object ArrayBuffer]')
+})
+
 test('?url import', async () => {
   expect(await page.textContent('.url')).toMatch(
     isBuild ? /http.*\/other-assets\/foo-[-\w]{8}\.js/ : `/foo.js`,
