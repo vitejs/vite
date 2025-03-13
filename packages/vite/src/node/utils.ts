@@ -331,6 +331,8 @@ export const isJSRequest = (url: string): boolean => {
 
 const importQueryRE = /(\?|&)import=?(?:&|$)/
 const directRequestRE = /(\?|&)direct=?(?:&|$)/
+export const urlRE = /(\?|&)url(?:&|$)/
+export const rawRE = /(\?|&)raw(?:&|$)/
 const internalPrefixes = [
   FS_PREFIX,
   VALID_ID_PREFIX,
@@ -343,20 +345,22 @@ export const isImportRequest = (url: string): boolean => importQueryRE.test(url)
 export const isInternalRequest = (url: string): boolean =>
   InternalPrefixRE.test(url)
 
-export function removeImportQuery(url: string): string {
-  return url.replace(importQueryRE, '$1').replace(trailingSeparatorRE, '')
-}
-export function removeDirectQuery(url: string): string {
-  return url.replace(directRequestRE, '$1').replace(trailingSeparatorRE, '')
+const removeQuery = (url: string, queryRE: RegExp) => {
+  return url.replace(queryRE, '$1').replace(trailingSeparatorRE, '')
 }
 
-export const urlRE = /(\?|&)url(?:&|$)/
-export const rawRE = /(\?|&)raw(?:&|$)/
+export function removeImportQuery(url: string): string {
+  return removeQuery(url, importQueryRE)
+}
+export function removeDirectQuery(url: string): string {
+  return removeQuery(url, directRequestRE)
+}
+
 export function removeUrlQuery(url: string): string {
-  return url.replace(urlRE, '$1').replace(trailingSeparatorRE, '')
+  return removeQuery(url, urlRE)
 }
 export function removeRawQuery(url: string): string {
-  return url.replace(rawRE, '$1').replace(trailingSeparatorRE, '')
+  return removeQuery(url, rawRE)
 }
 
 export function injectQuery(url: string, queryToInject: string): string {
