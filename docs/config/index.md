@@ -122,7 +122,7 @@ export default defineConfig(({ mode }) => {
 })
 ```
 
-## VScode Config
+## Debugging a config file on VScode
 
 Vite 6 writes the generated temporary configuration file to the `node_modules/.vite-temp` folder, a file not found error will occur when setting breakpoint debugging in the vite config file. Adding the following configuration to the vscode configuration file can solve the problem.
 
