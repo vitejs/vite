@@ -143,6 +143,13 @@ const FRAMEWORKS: Framework[] = [
         color: cyan,
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
+      {
+        name: 'custom-tanstack-router',
+        display: 'TanStack Router ↗',
+        color: cyan,
+        customCommand:
+          'npm create -- tsrouter-app@latest TARGET_DIR --framework react',
+      },
     ],
   },
   {
@@ -222,6 +229,13 @@ const FRAMEWORKS: Framework[] = [
         name: 'solid',
         display: 'JavaScript',
         color: yellow,
+      },
+      {
+        name: 'custom-tanstack-router',
+        display: 'TanStack Router ↗',
+        color: cyan,
+        customCommand:
+          'npm create -- tsrouter-app@latest TARGET_DIR --framework solid',
       },
     ],
   },
@@ -606,13 +620,20 @@ function getFullCustomCommand(customCommand: string, pkgInfo?: PkgInfo) {
 
   return (
     customCommand
-      .replace(/^npm create /, () => {
+      .replace(/^npm create (?:-- )?/, () => {
         // `bun create` uses it's own set of templates,
         // the closest alternative is using `bun x` directly on the package
         if (pkgManager === 'bun') {
           return 'bun x create-'
         }
-        return `${pkgManager} create `
+        // pnpm doesn't support the -- syntax
+        if (pkgManager === 'pnpm') {
+          return 'pnpm create '
+        }
+        // For other package managers, preserve the original format
+        return customCommand.startsWith('npm create -- ')
+          ? `${pkgManager} create -- `
+          : `${pkgManager} create `
       })
       // Only Yarn 1.x doesn't support `@version` in the `create` command
       .replace('@latest', () => (isYarn1 ? '' : '@latest'))
