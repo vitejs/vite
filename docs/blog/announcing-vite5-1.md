@@ -37,7 +37,7 @@ Quick links: [Docs](/), [Changelog](https://github.com/vitejs/vite/blob/main/pac
 
 Docs in other languages: [简体中文](https://cn.vite.dev/), [日本語](https://ja.vite.dev/), [Español](https://es.vite.dev/), [Português](https://pt.vite.dev/), [한국어](https://ko.vite.dev/), [Deutsch](https://de.vite.dev/)
 
-Try Vite 5.1 online in StackBlitz: [vanilla](https://vite.new/vanilla-ts), [vue](https://vite.new/vue-ts), [react](https://vite.new/react-ts), [preact](https://vite.new/preact-ts), [lit](https://vite.new/lit-ts), [svelte](https://vite.new/svelte-ts), [solid](https://vite.new/solid-ts), [qwik](https://vite.new/qwik-ts).
+Try Vite 5.1 online in StackBlitz: [vanilla](https://vite.new/vanilla-ts), [vue](https://vite.new/vue-ts), [react](https://vite.new/react-ts), [preact](https://vite.new/preact-ts), [lit](https://vite.new/lit-ts), [svelte](https://vite.new/svelte-ts), [ember](https://vite.new/ember-ts), [solid](https://vite.new/solid-ts), [qwik](https://vite.new/qwik-ts).
 
 If you're new to Vite, we suggest reading first the [Getting Started](/guide/) and [Features](/guide/features) guides.
 
