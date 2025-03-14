@@ -1,3 +1,17 @@
+## <small>6.2.2 (2025-03-14)</small>
+
+* fix: await client buildStart on top level buildStart (#19624) ([b31faab](https://github.com/vitejs/vite/commit/b31faab2a81b839e4b747baeb9c7a7cbb724f8d2)), closes [#19624](https://github.com/vitejs/vite/issues/19624)
+* fix(css): inline css correctly for double quote use strict (#19590) ([d0aa833](https://github.com/vitejs/vite/commit/d0aa833296668fc420a27a1ea88ecdbdeacdbce7)), closes [#19590](https://github.com/vitejs/vite/issues/19590)
+* fix(deps): update all non-major dependencies (#19613) ([363d691](https://github.com/vitejs/vite/commit/363d691b4995d72f26a14eb59ed88a9483b1f931)), closes [#19613](https://github.com/vitejs/vite/issues/19613)
+* fix(indexHtml): ensure correct URL when querying module graph (#19601) ([dc5395a](https://github.com/vitejs/vite/commit/dc5395a27e44066ef7725278c4057d9f1071a53f)), closes [#19601](https://github.com/vitejs/vite/issues/19601)
+* fix(preview): use preview https config, not server (#19633) ([98b3160](https://github.com/vitejs/vite/commit/98b3160fa5916189e756cd7c5aae87e0d8f1978e)), closes [#19633](https://github.com/vitejs/vite/issues/19633)
+* fix(ssr): use optional chaining to prevent "undefined is not an object" happening in `ssrRewriteStac ([4309755](https://github.com/vitejs/vite/commit/43097550a1aa8ff633c39fb197b5f9ac1222119b)), closes [#19612](https://github.com/vitejs/vite/issues/19612)
+* feat: show friendly error for malformed `base` (#19616) ([2476391](https://github.com/vitejs/vite/commit/2476391b2854aaa67d0ed317b6d0c462e68028f7)), closes [#19616](https://github.com/vitejs/vite/issues/19616)
+* feat(worker): show asset filename conflict warning (#19591) ([367d968](https://github.com/vitejs/vite/commit/367d968fbf584e9f0e17192b816e92e8045c6217)), closes [#19591](https://github.com/vitejs/vite/issues/19591)
+* chore: extend commit hash correctly when ambigious with a non-commit object (#19600) ([89a6287](https://github.com/vitejs/vite/commit/89a62873243805518b672212db7e317989c5c197)), closes [#19600](https://github.com/vitejs/vite/issues/19600)
+
+
+
 ## <small>6.2.1 (2025-03-07)</small>
 
 * refactor: remove `isBuild` check from preAliasPlugin (#19587) ([c9e086d](https://github.com/vitejs/vite/commit/c9e086d35ac35ee1c6d85d48369e8a67a2ba6bfe)), closes [#19587](https://github.com/vitejs/vite/issues/19587)
