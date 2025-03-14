@@ -169,21 +169,35 @@ export function assetImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
   }
 }
 
+const extRE = /^\.[a-zA-Z0-9]+$/
 function buildGlobPattern(ast: any) {
   let pattern = ''
-  let lastIsGlob = false
+  let hasGlob = false
   for (let i = 0; i < ast.quasis.length; i++) {
     const str = ast.quasis[i].value.raw
-    if (str) {
-      pattern += str
-      lastIsGlob = false
+    if (!str) {
+      continue
     }
 
-    if (ast.expressions[i] && !lastIsGlob) {
-      pattern += '*'
-      lastIsGlob = true
+    const isExt = extRE.test(str)
+
+    if (isExt) {
+      const endsWithStar = pattern.endsWith('*')
+      if (endsWithStar && hasGlob) {
+        pattern += '/*'
+      } else if (!endsWithStar) {
+        pattern += '*'
+      }
+    }
+
+    pattern += str
+
+    if (!hasGlob && !isExt) {
+      pattern += '**'
+      hasGlob = true
     }
   }
+
   return pattern
 }
 
