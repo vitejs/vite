@@ -1,0 +1,7 @@
+/*
+  Use :where so we can observe global styles that also declare `.shared` and
+  how it affects the styles here if they happen to have the same specificity.
+*/
+.shared:where(.scoped) {
+  color: red;
+}

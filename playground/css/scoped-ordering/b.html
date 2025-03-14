@@ -1,0 +1,10 @@
+<div id="app"></div>
+
+<script type="module">
+  import shared from './shared.js'
+  import './shared-global.css'
+  shared(
+    'app',
+    'Should be blue as global styles happen to have the same specificity as the scoped styles and loaded later',
+  )
+</script>

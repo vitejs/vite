@@ -519,3 +519,13 @@ test.runIf(isBuild)(
     expect(scopedAnotherCss).not.toContain('treeshake-scoped-barrel-a')
   },
 )
+
+test('Scoped CSS via cssScopeTo should preserve import and load order', async () => {
+  await page.goto(viteTestUrl + '/scoped-ordering/a.html')
+  let scopedEl = await page.$('.scoped')
+  expect(await getColor(scopedEl)).toBe('red')
+
+  await page.goto(viteTestUrl + '/scoped-ordering/b.html')
+  scopedEl = await page.$('.scoped')
+  expect(await getColor(scopedEl)).toBe('blue')
+})

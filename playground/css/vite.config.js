@@ -50,6 +50,12 @@ export default defineConfig({
           __dirname,
           './treeshake-scoped/another.html',
         ),
+        scopedOrderingA: path.resolve(__dirname, './scoped-ordering/a.html'),
+        scopedOrderingB: path.resolve(__dirname, './scoped-ordering/b.html'),
+        scopedOrderingOnlyShared: path.resolve(
+          __dirname,
+          './scoped-ordering/only-shared.html',
+        ),
       },
       output: {
         manualChunks(id) {

@@ -1,0 +1,7 @@
+<div id="app"></div>
+
+<script type="module">
+  import './shared-global.css'
+  import shared from './shared.js'
+  shared('app', 'Should be red as scoped styles are loaded later')
+</script>
