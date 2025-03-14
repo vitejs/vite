@@ -25,6 +25,7 @@ import type { Environment } from './environment'
 import type { PartialEnvironment } from './baseEnvironment'
 import type { PreviewServerHook } from './preview'
 import { arraify, asyncFlatten } from './utils'
+import type { StringFilter } from './plugins/pluginFilter'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -139,7 +140,8 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
         scan?: boolean
         isEntry: boolean
       },
-    ) => Promise<ResolveIdResult> | ResolveIdResult
+    ) => Promise<ResolveIdResult> | ResolveIdResult,
+    { filter?: { id?: StringFilter } }
   >
   load?: ObjectHook<
     (
@@ -152,7 +154,8 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
          */
         html?: boolean
       },
-    ) => Promise<LoadResult> | LoadResult
+    ) => Promise<LoadResult> | LoadResult,
+    { filter?: { id?: StringFilter } }
   >
   transform?: ObjectHook<
     (
@@ -162,7 +165,8 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       options?: {
         ssr?: boolean
       },
-    ) => Promise<TransformResult> | TransformResult
+    ) => Promise<TransformResult> | TransformResult,
+    { filter?: { id?: StringFilter; code?: StringFilter } }
   >
   /**
    * Opt-in this plugin into the shared plugins pipeline.
