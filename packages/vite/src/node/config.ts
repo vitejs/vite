@@ -24,6 +24,7 @@ import {
   DEFAULT_SERVER_MAIN_FIELDS,
   ENV_ENTRY,
   FS_PREFIX,
+  VERSION,
 } from './constants'
 import type {
   FalsyPlugin,
@@ -116,6 +117,7 @@ export interface ConfigEnv {
   mode: string
   isSsrBuild?: boolean
   isPreview?: boolean
+  version: string
 }
 
 /**
@@ -1033,6 +1035,8 @@ export async function resolveConfig(
     command,
     isSsrBuild: command === 'build' && !!config.build?.ssr,
     isPreview,
+    // https://github.com/vitejs/vite/pull/19355
+    version: VERSION,
   }
 
   let { configFile } = config
