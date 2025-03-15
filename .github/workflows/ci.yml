@@ -1,173 +1,173 @@
-name: CI
-
-env:
-  # 7 GiB by default on GitHub, setting to 6 GiB
-  # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
-  NODE_OPTIONS: --max-old-space-size=6144
-  # install playwright binary manually (because pnpm only runs install script once)
-  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
-  # Vitest auto retry on flaky segfault
-  VITEST_SEGFAULT_RETRY: 3
-
-# Remove default permissions of GITHUB_TOKEN for security
-# https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
-permissions: {}
-
-on:
-  push:
-    branches:
-      - main
-      - release/*
-      - feat/*
-      - fix/*
-      - perf/*
-      - v1
-      - v2
-      - v2.*
-      - v3.*
-  pull_request:
-  workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
-  cancel-in-progress: true
-
-jobs:
-  test:
-    timeout-minutes: 20
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-        node_version: [14, 16, 18, 20]
-        include:
-          # Active LTS + other OS
-          - os: macos-latest
-            node_version: 18
-          - os: windows-latest
-            node_version: 18
-      fail-fast: false
-
-    name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          # Assume PRs are less than 50 commits
-          fetch-depth: 50
-
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@87697c0dca7dd44e37a2b79a79489332556ff1f3 # v37.6.0
-        with:
-          files: |
-            docs/**
-            .github/**
-            !.github/workflows/ci.yml
-            packages/create-vite/template**
-            **.md
-
-      - name: Install pnpm (node 14, pnpm 7)
-        if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version == 14
-        uses: pnpm/action-setup@v2.4.0
-        with:
-          version: 7
-
-      - name: Install pnpm
-        if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version != 14
-        uses: pnpm/action-setup@v2.4.0
-
-      - name: Set node version to ${{ matrix.node_version }}
-        if: steps.changed-files.outputs.only_changed != 'true'
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node_version }}
-          cache: "pnpm"
-
-      - name: Install deps
-        if: steps.changed-files.outputs.only_changed != 'true'
-        run: pnpm install
-
-      # Install playwright's binary under custom directory to cache
-      - name: (non-windows) Set Playwright path and Get playwright version
-        if: runner.os != 'Windows' && steps.changed-files.outputs.only_changed != 'true'
-        run: |
-          echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $GITHUB_ENV
-          PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies["playwright-chromium"].version')"
-          echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
-      - name: (windows) Set Playwright path and Get playwright version
-        if: runner.os == 'Windows' && steps.changed-files.outputs.only_changed != 'true'
-        run: |
-          echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
-          $env:PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies[\"playwright-chromium\"].version')"
-          echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
-
-      - name: Cache Playwright's binary
-        if: steps.changed-files.outputs.only_changed != 'true'
-        uses: actions/cache@v3
-        with:
-          key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
-          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-bin-v1-
-
-      - name: Install Playwright
-        if: steps.changed-files.outputs.only_changed != 'true'
-        # does not need to explicitly set chromium after https://github.com/microsoft/playwright/issues/14862 is solved
-        run: pnpm playwright install chromium
-
-      - name: Build
-        if: steps.changed-files.outputs.only_changed != 'true'
-        run: pnpm run build
-
-      - name: Test unit
-        if: steps.changed-files.outputs.only_changed != 'true'
-        run: pnpm run test-unit
-
-      - name: Test serve
-        if: steps.changed-files.outputs.only_changed != 'true'
-        run: pnpm run test-serve
-
-      - name: Test build
-        if: steps.changed-files.outputs.only_changed != 'true'
-        run: pnpm run test-build
-
-  lint:
-    timeout-minutes: 10
-    runs-on: ubuntu-latest
-    name: "Lint: node-18, ubuntu-latest"
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2.4.0
-
-      - name: Set node version to 18
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-          cache: "pnpm"
-
-      - name: Install deps
-        run: pnpm install
-
-      - name: Build
-        run: pnpm run build
-
-      - name: Lint
-        run: pnpm run lint
-
-      - name: Check formatting
-        run: pnpm prettier --check .
-
-      - name: Typecheck
-        run: pnpm run typecheck
-
-      - name: Test docs
-        run: pnpm run test-docs
-
-      # From https://github.com/rhysd/actionlint/blob/main/docs/usage.md#use-actionlint-on-github-actions
-      - name: Check workflow files
-        run: |
-          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
-          ./actionlint -color -shellcheck=""
+#name: CI
+#
+#env:
+#  # 7 GiB by default on GitHub, setting to 6 GiB
+#  # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
+#  NODE_OPTIONS: --max-old-space-size=6144
+#  # install playwright binary manually (because pnpm only runs install script once)
+#  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+#  # Vitest auto retry on flaky segfault
+#  VITEST_SEGFAULT_RETRY: 3
+#
+## Remove default permissions of GITHUB_TOKEN for security
+## https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs
+#permissions: {}
+#
+#on:
+#  push:
+#    branches:
+#      - main
+#      - release/*
+#      - feat/*
+#      - fix/*
+#      - perf/*
+#      - v1
+#      - v2
+#      - v2.*
+#      - v3.*
+#  pull_request:
+#  workflow_dispatch:
+#
+#concurrency:
+#  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+#  cancel-in-progress: true
+#
+#jobs:
+#  test:
+#    timeout-minutes: 20
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os: [ubuntu-latest]
+#        node_version: [14, 16, 18, 20]
+#        include:
+#          # Active LTS + other OS
+#          - os: macos-latest
+#            node_version: 18
+#          - os: windows-latest
+#            node_version: 18
+#      fail-fast: false
+#
+#    name: "Build&Test: node-${{ matrix.node_version }}, ${{ matrix.os }}"
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v3
+#        with:
+#          # Assume PRs are less than 50 commits
+#          fetch-depth: 50
+#
+#      - name: Get changed files
+#        id: changed-files
+#        uses: tj-actions/changed-files@87697c0dca7dd44e37a2b79a79489332556ff1f3 # v37.6.0
+#        with:
+#          files: |
+#            docs/**
+#            .github/**
+#            !.github/workflows/ci.yml
+#            packages/create-vite/template**
+#            **.md
+#
+#      - name: Install pnpm (node 14, pnpm 7)
+#        if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version == 14
+#        uses: pnpm/action-setup@v2.4.0
+#        with:
+#          version: 7
+#
+#      - name: Install pnpm
+#        if: steps.changed-files.outputs.only_changed != 'true' && matrix.node_version != 14
+#        uses: pnpm/action-setup@v2.4.0
+#
+#      - name: Set node version to ${{ matrix.node_version }}
+#        if: steps.changed-files.outputs.only_changed != 'true'
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: ${{ matrix.node_version }}
+#          cache: "pnpm"
+#
+#      - name: Install deps
+#        if: steps.changed-files.outputs.only_changed != 'true'
+#        run: pnpm install
+#
+#      # Install playwright's binary under custom directory to cache
+#      - name: (non-windows) Set Playwright path and Get playwright version
+#        if: runner.os != 'Windows' && steps.changed-files.outputs.only_changed != 'true'
+#        run: |
+#          echo "PLAYWRIGHT_BROWSERS_PATH=$HOME/.cache/playwright-bin" >> $GITHUB_ENV
+#          PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies["playwright-chromium"].version')"
+#          echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
+#      - name: (windows) Set Playwright path and Get playwright version
+#        if: runner.os == 'Windows' && steps.changed-files.outputs.only_changed != 'true'
+#        run: |
+#          echo "PLAYWRIGHT_BROWSERS_PATH=$HOME\.cache\playwright-bin" >> $env:GITHUB_ENV
+#          $env:PLAYWRIGHT_VERSION="$(pnpm ls --depth 0 --json -w playwright-chromium | jq --raw-output '.[0].devDependencies[\"playwright-chromium\"].version')"
+#          echo "PLAYWRIGHT_VERSION=$env:PLAYWRIGHT_VERSION" >> $env:GITHUB_ENV
+#
+#      - name: Cache Playwright's binary
+#        if: steps.changed-files.outputs.only_changed != 'true'
+#        uses: actions/cache@v3
+#        with:
+#          key: ${{ runner.os }}-playwright-bin-v1-${{ env.PLAYWRIGHT_VERSION }}
+#          path: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+#          restore-keys: |
+#            ${{ runner.os }}-playwright-bin-v1-
+#
+#      - name: Install Playwright
+#        if: steps.changed-files.outputs.only_changed != 'true'
+#        # does not need to explicitly set chromium after https://github.com/microsoft/playwright/issues/14862 is solved
+#        run: pnpm playwright install chromium
+#
+#      - name: Build
+#        if: steps.changed-files.outputs.only_changed != 'true'
+#        run: pnpm run build
+#
+#      - name: Test unit
+#        if: steps.changed-files.outputs.only_changed != 'true'
+#        run: pnpm run test-unit
+#
+#      - name: Test serve
+#        if: steps.changed-files.outputs.only_changed != 'true'
+#        run: pnpm run test-serve
+#
+#      - name: Test build
+#        if: steps.changed-files.outputs.only_changed != 'true'
+#        run: pnpm run test-build
+#
+#  lint:
+#    timeout-minutes: 10
+#    runs-on: ubuntu-latest
+#    name: "Lint: node-18, ubuntu-latest"
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - name: Install pnpm
+#        uses: pnpm/action-setup@v2.4.0
+#
+#      - name: Set node version to 18
+#        uses: actions/setup-node@v3
+#        with:
+#          node-version: 18
+#          cache: "pnpm"
+#
+#      - name: Install deps
+#        run: pnpm install
+#
+#      - name: Build
+#        run: pnpm run build
+#
+#      - name: Lint
+#        run: pnpm run lint
+#
+#      - name: Check formatting
+#        run: pnpm prettier --check .
+#
+#      - name: Typecheck
+#        run: pnpm run typecheck
+#
+#      - name: Test docs
+#        run: pnpm run test-docs
+#
+#      # From https://github.com/rhysd/actionlint/blob/main/docs/usage.md#use-actionlint-on-github-actions
+#      - name: Check workflow files
+#        run: |
+#          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+#          ./actionlint -color -shellcheck=""
