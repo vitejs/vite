@@ -6,7 +6,7 @@ on:
 
 jobs:
   close-issues:
-    if: github.repository == 'vitejs/vite'
+    if: github.repository == 'vitejs/rolldown-vite'
     runs-on: ubuntu-latest
     permissions:
       issues: write # for actions-cool/issues-helper to update issues
