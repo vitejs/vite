@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  vite: workspace:*
+  vite: workspace:rolldown-vite@*
 
 packageExtensionsChecksum: sha256-BLDZCgUIohvBXMHo3XFOlGLzGXRyK3sDU0nMBRk9APY=
 
@@ -136,7 +136,7 @@ importers:
         specifier: ^8.26.1
         version: 8.26.1(eslint@9.22.0(jiti@2.4.2))(typescript@5.7.3)
       vite:
-        specifier: workspace:*
+        specifier: workspace:rolldown-vite@*
         version: link:packages/vite
       vitest:
         specifier: ^3.0.8
@@ -218,7 +218,7 @@ importers:
         specifier: ^3.5.0
         version: 3.5.0(sass@1.85.1)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3))
       vite:
-        specifier: workspace:*
+        specifier: workspace:rolldown-vite@*
         version: link:../vite
 
   packages/vite:
@@ -762,7 +762,7 @@ importers:
         specifier: npm:slash@^5.1.0
         version: slash@5.1.0
       vite:
-        specifier: workspace:*
+        specifier: workspace:rolldown-vite@*
         version: link:../../packages/vite
       vue:
         specifier: ^3.5.13
@@ -862,7 +862,7 @@ importers:
         specifier: ^5.39.0
         version: 5.39.0
       vite:
-        specifier: workspace:*
+        specifier: workspace:rolldown-vite@*
         version: link:../../packages/vite
 
   playground/lib:
@@ -3285,7 +3285,7 @@ packages:
   '@tailwindcss/vite@4.0.14':
     resolution: {integrity: sha512-y69ztPTRFy+13EPS/7dEFVl7q2Goh1pQueVO8IfGeyqSpcx/joNJXFk0lLhMgUbF0VFJotwRSb9ZY7Xoq3r26Q==}
     peerDependencies:
-      vite: workspace:*
+      vite: workspace:rolldown-vite@*
 
   '@trysound/sax@0.2.0':
     resolution: {integrity: sha512-L7z9BgrNEcYyUYtF+HaEfiS5ebkh9jXqbszz7pC0hRBPaatV0XjSD3+eHrpqFemQfgwiFF0QPIarnIihIDn7OA==}
@@ -3550,7 +3550,7 @@ packages:
     resolution: {integrity: sha512-cxh314tzaWwOLqVes2gnnCtvBDcM1UMdn+iFR+UjAn411dPT3tOmqrJjbMd7koZpMAmBM/GqeV4n9ge7JSiJJQ==}
     engines: {node: ^18.0.0 || >=20.0.0}
     peerDependencies:
-      vite: workspace:*
+      vite: workspace:rolldown-vite@*
       vue: ^3.2.25
 
   '@vitejs/release-scripts@1.3.3':
@@ -3819,7 +3819,7 @@ packages:
     resolution: {integrity: sha512-n3LjS7fcW1BCoF+zWZxG7/5XvuYH+lsFg+BDwwAz0arIwHQJFUEsKBQ0BLU49fCxuM/2HSeBPHQD8WjgrxMfow==}
     peerDependencies:
       msw: ^2.4.9
-      vite: workspace:*
+      vite: workspace:rolldown-vite@*
     peerDependenciesMeta:
       msw:
         optional: true

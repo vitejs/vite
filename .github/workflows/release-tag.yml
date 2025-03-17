@@ -11,7 +11,7 @@ on:
 
 jobs:
   release:
-    if: github.repository == 'vitejs/vite'
+    if: github.repository == 'vitejs/rolldown-vite'
     runs-on: ubuntu-latest
     permissions:
       contents: write # for yyx990803/release-tag to create a release tag
@@ -47,4 +47,4 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           body: |
-            Please refer to [CHANGELOG.md](https://github.com/vitejs/vite/blob/${{ github.ref_name }}/packages/${{ steps.tag.outputs.pkgName }}/CHANGELOG.md) for details.
+            Please refer to [CHANGELOG.md](https://github.com/vitejs/rolldown-vite/blob/${{ github.ref_name }}/packages/${{ steps.tag.outputs.pkgName }}/CHANGELOG.md) for details.

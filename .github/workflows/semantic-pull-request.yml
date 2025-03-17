@@ -9,7 +9,7 @@ on:
 
 jobs:
   main:
-    if: github.repository == 'vitejs/vite'
+    if: github.repository == 'vitejs/rolldown-vite'
     runs-on: ubuntu-latest
     name: Semantic Pull Request
     permissions:

@@ -754,7 +754,7 @@ describe('loadConfigFromFile', () => {
       ))!
       expect(config).toMatchInlineSnapshot(`
         {
-          "jsonValue": "vite",
+          "jsonValue": "rolldown-vite",
         }
       `)
     },
