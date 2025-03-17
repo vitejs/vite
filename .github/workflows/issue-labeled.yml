@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: contribution welcome
         if: github.event.label.name == 'contribution welcome' || github.event.label.name == 'help wanted'
-        uses: actions-cool/issues-helper@v3
+        uses: actions-cool/issues-helper@a610082f8ac0cf03e357eb8dd0d5e2ba075e017e # v3
         with:
           actions: "remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -20,7 +20,7 @@ jobs:
 
       - name: remove pending
         if: contains(github.event.label.description, '(priority)') && contains(github.event.issue.labels.*.name, 'pending triage')
-        uses: actions-cool/issues-helper@v3
+        uses: actions-cool/issues-helper@a610082f8ac0cf03e357eb8dd0d5e2ba075e017e # v3
         with:
           actions: "remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -29,7 +29,7 @@ jobs:
 
       - name: remove enhancement pending
         if: "(github.event.label.name == 'enhancement' || contains(github.event.label.description, '(priority)')) && contains(github.event.issue.labels.*.name, 'enhancement: pending triage')"
-        uses: actions-cool/issues-helper@v3
+        uses: actions-cool/issues-helper@a610082f8ac0cf03e357eb8dd0d5e2ba075e017e # v3
         with:
           actions: "remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -38,7 +38,7 @@ jobs:
 
       - name: needs reproduction
         if: github.event.label.name == 'needs reproduction'
-        uses: actions-cool/issues-helper@v3
+        uses: actions-cool/issues-helper@a610082f8ac0cf03e357eb8dd0d5e2ba075e017e # v3
         with:
           actions: "create-comment, remove-labels"
           token: ${{ secrets.GITHUB_TOKEN }}
