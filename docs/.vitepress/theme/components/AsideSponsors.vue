@@ -21,7 +21,7 @@ const sponsors = computed(() => {
 <template>
   <a
     class="viteconf"
-    href="https://viteconf.amsterdam/?utm=vite-sidebar"
+    href="https://viteconf.org/?utm=vite-sidebar"
     target="_blank"
   >
     <img width="22" height="22" src="/viteconf.svg" alt="ViteConf Logo" />
