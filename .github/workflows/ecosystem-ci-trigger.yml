@@ -8,6 +8,11 @@ jobs:
   trigger:
     runs-on: ubuntu-latest
     if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
+    permissions:
+      issues: write # to add / delete reactions
+      pull-requests: write # to read PR data, and to add labels
+      actions: read # to check workflow status
+      contents: read # to clone the repo
     steps:
       - name: Check User Permissions
         uses: actions/github-script@v7
