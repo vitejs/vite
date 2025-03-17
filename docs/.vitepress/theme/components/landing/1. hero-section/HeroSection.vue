@@ -7,7 +7,7 @@ import HeroDiagram from './HeroDiagram.vue'
     <div class="container">
       <!-- ViteConf 2025 Button -->
       <a
-        href="https://viteconf.amsterdam?utm=vite"
+        href="https://viteconf.org/?utm=vite"
         class="hero__pill"
         target="_blank"
       >
