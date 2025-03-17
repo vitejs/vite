@@ -9,6 +9,11 @@
       "depTypeList": ["peerDependencies"],
       "enabled": false,
     },
+    {
+      "matchDepTypes": ["action"],
+      "excludePackagePrefixes": ["actions/", "github/"],
+      "pinDigests": true,
+    },
   ],
   "ignoreDeps": [
     // manually bumping
