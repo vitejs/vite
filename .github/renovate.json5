@@ -11,7 +11,7 @@
     },
     {
       "matchDepTypes": ["action"],
-      "excludePackagePrefixes": ["actions/"],
+      "excludePackagePrefixes": ["actions/", "github/"],
       "pinDigests": true,
     },
   ],
