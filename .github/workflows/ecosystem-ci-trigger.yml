@@ -94,7 +94,7 @@ jobs:
 
       - name: Generate Token
         id: generate-token
-        uses: tibdex/github-app-token@v2
+        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a # v2
         with:
           app_id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
           installation_retrieval_payload: "${{ github.repository_owner }}/vite-ecosystem-ci"
