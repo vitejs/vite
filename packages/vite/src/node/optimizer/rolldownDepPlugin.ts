@@ -123,7 +123,7 @@ export function rolldownDepPlugin(
     if (isExternalUrl(resolved)) {
       return {
         id: resolved,
-        external: true,
+        external: 'absolute',
       }
     }
     return {
@@ -157,7 +157,7 @@ export function rolldownDepPlugin(
           if (id.startsWith(convertedExternalPrefix)) {
             return {
               id: id.slice(convertedExternalPrefix.length),
-              external: true,
+              external: 'absolute',
             }
           }
 
@@ -182,7 +182,7 @@ export function rolldownDepPlugin(
             }
             return {
               id: resolved,
-              external: true,
+              external: 'absolute',
             }
           }
         },
@@ -220,7 +220,7 @@ export function rolldownDepPlugin(
           if (moduleListContains(external, id)) {
             return {
               id: id,
-              external: true,
+              external: 'absolute',
             }
           }
 
@@ -329,7 +329,7 @@ export function rolldownCjsExternalPlugin(
         if (id.startsWith(nonFacadePrefix)) {
           return {
             id: id.slice(nonFacadePrefix.length),
-            external: true,
+            external: 'absolute',
           }
         }
 
@@ -344,7 +344,7 @@ export function rolldownCjsExternalPlugin(
 
           return {
             id,
-            external: true,
+            external: 'absolute',
           }
         }
       },
