@@ -122,5 +122,6 @@ Examples of using native tooling:
 
 Using native tooling often brings larger installation size and as so is not the default when starting a new Vite project. But it may be worth the cost for larger applications.
 
+- Use [Rolldown as the bundler](./rolldown) for faster builds.
 - Try out the experimental support for [LightningCSS](https://github.com/vitejs/vite/discussions/13835)
 - Use [`@vitejs/plugin-react-swc`](https://github.com/vitejs/vite-plugin-react-swc) in place of `@vitejs/plugin-react`.
