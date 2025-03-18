@@ -60,9 +60,9 @@ Set to `true` to exit if port is already in use, instead of automatically trying
 - **Type:** `https.ServerOptions`
 - **Default:** [`server.https`](./server-options#server-https)
 
-Enable TLS + HTTP/2. Note this downgrades to TLS only when the [`server.proxy` option](./server-options#server-proxy) is also used.
+Enable TLS + HTTP/2.
 
-The value can also be an [options object](https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener) passed to `https.createServer()`.
+See [`server.https`](./server-options#server-https) for more details.
 
 ## preview.open
 
