@@ -98,7 +98,9 @@ jobs:
         with:
           app-id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
           private-key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
-          repositories: vite-ecosystem-ci
+          repositories: |
+            vite
+            vite-ecosystem-ci
 
       - name: Trigger Preview Release (if Package Not Found)
         if: fromJSON(steps.check-package.outputs.result).exists == false
