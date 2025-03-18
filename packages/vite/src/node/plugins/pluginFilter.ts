@@ -39,7 +39,11 @@ function patternToIdFilter(pattern: string | RegExp): PluginFilter {
 
 function patternToCodeFilter(pattern: string | RegExp): PluginFilter {
   if (pattern instanceof RegExp) {
-    return (code: string) => pattern.test(code)
+    return (code: string) => {
+      const result = pattern.test(code)
+      pattern.lastIndex = 0
+      return result
+    }
   }
   return (code: string) => code.includes(pattern)
 }
