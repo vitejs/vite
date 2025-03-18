@@ -502,8 +502,8 @@ test.runIf(isBuild)('CSS modules should be treeshaken if not used', () => {
 
 test.runIf(isBuild)('Scoped CSS via cssScopeTo should be treeshaken', () => {
   const css = findAssetFile(/\.css$/, undefined, undefined, true)
-  expect(css).not.toContain('treeshake-module-b')
-  expect(css).not.toContain('treeshake-module-c')
+  expect(css).not.toMatch(/\btreeshake-scoped-b\b/)
+  expect(css).not.toMatch(/\btreeshake-scoped-c\b/)
 })
 
 test.runIf(isBuild)(
