@@ -94,11 +94,11 @@ jobs:
 
       - name: Generate Token
         id: generate-token
-        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a # v2
+        uses: actions/create-github-app-token@v1
         with:
-          app_id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
-          installation_retrieval_payload: "${{ github.repository_owner }}/vite-ecosystem-ci"
-          private_key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
+          private-key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
+          repositories: vite-ecosystem-ci
 
       - name: Trigger Preview Release (if Package Not Found)
         if: fromJSON(steps.check-package.outputs.result).exists == false
