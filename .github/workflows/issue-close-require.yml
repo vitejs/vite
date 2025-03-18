@@ -8,6 +8,9 @@ jobs:
   close-issues:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
+    permissions:
+      issues: write # for actions-cool/issues-helper to update issues
+      pull-requests: write # for actions-cool/issues-helper to update PRs
     steps:
       - name: needs reproduction
         uses: actions-cool/issues-helper@a610082f8ac0cf03e357eb8dd0d5e2ba075e017e # v3

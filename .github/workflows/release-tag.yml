@@ -13,6 +13,8 @@ jobs:
   release:
     if: github.repository == 'vitejs/vite'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # for yyx990803/release-tag to create a release tag
     steps:
       - uses: actions/checkout@v4
 
