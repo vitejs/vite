@@ -399,6 +399,26 @@ describe('processSrcSetSync', () => {
     ).toBe('/base/nested/asset.png 1x, /base/nested/asset.png 2x')
   })
 
+  test('prepend base URL to srcset 2', async () => {
+    const devBase = '/base/'
+    expect(
+      processSrcSetSync(
+        './nested/asset.png 1x,./nested/asset.png 2x',
+        ({ url }) => path.posix.join(devBase, url),
+      ),
+    ).toBe('/base/nested/asset.png 1x, /base/nested/asset.png 2x')
+  })
+
+  test('prepend base URL to srcset 3', async () => {
+    const devBase = '/base/'
+    expect(
+      processSrcSetSync(
+        '"./nested/asset.png" 1x,"./nested/asset.png" 2x',
+        ({ url }) => `"${path.posix.join(devBase, url.slice(1, -1))}"`,
+      ),
+    ).toBe('"/base/nested/asset.png" 1x, "/base/nested/asset.png" 2x')
+  })
+
   test('should not split the comma inside base64 value', async () => {
     const base64 =
       'data:image/avif;base64,aA+/0= 400w, data:image/avif;base64,bB+/9= 800w'

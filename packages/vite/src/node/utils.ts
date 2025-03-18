@@ -779,7 +779,7 @@ function joinSrcset(ret: ImageCandidate[]) {
   The `descriptor` is anything after the space and before the comma.
  */
 const imageCandidateRegex =
-  /(?:^|\s)(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
+  /(?:^|\s|(?<=,))(?<url>[\w-]+\([^)]*\)|"[^"]*"|'[^']*'|[^,]\S*[^,])\s*(?:\s(?<descriptor>\w[^,]+))?(?:,|$)/g
 const escapedSpaceCharacters = /(?: |\\t|\\n|\\f|\\r)+/g
 
 export function parseSrcset(string: string): ImageCandidate[] {
