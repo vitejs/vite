@@ -161,7 +161,22 @@ export function definePlugin(config: ResolvedConfig): Plugin {
         // Replace `import.meta.env.*` with undefined
         result.code = result.code.replaceAll(
           getImportMetaEnvKeyRe(marker),
-          (m) => 'undefined'.padEnd(m.length),
+          (m) => {
+            if (config.unsetEnv && config.unsetEnv !== 'off') {
+              // Add 1 to account for the dot after the marker
+              const variableName = m.slice(marker.length + 1)
+
+              const message = `Environment variable ${variableName} is unset. Referenced in ${id}`
+
+              if (config.unsetEnv === 'error') {
+                throw new Error(message)
+              } else if (config.unsetEnv === 'warn') {
+                config.logger.warnOnce(message)
+              }
+            }
+
+            return 'undefined'.padEnd(m.length)
+          },
         )
 
         // If there's bare `import.meta.env` references, prepend the banner
