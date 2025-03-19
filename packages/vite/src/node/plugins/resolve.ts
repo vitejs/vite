@@ -472,28 +472,30 @@ export function resolvePlugin(
       debug?.(`[fallthrough] ${colors.dim(id)}`)
     },
 
-    load(id) {
-      if (id.startsWith(browserExternalId)) {
-        if (isProduction) {
-          return `export default {}`
-        } else {
-          id = id.slice(browserExternalId.length + 1)
-          return `\
-export default new Proxy({}, {
-  get(_, key) {
-    throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.  See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
-  }
-})`
+    load: {
+      handler(id) {
+        if (id.startsWith(browserExternalId)) {
+          if (isProduction) {
+            return `export default {}`
+          } else {
+            id = id.slice(browserExternalId.length + 1)
+            return `\
+  export default new Proxy({}, {
+    get(_, key) {
+      throw new Error(\`Module "${id}" has been externalized for browser compatibility. Cannot access "${id}.\${key}" in client code.  See https://vite.dev/guide/troubleshooting.html#module-externalized-for-browser-compatibility for more details.\`)
+    }
+  })`
+          }
         }
-      }
-      if (id.startsWith(optionalPeerDepId)) {
-        if (isProduction) {
-          return `export default {}`
-        } else {
-          const [, peerDep, parentDep] = id.split(':')
-          return `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`
+        if (id.startsWith(optionalPeerDepId)) {
+          if (isProduction) {
+            return `export default {}`
+          } else {
+            const [, peerDep, parentDep] = id.split(':')
+            return `throw new Error(\`Could not resolve "${peerDep}" imported by "${parentDep}". Is it installed?\`)`
+          }
         }
-      }
+      },
     },
   }
 }
