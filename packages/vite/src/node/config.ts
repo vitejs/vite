@@ -860,7 +860,7 @@ export type ResolveFn = (
 
 /**
  * Check and warn if `path` includes characters that don't work well in Vite,
- * such as `#` and `?`.
+ * such as `#` and `?` and `*`.
  */
 function checkBadCharactersInPath(path: string, logger: Logger): void {
   const badChars = []
@@ -870,6 +870,9 @@ function checkBadCharactersInPath(path: string, logger: Logger): void {
   }
   if (path.includes('?')) {
     badChars.push('?')
+  }
+  if (path.includes('*')) {
+    badChars.push('*')
   }
 
   if (badChars.length > 0) {

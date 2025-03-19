@@ -355,7 +355,7 @@ describe('resolveConfig', () => {
     expect(results2.clearScreen).toBe(false)
   })
 
-  test('resolveConfig with root path including "#" and "?" should warn ', async () => {
+  test('resolveConfig with root path including "#" and "?" and "*" should warn ', async () => {
     expect.assertions(1)
 
     const logger = createLogger('info')
@@ -365,7 +365,7 @@ describe('resolveConfig', () => {
       )
     }
 
-    await resolveConfig({ root: './inc?ud#s', customLogger: logger }, 'build')
+    await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
   })
 })
 
