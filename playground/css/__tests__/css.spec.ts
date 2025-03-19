@@ -5,6 +5,7 @@ import {
   editFile,
   findAssetFile,
   getBg,
+  getBgColor,
   getColor,
   isBuild,
   page,
@@ -504,6 +505,12 @@ test.runIf(isBuild)('Scoped CSS via cssScopeTo should be treeshaken', () => {
   const css = findAssetFile(/\.css$/, undefined, undefined, true)
   expect(css).not.toMatch(/\btreeshake-scoped-b\b/)
   expect(css).not.toMatch(/\btreeshake-scoped-c\b/)
+})
+
+test('Scoped CSS should have a correct order', async () => {
+  await page.goto(viteTestUrl + '/treeshake-scoped/')
+  expect(await getColor('.treeshake-scoped-order')).toBe('red')
+  expect(await getBgColor('.treeshake-scoped-order')).toBe('blue')
 })
 
 test.runIf(isBuild)(
