@@ -361,7 +361,7 @@ describe('resolveConfig', () => {
     const logger = createLogger('info')
     logger.warn = (str) => {
       expect(str).to.include(
-        'Consider renaming the directory to remove the characters',
+        'Consider renaming the directory / file to remove the characters',
       )
     }
 
