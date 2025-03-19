@@ -126,7 +126,10 @@ export async function getBgColor(
   el: string | ElementHandle | Locator,
 ): Promise<string> {
   el = await toEl(el)
-  return el.evaluate((el) => getComputedStyle(el as Element).backgroundColor)
+  const rgb = await el.evaluate(
+    (el) => getComputedStyle(el as Element).backgroundColor,
+  )
+  return hexToNameMap[rgbToHex(rgb)] ?? rgb
 }
 
 export function readFile(filename: string): string {
