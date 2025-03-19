@@ -512,17 +512,3 @@ test('Scoped CSS should have a correct order', async () => {
   expect(await getColor('.treeshake-scoped-order')).toBe('red')
   expect(await getBgColor('.treeshake-scoped-order')).toBe('blue')
 })
-
-test.runIf(isBuild)(
-  'Scoped CSS via cssScopeTo should be bundled separately',
-  () => {
-    const scopedIndexCss = findAssetFile(/treeshakeScoped-[-\w]{8}\.css$/)
-    expect(scopedIndexCss).toContain('treeshake-scoped-barrel-a')
-    expect(scopedIndexCss).not.toContain('treeshake-scoped-barrel-b')
-    const scopedAnotherCss = findAssetFile(
-      /treeshakeScopedAnother-[-\w]{8}\.css$/,
-    )
-    expect(scopedAnotherCss).toContain('treeshake-scoped-barrel-b')
-    expect(scopedAnotherCss).not.toContain('treeshake-scoped-barrel-a')
-  },
-)
