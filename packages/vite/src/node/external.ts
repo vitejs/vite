@@ -32,24 +32,6 @@ export function shouldExternalize(
   return isExternal(id, importer)
 }
 
-const isConfiguredAsExternalCache = new WeakMap<
-  Environment,
-  (id: string, importer?: string) => boolean
->()
-
-export function isConfiguredAsExternal(
-  environment: Environment,
-  id: string,
-  importer?: string,
-): boolean {
-  let isExternal = isConfiguredAsExternalCache.get(environment)
-  if (!isExternal) {
-    isExternal = createIsConfiguredAsExternal(environment)
-    isConfiguredAsExternalCache.set(environment, isExternal)
-  }
-  return isExternal(id, importer)
-}
-
 export function createIsConfiguredAsExternal(
   environment: PartialEnvironment,
 ): (id: string, importer?: string) => boolean {
