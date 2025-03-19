@@ -143,6 +143,12 @@ const FRAMEWORKS: Framework[] = [
         color: cyan,
         customCommand: 'npm create react-router@latest TARGET_DIR',
       },
+      {
+        name: 'react-one',
+        display: 'One',
+        color: yellow,
+        customCommand: 'npx one@latest TARGET_DIR --template Minimal'
+      }
     ],
   },
   {
