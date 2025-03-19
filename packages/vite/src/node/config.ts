@@ -862,7 +862,11 @@ export type ResolveFn = (
  * Check and warn if `path` includes characters that don't work well in Vite,
  * such as `#` and `?` and `*`.
  */
-function checkBadCharactersInPath(path: string, logger: Logger): void {
+function checkBadCharactersInPath(
+  name: string,
+  path: string,
+  logger: Logger,
+): void {
   const badChars = []
 
   if (path.includes('#')) {
@@ -881,9 +885,9 @@ function checkBadCharactersInPath(path: string, logger: Logger): void {
 
     logger.warn(
       colors.yellow(
-        `The project root contains the ${charString} ${inflectedChars} (${colors.cyan(
+        `${name} contains the ${charString} ${inflectedChars} (${colors.cyan(
           path,
-        )}), which may not work when running Vite. Consider renaming the directory to remove the characters.`,
+        )}), which may not work when running Vite. Consider renaming the directory / file to remove the characters.`,
       ),
     )
   }
@@ -1114,7 +1118,7 @@ export async function resolveConfig(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
 
-  checkBadCharactersInPath(resolvedRoot, logger)
+  checkBadCharactersInPath('The project root', resolvedRoot, logger)
 
   const configEnvironmentsClient = config.environments!.client!
   configEnvironmentsClient.dev ??= {}
@@ -1779,12 +1783,11 @@ export async function loadConfigFromFile(
       dependencies,
     }
   } catch (e) {
-    createLogger(logLevel, { customLogger }).error(
-      colors.red(`failed to load config from ${resolvedPath}`),
-      {
-        error: e,
-      },
-    )
+    const logger = createLogger(logLevel, { customLogger })
+    checkBadCharactersInPath('The config path', resolvedPath, logger)
+    logger.error(colors.red(`failed to load config from ${resolvedPath}`), {
+      error: e,
+    })
     throw e
   }
 }
