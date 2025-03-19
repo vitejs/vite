@@ -21,6 +21,7 @@ import { genSourceMapUrl } from '../server/sourcemap'
 import type { Environment } from '../environment'
 import { removedPureCssFilesCache } from './css'
 import { createParseErrorInfo } from './importAnalysis'
+import { createChunkImportMap } from './chunkImportMap'
 
 type FileDep = {
   url: string
@@ -99,6 +100,7 @@ function preload(
       deps.map((dep) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
+        dep = import.meta.resolve(dep)
         if (dep in seen) return
         seen[dep] = true
         const isCss = dep.endsWith('.css')
@@ -118,7 +120,9 @@ function preload(
             }
           }
         } else if (
-          document.querySelector(`link[href="${dep}"]${cssSelector}`)
+          document.querySelector(
+            `link[href="${new URL(dep).pathname}"]${cssSelector}`,
+          )
         ) {
           return
         }
@@ -211,6 +215,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
               // is appended inside __vitePreload too.
               `function(dep) { return ${JSON.stringify(config.base)}+dep }`
+
         const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
         return { code: preloadCode, moduleSideEffects: false }
       }
@@ -464,6 +469,18 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       const buildSourcemap = this.environment.config.build.sourcemap
       const { modulePreload } = this.environment.config.build
 
+      const chunkImportMap = config.build.chunkImportMap
+        ? createChunkImportMap(bundle)
+        : {}
+      const valueKeyChunkImportMapFilePairs = Object.entries(chunkImportMap)
+        .map(([k, v]) => {
+          const key = /[^/]+\.js$/.exec(k)
+          const value = /[^/]+\.js$/.exec(v)
+          if (!key || !value) return null
+          return [value[0], key[0]]
+        })
+        .filter(Boolean) as [string, string][]
+
       for (const file in bundle) {
         const chunk = bundle[file]
         // can't use chunk.dynamicImports.length here since some modules e.g.
@@ -537,7 +554,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                   if (filename === ownerFilename) return
                   if (analyzed.has(filename)) return
                   analyzed.add(filename)
-                  const chunk = bundle[filename]
+                  const chunk =
+                    bundle[filename] ?? bundle[chunkImportMap[filename]]
                   if (chunk) {
                     deps.add(chunk.fileName)
                     if (chunk.type === 'chunk') {
@@ -608,6 +626,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                     }),
                     ...cssDeps,
                   ]
+                }
+
+                if (config.build.chunkImportMap) {
+                  depsArray = depsArray.map((dep) => {
+                    valueKeyChunkImportMapFilePairs.forEach(([v, k]) => {
+                      dep = dep.replace(v, k)
+                    })
+                    return dep
+                  })
                 }
 
                 let renderedDeps: number[]

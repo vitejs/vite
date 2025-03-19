@@ -133,6 +133,51 @@ const _require = createRequire(import.meta.url)
 const nonLeadingHashInFileNameRE = /[^/]+\[hash(?::\d+)?\]/
 const prefixedHashInFileNameRE = /\W?\[hash(?::\d+)?\]/
 
+const hashPlaceholderLeft = '!~{'
+const hashPlaceholderRight = '}~'
+const hashPlaceholderOverhead =
+  hashPlaceholderLeft.length + hashPlaceholderRight.length
+const maxHashSize = 22
+// from https://github.com/rollup/rollup/blob/91352494fc722bcd5e8e922cd1497b34aec57a67/src/utils/hashPlaceholders.ts#L41-L46
+const hashPlaceholderRE = new RegExp(
+  // eslint-disable-next-line regexp/strict, regexp/prefer-w
+  `${hashPlaceholderLeft}[0-9a-zA-Z_$]{1,${
+    maxHashSize - hashPlaceholderOverhead
+  }}${hashPlaceholderRight}`,
+  'g',
+)
+
+const hashPlaceholderToFacadeModuleIdHashMap = new Map<string, string>()
+
+function augmentFacadeModuleIdHash(name: string): string {
+  return name.replace(
+    hashPlaceholderRE,
+    (match) => hashPlaceholderToFacadeModuleIdHashMap.get(match) ?? match,
+  )
+}
+
+function createChunkImportMap(
+  bundle: OutputBundle,
+  base: string,
+): Record<string, string> {
+  return Object.fromEntries(
+    Object.values(bundle)
+      .filter((chunk): chunk is OutputChunk => chunk.type === 'chunk')
+      .map((output) => {
+        return [
+          base + augmentFacadeModuleIdHash(output.preliminaryFileName),
+          base + output.fileName,
+        ]
+      }),
+  )
+}
+
+export function getHash(text: Buffer | string, length = 8): string {
+  const h = hash('sha256', text, 'hex').substring(0, length)
+  if (length <= 64) return h
+  return h.padEnd(length, '_')
+}
+
 function viteLegacyPlugin(options: Options = {}): Plugin[] {
   let config: ResolvedConfig
   let targets: Options['targets']
@@ -164,6 +209,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const isDebug =
     debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
 
+  const chunkImportMap = new Map()
   const facadeToLegacyChunkMap = new Map()
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
@@ -523,6 +569,16 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         }
       }
 
+      if (config.build.chunkImportMap) {
+        const hashPlaceholder = chunk.fileName.match(hashPlaceholderRE)?.[0]
+        if (hashPlaceholder) {
+          hashPlaceholderToFacadeModuleIdHashMap.set(
+            hashPlaceholder,
+            getHash(chunk.facadeModuleId ?? chunk.fileName),
+          )
+        }
+      }
+
       if (!genLegacy) {
         return null
       }
@@ -578,13 +634,26 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
       return null
     },
 
-    transformIndexHtml(html, { chunk }) {
+    transformIndexHtml(html, { chunk, filename, bundle }) {
       if (config.build.ssr) return
       if (!chunk) return
       if (chunk.fileName.includes('-legacy')) {
         // The legacy bundle is built first, and its index.html isn't actually emitted if
         // modern bundle will be generated. Here we simply record its corresponding legacy chunk.
         facadeToLegacyChunkMap.set(chunk.facadeModuleId, chunk.fileName)
+
+        if (config.build.chunkImportMap) {
+          const relativeUrlPath = path.posix.relative(
+            config.root,
+            normalizePath(filename),
+          )
+          const assetsBase = getBaseInHTML(relativeUrlPath, config)
+          chunkImportMap.set(
+            chunk.facadeModuleId,
+            createChunkImportMap(bundle!, assetsBase),
+          )
+        }
+
         if (genModern) {
           return
         }
@@ -705,6 +774,19 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           children: dynamicFallbackInlineCode,
           injectTo: 'head',
         })
+      }
+
+      if (config.build.chunkImportMap) {
+        const imports = chunkImportMap.get(chunk.facadeModuleId)
+
+        if (imports) {
+          tags.push({
+            tag: 'script',
+            attrs: { type: 'systemjs-importmap' },
+            children: JSON.stringify({ imports }),
+            injectTo: 'head-prepend',
+          })
+        }
       }
 
       return {

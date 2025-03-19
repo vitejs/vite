@@ -57,6 +57,7 @@ import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
 import { dataURIPlugin } from './plugins/dataUri'
+import { chunkImportMapPlugin } from './plugins/chunkImportMap'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { buildLoadFallbackPlugin } from './plugins/loadFallback'
@@ -272,6 +273,12 @@ export interface BuildEnvironmentOptions {
    */
   watch?: WatcherOptions | null
   /**
+   * Whether to inject importmap for generated chunks.
+   * This importmap is used to optimize caching efficiency.
+   * @default false
+   */
+  chunkImportMap?: boolean
+  /**
    * create the Build Environment instance
    */
   createEnvironment?: (
@@ -385,6 +392,7 @@ export const buildEnvironmentOptionsDefaults = Object.freeze({
   reportCompressedSize: true,
   chunkSizeWarningLimit: 500,
   watch: null,
+  chunkImportMap: false,
   // createEnvironment
 })
 
@@ -481,6 +489,9 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
           ).filter(Boolean) as Plugin[],
       ),
       ...(config.isWorker ? [webWorkerPostPlugin()] : []),
+      ...(!config.isWorker && config.build.chunkImportMap
+        ? [chunkImportMapPlugin()]
+        : []),
     ],
     post: [
       buildImportAnalysisPlugin(config),
