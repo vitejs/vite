@@ -72,6 +72,10 @@ The rolldown-powered version of Vite is currently available as a separate packag
 
 After adding these overrides, reinstall your dependencies and start your development server or build your project as usual. No further configuration changes are required.
 
+## Known Limitations
+
+While Rolldown aims to be a drop-in replacement for Rollup, there are features that are still being implemented and minor intentional behavior differences. For a comprehensive list, please refer to [this GitHub PR](https://github.com/vitejs/rolldown-vite/pull/84#issue-2903144667) which is regularly updated.
+
 ## Reporting Issues
 
 Since this is an experimental integration, you may encounter issues. If you do, please report them in the [`vitejs/rolldown-vite`](https://github.com/vitejs/rolldown-vite) repository, **not the main Vite repository**.
