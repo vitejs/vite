@@ -269,6 +269,8 @@ export const isDirectCSSRequest = (request: string): boolean =>
 export const isDirectRequest = (request: string): boolean =>
   directRequestRE.test(request)
 
+const cssStylesCache = new WeakMap<ResolvedConfig, Map<string, string>>()
+
 const cssModulesCache = new WeakMap<
   ResolvedConfig,
   Map<string, Record<string, string>>
@@ -299,6 +301,12 @@ const cssUrlAssetRE = /__VITE_CSS_URL__([\da-f]+)__/g
 export function cssPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   let moduleCache: Map<string, Record<string, string>>
+
+  // styles initialization in buildStart causes a styling loss in watch
+  if (!cssStylesCache.has(config)) {
+    cssStylesCache.set(config, new Map<string, string>())
+  }
+  const styles = cssStylesCache.get(config)!
 
   const idResolver = createBackCompatIdResolver(config, {
     preferRelative: true,
@@ -364,6 +372,37 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
           }
         }
       },
+    },
+
+    async renderChunk(_code, chunk, _opts, meta) {
+      let chunkCSS = ''
+      const renderedModules = Object.fromEntries(
+        Object.values(meta.chunks).flatMap((chunk) =>
+          Object.entries(chunk.modules),
+        ),
+      )
+      const ids = Object.keys(chunk.modules)
+      for (const id of ids) {
+        if (styles.has(id)) {
+          // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
+          if (transformOnlyRE.test(id)) {
+            continue
+          }
+
+          // If this CSS is scoped to its importers exports, check if those importers exports
+          // are rendered in the chunks. If they are not, we can skip bundling this CSS.
+          const cssScopeTo = this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
+          if (
+            cssScopeTo &&
+            !isCssScopeToRendered(cssScopeTo, renderedModules)
+          ) {
+            continue
+          }
+
+          chunkCSS += styles.get(id)
+        }
+      }
+      chunk.viteMetadata!.cssContent = chunkCSS
     },
   }
 
@@ -458,8 +497,8 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
  * Plugin applied after user plugins
  */
 export function cssPostPlugin(config: ResolvedConfig): Plugin {
-  // styles initialization in buildStart causes a styling loss in watch
-  const styles = new Map<string, string>()
+  const styles = cssStylesCache.get(config)! // created in cssPlugin
+
   // queue to emit css serially to guarantee the files are emitted in a deterministic order
   let codeSplitEmitQueue = createSerialPromiseQueue<string>()
   const urlEmitQueue = createSerialPromiseQueue<unknown>()
@@ -637,47 +676,18 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       },
     },
 
-    async renderChunk(code, chunk, opts, meta) {
-      let chunkCSS = ''
-      const renderedModules = Object.fromEntries(
-        Object.values(meta.chunks).flatMap((chunk) =>
-          Object.entries(chunk.modules),
-        ),
-      )
+    async renderChunk(code, chunk, opts) {
+      let chunkCSS = chunk.viteMetadata!.cssContent ?? ''
+      chunk.viteMetadata!.cssContent = undefined // remove it so that it is not confusing
+
       // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
-      const isJsChunkEmpty = code === '' && !chunk.isEntry
-      let isPureCssChunk = chunk.exports.length === 0
-      const ids = Object.keys(chunk.modules)
-      for (const id of ids) {
-        if (styles.has(id)) {
-          // ?transform-only is used for ?url and shouldn't be included in normal CSS chunks
-          if (transformOnlyRE.test(id)) {
-            continue
-          }
-
-          // If this CSS is scoped to its importers exports, check if those importers exports
-          // are rendered in the chunks. If they are not, we can skip bundling this CSS.
-          const cssScopeTo = this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
-          if (
-            cssScopeTo &&
-            !isCssScopeToRendered(cssScopeTo, renderedModules)
-          ) {
-            continue
-          }
-
-          // a css module contains JS, so it makes this not a pure css chunk
-          if (cssModuleRE.test(id)) {
-            isPureCssChunk = false
-          }
-
-          chunkCSS += styles.get(id)
-        } else if (!isJsChunkEmpty) {
-          // if the module does not have a style, then it's not a pure css chunk.
-          // this is true because in the `transform` hook above, only modules
-          // that are css gets added to the `styles` map.
-          isPureCssChunk = false
-        }
-      }
+      const isPureCssChunk =
+        chunk.exports.length === 0 &&
+        // if the module does not have a style, then it's not a pure css chunk.
+        // this is true because in the `transform` hook above, only modules
+        // that are css gets added to the `styles` map.
+        (chunk.moduleIds.every((m) => styles.has(m)) ||
+          (code === '' && !chunk.isEntry))
 
       const publicAssetUrlMap = publicAssetUrlCache.get(config)!
 
