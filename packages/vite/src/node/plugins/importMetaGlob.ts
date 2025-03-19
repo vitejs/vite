@@ -51,44 +51,46 @@ export function importGlobPlugin(config: ResolvedConfig): Plugin {
     buildStart() {
       importGlobMaps.clear()
     },
-    async transform(code, id) {
-      if (!code.includes('import.meta.glob')) return
-      const result = await transformGlobImport(
-        code,
-        id,
-        config.root,
-        (im, _, options) =>
-          this.resolve(im, id, options).then((i) => i?.id || im),
-        config.experimental.importGlobRestoreExtension,
-        config.logger,
-      )
-      if (result) {
-        const allGlobs = result.matches.map((i) => i.globsResolved)
-        if (!importGlobMaps.has(this.environment)) {
-          importGlobMaps.set(this.environment, new Map())
+    transform: {
+      async handler(code, id) {
+        if (!code.includes('import.meta.glob')) return
+        const result = await transformGlobImport(
+          code,
+          id,
+          config.root,
+          (im, _, options) =>
+            this.resolve(im, id, options).then((i) => i?.id || im),
+          config.experimental.importGlobRestoreExtension,
+          config.logger,
+        )
+        if (result) {
+          const allGlobs = result.matches.map((i) => i.globsResolved)
+          if (!importGlobMaps.has(this.environment)) {
+            importGlobMaps.set(this.environment, new Map())
+          }
+
+          const globMatchers = allGlobs.map((globs) => {
+            const affirmed: string[] = []
+            const negated: string[] = []
+            for (const glob of globs) {
+              ;(glob[0] === '!' ? negated : affirmed).push(glob)
+            }
+            const affirmedMatcher = picomatch(affirmed)
+            const negatedMatcher = picomatch(negated)
+
+            return (file: string) => {
+              // (glob1 || glob2) && !(glob3 || glob4)...
+              return (
+                (affirmed.length === 0 || affirmedMatcher(file)) &&
+                !(negated.length > 0 && negatedMatcher(file))
+              )
+            }
+          })
+          importGlobMaps.get(this.environment)!.set(id, globMatchers)
+
+          return transformStableResult(result.s, id, config)
         }
-
-        const globMatchers = allGlobs.map((globs) => {
-          const affirmed: string[] = []
-          const negated: string[] = []
-          for (const glob of globs) {
-            ;(glob[0] === '!' ? negated : affirmed).push(glob)
-          }
-          const affirmedMatcher = picomatch(affirmed)
-          const negatedMatcher = picomatch(negated)
-
-          return (file: string) => {
-            // (glob1 || glob2) && !(glob3 || glob4)...
-            return (
-              (affirmed.length === 0 || affirmedMatcher(file)) &&
-              !(negated.length > 0 && negatedMatcher(file))
-            )
-          }
-        })
-        importGlobMaps.get(this.environment)!.set(id, globMatchers)
-
-        return transformStableResult(result.s, id, config)
-      }
+      },
     },
     hotUpdate({ type, file, modules: oldModules }) {
       if (type === 'update') return

@@ -218,79 +218,81 @@ export function workerImportMetaUrlPlugin(config: ResolvedConfig): Plugin {
       }
     },
 
-    async transform(code, id) {
-      if (isIncludeWorkerImportMetaUrl(code)) {
-        let s: MagicString | undefined
-        const cleanString = stripLiteral(code)
-        const workerImportMetaUrlRE =
-          /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
+    transform: {
+      async handler(code, id) {
+        if (isIncludeWorkerImportMetaUrl(code)) {
+          let s: MagicString | undefined
+          const cleanString = stripLiteral(code)
+          const workerImportMetaUrlRE =
+            /\bnew\s+(?:Worker|SharedWorker)\s*\(\s*(new\s+URL\s*\(\s*('[^']+'|"[^"]+"|`[^`]+`)\s*,\s*import\.meta\.url\s*\))/dg
 
-        let match: RegExpExecArray | null
-        while ((match = workerImportMetaUrlRE.exec(cleanString))) {
-          const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
-            match.indices!
+          let match: RegExpExecArray | null
+          while ((match = workerImportMetaUrlRE.exec(cleanString))) {
+            const [[, endIndex], [expStart, expEnd], [urlStart, urlEnd]] =
+              match.indices!
 
-          const rawUrl = code.slice(urlStart, urlEnd)
+            const rawUrl = code.slice(urlStart, urlEnd)
 
-          // potential dynamic template string
-          if (rawUrl[0] === '`' && rawUrl.includes('${')) {
-            this.error(
-              `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
-              expStart,
-            )
-          }
-
-          s ||= new MagicString(code)
-          const workerType = await getWorkerType(code, cleanString, endIndex)
-          const url = rawUrl.slice(1, -1)
-          let file: string | undefined
-          if (url[0] === '.') {
-            file = path.resolve(path.dirname(id), url)
-            file = slash(tryFsResolve(file, fsResolveOptions) ?? file)
-          } else {
-            workerResolver ??= createBackCompatIdResolver(config, {
-              extensions: [],
-              tryIndex: false,
-              preferRelative: true,
-            })
-            file = await workerResolver(this.environment, url, id)
-            file ??=
-              url[0] === '/'
-                ? slash(path.join(config.publicDir, url))
-                : slash(path.resolve(path.dirname(id), url))
-          }
-
-          if (
-            isBuild &&
-            config.isWorker &&
-            config.bundleChain.at(-1) === cleanUrl(file)
-          ) {
-            s.update(expStart, expEnd, 'self.location.href')
-          } else {
-            let builtUrl: string
-            if (isBuild) {
-              builtUrl = await workerFileToUrl(config, file)
-            } else {
-              builtUrl = await fileToUrl(this, cleanUrl(file))
-              builtUrl = injectQuery(
-                builtUrl,
-                `${WORKER_FILE_ID}&type=${workerType}`,
+            // potential dynamic template string
+            if (rawUrl[0] === '`' && rawUrl.includes('${')) {
+              this.error(
+                `\`new URL(url, import.meta.url)\` is not supported in dynamic template string.`,
+                expStart,
               )
             }
-            s.update(
-              expStart,
-              expEnd,
-              `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, import.meta.url)`,
-            )
+
+            s ||= new MagicString(code)
+            const workerType = await getWorkerType(code, cleanString, endIndex)
+            const url = rawUrl.slice(1, -1)
+            let file: string | undefined
+            if (url[0] === '.') {
+              file = path.resolve(path.dirname(id), url)
+              file = slash(tryFsResolve(file, fsResolveOptions) ?? file)
+            } else {
+              workerResolver ??= createBackCompatIdResolver(config, {
+                extensions: [],
+                tryIndex: false,
+                preferRelative: true,
+              })
+              file = await workerResolver(this.environment, url, id)
+              file ??=
+                url[0] === '/'
+                  ? slash(path.join(config.publicDir, url))
+                  : slash(path.resolve(path.dirname(id), url))
+            }
+
+            if (
+              isBuild &&
+              config.isWorker &&
+              config.bundleChain.at(-1) === cleanUrl(file)
+            ) {
+              s.update(expStart, expEnd, 'self.location.href')
+            } else {
+              let builtUrl: string
+              if (isBuild) {
+                builtUrl = await workerFileToUrl(config, file)
+              } else {
+                builtUrl = await fileToUrl(this, cleanUrl(file))
+                builtUrl = injectQuery(
+                  builtUrl,
+                  `${WORKER_FILE_ID}&type=${workerType}`,
+                )
+              }
+              s.update(
+                expStart,
+                expEnd,
+                `new URL(/* @vite-ignore */ ${JSON.stringify(builtUrl)}, import.meta.url)`,
+              )
+            }
           }
-        }
 
-        if (s) {
-          return transformStableResult(s, id, config)
-        }
+          if (s) {
+            return transformStableResult(s, id, config)
+          }
 
-        return null
-      }
+          return null
+        }
+      },
     },
   }
 }
