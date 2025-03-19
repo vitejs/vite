@@ -22,6 +22,12 @@ import { assetImportMetaUrlPlugin } from './assetImportMetaUrl'
 import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
+import {
+  type PluginFilterWithFallback,
+  type TransformHookFilter,
+  createFilterForTransform,
+  createIdFilter,
+} from './pluginFilter'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -156,6 +162,60 @@ export function getHookHandler<T extends ObjectHook<Function>>(
   hook: T,
 ): HookHandler<T> {
   return (typeof hook === 'object' ? hook.handler : hook) as HookHandler<T>
+}
+
+type FilterForPluginValue = {
+  resolveId?: PluginFilterWithFallback | undefined
+  load?: PluginFilterWithFallback | undefined
+  transform?: TransformHookFilter | undefined
+}
+const filterForPlugin = new WeakMap<Plugin, FilterForPluginValue>()
+
+export function getCachedFilterForPlugin<
+  H extends 'resolveId' | 'load' | 'transform',
+>(plugin: Plugin, hookName: H): FilterForPluginValue[H] | undefined {
+  let filters = filterForPlugin.get(plugin)
+  if (filters && hookName in filters) {
+    return filters[hookName]
+  }
+
+  if (!filters) {
+    filters = {}
+    filterForPlugin.set(plugin, filters)
+  }
+
+  let filter: PluginFilterWithFallback | TransformHookFilter | undefined
+  switch (hookName) {
+    case 'resolveId': {
+      const rawFilter =
+        typeof plugin.resolveId === 'object'
+          ? plugin.resolveId.filter?.id
+          : undefined
+      filters.resolveId = createIdFilter(rawFilter)
+      filter = filters.resolveId
+      break
+    }
+    case 'load': {
+      const rawFilter =
+        typeof plugin.load === 'object' ? plugin.load.filter?.id : undefined
+      filters.load = createIdFilter(rawFilter)
+      filter = filters.load
+      break
+    }
+    case 'transform': {
+      const rawFilters =
+        typeof plugin.transform === 'object'
+          ? plugin.transform.filter
+          : undefined
+      filters.transform = createFilterForTransform(
+        rawFilters?.id,
+        rawFilters?.code,
+      )
+      filter = filters.transform
+      break
+    }
+  }
+  return filter as FilterForPluginValue[H] | undefined
 }
 
 // Same as `@rollup/plugin-alias` default resolver, but we attach additional meta

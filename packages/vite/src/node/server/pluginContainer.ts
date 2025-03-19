@@ -78,7 +78,11 @@ import {
   timeFrom,
 } from '../utils'
 import { FS_PREFIX } from '../constants'
-import { createPluginHookUtils, getHookHandler } from '../plugins'
+import {
+  createPluginHookUtils,
+  getCachedFilterForPlugin,
+  getHookHandler,
+} from '../plugins'
 import { cleanUrl, unwrapId } from '../../shared/utils'
 import type { PluginHookUtils } from '../config'
 import type { Environment } from '../environment'
@@ -376,6 +380,9 @@ class EnvironmentPluginContainer {
         throwClosedServerError()
       if (mergedSkip?.has(plugin)) continue
 
+      const filter = getCachedFilterForPlugin(plugin, 'resolveId')
+      if (filter && !filter(rawId)) continue
+
       ctx._plugin = plugin
 
       const pluginResolveStart = debugPluginResolve ? performance.now() : 0
@@ -436,6 +443,10 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('load')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
+
+      const filter = getCachedFilterForPlugin(plugin, 'load')
+      if (filter && !filter(id)) continue
+
       ctx._plugin = plugin
       const handler = getHookHandler(plugin.load)
       const result = await this.handleHookPromise(
@@ -470,6 +481,9 @@ class EnvironmentPluginContainer {
     for (const plugin of this.getSortedPlugins('transform')) {
       if (this._closed && this.environment.config.dev.recoverable)
         throwClosedServerError()
+
+      const filter = getCachedFilterForPlugin(plugin, 'transform')
+      if (filter && !filter(id, code)) continue
 
       ctx._updateActiveInfo(plugin, id, code)
       const start = debugPluginTransform ? performance.now() : 0
