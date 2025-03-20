@@ -86,6 +86,8 @@ When [reporting issues](https://github.com/vitejs/rolldown-vite/issues/new), ple
 - Your environment details (OS, Node version, package manager)
 - Any relevant error messages or logs
 
+For real-time discussions and troubleshooting, make sure to join the [Rolldown Discord](https://chat.rolldown.rs/).
+
 ## Future Plans
 
 The `rolldown-vite` package is a temporary solution to gather feedback and stabilize the Rolldown integration. In the future, this functionality will be merged back into the main Vite repository.
