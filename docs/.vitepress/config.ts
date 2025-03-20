@@ -6,8 +6,8 @@ import {
   groupIconVitePlugin,
 } from 'vitepress-plugin-group-icons'
 import llmstxt from 'vitepress-plugin-llms'
+import type { PluginOption } from 'vite'
 import { buildEnd } from './buildEnd.config'
-import { PluginOption } from 'vite'
 
 const ogDescription = 'Next Generation Frontend Tooling'
 const ogImage = 'https://vite.dev/og-image.jpg'
