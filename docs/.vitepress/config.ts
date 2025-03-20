@@ -7,6 +7,7 @@ import {
 } from 'vitepress-plugin-group-icons'
 import llmstxt from 'vitepress-plugin-llms'
 import { buildEnd } from './buildEnd.config'
+import { PluginOption } from 'vite'
 
 const ogDescription = 'Next Generation Frontend Tooling'
 const ogImage = 'https://vite.dev/og-image.jpg'
@@ -466,7 +467,6 @@ export default defineConfig({
           '.gitlab-ci.yml': 'vscode-icons:file-type-gitlab',
         },
       }),
-      // @ts-ignore
       llmstxt({
         ignoreFiles: [
           'blog/*',
@@ -497,7 +497,7 @@ In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/gui
 ## Table of content
 
 {toc}`
-      }),
+      }) as PluginOption,
     ],
     optimizeDeps: {
       include: [
