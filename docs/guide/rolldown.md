@@ -18,9 +18,7 @@ Rolldown focuses on three key principles:
 
 2. **Performance**: Rolldown's Rust-based implementation offers significant performance improvements over JavaScript-based bundlers. While specific benchmarks may vary by project size and complexity, early tests show promising speed increases compared to Rollup.
 
-3. **Compatibility**: Rolldown is designed to be compatible with the Rollup plugin ecosystem, minimizing migration friction for Vite projects.
-
-4. **Additional Features**: Rolldown will provide features like improved chunk splitting and better support for Vite's development and production workflows.
+For additional insights on the motivations behind Rolldown, see the [reasons why Rolldown is being built](https://rolldown.rs/about#why-we-are-building-rolldown).
 
 ## Benefits of Trying `rolldown-vite`
 
