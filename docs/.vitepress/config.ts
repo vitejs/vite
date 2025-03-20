@@ -468,12 +468,7 @@ export default defineConfig({
         },
       }),
       llmstxt({
-        ignoreFiles: [
-          'blog/*',
-          'blog.md',
-          'index.md',
-          'team.md'
-        ],
+        ignoreFiles: ['blog/*', 'blog.md', 'index.md', 'team.md'],
         customLLMsTxtTemplate: `\
 # {title}
 
@@ -496,7 +491,7 @@ In addition, Vite is highly extensible via its [Plugin API](https://vite.dev/gui
 
 ## Table of content
 
-{toc}`
+{toc}`,
       }) as PluginOption,
     ],
     optimizeDeps: {
