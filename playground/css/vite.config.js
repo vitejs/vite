@@ -46,10 +46,6 @@ export default defineConfig({
           __dirname,
           './treeshake-scoped/index.html',
         ),
-        treeshakeScopedAnother: path.resolve(
-          __dirname,
-          './treeshake-scoped/another.html',
-        ),
       },
       output: {
         manualChunks(id) {
