@@ -2,10 +2,6 @@
   "name": "vite-ember-ts-starter",
   "version": "0.0.0",
   "private": true,
-  "description": "Small description for app-template goes here",
-  "repository": "",
-  "license": "MIT",
-  "author": "",
   "type": "module",
   "imports": {
     "#src/*": "./src/*",
@@ -18,7 +14,9 @@
   },
   "scripts": {
     "start": "vite",
-    "dev": "vite"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "devDependencies": {
     "@babel/core": "^7.19.3",
