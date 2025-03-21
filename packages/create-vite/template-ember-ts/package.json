@@ -37,7 +37,7 @@
     "decorator-transforms": "^2.0.0",
     "ember-modifier": "^4.1.0",
     "ember-resolver": "^13.1.0",
-    "ember-source": "6.4.0-alpha.4",
+    "ember-source": "^6.3.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   },
