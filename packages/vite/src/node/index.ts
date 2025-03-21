@@ -28,6 +28,12 @@ export {
   type RunnableDevEnvironmentContext,
 } from './server/environments/runnableEnvironment'
 export {
+  createFetchableDevEnvironment,
+  isFetchableDevEnvironment,
+  type FetchableDevEnvironment,
+  type FetchableDevEnvironmentContext,
+} from './server/environments/fetchableEnvironments'
+export {
   DevEnvironment,
   type DevEnvironmentContext,
 } from './server/environment'
