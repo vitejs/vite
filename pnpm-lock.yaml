@@ -499,6 +499,8 @@ importers:
 
   packages/vite/src/node/ssr/runtime/__tests__/fixtures/cjs-external: {}
 
+  packages/vite/src/node/ssr/runtime/__tests__/fixtures/cyclic2: {}
+
   packages/vite/src/node/ssr/runtime/__tests__/fixtures/esm-external: {}
 
   playground:
