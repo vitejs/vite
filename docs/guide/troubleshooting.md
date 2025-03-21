@@ -64,15 +64,6 @@ While it may work using [`--experimental-require-module`](https://nodejs.org/doc
 - adding `"type": "module"` to the nearest `package.json`
 - renaming `vite.config.js`/`vite.config.ts` to `vite.config.mjs`/`vite.config.mts`
 
-### `failed to load config from '/path/to/config*/vite.config.js'`
-
-> failed to load config from '/path/to/config\*/vite.config.js'
-> error when starting dev server:
-> Error: Build failed with 1 error:
-> error: Must use "outdir" when there are multiple input files
-
-The error above may occur if the path to your project folder contains `*`, which esbuild treats as a glob. You will need to rename your directory to remove the `*`.
-
 ## Dev Server
 
 ### Requests are stalled forever
