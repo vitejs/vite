@@ -596,7 +596,7 @@ function tryCleanFsResolve(
   const { tryPrefix, extensions, preserveSymlinks } = options
 
   // Optimization to get the real type or file type (directory, file, other)
-  const fileResult = tryResolveRealFileOrType(file, options.preserveSymlinks)
+  const fileResult = tryResolveRealFileOrType(file, preserveSymlinks)
 
   if (fileResult?.path) return fileResult.path
 
@@ -604,7 +604,7 @@ function tryCleanFsResolve(
 
   // If path.dirname is a valid directory, try extensions and ts resolution logic
   const possibleJsToTs = isPossibleTsOutput(file)
-  if (possibleJsToTs || options.extensions.length || tryPrefix) {
+  if (possibleJsToTs || extensions.length || tryPrefix) {
     const dirPath = path.dirname(file)
     if (isDirectory(dirPath)) {
       if (possibleJsToTs) {
@@ -636,7 +636,7 @@ function tryCleanFsResolve(
         return res
 
       if (tryPrefix) {
-        const prefixed = `${dirPath}/${options.tryPrefix}${path.basename(file)}`
+        const prefixed = `${dirPath}/${tryPrefix}${path.basename(file)}`
 
         if ((res = tryResolveRealFile(prefixed, preserveSymlinks))) return res
 
@@ -660,7 +660,7 @@ function tryCleanFsResolve(
       let pkgPath = `${dirPath}/package.json`
       try {
         if (fs.existsSync(pkgPath)) {
-          if (!options.preserveSymlinks) {
+          if (!preserveSymlinks) {
             pkgPath = safeRealpathSync(pkgPath)
           }
           // path points to a node package
@@ -686,7 +686,7 @@ function tryCleanFsResolve(
     if (tryPrefix) {
       if (
         (res = tryResolveRealFileWithExtensions(
-          `${dirPath}/${options.tryPrefix}index`,
+          `${dirPath}/${tryPrefix}index`,
           extensions,
           preserveSymlinks,
         ))
