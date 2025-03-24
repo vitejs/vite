@@ -82,15 +82,13 @@ export const tests = (isLightningCSS: boolean) => {
     await untilUpdated(() => getColor(imported), 'red')
   })
 
-  if (!isLightningCSS) {
-    test('postcss plugin that injects url()', async () => {
-      const imported = await page.$('.postcss-inject-url')
-      // alias should be resolved
-      expect(await getBg(imported)).toMatch(
-        /localhost(?::\d+)?\/(?:assets\/)?ok.*\.png/,
-      )
-    })
-  }
+  test('postcss plugin that injects url()', async () => {
+    const imported = await page.$('.inject-url')
+    // alias should be resolved
+    expect(await getBg(imported)).toMatch(
+      /localhost(?::\d+)?\/(?:assets\/)?ok.*\.png/,
+    )
+  })
 
   sassTest()
 

@@ -171,3 +171,40 @@ export function nestedLikePlugin() {
     },
   }
 }
+
+/** @returns {import('lightningcss').Visitor} */
+export function testInjectUrl() {
+  return {
+    Rule: {
+      unknown: {
+        'inject-url': (rule) => {
+          return [
+            {
+              type: 'style',
+              value: {
+                selectors: [[{ type: 'class', name: 'inject-url' }]],
+                declarations: {
+                  declarations: [
+                    {
+                      property: 'background-image',
+                      value: [
+                        {
+                          type: 'url',
+                          value: {
+                            url: '=/ok.png',
+                            loc: rule.loc,
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                },
+                loc: rule.loc,
+              },
+            },
+          ]
+        },
+      },
+    },
+  }
+}

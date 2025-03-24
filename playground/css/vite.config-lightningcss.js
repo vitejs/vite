@@ -4,6 +4,7 @@ import baseConfig from './vite.config.js'
 import {
   nestedLikePlugin,
   testDirDep,
+  testInjectUrl,
   testSourceInput,
 } from './lightningcss-plugins'
 
@@ -20,6 +21,7 @@ export default defineConfig({
         nestedLikePlugin(),
         testDirDep(),
         testSourceInput(),
+        testInjectUrl(),
       ]),
     },
   },
