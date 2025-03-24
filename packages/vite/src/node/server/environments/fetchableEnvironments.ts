@@ -41,7 +41,7 @@ class FetchableDevEnvironment extends DevEnvironment {
     config: ResolvedConfig,
     context: FetchableDevEnvironmentContext,
   ) {
-    super(name, config, context as DevEnvironmentContext)
+    super(name, config, context)
     this._handleRequest = context.handleRequest
   }
 
