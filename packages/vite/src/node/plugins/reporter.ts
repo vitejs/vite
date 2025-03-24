@@ -40,48 +40,46 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
   const tty = process.stdout.isTTY && !process.env.CI
   const shouldLogInfo = LogLevels[config.logLevel || 'info'] >= LogLevels.info
 
-  const modulesReporter = perEnvironmentState((environment: Environment) => {
-    let hasTransformed = false
-    let transformedCount = 0
+  const modulesReporter = shouldLogInfo
+    ? perEnvironmentState((environment: Environment) => {
+        let hasTransformed = false
+        let transformedCount = 0
 
-    const logTransform = throttle((id: string) => {
-      writeLine(
-        `transforming (${transformedCount}) ${colors.dim(
-          path.relative(config.root, id),
-        )}`,
-      )
-    })
-
-    return {
-      reset() {
-        transformedCount = 0
-      },
-      register(id: string) {
-        transformedCount++
-        if (shouldLogInfo) {
-          if (!tty) {
-            if (!hasTransformed) {
-              config.logger.info(`transforming...`)
-            }
-          } else {
-            if (id.includes(`?`)) return
-            logTransform(id)
-          }
-          hasTransformed = true
-        }
-      },
-      log() {
-        if (shouldLogInfo) {
-          if (tty) {
-            clearLine()
-          }
-          environment.logger.info(
-            `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
+        const logTransform = throttle((id: string) => {
+          writeLine(
+            `transforming (${transformedCount}) ${colors.dim(
+              path.relative(config.root, id),
+            )}`,
           )
+        })
+
+        return {
+          reset() {
+            transformedCount = 0
+          },
+          register(id: string) {
+            transformedCount++
+            if (!tty) {
+              if (!hasTransformed) {
+                config.logger.info(`transforming...`)
+              }
+            } else {
+              if (id.includes(`?`)) return
+              logTransform(id)
+            }
+            hasTransformed = true
+          },
+          log() {
+            if (tty) {
+              clearLine()
+            }
+            environment.logger.info(
+              `${colors.green(`✓`)} ${transformedCount} modules transformed.`,
+            )
+          },
         }
-      },
-    }
-  })
+      })
+    : undefined
 
   const chunksReporter = perEnvironmentState((environment: Environment) => {
     let hasRenderedChunk = false
@@ -277,17 +275,21 @@ export function buildReporterPlugin(config: ResolvedConfig): Plugin {
     sharedDuringBuild: true,
     perEnvironmentStartEndDuringDev: true,
 
-    transform(_, id) {
-      modulesReporter(this).register(id)
-    },
+    ...(modulesReporter
+      ? {
+          transform(_, id) {
+            modulesReporter(this).register(id)
+          },
 
-    buildStart() {
-      modulesReporter(this).reset()
-    },
+          buildStart() {
+            modulesReporter(this).reset()
+          },
 
-    buildEnd() {
-      modulesReporter(this).log()
-    },
+          buildEnd() {
+            modulesReporter(this).log()
+          },
+        }
+      : {}),
 
     renderStart() {
       chunksReporter(this).reset()
