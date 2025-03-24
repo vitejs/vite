@@ -46,6 +46,11 @@ class FetchableDevEnvironment extends DevEnvironment {
   }
 
   public async dispatchFetch(request: Request): Promise<Response> {
+    if (!(request instanceof Request)) {
+      throw new TypeError(
+        'FetchableDevEnvironment `dispatchFetch` must receive a `Request` object.',
+      )
+    }
     const response = await this._handleRequest(request)
     if (!(response instanceof Response)) {
       throw new TypeError(
