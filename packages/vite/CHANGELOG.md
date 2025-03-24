@@ -1,3 +1,9 @@
+## <small>6.0.12 (2025-03-24)</small>
+
+* fix: fs raw query with query separators (#19702) ([92ca12d](https://github.com/vitejs/vite/commit/92ca12dc79118bf66f2b32ff81ed09e0d0bd07ca)), closes [#19702](https://github.com/vitejs/vite/issues/19702)
+
+
+
 ## <small>6.0.11 (2025-01-21)</small>
 
 * fix: `preview.allowedHosts` with specific values was not respected (#19246) ([aeb3ec8](https://github.com/vitejs/vite/commit/aeb3ec84a288d6be227a1284607f13428a4f14a1)), closes [#19246](https://github.com/vitejs/vite/issues/19246)
