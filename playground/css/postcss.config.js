@@ -68,7 +68,7 @@ function testInjectUrl() {
     Once(root, { Rule }) {
       root.walkAtRules('inject-url', (atRule) => {
         const rule = new Rule({
-          selector: '.postcss-inject-url',
+          selector: '.inject-url',
           source: atRule.source,
         })
         rule.append({

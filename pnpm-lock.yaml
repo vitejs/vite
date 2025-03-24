@@ -587,6 +587,9 @@ importers:
       less:
         specifier: ^4.2.2
         version: 4.2.2
+      lightningcss:
+        specifier: ^1.29.2
+        version: 1.29.2
       postcss-nested:
         specifier: ^7.0.2
         version: 7.0.2(postcss@8.5.3)
@@ -637,6 +640,9 @@ importers:
       less:
         specifier: ^4.2.2
         version: 4.2.2
+      lightningcss:
+        specifier: ^1.29.2
+        version: 1.29.2
       magic-string:
         specifier: ^0.30.17
         version: 0.30.17
