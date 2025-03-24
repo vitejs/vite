@@ -3,7 +3,7 @@
 // <https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation>
 
 interface ImportMetaEnv {
-  [key: string]: any
+  [key: string]: unknown
   BASE_URL: string
   MODE: string
   DEV: boolean
