@@ -114,7 +114,7 @@ export interface CSSOptions {
   /**
    * Using lightningcss is an experimental option to handle CSS modules,
    * assets and imports via Lightning CSS. It requires to install it as a
-   * peer dependency. This is incompatible with the use of preprocessors.
+   * peer dependency.
    *
    * @default 'postcss'
    * @experimental
