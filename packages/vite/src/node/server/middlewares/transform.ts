@@ -43,6 +43,7 @@ import { ensureServingAccess } from './static'
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
+const trailingQuerySeparatorsRE = /[?&]+$/
 
 /**
  * A middleware that short-circuits the middleware chain to serve cached transformed modules
@@ -169,9 +170,19 @@ export function transformMiddleware(
         warnAboutExplicitPublicPathInUrl(url)
       }
 
+      const urlWithoutTrailingQuerySeparators = url.replace(
+        trailingQuerySeparatorsRE,
+        '',
+      )
       if (
-        (rawRE.test(url) || urlRE.test(url)) &&
-        !ensureServingAccess(url, server, res, next)
+        (rawRE.test(urlWithoutTrailingQuerySeparators) ||
+          urlRE.test(urlWithoutTrailingQuerySeparators)) &&
+        !ensureServingAccess(
+          urlWithoutTrailingQuerySeparators,
+          server,
+          res,
+          next,
+        )
       ) {
         return
       }
