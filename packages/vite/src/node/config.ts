@@ -651,7 +651,7 @@ export const configDefaults = Object.freeze({
     // mainFields
     // conditions
     externalConditions: ['node'],
-    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     dedupe: [],
     /** @experimental */
     noExternal: [],
