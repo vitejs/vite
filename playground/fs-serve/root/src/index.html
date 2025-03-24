@@ -37,6 +37,10 @@
 <pre class="unsafe-fs-fetch"></pre>
 <pre class="unsafe-fs-fetch-raw-status"></pre>
 <pre class="unsafe-fs-fetch-raw"></pre>
+<pre class="unsafe-fs-fetch-raw-query1-status"></pre>
+<pre class="unsafe-fs-fetch-raw-query1"></pre>
+<pre class="unsafe-fs-fetch-raw-query2-status"></pre>
+<pre class="unsafe-fs-fetch-raw-query2"></pre>
 <pre class="unsafe-fs-fetch-8498-status"></pre>
 <pre class="unsafe-fs-fetch-8498"></pre>
 <pre class="unsafe-fs-fetch-8498-2-status"></pre>
@@ -204,6 +208,40 @@
     })
     .then((data) => {
       text('.unsafe-fs-fetch-raw', JSON.stringify(data))
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  fetch(
+    joinUrlSegments(
+      base,
+      joinUrlSegments('/@fs/', ROOT) + '/unsafe.json?import&raw??',
+    ),
+  )
+    .then((r) => {
+      text('.unsafe-fs-fetch-raw-query1-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.unsafe-fs-fetch-raw-query1', JSON.stringify(data))
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  fetch(
+    joinUrlSegments(
+      base,
+      joinUrlSegments('/@fs/', ROOT) + '/unsafe.json?import&raw?&',
+    ),
+  )
+    .then((r) => {
+      text('.unsafe-fs-fetch-raw-query2-status', r.status)
+      return r.json()
+    })
+    .then((data) => {
+      text('.unsafe-fs-fetch-raw-query2', JSON.stringify(data))
     })
     .catch((e) => {
       console.error(e)
