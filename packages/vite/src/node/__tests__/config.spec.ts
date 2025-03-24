@@ -355,17 +355,17 @@ describe('resolveConfig', () => {
     expect(results2.clearScreen).toBe(false)
   })
 
-  test('resolveConfig with root path including "#" and "?" should warn ', async () => {
+  test('resolveConfig with root path including "#" and "?" and "*" should warn ', async () => {
     expect.assertions(1)
 
     const logger = createLogger('info')
     logger.warn = (str) => {
       expect(str).to.include(
-        'Consider renaming the directory to remove the characters',
+        'Consider renaming the directory / file to remove the characters',
       )
     }
 
-    await resolveConfig({ root: './inc?ud#s', customLogger: logger }, 'build')
+    await resolveConfig({ root: './inc?ud#s*', customLogger: logger }, 'build')
   })
 })
 

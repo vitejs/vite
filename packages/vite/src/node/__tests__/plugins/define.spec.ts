@@ -16,8 +16,8 @@ async function createDefinePluginTransform(
   const environment = new PartialEnvironment(ssr ? 'ssr' : 'client', config)
 
   return async (code: string) => {
-    // @ts-expect-error transform should exist
-    const result = await instance.transform.call(
+    // @ts-expect-error transform.handler should exist
+    const result = await instance.transform.handler.call(
       { environment },
       code,
       'foo.ts',

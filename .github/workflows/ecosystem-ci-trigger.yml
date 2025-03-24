@@ -8,6 +8,11 @@ jobs:
   trigger:
     runs-on: ubuntu-latest
     if: github.repository == 'vitejs/vite' && github.event.issue.pull_request && startsWith(github.event.comment.body, '/ecosystem-ci run')
+    permissions:
+      issues: write # to add / delete reactions
+      pull-requests: write # to read PR data, and to add labels
+      actions: read # to check workflow status
+      contents: read # to clone the repo
     steps:
       - name: Check User Permissions
         uses: actions/github-script@v7
@@ -94,11 +99,13 @@ jobs:
 
       - name: Generate Token
         id: generate-token
-        uses: tibdex/github-app-token@v2
+        uses: actions/create-github-app-token@v1
         with:
-          app_id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
-          installation_retrieval_payload: "${{ github.repository_owner }}/vite-ecosystem-ci"
-          private_key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
+          private-key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
+          repositories: |
+            vite
+            vite-ecosystem-ci
 
       - name: Trigger Preview Release (if Package Not Found)
         if: fromJSON(steps.check-package.outputs.result).exists == false
