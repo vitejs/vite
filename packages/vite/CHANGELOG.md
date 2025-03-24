@@ -1,3 +1,9 @@
+## <small>6.1.2 (2025-03-24)</small>
+
+* fix: fs raw query with query separators (#19702) ([80381c3](https://github.com/vitejs/vite/commit/80381c38d6f068b12e6e928cd3c616bd1d64803c)), closes [#19702](https://github.com/vitejs/vite/issues/19702)
+
+
+
 ## <small>6.1.1 (2025-02-19)</small>
 
 * fix: ensure `.[cm]?[tj]sx?` static assets are JS mime (#19453) ([e7ba55e](https://github.com/vitejs/vite/commit/e7ba55e7d57ad97ab43682b152159e29fa4b3753)), closes [#19453](https://github.com/vitejs/vite/issues/19453)
