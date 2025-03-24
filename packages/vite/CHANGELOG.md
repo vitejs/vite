@@ -1,3 +1,9 @@
+## <small>4.5.10 (2025-03-24)</small>
+
+* fix: backport #19702, fs raw query with query separators (#19704) ([315695e](https://github.com/vitejs/vite/commit/315695e)), closes [#19702](https://github.com/vitejs/vite/issues/19702) [#19704](https://github.com/vitejs/vite/issues/19704)
+
+
+
 ## <small>4.5.9 (2025-01-21)</small>
 
 * fix: `preview.allowedHosts` with specific values was not respected (#19246) ([0bc52e0](https://github.com/vitejs/vite/commit/0bc52e0)), closes [#19246](https://github.com/vitejs/vite/issues/19246)
