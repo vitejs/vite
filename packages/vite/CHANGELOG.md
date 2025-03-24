@@ -1,3 +1,9 @@
+## <small>6.2.3 (2025-03-24)</small>
+
+* fix: fs raw query with query separators (#19702) ([f234b57](https://github.com/vitejs/vite/commit/f234b5744d8b74c95535a7b82cc88ed2144263c1)), closes [#19702](https://github.com/vitejs/vite/issues/19702)
+
+
+
 ## <small>6.2.2 (2025-03-14)</small>
 
 * fix: await client buildStart on top level buildStart (#19624) ([b31faab](https://github.com/vitejs/vite/commit/b31faab2a81b839e4b747baeb9c7a7cbb724f8d2)), closes [#19624](https://github.com/vitejs/vite/issues/19624)
