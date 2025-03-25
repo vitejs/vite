@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import MagicString from 'magic-string'
@@ -142,6 +142,8 @@ const nodeConfig = defineConfig({
       'Vite core license',
       'Vite',
     ) as Plugin,
+    writeTypesPlugin(),
+    externalizeDepsInWatchPlugin(),
   ],
 })
 
@@ -180,7 +182,11 @@ const cjsConfig = defineConfig({
     target: 'es2022', // TODO: use node18
   },
   external: ['fsevents', 'supports-color', ...Object.keys(pkg.dependencies)],
-  plugins: [bundleSizeLimit(175), exportCheck()],
+  plugins: [
+    bundleSizeLimit(175),
+    exportCheck(),
+    externalizeDepsInWatchPlugin(),
+  ],
 })
 
 export default defineConfig([
@@ -192,6 +198,40 @@ export default defineConfig([
 ])
 
 // #region Plugins
+
+function writeTypesPlugin(): Plugin {
+  return {
+    name: 'write-types',
+    async writeBundle() {
+      if (this.meta.watchMode) {
+        writeFileSync(
+          'dist/node/index.d.ts',
+          "export * from '../../src/node/index.ts'",
+        )
+        writeFileSync(
+          'dist/node/module-runner.d.ts',
+          "export * from '../../src/module-runner/index.ts'",
+        )
+      }
+    },
+  }
+}
+
+function externalizeDepsInWatchPlugin(): Plugin {
+  return {
+    name: 'externalize-deps-in-watch',
+    options(options) {
+      if (this.meta.watchMode) {
+        options.external ||= []
+        if (!Array.isArray(options.external))
+          throw new Error('external must be an array')
+        options.external = options.external.concat(
+          Object.keys(pkg.devDependencies),
+        )
+      }
+    },
+  }
+}
 
 interface ShimOptions {
   src?: string
@@ -256,6 +296,8 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
       },
     },
     buildEnd(err) {
+      if (this.meta.watchMode) return
+
       if (!err) {
         for (const file in deps) {
           if (!transformed[file]) {
@@ -359,6 +401,8 @@ function bundleSizeLimit(limit: number): Plugin {
   return {
     name: 'bundle-limit',
     generateBundle(_, bundle) {
+      if (this.meta.watchMode) return
+
       size = Buffer.byteLength(
         Object.values(bundle)
           .map((i) => ('code' in i ? i.code : ''))
@@ -367,6 +411,8 @@ function bundleSizeLimit(limit: number): Plugin {
       )
     },
     closeBundle() {
+      if (this.meta.watchMode) return
+
       const kb = size / 1000
       if (kb > limit) {
         this.error(
@@ -383,6 +429,8 @@ function exportCheck(): Plugin {
   return {
     name: 'export-check',
     async writeBundle() {
+      if (this.meta.watchMode) return
+
       // escape import so that it's not bundled while config load
       const dynImport = (id: string) => import(id)
       // ignore warning from CJS entrypoint to avoid misleading logs
