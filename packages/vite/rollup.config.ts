@@ -9,6 +9,7 @@ import MagicString from 'magic-string'
 import type { Plugin } from 'rollup'
 import { defineConfig } from 'rollup'
 import esbuild, { type Options as esbuildOptions } from 'rollup-plugin-esbuild'
+import { init, parse } from 'es-module-lexer'
 import licensePlugin from './rollupLicensePlugin'
 
 const pkg = JSON.parse(
@@ -180,6 +181,7 @@ const nodeConfig = defineConfig({
       ],
     }),
     ...createSharedNodePlugins({}),
+    buildTimeImportMetaUrlPlugin(),
     licensePlugin(
       path.resolve(__dirname, 'LICENSE.md'),
       'Vite core license',
@@ -301,6 +303,83 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
           }
         }
       }
+    },
+  }
+}
+
+function buildTimeImportMetaUrlPlugin(): Plugin {
+  const idMap: Record<string, number> = {}
+  let lastIndex = 0
+
+  const prefix = `__vite_buildTimeImportMetaUrl_`
+  const keepCommentRE = /\/\*\*\s*[#@]__KEEP__\s*\*\/\s*$/
+
+  return {
+    name: 'import-meta-current-dirname',
+    transform: {
+      async handler(code, id) {
+        if (!code.includes('import.meta.url')) return
+        const relativeId = path.relative(__dirname, id).replaceAll('\\', '/')
+        // only replace import.meta.url in src/
+        if (!relativeId.startsWith('src/')) return
+
+        let index: number
+        if (idMap[id]) {
+          index = idMap[id]
+        } else {
+          index = idMap[id] = lastIndex
+          lastIndex++
+        }
+
+        await init
+
+        const s = new MagicString(code)
+        const [imports] = parse(code)
+        for (const { t, ss, se } of imports) {
+          if (t === 3 && code.slice(se, se + 4) === '.url') {
+            // ignore import.meta.url with /** #__KEEP__ */ comment
+            if (keepCommentRE.test(code.slice(0, se))) {
+              keepCommentRE.lastIndex = 0
+              continue
+            }
+
+            // import.meta.url
+            s.overwrite(ss, se + 4, `${prefix}${index}`)
+          }
+        }
+        return s.hasChanged() ? s.toString() : undefined
+      },
+    },
+    renderChunk(code, chunk, outputOptions) {
+      if (!code.includes(prefix)) return
+
+      return code.replace(
+        /__vite_buildTimeImportMetaUrl_(\d+)/g,
+        (_, index) => {
+          const originalFile = Object.keys(idMap).find(
+            (key) => idMap[key] === +index,
+          )
+          if (!originalFile) {
+            throw new Error(
+              `Could not find original file for ${prefix}${index} in ${chunk.fileName}`,
+            )
+          }
+          const outputFile = path.resolve(outputOptions.dir!, chunk.fileName)
+          const relativePath = path
+            .relative(path.dirname(outputFile), originalFile)
+            .replaceAll('\\', '/')
+
+          if (outputOptions.format === 'es') {
+            return `new URL(${JSON.stringify(relativePath)}, import.meta.url)`
+          } else if (outputOptions.format === 'cjs') {
+            return `new URL(${JSON.stringify(
+              relativePath,
+            )}, require('node:url').pathToFileURL(__filename))`
+          } else {
+            throw new Error(`Unsupported output format ${outputOptions.format}`)
+          }
+        },
+      )
     },
   }
 }
