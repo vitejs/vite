@@ -77,6 +77,10 @@ import {
 } from './baseEnvironment'
 import type { MinimalPluginContext, Plugin, PluginContext } from './plugin'
 import type { RollupPluginHooks } from './typeUtils'
+import {
+  createFilterForTransform,
+  createIdFilter,
+} from './plugins/pluginFilter'
 
 export interface BuildEnvironmentOptions {
   /**
@@ -584,7 +588,7 @@ async function buildEnvironment(
 
   // inject environment and ssr arg to plugin load/transform hooks
   const plugins = environment.plugins.map((p) =>
-    injectEnvironmentToHooks(environment, p),
+    injectEnvironmentAndFilterToHooks(environment, p),
   )
 
   const rollupOptions: RollupOptions = {
@@ -1128,7 +1132,7 @@ function isExternal(id: string, test: string | RegExp) {
   }
 }
 
-export function injectEnvironmentToHooks(
+export function injectEnvironmentAndFilterToHooks(
   environment: BuildEnvironment,
   plugin: Plugin,
 ): Plugin {
@@ -1139,13 +1143,13 @@ export function injectEnvironmentToHooks(
   for (const hook of Object.keys(clone) as RollupPluginHooks[]) {
     switch (hook) {
       case 'resolveId':
-        clone[hook] = wrapEnvironmentResolveId(environment, resolveId)
+        clone[hook] = wrapEnvironmentAndFilterResolveId(environment, resolveId)
         break
       case 'load':
-        clone[hook] = wrapEnvironmentLoad(environment, load)
+        clone[hook] = wrapEnvironmentAndFilterLoad(environment, load)
         break
       case 'transform':
-        clone[hook] = wrapEnvironmentTransform(environment, transform)
+        clone[hook] = wrapEnvironmentAndFilterTransform(environment, transform)
         break
       default:
         if (ROLLUP_HOOKS.includes(hook)) {
@@ -1158,14 +1162,20 @@ export function injectEnvironmentToHooks(
   return clone
 }
 
-function wrapEnvironmentResolveId(
+function wrapEnvironmentAndFilterResolveId(
   environment: BuildEnvironment,
   hook?: Plugin['resolveId'],
 ): Plugin['resolveId'] {
   if (!hook) return
 
+  const rawIdFilter = typeof hook === 'object' ? hook.filter?.id : undefined
+  const idFilter = rawIdFilter ? createIdFilter(rawIdFilter) : undefined
+
   const fn = getHookHandler(hook)
   const handler: Plugin['resolveId'] = function (id, importer, options) {
+    if (idFilter && !idFilter(id)) {
+      return
+    }
     return fn.call(
       injectEnvironmentInContext(this, environment),
       id,
@@ -1184,14 +1194,20 @@ function wrapEnvironmentResolveId(
   }
 }
 
-function wrapEnvironmentLoad(
+function wrapEnvironmentAndFilterLoad(
   environment: BuildEnvironment,
   hook?: Plugin['load'],
 ): Plugin['load'] {
   if (!hook) return
 
+  const rawIdFilter = typeof hook === 'object' ? hook.filter?.id : undefined
+  const idFilter = rawIdFilter ? createIdFilter(rawIdFilter) : undefined
+
   const fn = getHookHandler(hook)
   const handler: Plugin['load'] = function (id, ...args) {
+    if (idFilter && !idFilter(id)) {
+      return
+    }
     return fn.call(
       injectEnvironmentInContext(this, environment),
       id,
@@ -1209,14 +1225,22 @@ function wrapEnvironmentLoad(
   }
 }
 
-function wrapEnvironmentTransform(
+function wrapEnvironmentAndFilterTransform(
   environment: BuildEnvironment,
   hook?: Plugin['transform'],
 ): Plugin['transform'] {
   if (!hook) return
 
+  const filters = typeof hook === 'object' ? hook.filter : undefined
+  const filter = filters
+    ? createFilterForTransform(filters.id, filters.code)
+    : undefined
+
   const fn = getHookHandler(hook)
   const handler: Plugin['transform'] = function (code, importer, ...args) {
+    if (filter && !filter(importer, code)) {
+      return
+    }
     return fn.call(
       injectEnvironmentInContext(this, environment),
       code,
