@@ -1,14 +1,9 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import alias from '@rollup/plugin-alias'
-import nodeResolve from '@rollup/plugin-node-resolve'
-import commonjs from '@rollup/plugin-commonjs'
-import json from '@rollup/plugin-json'
 import MagicString from 'magic-string'
-import type { Plugin } from 'rollup'
-import { defineConfig } from 'rollup'
-import esbuild, { type Options as esbuildOptions } from 'rollup-plugin-esbuild'
+import type { Plugin } from 'rolldown'
+import { defineConfig } from 'rolldown'
 import { init, parse } from 'es-module-lexer'
 import licensePlugin from './rollupLicensePlugin'
 
@@ -20,46 +15,40 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 const envConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/env.ts'),
-  plugins: [
-    esbuild({
-      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
-    }),
-  ],
+  platform: 'browser',
   output: {
-    file: path.resolve(__dirname, 'dist/client', 'env.mjs'),
+    dir: path.resolve(__dirname, 'dist'),
+    entryFileNames: 'client/env.mjs',
+    target: 'es2020',
   },
 })
 
 const clientConfig = defineConfig({
   input: path.resolve(__dirname, 'src/client/client.ts'),
+  platform: 'browser',
   external: ['@vite/env'],
-  plugins: [
-    nodeResolve({ preferBuiltins: true }),
-    esbuild({
-      tsconfig: path.resolve(__dirname, 'src/client/tsconfig.json'),
-    }),
-  ],
   output: {
-    file: path.resolve(__dirname, 'dist/client', 'client.mjs'),
+    dir: path.resolve(__dirname, 'dist'),
+    entryFileNames: 'client/client.mjs',
+    target: 'es2020',
   },
 })
 
 const sharedNodeOptions = defineConfig({
+  platform: 'node',
   treeshake: {
-    moduleSideEffects(id, external) {
-      id = id.replaceAll('\\', '/')
-      // These nested dependencies should be considered side-effect free
-      // as it's not set within their package.json
-      if (
-        id.includes('node_modules/astring') ||
-        id.includes('node_modules/acorn')
-      ) {
-        return false
-      }
-      return !external
-    },
-    propertyReadSideEffects: false,
-    tryCatchDeoptimization: false,
+    moduleSideEffects: [
+      {
+        test: /acorn|astring|escape-html/,
+        sideEffects: false,
+      },
+      {
+        external: true,
+        sideEffects: false,
+      },
+    ],
+    // TODO: not supported yet
+    // propertyReadSideEffects: false,
   },
   output: {
     dir: './dist',
@@ -68,7 +57,6 @@ const sharedNodeOptions = defineConfig({
     exports: 'named',
     format: 'esm',
     externalLiveBindings: false,
-    freeze: false,
   },
   onwarn(warning, warn) {
     if (warning.message.includes('Circular dependency')) {
@@ -78,36 +66,6 @@ const sharedNodeOptions = defineConfig({
   },
 })
 
-function createSharedNodePlugins({
-  esbuildOptions,
-}: {
-  esbuildOptions?: esbuildOptions
-}): Plugin[] {
-  return [
-    alias({
-      entries: {
-        // we can always use node version (the default entry point has browser support)
-        debug: 'debug/src/node.js',
-      },
-    }),
-    nodeResolve({ preferBuiltins: true }),
-    esbuild({
-      tsconfig: path.resolve(__dirname, 'src/node/tsconfig.json'),
-      target: 'node18',
-      ...esbuildOptions,
-    }),
-    commonjs({
-      extensions: ['.js'],
-      // Optional peer deps of ws. Native deps that are mostly for performance.
-      // Since ws is not that perf critical for us, just ignore these deps.
-      ignore: ['bufferutil', 'utf-8-validate'],
-      sourceMap: false,
-      strictRequires: 'auto',
-    }),
-    json(),
-  ]
-}
-
 const nodeConfig = defineConfig({
   ...sharedNodeOptions,
   input: {
@@ -115,40 +73,38 @@ const nodeConfig = defineConfig({
     cli: path.resolve(__dirname, 'src/node/cli.ts'),
     constants: path.resolve(__dirname, 'src/node/constants.ts'),
   },
+  resolve: {
+    alias: {
+      // we can always use node version (the default entry point has browser support)
+      debug: 'debug/src/node.js',
+    },
+  },
+  output: {
+    ...sharedNodeOptions.output,
+    // When polyfillRequire is enabled, `require` gets renamed by rolldown.
+    // But the current usage of require() inside inlined workers expects `require`
+    // to not be renamed. To workaround, polyfillRequire is disabled and
+    // the banner is used instead.
+    // Ideally we should move workers to ESM
+    polyfillRequire: false,
+    banner:
+      "import { createRequire as ___createRequire } from 'module'; const require = ___createRequire(import.meta.url);",
+  },
   external: [
     /^vite\//,
     'fsevents',
     'rollup/parseAst',
     /^tsx\//,
     /^#/,
+    'sugarss', // postcss-import -> sugarss
+    'supports-color',
+    'utf-8-validate', // ws
+    'bufferutil', // ws
     ...Object.keys(pkg.dependencies),
     ...Object.keys(pkg.peerDependencies),
   ],
   plugins: [
-    // Some deps have try...catch require of optional deps, but rollup will
-    // generate code that force require them upfront for side effects.
-    // Shim them with eval() so rollup can skip these calls.
     shimDepsPlugin({
-      // chokidar -> fsevents
-      'fsevents-handler.js': [
-        {
-          src: `require('fsevents')`,
-          replacement: `__require('fsevents')`,
-        },
-      ],
-      // postcss-import -> sugarss
-      'process-content.js': [
-        {
-          src: 'require("sugarss")',
-          replacement: `__require('sugarss')`,
-        },
-      ],
-      'lilconfig/src/index.js': [
-        {
-          pattern: /: require;/g,
-          replacement: ': __require;',
-        },
-      ],
       'postcss-load-config/src/req.js': [
         {
           src: "const { pathToFileURL } = require('node:url')",
@@ -180,14 +136,12 @@ const nodeConfig = defineConfig({
         },
       ],
     }),
-    ...createSharedNodePlugins({}),
     buildTimeImportMetaUrlPlugin(),
     licensePlugin(
       path.resolve(__dirname, 'LICENSE.md'),
       'Vite core license',
       'Vite',
-    ),
-    cjsPatchPlugin(),
+    ) as Plugin,
   ],
 })
 
@@ -202,10 +156,15 @@ const moduleRunnerConfig = defineConfig({
     'rollup/parseAst',
     ...Object.keys(pkg.dependencies),
   ],
-  plugins: [
-    ...createSharedNodePlugins({ esbuildOptions: { minifySyntax: true } }),
-    bundleSizeLimit(54),
-  ],
+  plugins: [bundleSizeLimit(54)],
+  output: {
+    ...sharedNodeOptions.output,
+    minify: {
+      compress: true,
+      mangle: false,
+      removeWhitespace: false,
+    },
+  },
 })
 
 const cjsConfig = defineConfig({
@@ -218,13 +177,10 @@ const cjsConfig = defineConfig({
     entryFileNames: `node-cjs/[name].cjs`,
     chunkFileNames: 'node-cjs/chunks/dep-[hash].js',
     format: 'cjs',
+    target: 'es2022', // TODO: use node18
   },
-  external: ['fsevents', ...Object.keys(pkg.dependencies)],
-  plugins: [
-    ...createSharedNodePlugins({}),
-    bundleSizeLimit(175),
-    exportCheck(),
-  ],
+  external: ['fsevents', 'supports-color', ...Object.keys(pkg.dependencies)],
+  plugins: [bundleSizeLimit(175), exportCheck()],
 })
 
 export default defineConfig([
@@ -380,33 +336,6 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
           }
         },
       )
-    },
-  }
-}
-
-/**
- * Inject CJS Context for each deps chunk
- */
-function cjsPatchPlugin(): Plugin {
-  const cjsPatch = `
-import { createRequire as __cjs_createRequire } from 'node:module';
-
-const __require = __cjs_createRequire(import.meta.url);
-`.trimStart()
-
-  return {
-    name: 'cjs-chunk-patch',
-    renderChunk(code, chunk) {
-      if (!chunk.fileName.includes('chunks/dep-')) return
-      if (!code.includes('__require')) return
-
-      const match = /^(?:import[\s\S]*?;\s*)+/.exec(code)
-      const index = match ? match.index! + match[0].length : 0
-      const s = new MagicString(code)
-      // inject after the last `import`
-      s.appendRight(index, cjsPatch)
-      console.log('patched cjs context: ' + chunk.fileName)
-      return s.toString()
     },
   }
 }
