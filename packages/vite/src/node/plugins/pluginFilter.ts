@@ -34,7 +34,13 @@ function patternToIdFilter(pattern: string | RegExp): PluginFilter {
       return result
     }
   }
-  return picomatch(pattern, { dot: true })
+
+  const cwd = process.cwd()
+  const matcher = picomatch(pattern, { dot: true })
+  return (id: string) => {
+    const normalizedId = normalizePath(path.relative(cwd, id))
+    return matcher(normalizedId)
+  }
 }
 
 function patternToCodeFilter(pattern: string | RegExp): PluginFilter {
@@ -91,14 +97,7 @@ export function createIdFilter(
   const { exclude, include } = normalizeFilter(filter)
   const excludeFilter = exclude?.map(patternToIdFilter)
   const includeFilter = include?.map(patternToIdFilter)
-  const f = createFilter(excludeFilter, includeFilter)
-  const cwd = process.cwd()
-  return f
-    ? (id) => {
-        const normalizedId = normalizePath(path.relative(cwd, id))
-        return f(normalizedId)
-      }
-    : undefined
+  return createFilter(excludeFilter, includeFilter)
 }
 
 export function createCodeFilter(

@@ -1,4 +1,5 @@
 import util from 'node:util'
+import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
   FALLBACK_FALSE,
@@ -16,6 +17,7 @@ describe('createIdFilter', () => {
       cases: [
         { id: 'foo.js', expected: true },
         { id: 'foo.ts', expected: FALLBACK_FALSE },
+        { id: path.resolve('foo.js'), expected: true },
       ],
     },
     {
