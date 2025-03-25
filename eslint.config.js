@@ -63,7 +63,13 @@ export default tseslint.config(
       'n/no-exports-assign': 'error',
       'n/no-unpublished-bin': 'error',
       'n/no-unsupported-features/es-builtins': 'error',
-      'n/no-unsupported-features/node-builtins': 'error',
+      'n/no-unsupported-features/node-builtins': [
+        'error',
+        {
+          // TODO: remove this when we don't support Node 18 anymore
+          ignores: ['Response', 'Request', 'fetch'],
+        },
+      ],
       'n/process-exit-as-throw': 'error',
       'n/hashbang': 'error',
 
