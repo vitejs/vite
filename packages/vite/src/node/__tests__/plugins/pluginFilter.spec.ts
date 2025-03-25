@@ -18,6 +18,8 @@ describe('createIdFilter', () => {
         { id: 'foo.js', expected: true },
         { id: 'foo.ts', expected: FALLBACK_FALSE },
         { id: path.resolve('foo.js'), expected: true },
+        { id: '\0foo.js', expected: FALLBACK_FALSE },
+        { id: '\0' + path.resolve('foo.js'), expected: FALLBACK_FALSE },
       ],
     },
     {
