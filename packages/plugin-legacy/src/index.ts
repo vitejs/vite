@@ -745,7 +745,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 export async function detectPolyfills(
   code: string,
   targets: any,
-  assumptions: Record<string, boolean> = {},
+  assumptions: Record<string, boolean>,
   list: Set<string>,
 ): Promise<void> {
   const babel = await loadBabel()
@@ -776,7 +776,7 @@ export async function detectPolyfills(
 
 function createBabelPresetEnvOptions(
   targets: any,
-  assumptions: Record<string, boolean> = {},
+  assumptions: Record<string, boolean>,
   { needPolyfills = true }: { needPolyfills?: boolean },
 ) {
   return {
