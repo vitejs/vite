@@ -204,50 +204,56 @@ function shimDepsPlugin(deps: Record<string, ShimOptions[]>): Plugin {
 
   return {
     name: 'shim-deps',
-    transform(code, id) {
-      for (const file in deps) {
-        if (id.replace(/\\/g, '/').endsWith(file)) {
-          for (const { src, replacement, pattern } of deps[file]) {
-            const magicString = new MagicString(code)
+    transform: {
+      filter: {
+        id: new RegExp(`(?:${Object.keys(deps).join('|')})$`),
+      },
+      handler(code, id) {
+        const file = Object.keys(deps).find((file) =>
+          id.replace(/\\/g, '/').endsWith(file),
+        )
+        if (!file) return
 
-            if (src) {
-              const pos = code.indexOf(src)
-              if (pos < 0) {
-                this.error(
-                  `Could not find expected src "${src}" in file "${file}"`,
-                )
-              }
-              transformed[file] = true
-              magicString.overwrite(pos, pos + src.length, replacement)
+        for (const { src, replacement, pattern } of deps[file]) {
+          const magicString = new MagicString(code)
+
+          if (src) {
+            const pos = code.indexOf(src)
+            if (pos < 0) {
+              this.error(
+                `Could not find expected src "${src}" in file "${file}"`,
+              )
             }
-
-            if (pattern) {
-              let match
-              while ((match = pattern.exec(code))) {
-                transformed[file] = true
-                const start = match.index
-                const end = start + match[0].length
-                let _replacement = replacement
-                for (let i = 1; i <= match.length; i++) {
-                  _replacement = _replacement.replace(`$${i}`, match[i] || '')
-                }
-                magicString.overwrite(start, end, _replacement)
-              }
-              if (!transformed[file]) {
-                this.error(
-                  `Could not find expected pattern "${pattern}" in file "${file}"`,
-                )
-              }
-            }
-
-            code = magicString.toString()
+            transformed[file] = true
+            magicString.overwrite(pos, pos + src.length, replacement)
           }
 
-          console.log(`shimmed: ${file}`)
+          if (pattern) {
+            let match
+            while ((match = pattern.exec(code))) {
+              transformed[file] = true
+              const start = match.index
+              const end = start + match[0].length
+              let _replacement = replacement
+              for (let i = 1; i <= match.length; i++) {
+                _replacement = _replacement.replace(`$${i}`, match[i] || '')
+              }
+              magicString.overwrite(start, end, _replacement)
+            }
+            if (!transformed[file]) {
+              this.error(
+                `Could not find expected pattern "${pattern}" in file "${file}"`,
+              )
+            }
+          }
 
-          return code
+          code = magicString.toString()
         }
-      }
+
+        console.log(`shimmed: ${file}`)
+
+        return code
+      },
     },
     buildEnd(err) {
       if (!err) {
@@ -273,8 +279,10 @@ function buildTimeImportMetaUrlPlugin(): Plugin {
   return {
     name: 'import-meta-current-dirname',
     transform: {
+      filter: {
+        code: 'import.meta.url',
+      },
       async handler(code, id) {
-        if (!code.includes('import.meta.url')) return
         const relativeId = path.relative(__dirname, id).replaceAll('\\', '/')
         // only replace import.meta.url in src/
         if (!relativeId.startsWith('src/')) return
