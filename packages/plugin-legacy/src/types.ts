@@ -32,7 +32,5 @@ export interface Options {
   /**
    * default: {}
    */
-  assumptions?: {
-    [key: string]: boolean
-  }
+  assumptions?: Record<string, boolean>
 }
