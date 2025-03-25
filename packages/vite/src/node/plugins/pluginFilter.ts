@@ -1,6 +1,7 @@
 import path from 'node:path'
 import picomatch from 'picomatch'
-import { arraify, normalizePath } from '../utils'
+import { arraify } from '../utils'
+import { slash } from '../../shared/utils'
 
 export const FALLBACK_TRUE = 1
 export const FALLBACK_FALSE = 0
@@ -29,7 +30,7 @@ type NormalizedStringFilter = {
 function patternToIdFilter(pattern: string | RegExp): PluginFilter {
   if (pattern instanceof RegExp) {
     return (id: string) => {
-      const normalizedId = normalizePath(id)
+      const normalizedId = slash(id)
       const result = pattern.test(normalizedId)
       pattern.lastIndex = 0
       return result
@@ -39,7 +40,7 @@ function patternToIdFilter(pattern: string | RegExp): PluginFilter {
   const cwd = process.cwd()
   const matcher = picomatch(pattern, { dot: true })
   return (id: string) => {
-    const normalizedId = normalizePath(path.relative(cwd, id))
+    const normalizedId = slash(path.relative(cwd, id))
     return matcher(normalizedId)
   }
 }
