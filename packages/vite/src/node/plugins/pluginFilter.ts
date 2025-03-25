@@ -29,7 +29,8 @@ type NormalizedStringFilter = {
 function patternToIdFilter(pattern: string | RegExp): PluginFilter {
   if (pattern instanceof RegExp) {
     return (id: string) => {
-      const result = pattern.test(id)
+      const normalizedId = normalizePath(id)
+      const result = pattern.test(normalizedId)
       pattern.lastIndex = 0
       return result
     }

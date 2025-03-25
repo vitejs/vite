@@ -51,6 +51,14 @@ describe('createIdFilter', () => {
       ],
     },
     {
+      inputFilter: { include: /\/foo\.js$/ },
+      cases: [
+        { id: 'a/foo.js', expected: true },
+        { id: 'a\\foo.js', expected: true },
+        { id: 'a_foo.js', expected: FALLBACK_FALSE },
+      ],
+    },
+    {
       inputFilter: { include: [/\.js$/] },
       cases: [
         { id: 'foo.js', expected: true },
