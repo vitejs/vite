@@ -54,7 +54,9 @@ describe('createIdFilter', () => {
       inputFilter: { include: /\/foo\.js$/ },
       cases: [
         { id: 'a/foo.js', expected: true },
-        { id: 'a\\foo.js', expected: true },
+        ...(process.platform === 'win32'
+          ? [{ id: 'a\\foo.js', expected: true }]
+          : []),
         { id: 'a_foo.js', expected: FALLBACK_FALSE },
       ],
     },
