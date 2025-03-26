@@ -1,9 +1,11 @@
+import MagicString from 'magic-string'
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { isModernFlag } from './importAnalysisBuild'
 
 export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'
 const resolvedModulePreloadPolyfillId = '\0' + modulePreloadPolyfillId + '.js'
+const isEsmFormatPlaceholder = `__VITE_IS_ESM__`
+const isEsmFormatPlaceholderPattern = new RegExp('\\b' + isEsmFormatPlaceholder + '\\b', 'g')
 
 export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
   let polyfillString: string | undefined
@@ -28,11 +30,36 @@ export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
             return ''
           }
           if (!polyfillString) {
-            polyfillString = `${isModernFlag}&&(${polyfill.toString()}());`
+            polyfillString = `${isEsmFormatPlaceholder}&&(${polyfill.toString()}());`
           }
-          return { code: polyfillString, moduleSideEffects: true }
+          return {
+            code: polyfillString,
+            moduleSideEffects: true,
+          }
         }
       },
+    },
+
+    renderChunk(code, _, { format }) {
+      // make sure we only perform the preload logic in modern builds.
+      if (code.indexOf(isEsmFormatPlaceholder) === -1) {
+        return null;
+      }
+
+      const isEsmFormat = String(format === 'es')
+      if (!this.environment.config.build.sourcemap) {
+        return code.replace(isEsmFormatPlaceholderPattern, isEsmFormat)
+      }
+
+      const s = new MagicString(code)
+      let match: RegExpExecArray | null
+      while ((match = isEsmFormatPlaceholderPattern.exec(code))) {
+        s.update(match.index, match.index + isEsmFormatPlaceholder.length, isEsmFormat)
+      }
+      return {
+        code: s.toString(),
+        map: s.generateMap({ hires: 'boundary' }),
+      }
     },
   }
 }
