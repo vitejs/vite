@@ -12,8 +12,16 @@ test(`circular dependencies modules doesn't throw`, async () => {
   )
 })
 
-test(`circular import doesn't throw`, async () => {
+test(`circular import doesn't throw (1)`, async () => {
   await page.goto(`${url}/circular-import`)
+
+  expect(await page.textContent('.circ-import')).toMatchInlineSnapshot(
+    '"A is: __A__"',
+  )
+})
+
+test(`circular import doesn't throw (2)`, async () => {
+  await page.goto(`${url}/circular-import2`)
 
   expect(await page.textContent('.circ-import')).toMatchInlineSnapshot(
     '"A is: __A__"',

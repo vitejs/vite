@@ -178,11 +178,11 @@ async function ssrTransformScript(
     return importId
   }
 
-  function defineExport(position: number, name: string, local = name) {
+  function defineExport(name: string, local = name) {
     s.appendLeft(
-      position,
-      `\nObject.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
-        `{ enumerable: true, configurable: true, get(){ return ${local} }});`,
+      fileStartIndex,
+      `Object.defineProperty(${ssrModuleExportsKey}, ${JSON.stringify(name)}, ` +
+        `{ enumerable: true, configurable: true, get(){ return ${local} }});\n`,
     )
   }
 
@@ -251,13 +251,13 @@ async function ssrTransformScript(
           node.declaration.type === 'ClassDeclaration'
         ) {
           // export function foo() {}
-          defineExport(node.end, node.declaration.id!.name)
+          defineExport(node.declaration.id!.name)
         } else {
           // export const foo = 1, bar = 2
           for (const declaration of node.declaration.declarations) {
             const names = extractNames(declaration.id as any)
             for (const name of names) {
-              defineExport(node.end, name)
+              defineExport(name)
             }
           }
         }
@@ -281,14 +281,9 @@ async function ssrTransformScript(
             ) as string
 
             if (spec.local.type === 'Identifier') {
-              defineExport(
-                node.end,
-                exportedAs,
-                `${importId}.${spec.local.name}`,
-              )
+              defineExport(exportedAs, `${importId}.${spec.local.name}`)
             } else {
               defineExport(
-                node.end,
                 exportedAs,
                 `${importId}[${JSON.stringify(spec.local.value as string)}]`,
               )
@@ -304,7 +299,7 @@ async function ssrTransformScript(
               spec.exported,
             ) as string
 
-            defineExport(node.end, exportedAs, binding || local)
+            defineExport(exportedAs, binding || local)
           }
         }
       }
@@ -344,7 +339,7 @@ async function ssrTransformScript(
         const exportedAs = getIdentifierNameOrLiteralValue(
           node.exported,
         ) as string
-        defineExport(node.end, exportedAs, `${importId}`)
+        defineExport(exportedAs, `${importId}`)
       } else {
         s.appendLeft(node.end, `${ssrExportAllKey}(${importId});\n`)
       }

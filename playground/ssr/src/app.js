@@ -4,6 +4,7 @@ const pathRenderers = {
   '/': renderRoot,
   '/circular-dep': renderCircularDep,
   '/circular-import': renderCircularImport,
+  '/circular-import2': renderCircularImport2,
   '/forked-deadlock-static-imports': renderForkedDeadlockStaticImports,
   '/forked-deadlock-dynamic-imports': renderForkedDeadlockDynamicImports,
 }
@@ -38,6 +39,11 @@ async function renderCircularDep(rootDir) {
 
 async function renderCircularImport(rootDir) {
   const { logA } = await import('./circular-import/index.js')
+  return `<div class="circ-import">${escapeHtml(logA())}</div>`
+}
+
+async function renderCircularImport2(rootDir) {
+  const { logA } = await import('./circular-import2/index.js')
   return `<div class="circ-import">${escapeHtml(logA())}</div>`
 }
 
