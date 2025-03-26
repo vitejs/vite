@@ -1,3 +1,26 @@
+## 6.3.0-beta.0 (2025-03-26)
+
+* feat: implement hook filters (#19602) ([04d58b4](https://github.com/vitejs/vite/commit/04d58b42ae69547f04ef8fcd574b1ee1b654dc32)), closes [#19602](https://github.com/vitejs/vite/issues/19602)
+* feat: warn if `define['process.env']` contains `path` key with a value (#19517) ([832b2c4](https://github.com/vitejs/vite/commit/832b2c409ebbb2ba1480e6ae4630c7f047c160d4)), closes [#19517](https://github.com/vitejs/vite/issues/19517)
+* feat(config): improve bad character warning (#19683) ([998303b](https://github.com/vitejs/vite/commit/998303b438734e8219715fe6883b97fb10404c16)), closes [#19683](https://github.com/vitejs/vite/issues/19683)
+* feat(css): support preprocessor with lightningcss (#19071) ([d3450ca](https://github.com/vitejs/vite/commit/d3450cae614af4c2b866903411b6d765df3e5a48)), closes [#19071](https://github.com/vitejs/vite/issues/19071)
+* feat(experimental): add fetchable environment interface (#19664) ([c5b7191](https://github.com/vitejs/vite/commit/c5b71915099cfbc15447a166f35620fa0e05c023)), closes [#19664](https://github.com/vitejs/vite/issues/19664)
+* feat(types): expose `CustomPluginOptionsVite` type (#19557) ([15abc01](https://github.com/vitejs/vite/commit/15abc01241b0da5c4af6aa59b0bc936ccab0f0b4)), closes [#19557](https://github.com/vitejs/vite/issues/19557)
+* feat(types): make ImportMetaEnv strictly available (#19077) ([6cf5141](https://github.com/vitejs/vite/commit/6cf51417cdfc26f100c00c910e00829e48dec79c)), closes [#19077](https://github.com/vitejs/vite/issues/19077)
+* feat(types): type hints for hmr events (#19579) ([95424b2](https://github.com/vitejs/vite/commit/95424b26892b005f438169d0ea426cb1a3176bf2)), closes [#19579](https://github.com/vitejs/vite/issues/19579)
+* fix: add back `.mts` to default `resolve.extensions` (#19701) ([ae91bd0](https://github.com/vitejs/vite/commit/ae91bd0ad10942898c3d7aa8181249fb9682a4fe)), closes [#19701](https://github.com/vitejs/vite/issues/19701)
+* fix: fs raw query with query separators (#19702) ([262b5ec](https://github.com/vitejs/vite/commit/262b5ec7ae4981208339b7b87fefbd3dd8465851)), closes [#19702](https://github.com/vitejs/vite/issues/19702)
+* fix(css): parse image-set without space after comma correctly (#19661) ([d0d4c66](https://github.com/vitejs/vite/commit/d0d4c66bd539a5232005ac7ad63ec19f0794f2a5)), closes [#19661](https://github.com/vitejs/vite/issues/19661)
+* fix(css): scoped css order with non-scoped css (#19678) ([a3a94ab](https://github.com/vitejs/vite/commit/a3a94abb200c0bb1ed8bc4abb539a9ea27ce1a84)), closes [#19678](https://github.com/vitejs/vite/issues/19678)
+* fix(deps): update all non-major dependencies (#19649) ([f4e712f](https://github.com/vitejs/vite/commit/f4e712ff861f8a9504594a4a5e6d35a7547e5a7e)), closes [#19649](https://github.com/vitejs/vite/issues/19649)
+* fix(optimizer): fix incorrect picomatch usage in filter() (#19646) ([300280d](https://github.com/vitejs/vite/commit/300280d52203b6c1d8867d956f7d5c991e2e9dfb)), closes [#19646](https://github.com/vitejs/vite/issues/19646)
+* fix(ssr): hoist export to handle cyclic import better (#18983) ([8c04c69](https://github.com/vitejs/vite/commit/8c04c69a52c7b66d551d384ac34bb10ab1522f68)), closes [#18983](https://github.com/vitejs/vite/issues/18983)
+* refactor: `[hookName].handler` in plugins (#19586) ([9827df2](https://github.com/vitejs/vite/commit/9827df2195905e5eb04b46dce357d12c3dff4876)), closes [#19586](https://github.com/vitejs/vite/issues/19586)
+* refactor(reporter): only call modulesReporter when logLevel is info (#19708) ([7249553](https://github.com/vitejs/vite/commit/7249553625b667b6affb448d5acb7d6f457640f6)), closes [#19708](https://github.com/vitejs/vite/issues/19708)
+* chore(deps): unbundle tinyglobby (#19487) ([a5ea6f0](https://github.com/vitejs/vite/commit/a5ea6f09ba79f4a5b72117899bccaa43613a777f)), closes [#19487](https://github.com/vitejs/vite/issues/19487)
+
+
+
 ## <small>6.2.2 (2025-03-14)</small>
 
 * fix: await client buildStart on top level buildStart (#19624) ([b31faab](https://github.com/vitejs/vite/commit/b31faab2a81b839e4b747baeb9c7a7cbb724f8d2)), closes [#19624](https://github.com/vitejs/vite/issues/19624)
