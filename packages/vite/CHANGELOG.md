@@ -1,3 +1,9 @@
+## 6.3.0-beta.2 (2025-03-26)
+
+* chore: fix publish workflow ([fbaeca3](https://github.com/vitejs/rolldown-vite/commit/fbaeca3))
+
+
+
 ## 6.3.0-beta.1 (2025-03-26)
 
 
