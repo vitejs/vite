@@ -1,6 +1,5 @@
 import path from 'node:path'
 import url from 'node:url'
-import { createRequire } from 'node:module'
 import type {
   TransformOptions as OxcTransformOptions,
   TransformResult as OxcTransformResult,
@@ -526,23 +525,11 @@ export function resolveOxcTranspileOptions(
   }
 }
 
-let viteDir: string
-function getViteDir() {
-  if (!viteDir) {
-    let dir = createRequire(import.meta.url).resolve('vite')
-    while (dir && path.basename(dir) !== 'vite') {
-      dir = path.dirname(dir)
-    }
-    viteDir = dir
-  }
-  return viteDir
-}
-
 async function generateRuntimeHelpers(
   runtimeHelpers: readonly [string, string][],
 ): Promise<string> {
   const bundle = await rolldown({
-    cwd: getViteDir(),
+    cwd: url.fileURLToPath(import.meta.url),
     input: 'entrypoint',
     platform: 'neutral',
     logLevel: 'silent',
