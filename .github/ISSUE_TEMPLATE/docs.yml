@@ -33,7 +33,7 @@ body:
     id: reproduction
     attributes:
       label: Reproduction
-      description: If you have a reproduction, please provide a link via [vite.new](https://vite.new/) or a link to a repo that can reproduce the problem you ran into. `npm create vite@latest` and `npm create vite-extra@latest` (for SSR or library repros) can be used as a starter template.
+      description: If you have a reproduction, please provide a link via [StackBlitz](https://stackblitz.com/fork/github/vitejs/rolldown-vite/tree/rolldown-vite/packages/create-vite/template-vanilla) or a link to a repo that can reproduce the problem you ran into. `npm create vite@latest` and `npm create vite-extra@latest` (for SSR or library repros) can be used as a starter template.
       placeholder: Reproduction URL
   - type: textarea
     id: reproduction-steps
