@@ -66,7 +66,7 @@ For example, you can specify multiple Rollup outputs with plugins that are only 
 
 ## Chunking Strategy
 
-You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/configuration-options/#output-manualchunks)). If you use a framework, refer to their documentation for configuring how chunks are splitted.
+You can configure how chunks are split using `build.rollupOptions.output.manualChunks` (see [Rollup docs](https://rollupjs.org/configuration-options/#output-manualchunks)). If you use a framework, refer to their documentation for configuring how chunks are split.
 
 ## Load Error Handling
 

@@ -43,7 +43,7 @@ const identifierWithTrailingDollarRE = /\b(\w+)\$\d+\b/g
 
 /**
  * Replace specific identifiers with a more readable name, grouped by
- * the module that imports the identifer as a named import alias
+ * the module that imports the identifier as a named import alias
  */
 const identifierReplacements: Record<string, Record<string, string>> = {
   rollup: {
