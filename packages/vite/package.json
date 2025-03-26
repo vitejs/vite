@@ -62,11 +62,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vitejs/vite.git",
+    "url": "git+https://github.com/vitejs/rolldown-vite.git",
     "directory": "packages/vite"
   },
   "bugs": {
-    "url": "https://github.com/vitejs/vite/issues"
+    "url": "https://github.com/vitejs/rolldown-vite/issues"
   },
   "homepage": "https://vite.dev",
   "funding": "https://github.com/vitejs/vite?sponsor=1",
