@@ -17,14 +17,19 @@ export const baz3 = {
     console.log('treeshaken baz3')
   },
 }
-export const baz4 = () => {
-  console.log('treeshaken baz4')
+export const baz4 = {
+  log: () => {
+    console.log('treeshaken baz4')
+  },
 }
 export const baz5 = () => {
   console.log('treeshaken baz5')
 }
 export const baz6 = () => {
   console.log('treeshaken baz6')
+}
+export const baz7 = () => {
+  console.log('treeshaken baz7')
 }
 export const removed = () => {
   console.log('treeshaken removed')
