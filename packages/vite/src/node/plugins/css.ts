@@ -38,6 +38,7 @@ import type {
   TransformAttributeResult as LightningCssTransformAttributeResult,
   TransformResult as LightningCssTransformResult,
 } from 'lightningcss'
+import type { CustomPluginOptionsVite } from 'types/metadata'
 import { getCodeWithSourcemap, injectSourcesContent } from '../server/sourcemap'
 import type { EnvironmentModuleNode } from '../server/moduleGraph'
 import {
@@ -55,7 +56,7 @@ import {
   SPECIAL_QUERY_RE,
 } from '../constants'
 import type { ResolvedConfig } from '../config'
-import type { CustomPluginOptionsVite, Plugin } from '../plugin'
+import type { Plugin } from '../plugin'
 import { checkPublicFile } from '../publicDir'
 import {
   arraify,
@@ -656,11 +657,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
           // If this CSS is scoped to its importers exports, check if those importers exports
           // are rendered in the chunks. If they are not, we can skip bundling this CSS.
-          const cssScopeTo = (
-            this.getModuleInfo(id)?.meta?.vite as
-              | CustomPluginOptionsVite
-              | undefined
-          )?.cssScopeTo
+          const cssScopeTo = this.getModuleInfo(id)?.meta?.vite?.cssScopeTo
           if (
             cssScopeTo &&
             !isCssScopeToRendered(cssScopeTo, renderedModules)
