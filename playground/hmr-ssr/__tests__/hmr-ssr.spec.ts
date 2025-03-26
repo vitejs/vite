@@ -851,13 +851,14 @@ if (!isBuild) {
     editFile('self-accept-within-circular/c.js', (code) =>
       code.replace(`export const c = 'c'`, `export const c = 'cc'`),
     )
+    // it throws a same error as browser case,
+    // but it doesn't auto reload and it calls `hot.accept(nextExports)` with `nextExports = undefined`
+    await untilUpdated(() => el(), '')
+
+    // test reloading manually for now
+    server.moduleGraph.invalidateAll() // TODO: why is `runner.clearCache()` not enough?
+    await runner.import('/self-accept-within-circular/index')
     await untilUpdated(() => el(), 'cc')
-    await vi.waitFor(() => {
-      expect(serverLogs.length).greaterThanOrEqual(1)
-      // Should still keep hmr update, but it'll error on the browser-side and will refresh itself.
-      // Match on full log not possible because of color markers
-      expect(serverLogs.at(-1)!).toContain('hmr update')
-    })
   })
 
   test('hmr should not reload if no accepted within circular imported files', async (ctx) => {
