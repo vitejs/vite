@@ -157,7 +157,7 @@ export class BaseEnvironment extends PartialEnvironment {
  * const isDev = environment.mode === 'dev'   // good
  * ```
  *
- * You should also not check against `"unknown"` specfically. It's
+ * You should also not check against `"unknown"` specifically. It's
  * a placeholder for more possible environment types.
  */
 export class UnknownEnvironment extends BaseEnvironment {
