@@ -1,7 +1,7 @@
 import { publish } from '@vitejs/release-scripts'
 
 publish({
-  defaultPackage: 'rolldown-vite',
+  defaultPackage: 'vite',
   provenance: true,
   packageManager: 'pnpm',
 })
