@@ -1,3 +1,8 @@
+## 6.3.0-beta.1 (2025-03-26)
+
+
+
+
 ## 6.3.0-beta.0 (2025-03-26)
 
 * feat: implement hook filters (#19602) ([04d58b4](https://github.com/vitejs/vite/commit/04d58b42ae69547f04ef8fcd574b1ee1b654dc32)), closes [#19602](https://github.com/vitejs/vite/issues/19602)
