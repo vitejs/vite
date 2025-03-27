@@ -403,6 +403,7 @@ export function cssPlugin(config: ResolvedConfig): Plugin {
         }
       }
       chunk.viteMetadata!.cssContent = chunkCSS
+      chunk.viteMetadata!._cssCheckedModules = new Set(ids)
     },
   }
 
@@ -679,6 +680,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     async renderChunk(code, chunk, opts) {
       let chunkCSS = chunk.viteMetadata!.cssContent ?? ''
       chunk.viteMetadata!.cssContent = undefined // remove it so that it is not confusing
+      const checkedModules = chunk.viteMetadata!._cssCheckedModules ?? new Set()
+      for (const id of Object.keys(chunk.modules)) {
+        // this module was added by an external plugin
+        // append the CSS for backward compat
+        if (!checkedModules.has(id) && styles.has(id)) {
+          chunkCSS += styles.get(id)!
+        }
+      }
 
       // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
       const isPureCssChunk =
