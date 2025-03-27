@@ -1,12 +1,12 @@
 import type { ResolvedConfig } from '..'
 import type { Plugin } from '../plugin'
-import { isModernFlag } from './importAnalysisBuild'
+import { isEsmFlag } from './importAnalysisBuild'
 
 export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'
 const resolvedModulePreloadPolyfillId = '\0' + modulePreloadPolyfillId + '.js'
 
 export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
-  let polyfillString: string | undefined
+  let polyfillCode: string | undefined
 
   return {
     name: 'vite:modulepreload-polyfill',
@@ -20,17 +20,22 @@ export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
     load: {
       handler(id) {
         if (id === resolvedModulePreloadPolyfillId) {
-          // `isModernFlag` is only available during build since it is resolved by `vite:build-import-analysis`
           if (
             config.command !== 'build' ||
             this.environment.config.consumer !== 'client'
           ) {
             return ''
           }
-          if (!polyfillString) {
-            polyfillString = `${isModernFlag}&&(${polyfill.toString()}());`
+
+          if (!polyfillCode) {
+            // `isEsmFlag` is only available during build since it is resolved by `vite:build-import-analysis`
+            polyfillCode = `${isEsmFlag}&&(${polyfill.toString()}());`
           }
-          return { code: polyfillString, moduleSideEffects: true }
+
+          return {
+            code: polyfillCode,
+            moduleSideEffects: true,
+          }
         }
       },
     },

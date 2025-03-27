@@ -35,71 +35,79 @@ export function ssrManifestPlugin(): Plugin {
       const { base } = config
       for (const file in bundle) {
         const chunk = bundle[file]
-        if (chunk.type === 'chunk') {
-          for (const id in chunk.modules) {
-            const normalizedId = normalizePath(relative(config.root, id))
-            const mappedChunks =
-              ssrManifest[normalizedId] ?? (ssrManifest[normalizedId] = [])
-            if (!chunk.isEntry) {
-              mappedChunks.push(joinUrlSegments(base, chunk.fileName))
-              // <link> tags for entry chunks are already generated in static HTML,
-              // so we only need to record info for non-entry chunks.
-              chunk.viteMetadata!.importedCss.forEach((file) => {
-                mappedChunks.push(joinUrlSegments(base, file))
-              })
-            }
-            chunk.viteMetadata!.importedAssets.forEach((file) => {
+        if (chunk.type !== 'chunk') {
+          continue
+        }
+
+        for (const moduleId in chunk.modules) {
+          const normalizedId = normalizePath(relative(config.root, moduleId))
+          const mappedChunks =
+            ssrManifest[normalizedId] ?? (ssrManifest[normalizedId] = [])
+          if (!chunk.isEntry) {
+            mappedChunks.push(joinUrlSegments(base, chunk.fileName))
+            // <link> tags for entry chunks are already generated in static HTML,
+            // so we only need to record info for non-entry chunks.
+            chunk.viteMetadata!.importedCss.forEach((file) => {
               mappedChunks.push(joinUrlSegments(base, file))
             })
           }
-          if (chunk.code.includes(preloadMethod)) {
-            // generate css deps map
-            const code = chunk.code
-            let imports: ImportSpecifier[] = []
-            try {
-              imports = parseImports(code)[0].filter((i) => i.n && i.d > -1)
-            } catch (_e: unknown) {
-              const e = _e as EsModuleLexerParseError
-              const loc = numberToPos(code, e.idx)
-              this.error({
-                name: e.name,
-                message: e.message,
-                stack: e.stack,
-                cause: e.cause,
-                pos: e.idx,
-                loc: { ...loc, file: chunk.fileName },
-                frame: generateCodeFrame(code, loc),
-              })
+          chunk.viteMetadata!.importedAssets.forEach((file) => {
+            mappedChunks.push(joinUrlSegments(base, file))
+          })
+        }
+
+        if (!chunk.code.includes(preloadMethod)) {
+          continue
+        }
+
+        // generate css deps map
+        const { code, fileName: parentChunkName } = chunk
+        let dynamicImports: ImportSpecifier[] = []
+        try {
+          dynamicImports = parseImports(code)[0].filter((i) => i.n && i.d > -1)
+        } catch (_e: unknown) {
+          const e = _e as EsModuleLexerParseError
+          const loc = numberToPos(code, e.idx)
+          this.error({
+            name: e.name,
+            message: e.message,
+            stack: e.stack,
+            cause: e.cause,
+            pos: e.idx,
+            loc: {
+              ...loc,
+              file: parentChunkName,
+            },
+            frame: generateCodeFrame(code, loc),
+          })
+        }
+
+        for (const dynamicImport of dynamicImports) {
+          const { s: start, e: end, n: name } = dynamicImport
+
+          // check the chunk being imported
+          const url = code.slice(start, end)
+          const urlResolved = normalizePath(
+            join(dirname(parentChunkName), url.slice(1, -1)),
+          )
+
+          const dependencies: string[] = []
+
+          // Track traversed to prevent loops
+          const traversed = new Set<string>()
+          ;(function traverseChunkDependencies(chunkName: string) {
+            if (chunkName === parentChunkName) return
+            if (traversed.has(chunkName)) return
+            traversed.add(chunkName)
+            const chunk = bundle[chunkName] as OutputChunk | undefined
+            if (chunk) {
+              chunk.viteMetadata!.importedCss.forEach((file) =>
+                dependencies.push(joinUrlSegments(base, file)),
+              )
+              chunk.imports.forEach(traverseChunkDependencies)
             }
-            if (imports.length) {
-              for (let index = 0; index < imports.length; index++) {
-                const { s: start, e: end, n: name } = imports[index]
-                // check the chunk being imported
-                const url = code.slice(start, end)
-                const deps: string[] = []
-                const ownerFilename = chunk.fileName
-                // literal import - trace direct imports and add to deps
-                const analyzed: Set<string> = new Set<string>()
-                const addDeps = (filename: string) => {
-                  if (filename === ownerFilename) return
-                  if (analyzed.has(filename)) return
-                  analyzed.add(filename)
-                  const chunk = bundle[filename] as OutputChunk | undefined
-                  if (chunk) {
-                    chunk.viteMetadata!.importedCss.forEach((file) => {
-                      deps.push(joinUrlSegments(base, file))
-                    })
-                    chunk.imports.forEach(addDeps)
-                  }
-                }
-                const normalizedFile = normalizePath(
-                  join(dirname(chunk.fileName), url.slice(1, -1)),
-                )
-                addDeps(normalizedFile)
-                ssrManifest[basename(name!)] = deps
-              }
-            }
-          }
+          })(urlResolved)
+          ssrManifest[basename(name!)] = dependencies
         }
       }
 
