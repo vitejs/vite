@@ -1517,6 +1517,10 @@ export function escapeRegex(str: string): string {
   return str.replace(escapeRegexRE, '\\$&')
 }
 
+export function exactRegex(str: string): RegExp {
+  return new RegExp(`^${escapeRegex(str)}$`)
+}
+
 type CommandType = 'install' | 'uninstall' | 'update'
 export function getPackageManagerCommand(
   type: CommandType = 'install',
