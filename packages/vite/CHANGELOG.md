@@ -1,3 +1,11 @@
+## 6.3.0-beta.3 (2025-03-27)
+
+* fix: use exact regexp filter for virtual module (#89) ([fbbfca4](https://github.com/vitejs/rolldown-vite/commit/fbbfca4)), closes [#89](https://github.com/vitejs/rolldown-vite/issues/89)
+* fix(optimizer): derive `resolve.symlinks` option properly (#91) ([0fc1af8](https://github.com/vitejs/rolldown-vite/commit/0fc1af8)), closes [#91](https://github.com/vitejs/rolldown-vite/issues/91)
+* fix(transform): merge tsconfig jsx options with oxc jsx options correctly (#90) ([1851a57](https://github.com/vitejs/rolldown-vite/commit/1851a57)), closes [#90](https://github.com/vitejs/rolldown-vite/issues/90)
+
+
+
 ## 6.3.0-beta.2 (2025-03-26)
 
 * chore: fix publish workflow ([fbaeca3](https://github.com/vitejs/rolldown-vite/commit/fbaeca3))
