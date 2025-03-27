@@ -1,4 +1,5 @@
 import type { Plugin } from '../plugin'
+import { exactRegex } from '../utils'
 import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
@@ -51,14 +52,14 @@ export const wasmHelperPlugin = (): Plugin => {
     name: 'vite:wasm-helper',
 
     resolveId: {
-      filter: { id: wasmHelperId },
+      filter: { id: exactRegex(wasmHelperId) },
       handler(id) {
         return id
       },
     },
 
     load: {
-      filter: { id: [wasmHelperId, /\.wasm\?init$/] },
+      filter: { id: [exactRegex(wasmHelperId), /\.wasm\?init$/] },
       async handler(id) {
         if (id === wasmHelperId) {
           return `export default ${wasmHelperCode}`
