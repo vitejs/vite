@@ -1103,7 +1103,13 @@ function resolveDepOptimizationOptions(
         }
       }
     }
-    setResolveOptions('symlinks', optimizeDeps.esbuildOptions.preserveSymlinks)
+    if (
+      optimizeDeps.esbuildOptions.preserveSymlinks !== undefined &&
+      optimizeDeps.rollupOptions.resolve.symlinks === undefined
+    ) {
+      optimizeDeps.rollupOptions.resolve.symlinks =
+        !optimizeDeps.esbuildOptions.preserveSymlinks
+    }
     setResolveOptions(
       'extensions',
       optimizeDeps.esbuildOptions.resolveExtensions,
@@ -1169,6 +1175,11 @@ function resolveDepOptimizationOptions(
       noDiscovery: consumer !== 'client',
       esbuildOptions: {
         preserveSymlinks,
+      },
+      rollupOptions: {
+        resolve: {
+          symlinks: !preserveSymlinks,
+        },
       },
       force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
     },
