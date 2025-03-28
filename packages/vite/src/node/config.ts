@@ -1297,7 +1297,6 @@ export async function resolveConfig(
   }
 
   const userEnv =
-    inlineConfig.envDir !== false &&
     loadEnv(mode, envDir, resolveEnvPrefix(config))
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
