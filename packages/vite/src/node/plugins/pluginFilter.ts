@@ -27,7 +27,19 @@ type NormalizedStringFilter = {
   exclude?: Array<string | RegExp>
 }
 
-function patternToIdFilter(pattern: string | RegExp): PluginFilter {
+function getMatcherString(glob: string, cwd: string) {
+  if (glob.startsWith('**') || path.isAbsolute(glob)) {
+    return slash(glob)
+  }
+
+  const resolved = path.join(cwd, glob)
+  return slash(resolved)
+}
+
+function patternToIdFilter(
+  pattern: string | RegExp,
+  cwd: string,
+): PluginFilter {
   if (pattern instanceof RegExp) {
     return (id: string) => {
       const normalizedId = slash(id)
@@ -37,10 +49,10 @@ function patternToIdFilter(pattern: string | RegExp): PluginFilter {
     }
   }
 
-  const cwd = process.cwd()
-  const matcher = picomatch(pattern, { dot: true })
+  const glob = getMatcherString(pattern, cwd)
+  const matcher = picomatch(glob, { dot: true })
   return (id: string) => {
-    const normalizedId = slash(path.relative(cwd, id))
+    const normalizedId = slash(id)
     return matcher(normalizedId)
   }
 }
@@ -94,11 +106,12 @@ function normalizeFilter(filter: StringFilter): NormalizedStringFilter {
 
 export function createIdFilter(
   filter: StringFilter | undefined,
+  cwd = process.cwd(),
 ): PluginFilterWithFallback | undefined {
   if (!filter) return
   const { exclude, include } = normalizeFilter(filter)
-  const excludeFilter = exclude?.map(patternToIdFilter)
-  const includeFilter = include?.map(patternToIdFilter)
+  const excludeFilter = exclude?.map((p) => patternToIdFilter(p, cwd))
+  const includeFilter = include?.map((p) => patternToIdFilter(p, cwd))
   return createFilter(excludeFilter, includeFilter)
 }
 
@@ -115,9 +128,10 @@ export function createCodeFilter(
 export function createFilterForTransform(
   idFilter: StringFilter | undefined,
   codeFilter: StringFilter | undefined,
+  cwd?: string,
 ): TransformHookFilter | undefined {
   if (!idFilter && !codeFilter) return
-  const idFilterFn = createIdFilter(idFilter)
+  const idFilterFn = createIdFilter(idFilter, cwd)
   const codeFilterFn = createCodeFilter(codeFilter)
   return (id, code) => {
     let fallback = true

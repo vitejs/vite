@@ -17,7 +17,6 @@ describe('createIdFilter', () => {
       cases: [
         { id: 'foo.js', expected: true },
         { id: 'foo.ts', expected: FALLBACK_FALSE },
-        { id: path.resolve('foo.js'), expected: true },
         { id: '\0foo.js', expected: FALLBACK_FALSE },
         { id: '\0' + path.resolve('foo.js'), expected: FALLBACK_FALSE },
       ],
@@ -111,11 +110,15 @@ describe('createIdFilter', () => {
         { id: 'foo.ts', expected: false },
       ],
     },
+    {
+      inputFilter: '/virtual/foo',
+      cases: [{ id: '/virtual/foo', expected: true }],
+    },
   ]
 
   for (const filter of filters) {
     test(`${util.inspect(filter.inputFilter)}`, () => {
-      const idFilter = createIdFilter(filter.inputFilter)
+      const idFilter = createIdFilter(filter.inputFilter, '')
       if (!filter.cases) {
         expect(idFilter).toBeUndefined()
         return
@@ -264,7 +267,11 @@ describe('createFilterForTransform', () => {
   for (const filter of filters) {
     test(`${util.inspect(filter.inputFilter)}`, () => {
       const [idFilter, codeFilter] = filter.inputFilter
-      const filterForTransform = createFilterForTransform(idFilter, codeFilter)
+      const filterForTransform = createFilterForTransform(
+        idFilter,
+        codeFilter,
+        '',
+      )
       if (!filter.cases) {
         expect(filterForTransform).toBeUndefined()
         return
