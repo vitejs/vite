@@ -175,9 +175,7 @@ export function transformMiddleware(
 
       if (!isFileServingAllowed(server.config, withoutQuery)) {
         // if not allowed, only block if it's `/@fs/` as we know it's already
-        // know it's trying to access the filesystem wrongly, or see if it exists.
-        // if it doesn't exist, it may be an allowed root-relative path, API request,
-        // virtual module request, etc.
+        // trying to access the filesystem wrongly
         if (url.startsWith(FS_PREFIX)) {
           blockServingAccess(url, server, res)
           return
