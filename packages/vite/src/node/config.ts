@@ -547,7 +547,6 @@ export interface InlineConfig extends UserConfig {
   configFile?: string | false
   /** @experimental */
   configLoader?: 'bundle' | 'runner' | 'native'
-  envFile?: false
   forceOptimizeDeps?: boolean
 }
 
@@ -1297,7 +1296,7 @@ export async function resolveConfig(
   }
 
   const userEnv =
-    inlineConfig.envFile !== false &&
+    inlineConfig.envDir !== false &&
     loadEnv(mode, envDir, resolveEnvPrefix(config))
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
