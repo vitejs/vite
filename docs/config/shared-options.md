@@ -459,12 +459,16 @@ Set to `false` to prevent Vite from clearing the terminal screen when logging ce
 
 ## envDir
 
-- **Type:** `string`
+- **Type:** `string | false`
 - **Default:** `root`
 
 The directory from which `.env` files are loaded. Can be an absolute path, or a path relative to the project root.
 
 See [here](/guide/env-and-mode#env-files) for more about environment files.
+
+:::warning Warning
+If you don't want to use Vite's built-in `.env` file handling, you can set `envDir: false` to disable it.
+:::
 
 ## envPrefix
 
