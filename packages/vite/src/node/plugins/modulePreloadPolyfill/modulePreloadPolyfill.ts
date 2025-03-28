@@ -1,41 +1,4 @@
-import type { ResolvedConfig } from '..'
-import type { Plugin } from '../plugin'
-import { isModernFlag } from './importAnalysisBuild'
-
-export const modulePreloadPolyfillId = 'vite/modulepreload-polyfill'
-const resolvedModulePreloadPolyfillId = '\0' + modulePreloadPolyfillId + '.js'
-
-export function modulePreloadPolyfillPlugin(config: ResolvedConfig): Plugin {
-  let polyfillString: string | undefined
-
-  return {
-    name: 'vite:modulepreload-polyfill',
-    resolveId: {
-      handler(id) {
-        if (id === modulePreloadPolyfillId) {
-          return resolvedModulePreloadPolyfillId
-        }
-      },
-    },
-    load: {
-      handler(id) {
-        if (id === resolvedModulePreloadPolyfillId) {
-          // `isModernFlag` is only available during build since it is resolved by `vite:build-import-analysis`
-          if (
-            config.command !== 'build' ||
-            this.environment.config.consumer !== 'client'
-          ) {
-            return ''
-          }
-          if (!polyfillString) {
-            polyfillString = `${isModernFlag}&&(${polyfill.toString()}());`
-          }
-          return { code: polyfillString, moduleSideEffects: true }
-        }
-      },
-    },
-  }
-}
+/// <reference lib="dom" />
 
 /**
 The following polyfill function is meant to run in the browser and adapted from
@@ -58,17 +21,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 */
 
-declare const document: any
-declare const MutationObserver: any
-declare const fetch: any
-
-function polyfill() {
+export function modulePreloadPolyfill(): void {
   const relList = document.createElement('link').relList
   if (relList && relList.supports && relList.supports('modulepreload')) {
     return
   }
 
-  for (const link of document.querySelectorAll('link[rel="modulepreload"]')) {
+  for (const link of Array.from(
+    document.querySelectorAll('link[rel="modulepreload"]'),
+  )) {
     processPreload(link)
   }
 

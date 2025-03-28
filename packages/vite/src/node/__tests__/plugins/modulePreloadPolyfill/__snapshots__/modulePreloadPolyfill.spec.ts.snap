@@ -6,12 +6,14 @@ exports[`load > doesn't load modulepreload polyfill when format is cjs 1`] = `
 `;
 
 exports[`load > loads modulepreload polyfill 1`] = `
-"(function polyfill() {
+"(function modulePreloadPolyfill() {
   const relList = document.createElement("link").relList;
   if (relList && relList.supports && relList.supports("modulepreload")) {
     return;
   }
-  for (const link of document.querySelectorAll('link[rel="modulepreload"]')) {
+  for (const link of Array.from(
+    document.querySelectorAll('link[rel="modulepreload"]')
+  )) {
     processPreload(link);
   }
   new MutationObserver((mutations) => {
