@@ -141,7 +141,7 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
         isEntry: boolean
       },
     ) => Promise<ResolveIdResult> | ResolveIdResult,
-    { filter?: { id?: StringFilter } }
+    { filter?: { id?: StringFilter<RegExp> } }
   >
   load?: ObjectHook<
     (
