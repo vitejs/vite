@@ -1289,7 +1289,8 @@ export async function resolveConfig(
   )
 
   // load .env files
-  let envDir = config.envDir
+  // Backward compatibility: set envDir to false when envFile is false
+  let envDir = config.envFile === false ? false : config.envDir
   if (envDir !== false) {
     envDir = config.envDir
       ? normalizePath(path.resolve(resolvedRoot, config.envDir))
