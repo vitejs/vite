@@ -1296,8 +1296,7 @@ export async function resolveConfig(
       : resolvedRoot
   }
 
-  const userEnv =
-    loadEnv(mode, envDir, resolveEnvPrefix(config))
+  const userEnv = loadEnv(mode, envDir, resolveEnvPrefix(config))
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // development-like behavior is expected. This is indicated by NODE_ENV=development
