@@ -547,6 +547,8 @@ export interface InlineConfig extends UserConfig {
   configFile?: string | false
   /** @experimental */
   configLoader?: 'bundle' | 'runner' | 'native'
+  /** @deprecated */
+  envFile?: false
   forceOptimizeDeps?: boolean
 }
 
