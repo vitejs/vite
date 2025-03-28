@@ -7,4 +7,4 @@ https://vitejs.dev/* https://vite.dev/:splat 301!
 /guide/api-vite-environment.html /guide/api-environment 302
 /guide/comparisons /guide/why#how-vite-relates-to-other-unbundled-build-tools 302
 /guide/comparisons.html /guide/why#how-vite-relates-to-other-unbundled-build-tools 302
-/rolldown /guide/rolldown
+/rolldown /guide/rolldown 301
