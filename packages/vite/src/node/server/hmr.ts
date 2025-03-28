@@ -389,7 +389,7 @@ export async function handleHMRUpdate(
   )
 
   const isEnv =
-    config.inlineConfig.envDir !== false &&
+    config.envDir !== false &&
     getEnvFilesForMode(config.mode, config.envDir).includes(file)
   if (isConfig || isConfigDependency || isEnv) {
     // auto restart server
