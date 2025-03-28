@@ -25,7 +25,7 @@ describe('hook filter with plugin container', async () => {
     {
       name: 'test',
       resolveId: {
-        filter: { id: '**/*.js' },
+        filter: { id: /\.js$/ },
         handler: resolveId,
       },
       load: {
@@ -97,7 +97,7 @@ describe('hook filter with build', async () => {
       {
         name: 'test',
         resolveId: {
-          filter: { id: '**/*.js' },
+          filter: { id: /\.js$/ },
           handler: resolveId,
         },
         load: {

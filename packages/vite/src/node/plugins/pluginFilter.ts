@@ -13,13 +13,12 @@ export type PluginFilterWithFallback = (
 ) => boolean | FallbackValues
 export type TransformHookFilter = (id: string, code: string) => boolean
 
-export type StringFilter =
-  | string
-  | RegExp
-  | Array<string | RegExp>
+export type StringFilter<Value = string | RegExp> =
+  | Value
+  | Array<Value>
   | {
-      include?: string | RegExp | Array<string | RegExp>
-      exclude?: string | RegExp | Array<string | RegExp>
+      include?: Value | Array<Value>
+      exclude?: Value | Array<Value>
     }
 
 type NormalizedStringFilter = {
