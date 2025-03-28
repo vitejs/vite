@@ -7,8 +7,6 @@ export interface ChunkMetadata {
    * @experimental
    */
   cssContent?: string
-  /** @internal */
-  _cssCheckedModules?: Set<string>
 
   importedAssets: Set<string>
   importedCss: Set<string>
