@@ -77,6 +77,7 @@ import {
   indexHtmlMiddleware,
 } from './middlewares/indexHtml'
 import {
+  considerBlockServingAccessMiddleware,
   servePublicMiddleware,
   serveRawFsMiddleware,
   serveStaticMiddleware,
@@ -923,6 +924,10 @@ export async function _createServer(
   if (config.appType === 'spa' || config.appType === 'mpa') {
     middlewares.use(htmlFallbackMiddleware(root, config.appType === 'spa'))
   }
+
+  // if transform, raw fs, and static middlewates have considered blocking the request,
+  // and html fallback didn't change rewrite req.url, then block the request
+  middlewares.use(considerBlockServingAccessMiddleware(server))
 
   // run post config hooks
   // This is applied before the html middleware so that user middleware can

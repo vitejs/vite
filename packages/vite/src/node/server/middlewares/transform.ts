@@ -8,11 +8,11 @@ import {
   createDebugger,
   fsPathFromId,
   injectQuery,
+  isFileReadable,
   isImportRequest,
   isJSRequest,
   normalizePath,
   prettifyUrl,
-  rawRE,
   removeImportQuery,
   removeTimestampQuery,
   urlRE,
@@ -38,12 +38,15 @@ import {
   ERR_OUTDATED_OPTIMIZED_DEP,
   NULL_BYTE_PLACEHOLDER,
 } from '../../../shared/constants'
-import { ensureServingAccess } from './static'
+import {
+  blockServingAccess,
+  considerBlockServingAccess,
+  isFileServingAllowed,
+} from './static'
 
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
-const trailingQuerySeparatorsRE = /[?&]+$/
 
 /**
  * A middleware that short-circuits the middleware chain to serve cached transformed modules
@@ -170,21 +173,37 @@ export function transformMiddleware(
         warnAboutExplicitPublicPathInUrl(url)
       }
 
-      const urlWithoutTrailingQuerySeparators = url.replace(
-        trailingQuerySeparatorsRE,
-        '',
-      )
-      if (
-        (rawRE.test(urlWithoutTrailingQuerySeparators) ||
-          urlRE.test(urlWithoutTrailingQuerySeparators)) &&
-        !ensureServingAccess(
-          urlWithoutTrailingQuerySeparators,
-          server,
-          res,
-          next,
-        )
-      ) {
-        return
+      if (!isFileServingAllowed(server.config, withoutQuery)) {
+        // if not allowed, only block if it's `/@fs/` as we know it's already
+        // know it's trying to access the filesystem wrongly, or see if it exists.
+        // if it doesn't exist, it may be an allowed root-relative path, API request,
+        // virtual module request, etc.
+        if (url.startsWith(FS_PREFIX)) {
+          blockServingAccess(url, server, res)
+          return
+        }
+        // if the file exists, then we skip transforming it. however, we mark
+        // this req to consider blocking access if it doesn't get rewritten to
+        // another path in another middleware later
+        if (isFileReadable(withoutQuery)) {
+          considerBlockServingAccess(req)
+          next()
+          return
+        }
+        // maybe this is a path like `/unsafe.txt` or `/unsafe.txt?import&inline`,
+        // we try to resolve based on root to double confirm before allowing to
+        // transform, as plugins can interpret root-relative paths too
+        const resolvedRootUrl = path.join(root, withoutQuery)
+        if (
+          !isFileServingAllowed(server.config, resolvedRootUrl) &&
+          isFileReadable(resolvedRootUrl)
+        ) {
+          considerBlockServingAccess(req)
+          next()
+          return
+        }
+        // otherwise we let requests to continue transform, as they may be an API request,
+        // virtual module request, etc.
       }
 
       if (

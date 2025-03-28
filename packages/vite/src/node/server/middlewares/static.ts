@@ -154,7 +154,17 @@ export function serveStaticMiddleware(
     if (resolvedPathname.endsWith('/') && fileUrl[fileUrl.length - 1] !== '/') {
       fileUrl = withTrailingSlash(fileUrl)
     }
-    if (!ensureServingAccess(fileUrl, server, res, next)) {
+    if (!isFileServingAllowed(server.config, fileUrl)) {
+      if (isFileReadable(fileUrl)) {
+        // if the file exist, we'll want to block access to it. however, they're
+        // in SPAs where a path could coincidentally match an actual filesystem
+        // path but it should be treated as an SPA route instead. to support that,
+        // we track the url here to see if it'll be rewritten by `htmlFallbackMiddleware`
+        // so we know the html (SPA) will be rendered instead of letting post-middlewares
+        // handle the existing file and potentially expose it.
+        considerBlockServingAccess(req)
+      }
+      next()
       return
     }
 
@@ -184,15 +194,14 @@ export function serveRawFsMiddleware(
     if (req.url!.startsWith(FS_PREFIX)) {
       const url = new URL(req.url!, 'http://example.com')
       const pathname = decodeURI(url.pathname)
+      const fsPath = slash(path.resolve(fsPathFromId(pathname)))
       // restrict files outside of `fs.allow`
-      if (
-        !ensureServingAccess(
-          slash(path.resolve(fsPathFromId(pathname))),
-          server,
-          res,
-          next,
-        )
-      ) {
+      if (!isFileServingAllowed(server.config, fsPath)) {
+        if (isFileReadable(fsPath)) {
+          blockServingAccess(fsPath, server, res)
+        } else {
+          next()
+        }
         return
       }
 
@@ -205,6 +214,30 @@ export function serveRawFsMiddleware(
     } else {
       next()
     }
+  }
+}
+
+export function considerBlockServingAccessMiddleware(
+  server: ViteDevServer,
+): Connect.NextHandleFunction {
+  return function viteConsiderBlockServingAccessMiddleware(
+    req: Connect.IncomingMessage,
+    res: ServerResponse,
+    next: Connect.NextFunction,
+  ) {
+    // if the url was previously marked for blocking, check if it was
+    // rewritten to a different path by `htmlFallbackMiddleware`. if
+    // `req.url` is still the same, we block the access.
+    const considerBlockUrl = (req as any).__vite_consider_block_url
+    if (considerBlockUrl) {
+      if (considerBlockUrl === req.url) {
+        blockServingAccess(req.url!, server, res)
+        return
+      } else {
+        delete (req as any).__vite_consider_block_url
+      }
+    }
+    next()
   }
 }
 
@@ -259,33 +292,26 @@ export function isFileLoadingAllowed(
   return false
 }
 
-export function ensureServingAccess(
+export function considerBlockServingAccess(req: Connect.IncomingMessage): void {
+  ;(req as any).__vite_consider_block_url = req.url
+}
+
+export function blockServingAccess(
   url: string,
   server: ViteDevServer,
   res: ServerResponse,
-  next: Connect.NextFunction,
-): boolean {
-  if (isFileServingAllowed(url, server)) {
-    return true
-  }
-  if (isFileReadable(cleanUrl(url))) {
-    const urlMessage = `The request url "${url}" is outside of Vite serving allow list.`
-    const hintMessage = `
+): void {
+  const urlMessage = `The request url "${url}" is outside of Vite serving allow list.`
+  const hintMessage = `
 ${server.config.server.fs.allow.map((i) => `- ${i}`).join('\n')}
 
 Refer to docs https://vite.dev/config/server-options.html#server-fs-allow for configurations and more details.`
 
-    server.config.logger.error(urlMessage)
-    server.config.logger.warnOnce(hintMessage + '\n')
-    res.statusCode = 403
-    res.write(renderRestrictedErrorHTML(urlMessage + '\n' + hintMessage))
-    res.end()
-  } else {
-    // if the file doesn't exist, we shouldn't restrict this path as it can
-    // be an API call. Middlewares would issue a 404 if the file isn't handled
-    next()
-  }
-  return false
+  server.config.logger.error(urlMessage)
+  server.config.logger.warnOnce(hintMessage + '\n')
+  res.statusCode = 403
+  res.write(renderRestrictedErrorHTML(urlMessage + '\n' + hintMessage))
+  res.end()
 }
 
 function renderRestrictedErrorHTML(msg: string): string {
