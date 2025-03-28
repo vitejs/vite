@@ -1290,7 +1290,6 @@ export async function resolveConfig(
 
   // load .env files
   let envDir = config.envDir
-
   if (envDir !== false) {
     envDir = config.envDir
       ? normalizePath(path.resolve(resolvedRoot, config.envDir))
