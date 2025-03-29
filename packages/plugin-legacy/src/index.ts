@@ -164,6 +164,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const isDebug =
     debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
 
+  const assumptions = options.assumptions || {}
+
   const facadeToLegacyChunkMap = new Map()
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
@@ -338,6 +340,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         await detectPolyfills(
           `Promise.resolve(); Promise.all();`,
           targets,
+          assumptions,
           legacyPolyfills,
         )
       }
@@ -490,7 +493,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           genModern
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, modernTargets, polyfillsDiscovered.modern)
+          await detectPolyfills(
+            raw,
+            modernTargets,
+            assumptions,
+            polyfillsDiscovered.modern,
+          )
         }
 
         const ms = new MagicString(raw)
@@ -569,7 +577,9 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ],
           [
             (await import('@babel/preset-env')).default,
-            createBabelPresetEnvOptions(targets, { needPolyfills }),
+            createBabelPresetEnvOptions(targets, assumptions, {
+              needPolyfills,
+            }),
           ],
         ],
       })
@@ -735,6 +745,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 export async function detectPolyfills(
   code: string,
   targets: any,
+  assumptions: Record<string, boolean>,
   list: Set<string>,
 ): Promise<void> {
   const babel = await loadBabel()
@@ -746,7 +757,7 @@ export async function detectPolyfills(
     presets: [
       [
         (await import('@babel/preset-env')).default,
-        createBabelPresetEnvOptions(targets, {}),
+        createBabelPresetEnvOptions(targets, assumptions, {}),
       ],
     ],
   })
@@ -765,6 +776,7 @@ export async function detectPolyfills(
 
 function createBabelPresetEnvOptions(
   targets: any,
+  assumptions: Record<string, boolean>,
   { needPolyfills = true }: { needPolyfills?: boolean },
 ) {
   return {
@@ -781,6 +793,7 @@ function createBabelPresetEnvOptions(
       : undefined,
     shippedProposals: true,
     ignoreBrowserslistConfig: true,
+    assumptions,
   }
 }
 
