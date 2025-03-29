@@ -21,7 +21,7 @@ export async function runnerImport<T>(
   const config = await resolveConfig(
     mergeConfig(inlineConfig || {}, {
       configFile: false,
-      envFile: false,
+      envDir: false,
       cacheDir: process.cwd(),
       environments: {
         inline: {

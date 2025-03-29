@@ -1454,7 +1454,7 @@ const c = () => {
 test('combine mappings', async () => {
   const server = await createServer({
     configFile: false,
-    envFile: false,
+    envDir: false,
     logLevel: 'error',
     plugins: [
       {
