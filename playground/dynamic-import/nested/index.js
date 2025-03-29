@@ -142,15 +142,18 @@ import(`../nested/nested/${base}.js`).then((mod) => {
   const baz1 = (await import('./treeshaken/treeshaken.js')).baz1
   const baz2 = (await import('./treeshaken/treeshaken.js')).baz2.log
   const baz3 = (await import('./treeshaken/treeshaken.js')).baz3?.log
-  const baz4 = await import('./treeshaken/treeshaken.js').then(
-    ({ baz4 }) => baz4,
+  const { log: baz4 } = await import('./treeshaken/treeshaken.js').then(
+    (m) => m.baz4,
   )
-  const baz5 = await import('./treeshaken/treeshaken.js').then(function ({
-      baz5,
+  const baz5 = await import('./treeshaken/treeshaken.js').then(
+    ({ baz5 }) => baz5,
+  )
+  const baz6 = await import('./treeshaken/treeshaken.js').then(function ({
+      baz6,
     }) {
-      return baz5
+      return baz6
     }),
-    { baz6 } = await import('./treeshaken/treeshaken.js')
+    { baz7 } = await import('./treeshaken/treeshaken.js')
   foo()
   bar()
   tree()
@@ -162,6 +165,7 @@ import(`../nested/nested/${base}.js`).then((mod) => {
   baz4()
   baz5()
   baz6()
+  baz7()
 })()
 // Test syntax parsing only
 ;(async function () {
