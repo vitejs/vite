@@ -29,18 +29,14 @@ type FileDep = {
 
 type VitePreloadErrorEvent = Event & { payload: Error }
 
-/**
- * A flag for injected helpers. This flag will be set to `false` if the output
- * target is not native es - so that injected helper logic can be conditionally
- * dropped.
- */
-export const isModernFlag = `__VITE_IS_MODERN__`
+// Placeholder symbols for injecting helpers
+export const isEsmFlag = `__VITE_IS_MODERN__`
 export const preloadMethod = `__vitePreload`
-export const preloadMarker = `__VITE_PRELOAD__`
-export const preloadBaseMarker = `__VITE_PRELOAD_BASE__`
+const preloadMarker = `__VITE_PRELOAD__`
+const viteMapDeps = '__vite__mapDeps'
 
 export const preloadHelperId = '\0vite/preload-helper.js'
-const preloadMarkerRE = new RegExp(preloadMarker, 'g')
+const preloadMarkerRE = new RegExp('\\b' + preloadMarker + '\\b', 'g')
 
 const dynamicImportPrefixRE = /import\s*\(/
 
@@ -52,11 +48,7 @@ function toRelativePath(filename: string, importer: string) {
   return relPath[0] === '.' ? relPath : `./${relPath}`
 }
 
-function indexOfMatchInSlice(
-  str: string,
-  reg: RegExp,
-  pos: number = 0,
-): number {
+function indexOfRegexp(str: string, reg: RegExp, pos: number = 0) {
   reg.lastIndex = pos
   const result = reg.exec(str)
   return result?.index ?? -1
@@ -84,8 +76,12 @@ function preload(
 ) {
   let promise: Promise<PromiseSettledResult<unknown>[] | void> =
     Promise.resolve()
-  // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
-  if (__VITE_IS_MODERN__ && deps && deps.length > 0) {
+  if (
+    // @ts-expect-error __VITE_IS_MODERN__ will be replaced with boolean later
+    __VITE_IS_MODERN__ &&
+    deps &&
+    deps.length > 0
+  ) {
     const links = document.getElementsByTagName('link')
     const cspNonceMeta = document.querySelector<HTMLMetaElement>(
       'meta[property=csp-nonce]',
@@ -170,7 +166,7 @@ function preload(
  * Build only. During serve this is performed as part of ./importAnalysis.
  */
 export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
-  const getInsertPreload = (environment: Environment) =>
+  const shouldInsertPreload = (environment: Environment) =>
     environment.config.consumer === 'client' &&
     !config.isWorker &&
     !config.build.lib
@@ -210,12 +206,21 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
               ? // If `experimental.renderBuiltUrl` is used, the dependencies might be relative to the current chunk.
                 // If relative base is used, the dependencies are relative to the current chunk.
                 // The importerUrl is passed as third parameter to __vitePreload in this case
-                `function(dep, importerUrl) { return new URL(dep, importerUrl).href }`
+                `(dep, importerUrl) => new URL(dep, importerUrl).href`
               : // If the base isn't relative, then the deps are relative to the projects `outDir` and the base
                 // is appended inside __vitePreload too.
-                `function(dep) { return ${JSON.stringify(config.base)}+dep }`
-          const preloadCode = `const scriptRel = ${scriptRel};const assetsURL = ${assetsURL};const seen = {};export const ${preloadMethod} = ${preload.toString()}`
-          return { code: preloadCode, moduleSideEffects: false }
+                `(dep) => ${JSON.stringify(config.base)}+dep`
+          const code = [
+            `const scriptRel = ${scriptRel}`,
+            `const assetsURL = ${assetsURL}`,
+            `const seen = {}`,
+            `export const ${preloadMethod} = ${preload.toString()}`,
+          ].join(';')
+
+          return {
+            code,
+            moduleSideEffects: false,
+          }
         }
       },
     },
@@ -240,11 +245,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           this.error(message, showCodeFrame ? e.idx : undefined)
         }
 
-        if (!imports.length) {
+        if (imports.length === 0) {
           return null
         }
 
-        const insertPreload = getInsertPreload(this.environment)
+        const willInsertPreload = shouldInsertPreload(this.environment)
         // when wrapping dynamic imports with a preload helper, Rollup is unable to analyze the
         // accessed variables for treeshaking. This below tries to match common accessed syntax
         // to "copy" it over to the dynamic import wrapped by the preload helper.
@@ -253,7 +258,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           { declaration?: string; names?: string }
         > = {}
 
-        if (insertPreload) {
+        if (willInsertPreload) {
           let match
           while ((match = dynamicImportTreeshakenRE.exec(source))) {
             /* handle `const {foo} = await import('foo')`
@@ -304,30 +309,23 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           }
         }
 
-        let s: MagicString | undefined
-        const str = () => s || (s = new MagicString(source))
+        const s = new MagicString(source)
         let needPreloadHelper = false
 
-        for (let index = 0; index < imports.length; index++) {
-          const {
-            s: start,
-            e: end,
-            ss: expStart,
-            se: expEnd,
-            d: dynamicIndex,
-            a: attributeIndex,
-          } = imports[index]
+        for (const imp of imports) {
+          const { s: start, e: end, ss: expStart, se: expEnd } = imp
 
-          const isDynamicImport = dynamicIndex > -1
+          const isDynamicImport = imp.d > -1
+          const hasAttributes = imp.a > -1
 
-          // strip import attributes as we can process them ourselves
-          if (!isDynamicImport && attributeIndex > -1) {
-            str().remove(end + 1, expEnd)
+          // strip import attributes as we process them ourselves
+          if (!isDynamicImport && hasAttributes) {
+            s.remove(end + 1, expEnd)
           }
 
           if (
             isDynamicImport &&
-            insertPreload &&
+            willInsertPreload &&
             // Only preload static urls
             (source[start] === '"' ||
               source[start] === "'" ||
@@ -345,18 +343,18 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                * transform `(await import('foo')).foo`
                * to `__vitePreload(async () => { const {foo} = (await import('foo')).foo; return { foo }},...)).foo`
                */
-              str().prependLeft(
+              s.prependLeft(
                 expStart,
                 `${preloadMethod}(async () => { ${declaration} = await `,
               )
-              str().appendRight(expEnd, `;return ${names}}`)
+              s.appendRight(expEnd, `;return ${names}}`)
             } else {
-              str().prependLeft(expStart, `${preloadMethod}(() => `)
+              s.prependLeft(expStart, `${preloadMethod}(() => `)
             }
 
-            str().appendRight(
+            s.appendRight(
               expEnd,
-              `,${isModernFlag}?${preloadMarker}:void 0${
+              `,${isEsmFlag}?${preloadMarker}:void 0${
                 renderBuiltUrl || isRelativeBase ? ',import.meta.url' : ''
               })`,
             )
@@ -365,15 +363,13 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         if (
           needPreloadHelper &&
-          insertPreload &&
+          willInsertPreload &&
           !source.includes(`const ${preloadMethod} =`)
         ) {
-          str().prepend(
-            `import { ${preloadMethod} } from "${preloadHelperId}";`,
-          )
+          s.prepend(`import { ${preloadMethod} } from "${preloadHelperId}";`)
         }
 
-        if (s) {
+        if (s.hasChanged()) {
           return {
             code: s.toString(),
             map: this.environment.config.build.sourcemap
@@ -386,24 +382,25 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     renderChunk(code, _, { format }) {
       // make sure we only perform the preload logic in modern builds.
-      if (code.indexOf(isModernFlag) > -1) {
-        const re = new RegExp(isModernFlag, 'g')
-        const isModern = String(format === 'es')
-        if (this.environment.config.build.sourcemap) {
-          const s = new MagicString(code)
-          let match: RegExpExecArray | null
-          while ((match = re.exec(code))) {
-            s.update(match.index, match.index + isModernFlag.length, isModern)
-          }
-          return {
-            code: s.toString(),
-            map: s.generateMap({ hires: 'boundary' }),
-          }
-        } else {
-          return code.replace(re, isModern)
-        }
+      if (!code.includes(isEsmFlag)) {
+        return
       }
-      return null
+
+      const re = new RegExp(isEsmFlag, 'g')
+      const isEsm = String(format === 'es')
+      if (!this.environment.config.build.sourcemap) {
+        return code.replace(re, isEsm)
+      }
+
+      const s = new MagicString(code)
+      let match: RegExpExecArray | null
+      while ((match = re.exec(code))) {
+        s.update(match.index, match.index + isEsmFlag.length, isEsm)
+      }
+      return {
+        code: s.toString(),
+        map: s.generateMap({ hires: 'boundary' }),
+      }
     },
 
     generateBundle({ format }, bundle) {
@@ -413,7 +410,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
       // If preload is not enabled, we parse through each imports and remove any imports to pure CSS chunks
       // as they are removed from the bundle
-      if (!getInsertPreload(this.environment)) {
+      if (!shouldInsertPreload(this.environment)) {
         const removedPureCssFiles = removedPureCssFilesCache.get(config)
         if (removedPureCssFiles && removedPureCssFiles.size > 0) {
           for (const file in bundle) {
@@ -472,259 +469,258 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       const buildSourcemap = this.environment.config.build.sourcemap
       const { modulePreload } = this.environment.config.build
 
-      for (const file in bundle) {
-        const chunk = bundle[file]
+      for (const chunkName in bundle) {
+        const chunk = bundle[chunkName]
+        if (chunk.type !== 'chunk') {
+          continue
+        }
+
+        const { code, fileName: parentChunkName } = chunk
+
         // can't use chunk.dynamicImports.length here since some modules e.g.
         // dynamic import to constant json may get inlined.
-        if (chunk.type === 'chunk' && chunk.code.indexOf(preloadMarker) > -1) {
-          const code = chunk.code
-          let imports!: ImportSpecifier[]
-          try {
-            imports = parseImports(code)[0].filter((i) => i.d > -1)
-          } catch (e: any) {
-            const loc = numberToPos(code, e.idx)
-            this.error({
-              name: e.name,
-              message: e.message,
-              stack: e.stack,
-              cause: e.cause,
-              pos: e.idx,
-              loc: { ...loc, file: chunk.fileName },
-              frame: generateCodeFrame(code, loc),
-            })
+        if (!code.includes(preloadMarker)) {
+          continue
+        }
+
+        let dynamicImports!: ImportSpecifier[]
+        try {
+          dynamicImports = parseImports(code)[0].filter((i) => i.d > -1)
+        } catch (e: any) {
+          const loc = numberToPos(code, e.idx)
+          this.error({
+            name: e.name,
+            message: e.message,
+            stack: e.stack,
+            cause: e.cause,
+            pos: e.idx,
+            loc: {
+              ...loc,
+              file: parentChunkName,
+            },
+            frame: generateCodeFrame(code, loc),
+          })
+        }
+
+        const s = new MagicString(code)
+        const rewroteMarkerStartPos = new Set() // position of the leading double quote
+
+        const chunkRegistry: FileDep[] = []
+        const getChunkId = (url: string, runtime: boolean = false) => {
+          const index = chunkRegistry.findIndex((dep) => dep.url === url)
+          if (index === -1) {
+            return chunkRegistry.push({ url, runtime }) - 1
+          }
+          return index
+        }
+
+        for (const dynamicImport of dynamicImports) {
+          // To handle escape sequences in specifier strings, the .n field will be provided where possible.
+          const { s: start, e: end, ss: expStart, se: expEnd } = dynamicImport
+
+          // check the chunk being imported
+          let importUrl = dynamicImport.n
+          if (!importUrl) {
+            const rawUrl = code.slice(start, end)
+            if (rawUrl[0] === `"` && rawUrl.endsWith(`"`))
+              importUrl = rawUrl.slice(1, -1)
           }
 
-          const s = new MagicString(code)
-          const rewroteMarkerStartPos = new Set() // position of the leading double quote
+          const dependencies = new Set<string>()
+          let hasRemovedPureCssChunk = false
 
-          const fileDeps: FileDep[] = []
-          const addFileDep = (
-            url: string,
-            runtime: boolean = false,
-          ): number => {
-            const index = fileDeps.findIndex((dep) => dep.url === url)
-            if (index === -1) {
-              return fileDeps.push({ url, runtime }) - 1
-            } else {
-              return index
-            }
-          }
+          let importUrlResolved: string | undefined = undefined
 
-          if (imports.length) {
-            for (let index = 0; index < imports.length; index++) {
-              // To handle escape sequences in specifier strings, the .n field will be provided where possible.
-              const {
-                n: name,
-                s: start,
-                e: end,
-                ss: expStart,
-                se: expEnd,
-              } = imports[index]
-              // check the chunk being imported
-              let url = name
-              if (!url) {
-                const rawUrl = code.slice(start, end)
-                if (rawUrl[0] === `"` && rawUrl.endsWith(`"`))
-                  url = rawUrl.slice(1, -1)
-              }
-              const deps = new Set<string>()
-              let hasRemovedPureCssChunk = false
+          if (importUrl) {
+            importUrlResolved = path.posix.join(
+              path.posix.dirname(parentChunkName),
+              importUrl,
+            )
 
-              let normalizedFile: string | undefined = undefined
-
-              if (url) {
-                normalizedFile = path.posix.join(
-                  path.posix.dirname(chunk.fileName),
-                  url,
-                )
-
-                const ownerFilename = chunk.fileName
-                // literal import - trace direct imports and add to deps
-                const analyzed: Set<string> = new Set<string>()
-                const addDeps = (filename: string) => {
-                  if (filename === ownerFilename) return
-                  if (analyzed.has(filename)) return
-                  analyzed.add(filename)
-                  const chunk = bundle[filename]
-                  if (chunk) {
-                    deps.add(chunk.fileName)
-                    if (chunk.type === 'chunk') {
-                      chunk.imports.forEach(addDeps)
-                      // Ensure that the css imported by current chunk is loaded after the dependencies.
-                      // So the style of current chunk won't be overwritten unexpectedly.
-                      chunk.viteMetadata!.importedCss.forEach((file) => {
-                        deps.add(file)
-                      })
-                    }
-                  } else {
-                    const removedPureCssFiles =
-                      removedPureCssFilesCache.get(config)!
-                    const chunk = removedPureCssFiles.get(filename)
-                    if (chunk) {
-                      if (chunk.viteMetadata!.importedCss.size) {
-                        chunk.viteMetadata!.importedCss.forEach((file) => {
-                          deps.add(file)
-                        })
-                        hasRemovedPureCssChunk = true
-                      }
-
-                      s.update(expStart, expEnd, 'Promise.resolve({})')
-                    }
-                  }
-                }
-                addDeps(normalizedFile)
-              }
-
-              let markerStartPos = indexOfMatchInSlice(
-                code,
-                preloadMarkerRE,
-                end,
-              )
-              // fix issue #3051
-              if (markerStartPos === -1 && imports.length === 1) {
-                markerStartPos = indexOfMatchInSlice(code, preloadMarkerRE)
-              }
-
-              if (markerStartPos > 0) {
-                // the dep list includes the main chunk, so only need to reload when there are actual other deps.
-                let depsArray =
-                  deps.size > 1 ||
-                  // main chunk is removed
-                  (hasRemovedPureCssChunk && deps.size > 0)
-                    ? modulePreload === false
-                      ? // CSS deps use the same mechanism as module preloads, so even if disabled,
-                        // we still need to pass these deps to the preload helper in dynamic imports.
-                        [...deps].filter((d) => d.endsWith('.css'))
-                      : [...deps]
-                    : []
-
-                const resolveDependencies = modulePreload
-                  ? modulePreload.resolveDependencies
-                  : undefined
-                if (resolveDependencies && normalizedFile) {
-                  // We can't let the user remove css deps as these aren't really preloads, they are just using
-                  // the same mechanism as module preloads for this chunk
-                  const cssDeps: string[] = []
-                  const otherDeps: string[] = []
-                  for (const dep of depsArray) {
-                    ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
-                  }
-                  depsArray = [
-                    ...resolveDependencies(normalizedFile, otherDeps, {
-                      hostId: file,
-                      hostType: 'js',
-                    }),
-                    ...cssDeps,
-                  ]
-                }
-
-                let renderedDeps: number[]
-                if (renderBuiltUrl) {
-                  renderedDeps = depsArray.map((dep) => {
-                    const replacement = toOutputFilePathInJS(
-                      this.environment,
-                      dep,
-                      'asset',
-                      chunk.fileName,
-                      'js',
-                      toRelativePath,
-                    )
-
-                    if (typeof replacement === 'string') {
-                      return addFileDep(replacement)
-                    }
-
-                    return addFileDep(replacement.runtime, true)
-                  })
-                } else {
-                  renderedDeps = depsArray.map((d) =>
-                    // Don't include the assets dir if the default asset file names
-                    // are used, the path will be reconstructed by the import preload helper
-                    isRelativeBase
-                      ? addFileDep(toRelativePath(d, file))
-                      : addFileDep(d),
+            // literal import - trace direct imports and add to deps
+            const traversed = new Set<string>()
+            ;(function traverseChunkDependencies(chunkName: string) {
+              if (chunkName === parentChunkName) return
+              if (traversed.has(chunkName)) return
+              traversed.add(chunkName)
+              const chunk = bundle[chunkName]
+              if (chunk) {
+                dependencies.add(chunk.fileName)
+                if (chunk.type === 'chunk') {
+                  chunk.imports.forEach(traverseChunkDependencies)
+                  // Ensure that the css imported by current chunk is loaded after the dependencies.
+                  // So the style of current chunk won't be overwritten unexpectedly.
+                  chunk.viteMetadata!.importedCss.forEach((file) =>
+                    dependencies.add(file),
                   )
                 }
+              } else {
+                const removedPureCssFiles =
+                  removedPureCssFilesCache.get(config)!
+                const chunk = removedPureCssFiles.get(chunkName)
+                if (chunk) {
+                  if (chunk.viteMetadata!.importedCss.size) {
+                    chunk.viteMetadata!.importedCss.forEach((file) =>
+                      dependencies.add(file),
+                    )
+                    hasRemovedPureCssChunk = true
+                  }
 
-                s.update(
-                  markerStartPos,
-                  markerStartPos + preloadMarker.length,
-                  renderedDeps.length > 0
-                    ? `__vite__mapDeps([${renderedDeps.join(',')}])`
-                    : `[]`,
-                )
-                rewroteMarkerStartPos.add(markerStartPos)
+                  s.update(expStart, expEnd, 'Promise.resolve({})')
+                }
               }
-            }
+            })(importUrlResolved)
           }
 
-          if (fileDeps.length > 0) {
-            const fileDepsCode = `[${fileDeps
-              .map((fileDep) =>
-                fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url),
-              )
-              .join(',')}]`
+          let markerStartPos = indexOfRegexp(code, preloadMarkerRE, end)
+          // fix issue #3051
+          if (markerStartPos === -1 && dynamicImports.length === 1) {
+            markerStartPos = indexOfRegexp(code, preloadMarkerRE)
+          }
 
-            const mapDepsCode = `const __vite__mapDeps=(i,m=__vite__mapDeps,d=(m.f||(m.f=${fileDepsCode})))=>i.map(i=>d[i]);\n`
+          if (markerStartPos > 0) {
+            // the dep list includes the main chunk, so only need to reload when there are actual other deps.
+            let depsArray =
+              dependencies.size > 1 ||
+              // main chunk is removed
+              (hasRemovedPureCssChunk && dependencies.size > 0)
+                ? modulePreload === false
+                  ? // CSS deps use the same mechanism as module preloads, so even if disabled,
+                    // we still need to pass these deps to the preload helper in dynamic imports.
+                    [...dependencies].filter((d) => d.endsWith('.css'))
+                  : [...dependencies]
+                : []
 
-            // inject extra code at the top or next line of hashbang
-            if (code.startsWith('#!')) {
-              s.prependLeft(code.indexOf('\n') + 1, mapDepsCode)
+            const resolveDependencies = modulePreload
+              ? modulePreload.resolveDependencies
+              : undefined
+            if (resolveDependencies && importUrlResolved) {
+              // We can't let the user remove css deps as these aren't really preloads, they are just using
+              // the same mechanism as module preloads for this chunk
+              const cssDeps: string[] = []
+              const otherDeps: string[] = []
+              for (const dep of depsArray) {
+                ;(dep.endsWith('.css') ? cssDeps : otherDeps).push(dep)
+              }
+              depsArray = [
+                ...resolveDependencies(importUrlResolved, otherDeps, {
+                  hostId: chunkName,
+                  hostType: 'js',
+                }),
+                ...cssDeps,
+              ]
+            }
+
+            let chunkDependencies: number[]
+            if (renderBuiltUrl) {
+              chunkDependencies = depsArray.map((dep) => {
+                const replacement = toOutputFilePathInJS(
+                  this.environment,
+                  dep,
+                  'asset',
+                  chunk.fileName,
+                  'js',
+                  toRelativePath,
+                )
+
+                if (typeof replacement === 'string') {
+                  return getChunkId(replacement)
+                }
+
+                return getChunkId(replacement.runtime, true)
+              })
             } else {
-              s.prepend(mapDepsCode)
-            }
-          }
-
-          // there may still be markers due to inlined dynamic imports, remove
-          // all the markers regardless
-          let markerStartPos = indexOfMatchInSlice(code, preloadMarkerRE)
-          while (markerStartPos >= 0) {
-            if (!rewroteMarkerStartPos.has(markerStartPos)) {
-              s.update(
-                markerStartPos,
-                markerStartPos + preloadMarker.length,
-                'void 0',
+              chunkDependencies = depsArray.map((d) =>
+                // Don't include the assets dir if the default asset file names
+                // are used, the path will be reconstructed by the import preload helper
+                isRelativeBase
+                  ? getChunkId(toRelativePath(d, chunkName))
+                  : getChunkId(d),
               )
             }
-            markerStartPos = indexOfMatchInSlice(
-              code,
-              preloadMarkerRE,
+
+            s.update(
+              markerStartPos,
               markerStartPos + preloadMarker.length,
+              chunkDependencies.length > 0
+                ? `${viteMapDeps}([${chunkDependencies.join(',')}])`
+                : `[]`,
+            )
+            rewroteMarkerStartPos.add(markerStartPos)
+          }
+        }
+
+        if (chunkRegistry.length > 0) {
+          const chunkRegistryCode = `[${chunkRegistry
+            .map((fileDep) =>
+              fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url),
+            )
+            .join(',')}]`
+
+          const mapDepsCode = `const ${viteMapDeps}=(i,m=${viteMapDeps},d=(m.f||(m.f=${chunkRegistryCode})))=>i.map(i=>d[i]);\n`
+
+          // inject extra code at the top or next line of hashbang
+          if (code.startsWith('#!')) {
+            s.prependLeft(code.indexOf('\n') + 1, mapDepsCode)
+          } else {
+            s.prepend(mapDepsCode)
+          }
+        }
+
+        // there may still be markers due to inlined dynamic imports, remove
+        // all the markers regardless
+        let markerStartPos = indexOfRegexp(code, preloadMarkerRE)
+        while (markerStartPos >= 0) {
+          if (!rewroteMarkerStartPos.has(markerStartPos)) {
+            s.update(
+              markerStartPos,
+              markerStartPos + preloadMarker.length,
+              'void 0',
             )
           }
+          markerStartPos = indexOfRegexp(
+            code,
+            preloadMarkerRE,
+            markerStartPos + preloadMarker.length,
+          )
+        }
 
-          if (s.hasChanged()) {
-            chunk.code = s.toString()
-            if (buildSourcemap && chunk.map) {
-              const nextMap = s.generateMap({
-                source: chunk.fileName,
-                hires: 'boundary',
-              })
-              const map = combineSourcemaps(chunk.fileName, [
-                nextMap as RawSourceMap,
-                chunk.map as RawSourceMap,
-              ]) as SourceMap
-              map.toUrl = () => genSourceMapUrl(map)
+        if (!s.hasChanged()) {
+          continue
+        }
 
-              const originalDebugId = chunk.map.debugId
-              chunk.map = map
+        chunk.code = s.toString()
 
-              if (buildSourcemap === 'inline') {
-                chunk.code = chunk.code.replace(
-                  convertSourceMap.mapFileCommentRegex,
-                  '',
-                )
-                chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
-              } else {
-                if (originalDebugId) {
-                  map.debugId = originalDebugId
-                }
-                const mapAsset = bundle[chunk.fileName + '.map']
-                if (mapAsset && mapAsset.type === 'asset') {
-                  mapAsset.source = map.toString()
-                }
-              }
-            }
+        if (!buildSourcemap || !chunk.map) {
+          continue
+        }
+
+        const nextMap = s.generateMap({
+          source: chunk.fileName,
+          hires: 'boundary',
+        })
+        const map = combineSourcemaps(chunk.fileName, [
+          nextMap as RawSourceMap,
+          chunk.map as RawSourceMap,
+        ]) as SourceMap
+        map.toUrl = () => genSourceMapUrl(map)
+
+        const originalDebugId = chunk.map.debugId
+        chunk.map = map
+
+        if (buildSourcemap === 'inline') {
+          chunk.code = chunk.code.replace(
+            convertSourceMap.mapFileCommentRegex,
+            '',
+          )
+          chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
+        } else {
+          if (originalDebugId) {
+            map.debugId = originalDebugId
+          }
+          const mapAsset = bundle[chunk.fileName + '.map']
+          if (mapAsset && mapAsset.type === 'asset') {
+            mapAsset.source = map.toString()
           }
         }
       }
