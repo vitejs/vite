@@ -13,7 +13,7 @@
     "feed": "^4.2.2",
     "vitepress": "^1.6.3",
     "vitepress-plugin-group-icons": "^1.3.7",
-    "vitepress-plugin-llms": "^0.0.12",
+    "vitepress-plugin-llms": "^0.0.17",
     "vue": "^3.5.13"
   }
 }
