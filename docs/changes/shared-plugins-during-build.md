@@ -4,7 +4,7 @@
 Give us feedback at [Environment API feedback discussion](https://github.com/vitejs/vite/discussions/16358)
 :::
 
-See [Shared plugins during build](/guide/api-environment.md#shared-plugins-during-build).
+See [Shared plugins during build](/guide/api-environment-plugins.md#shared-plugins-during-build).
 
 Affect scope: `Vite Plugin Authors`
 
