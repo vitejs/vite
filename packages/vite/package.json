@@ -46,7 +46,8 @@
     "#module-sync-enabled": {
       "module-sync": "./misc/true.js",
       "default": "./misc/false.js"
-    }
+    },
+    "#deps-tracker": "./dist/node/deps-tracker.js"
   },
   "files": [
     "bin",
