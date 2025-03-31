@@ -5,7 +5,7 @@ import type {
   ImportSpecifier,
 } from 'es-module-lexer'
 import { init, parse as parseImports } from 'es-module-lexer'
-import type { SourceMap } from 'rollup'
+import type { OutputChunk, SourceMap } from 'rollup'
 import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
 import {
@@ -22,18 +22,18 @@ import type { Environment } from '../environment'
 import { removedPureCssFilesCache } from './css'
 import { createParseErrorInfo } from './importAnalysis'
 
-type FileDep = {
-  url: string
-  runtime: boolean
-}
+const symbolString = (name: string) =>
+  `__viteSymbol_${name}_${Math.random().toString(36).slice(2)}__`
 
 type VitePreloadErrorEvent = Event & { payload: Error }
 
 // Placeholder symbols for injecting helpers
 export const isEsmFlag = `__VITE_IS_MODERN__`
+const isEsmFlagPattern = new RegExp('\\b' + isEsmFlag + '\\b', 'g')
+
 export const preloadMethod = `__vitePreload`
 const preloadMarker = `__VITE_PRELOAD__`
-const viteMapDeps = '__vite__mapDeps'
+const chunkRegistryPlaceholder = symbolString('chunkRegistryPlaceholder')
 
 export const preloadHelperId = '\0vite/preload-helper.js'
 const preloadMarkerRE = new RegExp('\\b' + preloadMarker + '\\b', 'g')
@@ -93,6 +93,9 @@ function preload(
 
     promise = Promise.allSettled(
       deps.map((dep) => {
+        // @ts-expect-error chunkRegistry is declared before preload.toString()
+        dep = chunkRegistry[dep]
+
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
         if (dep in seen) return
@@ -211,6 +214,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
                 // is appended inside __vitePreload too.
                 `(dep) => ${JSON.stringify(config.base)}+dep`
           const code = [
+            `const chunkRegistry = ${chunkRegistryPlaceholder}`,
             `const scriptRel = ${scriptRel}`,
             `const assetsURL = ${assetsURL}`,
             `const seen = {}`,
@@ -381,25 +385,31 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     },
 
     renderChunk(code, _, { format }) {
-      // make sure we only perform the preload logic in modern builds.
-      if (!code.includes(isEsmFlag)) {
-        return
-      }
-
-      const re = new RegExp(isEsmFlag, 'g')
-      const isEsm = String(format === 'es')
-      if (!this.environment.config.build.sourcemap) {
-        return code.replace(re, isEsm)
-      }
-
       const s = new MagicString(code)
-      let match: RegExpExecArray | null
-      while ((match = re.exec(code))) {
-        s.update(match.index, match.index + isEsmFlag.length, isEsm)
+
+      // make sure we only perform the preload logic in modern builds.
+      if (code.includes(isEsmFlag)) {
+        const isEsmFormat = String(format === 'es')
+        let match: RegExpExecArray | null
+        while ((match = isEsmFlagPattern.exec(code))) {
+          s.update(match.index, match.index + isEsmFlag.length, isEsmFormat)
+        }
       }
+
+      if (format !== 'es' && code.includes(chunkRegistryPlaceholder)) {
+        s.overwrite(
+          code.indexOf(chunkRegistryPlaceholder),
+          code.indexOf(chunkRegistryPlaceholder) +
+            chunkRegistryPlaceholder.length,
+          '""',
+        )
+      }
+
       return {
         code: s.toString(),
-        map: s.generateMap({ hires: 'boundary' }),
+        map: this.environment.config.build.sourcemap
+          ? s.generateMap({ hires: 'boundary' })
+          : null,
       }
     },
 
@@ -469,6 +479,15 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       const buildSourcemap = this.environment.config.build.sourcemap
       const { modulePreload } = this.environment.config.build
 
+      const chunkRegistry: string[] = []
+      const getChunkId = (url: string, runtime: boolean = false) => {
+        if (!runtime) {
+          url = JSON.stringify(url)
+        }
+        const index = chunkRegistry.indexOf(url)
+        return index > -1 ? index : chunkRegistry.push(url) - 1
+      }
+
       for (const chunkName in bundle) {
         const chunk = bundle[chunkName]
         if (chunk.type !== 'chunk') {
@@ -485,7 +504,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         let dynamicImports!: ImportSpecifier[]
         try {
-          dynamicImports = parseImports(code)[0].filter((i) => i.d > -1)
+          dynamicImports = parseImports(code)[0].filter((i) => i.d !== -1)
         } catch (e: any) {
           const loc = numberToPos(code, e.idx)
           this.error({
@@ -504,15 +523,6 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
         const s = new MagicString(code)
         const rewroteMarkerStartPos = new Set() // position of the leading double quote
-
-        const chunkRegistry: FileDep[] = []
-        const getChunkId = (url: string, runtime: boolean = false) => {
-          const index = chunkRegistry.findIndex((dep) => dep.url === url)
-          if (index === -1) {
-            return chunkRegistry.push({ url, runtime }) - 1
-          }
-          return index
-        }
 
         for (const dynamicImport of dynamicImports) {
           // To handle escape sequences in specifier strings, the .n field will be provided where possible.
@@ -642,28 +652,9 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
             s.update(
               markerStartPos,
               markerStartPos + preloadMarker.length,
-              chunkDependencies.length > 0
-                ? `${viteMapDeps}([${chunkDependencies.join(',')}])`
-                : `[]`,
+              `[${chunkDependencies.join(',')}]`,
             )
             rewroteMarkerStartPos.add(markerStartPos)
-          }
-        }
-
-        if (chunkRegistry.length > 0) {
-          const chunkRegistryCode = `[${chunkRegistry
-            .map((fileDep) =>
-              fileDep.runtime ? fileDep.url : JSON.stringify(fileDep.url),
-            )
-            .join(',')}]`
-
-          const mapDepsCode = `const ${viteMapDeps}=(i,m=${viteMapDeps},d=(m.f||(m.f=${chunkRegistryCode})))=>i.map(i=>d[i]);\n`
-
-          // inject extra code at the top or next line of hashbang
-          if (code.startsWith('#!')) {
-            s.prependLeft(code.indexOf('\n') + 1, mapDepsCode)
-          } else {
-            s.prepend(mapDepsCode)
           }
         }
 
@@ -685,27 +676,45 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
         }
 
-        if (!s.hasChanged()) {
-          continue
+        if (s.hasChanged()) {
+          patchChunkWithMagicString(chunk, s)
         }
+      }
 
+      const chunkToPatchWithRegistry = Object.values(bundle).find(
+        (chunk) =>
+          chunk.type === 'chunk' &&
+          chunk.code.includes(chunkRegistryPlaceholder),
+      ) as OutputChunk | undefined
+      if (chunkToPatchWithRegistry) {
+        const chunkRegistryCode = `[${chunkRegistry.join(',')}]`
+        const s = new MagicString(chunkToPatchWithRegistry.code)
+        s.overwrite(
+          chunkToPatchWithRegistry.code.indexOf(chunkRegistryPlaceholder),
+          chunkToPatchWithRegistry.code.indexOf(chunkRegistryPlaceholder) +
+            chunkRegistryPlaceholder.length,
+          chunkRegistryCode,
+        )
+
+        patchChunkWithMagicString(chunkToPatchWithRegistry, s)
+      }
+
+      function patchChunkWithMagicString(chunk: OutputChunk, s: MagicString) {
         chunk.code = s.toString()
 
         if (!buildSourcemap || !chunk.map) {
-          continue
+          return
         }
 
-        const nextMap = s.generateMap({
-          source: chunk.fileName,
-          hires: 'boundary',
-        })
+        const { debugId } = chunk.map
         const map = combineSourcemaps(chunk.fileName, [
-          nextMap as RawSourceMap,
+          s.generateMap({
+            source: chunk.fileName,
+            hires: 'boundary',
+          }) as RawSourceMap,
           chunk.map as RawSourceMap,
         ]) as SourceMap
         map.toUrl = () => genSourceMapUrl(map)
-
-        const originalDebugId = chunk.map.debugId
         chunk.map = map
 
         if (buildSourcemap === 'inline') {
@@ -715,8 +724,8 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
           )
           chunk.code += `\n//# sourceMappingURL=${genSourceMapUrl(map)}`
         } else {
-          if (originalDebugId) {
-            map.debugId = originalDebugId
+          if (debugId) {
+            map.debugId = debugId
           }
           const mapAsset = bundle[chunk.fileName + '.map']
           if (mapAsset && mapAsset.type === 'asset') {

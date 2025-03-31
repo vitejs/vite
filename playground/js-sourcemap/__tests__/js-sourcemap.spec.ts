@@ -143,7 +143,7 @@ describe.runIf(isBuild)('build tests', () => {
       {
         "debugId": "00000000-0000-0000-0000-000000000000",
         "ignoreList": [],
-        "mappings": ";+7BAAA,OAAO,2BAAuB,0BAE9B,QAAQ,IAAI,uBAAuB",
+        "mappings": "6gCAAA,OAAO,2BAAuB,SAE9B,QAAQ,IAAI,uBAAuB",
         "sources": [
           "../../after-preload-dynamic.js",
         ],
@@ -161,19 +161,6 @@ describe.runIf(isBuild)('build tests', () => {
     expect(js).toMatch(
       /\n\/\/# sourceMappingURL=after-preload-dynamic-[-\w]{8}\.js\.map\n$/,
     )
-  })
-
-  test('__vite__mapDeps injected after banner', async () => {
-    const js = findAssetFile(/after-preload-dynamic-hashbang-[-\w]{8}\.js$/)
-    expect(js.split('\n').slice(0, 2)).toEqual([
-      '#!/usr/bin/env node',
-      expect.stringContaining('const __vite__mapDeps=(i'),
-    ])
-  })
-
-  test('no unused __vite__mapDeps', async () => {
-    const js = findAssetFile(/after-preload-dynamic-no-dep-[-\w]{8}\.js$/)
-    expect(js).not.toMatch(/__vite__mapDeps/)
   })
 
   test('sourcemap is correct when using object as "define" value', async () => {
