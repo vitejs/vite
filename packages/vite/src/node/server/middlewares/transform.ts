@@ -38,13 +38,17 @@ import {
 } from '../../plugins/optimizedDeps'
 import { ERR_CLOSED_SERVER } from '../pluginContainer'
 import { getDepsOptimizer } from '../../optimizer'
-import { rawRE, urlRE } from '../../plugins/asset'
 import { ensureServingAccess } from './static'
 
 const debugCache = createDebugger('vite:cache')
 
 const knownIgnoreList = new Set(['/', '/favicon.ico'])
 const trailingQuerySeparatorsRE = /[?&]+$/
+
+// TODO: consolidate this regex pattern with the url, raw, and inline checks in plugins
+const urlRE = /[?&]url\b/
+const rawRE = /[?&]raw\b/
+const inlineRE = /[?&]inline\b/
 
 export function transformMiddleware(
   server: ViteDevServer,
@@ -174,7 +178,8 @@ export function transformMiddleware(
       )
       if (
         (rawRE.test(urlWithoutTrailingQuerySeparators) ||
-          urlRE.test(urlWithoutTrailingQuerySeparators)) &&
+          urlRE.test(urlWithoutTrailingQuerySeparators) ||
+          inlineRE.test(urlWithoutTrailingQuerySeparators)) &&
         !ensureServingAccess(
           urlWithoutTrailingQuerySeparators,
           server,
