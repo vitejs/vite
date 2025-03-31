@@ -1,3 +1,9 @@
+## <small>6.2.4 (2025-03-31)</small>
+
+* fix: fs check in transform middleware (#19761) ([7a4faba](https://github.com/vitejs/vite/commit/7a4fabab6a3aa24c89144e15a13d78f92b52e588)), closes [#19761](https://github.com/vitejs/vite/issues/19761)
+
+
+
 ## <small>6.2.3 (2025-03-24)</small>
 
 * fix: fs raw query with query separators (#19702) ([f234b57](https://github.com/vitejs/vite/commit/f234b5744d8b74c95535a7b82cc88ed2144263c1)), closes [#19702](https://github.com/vitejs/vite/issues/19702)
