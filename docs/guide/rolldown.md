@@ -99,9 +99,9 @@ We encourage you to try out `rolldown-vite` and contribute to its development th
 - Rolldown is used for build (Rollup was used before)
 - Rolldown is used for the optimizer (esbuild was used before)
 - CommonJS support is handled by Rolldown (@rollup/plugin-commonjs was used before)
-- OXC is used for syntax lowering (esbuild was used before)
+- Oxc is used for syntax lowering (esbuild was used before)
 - lightningcss is used for CSS minification by default (esbuild was used before)
-- OXC minifier is used for JS minification by default (esbuild was used before)
+- Oxc minifier is used for JS minification by default (esbuild was used before)
 - Rolldown is used for bundling the config (esbuild was used before)
 
 ### Detecting rolldown-vite
@@ -149,12 +149,12 @@ To fix this error, you can either
 
 ### `transformWithEsbuild` requires `esbuild` to be installed separately
 
-A similar function `transformWithOxc`, which used OXC instead of esbuild, is exported from rolldown-vite.
+A similar function `transformWithOxc`, which uses Oxc instead of esbuild, is exported from rolldown-vite.
 
 ### Compat layer for esbuild options
 
-Rolldown-Vite has some compat layer to convert options for esbuild to OXC / rolldown. As tested in the ecosystem-ci, this works in many cases, including simple esbuild plugins.
-That said, we'll be removing the esbuild options support in the future and encourage you to try the corresponding OXC / rolldown options.
+Rolldown-Vite has some compat layer to convert options for esbuild to Oxc / rolldown. As tested in the ecosystem-ci, this works in many cases, including simple esbuild plugins.
+That said, we'll be removing the esbuild options support in the future and encourage you to try the corresponding Oxc / rolldown options.
 You can get the options set by the compat layer from the `configResolved` hook.
 
 ### Hook filter feature
