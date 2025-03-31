@@ -23,6 +23,8 @@
 <pre class="unsafe-fetch-8498"></pre>
 <pre class="unsafe-fetch-8498-2-status"></pre>
 <pre class="unsafe-fetch-8498-2"></pre>
+<pre class="unsafe-fetch-import-inline-status"></pre>
+<pre class="unsafe-fetch-raw-query-import-status"></pre>
 
 <h2>Safe /@fs/ Fetch</h2>
 <pre class="safe-fs-fetch-status"></pre>
@@ -45,6 +47,8 @@
 <pre class="unsafe-fs-fetch-8498"></pre>
 <pre class="unsafe-fs-fetch-8498-2-status"></pre>
 <pre class="unsafe-fs-fetch-8498-2"></pre>
+<pre class="unsafe-fs-fetch-import-inline-status"></pre>
+<pre class="unsafe-fs-fetch-import-inline-wasm-init-status"></pre>
 
 <h2>Nested Entry</h2>
 <pre class="nested-entry"></pre>
@@ -160,6 +164,24 @@
       console.error(e)
     })
 
+  // outside of allowed dir with import inline
+  fetch(joinUrlSegments(base, '/unsafe.txt?import&inline'))
+    .then((r) => {
+      text('.unsafe-fetch-import-inline-status', r.status)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  // outside of allowed dir with raw query import
+  fetch(joinUrlSegments(base, '/unsafe.txt?raw?import'))
+    .then((r) => {
+      text('.unsafe-fetch-raw-query-import-status', r.status)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
   // imported before, should be treated as safe
   fetch(joinUrlSegments(base, joinUrlSegments('/@fs/', ROOT) + '/safe.json'))
     .then((r) => {
@@ -242,6 +264,35 @@
     })
     .then((data) => {
       text('.unsafe-fs-fetch-raw-query2', JSON.stringify(data))
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  // outside of root inline
+  fetch(
+    joinUrlSegments(
+      base,
+      joinUrlSegments('/@fs/', ROOT) + '/root/unsafe.txt?import&inline',
+    ),
+  )
+    .then((r) => {
+      text('.unsafe-fs-fetch-import-inline-status', r.status)
+    })
+    .catch((e) => {
+      console.error(e)
+    })
+
+  // outside of root inline, faux wasm?init
+  fetch(
+    joinUrlSegments(
+      base,
+      joinUrlSegments('/@fs/', ROOT) +
+        '/root/unsafe.txt?import&?inline=1.wasm?init',
+    ),
+  )
+    .then((r) => {
+      text('.unsafe-fs-fetch-import-inline-wasm-init-status', r.status)
     })
     .catch((e) => {
       console.error(e)
