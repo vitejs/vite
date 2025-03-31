@@ -67,6 +67,18 @@ describe.runIf(isServe)('main', () => {
     expect(await page.textContent('.unsafe-fetch-8498-2-status')).toBe('404')
   })
 
+  test('unsafe fetch import inline', async () => {
+    expect(await page.textContent('.unsafe-fetch-import-inline-status')).toBe(
+      '403',
+    )
+  })
+
+  test('unsafe fetch raw query import', async () => {
+    expect(
+      await page.textContent('.unsafe-fetch-raw-query-import-status'),
+    ).toBe('403')
+  })
+
   test('safe fs fetch', async () => {
     expect(await page.textContent('.safe-fs-fetch')).toBe(stringified)
     expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
@@ -118,6 +130,18 @@ describe.runIf(isServe)('main', () => {
   test('unsafe fs fetch with special characters 2 (#8498)', async () => {
     expect(await page.textContent('.unsafe-fs-fetch-8498-2')).toBe('')
     expect(await page.textContent('.unsafe-fs-fetch-8498-2-status')).toBe('404')
+  })
+
+  test('unsafe fs fetch import inline', async () => {
+    expect(
+      await page.textContent('.unsafe-fs-fetch-import-inline-status'),
+    ).toBe('403')
+  })
+
+  test('unsafe fs fetch import inline wasm init', async () => {
+    expect(
+      await page.textContent('.unsafe-fs-fetch-import-inline-wasm-init-status'),
+    ).toBe('403')
   })
 
   test('nested entry', async () => {
