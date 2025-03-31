@@ -18,7 +18,10 @@ export interface CustomPluginOptionsVite {
    *
    * @experimental
    */
-  cssScopeTo?: [importerId: string, exportName: string | undefined]
+  cssScopeTo?: readonly [importerId: string, exportName: string | undefined]
+
+  /** @deprecated no-op since Vite 6.1 */
+  lang?: string
 }
 
 declare module 'rollup' {
