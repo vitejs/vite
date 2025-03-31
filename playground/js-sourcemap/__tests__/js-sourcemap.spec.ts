@@ -143,7 +143,7 @@ describe.runIf(isBuild)('build tests', () => {
       {
         "debugId": "00000000-0000-0000-0000-000000000000",
         "ignoreList": [],
-        "mappings": "6gCAAA,OAAO,2BAAuB,SAE9B,QAAQ,IAAI,uBAAuB",
+        "mappings": "4nCAAA,OAAO,2BAAuB,SAE9B,QAAQ,IAAI,uBAAuB",
         "sources": [
           "../../after-preload-dynamic.js",
         ],
