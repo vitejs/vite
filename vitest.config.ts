@@ -19,7 +19,7 @@ export default defineConfig({
     },
     testTimeout: 20000,
     isolate: false,
-    // importing non entry files (e.g. config.ts, build.ts, server/index.ts) is broken due to cyclic import
+    // importing non-entry files (e.g. config.ts, build.ts, server/index.ts) is broken due to cyclic import
     // as it can be seen from tsx (try pnpm exec tsx packages/vite/src/node/server/index.ts).
     // we can use `setupFiles` to ensure the modules are evaluated via main node entry.
     setupFiles: ['./packages/vite/src/node/index.ts'],
