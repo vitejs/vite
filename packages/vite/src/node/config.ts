@@ -408,7 +408,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * root.
    * @default root
    */
-  envDir?: string
+  envDir?: string | false
   /**
    * Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
    * @default 'VITE_'
@@ -547,6 +547,7 @@ export interface InlineConfig extends UserConfig {
   configFile?: string | false
   /** @experimental */
   configLoader?: 'bundle' | 'runner' | 'native'
+  /** @deprecated */
   envFile?: false
   forceOptimizeDeps?: boolean
 }
@@ -587,7 +588,7 @@ export interface ResolvedConfig
       /** @internal list of bundle entry id. used to detect recursive worker bundle. */
       bundleChain: string[]
       isProduction: boolean
-      envDir: string
+      envDir: string | false
       env: Record<string, any>
       resolve: Required<ResolveOptions> & {
         alias: Alias[]
@@ -1288,12 +1289,15 @@ export async function resolveConfig(
   )
 
   // load .env files
-  const envDir = config.envDir
-    ? normalizePath(path.resolve(resolvedRoot, config.envDir))
-    : resolvedRoot
-  const userEnv =
-    inlineConfig.envFile !== false &&
-    loadEnv(mode, envDir, resolveEnvPrefix(config))
+  // Backward compatibility: set envDir to false when envFile is false
+  let envDir = config.envFile === false ? false : config.envDir
+  if (envDir !== false) {
+    envDir = config.envDir
+      ? normalizePath(path.resolve(resolvedRoot, config.envDir))
+      : resolvedRoot
+  }
+
+  const userEnv = loadEnv(mode, envDir, resolveEnvPrefix(config))
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // development-like behavior is expected. This is indicated by NODE_ENV=development

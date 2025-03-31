@@ -7,18 +7,25 @@ import type { UserConfig } from './config'
 
 const debug = createDebugger('vite:env')
 
-export function getEnvFilesForMode(mode: string, envDir: string): string[] {
-  return [
-    /** default file */ `.env`,
-    /** local file */ `.env.local`,
-    /** mode file */ `.env.${mode}`,
-    /** mode local file */ `.env.${mode}.local`,
-  ].map((file) => normalizePath(path.join(envDir, file)))
+export function getEnvFilesForMode(
+  mode: string,
+  envDir: string | false,
+): string[] {
+  if (envDir !== false) {
+    return [
+      /** default file */ `.env`,
+      /** local file */ `.env.local`,
+      /** mode file */ `.env.${mode}`,
+      /** mode local file */ `.env.${mode}.local`,
+    ].map((file) => normalizePath(path.join(envDir, file)))
+  }
+
+  return []
 }
 
 export function loadEnv(
   mode: string,
-  envDir: string,
+  envDir: string | false,
   prefixes: string | string[] = 'VITE_',
 ): Record<string, string> {
   const start = performance.now()
