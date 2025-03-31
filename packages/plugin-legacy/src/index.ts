@@ -563,6 +563,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         compact: !!config.build.minify,
         sourceMaps,
         inputSourceMap: undefined,
+        assumptions,
         presets: [
           // forcing our plugin to run before preset-env by wrapping it in a
           // preset so we can catch the injected import statements...
@@ -577,9 +578,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           ],
           [
             (await import('@babel/preset-env')).default,
-            createBabelPresetEnvOptions(targets, assumptions, {
-              needPolyfills,
-            }),
+            createBabelPresetEnvOptions(targets, { needPolyfills }),
           ],
         ],
       })
@@ -754,10 +753,11 @@ export async function detectPolyfills(
     babelrc: false,
     configFile: false,
     compact: false,
+    assumptions,
     presets: [
       [
         (await import('@babel/preset-env')).default,
-        createBabelPresetEnvOptions(targets, assumptions, {}),
+        createBabelPresetEnvOptions(targets, {}),
       ],
     ],
   })
@@ -776,7 +776,6 @@ export async function detectPolyfills(
 
 function createBabelPresetEnvOptions(
   targets: any,
-  assumptions: Record<string, boolean>,
   { needPolyfills = true }: { needPolyfills?: boolean },
 ) {
   return {
@@ -793,7 +792,6 @@ function createBabelPresetEnvOptions(
       : undefined,
     shippedProposals: true,
     ignoreBrowserslistConfig: true,
-    assumptions,
   }
 }
 
