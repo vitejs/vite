@@ -27,9 +27,9 @@ import { loadTsconfigJsonForFile } from './esbuild'
 
 // IIFE content looks like `var MyLib = (function() {`.
 const IIFE_BEGIN_RE =
-  /(?:const|var)\s+\S+\s*=\s*\(?function\([^()]*\)\s*\{\s*"use strict";/
+  /(?:(?:const|var)\s+\S+\s*=\s*|^|\n)\(?function\([^()]*\)\s*\{(?:\s*"use strict";)?/
 // UMD content looks like `(this, function(exports) {`.
-const UMD_BEGIN_RE = /\(this,\s*function\([^()]*\)\s*\{\s*"use strict";/
+const UMD_BEGIN_RE = /\(this,\s*function\([^()]*\)\s*\{(?:\s*"use strict";)?/
 
 const jsxExtensionsRE = /\.(?:j|t)sx\b/
 const validExtensionRE = /\.\w+$/
@@ -490,7 +490,7 @@ export const buildOxcPlugin = (): Plugin => {
               this.error('Unexpected IIFE format')
               return
             }
-            const pos = m.index + m.length
+            const pos = m.index + m[0].length
             res.code =
               res.code.slice(0, pos) + helpersCode + '\n' + res.code.slice(pos)
             break
