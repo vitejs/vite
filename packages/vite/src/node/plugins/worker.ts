@@ -101,6 +101,14 @@ async function bundleWorkerEntry(
       injectEnvironmentToHooks(workerEnvironment, chunkMetadataMap, p),
     ),
     onLog(level, log) {
+      if (
+        log.code === 'MIXED_EXPORT' ||
+        log.code === 'MISSING_NAME_OPTION_FOR_IIFE_EXPORT'
+      ) {
+        // these warning will be output because `preserveEntrySignatures` is not supported by rolldown
+        // suppress these warnings as users do not need to care about it
+        return
+      }
       onRollupLog(level, log, workerEnvironment)
     },
     // TODO: remove this and enable rolldown's CSS support later
