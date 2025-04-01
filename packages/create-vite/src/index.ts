@@ -41,15 +41,15 @@ Options:
   -t, --template NAME        use a specific template
 
 Available templates:
-${yellow('vanilla-ts     vanilla')}
-${green('vue-ts         vue')}
-${cyan('react-ts       react')}
-${cyan('react-swc-ts   react-swc')}
-${magenta('preact-ts      preact')}
-${redBright('lit-ts         lit')}
-${red('svelte-ts      svelte')}
-${blue('solid-ts       solid')}
-${blueBright('qwik-ts        qwik')}`
+${yellow    ('vanilla-ts     vanilla'  )}
+${green     ('vue-ts         vue'      )}
+${cyan      ('react-ts       react'    )}
+${cyan      ('react-swc-ts   react-swc')}
+${magenta   ('preact-ts      preact'   )}
+${redBright ('lit-ts         lit'      )}
+${red       ('svelte-ts      svelte'   )}
+${blue      ('solid-ts       solid'    )}
+${blueBright('qwik-ts        qwik'     )}`
 
 type ColorFunc = (str: string | number) => string
 type Framework = {
@@ -390,7 +390,6 @@ async function init() {
         }
       },
     })
-
     checkCancel(packageNameResult)
     packageName = packageNameResult
   }
@@ -434,8 +433,8 @@ async function init() {
         }
       }),
     })
-
     checkCancel(variant)
+
     template = variant
   }
 
@@ -522,8 +521,7 @@ async function init() {
   }
   prompts.outro(doneMessage)
 }
-
-function checkCancel(value: symbol | string | Framework) {
+function checkCancel<T>(value: T): asserts value is Exclude<T, symbol> {
   if (prompts.isCancel(value)) return prompts.cancel()
 }
 function formatTargetDir(targetDir: string) {
