@@ -153,9 +153,18 @@ A similar function called `transformWithOxc`, which uses Oxc instead of `esbuild
 
 ### Compatibility layer for `esbuild` options
 
-Rolldown-Vite has a compatibility layer to convert options for `esbuild` to the respective Oxc or `rolldown` ones. As tested in the ecosystem-ci, this works in many cases, including simple `esbuild` plugins.
+Rolldown-Vite has a compatibility layer to convert options for `esbuild` to the respective Oxc or `rolldown` ones. As tested in [the ecosystem-ci](https://github.com/vitejs/vite-ecosystem-ci/blob/rolldown-vite/README-temp.md), this works in many cases, including simple `esbuild` plugins.
 That said, **we'll be removing the `esbuild` options support in the future** and encourage you to try the corresponding Oxc or `rolldown` options.
 You can get the options set by the compatibility layer from the `configResolved` hook.
+
+```js
+const plugin = {
+  name: 'log-config',
+  configResolved(config) {
+    console.log('options', config.optimizeDeps, config.oxc)
+  },
+},
+```
 
 ### Hook filter feature
 
@@ -180,3 +189,5 @@ const plugin = {
   },
 }
 ```
+
+This is because [Rolldown supports non-JavaScript modules](https://rolldown.rs/guide/in-depth/module-types) and infers the module type from extensions unless specified.
