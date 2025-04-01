@@ -10,7 +10,6 @@ import {
 } from '../../shared/constants'
 import { genSourceMapUrl } from '../server/sourcemap'
 import type { DevEnvironment } from '../server/environment'
-// import { normalizeResolvedIdToUrl } from '../plugins/importAnalysis'
 
 export interface FetchModuleOptions {
   cached?: boolean
