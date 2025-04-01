@@ -41,15 +41,15 @@ Options:
   -t, --template NAME        use a specific template
 
 Available templates:
-${yellow    ('vanilla-ts     vanilla'  )}
-${green     ('vue-ts         vue'      )}
-${cyan      ('react-ts       react'    )}
-${cyan      ('react-swc-ts   react-swc')}
-${magenta   ('preact-ts      preact'   )}
-${redBright ('lit-ts         lit'      )}
-${red       ('svelte-ts      svelte'   )}
-${blue      ('solid-ts       solid'    )}
-${blueBright('qwik-ts        qwik'     )}`
+${yellow('vanilla-ts     vanilla')}
+${green('vue-ts         vue')}
+${cyan('react-ts       react')}
+${cyan('react-swc-ts   react-swc')}
+${magenta('preact-ts      preact')}
+${redBright('lit-ts         lit')}
+${red('svelte-ts      svelte')}
+${blue('solid-ts       solid')}
+${blueBright('qwik-ts        qwik')}`
 
 type ColorFunc = (str: string | number) => string
 type Framework = {
@@ -337,7 +337,7 @@ async function init() {
       defaultValue: defaultTargetDir,
       placeholder: defaultTargetDir,
     })
-    if (prompts.isCancel(projectName)) return cancel()
+    checkCancel(projectName)
     targetDir = formatTargetDir(projectName as string)
   }
 
@@ -366,7 +366,7 @@ async function init() {
             },
           ],
         })
-    if (prompts.isCancel(overwrite)) return cancel()
+    checkCancel(overwrite)
     switch (overwrite) {
       case 'yes':
         emptyDir(targetDir)
@@ -390,7 +390,8 @@ async function init() {
         }
       },
     })
-    if (prompts.isCancel(packageNameResult)) return cancel()
+
+    checkCancel(packageNameResult)
     packageName = packageNameResult
   }
 
@@ -414,7 +415,7 @@ async function init() {
         }
       }),
     })
-    if (prompts.isCancel(framework)) return cancel()
+    checkCancel(framework)
 
     const variant = await prompts.select({
       message: 'Select a variant:',
@@ -433,8 +434,8 @@ async function init() {
         }
       }),
     })
-    if (prompts.isCancel(variant)) return cancel()
 
+    checkCancel(variant)
     template = variant
   }
 
@@ -522,6 +523,9 @@ async function init() {
   prompts.outro(doneMessage)
 }
 
+function checkCancel(value: symbol | string | Framework) {
+  if (prompts.isCancel(value)) return prompts.cancel()
+}
 function formatTargetDir(targetDir: string) {
   return targetDir.trim().replace(/\/+$/g, '')
 }
