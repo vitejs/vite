@@ -136,7 +136,7 @@ if (vite.rolldownVersion) {
 
 ### Ignoring option validation in Rolldown
 
-Rolldown throws an error when unknown options or invalid options are passed. Because some options in Rollup are not supported by Rolldown, you may encounter errors.
+Rolldown throws an error when unknown or invalid options are passed. Because some options available in Rollup are not supported by Rolldown, you may encounter errors. Below, you can find an an example of such an error message:
 
 > Error: Failed validate input options.
 >
@@ -144,27 +144,27 @@ Rolldown throws an error when unknown options or invalid options are passed. Bec
 
 To fix this error, you can either
 
-- conditionally pass the option by checking whether it's running with rolldown-vite
+- conditionally pass the option by checking whether it's running with `rolldown-vite` as shown above
 - set `ROLLDOWN_OPTIONS_VALIDATION=loose` to suppress the error
 
 ### `transformWithEsbuild` requires `esbuild` to be installed separately
 
-A similar function `transformWithOxc`, which uses Oxc instead of esbuild, is exported from rolldown-vite.
+A similar function called `transformWithOxc`, which uses Oxc instead of `esbuild`, is exported from `rolldown-vite`.
 
-### Compat layer for esbuild options
+### Compatibility layer for `esbuild` options
 
-Rolldown-Vite has some compat layer to convert options for esbuild to Oxc / rolldown. As tested in the ecosystem-ci, this works in many cases, including simple esbuild plugins.
-That said, we'll be removing the esbuild options support in the future and encourage you to try the corresponding Oxc / rolldown options.
-You can get the options set by the compat layer from the `configResolved` hook.
+Rolldown-Vite has a compatibility layer to convert options for `esbuild` to the respective Oxc or `rolldown` ones. As tested in the ecosystem-ci, this works in many cases, including simple `esbuild` plugins.
+That said, **we'll be removing the `esbuild` options support in the future** and encourage you to try the corresponding Oxc or `rolldown` options.
+You can get the options set by the compatibility layer from the `configResolved` hook.
 
 ### Hook filter feature
 
-Rolldown has [hook filter feature](https://rolldown.rs/guide/plugin-development#plugin-hook-filters). You can use this feature to make your plugin more performant.
+Rolldown introduced a [hook filter feature](https://rolldown.rs/guide/plugin-development#plugin-hook-filters) to reduce the communication overhead the between Rust and JavaScript runtimes. By using this feature you can make your plugin more performant.
 This is also supported by Rollup 4.38.0+ and Vite 6.3.0+. To make your plugin backward compatible with the older versions, make sure to also run the filter inside the hook handlers.
 
-### converting the content to JS in `load` / `transform` hooks
+### Converting content to JavaScript in `load` or `transform` hooks
 
-If you are converting the content to JS from other types in `load` / `transform` hooks, you may need to add `moduleType: 'js'` to the returned value.
+If you are converting the content to JavaScript from other types in `load` or `transform` hooks, you may need to add `moduleType: 'js'` to the returned value.
 
 ```js
 const plugin = {
