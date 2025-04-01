@@ -146,7 +146,7 @@ Rolldown throws an error when unknown or invalid options are passed. Because som
 
 This can be fixed by conditionally passing the option by checking whether it's running with `rolldown-vite` as shown above.
 
-If you would like to suppress this error for now, you can set `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable.
+If you would like to suppress this error for now, you can set the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable. However, keep in mind that you will eventually need to stop passing the options not supported by Rolldown.
 
 ### `transformWithEsbuild` requires `esbuild` to be installed separately
 
