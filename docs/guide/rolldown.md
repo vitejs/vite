@@ -134,6 +134,8 @@ if (vite.rolldownVersion) {
 }
 ```
 
+If you have `vite` as a dependency (not a peer dependency), the `rolldownVersion` export is useful as it can be used from anywhere in your code.
+
 ### Ignoring option validation in Rolldown
 
 Rolldown throws an error when unknown or invalid options are passed. Because some options available in Rollup are not supported by Rolldown, you may encounter errors. Below, you can find an an example of such an error message:
@@ -142,10 +144,9 @@ Rolldown throws an error when unknown or invalid options are passed. Because som
 >
 > - For the "preserveEntrySignatures". Invalid key: Expected never but received "preserveEntrySignatures".
 
-To fix this error, you can either
+This can be fixed by conditionally passing the option by checking whether it's running with `rolldown-vite` as shown above.
 
-- conditionally pass the option by checking whether it's running with `rolldown-vite` as shown above
-- set `ROLLDOWN_OPTIONS_VALIDATION=loose` to suppress the error
+If you would like to suppress this error for now, you can set `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable.
 
 ### `transformWithEsbuild` requires `esbuild` to be installed separately
 
