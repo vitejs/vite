@@ -81,11 +81,11 @@ export async function fetchModule(
   // this is an entry point module, very high chance it's not resolved yet
   // for example: runner.import('./some-file') or runner.import('/some-file')
   if (isFileUrl || !importer) {
+    // allow already resolved id such as `\0virtual:xxx` similar to `transformRequest`
     const resolved = await environment.pluginContainer.resolveId(url)
-    if (!resolved) {
-      throw new Error(`[vite] cannot find entry point module '${url}'.`)
+    if (resolved) {
+      url = normalizeResolvedIdToUrl(environment, url, resolved)
     }
-    url = normalizeResolvedIdToUrl(environment, url, resolved)
   }
 
   url = unwrapId(url)

@@ -29,17 +29,28 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('virtual:test')
     expect(mod.msg).toBe('virtual')
 
-    // virtual module query is not supported out of the box
-    // (`?t=...` was working on Vite 5 ssrLoadModule as `transformRequest` strips off timestamp query)
+    // already resolved id works similar to `transformRequest`
+    expect(await runner.import(`\0virtual:normal`)).toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // timestamp query as well
+    expect(await runner.import(`virtual:normal?t=${Date.now()}`))
+      .toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // but not arbitrary query
     await expect(() =>
-      runner.import(`virtual:test?t=${Date.now()}`),
+      runner.import('virtual:normal?abcd=1234'),
     ).rejects.toMatchObject({
-      message: expect.stringContaining('cannot find entry point module'),
-    })
-    await expect(() =>
-      runner.import('virtual:test?abcd=1234'),
-    ).rejects.toMatchObject({
-      message: expect.stringContaining('cannot find entry point module'),
+      message: expect.stringContaining(
+        'Failed to load url virtual:normal?abcd=1234',
+      ),
     })
   })
 
