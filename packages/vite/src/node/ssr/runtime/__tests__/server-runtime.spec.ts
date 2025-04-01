@@ -36,7 +36,15 @@ describe('module runner initialization', async () => {
       }
     `)
 
-    // timestamp query as well
+    // escaped virtual module id works
+    expect(await runner.import(`/@id/__x00__virtual:normal`))
+      .toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // timestamp query works
     expect(await runner.import(`virtual:normal?t=${Date.now()}`))
       .toMatchInlineSnapshot(`
       {
@@ -44,7 +52,7 @@ describe('module runner initialization', async () => {
       }
     `)
 
-    // but not arbitrary query
+    // other arbitrary queries don't work
     await expect(() =>
       runner.import('virtual:normal?abcd=1234'),
     ).rejects.toMatchObject({
