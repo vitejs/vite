@@ -100,7 +100,7 @@ We encourage you to try out `rolldown-vite` and contribute to its development th
 - Rolldown is used for the optimizer (esbuild was used before)
 - CommonJS support is handled by Rolldown (@rollup/plugin-commonjs was used before)
 - Oxc is used for syntax lowering (esbuild was used before)
-- lightningcss is used for CSS minification by default (esbuild was used before)
+- Lightning CSS is used for CSS minification by default (esbuild was used before)
 - Oxc minifier is used for JS minification by default (esbuild was used before)
 - Rolldown is used for bundling the config (esbuild was used before)
 
