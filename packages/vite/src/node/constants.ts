@@ -19,7 +19,7 @@ export const ROLLUP_HOOKS = [
   'banner',
   'footer',
   'augmentChunkHash',
-  // 'outputOptions',
+  'outputOptions',
   // 'renderDynamicImport',
   // 'resolveFileUrl',
   // 'resolveImportMeta',
