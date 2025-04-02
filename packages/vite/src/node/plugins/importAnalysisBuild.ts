@@ -11,6 +11,7 @@ import type { RawSourceMap } from '@ampproject/remapping'
 import convertSourceMap from 'convert-source-map'
 import {
   combineSourcemaps,
+  exactRegex,
   generateCodeFrame,
   isInNodeModules,
   numberToPos,
@@ -215,7 +216,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
     name: 'vite:build-import-analysis',
     resolveId: {
       filter: {
-        id: preloadHelperId,
+        id: exactRegex(preloadHelperId),
       },
       handler(id) {
         return id
@@ -224,7 +225,7 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
 
     load: {
       filter: {
-        id: preloadHelperId,
+        id: exactRegex(preloadHelperId),
       },
       handler(_id) {
         const preloadCode = getPreloadCode(

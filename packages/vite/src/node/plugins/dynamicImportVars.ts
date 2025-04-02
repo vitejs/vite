@@ -10,6 +10,7 @@ import { CLIENT_ENTRY } from '../constants'
 import { createBackCompatIdResolver } from '../idResolver'
 import {
   createFilter,
+  exactRegex,
   normalizePath,
   rawRE,
   requestQueryMaybeEscapedSplitRE,
@@ -182,7 +183,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
 
     resolveId: {
       filter: {
-        id: dynamicImportHelperId,
+        id: exactRegex(dynamicImportHelperId),
       },
       handler(id) {
         return id
@@ -191,7 +192,7 @@ export function dynamicImportVarsPlugin(config: ResolvedConfig): Plugin {
 
     load: {
       filter: {
-        id: dynamicImportHelperId,
+        id: exactRegex(dynamicImportHelperId),
       },
       handler(_id) {
         return `export default ${dynamicImportHelper.toString()}`
