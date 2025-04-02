@@ -421,7 +421,7 @@ export function updateStyle(id: string, content: string): void {
       document.head.appendChild(style)
 
       // reset lastInsertedStyle after async
-      // because dynamically imported css will be splitted into a different file
+      // because dynamically imported css will be split into a different file
       setTimeout(() => {
         lastInsertedStyle = undefined
       }, 0)
