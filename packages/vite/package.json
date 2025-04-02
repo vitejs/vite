@@ -88,7 +88,7 @@
     "esbuild": "^0.25.0",
     "picomatch": "^4.0.2",
     "postcss": "^8.5.3",
-    "rollup": "^4.38.0",
+    "rollup": "^4.39.0",
     "tinyglobby": "^0.2.12"
   },
   "optionalDependencies": {
