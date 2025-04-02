@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import alias from '@rollup/plugin-alias'
 import nodeResolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
@@ -82,6 +83,12 @@ function createSharedNodePlugins({
   esbuildOptions?: esbuildOptions
 }): Plugin[] {
   return [
+    alias({
+      entries: {
+        // we can always use node version (the default entry point has browser support)
+        debug: 'debug/src/node.js',
+      },
+    }),
     nodeResolve({ preferBuiltins: true }),
     esbuild({
       tsconfig: path.resolve(__dirname, 'src/node/tsconfig.json'),
