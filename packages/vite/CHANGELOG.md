@@ -1,3 +1,19 @@
+## 6.3.0-beta.4 (2025-04-02)
+
+* fix: accept worker iife format (#94) ([df12968](https://github.com/vitejs/rolldown-vite/commit/df12968)), closes [#94](https://github.com/vitejs/rolldown-vite/issues/94)
+* fix: align plugin hook filter behavior with pluginutils (#19736) ([0bbdd2c](https://github.com/vitejs/rolldown-vite/commit/0bbdd2c)), closes [#19736](https://github.com/vitejs/rolldown-vite/issues/19736)
+* fix: fs check in transform middleware (#19761) ([5967313](https://github.com/vitejs/rolldown-vite/commit/5967313)), closes [#19761](https://github.com/vitejs/rolldown-vite/issues/19761)
+* fix: make `this.environment` available in outputOptions hook ([efe2728](https://github.com/vitejs/rolldown-vite/commit/efe2728))
+* fix: plugin hook filter ([8dd6f69](https://github.com/vitejs/rolldown-vite/commit/8dd6f69))
+* fix(worker): suppress export related warnings in worker build (#95) ([5a6a776](https://github.com/vitejs/rolldown-vite/commit/5a6a776)), closes [#95](https://github.com/vitejs/rolldown-vite/issues/95)
+* feat: update rolldown ([96d9065](https://github.com/vitejs/rolldown-vite/commit/96d9065))
+* feat(env): add false option for envDir to disable env loading (#19503) ([bca89e1](https://github.com/vitejs/rolldown-vite/commit/bca89e1)), closes [#19503](https://github.com/vitejs/rolldown-vite/issues/19503)
+* feat(types): make CustomPluginOptionsVite backward compatible (#19760) ([821edf1](https://github.com/vitejs/rolldown-vite/commit/821edf1)), closes [#19760](https://github.com/vitejs/rolldown-vite/issues/19760)
+* perf: only bundle node version `debug` (#19715) ([e435aae](https://github.com/vitejs/rolldown-vite/commit/e435aae)), closes [#19715](https://github.com/vitejs/rolldown-vite/issues/19715)
+* chore: fix some typos in comment (#19728) ([35ee848](https://github.com/vitejs/rolldown-vite/commit/35ee848)), closes [#19728](https://github.com/vitejs/rolldown-vite/issues/19728)
+
+
+
 ## 6.3.0-beta.3 (2025-03-27)
 
 * fix: use exact regexp filter for virtual module (#89) ([fbbfca4](https://github.com/vitejs/rolldown-vite/commit/fbbfca4)), closes [#89](https://github.com/vitejs/rolldown-vite/issues/89)
