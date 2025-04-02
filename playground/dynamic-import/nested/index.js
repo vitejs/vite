@@ -184,12 +184,16 @@ import(`../nested/nested/${base}.js`).then((mod) => {
       },
     },
   ]
+  const { log: bar } = await import('./treeshaken/syntax.js').then(
+    (mod) => mod.bar,
+  )
   default1()
   default2()
   other()
   foo()
   foo2()
   obj[1].lazy()
+  bar()
 })()
 
 import(`../nested/static.js`).then((mod) => {
