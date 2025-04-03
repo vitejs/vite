@@ -32,6 +32,7 @@ import { throwClosedServerError } from './pluginContainer'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
+export const ERR_DENIED_ID = 'ERR_DENIED_ID'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -48,6 +49,10 @@ export interface TransformResult {
 export interface TransformOptions {
   ssr?: boolean
   html?: boolean
+  /**
+   * @internal
+   */
+  allowId?: (id: string) => boolean
 }
 
 export function transformRequest(
@@ -240,6 +245,12 @@ async function loadAndTransform(
   const ssr = !!options.ssr
 
   const file = cleanUrl(id)
+
+  if (options.allowId && !options.allowId(id)) {
+    const err: any = new Error(`Denied ID ${id}`)
+    err.code = ERR_DENIED_ID
+    throw err
+  }
 
   let code: string | null = null
   let map: SourceDescription['map'] = null
