@@ -1,3 +1,9 @@
+## <small>4.5.12 (2025-04-03)</small>
+
+* fix: backport #19782, fs check with svg and relative paths (#19785) ([0a3dcf5](https://github.com/vitejs/vite/commit/0a3dcf5)), closes [#19782](https://github.com/vitejs/vite/issues/19782) [#19785](https://github.com/vitejs/vite/issues/19785)
+
+
+
 ## <small>4.5.11 (2025-03-31)</small>
 
 * fix: backport #19761, fs check in transform middleware (#19763) ([26e1764](https://github.com/vitejs/vite/commit/26e1764)), closes [#19761](https://github.com/vitejs/vite/issues/19761) [#19763](https://github.com/vitejs/vite/issues/19763)
