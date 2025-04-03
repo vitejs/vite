@@ -22,6 +22,7 @@ import type { Plugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
 import type { Environment, Logger } from '..'
 import type { ViteDevServer } from '../server'
+import { JS_TYPES_RE } from '../constants'
 import type { ESBuildOptions } from './esbuild'
 import { loadTsconfigJsonForFile } from './esbuild'
 
@@ -42,8 +43,8 @@ export interface OxcOptions
   include?: string | RegExp | ReadonlyArray<string | RegExp>
   exclude?: string | RegExp | ReadonlyArray<string | RegExp>
   jsxInject?: string
-  jsxInclude?: string | RegExp | ReadonlyArray<string | RegExp>
-  jsxExclude?: string | RegExp | ReadonlyArray<string | RegExp>
+  jsxRefreshInclude?: string | RegExp | ReadonlyArray<string | RegExp>
+  jsxRefreshExclude?: string | RegExp | ReadonlyArray<string | RegExp>
 }
 
 export async function transformWithOxc(
@@ -303,22 +304,16 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     jsxInject,
     include,
     exclude,
-    jsxInclude,
-    jsxExclude,
+    jsxRefreshInclude,
+    jsxRefreshExclude,
     ...oxcTransformOptions
   } = options
 
-  const defaultInclude = Array.isArray(include)
-    ? include
-    : [include || /\.(m?ts|[jt]sx)$/]
-  const filter = createFilter(
-    defaultInclude.concat(jsxInclude || []),
-    exclude || /\.js$/,
-  )
-  const jsxFilter = createFilter(
-    jsxInclude || /\.jsx$/,
-    jsxExclude || /\.(m?[jt]s|tsx)$/,
-  )
+  const filter = createFilter(include || /\.(m?ts|[jt]sx)$/, exclude || /\.js$/)
+  const jsxRefreshFilter =
+    jsxRefreshInclude || jsxRefreshExclude
+      ? createFilter(jsxRefreshInclude, jsxRefreshExclude)
+      : undefined
 
   const getModifiedOxcTransformOptions = (
     oxcTransformOptions: OxcTransformOptions,
@@ -332,17 +327,16 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
     }
 
     const jsxOptions = result.jsx
-    // disable refresh at ssr
     if (
-      environment.config.consumer === 'server' &&
       typeof jsxOptions === 'object' &&
-      jsxOptions.refresh
+      jsxOptions.refresh &&
+      (environment.config.consumer === 'server' ||
+        (jsxRefreshFilter && !jsxRefreshFilter(id)))
     ) {
       result.jsx = { ...jsxOptions, refresh: false }
     }
-
-    if ((jsxFilter(id) || jsxFilter(cleanUrl(id))) && !result.lang) {
-      result.lang = 'jsx'
+    if (jsxRefreshFilter?.(id) && !JS_TYPES_RE.test(cleanUrl(id))) {
+      result.lang = 'js'
     }
 
     return result
@@ -368,7 +362,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
       },
     },
     async transform(code, id) {
-      if (filter(id) || filter(cleanUrl(id))) {
+      if (filter(id) || filter(cleanUrl(id)) || jsxRefreshFilter?.(id)) {
         const modifiedOxcTransformOptions = getModifiedOxcTransformOptions(
           oxcTransformOptions,
           id,
