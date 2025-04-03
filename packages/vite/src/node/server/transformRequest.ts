@@ -32,6 +32,7 @@ import type { DevEnvironment } from './environment'
 
 export const ERR_LOAD_URL = 'ERR_LOAD_URL'
 export const ERR_LOAD_PUBLIC_URL = 'ERR_LOAD_PUBLIC_URL'
+export const ERR_DENIED_ID = 'ERR_DENIED_ID'
 
 const debugLoad = createDebugger('vite:load')
 const debugTransform = createDebugger('vite:transform')
@@ -55,6 +56,10 @@ export interface TransformOptions {
    * @internal
    */
   html?: boolean
+  /**
+   * @internal
+   */
+  allowId?: (id: string) => boolean
 }
 
 // TODO: This function could be moved to the DevEnvironment class.
@@ -247,6 +252,12 @@ async function loadAndTransform(
     debugLoad || debugTransform ? prettifyUrl(url, config.root) : ''
 
   const moduleGraph = environment.moduleGraph
+
+  if (options.allowId && !options.allowId(id)) {
+    const err: any = new Error(`Denied ID ${id}`)
+    err.code = ERR_DENIED_ID
+    throw err
+  }
 
   let code: string | null = null
   let map: SourceDescription['map'] = null
