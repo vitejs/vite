@@ -1,3 +1,9 @@
+## <small>6.1.4 (2025-04-03)</small>
+
+* fix: backport #19782, fs check with svg and relative paths ([0aeccef](https://github.com/vitejs/vite/commit/0aeccef739cca78d8903c91a424d02192d698e23)), closes [#19782](https://github.com/vitejs/vite/issues/19782)
+
+
+
 ## <small>6.1.3 (2025-03-31)</small>
 
 * fix: fs check in transform middleware (#19761) ([45b00c9](https://github.com/vitejs/vite/commit/45b00c987c092b8032ebccdc4db17398e3b4d573)), closes [#19761](https://github.com/vitejs/vite/issues/19761)
