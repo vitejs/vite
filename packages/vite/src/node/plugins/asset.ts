@@ -225,6 +225,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     generateBundle(_, bundle) {
       // Remove empty entry point file
+      let importedFiles: Set<string> | undefined
       for (const file in bundle) {
         const chunk = bundle[file]
         if (
@@ -234,7 +235,23 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           config.assetsInclude(chunk.moduleIds[0]) &&
           this.getModuleInfo(chunk.moduleIds[0])?.meta['vite:asset']
         ) {
-          delete bundle[file]
+          if (!importedFiles) {
+            importedFiles = new Set()
+            for (const file in bundle) {
+              const chunk = bundle[file]
+              if (chunk.type === 'chunk') {
+                for (const importedFile of chunk.imports) {
+                  importedFiles.add(importedFile)
+                }
+                for (const importedFile of chunk.dynamicImports) {
+                  importedFiles.add(importedFile)
+                }
+              }
+            }
+          }
+          if (!importedFiles.has(file)) {
+            delete bundle[file]
+          }
         }
       }
 
