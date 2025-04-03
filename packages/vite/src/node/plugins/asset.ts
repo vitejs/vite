@@ -230,6 +230,7 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
 
     generateBundle(_, bundle) {
       // Remove empty entry point file
+      let importedFiles: Set<string> | undefined
       for (const file in bundle) {
         const chunk = bundle[file]
         if (
@@ -239,7 +240,23 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
           config.assetsInclude(chunk.moduleIds[0]) &&
           this.getModuleInfo(chunk.moduleIds[0])?.meta['vite:asset']
         ) {
-          delete bundle[file]
+          if (!importedFiles) {
+            importedFiles = new Set()
+            for (const file in bundle) {
+              const chunk = bundle[file]
+              if (chunk.type === 'chunk') {
+                for (const importedFile of chunk.imports) {
+                  importedFiles.add(importedFile)
+                }
+                for (const importedFile of chunk.dynamicImports) {
+                  importedFiles.add(importedFile)
+                }
+              }
+            }
+          }
+          if (!importedFiles.has(file)) {
+            delete bundle[file]
+          }
         }
       }
 
@@ -291,8 +308,9 @@ export async function fileToDevUrl(
 
   // If is svg and it's inlined in build, also inline it in dev to match
   // the behaviour in build due to quote handling differences.
-  if (svgExtRE.test(id)) {
-    const file = publicFile || cleanUrl(id)
+  const cleanedId = cleanUrl(id)
+  if (svgExtRE.test(cleanedId)) {
+    const file = publicFile || cleanedId
     const content = await fsp.readFile(file)
     if (shouldInline(environment, file, id, content, undefined, undefined)) {
       return assetToDataURL(environment, file, content)
