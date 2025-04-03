@@ -79,6 +79,16 @@ describe.runIf(isServe)('main', () => {
     ).toBe('403')
   })
 
+  test('unsafe fetch ?.svg?import', async () => {
+    expect(
+      await page.textContent('.unsafe-fetch-query-dot-svg-import-status'),
+    ).toBe('403')
+  })
+
+  test('unsafe fetch .svg?import', async () => {
+    expect(await page.textContent('.unsafe-fetch-svg-status')).toBe('403')
+  })
+
   test('safe fs fetch', async () => {
     expect(await page.textContent('.safe-fs-fetch')).toBe(stringified)
     expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
@@ -144,6 +154,14 @@ describe.runIf(isServe)('main', () => {
     ).toBe('403')
   })
 
+  test('unsafe fs fetch with relative path after query status', async () => {
+    expect(
+      await page.textContent(
+        '.unsafe-fs-fetch-relative-path-after-query-status',
+      ),
+    ).toBe('403')
+  })
+
   test('nested entry', async () => {
     expect(await page.textContent('.nested-entry')).toBe('foobar')
   })
@@ -156,6 +174,12 @@ describe.runIf(isServe)('main', () => {
     // It is 403 in case insensitive system, 404 in others
     const code = await page.textContent('.unsafe-dotEnV-casing')
     expect(code === '403' || code === '404').toBeTruthy()
+  })
+
+  test('denied env with ?.svg?.wasm?init', async () => {
+    expect(
+      await page.textContent('.unsafe-dotenv-query-dot-svg-wasm-init'),
+    ).toBe('403')
   })
 })
 
