@@ -1,3 +1,15 @@
+## 6.3.0-beta.5 (2025-04-03)
+
+* chore: cleanup changelog ([b17bade](https://github.com/vitejs/rolldown-vite/commit/b17bade))
+* chore: remove unused eslint directive (#19781) ([cb4f5b4](https://github.com/vitejs/rolldown-vite/commit/cb4f5b4)), closes [#19781](https://github.com/vitejs/rolldown-vite/issues/19781)
+* feat(oxc)!: jsxRefresh filter (#101) ([7c6faa6](https://github.com/vitejs/rolldown-vite/commit/7c6faa6)), closes [#101](https://github.com/vitejs/rolldown-vite/issues/101)
+* fix: fs check with svg and relative paths (#19782) ([62d7e81](https://github.com/vitejs/rolldown-vite/commit/62d7e81)), closes [#19782](https://github.com/vitejs/rolldown-vite/issues/19782)
+* fix: keep entry asset files imported by other files (#19779) ([2fa1495](https://github.com/vitejs/rolldown-vite/commit/2fa1495)), closes [#19779](https://github.com/vitejs/rolldown-vite/issues/19779)
+* fix(hmr): throw non-standard error info causes logical error (#19776) ([6b648c7](https://github.com/vitejs/rolldown-vite/commit/6b648c7)), closes [#19776](https://github.com/vitejs/rolldown-vite/issues/19776)
+* release: v6.3.0-beta.1 ([a299106](https://github.com/vitejs/rolldown-vite/commit/a299106))
+
+
+
 ## 6.3.0-beta.4 (2025-04-02)
 
 * fix: accept worker iife format (#94) ([df12968](https://github.com/vitejs/rolldown-vite/commit/df12968)), closes [#94](https://github.com/vitejs/rolldown-vite/issues/94)
