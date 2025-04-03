@@ -91,3 +91,104 @@ For real-time discussions and troubleshooting, make sure to join the [Rolldown D
 The `rolldown-vite` package is a temporary solution to gather feedback and stabilize the Rolldown integration. In the future, this functionality will be merged back into the main Vite repository.
 
 We encourage you to try out `rolldown-vite` and contribute to its development through feedback and issue reports.
+
+## Plugin / Framework authors guide
+
+### The list of big changes
+
+- Rolldown is used for build (Rollup was used before)
+- Rolldown is used for the optimizer (esbuild was used before)
+- CommonJS support is handled by Rolldown (@rollup/plugin-commonjs was used before)
+- Oxc is used for syntax lowering (esbuild was used before)
+- Lightning CSS is used for CSS minification by default (esbuild was used before)
+- Oxc minifier is used for JS minification by default (esbuild was used before)
+- Rolldown is used for bundling the config (esbuild was used before)
+
+### Detecting rolldown-vite
+
+You can detect by either
+
+- checking the `this.meta.rolldownVersion` existence
+
+```js
+const plugin = {
+  resolveId() {
+    if (this.meta.rolldownVersion) {
+      // logic for rolldown-vite
+    } else {
+      // logic for rollup-vite
+    }
+  },
+}
+```
+
+- checking the `rolldownVersion` export existence
+
+```js
+import * as vite from 'vite'
+
+if (vite.rolldownVersion) {
+  // logic for rolldown-vite
+} else {
+  // logic for rollup-vite
+}
+```
+
+If you have `vite` as a dependency (not a peer dependency), the `rolldownVersion` export is useful as it can be used from anywhere in your code.
+
+### Ignoring option validation in Rolldown
+
+Rolldown throws an error when unknown or invalid options are passed. Because some options available in Rollup are not supported by Rolldown, you may encounter errors. Below, you can find an an example of such an error message:
+
+> Error: Failed validate input options.
+>
+> - For the "preserveEntrySignatures". Invalid key: Expected never but received "preserveEntrySignatures".
+
+This can be fixed by conditionally passing the option by checking whether it's running with `rolldown-vite` as shown above.
+
+If you would like to suppress this error for now, you can set the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable. However, keep in mind that you will eventually need to stop passing the options not supported by Rolldown.
+
+### `transformWithEsbuild` requires `esbuild` to be installed separately
+
+A similar function called `transformWithOxc`, which uses Oxc instead of `esbuild`, is exported from `rolldown-vite`.
+
+### Compatibility layer for `esbuild` options
+
+Rolldown-Vite has a compatibility layer to convert options for `esbuild` to the respective Oxc or `rolldown` ones. As tested in [the ecosystem-ci](https://github.com/vitejs/vite-ecosystem-ci/blob/rolldown-vite/README-temp.md), this works in many cases, including simple `esbuild` plugins.
+That said, **we'll be removing the `esbuild` options support in the future** and encourage you to try the corresponding Oxc or `rolldown` options.
+You can get the options set by the compatibility layer from the `configResolved` hook.
+
+```js
+const plugin = {
+  name: 'log-config',
+  configResolved(config) {
+    console.log('options', config.optimizeDeps, config.oxc)
+  },
+},
+```
+
+### Hook filter feature
+
+Rolldown introduced a [hook filter feature](https://rolldown.rs/guide/plugin-development#plugin-hook-filters) to reduce the communication overhead the between Rust and JavaScript runtimes. By using this feature you can make your plugin more performant.
+This is also supported by Rollup 4.38.0+ and Vite 6.3.0+. To make your plugin backward compatible with the older versions, make sure to also run the filter inside the hook handlers.
+
+### Converting content to JavaScript in `load` or `transform` hooks
+
+If you are converting the content to JavaScript from other types in `load` or `transform` hooks, you may need to add `moduleType: 'js'` to the returned value.
+
+```js
+const plugin = {
+  name: 'txt-loader',
+  load(id) {
+    if (id.endsWith('.txt')) {
+      const content = fs.readFile(id, 'utf-8')
+      return {
+        code: `export default ${JSON.stringify(content)}`,
+        moduleType: 'js', // [!code ++]
+      }
+    }
+  },
+}
+```
+
+This is because [Rolldown supports non-JavaScript modules](https://rolldown.rs/guide/in-depth/module-types) and infers the module type from extensions unless specified. Note that `rolldown-vite` does not support ModuleTypes in dev.
