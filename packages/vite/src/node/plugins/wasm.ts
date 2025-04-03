@@ -4,6 +4,8 @@ import { fileToUrl } from './asset'
 
 const wasmHelperId = '\0vite/wasm-helper.js'
 
+const wasmInitRE = /(?<![?#].*)\.wasm\?init/
+
 const wasmHelper = async (opts = {}, url: string) => {
   let result
   if (url.startsWith('data:')) {
@@ -29,7 +31,6 @@ const wasmHelper = async (opts = {}, url: string) => {
     // correct MIME type for .wasm files, which unfortunately doesn't work for
     // a lot of static file servers, so we just work around it by getting the
     // raw buffer.
-    // eslint-disable-next-line n/no-unsupported-features/node-builtins -- this function runs in browsers
     const response = await fetch(url)
     const contentType = response.headers.get('Content-Type') || ''
     if (
@@ -59,7 +60,7 @@ export const wasmHelperPlugin = (): Plugin => {
     },
 
     load: {
-      filter: { id: [exactRegex(wasmHelperId), /\.wasm\?init$/] },
+      filter: { id: [exactRegex(wasmHelperId), wasmInitRE] },
       async handler(id) {
         if (id === wasmHelperId) {
           return `export default ${wasmHelperCode}`
