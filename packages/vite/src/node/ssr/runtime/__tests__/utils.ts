@@ -61,6 +61,9 @@ export async function createModuleRunnerTester(
             if (id === 'virtual:test') {
               return 'virtual:test'
             }
+            if (id === 'virtual:normal') {
+              return '\0' + id
+            }
           },
           load(id) {
             if (id === `\0virtual:test`) {
@@ -68,6 +71,9 @@ export async function createModuleRunnerTester(
             }
             if (id === `virtual:test`) {
               return `export const msg = 'virtual'`
+            }
+            if (id === '\0virtual:normal') {
+              return 'export default "ok"'
             }
           },
         },
