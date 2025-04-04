@@ -224,9 +224,6 @@ async function loadConfig(configEnv: ConfigEnv) {
         usePolling: true,
         interval: 100,
       },
-      fs: {
-        strict: !isBuild,
-      },
     },
     build: {
       // esbuild do not minify ES lib output since that would remove pure annotations and break tree-shaking
