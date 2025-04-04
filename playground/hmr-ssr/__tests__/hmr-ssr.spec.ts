@@ -853,7 +853,7 @@ if (!isBuild) {
     )
     // it throws a same error as browser case,
     // but it doesn't auto reload and it calls `hot.accept(nextExports)` with `nextExports = undefined`
-    await untilUpdated(() => el(), '')
+    await untilUpdated(() => el(), /^$/)
 
     // test reloading manually for now
     runner.evaluatedModules.clear()
