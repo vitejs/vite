@@ -105,15 +105,6 @@ beforeAll(async (s) => {
   browser = await chromium.connect(wsEndpoint)
   page = await browser.newPage()
 
-  const globalConsole = global.console
-  const warn = globalConsole.warn
-  globalConsole.warn = (msg, ...args) => {
-    // suppress @vue/reactivity-transform warning
-    if (msg.includes('@vue/reactivity-transform')) return
-    if (msg.includes('Generated an empty chunk')) return
-    warn.call(globalConsole, msg, ...args)
-  }
-
   try {
     page.on('console', (msg) => {
       // ignore favicon request in headed browser
