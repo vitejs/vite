@@ -935,27 +935,33 @@ if (!isBuild) {
   })
 
   test('deleted file should trigger dispose and prune callbacks', async () => {
-    browserLogs.length = 0
     await page.goto(viteTestUrl)
 
     const parentFile = 'file-delete-restore/parent.js'
     const childFile = 'file-delete-restore/child.js'
-
-    // delete the file
-    editFile(parentFile, (code) =>
-      code.replace(
-        "export { value as childValue } from './child'",
-        "export const childValue = 'not-child'",
-      ),
-    )
     const originalChildFileCode = readFile(childFile)
-    removeFile(childFile)
+
+    await untilBrowserLogAfter(
+      () => {
+        // delete the file
+        editFile(parentFile, (code) =>
+          code.replace(
+            "export { value as childValue } from './child'",
+            "export const childValue = 'not-child'",
+          ),
+        )
+        removeFile(childFile)
+      },
+      [
+        'file-delete-restore/child.js is disposed',
+        'file-delete-restore/child.js is pruned',
+      ],
+      false,
+    )
     await untilUpdated(
       () => page.textContent('.file-delete-restore'),
       'parent:not-child',
     )
-    expect(browserLogs).to.include('file-delete-restore/child.js is disposed')
-    expect(browserLogs).to.include('file-delete-restore/child.js is pruned')
 
     // restore the file
     addFile(childFile, originalChildFileCode)
