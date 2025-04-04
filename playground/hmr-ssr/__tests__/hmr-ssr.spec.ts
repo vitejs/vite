@@ -853,10 +853,11 @@ if (!isBuild) {
     )
     // it throws a same error as browser case,
     // but it doesn't auto reload and it calls `hot.accept(nextExports)` with `nextExports = undefined`
-    await untilUpdated(() => el(), '')
+    await untilUpdated(() => el(), /^$/)
 
     // test reloading manually for now
-    server.moduleGraph.invalidateAll() // TODO: why is `runner.clearCache()` not enough?
+    runner.evaluatedModules.clear()
+    server.moduleGraph.invalidateAll()
     await runner.import('/self-accept-within-circular/index')
     await untilUpdated(() => el(), 'cc')
   })
