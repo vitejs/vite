@@ -337,7 +337,7 @@ async function init() {
       defaultValue: defaultTargetDir,
       placeholder: defaultTargetDir,
     })
-    if (prompts.isCancel(projectName)) return cancel()
+    checkCancel(projectName)
     targetDir = formatTargetDir(projectName as string)
   }
 
@@ -366,7 +366,7 @@ async function init() {
             },
           ],
         })
-    if (prompts.isCancel(overwrite)) return cancel()
+    checkCancel(overwrite)
     switch (overwrite) {
       case 'yes':
         emptyDir(targetDir)
@@ -390,7 +390,7 @@ async function init() {
         }
       },
     })
-    if (prompts.isCancel(packageNameResult)) return cancel()
+    checkCancel(packageNameResult)
     packageName = packageNameResult
   }
 
@@ -414,7 +414,7 @@ async function init() {
         }
       }),
     })
-    if (prompts.isCancel(framework)) return cancel()
+    checkCancel(framework)
 
     const variant = await prompts.select({
       message: 'Select a variant:',
@@ -433,7 +433,7 @@ async function init() {
         }
       }),
     })
-    if (prompts.isCancel(variant)) return cancel()
+    checkCancel(variant)
 
     template = variant
   }
@@ -521,7 +521,9 @@ async function init() {
   }
   prompts.outro(doneMessage)
 }
-
+function checkCancel<T>(value: T): asserts value is Exclude<T, symbol> {
+  if (prompts.isCancel(value)) return prompts.cancel()
+}
 function formatTargetDir(targetDir: string) {
   return targetDir.trim().replace(/\/+$/g, '')
 }
