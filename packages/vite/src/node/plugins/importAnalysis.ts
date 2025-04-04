@@ -321,6 +321,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number,
         forceSkipImportAnalysis: boolean = false,
+        withBaseUrl: boolean = true,
       ): Promise<[string, string | null]> => {
         url = stripBase(url, base)
 
@@ -423,7 +424,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         // prepend base
-        if (!ssr) url = joinUrlSegments(base, url)
+        if (!ssr && withBaseUrl) url = joinUrlSegments(base, url)
 
         return [url, resolved.id]
       }
@@ -804,7 +805,8 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (pluginImports) {
           ;(
             await Promise.all(
-              [...pluginImports].map((id) => normalizeUrl(id, 0, true)),
+              // importedUrls doesn't include base url
+              [...pluginImports].map((id) => normalizeUrl(id, 0, true, false)),
             )
           ).forEach(([url]) => importedUrls.add(url))
         }
