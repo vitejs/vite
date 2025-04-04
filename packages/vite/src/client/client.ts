@@ -5,6 +5,7 @@ import {
   createWebSocketModuleRunnerTransport,
   normalizeModuleRunnerTransport,
 } from '../shared/moduleRunnerTransport'
+import { createHMRHandler } from '../shared/hmrHandler'
 import { ErrorOverlay, overlayId } from './overlay'
 import '@vite/env'
 
@@ -165,7 +166,7 @@ const hmrClient = new HMRClient(
     return await importPromise
   },
 )
-transport.connect!(handleMessage)
+transport.connect!(createHMRHandler(handleMessage))
 
 async function handleMessage(payload: HotPayload) {
   switch (payload.type) {
