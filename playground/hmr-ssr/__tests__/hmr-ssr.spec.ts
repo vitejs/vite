@@ -856,7 +856,8 @@ if (!isBuild) {
     await untilUpdated(() => el(), '')
 
     // test reloading manually for now
-    server.moduleGraph.invalidateAll() // TODO: why is `runner.clearCache()` not enough?
+    runner.evaluatedModules.clear()
+    server.moduleGraph.invalidateAll()
     await runner.import('/self-accept-within-circular/index')
     await untilUpdated(() => el(), 'cc')
   })
