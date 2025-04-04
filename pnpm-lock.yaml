@@ -226,6 +226,9 @@ importers:
       esbuild:
         specifier: ^0.25.0
         version: 0.25.0
+      fdir:
+        specifier: ^6.4.3
+        version: 6.4.3(picomatch@4.0.2)
       picomatch:
         specifier: ^4.0.2
         version: 4.0.2
