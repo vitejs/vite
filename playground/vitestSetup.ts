@@ -249,10 +249,10 @@ export async function startDefaultServe(): Promise<void> {
     process.env.VITE_INLINE = 'inline-serve'
     const config = await loadConfig({ command: 'serve', mode: 'development' })
     viteServer = server = await (await createServer(config)).listen()
-    viteTestUrl = server.resolvedUrls.local[0]
-    if (server.config.base === '/') {
-      viteTestUrl = viteTestUrl.replace(/\/$/, '')
-    }
+    viteTestUrl = stripTrailingSlashIfNeeded(
+      server.resolvedUrls.local[0],
+      server.config.base,
+    )
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'
@@ -294,7 +294,10 @@ export async function startDefaultServe(): Promise<void> {
     const previewServer = await preview(previewConfig)
     // prevent preview change NODE_ENV
     process.env.NODE_ENV = _nodeEnv
-    viteTestUrl = previewServer.resolvedUrls.local[0]
+    viteTestUrl = stripTrailingSlashIfNeeded(
+      previewServer.resolvedUrls.local[0],
+      previewServer.config.base,
+    )
     await page.goto(viteTestUrl)
   }
 }
@@ -360,6 +363,13 @@ function setupConsoleWarnCollector(logs: string[]) {
 
 export function slash(p: string): string {
   return p.replace(/\\/g, '/')
+}
+
+function stripTrailingSlashIfNeeded(url: string, base: string): string {
+  if (base === '/') {
+    return url.replace(/\/$/, '')
+  }
+  return url
 }
 
 declare module 'vite' {
