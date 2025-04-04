@@ -67,8 +67,6 @@ export const serverLogs: string[] = []
 export const browserLogs: string[] = []
 export const browserErrors: Error[] = []
 
-export let resolvedConfig: ResolvedConfig = undefined!
-
 export let page: Page = undefined!
 export let browser: Browser = undefined!
 export let viteTestUrl: string = ''
@@ -256,6 +254,7 @@ export async function startDefaultServe(): Promise<void> {
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'
+    let resolvedConfig: ResolvedConfig
     // determine build watch
     const resolvedPlugin: () => PluginOption = () => ({
       name: 'vite-plugin-watcher',
