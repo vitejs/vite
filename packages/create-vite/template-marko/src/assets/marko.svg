@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg fill="none" viewBox="0 0 287 158" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="d" gradientTransform="rotate(90)">
+      <stop
+        stop-color="color-mix(in oklch, color-mix(in oklch, oklch(57.257998749758485% 0.3183964572118043 2), oklch(47.45% 0.183 355.63)) 75%, color-mix(in oklch, oklch(80.73096175758349% 0.2522460899259008 22), oklch(66.53% 0.223 18.83)))"
+        offset=".05" />
+      <stop
+        stop-color="color-mix(in oklch, oklch(57.257998749758485% 0.3183964572118043 2), oklch(47.45% 0.183 355.63))"
+        offset=".95" />
+    </linearGradient>
+    <linearGradient id="c" gradientTransform="rotate(90)">
+      <stop
+        stop-color="color-mix(in oklch, oklch(80.73096175758349% 0.2522460899259008 22), oklch(66.53% 0.223 18.83))"
+        offset=".05" />
+      <stop
+        stop-color="color-mix(in oklch, color-mix(in oklch, oklch(80.73096175758349% 0.2522460899259008 22), oklch(66.53% 0.223 18.83)) 75%, color-mix(in oklch, oklch(57.257998749758485% 0.3183964572118043 2), oklch(47.45% 0.183 355.63)))"
+        offset=".95" />
+    </linearGradient>
+    <linearGradient id="b" gradientTransform="rotate(90)">
+      <stop
+        stop-color="color-mix(in oklch, color-mix(in oklch, oklch(67.82684320180385% 0.2812017794091559 74), oklch(66.65% 0.200 40.24)) 75%, color-mix(in oklch, oklch(88.9018990810186% 0.20745467353754446 94), oklch(87.5% 0.202 90.71)))"
+        offset=".05" />
+      <stop
+        stop-color="color-mix(in oklch, oklch(67.82684320180385% 0.2812017794091559 74), oklch(66.65% 0.200 40.24))"
+        offset=".95" />
+    </linearGradient>
+    <linearGradient id="a" gradientTransform="rotate(90)">
+      <stop
+        stop-color="color-mix(in oklch, oklch(88.9018990810186% 0.20745467353754446 94), oklch(87.5% 0.202 90.71))"
+        offset=".05" />
+      <stop
+        stop-color="color-mix(in oklch, color-mix(in oklch, oklch(88.9018990810186% 0.20745467353754446 94), oklch(87.5% 0.202 90.71)) 75%, color-mix(in oklch, oklch(67.82684320180385% 0.2812017794091559 74), oklch(66.65% 0.200 40.24)))"
+        offset=".95" />
+    </linearGradient>
+    <linearGradient id="j" gradientTransform="rotate(90)">
+      <stop
+        stop-color="color-mix(in oklch, color-mix(in oklch, oklch(63.38874842765736% 0.24000047192033816 166), oklch(65.26% 0.159 159.71)) 75%, color-mix(in oklch, oklch(86.19729036232225% 0.18234628331003386 146), oklch(83.87% 0.226 134.3)))"
+        offset=".05" />
+      <stop
+        stop-color="color-mix(in oklch, oklch(63.38874842765736% 0.24000047192033816 166), oklch(65.26% 0.159 159.71))"
+        offset=".95" />
+    </linearGradient>
+    <linearGradient id="i" gradientTransform="rotate(90)">
+      <stop
+        stop-color="color-mix(in oklch, oklch(86.19729036232225% 0.18234628331003386 146), oklch(83.87% 0.226 134.3))"
+        offset=".05" />
+      <stop
+        stop-color="color-mix(in oklch, color-mix(in oklch, oklch(86.19729036232225% 0.18234628331003386 146), oklch(83.87% 0.226 134.3)) 75%, color-mix(in oklch, oklch(63.38874842765736% 0.24000047192033816 166), oklch(65.26% 0.159 159.71)))"
+        offset=".95" />
+    </linearGradient>
+    <linearGradient id="l" gradientTransform="rotate(90)">
+      <stop
+        stop-color="color-mix(in oklch, color-mix(in oklch, oklch(51.81049661534631% 0.2678242585752687 238), oklch(55.53% 0.142 246.1)) 75%, color-mix(in oklch, oklch(74.62132686901334% 0.1955269438736858 218), oklch(81.25% 0.131 216.6)))"
+        offset=".05" />
+      <stop
+        stop-color="color-mix(in oklch, oklch(51.81049661534631% 0.2678242585752687 238), oklch(55.53% 0.142 246.1))"
+        offset=".95" />
+    </linearGradient>
+    <linearGradient id="k" gradientTransform="rotate(90)">
+      <stop
+        stop-color="color-mix(in oklch, oklch(74.62132686901334% 0.1955269438736858 218), oklch(81.25% 0.131 216.6))"
+        offset=".05" />
+      <stop
+        stop-color="color-mix(in oklch, color-mix(in oklch, oklch(74.62132686901334% 0.1955269438736858 218), oklch(81.25% 0.131 216.6)) 75%, color-mix(in oklch, oklch(51.81049661534631% 0.2678242585752687 238), oklch(55.53% 0.142 246.1)))"
+        offset=".95" />
+    </linearGradient>
+  </defs>
+  <mask id="h" x="0" y="12" width="89" height="146" style="mask-type:luminance"
+    maskUnits="userSpaceOnUse">
+    <path
+      d="m44.811 73.685 42.887 78.166c1.4236 2.428-0.3277 5.479-3.1421 5.479h-36.388c-1.9443 0-3.7393-1.03-4.7187-2.709l-42.705-73.212c-0.98306-1.6858-0.99398-3.7684-0.025487-5.4615l35.259-61.696c1.1142-1.9479 3.9141-1.9588 5.0464-0.0218l18.816 32.259c0.9758 1.6748 0.994 3.7429 0.0401 5.4359l-15.066 26.725-0.0037-0.0036z"
+      fill="#fff" />
+  </mask>
+  <g mask="url(#h)">
+    <path d="m-0.84277 78.685 39.322-68.814 22.938 39.322-16.606 29.452" fill="url(#k)" />
+    <path d="m44.811 78.245 46.098 79.085h-45.876l-45.876-79.045" fill="url(#l)" />
+  </g>
+  <mask id="g" x="47" y="0" width="106" height="79" style="mask-type:luminance"
+    maskUnits="userSpaceOnUse">
+    <path
+      d="m94.046 78.685h39.526c1.984 0 3.812-1.0741 4.773-2.8108l13.315-23.965c0.936-1.6857 0.914-3.7392-0.058-5.4032l-18.813-32.248c-1.132-1.9442-3.947-1.9224-5.054 0.0365l-14.112 25.028-21.354-36.61c-0.9795-1.6785-2.7781-2.7125-4.7224-2.7125l-36.18 0.032769c-2.8072 0-4.5585 3.0511-3.1422 5.476l41.107 70.464c0.9794 1.6785 2.7744 2.7089 4.7187 2.7089l-0.0036 0.0036z"
+      fill="#fff" />
+  </mask>
+  <g mask="url(#g)">
+    <path d="m113.63 39.322-22.938-39.322-45.654 0.040051 45.876 78.645" fill="url(#i)" />
+    <path d="m90.913 78.685h45.876l16.384-29.492-22.938-39.322" fill="url(#j)" />
+  </g>
+  <mask id="f" x="139" y="0" width="89" height="158" style="mask-type:luminance"
+    maskUnits="userSpaceOnUse">
+    <path
+      d="m182.44 78.645-42.683 73.169c-1.416 2.428 0.335 5.476 3.146 5.476h36.409c1.937 0 3.732-1.027 4.712-2.698l42.894-73.144c1.001-1.7039 1.001-3.8193 0-5.5233l-42.894-73.224c-0.98-1.6712-2.775-2.7016-4.712-2.7016h-36.406c-2.81 0-4.562 3.0475-3.145 5.476l42.683 73.169h-4e-3z"
+      fill="#fff" />
+  </mask>
+  <g mask="url(#f)">
+    <path d="m228.54 78.685-46.098-78.685h-45.876l45.876 78.645 46.098 0.04z" fill="url(#a)" />
+    <path d="m182.45 78.245-45.876 79.045h45.876l46.098-79.005" fill="url(#b)" />
+  </g>
+  <mask id="e" x="197" y="0" width="90" height="158" style="mask-type:luminance"
+    maskUnits="userSpaceOnUse">
+    <path
+      d="m201.56 0h36.399c1.944 0 3.739 1.0304 4.718 2.7089l42.691 73.184c0.99 1.7003 0.99 3.8048 0 5.5052l-42.691 73.183c-0.979 1.679-2.774 2.709-4.718 2.709h-36.399c-2.811 0-4.562-3.048-3.146-5.476l42.683-73.169-42.683-73.169c-1.416-2.4285 0.335-5.476 3.146-5.476z"
+      fill="#fff" />
+  </mask>
+  <g mask="url(#e)">
+    <path d="m241.1 78.645-45.876-78.645h45.876l45.876 78.645" fill="url(#c)" />
+    <path d="m286.98 78.245-45.876 79.045h-45.876l45.876-79.045" fill="url(#d)" />
+  </g>
+</svg>
