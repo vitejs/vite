@@ -95,6 +95,25 @@ function preload(
     // in that case fallback to getAttribute
     const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute('nonce')
 
+    if (!Promise.allSettled) {
+      const rejectHandler: (reason: unknown) => {
+        status: 'rejected'
+        reason: unknown
+      } = (reason: unknown) => ({ status: 'rejected', reason })
+
+      const resolveHandler: (value: unknown) => {
+        status: 'fulfilled'
+        value: unknown
+      } = (value: unknown) => ({ status: 'fulfilled', value })
+
+      Promise.allSettled = function <T>(promises: Array<T | PromiseLike<T>>) {
+        const convertedPromises = promises.map((p) =>
+          Promise.resolve(p).then(resolveHandler, rejectHandler),
+        )
+        return Promise.all(convertedPromises)
+      }
+    }
+
     promise = Promise.allSettled(
       deps.map((dep) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
