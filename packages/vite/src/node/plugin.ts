@@ -292,8 +292,13 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * The hook receives the following arguments:
    *
    * - html: string
-   * - ctx?: vite.ServerContext (only present during serve)
-   * - bundle?: rollup.OutputBundle (only present during build)
+   * - ctx: IndexHtmlTransformContext, which contains:
+   *    - path: public path when served
+   *    - filename: filename on disk
+   *    - server?: ViteDevServer (only present during serve)
+   *    - bundle?: rollup.OutputBundle (only present during build)
+   *    - chunk?: rollup.OutputChunk
+   *    - originalUrl?: string
    *
    * It can either return a transformed string, or a list of html tag
    * descriptors that will be injected into the `<head>` or `<body>`.
