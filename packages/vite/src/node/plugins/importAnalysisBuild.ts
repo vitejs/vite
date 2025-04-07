@@ -95,7 +95,7 @@ function preload(
     // in that case fallback to getAttribute
     const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute('nonce')
 
-    function allSettled<T>(promises: Array<T | PromiseLike<T>>)  {
+    function allSettled<T>(promises: Array<T | PromiseLike<T>>) {
       const rejectHandler: (reason: unknown) => {
         status: 'rejected'
         reason: unknown
