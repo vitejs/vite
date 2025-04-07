@@ -51,7 +51,7 @@
     "@types/etag": "^1.8.3",
     "@types/less": "^3.0.8",
     "@types/node": "^22.13.6",
-    "@types/picomatch": "^3.0.2",
+    "@types/picomatch": "^4.0.0",
     "@types/stylus": "^0.48.43",
     "@types/ws": "^8.18.0",
     "@vitejs/release-scripts": "^1.3.3",
