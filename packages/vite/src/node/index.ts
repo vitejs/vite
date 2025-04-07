@@ -28,6 +28,12 @@ export {
   type RunnableDevEnvironmentContext,
 } from './server/environments/runnableEnvironment'
 export {
+  createFetchableDevEnvironment,
+  isFetchableDevEnvironment,
+  type FetchableDevEnvironment,
+  type FetchableDevEnvironmentContext,
+} from './server/environments/fetchableEnvironments'
+export {
   DevEnvironment,
   type DevEnvironmentContext,
 } from './server/environment'
@@ -205,7 +211,7 @@ export type {
   GeneralImportGlobOptions,
   KnownAsTypeMap,
 } from 'types/importGlob'
-export type { ChunkMetadata } from 'types/metadata'
+export type { ChunkMetadata, CustomPluginOptionsVite } from 'types/metadata'
 
 // dep types
 export type {

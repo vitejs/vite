@@ -48,6 +48,8 @@ const disallowedVariables = [
   'createServerModuleRunner',
   'createServerModuleRunnerTransport',
   'isRunnableDevEnvironment',
+  'createFetchableDevEnvironment',
+  'isFetchableDevEnvironment',
 ]
 disallowedVariables.forEach((name) => {
   Object.defineProperty(module.exports, name, {
