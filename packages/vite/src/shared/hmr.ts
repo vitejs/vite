@@ -223,7 +223,7 @@ export class HMRClient {
   }
 
   protected warnFailedUpdate(err: Error, path: string | string[]): void {
-    if (!err.message.includes('fetch')) {
+    if (!(err instanceof Error) || !err.message.includes('fetch')) {
       this.logger.error(err)
     }
     this.logger.error(
