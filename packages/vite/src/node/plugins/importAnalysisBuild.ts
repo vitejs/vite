@@ -95,7 +95,7 @@ function preload(
     // in that case fallback to getAttribute
     const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute('nonce')
 
-    if (!Promise.allSettled) {
+    function allSettled<T>(promises: Array<T | PromiseLike<T>>)  {
       const rejectHandler: (reason: unknown) => {
         status: 'rejected'
         reason: unknown
@@ -106,15 +106,13 @@ function preload(
         value: unknown
       } = (value: unknown) => ({ status: 'fulfilled', value })
 
-      Promise.allSettled = function <T>(promises: Array<T | PromiseLike<T>>) {
-        const convertedPromises = promises.map((p) =>
-          Promise.resolve(p).then(resolveHandler, rejectHandler),
-        )
-        return Promise.all(convertedPromises)
-      }
+      const convertedPromises = promises.map((p) =>
+        Promise.resolve(p).then(resolveHandler, rejectHandler),
+      )
+      return Promise.all(convertedPromises)
     }
 
-    promise = Promise.allSettled(
+    promise = allSettled(
       deps.map((dep) => {
         // @ts-expect-error assetsURL is declared before preload.toString()
         dep = assetsURL(dep, importerUrl)
