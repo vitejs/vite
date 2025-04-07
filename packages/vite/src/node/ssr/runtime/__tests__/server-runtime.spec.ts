@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { posix, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect } from 'vitest'
+import { describe, expect, vi } from 'vitest'
 import { isWindows } from '../../../../shared/utils'
 import { createModuleRunnerTester } from './utils'
 
@@ -355,5 +355,40 @@ describe('resolveId absolute path entry', async () => {
       posix.join(server.config.root, 'fixtures/basic.js'),
     )
     expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
+  })
+})
+
+describe('virtual module hmr', async () => {
+  let state = 'init'
+
+  const it = await createModuleRunnerTester({
+    plugins: [
+      {
+        name: 'test-resolevId',
+        enforce: 'pre',
+        resolveId(source) {
+          if (source === 'virtual:test') {
+            return '\0' + source
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test') {
+            return `export default ${JSON.stringify(state)}`
+          }
+        },
+      },
+    ],
+  })
+
+  it('full reload', async ({ server, runner }) => {
+    const mod = await runner.import('virtual:test')
+    expect(mod.default).toBe('init')
+    state = 'reloaded'
+    server.environments.ssr.moduleGraph.invalidateAll()
+    server.environments.ssr.hot.send({ type: 'full-reload' })
+    await vi.waitFor(() => {
+      const mod = runner.evaluatedModules.getModuleById('\0virtual:test')
+      expect(mod?.exports.default).toBe('reloaded')
+    })
   })
 })
