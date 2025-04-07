@@ -164,6 +164,8 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
   const isDebug =
     debugFlags.includes('vite:*') || debugFlags.includes('vite:legacy')
 
+  const assumptions = options.assumptions || {}
+
   const facadeToLegacyChunkMap = new Map()
   const facadeToLegacyPolyfillMap = new Map()
   const facadeToModernPolyfillMap = new Map()
@@ -338,6 +340,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         await detectPolyfills(
           `Promise.resolve(); Promise.all();`,
           targets,
+          assumptions,
           legacyPolyfills,
         )
       }
@@ -490,7 +493,12 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
           genModern
         ) {
           // analyze and record modern polyfills
-          await detectPolyfills(raw, modernTargets, polyfillsDiscovered.modern)
+          await detectPolyfills(
+            raw,
+            modernTargets,
+            assumptions,
+            polyfillsDiscovered.modern,
+          )
         }
 
         const ms = new MagicString(raw)
@@ -555,6 +563,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
         compact: !!config.build.minify,
         sourceMaps,
         inputSourceMap: undefined,
+        assumptions,
         presets: [
           // forcing our plugin to run before preset-env by wrapping it in a
           // preset so we can catch the injected import statements...
@@ -735,6 +744,7 @@ function viteLegacyPlugin(options: Options = {}): Plugin[] {
 export async function detectPolyfills(
   code: string,
   targets: any,
+  assumptions: Record<string, boolean>,
   list: Set<string>,
 ): Promise<void> {
   const babel = await loadBabel()
@@ -743,6 +753,7 @@ export async function detectPolyfills(
     babelrc: false,
     configFile: false,
     compact: false,
+    assumptions,
     presets: [
       [
         (await import('@babel/preset-env')).default,
