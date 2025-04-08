@@ -140,10 +140,6 @@ Here, `import` and `require` are "conditions". Conditions can be nested and shou
 
 Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
 
-:::warning Resolving subpath exports
-Export keys ending with "/" is deprecated by Node and may not work well. Please contact the package author to use [`*` subpath patterns](https://nodejs.org/api/packages.html#package-entry-points) instead.
-:::
-
 ## resolve.mainFields
 
 - **Type:** `string[]`
