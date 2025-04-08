@@ -865,6 +865,7 @@ if (!isBuild) {
   test('hmr should not reload if no accepted within circular imported files', async (ctx) => {
     // TODO: Investigate race condition that causes an inconsistent behaviour for the last `untilUpdated`
     // assertion where it'll sometimes receive "mod-a -> mod-b (edited) -> mod-c -> mod-a (expected no error)"
+    // This is probably related to https://github.com/vitejs/vite/issues/19804
     ctx.skip()
 
     await setupModuleRunner('/circular/index')
