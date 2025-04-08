@@ -321,7 +321,6 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         url: string,
         pos: number,
         forceSkipImportAnalysis: boolean = false,
-        withBaseUrl: boolean = true,
       ): Promise<[string, string | null]> => {
         url = stripBase(url, base)
 
@@ -424,7 +423,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         }
 
         // prepend base
-        if (!ssr && withBaseUrl) url = joinUrlSegments(base, url)
+        if (!ssr) url = joinUrlSegments(base, url)
 
         return [url, resolved.id]
       }
@@ -805,10 +804,9 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
         if (pluginImports) {
           ;(
             await Promise.all(
-              // importedUrls doesn't include base url
-              [...pluginImports].map((id) => normalizeUrl(id, 0, true, false)),
+              [...pluginImports].map((id) => normalizeUrl(id, 0, true)),
             )
-          ).forEach(([url]) => importedUrls.add(url))
+          ).forEach(([url]) => importedUrls.add(stripBase(url, base)))
         }
         // HMR transforms are no-ops in SSR, so an `accept` call will
         // never be injected. Avoid updating the `isSelfAccepting`
