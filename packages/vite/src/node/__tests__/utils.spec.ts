@@ -248,7 +248,7 @@ describe('generateCodeFrames', () => {
 import foo from './foo'
 foo()
 `.trim()
-  const sourceCrLf = source.replace(/\n/, '\r\n')
+  const sourceCrLf = source.replaceAll('\n', '\r\n')
   const longSource = `
 import foo from './foo'
 
@@ -276,7 +276,7 @@ foo()
     expectSnapshot(generateCodeFrame(source, 24))
   })
 
-  test('start with postion', () => {
+  test('start with position', () => {
     expectSnapshot(generateCodeFrame(source, { line: 1, column: 0 }))
     expectSnapshot(generateCodeFrame(source, { line: 1, column: 1 }))
     expectSnapshot(generateCodeFrame(source, { line: 2, column: 0 }))
