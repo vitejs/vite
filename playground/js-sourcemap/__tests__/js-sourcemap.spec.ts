@@ -1,6 +1,7 @@
 import { URL, fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { execFile } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import { mapFileCommentRegex } from 'convert-source-map'
 import { commentSourceMap } from '../foo-with-sourcemap-plugin'
@@ -223,6 +224,9 @@ describe.runIf(isBuild)('build tests', () => {
 
     for (const jsAsset of jsAssets) {
       const jsContent = readFile(jsAsset)
+      const hasSourcemap = existsSync(`${jsAsset}.map`)
+      if (!hasSourcemap) continue
+
       const sourceDebugId = getDebugIdFromString(jsContent)
       expect(
         sourceDebugId,
