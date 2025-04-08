@@ -1,16 +1,9 @@
 {
-  "extends": "@tsconfig/ember",
+  "extends": "@ember/app-tsconfig",
   "glint": {
     "environment": ["ember-template-imports"]
   },
   "compilerOptions": {
-    "allowImportingTsExtensions": true,
-    // Stylistic
-    "noPropertyAccessFromIndexSignature": false,
-    // Ecosystem
-    "declaration": false,
-    "declarationMap": false,
-    "experimentalDecorators": true,
     "types": ["vite/client", "@embroider/core/virtual", "ember-source/types"]
   }
 }
