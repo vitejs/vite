@@ -95,21 +95,18 @@ function preload(
     // in that case fallback to getAttribute
     const cspNonce = cspNonceMeta?.nonce || cspNonceMeta?.getAttribute('nonce')
 
-    function allSettled<T>(promises: Array<T | PromiseLike<T>>) {
-      const rejectHandler: (reason: unknown) => {
-        status: 'rejected'
-        reason: unknown
-      } = (reason: unknown) => ({ status: 'rejected', reason })
-
-      const resolveHandler: (value: unknown) => {
-        status: 'fulfilled'
-        value: unknown
-      } = (value: unknown) => ({ status: 'fulfilled', value })
-
-      const convertedPromises = promises.map((p) =>
-        Promise.resolve(p).then(resolveHandler, rejectHandler),
+    // Promise.allSettled is not supported by Chrome 64-75, Firefox 67-70, Safari 11.1-12.1
+    function allSettled<T>(
+      promises: Array<T | PromiseLike<T>>,
+    ): Promise<PromiseSettledResult<T>[]> {
+      return Promise.all(
+        promises.map((p) =>
+          Promise.resolve(p).then(
+            (value: T) => ({ status: 'fulfilled' as const, value }),
+            (reason: unknown) => ({ status: 'rejected' as const, reason }),
+          ),
+        ),
       )
-      return Promise.all(convertedPromises)
     }
 
     promise = allSettled(
