@@ -115,7 +115,7 @@ exports[`generateCodeFrames > start with number 4`] = `
 "
 `;
 
-exports[`generateCodeFrames > start with postion 1`] = `
+exports[`generateCodeFrames > start with position 1`] = `
 "
 1  |  import foo from './foo'
    |  ^
@@ -123,7 +123,7 @@ exports[`generateCodeFrames > start with postion 1`] = `
 "
 `;
 
-exports[`generateCodeFrames > start with postion 2`] = `
+exports[`generateCodeFrames > start with position 2`] = `
 "
 1  |  import foo from './foo'
    |   ^
@@ -131,7 +131,7 @@ exports[`generateCodeFrames > start with postion 2`] = `
 "
 `;
 
-exports[`generateCodeFrames > start with postion 3`] = `
+exports[`generateCodeFrames > start with position 3`] = `
 "
 1  |  import foo from './foo'
 2  |  foo()
