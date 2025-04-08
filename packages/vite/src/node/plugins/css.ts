@@ -65,6 +65,7 @@ import {
   createSerialPromiseQueue,
   emptyCssComments,
   encodeURIPath,
+  escapeRegex,
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
@@ -1161,9 +1162,8 @@ export function getEmptyChunkReplacer(
   outputFormat: ModuleFormat,
 ): (code: string) => string {
   const emptyChunkFiles = pureCssChunkNames
-    .map((file) => path.basename(file))
+    .map((file) => escapeRegex(path.basename(file)))
     .join('|')
-    .replace(/\./g, '\\.')
 
   // for cjs, require calls might be chained by minifier using the comma operator.
   // in this case we have to keep one comma if a next require is chained
