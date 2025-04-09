@@ -368,9 +368,6 @@ test('buildStart before transform', async () => {
         "resolveId",
       ],
       [
-        "resolveId",
-      ],
-      [
         "load",
       ],
       [
