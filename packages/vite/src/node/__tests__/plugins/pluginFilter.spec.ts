@@ -2,8 +2,6 @@ import util from 'node:util'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
-  FALLBACK_FALSE,
-  FALLBACK_TRUE,
   createCodeFilter,
   createFilterForTransform,
   createIdFilter,
@@ -16,37 +14,37 @@ describe('createIdFilter', () => {
       inputFilter: 'foo.js',
       cases: [
         { id: 'foo.js', expected: true },
-        { id: 'foo.ts', expected: FALLBACK_FALSE },
-        { id: '\0foo.js', expected: FALLBACK_FALSE },
-        { id: '\0' + path.resolve('foo.js'), expected: FALLBACK_FALSE },
+        { id: 'foo.ts', expected: false },
+        { id: '\0foo.js', expected: false },
+        { id: '\0' + path.resolve('foo.js'), expected: false },
       ],
     },
     {
       inputFilter: ['foo.js'],
       cases: [
         { id: 'foo.js', expected: true },
-        { id: 'foo.ts', expected: FALLBACK_FALSE },
+        { id: 'foo.ts', expected: false },
       ],
     },
     {
       inputFilter: { include: 'foo.js' },
       cases: [
         { id: 'foo.js', expected: true },
-        { id: 'foo.ts', expected: FALLBACK_FALSE },
+        { id: 'foo.ts', expected: false },
       ],
     },
     {
       inputFilter: { include: '*.js' },
       cases: [
         { id: 'foo.js', expected: true },
-        { id: 'foo.ts', expected: FALLBACK_FALSE },
+        { id: 'foo.ts', expected: false },
       ],
     },
     {
       inputFilter: { include: /\.js$/ },
       cases: [
         { id: 'foo.js', expected: true },
-        { id: 'foo.ts', expected: FALLBACK_FALSE },
+        { id: 'foo.ts', expected: false },
       ],
     },
     {
@@ -56,42 +54,42 @@ describe('createIdFilter', () => {
         ...(process.platform === 'win32'
           ? [{ id: 'a\\foo.js', expected: true }]
           : []),
-        { id: 'a_foo.js', expected: FALLBACK_FALSE },
+        { id: 'a_foo.js', expected: false },
       ],
     },
     {
       inputFilter: { include: [/\.js$/] },
       cases: [
         { id: 'foo.js', expected: true },
-        { id: 'foo.ts', expected: FALLBACK_FALSE },
+        { id: 'foo.ts', expected: false },
       ],
     },
     {
       inputFilter: { exclude: 'foo.js' },
       cases: [
         { id: 'foo.js', expected: false },
-        { id: 'foo.ts', expected: FALLBACK_TRUE },
+        { id: 'foo.ts', expected: true },
       ],
     },
     {
       inputFilter: { exclude: '*.js' },
       cases: [
         { id: 'foo.js', expected: false },
-        { id: 'foo.ts', expected: FALLBACK_TRUE },
+        { id: 'foo.ts', expected: true },
       ],
     },
     {
       inputFilter: { exclude: /\.js$/ },
       cases: [
         { id: 'foo.js', expected: false },
-        { id: 'foo.ts', expected: FALLBACK_TRUE },
+        { id: 'foo.ts', expected: true },
       ],
     },
     {
       inputFilter: { exclude: [/\.js$/] },
       cases: [
         { id: 'foo.js', expected: false },
-        { id: 'foo.ts', expected: FALLBACK_TRUE },
+        { id: 'foo.ts', expected: true },
       ],
     },
     {
@@ -99,7 +97,7 @@ describe('createIdFilter', () => {
       cases: [
         { id: 'foo.js', expected: true },
         { id: 'bar.js', expected: false },
-        { id: 'baz.js', expected: FALLBACK_FALSE },
+        { id: 'baz.js', expected: false },
       ],
     },
     {
@@ -140,56 +138,56 @@ describe('createCodeFilter', () => {
       inputFilter: 'import.meta',
       cases: [
         { code: 'import.meta', expected: true },
-        { code: 'import_meta', expected: FALLBACK_FALSE },
+        { code: 'import_meta', expected: false },
       ],
     },
     {
       inputFilter: ['import.meta'],
       cases: [
         { code: 'import.meta', expected: true },
-        { code: 'import_meta', expected: FALLBACK_FALSE },
+        { code: 'import_meta', expected: false },
       ],
     },
     {
       inputFilter: { include: 'import.meta' },
       cases: [
         { code: 'import.meta', expected: true },
-        { code: 'import_meta', expected: FALLBACK_FALSE },
+        { code: 'import_meta', expected: false },
       ],
     },
     {
       inputFilter: { include: /import\.\w+/ },
       cases: [
         { code: 'import.meta', expected: true },
-        { code: 'import_meta', expected: FALLBACK_FALSE },
+        { code: 'import_meta', expected: false },
       ],
     },
     {
       inputFilter: { include: [/import\.\w+/] },
       cases: [
         { code: 'import.meta', expected: true },
-        { code: 'import_meta', expected: FALLBACK_FALSE },
+        { code: 'import_meta', expected: false },
       ],
     },
     {
       inputFilter: { exclude: 'import.meta' },
       cases: [
         { code: 'import.meta', expected: false },
-        { code: 'import_meta', expected: FALLBACK_TRUE },
+        { code: 'import_meta', expected: true },
       ],
     },
     {
       inputFilter: { exclude: /import\.\w+/ },
       cases: [
         { code: 'import.meta', expected: false },
-        { code: 'import_meta', expected: FALLBACK_TRUE },
+        { code: 'import_meta', expected: true },
       ],
     },
     {
       inputFilter: { exclude: [/import\.\w+/] },
       cases: [
         { code: 'import.meta', expected: false },
-        { code: 'import_meta', expected: FALLBACK_TRUE },
+        { code: 'import_meta', expected: true },
       ],
     },
     {
@@ -197,7 +195,7 @@ describe('createCodeFilter', () => {
       cases: [
         { code: 'import.meta', expected: true },
         { code: 'import_meta', expected: false },
-        { code: 'importmeta', expected: FALLBACK_FALSE },
+        { code: 'importmeta', expected: false },
       ],
     },
     {
@@ -259,7 +257,30 @@ describe('createFilterForTransform', () => {
         { id: 'foo.js', code: 'import.meta', expected: false },
         { id: 'foo.js', code: 'import_meta', expected: false },
         { id: 'foo.ts', code: 'import.meta', expected: true },
-        { id: 'foo.ts', code: 'import_meta', expected: true },
+        { id: 'foo.ts', code: 'import_meta', expected: false },
+      ],
+    },
+    {
+      inputFilter: [
+        { include: 'a*', exclude: '*b' },
+        { include: 'a', exclude: 'b' },
+      ],
+      cases: [
+        { id: 'ab', code: '', expected: false },
+        { id: 'a', code: 'b', expected: false },
+        { id: 'a', code: '', expected: false },
+        { id: 'c', code: 'a', expected: false },
+        { id: 'a', code: 'a', expected: true },
+      ],
+    },
+    {
+      inputFilter: [{ include: 'a*', exclude: '*b' }, { exclude: 'b' }],
+      cases: [
+        { id: 'ab', code: '', expected: false },
+        { id: 'a', code: 'b', expected: false },
+        { id: 'a', code: '', expected: true },
+        { id: 'c', code: 'a', expected: false },
+        { id: 'a', code: 'a', expected: true },
       ],
     },
   ]
