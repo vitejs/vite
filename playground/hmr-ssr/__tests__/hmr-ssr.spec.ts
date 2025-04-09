@@ -250,7 +250,7 @@ if (!isBuild) {
 
   describe('self accept with different entry point formats', () => {
     test.each(['./unresolved.ts', './unresolved', '/unresolved'])(
-      'accepts if entry point is relative to root',
+      'accepts if entry point is relative to root %s',
       async (entrypoint) => {
         await setupModuleRunner(entrypoint, {}, '/unresolved.ts')
 
@@ -270,7 +270,7 @@ if (!isBuild) {
             'foo was: 1',
             '(self-accepting 1) foo is now: 2',
             '(self-accepting 2) foo is now: 2',
-            updated('/unresolved.ts'),
+            updated(entrypoint),
           ],
           true,
         )
@@ -285,7 +285,7 @@ if (!isBuild) {
             'foo was: 2',
             '(self-accepting 1) foo is now: 3',
             '(self-accepting 2) foo is now: 3',
-            updated('/unresolved.ts'),
+            updated(entrypoint),
           ],
           true,
         )
