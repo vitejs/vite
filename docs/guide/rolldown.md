@@ -119,6 +119,8 @@ With the Rolldown integration, we have an opportunity to unify the development a
 - Reduced network overhead on page refreshes
 - Maintained efficient HMR on top of ESM output
 
+When the Full Bundle Mode is introduced, it will be an opt-in feature at first. Similar to the Rolldown integration, we are aiming to make it the default after gathering feedback and ensuring stability.
+
 ## Plugin / Framework authors guide
 
 ::: tip
