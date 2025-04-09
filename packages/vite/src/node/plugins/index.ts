@@ -23,7 +23,7 @@ import { metadataPlugin } from './metadata'
 import { dynamicImportVarsPlugin } from './dynamicImportVars'
 import { importGlobPlugin } from './importMetaGlob'
 import {
-  type PluginFilterWithFallback,
+  type PluginFilter,
   type TransformHookFilter,
   createFilterForTransform,
   createIdFilter,
@@ -165,8 +165,8 @@ export function getHookHandler<T extends ObjectHook<Function>>(
 }
 
 type FilterForPluginValue = {
-  resolveId?: PluginFilterWithFallback | undefined
-  load?: PluginFilterWithFallback | undefined
+  resolveId?: PluginFilter | undefined
+  load?: PluginFilter | undefined
   transform?: TransformHookFilter | undefined
 }
 const filterForPlugin = new WeakMap<Plugin, FilterForPluginValue>()
@@ -184,7 +184,7 @@ export function getCachedFilterForPlugin<
     filterForPlugin.set(plugin, filters)
   }
 
-  let filter: PluginFilterWithFallback | TransformHookFilter | undefined
+  let filter: PluginFilter | TransformHookFilter | undefined
   switch (hookName) {
     case 'resolveId': {
       const rawFilter =
