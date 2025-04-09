@@ -76,6 +76,16 @@ After adding these overrides, reinstall your dependencies and start your develop
 
 While Rolldown aims to be a drop-in replacement for Rollup, there are features that are still being implemented and minor intentional behavior differences. For a comprehensive list, please refer to [this GitHub PR](https://github.com/vitejs/rolldown-vite/pull/84#issue-2903144667) which is regularly updated.
 
+### Option Validation Errors
+
+Rolldown throws an error when unknown or invalid options are passed. Because some options available in Rollup are not supported by Rolldown, you may encounter errors based on the options you or the meta framework you use set. Below, you can find an an example of such an error message:
+
+> Error: Failed validate input options.
+>
+> - For the "preserveEntrySignatures". Invalid key: Expected never but received "preserveEntrySignatures".
+
+If you don't pass the option in yourself, this must be fixed by the utilized framework. You can suppress this error in the meantime by setting the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable.
+
 ## Enabling Native Plugins
 
 Thanks to Rolldown and OXC, various internal Vite plugins, such as the alias or resolve plugin, have been converted to Rust. At the time of writing, using these plugins is not enabled by default, as their behavior may differ from the JavaScript versions.
@@ -177,15 +187,12 @@ If you have `vite` as a dependency (not a peer dependency), the `rolldownVersion
 
 ### Ignoring option validation in Rolldown
 
-Rolldown throws an error when unknown or invalid options are passed. Because some options available in Rollup are not supported by Rolldown, you may encounter errors. Below, you can find an an example of such an error message:
+As [mentioned above](#option-validation-errors), Rolldown throws an error when unknown or invalid options are passed.
 
-> Error: Failed validate input options.
->
-> - For the "preserveEntrySignatures". Invalid key: Expected never but received "preserveEntrySignatures".
+This can be fixed by conditionally passing the option by checking whether it's running with `rolldown-vite` as [shown above](#detecting-rolldown-vite).
 
-This can be fixed by conditionally passing the option by checking whether it's running with `rolldown-vite` as shown above.
-
-If you would like to suppress this error for now, you can set the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable. However, keep in mind that you will **eventually need to stop passing the options not supported by Rolldown**.
+Suppressing the error by setting the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable also works in this case.
+However, keep in mind that you will **eventually need to stop passing the options not supported by Rolldown**.
 
 ### `transformWithEsbuild` requires `esbuild` to be installed separately
 
