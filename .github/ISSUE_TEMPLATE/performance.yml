@@ -1,17 +1,17 @@
-name: "\U0001F41E General Bug report"
-description: Report an issue with `rolldown-vite`
-labels: [pending triage]
+name: "\U0001F3C3 Performance Degradation"
+description: Report a performance issue with `rolldown-vite`
+labels: ["c: performance", pending triage]
 type: Bug
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
+        Thanks for taking the time to report a performance issue, such as a slow build or a slow dev server compared to using the main `vite` package.
   - type: textarea
-    id: bug-description
+    id: performance-description
     attributes:
-      label: Describe the bug
-      description: A clear and concise description of what the bug is. If you intend to submit a PR for this issue, tell us in the description. Thanks!
+      label: Describe the performance issue
+      description: A clear and concise description of the performance issue. If you intend to submit a PR for this issue, let us know in the description. Thanks!
       placeholder: I am doing ... What I expect is ... What actually happening is ...
     validations:
       required: true
@@ -19,15 +19,23 @@ body:
     id: reproduction
     attributes:
       label: Reproduction
-      description: Please provide a link via [StackBlitz](https://stackblitz.com/fork/github/vitejs/rolldown-vite/tree/rolldown-vite/packages/create-vite/template-vanilla) or a link to a repo that can reproduce the problem you ran into. `npm create vite@latest` and `npm create vite-extra@latest` (for SSR or library repros) can be used as a starter template (don't forget to alias `vite` to `rolldown-vite`). A [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) is required ([Why?](https://antfu.me/posts/why-reproductions-are-required)). If a report is vague (e.g. just a generic error message) and has no reproduction, it will receive a "needs reproduction" label. If no reproduction is provided after 3 days, it will be auto-closed.
+      description: Please provide a link via [StackBlitz](https://stackblitz.com/fork/github/vitejs/rolldown-vite/tree/rolldown-vite/packages/create-vite/template-vanilla) or a link to a repo that can reproduce the performance issue. A [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) is required ([Why?](https://antfu.me/posts/why-reproductions-are-required)). If no reproduction is provided after 3 days, the issue may be auto-closed.
       placeholder: Reproduction URL
+    validations:
+      required: true
+  - type: textarea
+    id: performance-metrics
+    attributes:
+      label: Performance Metrics
+      description: Provide any relevant performance metrics (e.g., build time, memory usage, CPU usage). Include before/after comparisons if applicable.
+      placeholder: "Build time with `rolldown-vite`: X seconds, build time with plain `vite`: X seconds, etc."
     validations:
       required: true
   - type: textarea
     id: reproduction-steps
     attributes:
       label: Steps to reproduce
-      description: Please provide any reproduction steps that may need to be described. E.g. if it happens only when running the dev or build script make sure it's clear which one to use.
+      description: Please provide any reproduction steps that may need to be described. E.g., if it happens only when running the dev or build script, make sure it's clear which one to use.
       placeholder: Run `npm install` followed by `npm run dev`
   - type: textarea
     id: system-info

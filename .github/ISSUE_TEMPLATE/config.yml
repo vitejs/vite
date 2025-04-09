@@ -1,14 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Vite Plugin React Issues
-    url: https://github.com/vitejs/vite-plugin-react/issues/new/choose
-    about: React related issues should be reported on the vite-plugin-react repository.
-  - name: Vite Plugin Vue Issues
-    url: https://github.com/vitejs/vite-plugin-vue/issues/new/choose
-    about: Vue related issues should be reported on the vite-plugin-vue repository.
-  - name: Discord Chat
-    url: https://chat.vite.dev
-    about: Ask questions and discuss with other Vite users in real time.
+  - name: Vite Discord
+    url: https://chat.vite.dev/
+    about: Do you have questions around Vite? Then join the Discord to discuss them with other Vite users.
+  - name: Rolldown Discord
+    url: https://chat.rolldown.rs/
+    about: Ask questions and discuss with other Rolldown users in real time.
   - name: Questions & Discussions
-    url: https://github.com/vitejs/vite/discussions
+    url: https://github.com/vitejs/rolldown-vite/discussions
     about: Use GitHub discussions for message-board style questions and discussions.
