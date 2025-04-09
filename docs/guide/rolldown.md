@@ -10,13 +10,15 @@ Rolldown focuses on three key principles:
 
 - **Speed**: Built with Rust for maximum performance
 - **Compatibility**: Works with existing Rollup plugins
-- **Developer Experience**: Familiar API for Rollup users
+- **Optimization**: Comes with features that go beyond what esbuild and Rollup implement
 
 ## Why Vite is Migrating to Rolldown
 
 1. **Unification**: Vite currently uses esbuild for dependency pre-bundling and Rollup for production builds. Rolldown aims to unify these into a single, high-performance bundler that can be used for both purposes, reducing complexity.
 
 2. **Performance**: Rolldown's Rust-based implementation offers significant performance improvements over JavaScript-based bundlers. While specific benchmarks may vary by project size and complexity, early tests show promising speed increases compared to Rollup.
+
+3. **Additional Features**: Rolldown introduces features that are not available in Rollup or esbuild, such as advanced chunk splitting control, built-in HMR, and Module Federation.
 
 For additional insights on the motivations behind Rolldown, see the [reasons why Rolldown is being built](https://rolldown.rs/guide/#why-rolldown).
 
@@ -74,11 +76,17 @@ After adding these overrides, reinstall your dependencies and start your develop
 
 While Rolldown aims to be a drop-in replacement for Rollup, there are features that are still being implemented and minor intentional behavior differences. For a comprehensive list, please refer to [this GitHub PR](https://github.com/vitejs/rolldown-vite/pull/84#issue-2903144667) which is regularly updated.
 
+## Enabling Native Plugins
+
+Thanks to Rolldown and OXC, various internal Vite plugins, such as the alias or resolve plugin, have been converted to Rust. At the time of writing, using these plugins is not enabled by default, as their behavior may differ from the JavaScript versions.
+
+To test them, you can set the `experimental.enableNativePlugin` option to `true` in your Vite config.
+
 ## Reporting Issues
 
 Since this is an experimental integration, you may encounter issues. If you do, please report them in the [`vitejs/rolldown-vite`](https://github.com/vitejs/rolldown-vite) repository, **not the main Vite repository**.
 
-When [reporting issues](https://github.com/vitejs/rolldown-vite/issues/new), please follow the issue template and provide:
+When [reporting issues](https://github.com/vitejs/rolldown-vite/issues/new), please follow the appropriate issue template and provide what is requested there, commonly including:
 
 - A minimal reproduction of the issue
 - Your environment details (OS, Node version, package manager)
@@ -92,9 +100,32 @@ The `rolldown-vite` package is a temporary solution to gather feedback and stabi
 
 We encourage you to try out `rolldown-vite` and contribute to its development through feedback and issue reports.
 
+In the future, we will also introduce a "Full Bundle Mode" for Vite, which will server bundled files in production _and development mode_.
+
+### Why introducing a Full Bundle Mode?
+
+Vite is known for its unbundled dev server approach, which is a main reason for Vite's speed and popularity when it was first introduced. This approach was initially an experiment to see just how far we could push the boundaries of development server performance without traditional bundling.
+
+However, as projects scale in size and complexity, two main challenges have emerged:
+
+1. **Development/Production inconsistency**: The unbundled JavaScript served in development versus the bundled production build creates different runtime behaviors. This can lead to issues that only manifest in production, making debugging more difficult.
+
+2. **Performance degradation on page refresh**: When running the development server for large applications, a hard page refresh can trigger hundreds or even thousands of network requests as each module is loaded individually. While this is somewhat mitigated by HTTP/2 multiplexing, it still creates overhead that impacts startup performance, especially on slower networks or devices.
+
+With the Rolldown integration, we have an opportunity to unify the development and production experiences while maintaining Vite's signature performance. A Full Bundle Mode would allow serving bundled files not only in production but also during development, combining the best of both worlds:
+
+- Fast startup times even for large applications
+- Consistent behavior between development and production
+- Reduced network overhead on page refreshes
+- Maintained efficient HMR on top of ESM output
+
 ## Plugin / Framework authors guide
 
-### The list of big changes
+::: tip
+This section is mostly relevant for plugin and framework authors. If you are a user, you can skip this section.
+:::
+
+### Overview of Major Changes
 
 - Rolldown is used for build (Rollup was used before)
 - Rolldown is used for the optimizer (esbuild was used before)
@@ -104,11 +135,15 @@ We encourage you to try out `rolldown-vite` and contribute to its development th
 - Oxc minifier is used for JS minification by default (esbuild was used before)
 - Rolldown is used for bundling the config (esbuild was used before)
 
-### Detecting rolldown-vite
+### Detecting `rolldown-vite`
 
-You can detect by either
+::: warning
+In most cases, you don't need to detect whether your plugin runs with `rolldown-vite` or `vite` and you should aim for consistent behavior across both, without conditional branching.
+:::
 
-- checking the `this.meta.rolldownVersion` existence
+In case you need different behavior with `rolldown-vite`, you have two ways to detect if `rolldown-vite` is used:
+
+Checking the existence of `this.meta.rolldownVersion`:
 
 ```js
 const plugin = {
@@ -122,7 +157,9 @@ const plugin = {
 }
 ```
 
-- checking the `rolldownVersion` export existence
+<br>
+
+Checking the existence of the `rolldownVersion` export:
 
 ```js
 import * as vite from 'vite'
@@ -146,7 +183,7 @@ Rolldown throws an error when unknown or invalid options are passed. Because som
 
 This can be fixed by conditionally passing the option by checking whether it's running with `rolldown-vite` as shown above.
 
-If you would like to suppress this error for now, you can set the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable. However, keep in mind that you will eventually need to stop passing the options not supported by Rolldown.
+If you would like to suppress this error for now, you can set the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable. However, keep in mind that you will **eventually need to stop passing the options not supported by Rolldown**.
 
 ### `transformWithEsbuild` requires `esbuild` to be installed separately
 
