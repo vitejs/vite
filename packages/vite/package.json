@@ -85,11 +85,11 @@
   },
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
-    "@oxc-project/runtime": "0.62.0",
+    "@oxc-project/runtime": "0.63.0",
     "lightningcss": "^1.29.3",
     "picomatch": "^4.0.2",
     "postcss": "^8.5.3",
-    "rolldown": "1.0.0-beta.7-commit.25f3c61",
+    "rolldown": "1.0.0-beta.7-commit.8d551a2",
     "tinyglobby": "^0.2.12"
   },
   "optionalDependencies": {
@@ -99,7 +99,7 @@
     "@ampproject/remapping": "^2.3.0",
     "@babel/parser": "^7.26.10",
     "@jridgewell/trace-mapping": "^0.3.25",
-    "@oxc-project/types": "0.62.0",
+    "@oxc-project/types": "0.63.0",
     "@polka/compression": "^1.0.0-next.25",
     "@rollup/plugin-alias": "^5.1.1",
     "@rollup/plugin-commonjs": "^28.0.3",
