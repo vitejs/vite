@@ -3,14 +3,7 @@ import picomatch from 'picomatch'
 import { arraify } from '../utils'
 import { slash } from '../../shared/utils'
 
-export const FALLBACK_TRUE = 1
-export const FALLBACK_FALSE = 0
-type FallbackValues = typeof FALLBACK_TRUE | typeof FALLBACK_FALSE
-
 export type PluginFilter = (input: string) => boolean
-export type PluginFilterWithFallback = (
-  input: string,
-) => boolean | FallbackValues
 export type TransformHookFilter = (id: string, code: string) => boolean
 
 export type StringFilter<Value = string | RegExp> =
@@ -70,7 +63,7 @@ function patternToCodeFilter(pattern: string | RegExp): PluginFilter {
 function createFilter(
   exclude: Array<PluginFilter> | undefined,
   include: Array<PluginFilter> | undefined,
-): PluginFilterWithFallback | undefined {
+): PluginFilter | undefined {
   if (!exclude && !include) {
     return
   }
@@ -82,7 +75,7 @@ function createFilter(
     if (include?.some((filter) => filter(input))) {
       return true
     }
-    return !!include && include.length > 0 ? FALLBACK_FALSE : FALLBACK_TRUE
+    return !!include && include.length > 0 ? false : true
   }
 }
 
@@ -106,7 +99,7 @@ function normalizeFilter(filter: StringFilter): NormalizedStringFilter {
 export function createIdFilter(
   filter: StringFilter | undefined,
   cwd = process.cwd(),
-): PluginFilterWithFallback | undefined {
+): PluginFilter | undefined {
   if (!filter) return
   const { exclude, include } = normalizeFilter(filter)
   const excludeFilter = exclude?.map((p) => patternToIdFilter(p, cwd))
@@ -116,7 +109,7 @@ export function createIdFilter(
 
 export function createCodeFilter(
   filter: StringFilter | undefined,
-): PluginFilterWithFallback | undefined {
+): PluginFilter | undefined {
   if (!filter) return
   const { exclude, include } = normalizeFilter(filter)
   const excludeFilter = exclude?.map(patternToCodeFilter)
@@ -135,18 +128,14 @@ export function createFilterForTransform(
   return (id, code) => {
     let fallback = true
     if (idFilterFn) {
-      const idResult = idFilterFn(id)
-      if (typeof idResult === 'boolean') {
-        return idResult
-      }
-      fallback &&= !!idResult
+      fallback &&= idFilterFn(id)
     }
+    if (!fallback) {
+      return false
+    }
+
     if (codeFilterFn) {
-      const codeResult = codeFilterFn(code)
-      if (typeof codeResult === 'boolean') {
-        return codeResult
-      }
-      fallback &&= !!codeResult
+      fallback &&= codeFilterFn(code)
     }
     return fallback
   }
