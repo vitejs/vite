@@ -293,7 +293,7 @@ export type ResolvedEnvironmentOptions = {
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  'consumer' | 'resolve'
+  'consumer' | 'resolve' | 'keepProcessEnv'
 > & {
   resolve?: AllResolveOptions
 }

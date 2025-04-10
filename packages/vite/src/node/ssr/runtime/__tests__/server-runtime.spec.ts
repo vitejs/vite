@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs'
 import { posix, win32 } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { describe, expect } from 'vitest'
+import { describe, expect, vi } from 'vitest'
 import { isWindows } from '../../../../shared/utils'
 import { createModuleRunnerTester } from './utils'
 
@@ -29,17 +29,36 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('virtual:test')
     expect(mod.msg).toBe('virtual')
 
-    // virtual module query is not supported out of the box
-    // (`?t=...` was working on Vite 5 ssrLoadModule as `transformRequest` strips off timestamp query)
+    // already resolved id works similar to `transformRequest`
+    expect(await runner.import(`\0virtual:normal`)).toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // escaped virtual module id works
+    expect(await runner.import(`/@id/__x00__virtual:normal`))
+      .toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // timestamp query works
+    expect(await runner.import(`virtual:normal?t=${Date.now()}`))
+      .toMatchInlineSnapshot(`
+      {
+        "default": "ok",
+      }
+    `)
+
+    // other arbitrary queries don't work
     await expect(() =>
-      runner.import(`virtual:test?t=${Date.now()}`),
+      runner.import('virtual:normal?abcd=1234'),
     ).rejects.toMatchObject({
-      message: expect.stringContaining('cannot find entry point module'),
-    })
-    await expect(() =>
-      runner.import('virtual:test?abcd=1234'),
-    ).rejects.toMatchObject({
-      message: expect.stringContaining('cannot find entry point module'),
+      message: expect.stringContaining(
+        'Failed to load url virtual:normal?abcd=1234',
+      ),
     })
   })
 
@@ -336,5 +355,40 @@ describe('resolveId absolute path entry', async () => {
       posix.join(server.config.root, 'fixtures/basic.js'),
     )
     expect(mod.name).toMatchInlineSnapshot(`"virtual:basic"`)
+  })
+})
+
+describe('virtual module hmr', async () => {
+  let state = 'init'
+
+  const it = await createModuleRunnerTester({
+    plugins: [
+      {
+        name: 'test-resolevId',
+        enforce: 'pre',
+        resolveId(source) {
+          if (source === 'virtual:test') {
+            return '\0' + source
+          }
+        },
+        load(id) {
+          if (id === '\0virtual:test') {
+            return `export default ${JSON.stringify(state)}`
+          }
+        },
+      },
+    ],
+  })
+
+  it('full reload', async ({ server, runner }) => {
+    const mod = await runner.import('virtual:test')
+    expect(mod.default).toBe('init')
+    state = 'reloaded'
+    server.environments.ssr.moduleGraph.invalidateAll()
+    server.environments.ssr.hot.send({ type: 'full-reload' })
+    await vi.waitFor(() => {
+      const mod = runner.evaluatedModules.getModuleById('\0virtual:test')
+      expect(mod?.exports.default).toBe('reloaded')
+    })
   })
 })

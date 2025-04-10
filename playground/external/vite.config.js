@@ -32,6 +32,7 @@ export default defineConfig({
     },
     commonjsOptions: {
       esmExternals: ['vue', 'slash5'],
+      dynamicRequireTargets: ['test-no-op-fdir-glob'],
     },
   },
   plugins: [

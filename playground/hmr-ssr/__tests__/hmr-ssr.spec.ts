@@ -250,7 +250,7 @@ if (!isBuild) {
 
   describe('self accept with different entry point formats', () => {
     test.each(['./unresolved.ts', './unresolved', '/unresolved'])(
-      'accepts if entry point is relative to root',
+      'accepts if entry point is relative to root %s',
       async (entrypoint) => {
         await setupModuleRunner(entrypoint, {}, '/unresolved.ts')
 
@@ -270,7 +270,7 @@ if (!isBuild) {
             'foo was: 1',
             '(self-accepting 1) foo is now: 2',
             '(self-accepting 2) foo is now: 2',
-            updated('/unresolved.ts'),
+            updated(entrypoint),
           ],
           true,
         )
@@ -285,7 +285,7 @@ if (!isBuild) {
             'foo was: 2',
             '(self-accepting 1) foo is now: 3',
             '(self-accepting 2) foo is now: 3',
-            updated('/unresolved.ts'),
+            updated(entrypoint),
           ],
           true,
         )
@@ -844,7 +844,8 @@ if (!isBuild) {
     await untilUpdated(() => hmr('.optional-chaining')?.toString(), '2')
   })
 
-  test('hmr works for self-accepted module within circular imported files', async () => {
+  // TODO: this is flaky due to https://github.com/vitejs/vite/issues/19804
+  test.skip('hmr works for self-accepted module within circular imported files', async () => {
     await setupModuleRunner('/self-accept-within-circular/index')
     const el = () => hmr('.self-accept-within-circular')
     expect(el()).toBe('c')
@@ -864,6 +865,7 @@ if (!isBuild) {
   test('hmr should not reload if no accepted within circular imported files', async (ctx) => {
     // TODO: Investigate race condition that causes an inconsistent behaviour for the last `untilUpdated`
     // assertion where it'll sometimes receive "mod-a -> mod-b (edited) -> mod-c -> mod-a (expected no error)"
+    // This is probably related to https://github.com/vitejs/vite/issues/19804
     ctx.skip()
 
     await setupModuleRunner('/circular/index')

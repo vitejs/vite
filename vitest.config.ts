@@ -23,6 +23,10 @@ export default defineConfig({
     // as it can be seen from tsx (try pnpm exec tsx packages/vite/src/node/server/index.ts).
     // we can use `setupFiles` to ensure the modules are evaluated via main node entry.
     setupFiles: ['./packages/vite/src/node/index.ts'],
+    onConsoleLog(log) {
+      if (log.includes('The built-in minifier is still under development'))
+        return false
+    },
   },
   esbuild: {
     target: 'node18',

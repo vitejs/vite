@@ -99,7 +99,7 @@ jobs:
 
       - name: Generate Token
         id: generate-token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         with:
           app-id: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_ID }}
           private-key: ${{ secrets.ECOSYSTEM_CI_GITHUB_APP_PRIVATE_KEY }}
