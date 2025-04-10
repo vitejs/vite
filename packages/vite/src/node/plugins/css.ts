@@ -64,6 +64,7 @@ import {
   createSerialPromiseQueue,
   emptyCssComments,
   encodeURIPath,
+  escapeRegex,
   generateCodeFrame,
   getHash,
   getPackageManagerCommand,
@@ -227,7 +228,7 @@ const cssModuleRE = new RegExp(`\\.module${CSS_LANGS_RE.source}`)
 const directRequestRE = /[?&]direct\b/
 const htmlProxyRE = /[?&]html-proxy\b/
 const htmlProxyIndexRE = /&index=(\d+)/
-const commonjsProxyRE = /\?commonjs-proxy/
+const commonjsProxyRE = /[?&]commonjs-proxy/
 const inlineRE = /[?&]inline\b/
 const inlineCSSRE = /[?&]inline-css\b/
 const styleAttrRE = /[?&]style-attr\b/
@@ -652,10 +653,19 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
 
     async renderChunk(code, chunk, opts, meta) {
       let chunkCSS = ''
-      const renderedModules = Object.fromEntries(
-        Object.values(meta.chunks).flatMap((chunk) =>
-          Object.entries(chunk.modules),
-        ),
+      const renderedModules = new Proxy(
+        {} as Record<string, RenderedModule | undefined>,
+        {
+          get(_target, p) {
+            for (const name in meta.chunks) {
+              const modules = meta.chunks[name].modules
+              const module = modules[p as string]
+              if (module) {
+                return module
+              }
+            }
+          },
+        },
       )
       // the chunk is empty if it's a dynamic entry chunk that only contains a CSS import
       const isJsChunkEmpty = code === '' && !chunk.isEntry
@@ -1172,9 +1182,8 @@ export function getEmptyChunkReplacer(
   outputFormat: InternalModuleFormat,
 ): (code: string) => string {
   const emptyChunkFiles = pureCssChunkNames
-    .map((file) => path.basename(file))
+    .map((file) => escapeRegex(path.basename(file)))
     .join('|')
-    .replace(/\./g, '\\.')
 
   // for cjs, require calls might be chained by minifier using the comma operator.
   // in this case we have to keep one comma if a next require is chained
