@@ -7,7 +7,7 @@ import type {
   InlineConfig,
   Logger,
   PluginOption,
-  ResolvedConfig,
+  // ResolvedConfig,
   UserConfig,
   ViteDevServer,
 } from 'vite'
@@ -242,12 +242,12 @@ export async function startDefaultServe(): Promise<void> {
     await page.goto(viteTestUrl)
   } else {
     process.env.VITE_INLINE = 'inline-build'
-    let resolvedConfig: ResolvedConfig
+    // let resolvedConfig: ResolvedConfig
     // determine build watch
     const resolvedPlugin: () => PluginOption = () => ({
       name: 'vite-plugin-watcher',
-      configResolved(config) {
-        resolvedConfig = config
+      configResolved(_config) {
+        // resolvedConfig = config
       },
     })
     const buildConfig = mergeConfig(
