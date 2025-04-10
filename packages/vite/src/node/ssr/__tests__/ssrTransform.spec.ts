@@ -1527,24 +1527,23 @@ test('combine mappings', async () => {
 test('deps', async () => {
   const result = await ssrTransformSimple(`\
 import a from "a";
-import dup from "a";
 export { b } from "b";
 export * from "c";
 export * as d from "d";
-import("e");
-import("e");
+import("e")
+export * as A from "a";
 `)
   expect(result?.code).toMatchInlineSnapshot(`
-    "Object.defineProperty(__vite_ssr_exports__, "b", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_2__.b }});
-    Object.defineProperty(__vite_ssr_exports__, "d", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_4__ }});
+    "Object.defineProperty(__vite_ssr_exports__, "b", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_1__.b }});
+    Object.defineProperty(__vite_ssr_exports__, "d", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_3__ }});
+    Object.defineProperty(__vite_ssr_exports__, "A", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_4__ }});
     const __vite_ssr_import_0__ = await __vite_ssr_import__("a", {"importedNames":["default"]});
-    const __vite_ssr_import_1__ = await __vite_ssr_import__("a", {"importedNames":["default"]});
-    const __vite_ssr_import_2__ = await __vite_ssr_import__("b", {"importedNames":["b"]});
-    const __vite_ssr_import_3__ = await __vite_ssr_import__("c");__vite_ssr_exportAll__(__vite_ssr_import_3__);
+    const __vite_ssr_import_1__ = await __vite_ssr_import__("b", {"importedNames":["b"]});
+    const __vite_ssr_import_2__ = await __vite_ssr_import__("c");__vite_ssr_exportAll__(__vite_ssr_import_2__);
 
-    const __vite_ssr_import_4__ = await __vite_ssr_import__("d");
+    const __vite_ssr_import_3__ = await __vite_ssr_import__("d");
     __vite_ssr_dynamic_import__("e");
-    __vite_ssr_dynamic_import__("e");
+    const __vite_ssr_import_4__ = await __vite_ssr_import__("a");
     "
   `)
   expect({
