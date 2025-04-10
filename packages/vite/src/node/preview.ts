@@ -6,7 +6,7 @@ import connect from 'connect'
 import type { Connect } from 'dep-types/connect'
 import corsMiddleware from 'cors'
 import type { ResolvedServerOptions, ResolvedServerUrls } from './server'
-import { DEFAULT_PREVIEW_PORT , defaultAllowedOrigins } from './constants'
+import { DEFAULT_PREVIEW_PORT, defaultAllowedOrigins } from './constants'
 import type { CommonServerOptions } from './http'
 import {
   httpServerStart,
