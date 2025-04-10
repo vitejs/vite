@@ -83,6 +83,7 @@ import type { TransformOptions, TransformResult } from './transformRequest'
 import { transformRequest } from './transformRequest'
 import { searchForWorkspaceRoot } from './searchRoot'
 import { hostCheckMiddleware } from './middlewares/hostCheck'
+import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -615,6 +616,9 @@ export async function _createServer(
   if (process.env.DEBUG) {
     middlewares.use(timeMiddleware(root))
   }
+
+  // disallows request that contains `#` in the URL
+  middlewares.use(rejectInvalidRequestMiddleware())
 
   // cors
   const { cors } = serverConfig
