@@ -397,7 +397,7 @@ describe('cross origin', () => {
   })
 })
 
-describe('invalid request', () => {
+describe.runIf(isServe)('invalid request', () => {
   const sendRawRequest = async (baseUrl: string, requestTarget: string) => {
     return new Promise<string>((resolve, reject) => {
       const parsedUrl = new URL(baseUrl)
