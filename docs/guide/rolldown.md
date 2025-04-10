@@ -120,7 +120,7 @@ However, as projects scale in size and complexity, two main challenges have emer
 
 1. **Development/Production inconsistency**: The unbundled JavaScript served in development versus the bundled production build creates different runtime behaviors. This can lead to issues that only manifest in production, making debugging more difficult.
 
-2. **Performance degradation on page refresh**: When running the development server for large applications, a hard page refresh can trigger hundreds or even thousands of network requests as each module is loaded individually. While this is somewhat mitigated by HTTP/2 multiplexing, it still creates overhead that impacts startup performance, especially on slower networks or devices.
+2. **Performance degradation during development**: The unbundled approach results in each module being fetched separately, which creates a large number of network requests. While this has _no impact in production_, it causes significant overhead during dev server startup and when refreshing the page in development. The impact is especially noticeable in large applications where hundreds or even thousands of separate requests must be processed. These bottlenecks become even more severe when developers use network proxy, resulting in slower refresh times and degraded developer experience.
 
 With the Rolldown integration, we have an opportunity to unify the development and production experiences while maintaining Vite's signature performance. A Full Bundle Mode would allow serving bundled files not only in production but also during development, combining the best of both worlds:
 
