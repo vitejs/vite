@@ -292,7 +292,7 @@ export type ResolvedEnvironmentOptions = {
 
 export type DefaultEnvironmentOptions = Omit<
   EnvironmentOptions,
-  'consumer' | 'resolve'
+  'consumer' | 'resolve' | 'keepProcessEnv'
 > & {
   resolve?: AllResolveOptions
 }
@@ -408,7 +408,7 @@ export interface UserConfig extends DefaultEnvironmentOptions {
    * root.
    * @default root
    */
-  envDir?: string
+  envDir?: string | false
   /**
    * Env variables starts with `envPrefix` will be exposed to your client source code via import.meta.env.
    * @default 'VITE_'
@@ -547,6 +547,7 @@ export interface InlineConfig extends UserConfig {
   configFile?: string | false
   /** @experimental */
   configLoader?: 'bundle' | 'runner' | 'native'
+  /** @deprecated */
   envFile?: false
   forceOptimizeDeps?: boolean
 }
@@ -587,7 +588,7 @@ export interface ResolvedConfig
       /** @internal list of bundle entry id. used to detect recursive worker bundle. */
       bundleChain: string[]
       isProduction: boolean
-      envDir: string
+      envDir: string | false
       env: Record<string, any>
       resolve: Required<ResolveOptions> & {
         alias: Alias[]
@@ -651,7 +652,7 @@ export const configDefaults = Object.freeze({
     // mainFields
     // conditions
     externalConditions: ['node'],
-    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json'],
+    extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     dedupe: [],
     /** @experimental */
     noExternal: [],
@@ -790,6 +791,27 @@ function resolveEnvironmentOptions(
     options.consumer ?? (isClientEnvironment ? 'client' : 'server')
   const isSsrTargetWebworkerEnvironment =
     isSsrTargetWebworkerSet && environmentName === 'ssr'
+
+  if (options.define?.['process.env']) {
+    const processEnvDefine = options.define['process.env']
+    if (typeof processEnvDefine === 'object') {
+      const pathKey = Object.entries(processEnvDefine).find(
+        // check with toLowerCase() to match with `Path` / `PATH` (Windows uses `Path`)
+        ([key, value]) => key.toLowerCase() === 'path' && !!value,
+      )?.[0]
+      if (pathKey) {
+        logger.warnOnce(
+          colors.yellow(
+            `The \`define\` option contains an object with ${JSON.stringify(pathKey)} for "process.env" key. ` +
+              'It looks like you may have passed the entire `process.env` object to `define`, ' +
+              'which can unintentionally expose all environment variables. ' +
+              'This poses a security risk and is discouraged.',
+          ),
+        )
+      }
+    }
+  }
+
   const resolve = resolveEnvironmentResolveOptions(
     options.resolve,
     alias,
@@ -860,9 +882,13 @@ export type ResolveFn = (
 
 /**
  * Check and warn if `path` includes characters that don't work well in Vite,
- * such as `#` and `?`.
+ * such as `#` and `?` and `*`.
  */
-function checkBadCharactersInPath(path: string, logger: Logger): void {
+function checkBadCharactersInPath(
+  name: string,
+  path: string,
+  logger: Logger,
+): void {
   const badChars = []
 
   if (path.includes('#')) {
@@ -871,6 +897,9 @@ function checkBadCharactersInPath(path: string, logger: Logger): void {
   if (path.includes('?')) {
     badChars.push('?')
   }
+  if (path.includes('*')) {
+    badChars.push('*')
+  }
 
   if (badChars.length > 0) {
     const charString = badChars.map((c) => `"${c}"`).join(' and ')
@@ -878,9 +907,9 @@ function checkBadCharactersInPath(path: string, logger: Logger): void {
 
     logger.warn(
       colors.yellow(
-        `The project root contains the ${charString} ${inflectedChars} (${colors.cyan(
+        `${name} contains the ${charString} ${inflectedChars} (${colors.cyan(
           path,
-        )}), which may not work when running Vite. Consider renaming the directory to remove the characters.`,
+        )}), which may not work when running Vite. Consider renaming the directory / file to remove the characters.`,
       ),
     )
   }
@@ -1111,7 +1140,7 @@ export async function resolveConfig(
     config.root ? path.resolve(config.root) : process.cwd(),
   )
 
-  checkBadCharactersInPath(resolvedRoot, logger)
+  checkBadCharactersInPath('The project root', resolvedRoot, logger)
 
   const configEnvironmentsClient = config.environments!.client!
   configEnvironmentsClient.dev ??= {}
@@ -1260,12 +1289,15 @@ export async function resolveConfig(
   )
 
   // load .env files
-  const envDir = config.envDir
-    ? normalizePath(path.resolve(resolvedRoot, config.envDir))
-    : resolvedRoot
-  const userEnv =
-    inlineConfig.envFile !== false &&
-    loadEnv(mode, envDir, resolveEnvPrefix(config))
+  // Backward compatibility: set envDir to false when envFile is false
+  let envDir = config.envFile === false ? false : config.envDir
+  if (envDir !== false) {
+    envDir = config.envDir
+      ? normalizePath(path.resolve(resolvedRoot, config.envDir))
+      : resolvedRoot
+  }
+
+  const userEnv = loadEnv(mode, envDir, resolveEnvPrefix(config))
 
   // Note it is possible for user to have a custom mode, e.g. `staging` where
   // development-like behavior is expected. This is indicated by NODE_ENV=development
@@ -1418,7 +1450,7 @@ export async function resolveConfig(
     inlineConfig,
     root: resolvedRoot,
     base,
-    decodedBase: decodeURI(base),
+    decodedBase: decodeBase(base),
     rawBase: resolvedBase,
     publicDir: resolvedPublicDir,
     cacheDir,
@@ -1678,6 +1710,16 @@ export function resolveBaseUrl(
   return base
 }
 
+function decodeBase(base: string): string {
+  try {
+    return decodeURI(base)
+  } catch {
+    throw new Error(
+      'The value passed to "base" option was malformed. It should be a valid URL.',
+    )
+  }
+}
+
 export function sortUserPlugins(
   plugins: (Plugin | Plugin[])[] | undefined,
 ): [Plugin[], Plugin[], Plugin[]] {
@@ -1766,12 +1808,11 @@ export async function loadConfigFromFile(
       dependencies,
     }
   } catch (e) {
-    createLogger(logLevel, { customLogger }).error(
-      colors.red(`failed to load config from ${resolvedPath}`),
-      {
-        error: e,
-      },
-    )
+    const logger = createLogger(logLevel, { customLogger })
+    checkBadCharactersInPath('The config path', resolvedPath, logger)
+    logger.error(colors.red(`failed to load config from ${resolvedPath}`), {
+      error: e,
+    })
     throw e
   }
 }

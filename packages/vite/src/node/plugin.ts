@@ -25,6 +25,7 @@ import type { Environment } from './environment'
 import type { PartialEnvironment } from './baseEnvironment'
 import type { PreviewServerHook } from './preview'
 import { arraify, asyncFlatten } from './utils'
+import type { StringFilter } from './plugins/pluginFilter'
 
 /**
  * Vite plugins extends the Rollup plugin interface with a few extra
@@ -139,7 +140,8 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
         scan?: boolean
         isEntry: boolean
       },
-    ) => Promise<ResolveIdResult> | ResolveIdResult
+    ) => Promise<ResolveIdResult> | ResolveIdResult,
+    { filter?: { id?: StringFilter<RegExp> } }
   >
   load?: ObjectHook<
     (
@@ -152,7 +154,8 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
          */
         html?: boolean
       },
-    ) => Promise<LoadResult> | LoadResult
+    ) => Promise<LoadResult> | LoadResult,
+    { filter?: { id?: StringFilter } }
   >
   transform?: ObjectHook<
     (
@@ -162,7 +165,8 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       options?: {
         ssr?: boolean
       },
-    ) => Promise<TransformResult> | TransformResult
+    ) => Promise<TransformResult> | TransformResult,
+    { filter?: { id?: StringFilter; code?: StringFilter } }
   >
   /**
    * Opt-in this plugin into the shared plugins pipeline.
@@ -288,8 +292,13 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
    * The hook receives the following arguments:
    *
    * - html: string
-   * - ctx?: vite.ServerContext (only present during serve)
-   * - bundle?: rollup.OutputBundle (only present during build)
+   * - ctx: IndexHtmlTransformContext, which contains:
+   *    - path: public path when served
+   *    - filename: filename on disk
+   *    - server?: ViteDevServer (only present during serve)
+   *    - bundle?: rollup.OutputBundle (only present during build)
+   *    - chunk?: rollup.OutputChunk
+   *    - originalUrl?: string
    *
    * It can either return a transformed string, or a list of html tag
    * descriptors that will be injected into the `<head>` or `<body>`.
@@ -321,24 +330,6 @@ export interface Plugin<A = any> extends RollupPlugin<A> {
       ctx: HmrContext,
     ) => Array<ModuleNode> | void | Promise<Array<ModuleNode> | void>
   >
-}
-
-export interface CustomPluginOptionsVite {
-  /**
-   * If this is a CSS Rollup module, you can scope to its importer's exports
-   * so that if those exports are treeshaken away, the CSS module will also
-   * be treeshaken.
-   *
-   * The "importerId" must import the CSS Rollup module statically.
-   *
-   * Example config if the CSS id is `/src/App.vue?vue&type=style&lang.css`:
-   * ```js
-   * cssScopeTo: ['/src/App.vue', 'default']
-   * ```
-   *
-   * @experimental
-   */
-  cssScopeTo?: [importerId: string, exportName: string | undefined]
 }
 
 export type HookHandler<T> = T extends ObjectHook<infer H> ? H : T

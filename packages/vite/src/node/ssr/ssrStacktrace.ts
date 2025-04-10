@@ -52,7 +52,7 @@ export function ssrRewriteStacktrace(
             return input
           }
 
-          const trimmedVarName = varName.trim()
+          const trimmedVarName = varName?.trim()
           const sourceFile = path.resolve(path.dirname(id), pos.source)
           // stacktrace's column is 1-indexed, but sourcemap's one is 0-indexed
           const source = `${sourceFile}:${pos.line}:${pos.column + 1}`

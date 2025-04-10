@@ -64,15 +64,6 @@ While it may work using [`--experimental-require-module`](https://nodejs.org/doc
 - adding `"type": "module"` to the nearest `package.json`
 - renaming `vite.config.js`/`vite.config.ts` to `vite.config.mjs`/`vite.config.mts`
 
-### `failed to load config from '/path/to/config*/vite.config.js'`
-
-> failed to load config from '/path/to/config\*/vite.config.js'
-> error when starting dev server:
-> Error: Build failed with 1 error:
-> error: Must use "outdir" when there are multiple input files
-
-The error above may occur if the path to your project folder contains `*`, which esbuild treats as a glob. You will need to rename your directory to remove the `*`.
-
 ## Dev Server
 
 ### Requests are stalled forever
@@ -110,6 +101,9 @@ If the above steps don't work, you can try adding `DefaultLimitNOFILE=65536` as 
 For Ubuntu Linux, you may need to add the line `* - nofile 65536` to the file `/etc/security/limits.conf` instead of updating systemd config files.
 
 Note that these settings persist but a **restart is required**.
+
+Alternatively, if the server is running inside a VS Code devcontainer, the request may appear to be stalled. To fix this issue, see
+[Dev Containers / VS Code Port Forwarding](#dev-containers-vs-code-port-forwarding).
 
 ### Network requests stop loading
 

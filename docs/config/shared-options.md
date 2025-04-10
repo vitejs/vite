@@ -140,10 +140,6 @@ Here, `import` and `require` are "conditions". Conditions can be nested and shou
 
 Note that `import`, `require`, `default` conditions are always applied if the requirements are met.
 
-:::warning Resolving subpath exports
-Export keys ending with "/" is deprecated by Node and may not work well. Please contact the package author to use [`*` subpath patterns](https://nodejs.org/api/packages.html#package-entry-points) instead.
-:::
-
 ## resolve.mainFields
 
 - **Type:** `string[]`
@@ -459,10 +455,10 @@ Set to `false` to prevent Vite from clearing the terminal screen when logging ce
 
 ## envDir
 
-- **Type:** `string`
+- **Type:** `string | false`
 - **Default:** `root`
 
-The directory from which `.env` files are loaded. Can be an absolute path, or a path relative to the project root.
+The directory from which `.env` files are loaded. Can be an absolute path, or a path relative to the project root. `false` will disable the `.env` file loading.
 
 See [here](/guide/env-and-mode#env-files) for more about environment files.
 

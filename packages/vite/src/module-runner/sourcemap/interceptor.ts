@@ -175,7 +175,7 @@ function mapSourcePosition(position: OriginalMapping) {
   let sourceMap = getRunnerSourceMap(position)
   if (!sourceMap) sourceMap = sourceMapCache[position.source]
   if (!sourceMap) {
-    // Call the (overrideable) retrieveSourceMap function to get the source map.
+    // Call the (overridable) retrieveSourceMap function to get the source map.
     const urlAndMap = retrieveSourceMap(position.source)
     if (urlAndMap && urlAndMap.map) {
       const url = urlAndMap.url

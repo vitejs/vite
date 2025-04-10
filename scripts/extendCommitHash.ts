@@ -11,7 +11,9 @@ export default function extendCommitHash(path: string): void {
   while ((match = matchHashReg.exec(content))) {
     const shortHash = match[1]
     try {
-      const longHash = execSync(`git rev-parse ${shortHash}`).toString().trim()
+      const longHash = execSync(`git rev-parse "${shortHash}^{commit}"`)
+        .toString()
+        .trim()
       content = content.replace(`${base}${shortHash}`, `${base}${longHash}`)
     } catch {}
   }

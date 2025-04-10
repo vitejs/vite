@@ -67,6 +67,28 @@ describe.runIf(isServe)('main', () => {
     expect(await page.textContent('.unsafe-fetch-8498-2-status')).toBe('404')
   })
 
+  test('unsafe fetch import inline', async () => {
+    expect(await page.textContent('.unsafe-fetch-import-inline-status')).toBe(
+      '403',
+    )
+  })
+
+  test('unsafe fetch raw query import', async () => {
+    expect(
+      await page.textContent('.unsafe-fetch-raw-query-import-status'),
+    ).toBe('403')
+  })
+
+  test('unsafe fetch ?.svg?import', async () => {
+    expect(
+      await page.textContent('.unsafe-fetch-query-dot-svg-import-status'),
+    ).toBe('403')
+  })
+
+  test('unsafe fetch .svg?import', async () => {
+    expect(await page.textContent('.unsafe-fetch-svg-status')).toBe('403')
+  })
+
   test('safe fs fetch', async () => {
     expect(await page.textContent('.safe-fs-fetch')).toBe(stringified)
     expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
@@ -96,6 +118,20 @@ describe.runIf(isServe)('main', () => {
     expect(await page.textContent('.unsafe-fs-fetch-raw-status')).toBe('403')
   })
 
+  test('unsafe fs fetch query 1', async () => {
+    expect(await page.textContent('.unsafe-fs-fetch-raw-query1')).toBe('')
+    expect(await page.textContent('.unsafe-fs-fetch-raw-query1-status')).toBe(
+      '403',
+    )
+  })
+
+  test('unsafe fs fetch query 2', async () => {
+    expect(await page.textContent('.unsafe-fs-fetch-raw-query2')).toBe('')
+    expect(await page.textContent('.unsafe-fs-fetch-raw-query2-status')).toBe(
+      '403',
+    )
+  })
+
   test('unsafe fs fetch with special characters (#8498)', async () => {
     expect(await page.textContent('.unsafe-fs-fetch-8498')).toBe('')
     expect(await page.textContent('.unsafe-fs-fetch-8498-status')).toBe('404')
@@ -104,6 +140,26 @@ describe.runIf(isServe)('main', () => {
   test('unsafe fs fetch with special characters 2 (#8498)', async () => {
     expect(await page.textContent('.unsafe-fs-fetch-8498-2')).toBe('')
     expect(await page.textContent('.unsafe-fs-fetch-8498-2-status')).toBe('404')
+  })
+
+  test('unsafe fs fetch import inline', async () => {
+    expect(
+      await page.textContent('.unsafe-fs-fetch-import-inline-status'),
+    ).toBe('403')
+  })
+
+  test('unsafe fs fetch import inline wasm init', async () => {
+    expect(
+      await page.textContent('.unsafe-fs-fetch-import-inline-wasm-init-status'),
+    ).toBe('403')
+  })
+
+  test('unsafe fs fetch with relative path after query status', async () => {
+    expect(
+      await page.textContent(
+        '.unsafe-fs-fetch-relative-path-after-query-status',
+      ),
+    ).toBe('403')
   })
 
   test('nested entry', async () => {
@@ -118,6 +174,12 @@ describe.runIf(isServe)('main', () => {
     // It is 403 in case insensitive system, 404 in others
     const code = await page.textContent('.unsafe-dotEnV-casing')
     expect(code === '403' || code === '404').toBeTruthy()
+  })
+
+  test('denied env with ?.svg?.wasm?init', async () => {
+    expect(
+      await page.textContent('.unsafe-dotenv-query-dot-svg-wasm-init'),
+    ).toBe('403')
   })
 })
 
