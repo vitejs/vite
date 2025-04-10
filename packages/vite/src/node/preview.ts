@@ -276,7 +276,14 @@ export async function preview(
   )
 
   if (options.open) {
-    const url = server.resolvedUrls.local[0] ?? server.resolvedUrls.network[0]
+    const host = options.host
+    const url =
+      typeof host === 'string'
+        ? [
+            ...(server.resolvedUrls?.local ?? []),
+            ...(server.resolvedUrls?.network ?? []),
+          ].find((url) => url.includes(host))
+        : (server.resolvedUrls.local[0] ?? server.resolvedUrls.network[0])
     if (url) {
       const path =
         typeof options.open === 'string' ? new URL(options.open, url).href : url
