@@ -1,3 +1,22 @@
+## 6.3.0-beta.6 (2025-04-10)
+
+* feat: update rolldown ([e28b1c0](https://github.com/vitejs/rolldown-vite/commit/e28b1c0))
+* feat: update rolldown ([c7e3e04](https://github.com/vitejs/rolldown-vite/commit/c7e3e04))
+* perf: define viteMetadata instead of assign (#106) ([7912459](https://github.com/vitejs/rolldown-vite/commit/7912459)), closes [#106](https://github.com/vitejs/rolldown-vite/issues/106)
+* perf(css): avoid constructing `renderedModules` (#19775) ([59d0b35](https://github.com/vitejs/rolldown-vite/commit/59d0b35)), closes [#19775](https://github.com/vitejs/rolldown-vite/issues/19775)
+* fix: correct the behavior when multiple transform filter options are specified (#19818) ([7200dee](https://github.com/vitejs/rolldown-vite/commit/7200dee)), closes [#19818](https://github.com/vitejs/rolldown-vite/issues/19818)
+* fix: reject requests with `#` in request-target (#19830) ([175a839](https://github.com/vitejs/rolldown-vite/commit/175a839)), closes [#19830](https://github.com/vitejs/rolldown-vite/issues/19830)
+* fix: unbundle `fdir` to fix `commonjsOptions.dynamicRequireTargets` (#19791) ([71227be](https://github.com/vitejs/rolldown-vite/commit/71227be)), closes [#19791](https://github.com/vitejs/rolldown-vite/issues/19791)
+* fix(css): remove empty chunk imports correctly when chunk file name contained special characters (#1 ([b125172](https://github.com/vitejs/rolldown-vite/commit/b125172)), closes [#19814](https://github.com/vitejs/rolldown-vite/issues/19814)
+* fix(dev): make query selector regexes more inclusive (fix #19213) (#19767) ([f530a72](https://github.com/vitejs/rolldown-vite/commit/f530a72)), closes [#19213](https://github.com/vitejs/rolldown-vite/issues/19213) [#19767](https://github.com/vitejs/rolldown-vite/issues/19767)
+* fix(module-runner): allow already resolved id as entry (#19768) ([e2e11b1](https://github.com/vitejs/rolldown-vite/commit/e2e11b1)), closes [#19768](https://github.com/vitejs/rolldown-vite/issues/19768)
+* fix(types): remove the `keepProcessEnv` from the `DefaultEnvironmentOptions` type (#19796) ([36935b5](https://github.com/vitejs/rolldown-vite/commit/36935b5)), closes [#19796](https://github.com/vitejs/rolldown-vite/issues/19796)
+* chore: bump rolldown (#105) ([8646e4e](https://github.com/vitejs/rolldown-vite/commit/8646e4e)), closes [#105](https://github.com/vitejs/rolldown-vite/issues/105)
+* test: tweak generateCodeFrame test (#19812) ([8fe3538](https://github.com/vitejs/rolldown-vite/commit/8fe3538)), closes [#19812](https://github.com/vitejs/rolldown-vite/issues/19812)
+* docs(vite): fix description of `transformIndexHtml` hook (#19799) ([a0e1a04](https://github.com/vitejs/rolldown-vite/commit/a0e1a04)), closes [#19799](https://github.com/vitejs/rolldown-vite/issues/19799)
+
+
+
 ## 6.3.0-beta.5 (2025-04-03)
 
 * chore: cleanup changelog ([b17bade](https://github.com/vitejs/rolldown-vite/commit/b17bade))
