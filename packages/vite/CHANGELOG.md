@@ -1,3 +1,9 @@
+## <small>6.1.5 (2025-04-10)</small>
+
+* fix: reject requests with `#` in request-target (#19830) ([87cff12](https://github.com/vitejs/vite/commit/87cff1215bcba6bee2113e5b85bccfa5c20049d6)), closes [#19830](https://github.com/vitejs/vite/issues/19830)
+
+
+
 ## <small>6.1.4 (2025-04-03)</small>
 
 * fix: backport #19782, fs check with svg and relative paths ([0aeccef](https://github.com/vitejs/vite/commit/0aeccef739cca78d8903c91a424d02192d698e23)), closes [#19782](https://github.com/vitejs/vite/issues/19782)
