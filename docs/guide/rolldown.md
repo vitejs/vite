@@ -110,7 +110,7 @@ The `rolldown-vite` package is a temporary solution to gather feedback and stabi
 
 We encourage you to try out `rolldown-vite` and contribute to its development through feedback and issue reports.
 
-In the future, we will also introduce a "Full Bundle Mode" for Vite, which will server bundled files in production _and development mode_.
+In the future, we will also introduce a "Full Bundle Mode" for Vite, which will serve bundled files in production _and development mode_.
 
 ### Why introducing a Full Bundle Mode?
 
