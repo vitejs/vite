@@ -87,7 +87,7 @@ function normalizeFilter(filter: StringFilter): NormalizedStringFilter {
   }
   if (Array.isArray(filter)) {
     return {
-      include: arraify(filter),
+      include: filter,
     }
   }
   return {
