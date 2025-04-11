@@ -26,6 +26,7 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  getServerUrlByHost,
   isInNodeModules,
   isObject,
   isParentDirectory,
@@ -659,15 +660,7 @@ export async function _createServer(
     },
     openBrowser() {
       const options = server.config.server
-      const host = options.host
-      let url: string | undefined
-      if (typeof host === 'string') {
-        url = [
-          ...(server.resolvedUrls?.local ?? []),
-          ...(server.resolvedUrls?.network ?? []),
-        ].find((url) => url.includes(host))
-      }
-      url ??= server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+      const url = getServerUrlByHost(server, options.host)
       if (url) {
         const path =
           typeof options.open === 'string'
