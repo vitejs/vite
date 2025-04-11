@@ -301,6 +301,25 @@ describe('module runner initialization', async () => {
       `[ReferenceError: Cannot access 'dep1' before initialization]`,
     )
   })
+
+  it(`live binding default export`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        "before",
+        "after",
+      ]
+    `)
+  })
+
+  it(`export deafult expression is hoisted`, async ({ runner }) => {
+    // Node error is `ReferenceError: Cannot access 'dep' before initialization`
+    await expect(() =>
+      runner.import('/fixtures/cyclic2/test9/index.js'),
+    ).rejects.toMatchInlineSnapshot(
+      `[ReferenceError: Cannot access '__vite_ssr_export_default__' before initialization]`,
+    )
+  })
 })
 
 describe('optimize-deps', async () => {
