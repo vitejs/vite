@@ -301,6 +301,36 @@ describe('module runner initialization', async () => {
       `[ReferenceError: Cannot access 'dep1' before initialization]`,
     )
   })
+
+  it(`cyclic with mixed import and re-export`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/cyclic2/test7/Ion.js')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "IonTypes": {
+          "BLOB": "Blob",
+        },
+        "dom": {
+          "Blob": "Blob",
+        },
+      }
+    `)
+  })
+
+  it(`execution order with mixed import and re-export`, async ({
+    runner,
+    onTestFinished,
+  }) => {
+    const spy = vi.spyOn(console, 'log')
+    onTestFinished(() => spy.mockRestore())
+
+    await runner.import('/fixtures/cyclic2/test8/index.js')
+    expect(spy.mock.calls.map((v) => v[0])).toMatchInlineSnapshot(`
+      [
+        "dep1",
+        "dep2",
+      ]
+    `)
+  })
 })
 
 describe('optimize-deps', async () => {
