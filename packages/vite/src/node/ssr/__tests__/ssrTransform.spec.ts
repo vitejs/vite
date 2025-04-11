@@ -505,11 +505,11 @@ test('should declare variable for imported super class', async () => {
         `export class B extends Foo {}`,
     ),
   ).toMatchInlineSnapshot(`
-    "Object.defineProperty(__vite_ssr_exports__, "B", { enumerable: true, configurable: true, get(){ return B }});
+    "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return A }});
+    Object.defineProperty(__vite_ssr_exports__, "B", { enumerable: true, configurable: true, get(){ return B }});
     const __vite_ssr_import_0__ = await __vite_ssr_import__("./dependency", {"importedNames":["Foo"]});const Foo = __vite_ssr_import_0__.Foo;
     class A extends Foo {};
-    class B extends Foo {}
-    Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, value: A });"
+    class B extends Foo {}"
   `)
 })
 
@@ -534,9 +534,9 @@ test('should handle default export variants', async () => {
         `foo.prototype = Object.prototype;`,
     ),
   ).toMatchInlineSnapshot(`
-    "function foo() {};
-    foo.prototype = Object.prototype;
-    Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, value: foo });"
+    "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return foo }});
+    function foo() {};
+    foo.prototype = Object.prototype;"
   `)
   // default named classes
   expect(
@@ -544,10 +544,10 @@ test('should handle default export variants', async () => {
       `export default class A {}\n` + `export class B extends A {}`,
     ),
   ).toMatchInlineSnapshot(`
-    "Object.defineProperty(__vite_ssr_exports__, "B", { enumerable: true, configurable: true, get(){ return B }});
+    "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return A }});
+    Object.defineProperty(__vite_ssr_exports__, "B", { enumerable: true, configurable: true, get(){ return B }});
     class A {};
-    class B extends A {}
-    Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, value: A });"
+    class B extends A {}"
   `)
 })
 
