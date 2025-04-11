@@ -267,7 +267,8 @@ async function ssrTransformScript(
         if (node.source) {
           // export { foo, bar } from './foo'
           const importId = defineImport(
-            node.start,
+            // node.start,
+            hoistIndex,
             node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
             {
               importedNames: node.specifiers.map(
@@ -334,7 +335,11 @@ async function ssrTransformScript(
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      const importId = defineImport(node.start, node)
+      const importId = defineImport(
+        // node.start,
+        hoistIndex,
+        node,
+      )
       if (node.exported) {
         const exportedAs = getIdentifierNameOrLiteralValue(
           node.exported,
