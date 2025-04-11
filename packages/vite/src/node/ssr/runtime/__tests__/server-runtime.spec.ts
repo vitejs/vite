@@ -301,6 +301,16 @@ describe('module runner initialization', async () => {
       `[ReferenceError: Cannot access 'dep1' before initialization]`,
     )
   })
+
+  it(`live binding default export`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        "before",
+        "after",
+      ]
+    `)
+  })
 })
 
 describe('optimize-deps', async () => {
