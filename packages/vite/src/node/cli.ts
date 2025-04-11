@@ -175,6 +175,9 @@ cli
     '--force',
     `[boolean] force the optimizer to ignore the cache and re-bundle`,
   )
+  .option('--watchStdin', `[boolean] watch stdin and exit on EOF`, {
+    default: !process.stdin.isTTY,
+  })
   .action(async (root: string, options: ServerOptions & GlobalCLIOptions) => {
     filterDuplicateOptions(options)
     // output structure is preserved even after bundling so require()
@@ -380,6 +383,9 @@ cli
   .option('--strictPort', `[boolean] exit if specified port is already in use`)
   .option('--open [path]', `[boolean | string] open browser on startup`)
   .option('--outDir <dir>', `[string] output directory (default: dist)`)
+  .option('--watchStdin', `[boolean] watch stdin and exit on EOF`, {
+    default: !process.stdin.isTTY,
+  })
   .action(
     async (
       root: string,
@@ -389,6 +395,7 @@ cli
         open?: boolean | string
         strictPort?: boolean
         outDir?: string
+        watchStdin?: boolean
       } & GlobalCLIOptions,
     ) => {
       filterDuplicateOptions(options)
@@ -409,6 +416,7 @@ cli
             strictPort: options.strictPort,
             host: options.host,
             open: options.open,
+            watchStdin: options.watchStdin,
           },
         })
         server.printUrls()
