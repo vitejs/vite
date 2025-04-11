@@ -75,7 +75,7 @@ function createFilter(
     if (include?.some((filter) => filter(input))) {
       return true
     }
-    return !!include && include.length > 0 ? false : true
+    return !(include && include.length > 0)
   }
 }
 
