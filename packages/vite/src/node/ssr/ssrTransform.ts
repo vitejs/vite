@@ -321,11 +321,13 @@ async function ssrTransformScript(
         defineExport('default', name)
       } else {
         // anonymous default exports
+        const name = `__vite_ssr_export_default__`
         s.update(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`,
+          `const ${name} =`,
         )
+        defineExport('default', name)
       }
     }
 
