@@ -25,6 +25,7 @@ import { indexHtmlMiddleware } from './server/middlewares/indexHtml'
 import { notFoundMiddleware } from './server/middlewares/notFound'
 import { proxyMiddleware } from './server/middlewares/proxy'
 import {
+  getServerUrlByHost,
   resolveHostname,
   resolveServerUrls,
   setupSIGTERMListener,
@@ -276,14 +277,7 @@ export async function preview(
   )
 
   if (options.open) {
-    const host = options.host
-    const url =
-      typeof host === 'string'
-        ? [
-            ...(server.resolvedUrls?.local ?? []),
-            ...(server.resolvedUrls?.network ?? []),
-          ].find((url) => url.includes(host))
-        : (server.resolvedUrls.local[0] ?? server.resolvedUrls.network[0])
+    const url = getServerUrlByHost(server, options.host)
     if (url) {
       const path =
         typeof options.open === 'string' ? new URL(options.open, url).href : url
