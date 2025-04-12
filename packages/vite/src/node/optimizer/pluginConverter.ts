@@ -3,6 +3,7 @@ import type * as esbuild from 'esbuild'
 import type {
   ImportKind,
   LoadResult,
+  PartialResolvedId,
   PluginContext,
   ResolveIdResult,
   Plugin as RolldownPlugin,
@@ -21,7 +22,10 @@ type ResolveIdHandler = (
   id: string,
   importer: string | undefined,
   opts: { kind: ImportKind },
-) => MaybePromise<ResolveIdResult>
+) => MaybePromise<
+  | (PartialResolvedId & { namespace?: string })
+  | Exclude<ResolveIdResult, PartialResolvedId>
+>
 type LoadHandler = (this: PluginContext, id: string) => MaybePromise<LoadResult>
 
 export function convertEsbuildPluginToRolldownPlugin(
@@ -106,6 +110,7 @@ export function convertEsbuildPluginToRolldownPlugin(
     isSetupDone = true
   }
 
+  const usedNamespaces = new Set<string>()
   return {
     name: esbuildPlugin.name,
     async options(inputOptions) {
@@ -146,7 +151,17 @@ export function convertEsbuildPluginToRolldownPlugin(
       for (const handler of resolveIdHandlers) {
         const result = await handler.call(this, id, importer, opts)
         if (result) {
+          if (typeof result === 'object' && result.namespace) {
+            usedNamespaces.add(result.namespace)
+          }
           return result
+        }
+      }
+      if (usedNamespaces.size) {
+        const [importerWithoutNamespace, namespaceFromImporter] =
+          idToPathAndNamespace(importer)
+        if (usedNamespaces.has(namespaceFromImporter)) {
+          return await this.resolve(id, importerWithoutNamespace, opts)
         }
       }
     },
@@ -223,6 +238,7 @@ function createResolveIdHandler(
       id: result.namespace ? `${result.namespace}:${result.path}` : result.path,
       external: result.external,
       moduleSideEffects: result.sideEffects,
+      namespace: result.namespace,
     }
   }
 }
