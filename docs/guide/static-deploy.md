@@ -99,7 +99,7 @@ Now the `preview` command will launch the server at `http://localhost:8080`.
          - name: Set up Node
            uses: actions/setup-node@v4
            with:
-             node-version: 20
+             node-version: lts/*
              cache: 'npm'
          - name: Install dependencies
            run: npm ci
