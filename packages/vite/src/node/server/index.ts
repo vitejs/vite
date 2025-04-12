@@ -26,6 +26,7 @@ import type { InlineConfig, ResolvedConfig } from '../config'
 import { resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
+  getServerUrlByHost,
   isInNodeModules,
   isObject,
   isParentDirectory,
@@ -98,6 +99,7 @@ import { transformRequest } from './transformRequest'
 import { searchForPackageRoot, searchForWorkspaceRoot } from './searchRoot'
 import type { DevEnvironment } from './environment'
 import { hostCheckMiddleware } from './middlewares/hostCheck'
+import { rejectInvalidRequestMiddleware } from './middlewares/rejectInvalidRequest'
 
 export interface ServerOptions extends CommonServerOptions {
   /**
@@ -658,15 +660,7 @@ export async function _createServer(
     },
     openBrowser() {
       const options = server.config.server
-      const host = options.host
-      let url: string | undefined
-      if (typeof host === 'string') {
-        url = [
-          ...(server.resolvedUrls?.local ?? []),
-          ...(server.resolvedUrls?.network ?? []),
-        ].find((url) => url.includes(host))
-      }
-      url ??= server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+      const url = getServerUrlByHost(server, options.host)
       if (url) {
         const path =
           typeof options.open === 'string'
@@ -863,6 +857,9 @@ export async function _createServer(
   if (process.env.DEBUG) {
     middlewares.use(timeMiddleware(root))
   }
+
+  // disallows request that contains `#` in the URL
+  middlewares.use(rejectInvalidRequestMiddleware())
 
   // cors
   const { cors } = serverConfig

@@ -1,3 +1,6 @@
+import net from 'node:net'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import fetch from 'node-fetch'
 import {
   afterEach,
@@ -11,6 +14,8 @@ import type { Page } from 'playwright-chromium'
 import WebSocket from 'ws'
 import testJSON from '../safe.json'
 import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const getViteTestIndexHtmlUrl = () => {
   const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
@@ -79,6 +84,16 @@ describe.runIf(isServe)('main', () => {
     ).toBe('403')
   })
 
+  test('unsafe fetch ?.svg?import', async () => {
+    expect(
+      await page.textContent('.unsafe-fetch-query-dot-svg-import-status'),
+    ).toBe('403')
+  })
+
+  test('unsafe fetch .svg?import', async () => {
+    expect(await page.textContent('.unsafe-fetch-svg-status')).toBe('403')
+  })
+
   test('safe fs fetch', async () => {
     expect(await page.textContent('.safe-fs-fetch')).toBe(stringified)
     expect(await page.textContent('.safe-fs-fetch-status')).toBe('200')
@@ -144,6 +159,14 @@ describe.runIf(isServe)('main', () => {
     ).toBe('403')
   })
 
+  test('unsafe fs fetch with relative path after query status', async () => {
+    expect(
+      await page.textContent(
+        '.unsafe-fs-fetch-relative-path-after-query-status',
+      ),
+    ).toBe('403')
+  })
+
   test('nested entry', async () => {
     expect(await page.textContent('.nested-entry')).toBe('foobar')
   })
@@ -156,6 +179,12 @@ describe.runIf(isServe)('main', () => {
     // It is 403 in case insensitive system, 404 in others
     const code = await page.textContent('.unsafe-dotEnV-casing')
     expect(code === '403' || code === '404').toBeTruthy()
+  })
+
+  test('denied env with ?.svg?.wasm?init', async () => {
+    expect(
+      await page.textContent('.unsafe-dotenv-query-dot-svg-wasm-init'),
+    ).toBe('403')
   })
 })
 
@@ -365,5 +394,75 @@ describe('cross origin', () => {
         expect(result2).toBe(false)
       },
     )
+  })
+})
+
+describe.runIf(isServe)('invalid request', () => {
+  const sendRawRequest = async (baseUrl: string, requestTarget: string) => {
+    return new Promise<string>((resolve, reject) => {
+      const parsedUrl = new URL(baseUrl)
+
+      const buf: Buffer[] = []
+      const client = net.createConnection(
+        { port: +parsedUrl.port, host: parsedUrl.hostname },
+        () => {
+          client.write(
+            [
+              `GET ${encodeURI(requestTarget)} HTTP/1.1`,
+              `Host: ${parsedUrl.host}`,
+              'Connection: Close',
+              '\r\n',
+            ].join('\r\n'),
+          )
+        },
+      )
+      client.on('data', (data) => {
+        buf.push(data)
+      })
+      client.on('end', (hadError) => {
+        if (!hadError) {
+          resolve(Buffer.concat(buf).toString())
+        }
+      })
+      client.on('error', (err) => {
+        reject(err)
+      })
+    })
+  }
+
+  const root = path
+    .resolve(__dirname.replace('playground', 'playground-temp'), '..')
+    .replace(/\\/g, '/')
+
+  test('request with sendRawRequest should work', async () => {
+    const response = await sendRawRequest(viteTestUrl, '/src/safe.txt')
+    expect(response).toContain('HTTP/1.1 200 OK')
+    expect(response).toContain('KEY=safe')
+  })
+
+  test('request with sendRawRequest should work with /@fs/', async () => {
+    const response = await sendRawRequest(
+      viteTestUrl,
+      path.posix.join('/@fs/', root, 'root/src/safe.txt'),
+    )
+    expect(response).toContain('HTTP/1.1 200 OK')
+    expect(response).toContain('KEY=safe')
+  })
+
+  test('should reject request that has # in request-target', async () => {
+    const response = await sendRawRequest(
+      viteTestUrl,
+      '/src/safe.txt#/../../unsafe.txt',
+    )
+    expect(response).toContain('HTTP/1.1 400 Bad Request')
+  })
+
+  test('should reject request that has # in request-target with /@fs/', async () => {
+    const response = await sendRawRequest(
+      viteTestUrl,
+      path.posix.join('/@fs/', root, 'root/src/safe.txt') +
+        '#/../../unsafe.txt',
+    )
+    expect(response).toContain('HTTP/1.1 400 Bad Request')
   })
 })

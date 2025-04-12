@@ -100,7 +100,7 @@ export function isExplicitImportRequired(url: string): boolean {
   return !isJSRequest(url) && !isCSSRequest(url)
 }
 
-export function normalizeResolvedIdToUrl(
+function normalizeResolvedIdToUrl(
   environment: DevEnvironment,
   url: string,
   resolved: PartialResolvedId,
@@ -806,7 +806,7 @@ export function importAnalysisPlugin(config: ResolvedConfig): Plugin {
             await Promise.all(
               [...pluginImports].map((id) => normalizeUrl(id, 0, true)),
             )
-          ).forEach(([url]) => importedUrls.add(url))
+          ).forEach(([url]) => importedUrls.add(stripBase(url, base)))
         }
         // HMR transforms are no-ops in SSR, so an `accept` call will
         // never be injected. Avoid updating the `isSelfAccepting`
