@@ -24,6 +24,7 @@ export {
   mergeAlias,
   createFilter,
   rollupVersion,
+  rolldownVersion,
 } from './utils'
 export { perEnvironmentPlugin } from './plugin'
 export { perEnvironmentState } from './environment'
