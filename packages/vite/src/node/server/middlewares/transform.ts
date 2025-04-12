@@ -122,10 +122,16 @@ export function transformMiddleware(
 
     let url: string
     try {
-      url = decodeURI(removeTimestampQuery(req.url!)).replace(
-        NULL_BYTE_PLACEHOLDER,
-        '\0',
-      )
+      url = removeTimestampQuery(req.url!).replace(/(%[A-Za-z0-9]{2})+/g, match => {
+          try {
+            return decodeURIComponent(match);
+          } catch (e) {
+            return match
+          }
+        }).replace(
+          NULL_BYTE_PLACEHOLDER,
+          '\0',
+        )
     } catch (e) {
       return next(e)
     }
