@@ -1,3 +1,15 @@
+## 6.3.0-beta.7 (2025-04-12)
+
+* feat(optimizer): improve esbuild plugin conversion compat (#110) ([6ec06b6](https://github.com/vitejs/rolldown-vite/commit/6ec06b6)), closes [#110](https://github.com/vitejs/rolldown-vite/issues/110)
+* fix: addWatchFile doesn't work if base is specified (fixes #19792) (#19794) ([8bed1de](https://github.com/vitejs/rolldown-vite/commit/8bed1de)), closes [#19792](https://github.com/vitejs/rolldown-vite/issues/19792) [#19794](https://github.com/vitejs/rolldown-vite/issues/19794)
+* fix: export `rolldownVersion` (#109) ([698cbea](https://github.com/vitejs/rolldown-vite/commit/698cbea)), closes [#109](https://github.com/vitejs/rolldown-vite/issues/109)
+* fix(hmr): run HMR handler sequentially (#19793) ([380c10e](https://github.com/vitejs/rolldown-vite/commit/380c10e)), closes [#19793](https://github.com/vitejs/rolldown-vite/issues/19793)
+* fix(preview): use host url to open browser (#19836) ([5003434](https://github.com/vitejs/rolldown-vite/commit/5003434)), closes [#19836](https://github.com/vitejs/rolldown-vite/issues/19836)
+* release: v6.3.0-beta.2 ([bf9728e](https://github.com/vitejs/rolldown-vite/commit/bf9728e))
+* refactor: simplify pluginFilter implementation (#19828) ([0a0c50a](https://github.com/vitejs/rolldown-vite/commit/0a0c50a)), closes [#19828](https://github.com/vitejs/rolldown-vite/issues/19828)
+
+
+
 ## 6.3.0-beta.6 (2025-04-10)
 
 * feat: update rolldown ([e28b1c0](https://github.com/vitejs/rolldown-vite/commit/e28b1c0))
