@@ -125,7 +125,7 @@ export function transformMiddleware(
       url = removeTimestampQuery(req.url!).replace(/(%[A-Za-z0-9]{2})+/g, match => {
           try {
             return decodeURIComponent(match);
-          } catch (e) {
+          } catch {
             return match
           }
         }).replace(
