@@ -45,6 +45,7 @@ export async function setup({ provide }: TestProject): Promise<void> {
   for (const [original, variants] of [
     ['css', ['sass-legacy', 'sass-modern', 'lightningcss']],
     ['css-sourcemap', ['sass-legacy', 'sass-modern']],
+    ['transform-plugin', ['base']],
   ] as const) {
     for (const variant of variants) {
       await fs.cp(
