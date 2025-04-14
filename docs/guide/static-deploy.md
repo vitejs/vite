@@ -159,7 +159,7 @@ You can quickly deploy your Vite app as a Static Site on [EdgeOne Pages](https:/
 4. Click **Start Deployment**.
 5. After deployment, your project should be deployed at `https://<PROJECTNAME>-<hash>.edgeone.app/` (only overseas acceleration) or `https://<PROJECTNAME>-<hash>.edgeone.site/` (including Chinese mainland acceleration).
 
-Note: All commits to the specified production branch (default is "main") will automatically trigger a new deployment.
+Note: All commits to the specified production branch (commonly "main") will automatically trigger a new deployment.
 
 You can also add [custom domain](https://edgeone.ai/document/160427672892563456?srouce=github#909bc024-7344-40c0-8be1-cfa9b1fab5a5) to your project.
 
