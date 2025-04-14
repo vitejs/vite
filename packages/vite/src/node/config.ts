@@ -1615,7 +1615,9 @@ export async function resolveConfig(
   if (config.esbuild) {
     if (config.oxc) {
       logger.warn(
-        `Found esbuild and oxc options, will use oxc and ignore esbuild at transformer.`,
+        colors.yellow(
+          `Both esbuild and oxc options were set, oxc options would be used and esbuild options would be ignored.`,
+        ),
       )
     } else {
       oxc = convertEsbuildConfigToOxcConfig(config.esbuild, logger)
