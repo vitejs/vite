@@ -122,16 +122,17 @@ export function transformMiddleware(
 
     let url: string
     try {
-      url = removeTimestampQuery(req.url!)
-        .replace(/(%[A-Za-z0-9]{2})+/g, (match) => {
-          try {
-            return decodeURIComponent(match)
-          } catch {
-            return match
-          }
-        })
-        .replace(NULL_BYTE_PLACEHOLDER, '\0')
+      url = decodeURI(removeTimestampQuery(req.url!)).replace(
+        NULL_BYTE_PLACEHOLDER,
+        '\0',
+      )
     } catch (e) {
+      if (e instanceof URIError) {
+        server.config.logger.warn(
+          colors.yellow('Malformed URI sequence in request URL'),
+        )
+        return next()
+      }
       return next(e)
     }
 
