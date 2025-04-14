@@ -933,10 +933,13 @@ function isLegacyBundle(
 ) {
   if (options.format === 'system') {
     const entryChunk = Object.values(bundle).find(
-      (output) => output.type === 'chunk' && output.isEntry,
+      (output) =>
+        output.type === 'chunk' &&
+        output.isEntry &&
+        output.fileName.includes('-legacy'),
     )
 
-    return !!entryChunk && entryChunk.fileName.includes('-legacy')
+    return !!entryChunk
   }
 
   return false
