@@ -302,8 +302,28 @@ describe('module runner initialization', async () => {
     )
   })
 
-  it(`live binding default export`, async ({ runner }) => {
-    const mod = await runner.import('/fixtures/live-binding/index.js')
+  it(`live binding (export default function f)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test1/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        "before",
+        "after",
+      ]
+    `)
+  })
+
+  it(`live binding (export default f)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test2/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        "before",
+        "before",
+      ]
+    `)
+  })
+
+  it(`live binding (export { f as default })`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test3/index.js')
     expect(mod.default).toMatchInlineSnapshot(`
       [
         "before",
