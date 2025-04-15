@@ -625,7 +625,7 @@ export async function handleHMRUpdate(
   await hotUpdateEnvironments(server, hmr)
 }
 
-type HasDeadEnd = boolean
+type HasDeadEnd = string | boolean
 
 export function updateModules(
   environment: DevEnvironment,
@@ -658,6 +658,14 @@ export function updateModules(
 
     if (hasDeadEnd) {
       needFullReload = hasDeadEnd
+      continue
+    }
+
+    if (
+      afterInvalidation &&
+      boundaries.some((boundary) => boundary.isWithinCircularImport)
+    ) {
+      needFullReload = 'circular imports'
       continue
     }
 
