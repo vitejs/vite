@@ -11,7 +11,7 @@
   },
   "devDependencies": {
     "@marko/vite": "^5.0.13",
-    "marko": "^6.0.0-next.3.22",
+    "marko": "^6.0.4",
     "vite": "^6.0.5"
   }
 }

@@ -12,7 +12,7 @@
   "devDependencies": {
     "@marko/type-check": "^1.3.13",
     "@marko/vite": "^5.0.13",
-    "marko": "^6.0.0-next.3.22",
+    "marko": "^6.0.4",
     "typescript": "~5.7.2",
     "vite": "^6.0.5"
   }
