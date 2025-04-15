@@ -88,9 +88,7 @@ export async function resolvePlugins(
                 environment.config.consumer !== 'client'
               )
                 return false
-              return nativeModulePreloadPolyfillPlugin({
-                skip: false,
-              })
+              return nativeModulePreloadPolyfillPlugin()
             },
           )
         : modulePreloadPolyfillPlugin(config)
@@ -127,7 +125,7 @@ export async function resolvePlugins(
         : oxcPlugin(config)
       : null,
     enableNativePlugin === true
-      ? nativeJsonPlugin({ ...config.json, isBuild })
+      ? nativeJsonPlugin({ ...config.json, minify: isBuild })
       : jsonPlugin(config.json, isBuild),
     enableNativePlugin === true ? nativeWasmHelperPlugin() : wasmHelperPlugin(),
     webWorkerPlugin(config),
