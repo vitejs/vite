@@ -1,3 +1,11 @@
+## 6.3.0-beta.8 (2025-04-15)
+
+* chore: oxc esbuild option warning message grammar (#112) ([892cf34](https://github.com/vitejs/rolldown-vite/commit/892cf34)), closes [#112](https://github.com/vitejs/rolldown-vite/issues/112)
+* feat: update rolldown ([e996d54](https://github.com/vitejs/rolldown-vite/commit/e996d54))
+* fix: update oxc esbuild option warning message (#111) ([aa29797](https://github.com/vitejs/rolldown-vite/commit/aa29797)), closes [#111](https://github.com/vitejs/rolldown-vite/issues/111)
+
+
+
 ## 6.3.0-beta.7 (2025-04-12)
 
 * feat(optimizer): improve esbuild plugin conversion compat (#110) ([6ec06b6](https://github.com/vitejs/rolldown-vite/commit/6ec06b6)), closes [#110](https://github.com/vitejs/rolldown-vite/issues/110)
