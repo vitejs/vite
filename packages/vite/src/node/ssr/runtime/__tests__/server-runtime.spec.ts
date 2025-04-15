@@ -323,7 +323,7 @@ describe('module runner initialization', async () => {
     const spy = vi.spyOn(console, 'log')
     onTestFinished(() => spy.mockRestore())
 
-    await runner.import('/fixtures/cyclic2/test8/index.js')
+    await runner.import('/fixtures/execution-order-re-export/index.js')
     expect(spy.mock.calls.map((v) => v[0])).toMatchInlineSnapshot(`
       [
         "dep1",
