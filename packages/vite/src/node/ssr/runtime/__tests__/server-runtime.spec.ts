@@ -332,6 +332,16 @@ describe('module runner initialization', async () => {
     `)
   })
 
+  it(`live binding (export default class C)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test4/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        2,
+        3,
+      ]
+    `)
+  })
+
   it(`export deafult expression is hoisted`, async ({ runner }) => {
     // Node error is `ReferenceError: Cannot access 'dep' before initialization`
     await expect(() =>
