@@ -306,8 +306,8 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('/fixtures/live-binding/test1/index.js')
     expect(mod.default).toMatchInlineSnapshot(`
       [
-        "before",
-        "after",
+        2,
+        3,
       ]
     `)
   })
@@ -316,8 +316,8 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('/fixtures/live-binding/test2/index.js')
     expect(mod.default).toMatchInlineSnapshot(`
       [
-        "before",
-        "before",
+        1,
+        1,
       ]
     `)
   })
@@ -326,8 +326,8 @@ describe('module runner initialization', async () => {
     const mod = await runner.import('/fixtures/live-binding/test3/index.js')
     expect(mod.default).toMatchInlineSnapshot(`
       [
-        "before",
-        "after",
+        2,
+        3,
       ]
     `)
   })
