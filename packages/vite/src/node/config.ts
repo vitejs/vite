@@ -1616,7 +1616,7 @@ export async function resolveConfig(
     if (config.oxc) {
       logger.warn(
         colors.yellow(
-          `Both esbuild and oxc options were set, oxc options would be used and esbuild options would be ignored.`,
+          `Both esbuild and oxc options were set. oxc options will be used and esbuild options will be ignored.`,
         ),
       )
     } else {
