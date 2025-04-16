@@ -1,3 +1,10 @@
+## 6.3.0 (2025-04-16)
+
+* fix(hmr): avoid infinite loop happening with `hot.invalidate` in circular deps (#19870) ([d4ee5e8](https://github.com/vitejs/vite/commit/d4ee5e8655a85f4d6bebc695b063d69406ab53ac)), closes [#19870](https://github.com/vitejs/vite/issues/19870)
+* fix(preview): use host url to open browser (#19836) ([5003434](https://github.com/vitejs/vite/commit/50034340401b4043bb0b158f18ffb7ae1b7f5c86)), closes [#19836](https://github.com/vitejs/vite/issues/19836)
+
+
+
 ## 6.3.0-beta.2 (2025-04-11)
 
 * fix: addWatchFile doesn't work if base is specified (fixes #19792) (#19794) ([8bed1de](https://github.com/vitejs/vite/commit/8bed1de5710f2a097af0e22a196545446d98f988)), closes [#19792](https://github.com/vitejs/vite/issues/19792) [#19794](https://github.com/vitejs/vite/issues/19794)
