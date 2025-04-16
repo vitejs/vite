@@ -1,3 +1,14 @@
+## 6.1.0 (2025-04-16)
+
+* feat(legacy): add 'assumptions' option (#19719) ([d1d99c9](https://github.com/vitejs/vite/commit/d1d99c9220989ce903dea9cae6c3608f57f377ea)), closes [#19719](https://github.com/vitejs/vite/issues/19719)
+* feat(legacy): add sourcemapBaseUrl support (#19281) ([a92c74b](https://github.com/vitejs/vite/commit/a92c74b088a253257c01596bd7c67e0f8fa39512)), closes [#19281](https://github.com/vitejs/vite/issues/19281)
+* fix(deps): update all non-major dependencies (#19555) ([f612e0f](https://github.com/vitejs/vite/commit/f612e0fdf6810317b61fcca1ded125755f261d78)), closes [#19555](https://github.com/vitejs/vite/issues/19555)
+* fix(deps): update all non-major dependencies (#19613) ([363d691](https://github.com/vitejs/vite/commit/363d691b4995d72f26a14eb59ed88a9483b1f931)), closes [#19613](https://github.com/vitejs/vite/issues/19613)
+* fix(deps): update all non-major dependencies (#19649) ([f4e712f](https://github.com/vitejs/vite/commit/f4e712ff861f8a9504594a4a5e6d35a7547e5a7e)), closes [#19649](https://github.com/vitejs/vite/issues/19649)
+* refactor: restore endsWith usage (#19554) ([6113a96](https://github.com/vitejs/vite/commit/6113a9670cc9b7d29fe0bffe033f7823e36ded00)), closes [#19554](https://github.com/vitejs/vite/issues/19554)
+
+
+
 ## <small>6.0.2 (2025-02-25)</small>
 
 * fix(deps): update all non-major dependencies (#19392) ([60456a5](https://github.com/vitejs/vite/commit/60456a54fe90872dbd4bed332ecbd85bc88deb92)), closes [#19392](https://github.com/vitejs/vite/issues/19392)
