@@ -97,13 +97,17 @@ export class HMRContext implements ViteHotContext {
   decline(): void {}
 
   invalidate(message: string): void {
+    const firstInvalidatedBy =
+      this.hmrClient.currentFirstInvalidatedBy ?? this.ownerPath
     this.hmrClient.notifyListeners('vite:invalidate', {
       path: this.ownerPath,
       message,
+      firstInvalidatedBy,
     })
     this.send('vite:invalidate', {
       path: this.ownerPath,
       message,
+      firstInvalidatedBy,
     })
     this.hmrClient.logger.debug(
       `invalidate ${this.ownerPath}${message ? `: ${message}` : ''}`,
@@ -170,6 +174,7 @@ export class HMRClient {
   public dataMap = new Map<string, any>()
   public customListenersMap: CustomListenersMap = new Map()
   public ctxToListenersMap = new Map<string, CustomListenersMap>()
+  public currentFirstInvalidatedBy: string | undefined
 
   constructor(
     public logger: HMRLogger,
@@ -254,7 +259,7 @@ export class HMRClient {
   }
 
   private async fetchUpdate(update: Update): Promise<(() => void) | undefined> {
-    const { path, acceptedPath } = update
+    const { path, acceptedPath, firstInvalidatedBy } = update
     const mod = this.hotModulesMap.get(path)
     if (!mod) {
       // In a code-splitting project,
@@ -282,13 +287,20 @@ export class HMRClient {
     }
 
     return () => {
-      for (const { deps, fn } of qualifiedCallbacks) {
-        fn(
-          deps.map((dep) => (dep === acceptedPath ? fetchedModule : undefined)),
-        )
+      try {
+        this.currentFirstInvalidatedBy = firstInvalidatedBy
+        for (const { deps, fn } of qualifiedCallbacks) {
+          fn(
+            deps.map((dep) =>
+              dep === acceptedPath ? fetchedModule : undefined,
+            ),
+          )
+        }
+        const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
+        this.logger.debug(`hot updated: ${loggedPath}`)
+      } finally {
+        this.currentFirstInvalidatedBy = undefined
       }
-      const loggedPath = isSelfUpdate ? path : `${acceptedPath} via ${path}`
-      this.logger.debug(`hot updated: ${loggedPath}`)
     }
   }
 }

@@ -625,14 +625,14 @@ export async function handleHMRUpdate(
   await hotUpdateEnvironments(server, hmr)
 }
 
-type HasDeadEnd = boolean
+type HasDeadEnd = string | boolean
 
 export function updateModules(
   environment: DevEnvironment,
   file: string,
   modules: EnvironmentModuleNode[],
   timestamp: number,
-  afterInvalidation?: boolean,
+  firstInvalidatedBy?: string,
 ): void {
   const { hot } = environment
   const updates: Update[] = []
@@ -661,6 +661,19 @@ export function updateModules(
       continue
     }
 
+    // If import.meta.hot.invalidate was called already on that module for the same update,
+    // it means any importer of that module can't hot update. We should fallback to full reload.
+    if (
+      firstInvalidatedBy &&
+      boundaries.some(
+        ({ acceptedVia }) =>
+          normalizeHmrUrl(acceptedVia.url) === firstInvalidatedBy,
+      )
+    ) {
+      needFullReload = 'circular import invalidate'
+      continue
+    }
+
     updates.push(
       ...boundaries.map(
         ({ boundary, acceptedVia, isWithinCircularImport }) => ({
@@ -673,6 +686,7 @@ export function updateModules(
               ? isExplicitImportRequired(acceptedVia.url)
               : false,
           isWithinCircularImport,
+          firstInvalidatedBy,
         }),
       ),
     )
@@ -685,7 +699,7 @@ export function updateModules(
         : ''
     environment.logger.info(
       colors.green(`page reload `) + colors.dim(file) + reason,
-      { clear: !afterInvalidation, timestamp: true },
+      { clear: !firstInvalidatedBy, timestamp: true },
     )
     hot.send({
       type: 'full-reload',
@@ -702,7 +716,7 @@ export function updateModules(
   environment.logger.info(
     colors.green(`hmr update `) +
       colors.dim([...new Set(updates.map((u) => u.path))].join(', ')),
-    { clear: !afterInvalidation, timestamp: true },
+    { clear: !firstInvalidatedBy, timestamp: true },
   )
   hot.send({
     type: 'update',
