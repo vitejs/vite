@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://main.vite.dev/guide/rolldown.html" target="_blank" rel="noopener noreferrer">
+  <a href="https://vite.dev/guide/rolldown.html" target="_blank" rel="noopener noreferrer">
     <img width="180" src="https://vite.dev/logo.svg" alt="Vite logo">
     <img width="180" src="https://rolldown.rs/rolldown-round.svg" alt="Rolldown logo">
   </a>
@@ -22,7 +22,7 @@
 
 It can be used as a drop-in replacement to test out Rolldown with Vite. Eventually, this package is not needed anymore as all changes will be merged into the main Vite repository.
 
-[Read the Docs to Learn More](https://main.vite.dev/guide/rolldown.html).
+[Read the Docs to Learn More](https://vite.dev/guide/rolldown.html).
 
 ## License
 
