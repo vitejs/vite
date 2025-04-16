@@ -1237,11 +1237,19 @@ function getConfigHash(environment: Environment): string {
         exclude: optimizeDeps.exclude
           ? unique(optimizeDeps.exclude).sort()
           : undefined,
-        esbuildOptions: {
-          ...optimizeDeps.esbuildOptions,
-          plugins: optimizeDeps.esbuildOptions?.plugins?.map((p) => p.name),
+        rollupOptions: {
+          ...optimizeDeps.rollupOptions,
+          plugins: undefined, // included in optimizeDepsPluginNames
+          onLog: undefined,
+          onwarn: undefined,
+          checks: undefined,
+          output: {
+            ...optimizeDeps.rollupOptions?.output,
+            plugins: undefined, // included in optimizeDepsPluginNames
+          },
         },
       },
+      optimizeDepsPluginNames: config.optimizeDepsPluginNames,
     },
     (_, value) => {
       if (typeof value === 'function' || value instanceof RegExp) {
