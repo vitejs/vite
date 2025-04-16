@@ -1,3 +1,14 @@
+## 6.4.0 (2025-04-16)
+
+* feat(create-vite): add TanStack Router commands (#19573) ([e49a3b5](https://github.com/vitejs/vite/commit/e49a3b523c8894e8e0df766642999a944e0148ef)), closes [#19573](https://github.com/vitejs/vite/issues/19573)
+* fix(deps): update all non-major dependencies (#19555) ([f612e0f](https://github.com/vitejs/vite/commit/f612e0fdf6810317b61fcca1ded125755f261d78)), closes [#19555](https://github.com/vitejs/vite/issues/19555)
+* fix(deps): update all non-major dependencies (#19613) ([363d691](https://github.com/vitejs/vite/commit/363d691b4995d72f26a14eb59ed88a9483b1f931)), closes [#19613](https://github.com/vitejs/vite/issues/19613)
+* fix(deps): update all non-major dependencies (#19649) ([f4e712f](https://github.com/vitejs/vite/commit/f4e712ff861f8a9504594a4a5e6d35a7547e5a7e)), closes [#19649](https://github.com/vitejs/vite/issues/19649)
+* chore(deps): update dependency globals to v16 (#19556) ([e4bdd6b](https://github.com/vitejs/vite/commit/e4bdd6b9dd6e2ccf7d11e84a9c2da805e98eed58)), closes [#19556](https://github.com/vitejs/vite/issues/19556)
+* docs: remove $ prefix from create-vite terminal commands in README (#19532) ([cb9165c](https://github.com/vitejs/vite/commit/cb9165c1b2569aabe3e110e9684a909918eae22c)), closes [#19532](https://github.com/vitejs/vite/issues/19532)
+
+
+
 ## <small>6.3.1 (2025-02-27)</small>
 
 * fix(create-vite): make custom command visible (#19519) ([5ea9a42](https://github.com/vitejs/vite/commit/5ea9a422c5a000c6a3183c617d6c853cdc4a5151)), closes [#19519](https://github.com/vitejs/vite/issues/19519)
