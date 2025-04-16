@@ -289,6 +289,8 @@ export type ResolvedEnvironmentOptions = {
   optimizeDeps: DepOptimizationOptions
   dev: ResolvedDevEnvironmentOptions
   build: ResolvedBuildEnvironmentOptions
+  /** @internal */
+  optimizeDepsPluginNames: string[]
 }
 
 export type DefaultEnvironmentOptions = Omit<
@@ -862,6 +864,8 @@ function resolveEnvironmentOptions(
       logger,
       consumer,
     ),
+    // will be set by `setOptimizeDepsPluginNames` later
+    optimizeDepsPluginNames: undefined!,
   }
 }
 
@@ -1185,6 +1189,25 @@ function resolveDepOptimizationOptions(
       force: forceOptimizeDeps ?? configDefaults.optimizeDeps.force,
     },
     optimizeDeps ?? {},
+  )
+}
+
+async function setOptimizeDepsPluginNames(resolvedConfig: ResolvedConfig) {
+  await Promise.all(
+    Object.values(resolvedConfig.environments).map(async (environment) => {
+      const plugins = environment.optimizeDeps.rollupOptions?.plugins ?? []
+      const outputPlugins =
+        environment.optimizeDeps.rollupOptions?.output?.plugins ?? []
+      const flattenedPlugins = await asyncFlatten([plugins, outputPlugins])
+
+      const pluginNames = []
+      for (const plugin of flattenedPlugins) {
+        if (plugin && 'name' in plugin) {
+          pluginNames.push(plugin.name)
+        }
+      }
+      environment.optimizeDepsPluginNames = pluginNames
+    }),
   )
 }
 
@@ -1798,6 +1821,7 @@ export async function resolveConfig(
   }
 
   applyDepOptimizationOptionCompat(resolved)
+  await setOptimizeDepsPluginNames(resolved)
 
   debug?.(`using resolved config: %O`, {
     ...resolved,
