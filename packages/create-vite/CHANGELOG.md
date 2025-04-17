@@ -1,3 +1,10 @@
+## <small>6.4.1 (2025-04-17)</small>
+
+* docs(create-vite): update react template README files (#19876) ([2d4c20e](https://github.com/vitejs/vite/commit/2d4c20ebadc35dae7327ffe6cba85cc5c36d579a)), closes [#19876](https://github.com/vitejs/vite/issues/19876)
+* fix(create-vite): adding an interactive flag to force interactivity (#19875) ([608457c](https://github.com/vitejs/vite/commit/608457cd03ce593492abfe007e20468387c4c895)), closes [#19875](https://github.com/vitejs/vite/issues/19875)
+
+
+
 ## 6.4.0 (2025-04-16)
 
 * feat(create-vite): add TanStack Router commands (#19573) ([e49a3b5](https://github.com/vitejs/vite/commit/e49a3b523c8894e8e0df766642999a944e0148ef)), closes [#19573](https://github.com/vitejs/vite/issues/19573)
