@@ -41,7 +41,7 @@ export function jsonPlugin(
   options: Required<JsonOptions>,
   isBuild: boolean,
 ): Plugin {
-  return {
+  const plugin = {
     name: 'vite:json',
 
     transform: {
@@ -119,7 +119,14 @@ export function jsonPlugin(
         }
       },
     },
-  }
+  } satisfies Plugin
+
+  // backward compat
+  const handler = plugin.transform.handler
+  ;(plugin as any).transform = handler
+  ;(plugin as any).transform.handler = handler
+
+  return plugin
 }
 
 function serializeValue(value: unknown): string {
