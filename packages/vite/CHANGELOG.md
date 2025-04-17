@@ -1,3 +1,17 @@
+## 6.3.0 (2025-04-17)
+
+* feat: reexport `withFilter` from rolldown (#122) ([f2d0354](https://github.com/vitejs/rolldown-vite/commit/f2d0354)), closes [#122](https://github.com/vitejs/rolldown-vite/issues/122)
+* feat: update rolldown ([752d7f6](https://github.com/vitejs/rolldown-vite/commit/752d7f6))
+* release: v6.3.0 ([5fdcfe7](https://github.com/vitejs/rolldown-vite/commit/5fdcfe7))
+* release: v6.3.1 ([a7349ef](https://github.com/vitejs/rolldown-vite/commit/a7349ef))
+* fix: avoid using `Promise.allSettled` in preload function (#19805) ([35c7f35](https://github.com/vitejs/rolldown-vite/commit/35c7f35)), closes [#19805](https://github.com/vitejs/rolldown-vite/issues/19805)
+* fix: backward compat for internal plugin `transform` calls (#19878) ([a152b7c](https://github.com/vitejs/rolldown-vite/commit/a152b7c)), closes [#19878](https://github.com/vitejs/rolldown-vite/issues/19878)
+* fix(hmr): avoid infinite loop happening with `hot.invalidate` in circular deps (#19870) ([d4ee5e8](https://github.com/vitejs/rolldown-vite/commit/d4ee5e8)), closes [#19870](https://github.com/vitejs/rolldown-vite/issues/19870)
+* fix(native-plugin): disable optimizerResolvePlugin correctly (#116) ([bf2b441](https://github.com/vitejs/rolldown-vite/commit/bf2b441)), closes [#116](https://github.com/vitejs/rolldown-vite/issues/116)
+* fix(optimizer): include rollupOptions in config hash (#115) ([732a8e4](https://github.com/vitejs/rolldown-vite/commit/732a8e4)), closes [#115](https://github.com/vitejs/rolldown-vite/issues/115)
+
+
+
 ## 6.3.0-beta.8 (2025-04-15)
 
 * chore: oxc esbuild option warning message grammar (#112) ([892cf34](https://github.com/vitejs/rolldown-vite/commit/892cf34)), closes [#112](https://github.com/vitejs/rolldown-vite/issues/112)
