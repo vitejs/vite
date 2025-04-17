@@ -512,7 +512,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
     return cssBundleName
   }
 
-  return {
+  const plugin = {
     name: 'vite:css-post',
 
     renderStart() {
@@ -1080,7 +1080,14 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
         }
       }
     },
-  }
+  } satisfies Plugin
+
+  // backward compat
+  const handler = plugin.transform.handler
+  ;(plugin as any).transform = handler
+  ;(plugin as any).transform.handler = handler
+
+  return plugin
 }
 
 export function cssAnalysisPlugin(config: ResolvedConfig): Plugin {
