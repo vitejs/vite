@@ -75,7 +75,7 @@ To get around this, we inline some of these dependencies' types in `packages/vit
 
 Use `pnpm run build-types-check` to check that the bundled types do not rely on types in `devDependencies`.
 
-For types shared between client and node, they should be added into `packages/vite/types`. These types are not bundled and are published as is (though they are still considered internal). Dependency types within this directory (e.g. `packages/vite/types/chokidar.d.ts`) are deprecated and should be added to `packages/vite/src/types` instead.
+For types shared between client and node, they should be added into `packages/vite/types`. These types are not bundled and are published as is (though they are still considered internal).
 
 ## Think Before Adding Yet Another Option
 
