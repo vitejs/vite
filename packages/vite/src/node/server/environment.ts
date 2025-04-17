@@ -134,12 +134,16 @@ export class DevEnvironment extends BaseEnvironment {
       },
     })
 
-    this.hot.on('vite:invalidate', async ({ path, message }) => {
-      invalidateModule(this, {
-        path,
-        message,
-      })
-    })
+    this.hot.on(
+      'vite:invalidate',
+      async ({ path, message, firstInvalidatedBy }) => {
+        invalidateModule(this, {
+          path,
+          message,
+          firstInvalidatedBy,
+        })
+      },
+    )
 
     const { optimizeDeps } = this.config
     if (context.depsOptimizer) {
@@ -277,6 +281,7 @@ function invalidateModule(
   m: {
     path: string
     message?: string
+    firstInvalidatedBy: string
   },
 ) {
   const mod = environment.moduleGraph.urlToModuleMap.get(m.path)
@@ -299,7 +304,7 @@ function invalidateModule(
       file,
       [...mod.importers],
       mod.lastHMRTimestamp,
-      true,
+      m.firstInvalidatedBy,
     )
   }
 }
