@@ -13,6 +13,6 @@
     "vite": "^6.3.1"
   },
   "dependencies": {
-    "@builder.io/qwik": "^1.12.1"
+    "@builder.io/qwik": "^1.13.0"
   }
 }
