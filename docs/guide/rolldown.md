@@ -30,7 +30,19 @@ For additional insights on the motivations behind Rolldown, see the [reasons why
 
 ## How to Try Rolldown
 
-The rolldown-powered version of Vite is currently available as a separate package called `rolldown-vite`. You can try it by adding package overrides to your `package.json`:
+The rolldown-powered version of Vite is currently available as a separate package called `rolldown-vite`. If you have `vite` as a direct dependency, you can alias the `vite` package to `rolldown-vite` in your project, which should result in a drop-in replacement.
+
+```json
+{
+  "dependencies": {
+    "vite": "npm:rolldown-vite@latest"
+  }
+}
+```
+
+If you use a Vitepress or a meta framework that has Vite as peer dependency, you have to override the `vite` dependency in your package manager:
+
+````bash
 
 :::code-group
 
@@ -40,7 +52,7 @@ The rolldown-powered version of Vite is currently available as a separate packag
     "vite": "npm:rolldown-vite@latest"
   }
 }
-```
+````
 
 ```json [Yarn]
 {
