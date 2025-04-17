@@ -40,43 +40,43 @@
     "ci-docs": "pnpm build && pnpm docs-build"
   },
   "devDependencies": {
-    "@eslint/js": "^9.22.0",
+    "@eslint/js": "^9.24.0",
     "@type-challenges/utils": "^0.1.1",
     "@types/babel__core": "^7.20.5",
     "@types/babel__preset-env": "^7.10.0",
     "@types/convert-source-map": "^2.0.3",
     "@types/cross-spawn": "^6.0.6",
     "@types/debug": "^4.1.12",
-    "@types/estree": "^1.0.6",
+    "@types/estree": "^1.0.7",
     "@types/etag": "^1.8.3",
     "@types/less": "^3.0.8",
     "@types/node": "^22.13.6",
     "@types/picomatch": "^4.0.0",
     "@types/stylus": "^0.48.43",
-    "@types/ws": "^8.18.0",
-    "@vitejs/release-scripts": "^1.3.3",
+    "@types/ws": "^8.18.1",
+    "@vitejs/release-scripts": "^1.5.0",
     "conventional-changelog-cli": "^5.0.0",
-    "eslint": "^9.22.0",
-    "eslint-plugin-import-x": "^4.8.0",
-    "eslint-plugin-n": "^17.16.2",
+    "eslint": "^9.24.0",
+    "eslint-plugin-import-x": "^4.10.5",
+    "eslint-plugin-n": "^17.17.0",
     "eslint-plugin-regexp": "^2.7.0",
     "execa": "^9.5.2",
     "globals": "^16.0.0",
     "gsap": "^3.12.7",
-    "lint-staged": "^15.5.0",
+    "lint-staged": "^15.5.1",
     "picocolors": "^1.1.1",
     "playwright-chromium": "^1.50.1",
     "premove": "^4.0.0",
     "prettier": "3.5.3",
     "rollup": "^4.34.9",
     "rollup-plugin-esbuild": "^6.2.1",
-    "simple-git-hooks": "^2.11.1",
+    "simple-git-hooks": "^2.12.1",
     "tslib": "^2.8.1",
     "tsx": "^4.19.3",
     "typescript": "~5.7.2",
-    "typescript-eslint": "^8.26.1",
+    "typescript-eslint": "^8.30.1",
     "vite": "workspace:*",
-    "vitest": "^3.0.8"
+    "vitest": "^3.1.1"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged --concurrent false"
@@ -95,7 +95,7 @@
       "eslint --cache --fix"
     ]
   },
-  "packageManager": "pnpm@10.6.3",
+  "packageManager": "pnpm@10.8.1",
   "pnpm": {
     "overrides": {
       "vite": "workspace:*"
@@ -104,8 +104,7 @@
       "http-proxy@1.18.1": "patches/http-proxy@1.18.1.patch",
       "sirv@3.0.1": "patches/sirv@3.0.1.patch",
       "chokidar@3.6.0": "patches/chokidar@3.6.0.patch",
-      "dotenv-expand@12.0.1": "patches/dotenv-expand@12.0.1.patch",
-      "@clack/core@0.4.1": "patches/@clack__core@0.4.1.patch"
+      "dotenv-expand@12.0.2": "patches/dotenv-expand@12.0.2.patch"
     },
     "peerDependencyRules": {
       "allowedVersions": {
