@@ -219,8 +219,6 @@ export function resolveCSSOptions(
   if (resolved.transformer === 'lightningcss') {
     resolved.lightningcss ??= {}
     resolved.lightningcss.targets ??= convertTargets(ESBUILD_MODULES_TARGET)
-  } else {
-    resolved.lightningcss = undefined
   }
   return resolved
 }
