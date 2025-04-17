@@ -106,6 +106,12 @@ When [reporting issues](https://github.com/vitejs/rolldown-vite/issues/new), ple
 
 For real-time discussions and troubleshooting, make sure to join the [Rolldown Discord](https://chat.rolldown.rs/).
 
+## Versioning Policy
+
+The versioning policy for `rolldown-vite` aligns its major and minor versions with those of the normal Vite package. This synchronization ensures that features present in a specific normal Vite minor release are also included in the corresponding `rolldown-vite` minor release. However, it's important to note that patch versions are not synchronized between the two projects. If you're wondering whether a specific change from normal Vite has been included in `rolldown-vite`, you can always check [`rolldown-vite`'s separate changelog](https://github.com/vitejs/rolldown-vite/blob/rolldown-vite/packages/vite/CHANGELOG.md) for confirmation.
+
+Furthermore, please be aware that `rolldown-vite` itself is considered experimental. Due to its experimental nature, breaking changes might be introduced even within its patch versions. Additionally, please note that `rolldown-vite` only receives updates for its most recent minor version. Even for important security or bug fixes, patches are not created for older major or minor versions.
+
 ## Future Plans
 
 The `rolldown-vite` package is a temporary solution to gather feedback and stabilize the Rolldown integration. In the future, this functionality will be merged back into the main Vite repository.
