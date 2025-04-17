@@ -1658,15 +1658,15 @@ export const teardownSIGTERMListener = (
 }
 
 export function getServerUrlByHost(
-  server: PreviewServer | ViteDevServer,
+  resolvedUrls: ResolvedServerUrls | null,
   host: CommonServerOptions['host'],
 ): string | undefined {
   if (typeof host !== 'string') {
-    return server.resolvedUrls?.local[0] ?? server.resolvedUrls?.network[0]
+    return resolvedUrls?.local[0] ?? resolvedUrls?.network[0]
   }
 
   return [
-    ...(server.resolvedUrls?.local ?? []),
-    ...(server.resolvedUrls?.network ?? []),
+    ...(resolvedUrls?.local ?? []),
+    ...(resolvedUrls?.network ?? []),
   ].find((url) => url.includes(host))
 }
