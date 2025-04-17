@@ -148,7 +148,7 @@ const FRAMEWORKS: Framework[] = [
         display: 'TanStack Router ↗',
         color: cyan,
         customCommand:
-          'npm create -- tsrouter-app@latest TARGET_DIR --framework react',
+          'npm create -- tsrouter-app@latest TARGET_DIR --framework react --interactive',
       },
     ],
   },
@@ -235,7 +235,7 @@ const FRAMEWORKS: Framework[] = [
         display: 'TanStack Router ↗',
         color: cyan,
         customCommand:
-          'npm create -- tsrouter-app@latest TARGET_DIR --framework solid',
+          'npm create -- tsrouter-app@latest TARGET_DIR --framework solid --interactive',
       },
     ],
   },
