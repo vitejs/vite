@@ -65,7 +65,7 @@
     "gsap": "^3.12.7",
     "lint-staged": "^15.5.1",
     "picocolors": "^1.1.1",
-    "playwright-chromium": "^1.51.1",
+    "playwright-chromium": "^1.50.1",
     "premove": "^4.0.0",
     "prettier": "3.5.3",
     "rollup": "^4.34.9",
