@@ -23,6 +23,7 @@ export {
   mergeConfig,
   mergeAlias,
   createFilter,
+  withFilter,
   rollupVersion,
   rolldownVersion,
 } from './utils'
