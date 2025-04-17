@@ -216,6 +216,26 @@ if (!isBuild) {
       )
     })
 
+    test('invalidate in circular dep should not trigger infinite HMR', async () => {
+      const el = () => hmr('.invalidation-circular-deps')
+      await untilUpdated(() => el(), 'child')
+      editFile(
+        'invalidation-circular-deps/circular-invalidate/child.js',
+        (code) => code.replace('child', 'child updated'),
+      )
+      await untilUpdated(() => el(), 'child updated')
+    })
+
+    test('invalidate in circular dep should be hot updated if possible', async () => {
+      const el = () => hmr('.invalidation-circular-deps-handled')
+      await untilUpdated(() => el(), 'child')
+      editFile(
+        'invalidation-circular-deps/invalidate-handled-in-circle/child.js',
+        (code) => code.replace('child', 'child updated'),
+      )
+      await untilUpdated(() => el(), 'child updated')
+    })
+
     test('plugin hmr handler + custom event', async () => {
       const el = () => hmr('.custom')
       editFile('customFile.js', (code) => code.replace('custom', 'edited'))

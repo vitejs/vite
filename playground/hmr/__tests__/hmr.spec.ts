@@ -25,7 +25,7 @@ test('should render', async () => {
 
 if (!isBuild) {
   test('should connect', async () => {
-    expect(browserLogs.length).toBe(3)
+    expect(browserLogs.length).toBe(5)
     expect(browserLogs.some((msg) => msg.includes('connected'))).toBe(true)
     browserLogs.length = 0
   })
@@ -240,6 +240,30 @@ if (!isBuild) {
       () => el.textContent(),
       'soft-invalidation/index.js is transformed 2 times. child is now updated?',
     )
+  })
+
+  test('invalidate in circular dep should not trigger infinite HMR', async () => {
+    const el = await page.$('.invalidation-circular-deps')
+    await untilUpdated(() => el.textContent(), 'child')
+    editFile(
+      'invalidation-circular-deps/circular-invalidate/child.js',
+      (code) => code.replace('child', 'child updated'),
+    )
+    await page.waitForEvent('load')
+    await untilUpdated(
+      () => page.textContent('.invalidation-circular-deps'),
+      'child updated',
+    )
+  })
+
+  test('invalidate in circular dep should be hot updated if possible', async () => {
+    const el = await page.$('.invalidation-circular-deps-handled')
+    await untilUpdated(() => el.textContent(), 'child')
+    editFile(
+      'invalidation-circular-deps/invalidate-handled-in-circle/child.js',
+      (code) => code.replace('child', 'child updated'),
+    )
+    await untilUpdated(() => el.textContent(), 'child updated')
   })
 
   test('plugin hmr handler + custom event', async () => {
