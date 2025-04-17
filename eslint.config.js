@@ -220,15 +220,15 @@ export default tseslint.config(
     },
   },
   {
-    name: 'playground/test',
-    files: ['playground/**/__tests__/**/*.?([cm])[jt]s?(x)'],
+    name: 'tests',
+    files: ['**/__tests__/**/*.?([cm])[jt]s?(x)'],
     rules: {
       'n/no-unsupported-features/node-builtins': [
         'error',
         {
           // ideally we would like to allow all experimental features
           // https://github.com/eslint-community/eslint-plugin-n/issues/199
-          ignores: ['fetch'],
+          ignores: ['fetch', 'import.meta.dirname'],
         },
       ],
     },
