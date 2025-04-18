@@ -282,6 +282,29 @@ const FRAMEWORKS: Framework[] = [
     ],
   },
   {
+    name: 'marko',
+    display: 'Marko',
+    color: magenta,
+    variants: [
+      {
+        name: 'marko-ts',
+        display: 'TypeScript',
+        color: blue,
+      },
+      {
+        name: 'marko',
+        display: 'JavaScript',
+        color: yellow,
+      },
+      {
+        name: 'custom-marko-run',
+        display: 'Marko Run ↗',
+        color: red,
+        customCommand: 'npm create marko',
+      },
+    ],
+  },
+  {
     name: 'others',
     display: 'Others',
     color: reset,
