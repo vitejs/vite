@@ -660,7 +660,7 @@ export async function _createServer(
     },
     openBrowser() {
       const options = server.config.server
-      const url = getServerUrlByHost(server, options.host)
+      const url = getServerUrlByHost(server.resolvedUrls, options.host)
       if (url) {
         const path =
           typeof options.open === 'string'

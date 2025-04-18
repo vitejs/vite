@@ -12,6 +12,7 @@ import {
   generateCodeFrame,
   getHash,
   getLocalhostAddressIfDiffersFromDNS,
+  getServerUrlByHost,
   injectQuery,
   isFileReadable,
   mergeWithDefaults,
@@ -21,6 +22,7 @@ import {
   resolveHostname,
 } from '../utils'
 import { isWindows } from '../../shared/utils'
+import type { CommonServerOptions, ResolvedServerUrls } from '..'
 
 describe('bareImportRE', () => {
   test('should work with normal package name', () => {
@@ -724,4 +726,55 @@ describe('combineSourcemaps', () => {
       }),
     )
   })
+})
+
+describe('getServerUrlByHost', () => {
+  const urls: ResolvedServerUrls = {
+    local: ['http://localhost:5173'],
+    network: ['http://foo.example.com:5173'],
+  }
+  const cases = [
+    {
+      name: 'when host is undefined',
+      urls,
+      host: undefined,
+      expected: 'http://localhost:5173',
+    },
+    {
+      name: 'when host is true',
+      urls,
+      host: true,
+      expected: 'http://localhost:5173',
+    },
+    {
+      name: 'when host is explicit string',
+      urls,
+      host: 'foo.example.com',
+      expected: 'http://foo.example.com:5173',
+    },
+    {
+      name: 'when host is 0.0.0.0',
+      urls,
+      host: '0.0.0.0',
+      expected: 'http://localhost:5173',
+    },
+    {
+      name: 'when host is ::1',
+      urls,
+      host: '::1',
+      expected: 'http://localhost:5173',
+    },
+  ] satisfies ReadonlyArray<{
+    name: string
+    urls: ResolvedServerUrls
+    host: CommonServerOptions['host']
+    expected: string | undefined
+  }>
+
+  for (const { name, urls, host, expected } of cases) {
+    test(name, () => {
+      const actual = getServerUrlByHost(urls, host)
+      expect(actual).toBe(expected)
+    })
+  }
 })
