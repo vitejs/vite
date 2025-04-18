@@ -23,7 +23,7 @@ import {
   setClientErrorHandler,
 } from '../http'
 import type { InlineConfig, ResolvedConfig } from '../config'
-import { resolveConfig } from '../config'
+import { isResolvedConfig, resolveConfig } from '../config'
 import {
   diffDnsOrderChange,
   getServerUrlByHost,
@@ -427,19 +427,21 @@ export interface ResolvedServerUrls {
 }
 
 export function createServer(
-  inlineConfig: InlineConfig = {},
+  inlineConfig: InlineConfig | ResolvedConfig = {},
 ): Promise<ViteDevServer> {
   return _createServer(inlineConfig, { listen: true })
 }
 
 export async function _createServer(
-  inlineConfig: InlineConfig = {},
+  inlineConfig: InlineConfig | ResolvedConfig = {},
   options: {
     listen: boolean
     previousEnvironments?: Record<string, DevEnvironment>
   },
 ): Promise<ViteDevServer> {
-  const config = await resolveConfig(inlineConfig, 'serve')
+  const config = isResolvedConfig(inlineConfig)
+    ? inlineConfig
+    : await resolveConfig(inlineConfig, 'serve')
 
   const initPublicFilesPromise = initPublicFiles(config)
 

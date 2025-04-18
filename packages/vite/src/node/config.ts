@@ -1034,6 +1034,16 @@ function resolveDepOptimizationOptions(
   )
 }
 
+export function isResolvedConfig(
+  inlineConfig: InlineConfig | ResolvedConfig,
+): inlineConfig is ResolvedConfig {
+  // assume that internal methods cannot be provided in inline config
+  return (
+    'fsDenyGlob' in inlineConfig &&
+    typeof inlineConfig.fsDenyGlob === 'function'
+  )
+}
+
 export async function resolveConfig(
   inlineConfig: InlineConfig,
   command: 'build' | 'serve',
