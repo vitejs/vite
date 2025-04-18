@@ -32,7 +32,17 @@ For additional insights on the motivations behind Rolldown, see the [reasons why
 
 ## How to Try Rolldown
 
-The rolldown-powered version of Vite is currently available as a separate package called `rolldown-vite`. You can try it by adding package overrides to your `package.json`:
+The rolldown-powered version of Vite is currently available as a separate package called `rolldown-vite`. If you have `vite` as a direct dependency, you can alias the `vite` package to `rolldown-vite` in your project, which should result in a drop-in replacement.
+
+```json
+{
+  "dependencies": {
+    "vite": "npm:rolldown-vite@latest"
+  }
+}
+```
+
+If you use a Vitepress or a meta framework that has Vite as peer dependency, you have to override the `vite` dependency in your package manager:
 
 :::code-group
 
@@ -105,6 +115,12 @@ When [reporting issues](https://github.com/vitejs/rolldown-vite/issues/new), ple
 - Any relevant error messages or logs
 
 For real-time discussions and troubleshooting, make sure to join the [Rolldown Discord](https://chat.rolldown.rs/).
+
+## Versioning Policy
+
+The versioning policy for `rolldown-vite` aligns its major and minor versions with those of the normal Vite package. This synchronization ensures that features present in a specific normal Vite minor release are also included in the corresponding `rolldown-vite` minor release. However, it's important to note that patch versions are not synchronized between the two projects. If you're wondering whether a specific change from normal Vite has been included in `rolldown-vite`, you can always check [`rolldown-vite`'s separate changelog](https://github.com/vitejs/rolldown-vite/blob/rolldown-vite/packages/vite/CHANGELOG.md) for confirmation.
+
+Furthermore, please be aware that `rolldown-vite` itself is considered experimental. Due to its experimental nature, breaking changes might be introduced even within its patch versions. Additionally, please note that `rolldown-vite` only receives updates for its most recent minor version. Even for important security or bug fixes, patches are not created for older major or minor versions.
 
 ## Future Plans
 

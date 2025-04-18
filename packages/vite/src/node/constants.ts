@@ -171,6 +171,7 @@ export const KNOWN_ASSET_TYPES = [
 
 export const DEFAULT_ASSETS_RE = new RegExp(
   `\\.(` + KNOWN_ASSET_TYPES.join('|') + `)(\\?.*)?$`,
+  'i',
 )
 
 export const DEP_VERSION_RE = /[?&](v=[\w.-]+)\b/

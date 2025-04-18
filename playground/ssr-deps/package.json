@@ -34,6 +34,6 @@
     "@vitejs/test-module-condition": "file:./module-condition"
   },
   "devDependencies": {
-    "express": "^5.0.1"
+    "express": "^5.1.0"
   }
 }
