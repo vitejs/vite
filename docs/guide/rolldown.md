@@ -86,9 +86,9 @@ Rolldown throws an error when unknown or invalid options are passed. Because som
 
 If you don't pass the option in yourself, this must be fixed by the utilized framework. You can suppress this error in the meantime by setting the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable.
 
-## Tweaking Performance
+## Performance
 
-Even though `rolldown-vite` is focused on ensuring compatibility with the existing ecosystem, you will net performance gains by switching over already through faster transforms due to the Rust-based implementation. Beyond that, you can also tweak the performance of `rolldown-vite` further through different options or customizations.
+`rolldown-vite` is focused on ensuring compatibility with the existing ecosystem, so defaults are geared towards a smooth transition. You can get further performance gains by switching over to faster Rust-based transforms and other customizations.
 
 ### Enabling Native Plugins
 
