@@ -344,27 +344,32 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
               // Using blob URL for SharedWorker results in multiple instances of a same worker
               workerConstructor === 'Worker'
                 ? `${jsContent}
-            const blob = typeof self !== "undefined" && self.Blob && new Blob([${
-              workerType === 'classic'
-                ? ''
-                : // `URL` is always available, in `Worker[type="module"]`
-                  `'URL.revokeObjectURL(import.meta.url);',`
-            }jsContent], { type: "text/javascript;charset=utf-8" });
+            const blob = typeof self !== "undefined" && self.Blob && new Blob([jsContent], { type: "text/javascript;charset=utf-8" });
             export default function WorkerWrapper(options) {
               let objURL;
               try {
                 objURL = blob && (self.URL || self.webkitURL).createObjectURL(blob);
                 if (!objURL) throw "";
                 const worker = new Worker(objURL, {
-                  name: options == null ? void 0 : options.name
+                  name: options == null ? void 0 : options.name,
+                  type: "${workerType}"
                 });
                 worker.addEventListener("load", () => {
+                  if (import.meta.url) {
+                    (self.URL || self.webkitURL).revokeObjectURL(import.meta.url);
+                  }
                   (self.URL || self.webkitURL).revokeObjectURL(objURL);
                 });
                 worker.addEventListener("error", () => {
+                  if (import.meta.url) {
+                    (self.URL || self.webkitURL).revokeObjectURL(import.meta.url);
+                  }
                   (self.URL || self.webkitURL).revokeObjectURL(objURL);
                 });
                 worker.addEventListener("close", () => {
+                  if (import.meta.url) {
+                    (self.URL || self.webkitURL).revokeObjectURL(import.meta.url);
+                  }
                   (self.URL || self.webkitURL).revokeObjectURL(objURL);
                 });
 
@@ -374,9 +379,10 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                   (self.URL || self.webkitURL).revokeObjectURL(objURL);
                 }
                 return new Worker(
-                  "data:text/javascript;base64," + encodedJs,
+                  "data:text/javascript;charset=utf-8," + encodeURIComponent(jsContent),
                   {
-                    name: options == null ? void 0 : options.name
+                    name: options == null ? void 0 : options.name,
+                    type: "${workerType}"
                   }
                 );
               }
