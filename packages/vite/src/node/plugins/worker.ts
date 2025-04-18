@@ -346,8 +346,9 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 ? `${jsContent}
             const blob = typeof self !== "undefined" && self.Blob && new Blob([${
               workerType === 'classic'
-                ? `'URL.revokeObjectURL(self.location.href);',`
-                : `'URL.revokeObjectURL(import.meta.url);',`
+                ? ''
+                : // `URL` is always available, in `Worker[type="module"]`
+                  `'URL.revokeObjectURL(import.meta.url);',`
             }jsContent], { type: "text/javascript;charset=utf-8" });
             export default function WorkerWrapper(options) {
               let objURL;
