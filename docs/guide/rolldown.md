@@ -88,7 +88,7 @@ If you don't pass the option in yourself, this must be fixed by the utilized fra
 
 ## Performance
 
-`rolldown-vite` is focused on ensuring compatibility with the existing ecosystem, so defaults are geared towards a smooth transition. You can get further performance gains by switching over to faster Rust-based transforms and other customizations.
+`rolldown-vite` is focused on ensuring compatibility with the existing ecosystem, so defaults are geared towards a smooth transition. You can get further performance gains by switching over to faster Rust-based internal plugins and other customizations.
 
 ### Enabling Native Plugins
 
