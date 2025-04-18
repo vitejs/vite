@@ -383,8 +383,8 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
             }`
                 : `${jsContent}
             export default function WorkerWrapper(options) {
-              return new Worker(
-                'data:text/javascript;base64,' + encodedJs,
+              return new ${workerConstructor}(
+                'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
                 ${workerTypeOption}
               );
             }
