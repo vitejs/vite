@@ -34,7 +34,7 @@ describe('import and resolveId', () => {
       '@vitejs/test-dep-conditions/with-module',
     )
     expect([mod.default, resolved?.id]).toEqual([
-      'dir/index.module.js',
+      'dir/index.default.js',
       expect.stringContaining('dir/index.module.js'),
     ])
   })
@@ -48,7 +48,7 @@ describe('import and resolveId', () => {
       '/fixtures/test-dep-conditions-app/entry-with-module',
     )
     expect([mod.default, resolved?.id]).toEqual([
-      'dir/index.module.js',
+      'dir/index.default.js',
       expect.stringContaining('dir/index.module.js'),
     ])
   })
