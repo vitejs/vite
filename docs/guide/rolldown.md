@@ -98,11 +98,38 @@ Rolldown throws an error when unknown or invalid options are passed. Because som
 
 If you don't pass the option in yourself, this must be fixed by the utilized framework. You can suppress this error in the meantime by setting the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable.
 
-## Enabling Native Plugins
+## Performance
+
+`rolldown-vite` is focused on ensuring compatibility with the existing ecosystem, so defaults are geared towards a smooth transition. You can get further performance gains by switching over to faster Rust-based internal plugins and other customizations.
+
+### Enabling Native Plugins
 
 Thanks to Rolldown and Oxc, various internal Vite plugins, such as the alias or resolve plugin, have been converted to Rust. At the time of writing, using these plugins is not enabled by default, as their behavior may differ from the JavaScript versions.
 
 To test them, you can set the `experimental.enableNativePlugin` option to `true` in your Vite config.
+
+### `withFilter` Wrapper
+
+Plugin authors have the option to use the [hook filter feature](#hook-filter-feature) to reduce the communication overhead between the Rust and JavaScript runtimes.
+But in case some of the used plugins are not using this feature (yet) but you still want to benefit from it, you can use the `withFilter` wrapper to wrap the plugin with a filter yourself.
+
+```js
+// In your vite.config.ts
+import { withFilter, defineConfig } from 'vite'
+import svgr from 'vite-plugin-svgr'
+
+export default defineConfig({
+  plugins: [
+    // Load the `svgr` plugin only for files which end in `.svg?react`
+    withFilter(
+      svgr({
+        /*...*/
+      }),
+      { load: { id: /\.svg?react$/ } },
+    ),
+  ],
+})
+```
 
 ## Reporting Issues
 
