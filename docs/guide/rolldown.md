@@ -42,8 +42,6 @@ The rolldown-powered version of Vite is currently available as a separate packag
 
 If you use a Vitepress or a meta framework that has Vite as peer dependency, you have to override the `vite` dependency in your package manager:
 
-````bash
-
 :::code-group
 
 ```json [npm]
@@ -52,7 +50,7 @@ If you use a Vitepress or a meta framework that has Vite as peer dependency, you
     "vite": "npm:rolldown-vite@latest"
   }
 }
-````
+```
 
 ```json [Yarn]
 {
