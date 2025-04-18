@@ -346,39 +346,44 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
                 ? `${jsContent}
             const blob = typeof self !== "undefined" && self.Blob && new Blob([${
               workerType === 'classic'
-                ? ''
-                : // `URL` is always available, in `Worker[type="module"]`
-                  `'URL.revokeObjectURL(import.meta.url);',`
+                ? `'URL.revokeObjectURL(self.location.href);',`
+                : `'URL.revokeObjectURL(import.meta.url);',`
             }jsContent], { type: "text/javascript;charset=utf-8" });
             export default function WorkerWrapper(options) {
               let objURL;
               try {
                 objURL = blob && (self.URL || self.webkitURL).createObjectURL(blob);
-                if (!objURL) throw ''
-                const worker = new ${workerConstructor}(objURL, ${workerTypeOption});
+                if (!objURL) throw "";
+                const worker = new Worker(objURL, {
+                  name: options == null ? void 0 : options.name
+                });
+                worker.addEventListener("load", () => {
+                  (self.URL || self.webkitURL).revokeObjectURL(objURL);
+                });
                 worker.addEventListener("error", () => {
                   (self.URL || self.webkitURL).revokeObjectURL(objURL);
                 });
+                worker.addEventListener("close", () => {
+                  (self.URL || self.webkitURL).revokeObjectURL(objURL);
+                });
+
                 return worker;
-              } catch(e) {
-                return new ${workerConstructor}(
-                  'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
-                  ${workerTypeOption}
+              } catch (e) {
+                if (objURL) {
+                  (self.URL || self.webkitURL).revokeObjectURL(objURL);
+                }
+                return new Worker(
+                  "data:text/javascript;base64," + encodedJs,
+                  {
+                    name: options == null ? void 0 : options.name
+                  }
                 );
-              }${
-                // For module workers, we should not revoke the URL until the worker runs,
-                // otherwise the worker fails to run
-                workerType === 'classic'
-                  ? ` finally {
-                      objURL && (self.URL || self.webkitURL).revokeObjectURL(objURL);
-                    }`
-                  : ''
               }
             }`
                 : `${jsContent}
             export default function WorkerWrapper(options) {
-              return new ${workerConstructor}(
-                'data:text/javascript;charset=utf-8,' + encodeURIComponent(jsContent),
+              return new Worker(
+                'data:text/javascript;base64,' + encodedJs,
                 ${workerTypeOption}
               );
             }
