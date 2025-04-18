@@ -24,7 +24,7 @@ peerDependencyRules:
   ignoreMissing:
     - "@algolia/client-search"
     - "postcss"
-    - ß"search-insights"
+    - "search-insights"
 packageExtensions:
   sass-embedded:
     peerDependencies:
