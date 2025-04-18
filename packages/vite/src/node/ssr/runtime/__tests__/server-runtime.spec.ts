@@ -301,6 +301,55 @@ describe('module runner initialization', async () => {
       `[ReferenceError: Cannot access 'dep1' before initialization]`,
     )
   })
+
+  it(`live binding (export default function f)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test1/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        2,
+        3,
+      ]
+    `)
+  })
+
+  it(`live binding (export default f)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test2/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        1,
+        1,
+      ]
+    `)
+  })
+
+  it(`live binding (export { f as default })`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test3/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        2,
+        3,
+      ]
+    `)
+  })
+
+  it(`live binding (export default class C)`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/live-binding/test4/index.js')
+    expect(mod.default).toMatchInlineSnapshot(`
+      [
+        2,
+        3,
+      ]
+    `)
+  })
+
+  it(`export default getter is hoisted`, async ({ runner }) => {
+    // Node error is `ReferenceError: Cannot access 'dep' before initialization`
+    await expect(() =>
+      runner.import('/fixtures/cyclic2/test9/index.js'),
+    ).rejects.toMatchInlineSnapshot(
+      `[ReferenceError: Cannot access '__vite_ssr_export_default__' before initialization]`,
+    )
+  })
 })
 
 describe('optimize-deps', async () => {
