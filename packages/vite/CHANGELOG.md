@@ -1,3 +1,13 @@
+## <small>6.3.2 (2025-04-18)</small>
+
+* fix: match default asserts case insensitive (#19852) ([cbdab1d](https://github.com/vitejs/vite/commit/cbdab1d6a30e07263ec51b2ca042369e736adec6)), closes [#19852](https://github.com/vitejs/vite/issues/19852)
+* fix: open first url if host does not match any urls (#19886) ([6abbdce](https://github.com/vitejs/vite/commit/6abbdce3d77990409e12380e72c7ec9dd3f8bec5)), closes [#19886](https://github.com/vitejs/vite/issues/19886)
+* fix(css): respect `css.lightningcss` option in css minification process (#19879) ([b5055e0](https://github.com/vitejs/vite/commit/b5055e0dd4c0e084115c3dbfead5736a54807e0c)), closes [#19879](https://github.com/vitejs/vite/issues/19879)
+* fix(deps): update all non-major dependencies (#19698) ([bab4cb9](https://github.com/vitejs/vite/commit/bab4cb92248adf6b9b18df12b2bf03889b0bd1eb)), closes [#19698](https://github.com/vitejs/vite/issues/19698)
+* feat(css): improve lightningcss messages (#19880) ([c713f79](https://github.com/vitejs/vite/commit/c713f79b5a4bd98542d8dbe4c85ba4cce9b1f358)), closes [#19880](https://github.com/vitejs/vite/issues/19880)
+
+
+
 ## <small>6.3.1 (2025-04-17)</small>
 
 * fix: avoid using `Promise.allSettled` in preload function (#19805) ([35c7f35](https://github.com/vitejs/vite/commit/35c7f35e2b67f2158ededf2af58ecec53b3f16c5)), closes [#19805](https://github.com/vitejs/vite/issues/19805)
