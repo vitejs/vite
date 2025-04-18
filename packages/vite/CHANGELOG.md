@@ -1,3 +1,15 @@
+## <small>6.3.1 (2025-04-18)</small>
+
+* feat: update rolldown ([4c2f7db](https://github.com/vitejs/rolldown-vite/commit/4c2f7db))
+* feat(css): improve lightningcss messages (#19880) ([c713f79](https://github.com/vitejs/rolldown-vite/commit/c713f79)), closes [#19880](https://github.com/vitejs/rolldown-vite/issues/19880)
+* release: v6.3.2 ([4bc17b4](https://github.com/vitejs/rolldown-vite/commit/4bc17b4))
+* fix: match default asserts case insensitive (#19852) ([cbdab1d](https://github.com/vitejs/rolldown-vite/commit/cbdab1d)), closes [#19852](https://github.com/vitejs/rolldown-vite/issues/19852)
+* fix: open first url if host does not match any urls (#19886) ([6abbdce](https://github.com/vitejs/rolldown-vite/commit/6abbdce)), closes [#19886](https://github.com/vitejs/rolldown-vite/issues/19886)
+* fix(css): respect `css.lightningcss` option in css minification process (#19879) ([b5055e0](https://github.com/vitejs/rolldown-vite/commit/b5055e0)), closes [#19879](https://github.com/vitejs/rolldown-vite/issues/19879)
+* fix(deps): update all non-major dependencies (#19698) ([bab4cb9](https://github.com/vitejs/rolldown-vite/commit/bab4cb9)), closes [#19698](https://github.com/vitejs/rolldown-vite/issues/19698)
+
+
+
 ## 6.3.0 (2025-04-17)
 
 * feat: reexport `withFilter` from rolldown (#122) ([f2d0354](https://github.com/vitejs/rolldown-vite/commit/f2d0354)), closes [#122](https://github.com/vitejs/rolldown-vite/issues/122)
