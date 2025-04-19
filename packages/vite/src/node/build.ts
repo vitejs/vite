@@ -64,7 +64,6 @@ import {
 import { perEnvironmentPlugin, resolveEnvironmentPlugins } from './plugin'
 import { manifestPlugin } from './plugins/manifest'
 import type { Logger } from './logger'
-import { dataURIPlugin } from './plugins/dataUri'
 import { buildImportAnalysisPlugin } from './plugins/importAnalysisBuild'
 import { ssrManifestPlugin } from './ssr/ssrManifestPlugin'
 import { buildLoadFallbackPlugin } from './plugins/loadFallback'
@@ -482,8 +481,6 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
   return {
     pre: [
       completeSystemWrapPlugin(),
-      // rolldown has builtin support datauri, use a switch to control it for convenience
-      ...(enableNativePlugin === true ? [] : [dataURIPlugin()]),
       perEnvironmentPlugin(
         'vite:rollup-options-plugins',
         async (environment) =>
