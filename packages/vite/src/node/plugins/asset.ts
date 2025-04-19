@@ -5,6 +5,7 @@ import * as mrmime from 'mrmime'
 import type { NormalizedOutputOptions, RenderedChunk } from 'rolldown'
 import MagicString from 'magic-string'
 import colors from 'picocolors'
+import picomatch from 'picomatch'
 import {
   createToImportMetaURLBasedRelativeRuntime,
   toOutputFilePathInJS,
@@ -23,7 +24,11 @@ import {
   removeUrlQuery,
   urlRE,
 } from '../utils'
-import { DEFAULT_ASSETS_INLINE_LIMIT, FS_PREFIX } from '../constants'
+import {
+  DEFAULT_ASSETS_INLINE_LIMIT,
+  DEFAULT_ASSETS_RE,
+  FS_PREFIX,
+} from '../constants'
 import {
   cleanUrl,
   splitFileAndPostfix,
@@ -149,6 +154,17 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     },
 
     resolveId: {
+      filter: {
+        id: [
+          urlRE,
+          DEFAULT_ASSETS_RE,
+          ...config.rawAssetsInclude.map((v) =>
+            typeof v === 'string'
+              ? picomatch.makeRe(`${v}{?*,}`, { dot: true })
+              : addQueryToRegex(v),
+          ),
+        ],
+      },
       handler(id) {
         if (!config.assetsInclude(cleanUrl(id)) && !urlRE.test(id)) {
           return
@@ -165,6 +181,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
     load: {
       filter: {
         id: {
+          include: [
+            rawRE,
+            urlRE,
+            DEFAULT_ASSETS_RE,
+            ...config.rawAssetsInclude.map((v) =>
+              typeof v === 'string' ? `${v}{?*,}` : addQueryToRegex(v),
+            ),
+          ],
           // Rollup convention, this id should be handled by the
           // plugin that marked it with \0
           exclude: /^\0/,
@@ -277,6 +301,14 @@ export function assetPlugin(config: ResolvedConfig): Plugin {
       }
     },
   }
+}
+
+function addQueryToRegex(input: RegExp) {
+  return new RegExp(
+    // replace `$` with `\?.*?$` (ignore `\$`)
+    input.source.replace(/(?<!\\)\$/g, '\\?.*?$'),
+    input.flags,
+  )
 }
 
 export async function fileToUrl(
