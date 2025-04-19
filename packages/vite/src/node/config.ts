@@ -59,6 +59,7 @@ import {
   resolveCSSOptions,
 } from './plugins/css'
 import {
+  arraify,
   asyncFlatten,
   createDebugger,
   createFilter,
@@ -621,6 +622,7 @@ export interface ResolvedConfig
       preview: ResolvedPreviewOptions
       ssr: ResolvedSSROptions
       assetsInclude: (file: string) => boolean
+      rawAssetsInclude: (string | RegExp)[]
       logger: Logger
       createResolver: (options?: Partial<InternalResolveOptions>) => ResolveFn
       optimizeDeps: DepOptimizationOptions
@@ -1703,6 +1705,7 @@ export async function resolveConfig(
     assetsInclude(file: string) {
       return DEFAULT_ASSETS_RE.test(file) || assetsFilter(file)
     },
+    rawAssetsInclude: config.assetsInclude ? arraify(config.assetsInclude) : [],
     logger,
     packageCache,
     worker: resolvedWorkerOptions,
