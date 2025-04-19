@@ -1,7 +1,6 @@
 import fs from 'node:fs'
 import fsp from 'node:fs/promises'
 import path from 'node:path'
-import { performance } from 'node:perf_hooks'
 import type {
   BuildContext,
   Loader,
@@ -40,7 +39,7 @@ import { createEnvironmentPluginContainer } from '../server/pluginContainer'
 import { BaseEnvironment } from '../baseEnvironment'
 import type { DevEnvironment } from '../server/environment'
 import { transformGlobImport } from '../plugins/importMetaGlob'
-import { cleanUrl } from '../../shared/utils'
+import { cleanUrl, createDurationTimer } from '../../shared/utils'
 import { loadTsconfigJsonForFile } from '../plugins/esbuild'
 
 export class ScanEnvironment extends BaseEnvironment {
@@ -128,7 +127,7 @@ export function scanImports(environment: ScanEnvironment): {
     missing: Record<string, string>
   }>
 } {
-  const start = performance.now()
+  const getDurationTime = createDurationTimer()
   const deps: Record<string, string> = {}
   const missing: Record<string, string> = {}
   let entries: string[]
@@ -219,13 +218,12 @@ export function scanImports(environment: ScanEnvironment): {
     })
     .finally(() => {
       if (debug) {
-        const duration = (performance.now() - start).toFixed(2)
         const depsStr =
           Object.keys(orderedDependencies(deps))
             .sort()
             .map((id) => `\n  ${colors.cyan(id)} -> ${colors.dim(deps[id])}`)
             .join('') || colors.dim('no dependencies found')
-        debug(`Scan completed in ${duration}ms: ${depsStr}`)
+        debug(`Scan completed in ${getDurationTime()}: ${depsStr}`)
       }
     })
 
