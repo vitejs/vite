@@ -10,7 +10,7 @@
   },
   "devDependencies": {
     "serve": "^14.2.4",
-    "typescript": "~5.7.2",
+    "typescript": "~5.8.3",
     "vite": "^6.3.1"
   },
   "dependencies": {
