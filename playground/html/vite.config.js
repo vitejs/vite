@@ -204,7 +204,7 @@ ${
             children: `
               {
                 "imports": {
-                  "vue": "https://unpkg.com/vue@3.2.47/dist/vue.runtime.esm-browser.js"
+                  "vue": "https://unpkg.com/vue@3.4.38/dist/vue.runtime.esm-browser.js"
                 }
               }
             `,
