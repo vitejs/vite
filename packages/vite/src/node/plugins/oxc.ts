@@ -20,7 +20,7 @@ import {
 import type { ResolvedConfig } from '../config'
 import type { Plugin } from '../plugin'
 import { cleanUrl } from '../../shared/utils'
-import type { Environment, Logger } from '..'
+import type { Environment } from '..'
 import type { ViteDevServer } from '../server'
 import { JS_TYPES_RE } from '../constants'
 import type { ESBuildOptions } from './esbuild'
@@ -36,7 +36,7 @@ const jsxExtensionsRE = /\.(?:j|t)sx\b/
 const validExtensionRE = /\.\w+$/
 
 export interface OxcOptions
-  extends Exclude<
+  extends Omit<
     OxcTransformOptions,
     'cwd' | 'sourceType' | 'lang' | 'sourcemap' | 'helpers'
   > {
@@ -564,7 +564,6 @@ type OxcJsxOptions = Exclude<OxcOptions['jsx'], string | undefined>
 
 export function convertEsbuildConfigToOxcConfig(
   esbuildConfig: ESBuildOptions,
-  logger: Logger,
 ): OxcOptions {
   const { jsxInject, include, exclude, ...esbuildTransformOptions } =
     esbuildConfig
@@ -607,40 +606,8 @@ export function convertEsbuildConfigToOxcConfig(
     oxcOptions.jsx = jsxOptions
   }
 
-  if (esbuildTransformOptions.loader) {
-    if (['js', 'jsx', 'ts', 'tsx'].includes(esbuildTransformOptions.loader)) {
-      oxcOptions.lang = esbuildTransformOptions.loader as
-        | 'js'
-        | 'jsx'
-        | 'ts'
-        | 'tsx'
-    } else {
-      logger.warn(
-        `The esbuild loader ${esbuildTransformOptions.loader} is not supported by oxc`,
-      )
-    }
-  }
   if (esbuildTransformOptions.define) {
     oxcOptions.define = esbuildTransformOptions.define
-  }
-
-  switch (esbuildTransformOptions.sourcemap) {
-    case true:
-    case false:
-    case undefined:
-      oxcOptions.sourcemap = esbuildTransformOptions.sourcemap
-      break
-    case 'external':
-      oxcOptions.sourcemap = true
-      break
-    // ignore it because it's not supported by esbuild `transform`
-    case 'linked':
-      break
-    default:
-      logger.warn(
-        `The esbuild sourcemap ${esbuildTransformOptions.sourcemap} is not supported by oxc`,
-      )
-      break
   }
 
   return oxcOptions
