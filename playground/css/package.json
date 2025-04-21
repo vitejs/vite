@@ -27,7 +27,7 @@
     "sass": "^1.86.3",
     "stylus": "^0.64.0",
     "sugarss": "^5.0.0",
-    "tinyglobby": "^0.2.12"
+    "tinyglobby": "^0.2.13"
   },
   "imports": {
     "#imports": "./imports-field.css"

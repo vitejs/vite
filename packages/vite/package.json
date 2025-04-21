@@ -86,11 +86,11 @@
   "//": "READ CONTRIBUTING.md to understand what to put under deps vs. devDeps!",
   "dependencies": {
     "esbuild": "^0.25.0",
-    "fdir": "^6.4.3",
+    "fdir": "^6.4.4",
     "picomatch": "^4.0.2",
     "postcss": "^8.5.3",
     "rollup": "^4.34.9",
-    "tinyglobby": "^0.2.12"
+    "tinyglobby": "^0.2.13"
   },
   "optionalDependencies": {
     "fsevents": "~2.3.3"
