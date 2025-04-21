@@ -1,4 +1,3 @@
-import fetch from 'node-fetch'
 import { expect, test } from 'vitest'
 import { port } from './serve'
 import { isBuild, page, untilUpdated } from '~utils'

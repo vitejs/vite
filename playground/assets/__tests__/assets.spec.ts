@@ -1,5 +1,4 @@
 import path from 'node:path'
-import fetch from 'node-fetch'
 import { describe, expect, test } from 'vitest'
 import {
   browserLogs,

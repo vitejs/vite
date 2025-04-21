@@ -1,7 +1,7 @@
 import net from 'node:net'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import fetch from 'node-fetch'
+import http from 'node:http'
 import {
   afterEach,
   beforeAll,
@@ -367,12 +367,25 @@ describe('cross origin', () => {
     })
 
     test('fetch with non-allowed hosts', async () => {
-      const res = await fetch(viteTestUrl + '/src/index.html', {
-        headers: {
-          Host: 'vite.dev',
-        },
+      // NOTE: fetch cannot be used here as `fetch` sets the correct `Host` header
+      const res = await new Promise<http.IncomingMessage>((resolve, reject) => {
+        http
+          .get(
+            viteTestUrl + '/src/index.html',
+            {
+              headers: {
+                Host: 'vite.dev',
+              },
+            },
+            (res) => {
+              resolve(res)
+            },
+          )
+          .on('error', (e) => {
+            reject(e)
+          })
       })
-      expect(res.status).toBe(403)
+      expect(res.statusCode).toBe(403)
     })
 
     test.runIf(isServe)(
