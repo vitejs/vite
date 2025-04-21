@@ -13,6 +13,8 @@ const debug = createDebugger('vite:sourcemap', {
 // Virtual modules should be prefixed with a null byte to avoid a
 // false positive "missing source" warning. We also check for certain
 // prefixes used for special handling in esbuildDepPlugin.
+// vite-plugin-react isn't following the leading \0 virtual module convention.
+// We'll remove this as soon we're able to fix the react plugins.
 const virtualSourceRE = /^(?:dep:|browser-external:|virtual:)|\0|^\/@react-refresh/
 
 interface SourceMapLike {
