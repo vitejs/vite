@@ -9,8 +9,8 @@ interface Post {
   }
 }
 
-// NOTE: https://github.com/rolldown/rolldown/issues/3048, https://github.com/oxc-project/oxc/issues/7951
-export declare const data: Post[]
+declare const data: Post[]
+export { data }
 
 export default createContentLoader('blog/*.md', {
   // excerpt: true,
