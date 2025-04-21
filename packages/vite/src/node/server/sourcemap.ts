@@ -15,7 +15,8 @@ const debug = createDebugger('vite:sourcemap', {
 // prefixes used for special handling in esbuildDepPlugin.
 // vite-plugin-react isn't following the leading \0 virtual module convention.
 // We'll remove this as soon we're able to fix the react plugins.
-const virtualSourceRE = /^(?:dep:|browser-external:|virtual:)|\0|^\/@react-refresh/
+const virtualSourceRE = 
+  /^(?:dep:|browser-external:|virtual:)|\0|^\/@react-refresh/
 
 interface SourceMapLike {
   sources: string[]
