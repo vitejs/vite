@@ -1,3 +1,12 @@
+## <small>6.3.2 (2025-04-21)</small>
+
+* fix(oxc): correctly type oxc options (#131) ([bc90a9e](https://github.com/vitejs/rolldown-vite/commit/bc90a9e)), closes [#131](https://github.com/vitejs/rolldown-vite/issues/131)
+* feat: update rolldown ([c655b43](https://github.com/vitejs/rolldown-vite/commit/c655b43))
+* perf: add filter to asset plugin (#118) ([1f0f755](https://github.com/vitejs/rolldown-vite/commit/1f0f755)), closes [#118](https://github.com/vitejs/rolldown-vite/issues/118)
+* perf: remove data uri plugin (#130) ([33ba886](https://github.com/vitejs/rolldown-vite/commit/33ba886)), closes [#130](https://github.com/vitejs/rolldown-vite/issues/130)
+
+
+
 ## <small>6.3.1 (2025-04-18)</small>
 
 * feat: update rolldown ([4c2f7db](https://github.com/vitejs/rolldown-vite/commit/4c2f7db))
