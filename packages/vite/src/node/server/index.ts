@@ -443,6 +443,12 @@ export async function _createServer(
     ? inlineConfig
     : await resolveConfig(inlineConfig, 'serve')
 
+  if (config.command !== 'serve') {
+    throw new Error(
+      `Config was resolved for a "build", expected a "serve" command.`,
+    )
+  }
+
   const initPublicFilesPromise = initPublicFiles(config)
 
   const { root, server: serverConfig } = config

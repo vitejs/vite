@@ -35,7 +35,7 @@ import {
 import { printServerUrls } from './logger'
 import { bindCLIShortcuts } from './shortcuts'
 import type { BindCLIShortcutsOptions } from './shortcuts'
-import { resolveConfig } from './config'
+import { isResolvedConfig, resolveConfig } from './config'
 import type { InlineConfig, ResolvedConfig } from './config'
 import { DEFAULT_PREVIEW_PORT } from './constants'
 import type { RequiredExceptFor } from './typeUtils'
@@ -112,15 +112,23 @@ export type PreviewServerHook = (
  * Starts the Vite server in preview mode, to simulate a production deployment
  */
 export async function preview(
-  inlineConfig: InlineConfig = {},
+  inlineConfig: InlineConfig | ResolvedConfig = {},
 ): Promise<PreviewServer> {
-  const config = await resolveConfig(
-    inlineConfig,
-    'serve',
-    'production',
-    'production',
-    true,
-  )
+  const config = isResolvedConfig(inlineConfig)
+    ? inlineConfig
+    : await resolveConfig(
+        inlineConfig,
+        'serve',
+        'production',
+        'production',
+        true,
+      )
+
+  if (config.command !== 'serve') {
+    throw new Error(
+      `Config was resolved for a "build", expected a "serve" command.`,
+    )
+  }
 
   const clientOutDir = config.environments.client.build.outDir
   const distDir = path.resolve(config.root, clientOutDir)
