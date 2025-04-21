@@ -506,6 +506,8 @@ importers:
 
   packages/vite/src/node/ssr/runtime/__tests__/fixtures/esm-external: {}
 
+  packages/vite/src/node/ssr/runtime/__tests__/fixtures/live-binding: {}
+
   playground:
     devDependencies:
       convert-source-map:

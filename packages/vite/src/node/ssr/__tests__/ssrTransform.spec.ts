@@ -221,9 +221,11 @@ test('export as from arbitrary module namespace identifier', async () => {
 })
 
 test('export default', async () => {
-  expect(
-    await ssrTransformSimpleCode(`export default {}`),
-  ).toMatchInlineSnapshot(`"__vite_ssr_exports__.default = {}"`)
+  expect(await ssrTransformSimpleCode(`export default {}`))
+    .toMatchInlineSnapshot(`
+    "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return __vite_ssr_export_default__ }});
+    const __vite_ssr_export_default__ = {}"
+  `)
 })
 
 test('export then import minified', async () => {
@@ -505,11 +507,11 @@ test('should declare variable for imported super class', async () => {
         `export class B extends Foo {}`,
     ),
   ).toMatchInlineSnapshot(`
-    "Object.defineProperty(__vite_ssr_exports__, "B", { enumerable: true, configurable: true, get(){ return B }});
+    "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return A }});
+    Object.defineProperty(__vite_ssr_exports__, "B", { enumerable: true, configurable: true, get(){ return B }});
     const __vite_ssr_import_0__ = await __vite_ssr_import__("./dependency", {"importedNames":["Foo"]});const Foo = __vite_ssr_import_0__.Foo;
     class A extends Foo {};
-    class B extends Foo {}
-    Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, value: A });"
+    class B extends Foo {}"
   `)
 })
 
@@ -518,13 +520,15 @@ test('should handle default export variants', async () => {
   // default anonymous functions
   expect(await ssrTransformSimpleCode(`export default function() {}\n`))
     .toMatchInlineSnapshot(`
-      "__vite_ssr_exports__.default = function() {}
+      "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return __vite_ssr_export_default__ }});
+      const __vite_ssr_export_default__ = function() {}
       "
     `)
   // default anonymous class
   expect(await ssrTransformSimpleCode(`export default class {}\n`))
     .toMatchInlineSnapshot(`
-      "__vite_ssr_exports__.default = class {}
+      "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return __vite_ssr_export_default__ }});
+      const __vite_ssr_export_default__ = class {}
       "
     `)
   // default named functions
@@ -534,9 +538,9 @@ test('should handle default export variants', async () => {
         `foo.prototype = Object.prototype;`,
     ),
   ).toMatchInlineSnapshot(`
-    "function foo() {};
-    foo.prototype = Object.prototype;
-    Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, value: foo });"
+    "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return foo }});
+    function foo() {};
+    foo.prototype = Object.prototype;"
   `)
   // default named classes
   expect(
@@ -544,10 +548,10 @@ test('should handle default export variants', async () => {
       `export default class A {}\n` + `export class B extends A {}`,
     ),
   ).toMatchInlineSnapshot(`
-    "Object.defineProperty(__vite_ssr_exports__, "B", { enumerable: true, configurable: true, get(){ return B }});
+    "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return A }});
+    Object.defineProperty(__vite_ssr_exports__, "B", { enumerable: true, configurable: true, get(){ return B }});
     class A {};
-    class B extends A {}
-    Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, value: A });"
+    class B extends A {}"
   `)
 })
 
@@ -1007,14 +1011,17 @@ export default (function getRandom() {
 `.trim()
 
   expect(await ssrTransformSimpleCode(code)).toMatchInlineSnapshot(`
-    "__vite_ssr_exports__.default = (function getRandom() {
+    "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return __vite_ssr_export_default__ }});
+    const __vite_ssr_export_default__ = (function getRandom() {
       return Math.random();
     });"
   `)
 
-  expect(
-    await ssrTransformSimpleCode(`export default (class A {});`),
-  ).toMatchInlineSnapshot(`"__vite_ssr_exports__.default = (class A {});"`)
+  expect(await ssrTransformSimpleCode(`export default (class A {});`))
+    .toMatchInlineSnapshot(`
+    "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return __vite_ssr_export_default__ }});
+    const __vite_ssr_export_default__ = (class A {});"
+  `)
 })
 
 // #8002
@@ -1278,10 +1285,11 @@ export * as bar from './bar'
 console.log(bar)
   `),
   ).toMatchInlineSnapshot(`
-    "Object.defineProperty(__vite_ssr_exports__, "bar", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_1__ }});
+    "Object.defineProperty(__vite_ssr_exports__, "default", { enumerable: true, configurable: true, get(){ return __vite_ssr_export_default__ }});
+    Object.defineProperty(__vite_ssr_exports__, "bar", { enumerable: true, configurable: true, get(){ return __vite_ssr_import_1__ }});
 
     const __vite_ssr_import_0__ = await __vite_ssr_import__("./foo", {"importedNames":["foo"]});
-    __vite_ssr_exports__.default = (0,__vite_ssr_import_0__.foo)();
+    const __vite_ssr_export_default__ = (0,__vite_ssr_import_0__.foo)();
     const __vite_ssr_import_1__ = await __vite_ssr_import__("./bar");;
     console.log(bar)
       "
@@ -1503,7 +1511,7 @@ test('combine mappings', async () => {
     expect(result?.map).toMatchInlineSnapshot(`
       SourceMap {
         "file": undefined,
-        "mappings": "AAAA,8BAAc,CAAC,CAAC,IAAI,CAAC;",
+        "mappings": ";AAAA,mCAAc,CAAC,CAAC,IAAI,CAAC;",
         "names": [],
         "sources": [
           "virtual:test-mappings:null",

@@ -318,17 +318,16 @@ async function ssrTransformScript(
         // export default class A {}
         const { name } = node.declaration.id
         s.remove(node.start, node.start + 15 /* 'export default '.length */)
-        s.append(
-          `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
-            `{ enumerable: true, configurable: true, value: ${name} });`,
-        )
+        defineExport('default', name)
       } else {
         // anonymous default exports
+        const name = `__vite_ssr_export_default__`
         s.update(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`,
+          `const ${name} =`,
         )
+        defineExport('default', name)
       }
     }
 
