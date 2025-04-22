@@ -42,6 +42,7 @@ import {
   createIdFilter,
 } from './pluginFilter'
 import { oxcPlugin } from './oxc'
+import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
 
 export async function resolvePlugins(
   config: ResolvedConfig,
@@ -121,6 +122,7 @@ export async function resolvePlugins(
         ]),
     htmlInlineProxyPlugin(config),
     cssPlugin(config),
+    esbuildBannerFooterCompatPlugin(config),
     config.oxc !== false
       ? enableNativePlugin === true
         ? nativeTransformPlugin()

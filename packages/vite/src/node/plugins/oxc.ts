@@ -10,6 +10,7 @@ import type { InternalModuleFormat, RollupError, SourceMap } from 'rolldown'
 import { rolldown } from 'rolldown'
 import type { FSWatcher } from 'dep-types/chokidar'
 import { TSConfckParseError } from 'tsconfck'
+import colors from 'picocolors'
 import {
   combineSourcemaps,
   createFilter,
@@ -23,6 +24,7 @@ import { cleanUrl } from '../../shared/utils'
 import type { Environment } from '..'
 import type { ViteDevServer } from '../server'
 import { JS_TYPES_RE } from '../constants'
+import type { Logger } from '../logger'
 import type { ESBuildOptions } from './esbuild'
 import { loadTsconfigJsonForFile } from './esbuild'
 
@@ -564,6 +566,7 @@ type OxcJsxOptions = Exclude<OxcOptions['jsx'], string | undefined>
 
 export function convertEsbuildConfigToOxcConfig(
   esbuildConfig: ESBuildOptions,
+  logger: Logger,
 ): OxcOptions {
   const { jsxInject, include, exclude, ...esbuildTransformOptions } =
     esbuildConfig
@@ -610,5 +613,26 @@ export function convertEsbuildConfigToOxcConfig(
     oxcOptions.define = esbuildTransformOptions.define
   }
 
+  // these backward compat are supported by esbuildBannerFooterCompatPlugin
+  if (esbuildTransformOptions.banner) {
+    warnDeprecatedShouldBeConvertedToPluginOptions(logger, 'banner')
+  }
+  if (esbuildTransformOptions.footer) {
+    warnDeprecatedShouldBeConvertedToPluginOptions(logger, 'footer')
+  }
+
   return oxcOptions
+}
+
+function warnDeprecatedShouldBeConvertedToPluginOptions(
+  logger: Logger,
+  name: string,
+) {
+  logger.warn(
+    colors.yellow(
+      `\`esbuild.${name}\` option was specified. ` +
+        `But this option is deprecated and will be removed in future versions. ` +
+        'This option can be achieved by using a plugin with transform hook, please use that instead.',
+    ),
+  )
 }
