@@ -1645,7 +1645,7 @@ export async function resolveConfig(
         ),
       )
     } else {
-      oxc = convertEsbuildConfigToOxcConfig(config.esbuild)
+      oxc = convertEsbuildConfigToOxcConfig(config.esbuild, logger)
     }
   }
 
