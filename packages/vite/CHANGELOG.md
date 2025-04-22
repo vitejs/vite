@@ -1,3 +1,10 @@
+## <small>6.3.3 (2025-04-22)</small>
+
+* feat: add backward compat and warning for esbuild.banner/footer (#135) ([702b6ac](https://github.com/vitejs/rolldown-vite/commit/702b6ac)), closes [#135](https://github.com/vitejs/rolldown-vite/issues/135)
+* feat: update rolldown ([cd8aa76](https://github.com/vitejs/rolldown-vite/commit/cd8aa76))
+
+
+
 ## <small>6.3.2 (2025-04-21)</small>
 
 * fix(oxc): correctly type oxc options (#131) ([bc90a9e](https://github.com/vitejs/rolldown-vite/commit/bc90a9e)), closes [#131](https://github.com/vitejs/rolldown-vite/issues/131)
