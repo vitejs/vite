@@ -1,5 +1,7 @@
+import url from 'node:url'
 import aliasPlugin, { type ResolverFunction } from '@rollup/plugin-alias'
 import type { ObjectHook } from 'rolldown'
+import type { TransformOptions as OxcTransformOptions } from 'rolldown/experimental'
 import {
   aliasPlugin as nativeAliasPlugin,
   dynamicImportVarsPlugin as nativeDynamicImportVarsPlugin,
@@ -18,6 +20,7 @@ import {
   perEnvironmentPlugin,
 } from '../plugin'
 import { watchPackageDataPlugin } from '../packages'
+import { normalizePath } from '../utils'
 import { jsonPlugin } from './json'
 import { oxcResolvePlugin, resolvePlugin } from './resolve'
 import { optimizedDepsPlugin } from './optimizedDeps'
@@ -41,7 +44,7 @@ import {
   createFilterForTransform,
   createIdFilter,
 } from './pluginFilter'
-import { oxcPlugin } from './oxc'
+import { type OxcOptions, oxcPlugin } from './oxc'
 import { esbuildBannerFooterCompatPlugin } from './esbuildBannerFooterCompatPlugin'
 
 export async function resolvePlugins(
@@ -125,7 +128,38 @@ export async function resolvePlugins(
     esbuildBannerFooterCompatPlugin(config),
     config.oxc !== false
       ? enableNativePlugin === true
-        ? nativeTransformPlugin()
+        ? perEnvironmentPlugin('native:transform', (environment) => {
+            const {
+              jsxInject,
+              include = /\.(m?ts|[jt]sx)$/,
+              exclude = /\.js$/,
+              jsxRefreshInclude,
+              jsxRefreshExclude,
+              ..._transformOptions
+            } = config.oxc as Exclude<OxcOptions, false | undefined>
+
+            const transformOptions: OxcTransformOptions = _transformOptions
+            transformOptions.sourcemap =
+              environment.config.mode !== 'build' ||
+              !!environment.config.build.sourcemap
+
+            return nativeTransformPlugin({
+              // @ts-expect-error https://github.com/rolldown/rolldown/pull/4266
+              include,
+              // @ts-expect-error https://github.com/rolldown/rolldown/pull/4266
+              exclude,
+              // @ts-expect-error https://github.com/rolldown/rolldown/pull/4266
+              jsxRefreshInclude,
+              // @ts-expect-error https://github.com/rolldown/rolldown/pull/4266
+              jsxRefreshExclude,
+              isServerConsumer: environment.config.consumer === 'server',
+              runtimeResolveBase: normalizePath(
+                url.fileURLToPath(import.meta.url),
+              ),
+              jsxInject,
+              transformOptions,
+            })
+          })
         : oxcPlugin(config)
       : null,
     enableNativePlugin === true

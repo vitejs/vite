@@ -343,7 +343,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
 
     return result
   }
-  const _filename = normalizePath(url.fileURLToPath(import.meta.url))
+  const runtimeResolveBase = normalizePath(url.fileURLToPath(import.meta.url))
 
   let server: ViteDevServer
 
@@ -359,7 +359,7 @@ export function oxcPlugin(config: ResolvedConfig): Plugin {
       async handler(id, _importer, opts) {
         // @oxc-project/runtime imports will be injected by OXC transform
         // since it's injected by the transform, @oxc-project/runtime should be resolved to the one Vite depends on
-        const resolved = await this.resolve(id, _filename, opts)
+        const resolved = await this.resolve(id, runtimeResolveBase, opts)
         return resolved
       },
     },
