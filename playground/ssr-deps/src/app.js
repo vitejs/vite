@@ -6,7 +6,7 @@ import tsDefaultExport, {
 } from '@vitejs/test-ts-transpiled-exports'
 import objectAssignedExports from '@vitejs/test-object-assigned-exports'
 import forwardedExport from '@vitejs/test-forwarded-export'
-import bcrypt from 'bcrypt'
+import bcrypt from '@node-rs/bcrypt'
 import definePropertiesExports from '@vitejs/test-define-properties-exports'
 import definePropertyExports from '@vitejs/test-define-property-exports'
 import onlyObjectAssignedExports from '@vitejs/test-only-object-assigned-exports'

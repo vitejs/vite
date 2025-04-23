@@ -277,7 +277,7 @@ export async function preview(
   )
 
   if (options.open) {
-    const url = getServerUrlByHost(server, options.host)
+    const url = getServerUrlByHost(server.resolvedUrls, options.host)
     if (url) {
       const path =
         typeof options.open === 'string' ? new URL(options.open, url).href : url

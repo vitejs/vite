@@ -152,7 +152,7 @@ ISC, MIT
 ## @clack/core, @clack/prompts
 License: MIT
 By: Nate Moore
-Repositories: https://github.com/natemoo-re/clack, https://github.com/natemoo-re/clack
+Repositories: git+https://github.com/bombshell-dev/clack.git, git+https://github.com/bombshell-dev/clack.git
 
 > MIT License
 > 
