@@ -1549,9 +1549,9 @@ export * as A from "a";
     const __vite_ssr_import_1__ = await __vite_ssr_import__("b", {"importedNames":["b"]});
     const __vite_ssr_import_2__ = await __vite_ssr_import__("c");__vite_ssr_exportAll__(__vite_ssr_import_2__);
 
-    const __vite_ssr_import_3__ = await __vite_ssr_import__("d");
+    const __vite_ssr_import_3__ = await __vite_ssr_import__("d");const __vite_ssr_import_4__ = await __vite_ssr_import__("a");
     __vite_ssr_dynamic_import__("e");
-    const __vite_ssr_import_4__ = await __vite_ssr_import__("a");
+
     "
   `)
   expect({
