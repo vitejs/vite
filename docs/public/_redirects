@@ -8,5 +8,11 @@ https://vitejs.dev/* https://vite.dev/:splat 301!
 /guide/comparisons /guide/why#how-vite-relates-to-other-unbundled-build-tools 301
 /guide/comparisons.html /guide/why#how-vite-relates-to-other-unbundled-build-tools 301
 
+# llms.txt
+/*.txt           /:splat.md 301
+/llms.md         /llms.txt 301
+/llms.txt        /llms.txt 200!
+/llms-full.txt   /llms-full.txt 200!
+
 # short links
 /rolldown /guide/rolldown 301

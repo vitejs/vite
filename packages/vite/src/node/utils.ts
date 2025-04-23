@@ -1656,3 +1656,19 @@ export const teardownSIGTERMListener = (
     }
   }
 }
+
+export function getServerUrlByHost(
+  resolvedUrls: ResolvedServerUrls | null,
+  host: CommonServerOptions['host'],
+): string | undefined {
+  if (typeof host === 'string') {
+    const matchedUrl = [
+      ...(resolvedUrls?.local ?? []),
+      ...(resolvedUrls?.network ?? []),
+    ].find((url) => url.includes(host))
+    if (matchedUrl) {
+      return matchedUrl
+    }
+  }
+  return resolvedUrls?.local[0] ?? resolvedUrls?.network[0]
+}

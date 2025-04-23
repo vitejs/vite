@@ -10,6 +10,6 @@
   },
   "devDependencies": {
     "lightningcss": "^1.29.3",
-    "express": "^5.0.1"
+    "express": "^5.1.0"
   }
 }

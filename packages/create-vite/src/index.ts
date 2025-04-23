@@ -148,7 +148,7 @@ const FRAMEWORKS: Framework[] = [
         display: 'TanStack Router ↗',
         color: cyan,
         customCommand:
-          'npm create -- tsrouter-app@latest TARGET_DIR --framework react',
+          'npm create -- tsrouter-app@latest TARGET_DIR --framework react --interactive',
       },
     ],
   },
@@ -235,7 +235,7 @@ const FRAMEWORKS: Framework[] = [
         display: 'TanStack Router ↗',
         color: cyan,
         customCommand:
-          'npm create -- tsrouter-app@latest TARGET_DIR --framework solid',
+          'npm create -- tsrouter-app@latest TARGET_DIR --framework solid --interactive',
       },
     ],
   },
@@ -593,7 +593,7 @@ function pkgFromUserAgent(userAgent: string | undefined): PkgInfo | undefined {
 
 function setupReactSwc(root: string, isTs: boolean) {
   // renovate: datasource=npm depName=@vitejs/plugin-react-swc
-  const reactSwcPluginVersion = '3.8.0'
+  const reactSwcPluginVersion = '3.9.0'
 
   editFile(path.resolve(root, 'package.json'), (content) => {
     return content.replace(

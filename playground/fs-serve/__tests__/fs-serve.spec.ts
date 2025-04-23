@@ -1,4 +1,7 @@
-import fetch from 'node-fetch'
+import net from 'node:net'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import http from 'node:http'
 import {
   afterEach,
   beforeAll,
@@ -11,6 +14,8 @@ import type { Page } from 'playwright-chromium'
 import WebSocket from 'ws'
 import testJSON from '../safe.json'
 import { browser, isServe, page, viteServer, viteTestUrl } from '~utils'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const getViteTestIndexHtmlUrl = () => {
   const srcPrefix = viteTestUrl.endsWith('/') ? '' : '/'
@@ -362,12 +367,25 @@ describe('cross origin', () => {
     })
 
     test('fetch with non-allowed hosts', async () => {
-      const res = await fetch(viteTestUrl + '/src/index.html', {
-        headers: {
-          Host: 'vite.dev',
-        },
+      // NOTE: fetch cannot be used here as `fetch` sets the correct `Host` header
+      const res = await new Promise<http.IncomingMessage>((resolve, reject) => {
+        http
+          .get(
+            viteTestUrl + '/src/index.html',
+            {
+              headers: {
+                Host: 'vite.dev',
+              },
+            },
+            (res) => {
+              resolve(res)
+            },
+          )
+          .on('error', (e) => {
+            reject(e)
+          })
       })
-      expect(res.status).toBe(403)
+      expect(res.statusCode).toBe(403)
     })
 
     test.runIf(isServe)(
@@ -389,5 +407,75 @@ describe('cross origin', () => {
         expect(result2).toBe(false)
       },
     )
+  })
+})
+
+describe.runIf(isServe)('invalid request', () => {
+  const sendRawRequest = async (baseUrl: string, requestTarget: string) => {
+    return new Promise<string>((resolve, reject) => {
+      const parsedUrl = new URL(baseUrl)
+
+      const buf: Buffer[] = []
+      const client = net.createConnection(
+        { port: +parsedUrl.port, host: parsedUrl.hostname },
+        () => {
+          client.write(
+            [
+              `GET ${encodeURI(requestTarget)} HTTP/1.1`,
+              `Host: ${parsedUrl.host}`,
+              'Connection: Close',
+              '\r\n',
+            ].join('\r\n'),
+          )
+        },
+      )
+      client.on('data', (data) => {
+        buf.push(data)
+      })
+      client.on('end', (hadError) => {
+        if (!hadError) {
+          resolve(Buffer.concat(buf).toString())
+        }
+      })
+      client.on('error', (err) => {
+        reject(err)
+      })
+    })
+  }
+
+  const root = path
+    .resolve(__dirname.replace('playground', 'playground-temp'), '..')
+    .replace(/\\/g, '/')
+
+  test('request with sendRawRequest should work', async () => {
+    const response = await sendRawRequest(viteTestUrl, '/src/safe.txt')
+    expect(response).toContain('HTTP/1.1 200 OK')
+    expect(response).toContain('KEY=safe')
+  })
+
+  test('request with sendRawRequest should work with /@fs/', async () => {
+    const response = await sendRawRequest(
+      viteTestUrl,
+      path.posix.join('/@fs/', root, 'root/src/safe.txt'),
+    )
+    expect(response).toContain('HTTP/1.1 200 OK')
+    expect(response).toContain('KEY=safe')
+  })
+
+  test('should reject request that has # in request-target', async () => {
+    const response = await sendRawRequest(
+      viteTestUrl,
+      '/src/safe.txt#/../../unsafe.txt',
+    )
+    expect(response).toContain('HTTP/1.1 400 Bad Request')
+  })
+
+  test('should reject request that has # in request-target with /@fs/', async () => {
+    const response = await sendRawRequest(
+      viteTestUrl,
+      path.posix.join('/@fs/', root, 'root/src/safe.txt') +
+        '#/../../unsafe.txt',
+    )
+    expect(response).toContain('HTTP/1.1 400 Bad Request')
   })
 })
