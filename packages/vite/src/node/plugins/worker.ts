@@ -247,7 +247,7 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
   const isBuild = config.command === 'build'
   const isWorker = config.isWorker
 
-  return {
+  const plugin = {
     name: 'vite:worker',
 
     buildStart() {
@@ -494,7 +494,14 @@ export function webWorkerPlugin(config: ResolvedConfig): Plugin {
       })
       workerMap.assets.clear()
     },
-  }
+  } satisfies Plugin
+
+  // backward compat
+  const handler = plugin.transform.handler
+  ;(plugin as any).transform = handler
+  ;(plugin as any).transform.handler = handler
+
+  return plugin
 }
 
 function isSameContent(a: string | Uint8Array, b: string | Uint8Array) {
