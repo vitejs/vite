@@ -186,27 +186,63 @@ async function ssrTransformScript(
     )
   }
 
-  const imports: RollupAstNode<ImportDeclaration>[] = []
+  const imports: (
+    | RollupAstNode<ImportDeclaration>
+    | RollupAstNode<ExportNamedDeclaration>
+    | RollupAstNode<ExportAllDeclaration>
+  )[] = []
   const exports: (
     | RollupAstNode<ExportNamedDeclaration>
     | RollupAstNode<ExportDefaultDeclaration>
     | RollupAstNode<ExportAllDeclaration>
   )[] = []
+  const reExportImportIdMap = new Map<
+    RollupAstNode<ExportNamedDeclaration> | RollupAstNode<ExportAllDeclaration>,
+    string
+  >()
 
   for (const node of ast.body as Node[]) {
     if (node.type === 'ImportDeclaration') {
       imports.push(node)
+    } else if (node.type === 'ExportDefaultDeclaration') {
+      exports.push(node)
     } else if (
       node.type === 'ExportNamedDeclaration' ||
-      node.type === 'ExportDefaultDeclaration' ||
       node.type === 'ExportAllDeclaration'
     ) {
+      imports.push(node)
       exports.push(node)
     }
   }
 
-  // 1. check all import statements and record id -> importName map
+  // 1. check all import statements, hoist imports, and record id -> importName map
   for (const node of imports) {
+    // hoist re-export's import at the same time as normal imports to preserve execution order
+    if (node.type === 'ExportNamedDeclaration') {
+      if (node.source) {
+        // export { foo, bar } from './foo'
+        const importId = defineImport(
+          hoistIndex,
+          node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
+          {
+            importedNames: node.specifiers.map(
+              (s) => getIdentifierNameOrLiteralValue(s.local) as string,
+            ),
+          },
+        )
+        reExportImportIdMap.set(node, importId)
+      }
+      continue
+    }
+    if (node.type === 'ExportAllDeclaration') {
+      if (node.source) {
+        // export * from './foo'
+        const importId = defineImport(hoistIndex, node)
+        reExportImportIdMap.set(node, importId)
+      }
+      continue
+    }
+
     // import foo from 'foo' --> foo -> __import_foo__.default
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
@@ -263,18 +299,9 @@ async function ssrTransformScript(
         }
         s.remove(node.start, (node.declaration as Node).start)
       } else {
-        s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
-          const importId = defineImport(
-            node.start,
-            node as RollupAstNode<ExportNamedDeclaration & { source: Literal }>,
-            {
-              importedNames: node.specifiers.map(
-                (s) => getIdentifierNameOrLiteralValue(s.local) as string,
-              ),
-            },
-          )
+          const importId = reExportImportIdMap.get(node)!
           for (const spec of node.specifiers) {
             const exportedAs = getIdentifierNameOrLiteralValue(
               spec.exported,
@@ -290,6 +317,7 @@ async function ssrTransformScript(
             }
           }
         } else {
+          s.remove(node.start, node.end)
           // export { foo, bar }
           for (const spec of node.specifiers) {
             // spec.local can be Literal only when it has "from 'something'"
@@ -333,7 +361,7 @@ async function ssrTransformScript(
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      const importId = defineImport(node.start, node)
+      const importId = reExportImportIdMap.get(node)!
       if (node.exported) {
         const exportedAs = getIdentifierNameOrLiteralValue(
           node.exported,
