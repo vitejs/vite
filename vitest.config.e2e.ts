@@ -32,10 +32,6 @@ export default defineConfig({
       // Prevent Vitest from running the workspace packages in Vite's SSR runtime
       moduleDirectories: ['node_modules', 'packages'],
     },
-    onConsoleLog(log) {
-      if (log.includes('The built-in minifier is still under development'))
-        return false
-    },
   },
   esbuild: {
     target: 'node18',
