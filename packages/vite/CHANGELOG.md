@@ -1,3 +1,10 @@
+## <small>6.3.4 (2025-04-23)</small>
+
+* feat: update rolldown ([233b7bf](https://github.com/vitejs/rolldown-vite/commit/233b7bf))
+* feat(native-plugin): adapt to the new native `transformPlugin` (#136) ([e5fa092](https://github.com/vitejs/rolldown-vite/commit/e5fa092)), closes [#136](https://github.com/vitejs/rolldown-vite/issues/136)
+
+
+
 ## <small>6.3.3 (2025-04-22)</small>
 
 * feat: add backward compat and warning for esbuild.banner/footer (#135) ([702b6ac](https://github.com/vitejs/rolldown-vite/commit/702b6ac)), closes [#135](https://github.com/vitejs/rolldown-vite/issues/135)
