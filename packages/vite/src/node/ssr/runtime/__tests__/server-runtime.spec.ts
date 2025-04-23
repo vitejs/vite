@@ -302,6 +302,36 @@ describe('module runner initialization', async () => {
     )
   })
 
+  it(`cyclic with mixed import and re-export`, async ({ runner }) => {
+    const mod = await runner.import('/fixtures/cyclic2/test7/Ion.js')
+    expect(mod).toMatchInlineSnapshot(`
+      {
+        "IonTypes": {
+          "BLOB": "Blob",
+        },
+        "dom": {
+          "Blob": "Blob",
+        },
+      }
+    `)
+  })
+
+  it(`execution order with mixed import and re-export`, async ({
+    runner,
+    onTestFinished,
+  }) => {
+    const spy = vi.spyOn(console, 'log')
+    onTestFinished(() => spy.mockRestore())
+
+    await runner.import('/fixtures/execution-order-re-export/index.js')
+    expect(spy.mock.calls.map((v) => v[0])).toMatchInlineSnapshot(`
+      [
+        "dep1",
+        "dep2",
+      ]
+    `)
+  })
+
   it(`live binding (export default function f)`, async ({ runner }) => {
     const mod = await runner.import('/fixtures/live-binding/test1/index.js')
     expect(mod.default).toMatchInlineSnapshot(`
