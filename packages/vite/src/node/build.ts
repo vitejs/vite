@@ -782,6 +782,12 @@ async function buildEnvironment(
 
     // watch file changes with rollup
     if (options.watch) {
+      if (!options.outDir) {
+        throw new Error(
+          `build.outDir must not be the same directory of root at watch model, this will cause Vite to build in an infinite loop.`,
+        )
+      }
+
       logger.info(colors.cyan(`\nwatching for file changes...`))
 
       const resolvedChokidarOptions = resolveChokidarOptions(
