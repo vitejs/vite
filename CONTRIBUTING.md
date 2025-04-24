@@ -236,6 +236,12 @@ For a mock dependency, make sure you add a `@vitejs/test-` prefix to the package
   - Provide a detailed description of the bug in the PR. Live demo preferred.
   - Add appropriate test coverage if applicable.
 
+- If it's a chore:
+
+  - For typos and comment changes, try to combine multiple of them into a single PR.
+  - **Note that we discourage contributors from submitting code refactors that are largely stylistic.** Code refactors are only accepted if it improves performance, or objectively improves code quality (e.g. makes a related bug fix or feature implementation easier, and it is as a separate PR to improve git history).
+    - The reason is that code readability is subjective. The maintainers of this project have chosen to write the code in its current style based on our preferences, and we do not want to spend time explaining our stylistic preferences. Contributors should just respect the established conventions when contributing code. Another aspect of it is that large scale stylistic changes result in massive diffs that touch multiple files, adding noise to the git history and makes tracing behavior changes across commits more cumbersome.
+
 - It's OK to have multiple small commits as you work on the PR. GitHub can automatically squash them before merging.
 
 - Make sure tests pass!

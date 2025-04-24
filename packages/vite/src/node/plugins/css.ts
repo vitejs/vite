@@ -1218,6 +1218,8 @@ export function getEmptyChunkReplacer(
     )
 }
 
+const fileURLWithWindowsDriveRE = /^file:\/\/\/[a-zA-Z]:\//
+
 interface CSSAtImportResolvers {
   css: ResolveIdFn
   sass: ResolveIdFn
@@ -1257,7 +1259,9 @@ function createCSSResolvers(config: ResolvedConfig): CSSAtImportResolvers {
             args[1] = fileURLToPath(args[1], {
               windows:
                 // file:///foo cannot be converted to path with windows mode
-                isWindows && args[1].startsWith('file:///') ? false : undefined,
+                isWindows && !fileURLWithWindowsDriveRE.test(args[1])
+                  ? false
+                  : undefined,
             })
           }
           return resolver(...args)

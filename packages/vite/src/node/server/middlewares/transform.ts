@@ -127,6 +127,12 @@ export function transformMiddleware(
         '\0',
       )
     } catch (e) {
+      if (e instanceof URIError) {
+        server.config.logger.warn(
+          colors.yellow('Malformed URI sequence in request URL'),
+        )
+        return next()
+      }
       return next(e)
     }
 
