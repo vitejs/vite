@@ -519,7 +519,7 @@ export async function resolveBuildPlugins(config: ResolvedConfig): Promise<{
                 })
               : manifestPlugin(),
             ssrManifestPlugin(),
-            buildReporterPlugin(config),
+            ...buildReporterPlugin(config),
           ]
         : []),
       enableNativePlugin === true
