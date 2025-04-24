@@ -1,3 +1,19 @@
+## <small>6.3.5 (2025-04-24)</small>
+
+* feat: update rolldown ([ec8faac](https://github.com/vitejs/rolldown-vite/commit/ec8faac))
+* feat(native-plugin): use native reporter plugin (#138) ([5306775](https://github.com/vitejs/rolldown-vite/commit/5306775)), closes [#138](https://github.com/vitejs/rolldown-vite/issues/138)
+* release: v6.3.3 ([db9eb97](https://github.com/vitejs/rolldown-vite/commit/db9eb97))
+* fix: ignore malformed uris in tranform middleware (#19853) ([e4d5201](https://github.com/vitejs/rolldown-vite/commit/e4d5201)), closes [#19853](https://github.com/vitejs/rolldown-vite/issues/19853)
+* fix(assets): ensure ?no-inline is not included in the asset url in the production environment (#1949 ([16a73c0](https://github.com/vitejs/rolldown-vite/commit/16a73c0)), closes [#19496](https://github.com/vitejs/rolldown-vite/issues/19496)
+* fix(css): resolve relative imports in sass properly on Windows (#19920) ([ffab442](https://github.com/vitejs/rolldown-vite/commit/ffab442)), closes [#19920](https://github.com/vitejs/rolldown-vite/issues/19920)
+* fix(deps): update all non-major dependencies (#19899) ([a4b500e](https://github.com/vitejs/rolldown-vite/commit/a4b500e)), closes [#19899](https://github.com/vitejs/rolldown-vite/issues/19899)
+* fix(ssr): fix execution order of re-export (#19841) ([ed29dee](https://github.com/vitejs/rolldown-vite/commit/ed29dee)), closes [#19841](https://github.com/vitejs/rolldown-vite/issues/19841)
+* fix(ssr): fix live binding of default export declaration and hoist exports getter (#19842) ([80a91ff](https://github.com/vitejs/rolldown-vite/commit/80a91ff)), closes [#19842](https://github.com/vitejs/rolldown-vite/issues/19842)
+* perf: skip sourcemap generation for renderChunk hook of import-analysis-build plugin (#19921) ([55cfd04](https://github.com/vitejs/rolldown-vite/commit/55cfd04)), closes [#19921](https://github.com/vitejs/rolldown-vite/issues/19921)
+* test(ssr): test `ssrTransform` re-export deps and test stacktrace with first line (#19629) ([9399cda](https://github.com/vitejs/rolldown-vite/commit/9399cda)), closes [#19629](https://github.com/vitejs/rolldown-vite/issues/19629)
+
+
+
 ## <small>6.3.4 (2025-04-23)</small>
 
 * feat: update rolldown ([233b7bf](https://github.com/vitejs/rolldown-vite/commit/233b7bf))
