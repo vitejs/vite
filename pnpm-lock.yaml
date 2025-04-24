@@ -215,8 +215,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       unbuild:
-        specifier: ^3.5.0
-        version: 3.5.0(sass@1.86.3)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3))
+        specifier: 3.4.2
+        version: 3.4.2(sass@1.86.3)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3))
       vite:
         specifier: workspace:*
         version: link:../vite
@@ -7305,6 +7305,15 @@ packages:
     engines: {node: '>=0.8.0'}
     hasBin: true
 
+  unbuild@3.4.2:
+    resolution: {integrity: sha512-bp+xhJ+MvxTDp/gcmzWf/e9IUQ12zFKz42VIMEtJo9GTrbkcAfq+rTcN1GSIr9ZyOEfdlsYdK85wguPHZ97YOQ==}
+    hasBin: true
+    peerDependencies:
+      typescript: ^5.7.3
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   unbuild@3.5.0:
     resolution: {integrity: sha512-DPFttsiADnHRb/K+yJ9r9jdn6JyXlsmdT0S12VFC14DFSJD+cxBnHq+v0INmqqPVPxOoUjvJFYUVIb02rWnVeA==}
     hasBin: true
@@ -13427,6 +13436,38 @@ snapshots:
 
   uglify-js@3.19.3:
     optional: true
+
+  unbuild@3.4.2(sass@1.86.3)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3)):
+    dependencies:
+      '@rollup/plugin-alias': 5.1.1(rollup@4.34.9)
+      '@rollup/plugin-commonjs': 28.0.3(rollup@4.34.9)
+      '@rollup/plugin-json': 6.1.0(rollup@4.34.9)
+      '@rollup/plugin-node-resolve': 16.0.1(rollup@4.34.9)
+      '@rollup/plugin-replace': 6.0.2(rollup@4.34.9)
+      '@rollup/pluginutils': 5.1.4(rollup@4.34.9)
+      citty: 0.1.6
+      consola: 3.4.0
+      defu: 6.1.4
+      esbuild: 0.25.0
+      hookable: 5.5.3
+      jiti: 2.4.2
+      magic-string: 0.30.17
+      mkdist: 2.2.0(sass@1.86.3)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3))
+      mlly: 1.7.4
+      pathe: 2.0.3
+      pkg-types: 2.0.1
+      pretty-bytes: 6.1.1
+      rollup: 4.34.9
+      rollup-plugin-dts: 6.2.1(rollup@4.34.9)(typescript@5.7.3)
+      scule: 1.3.0
+      tinyglobby: 0.2.13
+      untyped: 2.0.0
+    optionalDependencies:
+      typescript: 5.7.3
+    transitivePeerDependencies:
+      - sass
+      - vue
+      - vue-tsc
 
   unbuild@3.5.0(sass@1.86.3)(typescript@5.7.3)(vue@3.5.13(typescript@5.7.3)):
     dependencies:
