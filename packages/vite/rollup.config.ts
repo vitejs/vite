@@ -183,7 +183,7 @@ const cjsConfig = defineConfig({
   },
   external: ['fsevents', 'supports-color', ...Object.keys(pkg.dependencies)],
   plugins: [
-    bundleSizeLimit(175),
+    bundleSizeLimit(120),
     exportCheck(),
     externalizeDepsInWatchPlugin(),
   ],
