@@ -403,18 +403,11 @@ export function buildImportAnalysisPlugin(config: ResolvedConfig): Plugin {
       if (code.indexOf(isModernFlag) > -1) {
         const re = new RegExp(isModernFlag, 'g')
         const isModern = String(format === 'es')
-        if (this.environment.config.build.sourcemap) {
-          const s = new MagicString(code)
-          let match: RegExpExecArray | null
-          while ((match = re.exec(code))) {
-            s.update(match.index, match.index + isModernFlag.length, isModern)
-          }
-          return {
-            code: s.toString(),
-            map: s.generateMap({ hires: 'boundary' }),
-          }
-        } else {
-          return code.replace(re, isModern)
+        const isModernWithPadding =
+          isModern + ' '.repeat(isModernFlag.length - isModern.length)
+        return {
+          code: code.replace(re, isModernWithPadding),
+          map: null,
         }
       }
       return null
