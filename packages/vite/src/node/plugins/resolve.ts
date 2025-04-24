@@ -251,6 +251,7 @@ export function oxcResolvePlugin(
           },
           environmentConsumer: environment.config.consumer,
           environmentName: environment.name,
+          builtins: environment.config.resolve.builtins,
           external: options.external,
           noExternal: noExternal,
           dedupe: options.dedupe,

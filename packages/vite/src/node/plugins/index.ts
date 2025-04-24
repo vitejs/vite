@@ -144,13 +144,9 @@ export async function resolvePlugins(
               !!environment.config.build.sourcemap
 
             return nativeTransformPlugin({
-              // @ts-expect-error https://github.com/rolldown/rolldown/pull/4266
               include,
-              // @ts-expect-error https://github.com/rolldown/rolldown/pull/4266
               exclude,
-              // @ts-expect-error https://github.com/rolldown/rolldown/pull/4266
               jsxRefreshInclude,
-              // @ts-expect-error https://github.com/rolldown/rolldown/pull/4266
               jsxRefreshExclude,
               isServerConsumer: environment.config.consumer === 'server',
               runtimeResolveBase: normalizePath(
