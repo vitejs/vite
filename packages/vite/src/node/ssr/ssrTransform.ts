@@ -191,27 +191,63 @@ async function ssrTransformScript(
     )
   }
 
-  const imports: OxcAstNode<ImportDeclaration>[] = []
+  const imports: (
+    | OxcAstNode<ImportDeclaration>
+    | OxcAstNode<ExportNamedDeclaration>
+    | OxcAstNode<ExportAllDeclaration>
+  )[] = []
   const exports: (
     | OxcAstNode<ExportNamedDeclaration>
     | OxcAstNode<ExportDefaultDeclaration>
     | OxcAstNode<ExportAllDeclaration>
   )[] = []
+  const reExportImportIdMap = new Map<
+    OxcAstNode<ExportNamedDeclaration> | OxcAstNode<ExportAllDeclaration>,
+    string
+  >()
 
   for (const node of ast.body as Node[]) {
     if (node.type === 'ImportDeclaration') {
       imports.push(node)
+    } else if (node.type === 'ExportDefaultDeclaration') {
+      exports.push(node)
     } else if (
       node.type === 'ExportNamedDeclaration' ||
-      node.type === 'ExportDefaultDeclaration' ||
       node.type === 'ExportAllDeclaration'
     ) {
+      imports.push(node)
       exports.push(node)
     }
   }
 
-  // 1. check all import statements and record id -> importName map
+  // 1. check all import statements, hoist imports, and record id -> importName map
   for (const node of imports) {
+    // hoist re-export's import at the same time as normal imports to preserve execution order
+    if (node.type === 'ExportNamedDeclaration') {
+      if (node.source) {
+        // export { foo, bar } from './foo'
+        const importId = defineImport(
+          hoistIndex,
+          node as OxcAstNode<ExportNamedDeclaration & { source: Literal }>,
+          {
+            importedNames: node.specifiers.map(
+              (s) => getIdentifierNameOrLiteralValue(s.local) as string,
+            ),
+          },
+        )
+        reExportImportIdMap.set(node, importId)
+      }
+      continue
+    }
+    if (node.type === 'ExportAllDeclaration') {
+      if (node.source) {
+        // export * from './foo'
+        const importId = defineImport(hoistIndex, node)
+        reExportImportIdMap.set(node, importId)
+      }
+      continue
+    }
+
     // import foo from 'foo' --> foo -> __import_foo__.default
     // import { baz } from 'foo' --> baz -> __import_foo__.baz
     // import * as ok from 'foo' --> ok -> __import_foo__
@@ -268,18 +304,9 @@ async function ssrTransformScript(
         }
         s.remove(node.start, (node.declaration as Node).start)
       } else {
-        s.remove(node.start, node.end)
         if (node.source) {
           // export { foo, bar } from './foo'
-          const importId = defineImport(
-            node.start,
-            node as OxcAstNode<ExportNamedDeclaration & { source: Literal }>,
-            {
-              importedNames: node.specifiers.map(
-                (s) => getIdentifierNameOrLiteralValue(s.local) as string,
-              ),
-            },
-          )
+          const importId = reExportImportIdMap.get(node)!
           for (const spec of node.specifiers) {
             const exportedAs = getIdentifierNameOrLiteralValue(
               spec.exported,
@@ -295,6 +322,7 @@ async function ssrTransformScript(
             }
           }
         } else {
+          s.remove(node.start, node.end)
           // export { foo, bar }
           for (const spec of node.specifiers) {
             // spec.local can be Literal only when it has "from 'something'"
@@ -323,23 +351,22 @@ async function ssrTransformScript(
         // export default class A {}
         const { name } = node.declaration.id
         s.remove(node.start, node.start + 15 /* 'export default '.length */)
-        s.append(
-          `\nObject.defineProperty(${ssrModuleExportsKey}, "default", ` +
-            `{ enumerable: true, configurable: true, value: ${name} });`,
-        )
+        defineExport('default', name)
       } else {
         // anonymous default exports
+        const name = `__vite_ssr_export_default__`
         s.update(
           node.start,
           node.start + 14 /* 'export default'.length */,
-          `${ssrModuleExportsKey}.default =`,
+          `const ${name} =`,
         )
+        defineExport('default', name)
       }
     }
 
     // export * from './foo'
     if (node.type === 'ExportAllDeclaration') {
-      const importId = defineImport(node.start, node)
+      const importId = reExportImportIdMap.get(node)!
       if (node.exported) {
         const exportedAs = getIdentifierNameOrLiteralValue(
           node.exported,

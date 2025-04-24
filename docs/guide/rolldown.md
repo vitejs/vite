@@ -32,17 +32,18 @@ For additional insights on the motivations behind Rolldown, see the [reasons why
 
 ## How to Try Rolldown
 
-The rolldown-powered version of Vite is currently available as a separate package called `rolldown-vite`. If you have `vite` as a direct dependency, you can alias the `vite` package to `rolldown-vite` in your project, which should result in a drop-in replacement.
+The rolldown-powered version of Vite is currently available as a separate package called `rolldown-vite`. If you have `vite` as a direct dependency, you can alias the `vite` package to `rolldown-vite` in your project's `package.json`, which should result in a drop-in replacement.
 
 ```json
 {
   "dependencies": {
-    "vite": "npm:rolldown-vite@latest"
+    "vite": "^6.0.0" // [!code --]
+    "vite": "npm:rolldown-vite@latest" // [!code ++]
   }
 }
 ```
 
-If you use a Vitepress or a meta framework that has Vite as peer dependency, you have to override the `vite` dependency in your package manager:
+If you use a Vitepress or a meta framework that has Vite as peer dependency, you have to override the `vite` dependency in your `package.json`, which works slightly different depending on your package manager:
 
 :::code-group
 
@@ -98,11 +99,38 @@ Rolldown throws an error when unknown or invalid options are passed. Because som
 
 If you don't pass the option in yourself, this must be fixed by the utilized framework. You can suppress this error in the meantime by setting the `ROLLDOWN_OPTIONS_VALIDATION=loose` environment variable.
 
-## Enabling Native Plugins
+## Performance
+
+`rolldown-vite` is focused on ensuring compatibility with the existing ecosystem, so defaults are geared towards a smooth transition. You can get further performance gains by switching over to faster Rust-based internal plugins and other customizations.
+
+### Enabling Native Plugins
 
 Thanks to Rolldown and Oxc, various internal Vite plugins, such as the alias or resolve plugin, have been converted to Rust. At the time of writing, using these plugins is not enabled by default, as their behavior may differ from the JavaScript versions.
 
 To test them, you can set the `experimental.enableNativePlugin` option to `true` in your Vite config.
+
+### `withFilter` Wrapper
+
+Plugin authors have the option to use the [hook filter feature](#hook-filter-feature) to reduce the communication overhead between the Rust and JavaScript runtimes.
+But in case some of the used plugins are not using this feature (yet) but you still want to benefit from it, you can use the `withFilter` wrapper to wrap the plugin with a filter yourself.
+
+```js
+// In your vite.config.ts
+import { withFilter, defineConfig } from 'vite'
+import svgr from 'vite-plugin-svgr'
+
+export default defineConfig({
+  plugins: [
+    // Load the `svgr` plugin only for files which end in `.svg?react`
+    withFilter(
+      svgr({
+        /*...*/
+      }),
+      { load: { id: /\.svg?react$/ } },
+    ),
+  ],
+})
+```
 
 ## Reporting Issues
 

@@ -440,7 +440,7 @@ async function fileToBuiltUrl(
     return cached
   }
 
-  const { file, postfix } = splitFileAndPostfix(id)
+  let { file, postfix } = splitFileAndPostfix(id)
   const content = await fsp.readFile(file)
 
   let url: string
@@ -460,6 +460,11 @@ async function fileToBuiltUrl(
       originalFileName,
       source: content,
     })
+
+    if (environment.config.command === 'build' && noInlineRE.test(postfix)) {
+      postfix = postfix.replace(noInlineRE, '').replace(/^&/, '?')
+    }
+
     url = `__VITE_ASSET__${referenceId}__${postfix ? `$_${postfix}__` : ``}`
   }
 
