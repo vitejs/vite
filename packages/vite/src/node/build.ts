@@ -572,7 +572,7 @@ async function buildEnvironment(
 
   logger.info(
     colors.cyan(
-      `vite v${VERSION} ${colors.green(
+      `rolldown-vite v${VERSION} ${colors.green(
         `building ${ssr ? `SSR bundle ` : ``}for ${environment.config.mode}...`,
       )}`,
     ),
