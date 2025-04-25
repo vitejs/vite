@@ -176,7 +176,7 @@ describe('supports plugin context', () => {
           meta: expect.any(Object),
         })
         expect(this.meta.rollupVersion).toBeTypeOf('string')
-        expect(this.meta.watchMode).toBe(true)
+        expect(this.meta.watchMode).toBe(false)
       },
     })
   })
